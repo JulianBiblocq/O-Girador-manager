@@ -237,7 +237,7 @@ export default function SystemAdminPanel({ user, profileData, onBack, onNavigate
             onClick={() => onNavigateToView('tag-manager')}
             className="text-[10px] font-black uppercase tracking-widest bg-cordel-bg border border-encre-noire px-3 py-1 rounded-[4px_6px_3px_5px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-95 cursor-pointer flex items-center gap-1"
           >
-            🏷️ {t('tagManager.title')}
+            🏷️ {t('tags.managerTitle')}
           </button>
           <button 
             type="button"

@@ -12,11 +12,12 @@ service cloud.firestore {
     }
 
     function isAdminOrMestre() {
-      return isAuthenticated() && (
-        getUserData().role == 'mestre' || 
-        getUserData().role == 'super-admin' || 
-        getUserData().isSystemAdmin == true
-      );
+      return isAuthenticated() && 
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) && (
+          getUserData().role == 'mestre' || 
+          getUserData().role == 'super-admin' || 
+          getUserData().isSystemAdmin == true
+        );
     }
 
     // Collection Rules

@@ -37,6 +37,11 @@ export const fr = {
     pending: "En attente",
     presentCountLabel: "présents"
   },
+  tags: {
+    managerTitle: "Gestion des étiquettes",
+    createLabel: "Créer une étiquette",
+    title: "Titre"
+  },
   menu: {
     dashboard: "Tableau de bord",
     profile: "Mon Profil",
@@ -78,7 +83,7 @@ export const fr = {
     lastName: "Nom",
     instrument: "Instrument Principal",
     instrumentsPlayed: "Instruments pratiqués (Polyvalence)",
-    genre: "Genre (Pour l'accord de votre rôle)",
+    genre: "Genre (Pour accorder le vocabulaire de l'application à votre genre (ex: 'Inscrit' / 'Inscrite'))",
     phone: "Téléphone",
     phonePublic: "Rendre mon téléphone public dans le Trombinoscope",
     tshirtSize: "Taille de T-Shirt",
@@ -237,6 +242,8 @@ export const fr = {
     levelConfirm: "Confirmés uniquement",
     noEvents: "Aucun événement à venir.",
     errorCreate: "Erreur lors de la création de l'événement.",
+    seeAllEvents: "Voir tous les événements",
+    seeLessEvents: "Voir moins",
     lienSocialLabel: "Lien réseau social / Événement externe (URL)",
     imageUrlLabel: "Image de l'événement / Affiche",
     uploadingImage: "Téléversement...",

@@ -26,11 +26,11 @@ export default function Dashboard({ user, profileData, onNavigateToTrombi, onNav
       case 'motMestre':
       case 'annonces':
       case 'documents':
-        return 'col-span-2 md:col-span-2 lg:col-span-3';
+        return 'col-span-1 md:col-span-2 lg:col-span-3 w-full max-w-full overflow-hidden';
       case 'agenda':
-        return 'col-span-2 md:col-span-2 lg:col-span-2';
+        return 'col-span-1 md:col-span-2 lg:col-span-2 w-full max-w-full overflow-hidden';
       default:
-        return 'col-span-1';
+        return 'col-span-1 w-full max-w-full overflow-hidden';
     }
   };
 
@@ -75,7 +75,7 @@ export default function Dashboard({ user, profileData, onNavigateToTrombi, onNav
   }
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4 w-full max-w-full overflow-hidden">
       {/* System Admin Button (Top Float) */}
       {profileData?.isSystemAdmin && (
         <div className="flex justify-end -mb-3">
@@ -240,10 +240,7 @@ export default function Dashboard({ user, profileData, onNavigateToTrombi, onNav
       </div>
 
       {/* Widgets Grid (Dynamically Ordered) */}
-      <div 
-        className="grid gap-6"
-        style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))' }}
-      >
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full max-w-full overflow-hidden">
         {layout.map((widgetId) => {
           const spanClass = getWidgetSpan(widgetId);
           

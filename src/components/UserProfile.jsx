@@ -425,7 +425,7 @@ export default function UserProfile({ user, profileData, onBack }) {
             <label className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood">
               {t('onboarding.instrumentsPlayed')}
             </label>
-            <div className="grid grid-cols-2 gap-2 bg-white/40 dark:bg-black/25 p-3 rounded border border-dashed border-cordel-master-dark/15 max-h-40 overflow-y-auto">
+            <div className="grid grid-cols-2 gap-2 bg-white/40 dark:bg-black/25 p-3 rounded border border-dashed border-cordel-master-dark/15">
               {instrumentsDisponibles.map((inst) => {
                 const isChecked = (formData.instrumentsJoues || []).includes(inst);
                 return (

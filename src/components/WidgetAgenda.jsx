@@ -9,6 +9,26 @@ import { useTranslation } from './LanguageContext';
 import { XiloCalendar } from './XiloIcons';
 import PlacesAutocomplete from './PlacesAutocomplete';
 import { calculateRoadDistance } from '../utils/googleMaps';
+const formatDateWithDay = (dateStr, includeYear = true) => {
+  const date = new Date(dateStr);
+  if (isNaN(date.getTime())) return '';
+  const weekday = new Intl.DateTimeFormat('fr-FR', { weekday: 'short' }).format(date).toUpperCase().replace('.', '');
+  
+  if (includeYear) {
+    const dateParts = new Intl.DateTimeFormat('fr-FR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    }).format(date);
+    return `${weekday} ${dateParts}`;
+  } else {
+    const datePartsNoYear = new Intl.DateTimeFormat('fr-FR', {
+      day: '2-digit',
+      month: '2-digit'
+    }).format(date);
+    return `${weekday} ${datePartsNoYear}`;
+  }
+};
 
 export default function WidgetAgenda({ role, isSystemAdmin, groupId, user, profileData, onFocusModeChange, onNavigateToView }) {
   const { t } = useTranslation();
@@ -631,11 +651,13 @@ export default function WidgetAgenda({ role, isSystemAdmin, groupId, user, profi
                           </span>
                         )}
                       </div>
-                      {event.dateFin && (
-                        <span className="text-[9px] font-extrabold text-encre-noire/70 mb-1 leading-none select-none">
-                          Du {new Date(event.date).toLocaleDateString('fr-FR', {day: 'numeric', month: 'short'})} au {new Date(event.dateFin).toLocaleDateString('fr-FR', {day: 'numeric', month: 'short'})}
-                        </span>
-                      )}
+                      <span className="text-[9px] font-extrabold text-encre-noire/70 mb-1 leading-none select-none">
+                        {event.dateFin ? (
+                          `Du ${formatDateWithDay(event.date, true)} au ${formatDateWithDay(event.dateFin, false)}`
+                        ) : (
+                          `${formatDateWithDay(event.date, true)}`
+                        )}
+                      </span>
                       <div className="flex justify-between items-center mt-1.5 border-t border-dashed border-encre-noire/10 pt-1.5 gap-2">
                         <div className="flex flex-col items-start gap-1">
                           <span className="text-[8px] uppercase tracking-widest font-black opacity-60">

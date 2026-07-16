@@ -37,6 +37,11 @@ export const pt = {
     pending: "Em espera",
     presentCountLabel: "presentes"
   },
+  tags: {
+    managerTitle: "Gerenciador de etiquetas",
+    createLabel: "Criar etiqueta",
+    title: "Título"
+  },
   menu: {
     dashboard: "Início",
     profile: "Meu Perfil",
@@ -78,7 +83,7 @@ export const pt = {
     lastName: "Sobrenome",
     instrument: "Instrumento Principal",
     instrumentsPlayed: "Instrumentos praticados (Polivalência)",
-    genre: "Gênero (Para concordância do seu cargo)",
+    genre: "Gênero (Para adequar o vocabulário do aplicativo ao seu gênero (ex: 'Inscrito' / 'Inscrita'))",
     phone: "Telefone",
     phonePublic: "Tornar meu telefone público no Trombinoscópio",
     tshirtSize: "Tamanho da Camiseta",

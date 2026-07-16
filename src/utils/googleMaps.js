@@ -13,9 +13,9 @@ export function loadGoogleMaps() {
 
   if (!googleMapsPromise) {
     googleMapsPromise = new Promise((resolve, reject) => {
-      const apiKey = import.meta.env.VITE_FIREBASE_API_KEY;
+      const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || import.meta.env.VITE_FIREBASE_API_KEY;
       if (!apiKey) {
-        reject(new Error('Firebase API Key (VITE_FIREBASE_API_KEY) is missing in environment variables'));
+        reject(new Error('API Key (VITE_GOOGLE_MAPS_API_KEY or VITE_FIREBASE_API_KEY) is missing in environment variables'));
         return;
       }
 

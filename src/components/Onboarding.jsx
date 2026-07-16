@@ -142,7 +142,7 @@ export default function Onboarding({ user, branding, onComplete }) {
       }
     } catch (error) {
       console.error("Onboarding - Erreur d'écriture dans Firestore :", error);
-      alert(t('onboarding.errorSave'));
+      alert(t('onboarding.errorSave') + " (" + error.message + ")");
     } finally {
       setSubmitting(false);
     }
@@ -223,7 +223,7 @@ export default function Onboarding({ user, branding, onComplete }) {
             <label className="text-[10px] uppercase font-bold tracking-wider text-cordel-master-dark mb-1">
               {t('onboarding.instrumentsPlayed')}
             </label>
-            <div className="grid grid-cols-2 gap-2 bg-white/40 p-3 rounded border border-dashed border-cordel-master-dark/15 max-h-40 overflow-y-auto">
+            <div className="grid grid-cols-2 gap-2 bg-white/40 p-3 rounded border border-dashed border-cordel-master-dark/15">
               {instrumentsDisponibles.map((inst) => {
                 const isChecked = (formData.instrumentsJoues || []).includes(inst);
                 return (

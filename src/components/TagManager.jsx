@@ -121,35 +121,42 @@ export default function TagManager({ groupId, onBack, role, isSystemAdmin }) {
           </button>
           
           <h2 className="text-sm font-extrabold tracking-widest text-cordel-wood uppercase">
-            🏷️ {t('tagManager.title')}
+            🏷️ {t('tags.managerTitle')}
           </h2>
         </div>
 
         {/* Add Tag Form */}
         <CordelCard variant="default" useExtremeBorder={true} className="p-5">
           <h3 className="panel-title text-sm font-bold text-cordel-wood mb-3">
-            {t('tagManager.createTitle')}
+            {t('tags.createLabel')}
           </h3>
           
-          <form onSubmit={handleAddTag} className="flex gap-2">
-            <input
-              type="text"
-              value={newTag}
-              onChange={(e) => setNewTag(e.target.value)}
-              disabled={saving}
-              placeholder={t('tagManager.tagPlaceholder')}
-              required
-              maxLength={24}
-              className="theme-input flex-1 disabled:opacity-50 text-xs py-2 font-bold"
-            />
-            <CordelButton 
-              type="submit" 
-              variant="ocre" 
-              disabled={saving || !newTag.trim()} 
-              className="text-xs py-2 font-extrabold uppercase tracking-widest shrink-0"
-            >
-              + {t('tagManager.createBtn')}
-            </CordelButton>
+          <form onSubmit={handleAddTag} className="flex flex-col gap-2">
+            <div className="flex flex-col gap-1">
+              <label className="text-[10px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                {t('tags.title')}
+              </label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={newTag}
+                  onChange={(e) => setNewTag(e.target.value)}
+                  disabled={saving}
+                  placeholder={t('tagManager.tagPlaceholder')}
+                  required
+                  maxLength={24}
+                  className="theme-input flex-1 disabled:opacity-50 text-xs py-2 font-bold"
+                />
+                <CordelButton 
+                  type="submit" 
+                  variant="ocre" 
+                  disabled={saving || !newTag.trim()} 
+                  className="text-xs py-2 font-extrabold uppercase tracking-widest shrink-0"
+                >
+                  + {t('tagManager.createBtn')}
+                </CordelButton>
+              </div>
+            </div>
           </form>
         </CordelCard>
 

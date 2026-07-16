@@ -10,8 +10,8 @@ export interface CordelOptions {
 
 export const defaultCordelOptions: CordelOptions = {
   zoom: 120,
-  detail: 60,
-  shadow: 130,
+  detail: 45,  // Softer lines by default (down from 60)
+  shadow: 95,   // Softer shadows by default (down from 130)
   isMirror: true,
   isFrame: false,
   posX: 0,
@@ -79,8 +79,8 @@ export const processCordelEffect = (img: HTMLImageElement, options: CordelOption
   const cy = (minY + maxY) / 2;
 
   // Apply crop and offsets
-  const detailSensibility = 160 - options.detail; 
-  const shadowLimit = options.shadow;
+  const detailSensibility = 185 - options.detail; // Higher threshold -> softer, less thick outlines
+  const shadowLimit = options.shadow - 15;        // Lower threshold -> less black shadow spots
   const zoomVal = options.zoom;
   const cropSize = (boxSize * 1.3) / (zoomVal / 100); 
   
@@ -158,9 +158,9 @@ export const processCordelEffect = (img: HTMLImageElement, options: CordelOption
           }
 
           if (isInk) {
-              fData[outIdx] = 25; fData[outIdx+1] = 25; fData[outIdx+2] = 25; 
+              fData[outIdx] = 30; fData[outIdx+1] = 30; fData[outIdx+2] = 30; // Slightly softer black ink
           } else {
-              fData[outIdx] = 232; fData[outIdx+1] = 220; fData[outIdx+2] = 196; 
+              fData[outIdx] = 244; fData[outIdx+1] = 236; fData[outIdx+2] = 216; // #F4ECD8 (yellowish/pale sepia paper)
           }
           fData[outIdx+3] = 255;
       }
