@@ -236,14 +236,14 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
           <CordelCard variant="default" useExtremeBorder={false} className="p-4 text-center">
             <p className="text-xs opacity-75 font-semibold">Aucun document suspendu.</p>
           </CordelCard>
-        ) : (          <div className="flex flex-row md:flex-col gap-4 overflow-x-auto md:overflow-x-visible w-full no-scrollbar pb-3">
+        ) : (          <div className="flex flex-col gap-4 w-full">
             {varalCategories.map((category) => {
               const docList = groupedDocs[category.id] || [];
               const variant = categoryVariants[category.id] || 'default';
               const currentYear = new Date().getFullYear();
               
               return (
-                <CordelCard key={category.id} variant="default" useExtremeBorder={true} className="pb-8 pt-4 relative overflow-hidden bg-cordel-bg-light w-[85vw] md:w-full shrink-0">
+                <CordelCard key={category.id} variant="default" useExtremeBorder={true} className="pb-8 pt-4 relative overflow-hidden bg-cordel-bg-light w-full">
                   {/* Category Title Stamp */}
                   <div className="text-left mb-2 pl-2 flex justify-between items-center pr-3 select-none">
                     <div className="flex items-center gap-1.5">
