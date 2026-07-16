@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { doc, onSnapshot, setDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import LayoutShell from './LayoutShell';
@@ -29,6 +29,7 @@ export default function LayoutEditor({ groupId, onBack, role, isSystemAdmin }) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [dragOverIndex, setDragOverIndex] = useState(null);
+  const touchStartIndex = useRef(null);
 
   // Security Check: Mestres, Super-Admins and System Admins only
   const isAuthorized = role === 'mestre' || role === 'super-admin' || isSystemAdmin === true;
@@ -84,6 +85,37 @@ export default function LayoutEditor({ groupId, onBack, role, isSystemAdmin }) {
     const [draggedItem] = listCopy.splice(sourceIndex, 1);
     listCopy.splice(targetIndex, 0, draggedItem);
     
+    setItems(listCopy);
+  };
+
+  const handleTouchStart = (index) => {
+    touchStartIndex.current = index;
+  };
+
+  const handleTouchMove = (e) => {
+    const touch = e.touches[0];
+    const targetEl = document.elementFromPoint(touch.clientX, touch.clientY);
+    const itemEl = targetEl?.closest('[data-index]');
+    if (itemEl) {
+      const targetIndex = parseInt(itemEl.getAttribute('data-index'), 10);
+      if (!isNaN(targetIndex) && targetIndex !== touchStartIndex.current) {
+        const sourceIndex = touchStartIndex.current;
+        const listCopy = [...items];
+        const [draggedItem] = listCopy.splice(sourceIndex, 1);
+        listCopy.splice(targetIndex, 0, draggedItem);
+        setItems(listCopy);
+        touchStartIndex.current = targetIndex;
+      }
+    }
+  };
+
+  const handleMove = (index, direction) => {
+    const targetIndex = index + direction;
+    if (targetIndex < 0 || targetIndex >= items.length) return;
+    
+    const listCopy = [...items];
+    const [movedItem] = listCopy.splice(index, 1);
+    listCopy.splice(targetIndex, 0, movedItem);
     setItems(listCopy);
   };
 
@@ -145,8 +177,8 @@ export default function LayoutEditor({ groupId, onBack, role, isSystemAdmin }) {
         </div>
 
         {/* Info card */}
-        <div className="text-xs opacity-80 border border-dashed border-cordel-master-dark/30 p-3 rounded-[6px_4px_8px_5px] bg-[#fdfaf2] dark:bg-[#201d1a] leading-relaxed">
-          💡 <strong>Glissez-déposez</strong> les blocs ci-dessous par leurs poignées pour choisir l'ordre dans lequel les élèves verront les widgets sur leur tableau de bord.
+        <div className="text-xs text-encre-noire dark:text-cordel-bg-light opacity-80 border border-dashed border-cordel-master-dark/30 p-3 rounded-[6px_4px_8px_5px] bg-[#fdfaf2] dark:bg-[#201d1a] leading-relaxed">
+          💡 <strong>Glissez-déposez</strong> les blocs ci-dessous par leurs poignées ou utilisez les flèches <strong>▲ / ▼</strong> pour choisir l'ordre d'affichage des widgets.
         </div>
 
         {/* Loading Indicator */}
@@ -163,6 +195,7 @@ export default function LayoutEditor({ groupId, onBack, role, isSystemAdmin }) {
               return (
                 <div
                   key={widgetId}
+                  data-index={index}
                   onDragOver={(e) => handleDragOver(e, index)}
                   onDragLeave={handleDragLeave}
                   onDrop={(e) => handleDrop(e, index)}
@@ -183,14 +216,41 @@ export default function LayoutEditor({ groupId, onBack, role, isSystemAdmin }) {
                       </p>
                     </div>
 
-                    {/* Drag Handle (Draggable block wrapper with custom Woodcut aesthetics) */}
-                    <div
-                      draggable
-                      onDragStart={(e) => handleDragStart(e, index)}
-                      className="w-10 h-10 border-2 border-encre-noire bg-cordel-wood text-cordel-bg-light rounded-[6px_8px_5px_7px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-110 flex items-center justify-center cursor-grab active:cursor-grabbing select-none"
-                      title="Glisser pour déplacer"
-                    >
-                      <span className="text-xl font-bold tracking-tighter">🪢</span>
+                    {/* Reordering Controls */}
+                    <div className="flex items-center gap-2 shrink-0">
+                      {/* Arrow buttons for touch/mobile devices */}
+                      <div className="flex flex-col gap-0.5 select-none">
+                        <button
+                          type="button"
+                          onClick={() => handleMove(index, -1)}
+                          disabled={index === 0 || saving}
+                          className="w-6 h-5 border border-encre-noire bg-cordel-bg text-encre-noire dark:text-cordel-bg-light rounded shadow-[1px_1px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-105 disabled:opacity-30 disabled:pointer-events-none text-[8px] font-black cursor-pointer flex items-center justify-center"
+                          title="Monter"
+                        >
+                          ▲
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleMove(index, 1)}
+                          disabled={index === items.length - 1 || saving}
+                          className="w-6 h-5 border border-encre-noire bg-cordel-bg text-encre-noire dark:text-cordel-bg-light rounded shadow-[1px_1px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-105 disabled:opacity-30 disabled:pointer-events-none text-[8px] font-black cursor-pointer flex items-center justify-center"
+                          title="Descendre"
+                        >
+                          ▼
+                        </button>
+                      </div>
+
+                      {/* Drag Handle (Desktop drag-and-drop & Mobile touch swipe) */}
+                      <div
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, index)}
+                        onTouchStart={() => handleTouchStart(index)}
+                        onTouchMove={handleTouchMove}
+                        className="w-10 h-10 border-2 border-encre-noire bg-cordel-wood text-cordel-bg-light rounded-[6px_8px_5px_7px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-110 flex items-center justify-center cursor-grab active:cursor-grabbing select-none touch-none"
+                        title="Glisser pour déplacer"
+                      >
+                        <span className="text-xl font-bold tracking-tighter select-none pointer-events-none">🪢</span>
+                      </div>
                     </div>
                   </CordelCard>
                 </div>
