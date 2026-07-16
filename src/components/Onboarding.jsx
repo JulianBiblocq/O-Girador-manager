@@ -14,7 +14,7 @@ const DEFAULT_FIELDS_CONFIG = {
   dateNaissance: { key: "dateNaissance", label: "Date de naissance", enabled: true, filledBy: "member" }
 };
 
-const DEFAULT_INSTRUMENTS = ["Alfaia", "Caixa", "Gonguê", "Agbê", "Mineiro", "Timbal", "Paroles", "Chant", "Danse"];
+const DEFAULT_INSTRUMENTS = ["Alfaia Marcante", "Alfaia Meia", "Alfaia Repique", "Caixa", "Tarol", "Gonguê", "Agbê", "Mineiro", "Timbal", "Paroles", "Chant", "Danse"];
 
 export default function Onboarding({ user, onComplete }) {
   // Split the Google Auth display name into a first name and a last name

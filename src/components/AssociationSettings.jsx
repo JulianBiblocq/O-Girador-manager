@@ -16,7 +16,7 @@ export const DEFAULT_FIELDS_CONFIG = {
 };
 
 export default function AssociationSettings({ groupId, onBack, role, isSystemAdmin }) {
-  const DEFAULT_INSTRUMENTS = ["Alfaia", "Caixa", "Gonguê", "Agbê", "Mineiro", "Timbal", "Paroles", "Chant", "Danse"];
+  const DEFAULT_INSTRUMENTS = ["Alfaia Marcante", "Alfaia Meia", "Alfaia Repique", "Caixa", "Tarol", "Gonguê", "Agbê", "Mineiro", "Timbal", "Paroles", "Chant", "Danse"];
 
   const [fieldsConfig, setFieldsConfig] = useState(DEFAULT_FIELDS_CONFIG);
   const [instrumentsDisponibles, setInstrumentsDisponibles] = useState([]);
@@ -130,20 +130,20 @@ export default function AssociationSettings({ groupId, onBack, role, isSystemAdm
 
     setSaving(true);
     let finalLogoUrl = logoUrl;
+    let finalDroitImageDocUrl = droitImageDocUrl;
+    let finalAptitudeMedicaleDocUrl = aptitudeMedicaleDocUrl;
 
     try {
-      if (logoFile) {
+      if (logoFile && logoFile instanceof File) {
         setUploadingLogo(true);
         const storageRef = ref(storage, `brandings/${groupId}/logo.png`);
         const snapshot = await uploadBytes(storageRef, logoFile);
         finalLogoUrl = await getDownloadURL(snapshot.ref);
         setLogoUrl(finalLogoUrl);
         setLogoFile(null);
-        setUploadingLogo(false);
       }
 
-      let finalDroitImageDocUrl = droitImageDocUrl;
-      if (droitImageFile) {
+      if (droitImageFile && droitImageFile instanceof File) {
         const docRef = ref(storage, `documents/${groupId}/droit_image.pdf`);
         const snap = await uploadBytes(docRef, droitImageFile);
         finalDroitImageDocUrl = await getDownloadURL(snap.ref);
@@ -151,8 +151,7 @@ export default function AssociationSettings({ groupId, onBack, role, isSystemAdm
         setDroitImageFile(null);
       }
 
-      let finalAptitudeMedicaleDocUrl = aptitudeMedicaleDocUrl;
-      if (aptitudeMedicaleFile) {
+      if (aptitudeMedicaleFile && aptitudeMedicaleFile instanceof File) {
         const docRef = ref(storage, `documents/${groupId}/aptitude_medicale.pdf`);
         const snap = await uploadBytes(docRef, aptitudeMedicaleFile);
         finalAptitudeMedicaleDocUrl = await getDownloadURL(snap.ref);
@@ -176,9 +175,9 @@ export default function AssociationSettings({ groupId, onBack, role, isSystemAdm
       onBack();
     } catch (err) {
       console.error("AssociationSettings - Erreur de sauvegarde :", err);
-      alert("Erreur lors de la sauvegarde des réglages.");
-      setUploadingLogo(false);
+      alert("Erreur lors de la sauvegarde des réglages : " + (err.message || err));
     } finally {
+      setUploadingLogo(false);
       setSaving(false);
     }
   };
