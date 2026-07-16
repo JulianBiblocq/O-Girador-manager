@@ -10,6 +10,7 @@ import Forum from './components/Forum';
 import UserProfile from './components/UserProfile';
 import SystemAdminPanel from './components/SystemAdminPanel';
 import LayoutEditor from './components/LayoutEditor';
+import TagManager from './components/TagManager';
 import LayoutShell from './components/LayoutShell';
 
 export default function App() {
@@ -18,7 +19,7 @@ export default function App() {
   const [checkingProfile, setCheckingProfile] = useState(false);
   const [profileExists, setProfileExists] = useState(false);
   const [profileData, setProfileData] = useState(null);
-  const [currentView, setCurrentView] = useState('dashboard'); // 'dashboard', 'trombinoscope', 'forum', 'profil', 'system-admin', 'layout-editor'
+  const [currentView, setCurrentView] = useState('dashboard'); // 'dashboard', 'trombinoscope', 'forum', 'profil', 'system-admin', 'layout-editor', 'tag-manager'
 
   // Initialize dark mode from localStorage or system preferences on startup
   useEffect(() => {
@@ -166,6 +167,7 @@ export default function App() {
           user={user} 
           profileData={profileData} 
           onBack={() => setCurrentView('dashboard')} 
+          onNavigateToView={(view) => setCurrentView(view)}
         />
       ) : (currentView === 'layout-editor' && (profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.isSystemAdmin)) ? (
         <LayoutEditor 
@@ -173,6 +175,13 @@ export default function App() {
           role={profileData?.role}
           isSystemAdmin={profileData?.isSystemAdmin}
           onBack={() => setCurrentView('dashboard')} 
+        />
+      ) : (currentView === 'tag-manager' && (profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.isSystemAdmin)) ? (
+        <TagManager 
+          groupId={profileData?.groupId}
+          role={profileData?.role}
+          isSystemAdmin={profileData?.isSystemAdmin}
+          onBack={() => setCurrentView('system-admin')} 
         />
       ) : (
         <Dashboard 

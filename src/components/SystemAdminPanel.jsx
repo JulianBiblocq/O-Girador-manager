@@ -4,7 +4,7 @@ import { db } from '../firebase';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
 
-export default function SystemAdminPanel({ user, profileData, onBack }) {
+export default function SystemAdminPanel({ user, profileData, onBack, onNavigateToView }) {
   // Ultimate Security Verification
   if (!profileData || profileData.isSystemAdmin !== true) {
     return (
@@ -24,7 +24,9 @@ export default function SystemAdminPanel({ user, profileData, onBack }) {
   }
 
   const [usersList, setUsersList] = useState([]);
+  const [availableTags, setAvailableTags] = useState([]);
   const [draftRoles, setDraftRoles] = useState({}); // { [userId]: newRole }
+  const [draftTags, setDraftTags] = useState({}); // { [userId]: [tag1, tag2, ...] }
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState(null);
 
@@ -55,30 +57,70 @@ export default function SystemAdminPanel({ user, profileData, onBack }) {
     return () => unsubscribe();
   }, []);
 
+  // Real-time synchronization of custom tags list from associations collection
+  useEffect(() => {
+    if (!profileData?.groupId) return;
+
+    const assocRef = doc(db, 'associations', profileData.groupId);
+    const unsubscribe = onSnapshot(assocRef, (docSnap) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        if (Array.isArray(data.tagsDisponibles)) {
+          setAvailableTags(data.tagsDisponibles);
+        }
+      }
+    }, (error) => {
+      console.error("SystemAdminPanel - Erreur onSnapshot associations :", error);
+    });
+
+    return () => unsubscribe();
+  }, [profileData?.groupId]);
+
   const handleRoleChange = (userId, value) => {
     setDraftRoles((prev) => ({ ...prev, [userId]: value }));
   };
 
-  const handleSaveRole = async (targetUserId) => {
-    const newRole = draftRoles[targetUserId];
-    if (!newRole) return; // No change made
+  const handleTagToggle = (userId, tag, isChecked, currentTags = []) => {
+    setDraftTags((prev) => {
+      const userTags = prev[userId] !== undefined ? prev[userId] : (currentTags || []);
+      let updatedTags;
+      if (isChecked) {
+        updatedTags = [...userTags, tag];
+      } else {
+        updatedTags = userTags.filter(t => t !== tag);
+      }
+      return { ...prev, [userId]: updatedTags };
+    });
+  };
+
+  const handleSavePermissions = async (targetUserId, currentRole, currentTags) => {
+    const newRole = draftRoles[targetUserId] !== undefined ? draftRoles[targetUserId] : currentRole;
+    const newTags = draftTags[targetUserId] !== undefined ? draftTags[targetUserId] : (currentTags || []);
 
     setSavingId(targetUserId);
     try {
       const userRef = doc(db, 'users', targetUserId);
-      await updateDoc(userRef, { role: newRole });
+      await updateDoc(userRef, { 
+        role: newRole,
+        tags: newTags
+      });
       
-      // Clear draft role state for this user upon success
+      // Clear drafts upon success
       setDraftRoles((prev) => {
         const copy = { ...prev };
         delete copy[targetUserId];
         return copy;
       });
+      setDraftTags((prev) => {
+        const copy = { ...prev };
+        delete copy[targetUserId];
+        return copy;
+      });
       
-      alert("Le rôle de l'utilisateur a été mis à jour avec succès !");
+      alert("Permissions de l'utilisateur mises à jour avec succès !");
     } catch (error) {
       console.error("SystemAdminPanel - Erreur updateDoc :", error);
-      alert("Erreur lors de la mise à jour du rôle.");
+      alert("Erreur lors de la mise à jour des permissions.");
     } finally {
       setSavingId(null);
     }
@@ -94,7 +136,13 @@ export default function SystemAdminPanel({ user, profileData, onBack }) {
         <span className="panel-title text-base font-extrabold tracking-wider text-cordel-wood uppercase">
           Tour de Contrôle
         </span>
-        <div className="w-12"></div>
+        <button 
+          type="button"
+          onClick={() => onNavigateToView('tag-manager')}
+          className="text-[10px] font-black uppercase tracking-widest bg-cordel-bg border border-encre-noire px-3 py-1 rounded-[4px_6px_3px_5px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-95 cursor-pointer flex items-center gap-1"
+        >
+          🏷️ Étiquettes
+        </button>
       </div>
 
       {loading ? (
@@ -122,9 +170,20 @@ export default function SystemAdminPanel({ user, profileData, onBack }) {
           <div className="flex flex-col gap-3">
             {usersList.map((userItem) => {
               const currentRole = userItem.role || 'membre';
+              const currentTags = userItem.tags || [];
+              
               const draftRole = draftRoles[userItem.id];
-              const isModified = draftRole !== undefined && draftRole !== currentRole;
+              const draftTag = draftTags[userItem.id];
+              
               const activeRole = draftRole !== undefined ? draftRole : currentRole;
+              const activeTags = draftTag !== undefined ? draftTag : currentTags;
+
+              // Check modifications for Role and Tags to toggle Save button
+              const isRoleModified = draftRole !== undefined && draftRole !== currentRole;
+              const sortedCurrentTags = [...currentTags].sort();
+              const sortedActiveTags = [...activeTags].sort();
+              const isTagsModified = JSON.stringify(sortedCurrentTags) !== JSON.stringify(sortedActiveTags);
+              const isModified = isRoleModified || isTagsModified;
 
               return (
                 <CordelCard key={userItem.id} variant="default" useExtremeBorder={false} className="py-4 relative pr-4">
@@ -165,7 +224,7 @@ export default function SystemAdminPanel({ user, profileData, onBack }) {
                         <CordelButton
                           variant={isModified ? "ocre" : "default"}
                           useExtremeBorder={true}
-                          onClick={() => handleSaveRole(userItem.id)}
+                          onClick={() => handleSavePermissions(userItem.id, currentRole, currentTags)}
                           disabled={!isModified || savingId === userItem.id}
                           className={`text-xs px-3 py-1.5 font-bold uppercase tracking-wider ${
                             !isModified ? 'opacity-40 cursor-not-allowed' : ''
@@ -175,6 +234,34 @@ export default function SystemAdminPanel({ user, profileData, onBack }) {
                         </CordelButton>
                       </div>
                     </div>
+
+                    {/* Tags Selector Panel (Checkboxes) */}
+                    {availableTags.length > 0 && (
+                      <div className="flex flex-col gap-1.5 border-t border-dashed border-cordel-master-dark/10 pt-3">
+                        <label className="text-[8px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                          Étiquettes attribuées
+                        </label>
+                        <div className="flex flex-wrap gap-x-4 gap-y-1.5 mt-0.5">
+                          {availableTags.map((tag) => {
+                            const isChecked = activeTags.includes(tag);
+                            return (
+                              <label key={tag} className="flex items-center gap-1.5 cursor-pointer text-[10px] font-bold select-none hover:opacity-80">
+                                <input
+                                  type="checkbox"
+                                  checked={isChecked}
+                                  disabled={savingId === userItem.id}
+                                  onChange={(e) => handleTagToggle(userItem.id, tag, e.target.checked, currentTags)}
+                                  className="rounded border-encre-noire text-cordel-wood focus:ring-cordel-wood w-3 h-3 cursor-pointer"
+                                />
+                                <span className="theme-stamp-badge theme-stamp-badge-wood text-[8px] px-1 py-0.5 normal-case tracking-normal rotate-0 bg-transparent shadow-none border-dashed border">
+                                  {tag}
+                                </span>
+                              </label>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* Stamp badge representing current live role */}

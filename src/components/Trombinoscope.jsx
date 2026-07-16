@@ -141,20 +141,29 @@ export default function Trombinoscope({ user, profileData, onBack }) {
                       </div>
                     </div>
 
+                    {/* Member Tags (Custom ink stamp badges) */}
+                    {hasTags && (
+                      <div className="flex flex-wrap gap-1 mt-2.5 justify-center max-w-full z-10">
+                        {member.tags.map((tag, tagIdx) => {
+                          const rotation = ((tag.charCodeAt(0) + tagIdx) % 5) - 2; // -2deg to 2deg
+                          return (
+                            <span 
+                              key={tag} 
+                              style={{ transform: `rotate(${rotation}deg)` }}
+                              className="theme-stamp-badge theme-stamp-badge-wood text-[7px] px-1.5 py-0.5 border-dashed select-none bg-transparent shadow-none"
+                            >
+                              {tag}
+                            </span>
+                          );
+                        })}
+                      </div>
+                    )}
+
                     {/* Role Stamp overlay (rotated and overlapping) */}
                     {hasRoleBadge && (
                       <div className="absolute top-2 -right-1 z-25">
                         <span className="theme-stamp-badge theme-stamp-badge-wood text-[7px] rotate-[-6deg] select-none">
                           {member.role}
-                        </span>
-                      </div>
-                    )}
-
-                    {/* Tags / Instrument Stamp overlay */}
-                    {hasTags && (
-                      <div className="absolute bottom-2 -left-1 z-25">
-                        <span className="theme-stamp-badge theme-stamp-badge-dark text-[7px] rotate-[5deg] select-none">
-                          🎺 {member.tags[0]}
                         </span>
                       </div>
                     )}
