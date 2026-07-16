@@ -13,6 +13,7 @@ import LayoutEditor from './components/LayoutEditor';
 import TagManager from './components/TagManager';
 import InventoryManager from './components/InventoryManager';
 import AssociationSettings from './components/AssociationSettings';
+import OrdersManager from './components/OrdersManager';
 import LayoutShell from './components/LayoutShell';
 
 export default function App() {
@@ -242,6 +243,13 @@ export default function App() {
           />
         ) : (currentView === 'inventory' && (profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.isSystemAdmin)) ? (
           <InventoryManager 
+            groupId={profileData?.groupId}
+            role={profileData?.role}
+            isSystemAdmin={profileData?.isSystemAdmin}
+            onBack={() => setCurrentView('dashboard')} 
+          />
+        ) : (currentView === 'orders-manager' && (profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.isSystemAdmin)) ? (
+          <OrdersManager 
             groupId={profileData?.groupId}
             role={profileData?.role}
             isSystemAdmin={profileData?.isSystemAdmin}

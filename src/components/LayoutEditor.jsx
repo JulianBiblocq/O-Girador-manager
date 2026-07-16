@@ -52,6 +52,10 @@ const WIDGET_NAMES = {
     title: "Dates à Venir (Agenda) 📅",
     desc: "Liste des répétitions, concerts et stages de la Roda."
   },
+  commandes: {
+    title: "Achats de Matériel (Commandes) 📦",
+    desc: "Campagnes de commandes groupées de baguettes, peaux, T-shirts..."
+  },
   forum: {
     title: "Le Porte-Voix (Forum) 💬",
     desc: "Discussions communautaires et ateliers couture/costumes."
@@ -63,7 +67,7 @@ const WIDGET_NAMES = {
 };
 
 export default function LayoutEditor({ groupId, onBack, role, isSystemAdmin }) {
-  const [items, setItems] = useState(["motMestre", "annonces", "agenda", "forum", "documents"]);
+  const [items, setItems] = useState(["motMestre", "annonces", "agenda", "commandes", "forum", "documents"]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [dragOverIndex, setDragOverIndex] = useState(null);

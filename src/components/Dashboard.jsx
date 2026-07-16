@@ -4,6 +4,7 @@ import { db } from '../firebase';
 import WidgetMotMestre from './WidgetMotMestre';
 import WidgetAnnonces from './WidgetAnnonces';
 import WidgetAgenda from './WidgetAgenda';
+import WidgetCommandes from './WidgetCommandes';
 import WidgetForum from './WidgetForum';
 import WidgetDocuments from './WidgetDocuments';
 import CordelCard from './CordelCard';
@@ -14,7 +15,7 @@ export default function Dashboard({ user, profileData, onNavigateToTrombi, onNav
   const [darkMode, setDarkMode] = useState(() => {
     return document.documentElement.classList.contains('dark');
   });
-  const [layout, setLayout] = useState(["motMestre", "annonces", "agenda", "forum", "documents"]);
+  const [layout, setLayout] = useState(["motMestre", "annonces", "agenda", "commandes", "forum", "documents"]);
 
   const toggleDarkMode = () => {
     const isDark = document.documentElement.classList.toggle('dark');
@@ -147,6 +148,13 @@ export default function Dashboard({ user, profileData, onNavigateToTrombi, onNav
             >
               🥁 Inventaire du parc (Matériel)
             </button>
+            <button 
+              type="button"
+              onClick={() => onNavigateToView('orders-manager')}
+              className="text-[10px] font-black uppercase tracking-widest bg-cordel-bg border-2 border-dashed border-encre-noire/30 hover:border-encre-noire text-encre-noire py-1.5 w-full rounded-[6px_10px_8px_12px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-105 transition-all cursor-pointer flex items-center justify-center gap-2"
+            >
+              📦 Achats groupés (Commandes)
+            </button>
           </div>
         )}
       </div>
@@ -179,6 +187,15 @@ export default function Dashboard({ user, profileData, onNavigateToTrombi, onNav
                 key="agenda"
                 role={profileData?.role} 
                 isSystemAdmin={profileData?.isSystemAdmin} 
+                groupId={profileData?.groupId} 
+                user={user} 
+                profileData={profileData} 
+              />
+            );
+          case 'commandes':
+            return (
+              <WidgetCommandes 
+                key="commandes"
                 groupId={profileData?.groupId} 
                 user={user} 
                 profileData={profileData} 
