@@ -24,6 +24,7 @@ export default function LayoutShell({
   profileData, 
   onSignOut, 
   unreadPrivateMessagesCount = 0,
+  forceLight = false,
   children 
 }) {
   const finalLogoUrl = logoUrl || '/Pictures/logo-samambaia.png';
@@ -31,7 +32,7 @@ export default function LayoutShell({
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
   return (
-    <div className="min-h-screen w-full bg-cordel-bg-dark flex lg:items-center lg:justify-center lg:p-4 md:p-6 lg:p-8">
+    <div className={`min-h-screen w-full ${forceLight ? 'bg-cordel-bg-light' : 'bg-cordel-bg-dark'} flex lg:items-center lg:justify-center p-4 md:p-6 lg:p-8`}>
       {/* Responsive board container: split into sidebar/content on desktop (lg breakpoint >= 1024px) */}
       <div className="w-full h-screen lg:h-auto lg:min-h-[85vh] sm:max-w-3xl lg:max-w-5xl xl:max-w-6xl lg:border-8 lg:border-cordel-master-dark lg:rounded-[36px] lg:shadow-[0_20px_50px_rgba(0,0,0,0.6)] overflow-hidden flex flex-col lg:flex-row relative bg-cordel-bg-light text-encre-noire">
         

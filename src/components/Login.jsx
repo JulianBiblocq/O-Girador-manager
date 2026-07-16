@@ -65,8 +65,8 @@ export default function Login({ branding }) {
   } : {};
 
   return (
-    <div style={brandingStyle} className="min-h-screen flex flex-col w-full">
-      <LayoutShell>
+    <div style={brandingStyle} className="min-h-screen flex flex-col w-full force-light-theme">
+      <LayoutShell forceLight={true}>
         <div className="flex-1 flex flex-col justify-center items-center py-12">
           <CordelCard variant="default" useExtremeBorder={true} className="w-full text-center py-8">
             {/* Handcrafted circular print logo container */}

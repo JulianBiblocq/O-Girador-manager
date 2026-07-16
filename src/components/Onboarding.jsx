@@ -149,8 +149,9 @@ export default function Onboarding({ user, branding, onComplete }) {
   };
 
   return (
-    <LayoutShell logoUrl={branding?.logoUrl}>
-      <div className="text-center py-4 border-b-2 border-dashed border-cordel-master-dark/30">
+    <div className="force-light-theme w-full flex flex-col min-h-screen">
+      <LayoutShell logoUrl={branding?.logoUrl} forceLight={true}>
+        <div className="text-center py-4 border-b-2 border-dashed border-cordel-master-dark/30">
         <h1 className="panel-title text-2xl font-extrabold tracking-wider text-cordel-wood">
           {t('onboarding.title')}
         </h1>
@@ -222,7 +223,7 @@ export default function Onboarding({ user, branding, onComplete }) {
             <label className="text-[10px] uppercase font-bold tracking-wider text-cordel-master-dark mb-1">
               {t('onboarding.instrumentsPlayed')}
             </label>
-            <div className="grid grid-cols-2 gap-2 bg-white/40 dark:bg-black/25 p-3 rounded border border-dashed border-cordel-master-dark/15 max-h-40 overflow-y-auto">
+            <div className="grid grid-cols-2 gap-2 bg-white/40 p-3 rounded border border-dashed border-cordel-master-dark/15 max-h-40 overflow-y-auto">
               {instrumentsDisponibles.map((inst) => {
                 const isChecked = (formData.instrumentsJoues || []).includes(inst);
                 return (
@@ -404,7 +405,7 @@ export default function Onboarding({ user, branding, onComplete }) {
                   disabled={submitting}
                   className="mt-1"
                 />
-                <label htmlFor="aptitudeMedicale" className="text-xs font-bold leading-snug cursor-pointer select-none text-red-600 dark:text-red-400">
+                <label htmlFor="aptitudeMedicale" className="text-xs font-bold leading-snug cursor-pointer select-none text-red-600">
                   {t('onboarding.medicalCert')}
                 </label>
               </div>
@@ -427,5 +428,6 @@ export default function Onboarding({ user, branding, onComplete }) {
         </form>
       </CordelCard>
     </LayoutShell>
+    </div>
   );
 }

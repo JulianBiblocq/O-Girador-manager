@@ -51,6 +51,25 @@
   --cordel-hover-bg: #3d3d3d;           /* Darker hover background */
 }
 
+.force-light-theme {
+  --cordel-bg: #f4ecd8 !important;
+  --cordel-card-bg: #f4ecd8 !important;
+  --cordel-text: #1a1a1a !important;
+  --cordel-border: #1a1a1a !important;
+  --cordel-wood: #8b2a1a !important;
+  --cordel-master-bg: #ffffff !important;
+  --cordel-shadow-color: rgba(26, 26, 26, 0.25) !important;
+  --title-text-shadow: none !important;
+  --title-drop-shadow: none !important;
+  --encre-noire: #1a1a1a !important;
+
+  --cordel-bg-dark-color: #1a1a1a !important;
+  --cordel-bg-light-color: #f4ecd8 !important;
+  --cordel-master-dark-color: #251c1a !important;
+  --cordel-master-light-color: #e7d5c1 !important;
+  --cordel-hover-bg: #ece4d0 !important;
+}
+
 body {
   font-family: 'Roboto', 'Segoe UI', system-ui, -apple-system, sans-serif;
   margin: 0;

@@ -417,7 +417,7 @@ export default function App() {
   // Authenticated but no profile in Firestore -> Show Onboarding
   if (!profileExists || !profileData) {
     return (
-      <div style={brandingStyle} className="min-h-screen flex flex-col w-full">
+      <div style={brandingStyle} className="min-h-screen flex flex-col w-full force-light-theme">
         <React.Suspense fallback={<div className="flex-1 flex justify-center items-center py-12 animate-pulse text-xs font-bold select-none">⏳ Initialisation...</div>}>
           <Onboarding user={user} branding={branding} onComplete={handleOnboardingComplete} />
         </React.Suspense>
