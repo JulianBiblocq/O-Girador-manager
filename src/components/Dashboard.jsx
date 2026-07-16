@@ -1,4 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { doc, onSnapshot } from 'firebase/firestore';
+import { db } from '../firebase';
 import WidgetMotMestre from './WidgetMotMestre';
 import WidgetAgenda from './WidgetAgenda';
 import WidgetForum from './WidgetForum';
@@ -7,9 +9,10 @@ import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
 
 export default function Dashboard({ user, profileData, onNavigateToTrombi, onNavigateToView, onSignOut }) {
-  const [darkMode, setDarkMode] = React.useState(() => {
+  const [darkMode, setDarkMode] = useState(() => {
     return document.documentElement.classList.contains('dark');
   });
+  const [layout, setLayout] = useState(["motMestre", "agenda", "forum", "documents"]);
 
   const toggleDarkMode = () => {
     const isDark = document.documentElement.classList.toggle('dark');
@@ -17,10 +20,24 @@ export default function Dashboard({ user, profileData, onNavigateToTrombi, onNav
     localStorage.setItem('theme', isDark ? 'dark' : 'light');
   };
 
-  const handleSystemAdminClick = () => {
-    console.log("Accès Admin Système déclenché pour l'utilisateur :", profileData.email);
-    alert("Accès Admin Système déclenché (vérifiez la console).");
-  };
+  // Real-time synchronization of the pupil widgets display order
+  useEffect(() => {
+    if (!profileData?.groupId) return;
+
+    const assocRef = doc(db, 'associations', profileData.groupId);
+    const unsubscribe = onSnapshot(assocRef, (docSnap) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        if (Array.isArray(data.layoutEleves) && data.layoutEleves.length > 0) {
+          setLayout(data.layoutEleves);
+        }
+      }
+    }, (error) => {
+      console.error("Dashboard - Erreur onSnapshot association :", error);
+    });
+
+    return () => unsubscribe();
+  }, [profileData?.groupId]);
 
   return (
     <div className="flex flex-col gap-4">
@@ -101,7 +118,7 @@ export default function Dashboard({ user, profileData, onNavigateToTrombi, onNav
       </div>
 
       {/* Navigation to Trombinoscope */}
-      <div className="flex justify-center -mt-2">
+      <div className="flex flex-col gap-2 -mt-2">
         <CordelButton 
           variant="ocre" 
           useExtremeBorder={true}
@@ -110,13 +127,63 @@ export default function Dashboard({ user, profileData, onNavigateToTrombi, onNav
         >
           👥 Voir le Trombinoscope
         </CordelButton>
+
+        {/* Layout Editor Access Button (Visible to Mestres, Super-Admins & System Admins) */}
+        {(profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.isSystemAdmin) && (
+          <button 
+            type="button"
+            onClick={() => onNavigateToView('layout-editor')}
+            className="text-[10px] font-black uppercase tracking-widest bg-cordel-bg border-2 border-dashed border-encre-noire/30 hover:border-encre-noire text-encre-noire py-1.5 w-full rounded-[6px_10px_8px_12px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-105 transition-all cursor-pointer flex items-center justify-center gap-2"
+          >
+            ⚙️ Organiser l'accueil (Mise en page)
+          </button>
+        )}
       </div>
 
-      {/* 4 Widgets Stack */}
-      <WidgetMotMestre role={profileData?.role} isSystemAdmin={profileData?.isSystemAdmin} groupId={profileData?.groupId} />
-      <WidgetAgenda role={profileData?.role} isSystemAdmin={profileData?.isSystemAdmin} groupId={profileData?.groupId} user={user} profileData={profileData} />
-      <WidgetForum groupId={profileData?.groupId} onOpen={() => onNavigateToView('forum')} />
-      <WidgetDocuments role={profileData?.role} isSystemAdmin={profileData?.isSystemAdmin} groupId={profileData?.groupId} />
+      {/* 4 Widgets Stack (Dynamically Ordered) */}
+      {layout.map((widgetId) => {
+        switch (widgetId) {
+          case 'motMestre':
+            return (
+              <WidgetMotMestre 
+                key="motMestre"
+                role={profileData?.role} 
+                isSystemAdmin={profileData?.isSystemAdmin} 
+                groupId={profileData?.groupId} 
+              />
+            );
+          case 'agenda':
+            return (
+              <WidgetAgenda 
+                key="agenda"
+                role={profileData?.role} 
+                isSystemAdmin={profileData?.isSystemAdmin} 
+                groupId={profileData?.groupId} 
+                user={user} 
+                profileData={profileData} 
+              />
+            );
+          case 'forum':
+            return (
+              <WidgetForum 
+                key="forum"
+                groupId={profileData?.groupId} 
+                onOpen={() => onNavigateToView('forum')} 
+              />
+            );
+          case 'documents':
+            return (
+              <WidgetDocuments 
+                key="documents"
+                role={profileData?.role} 
+                isSystemAdmin={profileData?.isSystemAdmin} 
+                groupId={profileData?.groupId} 
+              />
+            );
+          default:
+            return null;
+        }
+      })}
     </div>
   );
 }

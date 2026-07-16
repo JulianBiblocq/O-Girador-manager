@@ -9,6 +9,7 @@ import Trombinoscope from './components/Trombinoscope';
 import Forum from './components/Forum';
 import UserProfile from './components/UserProfile';
 import SystemAdminPanel from './components/SystemAdminPanel';
+import LayoutEditor from './components/LayoutEditor';
 import LayoutShell from './components/LayoutShell';
 
 export default function App() {
@@ -17,7 +18,7 @@ export default function App() {
   const [checkingProfile, setCheckingProfile] = useState(false);
   const [profileExists, setProfileExists] = useState(false);
   const [profileData, setProfileData] = useState(null);
-  const [currentView, setCurrentView] = useState('dashboard'); // 'dashboard', 'trombinoscope', 'forum', 'profil', 'system-admin'
+  const [currentView, setCurrentView] = useState('dashboard'); // 'dashboard', 'trombinoscope', 'forum', 'profil', 'system-admin', 'layout-editor'
 
   // Initialize dark mode from localStorage or system preferences on startup
   useEffect(() => {
@@ -164,6 +165,13 @@ export default function App() {
         <SystemAdminPanel 
           user={user} 
           profileData={profileData} 
+          onBack={() => setCurrentView('dashboard')} 
+        />
+      ) : (currentView === 'layout-editor' && (profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.isSystemAdmin)) ? (
+        <LayoutEditor 
+          groupId={profileData?.groupId}
+          role={profileData?.role}
+          isSystemAdmin={profileData?.isSystemAdmin}
           onBack={() => setCurrentView('dashboard')} 
         />
       ) : (
