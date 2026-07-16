@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { doc, onSnapshot, updateDoc } from 'firebase/firestore';
+import { doc, onSnapshot, updateDoc, setDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '../firebase';
 import LayoutShell from './LayoutShell';
@@ -137,7 +137,7 @@ export default function AssociationSettings({ groupId, onBack, role, isSystemAdm
       }
 
       const assocRef = doc(db, 'associations', groupId);
-      await updateDoc(assocRef, {
+      await setDoc(assocRef, {
         fieldsConfig: fieldsConfig,
         instrumentsDisponibles: instrumentsDisponibles,
         sequenceurUrl: sequenceurUrl,
@@ -145,7 +145,7 @@ export default function AssociationSettings({ groupId, onBack, role, isSystemAdm
           logoUrl: finalLogoUrl,
           colors: colors
         }
-      });
+      }, { merge: true });
       alert("Réglages de l'association enregistrés avec succès !");
       onBack();
     } catch (err) {
