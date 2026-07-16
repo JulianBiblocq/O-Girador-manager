@@ -129,15 +129,24 @@ export default function Dashboard({ user, profileData, onNavigateToTrombi, onNav
           👥 Voir le Trombinoscope
         </CordelButton>
 
-        {/* Layout Editor Access Button (Visible to Mestres, Super-Admins & System Admins) */}
+        {/* Layout Editor & Inventory Access Buttons (Visible to Mestres, Super-Admins & System Admins) */}
         {(profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.isSystemAdmin) && (
-          <button 
-            type="button"
-            onClick={() => onNavigateToView('layout-editor')}
-            className="text-[10px] font-black uppercase tracking-widest bg-cordel-bg border-2 border-dashed border-encre-noire/30 hover:border-encre-noire text-encre-noire py-1.5 w-full rounded-[6px_10px_8px_12px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-105 transition-all cursor-pointer flex items-center justify-center gap-2"
-          >
-            ⚙️ Organiser l'accueil (Mise en page)
-          </button>
+          <div className="flex flex-col gap-2">
+            <button 
+              type="button"
+              onClick={() => onNavigateToView('layout-editor')}
+              className="text-[10px] font-black uppercase tracking-widest bg-cordel-bg border-2 border-dashed border-encre-noire/30 hover:border-encre-noire text-encre-noire py-1.5 w-full rounded-[6px_10px_8px_12px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-105 transition-all cursor-pointer flex items-center justify-center gap-2"
+            >
+              ⚙️ Organiser l'accueil (Mise en page)
+            </button>
+            <button 
+              type="button"
+              onClick={() => onNavigateToView('inventory')}
+              className="text-[10px] font-black uppercase tracking-widest bg-cordel-bg border-2 border-dashed border-encre-noire/30 hover:border-encre-noire text-encre-noire py-1.5 w-full rounded-[6px_10px_8px_12px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-105 transition-all cursor-pointer flex items-center justify-center gap-2"
+            >
+              🥁 Inventaire du parc (Matériel)
+            </button>
+          </div>
         )}
       </div>
 

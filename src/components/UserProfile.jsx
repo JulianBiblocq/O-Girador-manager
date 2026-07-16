@@ -1,11 +1,22 @@
-import React, { useState } from 'react';
-import { doc, updateDoc } from 'firebase/firestore';
+import React, { useState, useEffect } from 'react';
+import { doc, updateDoc, collection, query, where, onSnapshot } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
 import { db, auth } from '../firebase';
 import XiloAvatar from './XiloAvatar';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
 import { XiloSun, XiloMoon } from './XiloIcons';
+
+const INSTRUMENT_ICONS = {
+  Alfaia: 'icones/alfaia.svg',
+  Caixa: 'icones/caixa.svg',
+  Agbê: 'icones/agbe.svg',
+  Gonguê: 'icones/gongue.svg',
+  Mineiro: 'icones/mineiro.svg',
+  Apito: 'icones/apito.svg',
+  Timbal: 'icones/timbal.svg',
+  Autre: 'favicon.svg'
+};
 
 export default function UserProfile({ user, profileData, onBack }) {
   const [formData, setFormData] = useState({
@@ -15,6 +26,37 @@ export default function UserProfile({ user, profileData, onBack }) {
   });
   
   const [saving, setSaving] = useState(false);
+  const [myInstruments, setMyInstruments] = useState([]);
+  const [loadingInst, setLoadingInst] = useState(true);
+
+  // Sync instruments list for user's group
+  useEffect(() => {
+    if (!profileData?.groupId || !user?.uid) {
+      setMyInstruments([]);
+      setLoadingInst(false);
+      return;
+    }
+
+    const inventoryRef = collection(db, 'inventory');
+    const q = query(inventoryRef, where('groupId', '==', profileData.groupId));
+
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+      const fetched = [];
+      querySnapshot.forEach((doc) => {
+        fetched.push({
+          id: doc.id,
+          ...doc.data()
+        });
+      });
+      setMyInstruments(fetched);
+      setLoadingInst(false);
+    }, (error) => {
+      console.error("UserProfile - Erreur onSnapshot inventory :", error);
+      setLoadingInst(false);
+    });
+
+    return () => unsubscribe();
+  }, [profileData?.groupId, user?.uid]);
 
   const [darkMode, setDarkMode] = useState(() => {
     return document.documentElement.classList.contains('dark');
@@ -174,6 +216,99 @@ export default function UserProfile({ user, profileData, onBack }) {
           {saving ? "Enregistrement en cours..." : "Enregistrer mes modifications"}
         </CordelButton>
       </form>
+
+      {/* Section Mon Matériel */}
+      <div className="mt-4 pt-4 border-t border-dashed border-cordel-master-dark/20 flex flex-col gap-3 select-none">
+        <h4 className="font-bold text-xs uppercase tracking-wider text-cordel-wood">
+          🥁 Mon Matériel & Assignations
+        </h4>
+        
+        {loadingInst ? (
+          <div className="flex justify-center items-center py-4">
+            <span className="text-xs uppercase tracking-widest font-black animate-pulse opacity-60">⏳</span>
+          </div>
+        ) : (() => {
+          const personal = myInstruments.filter(inst => inst.proprietaire === user.uid);
+          const borrowed = myInstruments.filter(inst => inst.proprietaire === 'Association' && inst.localisationPhysique === user.uid);
+          const localAssigned = myInstruments.filter(inst => inst.localisationPhysique === 'Local' && Array.isArray(inst.assignations) && inst.assignations.includes(user.uid));
+          
+          return (
+            <div className="flex flex-col gap-3.5">
+              {/* 1. Instruments Personnels */}
+              <div className="flex flex-col gap-2">
+                <span className="text-[9px] uppercase font-bold text-cordel-master-dark opacity-75">
+                  Mes instruments personnels ({personal.length})
+                </span>
+                {personal.length === 0 ? (
+                  <p className="text-[10px] italic opacity-60">Aucun instrument personnel enregistré.</p>
+                ) : (
+                  <div className="flex flex-col gap-1.5">
+                    {personal.map(inst => (
+                      <CordelCard key={inst.id} variant="default" useExtremeBorder={false} className="p-2.5 bg-cordel-bg flex items-center justify-between gap-3 text-left">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <img src={INSTRUMENT_ICONS[inst.type] || 'favicon.svg'} alt={inst.type} className="w-6 h-6 object-contain shrink-0" />
+                          <span className="text-xs font-bold truncate">{inst.nom}</span>
+                        </div>
+                        <span className={`theme-stamp-badge ${inst.etat === 'À réparer' ? 'border-red-600 text-red-600' : 'theme-stamp-badge-wood'} text-[6px] rotate-2`}>
+                          {inst.etat}
+                        </span>
+                      </CordelCard>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* 2. Matériel Emprunté */}
+              <div className="flex flex-col gap-2">
+                <span className="text-[9px] uppercase font-bold text-cordel-master-dark opacity-75">
+                  Matériel emprunté à la maison ({borrowed.length})
+                </span>
+                {borrowed.length === 0 ? (
+                  <p className="text-[10px] italic opacity-60">Aucun emprunt en cours.</p>
+                ) : (
+                  <div className="flex flex-col gap-1.5">
+                    {borrowed.map(inst => (
+                      <CordelCard key={inst.id} variant="default" useExtremeBorder={false} className="p-2.5 bg-cordel-bg-light/40 flex items-center justify-between gap-3 text-left">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <img src={INSTRUMENT_ICONS[inst.type] || 'favicon.svg'} alt={inst.type} className="w-6 h-6 object-contain shrink-0" />
+                          <span className="text-xs font-bold truncate">{inst.nom}</span>
+                        </div>
+                        <span className={`theme-stamp-badge ${inst.etat === 'À réparer' ? 'border-red-600 text-red-600' : 'theme-stamp-badge-dark'} text-[6px] -rotate-1`}>
+                          {inst.etat}
+                        </span>
+                      </CordelCard>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* 3. Instruments assignés au local */}
+              <div className="flex flex-col gap-2">
+                <span className="text-[9px] uppercase font-bold text-cordel-master-dark opacity-75">
+                  Mes instruments assignés au local ({localAssigned.length})
+                </span>
+                {localAssigned.length === 0 ? (
+                  <p className="text-[10px] italic opacity-60">Aucune assignation au local.</p>
+                ) : (
+                  <div className="flex flex-col gap-1.5">
+                    {localAssigned.map(inst => (
+                      <CordelCard key={inst.id} variant="default" useExtremeBorder={false} className="p-2.5 bg-cordel-bg-light/40 flex items-center justify-between gap-3 text-left">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <img src={INSTRUMENT_ICONS[inst.type] || 'favicon.svg'} alt={inst.type} className="w-6 h-6 object-contain shrink-0" />
+                          <span className="text-xs font-bold truncate">{inst.nom}</span>
+                        </div>
+                        <span className="theme-stamp-badge theme-stamp-badge-wood text-[6px] rotate-3">
+                          {inst.etat}
+                        </span>
+                      </CordelCard>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })()}
+      </div>
 
       {/* Disconnect Button (Red / Swappable theme color using var(--cordel-wood)) */}
       <div className="mt-4 pt-4 border-t border-dashed border-cordel-master-dark/20 flex flex-col items-center">

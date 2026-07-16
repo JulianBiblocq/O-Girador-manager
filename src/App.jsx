@@ -11,6 +11,7 @@ import UserProfile from './components/UserProfile';
 import SystemAdminPanel from './components/SystemAdminPanel';
 import LayoutEditor from './components/LayoutEditor';
 import TagManager from './components/TagManager';
+import InventoryManager from './components/InventoryManager';
 import LayoutShell from './components/LayoutShell';
 
 export default function App() {
@@ -182,6 +183,13 @@ export default function App() {
           role={profileData?.role}
           isSystemAdmin={profileData?.isSystemAdmin}
           onBack={() => setCurrentView('system-admin')} 
+        />
+      ) : (currentView === 'inventory' && (profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.isSystemAdmin)) ? (
+        <InventoryManager 
+          groupId={profileData?.groupId}
+          role={profileData?.role}
+          isSystemAdmin={profileData?.isSystemAdmin}
+          onBack={() => setCurrentView('dashboard')} 
         />
       ) : (
         <Dashboard 
