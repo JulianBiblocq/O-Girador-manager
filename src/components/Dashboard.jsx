@@ -10,8 +10,10 @@ import WidgetDocuments from './WidgetDocuments';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
 import { XiloSun, XiloMoon } from './XiloIcons';
+import { useTranslation } from './LanguageContext';
 
 export default function Dashboard({ user, profileData, onNavigateToTrombi, onNavigateToView, onSignOut }) {
+  const { locale, toggleLanguage, t } = useTranslation();
   const [darkMode, setDarkMode] = useState(() => {
     return document.documentElement.classList.contains('dark');
   });
@@ -57,15 +59,22 @@ export default function Dashboard({ user, profileData, onNavigateToTrombi, onNav
       )}
       {/* Header Panel */}
       <div className="flex justify-between items-center py-2 border-b-2 border-dashed border-cordel-master-dark/30 select-none">
-        {/* Left spacer to center title */}
-        <div className="w-10"></div>
+        {/* Toggle Language Button in Header */}
+        <button 
+          type="button"
+          onClick={toggleLanguage}
+          className="theme-btn px-1.5 py-1 text-[11px] font-black rounded-[4px_6px_3px_5px] shadow-[1px_1px_0px_0px_rgba(0,0,0,0.15)] cursor-pointer flex items-center justify-center min-w-8 min-h-7"
+          title={locale === 'fr' ? "Mudar para Português" : "Changer en Français"}
+        >
+          {locale === 'fr' ? "🇧🇷" : "🇫🇷"}
+        </button>
         
         <div className="text-center flex-1">
           <h1 className="panel-title text-3xl font-extrabold tracking-wider text-cordel-wood">
             O GIRADOR
           </h1>
           <p className="text-sm font-semibold tracking-widest opacity-80 mt-1 uppercase">
-            Tableau de bord
+            {t('dashboard.title')}
           </p>
         </div>
         
@@ -103,7 +112,7 @@ export default function Dashboard({ user, profileData, onNavigateToTrombi, onNav
             
             <div className="flex-1 min-w-0">
               <h2 className="panel-title text-base font-extrabold text-cordel-wood truncate">
-                Axé, {profileData?.prenom || 'Batuqueiro'} !
+                {t('dashboard.welcome')}, {profileData?.prenom || 'Batuqueiro'} !
               </h2>
               <div className="flex flex-col items-start gap-1 mt-1">
                 <span className="text-[9px] font-semibold text-cordel-master-dark/70 break-all select-all">
@@ -128,7 +137,7 @@ export default function Dashboard({ user, profileData, onNavigateToTrombi, onNav
           onClick={onNavigateToTrombi} 
           className="w-full py-2.5 font-extrabold flex items-center justify-center gap-2"
         >
-          👥 Voir le Trombinoscope
+          👥 {t('dashboard.seeTrombi')}
         </CordelButton>
 
         {/* Layout Editor & Inventory Access Buttons (Visible to Mestres, Super-Admins & System Admins) */}
@@ -139,21 +148,21 @@ export default function Dashboard({ user, profileData, onNavigateToTrombi, onNav
               onClick={() => onNavigateToView('layout-editor')}
               className="text-[10px] font-black uppercase tracking-widest bg-cordel-bg border-2 border-dashed border-encre-noire/30 hover:border-encre-noire text-encre-noire py-1.5 w-full rounded-[6px_10px_8px_12px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-105 transition-all cursor-pointer flex items-center justify-center gap-2"
             >
-              ⚙️ Organiser l'accueil (Mise en page)
+              ⚙️ {t('dashboard.layoutEditor')}
             </button>
             <button 
               type="button"
               onClick={() => onNavigateToView('inventory')}
               className="text-[10px] font-black uppercase tracking-widest bg-cordel-bg border-2 border-dashed border-encre-noire/30 hover:border-encre-noire text-encre-noire py-1.5 w-full rounded-[6px_10px_8px_12px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-105 transition-all cursor-pointer flex items-center justify-center gap-2"
             >
-              🥁 Inventaire du parc (Matériel)
+              🥁 {t('dashboard.inventory')}
             </button>
             <button 
               type="button"
               onClick={() => onNavigateToView('orders-manager')}
               className="text-[10px] font-black uppercase tracking-widest bg-cordel-bg border-2 border-dashed border-encre-noire/30 hover:border-encre-noire text-encre-noire py-1.5 w-full rounded-[6px_10px_8px_12px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-105 transition-all cursor-pointer flex items-center justify-center gap-2"
             >
-              📦 Achats groupés (Commandes)
+              📦 {t('dashboard.ordersManager')}
             </button>
           </div>
         )}
