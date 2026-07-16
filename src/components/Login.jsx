@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { signInWithRedirect, getRedirectResult, signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
+import { signInWithRedirect, signInWithPopup, getRedirectResult, signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth, googleProvider } from '../firebase';
 import LayoutShell from './LayoutShell';
 import CordelCard from './CordelCard';
@@ -35,11 +35,24 @@ export default function Login({ branding }) {
   }, [t]);
 
   const handleLogin = async () => {
+    setAuthLoading(true);
     try {
-      await signInWithRedirect(auth, googleProvider);
+      // Try signInWithPopup first. This bypasses storage partitioning blockages on mobile Safari/iOS.
+      const result = await signInWithPopup(auth, googleProvider);
+      if (result) {
+        console.log("Login - Connexion réussie via Google Popup :", result.user);
+      }
     } catch (error) {
-      console.error("Erreur d'authentification Google :", error);
-      alert(t('login.connectError') + error.message);
+      console.warn("Login - Échec signInWithPopup, tentative via signInWithRedirect...", error);
+      // Fallback to signInWithRedirect if popup is blocked
+      try {
+        await signInWithRedirect(auth, googleProvider);
+      } catch (redirectError) {
+        console.error("Erreur d'authentification Google Redirect :", redirectError);
+        alert(t('login.connectError') + redirectError.message);
+      }
+    } finally {
+      setAuthLoading(false);
     }
   };
 
