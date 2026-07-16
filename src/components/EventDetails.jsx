@@ -3,6 +3,7 @@ import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
+import ReunionAgendaManager from './ReunionAgendaManager';
 
 export default function EventDetails({ event, user, profileData, onClose }) {
   // Find if the user has already responded to this event
@@ -250,6 +251,17 @@ export default function EventDetails({ event, user, profileData, onClose }) {
           {saving ? "Validation..." : "Valider mon inscription"}
         </CordelButton>
       </form>
+
+      {/* 💡 Reunion Specific Ordre du Jour & PDF minutes report manager */}
+      {event.type === 'reunion' && (
+        <div className="mt-4 pt-4 border-t border-dashed border-cordel-master-dark/20">
+          <ReunionAgendaManager 
+            event={event}
+            user={user}
+            profileData={profileData}
+          />
+        </div>
+      )}
     </div>
   );
 }
