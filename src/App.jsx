@@ -21,7 +21,55 @@ export default function App() {
   const [checkingProfile, setCheckingProfile] = useState(false);
   const [profileExists, setProfileExists] = useState(false);
   const [profileData, setProfileData] = useState(null);
+  const [branding, setBranding] = useState(null);
   const [currentView, setCurrentView] = useState('dashboard'); // 'dashboard', 'trombinoscope', 'forum', 'profil', 'system-admin', 'layout-editor', 'tag-manager'
+
+  // Load branding in real-time
+  useEffect(() => {
+    let activeGroupId = profileData?.groupId || null;
+    
+    if (!activeGroupId) {
+      const searchParams = new URLSearchParams(window.location.search);
+      activeGroupId = searchParams.get('groupe') || null;
+    }
+
+    if (!activeGroupId) {
+      setBranding(null);
+      return;
+    }
+
+    const assocRef = doc(db, 'associations', activeGroupId);
+    const unsubscribe = onSnapshot(assocRef, (docSnap) => {
+      if (docSnap.exists() && docSnap.data().branding) {
+        setBranding(docSnap.data().branding);
+      } else {
+        setBranding(null);
+      }
+    }, (error) => {
+      console.error("App - Erreur onSnapshot branding :", error);
+      setBranding(null);
+    });
+
+    return () => unsubscribe();
+  }, [profileData?.groupId, user]);
+
+  const brandingStyle = branding?.colors ? {
+    '--cordel-bg': branding.colors.background,
+    '--cordel-bg-light-color': branding.colors.background,
+    '--color-cordel-bg-light': branding.colors.background,
+
+    '--cordel-text': branding.colors.text,
+    '--color-encre-noire': branding.colors.text,
+    '--encre-noire': branding.colors.text,
+    '--cordel-border': branding.colors.text,
+
+    '--color-cordel-ocre': branding.colors.primary,
+    '--cordel-ocre': branding.colors.primary,
+    '--cordel-wood': branding.colors.primary,
+
+    '--color-cordel-vert': branding.colors.secondary,
+    '--cordel-vert': branding.colors.secondary
+  } : {};
 
   // Initialize dark mode from localStorage or system preferences on startup
   useEffect(() => {
@@ -122,92 +170,100 @@ export default function App() {
   // Loading screen (Auth state resolving or Firestore lookup)
   if (loading || checkingProfile) {
     return (
-      <LayoutShell>
-        <div className="flex-1 flex flex-col justify-center items-center py-12">
-          <div className="animate-spin text-4xl mb-4 select-none">⏳</div>
-          <span className="font-bold text-xs uppercase tracking-widest text-cordel-master-dark opacity-75">
-            {checkingProfile ? "Vérification du profil..." : "Chargement..."}
-          </span>
-        </div>
-      </LayoutShell>
+      <div style={brandingStyle} className="min-h-screen flex flex-col w-full">
+        <LayoutShell>
+          <div className="flex-1 flex flex-col justify-center items-center py-12">
+            <div className="animate-spin text-4xl mb-4 select-none">⏳</div>
+            <span className="font-bold text-xs uppercase tracking-widest text-cordel-master-dark opacity-75">
+              {checkingProfile ? "Vérification du profil..." : "Chargement..."}
+            </span>
+          </div>
+        </LayoutShell>
+      </div>
     );
   }
 
   // Not authenticated -> Show Login screen
   if (!user) {
-    return <Login />;
+    return <Login branding={branding} />;
   }
 
   // Authenticated but no profile in Firestore -> Show Onboarding
   if (!profileExists || !profileData) {
-    return <Onboarding user={user} onComplete={handleOnboardingComplete} />;
+    return (
+      <div style={brandingStyle} className="min-h-screen flex flex-col w-full">
+        <Onboarding user={user} onComplete={handleOnboardingComplete} />
+      </div>
+    );
   }
 
   // Authenticated and profile exists -> Render based on current view state
   return (
-    <LayoutShell>
-      {currentView === 'trombinoscope' ? (
-        <Trombinoscope 
-          user={user} 
-          profileData={profileData} 
-          onBack={() => setCurrentView('dashboard')} 
-        />
-      ) : currentView === 'forum' ? (
-        <Forum 
-          user={user} 
-          profileData={profileData} 
-          onBack={() => setCurrentView('dashboard')} 
-        />
-      ) : currentView === 'profil' ? (
-        <UserProfile 
-          user={user} 
-          profileData={profileData} 
-          onBack={() => setCurrentView('dashboard')} 
-        />
-      ) : (currentView === 'system-admin' && profileData?.isSystemAdmin) ? (
-        <SystemAdminPanel 
-          user={user} 
-          profileData={profileData} 
-          onBack={() => setCurrentView('dashboard')} 
-          onNavigateToView={(view) => setCurrentView(view)}
-        />
-      ) : (currentView === 'layout-editor' && (profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.isSystemAdmin)) ? (
-        <LayoutEditor 
-          groupId={profileData?.groupId}
-          role={profileData?.role}
-          isSystemAdmin={profileData?.isSystemAdmin}
-          onBack={() => setCurrentView('dashboard')} 
-        />
-      ) : (currentView === 'tag-manager' && (profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.isSystemAdmin)) ? (
-        <TagManager 
-          groupId={profileData?.groupId}
-          role={profileData?.role}
-          isSystemAdmin={profileData?.isSystemAdmin}
-          onBack={() => setCurrentView('system-admin')} 
-        />
-      ) : (currentView === 'inventory' && (profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.isSystemAdmin)) ? (
-        <InventoryManager 
-          groupId={profileData?.groupId}
-          role={profileData?.role}
-          isSystemAdmin={profileData?.isSystemAdmin}
-          onBack={() => setCurrentView('dashboard')} 
-        />
-      ) : (currentView === 'association-settings' && (profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.isSystemAdmin)) ? (
-        <AssociationSettings 
-          groupId={profileData?.groupId}
-          role={profileData?.role}
-          isSystemAdmin={profileData?.isSystemAdmin}
-          onBack={() => setCurrentView('system-admin')} 
-        />
-      ) : (
-        <Dashboard 
-          user={user} 
-          profileData={profileData} 
-          onNavigateToTrombi={() => setCurrentView('trombinoscope')} 
-          onNavigateToView={(view) => setCurrentView(view)}
-          onSignOut={handleSignOut} 
-        />
-      )}
-    </LayoutShell>
+    <div style={brandingStyle} className="min-h-screen flex flex-col w-full">
+      <LayoutShell>
+        {currentView === 'trombinoscope' ? (
+          <Trombinoscope 
+            user={user} 
+            profileData={profileData} 
+            onBack={() => setCurrentView('dashboard')} 
+          />
+        ) : currentView === 'forum' ? (
+          <Forum 
+            user={user} 
+            profileData={profileData} 
+            onBack={() => setCurrentView('dashboard')} 
+          />
+        ) : currentView === 'profil' ? (
+          <UserProfile 
+            user={user} 
+            profileData={profileData} 
+            onBack={() => setCurrentView('dashboard')} 
+          />
+        ) : (currentView === 'system-admin' && profileData?.isSystemAdmin) ? (
+          <SystemAdminPanel 
+            user={user} 
+            profileData={profileData} 
+            onBack={() => setCurrentView('dashboard')} 
+            onNavigateToView={(view) => setCurrentView(view)}
+          />
+        ) : (currentView === 'layout-editor' && (profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.isSystemAdmin)) ? (
+          <LayoutEditor 
+            groupId={profileData?.groupId}
+            role={profileData?.role}
+            isSystemAdmin={profileData?.isSystemAdmin}
+            onBack={() => setCurrentView('dashboard')} 
+          />
+        ) : (currentView === 'tag-manager' && (profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.isSystemAdmin)) ? (
+          <TagManager 
+            groupId={profileData?.groupId}
+            role={profileData?.role}
+            isSystemAdmin={profileData?.isSystemAdmin}
+            onBack={() => setCurrentView('system-admin')} 
+          />
+        ) : (currentView === 'inventory' && (profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.isSystemAdmin)) ? (
+          <InventoryManager 
+            groupId={profileData?.groupId}
+            role={profileData?.role}
+            isSystemAdmin={profileData?.isSystemAdmin}
+            onBack={() => setCurrentView('dashboard')} 
+          />
+        ) : (currentView === 'association-settings' && (profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.isSystemAdmin)) ? (
+          <AssociationSettings 
+            groupId={profileData?.groupId}
+            role={profileData?.role}
+            isSystemAdmin={profileData?.isSystemAdmin}
+            onBack={() => setCurrentView('system-admin')} 
+          />
+        ) : (
+          <Dashboard 
+            user={user} 
+            profileData={profileData} 
+            onNavigateToTrombi={() => setCurrentView('trombinoscope')} 
+            onNavigateToView={(view) => setCurrentView(view)}
+            onSignOut={handleSignOut} 
+          />
+        )}
+      </LayoutShell>
+    </div>
   );
 }

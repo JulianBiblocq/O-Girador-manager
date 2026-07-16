@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { doc, onSnapshot, updateDoc } from 'firebase/firestore';
-import { db } from '../firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { db, storage } from '../firebase';
 import LayoutShell from './LayoutShell';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
@@ -15,6 +16,16 @@ export const DEFAULT_FIELDS_CONFIG = {
 
 export default function AssociationSettings({ groupId, onBack, role, isSystemAdmin }) {
   const [fieldsConfig, setFieldsConfig] = useState(DEFAULT_FIELDS_CONFIG);
+  const [logoUrl, setLogoUrl] = useState('');
+  const [colors, setColors] = useState({
+    primary: '#d99f4d',
+    secondary: '#84967a',
+    background: '#f4ecd8',
+    text: '#1a1a1a'
+  });
+  const [logoFile, setLogoFile] = useState(null);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -38,6 +49,18 @@ export default function AssociationSettings({ groupId, onBack, role, isSystemAdm
           setFieldsConfig(merged);
         } else {
           setFieldsConfig(DEFAULT_FIELDS_CONFIG);
+        }
+
+        if (data.branding) {
+          setLogoUrl(data.branding.logoUrl || '');
+          if (data.branding.colors) {
+            setColors({
+              primary: data.branding.colors.primary || '#d99f4d',
+              secondary: data.branding.colors.secondary || '#84967a',
+              background: data.branding.colors.background || '#f4ecd8',
+              text: data.branding.colors.text || '#1a1a1a'
+            });
+          }
         }
       }
       setLoading(false);
@@ -73,16 +96,33 @@ export default function AssociationSettings({ groupId, onBack, role, isSystemAdm
     if (!groupId) return;
 
     setSaving(true);
+    let finalLogoUrl = logoUrl;
+
     try {
+      if (logoFile) {
+        setUploadingLogo(true);
+        const storageRef = ref(storage, `brandings/${groupId}/logo.png`);
+        const snapshot = await uploadBytes(storageRef, logoFile);
+        finalLogoUrl = await getDownloadURL(snapshot.ref);
+        setLogoUrl(finalLogoUrl);
+        setLogoFile(null);
+        setUploadingLogo(false);
+      }
+
       const assocRef = doc(db, 'associations', groupId);
       await updateDoc(assocRef, {
-        fieldsConfig: fieldsConfig
+        fieldsConfig: fieldsConfig,
+        branding: {
+          logoUrl: finalLogoUrl,
+          colors: colors
+        }
       });
       alert("Réglages de l'association enregistrés avec succès !");
       onBack();
     } catch (err) {
-      console.error("AssociationSettings - Erreur updateDoc :", err);
+      console.error("AssociationSettings - Erreur de sauvegarde :", err);
       alert("Erreur lors de la sauvegarde des réglages.");
+      setUploadingLogo(false);
     } finally {
       setSaving(false);
     }
@@ -124,13 +164,13 @@ export default function AssociationSettings({ groupId, onBack, role, isSystemAdm
           </button>
           
           <h2 className="text-sm font-extrabold tracking-widest text-cordel-wood uppercase">
-            ⚙️ Configuration des Champs
+            ⚙️ Paramètres Association
           </h2>
         </div>
 
         {/* Info card */}
         <div className="text-xs text-encre-noire dark:text-cordel-bg-light opacity-80 border border-dashed border-cordel-master-dark/30 p-3 rounded-[6px_4px_8px_5px] bg-[#fdfaf2] dark:bg-[#201d1a] leading-relaxed">
-          🔧 Déterminez quels champs administratifs sont demandés lors de l'onboarding et du profil, et qui est autorisé à les remplir.
+          🔧 Personnalisez l'identité visuelle de votre association et configurez les champs requis pour le profil de vos adhérents.
         </div>
 
         {loading ? (
@@ -139,6 +179,123 @@ export default function AssociationSettings({ groupId, onBack, role, isSystemAdm
           </div>
         ) : (
           <div className="flex flex-col gap-3">
+            {/* Branding Identité Visuelle */}
+            <CordelCard variant="default" useExtremeBorder={true} className="py-4 px-5">
+              <h3 className="text-xs uppercase font-extrabold tracking-wider text-cordel-wood mb-3">
+                🎨 Identité Visuelle & Thème
+              </h3>
+
+              {/* Logo Section */}
+              <div className="flex flex-col gap-2 pb-3 border-b border-dashed border-cordel-master-dark/15">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-cordel-master-dark">Logo de l'Association</span>
+                <div className="flex items-center gap-4">
+                  {logoUrl ? (
+                    <img 
+                      src={logoUrl} 
+                      alt="Logo" 
+                      className="w-12 h-12 object-contain border border-encre-noire/30 rounded bg-white p-1" 
+                    />
+                  ) : (
+                    <div className="w-12 h-12 border border-dashed border-encre-noire/30 rounded flex items-center justify-center text-[10px] text-cordel-master-dark opacity-50 bg-white font-semibold">
+                      Aucun
+                    </div>
+                  )}
+                  <div className="flex-1 flex flex-col gap-1">
+                    <input 
+                      type="file" 
+                      accept="image/*"
+                      onChange={(e) => setLogoFile(e.target.files?.[0] || null)}
+                      disabled={saving}
+                      className="text-[9px] font-bold"
+                    />
+                    {logoFile && (
+                      <span className="text-[9px] text-green-600 font-bold">
+                        ✓ Sélectionné : {logoFile.name}
+                      </span>
+                    )}
+                    {uploadingLogo && (
+                      <span className="text-[9px] text-cordel-wood animate-pulse font-bold">
+                        Envoi du logo...
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Colors Pickers Grid */}
+              <div className="flex flex-col gap-2 mt-3">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-cordel-master-dark mb-1">Thème de Couleurs</span>
+                
+                <div className="grid grid-cols-2 gap-3">
+                  {/* Primary Color */}
+                  <div className="flex items-center gap-2">
+                    <input 
+                      type="color" 
+                      value={colors.primary}
+                      onChange={(e) => setColors(prev => ({ ...prev, primary: e.target.value }))}
+                      disabled={saving}
+                      className="w-8 h-8 cursor-pointer rounded border border-encre-noire/40"
+                    />
+                    <div className="flex flex-col">
+                      <span className="text-[9px] font-extrabold text-cordel-wood">Primaire</span>
+                      <span className="text-[8px] font-semibold text-cordel-master-dark/65">{colors.primary}</span>
+                    </div>
+                  </div>
+
+                  {/* Secondary Color */}
+                  <div className="flex items-center gap-2">
+                    <input 
+                      type="color" 
+                      value={colors.secondary}
+                      onChange={(e) => setColors(prev => ({ ...prev, secondary: e.target.value }))}
+                      disabled={saving}
+                      className="w-8 h-8 cursor-pointer rounded border border-encre-noire/40"
+                    />
+                    <div className="flex flex-col">
+                      <span className="text-[9px] font-extrabold text-cordel-wood">Secondaire</span>
+                      <span className="text-[8px] font-semibold text-cordel-master-dark/65">{colors.secondary}</span>
+                    </div>
+                  </div>
+
+                  {/* Background Color */}
+                  <div className="flex items-center gap-2">
+                    <input 
+                      type="color" 
+                      value={colors.background}
+                      onChange={(e) => setColors(prev => ({ ...prev, background: e.target.value }))}
+                      disabled={saving}
+                      className="w-8 h-8 cursor-pointer rounded border border-encre-noire/40"
+                    />
+                    <div className="flex flex-col">
+                      <span className="text-[9px] font-extrabold text-cordel-wood">Fond d'écran</span>
+                      <span className="text-[8px] font-semibold text-cordel-master-dark/65">{colors.background}</span>
+                    </div>
+                  </div>
+
+                  {/* Text Color */}
+                  <div className="flex items-center gap-2">
+                    <input 
+                      type="color" 
+                      value={colors.text}
+                      onChange={(e) => setColors(prev => ({ ...prev, text: e.target.value }))}
+                      disabled={saving}
+                      className="w-8 h-8 cursor-pointer rounded border border-encre-noire/40"
+                    />
+                    <div className="flex flex-col">
+                      <span className="text-[9px] font-extrabold text-cordel-wood">Texte</span>
+                      <span className="text-[8px] font-semibold text-cordel-master-dark/65">{colors.text}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CordelCard>
+
+            {/* Separator or Header */}
+            <h3 className="text-xs uppercase font-extrabold tracking-wider text-cordel-master-dark opacity-75 mt-3 pl-1">
+              ⚙️ Gestion des Champs
+            </h3>
+
+            <div className="flex flex-col gap-3">
             {Object.values(fieldsConfig).map((field) => (
               <CordelCard 
                 key={field.key} 
@@ -192,7 +349,8 @@ export default function AssociationSettings({ groupId, onBack, role, isSystemAdm
               {saving ? "Enregistrement..." : "Enregistrer la configuration"}
             </CordelButton>
           </div>
-        )}
+        </div>
+      )}
 
       </div>
     </LayoutShell>
