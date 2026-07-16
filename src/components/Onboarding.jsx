@@ -10,7 +10,8 @@ const DEFAULT_FIELDS_CONFIG = {
   tailleTshirt: { key: "tailleTshirt", label: "Taille T-shirt", enabled: true, filledBy: "member" },
   droitImage: { key: "droitImage", label: "Droit à l'image", enabled: true, filledBy: "member" },
   aptitudeMedicale: { key: "aptitudeMedicale", label: "Aptitude médicale", enabled: true, filledBy: "member" },
-  lateralite: { key: "lateralite", label: "Latéralité (Gaucher/Droitier)", enabled: true, filledBy: "member" }
+  lateralite: { key: "lateralite", label: "Latéralité (Gaucher/Droitier)", enabled: true, filledBy: "member" },
+  dateNaissance: { key: "dateNaissance", label: "Date de naissance", enabled: true, filledBy: "member" }
 };
 
 export default function Onboarding({ user, onComplete }) {
@@ -26,7 +27,8 @@ export default function Onboarding({ user, onComplete }) {
     tailleTshirt: 'M',
     droitImage: true,
     aptitudeMedicale: false,
-    lateralite: 'droitier'
+    lateralite: 'droitier',
+    dateNaissance: ''
   });
 
   const [fieldsConfig, setFieldsConfig] = useState(null);
@@ -86,6 +88,7 @@ export default function Onboarding({ user, onComplete }) {
         droitImage: isFieldVisible('droitImage') ? formData.droitImage : true,
         aptitudeMedicale: isFieldVisible('aptitudeMedicale') ? formData.aptitudeMedicale : false,
         lateralite: isFieldVisible('lateralite') ? formData.lateralite : "droitier",
+        dateNaissance: isFieldVisible('dateNaissance') ? formData.dateNaissance : "",
         role: "membre",
         statutActuel: "active",
         groupId: groupId,
@@ -215,6 +218,24 @@ export default function Onboarding({ user, onComplete }) {
                 <option value="droitier">Droitier</option>
                 <option value="gaucher">Gaucher</option>
               </select>
+            </div>
+          )}
+
+          {/* Date de Naissance Input */}
+          {isFieldVisible('dateNaissance') && (
+            <div className="flex flex-col gap-1">
+              <label className="text-[10px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                Date de naissance
+              </label>
+              <input
+                type="date"
+                name="dateNaissance"
+                value={formData.dateNaissance}
+                onChange={handleChange}
+                required
+                disabled={submitting}
+                className="theme-input w-full disabled:opacity-50 font-bold"
+              />
             </div>
           )}
 

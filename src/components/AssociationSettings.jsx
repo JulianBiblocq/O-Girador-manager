@@ -11,7 +11,8 @@ export const DEFAULT_FIELDS_CONFIG = {
   tailleTshirt: { key: "tailleTshirt", label: "Taille T-shirt", enabled: true, filledBy: "member" },
   droitImage: { key: "droitImage", label: "Droit à l'image", enabled: true, filledBy: "member" },
   aptitudeMedicale: { key: "aptitudeMedicale", label: "Aptitude médicale", enabled: true, filledBy: "member" },
-  lateralite: { key: "lateralite", label: "Latéralité (Gaucher/Droitier)", enabled: true, filledBy: "member" }
+  lateralite: { key: "lateralite", label: "Latéralité (Gaucher/Droitier)", enabled: true, filledBy: "member" },
+  dateNaissance: { key: "dateNaissance", label: "Date de naissance", enabled: true, filledBy: "member" }
 };
 
 export default function AssociationSettings({ groupId, onBack, role, isSystemAdmin }) {

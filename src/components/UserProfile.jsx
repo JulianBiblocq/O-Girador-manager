@@ -23,7 +23,8 @@ const DEFAULT_FIELDS_CONFIG = {
   tailleTshirt: { key: "tailleTshirt", label: "Taille T-shirt", enabled: true, filledBy: "member" },
   droitImage: { key: "droitImage", label: "Droit à l'image", enabled: true, filledBy: "member" },
   aptitudeMedicale: { key: "aptitudeMedicale", label: "Aptitude médicale", enabled: true, filledBy: "member" },
-  lateralite: { key: "lateralite", label: "Latéralité (Gaucher/Droitier)", enabled: true, filledBy: "member" }
+  lateralite: { key: "lateralite", label: "Latéralité (Gaucher/Droitier)", enabled: true, filledBy: "member" },
+  dateNaissance: { key: "dateNaissance", label: "Date de naissance", enabled: true, filledBy: "member" }
 };
 
 export default function UserProfile({ user, profileData, onBack }) {
@@ -35,7 +36,8 @@ export default function UserProfile({ user, profileData, onBack }) {
     tailleTshirt: profileData?.tailleTshirt || 'M',
     droitImage: profileData?.droitImage !== undefined ? profileData.droitImage : true,
     aptitudeMedicale: profileData?.aptitudeMedicale !== undefined ? profileData.aptitudeMedicale : false,
-    lateralite: profileData?.lateralite || 'droitier'
+    lateralite: profileData?.lateralite || 'droitier',
+    dateNaissance: profileData?.dateNaissance || ''
   });
   
   const [saving, setSaving] = useState(false);
@@ -135,7 +137,8 @@ export default function UserProfile({ user, profileData, onBack }) {
         tailleTshirt: isFieldVisible('tailleTshirt') ? formData.tailleTshirt : (profileData?.tailleTshirt || 'M'),
         droitImage: isFieldVisible('droitImage') ? formData.droitImage : (profileData?.droitImage !== undefined ? profileData.droitImage : true),
         aptitudeMedicale: isFieldVisible('aptitudeMedicale') ? formData.aptitudeMedicale : (profileData?.aptitudeMedicale !== undefined ? profileData.aptitudeMedicale : false),
-        lateralite: isFieldVisible('lateralite') ? formData.lateralite : (profileData?.lateralite || 'droitier')
+        lateralite: isFieldVisible('lateralite') ? formData.lateralite : (profileData?.lateralite || 'droitier'),
+        dateNaissance: isFieldVisible('dateNaissance') ? formData.dateNaissance : (profileData?.dateNaissance || '')
       });
       alert("Profil mis à jour avec succès !");
     } catch (error) {
@@ -313,6 +316,23 @@ export default function UserProfile({ user, profileData, onBack }) {
                 <option value="droitier">Droitier</option>
                 <option value="gaucher">Gaucher</option>
               </select>
+            </div>
+          )}
+
+          {/* Date de Naissance */}
+          {isFieldVisible('dateNaissance') && (
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood">
+                Date de naissance
+              </label>
+              <input
+                type="date"
+                name="dateNaissance"
+                value={formData.dateNaissance}
+                onChange={handleChange}
+                disabled={saving}
+                className="theme-input w-full disabled:opacity-50 text-xs font-bold"
+              />
             </div>
           )}
 

@@ -18,6 +18,7 @@
   --cordel-shadow-color: rgba(26, 26, 26, 0.25);
   --title-text-shadow: none;
   --title-drop-shadow: none;
+  --encre-noire: #1a1a1a;
 
   /* Theme-swappable colors */
   --cordel-bg-dark-color: #1a1a1a;
@@ -35,6 +36,7 @@
   --cordel-shadow-color: rgba(0, 0, 0, 0.55);
   --title-text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
   --title-drop-shadow: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+  --encre-noire: #f4ecd8;
 
   /* Theme-swappable colors reversed in dark mode */
   --cordel-bg-dark-color: #f4ecd8;
@@ -73,7 +75,7 @@ body {
   --color-cordel-wood: #8b2a1a;
   --color-cordel-master-dark: var(--cordel-master-dark-color);
   --color-cordel-master-light: var(--cordel-master-light-color);
-  --color-encre-noire: #1a1a1a;
+  --color-encre-noire: var(--encre-noire);
 
   /* Agenda Tints */
   --color-cordel-ocre: #d99f4d;   /* Concerts */
@@ -1169,10 +1171,10 @@ body.eco-mode #center-afficheur {
 
 /* Background/Text Variants */
 .theme-bg-default { background-color: var(--cordel-bg); color: var(--cordel-text); }
-.theme-bg-ocre { background-color: var(--color-cordel-ocre) !important; color: var(--color-cordel-bg-dark) !important; }
-.theme-bg-vert { background-color: var(--color-cordel-vert) !important; color: var(--color-cordel-bg-dark) !important; }
-.theme-bg-bleu { background-color: var(--color-cordel-bleu) !important; color: var(--color-cordel-bg-light) !important; }
-.theme-bg-kraft { background-color: var(--color-cordel-kraft) !important; color: var(--color-cordel-bg-dark) !important; }
+.theme-bg-ocre { background-color: var(--color-cordel-ocre) !important; color: #1a1a1a !important; }
+.theme-bg-vert { background-color: var(--color-cordel-vert) !important; color: #1a1a1a !important; }
+.theme-bg-bleu { background-color: var(--color-cordel-bleu) !important; color: #1a1a1a !important; }
+.theme-bg-kraft { background-color: var(--color-cordel-kraft) !important; color: #1a1a1a !important; }
 
 /* Slanted Stamp Badge (Role Badge) */
 .theme-stamp-badge {

@@ -121,7 +121,7 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
                       <path 
                         d="M 10 10 Q 175 30 340 10" 
                         fill="none" 
-                        stroke="#181716" 
+                        stroke="var(--cordel-border)" 
                         strokeWidth="2" 
                         strokeDasharray="4 3" 
                       />

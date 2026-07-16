@@ -9,7 +9,8 @@ const DEFAULT_FIELDS_CONFIG = {
   tailleTshirt: { key: "tailleTshirt", label: "Taille T-shirt", enabled: true, filledBy: "member" },
   droitImage: { key: "droitImage", label: "Droit à l'image", enabled: true, filledBy: "member" },
   aptitudeMedicale: { key: "aptitudeMedicale", label: "Aptitude médicale", enabled: true, filledBy: "member" },
-  lateralite: { key: "lateralite", label: "Latéralité (Gaucher/Droitier)", enabled: true, filledBy: "member" }
+  lateralite: { key: "lateralite", label: "Latéralité (Gaucher/Droitier)", enabled: true, filledBy: "member" },
+  dateNaissance: { key: "dateNaissance", label: "Date de naissance", enabled: true, filledBy: "member" }
 };
 
 export default function SystemAdminPanel({ user, profileData, onBack, onNavigateToView }) {
@@ -148,6 +149,9 @@ export default function SystemAdminPanel({ user, profileData, onBack, onNavigate
     if (isEnabled('lateralite')) {
       updatePayload.lateralite = userDraft.lateralite !== undefined ? userDraft.lateralite : (currentUserItem.lateralite || 'droitier');
     }
+    if (isEnabled('dateNaissance')) {
+      updatePayload.dateNaissance = userDraft.dateNaissance !== undefined ? userDraft.dateNaissance : (currentUserItem.dateNaissance || '');
+    }
 
     setSavingId(targetUserId);
     try {
@@ -256,7 +260,8 @@ export default function SystemAdminPanel({ user, profileData, onBack, onNavigate
                 isFieldModified('tailleTshirt', userItem.tailleTshirt) ||
                 isFieldModified('droitImage', userItem.droitImage) ||
                 isFieldModified('aptitudeMedicale', userItem.aptitudeMedicale) ||
-                isFieldModified('lateralite', userItem.lateralite);
+                isFieldModified('lateralite', userItem.lateralite) ||
+                isFieldModified('dateNaissance', userItem.dateNaissance);
 
               const isModified = isRoleModified || isTagsModified || isAnyFieldModified;
 
@@ -286,6 +291,12 @@ export default function SystemAdminPanel({ user, profileData, onBack, onNavigate
                         )}
                         {(!fieldsConfig || fieldsConfig.lateralite?.enabled) && (
                           <span>👋 Main : <strong>{userItem.lateralite || 'Droitier'}</strong></span>
+                        )}
+                        {(!fieldsConfig || fieldsConfig.dateNaissance?.enabled) && (
+                          <>
+                            {((!fieldsConfig || fieldsConfig.lateralite?.enabled) || (!fieldsConfig || fieldsConfig.tailleTshirt?.enabled)) && <span>•</span>}
+                            <span>🎂 Nais. : <strong>{userItem.dateNaissance || 'Non spécifié'}</strong></span>
+                          </>
                         )}
                       </div>
                       <p className="text-[9px] font-bold text-cordel-wood mt-0.5">
@@ -382,6 +393,20 @@ export default function SystemAdminPanel({ user, profileData, onBack, onNavigate
                                 <option value="droitier">Droitier</option>
                                 <option value="gaucher">Gaucher</option>
                               </select>
+                            </div>
+                          )}
+
+                          {/* Date de naissance */}
+                          {fieldsConfig.dateNaissance?.enabled && (
+                            <div className="flex flex-col gap-0.5">
+                              <span className="text-[8px] font-bold text-cordel-wood">Naissance</span>
+                              <input
+                                type="date"
+                                value={userDraft.dateNaissance !== undefined ? userDraft.dateNaissance : (userItem.dateNaissance || '')}
+                                onChange={(e) => handleFieldChange(userItem.id, 'dateNaissance', e.target.value)}
+                                disabled={savingId === userItem.id}
+                                className="theme-input text-[10px] font-bold py-1 px-1.5"
+                              />
                             </div>
                           )}
                         </div>
