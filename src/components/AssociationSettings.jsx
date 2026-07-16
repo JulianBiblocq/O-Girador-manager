@@ -16,7 +16,7 @@ export const DEFAULT_FIELDS_CONFIG = {
 };
 
 export default function AssociationSettings({ groupId, onBack, role, isSystemAdmin }) {
-  const DEFAULT_INSTRUMENTS = ["Alfaia Marcante", "Alfaia Meia", "Alfaia Repique", "Caixa", "Tarol", "Gonguê", "Agbê", "Mineiro", "Timbal", "Paroles", "Chant", "Danse"];
+  const DEFAULT_INSTRUMENTS = ["Alfaia Marcante", "Alfaia Meião", "Alfaia Repique", "Caixa", "Tarol", "Gonguê", "Agbê", "Mineiro", "Timbal", "Paroles", "Chant", "Danse"];
 
   const [fieldsConfig, setFieldsConfig] = useState(DEFAULT_FIELDS_CONFIG);
   const [instrumentsDisponibles, setInstrumentsDisponibles] = useState([]);

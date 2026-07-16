@@ -31,6 +31,8 @@ export default function Dashboard({ user, profileData, onNavigateToTrombi, onNav
       case 'motMestre':
       case 'annonces':
         return 'col-span-1 md:col-span-2 lg:col-span-3';
+      case 'agenda':
+        return 'col-span-1 md:col-span-2 lg:col-span-2';
       default:
         return 'col-span-1';
     }

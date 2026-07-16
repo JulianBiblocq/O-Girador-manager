@@ -43,7 +43,7 @@ export default function UserProfile({ user, profileData, onBack }) {
     publierDateNaissance: profileData?.publierDateNaissance !== undefined ? profileData.publierDateNaissance : false
   });
   
-  const DEFAULT_INSTRUMENTS = ["Alfaia Marcante", "Alfaia Meia", "Alfaia Repique", "Caixa", "Tarol", "Gonguê", "Agbê", "Mineiro", "Timbal", "Paroles", "Chant", "Danse"];
+  const DEFAULT_INSTRUMENTS = ["Alfaia Marcante", "Alfaia Meião", "Alfaia Repique", "Caixa", "Tarol", "Gonguê", "Agbê", "Mineiro", "Timbal", "Paroles", "Chant", "Danse"];
 
   const [saving, setSaving] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);

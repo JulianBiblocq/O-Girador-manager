@@ -376,7 +376,7 @@ export default function WidgetAgenda({ role, isSystemAdmin, groupId, user, profi
             <p className="text-xs opacity-75 font-semibold">Aucun événement planifié.</p>
           </CordelCard>
         ) : (
-          <div className="flex flex-col gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {visibleEvents.map((event) => {
               const dateObj = new Date(event.date);
               const day = isNaN(dateObj.getTime()) ? '?' : dateObj.getDate();
