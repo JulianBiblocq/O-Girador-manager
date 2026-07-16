@@ -1,5 +1,19 @@
 import React, { useState } from 'react';
-import { XiloEQ } from './XiloIcons';
+import { 
+  XiloHome, 
+  XiloUser, 
+  XiloPeople, 
+  XiloMegaphone, 
+  XiloSettings, 
+  XiloCoin, 
+  XiloBox, 
+  XiloDrum, 
+  XiloChisel, 
+  XiloTag, 
+  XiloConsole, 
+  XiloSignOut,
+  XiloEQ 
+} from './XiloIcons';
 import { useTranslation } from './LanguageContext';
 
 export default function LayoutShell({ 
@@ -173,7 +187,7 @@ export default function LayoutShell({
                     }}
                     className="theme-btn text-[10px] font-black uppercase tracking-wider py-2 px-3 text-left rounded-[4px_6px_3px_5px] flex items-center gap-2 hover:bg-cordel-hover cursor-pointer"
                   >
-                    🏠 {t('menu.dashboard') || "Accueil"}
+                    <XiloHome size={14} /> {t('menu.dashboard') || "Accueil"}
                   </button>
                 )}
                 
@@ -184,7 +198,7 @@ export default function LayoutShell({
                   }}
                   className="theme-btn text-[10px] font-black uppercase tracking-wider py-2 px-3 text-left rounded-[4px_6px_3px_5px] flex items-center gap-2 hover:bg-cordel-hover cursor-pointer"
                 >
-                  👤 {t('menu.profile') || "Mon Profil"}
+                  <XiloUser size={14} /> {t('menu.profile') || "Mon Profil"}
                 </button>
 
                 <button
@@ -194,7 +208,7 @@ export default function LayoutShell({
                   }}
                   className="theme-btn text-[10px] font-black uppercase tracking-wider py-2 px-3 text-left rounded-[4px_6px_3px_5px] flex items-center gap-2 hover:bg-cordel-hover cursor-pointer"
                 >
-                  👥 {t('menu.trombinoscope') || "Trombinoscope"}
+                  <XiloPeople size={14} /> {t('menu.trombinoscope') || "Trombinoscope"}
                 </button>
 
                 <button
@@ -204,7 +218,7 @@ export default function LayoutShell({
                   }}
                   className="theme-btn text-[10px] font-black uppercase tracking-wider py-2 px-3 text-left rounded-[4px_6px_3px_5px] flex items-center justify-between hover:bg-cordel-hover cursor-pointer w-full"
                 >
-                  <span className="flex items-center gap-2">💬 {t('menu.forum') || "Porte-Voix"}</span>
+                  <span className="flex items-center gap-2"><XiloMegaphone size={14} /> {t('menu.forum') || "Porte-Voix"}</span>
                   {unreadPrivateMessagesCount > 0 && (
                     <span className="w-4 h-4 bg-red-600 text-white text-[8px] font-black rounded-full flex items-center justify-center animate-pulse mr-1 shrink-0">
                       {unreadPrivateMessagesCount}
@@ -227,7 +241,7 @@ export default function LayoutShell({
                       }}
                       className="theme-btn text-[10px] font-black uppercase tracking-wider py-2 px-3 text-left rounded-[4px_6px_3px_5px] flex items-center gap-2 hover:bg-cordel-hover cursor-pointer"
                     >
-                      ⚙️ {t('menu.settings') || "Configuration"}
+                      <XiloSettings size={14} /> {t('menu.settings') || "Configuration"}
                     </button>
 
                     <button
@@ -237,7 +251,7 @@ export default function LayoutShell({
                       }}
                       className="theme-btn text-[10px] font-black uppercase tracking-wider py-2 px-3 text-left rounded-[4px_6px_3px_5px] flex items-center gap-2 hover:bg-cordel-hover cursor-pointer"
                     >
-                      🪙 {t('menu.treasury') || "Trésorerie"}
+                      <XiloCoin size={14} /> {t('menu.treasury') || "Trésorerie"}
                     </button>
 
                     <button
@@ -247,7 +261,7 @@ export default function LayoutShell({
                       }}
                       className="theme-btn text-[10px] font-black uppercase tracking-wider py-2 px-3 text-left rounded-[4px_6px_3px_5px] flex items-center gap-2 hover:bg-cordel-hover cursor-pointer"
                     >
-                      📦 {t('menu.orders') || "Commandes"}
+                      <XiloBox size={14} /> {t('menu.orders') || "Commandes"}
                     </button>
 
                     <button
@@ -257,7 +271,7 @@ export default function LayoutShell({
                       }}
                       className="theme-btn text-[10px] font-black uppercase tracking-wider py-2 px-3 text-left rounded-[4px_6px_3px_5px] flex items-center gap-2 hover:bg-cordel-hover cursor-pointer"
                     >
-                      🥁 {t('menu.inventory') || "Inventaire"}
+                      <XiloDrum size={14} /> {t('menu.inventory') || "Inventaire"}
                     </button>
 
                     <button
@@ -267,7 +281,7 @@ export default function LayoutShell({
                       }}
                       className="theme-btn text-[10px] font-black uppercase tracking-wider py-2 px-3 text-left rounded-[4px_6px_3px_5px] flex items-center gap-2 hover:bg-cordel-hover cursor-pointer"
                     >
-                      📐 {t('menu.layoutEditor') || "Mise en page"}
+                      <XiloChisel size={14} /> {t('menu.layoutEditor') || "Mise en page"}
                     </button>
 
                     <button
@@ -277,7 +291,7 @@ export default function LayoutShell({
                       }}
                       className="theme-btn text-[10px] font-black uppercase tracking-wider py-2 px-3 text-left rounded-[4px_6px_3px_5px] flex items-center gap-2 hover:bg-cordel-hover cursor-pointer"
                     >
-                      🏷️ {t('menu.tags') || "Badges"}
+                      <XiloTag size={14} /> {t('menu.tags') || "Badges"}
                     </button>
                   </>
                 )}
@@ -291,7 +305,7 @@ export default function LayoutShell({
                     }}
                     className="theme-btn text-[10px] font-black uppercase tracking-wider py-2 px-3 text-left rounded-[4px_6px_3px_5px] flex items-center gap-2 hover:bg-cordel-hover cursor-pointer mt-1"
                   >
-                    🛠️ {t('menu.systemAdmin') || "Admin Système"}
+                    <XiloConsole size={14} /> {t('menu.systemAdmin') || "Admin Système"}
                   </button>
                 )}
               </div>
@@ -305,7 +319,7 @@ export default function LayoutShell({
                     rel="noopener noreferrer"
                     className="py-1.5 px-2 font-extrabold flex items-center justify-center gap-1.5 bg-[#d99f4d] text-[#1a1a1a] border border-encre-noire rounded-[6px_9px_7px_8px] shadow-[1.5px_1.5px_0px_0px_#181716] hover:scale-[1.01] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none transition-all text-center text-[8px] uppercase tracking-wide cursor-pointer"
                   >
-                    {t('dashboard.sequencer') || "Séquenceur"}
+                    <XiloEQ size={12} className="inline mr-1" /> {t('dashboard.sequencer') || "Séquenceur"}
                   </a>
                 )}
                 
@@ -316,9 +330,9 @@ export default function LayoutShell({
                       onSignOut();
                       setIsDrawerOpen(false);
                     }}
-                    className="w-full py-1.5 text-center text-[9px] font-black uppercase tracking-widest bg-red-800 text-white border border-encre-noire rounded-[6px_9px_7px_8px] shadow-[1.5px_1.5px_0px_0px_#181716] hover:brightness-110 active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none transition-all cursor-pointer"
+                    className="w-full py-1.5 text-center text-[9px] font-black uppercase tracking-widest bg-red-800 text-white border border-encre-noire rounded-[6px_9px_7px_8px] shadow-[1.5px_1.5px_0px_0px_#181716] hover:brightness-110 active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none transition-all cursor-pointer flex items-center justify-center gap-1.5"
                   >
-                    🚪 {t('common.signOut') || "Déconnexion"}
+                    <XiloSignOut size={12} /> {t('common.signOut') || "Se déconnecter"}
                   </button>
                 )}
 

@@ -184,7 +184,7 @@ export default function OrdersManager({ groupId, onBack, role, isSystemAdmin }) 
             disabled={saving}
             className="text-[10px] font-black uppercase tracking-widest bg-cordel-bg border border-encre-noire px-3 py-1 rounded-[4px_6px_3px_5px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-95 cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1"
           >
-            {selectedCampaign ? `← ${t('ordersManager.campaignsList') || "Liste"}` : "← Dashboard"}
+            {selectedCampaign ? `← ${t('ordersManager.campaignsList') || "Liste"}` : `← ${t('menu.dashboard') || "Tableau de bord"}`}
           </button>
           
           <h2 className="text-sm font-extrabold tracking-widest text-cordel-wood uppercase flex items-center gap-1">

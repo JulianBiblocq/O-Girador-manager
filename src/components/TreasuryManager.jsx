@@ -1,15 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { collection, query, where, onSnapshot, doc, updateDoc, getDoc } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, doc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
-import XiloAvatar from './XiloAvatar';
+import MemberTreasuryRow from './MemberTreasuryRow';
 import { useTranslation } from './LanguageContext';
-import { useTerminologie } from '../hooks/useTerminologie';
 
 export default function TreasuryManager({ groupId, onBack, role, isSystemAdmin }) {
   const { t } = useTranslation();
-  const { tRole } = useTerminologie();
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -70,23 +68,19 @@ export default function TreasuryManager({ groupId, onBack, role, isSystemAdmin }
     return () => unsubscribe();
   }, [groupId]);
 
-  const handleUpdateStatus = async (memberId, newStatus) => {
-    try {
-      const userRef = doc(db, 'users', memberId);
-      await updateDoc(userRef, {
-        paymentStatus: newStatus
-      });
-    } catch (err) {
-      console.error("TreasuryManager - Error updating payment status:", err);
-      alert("Impossible de modifier le statut de paiement : " + (err.message || err));
-    }
-  };
-
   // Calculations for stats
   const totalActive = members.length;
   const countPaid = members.filter(m => m.paymentStatus === 'paid').length;
   const countPartial = members.filter(m => m.paymentStatus === 'partial').length;
   const countUnpaid = members.filter(m => !m.paymentStatus || m.paymentStatus === 'unpaid').length;
+
+  const baseAdhesionAmount = associationSettings?.montantAdhesion !== undefined 
+    ? associationSettings.montantAdhesion 
+    : (associationSettings?.montantCotisation || 0);
+
+  const optionsCotisation = Array.isArray(associationSettings?.optionsCotisation) 
+    ? associationSettings.optionsCotisation 
+    : [];
 
   const filteredMembers = members.filter((member) => {
     const fullName = `${member.prenom || ''} ${member.nom || ''}`.toLowerCase();
@@ -97,6 +91,58 @@ export default function TreasuryManager({ groupId, onBack, role, isSystemAdmin }
 
     return matchesSearch && matchesStatus;
   });
+
+  // Export to Excel (CSV)
+  const exportToCSV = () => {
+    const headers = ["Nom du membre", "Adhésion de base", "Options choisies", "Total dû (€)", "Statut du paiement"];
+    const rows = filteredMembers.map(member => {
+      const fullName = `${member.prenom || ''} ${member.nom || ''}`;
+      
+      const hasBase = member.adhesionBase !== false;
+      const baseMembership = hasBase ? "Oui" : "Non";
+
+      const chosenOptionsList = (member.selectedOptions || [])
+        .map(optId => {
+          const opt = optionsCotisation.find(o => o.id === optId);
+          return opt ? opt.nom : null;
+        })
+        .filter(Boolean)
+        .join(', ');
+
+      const baseAmount = hasBase ? parseFloat(baseAdhesionAmount) || 0 : 0;
+      const optionsAmount = (member.selectedOptions || []).reduce((sum, optId) => {
+        const opt = optionsCotisation.find(o => o.id === optId);
+        return sum + (opt ? parseFloat(opt.montant) || 0 : 0);
+      }, 0);
+      const totalDue = baseAmount + optionsAmount;
+
+      let paymentStatusStr = "Non payé";
+      if (member.paymentStatus === 'paid') paymentStatusStr = "À jour";
+      else if (member.paymentStatus === 'partial') paymentStatusStr = "Partiel";
+
+      return [
+        fullName,
+        baseMembership,
+        chosenOptionsList,
+        totalDue,
+        paymentStatusStr
+      ];
+    });
+
+    // Excel CSV French support: UTF-8 BOM + semicolon separator
+    const csvContent = "\uFEFF" + [headers, ...rows]
+      .map(e => e.map(val => `"${String(val).replace(/"/g, '""')}"`).join(";"))
+      .join("\n");
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `tresorerie_${groupId || 'membres'}_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   if (!isAuthorized) {
     return (
@@ -143,11 +189,11 @@ export default function TreasuryManager({ groupId, onBack, role, isSystemAdmin }
         
         <div className="border border-encre-noire/30 p-3 rounded-[4px_6px_3px_5px] bg-[var(--cordel-bg-light)] text-[10px] flex flex-col gap-1.5 justify-center shadow-[1.5px_1.5px_0px_0px_#181716]">
           <span className="font-bold text-cordel-wood uppercase tracking-wide">Configuration Active :</span>
-          <div>💵 Adhésion base : <span className="font-black">{associationSettings?.montantAdhesion !== undefined ? associationSettings.montantAdhesion : (associationSettings?.montantCotisation || 0)} €</span></div>
-          {associationSettings?.optionsCotisation && associationSettings.optionsCotisation.length > 0 && (
+          <div>💵 Adhésion base : <span className="font-black">{baseAdhesionAmount} €</span></div>
+          {optionsCotisation.length > 0 && (
             <div className="flex flex-col gap-0.5 border-t border-dashed border-encre-noire/10 pt-1 mt-0.5">
               <span className="font-semibold text-cordel-master-dark">Options :</span>
-              {associationSettings.optionsCotisation.map(opt => (
+              {optionsCotisation.map(opt => (
                 <div key={opt.id} className="pl-1.5">• {opt.nom} : <span className="font-bold">{opt.montant} €</span></div>
               ))}
             </div>
@@ -188,8 +234,8 @@ export default function TreasuryManager({ groupId, onBack, role, isSystemAdmin }
           </div>
 
           {/* Filters and Search Toolbar */}
-          <CordelCard variant="default" useExtremeBorder={false} className="p-4 bg-cordel-bg flex flex-col md:flex-row gap-3">
-            <div className="flex-1 flex flex-col gap-1 text-left">
+          <CordelCard variant="default" useExtremeBorder={false} className="p-4 bg-cordel-bg flex flex-col md:flex-row gap-3 items-end">
+            <div className="flex-1 flex flex-col gap-1 text-left w-full">
               <label className="text-[9px] uppercase font-extrabold tracking-wider text-cordel-wood">
                 🔍 Rechercher un membre
               </label>
@@ -202,7 +248,7 @@ export default function TreasuryManager({ groupId, onBack, role, isSystemAdmin }
               />
             </div>
 
-            <div className="flex flex-col gap-1 text-left min-w-[150px]">
+            <div className="flex flex-col gap-1 text-left min-w-[150px] w-full md:w-auto">
               <label className="text-[9px] uppercase font-extrabold tracking-wider text-cordel-wood">
                 Statut
               </label>
@@ -217,6 +263,14 @@ export default function TreasuryManager({ groupId, onBack, role, isSystemAdmin }
                 <option value="unpaid">Non payé ❌</option>
               </select>
             </div>
+
+            <button
+              type="button"
+              onClick={exportToCSV}
+              className="text-[10px] font-black uppercase tracking-widest bg-[#84967a] hover:bg-[#728369] text-encre-noire border-2 border-encre-noire px-4 py-1.5 rounded-[4px_6px_3px_5px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-105 cursor-pointer flex items-center justify-center gap-1.5 w-full md:w-auto h-[34px]"
+            >
+              📥 Exporter CSV
+            </button>
           </CordelCard>
 
           {/* Members Table / List */}
@@ -226,56 +280,25 @@ export default function TreasuryManager({ groupId, onBack, role, isSystemAdmin }
                 <p className="text-xs font-bold opacity-75">Aucun membre ne correspond aux critères.</p>
               </CordelCard>
             ) : (
-              <div className="grid gap-3">
-                {filteredMembers.map((member) => {
-                  const fullName = `${member.prenom || ''} ${member.nom || ''}`;
-                  const currentStatus = member.paymentStatus || 'unpaid';
+              <div className="flex flex-col gap-2">
+                {/* Table Header for Desktop */}
+                <div className="hidden md:grid grid-cols-12 gap-4 px-4 py-2 border-b border-dashed border-cordel-master-dark/30 text-[9px] font-extrabold uppercase tracking-wider text-cordel-wood">
+                  <div className="col-span-3 text-left">Nom du membre</div>
+                  <div className="col-span-2 text-center">Adhésion de base</div>
+                  <div className="col-span-3 text-left">Options choisies</div>
+                  <div className="col-span-2 text-center">Total dû</div>
+                  <div className="col-span-2 text-right">Statut du paiement</div>
+                </div>
 
-                  return (
-                    <CordelCard 
-                      key={member.id} 
-                      variant="default" 
-                      useExtremeBorder={false}
-                      className="p-3.5 flex flex-col sm:flex-row items-center justify-between gap-4 bg-cordel-bg"
-                    >
-                      {/* Member Info */}
-                      <div className="flex items-center gap-3 w-full sm:w-auto">
-                        <XiloAvatar src={member.photoURL} name={fullName} size={40} />
-                        <div className="flex flex-col text-left">
-                          <span className="font-extrabold text-xs text-encre-noire">
-                            {fullName}
-                          </span>
-                          <span className="text-[9px] font-semibold text-cordel-master-dark/65 truncate max-w-[180px] sm:max-w-xs select-all">
-                            {member.email}
-                          </span>
-                          <span className="theme-stamp-badge theme-stamp-badge-wood text-[7px] border-dashed mt-1 self-start select-none">
-                            {tRole(member.role || 'membre', member.genre)}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Payment Status Dropdown Selector */}
-                      <div className="flex items-center gap-3 w-full sm:w-auto border-t sm:border-t-0 border-dashed border-cordel-master-dark/10 pt-3 sm:pt-0 justify-between sm:justify-end">
-                        <span className="text-[9px] font-extrabold uppercase tracking-wide text-cordel-master-dark">Statut de paiement :</span>
-                        <select
-                          value={currentStatus}
-                          onChange={(e) => handleUpdateStatus(member.id, e.target.value)}
-                          className={`theme-input text-[10px] font-black py-1.5 px-3 bg-cordel-bg-light cursor-pointer rounded-[4px_6px_3px_5px] border-2 ${
-                            currentStatus === 'paid' 
-                              ? 'border-green-600/40 text-green-700 dark:text-green-400' 
-                              : currentStatus === 'partial' 
-                                ? 'border-amber-600/40 text-amber-700 dark:text-amber-400' 
-                                : 'border-red-600/40 text-red-700 dark:text-red-400'
-                          }`}
-                        >
-                          <option value="unpaid">❌ Non payé</option>
-                          <option value="partial">⚠️ Partiel</option>
-                          <option value="paid">✅ À jour</option>
-                        </select>
-                      </div>
-                    </CordelCard>
-                  );
-                })}
+                {/* Table Rows */}
+                {filteredMembers.map((member) => (
+                  <MemberTreasuryRow
+                    key={member.id}
+                    member={member}
+                    optionsCotisation={optionsCotisation}
+                    baseAdhesionAmount={parseFloat(baseAdhesionAmount) || 0}
+                  />
+                ))}
               </div>
             )}
           </div>

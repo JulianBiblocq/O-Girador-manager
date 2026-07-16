@@ -5,6 +5,7 @@ export const fr = {
     cancel: "Annuler",
     loading: "Chargement...",
     disconnect: "Déconnexion",
+    signOut: "Se déconnecter",
     yes: "Oui",
     no: "Non",
     edit: "Modifier",
@@ -31,7 +32,7 @@ export const fr = {
     settings: "Paramètres"
   },
   menu: {
-    dashboard: "Accueil",
+    dashboard: "Tableau de bord",
     profile: "Mon Profil",
     trombinoscope: "Trombinoscope",
     forum: "Porte-Voix",

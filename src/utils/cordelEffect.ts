@@ -21,6 +21,9 @@ export const defaultCordelOptions: CordelOptions = {
 export const processCordelEffectBase64 = (base64Img: string, options: CordelOptions, outSize: number = 200): Promise<string> => {
   return new Promise((resolve, reject) => {
     const img = new Image();
+    if (base64Img.startsWith('http') || base64Img.startsWith('https')) {
+      img.crossOrigin = "anonymous";
+    }
     img.onload = () => {
       try {
         const result = processCordelEffect(img, options, outSize);

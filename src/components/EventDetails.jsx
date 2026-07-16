@@ -35,6 +35,7 @@ export default function EventDetails({ event, user, profileData, onClose, onPrev
     
     setEditForm({
       titre: event.titre || '',
+      type: event.type || 'repetition',
       date: event.date || '',
       dateFin: event.dateFin || '',
       lieu: event.lieu || '',
@@ -46,7 +47,7 @@ export default function EventDetails({ event, user, profileData, onClose, onPrev
       distanceAllerRetourKm: event.distanceAllerRetourKm || ''
     });
     setSetlist(event.setlist || []);
-  }, [event.id, user.uid, profileData?.instrument]);
+  }, [event.id, user.uid, profileData?.instrument, event.type]);
 
   const formatToUTCISO8601 = (date) => {
     if (!date || isNaN(date.getTime())) return '';
@@ -148,6 +149,7 @@ export default function EventDetails({ event, user, profileData, onClose, onPrev
   const [toastMessage, setToastMessage] = useState(null);
   const [editForm, setEditForm] = useState({
     titre: event.titre || '',
+    type: event.type || 'repetition',
     date: event.date || '',
     lieu: event.lieu || '',
     horairesPassages: event.horairesPassages || '',
@@ -622,6 +624,10 @@ export default function EventDetails({ event, user, profileData, onClose, onPrev
 
   const handleSave = async (e) => {
     e.preventDefault();
+    if (event.status === 'annule') {
+      alert("Les inscriptions sont désactivées car l'événement est annulé.");
+      return;
+    }
     setSaving(true);
 
     if (isPrestationRestricted && status !== 'absent') {
@@ -675,15 +681,16 @@ export default function EventDetails({ event, user, profileData, onClose, onPrev
       const eventRef = doc(db, 'events', event.id);
       await updateDoc(eventRef, {
         titre: editForm.titre,
+        type: editForm.type,
         date: editForm.date,
         dateFin: editForm.dateFin || '',
         lieu: editForm.lieu || '',
-        horairesPassages: editForm.horairesPassages || '',
-        horaireCovoiturage: editForm.horaireCovoiturage || '',
-        niveauRequis: editForm.niveauRequis || 'tous',
-        niveauDanseRequis: (event.type === 'prestation' || event.type === 'stage' || event.type === 'repetition' || event.type === 'atelier') ? editForm.niveauDanseRequis || 'aucun' : 'aucun',
-        lienDocument: editForm.lienDocument || '',
-        distanceAllerRetourKm: (event.type === 'prestation' || event.type === 'stage' || event.type === 'atelier') ? (parseFloat(editForm.distanceAllerRetourKm) || 0) : 0
+        horairesPassages: (editForm.type === 'prestation') ? editForm.horairesPassages || '' : '',
+        horaireCovoiturage: (editForm.type === 'prestation' || editForm.type === 'stage' || editForm.type === 'atelier') ? editForm.horaireCovoiturage || '' : '',
+        niveauRequis: (editForm.type === 'prestation') ? editForm.niveauRequis || 'tous' : 'tous',
+        niveauDanseRequis: (editForm.type === 'prestation' || editForm.type === 'stage' || editForm.type === 'repetition' || editForm.type === 'atelier') ? editForm.niveauDanseRequis || 'aucun' : 'aucun',
+        lienDocument: (editForm.type === 'reunion') ? editForm.lienDocument || '' : '',
+        distanceAllerRetourKm: (editForm.type === 'prestation' || editForm.type === 'stage' || editForm.type === 'atelier') ? (parseFloat(editForm.distanceAllerRetourKm) || 0) : 0
       });
       setIsEditingEvent(false);
       alert("Événement mis à jour avec succès !");
@@ -692,6 +699,20 @@ export default function EventDetails({ event, user, profileData, onClose, onPrev
       alert("Erreur lors de l'enregistrement de l'événement.");
     } finally {
       setSavingEvent(false);
+    }
+  };
+
+  const handleUpdateStatus = async (newStatus) => {
+    if (!event.id) return;
+    try {
+      const eventRef = doc(db, 'events', event.id);
+      await updateDoc(eventRef, {
+        status: newStatus
+      });
+      alert(`Statut de l'événement mis à jour : ${newStatus === 'annule' ? 'Annulé' : 'Maintenu'}`);
+    } catch (err) {
+      console.error("EventDetails - Erreur de modification statut :", err);
+      alert("Erreur lors de la modification du statut.");
     }
   };
 
@@ -873,6 +894,26 @@ export default function EventDetails({ event, user, profileData, onClose, onPrev
                 />
               </div>
 
+              {/* Type Dropdown */}
+              <div className="flex flex-col gap-1">
+                <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                  {t('widgetAgenda.typeLabel') || "Type"}
+                </label>
+                <select
+                  value={editForm.type}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, type: e.target.value }))}
+                  required
+                  disabled={savingEvent}
+                  className="theme-input w-full disabled:opacity-50 font-bold bg-cordel-bg-light"
+                >
+                  <option value="prestation">{t('widgetAgenda.typePrestation') || "Prestation (Ocre)"}</option>
+                  <option value="repetition">{t('widgetAgenda.typeRepetition') || "Répétition (Vert)"}</option>
+                  <option value="stage">{t('widgetAgenda.typeStage') || "Stage (Bleu)"}</option>
+                  <option value="atelier">{t('widgetAgenda.typeAtelier') || "Atelier (Jaune)"}</option>
+                  <option value="reunion">{t('widgetAgenda.typeReunion') || "Réunion (Kraft)"}</option>
+                </select>
+              </div>
+
               {/* Date */}
               <div className="flex flex-col gap-1">
                 <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
@@ -930,7 +971,7 @@ export default function EventDetails({ event, user, profileData, onClose, onPrev
               </div>
 
               {/* Distance A/R (Prestation, Stage & Atelier) */}
-              {(event.type === 'prestation' || event.type === 'stage' || event.type === 'atelier') && (
+              {(editForm.type === 'prestation' || editForm.type === 'stage' || editForm.type === 'atelier') && (
                 <div className="flex flex-col gap-1">
                   <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
                     {t('widgetAgenda.distanceLabel') || "Distance Aller-Retour (Km)"}
@@ -947,7 +988,7 @@ export default function EventDetails({ event, user, profileData, onClose, onPrev
               )}
 
               {/* Prestation specific fields */}
-              {event.type === 'prestation' && (
+              {editForm.type === 'prestation' && (
                 <>
                   <div className="flex flex-col gap-1">
                     <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
@@ -993,7 +1034,7 @@ export default function EventDetails({ event, user, profileData, onClose, onPrev
               )}
 
               {/* Stage & Atelier specific fields */}
-              {(event.type === 'stage' || event.type === 'atelier') && (
+              {(editForm.type === 'stage' || editForm.type === 'atelier') && (
                 <div className="flex flex-col gap-1">
                   <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
                     {t('widgetAgenda.carpoolingLabel') || "Horaire Covoiturage (Optionnel)"}
@@ -1009,7 +1050,7 @@ export default function EventDetails({ event, user, profileData, onClose, onPrev
               )}
 
               {/* Dance Level Selector for Prestation, Stage, Répétition, and Atelier */}
-              {(event.type === 'prestation' || event.type === 'stage' || event.type === 'repetition' || event.type === 'atelier') && (
+              {(editForm.type === 'prestation' || editForm.type === 'stage' || editForm.type === 'repetition' || editForm.type === 'atelier') && (
                 <div className="flex flex-col gap-1">
                   <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
                     {t('widgetAgenda.danceLevelLabel') || "Danse (Niveau requis)"}
@@ -1028,7 +1069,7 @@ export default function EventDetails({ event, user, profileData, onClose, onPrev
               )}
 
               {/* Reunion specific fields */}
-              {event.type === 'reunion' && (
+              {editForm.type === 'reunion' && (
                 <div className="flex flex-col gap-1">
                   <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
                     Lien du document d'ordre du jour
@@ -1058,11 +1099,60 @@ export default function EventDetails({ event, user, profileData, onClose, onPrev
       ) : (
         <>
 
-      {/* Event General Info Card */}
-      <CordelCard variant={currentVariant} useExtremeBorder={true} className="py-4">
-        <span className="text-[8px] uppercase tracking-widest font-black opacity-60">
-          {event.type}
-        </span>
+        {/* Admin Status Panel */}
+        {isAuthorized && !isEditingEvent && (
+          <div className="flex items-center justify-between gap-3 p-3 bg-cordel-bg border-2 border-encre-noire rounded-[4px_6px_3px_5px] shadow-[2px_2px_0px_0px_#181716] mb-4">
+            <div className="flex flex-col text-left">
+              <span className="text-[9px] font-bold uppercase text-cordel-wood">Statut de l'événement</span>
+              <span className="text-xs font-black uppercase">
+                {event.status === 'annule' ? (
+                  <span className="text-red-600">❌ Annulé</span>
+                ) : (
+                  <span className="text-green-700">✅ Validé / Maintenu</span>
+                )}
+              </span>
+            </div>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => handleUpdateStatus('confirme')}
+                disabled={event.status !== 'annule'}
+                className={`text-[9px] font-black uppercase tracking-wider px-2.5 py-1.5 rounded-[4px_6px_3px_5px] transition-all cursor-pointer select-none ${
+                  event.status !== 'annule'
+                    ? 'bg-gray-200 text-gray-400 border border-gray-300 cursor-not-allowed shadow-none'
+                    : 'bg-green-100 text-green-800 border border-green-800 hover:bg-green-200 active:translate-x-[0.5px] active:translate-y-[0.5px] shadow-[1.5px_1.5px_0px_0px_#181716] active:shadow-none'
+                }`}
+              >
+                Maintenir
+              </button>
+              <button
+                type="button"
+                onClick={() => handleUpdateStatus('annule')}
+                disabled={event.status === 'annule'}
+                className={`text-[9px] font-black uppercase tracking-wider px-2.5 py-1.5 rounded-[4px_6px_3px_5px] transition-all cursor-pointer select-none ${
+                  event.status === 'annule'
+                    ? 'bg-gray-200 text-gray-400 border border-gray-300 cursor-not-allowed shadow-none'
+                    : 'bg-red-100 text-red-800 border border-red-800 hover:bg-red-200 active:translate-x-[0.5px] active:translate-y-[0.5px] shadow-[1.5px_1.5px_0px_0px_#181716] active:shadow-none'
+                }`}
+              >
+                Annuler l'événement
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Event General Info Card */}
+        <CordelCard variant={currentVariant} useExtremeBorder={true} className="py-4">
+          <div className="flex justify-between items-start px-4">
+            <span className="text-[8px] uppercase tracking-widest font-black opacity-60">
+              {event.type}
+            </span>
+            {event.status === 'annule' && (
+              <span className="text-[9px] font-black uppercase px-2 py-0.5 bg-red-100 text-red-700 border border-red-300 rounded tracking-wider select-none shrink-0 leading-none">
+                🚫 Annulé
+              </span>
+            )}
+          </div>
         <h3 className="font-bold text-lg leading-tight mt-0.5 mb-2">{event.titre}</h3>
         <p className="text-xs font-semibold leading-relaxed">
           {hasDateFin ? (
@@ -1124,14 +1214,14 @@ export default function EventDetails({ event, user, profileData, onClose, onPrev
           <div className="grid grid-cols-3 gap-2">
             <button
               type="button"
-              disabled={saving || isPrestationRestricted}
+              disabled={saving || isPrestationRestricted || event.status === 'annule'}
               onClick={() => handleStatusChange('present')}
               className={`
                 theme-btn px-2 py-2 text-xs rounded-[4px_6px_3px_5px] transition-colors cursor-pointer select-none
                 ${status === 'present' 
                   ? 'theme-bg-vert font-black border-2 border-encre-noire shadow-none translate-x-[1px] translate-y-[1px]' 
                   : 'bg-cordel-bg-light text-encre-noire border-2 border-encre-noire shadow-[2px_2px_0px_0px_#181716] hover:bg-cordel-hover'}
-                ${isPrestationRestricted ? 'opacity-40 cursor-not-allowed' : ''}
+                ${(isPrestationRestricted || event.status === 'annule') ? 'opacity-40 cursor-not-allowed' : ''}
               `}
             >
               Présent
@@ -1139,13 +1229,14 @@ export default function EventDetails({ event, user, profileData, onClose, onPrev
             
             <button
               type="button"
-              disabled={saving}
+              disabled={saving || event.status === 'annule'}
               onClick={() => handleStatusChange('absent')}
               className={`
                 theme-btn px-2 py-2 text-xs rounded-[4px_6px_3px_5px] transition-colors cursor-pointer select-none
                 ${status === 'absent' 
                   ? 'bg-cordel-wood text-cordel-bg-light font-black border-2 border-encre-noire shadow-none translate-x-[1px] translate-y-[1px]' 
                   : 'bg-cordel-bg-light text-encre-noire border-2 border-encre-noire shadow-[2px_2px_0px_0px_#181716] hover:bg-cordel-hover'}
+                ${event.status === 'annule' ? 'opacity-40 cursor-not-allowed' : ''}
               `}
             >
               Absent
@@ -1153,19 +1244,26 @@ export default function EventDetails({ event, user, profileData, onClose, onPrev
 
             <button
               type="button"
-              disabled={saving || isPrestationRestricted}
+              disabled={saving || isPrestationRestricted || event.status === 'annule'}
               onClick={() => handleStatusChange('confirm')}
               className={`
                 theme-btn px-2 py-2 text-xs rounded-[4px_6px_3px_5px] transition-colors cursor-pointer select-none
                 ${status === 'confirm' 
                   ? 'theme-bg-ocre font-black border-2 border-encre-noire shadow-none translate-x-[1px] translate-y-[1px]' 
                   : 'bg-cordel-bg-light text-encre-noire border-2 border-encre-noire shadow-[2px_2px_0px_0px_#181716] hover:bg-cordel-hover'}
-                ${isPrestationRestricted ? 'opacity-40 cursor-not-allowed' : ''}
+                ${(isPrestationRestricted || event.status === 'annule') ? 'opacity-40 cursor-not-allowed' : ''}
               `}
             >
               À confirmer
             </button>
           </div>
+
+          {/* Cancellation warning message */}
+          {event.status === 'annule' && (
+            <div className="text-[11px] font-extrabold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/20 p-2.5 rounded border border-dashed border-red-500/30 flex items-center justify-center gap-1.5 mt-1 select-none">
+              🚫 Les inscriptions sont fermées car cet événement a été annulé.
+            </div>
+          )}
 
           {/* Restriction warning message */}
           {isPrestationRestricted && (
@@ -1309,7 +1407,7 @@ export default function EventDetails({ event, user, profileData, onClose, onPrev
           <CordelButton 
             variant="ocre" 
             useExtremeBorder={true}
-            disabled={saving}
+            disabled={saving || event.status === 'annule'}
             type="submit"
             className="flex-1 py-3"
           >

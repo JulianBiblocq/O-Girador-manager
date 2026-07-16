@@ -114,40 +114,63 @@ export default function Dashboard({ user, profileData, onNavigateToTrombi, onNav
       </div>
 
 
+      {/* Welcome & Tags Section */}
+      <div className="text-left select-none pb-1 mt-1 border-b border-dashed border-cordel-master-dark/15">
+        <h2 className="text-lg font-black text-cordel-wood">
+          ✨ {t('dashboard.welcome') || "Axé"}, {profileData?.prenom || tRole('batuqueiro', profileData?.genre)} !
+        </h2>
+        
+        <div className="flex flex-wrap gap-2 mt-2">
+          {/* Role badge */}
+          <span className="theme-stamp-badge theme-stamp-badge-wood rotate-[-1.5deg] text-[9px] font-black uppercase tracking-wider px-2.5 py-0.5 select-none">
+            🏆 {tRole(profileData?.role || 'membre', profileData?.genre)}
+          </span>
+          
+          {/* Instrument badges */}
+          {(() => {
+            const userInstruments = profileData?.instrumentsJoues && profileData.instrumentsJoues.length > 0
+              ? profileData.instrumentsJoues
+              : [profileData?.instrument].filter(Boolean);
+              
+            return userInstruments.map((inst) => (
+              <span 
+                key={inst} 
+                className="inline-block text-[9px] font-black uppercase tracking-wider bg-cordel-bg-light border border-encre-noire px-2 py-0.5 rounded-[4px_6px_3px_5px] shadow-[1px_1px_0px_0px_#181716] select-none"
+              >
+                🎵 {inst}
+              </span>
+            ));
+          })()}
+        </div>
+      </div>
+
       {/* Clickable User Information Card */}
       <div 
         onClick={() => onNavigateToView('profil')}
         className="cursor-pointer hover:scale-[1.01] active:scale-95 transition-all"
         title="Modifier mon profil / Paramètres"
       >
-        <CordelCard variant="default" useExtremeBorder={true} className="py-4 px-5">
-          <div className="flex items-center gap-4 text-left">
+        <CordelCard variant="default" useExtremeBorder={true} className="py-3 px-4">
+          <div className="flex items-center gap-3 text-left">
             {user.photoURL ? (
               <img 
                 src={user.photoURL} 
                 alt={`${profileData?.prenom} ${profileData?.nom}`} 
-                className="w-14 h-14 rounded-[12px_6px_10px_8px] border-2 border-encre-noire shadow-[2px_2px_0px_0px_#181716] object-cover select-none pointer-events-none"
+                className="w-10 h-10 rounded-[8px_4px_7px_6px] border border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716] object-cover select-none pointer-events-none"
               />
             ) : (
-              <div className="w-14 h-14 rounded-[12px_6px_10px_8px] border-2 border-encre-noire bg-cordel-wood flex items-center justify-center text-cordel-bg-light text-xl font-bold select-none">
+              <div className="w-10 h-10 rounded-[8px_4px_7px_6px] border border-encre-noire bg-cordel-wood flex items-center justify-center text-cordel-bg-light text-sm font-bold select-none">
                 {profileData?.prenom ? profileData.prenom.charAt(0) : '?'}
               </div>
             )}
             
             <div className="flex-1 min-w-0">
-              <h2 className="panel-title text-base font-extrabold text-cordel-wood truncate">
-                {t('dashboard.welcome')}, {profileData?.prenom || tRole('batuqueiro', profileData?.genre)} !
-              </h2>
-              <div className="flex flex-col items-start gap-1 mt-1">
-                <span className="text-[9px] font-semibold text-cordel-master-dark/70 break-all select-all">
-                  {profileData?.email}
-                </span>
-                
-                {/* Slanted ink stamp style role badge */}
-                <span className="theme-stamp-badge theme-stamp-badge-wood rotate-[-2deg] select-none">
-                  {tRole(profileData?.role || 'membre', profileData?.genre)}
-                </span>
-              </div>
+              <h3 className="text-xs font-black text-encre-noire truncate">
+                👤 {profileData?.prenom} {profileData?.nom}
+              </h3>
+              <p className="text-[9px] font-semibold text-cordel-master-dark/70 break-all select-all">
+                {profileData?.email}
+              </p>
             </div>
           </div>
         </CordelCard>

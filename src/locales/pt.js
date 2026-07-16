@@ -5,6 +5,7 @@ export const pt = {
     cancel: "Cancelar",
     loading: "Carregando...",
     disconnect: "Desconectar",
+    signOut: "Desconectar",
     yes: "Sim",
     no: "Não",
     edit: "Editar",

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { collection, query, where, onSnapshot, doc, getDoc } from 'firebase/firestore';
-import { db } from '../firebase';
+import { collection, query, where, onSnapshot, doc, getDoc, updateDoc } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { db, storage } from '../firebase';
 import LayoutShell from './LayoutShell';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
@@ -8,15 +9,20 @@ import XiloAvatar from './XiloAvatar';
 import { useTerminologie } from '../hooks/useTerminologie';
 import { useTranslation } from './LanguageContext';
 import { XiloCaixa, XiloPeople } from './XiloIcons';
+import CordelImageEditor from './CordelImageEditor';
 
 export default function Trombinoscope({ user, profileData, onBack, onContactUser }) {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const { tRole } = useTerminologie();
   const [members, setMembers] = useState([]);
   const [tagsDisponibles, setTagsDisponibles] = useState([]);
   const [fieldsConfig, setFieldsConfig] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  const [showEditor, setShowEditor] = useState(false);
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
   const DEFAULT_INSTRUMENTS = ["Alfaia Marcante", "Alfaia Meião", "Alfaia Repique", "Caixa", "Tarol", "Gonguê", "Agbê", "Mineiro", "Timbal", "Chant", "Danse"];
   const [instrumentsDisponibles, setInstrumentsDisponibles] = useState(DEFAULT_INSTRUMENTS);
@@ -101,7 +107,7 @@ export default function Trombinoscope({ user, profileData, onBack, onContactUser
         prenom: profileData?.prenom || 'Vous',
         nom: profileData?.nom || '',
         email: user.email,
-        photoURL: user.photoURL,
+        photoURL: profileData?.photoURL || user.photoURL,
         role: profileData?.role || 'membre',
         tags: profileData?.tags || [],
         statutActuel: profileData?.statutActuel || 'active'
@@ -123,7 +129,7 @@ export default function Trombinoscope({ user, profileData, onBack, onContactUser
         fetchedMembers.push({
           id: doc.id,
           ...data,
-          photoURL: doc.id === user.uid ? user.photoURL : data.photoURL || null
+          photoURL: doc.id === user.uid ? (data.photoURL || user.photoURL) : data.photoURL || null
         });
       });
 
@@ -133,7 +139,7 @@ export default function Trombinoscope({ user, profileData, onBack, onContactUser
           prenom: profileData?.prenom || 'Vous',
           nom: profileData?.nom || '',
           email: user.email,
-          photoURL: user.photoURL,
+          photoURL: profileData?.photoURL || user.photoURL,
           role: profileData?.role || 'membre',
           tags: profileData?.tags || [],
           statutActuel: profileData?.statutActuel || 'active'
@@ -150,6 +156,49 @@ export default function Trombinoscope({ user, profileData, onBack, onContactUser
 
     return () => unsubscribe();
   }, [profileData, user]);
+
+  const handleEditorComplete = async (processedBase64) => {
+    setShowEditor(false);
+    setSelectedImage(null);
+    if (!user?.uid) return;
+
+    setUploadingPhoto(true);
+
+    try {
+      const base64ToBlob = (base64, mimeType = 'image/jpeg') => {
+        const byteString = atob(base64.split(',')[1]);
+        const ab = new ArrayBuffer(byteString.length);
+        const ia = new Uint8Array(ab);
+        for (let i = 0; i < byteString.length; i++) {
+          ia[i] = byteString.charCodeAt(i);
+        }
+        return new Blob([ab], { type: mimeType });
+      };
+
+      const blob = base64ToBlob(processedBase64);
+
+      // Upload to Firebase Storage
+      const storageRef = ref(storage, `avatars/${user.uid}/profile_pic_${Date.now()}.jpg`);
+      const snapshot = await uploadBytes(storageRef, blob);
+      const downloadURL = await getDownloadURL(snapshot.ref);
+
+      // Save to Firestore users collection
+      const userRef = doc(db, 'users', user.uid);
+      await updateDoc(userRef, {
+        photoURL: downloadURL
+      });
+
+      // Update local state immediately
+      setMembers(prev => prev.map(m => m.id === user.uid ? { ...m, photoURL: downloadURL } : m));
+
+      alert(t('common.saveSuccess') || "Photo mise à jour !");
+    } catch (err) {
+      console.error("Trombinoscope - Erreur d'upload de photo :", err);
+      alert(t('common.saveError') || "Erreur lors de la sauvegarde.");
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
 
   // Cascade Filtering logic
   const filteredMembers = members.filter((member) => {
@@ -281,10 +330,26 @@ export default function Trombinoscope({ user, profileData, onBack, onContactUser
 
                 const isViewerAdmin = profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.isSystemAdmin === true;
                 const isPhoneEnabled = fieldsConfig?.telephone?.enabled !== false;
-                const showPhone = isPhoneEnabled && member.telephone && (isViewerAdmin || member.publierTelephone === true);
+                const showPhone = isPhoneEnabled && member.telephone && (member.id === user.uid || isViewerAdmin || member.publierTelephone === true);
 
                 const isBirthdateEnabled = fieldsConfig?.dateNaissance?.enabled !== false;
-                const showBirthdate = isBirthdateEnabled && member.dateNaissance && (isViewerAdmin || member.publierDateNaissance === true);
+                const showBirthdate = isBirthdateEnabled && member.dateNaissance && (member.id === user.uid || isViewerAdmin || member.publierDateNaissance === true);
+
+                // Instruments and Danse conditional logic
+                const userInstruments = member.instrumentsJoues && member.instrumentsJoues.length > 0
+                  ? member.instrumentsJoues
+                  : [member.instrument].filter(Boolean);
+
+                const percussions = userInstruments.filter(inst => {
+                  const norm = inst.toLowerCase().trim();
+                  return norm !== 'danse' && norm !== 'chant' && norm !== 'aucun' && norm !== '';
+                });
+
+                const hasPercussions = percussions.length > 0;
+                const percuLevel = member.niveau;
+
+                const hasDanse = (member.niveauDanse && member.niveauDanse !== 'aucun') || userInstruments.some(inst => inst.toLowerCase().trim() === 'danse');
+                const danseLevel = member.niveauDanse && member.niveauDanse !== 'aucun' ? member.niveauDanse : null;
 
                 return (
                   <div key={member.id} className="relative flex flex-col items-center">
@@ -294,8 +359,23 @@ export default function Trombinoscope({ user, profileData, onBack, onContactUser
                       className="w-full flex flex-col items-center p-4 min-h-[220px] relative overflow-hidden"
                     >
                       {/* Avatar with Xylogravure Filter */}
-                      <div className="mb-3">
+                      <div className="mb-3 relative group">
                         <XiloAvatar src={member.photoURL} name={fullName} size={72} />
+                        {member.id === user.uid && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedImage(member.photoURL || user.photoURL);
+                              setShowEditor(true);
+                            }}
+                            className="absolute -bottom-1 -right-1 bg-encre-noire text-cordel-bg-light hover:bg-cordel-wood rounded-full p-1 border border-encre-noire shadow-[1px_1px_0px_0px_#181716] cursor-pointer z-30 transition-all hover:scale-105 active:scale-95 flex items-center justify-center"
+                            title="Éditer la photo (Filtre Xylogravure)"
+                          >
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                            </svg>
+                          </button>
+                        )}
                       </div>
 
                       {/* Member Name */}
@@ -309,25 +389,47 @@ export default function Trombinoscope({ user, profileData, onBack, onContactUser
                       </div>
 
                       {/* Member Details */}
-                      <div className="text-center mt-2 text-[9px] leading-tight text-cordel-master-dark/85 flex flex-col gap-0.5 w-full">
-                        <span className="font-semibold text-cordel-wood flex items-center justify-center gap-1">
-                          <XiloCaixa size={10} /> {(() => {
-                            const instName = member.instrument || t('trombinoscope.other');
-                            const pupitreName = getPupitreName(instName);
-                            return pupitreName ? `${instName} (${pupitreName})` : instName;
-                          })()}
-                        </span>
-                        {showPhone && (
-                          <span className="truncate">📞 {member.telephone}</span>
+                      <div className="text-center mt-2.5 text-[9px] leading-tight text-cordel-master-dark/85 flex flex-col gap-1.5 w-full">
+                        {hasPercussions && (
+                          <div className="flex flex-col items-center">
+                            <span className="font-extrabold text-cordel-wood flex items-center justify-center gap-0.5 uppercase text-[8.5px] tracking-wider">
+                              <XiloCaixa size={9} /> Percussion {percuLevel && `(${percuLevel === 'confirme' ? t('userProfile.levelConfirmSimple') || 'Confirmé' : t('userProfile.levelBeginner') || 'Débutant'})`}
+                            </span>
+                            <span className="font-semibold text-encre-noire text-[9.5px] mt-0.5 leading-snug">
+                              {percussions.map((inst) => {
+                                const pupitreName = getPupitreName(inst);
+                                return pupitreName ? `${inst} (${pupitreName})` : inst;
+                              }).join(', ')}
+                            </span>
+                          </div>
                         )}
-                        {showBirthdate && (
-                          <span>🎂 {member.dateNaissance ? new Date(member.dateNaissance).toLocaleDateString('fr-FR') : ''}</span>
+
+                        {hasDanse && (
+                          <div className={`flex flex-col items-center ${hasPercussions ? 'mt-1.5 border-t border-dashed border-cordel-master-dark/10 pt-1.5' : ''}`}>
+                            <span className="font-extrabold text-cordel-wood flex items-center justify-center gap-0.5 uppercase text-[8.5px] tracking-wider">
+                              💃 Danse
+                            </span>
+                            <span className="font-semibold text-encre-noire text-[9.5px] mt-0.5">
+                              {danseLevel ? (danseLevel === 'confirme' ? t('userProfile.levelConfirmSimple') || 'Confirmé' : t('userProfile.levelBeginner') || 'Débutant') : (t('userProfile.levelBeginner') || 'Débutant')}
+                            </span>
+                          </div>
+                        )}
+
+                        {(showPhone || showBirthdate) && (
+                          <div className={`flex flex-col items-center mt-1.5 border-t border-dashed border-cordel-master-dark/10 pt-1.5 gap-0.5 text-cordel-master-dark/75 font-bold`}>
+                            {showPhone && (
+                              <span className="truncate">📞 {member.telephone}</span>
+                            )}
+                            {showBirthdate && (
+                              <span>🎂 {member.dateNaissance ? new Date(member.dateNaissance).toLocaleDateString('fr-FR') : ''}</span>
+                            )}
+                          </div>
                         )}
                       </div>
 
                       {/* Member Tags (Custom ink stamp badges) */}
                       {hasTags && (
-                        <div className="flex flex-wrap gap-1 mt-2.5 justify-center max-w-full z-10">
+                        <div className="flex flex-wrap gap-1 mt-3 justify-center max-w-full z-10">
                           {member.tags.map((tag, tagIdx) => {
                             const rotation = ((tag.charCodeAt(0) + tagIdx) % 5) - 2; // -2deg to 2deg
                             return (
@@ -368,6 +470,25 @@ export default function Trombinoscope({ user, profileData, onBack, onContactUser
               })}
             </div>
           )}
+        </div>
+      )}
+
+      {/* Editor Modal Overlay */}
+      {showEditor && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-[var(--cordel-bg)] max-w-md w-full rounded-lg shadow-xl overflow-hidden relative border-4 border-encre-noire max-h-[90vh] overflow-y-auto">
+            <div className="p-4">
+              <CordelImageEditor 
+                imageSrc={selectedImage}
+                lang={locale || 'fr'}
+                onComplete={handleEditorComplete}
+                onCancel={() => {
+                  setShowEditor(false);
+                  setSelectedImage(null);
+                }}
+              />
+            </div>
+          </div>
         </div>
       )}
     </div>

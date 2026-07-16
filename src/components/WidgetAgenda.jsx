@@ -164,7 +164,8 @@ export default function WidgetAgenda({ role, isSystemAdmin, groupId, user, profi
         niveauRequis: formData.type === 'prestation' ? formData.niveauRequis || 'tous' : 'tous',
         niveauDanseRequis: (formData.type === 'prestation' || formData.type === 'stage' || formData.type === 'repetition' || formData.type === 'atelier') ? formData.niveauDanseRequis || 'aucun' : 'aucun',
         lienDocument: formData.type === 'reunion' ? formData.lienDocument || '' : '',
-        distanceAllerRetourKm: (formData.type === 'prestation' || formData.type === 'stage' || formData.type === 'atelier') ? (parseFloat(formData.distanceAllerRetourKm) || 0) : 0
+        distanceAllerRetourKm: (formData.type === 'prestation' || formData.type === 'stage' || formData.type === 'atelier') ? (parseFloat(formData.distanceAllerRetourKm) || 0) : 0,
+        status: 'confirme'
       });
       setIsAdding(false);
     } catch (error) {
@@ -543,7 +544,14 @@ export default function WidgetAgenda({ role, isSystemAdmin, groupId, user, profi
 
                     {/* Right Side: Details */}
                     <div className="flex-1 p-4 flex flex-col justify-center text-left pl-5">
-                      <h4 className="font-bold text-sm leading-tight mb-0.5">{event.titre}</h4>
+                      <div className="flex justify-between items-start gap-2 mb-0.5">
+                        <h4 className="font-bold text-sm leading-tight">{event.titre}</h4>
+                        {event.status === 'annule' && (
+                          <span className="text-[8px] font-black px-1.5 py-0.5 bg-red-100 text-red-700 border border-red-300 rounded uppercase tracking-wider shrink-0 select-none">
+                            Annulé
+                          </span>
+                        )}
+                      </div>
                       {event.dateFin && (
                         <span className="text-[9px] font-extrabold text-encre-noire/70 mb-1 leading-none select-none">
                           Du {new Date(event.date).toLocaleDateString('fr-FR', {day: 'numeric', month: 'short'})} au {new Date(event.dateFin).toLocaleDateString('fr-FR', {day: 'numeric', month: 'short'})}
