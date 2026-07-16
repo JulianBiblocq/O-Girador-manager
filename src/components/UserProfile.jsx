@@ -41,16 +41,20 @@ export default function UserProfile({ user, profileData, onBack }) {
     dateNaissance: profileData?.dateNaissance || ''
   });
   
+  const DEFAULT_INSTRUMENTS = ["Alfaia", "Caixa", "Gonguê", "Agbê", "Mineiro", "Timbal", "Paroles", "Chant", "Danse"];
+
   const [saving, setSaving] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [myInstruments, setMyInstruments] = useState([]);
   const [loadingInst, setLoadingInst] = useState(true);
   const [fieldsConfig, setFieldsConfig] = useState(null);
+  const [instrumentsDisponibles, setInstrumentsDisponibles] = useState(DEFAULT_INSTRUMENTS);
 
   // Sync fieldsConfig for user's association
   useEffect(() => {
     if (!profileData?.groupId) {
       setFieldsConfig(DEFAULT_FIELDS_CONFIG);
+      setInstrumentsDisponibles(DEFAULT_INSTRUMENTS);
       return;
     }
 
@@ -63,12 +67,19 @@ export default function UserProfile({ user, profileData, onBack }) {
         } else {
           setFieldsConfig(DEFAULT_FIELDS_CONFIG);
         }
+        if (Array.isArray(data.instrumentsDisponibles)) {
+          setInstrumentsDisponibles(data.instrumentsDisponibles);
+        } else {
+          setInstrumentsDisponibles(DEFAULT_INSTRUMENTS);
+        }
       } else {
         setFieldsConfig(DEFAULT_FIELDS_CONFIG);
+        setInstrumentsDisponibles(DEFAULT_INSTRUMENTS);
       }
     }, (error) => {
       console.error("UserProfile - Erreur onSnapshot fieldsConfig :", error);
       setFieldsConfig(DEFAULT_FIELDS_CONFIG);
+      setInstrumentsDisponibles(DEFAULT_INSTRUMENTS);
     });
 
     return () => unsubscribe();
@@ -335,13 +346,10 @@ export default function UserProfile({ user, profileData, onBack }) {
               disabled={saving}
               className="theme-input w-full disabled:opacity-50 text-xs font-bold bg-cordel-bg-light"
             >
-              <option value="Alfaia">Alfaia (Tambour)</option>
-              <option value="Caixa">Caixa (Caisse claire)</option>
-              <option value="Gonguê">Gonguê (Cloche)</option>
-              <option value="Agbê">Agbê (Shekere)</option>
-              <option value="Mineiro">Mineiro (Secoueur)</option>
-              <option value="Danse">Danse / Chœur</option>
-              <option value="Autre">Autre / Non spécifié</option>
+              {instrumentsDisponibles.map((inst) => (
+                <option key={inst} value={inst}>{inst}</option>
+              ))}
+              <option value="Autre">Autre</option>
             </select>
           </div>
 

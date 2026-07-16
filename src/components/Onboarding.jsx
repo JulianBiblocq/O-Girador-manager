@@ -14,6 +14,8 @@ const DEFAULT_FIELDS_CONFIG = {
   dateNaissance: { key: "dateNaissance", label: "Date de naissance", enabled: true, filledBy: "member" }
 };
 
+const DEFAULT_INSTRUMENTS = ["Alfaia", "Caixa", "Gonguê", "Agbê", "Mineiro", "Timbal", "Paroles", "Chant", "Danse"];
+
 export default function Onboarding({ user, onComplete }) {
   // Split the Google Auth display name into a first name and a last name
   const nameParts = user.displayName ? user.displayName.split(' ') : [];
@@ -28,10 +30,12 @@ export default function Onboarding({ user, onComplete }) {
     droitImage: true,
     aptitudeMedicale: false,
     lateralite: 'droitier',
-    dateNaissance: ''
+    dateNaissance: '',
+    instrument: 'Alfaia'
   });
 
   const [fieldsConfig, setFieldsConfig] = useState(null);
+  const [instrumentsDisponibles, setInstrumentsDisponibles] = useState(DEFAULT_INSTRUMENTS);
   const [submitting, setSubmitting] = useState(false);
 
   // Extract the group ID parameter from the URL if present
@@ -42,6 +46,7 @@ export default function Onboarding({ user, onComplete }) {
   useEffect(() => {
     if (!groupId) {
       setFieldsConfig(DEFAULT_FIELDS_CONFIG);
+      setInstrumentsDisponibles(DEFAULT_INSTRUMENTS);
       return;
     }
 
@@ -49,14 +54,29 @@ export default function Onboarding({ user, onComplete }) {
       try {
         const docRef = doc(db, 'associations', groupId);
         const docSnap = await getDoc(docRef);
-        if (docSnap.exists() && docSnap.data().fieldsConfig) {
-          setFieldsConfig({ ...DEFAULT_FIELDS_CONFIG, ...docSnap.data().fieldsConfig });
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          if (data.fieldsConfig) {
+            setFieldsConfig({ ...DEFAULT_FIELDS_CONFIG, ...data.fieldsConfig });
+          } else {
+            setFieldsConfig(DEFAULT_FIELDS_CONFIG);
+          }
+          if (Array.isArray(data.instrumentsDisponibles)) {
+            setInstrumentsDisponibles(data.instrumentsDisponibles);
+            if (data.instrumentsDisponibles.length > 0) {
+              setFormData(prev => ({ ...prev, instrument: data.instrumentsDisponibles[0] }));
+            }
+          } else {
+            setInstrumentsDisponibles(DEFAULT_INSTRUMENTS);
+          }
         } else {
           setFieldsConfig(DEFAULT_FIELDS_CONFIG);
+          setInstrumentsDisponibles(DEFAULT_INSTRUMENTS);
         }
       } catch (err) {
         console.error("Onboarding - Erreur de fetch config :", err);
         setFieldsConfig(DEFAULT_FIELDS_CONFIG);
+        setInstrumentsDisponibles(DEFAULT_INSTRUMENTS);
       }
     };
     fetchConfig();
@@ -89,6 +109,7 @@ export default function Onboarding({ user, onComplete }) {
         aptitudeMedicale: isFieldVisible('aptitudeMedicale') ? formData.aptitudeMedicale : false,
         lateralite: isFieldVisible('lateralite') ? formData.lateralite : "droitier",
         dateNaissance: isFieldVisible('dateNaissance') ? formData.dateNaissance : "",
+        instrument: formData.instrument || "Autre",
         role: "membre",
         statutActuel: "active",
         groupId: groupId,
@@ -159,6 +180,25 @@ export default function Onboarding({ user, onComplete }) {
               disabled={submitting}
               className="theme-input w-full disabled:opacity-50"
             />
+          </div>
+
+          {/* Instrument Principal Select */}
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] uppercase font-bold tracking-wider text-cordel-master-dark">
+              Instrument Principal
+            </label>
+            <select
+              name="instrument"
+              value={formData.instrument}
+              onChange={handleChange}
+              disabled={submitting}
+              className="theme-input w-full disabled:opacity-50 font-bold bg-cordel-bg-light"
+            >
+              {instrumentsDisponibles.map((inst) => (
+                <option key={inst} value={inst}>{inst}</option>
+              ))}
+              <option value="Autre">Autre</option>
+            </select>
           </div>
 
           {/* Phone Input */}

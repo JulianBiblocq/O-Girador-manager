@@ -12,27 +12,38 @@ export default function Trombinoscope({ user, profileData, onBack }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  const DEFAULT_INSTRUMENTS = ["Alfaia", "Caixa", "Gonguê", "Agbê", "Mineiro", "Timbal", "Paroles", "Chant", "Danse"];
+  const [instrumentsDisponibles, setInstrumentsDisponibles] = useState(DEFAULT_INSTRUMENTS);
+
   // Filter States
   const [searchQuery, setSearchQuery] = useState('');
   const [filterInstrument, setFilterInstrument] = useState('all');
   const [filterLateralite, setFilterLateralite] = useState('all');
   const [filterTag, setFilterTag] = useState('all');
 
-  // Load association tags
+  // Load association tags and instruments
   useEffect(() => {
     if (!profileData?.groupId) return;
-    const loadAssocTags = async () => {
+    const loadAssocData = async () => {
       try {
         const assocRef = doc(db, 'associations', profileData.groupId);
         const docSnap = await getDoc(assocRef);
-        if (docSnap.exists() && Array.isArray(docSnap.data().tagsDisponibles)) {
-          setTagsDisponibles(docSnap.data().tagsDisponibles);
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          if (Array.isArray(data.tagsDisponibles)) {
+            setTagsDisponibles(data.tagsDisponibles);
+          }
+          if (Array.isArray(data.instrumentsDisponibles)) {
+            setInstrumentsDisponibles(data.instrumentsDisponibles);
+          } else {
+            setInstrumentsDisponibles(DEFAULT_INSTRUMENTS);
+          }
         }
       } catch (err) {
-        console.error("Trombinoscope - Erreur chargement tagsDisponibles :", err);
+        console.error("Trombinoscope - Erreur chargement config association :", err);
       }
     };
-    loadAssocTags();
+    loadAssocData();
   }, [profileData?.groupId]);
 
   useEffect(() => {
@@ -158,11 +169,9 @@ export default function Trombinoscope({ user, profileData, onBack }) {
                 className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light"
               >
                 <option value="all">Tous</option>
-                <option value="Alfaia">Alfaia</option>
-                <option value="Caixa">Caixa</option>
-                <option value="Agbê">Agbê</option>
-                <option value="Gonguê">Gonguê</option>
-                <option value="Mineiro">Mineiro</option>
+                {instrumentsDisponibles.map((inst) => (
+                  <option key={inst} value={inst}>{inst}</option>
+                ))}
                 <option value="Autre">Autre</option>
               </select>
             </div>

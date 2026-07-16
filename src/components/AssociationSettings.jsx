@@ -16,7 +16,11 @@ export const DEFAULT_FIELDS_CONFIG = {
 };
 
 export default function AssociationSettings({ groupId, onBack, role, isSystemAdmin }) {
+  const DEFAULT_INSTRUMENTS = ["Alfaia", "Caixa", "Gonguê", "Agbê", "Mineiro", "Timbal", "Paroles", "Chant", "Danse"];
+
   const [fieldsConfig, setFieldsConfig] = useState(DEFAULT_FIELDS_CONFIG);
+  const [instrumentsDisponibles, setInstrumentsDisponibles] = useState([]);
+  const [newInstrument, setNewInstrument] = useState('');
   const [logoUrl, setLogoUrl] = useState('');
   const [colors, setColors] = useState({
     primary: '#d99f4d',
@@ -50,6 +54,12 @@ export default function AssociationSettings({ groupId, onBack, role, isSystemAdm
           setFieldsConfig(merged);
         } else {
           setFieldsConfig(DEFAULT_FIELDS_CONFIG);
+        }
+
+        if (Array.isArray(data.instrumentsDisponibles)) {
+          setInstrumentsDisponibles(data.instrumentsDisponibles);
+        } else {
+          setInstrumentsDisponibles(DEFAULT_INSTRUMENTS);
         }
 
         if (data.branding) {
@@ -92,6 +102,20 @@ export default function AssociationSettings({ groupId, onBack, role, isSystemAdm
       }
     }));
   };
+  const handleAddInstrument = () => {
+    const trimmed = newInstrument.trim();
+    if (!trimmed) return;
+    if (instrumentsDisponibles.includes(trimmed)) {
+      alert("Cet instrument existe déjà !");
+      return;
+    }
+    setInstrumentsDisponibles(prev => [...prev, trimmed]);
+    setNewInstrument('');
+  };
+
+  const handleRemoveInstrument = (instToRemove) => {
+    setInstrumentsDisponibles(prev => prev.filter(i => i !== instToRemove));
+  };
 
   const handleSave = async () => {
     if (!groupId) return;
@@ -113,6 +137,7 @@ export default function AssociationSettings({ groupId, onBack, role, isSystemAdm
       const assocRef = doc(db, 'associations', groupId);
       await updateDoc(assocRef, {
         fieldsConfig: fieldsConfig,
+        instrumentsDisponibles: instrumentsDisponibles,
         branding: {
           logoUrl: finalLogoUrl,
           colors: colors
@@ -288,6 +313,62 @@ export default function AssociationSettings({ groupId, onBack, role, isSystemAdm
                     </div>
                   </div>
                 </div>
+              </div>
+            </CordelCard>
+
+            {/* Pupitres & Instruments section */}
+            <CordelCard variant="default" useExtremeBorder={true} className="py-4 px-5">
+              <h3 className="text-xs uppercase font-extrabold tracking-wider text-cordel-wood mb-3">
+                🥁 Pupitres & Instruments
+              </h3>
+              
+              <div className="flex flex-col gap-2 pb-3 border-b border-dashed border-cordel-master-dark/15">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-cordel-master-dark">Ajouter un instrument</span>
+                <div className="flex gap-2">
+                  <input 
+                    type="text"
+                    value={newInstrument}
+                    onChange={(e) => setNewInstrument(e.target.value)}
+                    placeholder="Ex: Agbê, Chant..."
+                    className="theme-input text-xs font-bold py-1.5 flex-1 bg-cordel-bg-light"
+                  />
+                  <CordelButton 
+                    variant="ocre"
+                    useExtremeBorder={true}
+                    onClick={handleAddInstrument}
+                    disabled={saving}
+                    className="text-[10px] px-3 uppercase tracking-widest font-black shrink-0"
+                  >
+                    + Ajouter
+                  </CordelButton>
+                </div>
+              </div>
+
+              {/* Instruments list */}
+              <div className="flex flex-col gap-2 mt-3">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-cordel-master-dark mb-1">Instruments configurés</span>
+                {instrumentsDisponibles.length === 0 ? (
+                  <span className="text-[10px] italic opacity-60">Aucun instrument configuré.</span>
+                ) : (
+                  <div className="flex flex-wrap gap-1.5 max-h-40 overflow-y-auto pr-1">
+                    {instrumentsDisponibles.map((inst, index) => (
+                      <span 
+                        key={inst + index}
+                        className="theme-stamp-badge theme-stamp-badge-wood text-[9px] px-2 py-0.5 border-dashed flex items-center gap-1.5"
+                      >
+                        {inst}
+                        <button 
+                          type="button"
+                          onClick={() => handleRemoveInstrument(inst)}
+                          className="text-[9px] hover:text-red-500 font-bold ml-1 cursor-pointer select-none"
+                          title="Supprimer"
+                        >
+                          ✕
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
             </CordelCard>
 
