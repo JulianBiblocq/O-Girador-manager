@@ -332,7 +332,7 @@ export default function UserProfile({ user, profileData, onBack }) {
         <div className="flex flex-col items-center gap-1.5 mt-1">
           <div className="flex flex-wrap justify-center gap-2">
             <label className="text-[10px] font-black uppercase tracking-widest bg-cordel-bg border border-encre-noire px-3 py-1.5 rounded-[4px_6px_3px_5px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-95 cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1">
-              📸 {uploadingPhoto ? "⏳ " + (t('userProfile.uploading') || "Téléchargement...") : (t('userProfile.changePhoto') || "Uploader une photo")}
+              📸 {uploadingPhoto ? "⏳ " + t('userProfile.uploading') : t('userProfile.changePhoto')}
               <input 
                 type="file" 
                 accept="image/*"
@@ -342,7 +342,7 @@ export default function UserProfile({ user, profileData, onBack }) {
               />
             </label>
             <label className="text-[10px] font-black uppercase tracking-widest bg-cordel-bg border border-encre-noire px-3 py-1.5 rounded-[4px_6px_3px_5px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-95 cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1">
-              📷 {t('userProfile.takePhoto') || "Prendre une photo"}
+              📷 {t('userProfile.takePhoto')}
               <input 
                 type="file" 
                 accept="image/*"

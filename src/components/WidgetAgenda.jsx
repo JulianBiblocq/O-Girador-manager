@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { collection, query, where, onSnapshot, addDoc, doc } from 'firebase/firestore';
-import { db } from '../firebase';
+import { db, storage } from '../firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
 import EventDetails from './EventDetails';
@@ -9,18 +10,18 @@ import { XiloCalendar } from './XiloIcons';
 import PlacesAutocomplete from './PlacesAutocomplete';
 import { calculateRoadDistance } from '../utils/googleMaps';
 
-export default function WidgetAgenda({ role, isSystemAdmin, groupId, user, profileData, onFocusModeChange }) {
+export default function WidgetAgenda({ role, isSystemAdmin, groupId, user, profileData, onFocusModeChange, onNavigateToView }) {
   const { t } = useTranslation();
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [showAll, setShowAll] = useState(false);
   
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
   const [adresseLocal, setAdresseLocal] = useState('');
-  const [indemniteKilometrique, setIndemniteKilometrique] = useState(0);
 
   // Sync association settings to get default local address and km rate
   useEffect(() => {
@@ -30,7 +31,6 @@ export default function WidgetAgenda({ role, isSystemAdmin, groupId, user, profi
       if (docSnap.exists()) {
         const data = docSnap.data();
         setAdresseLocal(data.adresseLocal || '');
-        setIndemniteKilometrique(data.indemniteKilometrique || 0);
       }
     });
     return () => unsubscribe();
@@ -64,7 +64,9 @@ export default function WidgetAgenda({ role, isSystemAdmin, groupId, user, profi
     niveauRequis: 'tous',
     niveauDanseRequis: 'aucun',
     lienDocument: '',
-    distanceAllerRetourKm: ''
+    distanceAllerRetourKm: '',
+    lienSocial: '',
+    imageUrl: ''
   });
 
   const isAuthorized = role === 'mestre' || role === 'super-admin' || isSystemAdmin === true;
@@ -132,9 +134,30 @@ export default function WidgetAgenda({ role, isSystemAdmin, groupId, user, profi
       niveauRequis: 'tous',
       niveauDanseRequis: 'aucun',
       lienDocument: '',
-      distanceAllerRetourKm: ''
+      distanceAllerRetourKm: '',
+      lienSocial: '',
+      imageUrl: ''
     });
     setIsAdding(true);
+  };
+
+  const handleImageUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingImage(true);
+    try {
+      const storagePath = `events/${groupId}/uploads/${Date.now()}_${file.name}`;
+      const fileRef = ref(storage, storagePath);
+      const snapshot = await uploadBytes(fileRef, file);
+      const downloadURL = await getDownloadURL(snapshot.ref);
+      setFormData(prev => ({ ...prev, imageUrl: downloadURL }));
+      alert(t('widgetAgenda.uploadSuccess') || "Image téléversée !");
+    } catch (error) {
+      console.error("WidgetAgenda - Erreur upload image :", error);
+      alert(t('widgetAgenda.uploadError') || "Erreur lors du téléversement de l'image.");
+    } finally {
+      setUploadingImage(false);
+    }
   };
 
   const handleCloseForm = () => {
@@ -165,7 +188,9 @@ export default function WidgetAgenda({ role, isSystemAdmin, groupId, user, profi
         niveauDanseRequis: (formData.type === 'prestation' || formData.type === 'stage' || formData.type === 'repetition' || formData.type === 'atelier') ? formData.niveauDanseRequis || 'aucun' : 'aucun',
         lienDocument: formData.type === 'reunion' ? formData.lienDocument || '' : '',
         distanceAllerRetourKm: (formData.type === 'prestation' || formData.type === 'stage' || formData.type === 'atelier') ? (parseFloat(formData.distanceAllerRetourKm) || 0) : 0,
-        status: 'confirme'
+        status: 'confirme',
+        lienSocial: formData.lienSocial || '',
+        imageUrl: formData.imageUrl || ''
       });
       setIsAdding(false);
     } catch (error) {
@@ -220,6 +245,7 @@ export default function WidgetAgenda({ role, isSystemAdmin, groupId, user, profi
         event={activeEvent}
         user={user}
         profileData={profileData}
+        onNavigateToView={onNavigateToView}
         onClose={() => {
           setSelectedEvent(null);
           if (onFocusModeChange) {
@@ -474,6 +500,59 @@ export default function WidgetAgenda({ role, isSystemAdmin, groupId, user, profi
               </div>
             )}
 
+            {/* Lien réseau social / Événement externe (Optionnel) */}
+            <div className="flex flex-col gap-1">
+              <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                {t('widgetAgenda.lienSocialLabel') || "Lien réseau social / Événement externe (URL)"}
+              </label>
+              <input
+                type="url"
+                name="lienSocial"
+                value={formData.lienSocial || ''}
+                onChange={handleChange}
+                disabled={saving || uploadingImage}
+                placeholder="https://..."
+                className="theme-input w-full disabled:opacity-50"
+              />
+            </div>
+
+            {/* Affiche de l'événement / Image (Optionnel) */}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                {t('widgetAgenda.imageUrlLabel') || "Image de l'événement / Affiche"}
+              </label>
+              <div className="flex items-center gap-3">
+                {formData.imageUrl && (
+                  <div className="w-14 h-14 border border-encre-noire rounded-[4px] overflow-hidden bg-white shrink-0 shadow-[1px_1px_0px_0px_rgba(26,26,26,0.15)]">
+                    <img src={formData.imageUrl} alt="Affiche preview" className="w-full h-full object-cover" />
+                  </div>
+                )}
+                <label className="text-[10px] font-black uppercase tracking-widest bg-cordel-bg border border-encre-noire px-3 py-2 rounded-[4px_6px_3px_5px] shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-95 cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1.5 shrink-0 select-none">
+                  {uploadingImage ? (
+                    <>⏳ {t('widgetAgenda.uploadingImage') || "Téléversement..."}</>
+                  ) : (
+                    <>📸 {t('widgetAgenda.imageUrlLabel') || "Image / Affiche"}</>
+                  )}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    disabled={saving || uploadingImage}
+                    onChange={handleImageUpload}
+                    className="hidden"
+                  />
+                </label>
+                {formData.imageUrl && (
+                  <button
+                    type="button"
+                    onClick={() => setFormData(prev => ({ ...prev, imageUrl: '' }))}
+                    className="text-[10px] font-bold text-red-700 hover:underline select-none"
+                  >
+                    Supprimer
+                  </button>
+                )}
+              </div>
+            </div>
+
             {/* Actions */}
             <div className="flex gap-3 justify-end mt-2">
               <CordelButton 
@@ -503,7 +582,7 @@ export default function WidgetAgenda({ role, isSystemAdmin, groupId, user, profi
       {!loading && !isAdding && (
         visibleEvents.length === 0 ? (
           <CordelCard variant="default" useExtremeBorder={false} className="p-4 text-center">
-            <p className="text-xs opacity-75 font-semibold">Aucun événement planifié.</p>
+            <p className="text-xs opacity-75 font-semibold">{t('widgetAgenda.noEvents')}</p>
           </CordelCard>
         ) : (
           <>
@@ -567,13 +646,13 @@ export default function WidgetAgenda({ role, isSystemAdmin, groupId, user, profi
                             const userInscription = (event.inscriptions || []).find(ins => ins.userId === user.uid);
                             const userStatus = userInscription ? userInscription.status : null;
                             if (userStatus === 'present') {
-                              return <span className="text-[8px] font-black px-1.5 py-0.5 rounded-[4px_6px_3px_5px] uppercase tracking-wider badge-status-present leading-none select-none">Présent</span>;
+                              return <span className="text-[8px] font-black px-1.5 py-0.5 rounded-[4px_6px_3px_5px] uppercase tracking-wider badge-status-present leading-none select-none">{t('common.present')}</span>;
                             } else if (userStatus === 'absent') {
-                              return <span className="text-[8px] font-black px-1.5 py-0.5 rounded-[4px_6px_3px_5px] uppercase tracking-wider badge-status-absent leading-none select-none">Absent</span>;
+                              return <span className="text-[8px] font-black px-1.5 py-0.5 rounded-[4px_6px_3px_5px] uppercase tracking-wider badge-status-absent leading-none select-none">{t('common.absent')}</span>;
                             } else if (userStatus === 'confirm') {
-                              return <span className="text-[8px] font-black px-1.5 py-0.5 rounded-[4px_6px_3px_5px] uppercase tracking-wider badge-status-confirm leading-none select-none">À confirmer</span>;
+                              return <span className="text-[8px] font-black px-1.5 py-0.5 rounded-[4px_6px_3px_5px] uppercase tracking-wider badge-status-confirm leading-none select-none">{t('common.toConfirm')}</span>;
                             } else {
-                              return <span className="text-[8px] font-bold px-1.5 py-0.5 rounded-[4px_6px_3px_5px] uppercase tracking-wider badge-status-pending leading-none select-none">En attente</span>;
+                              return <span className="text-[8px] font-bold px-1.5 py-0.5 rounded-[4px_6px_3px_5px] uppercase tracking-wider badge-status-pending leading-none select-none">{t('common.pending')}</span>;
                             }
                           })()}
                         </div>
@@ -581,7 +660,7 @@ export default function WidgetAgenda({ role, isSystemAdmin, groupId, user, profi
                         {/* Subscriptions counter */}
                         {event.inscriptions && event.inscriptions.length > 0 && (
                           <span className="text-[8px] font-bold px-1.5 py-0.5 bg-encre-noire text-cordel-bg-light rounded-sm self-end shrink-0">
-                            {event.inscriptions.filter(i => i.status === 'present').length} présents
+                            {event.inscriptions.filter(i => i.status === 'present').length} {t('common.presentCountLabel')}
                           </span>
                         )}
                       </div>
@@ -602,7 +681,7 @@ export default function WidgetAgenda({ role, isSystemAdmin, groupId, user, profi
                   onClick={() => setShowAll(!showAll)}
                   className="text-[10px] px-3 py-1.5 uppercase tracking-widest font-black"
                 >
-                  {showAll ? "Voir moins" : "Voir tous les événements"}
+                  {showAll ? t('widgetAgenda.seeLessEvents') : t('widgetAgenda.seeAllEvents')}
                 </CordelButton>
               </div>
             )}

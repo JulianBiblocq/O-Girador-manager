@@ -20,6 +20,7 @@ const InventoryManager = React.lazy(() => import('./components/InventoryManager'
 const OrdersManager = React.lazy(() => import('./components/OrdersManager'));
 const AssociationSettings = React.lazy(() => import('./components/AssociationSettings'));
 const TreasuryManager = React.lazy(() => import('./components/TreasuryManager'));
+const StudioSocial = React.lazy(() => import('./components/StudioSocial'));
 
 export default function App() {
   const { t } = useTranslation();
@@ -129,8 +130,7 @@ export default function App() {
   const triggerInstallPrompt = async () => {
     if (!deferredPrompt) return;
     deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    console.log(`App - Résultat de l'installation PWA : ${outcome}`);
+    await deferredPrompt.userChoice;
     setDeferredPrompt(null);
     setInstallPromptAvailable(false);
   };
@@ -243,7 +243,7 @@ export default function App() {
         short_name: associationName || 'O Girador',
         theme_color: primaryCol,
         background_color: bgCol,
-        start_url: activeGroupId ? `/?groupe=${activeGroupId}` : '/',
+        start_url: window.location.origin + (activeGroupId ? `/?groupe=${activeGroupId}` : '/'),
         display: 'standalone',
         orientation: 'portrait',
         icons: [
@@ -266,7 +266,6 @@ export default function App() {
         document.head.appendChild(linkElement);
       }
       linkElement.href = manifestUrl;
-      console.log("App - Manifest PWA dynamique injecté !", manifest);
     };
 
     generateAndInjectManifest();
@@ -282,7 +281,6 @@ export default function App() {
         const userRef = doc(db, 'users', user.uid);
         updateDoc(userRef, { groupId: urlGroupId })
           .then(() => {
-            console.log(`App - Associé ou basculé automatiquement vers le groupe : ${urlGroupId}`);
             // Clean up the URL to hide the query parameter
             const newUrl = window.location.pathname;
             window.history.replaceState({}, document.title, newUrl);
@@ -521,6 +519,14 @@ export default function App() {
                 role={profileData?.role}
                 isSystemAdmin={profileData?.isSystemAdmin}
                 onBack={() => setCurrentView('system-admin')} 
+              />
+            ) : (currentView === 'studio-social' && (profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.isSystemAdmin)) ? (
+              <StudioSocial 
+                groupId={profileData?.groupId}
+                role={profileData?.role}
+                isSystemAdmin={profileData?.isSystemAdmin}
+                branding={branding}
+                onBack={() => setCurrentView('dashboard')} 
               />
             ) : (
               <Dashboard 

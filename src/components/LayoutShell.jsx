@@ -246,6 +246,16 @@ export default function LayoutShell({
 
                     <button
                       onClick={() => {
+                        if (onNavigateToView) onNavigateToView('studio-social');
+                        setIsDrawerOpen(false);
+                      }}
+                      className="theme-btn text-[10px] font-black uppercase tracking-wider py-2 px-3 text-left rounded-[4px_6px_3px_5px] flex items-center gap-2 hover:bg-cordel-hover cursor-pointer"
+                    >
+                      <XiloMegaphone size={14} /> {t('menu.studioSocial') || "Studio Social"}
+                    </button>
+
+                    <button
+                      onClick={() => {
                         if (onNavigateToView) onNavigateToView('treasury');
                         setIsDrawerOpen(false);
                       }}

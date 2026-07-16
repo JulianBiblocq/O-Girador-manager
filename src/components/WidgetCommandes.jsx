@@ -156,6 +156,7 @@ export default function WidgetCommandes({ groupId, user, profileData }) {
       await deleteDoc(doc(db, 'campaignRequests', requestId));
     } catch (err) {
       console.error("WidgetCommandes - Erreur de suppression :", err);
+      alert("Erreur lors de la suppression de votre demande de commande.");
     }
   };
 

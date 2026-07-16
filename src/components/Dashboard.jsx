@@ -68,6 +68,7 @@ export default function Dashboard({ user, profileData, onNavigateToTrombi, onNav
           user={user} 
           profileData={profileData} 
           onFocusModeChange={(isFocused) => setAgendaFocusMode(isFocused)}
+          onNavigateToView={onNavigateToView}
         />
       </div>
     );
@@ -277,6 +278,7 @@ export default function Dashboard({ user, profileData, onNavigateToTrombi, onNav
                   user={user} 
                   profileData={profileData} 
                   onFocusModeChange={(isFocused) => setAgendaFocusMode(isFocused)}
+                  onNavigateToView={onNavigateToView}
                 />
               );
               break;

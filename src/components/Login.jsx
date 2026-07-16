@@ -17,10 +17,7 @@ export default function Login({ branding }) {
     setAuthLoading(true);
     try {
       // Connect purely via popup to bypass sessionStorage partitioning on modern mobile browsers/PWAs
-      const result = await signInWithPopup(auth, googleProvider);
-      if (result) {
-        console.log("Login - Connexion réussie via Google Popup :", result.user);
-      }
+      await signInWithPopup(auth, googleProvider);
     } catch (error) {
       console.error("Erreur de connexion :", error);
       alert(t('login.connectError') + error.message);

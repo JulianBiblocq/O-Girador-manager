@@ -4,8 +4,10 @@ import { db } from '../firebase';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
 import { XiloMegaphone, XiloClose } from './XiloIcons';
+import { useTranslation } from './LanguageContext';
 
 export default function WidgetAnnonces({ groupId, profileData, role, isSystemAdmin }) {
+  const { t } = useTranslation();
   const [announcements, setAnnouncements] = useState([]);
   const [tagsDisponibles, setTagsDisponibles] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -124,7 +126,7 @@ export default function WidgetAnnonces({ groupId, profileData, role, isSystemAdm
   };
 
   const handleDelete = async (annId, annTitre) => {
-    const confirmDelete = window.confirm(`Voulez-vous supprimer l'annonce "${annTitre}" ?`);
+    const confirmDelete = window.confirm(`${t('widgetAnnonces.deleteConfirm') || "Voulez-vous supprimer l'annonce"} "${annTitre}" ?`);
     if (!confirmDelete) return;
 
     try {
@@ -161,7 +163,7 @@ export default function WidgetAnnonces({ groupId, profileData, role, isSystemAdm
       {/* Header bar */}
       <div className="flex justify-between items-center pl-1 pr-1 select-none">
         <h3 className="text-xs font-extrabold tracking-wider text-cordel-master-dark opacity-75 uppercase text-left flex items-center gap-1.5">
-          <XiloMegaphone size={16} className="text-cordel-wood" /> Le Mégaphone (Annonces)
+          <XiloMegaphone size={16} className="text-cordel-wood" /> {t('widgetAnnonces.title')}
         </h3>
         {!loading && isAdmin && !isAdding && (
           <CordelButton 
@@ -169,7 +171,7 @@ export default function WidgetAnnonces({ groupId, profileData, role, isSystemAdm
             onClick={() => setIsAdding(true)} 
             className="text-[10px] px-2 py-1 uppercase tracking-widest font-black"
           >
-            + Annoncer
+            {t('widgetAnnonces.announceBtn')}
           </CordelButton>
         )}
       </div>
@@ -194,14 +196,14 @@ export default function WidgetAnnonces({ groupId, profileData, role, isSystemAdm
           </button>
 
           <h4 className="panel-title text-sm font-bold text-cordel-wood mb-4">
-            Publier une annonce
+            {t('widgetAnnonces.publishTitle')}
           </h4>
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-3.5">
             {/* Titre */}
             <div className="flex flex-col gap-1">
               <label className="text-[8px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                Titre de l'annonce
+                {t('widgetAnnonces.annTitleLabel')}
               </label>
               <input
                 type="text"
@@ -209,7 +211,7 @@ export default function WidgetAnnonces({ groupId, profileData, role, isSystemAdm
                 onChange={(e) => setTitre(e.target.value)}
                 required
                 disabled={saving}
-                placeholder="Ex : Changement d'horaire..."
+                placeholder={t('widgetAnnonces.annTitlePlaceholder')}
                 className="theme-input text-xs font-bold py-1.5"
               />
             </div>
@@ -217,7 +219,7 @@ export default function WidgetAnnonces({ groupId, profileData, role, isSystemAdm
             {/* Message */}
             <div className="flex flex-col gap-1">
               <label className="text-[8px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                Message / Texte
+                {t('widgetAnnonces.annMsgLabel')}
               </label>
               <textarea
                 value={message}
@@ -225,7 +227,7 @@ export default function WidgetAnnonces({ groupId, profileData, role, isSystemAdm
                 required
                 disabled={saving}
                 rows="3"
-                placeholder="Décrivez votre annonce importante..."
+                placeholder={t('widgetAnnonces.annMsgPlaceholder')}
                 className="theme-input text-xs font-semibold py-1.5 resize-none w-full"
               />
             </div>
@@ -233,7 +235,7 @@ export default function WidgetAnnonces({ groupId, profileData, role, isSystemAdm
             {/* Cibles checklist */}
             <div className="flex flex-col gap-1 pt-1 border-t border-dashed border-cordel-master-dark/15">
               <label className="text-[8px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                Membres ciblés (Étiquettes)
+                {t('widgetAnnonces.targetsLabel')}
               </label>
               <div className="flex flex-wrap gap-1.5 p-2 border border-dashed border-encre-noire/25 rounded bg-[#fdfaf2] dark:bg-[#201d1a] max-h-24 overflow-y-auto">
                 <button
@@ -246,7 +248,7 @@ export default function WidgetAnnonces({ groupId, profileData, role, isSystemAdm
                       : 'bg-transparent text-encre-noire border-dashed border-encre-noire/30'
                   }`}
                 >
-                  📢 Tout le monde (Tous)
+                  📢 {t('widgetAnnonces.targetAll')}
                 </button>
 
                 <button
@@ -259,7 +261,7 @@ export default function WidgetAnnonces({ groupId, profileData, role, isSystemAdm
                       : 'bg-transparent text-encre-noire border-dashed border-encre-noire/30'
                   }`}
                 >
-                  👑 Admins / Bureau / Mestre
+                  👑 {t('widgetAnnonces.targetAdmins')}
                 </button>
 
                 {tagsDisponibles.map((tag) => {
@@ -286,7 +288,7 @@ export default function WidgetAnnonces({ groupId, profileData, role, isSystemAdm
             {/* Canaux de diffusion */}
             <div className="flex flex-col gap-1.5 pt-1.5 border-t border-dashed border-cordel-master-dark/15 text-left">
               <label className="text-[8px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                Canaux de diffusion
+                {t('widgetAnnonces.channelsLabel')}
               </label>
               <div className="flex flex-col gap-1.5 pl-1 select-none">
                 <label className="flex items-center gap-2 text-xs font-semibold cursor-pointer">
@@ -297,7 +299,7 @@ export default function WidgetAnnonces({ groupId, profileData, role, isSystemAdm
                     disabled={saving}
                     className="accent-cordel-wood scale-105"
                   />
-                  <span>Publier sur le tableau de bord de l'application (Mégaphone)</span>
+                  <span>{t('widgetAnnonces.channelApp')}</span>
                 </label>
                 <label className="flex items-center gap-2 text-xs font-semibold cursor-pointer">
                   <input
@@ -307,7 +309,7 @@ export default function WidgetAnnonces({ groupId, profileData, role, isSystemAdm
                     disabled={saving}
                     className="accent-cordel-wood scale-105"
                   />
-                  <span>Envoyer également par Email</span>
+                  <span>{t('widgetAnnonces.channelEmail')}</span>
                 </label>
               </div>
             </div>
@@ -321,7 +323,7 @@ export default function WidgetAnnonces({ groupId, profileData, role, isSystemAdm
                 onClick={() => setIsAdding(false)}
                 className="text-xs px-3 py-1.5"
               >
-                Annuler
+                {t('common.cancel')}
               </CordelButton>
               <CordelButton
                 type="submit"
@@ -330,7 +332,7 @@ export default function WidgetAnnonces({ groupId, profileData, role, isSystemAdm
                 disabled={saving || !titre.trim() || !message.trim()}
                 className="text-xs px-4 py-1.5 font-bold"
               >
-                {saving ? "..." : "Publier"}
+                {saving ? "..." : t('widgetAnnonces.publishBtn')}
               </CordelButton>
             </div>
           </form>
@@ -341,7 +343,7 @@ export default function WidgetAnnonces({ groupId, profileData, role, isSystemAdm
       {!loading && !isAdding && (
         visibleAnnouncements.length === 0 ? (
           <CordelCard variant="default" useExtremeBorder={false} className="p-4 text-center bg-cordel-bg opacity-75 select-none">
-            <p className="text-[10px] italic font-semibold">Aucune annonce officielle active.</p>
+            <p className="text-[10px] italic font-semibold">{t('widgetAnnonces.noAnnouncements')}</p>
           </CordelCard>
         ) : (
           <div className="flex flex-col gap-3">
@@ -364,7 +366,7 @@ export default function WidgetAnnonces({ groupId, profileData, role, isSystemAdm
                     <div className="flex-1 min-w-0">
                       {/* Meta */}
                       <div className="flex flex-wrap items-center gap-1.5 text-[8px] font-bold text-cordel-master-dark/70 select-none">
-                        <span>📢 ANNONCE</span>
+                        <span>📢 {t('widgetAnnonces.roleLabel')}</span>
                         <span>•</span>
                         <span>{formattedDate}</span>
                         <span>•</span>
@@ -401,7 +403,7 @@ export default function WidgetAnnonces({ groupId, profileData, role, isSystemAdm
                       type="button"
                       onClick={() => handleDelete(ann.id, ann.titre)}
                       className="absolute top-2 right-2 p-1 border border-dashed border-red-400 hover:border-red-600 text-red-500 hover:text-red-700 bg-transparent rounded cursor-pointer flex items-center justify-center shrink-0"
-                      title="Supprimer l'annonce"
+                      title={t('widgetAnnonces.deleteTitle') || "Supprimer l'annonce"}
                     >
                       <XiloClose size={8} />
                     </button>

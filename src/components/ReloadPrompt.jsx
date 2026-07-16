@@ -14,7 +14,12 @@ export default function ReloadPrompt() {
     updateServiceWorker,
   } = useRegisterSW({
     onRegistered(r) {
-      console.log('ReloadPrompt - SW Registered:', r);
+      if (r) {
+        // Periodically check for updates (every hour)
+        setInterval(() => {
+          r.update();
+        }, 60 * 60 * 1000);
+      }
     },
     onRegisterError(error) {
       console.error('ReloadPrompt - SW Registration Error:', error);
@@ -24,7 +29,6 @@ export default function ReloadPrompt() {
   if (!needRefresh) return null;
 
   const handleUpdate = () => {
-    console.log('ReloadPrompt - User confirmed update. Skipping waiting and forcing reload...');
     updateServiceWorker(true);
     // Explicit force reload to guarantee bypass of any intermediate browser caches
     setTimeout(() => {

@@ -17,9 +17,6 @@ export const auth = getAuth(app);
 
 // Enforce browserLocalPersistence for reliable offline/standalone session persistence
 setPersistence(auth, browserLocalPersistence)
-  .then(() => {
-    console.log("Firebase Auth - Local persistence explicitly set.");
-  })
   .catch((err) => {
     console.error("Firebase Auth - Error setting persistence:", err);
   });

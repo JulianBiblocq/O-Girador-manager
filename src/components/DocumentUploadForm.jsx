@@ -55,7 +55,6 @@ export default function DocumentUploadForm({ groupId, varalCategories = [], onCl
           annee: parseInt(annee, 10) || new Date().getFullYear(),
         });
 
-        console.log("DocumentUploadForm - Document mis a jour avec succes !");
         onClose();
       } catch (error) {
         console.error("DocumentUploadForm - Erreur d'update :", error);
@@ -115,7 +114,6 @@ export default function DocumentUploadForm({ groupId, varalCategories = [], onCl
         order: 9999
       });
 
-      console.log("DocumentUploadForm - Document mis en ligne avec succès !");
       onClose();
     } catch (error) {
       console.error("DocumentUploadForm - Erreur d'upload :", error);

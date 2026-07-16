@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { doc, onSnapshot, updateDoc, setDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '../firebase';
-import LayoutShell from './LayoutShell';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
 import { useTranslation } from './LanguageContext';
@@ -57,7 +56,6 @@ export default function AssociationSettings({ groupId, onBack, role, isSystemAdm
   const [majoriteFeminine, setMajoriteFeminine] = useState(false);
   const [indemniteKilometrique, setIndemniteKilometrique] = useState(0);
   const [adresseLocal, setAdresseLocal] = useState('');
-  const [montantCotisation, setMontantCotisation] = useState(0);
   const [montantAdhesion, setMontantAdhesion] = useState(0);
   const [optionsCotisation, setOptionsCotisation] = useState([]);
   const [lienPaiementExterne, setLienPaiementExterne] = useState('');
@@ -138,7 +136,6 @@ export default function AssociationSettings({ groupId, onBack, role, isSystemAdm
         
         const adhesionVal = data.montantAdhesion !== undefined ? data.montantAdhesion : (data.montantCotisation || 0);
         setMontantAdhesion(adhesionVal);
-        setMontantCotisation(adhesionVal);
         setOptionsCotisation(Array.isArray(data.optionsCotisation) ? data.optionsCotisation : []);
         setLienPaiementExterne(data.lienPaiementExterne || '');
         setInstructionsPaiement(data.instructionsPaiement || '');

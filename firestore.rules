@@ -21,14 +21,26 @@ service cloud.firestore {
 
     // Collection Rules
 
-    // Users: Read if authenticated. Write if editing own profile (without modifying paymentStatus) or if admin/mestre.
+    // Users: Read if authenticated. Write if editing own profile (without privilege escalation / status tampering) or if admin/mestre.
     match /users/{userId} {
       allow read: if isAuthenticated();
       allow write: if isAuthenticated() && (
         isAdminOrMestre() || (
-          request.auth.uid == userId && 
-          (resource == null ? !request.resource.data.keys().hasAny(['paymentStatus']) 
-                            : !request.resource.data.diff(resource.data).affectedKeys().hasAny(['paymentStatus']))
+          request.auth.uid == userId && (
+            resource == null 
+              ? (
+                  (!request.resource.data.keys().hasAny(['isSystemAdmin']) || request.resource.data.isSystemAdmin == false) &&
+                  (!request.resource.data.keys().hasAny(['paymentStatus']) || request.resource.data.paymentStatus == 'unpaid') &&
+                  (!request.resource.data.keys().hasAny(['role']) || request.resource.data.role == 'membre') &&
+                  (!request.resource.data.keys().hasAny(['statutActuel']) || request.resource.data.statutActuel == 'active') &&
+                  (!request.resource.data.keys().hasAny(['adhesionBase']) || request.resource.data.adhesionBase == true) &&
+                  (!request.resource.data.keys().hasAny(['selectedOptions']) || request.resource.data.selectedOptions.size() == 0) &&
+                  (!request.resource.data.keys().hasAny(['tags']) || request.resource.data.tags.size() == 0)
+                )
+              : !request.resource.data.diff(resource.data).affectedKeys().hasAny([
+                  'paymentStatus', 'role', 'isSystemAdmin', 'adhesionBase', 'selectedOptions', 'tags', 'statutActuel'
+                ])
+          )
         )
       );
     }
@@ -63,11 +75,14 @@ service cloud.firestore {
       allow write: if isAdminOrMestre();
     }
 
-    // Events: Read if authenticated. Create/Delete for admins/mestres. Update allowed for RSVPs.
+    // Events: Read if authenticated. Create/Delete for admins/mestres. Update allowed for RSVPs (members) or full update for admins/mestres.
     match /events/{event} {
       allow read: if isAuthenticated();
       allow create, delete: if isAdminOrMestre();
-      allow update: if isAuthenticated();
+      allow update: if isAuthenticated() && (
+        isAdminOrMestre() || 
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['inscriptions'])
+      );
     }
 
     // Forum: Read and Write allowed for all authenticated members.

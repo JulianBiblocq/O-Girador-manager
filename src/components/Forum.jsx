@@ -192,7 +192,7 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
               : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
           }`}
         >
-          💬 Discussions
+          💬 {t('forum.discussionsTab') || "Discussions"}
         </button>
         <button
           type="button"
@@ -206,7 +206,7 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
               : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
           }`}
         >
-          ✉️ MP / Boîte de réception
+          ✉️ {t('forum.inboxTab') || "MP / Boîte de réception"}
           {unreadInboxCount > 0 && (
             <span className="absolute -top-1.5 -right-1.5 w-3.5 h-3.5 bg-red-600 text-white text-[7px] font-black rounded-full flex items-center justify-center animate-pulse">
               {unreadInboxCount}
@@ -219,12 +219,12 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
         /* Private Messages Inbox Listing */
         <div className="flex flex-col gap-4">
           <h2 className="panel-title text-sm font-extrabold text-cordel-master-dark opacity-80 uppercase px-1">
-            Mes Discussions Privées
+            {t('forum.privateConversationsTitle') || "Mes Discussions Privées"}
           </h2>
 
           {conversations.length === 0 ? (
             <CordelCard variant="default" useExtremeBorder={false} className="p-8 text-center bg-cordel-bg">
-              <p className="text-xs opacity-75 font-semibold">Aucune discussion privée pour le moment. Allez dans le Trombinoscope pour contacter un membre !</p>
+              <p className="text-xs opacity-75 font-semibold">{t('forum.noPrivateConversations') || "Aucune discussion privée pour le moment. Allez dans le Trombinoscope pour contacter un membre !"}</p>
             </CordelCard>
           ) : (
             <div className="flex flex-col gap-3">
@@ -255,7 +255,7 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
                       <p className={`text-[11px] truncate max-w-full text-cordel-master-dark ${
                         isUnread ? 'font-black text-encre-noire' : 'font-semibold opacity-75'
                       }`}>
-                        {isLastMessageFromMe ? "Vous : " : ""}{conv.lastMessage?.content}
+                        {isLastMessageFromMe ? `${t('common.you') || "Vous"} : ` : ""}{conv.lastMessage?.content}
                       </p>
                       <span className="text-[8px] font-black uppercase tracking-wider opacity-50 mt-0.5">
                         {formattedTime}

@@ -29,7 +29,13 @@ export const fr = {
     none: "Aucun",
     saveSuccess: "Enregistré avec succès !",
     saveError: "Erreur lors de l'enregistrement.",
-    settings: "Paramètres"
+    settings: "Paramètres",
+    you: "Vous",
+    present: "Présent",
+    absent: "Absent",
+    toConfirm: "À confirmer",
+    pending: "En attente",
+    presentCountLabel: "présents"
   },
   menu: {
     dashboard: "Tableau de bord",
@@ -43,7 +49,8 @@ export const fr = {
     layoutEditor: "Mise en page",
     tags: "Badges",
     systemAdmin: "Admin Système",
-    adminHeader: "Administration"
+    adminHeader: "Administration",
+    studioSocial: "Studio Social"
   },
   login: {
     title: "O Girador",
@@ -168,7 +175,8 @@ export const fr = {
     levelBeginner: "Débutant",
     changePhoto: "Changer ma photo",
     uploading: "Téléversement...",
-    personalInfo: "Informations personnelles"
+    personalInfo: "Informations personnelles",
+    takePhoto: "Prendre une photo"
   },
   widgetMotMestre: {
     title: "Le Mot du Mestre",
@@ -178,7 +186,8 @@ export const fr = {
     cancel: "Annuler",
     save: "Enregistrer",
     editTooltip: "Modifier le mot du mestre",
-    errorSave: "Erreur lors de la sauvegarde du message."
+    errorSave: "Erreur lors de la sauvegarde du message.",
+    welcomeDefault: "Bienvenue dans notre espace !"
   },
   widgetAnnonces: {
     title: "Le Mégaphone (Annonces)",
@@ -227,10 +236,51 @@ export const fr = {
     levelInter: "Intermédiaires & Confirmés",
     levelConfirm: "Confirmés uniquement",
     noEvents: "Aucun événement à venir.",
-    errorCreate: "Erreur lors de la création de l'événement."
+    errorCreate: "Erreur lors de la création de l'événement.",
+    lienSocialLabel: "Lien réseau social / Événement externe (URL)",
+    imageUrlLabel: "Image de l'événement / Affiche",
+    uploadingImage: "Téléversement...",
+    uploadSuccess: "Image téléversée !",
+    uploadError: "Erreur lors du téléversement de l'image."
   },
   widgetTreasury: {
-    title: "Ma Trésorerie"
+    title: "Ma Trésorerie",
+    dashboardTitle: "Tableau de Bord Trésorerie",
+    infoText: "Suivez les cotisations de vos membres actifs. La méthode de paiement est configurée dans les paramètres de l'association. Les modifications apportées aux statuts des membres sont enregistrées en temps réel.",
+    activeConfig: "Configuration Active :",
+    baseAdhesion: "Adhésion base :",
+    options: "Options :",
+    link: "Lien :",
+    activeMembers: "Membres Actifs",
+    upToDate: "À Jour",
+    partial: "Partiel",
+    unpaid: "Non Payé",
+    searchLabel: "Rechercher un membre",
+    searchPlaceholder: "Entrez un prénom ou nom...",
+    statusLabel: "Statut",
+    allStatuses: "Tous les statuts",
+    statusPaid: "À jour ✅",
+    statusPartial: "Partiel ⚠️",
+    statusUnpaid: "Non payé ❌",
+    exportCSV: "Exporter CSV",
+    noMembers: "Aucun membre ne correspond aux critères.",
+    tableMemberName: "Nom du membre",
+    tableBaseAdhesion: "Adhésion de base",
+    tableOptions: "Options choisies",
+    tableTotalDue: "Total dû",
+    tablePaymentStatus: "Statut du paiement",
+    disabledStatus: "Désactivé",
+    noOption: "Aucune option",
+    selectOptions: "Sélectionner les options :",
+    noOptionAvailable: "Aucune option disponible",
+    accessDenied: "ACCÈS REFUSÉ",
+    accessDeniedDesc: "Vous devez être administrateur pour accéder au module de trésorerie.",
+    successBaseUpdate: "Adhésion de base mise à jour avec succès !",
+    errorBaseUpdate: "Erreur lors de la modification de l'adhésion de base :",
+    successOptionsUpdate: "Options de cotisation mises à jour avec succès !",
+    errorOptionsUpdate: "Erreur lors de la mise à jour des options :",
+    successStatusUpdate: "Statut du paiement mis à jour !",
+    errorStatusUpdate: "Impossible de modifier le statut de paiement :"
   },
   widgetCommandes: {
     title: "Commande Groupée de Matériel",
@@ -273,23 +323,7 @@ export const fr = {
     docShared: "Partagé le",
     downloadBtn: "Télécharger"
   },
-  forum: {
-    title: "Le Porte-Voix (Forum)",
-    backBtn: "← Retour",
-    newThreadBtn: "+ Nouveau Sujet",
-    createTitle: "Créer une discussion",
-    threadTitleLabel: "Titre de la discussion",
-    threadTitlePlaceholder: "Saisissez un titre clair...",
-    categoryLabel: "Catégorie",
-    msgLabel: "Votre message initial",
-    msgPlaceholder: "Écrivez les détails ici...",
-    publishBtn: "Lancer la discussion",
-    noThreads: "Aucune discussion en cours.",
-    loading: "Chargement des sujets...",
-    replies: "réponses",
-    lastMod: "Modifié le",
-    by: "Par"
-  },
+
   threadView: {
     repliesTitle: "Réponses",
     replyPlaceholder: "Écrivez votre réponse...",
@@ -417,7 +451,10 @@ export const fr = {
     createBtn: "Ajouter",
     activeTags: "Étiquettes actives",
     noTags: "Aucune étiquette configurée.",
-    deleteConfirm: "Voulez-vous supprimer l'étiquette ?"
+    deleteConfirm: "Voulez-vous supprimer l'étiquette ?",
+    availableTags: "Étiquettes disponibles",
+    deleteConfirmText: "Voulez-vous vraiment supprimer l'étiquette \"{tag}\" ?",
+    deleteTitle: "Supprimer cette étiquette"
   },
   associationSettings: {
     title: "Paramètres Association",
@@ -444,12 +481,61 @@ export const fr = {
     successMsg: "Paramètres enregistrés !",
     errorMsg: "Erreur lors de la sauvegarde.",
     sequencerLabel: "Lien du Séquenceur de la Roda (Révisions)",
-    linkedInstrumentsHeading: "Instruments Liés / Jumelés",
+    linkedInstrumentsHeading: "Instruments Liés / Pupitres",
     linkBtn: "Lier / Jumeler",
     inst1Label: "Premier instrument",
     inst2Label: "Deuxième instrument",
     linkedConfigured: "Paires d'instruments liées",
-    noLinked: "Aucun instrument lié pour le moment."
+    noLinked: "Aucun instrument lié pour le moment.",
+    infoText: "Personnalisez l'identité visuelle de votre association et configurez les champs requis pour le profil de vos adhérents.",
+    logoLabel: "Logo de l'Association",
+    colorsHeading: "Thème de Couleurs",
+    colorPrimary: "Primaire",
+    colorSecondary: "Secondaire",
+    colorBackground: "Fond d'écran",
+    colorText: "Texte",
+    viewOnline: "Voir le document en ligne",
+    configuredInstruments: "Instruments configurés",
+    noInstrumentsConfigured: "Aucun instrument configuré.",
+    pupitreNameLabel: "Nom du Pupitre (Optionnel - ex: Alfaias, Sementes...)",
+    pupitreNamePlaceholder: "Saisissez un nom de pupitre personnalisé...",
+    createPupitreBtn: "Créer le Pupitre",
+    configuredPupitres: "Pupitres configurés",
+    noPupitresConfigured: "Aucun pupitre configuré pour le moment.",
+    sequencerHeading: "Lien du Séquenceur",
+    invitationHeading: "Invitation au groupe",
+    invitationDesc: "Permettez aux nouveaux membres de s'inscrire et de rejoindre directement votre association en partageant ce lien d'invitation unique.",
+    copyInvitationBtn: "Copier le lien d'invitation",
+    terminologyHeading: "Terminologie & Rendu",
+    majorityFemale: "Groupe à majorité féminine (Appliquer le féminin sur les textes au pluriel)",
+    majorityFemaleDesc: "Active le pluriel féminin pour les termes généraux (ex: \"Toutes les inscrites\", \"Les batuqueiras\"). Les rôles individuels restent fidèles au genre de chaque membre.",
+    kmHeading: "Indemnité Kilométrique & Point de Départ",
+    kmRateLabel: "Tarif de remboursement par kilomètre (€/km)",
+    localAddressLabel: "Adresse du local / Point de rassemblement par défaut",
+    treasuryHeading: "Trésorerie (Cotisations)",
+    extraCotisationsLabel: "Options de Cotisations supplémentaires",
+    addCotisationBtn: "+ Ajouter une cotisation",
+    externalPaymentLinkLabel: "Lien de paiement externe (HelloAsso, PayPal...)",
+    paymentInstructionsLabel: "Instructions de paiement",
+    paymentInstructionsPlaceholder: "Expliquez comment payer (chèque, virement, précisez la référence de paiement...)",
+    fieldActive: "Actif",
+    saveConfigBtn: "Enregistrer la configuration",
+    instrumentExistsAlert: "Cet instrument existe déjà !",
+    linkExistsAlert: "Cette liaison existe déjà !",
+    invitationCopiedAlert: "Lien d'invitation copié dans le presse-papiers !",
+    docImageRightsTitle: "Charte de Droit à l'image (PDF)",
+    docMedicalTitle: "Modèle de certificat médical / Règlement santé (PDF)",
+    uploadingLogo: "Envoi du logo...",
+    selectedFile: "Sélectionné :",
+    fieldFilledByMemberSelect: "L'adhérent (Profil & Inscription)",
+    fieldFilledByAdminSelect: "L'administrateur (Console Admin uniquement)",
+    cantCopyInvitation: "Impossible de copier le lien automatiquement. Voici le lien d'invitation : ",
+    invitationMessage: "Rejoins notre groupe sur O Girador Manager : ",
+    removeBtn: "Supprimer",
+    selectInstrumentsMin: "Sélectionner les instruments du pupitre (minimum 2)",
+    accessDeniedDesc: "Vous devez être administrateur pour configurer l'association.",
+    instrumentExistsAlert: "Cet instrument existe déjà !",
+    linkExistsAlert: "Ce pupitre existe déjà !"
   },
   systemAdmin: {
     title: "Admin Système",
@@ -554,7 +640,36 @@ export const fr = {
     Covoiturage: "Covoiturage",
     Autre: "Autre",
     // Time relative label
-    atTime: "{time} le {date}"
+    atTime: "{time} le {date}",
+    // New keys
+    discussionsTab: "Discussions",
+    inboxTab: "MP / Boîte de réception",
+    privateConversationsTitle: "Mes Discussions Privées",
+    noPrivateConversations: "Aucune discussion privée pour le moment. Allez dans le Trombinoscope pour contacter un membre !",
+    writeMessagePlaceholder: "Rédiger un message...",
+    noMessageInbox: "Aucun message. Lancez la discussion !"
+  },
+  studioSocial: {
+    title: "Studio Social",
+    selectEvent: "Sélectionner un événement",
+    selectEventPlaceholder: "Choisissez un événement...",
+    noUpcomingEvents: "Aucun événement trouvé.",
+    backgroundSource: "Source de l'image de fond",
+    eventImage: "Affiche de l'événement",
+    selectVaral: "Bibliothèque du Varal",
+    uploadAvol: "Uploader à la volée",
+    noVaralImages: "Aucune image trouvée dans le Varal.",
+    noEventImage: "Cet événement n'a pas d'affiche associée.",
+    copyBtn: "Copier le texte",
+    copySuccess: "Texte copié dans le presse-papiers !",
+    downloadBtn: "Télécharger l'image",
+    shareBtn: "Partager sur les réseaux",
+    previewTitle: "Prévisualisation du Visuel",
+    textTitle: "Texte de la publication",
+    hashtagsLabel: "Hashtags de l'association",
+    shareTitle: "Nouvelle publication",
+    shareText: "Découvrez notre prochain événement !",
+    loadingImages: "Chargement des images..."
   }
 };
 

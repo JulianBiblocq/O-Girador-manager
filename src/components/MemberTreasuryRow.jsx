@@ -48,7 +48,7 @@ export default function MemberTreasuryRow({ member, optionsCotisation, baseAdhes
       });
     } catch (err) {
       console.error("MemberTreasuryRow - Error toggling base adhesion:", err);
-      alert("Erreur lors de la modification de l'adhésion de base : " + (err.message || err));
+      alert((t('widgetTreasury.errorBaseUpdate') || "Erreur lors de la modification de l'adhésion de base : ") + (err.message || err));
     }
   };
 
@@ -66,7 +66,7 @@ export default function MemberTreasuryRow({ member, optionsCotisation, baseAdhes
       });
     } catch (err) {
       console.error("MemberTreasuryRow - Error updating options:", err);
-      alert("Erreur lors de la mise à jour des options : " + (err.message || err));
+      alert((t('widgetTreasury.errorOptionsUpdate') || "Erreur lors de la mise à jour des options : ") + (err.message || err));
     }
   };
 
@@ -78,7 +78,7 @@ export default function MemberTreasuryRow({ member, optionsCotisation, baseAdhes
       });
     } catch (err) {
       console.error("MemberTreasuryRow - Error updating payment status:", err);
-      alert("Impossible de modifier le statut de paiement : " + (err.message || err));
+      alert((t('widgetTreasury.errorStatusUpdate') || "Impossible de modifier le statut de paiement : ") + (err.message || err));
     }
   };
 
@@ -103,7 +103,7 @@ export default function MemberTreasuryRow({ member, optionsCotisation, baseAdhes
 
       {/* 2. Base Adhesion (Col span 2) */}
       <div className="md:col-span-2 flex items-center md:justify-center gap-2 border-t md:border-t-0 border-dashed border-cordel-master-dark/10 pt-2 md:pt-0">
-        <span className="md:hidden text-[9px] font-extrabold uppercase tracking-wide text-cordel-master-dark">Adhésion de base :</span>
+        <span className="md:hidden text-[9px] font-extrabold uppercase tracking-wide text-cordel-master-dark">{t('widgetTreasury.tableBaseAdhesion')} :</span>
         <label className="flex items-center gap-1.5 cursor-pointer select-none">
           <input
             type="checkbox"
@@ -112,7 +112,7 @@ export default function MemberTreasuryRow({ member, optionsCotisation, baseAdhes
             className="theme-checkbox h-4 w-4 text-cordel-wood focus:ring-cordel-wood border-encre-noire rounded cursor-pointer"
           />
           <span className={`text-[10px] font-bold ${hasBaseAdhesion ? 'text-green-700 dark:text-green-400 font-extrabold' : 'text-neutral-500'}`}>
-            {hasBaseAdhesion ? `${baseAdhesionAmount} €` : 'Désactivé'}
+            {hasBaseAdhesion ? `${baseAdhesionAmount} €` : (t('widgetTreasury.disabledStatus') || 'Désactivé')}
           </span>
         </label>
       </div>
@@ -120,20 +120,20 @@ export default function MemberTreasuryRow({ member, optionsCotisation, baseAdhes
       {/* 3. Chosen Options (Col span 3) */}
       <div className="md:col-span-3 flex flex-col items-start gap-1 border-t md:border-t-0 border-dashed border-cordel-master-dark/10 pt-2 md:pt-0 relative" ref={dropdownRef}>
         <div className="flex items-center justify-between w-full md:w-auto gap-2">
-          <span className="md:hidden text-[9px] font-extrabold uppercase tracking-wide text-cordel-master-dark">Options :</span>
+          <span className="md:hidden text-[9px] font-extrabold uppercase tracking-wide text-cordel-master-dark">{t('widgetTreasury.options')} :</span>
           <button
             type="button"
             onClick={() => setShowOptionsDropdown(!showOptionsDropdown)}
             className="text-[9px] font-black uppercase tracking-wider bg-cordel-bg-light border border-encre-noire px-2.5 py-1 rounded-[4px_6px_3px_5px] shadow-[1px_1px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:bg-neutral-100 cursor-pointer flex items-center gap-1"
           >
-            ⚙️ Options {activeOptions.length > 0 ? `(${activeOptions.length})` : ''} ▾
+            ⚙️ {t('widgetTreasury.options')} {activeOptions.length > 0 ? `(${activeOptions.length})` : ''} ▾
           </button>
         </div>
 
         {/* Selected Options Tags */}
         <div className="flex flex-wrap gap-1 mt-1">
           {activeOptions.length === 0 ? (
-            <span className="text-[8px] italic text-neutral-400">Aucune option</span>
+            <span className="text-[8px] italic text-neutral-400">{t('widgetTreasury.noOption')}</span>
           ) : (
             activeOptions.map(opt => (
               <span 
@@ -151,10 +151,10 @@ export default function MemberTreasuryRow({ member, optionsCotisation, baseAdhes
         {showOptionsDropdown && (
           <div className="absolute top-8 left-0 z-20 w-52 bg-cordel-bg-light border-2 border-encre-noire p-2.5 rounded-[6px_4px_8px_5px] shadow-[3px_3px_0px_0px_#181716] flex flex-col gap-1.5 text-left max-h-48 overflow-y-auto">
             <span className="text-[8px] font-black uppercase tracking-wider text-cordel-wood border-b border-dashed border-encre-noire/10 pb-1 mb-1">
-              Sélectionner les options :
+              {t('widgetTreasury.selectOptions')}
             </span>
             {optionsCotisation.length === 0 ? (
-              <span className="text-[9px] italic text-neutral-400 p-1">Aucune option disponible</span>
+              <span className="text-[9px] italic text-neutral-400 p-1">{t('widgetTreasury.noOptionAvailable')}</span>
             ) : (
               optionsCotisation.map(opt => {
                 const isSelected = selectedOptionIds.includes(opt.id);
@@ -180,7 +180,7 @@ export default function MemberTreasuryRow({ member, optionsCotisation, baseAdhes
 
       {/* 4. Total Due (Col span 2) */}
       <div className="md:col-span-2 flex items-center md:justify-center gap-2 border-t md:border-t-0 border-dashed border-cordel-master-dark/10 pt-2 md:pt-0">
-        <span className="md:hidden text-[9px] font-extrabold uppercase tracking-wide text-cordel-master-dark">Total dû :</span>
+        <span className="md:hidden text-[9px] font-extrabold uppercase tracking-wide text-cordel-master-dark">{t('widgetTreasury.tableTotalDue')} :</span>
         <span className="text-sm font-black text-cordel-wood bg-[#fbf5e6] dark:bg-black/25 px-2 py-0.5 border border-dashed border-cordel-wood/30 rounded">
           {totalDue} €
         </span>
@@ -188,7 +188,7 @@ export default function MemberTreasuryRow({ member, optionsCotisation, baseAdhes
 
       {/* 5. Payment Status (Col span 2) */}
       <div className="md:col-span-2 flex items-center md:justify-end gap-2 border-t md:border-t-0 border-dashed border-cordel-master-dark/10 pt-2 md:pt-0 justify-between w-full md:w-auto">
-        <span className="md:hidden text-[9px] font-extrabold uppercase tracking-wide text-cordel-master-dark">Statut :</span>
+        <span className="md:hidden text-[9px] font-extrabold uppercase tracking-wide text-cordel-master-dark">{t('widgetTreasury.statusLabel')} :</span>
         <select
           value={currentStatus}
           onChange={(e) => handleUpdateStatus(e.target.value)}
@@ -200,9 +200,9 @@ export default function MemberTreasuryRow({ member, optionsCotisation, baseAdhes
                 : 'border-red-600/40 text-red-700 dark:text-red-400'
           }`}
         >
-          <option value="unpaid">❌ Non payé</option>
-          <option value="partial">⚠️ Partiel</option>
-          <option value="paid">✅ À jour</option>
+          <option value="unpaid">{t('widgetTreasury.statusUnpaid')}</option>
+          <option value="partial">{t('widgetTreasury.statusPartial')}</option>
+          <option value="paid">{t('widgetTreasury.statusPaid')}</option>
         </select>
       </div>
 

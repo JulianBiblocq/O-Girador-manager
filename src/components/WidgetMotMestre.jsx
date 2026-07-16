@@ -4,8 +4,10 @@ import { db } from '../firebase';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
 import { XiloChisel, XiloClose } from './XiloIcons';
+import { useTranslation } from './LanguageContext';
 
 export default function WidgetMotMestre({ role, isSystemAdmin, groupId, profileData }) {
+  const { t } = useTranslation();
   const [motDuMestre, setMotDuMestre] = useState('');
   const [auteurNom, setAuteurNom] = useState('');
   const [loading, setLoading] = useState(true);
@@ -43,7 +45,7 @@ export default function WidgetMotMestre({ role, isSystemAdmin, groupId, profileD
   }, [groupId]);
 
   const handleEditToggle = () => {
-    setDraftText(motDuMestre || "Bienvenue dans notre espace !");
+    setDraftText(motDuMestre || t('widgetMotMestre.welcomeDefault'));
     setIsEditing(true);
   };
 
@@ -63,7 +65,7 @@ export default function WidgetMotMestre({ role, isSystemAdmin, groupId, profileD
       setIsEditing(false);
     } catch (error) {
       console.error("WidgetMotMestre - Erreur setDoc :", error);
-      alert("Erreur lors de la sauvegarde du message.");
+      alert(t('widgetMotMestre.errorSave'));
     } finally {
       setSaving(false);
     }
@@ -73,7 +75,7 @@ export default function WidgetMotMestre({ role, isSystemAdmin, groupId, profileD
     setIsEditing(false);
   };
 
-  const displayedMessage = motDuMestre || "Bienvenue dans notre espace !";
+  const displayedMessage = motDuMestre || t('widgetMotMestre.welcomeDefault');
 
   if (!loading && !isAuthorized && (!motDuMestre || !motDuMestre.trim())) {
     return null;
@@ -95,7 +97,7 @@ export default function WidgetMotMestre({ role, isSystemAdmin, groupId, profileD
                 onClick={handleCancel}
                 disabled={saving}
                 className="theme-btn bg-neutral-200 text-encre-noire p-1.5 rounded-[4px_6px_3px_5px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none cursor-pointer select-none disabled:opacity-50 flex items-center justify-center"
-                title="Annuler"
+                title={t('widgetMotMestre.cancel')}
               >
                 <XiloClose size={12} />
               </button>
@@ -103,7 +105,7 @@ export default function WidgetMotMestre({ role, isSystemAdmin, groupId, profileD
                 onClick={handleSave}
                 disabled={saving}
                 className="theme-btn bg-cordel-vert text-encre-noire p-1.5 rounded-[4px_6px_3px_5px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none cursor-pointer select-none disabled:opacity-50 flex items-center justify-center"
-                title="Enregistrer"
+                title={t('widgetMotMestre.save')}
               >
                 {saving ? "..." : (
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" className="xilo-icon">
@@ -116,7 +118,7 @@ export default function WidgetMotMestre({ role, isSystemAdmin, groupId, profileD
             <button 
               onClick={handleEditToggle}
               className="theme-btn bg-cordel-bg-light hover:bg-cordel-hover p-1.5 rounded-[4px_6px_3px_5px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none cursor-pointer select-none flex items-center justify-center"
-              title="Modifier le mot du mestre"
+              title={t('widgetMotMestre.editTooltip')}
             >
               <XiloChisel size={12} />
             </button>
@@ -137,7 +139,7 @@ export default function WidgetMotMestre({ role, isSystemAdmin, groupId, profileD
           
           <div className="flex-1 pr-12 min-h-[64px]">
             <h3 className="text-xs uppercase font-extrabold tracking-wider text-cordel-wood mb-1">
-              Le Mot du Mestre
+              {t('widgetMotMestre.title')}
             </h3>
             
             {isEditing ? (
@@ -147,7 +149,7 @@ export default function WidgetMotMestre({ role, isSystemAdmin, groupId, profileD
                 disabled={saving}
                 className="theme-input w-full min-h-[80px] text-sm resize-none disabled:opacity-50"
                 rows="3"
-                placeholder="Entrez votre message ici..."
+                placeholder={t('widgetMotMestre.placeholder')}
               />
             ) : (
               <p className="text-sm italic leading-relaxed font-medium whitespace-pre-wrap">
@@ -157,7 +159,7 @@ export default function WidgetMotMestre({ role, isSystemAdmin, groupId, profileD
 
             {!isEditing && (
               <div className="text-right mt-2 text-[10px] font-bold uppercase tracking-widest opacity-65">
-                — Signé {auteurNom || "L'équipe"}
+                — {t('widgetMotMestre.signedBy') || "Signé"} {auteurNom || t('widgetMotMestre.team') || "L'équipe"}
               </div>
             )}
           </div>

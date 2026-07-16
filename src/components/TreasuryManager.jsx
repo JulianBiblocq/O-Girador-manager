@@ -94,12 +94,18 @@ export default function TreasuryManager({ groupId, onBack, role, isSystemAdmin }
 
   // Export to Excel (CSV)
   const exportToCSV = () => {
-    const headers = ["Nom du membre", "Adhésion de base", "Options choisies", "Total dû (€)", "Statut du paiement"];
+    const headers = [
+      t('widgetTreasury.tableMemberName') || "Nom du membre",
+      t('widgetTreasury.tableBaseAdhesion') || "Adhésion de base",
+      t('widgetTreasury.tableOptions') || "Options choisies",
+      `${t('widgetTreasury.tableTotalDue') || "Total dû"} (€)`,
+      t('widgetTreasury.tablePaymentStatus') || "Statut du paiement"
+    ];
     const rows = filteredMembers.map(member => {
       const fullName = `${member.prenom || ''} ${member.nom || ''}`;
       
       const hasBase = member.adhesionBase !== false;
-      const baseMembership = hasBase ? "Oui" : "Non";
+      const baseMembership = hasBase ? (t('common.yes') || "Oui") : (t('common.no') || "Non");
 
       const chosenOptionsList = (member.selectedOptions || [])
         .map(optId => {
@@ -116,9 +122,9 @@ export default function TreasuryManager({ groupId, onBack, role, isSystemAdmin }
       }, 0);
       const totalDue = baseAmount + optionsAmount;
 
-      let paymentStatusStr = "Non payé";
-      if (member.paymentStatus === 'paid') paymentStatusStr = "À jour";
-      else if (member.paymentStatus === 'partial') paymentStatusStr = "Partiel";
+      let paymentStatusStr = t('widgetTreasury.unpaid') || "Non payé";
+      if (member.paymentStatus === 'paid') paymentStatusStr = t('widgetTreasury.upToDate') || "À jour";
+      else if (member.paymentStatus === 'partial') paymentStatusStr = t('widgetTreasury.partial') || "Partiel";
 
       return [
         fullName,
@@ -148,13 +154,13 @@ export default function TreasuryManager({ groupId, onBack, role, isSystemAdmin }
     return (
       <div className="text-center py-12 select-none">
         <CordelCard variant="default" useExtremeBorder={true} className="p-8">
-          <h2 className="text-xl font-bold text-cordel-wood">🚨 ACCÈS REFUSÉ</h2>
+          <h2 className="text-xl font-bold text-cordel-wood">🚨 {t('widgetTreasury.accessDenied') || "ACCÈS REFUSÉ"}</h2>
           <p className="text-xs opacity-75 mt-3 leading-relaxed">
-            Vous devez être administrateur pour accéder au module de trésorerie.
+            {t('widgetTreasury.accessDeniedDesc') || "Vous devez être administrateur pour accéder au module de trésorerie."}
           </p>
           <div className="mt-6 flex justify-center">
             <CordelButton variant="default" onClick={onBack} className="text-xs">
-              ⬅️ Retour
+              ⬅️ {t('common.back')}
             </CordelButton>
           </div>
         </CordelCard>
@@ -171,11 +177,11 @@ export default function TreasuryManager({ groupId, onBack, role, isSystemAdmin }
           onClick={onBack} 
           className="text-[10px] font-black uppercase tracking-widest bg-cordel-bg border border-encre-noire px-3 py-1 rounded-[4px_6px_3px_5px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-95 cursor-pointer flex items-center justify-center"
         >
-          ⬅️ Retour
+          ⬅️ {t('common.back')}
         </button>
         
         <h2 className="text-sm font-extrabold tracking-widest text-cordel-wood uppercase flex items-center">
-          🪙 Tableau de Bord Trésorerie
+          🪙 {t('widgetTreasury.dashboardTitle') || "Tableau de Bord Trésorerie"}
         </h2>
       </div>
 
@@ -183,22 +189,22 @@ export default function TreasuryManager({ groupId, onBack, role, isSystemAdmin }
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="col-span-1 md:col-span-2 text-xs text-encre-noire dark:text-cordel-bg-light opacity-80 border border-dashed border-cordel-master-dark/30 p-3 rounded-[6px_4px_8px_5px] bg-[#fdfaf2] dark:bg-[#201d1a] leading-relaxed flex flex-col justify-center">
           <div>
-            💰 Suivez les cotisations de vos membres actifs. La méthode de paiement est configurée dans les paramètres de l'association. Les modifications apportées aux statuts des membres sont enregistrées en temps réel.
+            💰 {t('widgetTreasury.infoText')}
           </div>
         </div>
         
         <div className="border border-encre-noire/30 p-3 rounded-[4px_6px_3px_5px] bg-[var(--cordel-bg-light)] text-[10px] flex flex-col gap-1.5 justify-center shadow-[1.5px_1.5px_0px_0px_#181716]">
-          <span className="font-bold text-cordel-wood uppercase tracking-wide">Configuration Active :</span>
-          <div>💵 Adhésion base : <span className="font-black">{baseAdhesionAmount} €</span></div>
+          <span className="font-bold text-cordel-wood uppercase tracking-wide">{t('widgetTreasury.activeConfig') || "Configuration Active :"}</span>
+          <div>💵 {t('widgetTreasury.baseAdhesion') || "Adhésion base :"} <span className="font-black">{baseAdhesionAmount} €</span></div>
           {optionsCotisation.length > 0 && (
             <div className="flex flex-col gap-0.5 border-t border-dashed border-encre-noire/10 pt-1 mt-0.5">
-              <span className="font-semibold text-cordel-master-dark">Options :</span>
+              <span className="font-semibold text-cordel-master-dark">{t('widgetTreasury.options') || "Options :"}</span>
               {optionsCotisation.map(opt => (
                 <div key={opt.id} className="pl-1.5">• {opt.nom} : <span className="font-bold">{opt.montant} €</span></div>
               ))}
             </div>
           )}
-          <div className="truncate border-t border-dashed border-encre-noire/10 pt-1 mt-0.5">🔗 Lien : <span className="font-semibold text-blue-600 dark:text-blue-400 select-all">{associationSettings?.lienPaiementExterne || "Aucun"}</span></div>
+          <div className="truncate border-t border-dashed border-encre-noire/10 pt-1 mt-0.5">{t('widgetTreasury.link') || "🔗 Lien :"} <span className="font-semibold text-blue-600 dark:text-blue-400 select-all">{associationSettings?.lienPaiementExterne || "Aucun"}</span></div>
         </div>
       </div>
 
@@ -209,26 +215,26 @@ export default function TreasuryManager({ groupId, onBack, role, isSystemAdmin }
       ) : error ? (
         <CordelCard variant="default" useExtremeBorder={true} className="text-center py-8">
           <p className="text-sm font-bold text-cordel-wood mb-4">{error}</p>
-          <CordelButton variant="ocre" onClick={onBack}>Retour</CordelButton>
+          <CordelButton variant="ocre" onClick={onBack}>{t('common.back')}</CordelButton>
         </CordelCard>
       ) : (
         <>
           {/* Stats Bar */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
             <div className="border border-encre-noire/25 p-2 bg-white/40 dark:bg-black/10 rounded">
-              <div className="text-[10px] uppercase font-bold text-cordel-master-dark opacity-60">Membres Actifs</div>
+              <div className="text-[10px] uppercase font-bold text-cordel-master-dark opacity-60">{t('widgetTreasury.activeMembers')}</div>
               <div className="text-xl font-black text-encre-noire">{totalActive}</div>
             </div>
             <div className="border border-encre-noire/25 p-2 bg-green-100/35 dark:bg-green-950/15 rounded">
-              <div className="text-[10px] uppercase font-bold text-green-700 dark:text-green-400 opacity-80">À Jour</div>
+              <div className="text-[10px] uppercase font-bold text-green-700 dark:text-green-400 opacity-80">{t('widgetTreasury.upToDate')}</div>
               <div className="text-xl font-black text-green-700 dark:text-green-400">{countPaid}</div>
             </div>
             <div className="border border-encre-noire/25 p-2 bg-amber-100/35 dark:bg-amber-950/15 rounded">
-              <div className="text-[10px] uppercase font-bold text-amber-700 dark:text-amber-400 opacity-80">Partiel</div>
+              <div className="text-[10px] uppercase font-bold text-amber-700 dark:text-amber-400 opacity-80">{t('widgetTreasury.partial')}</div>
               <div className="text-xl font-black text-amber-700 dark:text-amber-400">{countPartial}</div>
             </div>
             <div className="border border-encre-noire/25 p-2 bg-red-100/35 dark:bg-red-950/15 rounded">
-              <div className="text-[10px] uppercase font-bold text-red-700 dark:text-red-400 opacity-80">Non Payé</div>
+              <div className="text-[10px] uppercase font-bold text-red-700 dark:text-red-400 opacity-80">{t('widgetTreasury.unpaid')}</div>
               <div className="text-xl font-black text-red-700 dark:text-red-400">{countUnpaid}</div>
             </div>
           </div>
@@ -237,39 +243,39 @@ export default function TreasuryManager({ groupId, onBack, role, isSystemAdmin }
           <CordelCard variant="default" useExtremeBorder={false} className="p-4 bg-cordel-bg flex flex-col md:flex-row gap-3 items-end">
             <div className="flex-1 flex flex-col gap-1 text-left w-full">
               <label className="text-[9px] uppercase font-extrabold tracking-wider text-cordel-wood">
-                🔍 Rechercher un membre
+                {t('widgetTreasury.searchLabel') || "🔍 Rechercher un membre"}
               </label>
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Entrez un prénom ou nom..."
+                placeholder={t('widgetTreasury.searchPlaceholder')}
                 className="theme-input w-full text-xs font-bold py-1.5"
               />
             </div>
 
             <div className="flex flex-col gap-1 text-left min-w-[150px] w-full md:w-auto">
               <label className="text-[9px] uppercase font-extrabold tracking-wider text-cordel-wood">
-                Statut
+                {t('widgetTreasury.statusLabel')}
               </label>
               <select
                 value={filterStatus}
                 onChange={(e) => setFilterStatus(e.target.value)}
                 className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light"
               >
-                <option value="all">Tous les statuts</option>
-                <option value="paid">À jour ✅</option>
-                <option value="partial">Partiel ⚠️</option>
-                <option value="unpaid">Non payé ❌</option>
+                <option value="all">{t('widgetTreasury.allStatuses')}</option>
+                <option value="paid">{t('widgetTreasury.statusPaid')}</option>
+                <option value="partial">{t('widgetTreasury.statusPartial')}</option>
+                <option value="unpaid">{t('widgetTreasury.statusUnpaid')}</option>
               </select>
             </div>
 
             <button
               type="button"
               onClick={exportToCSV}
-              className="text-[10px] font-black uppercase tracking-widest bg-[#84967a] hover:bg-[#728369] text-encre-noire border-2 border-encre-noire px-4 py-1.5 rounded-[4px_6px_3px_5px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-105 cursor-pointer flex items-center justify-center gap-1.5 w-full md:w-auto h-[34px]"
+              className="text-[10px] font-black uppercase tracking-widest bg-[#84967a] hover:bg-[#728369] text-encre-noire border-2 border-encre-noire px-4 py-1.5 rounded-[4px_6px_3px_5px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-105 transition-all cursor-pointer flex items-center justify-center gap-1.5 w-full md:w-auto h-[34px]"
             >
-              📥 Exporter CSV
+              {t('widgetTreasury.exportCSV')}
             </button>
           </CordelCard>
 
@@ -277,17 +283,17 @@ export default function TreasuryManager({ groupId, onBack, role, isSystemAdmin }
           <div className="flex flex-col gap-3">
             {filteredMembers.length === 0 ? (
               <CordelCard variant="default" useExtremeBorder={false} className="p-8 text-center bg-cordel-bg">
-                <p className="text-xs font-bold opacity-75">Aucun membre ne correspond aux critères.</p>
+                <p className="text-xs font-bold opacity-75">{t('widgetTreasury.noMembers')}</p>
               </CordelCard>
             ) : (
               <div className="flex flex-col gap-2">
                 {/* Table Header for Desktop */}
                 <div className="hidden md:grid grid-cols-12 gap-4 px-4 py-2 border-b border-dashed border-cordel-master-dark/30 text-[9px] font-extrabold uppercase tracking-wider text-cordel-wood">
-                  <div className="col-span-3 text-left">Nom du membre</div>
-                  <div className="col-span-2 text-center">Adhésion de base</div>
-                  <div className="col-span-3 text-left">Options choisies</div>
-                  <div className="col-span-2 text-center">Total dû</div>
-                  <div className="col-span-2 text-right">Statut du paiement</div>
+                  <div className="col-span-3 text-left">{t('widgetTreasury.tableMemberName')}</div>
+                  <div className="col-span-2 text-center">{t('widgetTreasury.tableBaseAdhesion')}</div>
+                  <div className="col-span-3 text-left">{t('widgetTreasury.tableOptions')}</div>
+                  <div className="col-span-2 text-center">{t('widgetTreasury.tableTotalDue')}</div>
+                  <div className="col-span-2 text-right">{t('widgetTreasury.tablePaymentStatus')}</div>
                 </div>
 
                 {/* Table Rows */}

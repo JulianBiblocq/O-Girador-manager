@@ -135,7 +135,6 @@ export default function Onboarding({ user, branding, onComplete }) {
 
       // 3. Write user document to Firestore using Auth UID as the key
       await setDoc(doc(db, 'users', user.uid), userDoc);
-      console.log("Onboarding - Profil créé avec succès dans Firestore !");
 
       // 4. Redirect the user by triggering the parent callback
       if (onComplete) {

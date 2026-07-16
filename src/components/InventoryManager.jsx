@@ -450,10 +450,10 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin 
                 onChange={(e) => setFilter(e.target.value)}
                 className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light pr-8"
               >
-                <option value="all">Filtre : Tous ({instruments.length})</option>
-                <option value="association">Association ({instruments.filter(i=>i.proprietaire==='Association').length})</option>
-                <option value="personal">Matériel Personnel ({instruments.filter(i=>i.proprietaire!=='Association').length})</option>
-                <option value="repair">À réparer ({instruments.filter(i=>i.etat==='À réparer').length})</option>
+                <option value="all">{(t('inventory.filterAll') || "Filtre : Tous ({count})").replace('{count}', instruments.length)}</option>
+                <option value="association">{(t('inventory.filterAssoc') || "Association ({count})").replace('{count}', instruments.filter(i=>i.proprietaire==='Association').length)}</option>
+                <option value="personal">{(t('inventory.filterPersonal') || "Matériel Personnel ({count})").replace('{count}', instruments.filter(i=>i.proprietaire!=='Association').length)}</option>
+                <option value="repair">{(t('inventory.filterRepair') || "À réparer ({count})").replace('{count}', instruments.filter(i=>i.etat==='À réparer' || i.etat==='Para consertar').length)}</option>
               </select>
 
               <CordelButton
@@ -462,7 +462,7 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin 
                 onClick={handleOpenAdd}
                 className="text-[10px] px-3 py-2 uppercase tracking-widest font-black shrink-0"
               >
-                + Ajouter
+                {t('inventory.addBtn')}
               </CordelButton>
             </div>
 
@@ -473,7 +473,7 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin 
               </div>
             ) : filteredInstruments.length === 0 ? (
               <CordelCard variant="default" useExtremeBorder={false} className="p-8 text-center bg-cordel-bg">
-                <p className="text-xs font-bold opacity-75">Aucun instrument trouvé pour ce filtre.</p>
+                <p className="text-xs font-bold opacity-75">{t('inventory.noInstrumentsFilter') || "Aucun instrument trouvé pour ce filtre."}</p>
               </CordelCard>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">

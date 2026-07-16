@@ -40,7 +40,6 @@ export default function CreateThreadForm({ groupId, user, profileData, onClose }
         ]
       });
 
-      console.log("CreateThreadForm - Discussion créée avec succès !");
       onClose();
     } catch (error) {
       console.error("CreateThreadForm - Erreur addDoc :", error);

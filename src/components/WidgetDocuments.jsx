@@ -37,7 +37,6 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
         try {
           const fileRef = ref(storage, docItem.fileUrl);
           await deleteObject(fileRef);
-          console.log("WidgetDocuments - Fichier supprime de Storage avec succes.");
         } catch (storageError) {
           console.error("WidgetDocuments - Erreur de suppression Storage :", storageError);
         }
@@ -45,7 +44,6 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
 
       const docRef = doc(db, 'documents', docItem.id);
       await deleteDoc(docRef);
-      console.log("WidgetDocuments - Entree Firestore supprimee avec succes.");
     } catch (error) {
       console.error("WidgetDocuments - Erreur de suppression :", error);
       alert(t('documents.deleteError') || "Erreur lors de la suppression du document.");
@@ -199,7 +197,7 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
       {/* Title & Action Bar */}
       <div className="flex justify-between items-center pl-1 pr-1">
         <h3 className="text-xs font-extrabold tracking-wider text-cordel-master-dark opacity-75 uppercase text-left">
-          Varal de Documents
+          {t('widgetDocuments.title')}
         </h3>
         {!loading && isAuthorized && !isAdding && (
           <CordelButton 
@@ -207,7 +205,7 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
             onClick={() => setIsAdding(true)} 
             className="text-[10px] px-2 py-1 uppercase tracking-widest font-black"
           >
-            + Ajouter
+            {t('widgetDocuments.uploadBtn')}
           </CordelButton>
         )}
       </div>

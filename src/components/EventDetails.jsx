@@ -11,7 +11,7 @@ import XiloAvatar from './XiloAvatar';
 import PlacesAutocomplete from './PlacesAutocomplete';
 import { calculateRoadDistance } from '../utils/googleMaps';
 
-export default function EventDetails({ event, user, profileData, onClose, onPrev, onNext }) {
+export default function EventDetails({ event, user, profileData, onNavigateToView, onClose, onPrev, onNext }) {
   const { t } = useTranslation();
   // Find if the user has already responded to this event
   const existingResponse = (event.inscriptions || []).find(ins => ins.userId === user.uid);
@@ -44,7 +44,9 @@ export default function EventDetails({ event, user, profileData, onClose, onPrev
       niveauRequis: event.niveauRequis || 'tous',
       niveauDanseRequis: event.niveauDanseRequis || 'aucun',
       lienDocument: event.lienDocument || '',
-      distanceAllerRetourKm: event.distanceAllerRetourKm || ''
+      distanceAllerRetourKm: event.distanceAllerRetourKm || '',
+      lienSocial: event.lienSocial || '',
+      imageUrl: event.imageUrl || ''
     });
     setSetlist(event.setlist || []);
   }, [event.id, user.uid, profileData?.instrument, event.type]);
@@ -157,9 +159,31 @@ export default function EventDetails({ event, user, profileData, onClose, onPrev
     niveauRequis: event.niveauRequis || 'tous',
     niveauDanseRequis: event.niveauDanseRequis || 'aucun',
     lienDocument: event.lienDocument || '',
-    distanceAllerRetourKm: event.distanceAllerRetourKm || ''
+    distanceAllerRetourKm: event.distanceAllerRetourKm || '',
+    lienSocial: event.lienSocial || '',
+    imageUrl: event.imageUrl || ''
   });
   const [savingEvent, setSavingEvent] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
+
+  const handleImageUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingImage(true);
+    try {
+      const storagePath = `events/${event.groupId}/uploads/${Date.now()}_${file.name}`;
+      const fileRef = ref(storage, storagePath);
+      const snapshot = await uploadBytes(fileRef, file);
+      const downloadURL = await getDownloadURL(snapshot.ref);
+      setEditForm(prev => ({ ...prev, imageUrl: downloadURL }));
+      alert(t('widgetAgenda.uploadSuccess') || "Image téléversée !");
+    } catch (error) {
+      console.error("EventDetails - Erreur upload image :", error);
+      alert(t('widgetAgenda.uploadError') || "Erreur lors du téléversement de l'image.");
+    } finally {
+      setUploadingImage(false);
+    }
+  };
   const [indemniteKilometrique, setIndemniteKilometrique] = useState(0);
   const [adresseLocal, setAdresseLocal] = useState('');
   const [instrumentsDisponibles, setInstrumentsDisponibles] = useState(["Alfaia Marcante", "Alfaia Meião", "Alfaia Repique", "Caixa", "Tarol", "Gonguê", "Agbê", "Mineiro", "Timbal", "Chant", "Danse"]);
@@ -660,7 +684,6 @@ export default function EventDetails({ event, user, profileData, onClose, onPrev
         inscriptions: updatedInscriptions
       });
 
-      console.log("EventDetails - Inscription RSVP enregistrée avec succès !");
       setToastMessage("Inscription validée");
       setTimeout(() => {
         setToastMessage(null);
@@ -690,7 +713,9 @@ export default function EventDetails({ event, user, profileData, onClose, onPrev
         niveauRequis: (editForm.type === 'prestation') ? editForm.niveauRequis || 'tous' : 'tous',
         niveauDanseRequis: (editForm.type === 'prestation' || editForm.type === 'stage' || editForm.type === 'repetition' || editForm.type === 'atelier') ? editForm.niveauDanseRequis || 'aucun' : 'aucun',
         lienDocument: (editForm.type === 'reunion') ? editForm.lienDocument || '' : '',
-        distanceAllerRetourKm: (editForm.type === 'prestation' || editForm.type === 'stage' || editForm.type === 'atelier') ? (parseFloat(editForm.distanceAllerRetourKm) || 0) : 0
+        distanceAllerRetourKm: (editForm.type === 'prestation' || editForm.type === 'stage' || editForm.type === 'atelier') ? (parseFloat(editForm.distanceAllerRetourKm) || 0) : 0,
+        lienSocial: editForm.lienSocial || '',
+        imageUrl: editForm.imageUrl || ''
       });
       setIsEditingEvent(false);
       alert("Événement mis à jour avec succès !");
@@ -699,6 +724,14 @@ export default function EventDetails({ event, user, profileData, onClose, onPrev
       alert("Erreur lors de l'enregistrement de l'événement.");
     } finally {
       setSavingEvent(false);
+    }
+  };
+
+  const handlePreparePublication = () => {
+    const newUrl = `${window.location.pathname}?eventId=${event.id}`;
+    window.history.pushState({}, '', newUrl);
+    if (onNavigateToView) {
+      onNavigateToView('studio-social');
     }
   };
 
@@ -852,13 +885,22 @@ export default function EventDetails({ event, user, profileData, onClose, onPrev
           <XiloCalendar size={14} /> {t('eventDetails.title')}
         </span>
         {isAuthorized && !isEditingEvent && (
-          <button
-            type="button"
-            onClick={() => setIsEditingEvent(true)}
-            className="text-[10px] font-black uppercase bg-cordel-bg border border-encre-noire px-3 py-1 rounded shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-95 cursor-pointer"
-          >
-            ✏️ Modifier
-          </button>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={handlePreparePublication}
+              className="text-[10px] font-black uppercase bg-cordel-ocre text-black border border-encre-noire px-3 py-1 rounded shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-95 cursor-pointer flex items-center gap-1"
+            >
+              📢 Préparer la publication
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsEditingEvent(true)}
+              className="text-[10px] font-black uppercase bg-cordel-bg border border-encre-noire px-3 py-1 rounded shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-95 cursor-pointer"
+            >
+              ✏️ Modifier
+            </button>
+          </div>
         )}
         {isAuthorized && isEditingEvent && (
           <button
@@ -1083,6 +1125,58 @@ export default function EventDetails({ event, user, profileData, onClose, onPrev
                   />
                 </div>
               )}
+
+              {/* Lien réseau social / Événement externe */}
+              <div className="flex flex-col gap-1">
+                <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                  {t('widgetAgenda.lienSocialLabel') || "Lien réseau social / Événement externe (URL)"}
+                </label>
+                <input
+                  type="url"
+                  value={editForm.lienSocial || ''}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, lienSocial: e.target.value }))}
+                  disabled={savingEvent || uploadingImage}
+                  placeholder="https://..."
+                  className="theme-input w-full disabled:opacity-50"
+                />
+              </div>
+
+              {/* Image de l'événement / Affiche */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                  {t('widgetAgenda.imageUrlLabel') || "Image de l'événement / Affiche"}
+                </label>
+                <div className="flex items-center gap-3">
+                  {editForm.imageUrl && (
+                    <div className="w-14 h-14 border border-encre-noire rounded-[4px] overflow-hidden bg-white shrink-0 shadow-[1px_1px_0px_0px_rgba(26,26,26,0.15)]">
+                      <img src={editForm.imageUrl} alt="Affiche preview" className="w-full h-full object-cover" />
+                    </div>
+                  )}
+                  <label className="text-[10px] font-black uppercase tracking-widest bg-cordel-bg border border-encre-noire px-3 py-2 rounded-[4px_6px_3px_5px] shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-95 cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1.5 shrink-0 select-none">
+                    {uploadingImage ? (
+                      <>⏳ {t('widgetAgenda.uploadingImage') || "Téléversement..."}</>
+                    ) : (
+                      <>📸 {t('widgetAgenda.imageUrlLabel') || "Image / Affiche"}</>
+                    )}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      disabled={savingEvent || uploadingImage}
+                      onChange={handleImageUpload}
+                      className="hidden"
+                    />
+                  </label>
+                  {editForm.imageUrl && (
+                    <button
+                      type="button"
+                      onClick={() => setEditForm(prev => ({ ...prev, imageUrl: '' }))}
+                      className="text-[10px] font-bold text-red-700 hover:underline select-none"
+                    >
+                      Supprimer
+                    </button>
+                  )}
+                </div>
+              </div>
             </div>
 
             <CordelButton
@@ -1187,6 +1281,16 @@ export default function EventDetails({ event, user, profileData, onClose, onPrev
             <span className="truncate">
               📄 <strong>Ordre du jour :</strong> <a href={event.lienDocument} target="_blank" rel="noopener noreferrer" className="text-cordel-wood hover:underline">{event.lienDocument}</a>
             </span>
+          )}
+          {event.lienSocial && (
+            <span className="truncate">
+              🔗 <strong>Lien social / Externe :</strong> <a href={event.lienSocial} target="_blank" rel="noopener noreferrer" className="text-cordel-wood hover:underline">{event.lienSocial}</a>
+            </span>
+          )}
+          {event.imageUrl && (
+            <div className="mt-3.5 border-2 border-encre-noire rounded-[8px] overflow-hidden shadow-[2px_2px_0px_0px_rgba(26,26,26,0.15)] bg-white max-h-[300px] flex items-center justify-center">
+              <img src={event.imageUrl} alt={event.titre} className="max-w-full max-h-[300px] object-contain" />
+            </div>
           )}
           {event.lieu && (
             <div className="mt-3.5 border-2 border-encre-noire rounded-[8px] overflow-hidden shadow-[2px_2px_0px_0px_rgba(26,26,26,0.15)] bg-white h-[200px]">
