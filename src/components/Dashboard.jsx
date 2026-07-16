@@ -10,34 +10,25 @@ const WidgetDocuments = React.lazy(() => import('./WidgetDocuments'));
 const WidgetTreasury = React.lazy(() => import('./WidgetTreasury'));
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
-import { XiloSun, XiloMoon, XiloSettings, XiloCaixa, XiloBox, XiloPeople, XiloConsole } from './XiloIcons';
+import { XiloSettings, XiloCaixa, XiloBox, XiloPeople, XiloConsole } from './XiloIcons';
 import { useTranslation } from './LanguageContext';
 import { useTerminologie } from '../hooks/useTerminologie';
 
 export default function Dashboard({ user, profileData, onNavigateToTrombi, onNavigateToView, onSignOut, installPromptAvailable, onTriggerInstall }) {
   const { tRole } = useTerminologie();
   const { locale, toggleLanguage, t } = useTranslation();
-  const [darkMode, setDarkMode] = useState(() => {
-    return document.documentElement.classList.contains('dark');
-  });
   const [layout, setLayout] = useState(["motMestre", "annonces", "agenda", "commandes", "forum", "documents", "tresorerie"]);
   const [sequenceurUrl, setSequenceurUrl] = useState('');
   const [agendaFocusMode, setAgendaFocusMode] = useState(false);
-
-  const toggleDarkMode = () => {
-    const isDark = document.documentElement.classList.toggle('dark');
-    setDarkMode(isDark);
-    localStorage.setItem('theme', isDark ? 'dark' : 'light');
-  };
 
   const getWidgetSpan = (id) => {
     switch (id) {
       case 'motMestre':
       case 'annonces':
       case 'documents':
-        return 'col-span-1 md:col-span-2 lg:col-span-3';
+        return 'col-span-2 md:col-span-2 lg:col-span-3';
       case 'agenda':
-        return 'col-span-1 md:col-span-2 lg:col-span-2';
+        return 'col-span-2 md:col-span-2 lg:col-span-2';
       default:
         return 'col-span-1';
     }
@@ -119,15 +110,7 @@ export default function Dashboard({ user, profileData, onNavigateToTrombi, onNav
           </p>
         </div>
         
-        {/* Toggle Dark Mode Button in Header */}
-        <button 
-          type="button"
-          onClick={toggleDarkMode}
-          className="theme-btn px-2.5 py-1 text-xs font-black rounded-[4px_6px_3px_5px] shadow-[1px_1px_0px_0px_rgba(0,0,0,0.15)] cursor-pointer flex items-center justify-center min-w-8 min-h-7"
-          title={darkMode ? "Activer le mode clair" : "Activer le mode sombre"}
-        >
-          {darkMode ? <XiloSun size={14} /> : <XiloMoon size={14} />}
-        </button>
+
       </div>
 
 

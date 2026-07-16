@@ -173,6 +173,16 @@ body {
   background: #eaddcf;
 }
 
+/* Hide scrollbar for Chrome, Safari and Opera */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+/* Hide scrollbar for IE, Edge and Firefox */
+.no-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
 /* Specific wider scrollbar for the linear sequencer instrument tracks */
 #timeline-scroll-container::-webkit-scrollbar {
   width: 16px;

@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { doc, updateDoc, runTransaction, collection, query, where, onSnapshot } from 'firebase/firestore';
-import { db } from '../firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { db, storage } from '../firebase';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
 import ReunionAgendaManager from './ReunionAgendaManager';
 import { useTranslation } from './LanguageContext';
 import { XiloCalendar } from './XiloIcons';
+import XiloAvatar from './XiloAvatar';
 
 export default function EventDetails({ event, user, profileData, onClose, onPrev, onNext }) {
   const { t } = useTranslation();
@@ -160,6 +162,7 @@ export default function EventDetails({ event, user, profileData, onClose, onPrev
       if (docSnap.exists()) {
         const data = docSnap.data();
         setIndemniteKilometrique(data.indemniteKilometrique || 0);
+        setAssocSequenceurUrl(data.sequenceurUrl || '');
         if (Array.isArray(data.instrumentsDisponibles)) {
           setInstrumentsDisponibles(data.instrumentsDisponibles);
         }
@@ -255,7 +258,9 @@ export default function EventDetails({ event, user, profileData, onClose, onPrev
 
   const [setlist, setSetlist] = useState(event.setlist || []);
   const [newMorceauTitre, setNewMorceauTitre] = useState('');
-  const [newMorceauUrl, setNewMorceauUrl] = useState('');
+  const [newMorceauJsonFile, setNewMorceauJsonFile] = useState(null);
+  const [fileInputKey, setFileInputKey] = useState(0);
+  const [assocSequenceurUrl, setAssocSequenceurUrl] = useState('');
   const [newMorceauNotes, setNewMorceauNotes] = useState('');
   const [updatingSetlist, setUpdatingSetlist] = useState(false);
 
@@ -546,13 +551,20 @@ export default function EventDetails({ event, user, profileData, onClose, onPrev
 
     setUpdatingSetlist(true);
     try {
+      let jsonUrl = '';
+      if (newMorceauJsonFile) {
+        const fileRef = ref(storage, `associations/${event.groupId}/events/${event.id}/setlist/${Date.now()}_${newMorceauJsonFile.name}`);
+        const snapshot = await uploadBytes(fileRef, newMorceauJsonFile);
+        jsonUrl = await getDownloadURL(snapshot.ref);
+      }
+
       const updatedSetlist = [
         ...setlist,
         {
           id: `morceau_${Date.now()}`,
           titre: newMorceauTitre.trim(),
-          sequenceurUrl: newMorceauUrl.trim(),
-          notes: newMorceauNotes.trim()
+          notes: newMorceauNotes.trim(),
+          jsonUrl: jsonUrl
         }
       ];
 
@@ -563,8 +575,9 @@ export default function EventDetails({ event, user, profileData, onClose, onPrev
 
       setSetlist(updatedSetlist);
       setNewMorceauTitre('');
-      setNewMorceauUrl('');
       setNewMorceauNotes('');
+      setNewMorceauJsonFile(null);
+      setFileInputKey(prev => prev + 1);
     } catch (err) {
       console.error("EventDetails - Erreur handleAddMorceau :", err);
       alert("Erreur lors de l'ajout du morceau.");
@@ -1276,11 +1289,10 @@ export default function EventDetails({ event, user, profileData, onClose, onPrev
             <div className="flex flex-col gap-2.5 bg-[#fdfaf2] dark:bg-[#1a1816] p-3.5 rounded border border-dashed border-encre-noire/15 text-left">
               {Object.keys(presentsByInstrument).map(inst => {
                 const list = presentsByInstrument[inst];
-                const namesString = list.map(u => `${u.prenom} ${u.nom}`).join(', ');
                 const isLinked = inst.includes(' + ');
                 return (
                   <div key={inst} className="text-xs leading-normal">
-                    <strong className="text-cordel-wood">
+                    <strong className="text-cordel-wood block mb-1">
                       🥁 {(() => {
                         const pupitreName = getPupitreName(inst);
                         return pupitreName ? `${inst} (${pupitreName})` : inst;
@@ -1296,38 +1308,72 @@ export default function EventDetails({ event, user, profileData, onClose, onPrev
                           </span>
                         );
                       })()} :
-                    </strong> <span className="opacity-90 font-bold">{namesString}</span>
+                    </strong>
+                    <div className="flex flex-wrap gap-1.5 items-center pl-4">
+                      {list.map(u => (
+                        <div key={u.id || `${u.prenom}-${u.nom}`} className="inline-flex items-center gap-1.5 bg-white/60 dark:bg-black/20 px-2 py-0.5 rounded border border-dashed border-encre-noire/10 text-xs font-semibold text-encre-noire">
+                          <XiloAvatar src={u.photoURL} name={`${u.prenom} ${u.nom}`} size={18} />
+                          <span>{u.prenom} {u.nom}</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 );
               })}
             </div>
           )
         ) : (
-          /* Simple lists for reunion */
           <div className="flex flex-col gap-3.5 bg-[#fdfaf2] dark:bg-[#1a1816] p-3.5 rounded border border-dashed border-encre-noire/15 text-xs text-left">
             <div>
               <strong className="text-green-600 block border-b border-dashed border-green-500/10 pb-0.5 mb-1">
                 ✅ Présents ({(event.inscriptions || []).filter(i => i.status === 'present').length})
               </strong>
-              <p className="opacity-90 font-bold leading-normal">
-                {(event.inscriptions || []).filter(i => i.status === 'present').map(i => i.userName).join(', ') || 'Aucun'}
-              </p>
+              <div className="flex flex-wrap gap-1.5 items-center mt-1">
+                {(event.inscriptions || []).filter(i => i.status === 'present').map(i => {
+                  const userInfo = allUsers.find(u => u.id === i.userId) || {};
+                  return (
+                    <div key={i.userId} className="inline-flex items-center gap-1.5 bg-white/60 dark:bg-black/20 px-2 py-0.5 rounded border border-dashed border-encre-noire/10 text-xs font-semibold text-encre-noire">
+                      <XiloAvatar src={userInfo.photoURL} name={i.userName} size={18} />
+                      <span>{i.userName}</span>
+                    </div>
+                  );
+                })}
+                {(event.inscriptions || []).filter(i => i.status === 'present').length === 0 && <span className="opacity-60 italic">Aucun</span>}
+              </div>
             </div>
             <div>
               <strong className="text-red-600 block border-b border-dashed border-red-500/10 pb-0.5 mb-1">
                 ❌ Absents ({(event.inscriptions || []).filter(i => i.status === 'absent').length})
               </strong>
-              <p className="opacity-90 font-bold leading-normal">
-                {(event.inscriptions || []).filter(i => i.status === 'absent').map(i => i.userName).join(', ') || 'Aucun'}
-              </p>
+              <div className="flex flex-wrap gap-1.5 items-center mt-1">
+                {(event.inscriptions || []).filter(i => i.status === 'absent').map(i => {
+                  const userInfo = allUsers.find(u => u.id === i.userId) || {};
+                  return (
+                    <div key={i.userId} className="inline-flex items-center gap-1.5 bg-white/60 dark:bg-black/20 px-2 py-0.5 rounded border border-dashed border-encre-noire/10 text-xs font-semibold text-encre-noire">
+                      <XiloAvatar src={userInfo.photoURL} name={i.userName} size={18} />
+                      <span>{i.userName}</span>
+                    </div>
+                  );
+                })}
+                {(event.inscriptions || []).filter(i => i.status === 'absent').length === 0 && <span className="opacity-60 italic">Aucun</span>}
+              </div>
             </div>
             <div>
               <strong className="text-amber-600 block border-b border-dashed border-amber-500/10 pb-0.5 mb-1">
                 ⏳ À confirmer ({(event.inscriptions || []).filter(i => i.status === 'confirm').length})
               </strong>
-              <p className="opacity-90 font-bold leading-normal">
-                {(event.inscriptions || []).filter(i => i.status === 'confirm').map(i => i.userName).join(', ') || 'Aucun'}
-              </p>
+              <div className="flex flex-wrap gap-1.5 items-center mt-1">
+                {(event.inscriptions || []).filter(i => i.status === 'confirm').map(i => {
+                  const userInfo = allUsers.find(u => u.id === i.userId) || {};
+                  return (
+                    <div key={i.userId} className="inline-flex items-center gap-1.5 bg-white/60 dark:bg-black/20 px-2 py-0.5 rounded border border-dashed border-encre-noire/10 text-xs font-semibold text-encre-noire">
+                      <XiloAvatar src={userInfo.photoURL} name={i.userName} size={18} />
+                      <span>{i.userName}</span>
+                    </div>
+                  );
+                })}
+                {(event.inscriptions || []).filter(i => i.status === 'confirm').length === 0 && <span className="opacity-60 italic">Aucun</span>}
+              </div>
             </div>
           </div>
         )}
@@ -1349,8 +1395,9 @@ export default function EventDetails({ event, user, profileData, onClose, onPrev
 
                   return (
                     <div key={ins.userId} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-dashed border-encre-noire/10 pb-2 last:border-0 last:pb-0 text-xs">
-                      <span className="font-bold text-encre-noire truncate sm:max-w-[150px]">
-                        👤 {ins.userName}
+                      <span className="font-bold text-encre-noire truncate sm:max-w-[180px] flex items-center gap-1.5">
+                        <XiloAvatar src={userInfo.photoURL} name={ins.userName} size={20} />
+                        <span>{ins.userName}</span>
                       </span>
                       <div className="flex flex-wrap items-center gap-3">
                         <select
@@ -1516,16 +1563,30 @@ export default function EventDetails({ event, user, profileData, onClose, onPrev
                   </p>
                 )}
 
-                {morceau.sequenceurUrl && (
-                  <a
-                    href={morceau.sequenceurUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="theme-btn theme-bg-ocre text-encre-noire px-3 py-1.5 text-[10px] font-black rounded-[4px_6px_3px_5px] shadow-[1px_1px_0px_0px_rgba(0,0,0,0.15)] inline-flex items-center justify-center gap-1.5 hover:brightness-105 active:translate-x-[0.5px] active:translate-y-[0.5px] w-full text-center mt-1"
-                  >
-                    🎧 Travailler ce rythme (Séquenceur)
-                  </a>
-                )}
+                {(() => {
+                  let targetUrl = '';
+                  if (morceau.jsonUrl) {
+                    const baseUrl = assocSequenceurUrl || 'https://sequenceur.app';
+                    targetUrl = baseUrl.includes('?') 
+                      ? `${baseUrl}&file=${encodeURIComponent(morceau.jsonUrl)}`
+                      : `${baseUrl}?file=${encodeURIComponent(morceau.jsonUrl)}`;
+                  } else if (morceau.sequenceurUrl) {
+                    targetUrl = morceau.sequenceurUrl;
+                  }
+
+                  if (!targetUrl) return null;
+
+                  return (
+                    <a
+                      href={targetUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="theme-btn theme-bg-ocre text-encre-noire px-3 py-1.5 text-[10px] font-black rounded-[4px_6px_3px_5px] shadow-[1px_1px_0px_0px_rgba(0,0,0,0.15)] inline-flex items-center justify-center gap-1.5 hover:brightness-105 active:translate-x-[0.5px] active:translate-y-[0.5px] w-full text-center mt-1"
+                    >
+                      🎧 Travailler ce rythme (Séquenceur)
+                    </a>
+                  );
+                })()}
               </div>
             ))}
           </div>
@@ -1550,14 +1611,17 @@ export default function EventDetails({ event, user, profileData, onClose, onPrev
                 />
               </div>
 
-              <div className="flex flex-col gap-1">
+              <div className="flex flex-col gap-1 text-left">
+                <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                  Fichier de configuration du morceau (.json)
+                </label>
                 <input 
-                  type="url"
-                  placeholder="URL Séquenceur (ex: https://sequenceur.app/...)"
-                  value={newMorceauUrl}
-                  onChange={(e) => setNewMorceauUrl(e.target.value)}
+                  key={fileInputKey}
+                  type="file"
+                  accept=".json"
+                  onChange={(e) => setNewMorceauJsonFile(e.target.files[0])}
                   disabled={updatingSetlist}
-                  className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light"
+                  className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light w-full file:mr-3 file:py-1 file:px-2.5 file:rounded-md file:border-0 file:text-[10px] file:font-semibold file:bg-cordel-master-light file:text-encre-noire file:cursor-pointer"
                 />
               </div>
 

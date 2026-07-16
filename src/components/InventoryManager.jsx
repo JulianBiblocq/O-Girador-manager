@@ -6,6 +6,7 @@ import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
 import { XiloClose, XiloChisel, XiloCaixa } from './XiloIcons';
 import { useTranslation } from './LanguageContext';
+import XiloAvatar from './XiloAvatar';
 
 const INSTRUMENT_TYPES = ['Alfaia', 'Caixa', 'Agbê', 'Gonguê', 'Mineiro', 'Apito', 'Timbal', 'Autre'];
 const ETAT_OPTIONS = ['Neuf', 'Bon', 'À réparer'];
@@ -380,19 +381,22 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin 
                   ) : (
                     usersList.map((u) => {
                       const isAssigned = formData.assignations.includes(u.id);
+                      const fullName = `${u.prenom} ${u.nom}`;
                       return (
                         <button
                           key={u.id}
                           type="button"
                           disabled={saving}
                           onClick={() => handleAssignationToggle(u.id)}
-                          className={`text-[9px] px-2 py-0.5 border rounded-[3px_5px_2px_4px] transition-all cursor-pointer font-bold ${
+                          className={`text-[9px] px-2 py-0.5 border rounded-[3px_5px_2px_4px] transition-all cursor-pointer font-bold flex items-center gap-1.5 ${
                             isAssigned 
                               ? 'bg-cordel-wood text-cordel-bg-light border-encre-noire shadow-[1px_1px_0px_0px_#181716]' 
                               : 'bg-transparent text-encre-noire border-dashed border-encre-noire/30'
                           }`}
                         >
-                          {isAssigned && "🪢 "} {u.prenom} {u.nom}
+                          {isAssigned && "🪢 "}
+                          <XiloAvatar src={u.photoURL} name={fullName} size={14} />
+                          <span>{fullName}</span>
                         </button>
                       );
                     })
@@ -509,7 +513,22 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin 
                           {inst.assignations && inst.assignations.length > 0 && (
                             <>
                               <span>•</span>
-                              <span>Assigné à : <strong>{inst.assignations.map(uid => usersMap[uid] || '...').join(', ')}</strong></span>
+                              <span className="inline-flex items-center gap-1">
+                                Assigné à : 
+                                <span className="flex flex-wrap gap-1.5 items-center">
+                                  {inst.assignations.map(uid => {
+                                    const u = usersList.find(userObj => userObj.id === uid);
+                                    if (!u) return <strong key={uid} className="font-bold text-encre-noire">...</strong>;
+                                    const fullName = `${u.prenom} ${u.nom}`;
+                                    return (
+                                      <span key={uid} className="inline-flex items-center gap-1 bg-white/40 dark:bg-black/10 px-1.5 py-0.5 rounded border border-dashed border-encre-noire/10 text-[9px] font-semibold text-encre-noire">
+                                        <XiloAvatar src={u.photoURL} name={fullName} size={14} />
+                                        <span>{fullName}</span>
+                                      </span>
+                                    );
+                                  })}
+                                </span>
+                              </span>
                             </>
                           )}
                         </div>

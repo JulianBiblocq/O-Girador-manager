@@ -24,14 +24,31 @@ export default function LayoutShell({
         {/* Top Header / Navbar for Mobile and Tablet (hidden on Desktop) */}
         <div className="lg:hidden w-full h-16 landscape:h-12 border-b-4 border-cordel-master-dark bg-cordel-bg-light flex items-center px-4 justify-between select-none shrink-0 z-30">
           <div className="flex items-center gap-3">
-            <img 
-              src={finalLogoUrl} 
-              alt="Logo" 
-              className="w-10 h-10 landscape:w-8 landscape:h-8 object-contain rounded-[4px] p-0.5 bg-white border border-encre-noire/25" 
-            />
-            <span className="font-extrabold text-xs uppercase tracking-widest text-cordel-wood">
-              O Girador
-            </span>
+            <div 
+              onClick={() => onNavigateToView && onNavigateToView('dashboard')}
+              className="flex items-center gap-3 cursor-pointer hover:opacity-90 transition-opacity"
+              title={t('menu.dashboard') || "Accueil"}
+            >
+              <img 
+                src={finalLogoUrl} 
+                alt="Logo" 
+                className="w-10 h-10 landscape:w-8 landscape:h-8 object-contain rounded-[4px] p-0.5 bg-white border border-encre-noire/25 pointer-events-none" 
+              />
+              <span className="font-extrabold text-xs uppercase tracking-widest text-cordel-wood">
+                O Girador
+              </span>
+            </div>
+            {sequenceurUrl && (
+              <a 
+                href={sequenceurUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-1 border border-dashed border-encre-noire/20 hover:border-[#d99f4d] text-[#d99f4d] hover:bg-[#d99f4d]/10 rounded flex items-center justify-center transition-all cursor-pointer"
+                title="O Girador Séquenceur"
+              >
+                <XiloEQ size={14} />
+              </a>
+            )}
           </div>
 
           {/* Hamburger Menu Button */}
@@ -48,18 +65,38 @@ export default function LayoutShell({
         </div>
 
         {/* Left Sidebar for Desktop (hidden on Mobile & Tablet) */}
-        <div className="hidden lg:flex w-52 border-r-4 border-cordel-master-dark bg-cordel-bg-light flex-col items-center justify-between py-8 px-4 shrink-0 select-none">
+        <div className="hidden lg:flex w-44 border-r-4 border-cordel-master-dark bg-cordel-bg-light flex-col items-center justify-between py-8 px-4 shrink-0 select-none">
           <div className="flex flex-col items-center gap-3 w-full">
-            <div className="w-24 h-24 bg-white border-2 border-encre-noire rounded-full flex items-center justify-center p-2 shadow-[2px_2px_0px_0px_#181716]">
+            <div 
+              onClick={() => onNavigateToView && onNavigateToView('dashboard')}
+              className="w-24 h-24 bg-white border-2 border-encre-noire rounded-full flex items-center justify-center p-2 shadow-[2px_2px_0px_0px_#181716] cursor-pointer hover:scale-[1.02] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none transition-all"
+              title={t('menu.dashboard') || "Accueil"}
+            >
               <img 
                 src={finalLogoUrl} 
                 alt="Logo" 
-                className="w-full h-full object-contain" 
+                className="w-full h-full object-contain pointer-events-none" 
               />
             </div>
-            <span className="font-black text-sm uppercase tracking-widest text-cordel-wood mt-2 text-center">
-              O Girador
-            </span>
+            <div className="flex items-center gap-2 mt-2 justify-center">
+              <span 
+                onClick={() => onNavigateToView && onNavigateToView('dashboard')}
+                className="font-black text-sm uppercase tracking-widest text-cordel-wood cursor-pointer hover:opacity-85 transition-opacity"
+              >
+                O Girador
+              </span>
+              {sequenceurUrl && (
+                <a 
+                  href={sequenceurUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="p-1 border border-dashed border-encre-noire/20 hover:border-[#d99f4d] text-[#d99f4d] hover:bg-[#d99f4d]/10 rounded flex items-center justify-center transition-all cursor-pointer"
+                  title="O Girador Séquenceur"
+                >
+                  <XiloEQ size={12} />
+                </a>
+              )}
+            </div>
             <div className="w-full border-t border-dashed border-cordel-master-dark/20 my-4" />
           </div>
 

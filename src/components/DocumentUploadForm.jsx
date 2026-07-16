@@ -111,7 +111,8 @@ export default function DocumentUploadForm({ groupId, varalCategories = [], onCl
         fileUrl: finalUrl,
         type: type,
         groupId: groupId,
-        dateAjout: new Date().toISOString()
+        dateAjout: new Date().toISOString(),
+        order: 9999
       });
 
       console.log("DocumentUploadForm - Document mis en ligne avec succès !");

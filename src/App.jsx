@@ -110,15 +110,9 @@ export default function App() {
     '--cordel-vert': branding.colors.secondary
   } : {};
 
-  // Initialize dark mode from localStorage or system preferences on startup
+  // Initialize theme: force light theme by default, disable dark mode completely
   useEffect(() => {
-    const savedTheme = localStorage.getItem('theme');
-    const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    if (savedTheme === 'dark' || (!savedTheme && systemPrefersDark)) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
+    document.documentElement.classList.remove('dark');
   }, []);
 
   // Intercept PWA installation prompt

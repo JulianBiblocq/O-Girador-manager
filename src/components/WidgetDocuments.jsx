@@ -52,6 +52,38 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
     }
   };
 
+  const updateDocumentsOrder = async (newOrderedList) => {
+    try {
+      const promises = newOrderedList.map((docItem, idx) => {
+        const docRef = doc(db, 'documents', docItem.id);
+        return updateDoc(docRef, { order: idx });
+      });
+      await Promise.all(promises);
+    } catch (err) {
+      console.error("WidgetDocuments - Erreur lors de la mise à jour de l'ordre :", err);
+    }
+  };
+
+  const handleMoveLeft = async (docItem, docList) => {
+    const idx = docList.findIndex(d => d.id === docItem.id);
+    if (idx <= 0) return;
+    const newList = [...docList];
+    const temp = newList[idx];
+    newList[idx] = newList[idx - 1];
+    newList[idx - 1] = temp;
+    await updateDocumentsOrder(newList);
+  };
+
+  const handleMoveRight = async (docItem, docList) => {
+    const idx = docList.findIndex(d => d.id === docItem.id);
+    if (idx === -1 || idx >= docList.length - 1) return;
+    const newList = [...docList];
+    const temp = newList[idx];
+    newList[idx] = newList[idx + 1];
+    newList[idx + 1] = temp;
+    await updateDocumentsOrder(newList);
+  };
+
   const getCategoryLabel = (cat) => {
     return t(`documents.${cat}`) || cat;
   };
@@ -98,8 +130,15 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
         });
       });
 
-      // Sort by upload date (most recent first)
-      fetchedDocs.sort((a, b) => new Date(b.dateAjout) - new Date(a.dateAjout));
+      // Sort by order asc, then upload date desc
+      fetchedDocs.sort((a, b) => {
+        const orderA = typeof a.order === 'number' ? a.order : 9999;
+        const orderB = typeof b.order === 'number' ? b.order : 9999;
+        if (orderA !== orderB) {
+          return orderA - orderB;
+        }
+        return new Date(b.dateAjout) - new Date(a.dateAjout);
+      });
       setDocuments(fetchedDocs);
       setLoading(false);
     }, (error) => {
@@ -253,7 +292,7 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
                   </div>
 
                   {/* Hanging Booklets */}
-                  <div className="flex flex-wrap justify-center sm:justify-around items-start gap-3 sm:gap-4 mt-8 relative z-10">
+                  <div className="flex flex-nowrap overflow-x-auto justify-start items-start gap-3 sm:gap-4 mt-8 relative z-10 w-full no-scrollbar pb-3 px-4">
                     {docList.length === 0 ? (
                       <p className="text-[9px] italic opacity-60 self-center py-2">{t('documents.noDocumentsCategory') || "Aucun document dans cette rubrique."}</p>
                     ) : (
@@ -280,7 +319,7 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
                             onClick={() => window.open(docItem.fileUrl, '_blank')}
                             className={`
                               relative flex flex-col items-center group cursor-pointer
-                              transition-all duration-300 origin-top
+                              transition-all duration-300 origin-top shrink-0
                               ${rotationClass} hover:rotate-0 hover:scale-105
                               ${opacityClass}
                             `}
@@ -302,9 +341,33 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
                                 theme-bg-${colorClass}
                               `}
                             >
-                              {/* Edit & Delete Action Buttons */}
+                              {/* Edit & Delete & Reorder Action Buttons */}
                               {isAuthorized && (
                                 <div className="absolute top-1.5 right-1.5 flex gap-1 z-40 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                                  {index > 0 && (
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleMoveLeft(docItem, docList);
+                                      }}
+                                      className="p-1 rounded bg-[var(--cordel-bg)] text-[var(--cordel-text)] border border-[var(--cordel-border)] hover:bg-[var(--cordel-master-bg)] cursor-pointer select-none flex items-center justify-center shadow-sm font-bold text-[8px]"
+                                      title="Déplacer vers la gauche"
+                                    >
+                                      ◀
+                                    </button>
+                                  )}
+                                  {index < docList.length - 1 && (
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleMoveRight(docItem, docList);
+                                      }}
+                                      className="p-1 rounded bg-[var(--cordel-bg)] text-[var(--cordel-text)] border border-[var(--cordel-border)] hover:bg-[var(--cordel-master-bg)] cursor-pointer select-none flex items-center justify-center shadow-sm font-bold text-[8px]"
+                                      title="Déplacer vers la droite"
+                                    >
+                                      ▶
+                                    </button>
+                                  )}
                                   <button
                                     onClick={(e) => {
                                       e.stopPropagation();
