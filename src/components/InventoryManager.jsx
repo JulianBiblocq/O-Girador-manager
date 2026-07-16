@@ -453,7 +453,7 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin 
                 <p className="text-xs font-bold opacity-75">Aucun instrument trouvé pour ce filtre.</p>
               </CordelCard>
             ) : (
-              <div className="flex flex-col gap-2.5">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {filteredInstruments.map((inst) => {
                   const iconPath = INSTRUMENT_ICONS[inst.type] || 'favicon.svg';
                   const isPersonal = inst.proprietaire !== "Association";

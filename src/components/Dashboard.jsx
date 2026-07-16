@@ -25,6 +25,16 @@ export default function Dashboard({ user, profileData, onNavigateToTrombi, onNav
     localStorage.setItem('theme', isDark ? 'dark' : 'light');
   };
 
+  const getWidgetSpan = (id) => {
+    switch (id) {
+      case 'motMestre':
+      case 'annonces':
+        return 'col-span-1 md:col-span-2 lg:col-span-3';
+      default:
+        return 'col-span-1';
+    }
+  };
+
   // Real-time synchronization of the pupil widgets display order
   useEffect(() => {
     if (!profileData?.groupId) return;
@@ -168,69 +178,80 @@ export default function Dashboard({ user, profileData, onNavigateToTrombi, onNav
         )}
       </div>
 
-      {/* Widgets Stack (Dynamically Ordered) */}
-      {layout.map((widgetId) => {
-        switch (widgetId) {
-          case 'motMestre':
-            return (
-              <WidgetMotMestre 
-                key="motMestre"
-                role={profileData?.role} 
-                isSystemAdmin={profileData?.isSystemAdmin} 
-                groupId={profileData?.groupId} 
-              />
-            );
-          case 'annonces':
-            return (
-              <WidgetAnnonces 
-                key="annonces"
-                groupId={profileData?.groupId} 
-                profileData={profileData}
-                role={profileData?.role} 
-                isSystemAdmin={profileData?.isSystemAdmin} 
-              />
-            );
-          case 'agenda':
-            return (
-              <WidgetAgenda 
-                key="agenda"
-                role={profileData?.role} 
-                isSystemAdmin={profileData?.isSystemAdmin} 
-                groupId={profileData?.groupId} 
-                user={user} 
-                profileData={profileData} 
-              />
-            );
-          case 'commandes':
-            return (
-              <WidgetCommandes 
-                key="commandes"
-                groupId={profileData?.groupId} 
-                user={user} 
-                profileData={profileData} 
-              />
-            );
-          case 'forum':
-            return (
-              <WidgetForum 
-                key="forum"
-                groupId={profileData?.groupId} 
-                onOpen={() => onNavigateToView('forum')} 
-              />
-            );
-          case 'documents':
-            return (
-              <WidgetDocuments 
-                key="documents"
-                role={profileData?.role} 
-                isSystemAdmin={profileData?.isSystemAdmin} 
-                groupId={profileData?.groupId} 
-              />
-            );
-          default:
-            return null;
-        }
-      })}
+      {/* Widgets Grid (Dynamically Ordered) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {layout.map((widgetId) => {
+          const spanClass = getWidgetSpan(widgetId);
+          
+          let widgetContent = null;
+          switch (widgetId) {
+            case 'motMestre':
+              widgetContent = (
+                <WidgetMotMestre 
+                  role={profileData?.role} 
+                  isSystemAdmin={profileData?.isSystemAdmin} 
+                  groupId={profileData?.groupId} 
+                />
+              );
+              break;
+            case 'annonces':
+              widgetContent = (
+                <WidgetAnnonces 
+                  groupId={profileData?.groupId} 
+                  profileData={profileData}
+                  role={profileData?.role} 
+                  isSystemAdmin={profileData?.isSystemAdmin} 
+                />
+              );
+              break;
+            case 'agenda':
+              widgetContent = (
+                <WidgetAgenda 
+                  role={profileData?.role} 
+                  isSystemAdmin={profileData?.isSystemAdmin} 
+                  groupId={profileData?.groupId} 
+                  user={user} 
+                  profileData={profileData} 
+                />
+              );
+              break;
+            case 'commandes':
+              widgetContent = (
+                <WidgetCommandes 
+                  groupId={profileData?.groupId} 
+                  user={user} 
+                  profileData={profileData} 
+                />
+              );
+              break;
+            case 'forum':
+              widgetContent = (
+                <WidgetForum 
+                  groupId={profileData?.groupId} 
+                  onOpen={() => onNavigateToView('forum')} 
+                />
+              );
+              break;
+            case 'documents':
+              widgetContent = (
+                <WidgetDocuments 
+                  role={profileData?.role} 
+                  isSystemAdmin={profileData?.isSystemAdmin} 
+                  groupId={profileData?.groupId} 
+                />
+              );
+              break;
+            default:
+              return null;
+          }
+
+          return (
+            <div key={widgetId} className={spanClass}>
+              {widgetContent}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }

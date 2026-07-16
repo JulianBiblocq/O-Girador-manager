@@ -230,7 +230,7 @@ export default function OrdersManager({ groupId, onBack, role, isSystemAdmin }) 
             )}
 
             {/* Campaign lists */}
-            <div className="flex flex-col gap-2 mt-1">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-1">
               <h3 className="text-[10px] font-extrabold tracking-wider text-cordel-master-dark opacity-75 uppercase pl-1">
                 Campagnes Récentes
               </h3>
@@ -330,7 +330,7 @@ export default function OrdersManager({ groupId, onBack, role, isSystemAdmin }) 
                   {requests.length === 0 ? (
                     <p className="text-[10px] italic opacity-60">Aucun membre n'a encore enregistré de besoin.</p>
                   ) : (
-                    <div className="flex flex-col gap-2 max-h-60 overflow-y-auto pr-1">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-60 overflow-y-auto pr-1">
                       {requests.map((req) => (
                         <div key={req.id} className="text-xs p-2 rounded border border-dashed border-encre-noire/15 bg-cordel-bg-light/20 flex flex-col gap-0.5">
                           <div className="flex justify-between items-start font-bold">

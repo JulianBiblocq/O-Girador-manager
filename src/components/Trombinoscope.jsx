@@ -113,7 +113,7 @@ export default function Trombinoscope({ user, profileData, onBack }) {
           )}
 
           {/* Grille responsive de portraits */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {members.map((member) => {
               const fullName = `${member.prenom} ${member.nom}`;
               const hasRoleBadge = member.role && member.role !== 'membre';

@@ -234,7 +234,7 @@ export default function SystemAdminPanel({ user, profileData, onBack, onNavigate
           </h3>
 
           {/* User grid */}
-          <div className="flex flex-col gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {usersList.map((userItem) => {
               const currentRole = userItem.role || 'membre';
               const currentTags = userItem.tags || [];
