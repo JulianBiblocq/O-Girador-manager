@@ -1,9 +1,17 @@
-import React, { useState } from 'react';
-import { doc, setDoc } from 'firebase/firestore';
+import React, { useState, useEffect } from 'react';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import LayoutShell from './LayoutShell';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
+
+const DEFAULT_FIELDS_CONFIG = {
+  telephone: { key: "telephone", label: "Téléphone", enabled: true, filledBy: "member" },
+  tailleTshirt: { key: "tailleTshirt", label: "Taille T-shirt", enabled: true, filledBy: "member" },
+  droitImage: { key: "droitImage", label: "Droit à l'image", enabled: true, filledBy: "member" },
+  aptitudeMedicale: { key: "aptitudeMedicale", label: "Aptitude médicale", enabled: true, filledBy: "member" },
+  lateralite: { key: "lateralite", label: "Latéralité (Gaucher/Droitier)", enabled: true, filledBy: "member" }
+};
 
 export default function Onboarding({ user, onComplete }) {
   // Split the Google Auth display name into a first name and a last name
@@ -17,10 +25,46 @@ export default function Onboarding({ user, onComplete }) {
     phone: '',
     tailleTshirt: 'M',
     droitImage: true,
-    aptitudeMedicale: false
+    aptitudeMedicale: false,
+    lateralite: 'droitier'
   });
 
+  const [fieldsConfig, setFieldsConfig] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+
+  // Extract the group ID parameter from the URL if present
+  const searchParams = new URLSearchParams(window.location.search);
+  const groupId = searchParams.get('groupe') || null;
+
+  // Load custom fields configuration for Onboarding
+  useEffect(() => {
+    if (!groupId) {
+      setFieldsConfig(DEFAULT_FIELDS_CONFIG);
+      return;
+    }
+
+    const fetchConfig = async () => {
+      try {
+        const docRef = doc(db, 'associations', groupId);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists() && docSnap.data().fieldsConfig) {
+          setFieldsConfig({ ...DEFAULT_FIELDS_CONFIG, ...docSnap.data().fieldsConfig });
+        } else {
+          setFieldsConfig(DEFAULT_FIELDS_CONFIG);
+        }
+      } catch (err) {
+        console.error("Onboarding - Erreur de fetch config :", err);
+        setFieldsConfig(DEFAULT_FIELDS_CONFIG);
+      }
+    };
+    fetchConfig();
+  }, [groupId]);
+
+  const isFieldVisible = (key) => {
+    if (!fieldsConfig) return true; // show by default while loading
+    const cfg = fieldsConfig[key];
+    return cfg ? (cfg.enabled && cfg.filledBy === 'member') : true;
+  };
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -32,19 +76,16 @@ export default function Onboarding({ user, onComplete }) {
     setSubmitting(true);
 
     try {
-      // 1. Extract the group ID parameter from the URL if present
-      const searchParams = new URLSearchParams(window.location.search);
-      const groupId = searchParams.get('groupe') || null;
-
-      // 2. Build the user document payload according to the specifications
+      // Build the user document payload according to the specifications
       const userDoc = {
         nom: formData.lastName,
         prenom: formData.firstName,
         email: user.email,
-        telephone: formData.phone,
-        tailleTshirt: formData.tailleTshirt,
-        droitImage: formData.droitImage,
-        aptitudeMedicale: formData.aptitudeMedicale,
+        telephone: isFieldVisible('telephone') ? formData.phone : "",
+        tailleTshirt: isFieldVisible('tailleTshirt') ? formData.tailleTshirt : "M",
+        droitImage: isFieldVisible('droitImage') ? formData.droitImage : true,
+        aptitudeMedicale: isFieldVisible('aptitudeMedicale') ? formData.aptitudeMedicale : false,
+        lateralite: isFieldVisible('lateralite') ? formData.lateralite : "droitier",
         role: "membre",
         statutActuel: "active",
         groupId: groupId,
@@ -118,74 +159,101 @@ export default function Onboarding({ user, onComplete }) {
           </div>
 
           {/* Phone Input */}
-          <div className="flex flex-col gap-1">
-            <label className="text-[10px] uppercase font-bold tracking-wider text-cordel-master-dark">
-              Téléphone
-            </label>
-            <input
-              type="tel"
-              name="phone"
-              placeholder="06 12 34 56 78"
-              value={formData.phone}
-              onChange={handleChange}
-              required
-              disabled={submitting}
-              className="theme-input w-full disabled:opacity-50"
-            />
-          </div>
+          {isFieldVisible('telephone') && (
+            <div className="flex flex-col gap-1">
+              <label className="text-[10px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                Téléphone
+              </label>
+              <input
+                type="tel"
+                name="phone"
+                placeholder="06 12 34 56 78"
+                value={formData.phone}
+                onChange={handleChange}
+                required
+                disabled={submitting}
+                className="theme-input w-full disabled:opacity-50"
+              />
+            </div>
+          )}
 
           {/* T-Shirt Size Dropdown */}
-          <div className="flex flex-col gap-1">
-            <label className="text-[10px] uppercase font-bold tracking-wider text-cordel-master-dark">
-              Taille de T-Shirt
-            </label>
-            <select
-              name="tailleTshirt"
-              value={formData.tailleTshirt}
-              onChange={handleChange}
-              disabled={submitting}
-              className="theme-input w-full disabled:opacity-50 font-bold bg-cordel-bg-light"
-            >
-              <option value="S">S</option>
-              <option value="M">M</option>
-              <option value="L">L</option>
-              <option value="XL">XL</option>
-              <option value="XXL">XXL</option>
-            </select>
-          </div>
+          {isFieldVisible('tailleTshirt') && (
+            <div className="flex flex-col gap-1">
+              <label className="text-[10px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                Taille de T-Shirt
+              </label>
+              <select
+                name="tailleTshirt"
+                value={formData.tailleTshirt}
+                onChange={handleChange}
+                disabled={submitting}
+                className="theme-input w-full disabled:opacity-50 font-bold bg-cordel-bg-light"
+              >
+                <option value="S">S</option>
+                <option value="M">M</option>
+                <option value="L">L</option>
+                <option value="XL">XL</option>
+                <option value="XXL">XXL</option>
+              </select>
+            </div>
+          )}
+
+          {/* Latéralité Dropdown */}
+          {isFieldVisible('lateralite') && (
+            <div className="flex flex-col gap-1">
+              <label className="text-[10px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                Latéralité (Main principale)
+              </label>
+              <select
+                name="lateralite"
+                value={formData.lateralite}
+                onChange={handleChange}
+                disabled={submitting}
+                className="theme-input w-full disabled:opacity-50 font-bold bg-cordel-bg-light"
+              >
+                <option value="droitier">Droitier</option>
+                <option value="gaucher">Gaucher</option>
+              </select>
+            </div>
+          )}
 
           {/* Image Rights Checkbox */}
-          <div className="flex items-start gap-2.5 mt-2">
-            <input
-              type="checkbox"
-              name="droitImage"
-              id="droitImage"
-              checked={formData.droitImage}
-              onChange={handleChange}
-              disabled={submitting}
-              className="mt-1"
-            />
-            <label htmlFor="droitImage" className="text-xs font-semibold leading-snug cursor-pointer select-none">
-              J'autorise l'association à utiliser mon image sur ses supports de communication (photos, vidéos).
-            </label>
-          </div>
+          {isFieldVisible('droitImage') && (
+            <div className="flex items-start gap-2.5 mt-2">
+              <input
+                type="checkbox"
+                name="droitImage"
+                id="droitImage"
+                checked={formData.droitImage}
+                onChange={handleChange}
+                disabled={submitting}
+                className="mt-1"
+              />
+              <label htmlFor="droitImage" className="text-xs font-semibold leading-snug cursor-pointer select-none">
+                J'autorise l'association à utiliser mon image sur ses supports de communication (photos, vidéos).
+              </label>
+            </div>
+          )}
 
           {/* Medical Aptitude Checkbox (Required) */}
-          <div className="flex items-start gap-2.5 mt-1">
-            <input
-              type="checkbox"
-              name="aptitudeMedicale"
-              id="aptitudeMedicale"
-              checked={formData.aptitudeMedicale}
-              onChange={handleChange}
-              required
-              disabled={submitting}
-              className="mt-1"
-            />
-            <label htmlFor="aptitudeMedicale" className="text-xs font-bold leading-snug cursor-pointer select-none text-red-600 dark:text-red-400">
-              * Je certifie sur l'honneur être médicalement apte à la pratique du Maracatu.
-            </label>
-          </div>
+          {isFieldVisible('aptitudeMedicale') && (
+            <div className="flex items-start gap-2.5 mt-1">
+              <input
+                type="checkbox"
+                name="aptitudeMedicale"
+                id="aptitudeMedicale"
+                checked={formData.aptitudeMedicale}
+                onChange={handleChange}
+                required
+                disabled={submitting}
+                className="mt-1"
+              />
+              <label htmlFor="aptitudeMedicale" className="text-xs font-bold leading-snug cursor-pointer select-none text-red-600 dark:text-red-400">
+                * Je certifie sur l'honneur être médicalement apte à la pratique du Maracatu.
+              </label>
+            </div>
+          )}
 
           <CordelButton 
             variant="ocre" 

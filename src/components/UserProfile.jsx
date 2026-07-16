@@ -18,6 +18,14 @@ const INSTRUMENT_ICONS = {
   Autre: 'favicon.svg'
 };
 
+const DEFAULT_FIELDS_CONFIG = {
+  telephone: { key: "telephone", label: "Téléphone", enabled: true, filledBy: "member" },
+  tailleTshirt: { key: "tailleTshirt", label: "Taille T-shirt", enabled: true, filledBy: "member" },
+  droitImage: { key: "droitImage", label: "Droit à l'image", enabled: true, filledBy: "member" },
+  aptitudeMedicale: { key: "aptitudeMedicale", label: "Aptitude médicale", enabled: true, filledBy: "member" },
+  lateralite: { key: "lateralite", label: "Latéralité (Gaucher/Droitier)", enabled: true, filledBy: "member" }
+};
+
 export default function UserProfile({ user, profileData, onBack }) {
   const [formData, setFormData] = useState({
     prenom: profileData?.prenom || '',
@@ -26,12 +34,41 @@ export default function UserProfile({ user, profileData, onBack }) {
     telephone: profileData?.telephone || '',
     tailleTshirt: profileData?.tailleTshirt || 'M',
     droitImage: profileData?.droitImage !== undefined ? profileData.droitImage : true,
-    aptitudeMedicale: profileData?.aptitudeMedicale !== undefined ? profileData.aptitudeMedicale : false
+    aptitudeMedicale: profileData?.aptitudeMedicale !== undefined ? profileData.aptitudeMedicale : false,
+    lateralite: profileData?.lateralite || 'droitier'
   });
   
   const [saving, setSaving] = useState(false);
   const [myInstruments, setMyInstruments] = useState([]);
   const [loadingInst, setLoadingInst] = useState(true);
+  const [fieldsConfig, setFieldsConfig] = useState(null);
+
+  // Sync fieldsConfig for user's association
+  useEffect(() => {
+    if (!profileData?.groupId) {
+      setFieldsConfig(DEFAULT_FIELDS_CONFIG);
+      return;
+    }
+
+    const assocRef = doc(db, 'associations', profileData.groupId);
+    const unsubscribe = onSnapshot(assocRef, (docSnap) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        if (data.fieldsConfig) {
+          setFieldsConfig({ ...DEFAULT_FIELDS_CONFIG, ...data.fieldsConfig });
+        } else {
+          setFieldsConfig(DEFAULT_FIELDS_CONFIG);
+        }
+      } else {
+        setFieldsConfig(DEFAULT_FIELDS_CONFIG);
+      }
+    }, (error) => {
+      console.error("UserProfile - Erreur onSnapshot fieldsConfig :", error);
+      setFieldsConfig(DEFAULT_FIELDS_CONFIG);
+    });
+
+    return () => unsubscribe();
+  }, [profileData?.groupId]);
 
   // Sync instruments list for user's group
   useEffect(() => {
@@ -72,6 +109,12 @@ export default function UserProfile({ user, profileData, onBack }) {
     localStorage.setItem('theme', isDark ? 'dark' : 'light');
   };
 
+  const isFieldVisible = (key) => {
+    if (!fieldsConfig) return true; // show by default while loading
+    const cfg = fieldsConfig[key];
+    return cfg ? (cfg.enabled && cfg.filledBy === 'member') : true;
+  };
+
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
@@ -88,10 +131,11 @@ export default function UserProfile({ user, profileData, onBack }) {
         prenom: formData.prenom,
         nom: formData.nom,
         instrument: formData.instrument,
-        telephone: formData.telephone,
-        tailleTshirt: formData.tailleTshirt,
-        droitImage: formData.droitImage,
-        aptitudeMedicale: formData.aptitudeMedicale
+        telephone: isFieldVisible('telephone') ? formData.telephone : (profileData?.telephone || ''),
+        tailleTshirt: isFieldVisible('tailleTshirt') ? formData.tailleTshirt : (profileData?.tailleTshirt || 'M'),
+        droitImage: isFieldVisible('droitImage') ? formData.droitImage : (profileData?.droitImage !== undefined ? profileData.droitImage : true),
+        aptitudeMedicale: isFieldVisible('aptitudeMedicale') ? formData.aptitudeMedicale : (profileData?.aptitudeMedicale !== undefined ? profileData.aptitudeMedicale : false),
+        lateralite: isFieldVisible('lateralite') ? formData.lateralite : (profileData?.lateralite || 'droitier')
       });
       alert("Profil mis à jour avec succès !");
     } catch (error) {
@@ -213,74 +257,101 @@ export default function UserProfile({ user, profileData, onBack }) {
           </div>
 
           {/* Telephone */}
-          <div className="flex flex-col gap-1.5 border-t border-dashed border-cordel-master-dark/10 pt-2">
-            <label className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood">
-              Numéro de Téléphone
-            </label>
-            <input
-              type="tel"
-              name="telephone"
-              value={formData.telephone}
-              onChange={handleChange}
-              required
-              disabled={saving}
-              placeholder="06 12 34 56 78"
-              className="theme-input w-full disabled:opacity-50 text-xs font-bold"
-            />
-          </div>
+          {isFieldVisible('telephone') && (
+            <div className="flex flex-col gap-1.5 border-t border-dashed border-cordel-master-dark/10 pt-2">
+              <label className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood">
+                Numéro de Téléphone
+              </label>
+              <input
+                type="tel"
+                name="telephone"
+                value={formData.telephone}
+                onChange={handleChange}
+                required
+                disabled={saving}
+                placeholder="06 12 34 56 78"
+                className="theme-input w-full disabled:opacity-50 text-xs font-bold"
+              />
+            </div>
+          )}
 
           {/* Taille T-Shirt */}
-          <div className="flex flex-col gap-1.5">
-            <label className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood">
-              Taille de T-Shirt
-            </label>
-            <select
-              name="tailleTshirt"
-              value={formData.tailleTshirt}
-              onChange={handleChange}
-              disabled={saving}
-              className="theme-input w-full disabled:opacity-50 text-xs font-bold bg-cordel-bg-light"
-            >
-              <option value="S">S</option>
-              <option value="M">M</option>
-              <option value="L">L</option>
-              <option value="XL">XL</option>
-              <option value="XXL">XXL</option>
-            </select>
-          </div>
+          {isFieldVisible('tailleTshirt') && (
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood">
+                Taille de T-Shirt
+              </label>
+              <select
+                name="tailleTshirt"
+                value={formData.tailleTshirt}
+                onChange={handleChange}
+                disabled={saving}
+                className="theme-input w-full disabled:opacity-50 text-xs font-bold bg-cordel-bg-light"
+              >
+                <option value="S">S</option>
+                <option value="M">M</option>
+                <option value="L">L</option>
+                <option value="XL">XL</option>
+                <option value="XXL">XXL</option>
+              </select>
+            </div>
+          )}
+
+          {/* Latéralité */}
+          {isFieldVisible('lateralite') && (
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood">
+                Latéralité (Main principale)
+              </label>
+              <select
+                name="lateralite"
+                value={formData.lateralite}
+                onChange={handleChange}
+                disabled={saving}
+                className="theme-input w-full disabled:opacity-50 text-xs font-bold bg-cordel-bg-light"
+              >
+                <option value="droitier">Droitier</option>
+                <option value="gaucher">Gaucher</option>
+              </select>
+            </div>
+          )}
 
           {/* Droit à l'image Checkbox */}
-          <div className="flex items-start gap-2.5 mt-1 border-t border-dashed border-cordel-master-dark/10 pt-2">
-            <input
-              type="checkbox"
-              name="droitImage"
-              id="droitImage"
-              checked={formData.droitImage}
-              onChange={handleChange}
-              disabled={saving}
-              className="mt-1"
-            />
-            <label htmlFor="droitImage" className="text-xs font-semibold leading-snug cursor-pointer select-none">
-              J'autorise l'association à utiliser mon image sur ses supports de communication (photos, vidéos).
-            </label>
-          </div>
+          {isFieldVisible('droitImage') && (
+            <div className="flex items-start gap-2.5 mt-1 border-t border-dashed border-cordel-master-dark/10 pt-2">
+              <input
+                type="checkbox"
+                name="droitImage"
+                id="droitImage"
+                checked={formData.droitImage}
+                onChange={handleChange}
+                disabled={saving}
+                className="mt-1"
+              />
+              <label htmlFor="droitImage" className="text-xs font-semibold leading-snug cursor-pointer select-none">
+                J'autorise l'association à utiliser mon image sur ses supports de communication (photos, vidéos).
+              </label>
+            </div>
+          )}
 
           {/* Aptitude Médicale Checkbox (Required) */}
-          <div className="flex items-start gap-2.5 mt-0.5">
-            <input
-              type="checkbox"
-              name="aptitudeMedicale"
-              id="aptitudeMedicale"
-              checked={formData.aptitudeMedicale}
-              onChange={handleChange}
-              required
-              disabled={saving}
-              className="mt-1"
-            />
-            <label htmlFor="aptitudeMedicale" className="text-xs font-bold leading-snug cursor-pointer select-none text-red-600 dark:text-red-400">
-              * Je certifie sur l'honneur être médicalement apte à la pratique du Maracatu.
-            </label>
-          </div>
+          {isFieldVisible('aptitudeMedicale') && (
+            <div className="flex items-start gap-2.5 mt-0.5">
+              <input
+                type="checkbox"
+                name="aptitudeMedicale"
+                id="aptitudeMedicale"
+                checked={formData.aptitudeMedicale}
+                onChange={handleChange}
+                required
+                disabled={saving}
+                className="mt-1"
+              />
+              <label htmlFor="aptitudeMedicale" className="text-xs font-bold leading-snug cursor-pointer select-none text-red-600 dark:text-red-400">
+                * Je certifie sur l'honneur être médicalement apte à la pratique du Maracatu.
+              </label>
+            </div>
+          )}
         </CordelCard>
 
         {/* Validation Button */}

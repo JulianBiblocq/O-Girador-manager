@@ -4,6 +4,14 @@ import { db } from '../firebase';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
 
+const DEFAULT_FIELDS_CONFIG = {
+  telephone: { key: "telephone", label: "Téléphone", enabled: true, filledBy: "member" },
+  tailleTshirt: { key: "tailleTshirt", label: "Taille T-shirt", enabled: true, filledBy: "member" },
+  droitImage: { key: "droitImage", label: "Droit à l'image", enabled: true, filledBy: "member" },
+  aptitudeMedicale: { key: "aptitudeMedicale", label: "Aptitude médicale", enabled: true, filledBy: "member" },
+  lateralite: { key: "lateralite", label: "Latéralité (Gaucher/Droitier)", enabled: true, filledBy: "member" }
+};
+
 export default function SystemAdminPanel({ user, profileData, onBack, onNavigateToView }) {
   // Ultimate Security Verification
   if (!profileData || profileData.isSystemAdmin !== true) {
@@ -27,6 +35,8 @@ export default function SystemAdminPanel({ user, profileData, onBack, onNavigate
   const [availableTags, setAvailableTags] = useState([]);
   const [draftRoles, setDraftRoles] = useState({}); // { [userId]: newRole }
   const [draftTags, setDraftTags] = useState({}); // { [userId]: [tag1, tag2, ...] }
+  const [draftFields, setDraftFields] = useState({}); // { [userId]: { telephone, tshirt, ... } }
+  const [fieldsConfig, setFieldsConfig] = useState(null);
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState(null);
 
@@ -57,7 +67,7 @@ export default function SystemAdminPanel({ user, profileData, onBack, onNavigate
     return () => unsubscribe();
   }, []);
 
-  // Real-time synchronization of custom tags list from associations collection
+  // Real-time synchronization of custom tags list and fieldsConfig from associations collection
   useEffect(() => {
     if (!profileData?.groupId) return;
 
@@ -67,6 +77,11 @@ export default function SystemAdminPanel({ user, profileData, onBack, onNavigate
         const data = docSnap.data();
         if (Array.isArray(data.tagsDisponibles)) {
           setAvailableTags(data.tagsDisponibles);
+        }
+        if (data.fieldsConfig) {
+          setFieldsConfig({ ...DEFAULT_FIELDS_CONFIG, ...data.fieldsConfig });
+        } else {
+          setFieldsConfig(DEFAULT_FIELDS_CONFIG);
         }
       }
     }, (error) => {
@@ -78,6 +93,16 @@ export default function SystemAdminPanel({ user, profileData, onBack, onNavigate
 
   const handleRoleChange = (userId, value) => {
     setDraftRoles((prev) => ({ ...prev, [userId]: value }));
+  };
+
+  const handleFieldChange = (userId, fieldKey, value) => {
+    setDraftFields((prev) => ({
+      ...prev,
+      [userId]: {
+        ...(prev[userId] || {}),
+        [fieldKey]: value
+      }
+    }));
   };
 
   const handleTagToggle = (userId, tag, isChecked, currentTags = []) => {
@@ -93,17 +118,41 @@ export default function SystemAdminPanel({ user, profileData, onBack, onNavigate
     });
   };
 
-  const handleSavePermissions = async (targetUserId, currentRole, currentTags) => {
+  const handleSavePermissions = async (targetUserId, currentUserItem) => {
+    const currentRole = currentUserItem.role || 'membre';
+    const currentTags = currentUserItem.tags || [];
+
     const newRole = draftRoles[targetUserId] !== undefined ? draftRoles[targetUserId] : currentRole;
     const newTags = draftTags[targetUserId] !== undefined ? draftTags[targetUserId] : (currentTags || []);
+
+    const userDraft = draftFields[targetUserId] || {};
+    const isEnabled = (key) => fieldsConfig?.[key]?.enabled === true;
+
+    const updatePayload = {
+      role: newRole,
+      tags: newTags
+    };
+
+    if (isEnabled('telephone')) {
+      updatePayload.telephone = userDraft.telephone !== undefined ? userDraft.telephone : (currentUserItem.telephone || '');
+    }
+    if (isEnabled('tailleTshirt')) {
+      updatePayload.tailleTshirt = userDraft.tailleTshirt !== undefined ? userDraft.tailleTshirt : (currentUserItem.tailleTshirt || 'M');
+    }
+    if (isEnabled('droitImage')) {
+      updatePayload.droitImage = userDraft.droitImage !== undefined ? userDraft.droitImage : (currentUserItem.droitImage !== undefined ? currentUserItem.droitImage : true);
+    }
+    if (isEnabled('aptitudeMedicale')) {
+      updatePayload.aptitudeMedicale = userDraft.aptitudeMedicale !== undefined ? userDraft.aptitudeMedicale : (currentUserItem.aptitudeMedicale !== undefined ? currentUserItem.aptitudeMedicale : false);
+    }
+    if (isEnabled('lateralite')) {
+      updatePayload.lateralite = userDraft.lateralite !== undefined ? userDraft.lateralite : (currentUserItem.lateralite || 'droitier');
+    }
 
     setSavingId(targetUserId);
     try {
       const userRef = doc(db, 'users', targetUserId);
-      await updateDoc(userRef, { 
-        role: newRole,
-        tags: newTags
-      });
+      await updateDoc(userRef, updatePayload);
       
       // Clear drafts upon success
       setDraftRoles((prev) => {
@@ -116,11 +165,16 @@ export default function SystemAdminPanel({ user, profileData, onBack, onNavigate
         delete copy[targetUserId];
         return copy;
       });
+      setDraftFields((prev) => {
+        const copy = { ...prev };
+        delete copy[targetUserId];
+        return copy;
+      });
       
-      alert("Permissions de l'utilisateur mises à jour avec succès !");
+      alert("Profil et permissions mis à jour avec succès !");
     } catch (error) {
       console.error("SystemAdminPanel - Erreur updateDoc :", error);
-      alert("Erreur lors de la mise à jour des permissions.");
+      alert("Erreur lors de la mise à jour.");
     } finally {
       setSavingId(null);
     }
@@ -136,13 +190,22 @@ export default function SystemAdminPanel({ user, profileData, onBack, onNavigate
         <span className="panel-title text-base font-extrabold tracking-wider text-cordel-wood uppercase">
           Tour de Contrôle
         </span>
-        <button 
-          type="button"
-          onClick={() => onNavigateToView('tag-manager')}
-          className="text-[10px] font-black uppercase tracking-widest bg-cordel-bg border border-encre-noire px-3 py-1 rounded-[4px_6px_3px_5px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-95 cursor-pointer flex items-center gap-1"
-        >
-          🏷️ Étiquettes
-        </button>
+        <div className="flex gap-2">
+          <button 
+            type="button"
+            onClick={() => onNavigateToView('tag-manager')}
+            className="text-[10px] font-black uppercase tracking-widest bg-cordel-bg border border-encre-noire px-3 py-1 rounded-[4px_6px_3px_5px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-95 cursor-pointer flex items-center gap-1"
+          >
+            🏷️ Étiquettes
+          </button>
+          <button 
+            type="button"
+            onClick={() => onNavigateToView('association-settings')}
+            className="text-[10px] font-black uppercase tracking-widest bg-cordel-bg border border-encre-noire px-3 py-1 rounded-[4px_6px_3px_5px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-95 cursor-pointer flex items-center gap-1"
+          >
+            ⚙️ Paramètres
+          </button>
+        </div>
       </div>
 
       {loading ? (
@@ -174,6 +237,7 @@ export default function SystemAdminPanel({ user, profileData, onBack, onNavigate
               
               const draftRole = draftRoles[userItem.id];
               const draftTag = draftTags[userItem.id];
+              const userDraft = draftFields[userItem.id] || {};
               
               const activeRole = draftRole !== undefined ? draftRole : currentRole;
               const activeTags = draftTag !== undefined ? draftTag : currentTags;
@@ -183,7 +247,18 @@ export default function SystemAdminPanel({ user, profileData, onBack, onNavigate
               const sortedCurrentTags = [...currentTags].sort();
               const sortedActiveTags = [...activeTags].sort();
               const isTagsModified = JSON.stringify(sortedCurrentTags) !== JSON.stringify(sortedActiveTags);
-              const isModified = isRoleModified || isTagsModified;
+              
+              const isFieldModified = (key, currentVal) => {
+                return userDraft[key] !== undefined && userDraft[key] !== currentVal;
+              };
+              const isAnyFieldModified = 
+                isFieldModified('telephone', userItem.telephone) ||
+                isFieldModified('tailleTshirt', userItem.tailleTshirt) ||
+                isFieldModified('droitImage', userItem.droitImage) ||
+                isFieldModified('aptitudeMedicale', userItem.aptitudeMedicale) ||
+                isFieldModified('lateralite', userItem.lateralite);
+
+              const isModified = isRoleModified || isTagsModified || isAnyFieldModified;
 
               return (
                 <CordelCard key={userItem.id} variant="default" useExtremeBorder={false} className="py-4 relative pr-4">
@@ -196,10 +271,22 @@ export default function SystemAdminPanel({ user, profileData, onBack, onNavigate
                       <p className="text-[9px] font-semibold text-cordel-master-dark/70 break-all select-all mt-0.5">
                         ✉️ {userItem.email}
                       </p>
-                      <div className="flex flex-wrap gap-x-2 gap-y-0.5 text-[8px] font-semibold text-cordel-master-dark/70 mt-0.5">
-                        <span>📞 {userItem.telephone || 'Non renseigné'}</span>
-                        <span>•</span>
-                        <span>👕 T-Shirt : <strong>{userItem.tailleTshirt || 'Non spécifié'}</strong></span>
+                      <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[8px] font-semibold text-cordel-master-dark/70 mt-0.5">
+                        {(!fieldsConfig || fieldsConfig.telephone?.enabled) && (
+                          <>
+                            <span>📞 {userItem.telephone || 'Non renseigné'}</span>
+                            <span>•</span>
+                          </>
+                        )}
+                        {(!fieldsConfig || fieldsConfig.tailleTshirt?.enabled) && (
+                          <>
+                            <span>👕 T-Shirt : <strong>{userItem.tailleTshirt || 'Non spécifié'}</strong></span>
+                            {(!fieldsConfig || fieldsConfig.lateralite?.enabled) && <span>•</span>}
+                          </>
+                        )}
+                        {(!fieldsConfig || fieldsConfig.lateralite?.enabled) && (
+                          <span>👋 Main : <strong>{userItem.lateralite || 'Droitier'}</strong></span>
+                        )}
                       </div>
                       <p className="text-[9px] font-bold text-cordel-wood mt-0.5">
                         📦 Groupe : <span className="font-mono">{userItem.groupId || 'Aucun'}</span>
@@ -229,7 +316,7 @@ export default function SystemAdminPanel({ user, profileData, onBack, onNavigate
                         <CordelButton
                           variant={isModified ? "ocre" : "default"}
                           useExtremeBorder={true}
-                          onClick={() => handleSavePermissions(userItem.id, currentRole, currentTags)}
+                          onClick={() => handleSavePermissions(userItem.id, userItem)}
                           disabled={!isModified || savingId === userItem.id}
                           className={`text-xs px-3 py-1.5 font-bold uppercase tracking-wider ${
                             !isModified ? 'opacity-40 cursor-not-allowed' : ''
@@ -239,6 +326,96 @@ export default function SystemAdminPanel({ user, profileData, onBack, onNavigate
                         </CordelButton>
                       </div>
                     </div>
+
+                    {/* Custom Admin Fields Form (Only renders enabled custom fields) */}
+                    {fieldsConfig && Object.values(fieldsConfig).some(f => f.enabled) && (
+                      <div className="flex flex-col gap-3 border-t border-dashed border-cordel-master-dark/10 pt-3 mt-1.5">
+                        <label className="text-[8px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                          Champs d'Association ({userItem.groupId})
+                        </label>
+                        
+                        <div className="grid grid-cols-2 gap-2">
+                          {/* Telephone */}
+                          {fieldsConfig.telephone?.enabled && (
+                            <div className="flex flex-col gap-0.5">
+                              <span className="text-[8px] font-bold text-cordel-wood">Téléphone</span>
+                              <input
+                                type="tel"
+                                value={userDraft.telephone !== undefined ? userDraft.telephone : (userItem.telephone || '')}
+                                onChange={(e) => handleFieldChange(userItem.id, 'telephone', e.target.value)}
+                                disabled={savingId === userItem.id}
+                                className="theme-input text-[10px] font-bold py-1 px-1.5 bg-cordel-bg-light"
+                                placeholder="Non renseigné"
+                              />
+                            </div>
+                          )}
+
+                          {/* Taille Tshirt */}
+                          {fieldsConfig.tailleTshirt?.enabled && (
+                            <div className="flex flex-col gap-0.5">
+                              <span className="text-[8px] font-bold text-cordel-wood">Taille T-Shirt</span>
+                              <select
+                                value={userDraft.tailleTshirt !== undefined ? userDraft.tailleTshirt : (userItem.tailleTshirt || 'M')}
+                                onChange={(e) => handleFieldChange(userItem.id, 'tailleTshirt', e.target.value)}
+                                disabled={savingId === userItem.id}
+                                className="theme-input text-[10px] font-bold py-1 px-1.5 bg-cordel-bg-light"
+                              >
+                                <option value="S">S</option>
+                                <option value="M">M</option>
+                                <option value="L">L</option>
+                                <option value="XL">XL</option>
+                                <option value="XXL">XXL</option>
+                              </select>
+                            </div>
+                          )}
+
+                          {/* Latéralité */}
+                          {fieldsConfig.lateralite?.enabled && (
+                            <div className="flex flex-col gap-0.5">
+                              <span className="text-[8px] font-bold text-cordel-wood">Latéralité</span>
+                              <select
+                                value={userDraft.lateralite !== undefined ? userDraft.lateralite : (userItem.lateralite || 'droitier')}
+                                onChange={(e) => handleFieldChange(userItem.id, 'lateralite', e.target.value)}
+                                disabled={savingId === userItem.id}
+                                className="theme-input text-[10px] font-bold py-1 px-1.5 bg-cordel-bg-light"
+                              >
+                                <option value="droitier">Droitier</option>
+                                <option value="gaucher">Gaucher</option>
+                              </select>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Checkboxes for right to image and medical fitness */}
+                        <div className="flex flex-wrap gap-x-4 gap-y-1.5 mt-0.5">
+                          {fieldsConfig.droitImage?.enabled && (
+                            <label className="flex items-center gap-1.5 cursor-pointer text-[9px] font-bold select-none">
+                              <input
+                                type="checkbox"
+                                checked={userDraft.droitImage !== undefined ? userDraft.droitImage : (userItem.droitImage !== false)}
+                                onChange={(e) => handleFieldChange(userItem.id, 'droitImage', e.target.checked)}
+                                disabled={savingId === userItem.id}
+                                className="w-3 h-3 cursor-pointer"
+                              />
+                              <span>Droit image</span>
+                            </label>
+                          )}
+
+                          {fieldsConfig.aptitudeMedicale?.enabled && (
+                            <label className="flex items-center gap-1.5 cursor-pointer text-[9px] font-bold select-none">
+                              <input
+                                type="checkbox"
+                                checked={userDraft.aptitudeMedicale !== undefined ? userDraft.aptitudeMedicale : (userItem.aptitudeMedicale === true)}
+                                onChange={(e) => handleFieldChange(userItem.id, 'aptitudeMedicale', e.target.checked)}
+                                disabled={savingId === userItem.id}
+                                className="w-3 h-3 cursor-pointer"
+                              />
+                              <span>Aptitude méd.</span>
+                            </label>
+                          )}
+                        </div>
+                      </div>
+                    )}
 
                     {/* Tags Selector Panel (Checkboxes) */}
                     {availableTags.length > 0 && (
