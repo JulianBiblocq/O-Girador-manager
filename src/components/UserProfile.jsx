@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { doc, updateDoc, collection, query, where, onSnapshot } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { signOut } from 'firebase/auth';
-import { db, auth } from '../firebase';
+import { db, auth, storage } from '../firebase';
 import XiloAvatar from './XiloAvatar';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
@@ -41,6 +42,7 @@ export default function UserProfile({ user, profileData, onBack }) {
   });
   
   const [saving, setSaving] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [myInstruments, setMyInstruments] = useState([]);
   const [loadingInst, setLoadingInst] = useState(true);
   const [fieldsConfig, setFieldsConfig] = useState(null);
@@ -117,6 +119,76 @@ export default function UserProfile({ user, profileData, onBack }) {
     return cfg ? (cfg.enabled && cfg.filledBy === 'member') : true;
   };
 
+  const handlePhotoUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file || !user?.uid) return;
+
+    setUploadingPhoto(true);
+
+    try {
+      // 1. Read file as image and compress/resize to 256x256 using Canvas API
+      const compressedBlob = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const img = new Image();
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const maxDim = 256;
+            let width = img.width;
+            let height = img.height;
+
+            if (width > height) {
+              if (width > maxDim) {
+                height = Math.round((height * maxDim) / width);
+                width = maxDim;
+              }
+            } else {
+              if (height > maxDim) {
+                width = Math.round((width * maxDim) / height);
+                height = maxDim;
+              }
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+
+            canvas.toBlob((blob) => {
+              if (blob) {
+                resolve(blob);
+              } else {
+                reject(new Error("Canvas toBlob failed"));
+              }
+            }, 'image/jpeg', 0.8);
+          };
+          img.onerror = () => reject(new Error("Image loading failed"));
+          img.src = event.target.result;
+        };
+        reader.onerror = () => reject(new Error("File reading failed"));
+        reader.readAsDataURL(file);
+      });
+
+      // 2. Upload to Firebase Storage
+      const storageRef = ref(storage, `avatars/${user.uid}/profile_pic_${Date.now()}.jpg`);
+      const snapshot = await uploadBytes(storageRef, compressedBlob);
+      const downloadURL = await getDownloadURL(snapshot.ref);
+
+      // 3. Save to Firestore users collection
+      const userRef = doc(db, 'users', user.uid);
+      await updateDoc(userRef, {
+        photoURL: downloadURL
+      });
+
+      alert("Photo de profil mise à jour avec succès !");
+    } catch (err) {
+      console.error("UserProfile - Erreur d'upload de photo :", err);
+      alert("Erreur lors du téléversement de la photo.");
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
+
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
@@ -180,9 +252,9 @@ export default function UserProfile({ user, profileData, onBack }) {
       </div>
 
       {/* Avatar Container in Center */}
-      <div className="flex flex-col items-center gap-2 py-4 select-none">
+      <div className="flex flex-col items-center gap-3 py-4 select-none">
         <div className="relative">
-          <XiloAvatar src={user.photoURL} name={fullName} size={110} />
+          <XiloAvatar src={profileData?.photoURL || user?.photoURL} name={fullName} size={110} />
           {/* Decorative stamp on avatar */}
           <div className="absolute -bottom-1 -right-2 z-20">
             <span className="theme-stamp-badge theme-stamp-badge-wood text-[8px] rotate-12">
@@ -190,9 +262,23 @@ export default function UserProfile({ user, profileData, onBack }) {
             </span>
           </div>
         </div>
-        <span className="text-[10px] font-bold tracking-widest text-cordel-master-dark opacity-60 mt-1 break-all px-4 text-center">
-          {user.email}
-        </span>
+
+        {/* Upload picture button */}
+        <div className="flex flex-col items-center gap-1.5">
+          <label className="text-[10px] font-black uppercase tracking-widest bg-cordel-bg border border-encre-noire px-3 py-1.5 rounded-[4px_6px_3px_5px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-95 cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1">
+            {uploadingPhoto ? "⏳ Téléversement..." : "📸 Changer ma photo"}
+            <input 
+              type="file" 
+              accept="image/*"
+              disabled={uploadingPhoto || saving}
+              onChange={handlePhotoUpload}
+              className="hidden"
+            />
+          </label>
+          <span className="text-[9px] font-bold tracking-widest text-cordel-master-dark opacity-60 break-all px-4 text-center">
+            {user.email}
+          </span>
+        </div>
       </div>
 
       {/* Profile Modification Form */}

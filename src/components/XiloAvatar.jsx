@@ -3,6 +3,7 @@ import { processCordelEffect, defaultCordelOptions } from '../utils/cordelEffect
 
 export default function XiloAvatar({ src, name, size = 80 }) {
   const [processedSrc, setProcessedSrc] = useState(null);
+  const [useFallbackRaw, setUseFallbackRaw] = useState(false);
   const [error, setError] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -14,6 +15,7 @@ export default function XiloAvatar({ src, name, size = 80 }) {
 
     setLoading(true);
     setError(false);
+    setUseFallbackRaw(false);
 
     const img = new Image();
     img.crossOrigin = 'anonymous'; // Crucial for CORS-enabled image hosting (like Google profile pictures)
@@ -32,19 +34,19 @@ export default function XiloAvatar({ src, name, size = 80 }) {
         if (result) {
           setProcessedSrc(result);
         } else {
-          setError(true);
+          setUseFallbackRaw(true);
         }
       } catch (err) {
-        console.error("XiloAvatar - Erreur de filtrage :", err);
-        setError(true);
+        console.warn("XiloAvatar - Échec du traitement de xylogravure, affichage brut :", err);
+        setUseFallbackRaw(true);
       } finally {
         setLoading(false);
       }
     };
 
     img.onerror = (err) => {
-      console.warn("XiloAvatar - Échec du chargement de l'image (CORS ou réseau) :", src);
-      setError(true);
+      console.warn("XiloAvatar - Échec du chargement CORS ou réseau, affichage brut :", src);
+      setUseFallbackRaw(true);
       setLoading(false);
     };
 
@@ -64,6 +66,17 @@ export default function XiloAvatar({ src, name, size = 80 }) {
   };
 
   const initials = getInitials(name);
+
+  if (useFallbackRaw && src) {
+    return (
+      <img 
+        src={src} 
+        alt={name}
+        style={{ width: size, height: size }}
+        className="rounded-[12px_6px_10px_8px] border-2 border-encre-noire shadow-[2px_2px_0px_0px_#181716] object-cover select-none"
+      />
+    );
+  }
 
   if (error || !src) {
     return (
