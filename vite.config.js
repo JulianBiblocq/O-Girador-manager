@@ -13,7 +13,8 @@ export default defineConfig({
       manifest: false, // Generated dynamically in App.jsx
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
-        maximumFileSizeToCacheInBytes: 4 * 1024 * 1024
+        maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
+        navigateFallbackDenylist: [/^\/__/]
       }
     })
   ],
