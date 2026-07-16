@@ -18,6 +18,7 @@ export default function Dashboard({ user, profileData, onNavigateToTrombi, onNav
     return document.documentElement.classList.contains('dark');
   });
   const [layout, setLayout] = useState(["motMestre", "annonces", "agenda", "commandes", "forum", "documents"]);
+  const [sequenceurUrl, setSequenceurUrl] = useState('');
 
   const toggleDarkMode = () => {
     const isDark = document.documentElement.classList.toggle('dark');
@@ -46,6 +47,7 @@ export default function Dashboard({ user, profileData, onNavigateToTrombi, onNav
         if (Array.isArray(data.layoutEleves) && data.layoutEleves.length > 0) {
           setLayout(data.layoutEleves);
         }
+        setSequenceurUrl(data.sequenceurUrl || '');
       }
     }, (error) => {
       console.error("Dashboard - Erreur onSnapshot association :", error);
@@ -149,6 +151,17 @@ export default function Dashboard({ user, profileData, onNavigateToTrombi, onNav
         >
           👥 {t('dashboard.seeTrombi')}
         </CordelButton>
+
+        {sequenceurUrl && (
+          <a 
+            href={sequenceurUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full py-2.5 font-extrabold flex items-center justify-center gap-2 bg-[#d99f4d] text-encre-noire border-2 border-encre-noire rounded-[8px_12px_9px_11px] shadow-[2px_2px_0px_0px_#181716] hover:scale-[1.01] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-105 transition-all text-center text-xs"
+          >
+            🎛️ Séquenceur de la Roda (Révisions)
+          </a>
+        )}
 
         {/* Layout Editor & Inventory Access Buttons (Visible to Mestres, Super-Admins & System Admins) */}
         {(profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.isSystemAdmin) && (

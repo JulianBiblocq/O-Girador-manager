@@ -30,6 +30,7 @@ export default function AssociationSettings({ groupId, onBack, role, isSystemAdm
   });
   const [logoFile, setLogoFile] = useState(null);
   const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [sequenceurUrl, setSequenceurUrl] = useState('');
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -73,6 +74,7 @@ export default function AssociationSettings({ groupId, onBack, role, isSystemAdm
             });
           }
         }
+        setSequenceurUrl(data.sequenceurUrl || '');
       }
       setLoading(false);
     }, (error) => {
@@ -138,6 +140,7 @@ export default function AssociationSettings({ groupId, onBack, role, isSystemAdm
       await updateDoc(assocRef, {
         fieldsConfig: fieldsConfig,
         instrumentsDisponibles: instrumentsDisponibles,
+        sequenceurUrl: sequenceurUrl,
         branding: {
           logoUrl: finalLogoUrl,
           colors: colors
@@ -369,6 +372,25 @@ export default function AssociationSettings({ groupId, onBack, role, isSystemAdm
                     ))}
                   </div>
                 )}
+              </div>
+            </CordelCard>
+
+            {/* Séquenceur Roda Link */}
+            <CordelCard variant="default" useExtremeBorder={true} className="py-4 px-5">
+              <h3 className="text-xs uppercase font-extrabold tracking-wider text-cordel-wood mb-3">
+                🎛️ Lien du Séquenceur
+              </h3>
+              <div className="flex flex-col gap-1 text-left">
+                <label className="text-[9px] uppercase font-extrabold tracking-wider text-cordel-master-dark">
+                  URL Racine du Séquenceur de l'association
+                </label>
+                <input 
+                  type="url"
+                  value={sequenceurUrl}
+                  onChange={(e) => setSequenceurUrl(e.target.value)}
+                  placeholder="ex: https://mon-sequenceur.app"
+                  className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light w-full"
+                />
               </div>
             </CordelCard>
 
