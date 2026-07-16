@@ -12,6 +12,25 @@ export default function WidgetAgenda({ role, isSystemAdmin, groupId, user, profi
   const [saving, setSaving] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
   
+  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+
+  useEffect(() => {
+    const handleResize = () => setWindowWidth(window.innerWidth);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const isMobile = windowWidth < 768;
+  const limit = isMobile ? 3 : 8;
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const upcomingEvents = events.filter(e => {
+    const eDate = new Date(e.date);
+    return !isNaN(eDate.getTime()) && eDate >= today;
+  });
+  const visibleEvents = upcomingEvents.slice(0, limit);
+  
   const [formData, setFormData] = useState({
     titre: '',
     type: 'concert', // 'concert', 'repetition', 'stage', 'reunion'
@@ -231,13 +250,13 @@ export default function WidgetAgenda({ role, isSystemAdmin, groupId, user, profi
 
       {/* Events List (Visible when not loading and not adding) */}
       {!loading && !isAdding && (
-        events.length === 0 ? (
+        visibleEvents.length === 0 ? (
           <CordelCard variant="default" useExtremeBorder={false} className="p-4 text-center">
             <p className="text-xs opacity-75 font-semibold">Aucun événement planifié.</p>
           </CordelCard>
         ) : (
           <div className="flex flex-col gap-3">
-            {events.map((event) => {
+            {visibleEvents.map((event) => {
               const dateObj = new Date(event.date);
               const day = isNaN(dateObj.getTime()) ? '?' : dateObj.getDate();
               const month = isNaN(dateObj.getTime()) 

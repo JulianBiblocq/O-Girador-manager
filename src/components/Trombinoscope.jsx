@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { collection, query, where, onSnapshot } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, doc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import LayoutShell from './LayoutShell';
 import CordelCard from './CordelCard';
@@ -8,8 +8,32 @@ import XiloAvatar from './XiloAvatar';
 
 export default function Trombinoscope({ user, profileData, onBack }) {
   const [members, setMembers] = useState([]);
+  const [tagsDisponibles, setTagsDisponibles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // Filter States
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterInstrument, setFilterInstrument] = useState('all');
+  const [filterLateralite, setFilterLateralite] = useState('all');
+  const [filterTag, setFilterTag] = useState('all');
+
+  // Load association tags
+  useEffect(() => {
+    if (!profileData?.groupId) return;
+    const loadAssocTags = async () => {
+      try {
+        const assocRef = doc(db, 'associations', profileData.groupId);
+        const docSnap = await getDoc(assocRef);
+        if (docSnap.exists() && Array.isArray(docSnap.data().tagsDisponibles)) {
+          setTagsDisponibles(docSnap.data().tagsDisponibles);
+        }
+      } catch (err) {
+        console.error("Trombinoscope - Erreur chargement tagsDisponibles :", err);
+      }
+    };
+    loadAssocTags();
+  }, [profileData?.groupId]);
 
   useEffect(() => {
     if (!profileData?.groupId) {
@@ -68,6 +92,23 @@ export default function Trombinoscope({ user, profileData, onBack }) {
     return () => unsubscribe();
   }, [profileData, user]);
 
+  // Cascade Filtering logic
+  const filteredMembers = members.filter((member) => {
+    const fullName = `${member.prenom || ''} ${member.nom || ''}`.toLowerCase();
+    const matchesSearch = fullName.includes(searchQuery.toLowerCase());
+
+    const matchesInstrument = filterInstrument === 'all' || 
+      member.instrument === filterInstrument;
+
+    const matchesLateralite = filterLateralite === 'all' || 
+      member.lateralite === filterLateralite;
+
+    const matchesTag = filterTag === 'all' || 
+      (member.tags && member.tags.includes(filterTag));
+
+    return matchesSearch && matchesInstrument && matchesLateralite && matchesTag;
+  });
+
   return (
     <div className="flex flex-col gap-6">
       {/* Header */}
@@ -87,6 +128,78 @@ export default function Trombinoscope({ user, profileData, onBack }) {
           Groupe : {profileData?.groupId || 'Aucun groupe assigné'}
         </span>
       </div>
+
+      {/* Dynamic Search & Filters Toolbar */}
+      {!loading && !error && (
+        <CordelCard variant="default" useExtremeBorder={false} className="p-4 bg-cordel-bg flex flex-col gap-3">
+          {/* Saisie textuelle */}
+          <div className="flex flex-col gap-1 text-left">
+            <label className="text-[9px] uppercase font-extrabold tracking-wider text-cordel-wood">
+              🔍 Rechercher un membre
+            </label>
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Prénom ou Nom de famille..."
+              className="theme-input w-full text-xs font-bold py-1.5"
+            />
+          </div>
+
+          {/* Sélecteurs déroulants */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <div className="flex flex-col gap-1 text-left">
+              <label className="text-[9px] uppercase font-extrabold tracking-wider text-cordel-wood">
+                🥁 Instrument
+              </label>
+              <select
+                value={filterInstrument}
+                onChange={(e) => setFilterInstrument(e.target.value)}
+                className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light"
+              >
+                <option value="all">Tous</option>
+                <option value="Alfaia">Alfaia</option>
+                <option value="Caixa">Caixa</option>
+                <option value="Agbê">Agbê</option>
+                <option value="Gonguê">Gonguê</option>
+                <option value="Mineiro">Mineiro</option>
+                <option value="Autre">Autre</option>
+              </select>
+            </div>
+
+            <div className="flex flex-col gap-1 text-left">
+              <label className="text-[9px] uppercase font-extrabold tracking-wider text-cordel-wood">
+                🫱 Latéralité
+              </label>
+              <select
+                value={filterLateralite}
+                onChange={(e) => setFilterLateralite(e.target.value)}
+                className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light"
+              >
+                <option value="all">Toutes</option>
+                <option value="droitier">Droitier</option>
+                <option value="gaucher">Gaucher</option>
+              </select>
+            </div>
+
+            <div className="flex flex-col gap-1 text-left">
+              <label className="text-[9px] uppercase font-extrabold tracking-wider text-cordel-wood">
+                🏷️ Tag / Badge
+              </label>
+              <select
+                value={filterTag}
+                onChange={(e) => setFilterTag(e.target.value)}
+                className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light"
+              >
+                <option value="all">Tous</option>
+                {tagsDisponibles.map((tag) => (
+                  <option key={tag} value={tag}>{tag}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </CordelCard>
+      )}
 
       {/* Main Content Area */}
       {loading ? (
@@ -113,65 +226,71 @@ export default function Trombinoscope({ user, profileData, onBack }) {
           )}
 
           {/* Grille responsive de portraits */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {members.map((member) => {
-              const fullName = `${member.prenom} ${member.nom}`;
-              const hasRoleBadge = member.role && member.role !== 'membre';
-              const hasTags = member.tags && member.tags.length > 0;
+          {filteredMembers.length === 0 ? (
+            <CordelCard variant="default" useExtremeBorder={false} className="p-8 text-center bg-cordel-bg">
+              <p className="text-xs font-bold opacity-75">Aucun membre ne correspond à vos filtres.</p>
+            </CordelCard>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {filteredMembers.map((member) => {
+                const fullName = `${member.prenom} ${member.nom}`;
+                const hasRoleBadge = member.role && member.role !== 'membre';
+                const hasTags = member.tags && member.tags.length > 0;
 
-              return (
-                <div key={member.id} className="relative flex flex-col items-center">
-                  <CordelCard 
-                    variant="default" 
-                    useExtremeBorder={true} 
-                    className="w-full flex flex-col items-center p-4 min-h-[190px] relative overflow-hidden"
-                  >
-                    {/* Avatar with Xylogravure Filter */}
-                    <div className="mb-3">
-                      <XiloAvatar src={member.photoURL} name={fullName} size={72} />
-                    </div>
+                return (
+                  <div key={member.id} className="relative flex flex-col items-center">
+                    <CordelCard 
+                      variant="default" 
+                      useExtremeBorder={true} 
+                      className="w-full flex flex-col items-center p-4 min-h-[190px] relative overflow-hidden"
+                    >
+                      {/* Avatar with Xylogravure Filter */}
+                      <div className="mb-3">
+                        <XiloAvatar src={member.photoURL} name={fullName} size={72} />
+                      </div>
 
-                    {/* Member Name */}
-                    <div className="text-center mt-1 w-full">
-                      <div className="font-bold text-xs truncate leading-snug">
-                        {member.prenom}
+                      {/* Member Name */}
+                      <div className="text-center mt-1 w-full">
+                        <div className="font-bold text-xs truncate leading-snug">
+                          {member.prenom}
+                        </div>
+                        <div className="font-bold text-xs truncate leading-none uppercase text-[10px] opacity-75 mt-0.5">
+                          {member.nom}
+                        </div>
                       </div>
-                      <div className="font-bold text-xs truncate leading-none uppercase text-[10px] opacity-75 mt-0.5">
-                        {member.nom}
-                      </div>
-                    </div>
 
-                    {/* Member Tags (Custom ink stamp badges) */}
-                    {hasTags && (
-                      <div className="flex flex-wrap gap-1 mt-2.5 justify-center max-w-full z-10">
-                        {member.tags.map((tag, tagIdx) => {
-                          const rotation = ((tag.charCodeAt(0) + tagIdx) % 5) - 2; // -2deg to 2deg
-                          return (
-                            <span 
-                              key={tag} 
-                              style={{ transform: `rotate(${rotation}deg)` }}
-                              className="theme-stamp-badge theme-stamp-badge-wood text-[7px] px-1.5 py-0.5 border-dashed select-none bg-transparent shadow-none"
-                            >
-                              {tag}
-                            </span>
-                          );
-                        })}
-                      </div>
-                    )}
+                      {/* Member Tags (Custom ink stamp badges) */}
+                      {hasTags && (
+                        <div className="flex flex-wrap gap-1 mt-2.5 justify-center max-w-full z-10">
+                          {member.tags.map((tag, tagIdx) => {
+                            const rotation = ((tag.charCodeAt(0) + tagIdx) % 5) - 2; // -2deg to 2deg
+                            return (
+                              <span 
+                                key={tag} 
+                                style={{ transform: `rotate(${rotation}deg)` }}
+                                className="theme-stamp-badge theme-stamp-badge-wood text-[7px] px-1.5 py-0.5 border-dashed select-none bg-transparent shadow-none"
+                              >
+                                {tag}
+                              </span>
+                            );
+                          })}
+                        </div>
+                      )}
 
-                    {/* Role Stamp overlay (rotated and overlapping) */}
-                    {hasRoleBadge && (
-                      <div className="absolute top-2 -right-1 z-25">
-                        <span className="theme-stamp-badge theme-stamp-badge-wood text-[7px] rotate-[-6deg] select-none">
-                          {member.role}
-                        </span>
-                      </div>
-                    )}
-                  </CordelCard>
-                </div>
-              );
-            })}
-          </div>
+                      {/* Role Stamp overlay */}
+                      {hasRoleBadge && (
+                        <div className="absolute top-2 -right-1 z-25">
+                          <span className="theme-stamp-badge theme-stamp-badge-wood text-[7px] rotate-[-6deg] select-none">
+                            {member.role}
+                          </span>
+                        </div>
+                      )}
+                    </CordelCard>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
     </div>

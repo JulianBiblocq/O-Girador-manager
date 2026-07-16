@@ -5,8 +5,9 @@ import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
 import { XiloChisel, XiloClose } from './XiloIcons';
 
-export default function WidgetMotMestre({ role, isSystemAdmin, groupId }) {
+export default function WidgetMotMestre({ role, isSystemAdmin, groupId, profileData }) {
   const [motDuMestre, setMotDuMestre] = useState('');
+  const [auteurNom, setAuteurNom] = useState('');
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [draftText, setDraftText] = useState('');
@@ -27,8 +28,10 @@ export default function WidgetMotMestre({ role, isSystemAdmin, groupId }) {
     const unsubscribe = onSnapshot(docRef, (docSnap) => {
       if (docSnap.exists()) {
         setMotDuMestre(docSnap.data().motDuMestre || '');
+        setAuteurNom(docSnap.data().motDuMestreAuteur || '');
       } else {
         setMotDuMestre('');
+        setAuteurNom('');
       }
       setLoading(false);
     }, (error) => {
@@ -52,8 +55,11 @@ export default function WidgetMotMestre({ role, isSystemAdmin, groupId }) {
     setSaving(true);
     try {
       const docRef = doc(db, 'associations', groupId);
-      // Merge updates only the motDuMestre field, preserving branding, subscription, etc.
-      await setDoc(docRef, { motDuMestre: draftText }, { merge: true });
+      // Merge updates only the motDuMestre and motDuMestreAuteur fields
+      await setDoc(docRef, { 
+        motDuMestre: draftText,
+        motDuMestreAuteur: profileData?.prenom || "L'équipe"
+      }, { merge: true });
       setIsEditing(false);
     } catch (error) {
       console.error("WidgetMotMestre - Erreur setDoc :", error);
@@ -147,7 +153,7 @@ export default function WidgetMotMestre({ role, isSystemAdmin, groupId }) {
 
             {!isEditing && (
               <div className="text-right mt-2 text-[10px] font-bold uppercase tracking-widest opacity-65">
-                — Mestre Nico
+                — Signé {auteurNom || "L'équipe"}
               </div>
             )}
           </div>
