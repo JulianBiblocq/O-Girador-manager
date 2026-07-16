@@ -5,6 +5,7 @@ import { db, auth } from '../firebase';
 import XiloAvatar from './XiloAvatar';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
+import { XiloSun, XiloMoon } from './XiloIcons';
 
 export default function UserProfile({ user, profileData, onBack }) {
   const [formData, setFormData] = useState({
@@ -74,10 +75,10 @@ export default function UserProfile({ user, profileData, onBack }) {
         <button 
           type="button"
           onClick={toggleDarkMode}
-          className="theme-btn px-2.5 py-1 text-xs font-black rounded-[4px_6px_3px_5px] shadow-[1px_1px_0px_0px_rgba(0,0,0,0.15)] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none cursor-pointer select-none"
+          className="theme-btn px-2.5 py-1 text-xs font-black rounded-[4px_6px_3px_5px] shadow-[1px_1px_0px_0px_rgba(0,0,0,0.15)] cursor-pointer flex items-center justify-center min-w-8 min-h-7"
           title={darkMode ? "Activer le mode clair" : "Activer le mode sombre"}
         >
-          {darkMode ? '☀️' : '🌙'}
+          {darkMode ? <XiloSun size={14} /> : <XiloMoon size={14} />}
         </button>
       </div>
 

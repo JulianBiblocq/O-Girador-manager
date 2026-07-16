@@ -3,6 +3,7 @@ import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
+import { XiloChat } from './XiloIcons';
 
 export default function WidgetForum({ groupId, onOpen }) {
   const [latestThread, setLatestThread] = useState(null);
@@ -63,8 +64,8 @@ export default function WidgetForum({ groupId, onOpen }) {
         <div className="flex flex-col gap-3 text-left">
           <div className="flex gap-4 items-center">
             {/* Discussion Icon */}
-            <div className="w-10 h-10 bg-cordel-master-dark text-cordel-bg-light border-2 border-encre-noire flex items-center justify-center font-bold shrink-0 rounded-[8px_6px_10px_7px] select-none">
-              💬
+            <div className="w-10 h-10 bg-cordel-master-dark text-cordel-bg-light border-2 border-encre-noire flex items-center justify-center shrink-0 rounded-[8px_6px_10px_7px] select-none">
+              <XiloChat size={20} className="text-cordel-bg-light" />
             </div>
 
             <div className="flex-1 min-w-0">

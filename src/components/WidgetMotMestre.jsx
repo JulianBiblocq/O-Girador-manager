@@ -3,6 +3,7 @@ import { doc, onSnapshot, setDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
+import { XiloChisel, XiloClose } from './XiloIcons';
 
 export default function WidgetMotMestre({ role, isSystemAdmin, groupId }) {
   const [motDuMestre, setMotDuMestre] = useState('');
@@ -83,27 +84,31 @@ export default function WidgetMotMestre({ role, isSystemAdmin, groupId }) {
               <button 
                 onClick={handleCancel}
                 disabled={saving}
-                className="theme-btn bg-neutral-200 text-encre-noire px-2 py-1 text-xs rounded-[4px_6px_3px_5px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none cursor-pointer select-none disabled:opacity-50"
+                className="theme-btn bg-neutral-200 text-encre-noire p-1.5 rounded-[4px_6px_3px_5px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none cursor-pointer select-none disabled:opacity-50 flex items-center justify-center"
                 title="Annuler"
               >
-                ✕
+                <XiloClose size={12} />
               </button>
               <button 
                 onClick={handleSave}
                 disabled={saving}
-                className="theme-btn bg-cordel-vert text-encre-noire px-2 py-1 text-xs rounded-[4px_6px_3px_5px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none cursor-pointer select-none disabled:opacity-50"
+                className="theme-btn bg-cordel-vert text-encre-noire p-1.5 rounded-[4px_6px_3px_5px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none cursor-pointer select-none disabled:opacity-50 flex items-center justify-center"
                 title="Enregistrer"
               >
-                {saving ? "..." : "✔️"}
+                {saving ? "..." : (
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" className="xilo-icon">
+                    <path d="M20 6 L9 17 L4 12" />
+                  </svg>
+                )}
               </button>
             </>
           ) : (
             <button 
               onClick={handleEditToggle}
-              className="theme-btn bg-cordel-bg-light hover:bg-[#ece4d0] p-1.5 text-xs font-bold rounded-[4px_6px_3px_5px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none cursor-pointer select-none"
+              className="theme-btn bg-cordel-bg-light hover:bg-[#ece4d0] p-1.5 rounded-[4px_6px_3px_5px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none cursor-pointer select-none flex items-center justify-center"
               title="Modifier le mot du mestre"
             >
-              ✏️
+              <XiloChisel size={12} />
             </button>
           )}
         </div>
