@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { signInWithRedirect, signInWithPopup, getRedirectResult, signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
+import React, { useState } from 'react';
+import { signInWithRedirect, signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth, googleProvider } from '../firebase';
 import LayoutShell from './LayoutShell';
 import CordelCard from './CordelCard';
@@ -13,27 +13,6 @@ export default function Login({ branding }) {
   const [password, setPassword] = useState('');
   const [isSignUpMode, setIsSignUpMode] = useState(false);
   const [authLoading, setAuthLoading] = useState(false);
-  const [redirectResultLoading, setRedirectResultLoading] = useState(false);
-
-  // Catch the redirect authentication result on component mount
-  useEffect(() => {
-    const handleRedirectResult = async () => {
-      setRedirectResultLoading(true);
-      try {
-        const result = await getRedirectResult(auth);
-        if (result) {
-          console.log("Login - Connexion réussie via redirect :", result.user);
-        }
-      } catch (error) {
-        console.error("Login - Erreur getRedirectResult :", error);
-        alert(t('login.connectError') + error.message);
-      } finally {
-        setRedirectResultLoading(false);
-      }
-    };
-    handleRedirectResult();
-  }, [t]);
-
   const handleLogin = async () => {
     setAuthLoading(true);
     try {
@@ -93,22 +72,6 @@ export default function Login({ branding }) {
     '--color-cordel-vert': branding.colors.secondary,
     '--cordel-vert': branding.colors.secondary
   } : {};
-
-  // Display a fallback spinner during redirect resolution
-  if (redirectResultLoading) {
-    return (
-      <div style={brandingStyle} className="min-h-screen flex flex-col w-full">
-        <LayoutShell logoUrl={branding?.logoUrl}>
-          <div className="flex-1 flex flex-col justify-center items-center py-12">
-            <div className="animate-spin text-4xl mb-4 select-none">⏳</div>
-            <span className="font-bold text-xs uppercase tracking-widest text-cordel-master-dark opacity-75">
-              {t('login.loadingRedirect')}
-            </span>
-          </div>
-        </LayoutShell>
-      </div>
-    );
-  }
 
   return (
     <div style={brandingStyle} className="min-h-screen flex flex-col w-full">
