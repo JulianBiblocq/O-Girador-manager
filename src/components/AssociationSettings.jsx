@@ -5,6 +5,8 @@ import { db, storage } from '../firebase';
 import LayoutShell from './LayoutShell';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
+import { useTranslation } from './LanguageContext';
+import { XiloSettings } from './XiloIcons';
 
 export const DEFAULT_FIELDS_CONFIG = {
   telephone: { key: "telephone", label: "Téléphone", enabled: true, filledBy: "member" },
@@ -15,12 +17,28 @@ export const DEFAULT_FIELDS_CONFIG = {
   dateNaissance: { key: "dateNaissance", label: "Date de naissance", enabled: true, filledBy: "member" }
 };
 
+export const DEFAULT_VARAL_CATEGORIES = [
+  { id: 'Partitions', nom: 'Partitions', activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false },
+  { id: 'Tutoriels', nom: 'Tutoriels', activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false },
+  { id: 'Culture', nom: 'Culture', activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false },
+  { id: 'Administratif', nom: 'Administratif', activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: true }
+];
+
 export default function AssociationSettings({ groupId, onBack, role, isSystemAdmin }) {
-  const DEFAULT_INSTRUMENTS = ["Alfaia Marcante", "Alfaia Meião", "Alfaia Repique", "Caixa", "Tarol", "Gonguê", "Agbê", "Mineiro", "Timbal", "Paroles", "Chant", "Danse"];
+  const { t } = useTranslation();
+  const DEFAULT_INSTRUMENTS = ["Alfaia Marcante", "Alfaia Meião", "Alfaia Repique", "Caixa", "Tarol", "Gonguê", "Agbê", "Mineiro", "Timbal", "Chant", "Danse"];
 
   const [fieldsConfig, setFieldsConfig] = useState(DEFAULT_FIELDS_CONFIG);
   const [instrumentsDisponibles, setInstrumentsDisponibles] = useState([]);
   const [newInstrument, setNewInstrument] = useState('');
+  const [linkedInstruments, setLinkedInstruments] = useState([]);
+  const [newPupitreName, setNewPupitreName] = useState('');
+  const [selectedInstrumentsForLink, setSelectedInstrumentsForLink] = useState([]);
+  const [varalCategories, setVaralCategories] = useState([]);
+  const [newCatName, setNewCatName] = useState('');
+  const [newCatUpload, setNewCatUpload] = useState(false);
+  const [newCatUploadUrl, setNewCatUploadUrl] = useState('');
+  const [newCatArchive, setNewCatArchive] = useState(false);
   const [logoUrl, setLogoUrl] = useState('');
   const [colors, setColors] = useState({
     primary: '#d99f4d',
@@ -35,6 +53,13 @@ export default function AssociationSettings({ groupId, onBack, role, isSystemAdm
   const [droitImageFile, setDroitImageFile] = useState(null);
   const [aptitudeMedicaleDocUrl, setAptitudeMedicaleDocUrl] = useState('');
   const [aptitudeMedicaleFile, setAptitudeMedicaleFile] = useState(null);
+  const [majoriteFeminine, setMajoriteFeminine] = useState(false);
+  const [indemniteKilometrique, setIndemniteKilometrique] = useState(0);
+  const [montantCotisation, setMontantCotisation] = useState(0);
+  const [montantAdhesion, setMontantAdhesion] = useState(0);
+  const [optionsCotisation, setOptionsCotisation] = useState([]);
+  const [lienPaiementExterne, setLienPaiementExterne] = useState('');
+  const [instructionsPaiement, setInstructionsPaiement] = useState('');
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -67,6 +92,30 @@ export default function AssociationSettings({ groupId, onBack, role, isSystemAdm
           setInstrumentsDisponibles(DEFAULT_INSTRUMENTS);
         }
 
+        if (Array.isArray(data.linkedInstruments)) {
+          const normalized = data.linkedInstruments.map(link => {
+            if (Array.isArray(link)) {
+              return { name: '', instruments: link };
+            } else if (link && typeof link === 'object') {
+              if (Array.isArray(link.instruments)) {
+                return { name: link.name || '', instruments: link.instruments };
+              } else if (link.inst1 && link.inst2) {
+                return { name: link.name || '', instruments: [link.inst1, link.inst2] };
+              }
+            }
+            return null;
+          }).filter(Boolean);
+          setLinkedInstruments(normalized);
+        } else {
+          setLinkedInstruments([]);
+        }
+
+        if (Array.isArray(data.varalCategories)) {
+          setVaralCategories(data.varalCategories);
+        } else {
+          setVaralCategories(DEFAULT_VARAL_CATEGORIES);
+        }
+
         if (data.branding) {
           setLogoUrl(data.branding.logoUrl || '');
           if (data.branding.colors) {
@@ -81,6 +130,15 @@ export default function AssociationSettings({ groupId, onBack, role, isSystemAdm
         setSequenceurUrl(data.sequenceurUrl || '');
         setDroitImageDocUrl(data.droitImageDocUrl || '');
         setAptitudeMedicaleDocUrl(data.aptitudeMedicaleDocUrl || '');
+        setMajoriteFeminine(data.majoriteFeminine || false);
+        setIndemniteKilometrique(data.indemniteKilometrique || 0);
+        
+        const adhesionVal = data.montantAdhesion !== undefined ? data.montantAdhesion : (data.montantCotisation || 0);
+        setMontantAdhesion(adhesionVal);
+        setMontantCotisation(adhesionVal);
+        setOptionsCotisation(Array.isArray(data.optionsCotisation) ? data.optionsCotisation : []);
+        setLienPaiementExterne(data.lienPaiementExterne || '');
+        setInstructionsPaiement(data.instructionsPaiement || '');
       }
       setLoading(false);
     }, (error) => {
@@ -123,6 +181,65 @@ export default function AssociationSettings({ groupId, onBack, role, isSystemAdm
 
   const handleRemoveInstrument = (instToRemove) => {
     setInstrumentsDisponibles(prev => prev.filter(i => i !== instToRemove));
+    // Also clean up any links containing this instrument
+    setLinkedInstruments(prev => prev.filter(group => {
+      const insts = group.instruments || (Array.isArray(group) ? group : [group.inst1, group.inst2]);
+      return !insts.includes(instToRemove);
+    }));
+  };
+
+  const handleLinkInstruments = () => {
+    if (selectedInstrumentsForLink.length < 2) return;
+    
+    const sortedGroup = [...selectedInstrumentsForLink].sort();
+    
+    const exists = linkedInstruments.some(group => {
+      const g = group.instruments || (Array.isArray(group) ? group : [group.inst1, group.inst2]);
+      if (g.length !== sortedGroup.length) return false;
+      const sortedG = [...g].sort();
+      return sortedG.every((val, index) => val === sortedGroup[index]);
+    });
+    
+    if (exists) {
+      alert("Cette liaison existe déjà !");
+      return;
+    }
+    
+    const pupitreObj = {
+      name: newPupitreName.trim(),
+      instruments: sortedGroup
+    };
+    
+    setLinkedInstruments(prev => [...prev, pupitreObj]);
+    setSelectedInstrumentsForLink([]);
+    setNewPupitreName('');
+  };
+
+  const handleRemoveLink = (indexToRemove) => {
+    setLinkedInstruments(prev => prev.filter((_, idx) => idx !== indexToRemove));
+  };
+
+  const handleAddCategory = () => {
+    if (!newCatName.trim()) return;
+    const newCat = {
+      id: `cat_${Date.now()}`,
+      nom: newCatName.trim(),
+      activerUploadPublic: newCatUpload,
+      lienUploadPublic: newCatUpload ? newCatUploadUrl.trim() : '',
+      activerOpaciteArchive: newCatArchive
+    };
+    setVaralCategories(prev => [...prev, newCat]);
+    setNewCatName('');
+    setNewCatUpload(false);
+    setNewCatUploadUrl('');
+    setNewCatArchive(false);
+  };
+
+  const handleRemoveCategory = (id) => {
+    const msg = t('documents.varalSettingsRemoveConfirm') || "Êtes-vous sûr de vouloir supprimer cette corde ? Les documents liés ne seront pas supprimés mais n'auront plus de catégorie associée.";
+    if (window.confirm(msg)) {
+      setVaralCategories(prev => prev.filter(c => c.id !== id));
+    }
   };
 
   const handleSave = async () => {
@@ -163,15 +280,24 @@ export default function AssociationSettings({ groupId, onBack, role, isSystemAdm
       await setDoc(assocRef, {
         fieldsConfig: fieldsConfig,
         instrumentsDisponibles: instrumentsDisponibles,
+        linkedInstruments: linkedInstruments,
+        varalCategories: varalCategories,
         sequenceurUrl: sequenceurUrl,
         branding: {
           logoUrl: finalLogoUrl,
           colors: colors
         },
         droitImageDocUrl: finalDroitImageDocUrl,
-        aptitudeMedicaleDocUrl: finalAptitudeMedicaleDocUrl
+        aptitudeMedicaleDocUrl: finalAptitudeMedicaleDocUrl,
+        majoriteFeminine: majoriteFeminine,
+        indemniteKilometrique: indemniteKilometrique,
+        montantCotisation: montantAdhesion,
+        montantAdhesion: montantAdhesion,
+        optionsCotisation: optionsCotisation,
+        lienPaiementExterne: lienPaiementExterne,
+        instructionsPaiement: instructionsPaiement
       }, { merge: true });
-      alert("Réglages de l'association enregistrés avec succès !");
+      alert(t('associationSettings.successMsg') || "Réglages de l'association enregistrés avec succès !");
       onBack();
     } catch (err) {
       console.error("AssociationSettings - Erreur de sauvegarde :", err);
@@ -184,7 +310,7 @@ export default function AssociationSettings({ groupId, onBack, role, isSystemAdm
 
   if (!isAuthorized) {
     return (
-      <LayoutShell>
+      <>
         <div className="text-center py-12 select-none">
           <CordelCard variant="default" useExtremeBorder={true} className="p-8">
             <h2 className="text-xl font-bold text-cordel-wood">🚨 ACCÈS REFUSÉ</h2>
@@ -198,13 +324,13 @@ export default function AssociationSettings({ groupId, onBack, role, isSystemAdm
             </div>
           </CordelCard>
         </div>
-      </LayoutShell>
+      </>
     );
   }
 
   return (
-    <LayoutShell>
-      <div className="flex flex-col gap-4 text-left select-none">
+    <>
+      <div className="flex flex-col gap-4 text-left select-none max-w-3xl mx-auto w-full">
         
         {/* Header */}
         <div className="flex justify-between items-center pb-2 border-b-2 border-dashed border-cordel-master-dark/30">
@@ -217,8 +343,8 @@ export default function AssociationSettings({ groupId, onBack, role, isSystemAdm
             ⬅️ Retour
           </button>
           
-          <h2 className="text-sm font-extrabold tracking-widest text-cordel-wood uppercase">
-            ⚙️ Paramètres Association
+          <h2 className="text-sm font-extrabold tracking-widest text-cordel-wood uppercase flex items-center">
+            <XiloSettings size={14} className="inline mr-1.5" /> {t('associationSettings.title') || "Paramètres Association"}
           </h2>
         </div>
 
@@ -463,6 +589,232 @@ export default function AssociationSettings({ groupId, onBack, role, isSystemAdm
                   </div>
                 )}
               </div>
+             </CordelCard>
+
+            {/* Instruments Liés / Jumelés */}
+            <CordelCard variant="default" useExtremeBorder={true} className="py-4 px-5">
+              <h3 className="text-xs uppercase font-extrabold tracking-wider text-cordel-wood mb-3">
+                🔗 {t('associationSettings.linkedInstrumentsHeading') || "Instruments Liés / Pupitres"}
+              </h3>
+              
+              {/* Form to link instruments */}
+              <div className="flex flex-col gap-3 pb-3 border-b border-dashed border-cordel-master-dark/15 text-xs">
+                <div className="flex flex-col gap-2 text-left">
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                      Nom du Pupitre (Optionnel - ex: Alfaias, Sementes...)
+                    </label>
+                    <input 
+                      type="text"
+                      value={newPupitreName}
+                      onChange={(e) => setNewPupitreName(e.target.value)}
+                      placeholder="Saisissez un nom de pupitre personnalisé..."
+                      className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light w-full"
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-1 mt-1">
+                    <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark mb-1">
+                      {t('associationSettings.selectInstrumentsForGroup') || "Sélectionner les instruments du pupitre (minimum 2)"}
+                    </label>
+                    <div className="flex flex-wrap gap-2 p-3 border-2 border-dashed border-[var(--cordel-border)] rounded-[4px_8px_3px_6px] bg-[var(--cordel-master-bg)] max-h-40 overflow-y-auto">
+                      {instrumentsDisponibles.map(inst => {
+                        const isSelected = selectedInstrumentsForLink.includes(inst);
+                        return (
+                          <label 
+                            key={inst} 
+                            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-[4px_8px_3px_6px] border border-[var(--cordel-border)] cursor-pointer select-none text-[10px] font-bold transition-all ${
+                              isSelected 
+                                ? 'bg-[var(--cordel-wood)] text-white shadow-sm' 
+                                : 'bg-[var(--cordel-bg)] text-[var(--cordel-text)] opacity-75 hover:opacity-100'
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => {
+                                if (isSelected) {
+                                  setSelectedInstrumentsForLink(prev => prev.filter(i => i !== inst));
+                                } else {
+                                  setSelectedInstrumentsForLink(prev => [...prev, inst]);
+                                }
+                              }}
+                              className="hidden"
+                            />
+                            {inst}
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="flex justify-end">
+                  <CordelButton 
+                    type="button"
+                    variant="ocre"
+                    useExtremeBorder={true}
+                    onClick={handleLinkInstruments}
+                    disabled={saving || selectedInstrumentsForLink.length < 2}
+                    className="py-1.5 text-[10px] px-3 uppercase tracking-widest font-black shrink-0"
+                  >
+                    Créer le Pupitre
+                  </CordelButton>
+                </div>
+              </div>
+
+              {/* Display configured groups */}
+              <div className="flex flex-col gap-2 mt-3 text-left">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-cordel-master-dark mb-1">
+                  Pupitres configurés
+                </span>
+                {linkedInstruments.length === 0 ? (
+                  <span className="text-[10px] italic opacity-60">
+                    Aucun pupitre configuré pour le moment.
+                  </span>
+                ) : (
+                  <div className="flex flex-wrap gap-1.5 max-h-40 overflow-y-auto pr-1">
+                    {linkedInstruments.map((group, index) => {
+                      const instrumentsArray = group.instruments || (Array.isArray(group) ? group : [group.inst1, group.inst2]);
+                      const groupLabel = group.name 
+                        ? `${group.name} (${instrumentsArray.join(' + ')})` 
+                        : instrumentsArray.join(' + ');
+                      return (
+                        <span 
+                          key={index}
+                          className="theme-stamp-badge theme-stamp-badge-wood text-[9px] px-2 py-0.5 border-dashed flex items-center gap-1.5"
+                        >
+                          {groupLabel}
+                          <button 
+                            type="button"
+                            onClick={() => handleRemoveLink(index)}
+                            className="text-[9px] hover:text-red-500 font-bold ml-1 cursor-pointer select-none"
+                            title="Supprimer"
+                          >
+                            ✕
+                          </button>
+                        </span>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </CordelCard>
+
+            {/* Varal Categories Settings Card */}
+            <CordelCard variant="default" useExtremeBorder={true} className="py-4 px-5">
+              <h3 className="text-xs uppercase font-extrabold tracking-wider text-cordel-wood mb-3">
+                🔗 {t('documents.varalSettingsTitle') || "Catégories du Varal (Fils)"}
+              </h3>
+              
+              {/* Form to add a new category */}
+              <div className="flex flex-col gap-3 pb-3 border-b border-dashed border-cordel-master-dark/15 text-xs">
+                <div className="flex flex-col gap-2">
+                  <div className="flex flex-col gap-1 text-left">
+                    <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                      {t('documents.varalSettingsNameLabel') || "Nom de la catégorie (ex: Prestations, Danses)"}
+                    </label>
+                    <input 
+                      type="text"
+                      value={newCatName}
+                      onChange={(e) => setNewCatName(e.target.value)}
+                      placeholder={t('documents.varalSettingsNamePlaceholder') || "Nom..."}
+                      className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light w-full"
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-1 text-left">
+                    <label className="flex items-center gap-2 font-bold text-[10px] cursor-pointer">
+                      <input 
+                        type="checkbox"
+                        checked={newCatUpload}
+                        onChange={(e) => setNewCatUpload(e.target.checked)}
+                        className="scale-95 cursor-pointer"
+                      />
+                      <span>{t('documents.varalSettingsUploadLabel') || "Activer l'upload public (Lien externe)"}</span>
+                    </label>
+                    {newCatUpload && (
+                      <input 
+                        type="url"
+                        value={newCatUploadUrl}
+                        onChange={(e) => setNewCatUploadUrl(e.target.value)}
+                        placeholder={t('documents.varalSettingsUploadUrlLabel') || "Lien d'upload (Drive, Dropbox...)"}
+                        className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light w-full mt-1.5"
+                      />
+                    )}
+                  </div>
+
+                  <div className="flex flex-col gap-1 text-left mt-1">
+                    <label className="flex items-center gap-2 font-bold text-[10px] cursor-pointer">
+                      <input 
+                        type="checkbox"
+                        checked={newCatArchive}
+                        onChange={(e) => setNewCatArchive(e.target.checked)}
+                        className="scale-95 cursor-pointer"
+                      />
+                      <span>{t('documents.varalSettingsArchiveLabel') || "Archiver visuellement (opacité réduite si année antérieure)"}</span>
+                    </label>
+                  </div>
+                </div>
+
+                <div className="flex justify-end mt-1">
+                  <CordelButton 
+                    type="button"
+                    variant="ocre"
+                    useExtremeBorder={true}
+                    onClick={handleAddCategory}
+                    disabled={saving || !newCatName.trim() || (newCatUpload && !newCatUploadUrl.trim())}
+                    className="py-1.5 text-[10px] px-3 uppercase tracking-widest font-black shrink-0"
+                  >
+                    {t('documents.varalSettingsAddBtn') || "+ Ajouter"}
+                  </CordelButton>
+                </div>
+              </div>
+
+              {/* Display list of configured categories */}
+              <div className="flex flex-col gap-2 mt-3 text-left">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-cordel-master-dark mb-1">
+                  {t('documents.varalSettingsConfigured') || "Cordes configurées"}
+                </span>
+                {varalCategories.length === 0 ? (
+                  <span className="text-[10px] italic opacity-60">
+                    {t('documents.varalSettingsEmpty') || "Aucune catégorie configurée."}
+                  </span>
+                ) : (
+                  <div className="flex flex-col gap-2 max-h-60 overflow-y-auto pr-1">
+                    {varalCategories.map((cat) => (
+                      <div 
+                        key={cat.id}
+                        className="border border-encre-noire/15 p-2.5 rounded bg-white/40 dark:bg-black/10 flex justify-between items-center text-xs"
+                      >
+                        <div className="flex flex-col gap-0.5">
+                          <span className="font-extrabold text-encre-noire">{cat.nom}</span>
+                          <div className="flex flex-wrap gap-1.5 mt-1 text-[8px] font-black uppercase text-cordel-wood">
+                            {cat.activerUploadPublic && (
+                              <span className="px-1 bg-blue-100 dark:bg-blue-950/20 text-blue-700 dark:text-blue-400 rounded-sm">
+                                📤 Public
+                              </span>
+                            )}
+                            {cat.activerOpaciteArchive && (
+                              <span className="px-1 bg-purple-100 dark:bg-purple-950/20 text-purple-700 dark:text-purple-400 rounded-sm">
+                                ⏳ Opacité Archive
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <button 
+                          type="button"
+                          onClick={() => handleRemoveCategory(cat.id)}
+                          className="text-xs hover:text-red-500 font-bold px-2 py-1 cursor-pointer select-none"
+                          title="Supprimer"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </CordelCard>
 
             {/* Séquenceur Roda Link */}
@@ -481,6 +833,187 @@ export default function AssociationSettings({ groupId, onBack, role, isSystemAdm
                   placeholder="ex: https://mon-sequenceur.app"
                   className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light w-full"
                 />
+              </div>
+            </CordelCard>
+
+            {/* Invitation Link Card */}
+            <CordelCard variant="default" useExtremeBorder={true} className="py-4 px-5">
+              <h3 className="text-xs uppercase font-extrabold tracking-wider text-cordel-wood mb-3">
+                📨 Invitation au groupe
+              </h3>
+              <div className="flex flex-col gap-2.5 text-left">
+                <p className="text-[10px] text-cordel-master-dark/70 font-semibold leading-relaxed">
+                  Permettez aux nouveaux membres de s'inscrire et de rejoindre directement votre association en partageant ce lien d'invitation unique.
+                </p>
+                <CordelButton
+                  variant="ocre"
+                  useExtremeBorder={true}
+                  onClick={async () => {
+                    const invitationUrl = `${window.location.origin}/?groupe=${groupId}`;
+                    const shareText = `Rejoins notre groupe sur O Girador Manager : ${invitationUrl}`;
+                    try {
+                      await navigator.clipboard.writeText(shareText);
+                      alert("Lien d'invitation copié dans le presse-papiers !");
+                    } catch (err) {
+                      console.error("Erreur lors de la copie :", err);
+                      alert("Impossible de copier le lien automatiquement. Voici le lien d'invitation : " + invitationUrl);
+                    }
+                  }}
+                  className="w-full py-2.5 text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 cursor-pointer select-none"
+                >
+                  📋 Copier le lien d'invitation
+                </CordelButton>
+              </div>
+            </CordelCard>
+
+            {/* Options d'affichage & terminologie */}
+            <CordelCard variant="default" useExtremeBorder={true} className="py-4 px-5">
+              <h3 className="text-xs uppercase font-extrabold tracking-wider text-cordel-wood mb-3">
+                🗣️ Terminologie & Rendu
+              </h3>
+              <div className="flex flex-col gap-1 text-left">
+                <label className="flex items-start gap-2.5 cursor-pointer select-none">
+                  <input 
+                    type="checkbox"
+                    checked={majoriteFeminine}
+                    onChange={(e) => setMajoriteFeminine(e.target.checked)}
+                    disabled={saving}
+                    className="w-4 h-4 cursor-pointer mt-0.5 shrink-0"
+                  />
+                  <div className="flex flex-col">
+                    <span className="text-xs font-bold text-encre-noire">
+                      Groupe à majorité féminine (Appliquer le féminin sur les textes au pluriel)
+                    </span>
+                    <span className="text-[9px] text-cordel-master-dark/70 font-semibold mt-0.5 leading-relaxed">
+                      Active le pluriel féminin pour les termes généraux (ex: "Toutes les inscrites", "Les batuqueiras"). Les rôles individuels restent fidèles au genre de chaque membre.
+                    </span>
+                  </div>
+                </label>
+              </div>
+            </CordelCard>
+
+            {/* Indemnité Kilométrique */}
+            <CordelCard variant="default" useExtremeBorder={true} className="py-4 px-5">
+              <h3 className="text-xs uppercase font-extrabold tracking-wider text-cordel-wood mb-3">
+                🚗 Indemnité Kilométrique
+              </h3>
+              <div className="flex flex-col gap-1 text-left">
+                <label className="text-[9px] uppercase font-extrabold tracking-wider text-cordel-master-dark">
+                  Tarif de remboursement par kilomètre (€/km)
+                </label>
+                <input 
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={indemniteKilometrique}
+                  onChange={(e) => setIndemniteKilometrique(parseFloat(e.target.value) || 0)}
+                  placeholder="ex: 0.40"
+                  className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light w-full"
+                />
+              </div>
+            </CordelCard>
+
+            {/* Trésorerie Section */}
+            <CordelCard variant="default" useExtremeBorder={true} className="py-4 px-5">
+              <h3 className="text-xs uppercase font-extrabold tracking-wider text-cordel-wood mb-3">
+                🪙 Trésorerie (Cotisations)
+              </h3>
+              <div className="flex flex-col gap-3">
+                <div className="flex flex-col gap-1 text-left">
+                  <label className="text-[9px] uppercase font-extrabold tracking-wider text-cordel-master-dark">
+                    Montant de l'Adhésion de base (€) (Fixe)
+                  </label>
+                  <input 
+                    type="number"
+                    min="0"
+                    value={montantAdhesion}
+                    onChange={(e) => setMontantAdhesion(parseFloat(e.target.value) || 0)}
+                    placeholder="ex: 30"
+                    className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light w-full"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-2 mt-2">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-cordel-master-dark">
+                    Options de Cotisations supplémentaires
+                  </span>
+                  
+                  {optionsCotisation.map((opt, idx) => (
+                    <div key={opt.id || idx} className="flex gap-2 items-center bg-white/40 dark:bg-black/10 p-2 rounded border border-dashed border-cordel-master-dark/15">
+                      <input 
+                        type="text"
+                        value={opt.nom}
+                        onChange={(e) => {
+                          const updated = [...optionsCotisation];
+                          updated[idx].nom = e.target.value;
+                          setOptionsCotisation(updated);
+                        }}
+                        placeholder="Ex: Percussions"
+                        className="theme-input text-xs font-bold py-1 bg-cordel-bg-light flex-1"
+                      />
+                      <input 
+                        type="number"
+                        min="0"
+                        value={opt.montant}
+                        onChange={(e) => {
+                          const updated = [...optionsCotisation];
+                          updated[idx].montant = parseFloat(e.target.value) || 0;
+                          setOptionsCotisation(updated);
+                        }}
+                        placeholder="Montant"
+                        className="theme-input text-xs font-bold py-1 bg-cordel-bg-light w-20"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setOptionsCotisation(prev => prev.filter((_, i) => i !== idx));
+                        }}
+                        className="text-red-500 hover:text-red-700 font-bold px-2 text-xs cursor-pointer select-none"
+                        title="Supprimer"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+
+                  <div className="flex justify-start mt-1">
+                    <CordelButton 
+                      type="button"
+                      variant="ocre"
+                      onClick={() => {
+                        setOptionsCotisation(prev => [...prev, { id: `cot_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`, nom: '', montant: 0 }]);
+                      }}
+                      className="text-[9px] py-1 px-2.5 uppercase font-bold tracking-wider"
+                    >
+                      + Ajouter une cotisation
+                    </CordelButton>
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-1 text-left">
+                  <label className="text-[9px] uppercase font-extrabold tracking-wider text-cordel-master-dark">
+                    Lien de paiement externe (HelloAsso, PayPal...)
+                  </label>
+                  <input 
+                    type="url"
+                    value={lienPaiementExterne}
+                    onChange={(e) => setLienPaiementExterne(e.target.value || '')}
+                    placeholder="https://helloasso.com/associations/..."
+                    className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light w-full"
+                  />
+                </div>
+                <div className="flex flex-col gap-1 text-left">
+                  <label className="text-[9px] uppercase font-extrabold tracking-wider text-cordel-master-dark">
+                    Instructions de paiement
+                  </label>
+                  <textarea 
+                    rows={4}
+                    value={instructionsPaiement}
+                    onChange={(e) => setInstructionsPaiement(e.target.value || '')}
+                    placeholder="Expliquez comment payer (chèque, virement, précisez la référence de paiement...)"
+                    className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light w-full resize-y min-h-[80px]"
+                  />
+                </div>
               </div>
             </CordelCard>
 
@@ -547,6 +1080,6 @@ export default function AssociationSettings({ groupId, onBack, role, isSystemAdm
       )}
 
       </div>
-    </LayoutShell>
+    </>
   );
 }

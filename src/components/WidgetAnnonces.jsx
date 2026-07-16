@@ -16,6 +16,8 @@ export default function WidgetAnnonces({ groupId, profileData, role, isSystemAdm
   const [titre, setTitre] = useState('');
   const [message, setMessage] = useState('');
   const [cibles, setCibles] = useState(['Tous']);
+  const [publishOnApp, setPublishOnApp] = useState(true);
+  const [sendViaEmail, setSendViaEmail] = useState(false);
 
   const isAdmin = role === 'mestre' || role === 'super-admin' || isSystemAdmin === true;
 
@@ -99,7 +101,9 @@ export default function WidgetAnnonces({ groupId, profileData, role, isSystemAdm
         message: message.trim(),
         auteurNom: `${profileData?.prenom || 'Admin'} ${profileData?.nom || ''}`,
         dateCreation: new Date().toISOString(),
-        cibles
+        cibles,
+        publishOnApp,
+        sendViaEmail
       };
 
       await addDoc(collection(db, 'announcements'), payload);
@@ -108,6 +112,8 @@ export default function WidgetAnnonces({ groupId, profileData, role, isSystemAdm
       setTitre('');
       setMessage('');
       setCibles(['Tous']);
+      setPublishOnApp(true);
+      setSendViaEmail(false);
       setIsAdding(false);
     } catch (err) {
       console.error("WidgetAnnonces - Erreur de sauvegarde :", err);
@@ -128,12 +134,27 @@ export default function WidgetAnnonces({ groupId, profileData, role, isSystemAdm
     }
   };
 
-  // Local JS filtering: Visible if "Tous" is targeted, or user has one of targeted tags
+  // Local JS filtering: Visible based on target rules
   const userTags = profileData?.tags || [];
+  const userRole = role || profileData?.role || 'membre';
   const visibleAnnouncements = announcements.filter(ann => {
+    // If not publishOnApp, hide it from App dashboard
+    if (ann.publishOnApp === false) return false;
+
     if (!Array.isArray(ann.cibles) || ann.cibles.length === 0) return true;
-    return ann.cibles.includes('Tous') || ann.cibles.some(t => userTags.includes(t));
+    if (ann.cibles.includes('Tous')) return true;
+
+    // Check if target is admin and current user is admin
+    if (ann.cibles.includes('role:admin') && (userRole === 'mestre' || userRole === 'super-admin' || isSystemAdmin === true)) {
+      return true;
+    }
+
+    return ann.cibles.some(t => userTags.includes(t));
   });
+
+  if (!loading && !isAdmin && visibleAnnouncements.length === 0) {
+    return null;
+  }
 
   return (
     <div className="flex flex-col gap-3">
@@ -228,6 +249,19 @@ export default function WidgetAnnonces({ groupId, profileData, role, isSystemAdm
                   📢 Tout le monde (Tous)
                 </button>
 
+                <button
+                  type="button"
+                  disabled={saving}
+                  onClick={() => handleCibleToggle('role:admin')}
+                  className={`text-[9px] px-2 py-0.5 border rounded-[3px_5px_2px_4px] transition-all cursor-pointer font-bold ${
+                    cibles.includes('role:admin') 
+                      ? 'bg-cordel-wood text-cordel-bg-light border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]' 
+                      : 'bg-transparent text-encre-noire border-dashed border-encre-noire/30'
+                  }`}
+                >
+                  👑 Admins / Bureau / Mestre
+                </button>
+
                 {tagsDisponibles.map((tag) => {
                   const isActive = cibles.includes(tag);
                   return (
@@ -246,6 +280,35 @@ export default function WidgetAnnonces({ groupId, profileData, role, isSystemAdm
                     </button>
                   );
                 })}
+              </div>
+            </div>
+
+            {/* Canaux de diffusion */}
+            <div className="flex flex-col gap-1.5 pt-1.5 border-t border-dashed border-cordel-master-dark/15 text-left">
+              <label className="text-[8px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                Canaux de diffusion
+              </label>
+              <div className="flex flex-col gap-1.5 pl-1 select-none">
+                <label className="flex items-center gap-2 text-xs font-semibold cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={publishOnApp}
+                    onChange={(e) => setPublishOnApp(e.target.checked)}
+                    disabled={saving}
+                    className="accent-cordel-wood scale-105"
+                  />
+                  <span>Publier sur le tableau de bord de l'application (Mégaphone)</span>
+                </label>
+                <label className="flex items-center gap-2 text-xs font-semibold cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={sendViaEmail}
+                    onChange={(e) => setSendViaEmail(e.target.checked)}
+                    disabled={saving}
+                    className="accent-cordel-wood scale-105"
+                  />
+                  <span>Envoyer également par Email</span>
+                </label>
               </div>
             </div>
 

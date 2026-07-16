@@ -4,6 +4,8 @@ import { db } from '../firebase';
 import LayoutShell from './LayoutShell';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
+import { useTranslation } from './LanguageContext';
+import { XiloSettings } from './XiloIcons';
 
 // Wobbly, block-print stylized Up Chevron SVG (matches BaqueMix/Sequencer aesthetics)
 const ChevronUp = ({ size = 10, className = '' }) => (
@@ -63,15 +65,46 @@ const WIDGET_NAMES = {
   documents: {
     title: "Varal de Documents 📂",
     desc: "Partage de paroles, grilles de percussions et administratifs."
+  },
+  tresorerie: {
+    title: "Ma Trésorerie 🪙",
+    desc: "Suivi des cotisations et lien de paiement en ligne."
   }
 };
 
 export default function LayoutEditor({ groupId, onBack, role, isSystemAdmin }) {
-  const [items, setItems] = useState(["motMestre", "annonces", "agenda", "commandes", "forum", "documents"]);
+  const { t } = useTranslation();
+  const [items, setItems] = useState(["motMestre", "annonces", "agenda", "commandes", "forum", "documents", "tresorerie"]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [dragOverIndex, setDragOverIndex] = useState(null);
   const touchStartIndex = useRef(null);
+
+  const getWidgetTitle = (id) => {
+    switch (id) {
+      case 'motMestre': return t('layoutEditor.widgetMotMestre');
+      case 'annonces': return t('layoutEditor.widgetMegaphone');
+      case 'agenda': return t('layoutEditor.widgetAgenda');
+      case 'commandes': return t('layoutEditor.widgetOrders');
+      case 'forum': return t('layoutEditor.widgetForum');
+      case 'documents': return t('layoutEditor.widgetDocuments');
+      case 'tresorerie': return t('layoutEditor.widgetTreasury') || "Ma Trésorerie 🪙";
+      default: return id;
+    }
+  };
+
+  const getWidgetDesc = (id) => {
+    switch (id) {
+      case 'motMestre': return t('layoutEditor.descMotMestre');
+      case 'annonces': return t('layoutEditor.descMegaphone');
+      case 'agenda': return t('layoutEditor.descAgenda');
+      case 'commandes': return t('layoutEditor.descOrders');
+      case 'forum': return t('layoutEditor.descForum');
+      case 'documents': return t('layoutEditor.descDocuments');
+      case 'tresorerie': return t('layoutEditor.descTreasury') || "Suivi des cotisations et lien de paiement en ligne.";
+      default: return '';
+    }
+  };
 
   // Security Check: Mestres, Super-Admins and System Admins only
   const isAuthorized = role === 'mestre' || role === 'super-admin' || isSystemAdmin === true;
@@ -88,7 +121,11 @@ export default function LayoutEditor({ groupId, onBack, role, isSystemAdmin }) {
       if (docSnap.exists()) {
         const data = docSnap.data();
         if (Array.isArray(data.layoutEleves) && data.layoutEleves.length > 0) {
-          setItems(data.layoutEleves);
+          const activeLayout = [...data.layoutEleves];
+          if (!activeLayout.includes("tresorerie")) {
+            activeLayout.push("tresorerie");
+          }
+          setItems(activeLayout);
         }
       }
       setLoading(false);
@@ -168,11 +205,11 @@ export default function LayoutEditor({ groupId, onBack, role, isSystemAdmin }) {
       const docRef = doc(db, 'associations', groupId);
       // setDoc with merge creates document if it does not exist
       await setDoc(docRef, { layoutEleves: items }, { merge: true });
-      alert("Nouvel agencement enregistré avec succès !");
+      alert(t('layoutEditor.successMsg'));
       onBack();
     } catch (error) {
       console.error("LayoutEditor - Erreur de mise à jour layout :", error);
-      alert("Erreur lors de l'enregistrement de la mise en page.");
+      alert(t('layoutEditor.errorMsg'));
     } finally {
       setSaving(false);
     }
@@ -181,26 +218,26 @@ export default function LayoutEditor({ groupId, onBack, role, isSystemAdmin }) {
   // Render Access Denied card if security fails
   if (!isAuthorized) {
     return (
-      <LayoutShell>
+      <>
         <div className="text-center py-12 select-none">
           <CordelCard variant="default" useExtremeBorder={true} className="p-8">
-            <h2 className="text-xl font-bold text-cordel-wood">🚨 ACCÈS REFUSÉ</h2>
+            <h2 className="text-xl font-bold text-cordel-wood">🚨 {t('layoutEditor.accessDenied')}</h2>
             <p className="text-xs opacity-75 mt-3 leading-relaxed">
-              Vous devez avoir le rôle de Mestre ou d'Administrateur pour réorganiser la disposition de l'accueil.
+              {t('layoutEditor.accessDeniedDesc')}
             </p>
             <div className="mt-6 flex justify-center">
               <CordelButton variant="default" onClick={onBack} className="text-xs">
-                ⬅️ Retour
+                ← {t('common.back')}
               </CordelButton>
             </div>
           </CordelCard>
         </div>
-      </LayoutShell>
+      </>
     );
   }
 
   return (
-    <LayoutShell>
+    <>
       <div className="flex flex-col gap-5 text-left">
         {/* Header bar */}
         <div className="flex justify-between items-center pb-2 border-b-2 border-dashed border-cordel-master-dark/30 select-none">
@@ -210,17 +247,17 @@ export default function LayoutEditor({ groupId, onBack, role, isSystemAdmin }) {
             disabled={saving}
             className="text-[10px] font-black uppercase tracking-widest bg-cordel-bg border border-encre-noire px-3 py-1 rounded-[4px_6px_3px_5px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-95 cursor-pointer disabled:opacity-50"
           >
-            ⬅️ Retour
+            ← {t('common.back')}
           </button>
           
-          <h2 className="text-sm font-extrabold tracking-widest text-cordel-wood uppercase">
-            ⚙️ Organiser l'accueil
+          <h2 className="text-sm font-extrabold tracking-widest text-cordel-wood uppercase flex items-center gap-1">
+            <XiloSettings size={14} /> {t('layoutEditor.title')}
           </h2>
         </div>
 
         {/* Info card */}
         <div className="text-xs text-encre-noire dark:text-cordel-bg-light opacity-80 border border-dashed border-cordel-master-dark/30 p-3 rounded-[6px_4px_8px_5px] bg-[#fdfaf2] dark:bg-[#201d1a] leading-relaxed">
-          💡 <strong>Glissez-déposez</strong> les blocs ci-dessous par leurs poignées ou utilisez les flèches <strong>▲ / ▼</strong> pour choisir l'ordre d'affichage des widgets.
+          {t('layoutEditor.helpDesc')}
         </div>
 
         {/* Loading Indicator */}
@@ -267,7 +304,7 @@ export default function LayoutEditor({ groupId, onBack, role, isSystemAdmin }) {
                           onClick={() => handleMove(index, -1)}
                           disabled={index === 0 || saving}
                           className="w-8 h-6 border border-encre-noire bg-cordel-bg text-encre-noire dark:text-cordel-bg-light hover:bg-cordel-wood hover:text-cordel-bg-light rounded shadow-[1px_1px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none transition-all disabled:opacity-20 disabled:pointer-events-none cursor-pointer flex items-center justify-center"
-                          title="Monter"
+                          title={t('common.moveUp') || "Monter"}
                         >
                           <ChevronUp size={12} />
                         </button>
@@ -276,7 +313,7 @@ export default function LayoutEditor({ groupId, onBack, role, isSystemAdmin }) {
                           onClick={() => handleMove(index, 1)}
                           disabled={index === items.length - 1 || saving}
                           className="w-8 h-6 border border-encre-noire bg-cordel-bg text-encre-noire dark:text-cordel-bg-light hover:bg-cordel-wood hover:text-cordel-bg-light rounded shadow-[1px_1px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none transition-all disabled:opacity-20 disabled:pointer-events-none cursor-pointer flex items-center justify-center"
-                          title="Descendre"
+                          title={t('common.moveDown') || "Descendre"}
                         >
                           <ChevronDown size={12} />
                         </button>
@@ -289,7 +326,7 @@ export default function LayoutEditor({ groupId, onBack, role, isSystemAdmin }) {
                         onTouchStart={() => handleTouchStart(index)}
                         onTouchMove={handleTouchMove}
                         className="w-10 h-10 border-2 border-encre-noire bg-cordel-wood text-cordel-bg-light rounded-[6px_8px_5px_7px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-110 flex items-center justify-center cursor-grab active:cursor-grabbing select-none touch-none"
-                        title="Glisser pour déplacer"
+                        title={t('layoutEditor.dragToMove') || "Glisser pour déplacer"}
                       >
                         <span className="text-xl font-bold tracking-tighter select-none pointer-events-none">🪢</span>
                       </div>
@@ -312,11 +349,11 @@ export default function LayoutEditor({ groupId, onBack, role, isSystemAdmin }) {
               disabled={saving}
               className="w-full py-3 font-extrabold text-sm tracking-wider"
             >
-              {saving ? "Sauvegarde en cours..." : "Sauvegarder la disposition"}
+              {saving ? t('layoutEditor.saving') || "Enregistrement..." : t('layoutEditor.saveBtn')}
             </CordelButton>
           </div>
         )}
       </div>
-    </LayoutShell>
+    </>
   );
 }

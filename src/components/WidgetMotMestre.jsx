@@ -75,6 +75,10 @@ export default function WidgetMotMestre({ role, isSystemAdmin, groupId, profileD
 
   const displayedMessage = motDuMestre || "Bienvenue dans notre espace !";
 
+  if (!loading && !isAuthorized && (!motDuMestre || !motDuMestre.trim())) {
+    return null;
+  }
+
   return (
     <CordelCard variant="default" useExtremeBorder={true} className="relative overflow-hidden">
       {/* Decorative background stamp simulator */}
@@ -111,7 +115,7 @@ export default function WidgetMotMestre({ role, isSystemAdmin, groupId, profileD
           ) : (
             <button 
               onClick={handleEditToggle}
-              className="theme-btn bg-cordel-bg-light hover:bg-[#ece4d0] p-1.5 rounded-[4px_6px_3px_5px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none cursor-pointer select-none flex items-center justify-center"
+              className="theme-btn bg-cordel-bg-light hover:bg-cordel-hover p-1.5 rounded-[4px_6px_3px_5px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none cursor-pointer select-none flex items-center justify-center"
               title="Modifier le mot du mestre"
             >
               <XiloChisel size={12} />

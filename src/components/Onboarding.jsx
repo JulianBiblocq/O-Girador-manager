@@ -4,6 +4,7 @@ import { db } from '../firebase';
 import LayoutShell from './LayoutShell';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
+import { useTranslation } from './LanguageContext';
 
 const DEFAULT_FIELDS_CONFIG = {
   telephone: { key: "telephone", label: "Téléphone", enabled: true, filledBy: "member" },
@@ -14,9 +15,10 @@ const DEFAULT_FIELDS_CONFIG = {
   dateNaissance: { key: "dateNaissance", label: "Date de naissance", enabled: true, filledBy: "member" }
 };
 
-const DEFAULT_INSTRUMENTS = ["Alfaia Marcante", "Alfaia Meião", "Alfaia Repique", "Caixa", "Tarol", "Gonguê", "Agbê", "Mineiro", "Timbal", "Paroles", "Chant", "Danse"];
+const DEFAULT_INSTRUMENTS = ["Alfaia Marcante", "Alfaia Meião", "Alfaia Repique", "Caixa", "Tarol", "Gonguê", "Agbê", "Mineiro", "Timbal", "Chant", "Danse"];
 
-export default function Onboarding({ user, onComplete }) {
+export default function Onboarding({ user, branding, onComplete }) {
+  const { t } = useTranslation();
   // Split the Google Auth display name into a first name and a last name
   const nameParts = user.displayName ? user.displayName.split(' ') : [];
   const initialFirstName = nameParts[0] || '';
@@ -32,6 +34,8 @@ export default function Onboarding({ user, onComplete }) {
     lateralite: 'droitier',
     dateNaissance: '',
     instrument: 'Alfaia',
+    instrumentsJoues: [],
+    genre: 'autre',
     publierTelephone: false,
     publierDateNaissance: false
   });
@@ -116,6 +120,11 @@ export default function Onboarding({ user, onComplete }) {
         lateralite: isFieldVisible('lateralite') ? formData.lateralite : "droitier",
         dateNaissance: isFieldVisible('dateNaissance') ? formData.dateNaissance : "",
         instrument: formData.instrument || "Autre",
+        instrumentsJoues: Array.from(new Set([
+          formData.instrument || "Autre",
+          ...(formData.instrumentsJoues || [])
+        ])).filter(Boolean),
+        genre: formData.genre,
         role: "membre",
         statutActuel: "active",
         groupId: groupId,
@@ -134,34 +143,34 @@ export default function Onboarding({ user, onComplete }) {
       }
     } catch (error) {
       console.error("Onboarding - Erreur d'écriture dans Firestore :", error);
-      alert("Erreur lors de l'enregistrement de votre profil. Veuillez réessayer.");
+      alert(t('onboarding.errorSave'));
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <LayoutShell>
+    <LayoutShell logoUrl={branding?.logoUrl}>
       <div className="text-center py-4 border-b-2 border-dashed border-cordel-master-dark/30">
         <h1 className="panel-title text-2xl font-extrabold tracking-wider text-cordel-wood">
-          NOUVEAU PROFIL
+          {t('onboarding.title')}
         </h1>
         <p className="text-[10px] font-bold tracking-widest text-cordel-master-dark opacity-75 mt-1">
-          INSCRIPTION • ÉTAPE 1 SUR 2
+          {t('onboarding.step')}
         </p>
       </div>
 
       <CordelCard variant="default" useExtremeBorder={true}>
-        <h2 className="panel-title text-lg font-bold mb-2">Bienvenue dans l'association !</h2>
+        <h2 className="panel-title text-lg font-bold mb-2">{t('onboarding.welcome')}</h2>
         <p className="text-xs leading-relaxed opacity-80 mb-6">
-          Nous avons besoin de quelques informations pour compléter votre fiche de membre.
+          {t('onboarding.welcomeDesc')}
         </p>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4 text-left">
           {/* First Name Input */}
           <div className="flex flex-col gap-1">
             <label className="text-[10px] uppercase font-bold tracking-wider text-cordel-master-dark">
-              Prénom
+              {t('onboarding.firstName')}
             </label>
             <input
               type="text"
@@ -177,7 +186,7 @@ export default function Onboarding({ user, onComplete }) {
           {/* Last Name Input */}
           <div className="flex flex-col gap-1">
             <label className="text-[10px] uppercase font-bold tracking-wider text-cordel-master-dark">
-              Nom
+              {t('onboarding.lastName')}
             </label>
             <input
               type="text"
@@ -193,7 +202,7 @@ export default function Onboarding({ user, onComplete }) {
           {/* Instrument Principal Select */}
           <div className="flex flex-col gap-1">
             <label className="text-[10px] uppercase font-bold tracking-wider text-cordel-master-dark">
-              Instrument Principal
+              {t('onboarding.instrument')}
             </label>
             <select
               name="instrument"
@@ -205,14 +214,65 @@ export default function Onboarding({ user, onComplete }) {
               {instrumentsDisponibles.map((inst) => (
                 <option key={inst} value={inst}>{inst}</option>
               ))}
-              <option value="Autre">Autre</option>
+              <option value="Autre">{t('common.other')}</option>
+            </select>
+          </div>
+
+          {/* Instruments pratiqués / Polyvalence */}
+          <div className="flex flex-col gap-1 text-left">
+            <label className="text-[10px] uppercase font-bold tracking-wider text-cordel-master-dark mb-1">
+              {t('onboarding.instrumentsPlayed')}
+            </label>
+            <div className="grid grid-cols-2 gap-2 bg-white/40 dark:bg-black/25 p-3 rounded border border-dashed border-cordel-master-dark/15 max-h-40 overflow-y-auto">
+              {instrumentsDisponibles.map((inst) => {
+                const isChecked = (formData.instrumentsJoues || []).includes(inst);
+                return (
+                  <label key={inst} className="flex items-center gap-2 text-xs font-semibold cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={isChecked}
+                      disabled={submitting}
+                      onChange={(e) => {
+                        const checked = e.target.checked;
+                        setFormData(prev => {
+                          const currentList = prev.instrumentsJoues || [];
+                          const updatedList = checked 
+                            ? [...currentList, inst] 
+                            : currentList.filter(item => item !== inst);
+                          return { ...prev, instrumentsJoues: updatedList };
+                        });
+                      }}
+                      className="accent-cordel-wood scale-105"
+                    />
+                    <span>{inst}</span>
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Genre / Civilité Select */}
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] uppercase font-bold tracking-wider text-cordel-master-dark">
+              {t('onboarding.genre')}
+            </label>
+            <select
+              name="genre"
+              value={formData.genre}
+              onChange={handleChange}
+              disabled={submitting}
+              className="theme-input w-full disabled:opacity-50 font-bold bg-cordel-bg-light"
+            >
+              <option value="homme">{t('onboarding.genderMale')}</option>
+              <option value="femme">{t('onboarding.genderFemale')}</option>
+              <option value="autre">{t('onboarding.genderOther')}</option>
             </select>
           </div>
 
            {isFieldVisible('telephone') && (
             <div className="flex flex-col gap-1">
               <label className="text-[10px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                Téléphone
+                {t('onboarding.phone')}
               </label>
               <input
                 type="tel"
@@ -232,7 +292,7 @@ export default function Onboarding({ user, onComplete }) {
                   onChange={handleChange}
                   disabled={submitting}
                 />
-                <span>Rendre mon téléphone public dans le Trombinoscope</span>
+                <span>{t('onboarding.phonePublic')}</span>
               </label>
             </div>
           )}
@@ -241,7 +301,7 @@ export default function Onboarding({ user, onComplete }) {
           {isFieldVisible('tailleTshirt') && (
             <div className="flex flex-col gap-1">
               <label className="text-[10px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                Taille de T-Shirt
+                {t('onboarding.tshirtSize')}
               </label>
               <select
                 name="tailleTshirt"
@@ -263,7 +323,7 @@ export default function Onboarding({ user, onComplete }) {
           {isFieldVisible('lateralite') && (
             <div className="flex flex-col gap-1">
               <label className="text-[10px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                Latéralité (Main principale)
+                {t('onboarding.lateralite')}
               </label>
               <select
                 name="lateralite"
@@ -272,8 +332,8 @@ export default function Onboarding({ user, onComplete }) {
                 disabled={submitting}
                 className="theme-input w-full disabled:opacity-50 font-bold bg-cordel-bg-light"
               >
-                <option value="droitier">Droitier</option>
-                <option value="gaucher">Gaucher</option>
+                <option value="droitier">{t('onboarding.handRight')}</option>
+                <option value="gaucher">{t('onboarding.handLeft')}</option>
               </select>
             </div>
           )}
@@ -282,7 +342,7 @@ export default function Onboarding({ user, onComplete }) {
           {isFieldVisible('dateNaissance') && (
             <div className="flex flex-col gap-1">
               <label className="text-[10px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                Date de naissance
+                {t('onboarding.birthdate')}
               </label>
               <input
                 type="date"
@@ -301,7 +361,7 @@ export default function Onboarding({ user, onComplete }) {
                   onChange={handleChange}
                   disabled={submitting}
                 />
-                <span>Rendre ma date de naissance publique dans le Trombinoscope</span>
+                <span>{t('onboarding.birthdatePublic')}</span>
               </label>
             </div>
           )}
@@ -320,12 +380,12 @@ export default function Onboarding({ user, onComplete }) {
                   className="mt-1"
                 />
                 <label htmlFor="droitImage" className="text-xs font-semibold leading-snug cursor-pointer select-none">
-                  J'autorise l'association à utiliser mon image sur ses supports de communication (photos, vidéos).
+                  {t('onboarding.imageRights')}
                 </label>
               </div>
               {droitImageDocUrl && (
                 <div className="pl-6 text-[10px] font-bold">
-                  📄 <a href={droitImageDocUrl} target="_blank" rel="noopener noreferrer" className="text-cordel-wood hover:underline">Lire la charte de droit à l'image</a>
+                  📄 <a href={droitImageDocUrl} target="_blank" rel="noopener noreferrer" className="text-cordel-wood hover:underline">{t('onboarding.imageRightsDoc')}</a>
                 </div>
               )}
             </div>
@@ -346,12 +406,12 @@ export default function Onboarding({ user, onComplete }) {
                   className="mt-1"
                 />
                 <label htmlFor="aptitudeMedicale" className="text-xs font-bold leading-snug cursor-pointer select-none text-red-600 dark:text-red-400">
-                  * Je certifie sur l'honneur être médicalement apte à la pratique du Maracatu.
+                  {t('onboarding.medicalCert')}
                 </label>
               </div>
               {aptitudeMedicaleDocUrl && (
                 <div className="pl-6 text-[10px] font-bold">
-                  📄 <a href={aptitudeMedicaleDocUrl} target="_blank" rel="noopener noreferrer" className="text-cordel-wood hover:underline">Lire le règlement de santé / certificat type</a>
+                  📄 <a href={aptitudeMedicaleDocUrl} target="_blank" rel="noopener noreferrer" className="text-cordel-wood hover:underline">{t('onboarding.medicalCertDoc')}</a>
                 </div>
               )}
             </div>
@@ -363,7 +423,7 @@ export default function Onboarding({ user, onComplete }) {
             className="w-full mt-4 py-3"
             disabled={submitting}
           >
-            {submitting ? "Enregistrement..." : "Étape suivante"}
+            {submitting ? t('onboarding.saving') : t('onboarding.nextStep')}
           </CordelButton>
         </form>
       </CordelCard>

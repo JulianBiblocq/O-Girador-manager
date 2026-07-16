@@ -93,7 +93,7 @@ export default function XiloAvatar({ src, name, size = 80 }) {
     return (
       <div 
         style={{ width: size, height: size }}
-        className="rounded-[12px_6px_10px_8px] border-2 border-encre-noire bg-[#ece4d0] flex items-center justify-center text-encre-noire animate-pulse"
+        className="rounded-[12px_6px_10px_8px] border-2 border-encre-noire bg-[var(--cordel-hover-bg)] flex items-center justify-center text-encre-noire animate-pulse"
       >
         <span className="text-xs font-bold uppercase tracking-widest opacity-60">⏳</span>
       </div>

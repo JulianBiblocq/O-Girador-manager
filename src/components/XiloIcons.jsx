@@ -468,3 +468,137 @@ export const XiloMegaphone = ({ size = 16, className = '', ...props }) => (
     <path d="M21.5,6.5 C23.5,8.2 23.5,15.8 21.5,17.5" strokeWidth="2" strokeDasharray="1.5 2" />
   </svg>
 );
+
+// ⚙️ Paramètres / Administration (Gear)
+export const XiloSettings = ({ size = 16, className = '', ...props }) => (
+  <svg 
+    width={size} 
+    height={size} 
+    viewBox="0 0 24 24" 
+    fill="none" 
+    stroke="currentColor" 
+    strokeWidth="2.5" 
+    strokeLinecap="round" 
+    strokeLinejoin="round" 
+    className={`xilo-icon ${className}`} 
+    {...props}
+  >
+    <circle cx="12" cy="12" r="5" />
+    <circle cx="12" cy="12" r="1.5" fill="currentColor" />
+    <path d="M12,2 L12,4" />
+    <path d="M12,20 L12,22" />
+    <path d="M2,12 L4,12" />
+    <path d="M20,12 L22,12" />
+    <path d="M5,5 L6.5,6.5" />
+    <path d="M17.5,17.5 L19,19" />
+    <path d="M5,19 L6.5,17.5" />
+    <path d="M17.5,6.5 L19,5" />
+    <path d="M9,3 L9.5,5" />
+    <path d="M15,3 L14.5,5" />
+    <path d="M9,21 L9.5,19" />
+    <path d="M15,21 L14.5,19" />
+    <path d="M3,9 L5,9.5" />
+    <path d="M3,15 L5,14.5" />
+    <path d="M21,9 L19,9.5" />
+    <path d="M21,15 L19,14.5" />
+  </svg>
+);
+
+// 🥁 Caisse claire (Caixa)
+export const XiloCaixa = ({ size = 16, className = '', ...props }) => (
+  <svg 
+    width={size} 
+    height={size} 
+    viewBox="0 0 24 24" 
+    fill="none" 
+    stroke="currentColor" 
+    strokeWidth="2.3" 
+    strokeLinecap="round" 
+    strokeLinejoin="round" 
+    className={`xilo-icon ${className}`} 
+    {...props}
+  >
+    <ellipse cx="12" cy="7" rx="9" ry="2.5" />
+    <path d="M3,7 V13 C3,14.2 7,15.5 12,15.5 C17,15.5 21,14.2 21,13 V7" />
+    <path d="M5,8.5 V12.5" />
+    <path d="M8,9.5 V13.5" />
+    <path d="M12,10 V14" />
+    <path d="M16,9.5 V13.5" />
+    <path d="M19,8.5 V12.5" />
+    <path d="M4,17 L20,21" strokeWidth="1.8" />
+    <path d="M20,17 L4,21" strokeWidth="1.8" />
+    <circle cx="4" cy="17" r="0.8" fill="currentColor" />
+    <circle cx="20" cy="17" r="0.8" fill="currentColor" />
+  </svg>
+);
+
+// 📦 Achats groupés / Commandes (Box / Carton)
+export const XiloBox = ({ size = 16, className = '', ...props }) => (
+  <svg 
+    width={size} 
+    height={size} 
+    viewBox="0 0 24 24" 
+    fill="none" 
+    stroke="currentColor" 
+    strokeWidth="2.3" 
+    strokeLinecap="round" 
+    strokeLinejoin="round" 
+    className={`xilo-icon ${className}`} 
+    {...props}
+  >
+    <path d="M12,3 L21,7.5 L12,12 L3,7.5 Z" />
+    <path d="M3,7.5 V16.5 L12,21 V12 Z" />
+    <path d="M21,7.5 V16.5 L12,21 Z" />
+    <path d="M12,1 V3" strokeWidth="1.5" strokeDasharray="2 1" />
+    <path d="M10,1 C9,0.5 8,1.5 9,2.5 C10,3.5 12,3 12,3 C12,3 14,3.5 15,2.5 C16,1.5 15,0.5 14,1 C13,1.5 12,3 12,3" fill="currentColor" fillOpacity="0.1" />
+  </svg>
+);
+
+// 👥 Trombinoscope / Membres (People)
+export const XiloPeople = ({ size = 16, className = '', ...props }) => (
+  <svg 
+    width={size} 
+    height={size} 
+    viewBox="0 0 24 24" 
+    fill="none" 
+    stroke="currentColor" 
+    strokeWidth="2.3" 
+    strokeLinecap="round" 
+    strokeLinejoin="round" 
+    className={`xilo-icon ${className}`} 
+    {...props}
+  >
+    <circle cx="8" cy="8" r="3.5" />
+    <path d="M2.5,18.5 C2.5,15.5 5,14 8,14 C9,14 9.8,14.2 10.5,14.5" />
+    <circle cx="16" cy="8" r="3.5" />
+    <path d="M13.5,14.5 C14.2,14.2 15,14 16,14 C19,14 21.5,15.5 21.5,18.5" />
+    <path d="M1,21 H23" strokeWidth="1.5" />
+  </svg>
+);
+
+// 📅 Agenda / Calendrier (Calendar)
+export const XiloCalendar = ({ size = 16, className = '', ...props }) => (
+  <svg 
+    width={size} 
+    height={size} 
+    viewBox="0 0 24 24" 
+    fill="none" 
+    stroke="currentColor" 
+    strokeWidth="2.3" 
+    strokeLinecap="round" 
+    strokeLinejoin="round" 
+    className={`xilo-icon ${className}`} 
+    {...props}
+  >
+    <rect x="3" y="5" width="18" height="16" rx="2" />
+    <path d="M3,10 H21" />
+    <path d="M8,2 V5" strokeWidth="2.5" />
+    <path d="M16,2 V5" strokeWidth="2.5" />
+    <circle cx="7" cy="14" r="0.8" fill="currentColor" />
+    <circle cx="12" cy="14" r="0.8" fill="currentColor" />
+    <circle cx="17" cy="14" r="0.8" fill="currentColor" />
+    <circle cx="7" cy="18" r="0.8" fill="currentColor" />
+    <circle cx="12" cy="18" r="0.8" fill="currentColor" />
+    <circle cx="17" cy="18" r="0.8" fill="currentColor" />
+  </svg>
+);

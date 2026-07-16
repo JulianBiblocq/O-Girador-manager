@@ -4,7 +4,8 @@ import { db } from '../firebase';
 import LayoutShell from './LayoutShell';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
-import { XiloClose, XiloChisel } from './XiloIcons';
+import { XiloClose, XiloChisel, XiloCaixa } from './XiloIcons';
+import { useTranslation } from './LanguageContext';
 
 const INSTRUMENT_TYPES = ['Alfaia', 'Caixa', 'Agbê', 'Gonguê', 'Mineiro', 'Apito', 'Timbal', 'Autre'];
 const ETAT_OPTIONS = ['Neuf', 'Bon', 'À réparer'];
@@ -21,6 +22,22 @@ const INSTRUMENT_ICONS = {
 };
 
 export default function InventoryManager({ groupId, onBack, role, isSystemAdmin }) {
+  const { t } = useTranslation();
+
+  const getInstrumentTypeLabel = (type) => {
+    if (type === 'Autre') return t('inventory.other') || 'Autre';
+    return type;
+  };
+
+  const getEtatLabel = (etat) => {
+    switch (etat) {
+      case 'Neuf': return t('inventory.etatNeuf') || 'Neuf';
+      case 'Bon': return t('inventory.etatBon') || 'Bon';
+      case 'À réparer': return t('inventory.etatRepair') || 'À réparer';
+      default: return etat;
+    }
+  };
+
   const [instruments, setInstruments] = useState([]);
   const [usersList, setUsersList] = useState([]);
   const [filter, setFilter] = useState("all"); // "all", "association", "personal", "repair"
@@ -173,15 +190,17 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin 
       }
       setIsFormOpen(false);
     } catch (error) {
-      console.error("InventoryManager - Erreur de sauvegarde :", error);
-      alert("Erreur lors de l'enregistrement de l'instrument.");
+      console.error("Erreur Firebase Inventaire :", error);
+      alert(`${t('common.saveError')} : ${error.message}`);
     } finally {
       setSaving(false);
     }
   };
 
   const handleDelete = async (instId, name) => {
-    const confirmDelete = window.confirm(`Voulez-vous vraiment retirer "${name}" de l'inventaire ?`);
+    const confirmDelete = window.confirm(
+      (t('inventory.deleteConfirm') || `Voulez-vous vraiment retirer "{name}" de l'inventaire ?`).replace('{name}', name)
+    );
     if (!confirmDelete) return;
 
     setSaving(true);
@@ -189,8 +208,8 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin 
       await deleteDoc(doc(db, 'inventory', instId));
       setIsFormOpen(false);
     } catch (error) {
-      console.error("InventoryManager - Erreur de suppression :", error);
-      alert("Erreur lors de la suppression de l'instrument.");
+      console.error("Erreur Firebase Inventaire :", error);
+      alert(`${t('common.saveError')} : ${error.message}`);
     } finally {
       setSaving(false);
     }
@@ -207,26 +226,26 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin 
   // Render Access Denied card if security fails
   if (!isAuthorized) {
     return (
-      <LayoutShell>
+      <>
         <div className="text-center py-12 select-none">
           <CordelCard variant="default" useExtremeBorder={true} className="p-8">
-            <h2 className="text-xl font-bold text-cordel-wood">🚨 ACCÈS REFUSÉ</h2>
+            <h2 className="text-xl font-bold text-cordel-wood">🚨 {t('layoutEditor.accessDenied')}</h2>
             <p className="text-xs opacity-75 mt-3 leading-relaxed">
-              Vous devez avoir le rôle de Mestre ou d'Administrateur pour gérer l'inventaire instrumental.
+              {t('inventory.accessDeniedDesc')}
             </p>
             <div className="mt-6 flex justify-center">
               <CordelButton variant="default" onClick={onBack} className="text-xs">
-                ⬅️ Retour
+                ← {t('common.back')}
               </CordelButton>
             </div>
           </CordelCard>
         </div>
-      </LayoutShell>
+      </>
     );
   }
 
   return (
-    <LayoutShell>
+    <>
       <div className="flex flex-col gap-4 text-left">
         {/* Header bar */}
         <div className="flex justify-between items-center pb-2 border-b-2 border-dashed border-cordel-master-dark/30 select-none">
@@ -236,11 +255,11 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin 
             disabled={saving}
             className="text-[10px] font-black uppercase tracking-widest bg-cordel-bg border border-encre-noire px-3 py-1 rounded-[4px_6px_3px_5px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-95 cursor-pointer disabled:opacity-50 flex items-center justify-center"
           >
-            ⬅️ Retour
+            ← {t('common.back')}
           </button>
           
-          <h2 className="text-sm font-extrabold tracking-widest text-cordel-wood uppercase">
-            🥁 Inventaire du parc
+          <h2 className="text-sm font-extrabold tracking-widest text-cordel-wood uppercase flex items-center gap-1">
+            <XiloCaixa size={14} /> {t('inventory.title')}
           </h2>
         </div>
 
@@ -257,14 +276,14 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin 
             </button>
 
             <h3 className="panel-title text-sm font-bold text-cordel-wood mb-4">
-              {editingId ? "Modifier l'instrument" : "Ajouter un instrument"}
+              {editingId ? t('inventory.editTitle') : t('inventory.addTitle')}
             </h3>
 
             <form onSubmit={handleSave} className="flex flex-col gap-3.5">
               {/* Nom */}
               <div className="flex flex-col gap-1">
                 <label className="text-[8px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                  Nom / Surnom de l'instrument
+                  {t('inventory.instNameLabel')}
                 </label>
                 <input
                   type="text"
@@ -272,7 +291,7 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin 
                   value={formData.nom}
                   onChange={handleInputChange}
                   required
-                  placeholder="Ex : Alfaia Soleil, Caixa 3..."
+                  placeholder={t('inventory.instNamePlaceholder')}
                   disabled={saving}
                   className="theme-input text-xs font-bold py-1.5"
                 />
@@ -282,7 +301,7 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin 
                 {/* Type */}
                 <div className="flex flex-col gap-1">
                   <label className="text-[8px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                    Type
+                    {t('inventory.instTypeLabel')}
                   </label>
                   <select
                     name="type"
@@ -507,7 +526,7 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin 
                       <button
                         type="button"
                         onClick={() => handleOpenEdit(inst)}
-                        className="absolute bottom-2 right-2 p-1.5 border border-encre-noire bg-cordel-bg-light hover:bg-[#ece4d0] text-encre-noire rounded shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none cursor-pointer flex items-center justify-center"
+                        className="absolute bottom-2 right-2 p-1.5 border border-encre-noire bg-cordel-bg-light hover:bg-cordel-hover text-encre-noire rounded shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none cursor-pointer flex items-center justify-center"
                         title="Modifier l'instrument"
                       >
                         <XiloChisel size={10} />
@@ -520,6 +539,6 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin 
           </div>
         )}
       </div>
-    </LayoutShell>
+    </>
   );
 }

@@ -4,9 +4,26 @@ import { db } from '../firebase';
 import LayoutShell from './LayoutShell';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
-import { XiloClose } from './XiloIcons';
+import { XiloClose, XiloBox } from './XiloIcons';
+import { useTranslation } from './LanguageContext';
+import { fr } from '../locales/fr';
 
 export default function OrdersManager({ groupId, onBack, role, isSystemAdmin }) {
+  const { t } = useTranslation();
+
+  const getArticleLabel = (articleKey) => {
+    const trans = t(`widgetCommandes.articles.${articleKey}`);
+    if (trans && trans !== `widgetCommandes.articles.${articleKey}`) {
+      return trans;
+    }
+    // Try to find by matching value in french dict
+    const frArticles = fr.widgetCommandes?.articles || {};
+    const matchingKey = Object.keys(frArticles).find(k => frArticles[k] === articleKey);
+    if (matchingKey) {
+      return t(`widgetCommandes.articles.${matchingKey}`);
+    }
+    return articleKey; // fallback
+  };
   const [campaigns, setCampaigns] = useState([]);
   const [selectedCampaign, setSelectedCampaign] = useState(null);
   const [requests, setRequests] = useState([]);
@@ -99,14 +116,16 @@ export default function OrdersManager({ groupId, onBack, role, isSystemAdmin }) 
       setIsCreating(false);
     } catch (err) {
       console.error("OrdersManager - Erreur creation campagne :", err);
-      alert("Erreur lors de la création de la campagne.");
+      alert(t('common.saveError'));
     } finally {
       setSaving(false);
     }
   };
 
   const handleCloseCampaign = async (campaignId) => {
-    const confirmClose = window.confirm("Voulez-vous vraiment clôturer cette campagne de commandes ? Plus aucun membre ne pourra ajouter ou modifier ses demandes.");
+    const confirmClose = window.confirm(
+      t('ordersManager.confirmClose') || "Voulez-vous vraiment clôturer cette campagne de commandes ?"
+    );
     if (!confirmClose) return;
 
     setSaving(true);
@@ -119,7 +138,7 @@ export default function OrdersManager({ groupId, onBack, role, isSystemAdmin }) 
       }
     } catch (err) {
       console.error("OrdersManager - Erreur de clôture :", err);
-      alert("Erreur lors de la clôture.");
+      alert(t('common.saveError'));
     } finally {
       setSaving(false);
     }
@@ -135,26 +154,26 @@ export default function OrdersManager({ groupId, onBack, role, isSystemAdmin }) 
 
   if (!isAdmin) {
     return (
-      <LayoutShell>
+      <>
         <div className="text-center py-12">
           <CordelCard variant="default" useExtremeBorder={true} className="p-8">
-            <h2 className="text-xl font-bold text-cordel-wood">🚨 ACCÈS REFUSÉ</h2>
+            <h2 className="text-xl font-bold text-cordel-wood">🚨 {t('layoutEditor.accessDenied')}</h2>
             <p className="text-xs opacity-75 mt-3 leading-relaxed">
-              Vous devez être administrateur pour gérer les campagnes de commandes groupées.
+              {t('ordersManager.accessDeniedDesc')}
             </p>
             <div className="mt-6 flex justify-center">
               <CordelButton variant="default" onClick={onBack} className="text-xs">
-                ⬅️ Retour
+                ← {t('common.back')}
               </CordelButton>
             </div>
           </CordelCard>
         </div>
-      </LayoutShell>
+      </>
     );
   }
 
   return (
-    <LayoutShell>
+    <>
       <div className="flex flex-col gap-4 text-left select-none">
         
         {/* Header */}
@@ -163,13 +182,13 @@ export default function OrdersManager({ groupId, onBack, role, isSystemAdmin }) 
             type="button" 
             onClick={selectedCampaign ? () => setSelectedCampaign(null) : onBack} 
             disabled={saving}
-            className="text-[10px] font-black uppercase tracking-widest bg-cordel-bg border border-encre-noire px-3 py-1 rounded-[4px_6px_3px_5px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-95 cursor-pointer disabled:opacity-50 flex items-center justify-center"
+            className="text-[10px] font-black uppercase tracking-widest bg-cordel-bg border border-encre-noire px-3 py-1 rounded-[4px_6px_3px_5px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-95 cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1"
           >
-            {selectedCampaign ? "⬅️ Liste" : "⬅️ Dashboard"}
+            {selectedCampaign ? `← ${t('ordersManager.campaignsList') || "Liste"}` : "← Dashboard"}
           </button>
           
-          <h2 className="text-sm font-extrabold tracking-widest text-cordel-wood uppercase">
-            📦 Commandes Groupées
+          <h2 className="text-sm font-extrabold tracking-widest text-cordel-wood uppercase flex items-center gap-1">
+            <XiloBox size={14} /> {t('ordersManager.title')}
           </h2>
         </div>
 
@@ -191,7 +210,7 @@ export default function OrdersManager({ groupId, onBack, role, isSystemAdmin }) 
                 onClick={() => setIsCreating(true)}
                 className="w-full py-2.5 font-bold uppercase tracking-widest text-xs"
               >
-                + Ouvrir une Campagne
+                + {t('ordersManager.createCampaignTitle')}
               </CordelButton>
             ) : (
               <CordelCard variant="default" useExtremeBorder={true} className="p-4 relative">
@@ -204,16 +223,16 @@ export default function OrdersManager({ groupId, onBack, role, isSystemAdmin }) 
                   <XiloClose size={8} />
                 </button>
                 <form onSubmit={handleCreateCampaign} className="flex flex-col gap-3">
-                  <h4 className="text-xs uppercase font-extrabold text-cordel-wood">Nouvelle campagne</h4>
+                  <h4 className="text-xs uppercase font-extrabold text-cordel-wood">{t('ordersManager.newCampaign') || "Nouvelle campagne"}</h4>
                   <div className="flex flex-col gap-1">
-                    <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">Titre de la campagne</label>
+                    <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">{t('ordersManager.campaignTitleLabel')}</label>
                     <input 
                       type="text"
                       required
                       value={newCampaignTitle}
                       onChange={(e) => setNewCampaignTitle(e.target.value)}
                       disabled={saving}
-                      placeholder="Ex : Commandes Printemps 2026..."
+                      placeholder={t('ordersManager.campaignTitlePlaceholder')}
                       className="theme-input text-xs py-1.5"
                     />
                   </div>
@@ -223,7 +242,7 @@ export default function OrdersManager({ groupId, onBack, role, isSystemAdmin }) 
                     disabled={saving || !newCampaignTitle.trim()}
                     className="py-1.5 text-xs font-bold self-end px-4"
                   >
-                    Ouvrir la campagne
+                    {t('ordersManager.createBtn')}
                   </CordelButton>
                 </form>
               </CordelCard>
@@ -232,11 +251,11 @@ export default function OrdersManager({ groupId, onBack, role, isSystemAdmin }) 
             {/* Campaign lists */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-1">
               <h3 className="text-[10px] font-extrabold tracking-wider text-cordel-master-dark opacity-75 uppercase pl-1">
-                Campagnes Récentes
+                {t('ordersManager.campaignsList')}
               </h3>
               {campaigns.length === 0 ? (
                 <CordelCard variant="default" className="p-6 text-center bg-cordel-bg opacity-75">
-                  <p className="text-[10px] italic font-semibold">Aucune campagne de commande créée.</p>
+                  <p className="text-[10px] italic font-semibold">{t('ordersManager.noCampaigns') || "Aucune campagne de commande créée."}</p>
                 </CordelCard>
               ) : (
                 campaigns.map((c) => (
@@ -252,13 +271,13 @@ export default function OrdersManager({ groupId, onBack, role, isSystemAdmin }) 
                         {c.titre}
                       </h4>
                       <span className="text-[8px] font-bold text-cordel-master-dark/70">
-                        Créé le {new Date(c.dateCreation).toLocaleDateString('fr-FR')}
+                        {t('ordersManager.createdOn') || "Créé le"} {new Date(c.dateCreation).toLocaleDateString()}
                       </span>
                     </div>
 
                     <div className="flex items-center gap-2 select-none">
                       <span className={`theme-stamp-badge ${c.status === 'open' ? 'theme-stamp-badge-wood' : 'theme-stamp-badge-dark'} text-[8px]`}>
-                        {c.status === 'open' ? '🟢 EN COURS' : '🔴 CLÔTURÉE'}
+                        {c.status === 'open' ? `🟢 ${t('ordersManager.statusOpen')}` : `🔴 ${t('ordersManager.statusClosed')}`}
                       </span>
                     </div>
                   </CordelCard>
@@ -278,7 +297,7 @@ export default function OrdersManager({ groupId, onBack, role, isSystemAdmin }) 
                 {selectedCampaign.titre}
               </h3>
               <p className="text-[9px] font-bold text-cordel-master-dark/75 mt-1 select-none">
-                Statut : {selectedCampaign.status === 'open' ? '🟢 Commandes ouvertes aux membres' : '🔴 Clôturée'}
+                {t('ordersManager.campaignStatus') || "Statut :"} {selectedCampaign.status === 'open' ? `🟢 ${t('ordersManager.statusOpenText') || "Commandes ouvertes"}` : `🔴 ${t('ordersManager.statusClosed')}`}
               </p>
 
               {selectedCampaign.status === 'open' && (
@@ -289,7 +308,7 @@ export default function OrdersManager({ groupId, onBack, role, isSystemAdmin }) 
                     onClick={() => handleCloseCampaign(selectedCampaign.id)}
                     className="text-[9px] px-2.5 py-1 uppercase tracking-widest font-black text-red-600 dark:text-red-400 border-red-400/40"
                   >
-                    🔒 Clôturer la Campagne
+                    🔒 {t('ordersManager.closeCampaignBtn')}
                   </CordelButton>
                 </div>
               )}
@@ -304,17 +323,17 @@ export default function OrdersManager({ groupId, onBack, role, isSystemAdmin }) 
                 {/* 1. Summed totals per article (Supplier Ready) */}
                 <CordelCard variant="default" useExtremeBorder={false} className="py-4 px-5">
                   <h4 className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood border-b border-dashed border-cordel-master-dark/15 pb-1 mb-2.5">
-                    📊 Synthèse Agrégée (Commande Fournisseur)
+                    📊 {t('ordersManager.summaryByArticle')}
                   </h4>
                   {Object.keys(summary).length === 0 ? (
-                    <p className="text-[10px] italic opacity-60">Aucun article demandé pour le moment.</p>
+                    <p className="text-[10px] italic opacity-60">{t('ordersManager.noRequests')}</p>
                   ) : (
                     <ul className="flex flex-col gap-1.5">
                       {Object.entries(summary).map(([article, qty]) => (
                         <li key={article} className="flex justify-between items-center text-xs font-bold border-b border-dashed border-encre-noire/5 pb-1.5 last:border-0 last:pb-0">
-                          <span className="text-encre-noire">{article}</span>
+                          <span className="text-encre-noire">{getArticleLabel(article)}</span>
                           <span className="theme-stamp-badge theme-stamp-badge-wood px-2 py-0.5 text-[9px]">
-                            Total : {qty}
+                            {t('ordersManager.totalQty') || "Total"} : {qty}
                           </span>
                         </li>
                       ))}
@@ -325,21 +344,21 @@ export default function OrdersManager({ groupId, onBack, role, isSystemAdmin }) 
                 {/* 2. Detailed user demands */}
                 <CordelCard variant="default" useExtremeBorder={false} className="py-4 px-5">
                   <h4 className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood border-b border-dashed border-cordel-master-dark/15 pb-1 mb-2.5">
-                    👤 Demandes Nominatives Détaillées
+                    👤 {t('ordersManager.nominativeRequests')}
                   </h4>
                   {requests.length === 0 ? (
-                    <p className="text-[10px] italic opacity-60">Aucun membre n'a encore enregistré de besoin.</p>
+                    <p className="text-[10px] italic opacity-60">{t('ordersManager.noDemands') || "Aucun membre n'a encore enregistré de besoin."}</p>
                   ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-60 overflow-y-auto pr-1">
                       {requests.map((req) => (
                         <div key={req.id} className="text-xs p-2 rounded border border-dashed border-encre-noire/15 bg-cordel-bg-light/20 flex flex-col gap-0.5">
                           <div className="flex justify-between items-start font-bold">
                             <span className="text-cordel-wood">{req.userName}</span>
-                            <span className="text-encre-noire">{req.quantite}x {req.article}</span>
+                            <span className="text-encre-noire">{req.quantite}x {getArticleLabel(req.article)}</span>
                           </div>
                           {req.notes && (
                             <p className="text-[10px] italic text-encre-noire/70 mt-0.5 bg-[#fdfaf2] dark:bg-[#1a1816] px-1.5 py-0.5 rounded">
-                              ✍️ Note : {req.notes}
+                              ✍️ {t('ordersManager.noteLabel') || "Note"} : {req.notes}
                             </p>
                           )}
                         </div>
@@ -354,6 +373,6 @@ export default function OrdersManager({ groupId, onBack, role, isSystemAdmin }) 
         )}
 
       </div>
-    </LayoutShell>
+    </>
   );
 }

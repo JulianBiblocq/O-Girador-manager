@@ -1,22 +1,45 @@
-import React, { useState } from 'react';
-import { signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
+import React, { useState, useEffect } from 'react';
+import { signInWithRedirect, getRedirectResult, signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth, googleProvider } from '../firebase';
 import LayoutShell from './LayoutShell';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
+import { useTranslation } from './LanguageContext';
+import { XiloCaixa } from './XiloIcons';
 
 export default function Login({ branding }) {
+  const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isSignUpMode, setIsSignUpMode] = useState(false);
   const [authLoading, setAuthLoading] = useState(false);
+  const [redirectResultLoading, setRedirectResultLoading] = useState(false);
+
+  // Catch the redirect authentication result on component mount
+  useEffect(() => {
+    const handleRedirectResult = async () => {
+      setRedirectResultLoading(true);
+      try {
+        const result = await getRedirectResult(auth);
+        if (result) {
+          console.log("Login - Connexion réussie via redirect :", result.user);
+        }
+      } catch (error) {
+        console.error("Login - Erreur getRedirectResult :", error);
+        alert(t('login.connectError') + error.message);
+      } finally {
+        setRedirectResultLoading(false);
+      }
+    };
+    handleRedirectResult();
+  }, [t]);
 
   const handleLogin = async () => {
     try {
-      await signInWithPopup(auth, googleProvider);
+      await signInWithRedirect(auth, googleProvider);
     } catch (error) {
       console.error("Erreur d'authentification Google :", error);
-      alert("Impossible de se connecter : " + error.message);
+      alert(t('login.connectError') + error.message);
     }
   };
 
@@ -28,13 +51,13 @@ export default function Login({ branding }) {
     try {
       if (isSignUpMode) {
         await createUserWithEmailAndPassword(auth, email.trim(), password.trim());
-        alert("Compte créé avec succès ! Veuillez renseigner votre profil.");
+        alert(t('login.accountCreated'));
       } else {
         await signInWithEmailAndPassword(auth, email.trim(), password.trim());
       }
     } catch (error) {
       console.error("Erreur d'authentification par email :", error);
-      alert("Erreur d'authentification : " + error.message);
+      alert(t('login.authError') + error.message);
     } finally {
       setAuthLoading(false);
     }
@@ -58,6 +81,22 @@ export default function Login({ branding }) {
     '--cordel-vert': branding.colors.secondary
   } : {};
 
+  // Display a fallback spinner during redirect resolution
+  if (redirectResultLoading) {
+    return (
+      <div style={brandingStyle} className="min-h-screen flex flex-col w-full">
+        <LayoutShell logoUrl={branding?.logoUrl}>
+          <div className="flex-1 flex flex-col justify-center items-center py-12">
+            <div className="animate-spin text-4xl mb-4 select-none">⏳</div>
+            <span className="font-bold text-xs uppercase tracking-widest text-cordel-master-dark opacity-75">
+              {t('login.loadingRedirect')}
+            </span>
+          </div>
+        </LayoutShell>
+      </div>
+    );
+  }
+
   return (
     <div style={brandingStyle} className="min-h-screen flex flex-col w-full">
       <LayoutShell>
@@ -72,19 +111,19 @@ export default function Login({ branding }) {
                   className="w-full h-full object-cover p-2 bg-white" 
                 />
               ) : (
-                <span className="text-4xl text-cordel-bg-light select-none">🥁</span>
+                <XiloCaixa size={48} className="text-cordel-bg-light" />
               )}
             </div>
 
             <h2 className="panel-title text-2xl font-bold tracking-wider text-cordel-wood mb-2">
-              O Girador
+              {t('login.title')}
             </h2>
             <p className="text-xs uppercase font-extrabold tracking-widest text-cordel-master-dark/65 mb-6">
-              Porte d'Entrée
+              {t('login.gateway')}
             </p>
 
             <p className="text-sm leading-relaxed mb-8 text-cordel-master-dark/80 px-2">
-              Accédez à la console d'administration et de gestion pour votre groupe de maracatu.
+              {t('login.welcomeDesc')}
             </p>
 
             <CordelButton 
@@ -94,13 +133,13 @@ export default function Login({ branding }) {
               disabled={authLoading}
               className="w-full py-3"
             >
-              Se connecter avec Google
+              {t('login.loginGoogle')}
             </CordelButton>
 
             {/* Divider */}
             <div className="flex items-center gap-2 my-6 opacity-40">
               <div className="flex-1 border-t border-dashed border-encre-noire"></div>
-              <span className="text-[10px] font-bold uppercase tracking-widest text-cordel-master-dark">ou par email</span>
+              <span className="text-[10px] font-bold uppercase tracking-widest text-cordel-master-dark">{t('login.orEmail')}</span>
               <div className="flex-1 border-t border-dashed border-encre-noire"></div>
             </div>
 
@@ -108,7 +147,7 @@ export default function Login({ branding }) {
             <form onSubmit={handleEmailAuth} className="flex flex-col gap-3 text-left">
               <div className="flex flex-col gap-1">
                 <label className="text-[9px] uppercase font-extrabold tracking-wider text-cordel-master-dark">
-                  Adresse Email
+                  {t('login.email')}
                 </label>
                 <input 
                   type="email"
@@ -123,7 +162,7 @@ export default function Login({ branding }) {
 
               <div className="flex flex-col gap-1">
                 <label className="text-[9px] uppercase font-extrabold tracking-wider text-cordel-master-dark">
-                  Mot de passe
+                  {t('login.password')}
                 </label>
                 <input 
                   type="password"
@@ -142,7 +181,7 @@ export default function Login({ branding }) {
                 disabled={authLoading || !email.trim() || !password.trim()}
                 className="w-full py-2.5 mt-2 font-bold uppercase text-xs tracking-wider"
               >
-                {authLoading ? "Chargement..." : (isSignUpMode ? "Créer un compte" : "Se connecter")}
+                {authLoading ? t('common.loading') : (isSignUpMode ? t('login.createAccountBtn') : t('login.loginBtn'))}
               </CordelButton>
 
               <div className="text-center mt-2">
@@ -151,7 +190,7 @@ export default function Login({ branding }) {
                   onClick={() => setIsSignUpMode(!isSignUpMode)}
                   className="text-[10px] font-bold text-cordel-wood hover:underline cursor-pointer"
                 >
-                  {isSignUpMode ? "Déjà un compte ? Se connecter" : "Nouveau ? Créer un compte"}
+                  {isSignUpMode ? t('login.switchLogin') : t('login.switchSignUp')}
                 </button>
               </div>
             </form>

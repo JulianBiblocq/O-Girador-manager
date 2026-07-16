@@ -1,0 +1,99 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function isAdminOrMestre() {
+      return isAuthenticated() && (
+        getUserData().role == 'mestre' || 
+        getUserData().role == 'super-admin' || 
+        getUserData().isSystemAdmin == true
+      );
+    }
+
+    // Collection Rules
+
+    // Users: Read if authenticated. Write if editing own profile (without modifying paymentStatus) or if admin/mestre.
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && (
+        isAdminOrMestre() || (
+          request.auth.uid == userId && 
+          (resource == null ? !request.resource.data.keys().hasAny(['paymentStatus']) 
+                            : !request.resource.data.diff(resource.data).affectedKeys().hasAny(['paymentStatus']))
+        )
+      );
+    }
+
+    // Inventory: Read if authenticated. Write (create, update, delete) reserved for admins/mestres.
+    match /inventory/{item} {
+      allow read: if isAuthenticated();
+      allow write: if isAdminOrMestre();
+    }
+
+    // Associations: Read if authenticated. Write reserved for admins/mestres.
+    match /associations/{assocId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdminOrMestre();
+    }
+
+    // Announcements: Read if authenticated. Write reserved for admins/mestres.
+    match /announcements/{announcement} {
+      allow read: if isAuthenticated();
+      allow write: if isAdminOrMestre();
+    }
+
+    // Documents: Read if authenticated. Write reserved for admins/mestres.
+    match /documents/{document} {
+      allow read: if isAuthenticated();
+      allow write: if isAdminOrMestre();
+    }
+
+    // Campaigns: Read if authenticated. Write reserved for admins/mestres.
+    match /campaigns/{campaign} {
+      allow read: if isAuthenticated();
+      allow write: if isAdminOrMestre();
+    }
+
+    // Events: Read if authenticated. Create/Delete for admins/mestres. Update allowed for RSVPs.
+    match /events/{event} {
+      allow read: if isAuthenticated();
+      allow create, delete: if isAdminOrMestre();
+      allow update: if isAuthenticated();
+    }
+
+    // Forum: Read and Write allowed for all authenticated members.
+    match /forum/{thread} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // Campaign Requests: Read and Write allowed for all authenticated members.
+    match /campaignRequests/{req} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // Private messages: Read and write restricted to sender or recipient
+    match /private_messages/{messageId} {
+      allow read: if isAuthenticated() && (
+        resource.data.senderId == request.auth.uid || 
+        resource.data.recipientId == request.auth.uid
+      );
+      allow create: if isAuthenticated() && (
+        request.resource.data.senderId == request.auth.uid
+      );
+      allow update: if isAuthenticated() && (
+        resource.data.recipientId == request.auth.uid &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read'])
+      );
+      allow delete: if false;
+    }
+  }
+}

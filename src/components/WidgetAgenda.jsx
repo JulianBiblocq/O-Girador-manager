@@ -4,8 +4,11 @@ import { db } from '../firebase';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
 import EventDetails from './EventDetails';
+import { useTranslation } from './LanguageContext';
+import { XiloCalendar } from './XiloIcons';
 
-export default function WidgetAgenda({ role, isSystemAdmin, groupId, user, profileData }) {
+export default function WidgetAgenda({ role, isSystemAdmin, groupId, user, profileData, onFocusModeChange }) {
+  const { t } = useTranslation();
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
@@ -39,7 +42,8 @@ export default function WidgetAgenda({ role, isSystemAdmin, groupId, user, profi
     horairesPassages: '',
     horaireCovoiturage: '',
     niveauRequis: 'tous',
-    lienDocument: ''
+    lienDocument: '',
+    distanceAllerRetourKm: ''
   });
 
   const isAuthorized = role === 'mestre' || role === 'super-admin' || isSystemAdmin === true;
@@ -91,7 +95,8 @@ export default function WidgetAgenda({ role, isSystemAdmin, groupId, user, profi
       horairesPassages: '',
       horaireCovoiturage: '',
       niveauRequis: 'tous',
-      lienDocument: ''
+      lienDocument: '',
+      distanceAllerRetourKm: ''
     });
     setIsAdding(true);
   };
@@ -120,7 +125,8 @@ export default function WidgetAgenda({ role, isSystemAdmin, groupId, user, profi
         horairesPassages: formData.type === 'concert' ? formData.horairesPassages || '' : '',
         horaireCovoiturage: (formData.type === 'concert' || formData.type === 'stage') ? formData.horaireCovoiturage || '' : '',
         niveauRequis: formData.type === 'concert' ? formData.niveauRequis || 'tous' : 'tous',
-        lienDocument: formData.type === 'reunion' ? formData.lienDocument || '' : ''
+        lienDocument: formData.type === 'reunion' ? formData.lienDocument || '' : '',
+        distanceAllerRetourKm: (formData.type === 'concert' || formData.type === 'stage') ? (parseFloat(formData.distanceAllerRetourKm) || 0) : 0
       });
       setIsAdding(false);
     } catch (error) {
@@ -144,6 +150,29 @@ export default function WidgetAgenda({ role, isSystemAdmin, groupId, user, profi
     ? events.find(e => e.id === selectedEvent.id) || selectedEvent 
     : null;
 
+  const currentIndex = activeEvent ? events.findIndex(e => e.id === activeEvent.id) : -1;
+  const hasPrev = currentIndex > 0;
+  const hasNext = currentIndex >= 0 && currentIndex < events.length - 1;
+
+  const handlePrevEvent = () => {
+    if (hasPrev) {
+      setSelectedEvent(events[currentIndex - 1]);
+    }
+  };
+
+  const handleNextEvent = () => {
+    if (hasNext) {
+      setSelectedEvent(events[currentIndex + 1]);
+    }
+  };
+
+  const handleSelectEvent = (event) => {
+    setSelectedEvent(event);
+    if (onFocusModeChange) {
+      onFocusModeChange(true);
+    }
+  };
+
   // Render Event Details view if a ticket is clicked
   if (activeEvent) {
     return (
@@ -151,7 +180,14 @@ export default function WidgetAgenda({ role, isSystemAdmin, groupId, user, profi
         event={activeEvent}
         user={user}
         profileData={profileData}
-        onClose={() => setSelectedEvent(null)}
+        onClose={() => {
+          setSelectedEvent(null);
+          if (onFocusModeChange) {
+            onFocusModeChange(false);
+          }
+        }}
+        onPrev={hasPrev ? handlePrevEvent : null}
+        onNext={hasNext ? handleNextEvent : null}
       />
     );
   }
@@ -160,8 +196,8 @@ export default function WidgetAgenda({ role, isSystemAdmin, groupId, user, profi
     <div className="flex flex-col gap-3">
       {/* Title & Action Bar */}
       <div className="flex justify-between items-center pl-1 pr-1">
-        <h3 className="text-xs font-extrabold tracking-wider text-cordel-master-dark opacity-75 uppercase text-left">
-          Dates à Venir
+        <h3 className="text-xs font-extrabold tracking-wider text-cordel-master-dark opacity-75 uppercase text-left flex items-center gap-1">
+          <XiloCalendar size={14} /> {t('widgetAgenda.title')}
         </h3>
         {!loading && isAuthorized && !isAdding && (
           <CordelButton 
@@ -258,6 +294,25 @@ export default function WidgetAgenda({ role, isSystemAdmin, groupId, user, profi
                 className="theme-input w-full disabled:opacity-50"
               />
             </div>
+
+            {/* Distance A/R (Concert & Stage) */}
+            {(formData.type === 'concert' || formData.type === 'stage') && (
+              <div className="flex flex-col gap-1">
+                <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                  Distance Aller-Retour (Km)
+                </label>
+                <input
+                  type="number"
+                  name="distanceAllerRetourKm"
+                  min="0"
+                  value={formData.distanceAllerRetourKm}
+                  onChange={handleChange}
+                  disabled={saving}
+                  placeholder="Ex : 120"
+                  className="theme-input w-full disabled:opacity-50"
+                />
+              </div>
+            )}
 
             {/* Concert specific fields */}
             {formData.type === 'concert' && (
@@ -392,7 +447,7 @@ export default function WidgetAgenda({ role, isSystemAdmin, groupId, user, profi
               return (
                 <div 
                   key={event.id}
-                  onClick={() => setSelectedEvent(event)}
+                  onClick={() => handleSelectEvent(event)}
                   className={`
                     relative overflow-hidden
                     border-2 border-encre-noire

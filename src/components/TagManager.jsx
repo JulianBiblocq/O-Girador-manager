@@ -4,8 +4,10 @@ import { db } from '../firebase';
 import LayoutShell from './LayoutShell';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
+import { useTranslation } from './LanguageContext';
 
 export default function TagManager({ groupId, onBack, role, isSystemAdmin }) {
+  const { t } = useTranslation();
   const [tags, setTags] = useState([]);
   const [newTag, setNewTag] = useState("");
   const [loading, setLoading] = useState(true);
@@ -45,7 +47,7 @@ export default function TagManager({ groupId, onBack, role, isSystemAdmin }) {
 
     // Check for duplicates (case insensitive)
     if (tags.some(t => t.toLowerCase() === cleanTag.toLowerCase())) {
-      alert("Cette étiquette existe déjà !");
+      alert(t('tagManager.alreadyExists'));
       return;
     }
 
@@ -57,7 +59,7 @@ export default function TagManager({ groupId, onBack, role, isSystemAdmin }) {
       setNewTag("");
     } catch (error) {
       console.error("TagManager - Erreur d'ajout d'étiquette :", error);
-      alert("Impossible d'ajouter l'étiquette.");
+      alert(t('tagManager.errorAdd'));
     } finally {
       setSaving(false);
     }
@@ -65,7 +67,9 @@ export default function TagManager({ groupId, onBack, role, isSystemAdmin }) {
 
   const handleDeleteTag = async (tagToDelete) => {
     if (!groupId) return;
-    const confirmDelete = window.confirm(`Voulez-vous vraiment supprimer l'étiquette "${tagToDelete}" ?\nNote : Cela ne la retirera pas automatiquement des membres qui la possèdent déjà, mais elle ne sera plus disponible pour attribution.`);
+    const confirmDelete = window.confirm(
+      (t('tagManager.deleteConfirmText') || `Voulez-vous vraiment supprimer l'étiquette "{tag}" ?`).replace('{tag}', tagToDelete)
+    );
     if (!confirmDelete) return;
 
     setSaving(true);
@@ -75,7 +79,7 @@ export default function TagManager({ groupId, onBack, role, isSystemAdmin }) {
       await setDoc(assocRef, { tagsDisponibles: updatedTags }, { merge: true });
     } catch (error) {
       console.error("TagManager - Erreur de suppression d'étiquette :", error);
-      alert("Impossible de supprimer l'étiquette.");
+      alert(t('tagManager.errorDelete'));
     } finally {
       setSaving(false);
     }
@@ -84,26 +88,26 @@ export default function TagManager({ groupId, onBack, role, isSystemAdmin }) {
   // Render Access Denied card if security fails
   if (!isAuthorized) {
     return (
-      <LayoutShell>
+      <>
         <div className="text-center py-12 select-none">
           <CordelCard variant="default" useExtremeBorder={true} className="p-8">
-            <h2 className="text-xl font-bold text-cordel-wood">🚨 ACCÈS REFUSÉ</h2>
+            <h2 className="text-xl font-bold text-cordel-wood">🚨 {t('layoutEditor.accessDenied')}</h2>
             <p className="text-xs opacity-75 mt-3 leading-relaxed">
-              Vous devez avoir le rôle de Mestre ou d'Administrateur pour gérer les étiquettes personnalisées.
+              {t('tagManager.accessDeniedDesc')}
             </p>
             <div className="mt-6 flex justify-center">
               <CordelButton variant="default" onClick={onBack} className="text-xs">
-                ⬅️ Retour
+                ← {t('common.back')}
               </CordelButton>
             </div>
           </CordelCard>
         </div>
-      </LayoutShell>
+      </>
     );
   }
 
   return (
-    <LayoutShell>
+    <>
       <div className="flex flex-col gap-5 text-left">
         {/* Header bar */}
         <div className="flex justify-between items-center pb-2 border-b-2 border-dashed border-cordel-master-dark/30 select-none">
@@ -113,18 +117,18 @@ export default function TagManager({ groupId, onBack, role, isSystemAdmin }) {
             disabled={saving}
             className="text-[10px] font-black uppercase tracking-widest bg-cordel-bg border border-encre-noire px-3 py-1 rounded-[4px_6px_3px_5px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-95 cursor-pointer disabled:opacity-50"
           >
-            ⬅️ Retour
+            ← {t('common.back')}
           </button>
           
           <h2 className="text-sm font-extrabold tracking-widest text-cordel-wood uppercase">
-            🏷️ Gérer les étiquettes
+            🏷️ {t('tagManager.title')}
           </h2>
         </div>
 
         {/* Add Tag Form */}
         <CordelCard variant="default" useExtremeBorder={true} className="p-5">
           <h3 className="panel-title text-sm font-bold text-cordel-wood mb-3">
-            Créer une nouvelle étiquette
+            {t('tagManager.createTitle')}
           </h3>
           
           <form onSubmit={handleAddTag} className="flex gap-2">
@@ -133,7 +137,7 @@ export default function TagManager({ groupId, onBack, role, isSystemAdmin }) {
               value={newTag}
               onChange={(e) => setNewTag(e.target.value)}
               disabled={saving}
-              placeholder="Ex : Référent Caixa, Logistique..."
+              placeholder={t('tagManager.tagPlaceholder')}
               required
               maxLength={24}
               className="theme-input flex-1 disabled:opacity-50 text-xs py-2 font-bold"
@@ -144,7 +148,7 @@ export default function TagManager({ groupId, onBack, role, isSystemAdmin }) {
               disabled={saving || !newTag.trim()} 
               className="text-xs py-2 font-extrabold uppercase tracking-widest shrink-0"
             >
-              + Ajouter
+              + {t('tagManager.createBtn')}
             </CordelButton>
           </form>
         </CordelCard>
@@ -152,7 +156,7 @@ export default function TagManager({ groupId, onBack, role, isSystemAdmin }) {
         {/* Tags List */}
         <div className="flex flex-col gap-3">
           <h3 className="text-xs font-extrabold tracking-wider text-cordel-master-dark opacity-75 uppercase">
-            Étiquettes disponibles ({tags.length})
+            {t('tagManager.availableTags')} ({tags.length})
           </h3>
 
           {loading ? (
@@ -161,7 +165,7 @@ export default function TagManager({ groupId, onBack, role, isSystemAdmin }) {
             </div>
           ) : tags.length === 0 ? (
             <CordelCard variant="default" useExtremeBorder={false} className="p-6 text-center">
-              <p className="text-xs opacity-75 font-semibold">Aucune étiquette personnalisée créée pour le moment.</p>
+              <p className="text-xs opacity-75 font-semibold">{t('tagManager.noTags')}</p>
             </CordelCard>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -179,7 +183,7 @@ export default function TagManager({ groupId, onBack, role, isSystemAdmin }) {
                     onClick={() => handleDeleteTag(tag)}
                     disabled={saving}
                     className="w-7 h-7 flex items-center justify-center border border-encre-noire bg-cordel-wood text-cordel-bg-light rounded-[3px_5px_2px_4px] shadow-[1px_1px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-110 cursor-pointer disabled:opacity-50 text-xs font-bold"
-                    title="Supprimer cette étiquette"
+                    title={t('tagManager.deleteTitle') || "Supprimer cette étiquette"}
                   >
                     🗑️
                   </button>
@@ -189,6 +193,6 @@ export default function TagManager({ groupId, onBack, role, isSystemAdmin }) {
           )}
         </div>
       </div>
-    </LayoutShell>
+    </>
   );
 }

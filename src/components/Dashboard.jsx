@@ -6,19 +6,23 @@ import WidgetAnnonces from './WidgetAnnonces';
 import WidgetAgenda from './WidgetAgenda';
 import WidgetCommandes from './WidgetCommandes';
 import WidgetForum from './WidgetForum';
-import WidgetDocuments from './WidgetDocuments';
+const WidgetDocuments = React.lazy(() => import('./WidgetDocuments'));
+const WidgetTreasury = React.lazy(() => import('./WidgetTreasury'));
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
-import { XiloSun, XiloMoon } from './XiloIcons';
+import { XiloSun, XiloMoon, XiloSettings, XiloCaixa, XiloBox, XiloPeople, XiloConsole } from './XiloIcons';
 import { useTranslation } from './LanguageContext';
+import { useTerminologie } from '../hooks/useTerminologie';
 
 export default function Dashboard({ user, profileData, onNavigateToTrombi, onNavigateToView, onSignOut, installPromptAvailable, onTriggerInstall }) {
+  const { tRole } = useTerminologie();
   const { locale, toggleLanguage, t } = useTranslation();
   const [darkMode, setDarkMode] = useState(() => {
     return document.documentElement.classList.contains('dark');
   });
-  const [layout, setLayout] = useState(["motMestre", "annonces", "agenda", "commandes", "forum", "documents"]);
+  const [layout, setLayout] = useState(["motMestre", "annonces", "agenda", "commandes", "forum", "documents", "tresorerie"]);
   const [sequenceurUrl, setSequenceurUrl] = useState('');
+  const [agendaFocusMode, setAgendaFocusMode] = useState(false);
 
   const toggleDarkMode = () => {
     const isDark = document.documentElement.classList.toggle('dark');
@@ -30,6 +34,7 @@ export default function Dashboard({ user, profileData, onNavigateToTrombi, onNav
     switch (id) {
       case 'motMestre':
       case 'annonces':
+      case 'documents':
         return 'col-span-1 md:col-span-2 lg:col-span-3';
       case 'agenda':
         return 'col-span-1 md:col-span-2 lg:col-span-2';
@@ -47,7 +52,11 @@ export default function Dashboard({ user, profileData, onNavigateToTrombi, onNav
       if (docSnap.exists()) {
         const data = docSnap.data();
         if (Array.isArray(data.layoutEleves) && data.layoutEleves.length > 0) {
-          setLayout(data.layoutEleves);
+          const activeLayout = [...data.layoutEleves];
+          if (!activeLayout.includes("tresorerie")) {
+            activeLayout.push("tresorerie");
+          }
+          setLayout(activeLayout);
         }
         setSequenceurUrl(data.sequenceurUrl || '');
       }
@@ -58,6 +67,21 @@ export default function Dashboard({ user, profileData, onNavigateToTrombi, onNav
     return () => unsubscribe();
   }, [profileData?.groupId]);
 
+  if (agendaFocusMode) {
+    return (
+      <div className="flex flex-col gap-4 text-left max-w-4xl mx-auto w-full select-none min-h-screen justify-center items-stretch py-4 px-1">
+        <WidgetAgenda 
+          role={profileData?.role} 
+          isSystemAdmin={profileData?.isSystemAdmin} 
+          groupId={profileData?.groupId} 
+          user={user} 
+          profileData={profileData} 
+          onFocusModeChange={(isFocused) => setAgendaFocusMode(isFocused)}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-4">
       {/* System Admin Button (Top Float) */}
@@ -65,9 +89,10 @@ export default function Dashboard({ user, profileData, onNavigateToTrombi, onNav
         <div className="flex justify-end -mb-3">
           <button 
             onClick={() => onNavigateToView('system-admin')}
-            className="text-[10px] font-black uppercase tracking-widest bg-cordel-wood text-cordel-bg-light px-3 py-1 border border-encre-noire rounded-[4px_7px_3px_5px] shadow-[2px_2px_0px_0px_#181716] hover:brightness-110 active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none transition-all cursor-pointer"
+            className="text-[10px] font-black uppercase tracking-widest bg-cordel-wood text-cordel-bg-light px-3 py-1 border border-encre-noire rounded-[4px_7px_3px_5px] shadow-[2px_2px_0px_0px_#181716] hover:brightness-110 active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none transition-all cursor-pointer flex items-center gap-1.5"
           >
-            🛠️ Admin Système
+            <XiloSettings size={10} className="text-cordel-bg-light" />
+            {t('dashboard.systemAdmin')}
           </button>
         </div>
       )}
@@ -77,10 +102,12 @@ export default function Dashboard({ user, profileData, onNavigateToTrombi, onNav
         <button 
           type="button"
           onClick={toggleLanguage}
-          className="theme-btn px-1.5 py-1 text-[11px] font-black rounded-[4px_6px_3px_5px] shadow-[1px_1px_0px_0px_rgba(0,0,0,0.15)] cursor-pointer flex items-center justify-center min-w-8 min-h-7"
-          title={locale === 'fr' ? "Mudar para Português" : "Changer en Français"}
+          className="theme-btn px-2 py-1 text-[11px] font-black rounded-[4px_6px_3px_5px] shadow-[1px_1px_0px_0px_rgba(0,0,0,0.15)] cursor-pointer flex items-center justify-center gap-1 min-w-[36px] min-h-7"
+          title={locale === 'fr' ? "Mudar para Português (Brasil)" : "Changer en Français"}
         >
-          {locale === 'fr' ? "🇧🇷" : "🇫🇷"}
+          <span className={locale === 'fr' ? 'font-black text-cordel-wood' : 'opacity-40'}>FR</span>
+          <span className="opacity-20">/</span>
+          <span className={locale === 'pt' ? 'font-black text-cordel-wood' : 'opacity-40'}>BR</span>
         </button>
         
         <div className="text-center flex-1">
@@ -126,7 +153,7 @@ export default function Dashboard({ user, profileData, onNavigateToTrombi, onNav
             
             <div className="flex-1 min-w-0">
               <h2 className="panel-title text-base font-extrabold text-cordel-wood truncate">
-                {t('dashboard.welcome')}, {profileData?.prenom || 'Batuqueiro'} !
+                {t('dashboard.welcome')}, {profileData?.prenom || tRole('batuqueiro', profileData?.genre)} !
               </h2>
               <div className="flex flex-col items-start gap-1 mt-1">
                 <span className="text-[9px] font-semibold text-cordel-master-dark/70 break-all select-all">
@@ -135,7 +162,7 @@ export default function Dashboard({ user, profileData, onNavigateToTrombi, onNav
                 
                 {/* Slanted ink stamp style role badge */}
                 <span className="theme-stamp-badge theme-stamp-badge-wood rotate-[-2deg] select-none">
-                  {profileData?.role || 'membre'}
+                  {tRole(profileData?.role || 'membre', profileData?.genre)}
                 </span>
               </div>
             </div>
@@ -151,7 +178,7 @@ export default function Dashboard({ user, profileData, onNavigateToTrombi, onNav
             onClick={onTriggerInstall}
             className="w-full py-2.5 font-extrabold flex items-center justify-center gap-2 bg-[#84967a] text-encre-noire border-2 border-encre-noire rounded-[8px_12px_9px_11px] shadow-[2px_2px_0px_0px_#181716] hover:scale-[1.01] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-105 transition-all text-xs mb-1"
           >
-            📱 Installer l'application sur ce téléphone
+            📱 {t('dashboard.installApp')}
           </button>
         )}
 
@@ -161,7 +188,8 @@ export default function Dashboard({ user, profileData, onNavigateToTrombi, onNav
           onClick={onNavigateToTrombi} 
           className="w-full py-2.5 font-extrabold flex items-center justify-center gap-2"
         >
-          👥 {t('dashboard.seeTrombi')}
+          <XiloPeople size={14} />
+          {t('dashboard.seeTrombi')}
         </CordelButton>
 
         {sequenceurUrl && (
@@ -171,7 +199,8 @@ export default function Dashboard({ user, profileData, onNavigateToTrombi, onNav
             rel="noopener noreferrer"
             className="w-full py-2.5 font-extrabold flex items-center justify-center gap-2 bg-[#d99f4d] text-encre-noire border-2 border-encre-noire rounded-[8px_12px_9px_11px] shadow-[2px_2px_0px_0px_#181716] hover:scale-[1.01] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-105 transition-all text-center text-xs"
           >
-            🎛️ Séquenceur de la Roda (Révisions)
+            <XiloConsole size={14} />
+            {t('dashboard.sequencer')}
           </a>
         )}
 
@@ -183,28 +212,31 @@ export default function Dashboard({ user, profileData, onNavigateToTrombi, onNav
               onClick={() => onNavigateToView('layout-editor')}
               className="text-[10px] font-black uppercase tracking-widest bg-cordel-bg border-2 border-dashed border-encre-noire/30 hover:border-encre-noire text-encre-noire py-1.5 w-full rounded-[6px_10px_8px_12px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-105 transition-all cursor-pointer flex items-center justify-center gap-2"
             >
-              ⚙️ {t('dashboard.layoutEditor')}
+              <XiloSettings size={12} /> {t('dashboard.layoutEditor')}
             </button>
             <button 
               type="button"
               onClick={() => onNavigateToView('inventory')}
               className="text-[10px] font-black uppercase tracking-widest bg-cordel-bg border-2 border-dashed border-encre-noire/30 hover:border-encre-noire text-encre-noire py-1.5 w-full rounded-[6px_10px_8px_12px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-105 transition-all cursor-pointer flex items-center justify-center gap-2"
             >
-              🥁 {t('dashboard.inventory')}
+              <XiloCaixa size={12} /> {t('dashboard.inventory')}
             </button>
             <button 
               type="button"
               onClick={() => onNavigateToView('orders-manager')}
               className="text-[10px] font-black uppercase tracking-widest bg-cordel-bg border-2 border-dashed border-encre-noire/30 hover:border-encre-noire text-encre-noire py-1.5 w-full rounded-[6px_10px_8px_12px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-105 transition-all cursor-pointer flex items-center justify-center gap-2"
             >
-              📦 {t('dashboard.ordersManager')}
+              <XiloBox size={12} /> {t('dashboard.ordersManager')}
             </button>
           </div>
         )}
       </div>
 
       {/* Widgets Grid (Dynamically Ordered) */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div 
+        className="grid gap-6"
+        style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))' }}
+      >
         {layout.map((widgetId) => {
           const spanClass = getWidgetSpan(widgetId);
           
@@ -238,6 +270,7 @@ export default function Dashboard({ user, profileData, onNavigateToTrombi, onNav
                   groupId={profileData?.groupId} 
                   user={user} 
                   profileData={profileData} 
+                  onFocusModeChange={(isFocused) => setAgendaFocusMode(isFocused)}
                 />
               );
               break;
@@ -260,11 +293,23 @@ export default function Dashboard({ user, profileData, onNavigateToTrombi, onNav
               break;
             case 'documents':
               widgetContent = (
-                <WidgetDocuments 
-                  role={profileData?.role} 
-                  isSystemAdmin={profileData?.isSystemAdmin} 
-                  groupId={profileData?.groupId} 
-                />
+                <React.Suspense fallback={<div className="animate-pulse py-6 text-xs text-center opacity-65">Chargement du Varal...</div>}>
+                  <WidgetDocuments 
+                    role={profileData?.role} 
+                    isSystemAdmin={profileData?.isSystemAdmin} 
+                    groupId={profileData?.groupId} 
+                  />
+                </React.Suspense>
+              );
+              break;
+            case 'tresorerie':
+              widgetContent = (
+                <React.Suspense fallback={<div className="animate-pulse py-6 text-xs text-center opacity-65">Chargement de la Trésorerie...</div>}>
+                  <WidgetTreasury 
+                    groupId={profileData?.groupId} 
+                    profileData={profileData} 
+                  />
+                </React.Suspense>
               );
               break;
             default:

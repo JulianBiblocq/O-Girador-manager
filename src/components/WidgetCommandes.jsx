@@ -3,7 +3,10 @@ import { collection, query, where, onSnapshot, addDoc, deleteDoc, doc } from 'fi
 import { db } from '../firebase';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
-import { XiloClose } from './XiloIcons';
+import { XiloClose, XiloBox } from './XiloIcons';
+import { useTerminologie } from '../hooks/useTerminologie';
+import { useTranslation } from './LanguageContext';
+import { fr } from '../locales/fr';
 
 const ARTICLES_LIST = [
   "Baguettes d'Alfaia (Grosses, Petites ou Bacalhau)",
@@ -23,6 +26,22 @@ const ARTICLES_LIST = [
 ];
 
 export default function WidgetCommandes({ groupId, user, profileData }) {
+  const { t, locale } = useTranslation();
+  const { tRole } = useTerminologie();
+
+  const getArticleLabel = (articleKey) => {
+    const trans = t(`widgetCommandes.articles.${articleKey}`);
+    if (trans && trans !== `widgetCommandes.articles.${articleKey}`) {
+      return trans;
+    }
+    // Try to find by matching value in french dict
+    const frArticles = fr.widgetCommandes?.articles || {};
+    const matchingKey = Object.keys(frArticles).find(k => frArticles[k] === articleKey);
+    if (matchingKey) {
+      return t(`widgetCommandes.articles.${matchingKey}`);
+    }
+    return articleKey; // fallback
+  };
   const [openCampaign, setOpenCampaign] = useState(null);
   const [userRequests, setUserRequests] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -113,7 +132,7 @@ export default function WidgetCommandes({ groupId, user, profileData }) {
         campaignId: openCampaign.id,
         groupId,
         userId: user.uid,
-        userName: `${profileData?.prenom || 'Batuqueiro'} ${profileData?.nom || ''}`,
+        userName: `${profileData?.prenom || tRole('batuqueiro', profileData?.genre)} ${profileData?.nom || ''}`,
         article,
         quantite: parseInt(quantite, 10) || 1,
         notes: finalNotes
@@ -144,11 +163,17 @@ export default function WidgetCommandes({ groupId, user, profileData }) {
   const isTshirtSelected = article === "T-shirt Homme" || article === "T-shirt Femme";
   const isAlfaiaSkinSelected = article === "Peau d'Alfaia (18\", 20\" ou 22\")" || article === "Housse de protection Alfaia (18\", 20\" ou 22\")";
 
+  const isAdmin = profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.isSystemAdmin === true;
+
+  if (!loading && !isAdmin && !openCampaign) {
+    return null;
+  }
+
   return (
     <div className="flex flex-col gap-3 text-left select-none">
       {/* Title */}
-      <h3 className="text-xs font-extrabold tracking-wider text-cordel-master-dark opacity-75 uppercase pl-1">
-        📦 Commande Groupée de Matériel
+      <h3 className="text-xs font-extrabold tracking-wider text-cordel-master-dark opacity-75 uppercase pl-1 flex items-center gap-1">
+        <XiloBox size={14} /> {t('widgetCommandes.title') || "Commande Groupée"}
       </h3>
 
       {loading && (
@@ -160,7 +185,7 @@ export default function WidgetCommandes({ groupId, user, profileData }) {
       {/* No open campaigns */}
       {!loading && !openCampaign && (
         <CordelCard variant="default" className="p-4 text-center bg-cordel-bg opacity-75">
-          <p className="text-[10px] italic font-semibold">Aucune campagne d'achat groupé en cours.</p>
+          <p className="text-[10px] italic font-semibold">{t('widgetCommandes.noCampaign') || "Aucune campagne active."}</p>
         </CordelCard>
       )}
 
@@ -169,16 +194,16 @@ export default function WidgetCommandes({ groupId, user, profileData }) {
         <div className="flex flex-col gap-3">
           <CordelCard variant="ocre" useExtremeBorder={true} className="py-4 px-5">
             <h4 className="font-extrabold text-sm text-encre-noire leading-snug mb-1">
-              Campagne : {openCampaign.titre}
+              {t('widgetCommandes.campaignTitle') || "Campagne :"} {openCampaign.titre}
             </h4>
             <p className="text-[8px] uppercase tracking-wider font-extrabold text-cordel-master-dark/70 border-b border-dashed border-cordel-master-dark/20 pb-2 mb-3">
-              Insérez vos besoins ci-dessous :
+              {t('widgetCommandes.subTitle') || "Vos besoins :"}
             </p>
 
             <form onSubmit={handleSubmit} className="flex flex-col gap-3">
               {/* Dropdown list of articles */}
               <div className="flex flex-col gap-1">
-                <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">Article souhaité</label>
+                <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">{t('widgetCommandes.articleLabel') || "Article"}</label>
                 <select
                   value={article}
                   onChange={(e) => setArticle(e.target.value)}
@@ -186,7 +211,7 @@ export default function WidgetCommandes({ groupId, user, profileData }) {
                   className="theme-input text-xs font-bold py-1.5 px-2 bg-cordel-bg-light"
                 >
                   {ARTICLES_LIST.map((art) => (
-                    <option key={art} value={art}>{art}</option>
+                    <option key={art} value={art}>{getArticleLabel(art)}</option>
                   ))}
                 </select>
               </div>
@@ -194,20 +219,20 @@ export default function WidgetCommandes({ groupId, user, profileData }) {
               {/* Helper notice */}
               {isTshirtSelected && (
                 <div className="text-[9px] font-bold text-green-700 dark:text-green-400 bg-white/40 dark:bg-black/20 p-1.5 rounded border border-dashed border-green-300/50 leading-relaxed mt-0.5">
-                  👕 Note : Votre taille de T-Shirt enregistrée est <strong>{profileData?.tailleTshirt || 'M'}</strong>. Elle sera automatiquement jointe à la commande.
+                  {t('widgetCommandes.tshirtNotice') ? t('widgetCommandes.tshirtNotice').replace('{{size}}', profileData?.tailleTshirt || 'M') : `Taille T-shirt : ${profileData?.tailleTshirt || 'M'}`}
                 </div>
               )}
 
               {isAlfaiaSkinSelected && (
                 <div className="text-[9px] font-bold text-cordel-wood bg-white/40 dark:bg-black/20 p-1.5 rounded border border-dashed border-cordel-wood/40 leading-relaxed mt-0.5 animate-pulse">
-                  🥁 Précision requise : N'oubliez pas de préciser la taille en pouces (18", 20" ou 22") dans les notes de l'article !
+                  {t('widgetCommandes.alfaiaNotice') || "Précisez la taille en pouces dans les notes."}
                 </div>
               )}
 
               {/* Quantité & Notes row */}
               <div className="grid grid-cols-3 gap-2">
                 <div className="flex flex-col gap-1 col-span-1">
-                  <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">Quantité</label>
+                  <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">{t('widgetCommandes.qtyLabel') || "Quantité"}</label>
                   <input
                     type="number"
                     min="1"
@@ -219,7 +244,7 @@ export default function WidgetCommandes({ groupId, user, profileData }) {
                   />
                 </div>
                 <div className="flex flex-col gap-1 col-span-2">
-                  <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">Notes / Taille</label>
+                  <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">{t('widgetCommandes.notesLabel') || "Notes"}</label>
                   <input
                     type="text"
                     value={notes}
@@ -238,7 +263,7 @@ export default function WidgetCommandes({ groupId, user, profileData }) {
                 disabled={saving || !article}
                 className="w-full py-2 font-bold uppercase tracking-widest text-[10px] mt-1"
               >
-                {saving ? "Envoi..." : "Ajouter à ma commande"}
+                {saving ? (t('widgetCommandes.adding') || "Envoi...") : (t('widgetCommandes.addBtn') || "Commander")}
               </CordelButton>
             </form>
           </CordelCard>
@@ -246,27 +271,27 @@ export default function WidgetCommandes({ groupId, user, profileData }) {
           {/* User's existing requests list */}
           {userRequests.length > 0 && (
             <CordelCard variant="default" useExtremeBorder={false} className="py-3 px-4">
-              <h5 className="text-[9px] font-extrabold tracking-wider text-cordel-wood uppercase border-b border-dashed border-cordel-master-dark/15 pb-1 mb-2">
-                📋 Mes Demandes pour cette campagne
+              <h5 className="text-[9px] font-extrabold tracking-wider text-cordel-wood uppercase border-b border-dashed border-cordel-master-dark/15 pb-1 mb-2 flex items-center gap-1">
+                <XiloBox size={12} /> {t('widgetCommandes.myRequests') || "Ma commande"}
               </h5>
               <div className="flex flex-col gap-2 max-h-40 overflow-y-auto">
                 {userRequests.map((req) => (
                   <div key={req.id} className="text-xs flex justify-between items-center py-1 border-b border-dashed border-encre-noire/5 last:border-0 last:pb-0">
                     <div className="flex-1 min-w-0">
                       <span className="font-extrabold text-encre-noire">
-                        {req.quantite}x {req.article}
+                        {req.quantite} {t('widgetCommandes.unit') || "u"} {getArticleLabel(req.article)}
                       </span>
                       {req.notes && (
                         <p className="text-[9px] text-cordel-master-dark/70 font-semibold truncate">
-                          Note : {req.notes}
+                          {t('widgetCommandes.notesLabel') || "Note"} : {req.notes}
                         </p>
                       )}
                     </div>
                     <button
                       type="button"
                       onClick={() => handleDeleteRequest(req.id)}
-                      className="p-1 border border-dashed border-red-400 hover:border-red-600 text-red-500 rounded cursor-pointer shrink-0 ml-2"
-                      title="Retirer cet article"
+                      className="p-1 border border-dashed border-red-400 hover:border-red-600 text-red-500 rounded cursor-pointer shrink-0 ml-2 flex items-center justify-center"
+                      title="Retirer"
                     >
                       <XiloClose size={8} />
                     </button>

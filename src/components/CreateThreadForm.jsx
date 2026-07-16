@@ -3,8 +3,10 @@ import { collection, addDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
+import { useTranslation } from './LanguageContext';
 
 export default function CreateThreadForm({ groupId, user, profileData, onClose }) {
+  const { t } = useTranslation();
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState('Général');
   const [message, setMessage] = useState('');
@@ -42,7 +44,7 @@ export default function CreateThreadForm({ groupId, user, profileData, onClose }
       onClose();
     } catch (error) {
       console.error("CreateThreadForm - Erreur addDoc :", error);
-      alert("Erreur lors de la création de la discussion.");
+      alert(t('common.saveError'));
     } finally {
       setSaving(false);
     }
@@ -51,14 +53,14 @@ export default function CreateThreadForm({ groupId, user, profileData, onClose }
   return (
     <CordelCard variant="default" useExtremeBorder={true} className="text-left py-6">
       <h4 className="panel-title text-base font-bold mb-4 text-cordel-wood">
-        Nouvelle Discussion
+        {t('forum.newThreadTitle')}
       </h4>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         {/* Title */}
         <div className="flex flex-col gap-1">
           <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-            Sujet / Titre
+            {t('forum.subjectLabel')}
           </label>
           <input
             type="text"
@@ -66,7 +68,7 @@ export default function CreateThreadForm({ groupId, user, profileData, onClose }
             onChange={(e) => setTitle(e.target.value)}
             required
             disabled={saving}
-            placeholder="Ex : Organisation Répétition Générale"
+            placeholder={t('forum.subjectPlaceholder')}
             className="theme-input w-full disabled:opacity-50"
           />
         </div>
@@ -74,7 +76,7 @@ export default function CreateThreadForm({ groupId, user, profileData, onClose }
         {/* Category Select */}
         <div className="flex flex-col gap-1">
           <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-            Catégorie
+            {t('forum.categoryLabel')}
           </label>
           <select
             value={category}
@@ -83,17 +85,17 @@ export default function CreateThreadForm({ groupId, user, profileData, onClose }
             disabled={saving}
             className="theme-input w-full disabled:opacity-50"
           >
-            <option value="Général">Général (Apéros, actus, etc.)</option>
-            <option value="Costumes">Costumes (Ateliers, couture)</option>
-            <option value="Covoiturage">Covoiturage (Trajets)</option>
-            <option value="Autre">Autre</option>
+            <option value="Général">{t('forum.Général')} (Apéros, actus, etc.)</option>
+            <option value="Costumes">{t('forum.Costumes')} (Ateliers, couture)</option>
+            <option value="Covoiturage">{t('forum.Covoiturage')} (Trajets)</option>
+            <option value="Autre">{t('forum.Autre')}</option>
           </select>
         </div>
 
         {/* First Message */}
         <div className="flex flex-col gap-1">
           <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-            Message initial
+            {t('forum.firstMessageLabel')}
           </label>
           <textarea
             value={message}
@@ -101,7 +103,7 @@ export default function CreateThreadForm({ groupId, user, profileData, onClose }
             required
             disabled={saving}
             rows="4"
-            placeholder="Écrivez votre message..."
+            placeholder={t('forum.messagePlaceholder')}
             className="theme-input w-full resize-none disabled:opacity-50 text-sm"
           />
         </div>
@@ -115,7 +117,7 @@ export default function CreateThreadForm({ groupId, user, profileData, onClose }
             disabled={saving}
             className="text-xs px-4 py-2"
           >
-            Annuler
+            {t('common.cancel')}
           </CordelButton>
           <CordelButton 
             type="submit"
@@ -124,7 +126,7 @@ export default function CreateThreadForm({ groupId, user, profileData, onClose }
             disabled={saving}
             className="text-xs px-4 py-2"
           >
-            {saving ? "Création..." : "Valider"}
+            {saving ? t('forum.creatingMsg') : (t('common.confirm') || "Valider")}
           </CordelButton>
         </div>
       </form>

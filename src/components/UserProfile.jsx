@@ -6,7 +6,10 @@ import { db, auth, storage } from '../firebase';
 import XiloAvatar from './XiloAvatar';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
-import { XiloSun, XiloMoon } from './XiloIcons';
+import { XiloSun, XiloMoon, XiloCaixa } from './XiloIcons';
+import { useTerminologie } from '../hooks/useTerminologie';
+import { useTranslation } from './LanguageContext';
+import { forceUpdateAndClearCache } from '../utils/pwaUtils';
 
 const INSTRUMENT_ICONS = {
   Alfaia: 'icones/alfaia.svg',
@@ -29,21 +32,25 @@ const DEFAULT_FIELDS_CONFIG = {
 };
 
 export default function UserProfile({ user, profileData, onBack }) {
+  const { t } = useTranslation();
+  const { tRole } = useTerminologie();
   const [formData, setFormData] = useState({
     prenom: profileData?.prenom || '',
     nom: profileData?.nom || '',
     instrument: profileData?.instrument || 'Autre',
+    instrumentsJoues: profileData?.instrumentsJoues || (profileData?.instrument ? [profileData.instrument] : []),
     telephone: profileData?.telephone || '',
     tailleTshirt: profileData?.tailleTshirt || 'M',
     droitImage: profileData?.droitImage !== undefined ? profileData.droitImage : true,
     aptitudeMedicale: profileData?.aptitudeMedicale !== undefined ? profileData.aptitudeMedicale : false,
     lateralite: profileData?.lateralite || 'droitier',
     dateNaissance: profileData?.dateNaissance || '',
+    genre: profileData?.genre || 'autre',
     publierTelephone: profileData?.publierTelephone !== undefined ? profileData.publierTelephone : false,
     publierDateNaissance: profileData?.publierDateNaissance !== undefined ? profileData.publierDateNaissance : false
   });
   
-  const DEFAULT_INSTRUMENTS = ["Alfaia Marcante", "Alfaia Meião", "Alfaia Repique", "Caixa", "Tarol", "Gonguê", "Agbê", "Mineiro", "Timbal", "Paroles", "Chant", "Danse"];
+  const DEFAULT_INSTRUMENTS = ["Alfaia Marcante", "Alfaia Meião", "Alfaia Repique", "Caixa", "Tarol", "Gonguê", "Agbê", "Mineiro", "Timbal", "Chant", "Danse"];
 
   const [saving, setSaving] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
@@ -196,10 +203,10 @@ export default function UserProfile({ user, profileData, onBack }) {
         photoURL: downloadURL
       });
 
-      alert("Photo de profil mise à jour avec succès !");
+      alert(t('common.saveSuccess'));
     } catch (err) {
       console.error("UserProfile - Erreur d'upload de photo :", err);
-      alert("Erreur lors du téléversement de la photo.");
+      alert(t('common.saveError'));
     } finally {
       setUploadingPhoto(false);
     }
@@ -221,19 +228,24 @@ export default function UserProfile({ user, profileData, onBack }) {
         prenom: formData.prenom,
         nom: formData.nom,
         instrument: formData.instrument,
+        instrumentsJoues: Array.from(new Set([
+          formData.instrument || "Autre",
+          ...(formData.instrumentsJoues || [])
+        ])).filter(Boolean),
         telephone: isFieldVisible('telephone') ? formData.telephone : (profileData?.telephone || ''),
         tailleTshirt: isFieldVisible('tailleTshirt') ? formData.tailleTshirt : (profileData?.tailleTshirt || 'M'),
         droitImage: isFieldVisible('droitImage') ? formData.droitImage : (profileData?.droitImage !== undefined ? profileData.droitImage : true),
         aptitudeMedicale: isFieldVisible('aptitudeMedicale') ? formData.aptitudeMedicale : (profileData?.aptitudeMedicale !== undefined ? profileData.aptitudeMedicale : false),
         lateralite: isFieldVisible('lateralite') ? formData.lateralite : (profileData?.lateralite || 'droitier'),
         dateNaissance: isFieldVisible('dateNaissance') ? formData.dateNaissance : (profileData?.dateNaissance || ''),
+        genre: formData.genre,
         publierTelephone: isFieldVisible('telephone') ? formData.publierTelephone : false,
         publierDateNaissance: isFieldVisible('dateNaissance') ? formData.publierDateNaissance : false
       });
-      alert("Profil mis à jour avec succès !");
+      alert(t('userProfile.successMsg'));
     } catch (error) {
       console.error("UserProfile - Erreur lors de la sauvegarde :", error);
-      alert("Erreur lors de l'enregistrement de vos modifications.");
+      alert(t('userProfile.errorMsg'));
     } finally {
       setSaving(false);
     }
@@ -247,17 +259,23 @@ export default function UserProfile({ user, profileData, onBack }) {
     }
   };
 
+  const handleForceUpdate = () => {
+    if (window.confirm(t('pwa.confirmForceUpdate') || "Voulez-vous vraiment vider le cache et forcer la mise à jour ?")) {
+      forceUpdateAndClearCache();
+    }
+  };
+
   const fullName = `${profileData?.prenom || ''} ${profileData?.nom || ''}`;
 
   return (
-    <div className="flex flex-col gap-4 text-left">
+    <div className="flex flex-col gap-4 text-left max-w-3xl mx-auto w-full">
       {/* Header bar */}
       <div className="flex justify-between items-center border-b-2 border-dashed border-cordel-master-dark/30 pb-2 select-none">
         <CordelButton variant="default" onClick={onBack} className="px-3 py-1 text-xs">
-          ⬅️ Retour
+          ← {t('common.back')}
         </CordelButton>
         <span className="panel-title text-base font-extrabold tracking-wider text-cordel-wood uppercase">
-          Mon Profil
+          {t('userProfile.title')}
         </span>
         <button 
           type="button"
@@ -276,10 +294,10 @@ export default function UserProfile({ user, profileData, onBack }) {
           {/* Decorative stamp on avatar */}
           <div className="absolute -bottom-1 -right-2 z-20 flex flex-col gap-1 items-end select-none">
             <span className="theme-stamp-badge theme-stamp-badge-wood text-[8px] rotate-12">
-              {profileData?.role || 'membre'}
+              {tRole(profileData?.role || 'membre', profileData?.genre)}
             </span>
             <span className="theme-stamp-badge theme-stamp-badge-ocre text-[7px] -rotate-6">
-              {profileData?.niveau === 'confirme' ? '🏆 Confirmé' : '🌱 Débutant'}
+              {profileData?.niveau === 'confirme' ? '🏆 ' + t('userProfile.levelConfirmSimple') : '🌱 ' + t('userProfile.levelBeginner')}
             </span>
           </div>
         </div>
@@ -287,7 +305,7 @@ export default function UserProfile({ user, profileData, onBack }) {
         {/* Upload picture button */}
         <div className="flex flex-col items-center gap-1.5">
           <label className="text-[10px] font-black uppercase tracking-widest bg-cordel-bg border border-encre-noire px-3 py-1.5 rounded-[4px_6px_3px_5px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-95 cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1">
-            {uploadingPhoto ? "⏳ Téléversement..." : "📸 Changer ma photo"}
+            {uploadingPhoto ? "⏳ " + t('userProfile.uploading') : "📸 " + t('userProfile.changePhoto')}
             <input 
               type="file" 
               accept="image/*"
@@ -306,13 +324,13 @@ export default function UserProfile({ user, profileData, onBack }) {
       <form onSubmit={handleSave} className="flex flex-col gap-4">
         <CordelCard variant="default" useExtremeBorder={false} className="flex flex-col gap-4">
           <h4 className="font-bold text-xs uppercase tracking-wider text-cordel-wood border-b border-dashed border-cordel-master-dark/10 pb-1">
-            Informations personnelles
+            {t('userProfile.personalInfo')}
           </h4>
 
           {/* First Name */}
           <div className="flex flex-col gap-1.5">
             <label className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood">
-              Prénom de l'adhérent
+              {t('userProfile.firstName')}
             </label>
             <input
               type="text"
@@ -321,7 +339,7 @@ export default function UserProfile({ user, profileData, onBack }) {
               onChange={handleChange}
               required
               disabled={saving}
-              placeholder="Entrez votre prénom (ex : Manoel)"
+              placeholder="Entrez votre prénom"
               className="theme-input w-full disabled:opacity-50 text-xs font-bold"
             />
           </div>
@@ -329,7 +347,7 @@ export default function UserProfile({ user, profileData, onBack }) {
           {/* Last Name */}
           <div className="flex flex-col gap-1.5">
             <label className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood">
-              Nom de famille
+              {t('userProfile.lastName')}
             </label>
             <input
               type="text"
@@ -338,7 +356,7 @@ export default function UserProfile({ user, profileData, onBack }) {
               onChange={handleChange}
               required
               disabled={saving}
-              placeholder="Entrez votre nom de famille (ex : Silva)"
+              placeholder="Entrez votre nom"
               className="theme-input w-full disabled:opacity-50 text-xs font-bold"
             />
           </div>
@@ -346,7 +364,7 @@ export default function UserProfile({ user, profileData, onBack }) {
           {/* Instrument Dropdown */}
           <div className="flex flex-col gap-1.5">
             <label className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood">
-              Instrument Principal pratiqué
+              {t('onboarding.instrument')}
             </label>
             <select
               name="instrument"
@@ -359,24 +377,76 @@ export default function UserProfile({ user, profileData, onBack }) {
               {instrumentsDisponibles.map((inst) => (
                 <option key={inst} value={inst}>{inst}</option>
               ))}
-              <option value="Autre">Autre</option>
+              <option value="Autre">{t('common.other')}</option>
+            </select>
+          </div>
+
+          {/* Instruments pratiqués / Polyvalence */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood">
+              {t('onboarding.instrumentsPlayed')}
+            </label>
+            <div className="grid grid-cols-2 gap-2 bg-white/40 dark:bg-black/25 p-3 rounded border border-dashed border-cordel-master-dark/15 max-h-40 overflow-y-auto">
+              {instrumentsDisponibles.map((inst) => {
+                const isChecked = (formData.instrumentsJoues || []).includes(inst);
+                return (
+                  <label key={inst} className="flex items-center gap-2 text-xs font-semibold cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={isChecked}
+                      disabled={saving}
+                      onChange={(e) => {
+                        const checked = e.target.checked;
+                        setFormData(prev => {
+                          const currentList = prev.instrumentsJoues || [];
+                          const updatedList = checked 
+                            ? [...currentList, inst] 
+                            : currentList.filter(item => item !== inst);
+                          return { ...prev, instrumentsJoues: updatedList };
+                        });
+                      }}
+                      className="accent-cordel-wood scale-105"
+                    />
+                    <span>{inst}</span>
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Genre / Civilité Dropdown */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood">
+              {t('onboarding.genre')}
+            </label>
+            <select
+              name="genre"
+              value={formData.genre}
+              onChange={handleChange}
+              required
+              disabled={saving}
+              className="theme-input w-full disabled:opacity-50 text-xs font-bold bg-cordel-bg-light"
+            >
+              <option value="homme">{t('onboarding.genderMale')}</option>
+              <option value="femme">{t('onboarding.genderFemale')}</option>
+              <option value="autre">{t('onboarding.genderOther')}</option>
             </select>
           </div>
 
           {/* Level Info display */}
           <div className="flex flex-col gap-1.5 border-t border-dashed border-cordel-master-dark/10 pt-2">
             <span className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood">
-              Niveau de Pratique (Maracatu)
+              {t('userProfile.levelHeading')}
             </span>
             <span className="text-xs font-bold text-encre-noire bg-cordel-bg-light py-1.5 px-3 rounded border border-encre-noire/25 w-full inline-block">
-              {profileData?.niveau === 'confirme' ? '🏆 Confirmé' : '🌱 Débutant'}
+              {profileData?.niveau === 'confirme' ? '🏆 ' + t('userProfile.levelConfirmSimple') : '🌱 ' + t('userProfile.levelBeginner')}
             </span>
           </div>
 
            {isFieldVisible('telephone') && (
             <div className="flex flex-col gap-1.5 border-t border-dashed border-cordel-master-dark/10 pt-2">
               <label className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood">
-                Numéro de Téléphone
+                {t('userProfile.phone')}
               </label>
               <input
                 type="tel"
@@ -396,7 +466,7 @@ export default function UserProfile({ user, profileData, onBack }) {
                   onChange={handleChange}
                   disabled={saving}
                 />
-                <span>Rendre mon téléphone public dans le Trombinoscope</span>
+                <span>{t('userProfile.phonePublic')}</span>
               </label>
             </div>
           )}
@@ -405,7 +475,7 @@ export default function UserProfile({ user, profileData, onBack }) {
           {isFieldVisible('tailleTshirt') && (
             <div className="flex flex-col gap-1.5">
               <label className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood">
-                Taille de T-Shirt
+                {t('userProfile.tshirtSize')}
               </label>
               <select
                 name="tailleTshirt"
@@ -427,7 +497,7 @@ export default function UserProfile({ user, profileData, onBack }) {
           {isFieldVisible('lateralite') && (
             <div className="flex flex-col gap-1.5">
               <label className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood">
-                Latéralité (Main principale)
+                {t('userProfile.lateralite')}
               </label>
               <select
                 name="lateralite"
@@ -436,8 +506,8 @@ export default function UserProfile({ user, profileData, onBack }) {
                 disabled={saving}
                 className="theme-input w-full disabled:opacity-50 text-xs font-bold bg-cordel-bg-light"
               >
-                <option value="droitier">Droitier</option>
-                <option value="gaucher">Gaucher</option>
+                <option value="droitier">{t('onboarding.handRight')}</option>
+                <option value="gaucher">{t('onboarding.handLeft')}</option>
               </select>
             </div>
           )}
@@ -446,7 +516,7 @@ export default function UserProfile({ user, profileData, onBack }) {
           {isFieldVisible('dateNaissance') && (
             <div className="flex flex-col gap-1.5">
               <label className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood">
-                Date de naissance
+                {t('userProfile.birthdate')}
               </label>
               <input
                 type="date"
@@ -464,7 +534,7 @@ export default function UserProfile({ user, profileData, onBack }) {
                   onChange={handleChange}
                   disabled={saving}
                 />
-                <span>Rendre ma date de naissance publique dans le Trombinoscope</span>
+                <span>{t('userProfile.birthdatePublic')}</span>
               </label>
             </div>
           )}
@@ -483,12 +553,12 @@ export default function UserProfile({ user, profileData, onBack }) {
                   className="mt-1"
                 />
                 <label htmlFor="droitImage" className="text-xs font-semibold leading-snug cursor-pointer select-none">
-                  J'autorise l'association à utiliser mon image sur ses supports de communication (photos, vidéos).
+                  {t('userProfile.imageRights')}
                 </label>
               </div>
               {droitImageDocUrl && (
                 <div className="pl-6 text-[10px] font-bold">
-                  📄 <a href={droitImageDocUrl} target="_blank" rel="noopener noreferrer" className="text-cordel-wood hover:underline">Lire la charte de droit à l'image</a>
+                  📄 <a href={droitImageDocUrl} target="_blank" rel="noopener noreferrer" className="text-cordel-wood hover:underline">{t('userProfile.imageRightsDoc')}</a>
                 </div>
               )}
             </div>
@@ -509,12 +579,12 @@ export default function UserProfile({ user, profileData, onBack }) {
                   className="mt-1"
                 />
                 <label htmlFor="aptitudeMedicale" className="text-xs font-bold leading-snug cursor-pointer select-none text-red-600 dark:text-red-400">
-                  * Je certifie sur l'honneur être médicalement apte à la pratique du Maracatu.
+                  {t('userProfile.medicalCert')}
                 </label>
               </div>
               {aptitudeMedicaleDocUrl && (
                 <div className="pl-6 text-[10px] font-bold">
-                  📄 <a href={aptitudeMedicaleDocUrl} target="_blank" rel="noopener noreferrer" className="text-cordel-wood hover:underline">Lire le règlement de santé / certificat type</a>
+                  📄 <a href={aptitudeMedicaleDocUrl} target="_blank" rel="noopener noreferrer" className="text-cordel-wood hover:underline">{t('userProfile.medicalCertDoc')}</a>
                 </div>
               )}
             </div>
@@ -529,14 +599,14 @@ export default function UserProfile({ user, profileData, onBack }) {
           disabled={saving}
           className="w-full py-3"
         >
-          {saving ? "Enregistrement en cours..." : "Enregistrer mes modifications"}
+          {saving ? t('userProfile.saving') : t('userProfile.saveBtn')}
         </CordelButton>
       </form>
 
       {/* Section Mon Matériel */}
       <div className="mt-4 pt-4 border-t border-dashed border-cordel-master-dark/20 flex flex-col gap-3 select-none">
-        <h4 className="font-bold text-xs uppercase tracking-wider text-cordel-wood">
-          🥁 Mon Matériel & Assignations
+        <h4 className="font-bold text-xs uppercase tracking-wider text-cordel-wood flex items-center gap-1.5">
+          <XiloCaixa size={14} /> {t('userProfile.instrumentsHeading')}
         </h4>
         
         {loadingInst ? (
@@ -553,10 +623,10 @@ export default function UserProfile({ user, profileData, onBack }) {
               {/* 1. Instruments Personnels */}
               <div className="flex flex-col gap-2">
                 <span className="text-[9px] uppercase font-bold text-cordel-master-dark opacity-75">
-                  Mes instruments personnels ({personal.length})
+                  {t('userProfile.personalInsts')} ({personal.length})
                 </span>
                 {personal.length === 0 ? (
-                  <p className="text-[10px] italic opacity-60">Aucun instrument personnel enregistré.</p>
+                  <p className="text-[10px] italic opacity-60">{t('userProfile.noPersonal')}</p>
                 ) : (
                   <div className="flex flex-col gap-1.5">
                     {personal.map(inst => (
@@ -577,10 +647,10 @@ export default function UserProfile({ user, profileData, onBack }) {
               {/* 2. Matériel Emprunté */}
               <div className="flex flex-col gap-2">
                 <span className="text-[9px] uppercase font-bold text-cordel-master-dark opacity-75">
-                  Matériel emprunté à la maison ({borrowed.length})
+                  {t('userProfile.borrowedInsts')} ({borrowed.length})
                 </span>
                 {borrowed.length === 0 ? (
-                  <p className="text-[10px] italic opacity-60">Aucun emprunt en cours.</p>
+                  <p className="text-[10px] italic opacity-60">{t('userProfile.noBorrowed')}</p>
                 ) : (
                   <div className="flex flex-col gap-1.5">
                     {borrowed.map(inst => (
@@ -601,10 +671,10 @@ export default function UserProfile({ user, profileData, onBack }) {
               {/* 3. Instruments assignés au local */}
               <div className="flex flex-col gap-2">
                 <span className="text-[9px] uppercase font-bold text-cordel-master-dark opacity-75">
-                  Mes instruments assignés au local ({localAssigned.length})
+                  {t('userProfile.localAssignedInsts')} ({localAssigned.length})
                 </span>
                 {localAssigned.length === 0 ? (
-                  <p className="text-[10px] italic opacity-60">Aucune assignation au local.</p>
+                  <p className="text-[10px] italic opacity-60">{t('userProfile.noLocal')}</p>
                 ) : (
                   <div className="flex flex-col gap-1.5">
                     {localAssigned.map(inst => (
@@ -626,8 +696,17 @@ export default function UserProfile({ user, profileData, onBack }) {
         })()}
       </div>
 
-      {/* Disconnect Button (Red / Swappable theme color using var(--cordel-wood)) */}
-      <div className="mt-4 pt-4 border-t border-dashed border-cordel-master-dark/20 flex flex-col items-center">
+      {/* Disconnect & PWA Emergency Clean Buttons */}
+      <div className="mt-4 pt-4 border-t border-dashed border-cordel-master-dark/20 flex flex-col gap-3 items-center">
+        <CordelButton 
+          type="button"
+          variant="ocre"
+          onClick={handleForceUpdate}
+          useExtremeBorder={true}
+          className="w-full py-3 border-2 border-encre-noire shadow-[3px_3px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-110 font-bold transition-all text-sm uppercase tracking-widest flex items-center justify-center gap-2"
+        >
+          ⚡ {t('pwa.forceUpdateBtn')}
+        </CordelButton>
         <CordelButton 
           type="button"
           variant="default"
@@ -635,7 +714,7 @@ export default function UserProfile({ user, profileData, onBack }) {
           useExtremeBorder={true}
           className="w-full py-3 !bg-cordel-wood !text-cordel-bg-light border-2 border-encre-noire shadow-[3px_3px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-110 font-bold transition-all text-sm uppercase tracking-widest flex items-center justify-center gap-2"
         >
-          🚪 Se déconnecter
+          🚪 {t('userProfile.disconnectBtn')}
         </CordelButton>
       </div>
     </div>

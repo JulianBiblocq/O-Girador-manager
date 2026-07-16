@@ -3,6 +3,9 @@ import { collection, query, onSnapshot, doc, updateDoc } from 'firebase/firestor
 import { db } from '../firebase';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
+import { useTranslation } from './LanguageContext';
+import { forceUpdateAndClearCache } from '../utils/pwaUtils';
+import { XiloSettings, XiloPeople } from './XiloIcons';
 
 const DEFAULT_FIELDS_CONFIG = {
   telephone: { key: "telephone", label: "Téléphone", enabled: true, filledBy: "member" },
@@ -14,24 +17,7 @@ const DEFAULT_FIELDS_CONFIG = {
 };
 
 export default function SystemAdminPanel({ user, profileData, onBack, onNavigateToView }) {
-  // Ultimate Security Verification
-  if (!profileData || profileData.isSystemAdmin !== true) {
-    return (
-      <div className="text-center py-12">
-        <div className="w-16 h-16 bg-cordel-wood text-cordel-bg-light rounded-full flex items-center justify-center text-3xl font-black mx-auto mb-4 border-2 border-encre-noire shadow-[3px_3px_0px_0px_#181716] select-none">
-          🚨
-        </div>
-        <h2 className="text-xl font-bold text-cordel-wood uppercase tracking-wider">Accès Refusé</h2>
-        <p className="text-xs opacity-75 mt-2 font-semibold">
-          Vous n'avez pas les privilèges requis pour accéder au panneau d'administration globale.
-        </p>
-        <CordelButton variant="default" onClick={onBack} className="mt-6 px-5 py-2 text-xs">
-          Retourner au tableau de bord
-        </CordelButton>
-      </div>
-    );
-  }
-
+  const { t } = useTranslation();
   const [usersList, setUsersList] = useState([]);
   const [availableTags, setAvailableTags] = useState([]);
   const [draftRoles, setDraftRoles] = useState({}); // { [userId]: newRole }
@@ -44,6 +30,7 @@ export default function SystemAdminPanel({ user, profileData, onBack, onNavigate
 
   // Synchronize all user profiles in real-time
   useEffect(() => {
+    if (!profileData || profileData.isSystemAdmin !== true) return;
     setLoading(true);
     const usersRef = collection(db, 'users');
     const q = query(usersRef);
@@ -67,11 +54,11 @@ export default function SystemAdminPanel({ user, profileData, onBack, onNavigate
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [profileData]);
 
   // Real-time synchronization of custom tags list and fieldsConfig from associations collection
   useEffect(() => {
-    if (!profileData?.groupId) return;
+    if (!profileData || profileData.isSystemAdmin !== true || !profileData?.groupId) return;
 
     const assocRef = doc(db, 'associations', profileData.groupId);
     const unsubscribe = onSnapshot(assocRef, (docSnap) => {
@@ -91,7 +78,25 @@ export default function SystemAdminPanel({ user, profileData, onBack, onNavigate
     });
 
     return () => unsubscribe();
-  }, [profileData?.groupId]);
+  }, [profileData]);
+
+  // Ultimate Security Verification
+  if (!profileData || profileData.isSystemAdmin !== true) {
+    return (
+      <div className="text-center py-12">
+        <div className="w-16 h-16 bg-cordel-wood text-cordel-bg-light rounded-full flex items-center justify-center text-3xl font-black mx-auto mb-4 border-2 border-encre-noire shadow-[3px_3px_0px_0px_#181716] select-none">
+          🚨
+        </div>
+        <h2 className="text-xl font-bold text-cordel-wood uppercase tracking-wider">{t('systemAdmin.accessDenied')}</h2>
+        <p className="text-xs opacity-75 mt-2 font-semibold">
+          {t('systemAdmin.accessDeniedDesc')}
+        </p>
+        <CordelButton variant="default" onClick={onBack} className="mt-6 px-5 py-2 text-xs">
+          {t('common.back')}
+        </CordelButton>
+      </div>
+    );
+  }
 
   const handleRoleChange = (userId, value) => {
     setDraftRoles((prev) => ({ ...prev, [userId]: value }));
@@ -188,12 +193,18 @@ export default function SystemAdminPanel({ user, profileData, onBack, onNavigate
         return copy;
       });
       
-      alert("Profil et permissions mis à jour avec succès !");
+      alert(t('common.saveSuccess'));
     } catch (error) {
       console.error("SystemAdminPanel - Erreur updateDoc :", error);
-      alert("Erreur lors de la mise à jour.");
+      alert(t('common.saveError'));
     } finally {
       setSavingId(null);
+    }
+  };
+
+  const handleForceUpdate = () => {
+    if (window.confirm(t('pwa.confirmForceUpdate') || "Voulez-vous vraiment vider le cache et forcer la mise à jour ?")) {
+      forceUpdateAndClearCache();
     }
   };
 
@@ -202,10 +213,10 @@ export default function SystemAdminPanel({ user, profileData, onBack, onNavigate
       {/* Header bar */}
       <div className="flex justify-between items-center border-b-2 border-dashed border-cordel-master-dark/30 pb-2 select-none">
         <CordelButton variant="default" onClick={onBack} className="px-3 py-1 text-xs">
-          ⬅️ Retour
+          ← {t('common.back')}
         </CordelButton>
         <span className="panel-title text-base font-extrabold tracking-wider text-cordel-wood uppercase">
-          Tour de Contrôle
+          {t('systemAdmin.title')}
         </span>
         <div className="flex gap-2">
           <button 
@@ -213,37 +224,58 @@ export default function SystemAdminPanel({ user, profileData, onBack, onNavigate
             onClick={() => onNavigateToView('tag-manager')}
             className="text-[10px] font-black uppercase tracking-widest bg-cordel-bg border border-encre-noire px-3 py-1 rounded-[4px_6px_3px_5px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-95 cursor-pointer flex items-center gap-1"
           >
-            🏷️ Étiquettes
+            🏷️ {t('tagManager.title')}
           </button>
           <button 
             type="button"
             onClick={() => onNavigateToView('association-settings')}
             className="text-[10px] font-black uppercase tracking-widest bg-cordel-bg border border-encre-noire px-3 py-1 rounded-[4px_6px_3px_5px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-95 cursor-pointer flex items-center gap-1"
           >
-            ⚙️ Paramètres
+            <XiloSettings size={12} /> {t('common.settings')}
           </button>
         </div>
       </div>
 
       {loading ? (
         <div className="flex justify-center items-center py-12">
-          <span className="text-xs uppercase tracking-widest font-black animate-pulse opacity-60">⏳ Chargement...</span>
+          <span className="text-xs uppercase tracking-widest font-black animate-pulse opacity-60">⏳ {t('systemAdmin.loading')}</span>
         </div>
       ) : (
         <div className="flex flex-col gap-4">
+          {/* PWA Cache Action Card */}
+          <CordelCard variant="ocre" useExtremeBorder={false} className="p-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-left">
+            <div className="flex flex-col gap-1">
+              <h4 className="text-xs uppercase font-extrabold tracking-wider text-cordel-wood">
+                {t('pwa.maintenanceTitle') || 'Maintenance & Cache'}
+              </h4>
+              <p className="text-[10px] opacity-75 font-semibold leading-relaxed">
+                {t('pwa.maintenanceDesc') || 'Si des utilisateurs rencontrent des difficultés suite à une mise à jour, forcez la purge du cache local.'}
+              </p>
+            </div>
+            <CordelButton 
+              type="button" 
+              variant="default" 
+              onClick={handleForceUpdate}
+              useExtremeBorder={true}
+              className="py-2.5 px-4 text-xs font-black uppercase tracking-wider shrink-0 !bg-cordel-wood !text-cordel-bg-light"
+            >
+              ⚡ {t('pwa.forceUpdateBtn')}
+            </CordelButton>
+          </CordelCard>
+
           {/* Global Statistics Card */}
           <CordelCard variant="default" useExtremeBorder={true} className="py-4">
             <h3 className="text-xs uppercase font-extrabold tracking-wider text-cordel-wood mb-1">
-              Statistiques Globales
+              {t('systemAdmin.globalStats')}
             </h3>
-            <p className="text-sm font-bold text-encre-noire leading-relaxed">
-              👥 Total des inscrits : <span className="text-base font-black text-cordel-wood">{usersList.length}</span>
+            <p className="text-sm font-bold text-encre-noire leading-relaxed flex items-center justify-center gap-1.5">
+              <XiloPeople size={14} /> {t('systemAdmin.totalRegistered')} : <span className="text-base font-black text-cordel-wood">{usersList.length}</span>
             </p>
           </CordelCard>
 
           {/* Users List Title */}
           <h3 className="text-xs font-extrabold tracking-wider text-cordel-master-dark opacity-75 uppercase pl-1 mt-2">
-            Gestion des Utilisateurs
+            {t('systemAdmin.usersHeading')}
           </h3>
 
           {/* User grid */}

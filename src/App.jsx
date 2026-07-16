@@ -1,22 +1,28 @@
 import React, { useState, useEffect } from 'react';
-import { onAuthStateChanged, signOut } from 'firebase/auth';
-import { doc, onSnapshot, updateDoc } from 'firebase/firestore';
+import { onAuthStateChanged, signOut, getRedirectResult } from 'firebase/auth';
+import { doc, onSnapshot, updateDoc, collection, query, where } from 'firebase/firestore';
 import { auth, db } from './firebase';
 import Login from './components/Login';
-import Onboarding from './components/Onboarding';
 import Dashboard from './components/Dashboard';
-import Trombinoscope from './components/Trombinoscope';
-import Forum from './components/Forum';
-import UserProfile from './components/UserProfile';
-import SystemAdminPanel from './components/SystemAdminPanel';
-import LayoutEditor from './components/LayoutEditor';
-import TagManager from './components/TagManager';
-import InventoryManager from './components/InventoryManager';
-import AssociationSettings from './components/AssociationSettings';
-import OrdersManager from './components/OrdersManager';
 import LayoutShell from './components/LayoutShell';
+import { TerminologyProvider } from './components/TerminologyContext';
+import { useTranslation } from './components/LanguageContext';
+import ReloadPrompt from './components/ReloadPrompt';
+
+const Onboarding = React.lazy(() => import('./components/Onboarding'));
+const Trombinoscope = React.lazy(() => import('./components/Trombinoscope'));
+const Forum = React.lazy(() => import('./components/Forum'));
+const UserProfile = React.lazy(() => import('./components/UserProfile'));
+const SystemAdminPanel = React.lazy(() => import('./components/SystemAdminPanel'));
+const LayoutEditor = React.lazy(() => import('./components/LayoutEditor'));
+const TagManager = React.lazy(() => import('./components/TagManager'));
+const InventoryManager = React.lazy(() => import('./components/InventoryManager'));
+const OrdersManager = React.lazy(() => import('./components/OrdersManager'));
+const AssociationSettings = React.lazy(() => import('./components/AssociationSettings'));
+const TreasuryManager = React.lazy(() => import('./components/TreasuryManager'));
 
 export default function App() {
+  const { t } = useTranslation();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [checkingProfile, setCheckingProfile] = useState(false);
@@ -24,9 +30,13 @@ export default function App() {
   const [profileData, setProfileData] = useState(null);
   const [branding, setBranding] = useState(null);
   const [associationName, setAssociationName] = useState('');
+  const [majoriteFeminine, setMajoriteFeminine] = useState(false);
+  const [sequenceurUrl, setSequenceurUrl] = useState('');
   const [currentView, setCurrentView] = useState('dashboard'); // 'dashboard', 'trombinoscope', 'forum', 'profil', 'system-admin', 'layout-editor', 'tag-manager'
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [installPromptAvailable, setInstallPromptAvailable] = useState(false);
+  const [unreadPrivateMessagesCount, setUnreadPrivateMessagesCount] = useState(0);
+  const [activePrivateChatUserId, setActivePrivateChatUserId] = useState(null);
 
   // Load branding in real-time
   useEffect(() => {
@@ -40,6 +50,8 @@ export default function App() {
     if (!activeGroupId) {
       setBranding(null);
       setAssociationName('');
+      setMajoriteFeminine(false);
+      setSequenceurUrl('');
       return;
     }
 
@@ -53,18 +65,32 @@ export default function App() {
           setBranding(null);
         }
         setAssociationName(data.nom || '');
+        setMajoriteFeminine(data.majoriteFeminine || false);
+        setSequenceurUrl(data.sequenceurUrl || '');
       } else {
         setBranding(null);
         setAssociationName('');
+        setMajoriteFeminine(false);
+        setSequenceurUrl('');
       }
     }, (error) => {
       console.error("App - Erreur onSnapshot branding :", error);
       setBranding(null);
       setAssociationName('');
+      setMajoriteFeminine(false);
+      setSequenceurUrl('');
     });
 
     return () => unsubscribe();
   }, [profileData?.groupId, user]);
+
+  // Dynamic favicon customization based on association branding
+  useEffect(() => {
+    const faviconElement = document.getElementById("favicon") || document.querySelector("link[rel*='icon']");
+    if (faviconElement) {
+      faviconElement.href = branding?.logoUrl ? branding.logoUrl : "/favicon.svg";
+    }
+  }, [branding?.logoUrl]);
 
   const brandingStyle = branding?.colors ? {
     '--cordel-bg': branding.colors.background,
@@ -223,7 +249,7 @@ export default function App() {
         short_name: associationName || 'O Girador',
         theme_color: primaryCol,
         background_color: bgCol,
-        start_url: `/?groupe=${activeGroupId}`,
+        start_url: activeGroupId ? `/?groupe=${activeGroupId}` : '/',
         display: 'standalone',
         orientation: 'portrait',
         icons: [
@@ -274,49 +300,90 @@ export default function App() {
     }
   }, [user, profileData]);
 
+  // Sync unread private messages count
+  useEffect(() => {
+    if (!user?.uid) {
+      setUnreadPrivateMessagesCount(0);
+      return;
+    }
+    const messagesRef = collection(db, 'private_messages');
+    const q = query(
+      messagesRef, 
+      where('recipientId', '==', user.uid), 
+      where('read', '==', false)
+    );
+    const unsubscribe = onSnapshot(q, (snap) => {
+      setUnreadPrivateMessagesCount(snap.size);
+    }, (error) => {
+      console.error("App - Error syncing unread messages:", error);
+    });
+    return () => unsubscribe();
+  }, [user?.uid]);
+
   useEffect(() => {
     let unsubscribeProfile = null;
+    let unsubscribeAuth = null;
+    let isMounted = true;
 
-    const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-      
-      // Clean up previous profile listener if any
-      if (unsubscribeProfile) {
-        unsubscribeProfile();
-        unsubscribeProfile = null;
+    const initAuth = async () => {
+      console.log("App - Resolving redirect result if any...");
+      try {
+        const redirectResult = await getRedirectResult(auth);
+        if (redirectResult) {
+          console.log("App - Redirect result resolved user:", redirectResult.user);
+        }
+      } catch (err) {
+        console.error("App - Error resolving redirect result:", err);
       }
 
-      if (currentUser) {
-        setCheckingProfile(true);
-        // Real-time synchronization of the user profile document
-        const profileRef = doc(db, 'users', currentUser.uid);
-        unsubscribeProfile = onSnapshot(profileRef, (docSnap) => {
-          if (docSnap.exists()) {
-            setProfileData(docSnap.data());
-            setProfileExists(true);
-          } else {
+      if (!isMounted) return;
+
+      unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
+        setUser(currentUser);
+        
+        // Clean up previous profile listener if any
+        if (unsubscribeProfile) {
+          unsubscribeProfile();
+          unsubscribeProfile = null;
+        }
+
+        if (currentUser) {
+          setCheckingProfile(true);
+          // Real-time synchronization of the user profile document
+          const profileRef = doc(db, 'users', currentUser.uid);
+          unsubscribeProfile = onSnapshot(profileRef, (docSnap) => {
+            if (docSnap.exists()) {
+              setProfileData(docSnap.data());
+              setProfileExists(true);
+            } else {
+              setProfileData(null);
+              setProfileExists(false);
+            }
+            setCheckingProfile(false);
+            setLoading(false);
+          }, (error) => {
+            console.error("App - Erreur onSnapshot profil utilisateur :", error);
             setProfileData(null);
             setProfileExists(false);
-          }
-          setCheckingProfile(false);
-          setLoading(false);
-        }, (error) => {
-          console.error("App - Erreur onSnapshot profil utilisateur :", error);
+            setCheckingProfile(false);
+            setLoading(false);
+          });
+        } else {
           setProfileData(null);
           setProfileExists(false);
           setCheckingProfile(false);
           setLoading(false);
-        });
-      } else {
-        setProfileData(null);
-        setProfileExists(false);
-        setCheckingProfile(false);
-        setLoading(false);
-      }
-    });
+        }
+      });
+    };
+
+    initAuth();
 
     return () => {
-      unsubscribeAuth();
+      isMounted = false;
+      if (unsubscribeAuth) {
+        unsubscribeAuth();
+      }
       if (unsubscribeProfile) {
         unsubscribeProfile();
       }
@@ -340,109 +407,152 @@ export default function App() {
   // Loading screen (Auth state resolving or Firestore lookup)
   if (loading || checkingProfile) {
     return (
-      <div style={brandingStyle} className="min-h-screen flex flex-col w-full">
-        <LayoutShell>
-          <div className="flex-1 flex flex-col justify-center items-center py-12">
-            <div className="animate-spin text-4xl mb-4 select-none">⏳</div>
-            <span className="font-bold text-xs uppercase tracking-widest text-cordel-master-dark opacity-75">
-              {checkingProfile ? "Vérification du profil..." : "Chargement..."}
-            </span>
+      <div style={brandingStyle} className="min-h-screen w-full flex flex-col justify-center items-center p-6 bg-[var(--cordel-bg)] text-[var(--cordel-text)] transition-colors duration-300">
+        <div className="flex flex-col items-center gap-4 text-center">
+          {/* A beautiful double ring spinner utilizing theme variables */}
+          <div className="relative w-16 h-16 select-none animate-spin">
+            <div className="absolute inset-0 rounded-full border-4 border-[var(--cordel-border)]/20 animate-pulse"></div>
+            <div className="absolute inset-0 rounded-full border-4 border-t-cordel-wood border-r-transparent border-b-transparent border-l-transparent"></div>
           </div>
-        </LayoutShell>
+          <span className="font-black text-xs uppercase tracking-widest text-cordel-wood animate-pulse">
+            {checkingProfile ? t('dashboard.loadingProfile') : t('common.loading')}
+          </span>
+        </div>
       </div>
     );
   }
 
   // Not authenticated -> Show Login screen
   if (!user) {
-    return <Login branding={branding} />;
+    return (
+      <>
+        <Login branding={branding} />
+        <ReloadPrompt />
+      </>
+    );
   }
 
   // Authenticated but no profile in Firestore -> Show Onboarding
   if (!profileExists || !profileData) {
     return (
       <div style={brandingStyle} className="min-h-screen flex flex-col w-full">
-        <Onboarding user={user} onComplete={handleOnboardingComplete} />
+        <React.Suspense fallback={<div className="flex-1 flex justify-center items-center py-12 animate-pulse text-xs font-bold select-none">⏳ Initialisation...</div>}>
+          <Onboarding user={user} branding={branding} onComplete={handleOnboardingComplete} />
+        </React.Suspense>
+        <ReloadPrompt />
       </div>
     );
   }
 
   // Authenticated and profile exists -> Render based on current view state
   return (
-    <div style={brandingStyle} className="min-h-screen flex flex-col w-full">
-      <LayoutShell>
-        {currentView === 'trombinoscope' ? (
-          <Trombinoscope 
-            user={user} 
-            profileData={profileData} 
-            onBack={() => setCurrentView('dashboard')} 
-          />
-        ) : currentView === 'forum' ? (
-          <Forum 
-            user={user} 
-            profileData={profileData} 
-            onBack={() => setCurrentView('dashboard')} 
-          />
-        ) : currentView === 'profil' ? (
-          <UserProfile 
-            user={user} 
-            profileData={profileData} 
-            onBack={() => setCurrentView('dashboard')} 
-          />
-        ) : (currentView === 'system-admin' && profileData?.isSystemAdmin) ? (
-          <SystemAdminPanel 
-            user={user} 
-            profileData={profileData} 
-            onBack={() => setCurrentView('dashboard')} 
-            onNavigateToView={(view) => setCurrentView(view)}
-          />
-        ) : (currentView === 'layout-editor' && (profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.isSystemAdmin)) ? (
-          <LayoutEditor 
-            groupId={profileData?.groupId}
-            role={profileData?.role}
-            isSystemAdmin={profileData?.isSystemAdmin}
-            onBack={() => setCurrentView('dashboard')} 
-          />
-        ) : (currentView === 'tag-manager' && (profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.isSystemAdmin)) ? (
-          <TagManager 
-            groupId={profileData?.groupId}
-            role={profileData?.role}
-            isSystemAdmin={profileData?.isSystemAdmin}
-            onBack={() => setCurrentView('system-admin')} 
-          />
-        ) : (currentView === 'inventory' && (profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.isSystemAdmin)) ? (
-          <InventoryManager 
-            groupId={profileData?.groupId}
-            role={profileData?.role}
-            isSystemAdmin={profileData?.isSystemAdmin}
-            onBack={() => setCurrentView('dashboard')} 
-          />
-        ) : (currentView === 'orders-manager' && (profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.isSystemAdmin)) ? (
-          <OrdersManager 
-            groupId={profileData?.groupId}
-            role={profileData?.role}
-            isSystemAdmin={profileData?.isSystemAdmin}
-            onBack={() => setCurrentView('dashboard')} 
-          />
-        ) : (currentView === 'association-settings' && (profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.isSystemAdmin)) ? (
-          <AssociationSettings 
-            groupId={profileData?.groupId}
-            role={profileData?.role}
-            isSystemAdmin={profileData?.isSystemAdmin}
-            onBack={() => setCurrentView('system-admin')} 
-          />
-        ) : (
-          <Dashboard 
-            user={user} 
-            profileData={profileData} 
-            onNavigateToTrombi={() => setCurrentView('trombinoscope')} 
-            onNavigateToView={(view) => setCurrentView(view)}
-            onSignOut={handleSignOut} 
-            installPromptAvailable={installPromptAvailable}
-            onTriggerInstall={triggerInstallPrompt}
-          />
-        )}
-      </LayoutShell>
-    </div>
+    <TerminologyProvider majoriteFeminine={majoriteFeminine}>
+      <div style={brandingStyle} className="min-h-screen flex flex-col w-full">
+        <LayoutShell 
+          logoUrl={branding?.logoUrl} 
+          sequenceurUrl={sequenceurUrl}
+          currentView={currentView}
+          onNavigateToView={(view) => setCurrentView(view)}
+          profileData={profileData}
+          onSignOut={handleSignOut}
+          unreadPrivateMessagesCount={unreadPrivateMessagesCount}
+        >
+          <React.Suspense fallback={
+            <div className="flex-1 flex flex-col justify-center items-center py-12">
+              <div className="animate-spin text-4xl mb-4 select-none">⏳</div>
+              <span className="font-bold text-xs uppercase tracking-widest text-cordel-master-dark opacity-75">
+                {t('dashboard.loadingPage')}
+              </span>
+            </div>
+          }>
+            {currentView === 'trombinoscope' ? (
+              <Trombinoscope 
+                user={user} 
+                profileData={profileData} 
+                onBack={() => setCurrentView('dashboard')} 
+                onContactUser={(otherUserId) => {
+                  setActivePrivateChatUserId(otherUserId);
+                  setCurrentView('forum');
+                }}
+              />
+            ) : currentView === 'forum' ? (
+              <Forum 
+                user={user} 
+                profileData={profileData} 
+                onBack={() => setCurrentView('dashboard')} 
+                activePrivateChatUserId={activePrivateChatUserId}
+                onClearActivePrivateChat={() => setActivePrivateChatUserId(null)}
+              />
+            ) : currentView === 'profil' ? (
+              <UserProfile 
+                user={user} 
+                profileData={profileData} 
+                onBack={() => setCurrentView('dashboard')} 
+              />
+            ) : (currentView === 'system-admin' && profileData?.isSystemAdmin) ? (
+              <SystemAdminPanel 
+                user={user} 
+                profileData={profileData} 
+                onBack={() => setCurrentView('dashboard')} 
+                onNavigateToView={(view) => setCurrentView(view)}
+              />
+            ) : (currentView === 'layout-editor' && (profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.isSystemAdmin)) ? (
+              <LayoutEditor 
+                groupId={profileData?.groupId}
+                role={profileData?.role}
+                isSystemAdmin={profileData?.isSystemAdmin}
+                onBack={() => setCurrentView('dashboard')} 
+              />
+            ) : (currentView === 'tag-manager' && (profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.isSystemAdmin)) ? (
+              <TagManager 
+                groupId={profileData?.groupId}
+                role={profileData?.role}
+                isSystemAdmin={profileData?.isSystemAdmin}
+                onBack={() => setCurrentView('system-admin')} 
+              />
+            ) : (currentView === 'inventory' && (profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.isSystemAdmin)) ? (
+              <InventoryManager 
+                groupId={profileData?.groupId}
+                role={profileData?.role}
+                isSystemAdmin={profileData?.isSystemAdmin}
+                onBack={() => setCurrentView('dashboard')} 
+              />
+            ) : (currentView === 'orders-manager' && (profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.isSystemAdmin)) ? (
+              <OrdersManager 
+                groupId={profileData?.groupId}
+                role={profileData?.role}
+                isSystemAdmin={profileData?.isSystemAdmin}
+                onBack={() => setCurrentView('dashboard')} 
+              />
+            ) : (currentView === 'treasury' && (profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.isSystemAdmin)) ? (
+              <TreasuryManager 
+                groupId={profileData?.groupId}
+                role={profileData?.role}
+                isSystemAdmin={profileData?.isSystemAdmin}
+                onBack={() => setCurrentView('dashboard')} 
+              />
+            ) : (currentView === 'association-settings' && (profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.isSystemAdmin)) ? (
+              <AssociationSettings 
+                groupId={profileData?.groupId}
+                role={profileData?.role}
+                isSystemAdmin={profileData?.isSystemAdmin}
+                onBack={() => setCurrentView('system-admin')} 
+              />
+            ) : (
+              <Dashboard 
+                user={user} 
+                profileData={profileData} 
+                onNavigateToTrombi={() => setCurrentView('trombinoscope')} 
+                onNavigateToView={(view) => setCurrentView(view)}
+                onSignOut={handleSignOut} 
+                installPromptAvailable={installPromptAvailable}
+                onTriggerInstall={triggerInstallPrompt}
+              />
+            )}
+          </React.Suspense>
+        </LayoutShell>
+        <ReloadPrompt />
+      </div>
+    </TerminologyProvider>
   );
 }

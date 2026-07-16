@@ -4,8 +4,11 @@ import { db } from '../firebase';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
 import ReunionAgendaManager from './ReunionAgendaManager';
+import { useTranslation } from './LanguageContext';
+import { XiloCalendar } from './XiloIcons';
 
-export default function EventDetails({ event, user, profileData, onClose }) {
+export default function EventDetails({ event, user, profileData, onClose, onPrev, onNext }) {
+  const { t } = useTranslation();
   // Find if the user has already responded to this event
   const existingResponse = (event.inscriptions || []).find(ins => ins.userId === user.uid);
 
@@ -14,6 +17,124 @@ export default function EventDetails({ event, user, profileData, onClose }) {
   const [places, setPlaces] = useState(existingResponse ? existingResponse.places || 0 : 0);
   const [instruments, setInstruments] = useState(existingResponse ? existingResponse.instruments || '' : '');
   const [saving, setSaving] = useState(false);
+  const [isCalendarMenuOpen, setIsCalendarMenuOpen] = useState(false);
+
+  useEffect(() => {
+    const resp = (event.inscriptions || []).find(ins => ins.userId === user.uid);
+    setStatus(resp ? resp.status : 'confirm');
+    setTransport(resp ? resp.transport || 'propre' : 'propre');
+    setPlaces(resp ? resp.places || 0 : 0);
+    setInstruments(resp ? resp.instruments || '' : '');
+    
+    setInstrumentChoisi(resp?.instrumentChoisi || profileData?.instrument || 'Autre');
+    setIsEditingEvent(false);
+    
+    setEditForm({
+      titre: event.titre || '',
+      date: event.date || '',
+      lieu: event.lieu || '',
+      horairesPassages: event.horairesPassages || '',
+      horaireCovoiturage: event.horaireCovoiturage || '',
+      niveauRequis: event.niveauRequis || 'tous',
+      lienDocument: event.lienDocument || '',
+      distanceAllerRetourKm: event.distanceAllerRetourKm || ''
+    });
+    setSetlist(event.setlist || []);
+  }, [event.id, user.uid, profileData?.instrument]);
+
+  const formatToUTCISO8601 = (date) => {
+    if (!date || isNaN(date.getTime())) return '';
+    const y = date.getUTCFullYear();
+    const m = String(date.getUTCMonth() + 1).padStart(2, '0');
+    const d = String(date.getUTCDate()).padStart(2, '0');
+    const h = String(date.getUTCHours()).padStart(2, '0');
+    const min = String(date.getUTCMinutes()).padStart(2, '0');
+    const s = String(date.getUTCSeconds()).padStart(2, '0');
+    return `${y}${m}${d}T${h}${min}${s}Z`;
+  };
+
+  const getEventDetailsText = () => {
+    let detailsText = `Type d'événement : ${event.type || ''}`;
+    if (event.lieu) detailsText += `\n📍 Lieu : ${event.lieu}`;
+    if (event.horairesPassages) detailsText += `\n⏱️ Horaires de passage : ${event.horairesPassages}`;
+    if (event.horaireCovoiturage) detailsText += `\n🚗 Covoiturage : ${event.horaireCovoiturage}`;
+    if (event.niveauRequis) detailsText += `\n🎯 Niveau requis : ${event.niveauRequis === 'confirme' ? 'Confirmés' : 'Tous'}`;
+    if (event.lienDocument) detailsText += `\n📄 Document / Ordre du jour : ${event.lienDocument}`;
+    return detailsText;
+  };
+
+  const handleAddToGoogleCalendar = () => {
+    const eventDate = new Date(event.date);
+    if (isNaN(eventDate.getTime())) {
+      alert("Impossible d'ajouter à l'agenda : date invalide.");
+      return;
+    }
+    const startStr = formatToUTCISO8601(eventDate);
+    const endDate = new Date(eventDate.getTime() + 2 * 60 * 60 * 1000); // 2 hours default duration
+    const endStr = formatToUTCISO8601(endDate);
+
+    const title = encodeURIComponent(event.titre || 'Événement Roda');
+    const dates = `${startStr}/${endStr}`;
+    const details = encodeURIComponent(getEventDetailsText());
+    const location = encodeURIComponent(event.lieu || '');
+
+    const googleCalendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${dates}&details=${details}&location=${location}`;
+    window.open(googleCalendarUrl, '_blank', 'noopener,noreferrer');
+  };
+
+  const handleDownloadIcs = () => {
+    const eventDate = new Date(event.date);
+    if (isNaN(eventDate.getTime())) {
+      alert("Impossible de générer le fichier iCal : date invalide.");
+      return;
+    }
+    const startStr = formatToUTCISO8601(eventDate);
+    const endDate = new Date(eventDate.getTime() + 2 * 60 * 60 * 1000);
+    const endStr = formatToUTCISO8601(endDate);
+    const stampStr = formatToUTCISO8601(new Date());
+
+    const summary = event.titre || 'Événement Roda';
+    const description = getEventDetailsText().replace(/\n/g, '\\n');
+    const location = event.lieu || '';
+
+    const icsContent = [
+      'BEGIN:VCALENDAR',
+      'VERSION:2.0',
+      'PRODID:-//O Girador//Event Calendar//FR',
+      'CALSCALE:GREGORIAN',
+      'METHOD:PUBLISH',
+      'BEGIN:VEVENT',
+      `UID:event-${event.id || Date.now()}@o-girador`,
+      `DTSTAMP:${stampStr}`,
+      `DTSTART:${startStr}`,
+      `DTEND:${endStr}`,
+      `SUMMARY:${summary}`,
+      `DESCRIPTION:${description}`,
+      `LOCATION:${location}`,
+      'END:VEVENT',
+      'END:VCALENDAR'
+    ].join('\r\n');
+
+    const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    const cleanTitle = (event.titre || 'evenement').toLowerCase().replace(/[^a-z0-9]/g, '_');
+    link.download = `${cleanTitle}.ics`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  const [instrumentChoisi, setInstrumentChoisi] = useState(() => {
+    if (existingResponse?.instrumentChoisi) {
+      return existingResponse.instrumentChoisi;
+    }
+    return profileData?.instrument || 'Autre';
+  });
+
+  const isInstrumentLocked = !!existingResponse?.instrumentImposeParMestre;
   
   const [allUsers, setAllUsers] = useState([]);
   const [isEditingEvent, setIsEditingEvent] = useState(false);
@@ -24,9 +145,45 @@ export default function EventDetails({ event, user, profileData, onClose }) {
     horairesPassages: event.horairesPassages || '',
     horaireCovoiturage: event.horaireCovoiturage || '',
     niveauRequis: event.niveauRequis || 'tous',
-    lienDocument: event.lienDocument || ''
+    lienDocument: event.lienDocument || '',
+    distanceAllerRetourKm: event.distanceAllerRetourKm || ''
   });
   const [savingEvent, setSavingEvent] = useState(false);
+  const [indemniteKilometrique, setIndemniteKilometrique] = useState(0);
+  const [instrumentsDisponibles, setInstrumentsDisponibles] = useState(["Alfaia Marcante", "Alfaia Meião", "Alfaia Repique", "Caixa", "Tarol", "Gonguê", "Agbê", "Mineiro", "Timbal", "Chant", "Danse"]);
+  const [linkedInstruments, setLinkedInstruments] = useState([]);
+
+  useEffect(() => {
+    if (!event.groupId) return;
+    const assocRef = doc(db, 'associations', event.groupId);
+    const unsubscribe = onSnapshot(assocRef, (docSnap) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        setIndemniteKilometrique(data.indemniteKilometrique || 0);
+        if (Array.isArray(data.instrumentsDisponibles)) {
+          setInstrumentsDisponibles(data.instrumentsDisponibles);
+        }
+        if (Array.isArray(data.linkedInstruments)) {
+          const normalized = data.linkedInstruments.map(link => {
+            if (Array.isArray(link)) {
+              return { name: '', instruments: link };
+            } else if (link && typeof link === 'object') {
+              if (Array.isArray(link.instruments)) {
+                return { name: link.name || '', instruments: link.instruments };
+              } else if (link.inst1 && link.inst2) {
+                return { name: link.name || '', instruments: [link.inst1, link.inst2] };
+              }
+            }
+            return null;
+          }).filter(Boolean);
+          setLinkedInstruments(normalized);
+        } else {
+          setLinkedInstruments([]);
+        }
+      }
+    });
+    return () => unsubscribe();
+  }, [event.groupId]);
 
   const isConcertRestricted = event.type === 'concert' && event.niveauRequis === 'confirme' && profileData?.niveau === 'debutant';
 
@@ -52,6 +209,49 @@ export default function EventDetails({ event, user, profileData, onClose }) {
   }, [isConcertRestricted]);
 
   const isAuthorized = profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.isSystemAdmin === true;
+
+  const getPupitreName = (inst) => {
+    if (!inst) return null;
+    const parts = inst.split(' + ').map(p => p.trim());
+    const match = linkedInstruments.find(group => {
+      const groupInsts = group.instruments || (Array.isArray(group) ? group : [group.inst1, group.inst2]);
+      if (groupInsts.length !== parts.length) return false;
+      const sortedGroup = [...groupInsts].sort();
+      const sortedParts = [...parts].sort();
+      return sortedGroup.every((val, idx) => val === sortedParts[idx]);
+    });
+    if (match && match.name) return match.name;
+
+    if (parts.length === 1) {
+      const containingGroup = linkedInstruments.find(group => {
+        const groupInsts = group.instruments || (Array.isArray(group) ? group : [group.inst1, group.inst2]);
+        return groupInsts.includes(parts[0]) && group.name;
+      });
+      if (containingGroup) return containingGroup.name;
+    }
+    return null;
+  };
+
+  const getMemberInstrumentOptions = (mInfo) => {
+    const base = mInfo?.instrumentsJoues && mInfo.instrumentsJoues.length > 0
+      ? [...mInfo.instrumentsJoues]
+      : [...instrumentsDisponibles];
+    
+    // Add combined option if they are polyvalent and have linked instruments
+    if (mInfo?.instrumentsJoues && mInfo.instrumentsJoues.length > 1) {
+      linkedInstruments.forEach(link => {
+        const instrumentsArray = link.instruments || (Array.isArray(link) ? link : [link.inst1, link.inst2]);
+        const hasAll = instrumentsArray.every(inst => mInfo.instrumentsJoues.includes(inst));
+        if (hasAll) {
+          const combined = instrumentsArray.join(' + ');
+          if (!base.includes(combined)) {
+            base.push(combined);
+          }
+        }
+      });
+    }
+    return base;
+  };
 
   const [setlist, setSetlist] = useState(event.setlist || []);
   const [newMorceauTitre, setNewMorceauTitre] = useState('');
@@ -419,7 +619,9 @@ export default function EventDetails({ event, user, profileData, onClose }) {
         status: status,
         transport: status === 'present' ? transport : null,
         places: status === 'present' && transport === 'propose' ? parseInt(places) || 0 : 0,
-        instruments: status === 'present' && transport === 'propose' ? instruments : ""
+        instruments: status === 'present' && transport === 'propose' ? instruments : "",
+        instrumentChoisi: status === 'present' ? instrumentChoisi : null,
+        instrumentImposeParMestre: status === 'present' ? isInstrumentLocked : false
       };
 
       updatedInscriptions.push(newResponse);
@@ -453,7 +655,8 @@ export default function EventDetails({ event, user, profileData, onClose }) {
         horairesPassages: editForm.horairesPassages || '',
         horaireCovoiturage: editForm.horaireCovoiturage || '',
         niveauRequis: editForm.niveauRequis || 'tous',
-        lienDocument: editForm.lienDocument || ''
+        lienDocument: editForm.lienDocument || '',
+        distanceAllerRetourKm: (event.type === 'concert' || event.type === 'stage') ? (parseFloat(editForm.distanceAllerRetourKm) || 0) : 0
       });
       setIsEditingEvent(false);
       alert("Événement mis à jour avec succès !");
@@ -465,17 +668,72 @@ export default function EventDetails({ event, user, profileData, onClose }) {
     }
   };
 
+  const handleUpdateMemberInstrument = async (userId, newInstrument, impose) => {
+    try {
+      const eventRef = doc(db, 'events', event.id);
+      await runTransaction(db, async (transaction) => {
+        const eventDoc = await transaction.get(eventRef);
+        if (!eventDoc.exists()) {
+          throw new Error("L'événement n'existe plus !");
+        }
+        const currentInscriptions = eventDoc.data().inscriptions || [];
+        const updated = currentInscriptions.map(ins => {
+          if (ins.userId === userId) {
+            return {
+              ...ins,
+              instrumentChoisi: newInstrument,
+              instrumentImposeParMestre: impose
+            };
+          }
+          return ins;
+        });
+        transaction.update(eventRef, { inscriptions: updated });
+      });
+    } catch (err) {
+      console.error("EventDetails - Erreur handleUpdateMemberInstrument :", err);
+      alert("Erreur lors de la modification de l'instrument.");
+    }
+  };
+
   // Group presents by instrument for grouped presence list display
   const presentsByInstrument = {};
   if (event.inscriptions && event.inscriptions.length > 0) {
     event.inscriptions.forEach((ins) => {
       if (ins.status === 'present') {
         const userInfo = allUsers.find(u => u.id === ins.userId) || { prenom: ins.userName, nom: '', instrument: 'Autre' };
-        const inst = userInfo.instrument || 'Autre';
+        const inst = ins.instrumentChoisi || userInfo.instrument || 'Autre';
         if (!presentsByInstrument[inst]) {
           presentsByInstrument[inst] = [];
         }
         presentsByInstrument[inst].push(userInfo);
+      }
+    });
+  }
+
+  // Extract convoi drivers and individual drivers
+  const convoiDrivers = [];
+  if (event.covoiturage?.voitures) {
+    event.covoiturage.voitures.forEach(voiture => {
+      if (voiture.chauffeurId && voiture.chauffeurNom) {
+        convoiDrivers.push({
+          id: voiture.chauffeurId,
+          nom: voiture.chauffeurNom
+        });
+      }
+    });
+  }
+
+  const convoiChauffeurIds = new Set(convoiDrivers.map(d => d.id));
+  const individualDrivers = [];
+  if (event.inscriptions) {
+    event.inscriptions.forEach(ins => {
+      if (ins.status === 'present' && ins.transport === 'propre') {
+        if (!convoiChauffeurIds.has(ins.userId)) {
+          individualDrivers.push({
+            id: ins.userId,
+            nom: ins.userName
+          });
+        }
       }
     });
   }
@@ -499,14 +757,36 @@ export default function EventDetails({ event, user, profileData, onClose }) {
   const currentVariant = typeVariants[event.type] || 'default';
 
   return (
-    <div className="flex flex-col gap-4 text-left">
-      {/* Header with back button & modifier button */}
-      <div className="flex justify-between items-center border-b-2 border-dashed border-cordel-master-dark/30 pb-2 select-none">
-        <CordelButton variant="default" onClick={onClose} className="px-3 py-1 text-xs">
-          ← Retour
-        </CordelButton>
-        <span className="panel-title text-sm font-extrabold tracking-wider text-cordel-wood uppercase">
-          Détails Événement
+    <div className="flex flex-col gap-4 text-left max-w-3xl mx-auto w-full">
+      {/* Header with back button, modifier button & navigation arrows */}
+      <div className="flex justify-between items-center border-b-2 border-dashed border-cordel-master-dark/30 pb-2 select-none gap-2">
+        <div className="flex items-center gap-1.5">
+          <CordelButton variant="default" onClick={onClose} className="px-3 py-1 text-xs font-black">
+            ← {t('common.back')}
+          </CordelButton>
+          {onPrev && (
+            <button
+              type="button"
+              onClick={onPrev}
+              className="text-[10px] font-black uppercase bg-cordel-bg border border-encre-noire px-2.5 py-1.5 rounded shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:bg-neutral-100 cursor-pointer flex items-center justify-center select-none"
+              title="Événement précédent"
+            >
+              ◀
+            </button>
+          )}
+          {onNext && (
+            <button
+              type="button"
+              onClick={onNext}
+              className="text-[10px] font-black uppercase bg-cordel-bg border border-encre-noire px-2.5 py-1.5 rounded shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:bg-neutral-100 cursor-pointer flex items-center justify-center select-none"
+              title="Événement suivant"
+            >
+              ▶
+            </button>
+          )}
+        </div>
+        <span className="panel-title text-sm font-extrabold tracking-wider text-cordel-wood uppercase flex items-center gap-1">
+          <XiloCalendar size={14} /> {t('eventDetails.title')}
         </span>
         {isAuthorized && !isEditingEvent && (
           <button
@@ -580,6 +860,23 @@ export default function EventDetails({ event, user, profileData, onClose }) {
                   className="theme-input w-full disabled:opacity-50"
                 />
               </div>
+
+              {/* Distance A/R (Concert & Stage) */}
+              {(event.type === 'concert' || event.type === 'stage') && (
+                <div className="flex flex-col gap-1">
+                  <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                    Distance Aller-Retour (Km)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={editForm.distanceAllerRetourKm}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, distanceAllerRetourKm: e.target.value }))}
+                    disabled={savingEvent}
+                    className="theme-input w-full disabled:opacity-50"
+                  />
+                </div>
+              )}
 
               {/* Concert specific fields */}
               {event.type === 'concert' && (
@@ -703,6 +1000,18 @@ export default function EventDetails({ event, user, profileData, onClose }) {
               📄 <strong>Ordre du jour :</strong> <a href={event.lienDocument} target="_blank" rel="noopener noreferrer" className="text-cordel-wood hover:underline">{event.lienDocument}</a>
             </span>
           )}
+          {event.lieu && (
+            <div className="mt-3.5 border-2 border-encre-noire rounded-[8px] overflow-hidden shadow-[2px_2px_0px_0px_rgba(26,26,26,0.15)] bg-white h-[200px]">
+              <iframe
+                title="Google Maps"
+                width="100%"
+                height="100%"
+                frameBorder="0"
+                src={`https://maps.google.com/maps?q=${encodeURIComponent(event.lieu)}&t=&z=14&ie=UTF8&iwloc=&output=embed`}
+                allowFullScreen
+              />
+            </div>
+          )}
         </div>
       </CordelCard>
 
@@ -723,7 +1032,7 @@ export default function EventDetails({ event, user, profileData, onClose }) {
                 theme-btn px-2 py-2 text-xs rounded-[4px_6px_3px_5px] transition-colors cursor-pointer select-none
                 ${status === 'present' 
                   ? 'theme-bg-vert font-black border-2 border-encre-noire shadow-none translate-x-[1px] translate-y-[1px]' 
-                  : 'bg-cordel-bg-light text-encre-noire border-2 border-encre-noire shadow-[2px_2px_0px_0px_#181716] hover:bg-[#ece4d0]'}
+                  : 'bg-cordel-bg-light text-encre-noire border-2 border-encre-noire shadow-[2px_2px_0px_0px_#181716] hover:bg-cordel-hover'}
                 ${isConcertRestricted ? 'opacity-40 cursor-not-allowed' : ''}
               `}
             >
@@ -738,7 +1047,7 @@ export default function EventDetails({ event, user, profileData, onClose }) {
                 theme-btn px-2 py-2 text-xs rounded-[4px_6px_3px_5px] transition-colors cursor-pointer select-none
                 ${status === 'absent' 
                   ? 'bg-cordel-wood text-cordel-bg-light font-black border-2 border-encre-noire shadow-none translate-x-[1px] translate-y-[1px]' 
-                  : 'bg-cordel-bg-light text-encre-noire border-2 border-encre-noire shadow-[2px_2px_0px_0px_#181716] hover:bg-[#ece4d0]'}
+                  : 'bg-cordel-bg-light text-encre-noire border-2 border-encre-noire shadow-[2px_2px_0px_0px_#181716] hover:bg-cordel-hover'}
               `}
             >
               Absent
@@ -752,7 +1061,7 @@ export default function EventDetails({ event, user, profileData, onClose }) {
                 theme-btn px-2 py-2 text-xs rounded-[4px_6px_3px_5px] transition-colors cursor-pointer select-none
                 ${status === 'confirm' 
                   ? 'theme-bg-ocre font-black border-2 border-encre-noire shadow-none translate-x-[1px] translate-y-[1px]' 
-                  : 'bg-cordel-bg-light text-encre-noire border-2 border-encre-noire shadow-[2px_2px_0px_0px_#181716] hover:bg-[#ece4d0]'}
+                  : 'bg-cordel-bg-light text-encre-noire border-2 border-encre-noire shadow-[2px_2px_0px_0px_#181716] hover:bg-cordel-hover'}
                 ${isConcertRestricted ? 'opacity-40 cursor-not-allowed' : ''}
               `}
             >
@@ -770,6 +1079,49 @@ export default function EventDetails({ event, user, profileData, onClose }) {
           {/* Conditional Transport Options (Only visible when present) */}
           {status === 'present' && (
             <div className="flex flex-col gap-4 border-t border-dashed border-cordel-master-dark/20 pt-4 mt-2">
+              
+              {/* Choice of Instrument for Polyvalents or locked notice */}
+              {(isInstrumentLocked || (profileData?.instrumentsJoues && profileData.instrumentsJoues.length > 1)) && (
+                <div className="flex flex-col gap-2">
+                  <h4 className="font-bold text-xs uppercase tracking-wider text-cordel-wood">
+                    Choix d'Instrument
+                  </h4>
+                  {isInstrumentLocked ? (
+                    <div className="text-[11px] font-extrabold text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/20 p-2.5 rounded border border-dashed border-blue-500/30 flex items-center justify-center gap-1.5 select-none leading-relaxed">
+                      Le Mestre a défini ton instrument pour cette date : {instrumentChoisi}
+                    </div>
+                  ) : (
+                    <div className="flex flex-col gap-1 text-left">
+                      <label className="text-[9px] uppercase font-extrabold tracking-wider text-cordel-master-dark">
+                        Avec quel instrument vas-tu jouer pour cet événement ?
+                      </label>
+                      <select
+                        value={instrumentChoisi}
+                        onChange={(e) => setInstrumentChoisi(e.target.value)}
+                        disabled={saving}
+                        className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light w-full"
+                      >
+                        {(() => {
+                          const options = getMemberInstrumentOptions(profileData);
+                          if (instrumentChoisi && !options.includes(instrumentChoisi)) {
+                            options.push(instrumentChoisi);
+                          }
+                          return options.map((inst) => {
+                            const pupitreName = getPupitreName(inst);
+                            return (
+                              <option key={inst} value={inst}>
+                                {pupitreName ? `${inst} (${pupitreName})` : inst}
+                              </option>
+                            );
+                          });
+                        })()}
+                      </select>
+                    </div>
+                  )}
+                  <div className="border-b border-dashed border-cordel-master-dark/20 my-2" />
+                </div>
+              )}
+
               <h4 className="font-bold text-xs uppercase tracking-wider text-cordel-wood">
                 Logistique Covoiturage
               </h4>
@@ -854,15 +1206,60 @@ export default function EventDetails({ event, user, profileData, onClose }) {
           )}
         </CordelCard>
 
-        {/* Validation Button */}
-        <CordelButton 
-          variant="ocre" 
-          useExtremeBorder={true}
-          disabled={saving}
-          className="w-full py-3"
-        >
-          {saving ? "Validation..." : "Valider mon inscription"}
-        </CordelButton>
+        {/* Action Buttons: Validation & Calendar Sync */}
+        <div className="flex flex-col sm:flex-row gap-2.5 w-full mt-2">
+          <CordelButton 
+            variant="ocre" 
+            useExtremeBorder={true}
+            disabled={saving}
+            type="submit"
+            className="flex-1 py-3"
+          >
+            {saving ? "Validation..." : "Valider mon inscription"}
+          </CordelButton>
+
+          <div className="relative flex-1">
+            <button
+              type="button"
+              onClick={() => setIsCalendarMenuOpen(!isCalendarMenuOpen)}
+              className="w-full py-3 text-xs font-bold uppercase tracking-wider bg-cordel-bg-light text-encre-noire border-2 border-encre-noire rounded-[8px_12px_9px_11px] shadow-[2.5px_2.5px_0px_0px_#181716] hover:bg-cordel-hover active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:scale-[1.01] transition-all flex items-center justify-center gap-1.5 cursor-pointer h-full min-h-[46px]"
+            >
+              📅 Ajouter à mon agenda
+            </button>
+            
+            {isCalendarMenuOpen && (
+              <>
+                <div 
+                  className="fixed inset-0 z-40" 
+                  onClick={() => setIsCalendarMenuOpen(false)}
+                />
+                <div className="absolute right-0 bottom-full mb-2 w-full min-w-[180px] bg-cordel-bg-light border-2 border-encre-noire rounded-[6px_10px_8px_12px] shadow-[3px_3px_0px_0px_#181716] py-1.5 z-50 flex flex-col text-left">
+                  <button
+                     type="button"
+                     onClick={() => {
+                       handleAddToGoogleCalendar();
+                       setIsCalendarMenuOpen(false);
+                     }}
+                     className="w-full px-4 py-2 text-[10px] font-black uppercase tracking-wider text-encre-noire hover:bg-cordel-hover cursor-pointer text-left"
+                  >
+                     🔵 Google Agenda
+                  </button>
+                  <div className="border-t border-dashed border-encre-noire/15 my-0.5" />
+                  <button
+                     type="button"
+                     onClick={() => {
+                       handleDownloadIcs();
+                       setIsCalendarMenuOpen(false);
+                     }}
+                     className="w-full px-4 py-2 text-[10px] font-black uppercase tracking-wider text-encre-noire hover:bg-cordel-hover cursor-pointer text-left"
+                  >
+                     🍏 Apple / Outlook (.ics)
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
       </form>
 
       {/* 👥 Tableau nominatif des présences */}
@@ -880,9 +1277,26 @@ export default function EventDetails({ event, user, profileData, onClose }) {
               {Object.keys(presentsByInstrument).map(inst => {
                 const list = presentsByInstrument[inst];
                 const namesString = list.map(u => `${u.prenom} ${u.nom}`).join(', ');
+                const isLinked = inst.includes(' + ');
                 return (
                   <div key={inst} className="text-xs leading-normal">
-                    <strong className="text-cordel-wood">🥁 {inst} ({list.length}) :</strong> <span className="opacity-90 font-bold">{namesString}</span>
+                    <strong className="text-cordel-wood">
+                      🥁 {(() => {
+                        const pupitreName = getPupitreName(inst);
+                        return pupitreName ? `${inst} (${pupitreName})` : inst;
+                      })()} ({list.length})
+                      {isLinked && (() => {
+                        const count = inst.split(' + ').length;
+                        const badgeText = count > 2 
+                          ? (t('eventDetails.multiRole') || "Multi-Rôles")
+                          : (t('eventDetails.doubleRole') || "Double Rôle");
+                        return (
+                          <span className="ml-1.5 px-1.5 py-0.5 text-[8px] font-extrabold uppercase border border-amber-600/30 text-amber-700 bg-amber-50 dark:bg-amber-950/20 dark:text-amber-400 rounded-sm inline-block select-none leading-none">
+                            {badgeText}
+                          </span>
+                        );
+                      })()} :
+                    </strong> <span className="opacity-90 font-bold">{namesString}</span>
                   </div>
                 );
               })}
@@ -917,7 +1331,154 @@ export default function EventDetails({ event, user, profileData, onClose }) {
             </div>
           </div>
         )}
+
+        {isAuthorized && (event.inscriptions || []).filter(i => i.status === 'present').length > 0 && (
+          <div className="mt-4 pt-4 border-t border-dashed border-cordel-master-dark/15 text-left flex flex-col gap-3">
+            <h5 className="font-bold text-[10px] uppercase tracking-widest text-cordel-wood mb-1">
+              🛠️ Gestion des instruments par Mestre
+            </h5>
+            <div className="flex flex-col gap-2.5 bg-white/40 dark:bg-black/20 p-3 rounded border border-dashed border-encre-noire/15">
+              {(event.inscriptions || [])
+                .filter(ins => ins.status === 'present')
+                .map(ins => {
+                  const userInfo = allUsers.find(u => u.id === ins.userId) || {};
+                  const memberInstruments = getMemberInstrumentOptions(userInfo);
+                  
+                  const currentInst = ins.instrumentChoisi || userInfo.instrument || 'Autre';
+                  const isLocked = !!ins.instrumentImposeParMestre;
+
+                  return (
+                    <div key={ins.userId} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-dashed border-encre-noire/10 pb-2 last:border-0 last:pb-0 text-xs">
+                      <span className="font-bold text-encre-noire truncate sm:max-w-[150px]">
+                        👤 {ins.userName}
+                      </span>
+                      <div className="flex flex-wrap items-center gap-3">
+                        <select
+                          value={currentInst}
+                          onChange={(e) => handleUpdateMemberInstrument(ins.userId, e.target.value, isLocked)}
+                          className="theme-input text-[11px] font-bold py-1 bg-cordel-bg-light"
+                        >
+                          {!memberInstruments.includes(currentInst) && (() => {
+                            const pupitreName = getPupitreName(currentInst);
+                            return (
+                              <option value={currentInst}>
+                                {pupitreName ? `${currentInst} (${pupitreName})` : currentInst}
+                              </option>
+                            );
+                          })()}
+                          {memberInstruments.map(inst => {
+                            const pupitreName = getPupitreName(inst);
+                            return (
+                              <option key={inst} value={inst}>
+                                {pupitreName ? `${inst} (${pupitreName})` : inst}
+                              </option>
+                            );
+                          })}
+                        </select>
+                        <label className="flex items-center gap-1.5 cursor-pointer font-bold text-[10px] uppercase select-none">
+                          <input
+                            type="checkbox"
+                            checked={isLocked}
+                            onChange={(e) => handleUpdateMemberInstrument(ins.userId, currentInst, e.target.checked)}
+                            className="scale-95 cursor-pointer"
+                          />
+                          <span>Imposer</span>
+                        </label>
+                      </div>
+                    </div>
+                  );
+                })}
+            </div>
+          </div>
+        )}
       </CordelCard>
+
+      {/* 🚗 Frais de déplacement (uniquement pour les administrateurs pour concert & stage) */}
+      {isAuthorized && (event.type === 'concert' || event.type === 'stage') && (
+        <CordelCard variant="default" useExtremeBorder={true} className="py-4 px-5 select-none">
+          <h4 className="font-bold text-xs uppercase tracking-wider text-cordel-wood border-b border-dashed border-cordel-master-dark/15 pb-1 mb-3">
+            🚗 Frais de déplacement (Admin)
+          </h4>
+          <div className="text-xs flex flex-col gap-2.5 text-left bg-[#fdfaf2] dark:bg-[#1a1816] p-3.5 rounded border border-dashed border-encre-noire/15">
+            <div className="flex justify-between font-bold border-b border-dashed border-encre-noire/10 pb-1 mb-1">
+              <span>Distance A/R :</span>
+              <span>{event.distanceAllerRetourKm || 0} km</span>
+            </div>
+            <div className="flex justify-between font-bold border-b border-dashed border-encre-noire/10 pb-1 mb-1.5">
+              <span>Tarif Km :</span>
+              <span>{indemniteKilometrique.toFixed(2)} €/km</span>
+            </div>
+
+            {/* 1. Catégorie : Convoi / Covoiturage */}
+            <div className="mt-2">
+              <strong className="text-cordel-wood uppercase text-[10px] tracking-wider block border-b border-dashed border-cordel-master-dark/10 pb-0.5 mb-1.5">
+                🚗 Chauffeurs du Convoi ({convoiDrivers.length})
+              </strong>
+              {convoiDrivers.length === 0 ? (
+                <p className="text-[11px] italic opacity-60 pl-2">Aucun conducteur déclaré dans le convoi.</p>
+              ) : (
+                <div className="flex flex-col gap-1.5 pl-2">
+                  {convoiDrivers.map(driver => {
+                    const refund = (event.distanceAllerRetourKm || 0) * indemniteKilometrique;
+                    return (
+                      <div key={driver.id} className="flex justify-between items-center text-xs">
+                        <span className="font-semibold">{driver.nom} :</span>
+                        <span className="font-black text-cordel-wood">
+                          {refund > 0 ? `${refund.toFixed(2)} €` : "0.00 €"}
+                        </span>
+                      </div>
+                    );
+                  })}
+                  {event.distanceAllerRetourKm > 0 && indemniteKilometrique > 0 && (
+                    <div className="text-right text-[11px] font-bold text-encre-noire opacity-80 mt-1">
+                      Sous-total : {(convoiDrivers.length * event.distanceAllerRetourKm * indemniteKilometrique).toFixed(2)} €
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* 2. Catégorie : Trajets Individuels (Propres Moyens) */}
+            <div className="mt-3">
+              <strong className="text-cordel-wood uppercase text-[10px] tracking-wider block border-b border-dashed border-cordel-master-dark/10 pb-0.5 mb-1.5">
+                🚶 Trajets Individuels / Propres moyens ({individualDrivers.length})
+              </strong>
+              {individualDrivers.length === 0 ? (
+                <p className="text-[11px] italic opacity-60 pl-2">Aucun trajet individuel déclaré.</p>
+              ) : (
+                <div className="flex flex-col gap-1.5 pl-2">
+                  {individualDrivers.map(driver => {
+                    const refund = (event.distanceAllerRetourKm || 0) * indemniteKilometrique;
+                    return (
+                      <div key={driver.id} className="flex justify-between items-center text-xs">
+                        <span className="font-semibold">{driver.nom} :</span>
+                        <span className="font-black text-cordel-wood">
+                          {refund > 0 ? `${refund.toFixed(2)} €` : "0.00 €"}
+                        </span>
+                      </div>
+                    );
+                  })}
+                  {event.distanceAllerRetourKm > 0 && indemniteKilometrique > 0 && (
+                    <div className="text-right text-[11px] font-bold text-encre-noire opacity-80 mt-1">
+                      Sous-total : {(individualDrivers.length * event.distanceAllerRetourKm * indemniteKilometrique).toFixed(2)} €
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Total Cumulé */}
+            {event.distanceAllerRetourKm > 0 && indemniteKilometrique > 0 && (convoiDrivers.length > 0 || individualDrivers.length > 0) && (
+              <div className="border-t border-double border-encre-noire/25 pt-2.5 mt-3 flex justify-between items-center font-black text-sm text-encre-noire">
+                <span>Total Général :</span>
+                <span className="text-cordel-wood">
+                  {((convoiDrivers.length + individualDrivers.length) * event.distanceAllerRetourKm * indemniteKilometrique).toFixed(2)} €
+                </span>
+              </div>
+            )}
+          </div>
+        </CordelCard>
+      )}
 
       {/* Setlist & Séquenceur de l'événement */}
       <CordelCard variant="default" useExtremeBorder={true} className="py-4 px-5">
@@ -1133,7 +1694,7 @@ export default function EventDetails({ event, user, profileData, onClose }) {
                   type="button"
                   disabled={submittingCovoit}
                   onClick={handleChercherPlace}
-                  className="text-[9px] font-black uppercase bg-cordel-bg-light hover:bg-[#ece4d0] border border-encre-noire px-2 py-1 rounded shadow-[1px_1px_0px_0px_rgba(0,0,0,0.15)]"
+                  className="text-[9px] font-black uppercase bg-cordel-bg-light hover:bg-cordel-hover border border-encre-noire px-2 py-1 rounded shadow-[1px_1px_0px_0px_rgba(0,0,0,0.15)]"
                 >
                   Je cherche une place
                 </button>
