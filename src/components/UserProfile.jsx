@@ -38,7 +38,9 @@ export default function UserProfile({ user, profileData, onBack }) {
     droitImage: profileData?.droitImage !== undefined ? profileData.droitImage : true,
     aptitudeMedicale: profileData?.aptitudeMedicale !== undefined ? profileData.aptitudeMedicale : false,
     lateralite: profileData?.lateralite || 'droitier',
-    dateNaissance: profileData?.dateNaissance || ''
+    dateNaissance: profileData?.dateNaissance || '',
+    publierTelephone: profileData?.publierTelephone !== undefined ? profileData.publierTelephone : false,
+    publierDateNaissance: profileData?.publierDateNaissance !== undefined ? profileData.publierDateNaissance : false
   });
   
   const DEFAULT_INSTRUMENTS = ["Alfaia", "Caixa", "Gonguê", "Agbê", "Mineiro", "Timbal", "Paroles", "Chant", "Danse"];
@@ -47,6 +49,8 @@ export default function UserProfile({ user, profileData, onBack }) {
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [myInstruments, setMyInstruments] = useState([]);
   const [loadingInst, setLoadingInst] = useState(true);
+  const [droitImageDocUrl, setDroitImageDocUrl] = useState('');
+  const [aptitudeMedicaleDocUrl, setAptitudeMedicaleDocUrl] = useState('');
   const [fieldsConfig, setFieldsConfig] = useState(null);
   const [instrumentsDisponibles, setInstrumentsDisponibles] = useState(DEFAULT_INSTRUMENTS);
 
@@ -72,14 +76,15 @@ export default function UserProfile({ user, profileData, onBack }) {
         } else {
           setInstrumentsDisponibles(DEFAULT_INSTRUMENTS);
         }
-      } else {
-        setFieldsConfig(DEFAULT_FIELDS_CONFIG);
-        setInstrumentsDisponibles(DEFAULT_INSTRUMENTS);
+        setDroitImageDocUrl(data.droitImageDocUrl || '');
+        setAptitudeMedicaleDocUrl(data.aptitudeMedicaleDocUrl || '');
       }
+      setLoadingInst(false);
     }, (error) => {
       console.error("UserProfile - Erreur onSnapshot fieldsConfig :", error);
       setFieldsConfig(DEFAULT_FIELDS_CONFIG);
       setInstrumentsDisponibles(DEFAULT_INSTRUMENTS);
+      setLoadingInst(false);
     });
 
     return () => unsubscribe();
@@ -221,7 +226,9 @@ export default function UserProfile({ user, profileData, onBack }) {
         droitImage: isFieldVisible('droitImage') ? formData.droitImage : (profileData?.droitImage !== undefined ? profileData.droitImage : true),
         aptitudeMedicale: isFieldVisible('aptitudeMedicale') ? formData.aptitudeMedicale : (profileData?.aptitudeMedicale !== undefined ? profileData.aptitudeMedicale : false),
         lateralite: isFieldVisible('lateralite') ? formData.lateralite : (profileData?.lateralite || 'droitier'),
-        dateNaissance: isFieldVisible('dateNaissance') ? formData.dateNaissance : (profileData?.dateNaissance || '')
+        dateNaissance: isFieldVisible('dateNaissance') ? formData.dateNaissance : (profileData?.dateNaissance || ''),
+        publierTelephone: isFieldVisible('telephone') ? formData.publierTelephone : false,
+        publierDateNaissance: isFieldVisible('dateNaissance') ? formData.publierDateNaissance : false
       });
       alert("Profil mis à jour avec succès !");
     } catch (error) {
@@ -353,8 +360,7 @@ export default function UserProfile({ user, profileData, onBack }) {
             </select>
           </div>
 
-          {/* Telephone */}
-          {isFieldVisible('telephone') && (
+           {isFieldVisible('telephone') && (
             <div className="flex flex-col gap-1.5 border-t border-dashed border-cordel-master-dark/10 pt-2">
               <label className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood">
                 Numéro de Téléphone
@@ -369,6 +375,16 @@ export default function UserProfile({ user, profileData, onBack }) {
                 placeholder="06 12 34 56 78"
                 className="theme-input w-full disabled:opacity-50 text-xs font-bold"
               />
+              <label className="flex items-center gap-1.5 mt-1 text-[10px] font-semibold cursor-pointer select-none">
+                <input 
+                  type="checkbox"
+                  name="publierTelephone"
+                  checked={formData.publierTelephone}
+                  onChange={handleChange}
+                  disabled={saving}
+                />
+                <span>Rendre mon téléphone public dans le Trombinoscope</span>
+              </label>
             </div>
           )}
 
@@ -427,43 +443,67 @@ export default function UserProfile({ user, profileData, onBack }) {
                 disabled={saving}
                 className="theme-input w-full disabled:opacity-50 text-xs font-bold"
               />
+              <label className="flex items-center gap-1.5 mt-1 text-[10px] font-semibold cursor-pointer select-none">
+                <input 
+                  type="checkbox"
+                  name="publierDateNaissance"
+                  checked={formData.publierDateNaissance}
+                  onChange={handleChange}
+                  disabled={saving}
+                />
+                <span>Rendre ma date de naissance publique dans le Trombinoscope</span>
+              </label>
             </div>
           )}
 
           {/* Droit à l'image Checkbox */}
           {isFieldVisible('droitImage') && (
-            <div className="flex items-start gap-2.5 mt-1 border-t border-dashed border-cordel-master-dark/10 pt-2">
-              <input
-                type="checkbox"
-                name="droitImage"
-                id="droitImage"
-                checked={formData.droitImage}
-                onChange={handleChange}
-                disabled={saving}
-                className="mt-1"
-              />
-              <label htmlFor="droitImage" className="text-xs font-semibold leading-snug cursor-pointer select-none">
-                J'autorise l'association à utiliser mon image sur ses supports de communication (photos, vidéos).
-              </label>
+            <div className="flex flex-col gap-1.5 border-t border-dashed border-cordel-master-dark/10 pt-2">
+              <div className="flex items-start gap-2.5">
+                <input
+                  type="checkbox"
+                  name="droitImage"
+                  id="droitImage"
+                  checked={formData.droitImage}
+                  onChange={handleChange}
+                  disabled={saving}
+                  className="mt-1"
+                />
+                <label htmlFor="droitImage" className="text-xs font-semibold leading-snug cursor-pointer select-none">
+                  J'autorise l'association à utiliser mon image sur ses supports de communication (photos, vidéos).
+                </label>
+              </div>
+              {droitImageDocUrl && (
+                <div className="pl-6 text-[10px] font-bold">
+                  📄 <a href={droitImageDocUrl} target="_blank" rel="noopener noreferrer" className="text-cordel-wood hover:underline">Lire la charte de droit à l'image</a>
+                </div>
+              )}
             </div>
           )}
 
           {/* Aptitude Médicale Checkbox (Required) */}
           {isFieldVisible('aptitudeMedicale') && (
-            <div className="flex items-start gap-2.5 mt-0.5">
-              <input
-                type="checkbox"
-                name="aptitudeMedicale"
-                id="aptitudeMedicale"
-                checked={formData.aptitudeMedicale}
-                onChange={handleChange}
-                required
-                disabled={saving}
-                className="mt-1"
-              />
-              <label htmlFor="aptitudeMedicale" className="text-xs font-bold leading-snug cursor-pointer select-none text-red-600 dark:text-red-400">
-                * Je certifie sur l'honneur être médicalement apte à la pratique du Maracatu.
-              </label>
+            <div className="flex flex-col gap-1.5 mt-1">
+              <div className="flex items-start gap-2.5">
+                <input
+                  type="checkbox"
+                  name="aptitudeMedicale"
+                  id="aptitudeMedicale"
+                  checked={formData.aptitudeMedicale}
+                  onChange={handleChange}
+                  required
+                  disabled={saving}
+                  className="mt-1"
+                />
+                <label htmlFor="aptitudeMedicale" className="text-xs font-bold leading-snug cursor-pointer select-none text-red-600 dark:text-red-400">
+                  * Je certifie sur l'honneur être médicalement apte à la pratique du Maracatu.
+                </label>
+              </div>
+              {aptitudeMedicaleDocUrl && (
+                <div className="pl-6 text-[10px] font-bold">
+                  📄 <a href={aptitudeMedicaleDocUrl} target="_blank" rel="noopener noreferrer" className="text-cordel-wood hover:underline">Lire le règlement de santé / certificat type</a>
+                </div>
+              )}
             </div>
           )}
         </CordelCard>

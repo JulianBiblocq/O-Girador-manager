@@ -31,12 +31,16 @@ export default function Onboarding({ user, onComplete }) {
     aptitudeMedicale: false,
     lateralite: 'droitier',
     dateNaissance: '',
-    instrument: 'Alfaia'
+    instrument: 'Alfaia',
+    publierTelephone: false,
+    publierDateNaissance: false
   });
 
   const [fieldsConfig, setFieldsConfig] = useState(null);
   const [instrumentsDisponibles, setInstrumentsDisponibles] = useState(DEFAULT_INSTRUMENTS);
   const [submitting, setSubmitting] = useState(false);
+  const [droitImageDocUrl, setDroitImageDocUrl] = useState('');
+  const [aptitudeMedicaleDocUrl, setAptitudeMedicaleDocUrl] = useState('');
 
   // Extract the group ID parameter from the URL if present
   const searchParams = new URLSearchParams(window.location.search);
@@ -69,6 +73,8 @@ export default function Onboarding({ user, onComplete }) {
           } else {
             setInstrumentsDisponibles(DEFAULT_INSTRUMENTS);
           }
+          setDroitImageDocUrl(data.droitImageDocUrl || '');
+          setAptitudeMedicaleDocUrl(data.aptitudeMedicaleDocUrl || '');
         } else {
           setFieldsConfig(DEFAULT_FIELDS_CONFIG);
           setInstrumentsDisponibles(DEFAULT_INSTRUMENTS);
@@ -113,7 +119,9 @@ export default function Onboarding({ user, onComplete }) {
         role: "membre",
         statutActuel: "active",
         groupId: groupId,
-        tags: []
+        tags: [],
+        publierTelephone: isFieldVisible('telephone') ? formData.publierTelephone : false,
+        publierDateNaissance: isFieldVisible('dateNaissance') ? formData.publierDateNaissance : false
       };
 
       // 3. Write user document to Firestore using Auth UID as the key
@@ -201,8 +209,7 @@ export default function Onboarding({ user, onComplete }) {
             </select>
           </div>
 
-          {/* Phone Input */}
-          {isFieldVisible('telephone') && (
+           {isFieldVisible('telephone') && (
             <div className="flex flex-col gap-1">
               <label className="text-[10px] uppercase font-bold tracking-wider text-cordel-master-dark">
                 Téléphone
@@ -217,6 +224,16 @@ export default function Onboarding({ user, onComplete }) {
                 disabled={submitting}
                 className="theme-input w-full disabled:opacity-50"
               />
+              <label className="flex items-center gap-1.5 mt-1 text-[10px] font-semibold cursor-pointer select-none">
+                <input 
+                  type="checkbox"
+                  name="publierTelephone"
+                  checked={formData.publierTelephone}
+                  onChange={handleChange}
+                  disabled={submitting}
+                />
+                <span>Rendre mon téléphone public dans le Trombinoscope</span>
+              </label>
             </div>
           )}
 
@@ -276,43 +293,67 @@ export default function Onboarding({ user, onComplete }) {
                 disabled={submitting}
                 className="theme-input w-full disabled:opacity-50 font-bold"
               />
+              <label className="flex items-center gap-1.5 mt-1 text-[10px] font-semibold cursor-pointer select-none">
+                <input 
+                  type="checkbox"
+                  name="publierDateNaissance"
+                  checked={formData.publierDateNaissance}
+                  onChange={handleChange}
+                  disabled={submitting}
+                />
+                <span>Rendre ma date de naissance publique dans le Trombinoscope</span>
+              </label>
             </div>
           )}
 
           {/* Image Rights Checkbox */}
           {isFieldVisible('droitImage') && (
-            <div className="flex items-start gap-2.5 mt-2">
-              <input
-                type="checkbox"
-                name="droitImage"
-                id="droitImage"
-                checked={formData.droitImage}
-                onChange={handleChange}
-                disabled={submitting}
-                className="mt-1"
-              />
-              <label htmlFor="droitImage" className="text-xs font-semibold leading-snug cursor-pointer select-none">
-                J'autorise l'association à utiliser mon image sur ses supports de communication (photos, vidéos).
-              </label>
+            <div className="flex flex-col gap-1 mt-2">
+              <div className="flex items-start gap-2.5">
+                <input
+                  type="checkbox"
+                  name="droitImage"
+                  id="droitImage"
+                  checked={formData.droitImage}
+                  onChange={handleChange}
+                  disabled={submitting}
+                  className="mt-1"
+                />
+                <label htmlFor="droitImage" className="text-xs font-semibold leading-snug cursor-pointer select-none">
+                  J'autorise l'association à utiliser mon image sur ses supports de communication (photos, vidéos).
+                </label>
+              </div>
+              {droitImageDocUrl && (
+                <div className="pl-6 text-[10px] font-bold">
+                  📄 <a href={droitImageDocUrl} target="_blank" rel="noopener noreferrer" className="text-cordel-wood hover:underline">Lire la charte de droit à l'image</a>
+                </div>
+              )}
             </div>
           )}
 
           {/* Medical Aptitude Checkbox (Required) */}
           {isFieldVisible('aptitudeMedicale') && (
-            <div className="flex items-start gap-2.5 mt-1">
-              <input
-                type="checkbox"
-                name="aptitudeMedicale"
-                id="aptitudeMedicale"
-                checked={formData.aptitudeMedicale}
-                onChange={handleChange}
-                required
-                disabled={submitting}
-                className="mt-1"
-              />
-              <label htmlFor="aptitudeMedicale" className="text-xs font-bold leading-snug cursor-pointer select-none text-red-600 dark:text-red-400">
-                * Je certifie sur l'honneur être médicalement apte à la pratique du Maracatu.
-              </label>
+            <div className="flex flex-col gap-1 mt-2">
+              <div className="flex items-start gap-2.5">
+                <input
+                  type="checkbox"
+                  name="aptitudeMedicale"
+                  id="aptitudeMedicale"
+                  checked={formData.aptitudeMedicale}
+                  onChange={handleChange}
+                  required
+                  disabled={submitting}
+                  className="mt-1"
+                />
+                <label htmlFor="aptitudeMedicale" className="text-xs font-bold leading-snug cursor-pointer select-none text-red-600 dark:text-red-400">
+                  * Je certifie sur l'honneur être médicalement apte à la pratique du Maracatu.
+                </label>
+              </div>
+              {aptitudeMedicaleDocUrl && (
+                <div className="pl-6 text-[10px] font-bold">
+                  📄 <a href={aptitudeMedicaleDocUrl} target="_blank" rel="noopener noreferrer" className="text-cordel-wood hover:underline">Lire le règlement de santé / certificat type</a>
+                </div>
+              )}
             </div>
           )}
 

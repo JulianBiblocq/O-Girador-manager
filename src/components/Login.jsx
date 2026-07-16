@@ -1,17 +1,42 @@
-import React from 'react';
-import { signInWithPopup } from 'firebase/auth';
+import React, { useState } from 'react';
+import { signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth, googleProvider } from '../firebase';
 import LayoutShell from './LayoutShell';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
 
 export default function Login({ branding }) {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [isSignUpMode, setIsSignUpMode] = useState(false);
+  const [authLoading, setAuthLoading] = useState(false);
+
   const handleLogin = async () => {
     try {
       await signInWithPopup(auth, googleProvider);
     } catch (error) {
       console.error("Erreur d'authentification Google :", error);
       alert("Impossible de se connecter : " + error.message);
+    }
+  };
+
+  const handleEmailAuth = async (e) => {
+    e.preventDefault();
+    if (!email.trim() || !password.trim()) return;
+
+    setAuthLoading(true);
+    try {
+      if (isSignUpMode) {
+        await createUserWithEmailAndPassword(auth, email.trim(), password.trim());
+        alert("Compte créé avec succès ! Veuillez renseigner votre profil.");
+      } else {
+        await signInWithEmailAndPassword(auth, email.trim(), password.trim());
+      }
+    } catch (error) {
+      console.error("Erreur d'authentification par email :", error);
+      alert("Erreur d'authentification : " + error.message);
+    } finally {
+      setAuthLoading(false);
     }
   };
 
@@ -66,10 +91,70 @@ export default function Login({ branding }) {
               variant="ocre" 
               useExtremeBorder={true} 
               onClick={handleLogin} 
+              disabled={authLoading}
               className="w-full py-3"
             >
               Se connecter avec Google
             </CordelButton>
+
+            {/* Divider */}
+            <div className="flex items-center gap-2 my-6 opacity-40">
+              <div className="flex-1 border-t border-dashed border-encre-noire"></div>
+              <span className="text-[10px] font-bold uppercase tracking-widest text-cordel-master-dark">ou par email</span>
+              <div className="flex-1 border-t border-dashed border-encre-noire"></div>
+            </div>
+
+            {/* Email form */}
+            <form onSubmit={handleEmailAuth} className="flex flex-col gap-3 text-left">
+              <div className="flex flex-col gap-1">
+                <label className="text-[9px] uppercase font-extrabold tracking-wider text-cordel-master-dark">
+                  Adresse Email
+                </label>
+                <input 
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  disabled={authLoading}
+                  className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light"
+                  placeholder="nom@exemple.com"
+                />
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="text-[9px] uppercase font-extrabold tracking-wider text-cordel-master-dark">
+                  Mot de passe
+                </label>
+                <input 
+                  type="password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  disabled={authLoading}
+                  className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light"
+                  placeholder="******"
+                />
+              </div>
+
+              <CordelButton 
+                variant="default" 
+                useExtremeBorder={true} 
+                disabled={authLoading || !email.trim() || !password.trim()}
+                className="w-full py-2.5 mt-2 font-bold uppercase text-xs tracking-wider"
+              >
+                {authLoading ? "Chargement..." : (isSignUpMode ? "Créer un compte" : "Se connecter")}
+              </CordelButton>
+
+              <div className="text-center mt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsSignUpMode(!isSignUpMode)}
+                  className="text-[10px] font-bold text-cordel-wood hover:underline cursor-pointer"
+                >
+                  {isSignUpMode ? "Déjà un compte ? Se connecter" : "Nouveau ? Créer un compte"}
+                </button>
+              </div>
+            </form>
           </CordelCard>
         </div>
 

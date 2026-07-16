@@ -31,6 +31,10 @@ export default function AssociationSettings({ groupId, onBack, role, isSystemAdm
   const [logoFile, setLogoFile] = useState(null);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [sequenceurUrl, setSequenceurUrl] = useState('');
+  const [droitImageDocUrl, setDroitImageDocUrl] = useState('');
+  const [droitImageFile, setDroitImageFile] = useState(null);
+  const [aptitudeMedicaleDocUrl, setAptitudeMedicaleDocUrl] = useState('');
+  const [aptitudeMedicaleFile, setAptitudeMedicaleFile] = useState(null);
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -75,6 +79,8 @@ export default function AssociationSettings({ groupId, onBack, role, isSystemAdm
           }
         }
         setSequenceurUrl(data.sequenceurUrl || '');
+        setDroitImageDocUrl(data.droitImageDocUrl || '');
+        setAptitudeMedicaleDocUrl(data.aptitudeMedicaleDocUrl || '');
       }
       setLoading(false);
     }, (error) => {
@@ -136,6 +142,24 @@ export default function AssociationSettings({ groupId, onBack, role, isSystemAdm
         setUploadingLogo(false);
       }
 
+      let finalDroitImageDocUrl = droitImageDocUrl;
+      if (droitImageFile) {
+        const docRef = ref(storage, `documents/${groupId}/droit_image.pdf`);
+        const snap = await uploadBytes(docRef, droitImageFile);
+        finalDroitImageDocUrl = await getDownloadURL(snap.ref);
+        setDroitImageDocUrl(finalDroitImageDocUrl);
+        setDroitImageFile(null);
+      }
+
+      let finalAptitudeMedicaleDocUrl = aptitudeMedicaleDocUrl;
+      if (aptitudeMedicaleFile) {
+        const docRef = ref(storage, `documents/${groupId}/aptitude_medicale.pdf`);
+        const snap = await uploadBytes(docRef, aptitudeMedicaleFile);
+        finalAptitudeMedicaleDocUrl = await getDownloadURL(snap.ref);
+        setAptitudeMedicaleDocUrl(finalAptitudeMedicaleDocUrl);
+        setAptitudeMedicaleFile(null);
+      }
+
       const assocRef = doc(db, 'associations', groupId);
       await setDoc(assocRef, {
         fieldsConfig: fieldsConfig,
@@ -144,7 +168,9 @@ export default function AssociationSettings({ groupId, onBack, role, isSystemAdm
         branding: {
           logoUrl: finalLogoUrl,
           colors: colors
-        }
+        },
+        droitImageDocUrl: finalDroitImageDocUrl,
+        aptitudeMedicaleDocUrl: finalAptitudeMedicaleDocUrl
       }, { merge: true });
       alert("Réglages de l'association enregistrés avec succès !");
       onBack();
@@ -315,6 +341,71 @@ export default function AssociationSettings({ groupId, onBack, role, isSystemAdm
                       <span className="text-[8px] font-semibold text-cordel-master-dark/65">{colors.text}</span>
                     </div>
                   </div>
+                </div>
+              </div>
+            </CordelCard>
+
+            {/* Documents de l'Association card */}
+            <CordelCard variant="default" useExtremeBorder={true} className="py-4 px-5">
+              <h3 className="text-xs uppercase font-extrabold tracking-wider text-cordel-wood mb-3">
+                📋 Documents de l'Association (RGPD & Médical)
+              </h3>
+
+              {/* Droit à l'image Doc */}
+              <div className="flex flex-col gap-2 pb-3 border-b border-dashed border-cordel-master-dark/15">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-cordel-master-dark">Charte de Droit à l'image (PDF)</span>
+                <div className="flex flex-col gap-1.5">
+                  <input 
+                    type="file" 
+                    accept="application/pdf"
+                    onChange={(e) => setDroitImageFile(e.target.files?.[0] || null)}
+                    disabled={saving}
+                    className="text-[9px] font-bold"
+                  />
+                  {droitImageFile && (
+                    <span className="text-[9px] text-green-600 font-bold">
+                      ✓ Sélectionné : {droitImageFile.name}
+                    </span>
+                  )}
+                  {droitImageDocUrl && (
+                    <a 
+                      href={droitImageDocUrl} 
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      className="text-[9px] text-cordel-wood hover:underline font-bold"
+                    >
+                      Voir le document en ligne
+                    </a>
+                  )}
+                </div>
+              </div>
+
+              {/* Aptitude médicale Doc */}
+              <div className="flex flex-col gap-2 mt-3">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-cordel-master-dark mb-1">Modèle de certificat médical / Règlement santé (PDF)</span>
+                <div className="flex flex-col gap-1.5">
+                  <input 
+                    type="file" 
+                    accept="application/pdf"
+                    onChange={(e) => setAptitudeMedicaleFile(e.target.files?.[0] || null)}
+                    disabled={saving}
+                    className="text-[9px] font-bold"
+                  />
+                  {aptitudeMedicaleFile && (
+                    <span className="text-[9px] text-green-600 font-bold">
+                      ✓ Sélectionné : {aptitudeMedicaleFile.name}
+                    </span>
+                  )}
+                  {aptitudeMedicaleDocUrl && (
+                    <a 
+                      href={aptitudeMedicaleDocUrl} 
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      className="text-[9px] text-cordel-wood hover:underline font-bold"
+                    >
+                      Voir le document en ligne
+                    </a>
+                  )}
                 </div>
               </div>
             </CordelCard>

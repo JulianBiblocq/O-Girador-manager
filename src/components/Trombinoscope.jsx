@@ -9,6 +9,7 @@ import XiloAvatar from './XiloAvatar';
 export default function Trombinoscope({ user, profileData, onBack }) {
   const [members, setMembers] = useState([]);
   const [tagsDisponibles, setTagsDisponibles] = useState([]);
+  const [fieldsConfig, setFieldsConfig] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -37,6 +38,9 @@ export default function Trombinoscope({ user, profileData, onBack }) {
             setInstrumentsDisponibles(data.instrumentsDisponibles);
           } else {
             setInstrumentsDisponibles(DEFAULT_INSTRUMENTS);
+          }
+          if (data.fieldsConfig) {
+            setFieldsConfig(data.fieldsConfig);
           }
         }
       } catch (err) {
@@ -246,12 +250,19 @@ export default function Trombinoscope({ user, profileData, onBack }) {
                 const hasRoleBadge = member.role && member.role !== 'membre';
                 const hasTags = member.tags && member.tags.length > 0;
 
+                const isViewerAdmin = profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.isSystemAdmin === true;
+                const isPhoneEnabled = fieldsConfig?.telephone?.enabled !== false;
+                const showPhone = isPhoneEnabled && member.telephone && (isViewerAdmin || member.publierTelephone === true);
+
+                const isBirthdateEnabled = fieldsConfig?.dateNaissance?.enabled !== false;
+                const showBirthdate = isBirthdateEnabled && member.dateNaissance && (isViewerAdmin || member.publierDateNaissance === true);
+
                 return (
                   <div key={member.id} className="relative flex flex-col items-center">
                     <CordelCard 
                       variant="default" 
                       useExtremeBorder={true} 
-                      className="w-full flex flex-col items-center p-4 min-h-[190px] relative overflow-hidden"
+                      className="w-full flex flex-col items-center p-4 min-h-[220px] relative overflow-hidden"
                     >
                       {/* Avatar with Xylogravure Filter */}
                       <div className="mb-3">
@@ -266,6 +277,17 @@ export default function Trombinoscope({ user, profileData, onBack }) {
                         <div className="font-bold text-xs truncate leading-none uppercase text-[10px] opacity-75 mt-0.5">
                           {member.nom}
                         </div>
+                      </div>
+
+                      {/* Member Details */}
+                      <div className="text-center mt-2 text-[9px] leading-tight text-cordel-master-dark/85 flex flex-col gap-0.5 w-full">
+                        <span className="font-semibold text-cordel-wood">🥁 {member.instrument || 'Autre'}</span>
+                        {showPhone && (
+                          <span className="truncate">📞 {member.telephone}</span>
+                        )}
+                        {showBirthdate && (
+                          <span>🎂 {member.dateNaissance ? new Date(member.dateNaissance).toLocaleDateString('fr-FR') : ''}</span>
+                        )}
                       </div>
 
                       {/* Member Tags (Custom ink stamp badges) */}
