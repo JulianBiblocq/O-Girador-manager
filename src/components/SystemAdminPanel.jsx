@@ -196,6 +196,11 @@ export default function SystemAdminPanel({ user, profileData, onBack, onNavigate
                       <p className="text-[9px] font-semibold text-cordel-master-dark/70 break-all select-all mt-0.5">
                         ✉️ {userItem.email}
                       </p>
+                      <div className="flex flex-wrap gap-x-2 gap-y-0.5 text-[8px] font-semibold text-cordel-master-dark/70 mt-0.5">
+                        <span>📞 {userItem.telephone || 'Non renseigné'}</span>
+                        <span>•</span>
+                        <span>👕 T-Shirt : <strong>{userItem.tailleTshirt || 'Non spécifié'}</strong></span>
+                      </div>
                       <p className="text-[9px] font-bold text-cordel-wood mt-0.5">
                         📦 Groupe : <span className="font-mono">{userItem.groupId || 'Aucun'}</span>
                       </p>

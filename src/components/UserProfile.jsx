@@ -22,7 +22,11 @@ export default function UserProfile({ user, profileData, onBack }) {
   const [formData, setFormData] = useState({
     prenom: profileData?.prenom || '',
     nom: profileData?.nom || '',
-    instrument: profileData?.instrument || 'Autre'
+    instrument: profileData?.instrument || 'Autre',
+    telephone: profileData?.telephone || '',
+    tailleTshirt: profileData?.tailleTshirt || 'M',
+    droitImage: profileData?.droitImage !== undefined ? profileData.droitImage : true,
+    aptitudeMedicale: profileData?.aptitudeMedicale !== undefined ? profileData.aptitudeMedicale : false
   });
   
   const [saving, setSaving] = useState(false);
@@ -69,8 +73,8 @@ export default function UserProfile({ user, profileData, onBack }) {
   };
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    const { name, value, type, checked } = e.target;
+    setFormData(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
   };
 
   const handleSave = async (e) => {
@@ -83,7 +87,11 @@ export default function UserProfile({ user, profileData, onBack }) {
       await updateDoc(userRef, {
         prenom: formData.prenom,
         nom: formData.nom,
-        instrument: formData.instrument
+        instrument: formData.instrument,
+        telephone: formData.telephone,
+        tailleTshirt: formData.tailleTshirt,
+        droitImage: formData.droitImage,
+        aptitudeMedicale: formData.aptitudeMedicale
       });
       alert("Profil mis à jour avec succès !");
     } catch (error) {
@@ -192,7 +200,7 @@ export default function UserProfile({ user, profileData, onBack }) {
               onChange={handleChange}
               required
               disabled={saving}
-              className="theme-input w-full disabled:opacity-50 text-xs font-bold"
+              className="theme-input w-full disabled:opacity-50 text-xs font-bold bg-cordel-bg-light"
             >
               <option value="Alfaia">Alfaia (Tambour)</option>
               <option value="Caixa">Caixa (Caisse claire)</option>
@@ -202,6 +210,76 @@ export default function UserProfile({ user, profileData, onBack }) {
               <option value="Danse">Danse / Chœur</option>
               <option value="Autre">Autre / Non spécifié</option>
             </select>
+          </div>
+
+          {/* Telephone */}
+          <div className="flex flex-col gap-1.5 border-t border-dashed border-cordel-master-dark/10 pt-2">
+            <label className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood">
+              Numéro de Téléphone
+            </label>
+            <input
+              type="tel"
+              name="telephone"
+              value={formData.telephone}
+              onChange={handleChange}
+              required
+              disabled={saving}
+              placeholder="06 12 34 56 78"
+              className="theme-input w-full disabled:opacity-50 text-xs font-bold"
+            />
+          </div>
+
+          {/* Taille T-Shirt */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood">
+              Taille de T-Shirt
+            </label>
+            <select
+              name="tailleTshirt"
+              value={formData.tailleTshirt}
+              onChange={handleChange}
+              disabled={saving}
+              className="theme-input w-full disabled:opacity-50 text-xs font-bold bg-cordel-bg-light"
+            >
+              <option value="S">S</option>
+              <option value="M">M</option>
+              <option value="L">L</option>
+              <option value="XL">XL</option>
+              <option value="XXL">XXL</option>
+            </select>
+          </div>
+
+          {/* Droit à l'image Checkbox */}
+          <div className="flex items-start gap-2.5 mt-1 border-t border-dashed border-cordel-master-dark/10 pt-2">
+            <input
+              type="checkbox"
+              name="droitImage"
+              id="droitImage"
+              checked={formData.droitImage}
+              onChange={handleChange}
+              disabled={saving}
+              className="mt-1"
+            />
+            <label htmlFor="droitImage" className="text-xs font-semibold leading-snug cursor-pointer select-none">
+              J'autorise l'association à utiliser mon image sur ses supports de communication (photos, vidéos).
+            </label>
+          </div>
+
+          {/* Aptitude Médicale Checkbox (Required) */}
+          <div className="flex items-start gap-2.5 mt-0.5">
+            <input
+              type="checkbox"
+              name="aptitudeMedicale"
+              id="aptitudeMedicale"
+              checked={formData.aptitudeMedicale}
+              onChange={handleChange}
+              required
+              disabled={saving}
+              className="mt-1"
+            />
+            <label htmlFor="aptitudeMedicale" className="text-xs font-bold leading-snug cursor-pointer select-none text-red-600 dark:text-red-400">
+              * Je certifie sur l'honneur être médicalement apte à la pratique du Maracatu.
+            </label>
           </div>
         </CordelCard>
 

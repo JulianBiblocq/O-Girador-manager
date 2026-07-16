@@ -14,14 +14,17 @@ export default function Onboarding({ user, onComplete }) {
   const [formData, setFormData] = useState({
     firstName: initialFirstName,
     lastName: initialLastName,
-    phone: ''
+    phone: '',
+    tailleTshirt: 'M',
+    droitImage: true,
+    aptitudeMedicale: false
   });
 
   const [submitting, setSubmitting] = useState(false);
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    const { name, value, type, checked } = e.target;
+    setFormData(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
   };
 
   const handleSubmit = async (e) => {
@@ -39,6 +42,9 @@ export default function Onboarding({ user, onComplete }) {
         prenom: formData.firstName,
         email: user.email,
         telephone: formData.phone,
+        tailleTshirt: formData.tailleTshirt,
+        droitImage: formData.droitImage,
+        aptitudeMedicale: formData.aptitudeMedicale,
         role: "membre",
         statutActuel: "active",
         groupId: groupId,
@@ -126,6 +132,59 @@ export default function Onboarding({ user, onComplete }) {
               disabled={submitting}
               className="theme-input w-full disabled:opacity-50"
             />
+          </div>
+
+          {/* T-Shirt Size Dropdown */}
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] uppercase font-bold tracking-wider text-cordel-master-dark">
+              Taille de T-Shirt
+            </label>
+            <select
+              name="tailleTshirt"
+              value={formData.tailleTshirt}
+              onChange={handleChange}
+              disabled={submitting}
+              className="theme-input w-full disabled:opacity-50 font-bold bg-cordel-bg-light"
+            >
+              <option value="S">S</option>
+              <option value="M">M</option>
+              <option value="L">L</option>
+              <option value="XL">XL</option>
+              <option value="XXL">XXL</option>
+            </select>
+          </div>
+
+          {/* Image Rights Checkbox */}
+          <div className="flex items-start gap-2.5 mt-2">
+            <input
+              type="checkbox"
+              name="droitImage"
+              id="droitImage"
+              checked={formData.droitImage}
+              onChange={handleChange}
+              disabled={submitting}
+              className="mt-1"
+            />
+            <label htmlFor="droitImage" className="text-xs font-semibold leading-snug cursor-pointer select-none">
+              J'autorise l'association à utiliser mon image sur ses supports de communication (photos, vidéos).
+            </label>
+          </div>
+
+          {/* Medical Aptitude Checkbox (Required) */}
+          <div className="flex items-start gap-2.5 mt-1">
+            <input
+              type="checkbox"
+              name="aptitudeMedicale"
+              id="aptitudeMedicale"
+              checked={formData.aptitudeMedicale}
+              onChange={handleChange}
+              required
+              disabled={submitting}
+              className="mt-1"
+            />
+            <label htmlFor="aptitudeMedicale" className="text-xs font-bold leading-snug cursor-pointer select-none text-red-600 dark:text-red-400">
+              * Je certifie sur l'honneur être médicalement apte à la pratique du Maracatu.
+            </label>
           </div>
 
           <CordelButton 
