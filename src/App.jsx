@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { onAuthStateChanged, signOut, getRedirectResult } from 'firebase/auth';
+import { onAuthStateChanged, signOut, getRedirectResult, setPersistence, browserLocalPersistence } from 'firebase/auth';
 import { doc, onSnapshot, updateDoc, collection, query, where } from 'firebase/firestore';
 import { auth, db } from './firebase';
 import Login from './components/Login';
@@ -326,6 +326,13 @@ export default function App() {
     let isMounted = true;
 
     const initAuth = async () => {
+      console.log("App - Setting explicit persistence sequentially...");
+      try {
+        await setPersistence(auth, browserLocalPersistence);
+      } catch (err) {
+        console.error("App - Error setting persistence:", err);
+      }
+
       console.log("App - Resolving redirect result if any...");
       try {
         const redirectResult = await getRedirectResult(auth);
