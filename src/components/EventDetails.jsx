@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { doc, updateDoc, runTransaction } from 'firebase/firestore';
+import React, { useState, useEffect } from 'react';
+import { doc, updateDoc, runTransaction, collection, query, where, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
@@ -14,6 +14,42 @@ export default function EventDetails({ event, user, profileData, onClose }) {
   const [places, setPlaces] = useState(existingResponse ? existingResponse.places || 0 : 0);
   const [instruments, setInstruments] = useState(existingResponse ? existingResponse.instruments || '' : '');
   const [saving, setSaving] = useState(false);
+  
+  const [allUsers, setAllUsers] = useState([]);
+  const [isEditingEvent, setIsEditingEvent] = useState(false);
+  const [editForm, setEditForm] = useState({
+    titre: event.titre || '',
+    date: event.date || '',
+    lieu: event.lieu || '',
+    horairesPassages: event.horairesPassages || '',
+    horaireCovoiturage: event.horaireCovoiturage || '',
+    niveauRequis: event.niveauRequis || 'tous',
+    lienDocument: event.lienDocument || ''
+  });
+  const [savingEvent, setSavingEvent] = useState(false);
+
+  const isConcertRestricted = event.type === 'concert' && event.niveauRequis === 'confirme' && profileData?.niveau === 'debutant';
+
+  // Sync users list to fetch instruments and names in real-time
+  useEffect(() => {
+    if (!event.groupId) return;
+    const q = query(collection(db, 'users'), where('groupId', '==', event.groupId));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const usersList = [];
+      snapshot.forEach(docSnap => {
+        usersList.push({ id: docSnap.id, ...docSnap.data() });
+      });
+      setAllUsers(usersList);
+    });
+    return () => unsubscribe();
+  }, [event.groupId]);
+
+  // Enforce absent status if concert is restricted for beginners
+  useEffect(() => {
+    if (isConcertRestricted && status !== 'absent') {
+      setStatus('absent');
+    }
+  }, [isConcertRestricted]);
 
   const isAuthorized = profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.isSystemAdmin === true;
 
@@ -366,6 +402,11 @@ export default function EventDetails({ event, user, profileData, onClose }) {
     e.preventDefault();
     setSaving(true);
 
+    if (isConcertRestricted && status !== 'absent') {
+      alert("Ce concert est réservé aux musiciens confirmés.");
+      return;
+    }
+
     try {
       // 1. Read existing inscriptions and filter out current user's past response
       const currentInscriptions = event.inscriptions || [];
@@ -399,6 +440,46 @@ export default function EventDetails({ event, user, profileData, onClose }) {
     }
   };
 
+  const handleSaveEvent = async (e) => {
+    e.preventDefault();
+    if (!event.id) return;
+    setSavingEvent(true);
+    try {
+      const eventRef = doc(db, 'events', event.id);
+      await updateDoc(eventRef, {
+        titre: editForm.titre,
+        date: editForm.date,
+        lieu: editForm.lieu || '',
+        horairesPassages: editForm.horairesPassages || '',
+        horaireCovoiturage: editForm.horaireCovoiturage || '',
+        niveauRequis: editForm.niveauRequis || 'tous',
+        lienDocument: editForm.lienDocument || ''
+      });
+      setIsEditingEvent(false);
+      alert("Événement mis à jour avec succès !");
+    } catch (err) {
+      console.error("EventDetails - Erreur de modification événement :", err);
+      alert("Erreur lors de l'enregistrement de l'événement.");
+    } finally {
+      setSavingEvent(false);
+    }
+  };
+
+  // Group presents by instrument for grouped presence list display
+  const presentsByInstrument = {};
+  if (event.inscriptions && event.inscriptions.length > 0) {
+    event.inscriptions.forEach((ins) => {
+      if (ins.status === 'present') {
+        const userInfo = allUsers.find(u => u.id === ins.userId) || { prenom: ins.userName, nom: '', instrument: 'Autre' };
+        const inst = userInfo.instrument || 'Autre';
+        if (!presentsByInstrument[inst]) {
+          presentsByInstrument[inst] = [];
+        }
+        presentsByInstrument[inst].push(userInfo);
+      }
+    });
+  }
+
   // Date parsing for visual header
   const dateObj = new Date(event.date);
   const formattedDate = isNaN(dateObj.getTime()) 
@@ -419,16 +500,179 @@ export default function EventDetails({ event, user, profileData, onClose }) {
 
   return (
     <div className="flex flex-col gap-4 text-left">
-      {/* Header with back button */}
-      <div className="flex justify-between items-center border-b-2 border-dashed border-cordel-master-dark/30 pb-2">
+      {/* Header with back button & modifier button */}
+      <div className="flex justify-between items-center border-b-2 border-dashed border-cordel-master-dark/30 pb-2 select-none">
         <CordelButton variant="default" onClick={onClose} className="px-3 py-1 text-xs">
           ← Retour
         </CordelButton>
-        <span className="panel-title text-base font-extrabold tracking-wider text-cordel-wood uppercase">
+        <span className="panel-title text-sm font-extrabold tracking-wider text-cordel-wood uppercase">
           Détails Événement
         </span>
-        <div className="w-12"></div>
+        {isAuthorized && !isEditingEvent && (
+          <button
+            type="button"
+            onClick={() => setIsEditingEvent(true)}
+            className="text-[10px] font-black uppercase bg-cordel-bg border border-encre-noire px-3 py-1 rounded shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-95 cursor-pointer"
+          >
+            ✏️ Modifier
+          </button>
+        )}
+        {isAuthorized && isEditingEvent && (
+          <button
+            type="button"
+            onClick={() => setIsEditingEvent(false)}
+            className="text-[10px] font-black uppercase bg-neutral-200 border border-encre-noire px-3 py-1 rounded"
+          >
+            Annuler
+          </button>
+        )}
       </div>
+
+      {isEditingEvent ? (
+        <form onSubmit={handleSaveEvent} className="flex flex-col gap-4">
+          <CordelCard variant="default" useExtremeBorder={true} className="py-5 px-6 text-left">
+            <h3 className="panel-title text-base font-bold mb-4 text-cordel-wood">
+              Modifier l'événement
+            </h3>
+
+            <div className="flex flex-col gap-4">
+              {/* Title */}
+              <div className="flex flex-col gap-1">
+                <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                  Titre de l'événement
+                </label>
+                <input
+                  type="text"
+                  value={editForm.titre}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, titre: e.target.value }))}
+                  required
+                  disabled={savingEvent}
+                  className="theme-input w-full disabled:opacity-50"
+                />
+              </div>
+
+              {/* Date */}
+              <div className="flex flex-col gap-1">
+                <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                  Date et heure
+                </label>
+                <input
+                  type="datetime-local"
+                  value={editForm.date}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, date: e.target.value }))}
+                  required
+                  disabled={savingEvent}
+                  className="theme-input w-full disabled:opacity-50"
+                />
+              </div>
+
+              {/* Lieu */}
+              <div className="flex flex-col gap-1">
+                <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                  Lieu
+                </label>
+                <input
+                  type="text"
+                  value={editForm.lieu}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, lieu: e.target.value }))}
+                  required
+                  disabled={savingEvent}
+                  className="theme-input w-full disabled:opacity-50"
+                />
+              </div>
+
+              {/* Concert specific fields */}
+              {event.type === 'concert' && (
+                <>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                      Horaires des sets / passages
+                    </label>
+                    <input
+                      type="text"
+                      value={editForm.horairesPassages}
+                      onChange={(e) => setEditForm(prev => ({ ...prev, horairesPassages: e.target.value }))}
+                      disabled={savingEvent}
+                      className="theme-input w-full disabled:opacity-50"
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                      Horaire de convoi (Départ local)
+                    </label>
+                    <input
+                      type="time"
+                      value={editForm.horaireCovoiturage}
+                      onChange={(e) => setEditForm(prev => ({ ...prev, horaireCovoiturage: e.target.value }))}
+                      disabled={savingEvent}
+                      className="theme-input w-full disabled:opacity-50"
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                      Niveau requis
+                    </label>
+                    <select
+                      value={editForm.niveauRequis}
+                      onChange={(e) => setEditForm(prev => ({ ...prev, niveauRequis: e.target.value }))}
+                      disabled={savingEvent}
+                      className="theme-input w-full disabled:opacity-50 font-bold bg-cordel-bg-light"
+                    >
+                      <option value="tous">Tous les niveaux (Débutants acceptés)</option>
+                      <option value="confirme">Confirmés uniquement</option>
+                    </select>
+                  </div>
+                </>
+              )}
+
+              {/* Stage specific fields */}
+              {event.type === 'stage' && (
+                <div className="flex flex-col gap-1">
+                  <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                    Horaire de convoi (Départ local)
+                  </label>
+                  <input
+                    type="time"
+                    value={editForm.horaireCovoiturage}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, horaireCovoiturage: e.target.value }))}
+                    disabled={savingEvent}
+                    className="theme-input w-full disabled:opacity-50"
+                  />
+                </div>
+              )}
+
+              {/* Reunion specific fields */}
+              {event.type === 'reunion' && (
+                <div className="flex flex-col gap-1">
+                  <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                    Lien du document d'ordre du jour
+                  </label>
+                  <input
+                    type="url"
+                    value={editForm.lienDocument}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, lienDocument: e.target.value }))}
+                    disabled={savingEvent}
+                    className="theme-input w-full disabled:opacity-50"
+                  />
+                </div>
+              )}
+            </div>
+
+            <CordelButton
+              type="submit"
+              variant="ocre"
+              useExtremeBorder={true}
+              disabled={savingEvent}
+              className="w-full mt-5 py-3 text-xs font-bold uppercase tracking-widest"
+            >
+              {savingEvent ? "Modification..." : "Enregistrer les modifications"}
+            </CordelButton>
+          </CordelCard>
+        </form>
+      ) : (
+        <>
 
       {/* Event General Info Card */}
       <CordelCard variant={currentVariant} useExtremeBorder={true} className="py-4">
@@ -439,6 +683,27 @@ export default function EventDetails({ event, user, profileData, onClose }) {
         <p className="text-xs font-semibold leading-relaxed">
           📅 {formattedDate} {formattedTime ? `à ${formattedTime}` : ''}
         </p>
+
+        {/* New fields display */}
+        <div className="mt-3 pt-2.5 border-t border-dashed border-encre-noire/15 text-xs flex flex-col gap-1 font-semibold leading-relaxed">
+          {event.lieu && (
+            <span>📍 <strong>Lieu :</strong> {event.lieu}</span>
+          )}
+          {event.type === 'concert' && event.horairesPassages && (
+            <span>⏱️ <strong>Horaires de passage :</strong> {event.horairesPassages}</span>
+          )}
+          {(event.type === 'concert' || event.type === 'stage') && event.horaireCovoiturage && (
+            <span>🚗 <strong>Horaire de convoi :</strong> {event.horaireCovoiturage}</span>
+          )}
+          {event.type === 'concert' && (
+            <span>🎯 <strong>Niveau requis :</strong> {event.niveauRequis === 'confirme' ? '🏆 Confirmés uniquement' : '👥 Tous les niveaux'}</span>
+          )}
+          {event.type === 'reunion' && event.lienDocument && (
+            <span className="truncate">
+              📄 <strong>Ordre du jour :</strong> <a href={event.lienDocument} target="_blank" rel="noopener noreferrer" className="text-cordel-wood hover:underline">{event.lienDocument}</a>
+            </span>
+          )}
+        </div>
       </CordelCard>
 
       {/* RSVP Form */}
@@ -452,13 +717,14 @@ export default function EventDetails({ event, user, profileData, onClose }) {
           <div className="grid grid-cols-3 gap-2">
             <button
               type="button"
-              disabled={saving}
+              disabled={saving || isConcertRestricted}
               onClick={() => handleStatusChange('present')}
               className={`
                 theme-btn px-2 py-2 text-xs rounded-[4px_6px_3px_5px] transition-colors cursor-pointer select-none
                 ${status === 'present' 
                   ? 'theme-bg-vert font-black border-2 border-encre-noire shadow-none translate-x-[1px] translate-y-[1px]' 
                   : 'bg-cordel-bg-light text-encre-noire border-2 border-encre-noire shadow-[2px_2px_0px_0px_#181716] hover:bg-[#ece4d0]'}
+                ${isConcertRestricted ? 'opacity-40 cursor-not-allowed' : ''}
               `}
             >
               Présent
@@ -480,18 +746,26 @@ export default function EventDetails({ event, user, profileData, onClose }) {
 
             <button
               type="button"
-              disabled={saving}
+              disabled={saving || isConcertRestricted}
               onClick={() => handleStatusChange('confirm')}
               className={`
                 theme-btn px-2 py-2 text-xs rounded-[4px_6px_3px_5px] transition-colors cursor-pointer select-none
                 ${status === 'confirm' 
                   ? 'theme-bg-ocre font-black border-2 border-encre-noire shadow-none translate-x-[1px] translate-y-[1px]' 
                   : 'bg-cordel-bg-light text-encre-noire border-2 border-encre-noire shadow-[2px_2px_0px_0px_#181716] hover:bg-[#ece4d0]'}
+                ${isConcertRestricted ? 'opacity-40 cursor-not-allowed' : ''}
               `}
             >
               À confirmer
             </button>
           </div>
+
+          {/* Restriction warning message */}
+          {isConcertRestricted && (
+            <div className="text-[11px] font-extrabold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/20 p-2.5 rounded border border-dashed border-red-500/30 flex items-center justify-center gap-1.5 mt-1 select-none">
+              🚫 Concert réservé aux musiciens confirmés.
+            </div>
+          )}
 
           {/* Conditional Transport Options (Only visible when present) */}
           {status === 'present' && (
@@ -590,6 +864,60 @@ export default function EventDetails({ event, user, profileData, onClose }) {
           {saving ? "Validation..." : "Valider mon inscription"}
         </CordelButton>
       </form>
+
+      {/* 👥 Tableau nominatif des présences */}
+      <CordelCard variant="default" useExtremeBorder={true} className="py-4 px-5 select-none">
+        <h4 className="font-bold text-xs uppercase tracking-wider text-cordel-wood border-b border-dashed border-cordel-master-dark/15 pb-1 mb-3">
+          👥 Tableau de présence / Inscriptions
+        </h4>
+
+        {/* Grouped by instrument for concert, repetition, stage */}
+        {(event.type === 'concert' || event.type === 'repetition' || event.type === 'stage') ? (
+          Object.keys(presentsByInstrument).length === 0 ? (
+            <p className="text-[11px] italic opacity-60">Aucun membre présent pour le moment.</p>
+          ) : (
+            <div className="flex flex-col gap-2.5 bg-[#fdfaf2] dark:bg-[#1a1816] p-3.5 rounded border border-dashed border-encre-noire/15 text-left">
+              {Object.keys(presentsByInstrument).map(inst => {
+                const list = presentsByInstrument[inst];
+                const namesString = list.map(u => `${u.prenom} ${u.nom}`).join(', ');
+                return (
+                  <div key={inst} className="text-xs leading-normal">
+                    <strong className="text-cordel-wood">🥁 {inst} ({list.length}) :</strong> <span className="opacity-90 font-bold">{namesString}</span>
+                  </div>
+                );
+              })}
+            </div>
+          )
+        ) : (
+          /* Simple lists for reunion */
+          <div className="flex flex-col gap-3.5 bg-[#fdfaf2] dark:bg-[#1a1816] p-3.5 rounded border border-dashed border-encre-noire/15 text-xs text-left">
+            <div>
+              <strong className="text-green-600 block border-b border-dashed border-green-500/10 pb-0.5 mb-1">
+                ✅ Présents ({(event.inscriptions || []).filter(i => i.status === 'present').length})
+              </strong>
+              <p className="opacity-90 font-bold leading-normal">
+                {(event.inscriptions || []).filter(i => i.status === 'present').map(i => i.userName).join(', ') || 'Aucun'}
+              </p>
+            </div>
+            <div>
+              <strong className="text-red-600 block border-b border-dashed border-red-500/10 pb-0.5 mb-1">
+                ❌ Absents ({(event.inscriptions || []).filter(i => i.status === 'absent').length})
+              </strong>
+              <p className="opacity-90 font-bold leading-normal">
+                {(event.inscriptions || []).filter(i => i.status === 'absent').map(i => i.userName).join(', ') || 'Aucun'}
+              </p>
+            </div>
+            <div>
+              <strong className="text-amber-600 block border-b border-dashed border-amber-500/10 pb-0.5 mb-1">
+                ⏳ À confirmer ({(event.inscriptions || []).filter(i => i.status === 'confirm').length})
+              </strong>
+              <p className="opacity-90 font-bold leading-normal">
+                {(event.inscriptions || []).filter(i => i.status === 'confirm').map(i => i.userName).join(', ') || 'Aucun'}
+              </p>
+            </div>
+          </div>
+        )}
+      </CordelCard>
 
       {/* Setlist & Séquenceur de l'événement */}
       <CordelCard variant="default" useExtremeBorder={true} className="py-4 px-5">
@@ -931,6 +1259,8 @@ export default function EventDetails({ event, user, profileData, onClose }) {
             profileData={profileData}
           />
         </div>
+      )}
+      </>
       )}
     </div>
   );

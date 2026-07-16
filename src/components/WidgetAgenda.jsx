@@ -34,7 +34,12 @@ export default function WidgetAgenda({ role, isSystemAdmin, groupId, user, profi
   const [formData, setFormData] = useState({
     titre: '',
     type: 'concert', // 'concert', 'repetition', 'stage', 'reunion'
-    date: ''
+    date: '',
+    lieu: '',
+    horairesPassages: '',
+    horaireCovoiturage: '',
+    niveauRequis: 'tous',
+    lienDocument: ''
   });
 
   const isAuthorized = role === 'mestre' || role === 'super-admin' || isSystemAdmin === true;
@@ -78,7 +83,16 @@ export default function WidgetAgenda({ role, isSystemAdmin, groupId, user, profi
   };
 
   const handleOpenForm = () => {
-    setFormData({ titre: '', type: 'concert', date: '' });
+    setFormData({
+      titre: '',
+      type: 'concert',
+      date: '',
+      lieu: '',
+      horairesPassages: '',
+      horaireCovoiturage: '',
+      niveauRequis: 'tous',
+      lienDocument: ''
+    });
     setIsAdding(true);
   };
 
@@ -101,7 +115,12 @@ export default function WidgetAgenda({ role, isSystemAdmin, groupId, user, profi
         type: formData.type,
         date: formData.date,
         groupId: groupId,
-        inscriptions: [] // Initialize with empty array
+        inscriptions: [],
+        lieu: formData.lieu || '',
+        horairesPassages: formData.type === 'concert' ? formData.horairesPassages || '' : '',
+        horaireCovoiturage: (formData.type === 'concert' || formData.type === 'stage') ? formData.horaireCovoiturage || '' : '',
+        niveauRequis: formData.type === 'concert' ? formData.niveauRequis || 'tous' : 'tous',
+        lienDocument: formData.type === 'reunion' ? formData.lienDocument || '' : ''
       });
       setIsAdding(false);
     } catch (error) {
@@ -207,7 +226,7 @@ export default function WidgetAgenda({ role, isSystemAdmin, groupId, user, profi
               </select>
             </div>
 
-            {/* Date Picker */}
+             {/* Date Picker */}
             <div className="flex flex-col gap-1">
               <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
                 Date et heure
@@ -222,6 +241,108 @@ export default function WidgetAgenda({ role, isSystemAdmin, groupId, user, profi
                 className="theme-input w-full disabled:opacity-50"
               />
             </div>
+
+            {/* Lieu (Tous) */}
+            <div className="flex flex-col gap-1">
+              <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                Lieu
+              </label>
+              <input
+                type="text"
+                name="lieu"
+                value={formData.lieu}
+                onChange={handleChange}
+                required
+                disabled={saving}
+                placeholder="Ex : Local de l'asso, Place de la Mairie..."
+                className="theme-input w-full disabled:opacity-50"
+              />
+            </div>
+
+            {/* Concert specific fields */}
+            {formData.type === 'concert' && (
+              <>
+                <div className="flex flex-col gap-1">
+                  <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                    Horaires des sets / passages
+                  </label>
+                  <input
+                    type="text"
+                    name="horairesPassages"
+                    value={formData.horairesPassages}
+                    onChange={handleChange}
+                    disabled={saving}
+                    placeholder="Ex : 1er set 14h, 2ème set 16h"
+                    className="theme-input w-full disabled:opacity-50"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                    Horaire de convoi (Départ local)
+                  </label>
+                  <input
+                    type="time"
+                    name="horaireCovoiturage"
+                    value={formData.horaireCovoiturage}
+                    onChange={handleChange}
+                    disabled={saving}
+                    className="theme-input w-full disabled:opacity-50"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                    Niveau requis
+                  </label>
+                  <select
+                    name="niveauRequis"
+                    value={formData.niveauRequis}
+                    onChange={handleChange}
+                    disabled={saving}
+                    className="theme-input w-full disabled:opacity-50 font-bold bg-cordel-bg-light"
+                  >
+                    <option value="tous">Tous les niveaux (Débutants acceptés)</option>
+                    <option value="confirme">Confirmés uniquement</option>
+                  </select>
+                </div>
+              </>
+            )}
+
+            {/* Stage specific fields */}
+            {formData.type === 'stage' && (
+              <div className="flex flex-col gap-1">
+                <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                  Horaire de convoi (Départ local)
+                </label>
+                <input
+                  type="time"
+                  name="horaireCovoiturage"
+                  value={formData.horaireCovoiturage}
+                  onChange={handleChange}
+                  disabled={saving}
+                  className="theme-input w-full disabled:opacity-50"
+                />
+              </div>
+            )}
+
+            {/* Réunion specific fields */}
+            {formData.type === 'reunion' && (
+              <div className="flex flex-col gap-1">
+                <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                  Lien du document d'ordre du jour
+                </label>
+                <input
+                  type="url"
+                  name="lienDocument"
+                  value={formData.lienDocument}
+                  onChange={handleChange}
+                  disabled={saving}
+                  placeholder="Ex : https://docs.google.com/..."
+                  className="theme-input w-full disabled:opacity-50"
+                />
+              </div>
+            )}
 
             {/* Actions */}
             <div className="flex gap-3 justify-end mt-2">

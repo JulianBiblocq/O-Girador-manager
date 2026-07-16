@@ -37,6 +37,7 @@ export default function SystemAdminPanel({ user, profileData, onBack, onNavigate
   const [draftRoles, setDraftRoles] = useState({}); // { [userId]: newRole }
   const [draftTags, setDraftTags] = useState({}); // { [userId]: [tag1, tag2, ...] }
   const [draftFields, setDraftFields] = useState({}); // { [userId]: { telephone, tshirt, ... } }
+  const [draftLevels, setDraftLevels] = useState({}); // { [userId]: 'debutant' | 'confirme' }
   const [fieldsConfig, setFieldsConfig] = useState(null);
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState(null);
@@ -96,6 +97,10 @@ export default function SystemAdminPanel({ user, profileData, onBack, onNavigate
     setDraftRoles((prev) => ({ ...prev, [userId]: value }));
   };
 
+  const handleLevelChange = (userId, value) => {
+    setDraftLevels((prev) => ({ ...prev, [userId]: value }));
+  };
+
   const handleFieldChange = (userId, fieldKey, value) => {
     setDraftFields((prev) => ({
       ...prev,
@@ -122,16 +127,19 @@ export default function SystemAdminPanel({ user, profileData, onBack, onNavigate
   const handleSavePermissions = async (targetUserId, currentUserItem) => {
     const currentRole = currentUserItem.role || 'membre';
     const currentTags = currentUserItem.tags || [];
+    const currentLevel = currentUserItem.niveau || 'debutant';
 
     const newRole = draftRoles[targetUserId] !== undefined ? draftRoles[targetUserId] : currentRole;
     const newTags = draftTags[targetUserId] !== undefined ? draftTags[targetUserId] : (currentTags || []);
+    const newLevel = draftLevels[targetUserId] !== undefined ? draftLevels[targetUserId] : currentLevel;
 
     const userDraft = draftFields[targetUserId] || {};
     const isEnabled = (key) => fieldsConfig?.[key]?.enabled === true;
 
     const updatePayload = {
       role: newRole,
-      tags: newTags
+      tags: newTags,
+      niveau: newLevel
     };
 
     if (isEnabled('telephone')) {
@@ -165,6 +173,11 @@ export default function SystemAdminPanel({ user, profileData, onBack, onNavigate
         return copy;
       });
       setDraftTags((prev) => {
+        const copy = { ...prev };
+        delete copy[targetUserId];
+        return copy;
+      });
+      setDraftLevels((prev) => {
         const copy = { ...prev };
         delete copy[targetUserId];
         return copy;
@@ -238,19 +251,23 @@ export default function SystemAdminPanel({ user, profileData, onBack, onNavigate
             {usersList.map((userItem) => {
               const currentRole = userItem.role || 'membre';
               const currentTags = userItem.tags || [];
+              const currentLevel = userItem.niveau || 'debutant';
               
               const draftRole = draftRoles[userItem.id];
               const draftTag = draftTags[userItem.id];
+              const draftLevel = draftLevels[userItem.id];
               const userDraft = draftFields[userItem.id] || {};
               
               const activeRole = draftRole !== undefined ? draftRole : currentRole;
               const activeTags = draftTag !== undefined ? draftTag : currentTags;
+              const activeLevel = draftLevel !== undefined ? draftLevel : currentLevel;
 
               // Check modifications for Role and Tags to toggle Save button
               const isRoleModified = draftRole !== undefined && draftRole !== currentRole;
               const sortedCurrentTags = [...currentTags].sort();
               const sortedActiveTags = [...activeTags].sort();
               const isTagsModified = JSON.stringify(sortedCurrentTags) !== JSON.stringify(sortedActiveTags);
+              const isLevelModified = draftLevel !== undefined && draftLevel !== currentLevel;
               
               const isFieldModified = (key, currentVal) => {
                 return userDraft[key] !== undefined && userDraft[key] !== currentVal;
@@ -263,7 +280,7 @@ export default function SystemAdminPanel({ user, profileData, onBack, onNavigate
                 isFieldModified('lateralite', userItem.lateralite) ||
                 isFieldModified('dateNaissance', userItem.dateNaissance);
 
-              const isModified = isRoleModified || isTagsModified || isAnyFieldModified;
+              const isModified = isRoleModified || isTagsModified || isAnyFieldModified || isLevelModified;
 
               return (
                 <CordelCard key={userItem.id} variant="default" useExtremeBorder={false} className="py-4 relative pr-4">
@@ -299,8 +316,10 @@ export default function SystemAdminPanel({ user, profileData, onBack, onNavigate
                           </>
                         )}
                       </div>
-                      <p className="text-[9px] font-bold text-cordel-wood mt-0.5">
-                        📦 Groupe : <span className="font-mono">{userItem.groupId || 'Aucun'}</span>
+                      <p className="text-[9px] font-bold text-cordel-wood mt-0.5 flex flex-wrap gap-x-2">
+                        <span>📦 Groupe : <span className="font-mono">{userItem.groupId || 'Aucun'}</span></span>
+                        <span>•</span>
+                        <span>🏆 Niveau : <strong className="uppercase">{userItem.niveau === 'confirme' ? 'Confirmé' : 'Débutant'}</strong></span>
                       </p>
                     </div>
 
@@ -319,6 +338,21 @@ export default function SystemAdminPanel({ user, profileData, onBack, onNavigate
                           <option value="membre">Membre</option>
                           <option value="mestre">Mestre</option>
                           <option value="super-admin">Super-Admin</option>
+                        </select>
+                      </div>
+
+                      <div className="flex flex-col gap-1 flex-1">
+                        <label className="text-[8px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                          Niveau Musique
+                        </label>
+                        <select
+                          value={activeLevel}
+                          onChange={(e) => handleLevelChange(userItem.id, e.target.value)}
+                          disabled={savingId === userItem.id}
+                          className="theme-input text-xs font-bold py-1.5 px-2 bg-cordel-bg-light"
+                        >
+                          <option value="debutant">Débutant</option>
+                          <option value="confirme">Confirmé</option>
                         </select>
                       </div>
 

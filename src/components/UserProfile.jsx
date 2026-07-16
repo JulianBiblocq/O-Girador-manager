@@ -274,9 +274,12 @@ export default function UserProfile({ user, profileData, onBack }) {
         <div className="relative">
           <XiloAvatar src={profileData?.photoURL || user?.photoURL} name={fullName} size={110} />
           {/* Decorative stamp on avatar */}
-          <div className="absolute -bottom-1 -right-2 z-20">
+          <div className="absolute -bottom-1 -right-2 z-20 flex flex-col gap-1 items-end select-none">
             <span className="theme-stamp-badge theme-stamp-badge-wood text-[8px] rotate-12">
               {profileData?.role || 'membre'}
+            </span>
+            <span className="theme-stamp-badge theme-stamp-badge-ocre text-[7px] -rotate-6">
+              {profileData?.niveau === 'confirme' ? '🏆 Confirmé' : '🌱 Débutant'}
             </span>
           </div>
         </div>
@@ -358,6 +361,16 @@ export default function UserProfile({ user, profileData, onBack }) {
               ))}
               <option value="Autre">Autre</option>
             </select>
+          </div>
+
+          {/* Level Info display */}
+          <div className="flex flex-col gap-1.5 border-t border-dashed border-cordel-master-dark/10 pt-2">
+            <span className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood">
+              Niveau de Pratique (Maracatu)
+            </span>
+            <span className="text-xs font-bold text-encre-noire bg-cordel-bg-light py-1.5 px-3 rounded border border-encre-noire/25 w-full inline-block">
+              {profileData?.niveau === 'confirme' ? '🏆 Confirmé' : '🌱 Débutant'}
+            </span>
           </div>
 
            {isFieldVisible('telephone') && (
