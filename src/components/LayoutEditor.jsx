@@ -44,6 +44,10 @@ const WIDGET_NAMES = {
     title: "Le Mot du Mestre 📝",
     desc: "Bloc d'actualité rédigé en direct par le Mestre."
   },
+  annonces: {
+    title: "Le Mégaphone (Annonces) 📢",
+    desc: "Annonces officielles de l'association ciblées par étiquettes."
+  },
   agenda: {
     title: "Dates à Venir (Agenda) 📅",
     desc: "Liste des répétitions, concerts et stages de la Roda."
@@ -59,7 +63,7 @@ const WIDGET_NAMES = {
 };
 
 export default function LayoutEditor({ groupId, onBack, role, isSystemAdmin }) {
-  const [items, setItems] = useState(["motMestre", "agenda", "forum", "documents"]);
+  const [items, setItems] = useState(["motMestre", "annonces", "agenda", "forum", "documents"]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [dragOverIndex, setDragOverIndex] = useState(null);

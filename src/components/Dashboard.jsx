@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase';
 import WidgetMotMestre from './WidgetMotMestre';
+import WidgetAnnonces from './WidgetAnnonces';
 import WidgetAgenda from './WidgetAgenda';
 import WidgetForum from './WidgetForum';
 import WidgetDocuments from './WidgetDocuments';
@@ -13,7 +14,7 @@ export default function Dashboard({ user, profileData, onNavigateToTrombi, onNav
   const [darkMode, setDarkMode] = useState(() => {
     return document.documentElement.classList.contains('dark');
   });
-  const [layout, setLayout] = useState(["motMestre", "agenda", "forum", "documents"]);
+  const [layout, setLayout] = useState(["motMestre", "annonces", "agenda", "forum", "documents"]);
 
   const toggleDarkMode = () => {
     const isDark = document.documentElement.classList.toggle('dark');
@@ -150,7 +151,7 @@ export default function Dashboard({ user, profileData, onNavigateToTrombi, onNav
         )}
       </div>
 
-      {/* 4 Widgets Stack (Dynamically Ordered) */}
+      {/* Widgets Stack (Dynamically Ordered) */}
       {layout.map((widgetId) => {
         switch (widgetId) {
           case 'motMestre':
@@ -160,6 +161,16 @@ export default function Dashboard({ user, profileData, onNavigateToTrombi, onNav
                 role={profileData?.role} 
                 isSystemAdmin={profileData?.isSystemAdmin} 
                 groupId={profileData?.groupId} 
+              />
+            );
+          case 'annonces':
+            return (
+              <WidgetAnnonces 
+                key="annonces"
+                groupId={profileData?.groupId} 
+                profileData={profileData}
+                role={profileData?.role} 
+                isSystemAdmin={profileData?.isSystemAdmin} 
               />
             );
           case 'agenda':
