@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider } from 'firebase/auth';
+import { getAuth, GoogleAuthProvider, setPersistence, browserLocalPersistence } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 
@@ -14,6 +14,15 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
+
+// Enforce browserLocalPersistence for reliable offline/standalone session persistence
+setPersistence(auth, browserLocalPersistence)
+  .then(() => {
+    console.log("Firebase Auth - Local persistence explicitly set.");
+  })
+  .catch((err) => {
+    console.error("Firebase Auth - Error setting persistence:", err);
+  });
 
 export const googleProvider = new GoogleAuthProvider();
 export const db = getFirestore(app);
