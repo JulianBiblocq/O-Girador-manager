@@ -5,6 +5,40 @@ import LayoutShell from './LayoutShell';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
 
+// Wobbly, block-print stylized Up Chevron SVG (matches BaqueMix/Sequencer aesthetics)
+const ChevronUp = ({ size = 10, className = '' }) => (
+  <svg 
+    width={size} 
+    height={size} 
+    viewBox="0 0 24 24" 
+    fill="none" 
+    stroke="currentColor" 
+    strokeWidth="4" 
+    strokeLinecap="round" 
+    strokeLinejoin="round" 
+    className={className}
+  >
+    <path d="M18 15 L12 9 C11.8 8.8 12.2 8.8 12 9 L6 15" />
+  </svg>
+);
+
+// Wobbly, block-print stylized Down Chevron SVG (matches BaqueMix/Sequencer aesthetics)
+const ChevronDown = ({ size = 10, className = '' }) => (
+  <svg 
+    width={size} 
+    height={size} 
+    viewBox="0 0 24 24" 
+    fill="none" 
+    stroke="currentColor" 
+    strokeWidth="4" 
+    strokeLinecap="round" 
+    strokeLinejoin="round" 
+    className={className}
+  >
+    <path d="M6 9 L12 15 C12.2 15.2 11.8 15.2 12 15 L18 9" />
+  </svg>
+);
+
 const WIDGET_NAMES = {
   motMestre: {
     title: "Le Mot du Mestre 📝",
@@ -219,24 +253,24 @@ export default function LayoutEditor({ groupId, onBack, role, isSystemAdmin }) {
                     {/* Reordering Controls */}
                     <div className="flex items-center gap-2 shrink-0">
                       {/* Arrow buttons for touch/mobile devices */}
-                      <div className="flex flex-col gap-0.5 select-none">
+                      <div className="flex flex-col gap-1 select-none">
                         <button
                           type="button"
                           onClick={() => handleMove(index, -1)}
                           disabled={index === 0 || saving}
-                          className="w-6 h-5 border border-encre-noire bg-cordel-bg text-encre-noire dark:text-cordel-bg-light rounded shadow-[1px_1px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-105 disabled:opacity-30 disabled:pointer-events-none text-[8px] font-black cursor-pointer flex items-center justify-center"
+                          className="w-8 h-6 border border-encre-noire bg-cordel-bg text-encre-noire dark:text-cordel-bg-light hover:bg-cordel-wood hover:text-cordel-bg-light rounded shadow-[1px_1px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none transition-all disabled:opacity-20 disabled:pointer-events-none cursor-pointer flex items-center justify-center"
                           title="Monter"
                         >
-                          ▲
+                          <ChevronUp size={12} />
                         </button>
                         <button
                           type="button"
                           onClick={() => handleMove(index, 1)}
                           disabled={index === items.length - 1 || saving}
-                          className="w-6 h-5 border border-encre-noire bg-cordel-bg text-encre-noire dark:text-cordel-bg-light rounded shadow-[1px_1px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-105 disabled:opacity-30 disabled:pointer-events-none text-[8px] font-black cursor-pointer flex items-center justify-center"
+                          className="w-8 h-6 border border-encre-noire bg-cordel-bg text-encre-noire dark:text-cordel-bg-light hover:bg-cordel-wood hover:text-cordel-bg-light rounded shadow-[1px_1px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none transition-all disabled:opacity-20 disabled:pointer-events-none cursor-pointer flex items-center justify-center"
                           title="Descendre"
                         >
-                          ▼
+                          <ChevronDown size={12} />
                         </button>
                       </div>
 
