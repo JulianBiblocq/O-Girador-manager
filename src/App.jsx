@@ -23,7 +23,10 @@ export default function App() {
   const [profileExists, setProfileExists] = useState(false);
   const [profileData, setProfileData] = useState(null);
   const [branding, setBranding] = useState(null);
+  const [associationName, setAssociationName] = useState('');
   const [currentView, setCurrentView] = useState('dashboard'); // 'dashboard', 'trombinoscope', 'forum', 'profil', 'system-admin', 'layout-editor', 'tag-manager'
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
+  const [installPromptAvailable, setInstallPromptAvailable] = useState(false);
 
   // Load branding in real-time
   useEffect(() => {
@@ -36,19 +39,28 @@ export default function App() {
 
     if (!activeGroupId) {
       setBranding(null);
+      setAssociationName('');
       return;
     }
 
     const assocRef = doc(db, 'associations', activeGroupId);
     const unsubscribe = onSnapshot(assocRef, (docSnap) => {
-      if (docSnap.exists() && docSnap.data().branding) {
-        setBranding(docSnap.data().branding);
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        if (data.branding) {
+          setBranding(data.branding);
+        } else {
+          setBranding(null);
+        }
+        setAssociationName(data.nom || '');
       } else {
         setBranding(null);
+        setAssociationName('');
       }
     }, (error) => {
       console.error("App - Erreur onSnapshot branding :", error);
       setBranding(null);
+      setAssociationName('');
     });
 
     return () => unsubscribe();
@@ -82,6 +94,163 @@ export default function App() {
       document.documentElement.classList.remove('dark');
     }
   }, []);
+
+  // Intercept PWA installation prompt
+  useEffect(() => {
+    const handleBeforeInstall = (e) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      setInstallPromptAvailable(true);
+    };
+    window.addEventListener('beforeinstallprompt', handleBeforeInstall);
+    return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
+  }, []);
+
+  const triggerInstallPrompt = async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    console.log(`App - Résultat de l'installation PWA : ${outcome}`);
+    setDeferredPrompt(null);
+    setInstallPromptAvailable(false);
+  };
+
+  // Generate dynamic Manifest with canvas branded stamp
+  useEffect(() => {
+    let activeGroupId = profileData?.groupId || null;
+    if (!activeGroupId) {
+      const searchParams = new URLSearchParams(window.location.search);
+      activeGroupId = searchParams.get('groupe') || null;
+    }
+
+    if (!activeGroupId) return;
+
+    const generateAndInjectManifest = async () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = 512;
+      canvas.height = 512;
+      const ctx = canvas.getContext('2d');
+
+      const bgCol = branding?.colors?.background || '#f4ecd8';
+      const primaryCol = branding?.colors?.primary || '#d99f4d';
+      const textCol = branding?.colors?.text || '#1a1a1a';
+      const logoSrc = branding?.logoUrl;
+
+      // Draw paper background
+      ctx.fillStyle = bgCol;
+      ctx.fillRect(0, 0, 512, 512);
+
+      // Draw double textured woodcut circles
+      ctx.strokeStyle = primaryCol;
+      ctx.lineWidth = 14;
+      ctx.beginPath();
+      ctx.arc(256, 256, 230, 0, Math.PI * 2);
+      ctx.stroke();
+
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.arc(256, 256, 215, 0, Math.PI * 2);
+      ctx.stroke();
+
+      ctx.lineWidth = 2;
+      ctx.setLineDash([8, 6]);
+      ctx.beginPath();
+      ctx.arc(256, 256, 205, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Draw circular text "★ O GIRADOR ★" at the bottom inside the ring
+      ctx.font = 'bold 24px Courier New, Courier, monospace';
+      ctx.fillStyle = textCol;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      
+      const label = "★ O GIRADOR ★";
+      const radius = 175;
+      const angleStep = 0.16;
+      const startAngle = Math.PI / 2 - (label.length - 1) * angleStep / 2;
+
+      for (let i = 0; i < label.length; i++) {
+        const charAngle = startAngle + i * angleStep;
+        const x = 256 + Math.cos(charAngle) * radius;
+        const y = 256 + Math.sin(charAngle) * radius;
+        
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(charAngle - Math.PI / 2);
+        ctx.fillText(label[i], 0, 0);
+        ctx.restore();
+      }
+
+      if (logoSrc) {
+        try {
+          const img = new Image();
+          img.crossOrigin = 'anonymous';
+          img.src = logoSrc;
+          await new Promise((resolve, reject) => {
+            img.onload = resolve;
+            img.onerror = reject;
+          });
+
+          const targetSize = 220;
+          let w = img.width;
+          let h = img.height;
+          const ratio = w / h;
+          if (w > h) {
+            w = targetSize;
+            h = targetSize / ratio;
+          } else {
+            h = targetSize;
+            w = targetSize * ratio;
+          }
+          ctx.drawImage(img, 256 - w / 2, 220 - h / 2, w, h);
+        } catch (err) {
+          console.warn("App - Erreur logo Canvas PWA fallback text :", err);
+          ctx.font = 'bold 36px Courier New, Courier, monospace';
+          ctx.fillStyle = textCol;
+          ctx.fillText(associationName ? associationName.substring(0, 10).toUpperCase() : 'RODA', 256, 210);
+        }
+      } else {
+        ctx.font = 'bold 36px Courier New, Courier, monospace';
+        ctx.fillStyle = textCol;
+        ctx.fillText(associationName ? associationName.substring(0, 10).toUpperCase() : 'RODA', 256, 210);
+      }
+
+      const iconDataUrl = canvas.toDataURL('image/png');
+
+      const manifest = {
+        name: `O Girador - ${associationName || 'Maracatu'}`,
+        short_name: associationName || 'O Girador',
+        theme_color: primaryCol,
+        background_color: bgCol,
+        start_url: `/?groupe=${activeGroupId}`,
+        display: 'standalone',
+        orientation: 'portrait',
+        icons: [
+          {
+            src: iconDataUrl,
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'any maskable'
+          }
+        ]
+      };
+
+      const blob = new Blob([JSON.stringify(manifest, null, 2)], { type: 'application/json' });
+      const manifestUrl = URL.createObjectURL(blob);
+
+      let linkElement = document.querySelector('link[rel="manifest"]');
+      if (!linkElement) {
+        linkElement = document.createElement('link');
+        linkElement.rel = 'manifest';
+        document.head.appendChild(linkElement);
+      }
+      linkElement.href = manifestUrl;
+      console.log("App - Manifest PWA dynamique injecté !", manifest);
+    };
+
+    generateAndInjectManifest();
+  }, [branding, associationName, profileData?.groupId]);
 
   // Automatically associate or switch the user's group if they open the app via an invitation URL
   // containing a different groupId than their current profileData.groupId
@@ -269,6 +438,8 @@ export default function App() {
             onNavigateToTrombi={() => setCurrentView('trombinoscope')} 
             onNavigateToView={(view) => setCurrentView(view)}
             onSignOut={handleSignOut} 
+            installPromptAvailable={installPromptAvailable}
+            onTriggerInstall={triggerInstallPrompt}
           />
         )}
       </LayoutShell>

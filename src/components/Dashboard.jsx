@@ -12,7 +12,7 @@ import CordelButton from './CordelButton';
 import { XiloSun, XiloMoon } from './XiloIcons';
 import { useTranslation } from './LanguageContext';
 
-export default function Dashboard({ user, profileData, onNavigateToTrombi, onNavigateToView, onSignOut }) {
+export default function Dashboard({ user, profileData, onNavigateToTrombi, onNavigateToView, onSignOut, installPromptAvailable, onTriggerInstall }) {
   const { locale, toggleLanguage, t } = useTranslation();
   const [darkMode, setDarkMode] = useState(() => {
     return document.documentElement.classList.contains('dark');
@@ -143,6 +143,16 @@ export default function Dashboard({ user, profileData, onNavigateToTrombi, onNav
 
       {/* Navigation to Trombinoscope */}
       <div className="flex flex-col gap-2 -mt-2">
+        {installPromptAvailable && (
+          <button
+            type="button"
+            onClick={onTriggerInstall}
+            className="w-full py-2.5 font-extrabold flex items-center justify-center gap-2 bg-[#84967a] text-encre-noire border-2 border-encre-noire rounded-[8px_12px_9px_11px] shadow-[2px_2px_0px_0px_#181716] hover:scale-[1.01] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-105 transition-all text-xs mb-1"
+          >
+            📱 Installer l'application sur ce téléphone
+          </button>
+        )}
+
         <CordelButton 
           variant="ocre" 
           useExtremeBorder={true}
