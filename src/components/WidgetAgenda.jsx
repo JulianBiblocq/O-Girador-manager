@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { collection, query, where, onSnapshot, addDoc } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, addDoc, doc } from 'firebase/firestore';
 import { db } from '../firebase';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
 import EventDetails from './EventDetails';
 import { useTranslation } from './LanguageContext';
 import { XiloCalendar } from './XiloIcons';
+import PlacesAutocomplete from './PlacesAutocomplete';
+import { calculateRoadDistance } from '../utils/googleMaps';
 
 export default function WidgetAgenda({ role, isSystemAdmin, groupId, user, profileData, onFocusModeChange }) {
   const { t } = useTranslation();
@@ -14,8 +16,25 @@ export default function WidgetAgenda({ role, isSystemAdmin, groupId, user, profi
   const [isAdding, setIsAdding] = useState(false);
   const [saving, setSaving] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
+  const [showAll, setShowAll] = useState(false);
   
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+  const [adresseLocal, setAdresseLocal] = useState('');
+  const [indemniteKilometrique, setIndemniteKilometrique] = useState(0);
+
+  // Sync association settings to get default local address and km rate
+  useEffect(() => {
+    if (!groupId) return;
+    const assocRef = doc(db, 'associations', groupId);
+    const unsubscribe = onSnapshot(assocRef, (docSnap) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        setAdresseLocal(data.adresseLocal || '');
+        setIndemniteKilometrique(data.indemniteKilometrique || 0);
+      }
+    });
+    return () => unsubscribe();
+  }, [groupId]);
 
   useEffect(() => {
     const handleResize = () => setWindowWidth(window.innerWidth);
@@ -32,16 +51,18 @@ export default function WidgetAgenda({ role, isSystemAdmin, groupId, user, profi
     const eDate = new Date(e.date);
     return !isNaN(eDate.getTime()) && eDate >= today;
   });
-  const visibleEvents = upcomingEvents.slice(0, limit);
+  const visibleEvents = showAll ? upcomingEvents : upcomingEvents.slice(0, limit);
   
   const [formData, setFormData] = useState({
     titre: '',
-    type: 'concert', // 'concert', 'repetition', 'stage', 'reunion'
+    type: 'prestation', // 'prestation', 'repetition', 'stage', 'reunion', 'atelier'
     date: '',
+    dateFin: '',
     lieu: '',
     horairesPassages: '',
     horaireCovoiturage: '',
     niveauRequis: 'tous',
+    niveauDanseRequis: 'aucun',
     lienDocument: '',
     distanceAllerRetourKm: ''
   });
@@ -81,20 +102,35 @@ export default function WidgetAgenda({ role, isSystemAdmin, groupId, user, profi
     return () => unsubscribe();
   }, [groupId]);
 
-  const handleChange = (e) => {
+  const handleChange = async (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+
+    // Calculate distance automatically if address (lieu) changes
+    if (name === 'lieu') {
+      if (adresseLocal && value) {
+        try {
+          const distanceKm = await calculateRoadDistance(adresseLocal, value);
+          const distanceRoundTrip = Math.round(distanceKm * 2 * 100) / 100;
+          setFormData((prev) => ({ ...prev, distanceAllerRetourKm: distanceRoundTrip.toString() }));
+        } catch (err) {
+          console.error("Distance Matrix calculation failed on creation:", err);
+        }
+      }
+    }
   };
 
   const handleOpenForm = () => {
     setFormData({
       titre: '',
-      type: 'concert',
+      type: 'prestation',
       date: '',
+      dateFin: '',
       lieu: '',
       horairesPassages: '',
       horaireCovoiturage: '',
       niveauRequis: 'tous',
+      niveauDanseRequis: 'aucun',
       lienDocument: '',
       distanceAllerRetourKm: ''
     });
@@ -119,14 +155,16 @@ export default function WidgetAgenda({ role, isSystemAdmin, groupId, user, profi
         titre: formData.titre,
         type: formData.type,
         date: formData.date,
+        dateFin: formData.dateFin || '',
         groupId: groupId,
         inscriptions: [],
         lieu: formData.lieu || '',
-        horairesPassages: formData.type === 'concert' ? formData.horairesPassages || '' : '',
-        horaireCovoiturage: (formData.type === 'concert' || formData.type === 'stage') ? formData.horaireCovoiturage || '' : '',
-        niveauRequis: formData.type === 'concert' ? formData.niveauRequis || 'tous' : 'tous',
+        horairesPassages: formData.type === 'prestation' ? formData.horairesPassages || '' : '',
+        horaireCovoiturage: (formData.type === 'prestation' || formData.type === 'stage' || formData.type === 'atelier') ? formData.horaireCovoiturage || '' : '',
+        niveauRequis: formData.type === 'prestation' ? formData.niveauRequis || 'tous' : 'tous',
+        niveauDanseRequis: (formData.type === 'prestation' || formData.type === 'stage' || formData.type === 'repetition' || formData.type === 'atelier') ? formData.niveauDanseRequis || 'aucun' : 'aucun',
         lienDocument: formData.type === 'reunion' ? formData.lienDocument || '' : '',
-        distanceAllerRetourKm: (formData.type === 'concert' || formData.type === 'stage') ? (parseFloat(formData.distanceAllerRetourKm) || 0) : 0
+        distanceAllerRetourKm: (formData.type === 'prestation' || formData.type === 'stage' || formData.type === 'atelier') ? (parseFloat(formData.distanceAllerRetourKm) || 0) : 0
       });
       setIsAdding(false);
     } catch (error) {
@@ -138,10 +176,11 @@ export default function WidgetAgenda({ role, isSystemAdmin, groupId, user, profi
   };
 
   const variants = {
-    concert: 'ocre',
+    prestation: 'ocre',
     repetition: 'vert',
     stage: 'bleu',
-    reunion: 'kraft'
+    reunion: 'kraft',
+    atelier: 'jaune'
   };
 
   // Find the currently selected event inside the synchronized events state 
@@ -245,7 +284,7 @@ export default function WidgetAgenda({ role, isSystemAdmin, groupId, user, profi
             {/* Type Dropdown */}
             <div className="flex flex-col gap-1">
               <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                Type
+                {t('widgetAgenda.typeLabel') || "Type"}
               </label>
               <select
                 name="type"
@@ -255,17 +294,18 @@ export default function WidgetAgenda({ role, isSystemAdmin, groupId, user, profi
                 disabled={saving}
                 className="theme-input w-full disabled:opacity-50"
               >
-                <option value="concert">Concert (Ocre)</option>
-                <option value="repetition">Répétition (Vert)</option>
-                <option value="stage">Stage (Bleu)</option>
-                <option value="reunion">Réunion (Kraft)</option>
+                <option value="prestation">{t('widgetAgenda.typePrestation') || "Prestation (Ocre)"}</option>
+                <option value="repetition">{t('widgetAgenda.typeRepetition') || "Répétition (Vert)"}</option>
+                <option value="stage">{t('widgetAgenda.typeStage') || "Stage (Bleu)"}</option>
+                <option value="atelier">{t('widgetAgenda.typeAtelier') || "Atelier (Jaune)"}</option>
+                <option value="reunion">{t('widgetAgenda.typeReunion') || "Réunion (Kraft)"}</option>
               </select>
             </div>
 
              {/* Date Picker */}
             <div className="flex flex-col gap-1">
               <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                Date et heure
+                Date et heure de début
               </label>
               <input
                 type="datetime-local"
@@ -278,13 +318,27 @@ export default function WidgetAgenda({ role, isSystemAdmin, groupId, user, profi
               />
             </div>
 
+            {/* Date Fin Picker (optionnel) */}
+            <div className="flex flex-col gap-1">
+              <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                Date et heure de fin (optionnel)
+              </label>
+              <input
+                type="datetime-local"
+                name="dateFin"
+                value={formData.dateFin}
+                onChange={handleChange}
+                disabled={saving}
+                className="theme-input w-full disabled:opacity-50"
+              />
+            </div>
+
             {/* Lieu (Tous) */}
             <div className="flex flex-col gap-1">
               <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
                 Lieu
               </label>
-              <input
-                type="text"
+              <PlacesAutocomplete
                 name="lieu"
                 value={formData.lieu}
                 onChange={handleChange}
@@ -295,11 +349,11 @@ export default function WidgetAgenda({ role, isSystemAdmin, groupId, user, profi
               />
             </div>
 
-            {/* Distance A/R (Concert & Stage) */}
-            {(formData.type === 'concert' || formData.type === 'stage') && (
+            {/* Distance A/R (Prestation, Stage & Atelier) */}
+            {(formData.type === 'prestation' || formData.type === 'stage' || formData.type === 'atelier') && (
               <div className="flex flex-col gap-1">
                 <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                  Distance Aller-Retour (Km)
+                  {t('widgetAgenda.distanceLabel') || "Distance Aller-Retour en Km (Covoiturage)"}
                 </label>
                 <input
                   type="number"
@@ -314,12 +368,12 @@ export default function WidgetAgenda({ role, isSystemAdmin, groupId, user, profi
               </div>
             )}
 
-            {/* Concert specific fields */}
-            {formData.type === 'concert' && (
+            {/* Prestation specific fields */}
+            {formData.type === 'prestation' && (
               <>
                 <div className="flex flex-col gap-1">
                   <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                    Horaires des sets / passages
+                    {t('widgetAgenda.passagesLabel') || "Horaires des passages (Optionnel)"}
                   </label>
                   <input
                     type="text"
@@ -334,7 +388,7 @@ export default function WidgetAgenda({ role, isSystemAdmin, groupId, user, profi
 
                 <div className="flex flex-col gap-1">
                   <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                    Horaire de convoi (Départ local)
+                    {t('widgetAgenda.carpoolingLabel') || "Horaire Covoiturage (Optionnel)"}
                   </label>
                   <input
                     type="time"
@@ -348,7 +402,7 @@ export default function WidgetAgenda({ role, isSystemAdmin, groupId, user, profi
 
                 <div className="flex flex-col gap-1">
                   <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                    Niveau requis
+                    {t('widgetAgenda.reqLevelLabel') || "Niveau requis (Musique)"}
                   </label>
                   <select
                     name="niveauRequis"
@@ -357,18 +411,18 @@ export default function WidgetAgenda({ role, isSystemAdmin, groupId, user, profi
                     disabled={saving}
                     className="theme-input w-full disabled:opacity-50 font-bold bg-cordel-bg-light"
                   >
-                    <option value="tous">Tous les niveaux (Débutants acceptés)</option>
-                    <option value="confirme">Confirmés uniquement</option>
+                    <option value="tous">{t('widgetAgenda.levelAll') || "Tous les niveaux"}</option>
+                    <option value="confirme">{t('widgetAgenda.levelConfirm') || "Confirmés uniquement"}</option>
                   </select>
                 </div>
               </>
             )}
 
-            {/* Stage specific fields */}
-            {formData.type === 'stage' && (
+            {/* Stage & Atelier specific fields */}
+            {(formData.type === 'stage' || formData.type === 'atelier') && (
               <div className="flex flex-col gap-1">
                 <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                  Horaire de convoi (Départ local)
+                  {t('widgetAgenda.carpoolingLabel') || "Horaire Covoiturage (Optionnel)"}
                 </label>
                 <input
                   type="time"
@@ -378,6 +432,26 @@ export default function WidgetAgenda({ role, isSystemAdmin, groupId, user, profi
                   disabled={saving}
                   className="theme-input w-full disabled:opacity-50"
                 />
+              </div>
+            )}
+
+            {/* Dance Level Selector for Prestation, Stage, Répétition, and Atelier */}
+            {(formData.type === 'prestation' || formData.type === 'stage' || formData.type === 'repetition' || formData.type === 'atelier') && (
+              <div className="flex flex-col gap-1">
+                <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                  {t('widgetAgenda.danceLevelLabel') || "Danse (Niveau requis)"}
+                </label>
+                <select
+                  name="niveauDanseRequis"
+                  value={formData.niveauDanseRequis}
+                  onChange={handleChange}
+                  disabled={saving}
+                  className="theme-input w-full disabled:opacity-50 font-bold bg-cordel-bg-light"
+                >
+                  <option value="aucun">{t('widgetAgenda.danceLevelNone') || "Pas de danse"}</option>
+                  <option value="debutant">{t('widgetAgenda.danceLevelDeb') || "Niveau débutant"}</option>
+                  <option value="confirme">{t('widgetAgenda.danceLevelConfirm') || "Niveau confirmé"}</option>
+                </select>
               </div>
             )}
 
@@ -431,64 +505,100 @@ export default function WidgetAgenda({ role, isSystemAdmin, groupId, user, profi
             <p className="text-xs opacity-75 font-semibold">Aucun événement planifié.</p>
           </CordelCard>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {visibleEvents.map((event) => {
-              const dateObj = new Date(event.date);
-              const day = isNaN(dateObj.getTime()) ? '?' : dateObj.getDate();
-              const month = isNaN(dateObj.getTime()) 
-                ? '???' 
-                : dateObj.toLocaleDateString('fr-FR', { month: 'short' }).toUpperCase().replace('.', '');
-              const time = isNaN(dateObj.getTime())
-                ? '--h--'
-                : dateObj.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {visibleEvents.map((event) => {
+                const dateObj = new Date(event.date);
+                const day = isNaN(dateObj.getTime()) ? '?' : dateObj.getDate();
+                const month = isNaN(dateObj.getTime()) 
+                  ? '???' 
+                  : dateObj.toLocaleDateString('fr-FR', { month: 'short' }).toUpperCase().replace('.', '');
+                const time = isNaN(dateObj.getTime())
+                  ? '--h--'
+                  : dateObj.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
 
-              const variant = variants[event.type] || 'default';
+                const variant = variants[event.type] || 'default';
 
-              return (
-                <div 
-                  key={event.id}
-                  onClick={() => handleSelectEvent(event)}
-                  className={`
-                    relative overflow-hidden
-                    border-2 border-encre-noire
-                    theme-bg-${variant}
-                    shadow-[4px_4px_0px_0px_#181716]
-                    rounded-[8px_12px_9px_11px]
-                    flex items-stretch
-                    min-h-[90px]
-                    cursor-pointer hover:scale-[1.01] active:scale-95 transition-all
-                  `}
-                >
-                  {/* Left Side: Date Block */}
-                  <div className="w-20 shrink-0 flex flex-col justify-center items-center text-center border-r-2 border-dashed border-encre-noire/30 px-2 select-none">
-                    <span className="text-2xl font-black tracking-tighter leading-none">{day}</span>
-                    <span className="text-[10px] font-bold tracking-widest mt-0.5">{month}</span>
-                    <span className="text-[9px] font-semibold opacity-75 mt-1">{time}</span>
-                  </div>
+                return (
+                  <div 
+                    key={event.id}
+                    onClick={() => handleSelectEvent(event)}
+                    className={`
+                      relative overflow-hidden
+                      border-2 border-encre-noire
+                      theme-bg-${variant}
+                      shadow-[4px_4px_0px_0px_#181716]
+                      rounded-[8px_12px_9px_11px]
+                      flex items-stretch
+                      min-h-[90px]
+                      cursor-pointer hover:scale-[1.01] active:scale-95 transition-all
+                    `}
+                  >
+                    {/* Left Side: Date Block */}
+                    <div className="w-20 shrink-0 flex flex-col justify-center items-center text-center border-r-2 border-dashed border-encre-noire/30 px-2 select-none">
+                      <span className="text-2xl font-black tracking-tighter leading-none">{day}</span>
+                      <span className="text-[10px] font-bold tracking-widest mt-0.5">{month}</span>
+                      <span className="text-[9px] font-semibold opacity-75 mt-1">{time}</span>
+                    </div>
 
-                  {/* Right Side: Details */}
-                  <div className="flex-1 p-4 flex flex-col justify-center text-left pl-5">
-                    <h4 className="font-bold text-sm leading-tight mb-0.5">{event.titre}</h4>
-                    <div className="flex justify-between items-center mt-1">
-                      <span className="text-[8px] uppercase tracking-widest font-black opacity-60">
-                        {event.type}
-                      </span>
-                      {/* Subscriptions counter */}
-                      {event.inscriptions && event.inscriptions.length > 0 && (
-                        <span className="text-[8px] font-bold px-1.5 py-0.5 bg-encre-noire text-cordel-bg-light rounded-sm">
-                          {event.inscriptions.filter(i => i.status === 'present').length} présents
+                    {/* Right Side: Details */}
+                    <div className="flex-1 p-4 flex flex-col justify-center text-left pl-5">
+                      <h4 className="font-bold text-sm leading-tight mb-0.5">{event.titre}</h4>
+                      {event.dateFin && (
+                        <span className="text-[9px] font-extrabold text-encre-noire/70 mb-1 leading-none select-none">
+                          Du {new Date(event.date).toLocaleDateString('fr-FR', {day: 'numeric', month: 'short'})} au {new Date(event.dateFin).toLocaleDateString('fr-FR', {day: 'numeric', month: 'short'})}
                         </span>
                       )}
+                      <div className="flex justify-between items-center mt-1.5 border-t border-dashed border-encre-noire/10 pt-1.5 gap-2">
+                        <div className="flex flex-col items-start gap-1">
+                          <span className="text-[8px] uppercase tracking-widest font-black opacity-60">
+                            {event.type}
+                          </span>
+                          {/* Connected User Attendance Badge */}
+                          {(() => {
+                            const userInscription = (event.inscriptions || []).find(ins => ins.userId === user.uid);
+                            const userStatus = userInscription ? userInscription.status : null;
+                            if (userStatus === 'present') {
+                              return <span className="text-[8px] font-black px-1.5 py-0.5 rounded-[4px_6px_3px_5px] uppercase tracking-wider badge-status-present leading-none select-none">Présent</span>;
+                            } else if (userStatus === 'absent') {
+                              return <span className="text-[8px] font-black px-1.5 py-0.5 rounded-[4px_6px_3px_5px] uppercase tracking-wider badge-status-absent leading-none select-none">Absent</span>;
+                            } else if (userStatus === 'confirm') {
+                              return <span className="text-[8px] font-black px-1.5 py-0.5 rounded-[4px_6px_3px_5px] uppercase tracking-wider badge-status-confirm leading-none select-none">À confirmer</span>;
+                            } else {
+                              return <span className="text-[8px] font-bold px-1.5 py-0.5 rounded-[4px_6px_3px_5px] uppercase tracking-wider badge-status-pending leading-none select-none">En attente</span>;
+                            }
+                          })()}
+                        </div>
+                        
+                        {/* Subscriptions counter */}
+                        {event.inscriptions && event.inscriptions.length > 0 && (
+                          <span className="text-[8px] font-bold px-1.5 py-0.5 bg-encre-noire text-cordel-bg-light rounded-sm self-end shrink-0">
+                            {event.inscriptions.filter(i => i.status === 'present').length} présents
+                          </span>
+                        )}
+                      </div>
                     </div>
-                  </div>
 
-                  {/* Ticket Circular Cut-out notches (blends dynamically with theme background using var(--cordel-bg)) */}
-                  <div className="absolute -left-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-[var(--cordel-bg)] border-r-2 border-encre-noire"></div>
-                  <div className="absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-[var(--cordel-bg)] border-l-2 border-encre-noire"></div>
-                </div>
-              );
-            })}
-          </div>
+                    {/* Ticket Circular Cut-out notches (blends dynamically with theme background using var(--cordel-bg)) */}
+                    <div className="absolute -left-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-[var(--cordel-bg)] border-r-2 border-encre-noire"></div>
+                    <div className="absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-[var(--cordel-bg)] border-l-2 border-encre-noire"></div>
+                  </div>
+                );
+              })}
+            </div>
+            
+            {upcomingEvents.length > limit && (
+              <div className="flex justify-center mt-3">
+                <CordelButton 
+                  variant="default"
+                  onClick={() => setShowAll(!showAll)}
+                  className="text-[10px] px-3 py-1.5 uppercase tracking-widest font-black"
+                >
+                  {showAll ? "Voir moins" : "Voir tous les événements"}
+                </CordelButton>
+              </div>
+            )}
+          </>
         )
       )}
     </div>

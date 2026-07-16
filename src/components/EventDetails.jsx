@@ -8,6 +8,8 @@ import ReunionAgendaManager from './ReunionAgendaManager';
 import { useTranslation } from './LanguageContext';
 import { XiloCalendar } from './XiloIcons';
 import XiloAvatar from './XiloAvatar';
+import PlacesAutocomplete from './PlacesAutocomplete';
+import { calculateRoadDistance } from '../utils/googleMaps';
 
 export default function EventDetails({ event, user, profileData, onClose, onPrev, onNext }) {
   const { t } = useTranslation();
@@ -34,10 +36,12 @@ export default function EventDetails({ event, user, profileData, onClose, onPrev
     setEditForm({
       titre: event.titre || '',
       date: event.date || '',
+      dateFin: event.dateFin || '',
       lieu: event.lieu || '',
       horairesPassages: event.horairesPassages || '',
       horaireCovoiturage: event.horaireCovoiturage || '',
       niveauRequis: event.niveauRequis || 'tous',
+      niveauDanseRequis: event.niveauDanseRequis || 'aucun',
       lienDocument: event.lienDocument || '',
       distanceAllerRetourKm: event.distanceAllerRetourKm || ''
     });
@@ -60,7 +64,8 @@ export default function EventDetails({ event, user, profileData, onClose, onPrev
     if (event.lieu) detailsText += `\n📍 Lieu : ${event.lieu}`;
     if (event.horairesPassages) detailsText += `\n⏱️ Horaires de passage : ${event.horairesPassages}`;
     if (event.horaireCovoiturage) detailsText += `\n🚗 Covoiturage : ${event.horaireCovoiturage}`;
-    if (event.niveauRequis) detailsText += `\n🎯 Niveau requis : ${event.niveauRequis === 'confirme' ? 'Confirmés' : 'Tous'}`;
+    if (event.niveauRequis) detailsText += `\n🎯 Niveau requis (Musique) : ${event.niveauRequis === 'confirme' ? 'Confirmés' : 'Tous'}`;
+    if (event.niveauDanseRequis && event.niveauDanseRequis !== 'aucun') detailsText += `\n💃 Danse (Niveau requis) : ${event.niveauDanseRequis === 'confirme' ? 'Confirmés' : 'Débutants'}`;
     if (event.lienDocument) detailsText += `\n📄 Document / Ordre du jour : ${event.lienDocument}`;
     return detailsText;
   };
@@ -140,6 +145,7 @@ export default function EventDetails({ event, user, profileData, onClose, onPrev
   
   const [allUsers, setAllUsers] = useState([]);
   const [isEditingEvent, setIsEditingEvent] = useState(false);
+  const [toastMessage, setToastMessage] = useState(null);
   const [editForm, setEditForm] = useState({
     titre: event.titre || '',
     date: event.date || '',
@@ -147,11 +153,13 @@ export default function EventDetails({ event, user, profileData, onClose, onPrev
     horairesPassages: event.horairesPassages || '',
     horaireCovoiturage: event.horaireCovoiturage || '',
     niveauRequis: event.niveauRequis || 'tous',
+    niveauDanseRequis: event.niveauDanseRequis || 'aucun',
     lienDocument: event.lienDocument || '',
     distanceAllerRetourKm: event.distanceAllerRetourKm || ''
   });
   const [savingEvent, setSavingEvent] = useState(false);
   const [indemniteKilometrique, setIndemniteKilometrique] = useState(0);
+  const [adresseLocal, setAdresseLocal] = useState('');
   const [instrumentsDisponibles, setInstrumentsDisponibles] = useState(["Alfaia Marcante", "Alfaia Meião", "Alfaia Repique", "Caixa", "Tarol", "Gonguê", "Agbê", "Mineiro", "Timbal", "Chant", "Danse"]);
   const [linkedInstruments, setLinkedInstruments] = useState([]);
 
@@ -162,6 +170,7 @@ export default function EventDetails({ event, user, profileData, onClose, onPrev
       if (docSnap.exists()) {
         const data = docSnap.data();
         setIndemniteKilometrique(data.indemniteKilometrique || 0);
+        setAdresseLocal(data.adresseLocal || '');
         setAssocSequenceurUrl(data.sequenceurUrl || '');
         if (Array.isArray(data.instrumentsDisponibles)) {
           setInstrumentsDisponibles(data.instrumentsDisponibles);
@@ -188,7 +197,7 @@ export default function EventDetails({ event, user, profileData, onClose, onPrev
     return () => unsubscribe();
   }, [event.groupId]);
 
-  const isConcertRestricted = event.type === 'concert' && event.niveauRequis === 'confirme' && profileData?.niveau === 'debutant';
+  const isPrestationRestricted = event.type === 'prestation' && event.niveauRequis === 'confirme' && profileData?.niveau === 'debutant';
 
   // Sync users list to fetch instruments and names in real-time
   useEffect(() => {
@@ -204,12 +213,12 @@ export default function EventDetails({ event, user, profileData, onClose, onPrev
     return () => unsubscribe();
   }, [event.groupId]);
 
-  // Enforce absent status if concert is restricted for beginners
+  // Enforce absent status if prestation is restricted for beginners
   useEffect(() => {
-    if (isConcertRestricted && status !== 'absent') {
+    if (isPrestationRestricted && status !== 'absent') {
       setStatus('absent');
     }
-  }, [isConcertRestricted]);
+  }, [isPrestationRestricted]);
 
   const isAuthorized = profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.isSystemAdmin === true;
 
@@ -615,8 +624,8 @@ export default function EventDetails({ event, user, profileData, onClose, onPrev
     e.preventDefault();
     setSaving(true);
 
-    if (isConcertRestricted && status !== 'absent') {
-      alert("Ce concert est réservé aux musiciens confirmés.");
+    if (isPrestationRestricted && status !== 'absent') {
+      alert("Cette prestation est réservée aux musiciens confirmés.");
       return;
     }
 
@@ -646,7 +655,10 @@ export default function EventDetails({ event, user, profileData, onClose, onPrev
       });
 
       console.log("EventDetails - Inscription RSVP enregistrée avec succès !");
-      onClose();
+      setToastMessage("Inscription validée");
+      setTimeout(() => {
+        setToastMessage(null);
+      }, 3000);
     } catch (error) {
       console.error("EventDetails - Erreur lors de la sauvegarde RSVP :", error);
       alert("Erreur lors de l'enregistrement de votre inscription.");
@@ -664,12 +676,14 @@ export default function EventDetails({ event, user, profileData, onClose, onPrev
       await updateDoc(eventRef, {
         titre: editForm.titre,
         date: editForm.date,
+        dateFin: editForm.dateFin || '',
         lieu: editForm.lieu || '',
         horairesPassages: editForm.horairesPassages || '',
         horaireCovoiturage: editForm.horaireCovoiturage || '',
         niveauRequis: editForm.niveauRequis || 'tous',
+        niveauDanseRequis: (event.type === 'prestation' || event.type === 'stage' || event.type === 'repetition' || event.type === 'atelier') ? editForm.niveauDanseRequis || 'aucun' : 'aucun',
         lienDocument: editForm.lienDocument || '',
-        distanceAllerRetourKm: (event.type === 'concert' || event.type === 'stage') ? (parseFloat(editForm.distanceAllerRetourKm) || 0) : 0
+        distanceAllerRetourKm: (event.type === 'prestation' || event.type === 'stage' || event.type === 'atelier') ? (parseFloat(editForm.distanceAllerRetourKm) || 0) : 0
       });
       setIsEditingEvent(false);
       alert("Événement mis à jour avec succès !");
@@ -760,17 +774,32 @@ export default function EventDetails({ event, user, profileData, onClose, onPrev
     ? ''
     : dateObj.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
 
+  const dateFinObj = event.dateFin ? new Date(event.dateFin) : null;
+  const hasDateFin = dateFinObj && !isNaN(dateFinObj.getTime());
+  const formattedDateFin = hasDateFin
+    ? dateFinObj.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+    : '';
+  const formattedTimeFin = hasDateFin
+    ? dateFinObj.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+    : '';
+
   const typeVariants = {
-    concert: 'ocre',
+    prestation: 'ocre',
     repetition: 'vert',
     stage: 'bleu',
-    reunion: 'kraft'
+    reunion: 'kraft',
+    atelier: 'jaune'
   };
 
   const currentVariant = typeVariants[event.type] || 'default';
 
   return (
-    <div className="flex flex-col gap-4 text-left max-w-3xl mx-auto w-full">
+    <div className="flex flex-col gap-4 text-left max-w-3xl mx-auto w-full relative">
+      {toastMessage && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[9999] bg-[#84967a] text-encre-noire border-2 border-encre-noire px-5 py-3 rounded-[8px_12px_9px_11px] shadow-[4px_4px_0px_0px_#181716] font-bold text-xs uppercase tracking-wider animate-bounce select-none">
+          {toastMessage}
+        </div>
+      )}
       {/* Header with back button, modifier button & navigation arrows */}
       <div className="flex justify-between items-center border-b-2 border-dashed border-cordel-master-dark/30 pb-2 select-none gap-2">
         <div className="flex items-center gap-1.5">
@@ -847,7 +876,7 @@ export default function EventDetails({ event, user, profileData, onClose, onPrev
               {/* Date */}
               <div className="flex flex-col gap-1">
                 <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                  Date et heure
+                  Date et heure de début
                 </label>
                 <input
                   type="datetime-local"
@@ -859,26 +888,52 @@ export default function EventDetails({ event, user, profileData, onClose, onPrev
                 />
               </div>
 
+              {/* Date Fin (optionnel) */}
+              <div className="flex flex-col gap-1">
+                <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                  Date et heure de fin (optionnel)
+                </label>
+                <input
+                  type="datetime-local"
+                  value={editForm.dateFin || ''}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, dateFin: e.target.value }))}
+                  disabled={savingEvent}
+                  className="theme-input w-full disabled:opacity-50"
+                />
+              </div>
+
               {/* Lieu */}
               <div className="flex flex-col gap-1">
                 <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
                   Lieu
                 </label>
-                <input
-                  type="text"
+                <PlacesAutocomplete
+                  name="lieu"
                   value={editForm.lieu}
-                  onChange={(e) => setEditForm(prev => ({ ...prev, lieu: e.target.value }))}
+                  onChange={async (e) => {
+                    const newLieu = e.target.value;
+                    setEditForm(prev => ({ ...prev, lieu: newLieu }));
+                    if (adresseLocal && newLieu) {
+                      try {
+                        const distanceKm = await calculateRoadDistance(adresseLocal, newLieu);
+                        const distanceRoundTrip = Math.round(distanceKm * 2 * 100) / 100;
+                        setEditForm(prev => ({ ...prev, distanceAllerRetourKm: distanceRoundTrip.toString() }));
+                      } catch (err) {
+                        console.error("Distance Matrix calculation failed on edit:", err);
+                      }
+                    }
+                  }}
                   required
                   disabled={savingEvent}
                   className="theme-input w-full disabled:opacity-50"
                 />
               </div>
 
-              {/* Distance A/R (Concert & Stage) */}
-              {(event.type === 'concert' || event.type === 'stage') && (
+              {/* Distance A/R (Prestation, Stage & Atelier) */}
+              {(event.type === 'prestation' || event.type === 'stage' || event.type === 'atelier') && (
                 <div className="flex flex-col gap-1">
                   <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                    Distance Aller-Retour (Km)
+                    {t('widgetAgenda.distanceLabel') || "Distance Aller-Retour (Km)"}
                   </label>
                   <input
                     type="number"
@@ -891,12 +946,12 @@ export default function EventDetails({ event, user, profileData, onClose, onPrev
                 </div>
               )}
 
-              {/* Concert specific fields */}
-              {event.type === 'concert' && (
+              {/* Prestation specific fields */}
+              {event.type === 'prestation' && (
                 <>
                   <div className="flex flex-col gap-1">
                     <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                      Horaires des sets / passages
+                      {t('widgetAgenda.passagesLabel') || "Horaires des passages (Optionnel)"}
                     </label>
                     <input
                       type="text"
@@ -909,7 +964,7 @@ export default function EventDetails({ event, user, profileData, onClose, onPrev
 
                   <div className="flex flex-col gap-1">
                     <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                      Horaire de convoi (Départ local)
+                      {t('widgetAgenda.carpoolingLabel') || "Horaire Covoiturage (Optionnel)"}
                     </label>
                     <input
                       type="time"
@@ -922,7 +977,7 @@ export default function EventDetails({ event, user, profileData, onClose, onPrev
 
                   <div className="flex flex-col gap-1">
                     <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                      Niveau requis
+                      {t('widgetAgenda.reqLevelLabel') || "Niveau requis (Musique)"}
                     </label>
                     <select
                       value={editForm.niveauRequis}
@@ -930,18 +985,18 @@ export default function EventDetails({ event, user, profileData, onClose, onPrev
                       disabled={savingEvent}
                       className="theme-input w-full disabled:opacity-50 font-bold bg-cordel-bg-light"
                     >
-                      <option value="tous">Tous les niveaux (Débutants acceptés)</option>
-                      <option value="confirme">Confirmés uniquement</option>
+                      <option value="tous">{t('widgetAgenda.levelAll') || "Tous les niveaux"}</option>
+                      <option value="confirme">{t('widgetAgenda.levelConfirm') || "Confirmés uniquement"}</option>
                     </select>
                   </div>
                 </>
               )}
 
-              {/* Stage specific fields */}
-              {event.type === 'stage' && (
+              {/* Stage & Atelier specific fields */}
+              {(event.type === 'stage' || event.type === 'atelier') && (
                 <div className="flex flex-col gap-1">
                   <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                    Horaire de convoi (Départ local)
+                    {t('widgetAgenda.carpoolingLabel') || "Horaire Covoiturage (Optionnel)"}
                   </label>
                   <input
                     type="time"
@@ -950,6 +1005,25 @@ export default function EventDetails({ event, user, profileData, onClose, onPrev
                     disabled={savingEvent}
                     className="theme-input w-full disabled:opacity-50"
                   />
+                </div>
+              )}
+
+              {/* Dance Level Selector for Prestation, Stage, Répétition, and Atelier */}
+              {(event.type === 'prestation' || event.type === 'stage' || event.type === 'repetition' || event.type === 'atelier') && (
+                <div className="flex flex-col gap-1">
+                  <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                    {t('widgetAgenda.danceLevelLabel') || "Danse (Niveau requis)"}
+                  </label>
+                  <select
+                    value={editForm.niveauDanseRequis}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, niveauDanseRequis: e.target.value }))}
+                    disabled={savingEvent}
+                    className="theme-input w-full disabled:opacity-50 font-bold bg-cordel-bg-light"
+                  >
+                    <option value="aucun">{t('widgetAgenda.danceLevelNone') || "Pas de danse"}</option>
+                    <option value="debutant">{t('widgetAgenda.danceLevelDeb') || "Niveau débutant"}</option>
+                    <option value="confirme">{t('widgetAgenda.danceLevelConfirm') || "Niveau confirmé"}</option>
+                  </select>
                 </div>
               )}
 
@@ -991,7 +1065,11 @@ export default function EventDetails({ event, user, profileData, onClose, onPrev
         </span>
         <h3 className="font-bold text-lg leading-tight mt-0.5 mb-2">{event.titre}</h3>
         <p className="text-xs font-semibold leading-relaxed">
-          📅 {formattedDate} {formattedTime ? `à ${formattedTime}` : ''}
+          {hasDateFin ? (
+            <span>📅 Du {formattedDate} {formattedTime ? `à ${formattedTime}` : ''} au {formattedDateFin} {formattedTimeFin ? `à ${formattedTimeFin}` : ''}</span>
+          ) : (
+            <span>📅 {formattedDate} {formattedTime ? `à ${formattedTime}` : ''}</span>
+          )}
         </p>
 
         {/* New fields display */}
@@ -999,14 +1077,21 @@ export default function EventDetails({ event, user, profileData, onClose, onPrev
           {event.lieu && (
             <span>📍 <strong>Lieu :</strong> {event.lieu}</span>
           )}
-          {event.type === 'concert' && event.horairesPassages && (
+          {event.type === 'prestation' && event.horairesPassages && (
             <span>⏱️ <strong>Horaires de passage :</strong> {event.horairesPassages}</span>
           )}
-          {(event.type === 'concert' || event.type === 'stage') && event.horaireCovoiturage && (
+          {(event.type === 'prestation' || event.type === 'stage' || event.type === 'atelier') && event.horaireCovoiturage && (
             <span>🚗 <strong>Horaire de convoi :</strong> {event.horaireCovoiturage}</span>
           )}
-          {event.type === 'concert' && (
-            <span>🎯 <strong>Niveau requis :</strong> {event.niveauRequis === 'confirme' ? '🏆 Confirmés uniquement' : '👥 Tous les niveaux'}</span>
+          {event.type === 'prestation' && (
+            <span>🎯 <strong>Niveau requis (Musique) :</strong> {event.niveauRequis === 'confirme' ? t('widgetAgenda.levelConfirm') || '🏆 Confirmés uniquement' : t('widgetAgenda.levelAll') || '👥 Tous les niveaux'}</span>
+          )}
+          {(event.type === 'prestation' || event.type === 'stage' || event.type === 'repetition' || event.type === 'atelier') && (
+            <span>💃 <strong>Danse (Niveau requis) :</strong> {
+              event.niveauDanseRequis === 'debutant' ? `🌱 ${t('widgetAgenda.danceLevelDeb') || 'Niveau débutant'}` :
+              event.niveauDanseRequis === 'confirme' ? `🏆 ${t('widgetAgenda.danceLevelConfirm') || 'Niveau confirmé'}` :
+              `❌ ${t('widgetAgenda.danceLevelNone') || 'Pas de danse'}`
+            }</span>
           )}
           {event.type === 'reunion' && event.lienDocument && (
             <span className="truncate">
@@ -1039,14 +1124,14 @@ export default function EventDetails({ event, user, profileData, onClose, onPrev
           <div className="grid grid-cols-3 gap-2">
             <button
               type="button"
-              disabled={saving || isConcertRestricted}
+              disabled={saving || isPrestationRestricted}
               onClick={() => handleStatusChange('present')}
               className={`
                 theme-btn px-2 py-2 text-xs rounded-[4px_6px_3px_5px] transition-colors cursor-pointer select-none
                 ${status === 'present' 
                   ? 'theme-bg-vert font-black border-2 border-encre-noire shadow-none translate-x-[1px] translate-y-[1px]' 
                   : 'bg-cordel-bg-light text-encre-noire border-2 border-encre-noire shadow-[2px_2px_0px_0px_#181716] hover:bg-cordel-hover'}
-                ${isConcertRestricted ? 'opacity-40 cursor-not-allowed' : ''}
+                ${isPrestationRestricted ? 'opacity-40 cursor-not-allowed' : ''}
               `}
             >
               Présent
@@ -1068,14 +1153,14 @@ export default function EventDetails({ event, user, profileData, onClose, onPrev
 
             <button
               type="button"
-              disabled={saving || isConcertRestricted}
+              disabled={saving || isPrestationRestricted}
               onClick={() => handleStatusChange('confirm')}
               className={`
                 theme-btn px-2 py-2 text-xs rounded-[4px_6px_3px_5px] transition-colors cursor-pointer select-none
                 ${status === 'confirm' 
                   ? 'theme-bg-ocre font-black border-2 border-encre-noire shadow-none translate-x-[1px] translate-y-[1px]' 
                   : 'bg-cordel-bg-light text-encre-noire border-2 border-encre-noire shadow-[2px_2px_0px_0px_#181716] hover:bg-cordel-hover'}
-                ${isConcertRestricted ? 'opacity-40 cursor-not-allowed' : ''}
+                ${isPrestationRestricted ? 'opacity-40 cursor-not-allowed' : ''}
               `}
             >
               À confirmer
@@ -1083,9 +1168,9 @@ export default function EventDetails({ event, user, profileData, onClose, onPrev
           </div>
 
           {/* Restriction warning message */}
-          {isConcertRestricted && (
+          {isPrestationRestricted && (
             <div className="text-[11px] font-extrabold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/20 p-2.5 rounded border border-dashed border-red-500/30 flex items-center justify-center gap-1.5 mt-1 select-none">
-              🚫 Concert réservé aux musiciens confirmés.
+              🚫 Prestation réservée aux musiciens confirmés.
             </div>
           )}
 
@@ -1281,12 +1366,12 @@ export default function EventDetails({ event, user, profileData, onClose, onPrev
           👥 Tableau de présence / Inscriptions
         </h4>
 
-        {/* Grouped by instrument for concert, repetition, stage */}
-        {(event.type === 'concert' || event.type === 'repetition' || event.type === 'stage') ? (
+        {/* Grouped by instrument for prestation, repetition, stage, atelier */}
+        {(event.type === 'prestation' || event.type === 'repetition' || event.type === 'stage' || event.type === 'atelier') ? (
           Object.keys(presentsByInstrument).length === 0 ? (
             <p className="text-[11px] italic opacity-60">Aucun membre présent pour le moment.</p>
           ) : (
-            <div className="flex flex-col gap-2.5 bg-[#fdfaf2] dark:bg-[#1a1816] p-3.5 rounded border border-dashed border-encre-noire/15 text-left">
+            <div className="flex flex-col gap-2.5 theme-inner-panel p-3.5 rounded text-left">
               {Object.keys(presentsByInstrument).map(inst => {
                 const list = presentsByInstrument[inst];
                 const isLinked = inst.includes(' + ');
@@ -1323,7 +1408,7 @@ export default function EventDetails({ event, user, profileData, onClose, onPrev
             </div>
           )
         ) : (
-          <div className="flex flex-col gap-3.5 bg-[#fdfaf2] dark:bg-[#1a1816] p-3.5 rounded border border-dashed border-encre-noire/15 text-xs text-left">
+          <div className="flex flex-col gap-3.5 theme-inner-panel p-3.5 rounded text-xs text-left">
             <div>
               <strong className="text-green-600 block border-b border-dashed border-green-500/10 pb-0.5 mb-1">
                 ✅ Présents ({(event.inscriptions || []).filter(i => i.status === 'present').length})
@@ -1440,13 +1525,16 @@ export default function EventDetails({ event, user, profileData, onClose, onPrev
         )}
       </CordelCard>
 
-      {/* 🚗 Frais de déplacement (uniquement pour les administrateurs pour concert & stage) */}
-      {isAuthorized && (event.type === 'concert' || event.type === 'stage') && (
+      {/* 🚗 Frais de déplacement (uniquement pour les administrateurs pour prestation, stage & atelier) */}
+      {isAuthorized && (event.type === 'prestation' || event.type === 'stage' || event.type === 'atelier') && (
         <CordelCard variant="default" useExtremeBorder={true} className="py-4 px-5 select-none">
           <h4 className="font-bold text-xs uppercase tracking-wider text-cordel-wood border-b border-dashed border-cordel-master-dark/15 pb-1 mb-3">
             🚗 Frais de déplacement (Admin)
           </h4>
-          <div className="text-xs flex flex-col gap-2.5 text-left bg-[#fdfaf2] dark:bg-[#1a1816] p-3.5 rounded border border-dashed border-encre-noire/15">
+          <div className="text-xs flex flex-col gap-2.5 text-left theme-inner-panel p-3.5 rounded">
+            <div className="border-b border-dashed border-encre-noire/10 pb-2 mb-1 text-[11px] font-bold text-encre-noire/80">
+              ℹ️ Distance estimée : {event.distanceAllerRetourKm || 0} km A/R - Indemnité prévue : {((event.distanceAllerRetourKm || 0) * indemniteKilometrique).toFixed(2)} €
+            </div>
             <div className="flex justify-between font-bold border-b border-dashed border-encre-noire/10 pb-1 mb-1">
               <span>Distance A/R :</span>
               <span>{event.distanceAllerRetourKm || 0} km</span>
@@ -1540,7 +1628,7 @@ export default function EventDetails({ event, user, profileData, onClose, onPrev
             {setlist.map((morceau) => (
               <div 
                 key={morceau.id}
-                className="text-xs p-3 rounded border border-dashed border-encre-noire/15 bg-[#fdfaf2] dark:bg-[#1a1816] flex flex-col gap-1.5"
+                className="text-xs p-3 rounded theme-inner-panel flex flex-col gap-1.5"
               >
                 <div className="flex justify-between items-start">
                   <span className="font-bold text-encre-noire text-sm">{morceau.titre}</span>
@@ -1649,8 +1737,8 @@ export default function EventDetails({ event, user, profileData, onClose, onPrev
         )}
       </CordelCard>
 
-      {/* 🚗 Convoi & Covoiturage (uniquement concert et stage) */}
-      {(event.type === 'concert' || event.type === 'stage') && (
+      {/* 🚗 Convoi & Covoiturage (uniquement prestation, stage et atelier) */}
+      {(event.type === 'prestation' || event.type === 'stage' || event.type === 'atelier') && (
         <CordelCard variant="default" useExtremeBorder={true} className="py-4 px-5">
           <h4 className="font-bold text-xs uppercase tracking-wider text-cordel-wood border-b border-dashed border-cordel-master-dark/15 pb-1 mb-3">
             🚗 Convoi & Covoiturage (Départ du local)
@@ -1700,7 +1788,7 @@ export default function EventDetails({ event, user, profileData, onClose, onPrev
 
                         {/* Passengers listing */}
                         {voiture.passagers.length > 0 && (
-                          <div className="bg-[#fdfaf2] dark:bg-[#1a1816] border border-dashed border-encre-noire/10 rounded p-1.5 mb-3">
+                          <div className="theme-inner-panel rounded p-1.5 mb-3">
                             <span className="text-[9px] uppercase font-bold tracking-widest opacity-60 block mb-0.5">Passagers :</span>
                             <p className="text-[11px] font-bold leading-normal truncate">
                               {voiture.passagers.map(p => p.nom).join(', ')}
@@ -1801,7 +1889,7 @@ export default function EventDetails({ event, user, profileData, onClose, onPrev
                 🚗 Proposer ma voiture pour le trajet
               </button>
             ) : (
-              <form onSubmit={handleProposerVoiture} className="flex flex-col gap-3 bg-[#fdfaf2] dark:bg-[#1a1816] p-4 rounded border border-dashed border-encre-noire/15">
+              <form onSubmit={handleProposerVoiture} className="flex flex-col gap-3 theme-inner-panel p-4 rounded">
                 <h5 className="font-bold text-[10px] uppercase tracking-widest text-cordel-wood">
                   Proposer un véhicule
                 </h5>

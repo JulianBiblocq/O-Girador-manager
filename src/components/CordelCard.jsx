@@ -20,6 +20,7 @@ export default function CordelCard({
     vert: 'theme-bg-vert',
     bleu: 'theme-bg-bleu',
     kraft: 'theme-bg-kraft',
+    jaune: 'theme-bg-jaune',
   };
 
   return (

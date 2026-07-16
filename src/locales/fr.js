@@ -27,7 +27,8 @@ export const fr = {
     location: "Lieu",
     none: "Aucun",
     saveSuccess: "Enregistré avec succès !",
-    saveError: "Erreur lors de l'enregistrement."
+    saveError: "Erreur lors de l'enregistrement.",
+    settings: "Paramètres"
   },
   menu: {
     dashboard: "Accueil",
@@ -205,15 +206,20 @@ export const fr = {
     eventTitleLabel: "Titre de l'événement",
     eventTitlePlaceholder: "Ex : Carnaval ou Répétition",
     typeLabel: "Type",
-    typeConcert: "Concert (Ocre)",
+    typePrestation: "Prestation (Ocre)",
     typeRepetition: "Répétition (Vert)",
     typeStage: "Stage (Bleu)",
     typeReunion: "Réunion (Kraft)",
+    typeAtelier: "Atelier (Jaune)",
     dateTimeLabel: "Date et heure",
     locationLabel: "Lieu",
     passagesLabel: "Horaires des passages (Optionnel)",
     carpoolingLabel: "Horaire Covoiturage (Optionnel)",
-    reqLevelLabel: "Niveau requis",
+    reqLevelLabel: "Niveau requis (Musique)",
+    danceLevelLabel: "Danse (Niveau requis)",
+    danceLevelNone: "Pas de danse",
+    danceLevelDeb: "Niveau débutant",
+    danceLevelConfirm: "Niveau confirmé",
     docLinkLabel: "Lien document / partition (Optionnel)",
     distanceLabel: "Distance Aller-Retour en Km (Covoiturage)",
     levelAll: "Tous les niveaux",
@@ -467,7 +473,8 @@ export const fr = {
     imageRightsBadge: "Droit image",
     medicalAptShort: "Aptitude méd.",
     assignedTags: "Étiquettes attribuées",
-    levelLabel: "Niveau"
+    levelLabel: "Niveau",
+    danceLevel: "Niveau Danse"
   },
   documents: {
     title: "Varal de Documents",

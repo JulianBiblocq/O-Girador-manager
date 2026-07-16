@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@variant dark (&:where(.dark, .dark *));
+
 @font-face {
   font-family: 'Cactus';
   src: url('/fonts/Cactus Regular.otf') format('opentype');
@@ -83,10 +85,11 @@ body {
   --color-cordel-hover: var(--cordel-hover-bg);
 
   /* Agenda Tints */
-  --color-cordel-ocre: #d99f4d;   /* Concerts */
+  --color-cordel-ocre: #d99f4d;   /* Prestations */
   --color-cordel-vert: #84967a;   /* Répétitions */
   --color-cordel-bleu: #758b9c;   /* Stages */
   --color-cordel-kraft: #c2a385;  /* Réunions */
+  --color-cordel-jaune: #e0b443;  /* Ateliers */
 }
 
 /* Brazilian Cordel and Cactus display visual typography (only for strict targets, others fallback to system font) */
@@ -1433,4 +1436,37 @@ body.eco-mode #center-afficheur {
 
 .animate-slide-in {
   animation: slideIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Theme-swappable nested panels / lists (e.g. Tableau de présence, Frais admin) */
+.theme-inner-panel {
+  background-color: #fdfaf2 !important;
+  color: #1a1a1a !important;
+  border: 1px dashed rgba(26, 26, 26, 0.15) !important;
+}
+
+/* Presence status badges for event cards */
+.badge-status-present {
+  background-color: var(--color-cordel-vert, #84967a) !important;
+  color: #1a1a1a !important;
+  border: 1px solid var(--cordel-border, #1a1a1a) !important;
+}
+
+.badge-status-absent {
+  background-color: #8b2a1a !important; /* Theme ocre/red tone */
+  color: #f4ecd8 !important;
+  border: 1px solid var(--cordel-border, #1a1a1a) !important;
+}
+
+.badge-status-confirm {
+  background-color: var(--color-cordel-ocre, #d99f4d) !important;
+  color: #1a1a1a !important;
+  border: 1px solid var(--cordel-border, #1a1a1a) !important;
+}
+
+.badge-status-pending {
+  background-color: transparent !important;
+  color: #1a1a1a !important;
+  opacity: 0.55 !important;
+  border: 1px dashed var(--cordel-border, #1a1a1a) !important;
 }

@@ -27,7 +27,8 @@ export const pt = {
     location: "Local",
     none: "Nenhum",
     saveSuccess: "Salvo com sucesso!",
-    saveError: "Erro ao salvar."
+    saveError: "Erro ao salvar.",
+    settings: "Configurações"
   },
   menu: {
     dashboard: "Início",
@@ -205,15 +206,20 @@ export const pt = {
     eventTitleLabel: "Título do evento",
     eventTitlePlaceholder: "Ex: Apresentação ou Ensaio",
     typeLabel: "Tipo",
-    typeConcert: "Apresentação (Ocre)",
+    typePrestation: "Apresentação (Ocre)",
     typeRepetition: "Ensaio (Verde)",
     typeStage: "Oficina (Azul)",
     typeReunion: "Reunião (Kraft)",
+    typeAtelier: "Ateliê (Amarelo)",
     dateTimeLabel: "Data e hora",
     locationLabel: "Local",
     passagesLabel: "Horários das apresentações (Opcional)",
     carpoolingLabel: "Horário da Carona (Opcional)",
-    reqLevelLabel: "Nível exigido",
+    reqLevelLabel: "Nível exigido (Música)",
+    danceLevelLabel: "Dança (Nível exigido)",
+    danceLevelNone: "Sem dança",
+    danceLevelDeb: "Nível iniciante",
+    danceLevelConfirm: "Nível avançado",
     docLinkLabel: "Link do documento / partitura (Opcional)",
     distanceLabel: "Distância Ida e Volta em Km (Carona)",
     levelAll: "Todos os níveis",
@@ -467,7 +473,8 @@ export const pt = {
     imageRightsBadge: "Direito de imagem",
     medicalAptShort: "Aptidão méd.",
     assignedTags: "Etiquetas atribuídas",
-    levelLabel: "Nível"
+    levelLabel: "Nível",
+    danceLevel: "Nível de Dança"
   },
   documents: {
     title: "Varal de Documentos",

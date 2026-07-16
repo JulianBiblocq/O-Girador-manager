@@ -24,6 +24,7 @@ export default function SystemAdminPanel({ user, profileData, onBack, onNavigate
   const [draftTags, setDraftTags] = useState({}); // { [userId]: [tag1, tag2, ...] }
   const [draftFields, setDraftFields] = useState({}); // { [userId]: { telephone, tshirt, ... } }
   const [draftLevels, setDraftLevels] = useState({}); // { [userId]: 'debutant' | 'confirme' }
+  const [draftDanceLevels, setDraftDanceLevels] = useState({}); // { [userId]: 'aucun' | 'debutant' | 'confirme' }
   const [fieldsConfig, setFieldsConfig] = useState(null);
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState(null);
@@ -106,6 +107,10 @@ export default function SystemAdminPanel({ user, profileData, onBack, onNavigate
     setDraftLevels((prev) => ({ ...prev, [userId]: value }));
   };
 
+  const handleDanceLevelChange = (userId, value) => {
+    setDraftDanceLevels((prev) => ({ ...prev, [userId]: value }));
+  };
+
   const handleFieldChange = (userId, fieldKey, value) => {
     setDraftFields((prev) => ({
       ...prev,
@@ -133,10 +138,12 @@ export default function SystemAdminPanel({ user, profileData, onBack, onNavigate
     const currentRole = currentUserItem.role || 'membre';
     const currentTags = currentUserItem.tags || [];
     const currentLevel = currentUserItem.niveau || 'debutant';
+    const currentDanceLevel = currentUserItem.niveauDanse || 'aucun';
 
     const newRole = draftRoles[targetUserId] !== undefined ? draftRoles[targetUserId] : currentRole;
     const newTags = draftTags[targetUserId] !== undefined ? draftTags[targetUserId] : (currentTags || []);
     const newLevel = draftLevels[targetUserId] !== undefined ? draftLevels[targetUserId] : currentLevel;
+    const newDanceLevel = draftDanceLevels[targetUserId] !== undefined ? draftDanceLevels[targetUserId] : currentDanceLevel;
 
     const userDraft = draftFields[targetUserId] || {};
     const isEnabled = (key) => fieldsConfig?.[key]?.enabled === true;
@@ -144,7 +151,8 @@ export default function SystemAdminPanel({ user, profileData, onBack, onNavigate
     const updatePayload = {
       role: newRole,
       tags: newTags,
-      niveau: newLevel
+      niveau: newLevel,
+      niveauDanse: newDanceLevel
     };
 
     if (isEnabled('telephone')) {
@@ -183,6 +191,11 @@ export default function SystemAdminPanel({ user, profileData, onBack, onNavigate
         return copy;
       });
       setDraftLevels((prev) => {
+        const copy = { ...prev };
+        delete copy[targetUserId];
+        return copy;
+      });
+      setDraftDanceLevels((prev) => {
         const copy = { ...prev };
         delete copy[targetUserId];
         return copy;
@@ -284,15 +297,18 @@ export default function SystemAdminPanel({ user, profileData, onBack, onNavigate
               const currentRole = userItem.role || 'membre';
               const currentTags = userItem.tags || [];
               const currentLevel = userItem.niveau || 'debutant';
+              const currentDanceLevel = userItem.niveauDanse || 'aucun';
               
               const draftRole = draftRoles[userItem.id];
               const draftTag = draftTags[userItem.id];
               const draftLevel = draftLevels[userItem.id];
+              const draftDanceLevel = draftDanceLevels[userItem.id];
               const userDraft = draftFields[userItem.id] || {};
               
               const activeRole = draftRole !== undefined ? draftRole : currentRole;
               const activeTags = draftTag !== undefined ? draftTag : currentTags;
               const activeLevel = draftLevel !== undefined ? draftLevel : currentLevel;
+              const activeDanceLevel = draftDanceLevel !== undefined ? draftDanceLevel : currentDanceLevel;
 
               // Check modifications for Role and Tags to toggle Save button
               const isRoleModified = draftRole !== undefined && draftRole !== currentRole;
@@ -300,6 +316,7 @@ export default function SystemAdminPanel({ user, profileData, onBack, onNavigate
               const sortedActiveTags = [...activeTags].sort();
               const isTagsModified = JSON.stringify(sortedCurrentTags) !== JSON.stringify(sortedActiveTags);
               const isLevelModified = draftLevel !== undefined && draftLevel !== currentLevel;
+              const isDanceLevelModified = draftDanceLevel !== undefined && draftDanceLevel !== currentDanceLevel;
               
               const isFieldModified = (key, currentVal) => {
                 return userDraft[key] !== undefined && userDraft[key] !== currentVal;
@@ -312,7 +329,7 @@ export default function SystemAdminPanel({ user, profileData, onBack, onNavigate
                 isFieldModified('lateralite', userItem.lateralite) ||
                 isFieldModified('dateNaissance', userItem.dateNaissance);
 
-              const isModified = isRoleModified || isTagsModified || isAnyFieldModified || isLevelModified;
+              const isModified = isRoleModified || isTagsModified || isAnyFieldModified || isLevelModified || isDanceLevelModified;
 
               return (
                 <CordelCard key={userItem.id} variant="default" useExtremeBorder={false} className="py-4 relative pr-4">
@@ -351,15 +368,38 @@ export default function SystemAdminPanel({ user, profileData, onBack, onNavigate
                       <p className="text-[9px] font-bold text-cordel-wood mt-0.5 flex flex-wrap gap-x-2">
                         <span>📦 Groupe : <span className="font-mono">{userItem.groupId || 'Aucun'}</span></span>
                         <span>•</span>
-                        <span>🏆 Niveau : <strong className="uppercase">{userItem.niveau === 'confirme' ? 'Confirmé' : 'Débutant'}</strong></span>
+                        <span>🏆 Percu : <strong className="uppercase">{userItem.niveau === 'confirme' ? 'Confirmé' : 'Débutant'}</strong></span>
+                        <span>•</span>
+                        <span>💃 Danse : <strong className="uppercase">{userItem.niveauDanse === 'confirme' ? 'Confirmé' : userItem.niveauDanse === 'debutant' ? 'Débutant' : 'Aucun'}</strong></span>
                       </p>
+
+                      {/* Display member instruments */}
+                      {(() => {
+                        const userInstruments = userItem.instrumentsJoues && userItem.instrumentsJoues.length > 0
+                          ? userItem.instrumentsJoues
+                          : [userItem.instrument].filter(Boolean);
+                        
+                        if (userInstruments.length === 0) return null;
+                        return (
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {userInstruments.map((inst) => (
+                              <span 
+                                key={inst} 
+                                className="inline-block text-[8px] font-black uppercase tracking-wider bg-cordel-bg-light border border-encre-noire/30 px-1.5 py-0.5 rounded-[3px]"
+                              >
+                                🎵 {inst}
+                              </span>
+                            ))}
+                          </div>
+                        );
+                      })()}
                     </div>
 
                     {/* Role Control Panel */}
-                    <div className="flex items-center gap-3 border-t border-dashed border-cordel-master-dark/15 pt-3 mt-1">
-                      <div className="flex flex-col gap-1 flex-1">
+                    <div className="flex flex-wrap items-center gap-3 border-t border-dashed border-cordel-master-dark/15 pt-3 mt-1">
+                      <div className="flex flex-col gap-1 flex-1 min-w-[90px]">
                         <label className="text-[8px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                          Rôle de l'utilisateur
+                          {t('systemAdmin.roleLabel') || "Rôle"}
                         </label>
                         <select
                           value={activeRole}
@@ -373,9 +413,9 @@ export default function SystemAdminPanel({ user, profileData, onBack, onNavigate
                         </select>
                       </div>
 
-                      <div className="flex flex-col gap-1 flex-1">
+                      <div className="flex flex-col gap-1 flex-1 min-w-[90px]">
                         <label className="text-[8px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                          Niveau Musique
+                          {t('systemAdmin.musicLevel') || "Niveau Musique"}
                         </label>
                         <select
                           value={activeLevel}
@@ -383,6 +423,22 @@ export default function SystemAdminPanel({ user, profileData, onBack, onNavigate
                           disabled={savingId === userItem.id}
                           className="theme-input text-xs font-bold py-1.5 px-2 bg-cordel-bg-light"
                         >
+                          <option value="debutant">Débutant</option>
+                          <option value="confirme">Confirmé</option>
+                        </select>
+                      </div>
+
+                      <div className="flex flex-col gap-1 flex-1 min-w-[90px]">
+                        <label className="text-[8px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                          {t('systemAdmin.danceLevel') || "Niveau Danse"}
+                        </label>
+                        <select
+                          value={activeDanceLevel}
+                          onChange={(e) => handleDanceLevelChange(userItem.id, e.target.value)}
+                          disabled={savingId === userItem.id}
+                          className="theme-input text-xs font-bold py-1.5 px-2 bg-cordel-bg-light"
+                        >
+                          <option value="aucun">Aucun</option>
                           <option value="debutant">Débutant</option>
                           <option value="confirme">Confirmé</option>
                         </select>

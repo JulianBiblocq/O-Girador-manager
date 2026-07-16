@@ -7,6 +7,7 @@ import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
 import { useTranslation } from './LanguageContext';
 import { XiloSettings } from './XiloIcons';
+import PlacesAutocomplete from './PlacesAutocomplete';
 
 export const DEFAULT_FIELDS_CONFIG = {
   telephone: { key: "telephone", label: "Téléphone", enabled: true, filledBy: "member" },
@@ -55,6 +56,7 @@ export default function AssociationSettings({ groupId, onBack, role, isSystemAdm
   const [aptitudeMedicaleFile, setAptitudeMedicaleFile] = useState(null);
   const [majoriteFeminine, setMajoriteFeminine] = useState(false);
   const [indemniteKilometrique, setIndemniteKilometrique] = useState(0);
+  const [adresseLocal, setAdresseLocal] = useState('');
   const [montantCotisation, setMontantCotisation] = useState(0);
   const [montantAdhesion, setMontantAdhesion] = useState(0);
   const [optionsCotisation, setOptionsCotisation] = useState([]);
@@ -132,6 +134,7 @@ export default function AssociationSettings({ groupId, onBack, role, isSystemAdm
         setAptitudeMedicaleDocUrl(data.aptitudeMedicaleDocUrl || '');
         setMajoriteFeminine(data.majoriteFeminine || false);
         setIndemniteKilometrique(data.indemniteKilometrique || 0);
+        setAdresseLocal(data.adresseLocal || '');
         
         const adhesionVal = data.montantAdhesion !== undefined ? data.montantAdhesion : (data.montantCotisation || 0);
         setMontantAdhesion(adhesionVal);
@@ -291,6 +294,7 @@ export default function AssociationSettings({ groupId, onBack, role, isSystemAdm
         aptitudeMedicaleDocUrl: finalAptitudeMedicaleDocUrl,
         majoriteFeminine: majoriteFeminine,
         indemniteKilometrique: indemniteKilometrique,
+        adresseLocal: adresseLocal,
         montantCotisation: montantAdhesion,
         montantAdhesion: montantAdhesion,
         optionsCotisation: optionsCotisation,
@@ -892,24 +896,39 @@ export default function AssociationSettings({ groupId, onBack, role, isSystemAdm
               </div>
             </CordelCard>
 
-            {/* Indemnité Kilométrique */}
+            {/* Indemnité Kilométrique & Point de Départ */}
             <CordelCard variant="default" useExtremeBorder={true} className="py-4 px-5">
               <h3 className="text-xs uppercase font-extrabold tracking-wider text-cordel-wood mb-3">
-                🚗 Indemnité Kilométrique
+                🚗 Indemnité Kilométrique & Point de Départ
               </h3>
-              <div className="flex flex-col gap-1 text-left">
-                <label className="text-[9px] uppercase font-extrabold tracking-wider text-cordel-master-dark">
-                  Tarif de remboursement par kilomètre (€/km)
-                </label>
-                <input 
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={indemniteKilometrique}
-                  onChange={(e) => setIndemniteKilometrique(parseFloat(e.target.value) || 0)}
-                  placeholder="ex: 0.40"
-                  className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light w-full"
-                />
+              <div className="flex flex-col gap-3">
+                <div className="flex flex-col gap-1 text-left">
+                  <label className="text-[9px] uppercase font-extrabold tracking-wider text-cordel-master-dark">
+                    Tarif de remboursement par kilomètre (€/km)
+                  </label>
+                  <input 
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={indemniteKilometrique}
+                    onChange={(e) => setIndemniteKilometrique(parseFloat(e.target.value) || 0)}
+                    placeholder="ex: 0.40"
+                    className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light w-full"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1 text-left border-t border-dashed border-cordel-master-dark/15 pt-3">
+                  <label className="text-[9px] uppercase font-extrabold tracking-wider text-cordel-master-dark">
+                    Adresse du local / Point de rassemblement par défaut
+                  </label>
+                  <PlacesAutocomplete 
+                    name="adresseLocal"
+                    value={adresseLocal}
+                    onChange={(e) => setAdresseLocal(e.target.value)}
+                    placeholder="ex: 12 Rue du Maracatu, 75000 Paris"
+                    className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light w-full"
+                  />
+                </div>
               </div>
             </CordelCard>
 

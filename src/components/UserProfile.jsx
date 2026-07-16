@@ -6,10 +6,11 @@ import { db, auth, storage } from '../firebase';
 import XiloAvatar from './XiloAvatar';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
-import { XiloSun, XiloMoon, XiloCaixa } from './XiloIcons';
+import { XiloCaixa } from './XiloIcons';
 import { useTerminologie } from '../hooks/useTerminologie';
 import { useTranslation } from './LanguageContext';
 import { forceUpdateAndClearCache } from '../utils/pwaUtils';
+import CordelImageEditor from './CordelImageEditor';
 
 const INSTRUMENT_ICONS = {
   Alfaia: 'icones/alfaia.svg',
@@ -32,7 +33,7 @@ const DEFAULT_FIELDS_CONFIG = {
 };
 
 export default function UserProfile({ user, profileData, onBack }) {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const { tRole } = useTerminologie();
   const [formData, setFormData] = useState({
     prenom: profileData?.prenom || '',
@@ -60,6 +61,10 @@ export default function UserProfile({ user, profileData, onBack }) {
   const [aptitudeMedicaleDocUrl, setAptitudeMedicaleDocUrl] = useState('');
   const [fieldsConfig, setFieldsConfig] = useState(null);
   const [instrumentsDisponibles, setInstrumentsDisponibles] = useState(DEFAULT_INSTRUMENTS);
+
+  // Xylogravure photo editor states
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [showEditor, setShowEditor] = useState(false);
 
   // Sync fieldsConfig for user's association
   useEffect(() => {
@@ -126,78 +131,51 @@ export default function UserProfile({ user, profileData, onBack }) {
     return () => unsubscribe();
   }, [profileData?.groupId, user?.uid]);
 
-  const [darkMode, setDarkMode] = useState(() => {
-    return document.documentElement.classList.contains('dark');
-  });
-
-  const toggleDarkMode = () => {
-    const isDark = document.documentElement.classList.toggle('dark');
-    setDarkMode(isDark);
-    localStorage.setItem('theme', isDark ? 'dark' : 'light');
-  };
-
   const isFieldVisible = (key) => {
     if (!fieldsConfig) return true; // show by default while loading
     const cfg = fieldsConfig[key];
     return cfg ? (cfg.enabled && cfg.filledBy === 'member') : true;
   };
 
-  const handlePhotoUpload = async (e) => {
+  const handlePhotoSelected = (e) => {
     const file = e.target.files?.[0];
-    if (!file || !user?.uid) return;
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      setSelectedImage(event.target.result);
+      setShowEditor(true);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleEditorComplete = async (processedBase64) => {
+    setShowEditor(false);
+    setSelectedImage(null);
+    if (!user?.uid) return;
 
     setUploadingPhoto(true);
 
     try {
-      // 1. Read file as image and compress/resize to 256x256 using Canvas API
-      const compressedBlob = await new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          const img = new Image();
-          img.onload = () => {
-            const canvas = document.createElement('canvas');
-            const maxDim = 256;
-            let width = img.width;
-            let height = img.height;
+      // Helper function to convert base64 to Blob
+      const base64ToBlob = (base64, mimeType = 'image/jpeg') => {
+        const byteString = atob(base64.split(',')[1]);
+        const ab = new ArrayBuffer(byteString.length);
+        const ia = new Uint8Array(ab);
+        for (let i = 0; i < byteString.length; i++) {
+          ia[i] = byteString.charCodeAt(i);
+        }
+        return new Blob([ab], { type: mimeType });
+      };
 
-            if (width > height) {
-              if (width > maxDim) {
-                height = Math.round((height * maxDim) / width);
-                width = maxDim;
-              }
-            } else {
-              if (height > maxDim) {
-                width = Math.round((width * maxDim) / height);
-                height = maxDim;
-              }
-            }
+      const blob = base64ToBlob(processedBase64);
 
-            canvas.width = width;
-            canvas.height = height;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(img, 0, 0, width, height);
-
-            canvas.toBlob((blob) => {
-              if (blob) {
-                resolve(blob);
-              } else {
-                reject(new Error("Canvas toBlob failed"));
-              }
-            }, 'image/jpeg', 0.8);
-          };
-          img.onerror = () => reject(new Error("Image loading failed"));
-          img.src = event.target.result;
-        };
-        reader.onerror = () => reject(new Error("File reading failed"));
-        reader.readAsDataURL(file);
-      });
-
-      // 2. Upload to Firebase Storage
+      // Upload to Firebase Storage
       const storageRef = ref(storage, `avatars/${user.uid}/profile_pic_${Date.now()}.jpg`);
-      const snapshot = await uploadBytes(storageRef, compressedBlob);
+      const snapshot = await uploadBytes(storageRef, blob);
       const downloadURL = await getDownloadURL(snapshot.ref);
 
-      // 3. Save to Firestore users collection
+      // Save to Firestore users collection
       const userRef = doc(db, 'users', user.uid);
       await updateDoc(userRef, {
         photoURL: downloadURL
@@ -277,18 +255,11 @@ export default function UserProfile({ user, profileData, onBack }) {
         <span className="panel-title text-base font-extrabold tracking-wider text-cordel-wood uppercase">
           {t('userProfile.title')}
         </span>
-        <button 
-          type="button"
-          onClick={toggleDarkMode}
-          className="theme-btn px-2.5 py-1 text-xs font-black rounded-[4px_6px_3px_5px] shadow-[1px_1px_0px_0px_rgba(0,0,0,0.15)] cursor-pointer flex items-center justify-center min-w-8 min-h-7"
-          title={darkMode ? "Activer le mode clair" : "Activer le mode sombre"}
-        >
-          {darkMode ? <XiloSun size={14} /> : <XiloMoon size={14} />}
-        </button>
+        <div className="w-12"></div> {/* Spacer for alignment */}
       </div>
 
       {/* Avatar Container in Center */}
-      <div className="flex flex-col items-center gap-3 py-4 select-none">
+      <div className="flex flex-col items-center gap-3 py-4 select-none w-full">
         <div className="relative">
           <XiloAvatar src={profileData?.photoURL || user?.photoURL} name={fullName} size={110} />
           {/* Decorative stamp on avatar */}
@@ -299,21 +270,89 @@ export default function UserProfile({ user, profileData, onBack }) {
             <span className="theme-stamp-badge theme-stamp-badge-ocre text-[7px] -rotate-6">
               {profileData?.niveau === 'confirme' ? '🏆 ' + t('userProfile.levelConfirmSimple') : '🌱 ' + t('userProfile.levelBeginner')}
             </span>
+            <span className="theme-stamp-badge theme-stamp-badge-ocre text-[7px] rotate-3">
+              {profileData?.niveauDanse === 'confirme' ? '💃 ' + t('userProfile.levelConfirmSimple') : profileData?.niveauDanse === 'debutant' ? '🌱 ' + t('userProfile.levelBeginner') : '💃 ' + t('common.none')}
+            </span>
           </div>
         </div>
 
+        {/* User Name & Main Role */}
+        <div className="flex flex-col items-center gap-1 w-full text-center">
+          <h2 className="font-cactus font-black text-2xl uppercase tracking-wider text-encre-noire">
+            {fullName}
+          </h2>
+          <span className="text-xs font-black uppercase tracking-widest text-cordel-wood">
+            {tRole(profileData?.role || 'membre', profileData?.genre)}
+          </span>
+        </div>
+
+        {/* Roles & Instruments Badges (exploit full width) */}
+        <div className="flex flex-wrap gap-2.5 justify-center items-center w-full px-2 max-w-2xl border-b border-dashed border-cordel-master-dark/10 pb-4">
+          {/* Rôles supplémentaires */}
+          {profileData?.tags && profileData.tags.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 justify-center">
+              {profileData.tags.map((tag, idx) => {
+                const rotation = ((tag.charCodeAt(0) + idx) % 5) - 2;
+                return (
+                  <span 
+                    key={`tag-${tag}`} 
+                    className="theme-stamp-badge theme-stamp-badge-wood text-[9px] px-2.5 py-1 bg-white/40"
+                    style={{ transform: `rotate(${rotation}deg)` }}
+                  >
+                    👤 {tag}
+                  </span>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Instruments joués */}
+          {((profileData?.instrumentsJoues && profileData.instrumentsJoues.length > 0) || profileData?.instrument) && (
+            <div className="flex flex-wrap gap-1.5 justify-center">
+              {(profileData.instrumentsJoues && profileData.instrumentsJoues.length > 0 
+                ? profileData.instrumentsJoues 
+                : [profileData.instrument].filter(Boolean)
+              ).map((inst, idx) => {
+                const rotation = ((inst.charCodeAt(0) + idx) % 5) - 2;
+                return (
+                  <span 
+                    key={`inst-${inst}`} 
+                    className="theme-stamp-badge theme-stamp-badge-dark text-[9px] px-2.5 py-1 bg-cordel-bg-light/80 border-dashed"
+                    style={{ transform: `rotate(${rotation}deg)` }}
+                  >
+                    🎵 {inst}
+                  </span>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
         {/* Upload picture button */}
-        <div className="flex flex-col items-center gap-1.5">
-          <label className="text-[10px] font-black uppercase tracking-widest bg-cordel-bg border border-encre-noire px-3 py-1.5 rounded-[4px_6px_3px_5px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-95 cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1">
-            {uploadingPhoto ? "⏳ " + t('userProfile.uploading') : "📸 " + t('userProfile.changePhoto')}
-            <input 
-              type="file" 
-              accept="image/*"
-              disabled={uploadingPhoto || saving}
-              onChange={handlePhotoUpload}
-              className="hidden"
-            />
-          </label>
+        <div className="flex flex-col items-center gap-1.5 mt-1">
+          <div className="flex flex-wrap justify-center gap-2">
+            <label className="text-[10px] font-black uppercase tracking-widest bg-cordel-bg border border-encre-noire px-3 py-1.5 rounded-[4px_6px_3px_5px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-95 cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1">
+              📸 {uploadingPhoto ? "⏳ " + (t('userProfile.uploading') || "Téléchargement...") : (t('userProfile.changePhoto') || "Uploader une photo")}
+              <input 
+                type="file" 
+                accept="image/*"
+                disabled={uploadingPhoto || saving}
+                onChange={handlePhotoSelected}
+                className="hidden"
+              />
+            </label>
+            <label className="text-[10px] font-black uppercase tracking-widest bg-cordel-bg border border-encre-noire px-3 py-1.5 rounded-[4px_6px_3px_5px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-95 cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1">
+              📷 {t('userProfile.takePhoto') || "Prendre une photo"}
+              <input 
+                type="file" 
+                accept="image/*"
+                capture="user"
+                disabled={uploadingPhoto || saving}
+                onChange={handlePhotoSelected}
+                className="hidden"
+              />
+            </label>
+          </div>
           <span className="text-[9px] font-bold tracking-widest text-cordel-master-dark opacity-60 break-all px-4 text-center">
             {user.email}
           </span>
@@ -434,13 +473,23 @@ export default function UserProfile({ user, profileData, onBack }) {
           </div>
 
           {/* Level Info display */}
-          <div className="flex flex-col gap-1.5 border-t border-dashed border-cordel-master-dark/10 pt-2">
-            <span className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood">
-              {t('userProfile.levelHeading')}
-            </span>
-            <span className="text-xs font-bold text-encre-noire bg-cordel-bg-light py-1.5 px-3 rounded border border-encre-noire/25 w-full inline-block">
-              {profileData?.niveau === 'confirme' ? '🏆 ' + t('userProfile.levelConfirmSimple') : '🌱 ' + t('userProfile.levelBeginner')}
-            </span>
+          <div className="grid grid-cols-2 gap-3 border-t border-dashed border-cordel-master-dark/10 pt-2">
+            <div className="flex flex-col gap-1.5">
+              <span className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood">
+                {t('systemAdmin.musicLevel') || "Niveau Musique"}
+              </span>
+              <span className="text-xs font-bold text-encre-noire bg-cordel-bg-light py-1.5 px-3 rounded border border-encre-noire/25 w-full inline-block text-center">
+                {profileData?.niveau === 'confirme' ? '🏆 ' + t('userProfile.levelConfirmSimple') : '🌱 ' + t('userProfile.levelBeginner')}
+              </span>
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <span className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood">
+                {t('systemAdmin.danceLevel') || "Niveau Danse"}
+              </span>
+              <span className="text-xs font-bold text-encre-noire bg-cordel-bg-light py-1.5 px-3 rounded border border-encre-noire/25 w-full inline-block text-center">
+                {profileData?.niveauDanse === 'confirme' ? '💃 ' + t('userProfile.levelConfirmSimple') : profileData?.niveauDanse === 'debutant' ? '🌱 ' + t('userProfile.levelBeginner') : '💃 ' + t('common.none')}
+              </span>
+            </div>
           </div>
 
            {isFieldVisible('telephone') && (
@@ -717,6 +766,25 @@ export default function UserProfile({ user, profileData, onBack }) {
           🚪 {t('userProfile.disconnectBtn')}
         </CordelButton>
       </div>
+
+      {/* Editor Modal Overlay */}
+      {showEditor && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-[var(--cordel-bg)] max-w-md w-full rounded-lg shadow-xl overflow-hidden relative border-4 border-encre-noire max-h-[90vh] overflow-y-auto">
+            <div className="p-4">
+              <CordelImageEditor 
+                imageSrc={selectedImage}
+                lang={locale}
+                onComplete={handleEditorComplete}
+                onCancel={() => {
+                  setShowEditor(false);
+                  setSelectedImage(null);
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

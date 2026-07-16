@@ -52,7 +52,7 @@ const WIDGET_NAMES = {
   },
   agenda: {
     title: "Dates à Venir (Agenda) 📅",
-    desc: "Liste des répétitions, concerts et stages de la Roda."
+    desc: "Liste des répétitions, prestations et stages de la Roda."
   },
   commandes: {
     title: "Achats de Matériel (Commandes) 📦",
