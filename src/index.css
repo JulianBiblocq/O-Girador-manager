@@ -1441,6 +1441,17 @@ body.eco-mode #center-afficheur {
 .theme-bg-violet { background-color: #6d28d9 !important; color: #f4ecd8 !important; }
 .theme-bg-orange { background-color: #ea580c !important; color: #1a1a1a !important; }
 
+/* Custom styles for modern PlaceAutocompleteElement web component */
+gmp-place-autocomplete {
+  box-sizing: border-box !important;
+  width: 100% !important;
+}
+
+gmp-place-autocomplete:focus-within {
+  border-color: var(--cordel-wood) !important;
+  background-color: var(--cordel-bg) !important;
+}
+
 /* === GLOBAL POPUP & MODAL RESPONSIVE COMPATIBILITY === */
 .modal-overlay, .modal-backdrop, [role="dialog"], .popup-window, .modal-content, [class*="modal"] {
   max-height: 90vh !important;
