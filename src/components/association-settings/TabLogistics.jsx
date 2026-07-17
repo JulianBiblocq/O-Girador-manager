@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import CordelCard from '../CordelCard';
 import { loadGoogleMaps } from '../../utils/googleMaps';
-const PlacesAutocomplete = React.lazy(() => import('../PlacesAutocomplete'));
+const AddressAutocomplete = React.lazy(() => import('../AddressAutocomplete'));
 
 const geocodeByAddress = async (address) => {
   const maps = await loadGoogleMaps();
@@ -41,17 +41,14 @@ export default function TabLogistics({
     reimbursementRule = 'full_cars_only'
   } = formData;
 
-  const handleAddressChange = (newAddress) => {
-    handleChange({ target: { name: 'pointRassemblementDefaut', value: newAddress } });
-  };
-
-  const handleAddressSelect = async (selectedAddress) => {
-    handleChange({ target: { name: 'pointRassemblementDefaut', value: selectedAddress } });
-    if (!selectedAddress || selectedAddress.trim() === "") return;
+  const handleAddressSelect = async (addressData) => {
+    const address = typeof addressData === 'string' ? addressData : addressData.address;
+    handleChange({ target: { name: 'pointRassemblementDefaut', value: address } });
+    if (!address || address.trim() === "") return;
     try {
-      const results = await geocodeByAddress(selectedAddress);
+      const results = await geocodeByAddress(address);
       if (results && results.length > 0) {
-        const latLng = await getLatLng(results[0]);
+        await getLatLng(results[0]);
       }
     } catch (error) {
       console.warn("Geocoding ignoré pour cette saisie :", error);
@@ -89,10 +86,10 @@ export default function TabLogistics({
                 ⏳ Chargement du champ adresse...
               </div>
             }>
-              <PlacesAutocomplete 
+              <AddressAutocomplete 
                 name="pointRassemblementDefaut"
                 value={formData.pointRassemblementDefaut || ""}
-                onChange={handleAddressChange}
+                onChange={handleChange}
                 onSelect={handleAddressSelect}
                 placeholder="ex: 12 Rue du Maracatu, 75000 Paris"
                 className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light w-full"

@@ -182,6 +182,36 @@ export function useUserProfile(user, profileData, t) {
     return () => unsubscribe();
   }, [profileData?.groupId, user?.uid]);
 
+  // Auto-subscribe push notifications if permission is already granted
+  useEffect(() => {
+    if (!messaging || !user?.uid) return;
+
+    const checkAndAutoSubscribe = async () => {
+      if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+        setNotificationPermission('granted');
+        try {
+          const token = await getToken(messaging, {
+            vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY || undefined
+          });
+          if (token) {
+            const currentTokens = profileData?.fcmTokens || [];
+            if (!currentTokens.includes(token)) {
+              const userRef = doc(db, 'users', user.uid);
+              await updateDoc(userRef, {
+                fcmTokens: arrayUnion(token)
+              });
+              console.log("FCM Token registered automatically.");
+            }
+          }
+        } catch (err) {
+          console.error("Auto-subscribing FCM Token failed:", err);
+        }
+      }
+    };
+
+    checkAndAutoSubscribe();
+  }, [user?.uid, messaging, profileData?.fcmTokens]);
+
   const isFieldVisible = (key) => {
     if (!fieldsConfig) return true;
     const cfg = fieldsConfig[key];

@@ -8,6 +8,7 @@ import { useTerminologie } from '../hooks/useTerminologie';
 import { useTranslation } from './LanguageContext';
 import { messaging } from '../firebase';
 const CordelImageEditor = React.lazy(() => import('./CordelImageEditor'));
+const AddressAutocomplete = React.lazy(() => import('./AddressAutocomplete'));
 
 const INSTRUMENT_ICONS = {
   Alfaia: 'icones/alfaia.svg',
@@ -487,16 +488,29 @@ export default function UserProfile({ user, profileData, onBack }) {
                   <label className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood">
                     {t('userProfile.adresseRue') || "Numéro et Rue"}
                   </label>
-                  <input
-                    type="text"
-                    name="adresseRue"
-                    value={formData.adresseRue}
-                    onChange={handleChange}
-                    required
-                    disabled={saving}
-                    placeholder="123 Rue de la Roda"
-                    className="theme-input w-full disabled:opacity-50 text-xs font-bold"
-                  />
+                  <React.Suspense fallback={
+                    <div className="text-[10px] font-bold py-2 text-cordel-wood animate-pulse">
+                      ⏳ Chargement de la recherche d'adresse...
+                    </div>
+                  }>
+                    <AddressAutocomplete
+                      name="adresseRue"
+                      value={formData.adresseRue}
+                      onChange={handleChange}
+                      onSelect={(addressData) => {
+                        setFormData(prev => ({
+                          ...prev,
+                          adresseRue: addressData.street,
+                          adresseCP: addressData.zipcode,
+                          adresseVille: addressData.city
+                        }));
+                      }}
+                      required
+                      disabled={saving}
+                      placeholder="123 Rue de la Roda"
+                      className="theme-input w-full disabled:opacity-50 text-xs font-bold"
+                    />
+                  </React.Suspense>
                 </div>
                 <div className="grid grid-cols-3 gap-2">
                   <div className="flex flex-col gap-1 col-span-1">

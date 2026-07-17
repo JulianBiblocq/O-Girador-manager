@@ -2,17 +2,19 @@ import React, { useEffect, useRef, useState } from 'react';
 import { loadGoogleMaps } from '../utils/googleMaps';
 
 /**
- * PlacesAutocomplete component wraps Google Maps Places AutocompleteElement
+ * AddressAutocomplete component wraps Google Maps Places AutocompleteElement
  * (the modern Places Web Component) with React controlled state integration.
+ * It decouples change/select callbacks using React refs to prevent input freezing
+ * due to parent re-rendering cycles.
  */
-export default function PlacesAutocomplete({ 
+export default function AddressAutocomplete({ 
   value, 
   onChange, 
   onSelect,
   placeholder, 
   className, 
   disabled, 
-  name = 'lieu', 
+  name = 'address', 
   required = false 
 }) {
   const containerRef = useRef(null);
@@ -21,13 +23,47 @@ export default function PlacesAutocomplete({
   const cleanupSelectRef = useRef(null);
   const [hasError, setHasError] = useState(false);
 
+  // Store callbacks in refs to prevent recreating Google Maps elements
+  // when parent handlers change (e.g., inline functions or un-memoized handlers).
+  const onChangeRef = useRef(onChange);
+  const onSelectRef = useRef(onSelect);
+
+  useEffect(() => {
+    onChangeRef.current = onChange;
+  }, [onChange]);
+
+  useEffect(() => {
+    onSelectRef.current = onSelect;
+  }, [onSelect]);
+
+  // Helper to find the internal input element within the shadow DOM of PlaceAutocompleteElement
+  const findInnerInput = (gmpElement) => {
+    const el = gmpElement || autocompleteRef.current;
+    if (!el) return null;
+    if (el.inputElement instanceof HTMLInputElement) {
+      return el.inputElement;
+    }
+    if (el.shadowRoot) {
+      const input = el.shadowRoot.querySelector('input');
+      if (input) return input;
+    }
+    for (const prop in el) {
+      try {
+        if (el[prop] instanceof HTMLInputElement) {
+          return el[prop];
+        }
+      } catch (e) {}
+    }
+    return null;
+  };
+
   useEffect(() => {
     let active = true;
 
     // Detect Google Maps authentication failures (e.g. invalid key, billing, referers)
     const originalAuthFailure = window.gm_authFailure;
     window.gm_authFailure = () => {
-      console.warn("PlacesAutocomplete - Google Maps Authentication Failure detected!");
+      console.warn("AddressAutocomplete - Google Maps Authentication Failure detected!");
       if (active) {
         setHasError(true);
       }
@@ -49,52 +85,30 @@ export default function PlacesAutocomplete({
           const placeAutocomplete = new maps.places.PlaceAutocompleteElement();
           placeAutocomplete.style.width = '100%';
           
-          // Style the custom element directly using standard host properties
-          placeAutocomplete.style.setProperty('border', '2px solid var(--cordel-border)');
-          placeAutocomplete.style.setProperty('background-color', 'var(--cordel-master-bg)');
-          placeAutocomplete.style.setProperty('color', 'var(--cordel-text)');
-          placeAutocomplete.style.setProperty('border-radius', '4px 8px 3px 6px');
-          placeAutocomplete.style.setProperty('font-weight', '600');
-          placeAutocomplete.style.setProperty('font-size', '0.875rem');
-          
+          // Style configuration is handled by index.css (.theme-address-autocomplete or gmp-place-autocomplete tag)
+          placeAutocomplete.classList.add('theme-address-autocomplete');
+
           // Mount the component in our container
           containerRef.current.replaceChildren(placeAutocomplete);
           autocompleteRef.current = placeAutocomplete;
 
-          // Helper to find the internal input element within the Shadow DOM
-          const findInnerInput = () => {
-            if (placeAutocomplete.inputElement instanceof HTMLInputElement) {
-              return placeAutocomplete.inputElement;
-            }
-            if (placeAutocomplete.shadowRoot) {
-              const input = placeAutocomplete.shadowRoot.querySelector('input');
-              if (input) return input;
-            }
-            for (const prop in placeAutocomplete) {
-              try {
-                if (placeAutocomplete[prop] instanceof HTMLInputElement) {
-                  return placeAutocomplete[prop];
-                }
-              } catch (e) {}
-            }
-            return null;
-          };
-
           // Set the initial value and attach raw input event listener
           const initInput = (attempts = 0) => {
             if (!active) return;
-            const input = findInnerInput();
+            const input = findInnerInput(placeAutocomplete);
             if (input) {
               input.value = value || '';
               placeAutocomplete.placeholder = placeholder || '';
               
               const handleInput = (e) => {
-                onChange({
-                  target: {
-                    name: name,
-                    value: e.target.value
-                  }
-                });
+                if (onChangeRef.current) {
+                  onChangeRef.current({
+                    target: {
+                      name: name,
+                      value: e.target.value
+                    }
+                  });
+                }
               };
               input.addEventListener('input', handleInput);
               
@@ -109,7 +123,7 @@ export default function PlacesAutocomplete({
 
           initInput();
 
-          // Listen for selection events (handles both the new gmp-select and fallback gmp-placeselect)
+          // Listen for selection events
           const handleSelect = async (event) => {
             try {
               let place = null;
@@ -120,9 +134,9 @@ export default function PlacesAutocomplete({
               }
 
               if (place) {
-                // Fetch the required address fields
+                // Fetch the required address fields (including addressComponents)
                 await place.fetchFields({
-                  fields: ['formattedAddress', 'displayName']
+                  fields: ['formattedAddress', 'displayName', 'addressComponents']
                 });
 
                 const addr = place.formattedAddress || place.formatted_address;
@@ -130,25 +144,47 @@ export default function PlacesAutocomplete({
                 const finalVal = addr || nameVal;
 
                 if (finalVal) {
-                  const input = findInnerInput();
+                  const input = findInnerInput(placeAutocomplete);
                   if (input) {
                     input.value = finalVal;
                   }
 
-                  onChange({
-                    target: {
-                      name: name,
-                      value: finalVal
-                    }
-                  });
+                  if (onChangeRef.current) {
+                    onChangeRef.current({
+                      target: {
+                        name: name,
+                        value: finalVal
+                      }
+                    });
+                  }
 
-                  if (onSelect) {
-                    onSelect(finalVal);
+                  if (onSelectRef.current) {
+                    // Extract structured address parts
+                    const components = place.addressComponents || [];
+                    const getComponent = (types) => {
+                      const comp = components.find(c => c.types && c.types.some(t => types.includes(t)));
+                      return comp ? (comp.longText || comp.long_name || comp.shortText || comp.short_name || '') : '';
+                    };
+
+                    const streetNumber = getComponent(['street_number']);
+                    const route = getComponent(['route']);
+                    const zipcode = getComponent(['postal_code']);
+                    const city = getComponent(['locality', 'sublocality']);
+                    
+                    const street = [streetNumber, route].filter(Boolean).join(' ');
+
+                    onSelectRef.current({
+                      address: finalVal,
+                      street: street || finalVal,
+                      zipcode: zipcode,
+                      city: city,
+                      rawPlace: place
+                    });
                   }
                 }
               }
             } catch (err) {
-              console.error("PlacesAutocomplete - Error resolving selected place details:", err);
+              console.error("AddressAutocomplete - Error resolving selected place details:", err);
             }
           };
 
@@ -161,12 +197,12 @@ export default function PlacesAutocomplete({
           };
 
         } catch (initErr) {
-          console.error("PlacesAutocomplete - Error creating PlaceAutocompleteElement:", initErr);
+          console.error("AddressAutocomplete - Error creating PlaceAutocompleteElement:", initErr);
           if (active) setHasError(true);
         }
       })
       .catch((err) => {
-        console.error("PlacesAutocomplete - Failed to load Google Maps SDK:", err);
+        console.error("AddressAutocomplete - Failed to load Google Maps SDK:", err);
         if (active) setHasError(true);
       });
 
@@ -181,32 +217,11 @@ export default function PlacesAutocomplete({
         cleanupSelectRef.current();
       }
     };
-  }, [name, onChange]); // Value omitted intentionally to avoid component recreation on keystroke
+  }, [name]); // Removed onChangeRef, onSelectRef, and value from dependencies
 
   // Sync value from parent state when changed programmatically (e.g. form resets)
   useEffect(() => {
     if (!autocompleteRef.current) return;
-    
-    const findInnerInput = () => {
-      const gmp = autocompleteRef.current;
-      if (!gmp) return null;
-      if (gmp.inputElement instanceof HTMLInputElement) {
-        return gmp.inputElement;
-      }
-      if (gmp.shadowRoot) {
-        const input = gmp.shadowRoot.querySelector('input');
-        if (input) return input;
-      }
-      for (const prop in gmp) {
-        try {
-          if (gmp[prop] instanceof HTMLInputElement) {
-            return gmp[prop];
-          }
-        } catch (e) {}
-      }
-      return null;
-    };
-
     const input = findInnerInput();
     if (input && input.value !== (value || '')) {
       input.value = value || '';
@@ -220,7 +235,9 @@ export default function PlacesAutocomplete({
           type="text"
           name={name}
           value={value || ''}
-          onChange={onChange}
+          onChange={(e) => {
+            if (onChangeRef.current) onChangeRef.current(e);
+          }}
           placeholder={placeholder}
           className={className}
           disabled={disabled}
@@ -235,7 +252,6 @@ export default function PlacesAutocomplete({
 
   return (
     <div className="flex flex-col gap-1 w-full">
-      {/* Container where the PlaceAutocompleteElement will be dynamically mounted */}
       <div ref={containerRef} className="w-full min-h-[38px] flex items-center" />
       <span className="text-[9px] text-cordel-master-dark/60 font-semibold leading-none mt-1 select-none">
         Saisissez pour chercher l'adresse

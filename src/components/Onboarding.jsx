@@ -19,6 +19,8 @@ const DEFAULT_FIELDS_CONFIG = {
 
 const DEFAULT_INSTRUMENTS = ["Alfaia Marcante", "Alfaia Meião", "Alfaia Repique", "Caixa", "Tarol", "Gonguê", "Agbê", "Mineiro", "Timbal", "Chant", "Danse"];
 
+const AddressAutocomplete = React.lazy(() => import('./AddressAutocomplete'));
+
 export default function Onboarding({ user, branding, onComplete }) {
   const { t } = useTranslation();
   // Split the Google Auth display name into a first name and a last name
@@ -336,16 +338,29 @@ export default function Onboarding({ user, branding, onComplete }) {
                 <label className="text-[10px] uppercase font-bold tracking-wider text-cordel-master-dark">
                   {t('onboarding.adresseRue') || "Numéro et Rue"}
                 </label>
-                <input
-                  type="text"
-                  name="adresseRue"
-                  placeholder="123 Rue de la Roda"
-                  value={formData.adresseRue}
-                  onChange={handleChange}
-                  required
-                  disabled={submitting}
-                  className="theme-input w-full disabled:opacity-50"
-                />
+                <React.Suspense fallback={
+                  <div className="text-[10px] font-bold py-2 text-cordel-wood animate-pulse">
+                    ⏳ Chargement de la recherche d'adresse...
+                  </div>
+                }>
+                  <AddressAutocomplete
+                    name="adresseRue"
+                    value={formData.adresseRue}
+                    onChange={handleChange}
+                    onSelect={(addressData) => {
+                      setFormData(prev => ({
+                        ...prev,
+                        adresseRue: addressData.street,
+                        adresseCP: addressData.zipcode,
+                        adresseVille: addressData.city
+                      }));
+                    }}
+                    required
+                    disabled={submitting}
+                    placeholder="123 Rue de la Roda"
+                    className="theme-input w-full disabled:opacity-50"
+                  />
+                </React.Suspense>
               </div>
               <div className="grid grid-cols-3 gap-2">
                 <div className="flex flex-col gap-1 col-span-1">

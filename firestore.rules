@@ -86,7 +86,6 @@ service cloud.firestore {
       allow update: if isAuthenticated() && (
         isAdminOrMestre() || (
           request.auth.uid == userId && (
-            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['fcmTokens']) ||
             !request.resource.data.diff(resource.data).affectedKeys().hasAny([
               'paymentStatus', 'role', 'isSystemAdmin', 'adhesionBase', 'selectedOptions', 'tags', 'statutActuel'
             ])
@@ -137,7 +136,8 @@ service cloud.firestore {
       allow create, delete: if isAdminOrMestre();
       allow update: if isAuthenticated() && (
         isAdminOrMestre() || 
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['inscriptions'])
+        (request.resource.data.diff(resource.data).affectedKeys().hasAll(['inscriptions']) &&
+         request.resource.data.diff(resource.data).affectedKeys().size() == 1)
       );
     }
 
@@ -194,7 +194,8 @@ service cloud.firestore {
       );
       allow update: if isAuthenticated() && (
         resource.data.recipientId == request.auth.uid &&
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read'])
+        (request.resource.data.diff(resource.data).affectedKeys().hasAll(['read']) &&
+         request.resource.data.diff(resource.data).affectedKeys().size() == 1)
       );
       allow delete: if false;
     }

@@ -20,24 +20,27 @@ export function loadGoogleMaps() {
           return;
         }
 
-        const script = document.createElement('script');
-        script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`;
-        script.async = true;
-        script.defer = true;
-        
-        script.onload = () => {
+        const callbackName = `__googleMapsCallback_${Math.random().toString(36).substring(2, 9)}`;
+        window[callbackName] = () => {
           try {
+            delete window[callbackName];
             if (window.google && window.google.maps) {
               resolve(window.google.maps);
             } else {
               reject(new Error('Google Maps script loaded but window.google.maps is undefined'));
             }
-          } catch (onloadErr) {
-            reject(onloadErr);
+          } catch (callbackErr) {
+            reject(callbackErr);
           }
         };
 
+        const script = document.createElement('script');
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&loading=async&callback=${callbackName}`;
+        script.async = true;
+        script.defer = true;
+
         script.onerror = (err) => {
+          delete window[callbackName];
           reject(err || new Error('Failed to load Google Maps script tag'));
         };
 

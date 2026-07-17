@@ -7,7 +7,7 @@ import CordelButton from './CordelButton';
 const EventDetails = React.lazy(() => import('./EventDetails'));
 import { useTranslation } from './LanguageContext';
 import { XiloCalendar } from './XiloIcons';
-const PlacesAutocomplete = React.lazy(() => import('./PlacesAutocomplete'));
+const AddressAutocomplete = React.lazy(() => import('./AddressAutocomplete'));
 import { calculateRoadDistance } from '../utils/googleMaps';
 const formatDateWithDay = (dateStr, includeYear = true) => {
   const date = new Date(dateStr);
@@ -402,7 +402,7 @@ export default function WidgetAgenda({ role, isSystemAdmin, groupId, user, profi
                   ⏳ Chargement du champ adresse...
                 </div>
               }>
-                <PlacesAutocomplete
+                <AddressAutocomplete
                   name="lieu"
                   value={formData.lieu}
                   onChange={handleChange}

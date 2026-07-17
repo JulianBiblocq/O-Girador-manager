@@ -8,7 +8,7 @@ import ReunionAgendaManager from './ReunionAgendaManager';
 import { useTranslation } from './LanguageContext';
 import { XiloCalendar, XiloMegaphone } from './XiloIcons';
 import XiloAvatar from './XiloAvatar';
-const PlacesAutocomplete = React.lazy(() => import('./PlacesAutocomplete'));
+const AddressAutocomplete = React.lazy(() => import('./AddressAutocomplete'));
 import { calculateRoadDistance } from '../utils/googleMaps';
 
 import { useEventRSVP } from '../hooks/useEventRSVP';
@@ -626,7 +626,7 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
                     ⏳ Chargement du champ adresse...
                   </div>
                 }>
-                  <PlacesAutocomplete
+                  <AddressAutocomplete
                     name="lieu"
                     value={editForm.lieu}
                     onChange={async (e) => {
