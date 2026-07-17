@@ -53,7 +53,9 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin 
     etat: 'Bon',
     proprietaire: 'Association',
     localisationPhysique: 'Local',
-    assignations: []
+    assignations: [],
+    status: 'En stock',
+    borrowedBy: ''
   });
 
   // Security Check: Mestres, Super-Admins and System Admins only
@@ -145,7 +147,9 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin 
       etat: 'Bon',
       proprietaire: 'Association',
       localisationPhysique: 'Local',
-      assignations: []
+      assignations: [],
+      status: 'En stock',
+      borrowedBy: ''
     });
     setEditingId(null);
     setIsFormOpen(true);
@@ -158,7 +162,9 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin 
       etat: inst.etat || 'Bon',
       proprietaire: inst.proprietaire || 'Association',
       localisationPhysique: inst.localisationPhysique || 'Local',
-      assignations: inst.assignations || []
+      assignations: inst.assignations || [],
+      status: inst.status || 'En stock',
+      borrowedBy: inst.borrowedBy || ''
     });
     setEditingId(inst.id);
     setIsFormOpen(true);
@@ -177,6 +183,8 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin 
         proprietaire: formData.proprietaire,
         localisationPhysique: formData.localisationPhysique,
         assignations: formData.assignations,
+        status: formData.status || 'En stock',
+        borrowedBy: formData.borrowedBy || null,
         groupId: groupId
       };
 
@@ -195,6 +203,34 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin 
       alert(`${t('common.saveError')} : ${error.message}`);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleAssignBorrower = async (instId, borrowerId) => {
+    if (!instId || !borrowerId) return;
+    try {
+      const docRef = doc(db, 'inventory', instId);
+      await updateDoc(docRef, {
+        status: 'Emprunté',
+        borrowedBy: borrowerId
+      });
+    } catch (error) {
+      console.error("InventoryManager - Error assigning borrower:", error);
+      alert(t('common.saveError'));
+    }
+  };
+
+  const handleReturnInstrument = async (instId) => {
+    if (!instId) return;
+    try {
+      const docRef = doc(db, 'inventory', instId);
+      await updateDoc(docRef, {
+        status: 'En stock',
+        borrowedBy: null
+      });
+    } catch (error) {
+      console.error("InventoryManager - Error returning instrument:", error);
+      alert(t('common.saveError'));
     }
   };
 
@@ -370,6 +406,45 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin 
                 </select>
               </div>
 
+              {/* Statut d'emprunt */}
+              <div className="flex flex-col gap-1">
+                <label className="text-[8px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                  Statut de l'instrument
+                </label>
+                <select
+                  name="status"
+                  value={formData.status}
+                  onChange={handleInputChange}
+                  disabled={saving}
+                  className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light"
+                >
+                  <option value="En stock">En stock</option>
+                  <option value="Emprunté">Emprunté</option>
+                  <option value="En réparation">En réparation</option>
+                </select>
+              </div>
+
+              {/* Emprunteur (sélectionnable si statut === 'Emprunté') */}
+              {formData.status === 'Emprunté' && (
+                <div className="flex flex-col gap-1">
+                  <label className="text-[8px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                    Emprunteur
+                  </label>
+                  <select
+                    name="borrowedBy"
+                    value={formData.borrowedBy}
+                    onChange={handleInputChange}
+                    disabled={saving}
+                    className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light"
+                  >
+                    <option value="">-- Non spécifié --</option>
+                    {usersList.map(u => (
+                      <option key={u.id} value={u.id}>{u.prenom} {u.nom}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
               {/* Assignations (Pills selector) */}
               <div className="flex flex-col gap-1 border-t border-dashed border-cordel-master-dark/15 pt-2">
                 <label className="text-[8px] uppercase font-bold tracking-wider text-cordel-master-dark">
@@ -489,49 +564,99 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin 
                       key={inst.id}
                       variant="default"
                       useExtremeBorder={false}
-                      className="p-3 bg-cordel-bg flex items-center justify-between gap-4 relative pr-12 text-left"
+                      className="p-3 bg-cordel-bg flex flex-col gap-2 w-full relative pr-12 text-left"
                     >
-                      {/* Left Side: Instrument Icon */}
-                      <div className="w-10 h-10 border-2 border-encre-noire bg-cordel-bg-light rounded-[8px_6px_10px_7px] flex items-center justify-center shrink-0 shadow-[1.5px_1.5px_0px_0px_#181716] select-none p-1.5">
-                        <img src={iconPath} alt={inst.type} className="w-full h-full object-contain pointer-events-none" />
+                      {/* Top Part: Icon + Info details */}
+                      <div className="flex items-center gap-4 w-full">
+                        {/* Left Side: Instrument Icon */}
+                        <div className="w-10 h-10 border-2 border-encre-noire bg-cordel-bg-light rounded-[8px_6px_10px_7px] flex items-center justify-center shrink-0 shadow-[1.5px_1.5px_0px_0px_#181716] select-none p-1.5">
+                          <img src={iconPath} alt={inst.type} className="w-full h-full object-contain pointer-events-none" />
+                        </div>
+
+                        {/* Middle: Details */}
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-extrabold text-xs text-encre-noire leading-tight truncate">
+                            {inst.nom}
+                          </h4>
+                          <div className="flex flex-wrap gap-x-2 gap-y-0.5 mt-1 text-[8px] font-semibold text-cordel-master-dark/70">
+                            <span>🛠️ {inst.type}</span>
+                            <span>•</span>
+                            <span>Proprio : <strong className="text-cordel-wood">{ownerName}</strong></span>
+                          </div>
+                          <div className="flex flex-wrap gap-x-2 gap-y-0.5 mt-0.5 text-[8px] font-semibold text-cordel-master-dark/70">
+                            <span>📍 Localisation : <strong>{locName}</strong></span>
+                            
+                            {/* Assignations Display */}
+                            {inst.assignations && inst.assignations.length > 0 && (
+                              <>
+                                <span>•</span>
+                                <span className="inline-flex items-center gap-1">
+                                  Assigné à : 
+                                  <span className="flex flex-wrap gap-1.5 items-center">
+                                    {inst.assignations.map(uid => {
+                                      const u = usersList.find(userObj => userObj.id === uid);
+                                      if (!u) return <strong key={uid} className="font-bold text-encre-noire">...</strong>;
+                                      const fullName = `${u.prenom} ${u.nom}`;
+                                      return (
+                                        <span key={uid} className="inline-flex items-center gap-1 bg-white/40 dark:bg-black/10 px-1.5 py-0.5 rounded border border-dashed border-encre-noire/10 text-[9px] font-semibold text-encre-noire">
+                                          <XiloAvatar src={u.photoURL} name={fullName} size={14} />
+                                          <span>{fullName}</span>
+                                        </span>
+                                      );
+                                    })}
+                                  </span>
+                                </span>
+                              </>
+                            )}
+                          </div>
+                        </div>
                       </div>
 
-                      {/* Middle: Details */}
-                      <div className="flex-1 min-w-0">
-                        <h4 className="font-extrabold text-xs text-encre-noire leading-tight truncate">
-                          {inst.nom}
-                        </h4>
-                        <div className="flex flex-wrap gap-x-2 gap-y-0.5 mt-1 text-[8px] font-semibold text-cordel-master-dark/70">
-                          <span>🛠️ {inst.type}</span>
-                          <span>•</span>
-                          <span>Proprio : <strong className="text-cordel-wood">{ownerName}</strong></span>
+                      {/* Borrowing / Lending Controls Section */}
+                      <div className="mt-1 pt-1.5 border-t border-dashed border-cordel-master-dark/15 flex flex-col gap-1.5 w-full">
+                        <div className="flex items-center gap-1.5 select-none">
+                          <span className="text-[9px] font-black text-cordel-wood uppercase">Statut :</span>
+                          <span className={`text-[8px] font-black uppercase px-1.5 py-0.5 rounded border ${
+                            inst.status === 'Emprunté'
+                              ? 'bg-amber-100 border-amber-400 text-amber-800'
+                              : inst.status === 'En réparation'
+                                ? 'bg-red-100 border-red-400 text-red-800'
+                                : 'bg-green-100 border-green-400 text-green-800'
+                          }`}>
+                            {inst.status || 'En stock'}
+                          </span>
                         </div>
-                        <div className="flex flex-wrap gap-x-2 gap-y-0.5 mt-0.5 text-[8px] font-semibold text-cordel-master-dark/70">
-                          <span>📍 Localisation : <strong>{locName}</strong></span>
-                          
-                          {/* Assignations Display */}
-                          {inst.assignations && inst.assignations.length > 0 && (
-                            <>
-                              <span>•</span>
-                              <span className="inline-flex items-center gap-1">
-                                Assigné à : 
-                                <span className="flex flex-wrap gap-1.5 items-center">
-                                  {inst.assignations.map(uid => {
-                                    const u = usersList.find(userObj => userObj.id === uid);
-                                    if (!u) return <strong key={uid} className="font-bold text-encre-noire">...</strong>;
-                                    const fullName = `${u.prenom} ${u.nom}`;
-                                    return (
-                                      <span key={uid} className="inline-flex items-center gap-1 bg-white/40 dark:bg-black/10 px-1.5 py-0.5 rounded border border-dashed border-encre-noire/10 text-[9px] font-semibold text-encre-noire">
-                                        <XiloAvatar src={u.photoURL} name={fullName} size={14} />
-                                        <span>{fullName}</span>
-                                      </span>
-                                    );
-                                  })}
-                                </span>
-                              </span>
-                            </>
-                          )}
-                        </div>
+
+                        {inst.status === 'Emprunté' ? (
+                          <div className="flex items-center justify-between gap-2 bg-white/40 dark:bg-black/10 p-1.5 rounded border border-dashed border-encre-noire/15">
+                            <span className="text-[9px] font-bold text-cordel-master-dark/95 truncate">
+                              👤 Emprunté par : <strong className="font-extrabold text-encre-noire">{usersMap[inst.borrowedBy] || "Membre"}</strong>
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => handleReturnInstrument(inst.id)}
+                              className="text-[8px] font-black uppercase tracking-wider bg-cordel-wood text-cordel-bg-light px-2.5 py-1.5 border border-encre-noire rounded shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-110 cursor-pointer shrink-0"
+                            >
+                              ↩️ Restitué
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2 bg-white/40 dark:bg-black/10 p-1.5 rounded border border-dashed border-encre-noire/15">
+                            <span className="text-[9px] font-bold text-cordel-master-dark/95 shrink-0">
+                              🤝 Prêter à :
+                            </span>
+                            <select
+                              value=""
+                              onChange={(e) => handleAssignBorrower(inst.id, e.target.value)}
+                              className="theme-input text-[9px] font-bold py-0.5 px-1 bg-white shrink-0 max-w-[120px] ml-auto"
+                            >
+                              <option value="">-- Choisir --</option>
+                              {usersList.map(u => (
+                                <option key={u.id} value={u.id}>{u.prenom} {u.nom}</option>
+                              ))}
+                            </select>
+                          </div>
+                        )}
                       </div>
 
                       {/* Right top status tag stamp */}

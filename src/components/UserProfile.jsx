@@ -664,7 +664,10 @@ export default function UserProfile({ user, profileData, onBack }) {
           </div>
         ) : (() => {
           const personal = myInstruments.filter(inst => inst.proprietaire === user.uid);
-          const borrowed = myInstruments.filter(inst => inst.proprietaire === 'Association' && inst.localisationPhysique === user.uid);
+          const borrowed = myInstruments.filter(inst => 
+            (inst.status === 'Emprunté' && inst.borrowedBy === user.uid) ||
+            (inst.proprietaire === 'Association' && inst.localisationPhysique === user.uid)
+          );
           const localAssigned = myInstruments.filter(inst => inst.localisationPhysique === 'Local' && Array.isArray(inst.assignations) && inst.assignations.includes(user.uid));
           
           return (

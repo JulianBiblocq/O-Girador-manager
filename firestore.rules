@@ -20,6 +20,35 @@ service cloud.firestore {
         );
     }
 
+    function hasChannelReadAccess(channelId) {
+      return isAuthenticated() && (
+        isAdminOrMestre() ||
+        (
+          exists(/databases/$(database)/documents/forum_channels/$(channelId)) &&
+          getUserData().groupId == get(/databases/$(database)/documents/forum_channels/$(channelId)).data.groupId &&
+          (
+            get(/databases/$(database)/documents/forum_channels/$(channelId)).data.allowedRoles.hasAny([getUserData().role]) ||
+            get(/databases/$(database)/documents/forum_channels/$(channelId)).data.allowedRoles.hasAny(['all']) ||
+            get(/databases/$(database)/documents/forum_channels/$(channelId)).data.isTransparent == true
+          )
+        )
+      );
+    }
+
+    function hasChannelWriteAccess(channelId) {
+      return isAuthenticated() && (
+        isAdminOrMestre() ||
+        (
+          exists(/databases/$(database)/documents/forum_channels/$(channelId)) &&
+          getUserData().groupId == get(/databases/$(database)/documents/forum_channels/$(channelId)).data.groupId &&
+          (
+            get(/databases/$(database)/documents/forum_channels/$(channelId)).data.allowedRoles.hasAny([getUserData().role]) ||
+            get(/databases/$(database)/documents/forum_channels/$(channelId)).data.allowedRoles.hasAny(['all'])
+          )
+        )
+      );
+    }
+
     // Collection Rules
 
     // Users: Read if authenticated. Write if editing own profile (without privilege escalation / status tampering) or if admin/mestre.
@@ -56,6 +85,11 @@ service cloud.firestore {
     match /associations/{assocId} {
       allow read: if isAuthenticated();
       allow write: if isAdminOrMestre();
+
+      // Protected credentials only readable/writable by group administrators/mestres
+      match /private_settings/credentials {
+        allow read, write: if isAdminOrMestre() && getUserData().groupId == assocId;
+      }
     }
 
     // Announcements: Read if authenticated. Write reserved for admins/mestres.
@@ -86,9 +120,37 @@ service cloud.firestore {
       );
     }
 
-    // Forum: Read and Write allowed for all authenticated members.
+    // Forum Channels: Read if member has roles/transparent, write only by admins (or create by group members)
+    match /forum_channels/{channelId} {
+      allow read: if isAuthenticated() && (
+        isAdminOrMestre() ||
+        (
+          getUserData().groupId == resource.data.groupId &&
+          (
+            resource.data.allowedRoles.hasAny([getUserData().role]) ||
+            resource.data.allowedRoles.hasAny(['all']) ||
+            resource.data.isTransparent == true
+          )
+        )
+      );
+      allow create: if isAuthenticated() && request.resource.data.groupId == getUserData().groupId;
+      allow update, delete: if isAdminOrMestre();
+    }
+
+    // Forum Threads: Read and Write allowed for members depending on channel permissions.
     match /forum/{thread} {
-      allow read, write: if isAuthenticated();
+      allow read: if isAuthenticated() && (
+        isAdminOrMestre() ||
+        hasChannelReadAccess(resource.data.channelId)
+      );
+      allow create: if isAuthenticated() && (
+        hasChannelWriteAccess(request.resource.data.channelId)
+      );
+      allow update: if isAuthenticated() && (
+        hasChannelWriteAccess(resource.data.channelId) &&
+        (!request.resource.data.keys().hasAny(['channelId']) || request.resource.data.channelId == resource.data.channelId)
+      );
+      allow delete: if isAdminOrMestre();
     }
 
     // Campaign Requests: Read and Write allowed for all authenticated members.
@@ -110,6 +172,11 @@ service cloud.firestore {
         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read'])
       );
       allow delete: if false;
+    }
+
+    // Pending payments: Only admins and mestres can access directly from client
+    match /pending_payments/{email} {
+      allow read, write: if isAdminOrMestre();
     }
   }
 }

@@ -1,16 +1,36 @@
-import React, { useState } from 'react';
-import { collection, addDoc } from 'firebase/firestore';
+import React, { useState, useEffect } from 'react';
+import { collection, addDoc, doc, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
 import { useTranslation } from './LanguageContext';
 
-export default function CreateThreadForm({ groupId, user, profileData, onClose }) {
+export default function CreateThreadForm({ groupId, channelId, user, profileData, onClose }) {
   const { t } = useTranslation();
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState('Général');
   const [message, setMessage] = useState('');
+  const [availableTargets, setAvailableTargets] = useState([]);
+  const [selectedTarget, setSelectedTarget] = useState('');
   const [saving, setSaving] = useState(false);
+
+  // Load available tags and instruments from association document in real-time
+  useEffect(() => {
+    if (!groupId) return;
+    const assocRef = doc(db, 'associations', groupId);
+    const unsubscribe = onSnapshot(assocRef, (snap) => {
+      if (snap.exists()) {
+        const data = snap.data();
+        const tags = data.tagsDisponibles || [];
+        const instruments = data.instrumentsDisponibles || [];
+        const combined = [...new Set([...tags, ...instruments])].filter(Boolean).sort();
+        setAvailableTargets(combined);
+      }
+    }, (error) => {
+      console.error("CreateThreadForm - Error fetching association targets:", error);
+    });
+    return () => unsubscribe();
+  }, [groupId]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -26,16 +46,19 @@ export default function CreateThreadForm({ groupId, user, profileData, onClose }
         titre: title,
         categorie: category,
         groupId: groupId,
+        channelId: channelId || `${groupId}_general`, // default to general if none passed
         auteurId: user.uid,
         auteurNom: authorName,
         dateCreation: nowIso,
         derniereModification: nowIso,
+        targetTag: selectedTarget || null, // Store targeted group at root
         reponses: [
           {
             auteurId: user.uid,
             auteurNom: authorName,
             message: message,
-            dateCreation: nowIso
+            dateCreation: nowIso,
+            targetTag: selectedTarget || null // Store targeted group in message
           }
         ]
       });
@@ -88,6 +111,26 @@ export default function CreateThreadForm({ groupId, user, profileData, onClose }
             <option value="Costumes">{t('forum.Costumes')} (Ateliers, couture)</option>
             <option value="Covoiturage">{t('forum.Covoiturage')} (Trajets)</option>
             <option value="Autre">{t('forum.Autre')}</option>
+          </select>
+        </div>
+
+        {/* Target Group Selector */}
+        <div className="flex flex-col gap-1">
+          <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+            🗣️ {t('forum.targetGroup') || "Cibler un groupe (Optionnel)"}
+          </label>
+          <select
+            value={selectedTarget}
+            onChange={(e) => setSelectedTarget(e.target.value)}
+            disabled={saving}
+            className="theme-input w-full disabled:opacity-50 text-xs py-1.5 font-bold"
+          >
+            <option value="">{t('forum.targetAll') || "-- Tout le monde --"}</option>
+            {availableTargets.map((target) => (
+              <option key={target} value={target}>
+                {target}
+              </option>
+            ))}
           </select>
         </div>
 

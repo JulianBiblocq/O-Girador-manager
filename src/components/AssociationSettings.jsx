@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { doc, onSnapshot, updateDoc, setDoc } from 'firebase/firestore';
+import { doc, onSnapshot, updateDoc, setDoc, getDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '../firebase';
 import CordelCard from './CordelCard';
@@ -60,9 +60,44 @@ export default function AssociationSettings({ groupId, onBack, role, isSystemAdm
   const [optionsCotisation, setOptionsCotisation] = useState([]);
   const [lienPaiementExterne, setLienPaiementExterne] = useState('');
   const [instructionsPaiement, setInstructionsPaiement] = useState('');
+  const [helloAssoSignatureKey, setHelloAssoSignatureKey] = useState('');
+  const [copySuccess, setCopySuccess] = useState(false);
+
+  const [enableCarpoolReimbursement, setEnableCarpoolReimbursement] = useState(true);
+  const [reimbursementRule, setReimbursementRule] = useState('full_cars_only');
+  const [defaultDepartureLocation, setDefaultDepartureLocation] = useState('');
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+
+  const projectId = import.meta.env.VITE_FIREBASE_PROJECT_ID || 'o-girador-7828c';
+  const webhookUrl = `https://us-central1-${projectId}.cloudfunctions.net/helloAssoWebhook?groupId=${groupId}`;
+
+  const handleCopyUrl = () => {
+    navigator.clipboard.writeText(webhookUrl).then(() => {
+      setCopySuccess(true);
+      setTimeout(() => setCopySuccess(false), 2000);
+    }).catch(err => {
+      console.error("Erreur de copie :", err);
+    });
+  };
+
+  const handleSaveHelloAssoKey = async () => {
+    if (!groupId) return;
+    setSaving(true);
+    try {
+      const credentialsRef = doc(db, 'associations', groupId, 'private_settings', 'credentials');
+      await setDoc(credentialsRef, {
+        helloAssoSignatureKey: helloAssoSignatureKey
+      }, { merge: true });
+      alert("Clé secrète HelloAsso sauvegardée avec succès !");
+    } catch (err) {
+      console.error("Erreur lors de la sauvegarde de la clé HelloAsso :", err);
+      alert("Impossible de sauvegarder la clé : " + (err.message || err));
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const isAuthorized = role === 'mestre' || role === 'super-admin' || isSystemAdmin === true;
 
@@ -74,6 +109,17 @@ export default function AssociationSettings({ groupId, onBack, role, isSystemAdm
     }
 
     setLoading(true);
+
+    // Charger la clé HelloAsso privée
+    const credentialsRef = doc(db, 'associations', groupId, 'private_settings', 'credentials');
+    getDoc(credentialsRef).then((docSnap) => {
+      if (docSnap.exists()) {
+        setHelloAssoSignatureKey(docSnap.data().helloAssoSignatureKey || '');
+      }
+    }).catch(err => {
+      console.error("AssociationSettings - Erreur de lecture des credentials :", err);
+    });
+
     const assocRef = doc(db, 'associations', groupId);
     const unsubscribe = onSnapshot(assocRef, (docSnap) => {
       if (docSnap.exists()) {
@@ -133,6 +179,9 @@ export default function AssociationSettings({ groupId, onBack, role, isSystemAdm
         setMajoriteFeminine(data.majoriteFeminine || false);
         setIndemniteKilometrique(data.indemniteKilometrique || 0);
         setAdresseLocal(data.adresseLocal || '');
+        setEnableCarpoolReimbursement(data.enableCarpoolReimbursement !== false);
+        setReimbursementRule(data.reimbursementRule || 'full_cars_only');
+        setDefaultDepartureLocation(data.defaultDepartureLocation || '');
         
         const adhesionVal = data.montantAdhesion !== undefined ? data.montantAdhesion : (data.montantCotisation || 0);
         setMontantAdhesion(adhesionVal);
@@ -292,12 +341,22 @@ export default function AssociationSettings({ groupId, onBack, role, isSystemAdm
         majoriteFeminine: majoriteFeminine,
         indemniteKilometrique: indemniteKilometrique,
         adresseLocal: adresseLocal,
+        enableCarpoolReimbursement: enableCarpoolReimbursement,
+        reimbursementRule: reimbursementRule,
+        defaultDepartureLocation: defaultDepartureLocation,
         montantCotisation: montantAdhesion,
         montantAdhesion: montantAdhesion,
         optionsCotisation: optionsCotisation,
         lienPaiementExterne: lienPaiementExterne,
         instructionsPaiement: instructionsPaiement
       }, { merge: true });
+
+      // Sauvegarde des credentials privés
+      const credentialsRef = doc(db, 'associations', groupId, 'private_settings', 'credentials');
+      await setDoc(credentialsRef, {
+        helloAssoSignatureKey: helloAssoSignatureKey
+      }, { merge: true });
+
       alert(t('associationSettings.successMsg') || "Réglages de l'association enregistrés avec succès !");
       onBack();
     } catch (err) {
@@ -1030,6 +1089,126 @@ export default function AssociationSettings({ groupId, onBack, role, isSystemAdm
                     className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light w-full resize-y min-h-[80px]"
                   />
                 </div>
+
+                <div className="flex flex-col gap-3 text-left border-t border-dashed border-cordel-master-dark/15 pt-3 mt-1">
+                  <label className="text-[10px] uppercase font-black tracking-widest text-cordel-wood">
+                    🔗 Automatisation HelloAsso
+                  </label>
+                  
+                  {/* Bloc d'explication pédagogique */}
+                  <div className="bg-[#fcfaf2] dark:bg-black/15 border border-cordel-wood/35 p-3.5 rounded-[4px] text-[10px] font-bold flex flex-col gap-2.5 leading-relaxed text-encre-noire shadow-[1px_1px_0px_0px_rgba(0,0,0,0.05)]">
+                    <p className="font-black text-cordel-wood border-b border-dashed border-cordel-wood/20 pb-1.5 mb-0.5 uppercase tracking-wide">
+                      Guide d'intégration pas à pas :
+                    </p>
+                    
+                    <div>
+                      <span className="text-[9px] font-black uppercase text-cordel-wood">Étape 1 :</span> Copiez cette URL personnalisée pour votre association :
+                      <div className="flex gap-2 items-center mt-1.5 bg-white/70 dark:bg-black/25 p-1.5 rounded border border-encre-noire/15">
+                        <code className="text-[8px] font-mono select-all truncate flex-1 leading-none text-encre-noire">
+                          {webhookUrl}
+                        </code>
+                        <button
+                          type="button"
+                          onClick={handleCopyUrl}
+                          className="text-[8px] font-black uppercase tracking-wider bg-cordel-wood text-cordel-bg-light px-2.5 py-1 rounded border border-encre-noire shadow-[0.5px_0.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:bg-opacity-95 cursor-pointer select-none"
+                        >
+                          {copySuccess ? "Copié !" : "Copier"}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div>
+                      <span className="text-[9px] font-black uppercase text-cordel-wood">Étape 2 :</span> Connectez-vous à votre espace administrateur HelloAsso. Allez dans <strong>Mon Compte &gt; Intégrations et API</strong>.
+                    </div>
+
+                    <div>
+                      <span className="text-[9px] font-black uppercase text-cordel-wood">Étape 3 :</span> Dans la section <strong>Webhooks</strong>, collez l'URL ci-dessus et cochez l'événement <strong>Historique des commandes (Order)</strong>.
+                    </div>
+
+                    <div>
+                      <span className="text-[9px] font-black uppercase text-cordel-wood">Étape 4 :</span> HelloAsso va vous fournir une <strong>Clé secrète</strong>. Collez-la dans le champ sécurisé ci-dessous et sauvegardez.
+                    </div>
+                  </div>
+
+                  {/* Saisie de la clé et bouton de sauvegarde */}
+                  <div className="flex flex-col gap-1.5 mt-1">
+                    <label className="text-[9px] uppercase font-extrabold tracking-wider text-cordel-master-dark">
+                      Clé secrète de notification HelloAsso
+                    </label>
+                    <div className="flex gap-2 items-center">
+                      <input 
+                        type="password"
+                        value={helloAssoSignatureKey}
+                        onChange={(e) => setHelloAssoSignatureKey(e.target.value || '')}
+                        placeholder="Saisissez la clé de signature du Webhook"
+                        className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light flex-1"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleSaveHelloAssoKey}
+                        disabled={saving}
+                        className="text-[9px] font-black uppercase tracking-wider bg-cordel-bg text-encre-noire px-3 py-1.5 rounded-[4px_6px_3px_5px] border-2 border-encre-noire shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:bg-neutral-100 cursor-pointer select-none disabled:opacity-50 h-full flex items-center justify-center min-h-[32px]"
+                      >
+                        Sauvegarder la clé
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CordelCard>
+
+            {/* 🚗 Covoiturage & Défraiements */}
+            <CordelCard variant="default" useExtremeBorder={true} className="py-4 px-5">
+              <h3 className="text-xs uppercase font-extrabold tracking-wider text-cordel-wood mb-3">
+                🚗 Covoiturage & Défraiements
+              </h3>
+              <div className="flex flex-col gap-3">
+                <div className="flex items-start gap-2.5 cursor-pointer select-none">
+                  <input 
+                    type="checkbox"
+                    checked={enableCarpoolReimbursement}
+                    onChange={(e) => setEnableCarpoolReimbursement(e.target.checked)}
+                    disabled={saving}
+                    className="w-4 h-4 cursor-pointer mt-0.5 shrink-0"
+                    id="enableCarpoolReimbursement"
+                  />
+                  <div className="flex flex-col text-left">
+                    <label htmlFor="enableCarpoolReimbursement" className="text-xs font-bold text-encre-noire cursor-pointer">
+                      Activer le calcul automatique des défraiements kilométriques
+                    </label>
+                  </div>
+                </div>
+
+                {enableCarpoolReimbursement && (
+                  <div className="flex flex-col gap-3 border-t border-dashed border-cordel-master-dark/10 pt-3 mt-1 text-left">
+                    <div className="flex flex-col gap-1">
+                      <label className="text-[9px] uppercase font-extrabold tracking-wider text-cordel-master-dark">
+                        Lieu de départ de référence (ex: Local de l'association)
+                      </label>
+                      <input 
+                        type="text"
+                        value={defaultDepartureLocation}
+                        onChange={(e) => setDefaultDepartureLocation(e.target.value || '')}
+                        placeholder="Ex: Local de l'association, Mairie..."
+                        className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light w-full"
+                      />
+                    </div>
+
+                    <div className="flex flex-col gap-1">
+                      <label className="text-[9px] uppercase font-extrabold tracking-wider text-cordel-master-dark">
+                        Règle d'éligibilité au remboursement
+                      </label>
+                      <select 
+                        value={reimbursementRule}
+                        onChange={(e) => setReimbursementRule(e.target.value)}
+                        className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light w-full cursor-pointer"
+                      >
+                        <option value="all_drivers">Souple : Tous les conducteurs sont éligibles</option>
+                        <option value="full_cars_only">Strict : Uniquement les voitures pleines - inclut le calcul de volume des instruments</option>
+                      </select>
+                    </div>
+                  </div>
+                )}
               </div>
             </CordelCard>
 

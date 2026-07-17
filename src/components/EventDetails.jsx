@@ -11,6 +11,51 @@ import XiloAvatar from './XiloAvatar';
 import PlacesAutocomplete from './PlacesAutocomplete';
 import { calculateRoadDistance } from '../utils/googleMaps';
 
+// Algorithme de calcul de l'occupation du véhicule
+const calculateCarStatus = (car, associationSettings) => {
+  // On s'assure que car.passengers est un tableau
+  const passengers = car.passengers || [];
+
+  // Calcul du volume des Alfaias
+  const totalAlfayas = passengers.reduce((sum, p) => sum + (Number(p.alfayasCount) || 0), 0);
+  const alfayasInTrunk = Math.min(totalAlfayas, Number(car.trunkAlfayaCapacity) || 0);
+  const alfayasOnSeats = totalAlfayas - alfayasInTrunk;
+
+  // Calcul des passagers physiques
+  const physicalPassengers = passengers.reduce((sum, p) => sum + (p.isPassenger ? 1 : 0), 0);
+  
+  // Occupation totale et places restantes
+  const occupiedSeats = physicalPassengers + alfayasOnSeats;
+  const availableSeats = (Number(car.passengerSeats) || 0) - occupiedSeats;
+
+  // Statuts d'éligibilité et de blocage
+  const isFull = availableSeats === 0;
+  
+  let isEligibleForReimbursement = false;
+  if (associationSettings?.enableCarpoolReimbursement !== false) {
+    const rule = associationSettings?.reimbursementRule || 'full_cars_only';
+    if (rule === 'all_drivers') {
+      isEligibleForReimbursement = true;
+    } else {
+      isEligibleForReimbursement = isFull;
+    }
+  }
+
+  const isOverbooked = availableSeats < 0;
+
+  return {
+    totalAlfayas,
+    alfayasInTrunk,
+    alfayasOnSeats,
+    physicalPassengers,
+    occupiedSeats,
+    availableSeats,
+    isFull,
+    isEligibleForReimbursement,
+    isOverbooked
+  };
+};
+
 export default function EventDetails({ event, user, profileData, onNavigateToView, onClose, onPrev, onNext }) {
   const { t } = useTranslation();
   // Find if the user has already responded to this event
@@ -188,6 +233,8 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
   const [adresseLocal, setAdresseLocal] = useState('');
   const [instrumentsDisponibles, setInstrumentsDisponibles] = useState(["Alfaia Marcante", "Alfaia Meião", "Alfaia Repique", "Caixa", "Tarol", "Gonguê", "Agbê", "Mineiro", "Timbal", "Chant", "Danse"]);
   const [linkedInstruments, setLinkedInstruments] = useState([]);
+  const [enableCarpoolReimbursement, setEnableCarpoolReimbursement] = useState(true);
+  const [reimbursementRule, setReimbursementRule] = useState('full_cars_only');
 
   useEffect(() => {
     if (!event.groupId) return;
@@ -198,6 +245,8 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
         setIndemniteKilometrique(data.indemniteKilometrique || 0);
         setAdresseLocal(data.adresseLocal || '');
         setAssocSequenceurUrl(data.sequenceurUrl || '');
+        setEnableCarpoolReimbursement(data.enableCarpoolReimbursement !== false);
+        setReimbursementRule(data.reimbursementRule || 'full_cars_only');
         if (Array.isArray(data.instrumentsDisponibles)) {
           setInstrumentsDisponibles(data.instrumentsDisponibles);
         }
@@ -301,9 +350,14 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
 
   const [showProposerForm, setShowProposerForm] = useState(false);
   const [voitureForm, setVoitureForm] = useState({
-    placesPassagers: 3,
-    placesAlfaias: '',
+    passengerSeats: 3,
+    trunkAlfayaCapacity: 0,
     materielCharge: ''
+  });
+  const [joiningVoitureId, setJoiningVoitureId] = useState(null);
+  const [joinForm, setJoinForm] = useState({
+    isPassenger: true,
+    alfayasCount: 0
   });
   const [submittingCovoit, setSubmittingCovoit] = useState(false);
 
@@ -333,10 +387,10 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
           id: `voiture_${user.uid}`,
           chauffeurId: user.uid,
           chauffeurNom: `${profileData?.prenom} ${profileData?.nom}`,
-          placesPassagers: parseInt(voitureForm.placesPassagers) || 0,
-          placesAlfaias: voitureForm.placesAlfaias.trim(),
+          passengerSeats: parseInt(voitureForm.passengerSeats) || 0,
+          trunkAlfayaCapacity: parseInt(voitureForm.trunkAlfayaCapacity) || 0,
           materielCharge: voitureForm.materielCharge.trim(),
-          passagers: []
+          passengers: []
         };
 
         const recherchePlace = (currentCovoit.recherchePlace || []).filter(item => item.uid !== user.uid);
@@ -350,7 +404,7 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
       });
 
       setShowProposerForm(false);
-      setVoitureForm({ placesPassagers: 3, placesAlfaias: '', materielCharge: '' });
+      setVoitureForm({ passengerSeats: 3, trunkAlfayaCapacity: 0, materielCharge: '' });
       alert("Votre voiture a été ajoutée au convoi !");
     } catch (err) {
       console.error("EventDetails - Erreur handleProposerVoiture :", err);
@@ -360,8 +414,30 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
     }
   };
 
-  const handleRejoindreVoiture = async (voitureId) => {
+
+
+  const handleConfirmJoin = async (voiture) => {
     if (!user?.uid) return;
+
+    // Simuler l'ajout pour vérifier la capacité
+    const cleanPassengers = (voiture.passengers || []).filter(p => p.uid !== user.uid);
+    const candidatePassenger = {
+      uid: user.uid,
+      nom: `${profileData?.prenom} ${profileData?.nom}`,
+      isPassenger: joinForm.isPassenger,
+      alfayasCount: joinForm.alfayasCount
+    };
+    const simulatedCar = {
+      ...voiture,
+      passengers: [...cleanPassengers, candidatePassenger]
+    };
+
+    const status = calculateCarStatus(simulatedCar, { enableCarpoolReimbursement, reimbursementRule });
+
+    if (status.isOverbooked) {
+      alert("❌ Impossible de rejoindre : pas assez de place pour vous et/ou vos instruments !");
+      return;
+    }
 
     setSubmittingCovoit(true);
     try {
@@ -377,27 +453,33 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
         const currentCovoit = eventData.covoiturage || { voitures: [], recherchePlace: [] };
         const voitures = currentCovoit.voitures || [];
 
-        const targetVoiture = voitures.find(v => v.id === voitureId);
-        if (!targetVoiture) {
+        const freshVoiture = voitures.find(v => v.id === voiture.id);
+        if (!freshVoiture) {
           throw new Error("Ce véhicule n'est plus disponible.");
         }
 
-        if (targetVoiture.passagers.length >= targetVoiture.placesPassagers) {
-          throw new Error("Désolé, cette voiture vient d'être remplie !");
+        const freshCleanPassengers = (freshVoiture.passengers || []).filter(p => p.uid !== user.uid);
+        const freshSimulatedCar = {
+          ...freshVoiture,
+          passengers: [...freshCleanPassengers, candidatePassenger]
+        };
+
+        const freshStatus = calculateCarStatus(freshSimulatedCar, { enableCarpoolReimbursement, reimbursementRule });
+        if (freshStatus.isOverbooked) {
+          throw new Error("Désolé, cette voiture vient d'être remplie par un autre passager ou instrument !");
         }
 
-        const updatedVoitures = voitures.map(voiture => {
-          const cleanPassagers = voiture.passagers.filter(p => p.uid !== user.uid);
-          
-          if (voiture.id === voitureId) {
+        const updatedVoitures = voitures.map(v => {
+          const cleanP = (v.passengers || []).filter(p => p.uid !== user.uid);
+          if (v.id === voiture.id) {
             return {
-              ...voiture,
-              passagers: [...cleanPassagers, { uid: user.uid, nom: `${profileData?.prenom} ${profileData?.nom}` }]
+              ...v,
+              passengers: [...cleanP, candidatePassenger]
             };
           }
           return {
-            ...voiture,
-            passagers: cleanPassagers
+            ...v,
+            passengers: cleanP
           };
         });
 
@@ -411,9 +493,10 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
         });
       });
 
+      setJoiningVoitureId(null);
     } catch (err) {
-      console.error("EventDetails - Erreur handleRejoindreVoiture :", err);
-      alert(err.message || "Erreur lors de la réservation.");
+      console.error("EventDetails - Erreur handleConfirmJoin :", err);
+      alert(err.message || "Erreur lors de l'inscription.");
     } finally {
       setSubmittingCovoit(false);
     }
@@ -436,9 +519,10 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
 
         const updatedVoitures = voitures.map(voiture => {
           if (voiture.id === voitureId) {
+            const cleanP = (voiture.passengers || voiture.passagers || []).filter(p => p.uid !== user.uid);
             return {
               ...voiture,
-              passagers: voiture.passagers.filter(p => p.uid !== user.uid)
+              passengers: cleanP
             };
           }
           return voiture;
@@ -478,7 +562,7 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
         const voitureToDelete = voitures.find(v => v.id === voitureId);
         if (!voitureToDelete) return;
 
-        const passengersToQueue = voitureToDelete.passagers || [];
+        const passengersToQueue = voitureToDelete.passengers || voitureToDelete.passagers || [];
         
         let recherchePlace = currentCovoit.recherchePlace || [];
         passengersToQueue.forEach(p => {
@@ -528,7 +612,7 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
 
         const updatedVoitures = voitures.map(voiture => ({
           ...voiture,
-          passagers: voiture.passagers.filter(p => p.uid !== user.uid)
+          passengers: (voiture.passengers || voiture.passagers || []).filter(p => p.uid !== user.uid)
         }));
 
         recherchePlace.push({ uid: user.uid, nom: `${profileData?.prenom} ${profileData?.nom}` });
@@ -796,9 +880,11 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
   if (event.covoiturage?.voitures) {
     event.covoiturage.voitures.forEach(voiture => {
       if (voiture.chauffeurId && voiture.chauffeurNom) {
+        const carStatus = calculateCarStatus(voiture, { enableCarpoolReimbursement, reimbursementRule });
         convoiDrivers.push({
           id: voiture.chauffeurId,
-          nom: voiture.chauffeurNom
+          nom: voiture.chauffeurNom,
+          isEligibleRefund: carStatus.isEligibleForReimbursement
         });
       }
     });
@@ -1727,24 +1813,28 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
         )}
       </CordelCard>
 
-      {/* 🚗 Frais de déplacement (uniquement pour les administrateurs pour prestation, stage & atelier) */}
+      {/* 🚗 Frais de déplacement / Convoi (uniquement pour les administrateurs pour prestation, stage & atelier) */}
       {isAuthorized && (event.type === 'prestation' || event.type === 'stage' || event.type === 'atelier') && (
         <CordelCard variant="default" useExtremeBorder={true} className="py-4 px-5 select-none">
           <h4 className="font-bold text-xs uppercase tracking-wider text-cordel-wood border-b border-dashed border-cordel-master-dark/15 pb-1 mb-3">
-            🚗 Frais de déplacement (Admin)
+            {enableCarpoolReimbursement ? "🚗 Frais de déplacement (Admin)" : "🚗 Covoiturage & Convoi (Admin)"}
           </h4>
           <div className="text-xs flex flex-col gap-2.5 text-left theme-inner-panel p-3.5 rounded">
-            <div className="border-b border-dashed border-encre-noire/10 pb-2 mb-1 text-[11px] font-bold text-encre-noire/80">
-              ℹ️ Distance estimée : {event.distanceAllerRetourKm || 0} km A/R - Indemnité prévue : {((event.distanceAllerRetourKm || 0) * indemniteKilometrique).toFixed(2)} €
-            </div>
-            <div className="flex justify-between font-bold border-b border-dashed border-encre-noire/10 pb-1 mb-1">
-              <span>Distance A/R :</span>
-              <span>{event.distanceAllerRetourKm || 0} km</span>
-            </div>
-            <div className="flex justify-between font-bold border-b border-dashed border-encre-noire/10 pb-1 mb-1.5">
-              <span>Tarif Km :</span>
-              <span>{indemniteKilometrique.toFixed(2)} €/km</span>
-            </div>
+            {enableCarpoolReimbursement && (
+              <>
+                <div className="border-b border-dashed border-encre-noire/10 pb-2 mb-1 text-[11px] font-bold text-encre-noire/80">
+                  ℹ️ Distance estimée : {event.distanceAllerRetourKm || 0} km A/R - Indemnité prévue : {((event.distanceAllerRetourKm || 0) * indemniteKilometrique).toFixed(2)} €
+                </div>
+                <div className="flex justify-between font-bold border-b border-dashed border-encre-noire/10 pb-1 mb-1">
+                  <span>Distance A/R :</span>
+                  <span>{event.distanceAllerRetourKm || 0} km</span>
+                </div>
+                <div className="flex justify-between font-bold border-b border-dashed border-encre-noire/10 pb-1 mb-1.5">
+                  <span>Tarif Km :</span>
+                  <span>{indemniteKilometrique.toFixed(2)} €/km</span>
+                </div>
+              </>
+            )}
 
             {/* 1. Catégorie : Convoi / Covoiturage */}
             <div className="mt-2">
@@ -1756,19 +1846,36 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
               ) : (
                 <div className="flex flex-col gap-1.5 pl-2">
                   {convoiDrivers.map(driver => {
-                    const refund = (event.distanceAllerRetourKm || 0) * indemniteKilometrique;
+                    const refund = driver.isEligibleRefund ? (event.distanceAllerRetourKm || 0) * indemniteKilometrique : 0;
                     return (
-                      <div key={driver.id} className="flex justify-between items-center text-xs">
-                        <span className="font-semibold">{driver.nom} :</span>
-                        <span className="font-black text-cordel-wood">
-                          {refund > 0 ? `${refund.toFixed(2)} €` : "0.00 €"}
-                        </span>
+                      <div key={driver.id} className="flex flex-col gap-0.5 border-b border-dashed border-encre-noire/5 pb-1 mb-1 last:border-none">
+                        <div className="flex justify-between items-center text-xs">
+                          <span className="font-semibold">{driver.nom}</span>
+                          {enableCarpoolReimbursement && (
+                            <span className="font-black text-cordel-wood">
+                              {refund > 0 ? `${refund.toFixed(2)} €` : "0.00 €"}
+                            </span>
+                          )}
+                        </div>
+                        {enableCarpoolReimbursement && (
+                          <div className="flex items-center gap-1.5 mt-0.5">
+                            {driver.isEligibleRefund ? (
+                              <span className="text-[8px] font-black uppercase tracking-wider bg-green-100 border border-green-400 text-green-800 px-1.5 py-0.5 rounded select-none">
+                                ✅ Complète - Éligible Remboursement
+                              </span>
+                            ) : (
+                              <span className="text-[8px] font-black uppercase tracking-wider bg-neutral-100 border border-neutral-300 text-neutral-600 px-1.5 py-0.5 rounded select-none">
+                                ❌ Incomplète - Non éligible
+                              </span>
+                            )}
+                          </div>
+                        )}
                       </div>
                     );
                   })}
-                  {event.distanceAllerRetourKm > 0 && indemniteKilometrique > 0 && (
+                  {enableCarpoolReimbursement && event.distanceAllerRetourKm > 0 && indemniteKilometrique > 0 && (
                     <div className="text-right text-[11px] font-bold text-encre-noire opacity-80 mt-1">
-                      Sous-total : {(convoiDrivers.length * event.distanceAllerRetourKm * indemniteKilometrique).toFixed(2)} €
+                      Sous-total : {(convoiDrivers.filter(d => d.isEligibleRefund).length * event.distanceAllerRetourKm * indemniteKilometrique).toFixed(2)} €
                     </div>
                   )}
                 </div>
@@ -1787,15 +1894,17 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
                   {individualDrivers.map(driver => {
                     const refund = (event.distanceAllerRetourKm || 0) * indemniteKilometrique;
                     return (
-                      <div key={driver.id} className="flex justify-between items-center text-xs">
-                        <span className="font-semibold">{driver.nom} :</span>
-                        <span className="font-black text-cordel-wood">
-                          {refund > 0 ? `${refund.toFixed(2)} €` : "0.00 €"}
-                        </span>
+                      <div key={driver.id} className="flex justify-between items-center text-xs border-b border-dashed border-encre-noire/5 pb-1 mb-1 last:border-none">
+                        <span className="font-semibold">{driver.nom}</span>
+                        {enableCarpoolReimbursement && (
+                          <span className="font-black text-cordel-wood">
+                            {refund > 0 ? `${refund.toFixed(2)} €` : "0.00 €"}
+                          </span>
+                        )}
                       </div>
                     );
                   })}
-                  {event.distanceAllerRetourKm > 0 && indemniteKilometrique > 0 && (
+                  {enableCarpoolReimbursement && event.distanceAllerRetourKm > 0 && indemniteKilometrique > 0 && (
                     <div className="text-right text-[11px] font-bold text-encre-noire opacity-80 mt-1">
                       Sous-total : {(individualDrivers.length * event.distanceAllerRetourKm * indemniteKilometrique).toFixed(2)} €
                     </div>
@@ -1805,11 +1914,11 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
             </div>
 
             {/* Total Cumulé */}
-            {event.distanceAllerRetourKm > 0 && indemniteKilometrique > 0 && (convoiDrivers.length > 0 || individualDrivers.length > 0) && (
+            {enableCarpoolReimbursement && event.distanceAllerRetourKm > 0 && indemniteKilometrique > 0 && (convoiDrivers.length > 0 || individualDrivers.length > 0) && (
               <div className="border-t border-double border-encre-noire/25 pt-2.5 mt-3 flex justify-between items-center font-black text-sm text-encre-noire">
                 <span>Total Général :</span>
                 <span className="text-cordel-wood">
-                  {((convoiDrivers.length + individualDrivers.length) * event.distanceAllerRetourKm * indemniteKilometrique).toFixed(2)} €
+                  {((convoiDrivers.filter(d => d.isEligibleRefund).length + individualDrivers.length) * event.distanceAllerRetourKm * indemniteKilometrique).toFixed(2)} €
                 </span>
               </div>
             )}
@@ -1953,15 +2062,17 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                 {(event.covoiturage.voitures).map((voiture) => {
+                  const status = calculateCarStatus(voiture, { enableCarpoolReimbursement, reimbursementRule });
                   const isUserChauffeur = voiture.chauffeurId === user.uid;
-                  const isUserPassager = voiture.passagers.some(p => p.uid === user.uid);
-                  const occupancy = voiture.passagers.length;
-                  const capacity = voiture.placesPassagers;
+                  const isUserPassager = (voiture.passengers || voiture.passagers || []).some(p => p.uid === user.uid);
+                  const passengersList = voiture.passengers || voiture.passagers || [];
 
                   return (
                     <div 
                       key={voiture.id}
-                      className="border-2 border-encre-noire bg-cordel-bg rounded-[6px_10px_8px_12px] shadow-[2px_2px_0px_0px_#181716] p-3 text-left relative flex flex-col justify-between min-h-[140px] text-xs"
+                      className={`border-2 border-encre-noire rounded-[6px_10px_8px_12px] shadow-[2px_2px_0px_0px_#181716] p-3 text-left relative flex flex-col justify-between min-h-[140px] text-xs transition-all ${
+                        enableCarpoolReimbursement && status.isFull ? 'bg-green-50/50 border-green-700' : 'bg-cordel-bg'
+                      }`}
                     >
                       <div>
                         {/* Chauffeur header */}
@@ -1970,15 +2081,27 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
                             👤 Chauffeur : {voiture.chauffeurNom}
                           </span>
                           <span className="shrink-0 text-encre-noire whitespace-nowrap">
-                            🧑‍🤝‍🧑 {occupancy}/{capacity} places
+                            🚗 Libres : {status.availableSeats}/{voiture.passengerSeats || 0}
                           </span>
                         </div>
 
+                        {/* Eligibility badge */}
+                        {enableCarpoolReimbursement && status.isEligibleForReimbursement && (
+                          <div className="mb-2">
+                            <span className="inline-block bg-green-100 text-green-800 text-[8px] px-2 py-0.5 rounded font-black border border-green-300 uppercase tracking-wide">
+                              {reimbursementRule === 'all_drivers' ? "✅ Éligible Défraiement" : "✅ Complète - Éligible Remboursement"}
+                            </span>
+                          </div>
+                        )}
+
                         {/* Cargo items */}
                         <div className="flex flex-col gap-1 text-[11px] font-semibold text-encre-noire opacity-90 mb-2">
-                          {voiture.placesAlfaias && (
-                            <span className="flex items-center gap-1.5">
-                              🥁 <strong className="text-cordel-wood">Coffre (Alfaias) :</strong> {voiture.placesAlfaias}
+                          <span className="flex items-center gap-1.5">
+                            🥁 <strong className="text-cordel-wood">Coffre (Alfayas) :</strong> {status.alfayasInTrunk}/{voiture.trunkAlfayaCapacity || 0}
+                          </span>
+                          {status.alfayasOnSeats > 0 && (
+                            <span className="flex items-center gap-1.5 text-amber-700">
+                              ⚠️ <strong className="text-amber-800">Alfayas sur sièges :</strong> {status.alfayasOnSeats}
                             </span>
                           )}
                           {voiture.materielCharge && (
@@ -1989,48 +2112,111 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
                         </div>
 
                         {/* Passengers listing */}
-                        {voiture.passagers.length > 0 && (
+                        {passengersList.length > 0 && (
                           <div className="theme-inner-panel rounded p-1.5 mb-3">
-                            <span className="text-[9px] uppercase font-bold tracking-widest opacity-60 block mb-0.5">Passagers :</span>
-                            <p className="text-[11px] font-bold leading-normal truncate">
-                              {voiture.passagers.map(p => p.nom).join(', ')}
-                            </p>
+                            <span className="text-[9px] uppercase font-bold tracking-widest opacity-60 block mb-0.5">Participants :</span>
+                            <ul className="list-disc pl-3 text-[11px] font-bold leading-normal">
+                              {passengersList.map((p, idx) => {
+                                const details = [];
+                                if (p.isPassenger !== false) {
+                                  details.push("Passager");
+                                } else {
+                                  details.push("Instrument seul");
+                                }
+                                if (p.alfayasCount > 0) {
+                                  details.push(`${p.alfayasCount} Alfaya${p.alfayasCount > 1 ? 's' : ''}`);
+                                }
+                                return (
+                                  <li key={idx}>
+                                    {p.nom} <span className="text-[9px] font-semibold text-cordel-master-dark/70">({details.join(', ')})</span>
+                                  </li>
+                                );
+                              })}
+                            </ul>
                           </div>
                         )}
                       </div>
 
-                      {/* Action buttons */}
-                      <div className="flex justify-end gap-2 mt-auto">
-                        {isUserChauffeur ? (
-                          <button
-                            type="button"
-                            disabled={submittingCovoit}
-                            onClick={() => handleRetirerVoiture(voiture.id)}
-                            className="text-[9px] font-black uppercase bg-red-100 hover:bg-red-200 text-red-700 border border-red-300 px-2 py-1 rounded"
-                          >
-                            Retirer ma voiture
-                          </button>
-                        ) : isUserPassager ? (
-                          <button
-                            type="button"
-                            disabled={submittingCovoit}
-                            onClick={() => handleQuitterVoiture(voiture.id)}
-                            className="text-[9px] font-black uppercase bg-neutral-200 hover:bg-neutral-300 text-encre-noire border border-encre-noire px-2 py-1 rounded"
-                          >
-                            Quitter la voiture
-                          </button>
-                        ) : (
-                          occupancy < capacity && (
+                      {/* Action buttons / inline form */}
+                      <div className="flex flex-col gap-2 mt-auto">
+                        {joiningVoitureId === voiture.id && (
+                          <div className="reservation-form mt-2 p-2 bg-white/60 dark:bg-black/20 rounded border border-dashed border-encre-noire/25 text-[11px] font-bold">
+                            <label className="flex items-center gap-2 mb-2 select-none cursor-pointer">
+                              <input 
+                                type="checkbox" 
+                                checked={joinForm.isPassenger} 
+                                onChange={(e) => setJoinForm(prev => ({ ...prev, isPassenger: e.target.checked }))} 
+                                className="w-3.5 h-3.5 border border-encre-noire bg-white rounded"
+                              />
+                              <span>Je monte dans la voiture (1 place)</span>
+                            </label>
+                            
+                            <label className="flex items-center justify-between gap-2">
+                              <span>Nombre d'Alfayas transportées :</span>
+                              <input 
+                                type="number" 
+                                min="0" 
+                                max="5"
+                                value={joinForm.alfayasCount} 
+                                onChange={(e) => setJoinForm(prev => ({ ...prev, alfayasCount: Math.max(0, parseInt(e.target.value) || 0) }))}
+                                className="theme-input text-xs font-bold py-0.5 px-1.5 w-12 text-center bg-white"
+                              />
+                            </label>
+                            
+                            <div className="flex gap-2 justify-end mt-3">
+                              <button 
+                                type="button"
+                                onClick={() => setJoiningVoitureId(null)}
+                                className="text-[9px] font-black uppercase bg-neutral-200 hover:bg-neutral-300 text-encre-noire border border-encre-noire px-2 py-1 rounded"
+                              >
+                                Annuler
+                              </button>
+                              <button 
+                                type="button"
+                                onClick={() => handleConfirmJoin(voiture)}
+                                className="text-[9px] font-black uppercase bg-cordel-vert hover:bg-cordel-vert/90 text-encre-noire border border-encre-noire px-3 py-1 rounded shadow-[1px_1px_0px_0px_#181716]"
+                              >
+                                Confirmer ma place
+                              </button>
+                            </div>
+                          </div>
+                        )}
+
+                        <div className="flex justify-end gap-2 mt-1">
+                          {isUserChauffeur ? (
                             <button
                               type="button"
                               disabled={submittingCovoit}
-                              onClick={() => handleRejoindreVoiture(voiture.id)}
-                              className="text-[9px] font-black uppercase bg-cordel-vert hover:bg-cordel-vert/90 text-encre-noire border border-encre-noire px-2.5 py-1 rounded shadow-[1px_1px_0px_0px_#181716]"
+                              onClick={() => handleRetirerVoiture(voiture.id)}
+                              className="text-[9px] font-black uppercase bg-red-100 hover:bg-red-200 text-red-700 border border-red-300 px-2 py-1 rounded"
                             >
-                              S'inscrire
+                              Retirer ma voiture
                             </button>
-                          )
-                        )}
+                          ) : isUserPassager ? (
+                            <button
+                              type="button"
+                              disabled={submittingCovoit}
+                              onClick={() => handleQuitterVoiture(voiture.id)}
+                              className="text-[9px] font-black uppercase bg-neutral-200 hover:bg-neutral-300 text-encre-noire border border-encre-noire px-2 py-1 rounded"
+                            >
+                              Quitter la voiture
+                            </button>
+                          ) : (
+                            joiningVoitureId !== voiture.id && (
+                              <button
+                                type="button"
+                                disabled={submittingCovoit}
+                                onClick={() => {
+                                  setJoiningVoitureId(voiture.id);
+                                  setJoinForm({ isPassenger: true, alfayasCount: 0 });
+                                }}
+                                className="text-[9px] font-black uppercase bg-cordel-vert hover:bg-cordel-vert/90 text-encre-noire border border-encre-noire px-2.5 py-1 rounded shadow-[1px_1px_0px_0px_#181716]"
+                              >
+                                S'inscrire
+                              </button>
+                            )
+                          )}
+                        </div>
                       </div>
                     </div>
                   );
@@ -2105,8 +2291,8 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
                       type="number"
                       min="1"
                       max="8"
-                      value={voitureForm.placesPassagers}
-                      onChange={(e) => setVoitureForm(prev => ({ ...prev, placesPassagers: parseInt(e.target.value) || 0 }))}
+                      value={voitureForm.passengerSeats}
+                      onChange={(e) => setVoitureForm(prev => ({ ...prev, passengerSeats: parseInt(e.target.value) || 0 }))}
                       disabled={submittingCovoit}
                       required
                       className="theme-input text-xs font-bold py-1 text-center bg-cordel-bg-light"
@@ -2118,12 +2304,14 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
                       Volume coffre (Alfaias)
                     </label>
                     <input 
-                      type="text"
-                      placeholder="Ex: 2 grosses alfaias"
-                      value={voitureForm.placesAlfaias}
-                      onChange={(e) => setVoitureForm(prev => ({ ...prev, placesAlfaias: e.target.value }))}
+                      type="number"
+                      min="0"
+                      max="10"
+                      value={voitureForm.trunkAlfayaCapacity}
+                      onChange={(e) => setVoitureForm(prev => ({ ...prev, trunkAlfayaCapacity: parseInt(e.target.value) || 0 }))}
                       disabled={submittingCovoit}
-                      className="theme-input text-xs font-bold py-1 bg-cordel-bg-light"
+                      required
+                      className="theme-input text-xs font-bold py-1 text-center bg-cordel-bg-light"
                     />
                   </div>
                 </div>

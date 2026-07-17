@@ -6,6 +6,7 @@ import WidgetAnnonces from './WidgetAnnonces';
 import WidgetAgenda from './WidgetAgenda';
 import WidgetCommandes from './WidgetCommandes';
 import WidgetForum from './WidgetForum';
+import WidgetAnniversaires from './WidgetAnniversaires';
 const WidgetDocuments = React.lazy(() => import('./WidgetDocuments'));
 const WidgetTreasury = React.lazy(() => import('./WidgetTreasury'));
 import CordelCard from './CordelCard';
@@ -17,7 +18,7 @@ import { useTerminologie } from '../hooks/useTerminologie';
 export default function Dashboard({ user, profileData, onNavigateToTrombi, onNavigateToView, onSignOut, installPromptAvailable, onTriggerInstall }) {
   const { tRole } = useTerminologie();
   const { locale, toggleLanguage, t } = useTranslation();
-  const [layout, setLayout] = useState(["motMestre", "annonces", "agenda", "commandes", "forum", "documents", "tresorerie"]);
+  const [layout, setLayout] = useState(["motMestre", "annonces", "agenda", "commandes", "forum", "documents", "tresorerie", "anniversaires"]);
   const [sequenceurUrl, setSequenceurUrl] = useState('');
   const [agendaFocusMode, setAgendaFocusMode] = useState(false);
 
@@ -46,6 +47,9 @@ export default function Dashboard({ user, profileData, onNavigateToTrombi, onNav
           const activeLayout = [...data.layoutEleves];
           if (!activeLayout.includes("tresorerie")) {
             activeLayout.push("tresorerie");
+          }
+          if (!activeLayout.includes("anniversaires")) {
+            activeLayout.push("anniversaires");
           }
           setLayout(activeLayout);
         }
@@ -317,9 +321,18 @@ export default function Dashboard({ user, profileData, onNavigateToTrombi, onNav
                 </React.Suspense>
               );
               break;
+            case 'anniversaires':
+              widgetContent = (
+                <WidgetAnniversaires 
+                  groupId={profileData?.groupId} 
+                />
+              );
+              break;
             default:
               return null;
           }
+
+          if (!widgetContent) return null;
 
           return (
             <div key={widgetId} className={spanClass}>

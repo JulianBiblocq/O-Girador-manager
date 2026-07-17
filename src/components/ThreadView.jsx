@@ -5,7 +5,7 @@ import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
 import { useTranslation } from './LanguageContext';
 
-export default function ThreadView({ threadId, user, profileData, onClose }) {
+export default function ThreadView({ threadId, user, profileData, isReadOnly, onClose }) {
   const { t } = useTranslation();
 
   const getCategoryLabel = (cat) => {
@@ -16,6 +16,8 @@ export default function ThreadView({ threadId, user, profileData, onClose }) {
   const [loading, setLoading] = useState(true);
   const [replyText, setReplyText] = useState('');
   const [sending, setSending] = useState(false);
+  const [availableTargets, setAvailableTargets] = useState([]);
+  const [selectedTarget, setSelectedTarget] = useState('');
   
   const messagesEndRef = useRef(null);
 
@@ -59,6 +61,24 @@ export default function ThreadView({ threadId, user, profileData, onClose }) {
     }
   }, [thread?.reponses]);
 
+  // Load available tags and instruments from association document in real-time
+  useEffect(() => {
+    if (!profileData?.groupId) return;
+    const assocRef = doc(db, 'associations', profileData.groupId);
+    const unsubscribe = onSnapshot(assocRef, (snap) => {
+      if (snap.exists()) {
+        const data = snap.data();
+        const tags = data.tagsDisponibles || [];
+        const instruments = data.instrumentsDisponibles || [];
+        const combined = [...new Set([...tags, ...instruments])].filter(Boolean).sort();
+        setAvailableTargets(combined);
+      }
+    }, (error) => {
+      console.error("ThreadView - Error fetching targets:", error);
+    });
+    return () => unsubscribe();
+  }, [profileData?.groupId]);
+
   const handleSend = async (e) => {
     e.preventDefault();
     if (!replyText.trim() || !threadId) return;
@@ -75,12 +95,14 @@ export default function ThreadView({ threadId, user, profileData, onClose }) {
           auteurId: user.uid,
           auteurNom: authorName,
           message: replyText,
-          dateCreation: nowIso
+          dateCreation: nowIso,
+          targetTag: selectedTarget || null
         }),
         derniereModification: nowIso
       });
 
       setReplyText('');
+      setSelectedTarget('');
     } catch (error) {
       console.error("ThreadView - Erreur updateDoc/arrayUnion :", error);
       alert(t('common.saveError'));
@@ -145,6 +167,12 @@ export default function ThreadView({ threadId, user, profileData, onClose }) {
                     .replace('{time}', dateMsg.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' }))
                     .replace('{date}', dateMsg.toLocaleDateString(undefined, { day: 'numeric', month: 'short' }));
 
+              // Check if message targets user tags/instruments
+              const userPlaysInstrument = (profileData?.instrumentsJoues && profileData.instrumentsJoues.includes(reply.targetTag)) ||
+                                           (profileData?.instrument === reply.targetTag);
+              const userHasTag = profileData?.tags && profileData.tags.includes(reply.targetTag);
+              const isTargeted = reply.targetTag && (userPlaysInstrument || userHasTag);
+
               return (
                 <div 
                   key={index} 
@@ -155,12 +183,20 @@ export default function ThreadView({ threadId, user, profileData, onClose }) {
                 >
                   <div 
                     className={`
-                      border-2 border-encre-noire p-3 shadow-[2px_2px_0px_0px_#181716]
-                      ${isCurrentUser 
-                        ? 'theme-bg-vert rounded-[10px_2px_8px_10px]' 
-                        : 'bg-[var(--cordel-hover-bg)] text-encre-noire rounded-[2px_10px_10px_8px]'}
+                      border-2 p-3 shadow-[2px_2px_0px_0px_#181716] transition-all
+                      ${isTargeted 
+                        ? 'theme-bg-jaune border-cordel-wood rounded-[6px_10px_6px_10px] scale-[1.02] shadow-[2.5px_2.5px_0px_0px_#8b2a1a]' 
+                        : isCurrentUser 
+                          ? 'theme-bg-vert border-encre-noire rounded-[10px_2px_8px_10px]' 
+                          : 'bg-[var(--cordel-hover-bg)] border-encre-noire text-encre-noire rounded-[2px_10px_10px_8px]'}
                     `}
                   >
+                    {isTargeted && (
+                      <span className="text-[8px] font-black text-cordel-wood block mb-1 uppercase tracking-wider animate-pulse">
+                        🗣️ Ce message vous concerne ({reply.targetTag})
+                      </span>
+                    )}
+
                     {/* Message author (only if not current user) */}
                     {!isCurrentUser && (
                       <span className="text-[8px] font-extrabold uppercase tracking-widest text-cordel-wood block mb-1">
@@ -184,28 +220,56 @@ export default function ThreadView({ threadId, user, profileData, onClose }) {
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Quick Reply Form */}
-          <form onSubmit={handleSend} className="flex flex-col gap-2 mt-auto">
-            <textarea
-              value={replyText}
-              onChange={(e) => setReplyText(e.target.value)}
-              disabled={sending}
-              required
-              placeholder={t('forum.writeReplyPlaceholder')}
-              rows="2"
-              className="theme-input w-full resize-none disabled:opacity-50 text-xs py-2"
-            />
-            <div className="flex justify-end">
-              <CordelButton
-                variant="ocre"
-                useExtremeBorder={true}
-                disabled={sending || !replyText.trim()}
-                className="text-xs px-5 py-2 uppercase font-bold tracking-widest"
-              >
-                {sending ? t('forum.sendingMsg') : (t('common.send') || "Envoyer")}
-              </CordelButton>
+          {/* Quick Reply Form or Read-Only Banner */}
+          {isReadOnly ? (
+            <div className="p-4 text-center border-2 border-dashed border-cordel-wood/30 bg-cordel-bg rounded-md select-none mt-2">
+              <span className="text-xs font-black text-cordel-wood">
+                🔇 Ce salon est en lecture seule pour votre rôle.
+              </span>
             </div>
-          </form>
+          ) : (
+            <form onSubmit={handleSend} className="flex flex-col gap-2 mt-auto">
+              {/* Target Group Selector */}
+              <div className="flex flex-col gap-1">
+                <label className="text-[8px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                  🗣️ {t('forum.targetGroup') || "Cibler un groupe (Optionnel)"}
+                </label>
+                <select
+                  value={selectedTarget}
+                  onChange={(e) => setSelectedTarget(e.target.value)}
+                  disabled={sending}
+                  className="theme-input w-full disabled:opacity-50 text-[10px] py-1 font-bold bg-cordel-bg"
+                >
+                  <option value="">{t('forum.targetAll') || "-- Tout le monde --"}</option>
+                  {availableTargets.map((target) => (
+                    <option key={target} value={target}>
+                      {target}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <textarea
+                value={replyText}
+                onChange={(e) => setReplyText(e.target.value)}
+                disabled={sending}
+                required
+                placeholder={t('forum.writeReplyPlaceholder')}
+                rows="2"
+                className="theme-input w-full resize-none disabled:opacity-50 text-xs py-2"
+              />
+              <div className="flex justify-end">
+                <CordelButton
+                  variant="ocre"
+                  useExtremeBorder={true}
+                  disabled={sending || !replyText.trim()}
+                  className="text-xs px-5 py-2 uppercase font-bold tracking-widest"
+                >
+                  {sending ? t('forum.sendingMsg') : (t('common.send') || "Envoyer")}
+                </CordelButton>
+              </div>
+            </form>
+          )}
         </div>
       )}
     </div>
