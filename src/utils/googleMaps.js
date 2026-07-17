@@ -68,43 +68,91 @@ export function calculateRoadDistance(origin, destination) {
   }
 
   return loadGoogleMaps().then((maps) => {
+    const geocoder = new maps.Geocoder();
+
+    const getCoords = async (addr) => {
+      const coordinateRegex = /^[-+]?([1-9]?\d(\.\d+)?|90(\.0+)?),\s*[-+]?(180(\.0+)?|((1[0-7]\d)|([1-9]?\d))(\.\d+)?)$/;
+      if (coordinateRegex.test(addr.trim())) {
+        const parts = addr.split(',').map(s => parseFloat(s.trim()));
+        return { lat: parts[0], lng: parts[1] };
+      }
+      return new Promise((resolve, reject) => {
+        geocoder.geocode({ address: addr }, (results, status) => {
+          if (status === 'OK' && results && results[0] && results[0].geometry && results[0].geometry.location) {
+            const loc = results[0].geometry.location;
+            resolve({
+              lat: typeof loc.lat === 'function' ? loc.lat() : loc.lat,
+              lng: typeof loc.lng === 'function' ? loc.lng() : loc.lng
+            });
+          } else {
+            reject(new Error(`Geocoding failed for "${addr}" with status: ${status}`));
+          }
+        });
+      });
+    };
+
+    // Try Distance Matrix first
     return new Promise((resolve, reject) => {
       const service = new maps.DistanceMatrixService();
       
+      const coordinateRegex = /^[-+]?([1-9]?\d(\.\d+)?|90(\.0+)?),\s*[-+]?(180(\.0+)?|((1[0-7]\d)|([1-9]?\d))(\.\d+)?)$/;
+      const parseLocation = (str) => {
+        if (coordinateRegex.test(str.trim())) {
+          const parts = str.split(',').map(s => parseFloat(s.trim()));
+          return new maps.LatLng(parts[0], parts[1]);
+        }
+        return str;
+      };
+
+      const originLoc = parseLocation(origin);
+      const destLoc = parseLocation(destination);
+
       service.getDistanceMatrix(
         {
-          origins: [origin],
-          destinations: [destination],
+          origins: [originLoc],
+          destinations: [destLoc],
           travelMode: maps.TravelMode.DRIVING,
           unitSystem: maps.UnitSystem.METRIC,
         },
         (response, status) => {
-          if (status !== 'OK') {
-            reject(new Error(`Distance Matrix service failed with status: ${status}`));
-            return;
-          }
-
           if (
+            status === 'OK' &&
             response &&
             response.rows &&
             response.rows[0] &&
             response.rows[0].elements &&
-            response.rows[0].elements[0]
+            response.rows[0].elements[0] &&
+            response.rows[0].elements[0].status === 'OK'
           ) {
             const element = response.rows[0].elements[0];
-            
-            if (element.status === 'OK') {
-              // element.distance.value is in meters
-              const distanceKm = element.distance.value / 1000;
-              resolve(distanceKm);
-            } else {
-              reject(new Error(`Distance Matrix address matching failed: ${element.status}`));
-            }
+            const distanceKm = element.distance.value / 1000;
+            resolve(distanceKm);
           } else {
-            reject(new Error('Invalid response format from Distance Matrix service'));
+            const errStatus = response?.rows?.[0]?.elements?.[0]?.status || status;
+            reject(new Error(`Distance Matrix failed with status/element status: ${errStatus}`));
           }
         }
       );
+    })
+    .catch((matrixErr) => {
+      console.warn("Distance Matrix failed, falling back to Haversine straight-line distance:", matrixErr);
+      // Fallback: Geocode both addresses and calculate Haversine distance
+      return Promise.all([getCoords(origin), getCoords(destination)])
+        .then(([coords1, coords2]) => {
+          const R = 6371; // Earth's radius in km
+          const dLat = (coords2.lat - coords1.lat) * Math.PI / 180;
+          const dLng = (coords2.lng - coords1.lng) * Math.PI / 180;
+          const a = 
+            Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(coords1.lat * Math.PI / 180) * Math.cos(coords2.lat * Math.PI / 180) * 
+            Math.sin(dLng / 2) * Math.sin(dLng / 2);
+          const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+          const haversineDist = R * c;
+          
+          // Estimate road distance by multiplying by a factor of 1.25
+          const estimatedRoadDist = haversineDist * 1.25;
+          return estimatedRoadDist;
+        });
     });
   });
 }
