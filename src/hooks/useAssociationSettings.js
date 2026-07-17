@@ -46,6 +46,7 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
     majoriteFeminine: false,
     indemniteKilometrique: 0,
     adresseLocal: '',
+    pointRassemblementDefaut: '',
     enableCarpoolReimbursement: true,
     reimbursementRule: 'full_cars_only',
     defaultDepartureLocation: '',
@@ -66,21 +67,31 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
   const [loading, setLoading] = useState(true);
 
   const handleChange = (key, value) => {
+    let actualKey = key;
+    let actualValue = value;
+    if (key && key.target) {
+      actualKey = key.target.name;
+      actualValue = key.target.value;
+    }
+    if (actualKey === 'pointRassemblementDefaut') {
+      actualKey = 'adresseLocal';
+    }
+
     setFormData(prev => {
-      if (key.includes('.')) {
-        const parts = key.split('.');
+      if (actualKey.includes('.')) {
+        const parts = actualKey.split('.');
         const updated = { ...prev };
         let current = updated;
         for (let i = 0; i < parts.length - 1; i++) {
           current[parts[i]] = { ...current[parts[i]] };
           current = current[parts[i]];
         }
-        current[parts[parts.length - 1]] = value;
+        current[parts[parts.length - 1]] = actualValue;
         return updated;
       }
       return {
         ...prev,
-        [key]: value
+        [actualKey]: actualValue
       };
     });
   };
@@ -140,6 +151,7 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
           majoriteFeminine: data.majoriteFeminine || false,
           indemniteKilometrique: data.indemniteKilometrique || 0,
           adresseLocal: data.adresseLocal || '',
+          pointRassemblementDefaut: data.adresseLocal || '',
           enableCarpoolReimbursement: data.enableCarpoolReimbursement !== false,
           reimbursementRule: data.reimbursementRule || 'full_cars_only',
           defaultDepartureLocation: data.defaultDepartureLocation || '',

@@ -3,6 +3,31 @@ import CordelCard from '../CordelCard';
 import { loadGoogleMaps } from '../../utils/googleMaps';
 const PlacesAutocomplete = React.lazy(() => import('../PlacesAutocomplete'));
 
+const geocodeByAddress = async (address) => {
+  const maps = await loadGoogleMaps();
+  const geocoder = new maps.Geocoder();
+  return new Promise((resolve, reject) => {
+    geocoder.geocode({ address }, (results, status) => {
+      if (status === 'OK' && results) {
+        resolve(results);
+      } else {
+        reject(new Error(`Geocoding failed with status: ${status}`));
+      }
+    });
+  });
+};
+
+const getLatLng = async (geocodeResult) => {
+  if (geocodeResult && geocodeResult.geometry && geocodeResult.geometry.location) {
+    const loc = geocodeResult.geometry.location;
+    return {
+      lat: typeof loc.lat === 'function' ? loc.lat() : loc.lat,
+      lng: typeof loc.lng === 'function' ? loc.lng() : loc.lng
+    };
+  }
+  throw new Error("No location found in geocode result");
+};
+
 export default function TabLogistics({
   formData,
   handleChange,
@@ -11,17 +36,33 @@ export default function TabLogistics({
 }) {
   const {
     indemniteKilometrique = 0,
-    adresseLocal = '',
     enableCarpoolReimbursement = true,
     defaultDepartureLocation = '',
     reimbursementRule = 'full_cars_only'
   } = formData;
 
+  const handleAddressChange = (newAddress) => {
+    handleChange({ target: { name: 'pointRassemblementDefaut', value: newAddress } });
+  };
+
+  const handleAddressSelect = async (selectedAddress) => {
+    handleChange({ target: { name: 'pointRassemblementDefaut', value: selectedAddress } });
+    if (!selectedAddress || selectedAddress.trim() === "") return;
+    try {
+      const results = await geocodeByAddress(selectedAddress);
+      if (results && results.length > 0) {
+        const latLng = await getLatLng(results[0]);
+      }
+    } catch (error) {
+      console.warn("Geocoding ignoré pour cette saisie :", error);
+    }
+  };
+
   return (
     <>
       <CordelCard variant="default" useExtremeBorder={true} className="py-4 px-5">
         <h3 className="text-xs uppercase font-extrabold tracking-wider text-cordel-wood mb-3">
-          🚗 Indemnité Kilométrique & Point de Départ
+          🚗 Point de départ & Remboursements
         </h3>
         <div className="flex flex-col gap-3">
           <div className="flex flex-col gap-1 text-left">
@@ -49,18 +90,16 @@ export default function TabLogistics({
               </div>
             }>
               <PlacesAutocomplete 
-                name="adresseLocal"
-                value={adresseLocal || ""}
-                onChange={(e) => {
-                  const val = e && e.target ? e.target.value : e;
-                  handleChange('adresseLocal', val || '');
-                }}
+                name="pointRassemblementDefaut"
+                value={formData.pointRassemblementDefaut || ""}
+                onChange={handleAddressChange}
+                onSelect={handleAddressSelect}
                 placeholder="ex: 12 Rue du Maracatu, 75000 Paris"
                 className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light w-full"
               />
             </React.Suspense>
             <div className="mt-3">
-              <GoogleMapsPreview address={adresseLocal || ""} />
+              <GoogleMapsPreview address={formData.pointRassemblementDefaut || ""} />
             </div>
           </div>
         </div>

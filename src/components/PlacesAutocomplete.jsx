@@ -8,6 +8,7 @@ import { loadGoogleMaps } from '../utils/googleMaps';
 export default function PlacesAutocomplete({ 
   value, 
   onChange, 
+  onSelect,
   placeholder, 
   className, 
   disabled, 
@@ -140,6 +141,10 @@ export default function PlacesAutocomplete({
                       value: finalVal
                     }
                   });
+
+                  if (onSelect) {
+                    onSelect(finalVal);
+                  }
                 }
               }
             } catch (err) {
