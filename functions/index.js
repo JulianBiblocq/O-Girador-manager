@@ -244,3 +244,111 @@ exports.onUserCreate = onDocumentCreated("users/{userId}", async (event) => {
     console.log(`Aucun paiement en attente trouvé pour l'adresse e-mail : ${userEmail}`);
   }
 });
+
+// 3. Trigger pour l'envoi des notifications Push via FCM
+exports.onAnnouncementCreated = onDocumentCreated("announcements/{announcementId}", async (event) => {
+  const snapshot = event.data;
+  if (!snapshot) return;
+
+  const announcement = snapshot.data();
+  // Vérifie si la case à cocher pour l'envoi de la notification Push est active
+  if (announcement.sendPushNotification !== true) {
+    console.log("Envoi de notification Push non requis pour cette annonce.");
+    return;
+  }
+
+  const title = announcement.titre || "Nouvelle annonce";
+  const message = announcement.message || "";
+  const groupId = announcement.groupId;
+
+  if (!groupId) {
+    console.warn("Aucun groupId trouvé sur l'annonce, envoi annulé.");
+    return;
+  }
+
+  try {
+    // 1. Récupérer tous les utilisateurs valides du groupe qui ont des fcmTokens enregistrés
+    const usersSnap = await db.collection("users")
+      .where("groupId", "==", groupId)
+      .get();
+
+    const tokens = [];
+    usersSnap.forEach((doc) => {
+      const data = doc.data();
+      if (Array.isArray(data.fcmTokens)) {
+        data.fcmTokens.forEach((tok) => {
+          if (tok && typeof tok === "string") {
+            tokens.push(tok);
+          }
+        });
+      }
+    });
+
+    if (tokens.length === 0) {
+      console.log("Aucun jeton FCM trouvé parmi les membres de ce groupe.");
+      return;
+    }
+
+    // Retirer les doublons de jetons
+    const uniqueTokens = [...new Set(tokens)];
+    console.log(`Préparation de l'envoi à ${uniqueTokens.length} jetons FCM uniques.`);
+
+    // 2. Structurer le payload de notification
+    const payload = {
+      notification: {
+        title: title,
+        body: message.length > 100 ? `${message.substring(0, 97)}...` : message
+      },
+      data: {
+        announcementId: snapshot.id,
+        click_action: "/forum" // navigation vers le porte-voix / forum
+      }
+    };
+
+    // 3. Envoyer le message via FCM admin.messaging()
+    const response = await admin.messaging().sendEachForMulticast({
+      tokens: uniqueTokens,
+      notification: payload.notification,
+      data: payload.data
+    });
+
+    console.log(`Succès : ${response.successCount} messages envoyés. Échecs : ${response.failureCount}.`);
+
+    // Optionnel : Nettoyage des jetons invalides (ex: tokens expirés ou non enregistrés)
+    if (response.failureCount > 0) {
+      const tokensToRemove = [];
+      response.responses.forEach((resp, idx) => {
+        if (!resp.success) {
+          const errorCode = resp.error?.code;
+          if (
+            errorCode === "messaging/invalid-registration-token" ||
+            errorCode === "messaging/registration-token-not-registered"
+          ) {
+            tokensToRemove.push(uniqueTokens[idx]);
+          }
+        }
+      });
+
+      if (tokensToRemove.length > 0) {
+        console.log(`Nettoyage de ${tokensToRemove.length} jetons FCM obsolètes...`);
+        const batch = db.batch();
+        usersSnap.forEach((doc) => {
+          const data = doc.data();
+          if (Array.isArray(data.fcmTokens)) {
+            const intersection = data.fcmTokens.filter(t => tokensToRemove.includes(t));
+            if (intersection.length > 0) {
+              batch.update(doc.ref, {
+                fcmTokens: admin.firestore.FieldValue.arrayRemove(...intersection)
+              });
+            }
+          }
+        });
+        await batch.commit();
+        console.log("Nettoyage des jetons obsolètes terminé avec succès.");
+      }
+    }
+  } catch (error) {
+    console.error("Erreur lors de l'envoi de la notification Push FCM :", error);
+  }
+});
+

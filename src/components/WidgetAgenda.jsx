@@ -86,7 +86,8 @@ export default function WidgetAgenda({ role, isSystemAdmin, groupId, user, profi
     lienDocument: '',
     distanceAllerRetourKm: '',
     lienSocial: '',
-    imageUrl: ''
+    imageUrl: '',
+    requiresValidation: false
   });
 
   const isAuthorized = role === 'mestre' || role === 'super-admin' || isSystemAdmin === true;
@@ -156,7 +157,8 @@ export default function WidgetAgenda({ role, isSystemAdmin, groupId, user, profi
       lienDocument: '',
       distanceAllerRetourKm: '',
       lienSocial: '',
-      imageUrl: ''
+      imageUrl: '',
+      requiresValidation: false
     });
     setIsAdding(true);
   };
@@ -210,7 +212,8 @@ export default function WidgetAgenda({ role, isSystemAdmin, groupId, user, profi
         distanceAllerRetourKm: (formData.type === 'prestation' || formData.type === 'stage' || formData.type === 'atelier') ? (parseFloat(formData.distanceAllerRetourKm) || 0) : 0,
         status: 'confirme',
         lienSocial: formData.lienSocial || '',
-        imageUrl: formData.imageUrl || ''
+        imageUrl: formData.imageUrl || '',
+        requiresValidation: formData.requiresValidation || false
       });
       setIsAdding(false);
     } catch (error) {
@@ -579,6 +582,21 @@ export default function WidgetAgenda({ role, isSystemAdmin, groupId, user, profi
               </div>
             </div>
 
+            {/* Validation Toggle */}
+            <div className="flex items-center gap-2 pt-2 border-t border-dashed border-cordel-master-dark/15">
+              <label className="flex items-center gap-2 text-xs font-semibold cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  name="requiresValidation"
+                  checked={formData.requiresValidation || false}
+                  onChange={(e) => setFormData(prev => ({ ...prev, requiresValidation: e.target.checked }))}
+                  disabled={saving}
+                  className="accent-cordel-wood scale-105"
+                />
+                <span>Inscriptions soumises à validation par l'administrateur</span>
+              </label>
+            </div>
+
             {/* Actions */}
             <div className="flex gap-3 justify-end mt-2">
               <CordelButton 
@@ -682,6 +700,10 @@ export default function WidgetAgenda({ role, isSystemAdmin, groupId, user, profi
                             const userStatus = userInscription ? userInscription.status : null;
                             if (userStatus === 'present') {
                               return <span className="text-[8px] font-black px-1.5 py-0.5 rounded-[4px_6px_3px_5px] uppercase tracking-wider badge-status-present leading-none select-none">{t('common.present')}</span>;
+                            } else if (userStatus === 'pending') {
+                              return <span className="text-[8px] font-bold px-1.5 py-0.5 rounded-[4px_6px_3px_5px] uppercase tracking-wider bg-yellow-100 text-yellow-800 border border-yellow-300 leading-none select-none">En attente de validation</span>;
+                            } else if (userStatus === 'refused') {
+                              return <span className="text-[8px] font-black px-1.5 py-0.5 rounded-[4px_6px_3px_5px] uppercase tracking-wider badge-status-absent leading-none select-none">Refusé</span>;
                             } else if (userStatus === 'absent') {
                               return <span className="text-[8px] font-black px-1.5 py-0.5 rounded-[4px_6px_3px_5px] uppercase tracking-wider badge-status-absent leading-none select-none">{t('common.absent')}</span>;
                             } else if (userStatus === 'confirm') {

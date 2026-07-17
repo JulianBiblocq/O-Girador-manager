@@ -48,15 +48,19 @@ export const fr = {
     trombinoscope: "Trombinoscope",
     forum: "Porte-Voix",
     settings: "Configuration",
-    treasury: "Trésorerie",
-    orders: "Commandes",
-    inventory: "Inventaire",
+    treasury: "Gestion des Cotisations",
+    orders: "Gestion des Commandes",
+    inventory: "Inventaire des Instruments",
     layoutEditor: "Mise en page",
     tags: "Badges",
     systemAdmin: "Admin Système",
     adminHeader: "Administration",
     studioSocial: "Studio Social",
-    exportAnnu: "Annuaire & Export"
+    exportAnnu: "Annuaire & Export",
+    tresorerie: "Trésorerie",
+    logistique: "Logistique",
+    kilometricReimbursement: "Remboursements Kilométriques",
+    varalManager: "Gestionnaire Varal"
   },
   login: {
     title: "O Girador",

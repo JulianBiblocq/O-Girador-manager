@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { doc, updateDoc, collection, query, where, onSnapshot } from 'firebase/firestore';
+import { doc, updateDoc, collection, query, where, onSnapshot, arrayUnion } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { signOut } from 'firebase/auth';
-import { db, auth, storage } from '../firebase';
+import { db, auth, storage, messaging } from '../firebase';
+import { getToken } from 'firebase/messaging';
 import XiloAvatar from './XiloAvatar';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
@@ -71,6 +72,43 @@ export default function UserProfile({ user, profileData, onBack }) {
   // Xylogravure photo editor states
   const [selectedImage, setSelectedImage] = useState(null);
   const [showEditor, setShowEditor] = useState(false);
+
+  const [notificationPermission, setNotificationPermission] = useState(typeof window !== 'undefined' && 'Notification' in window ? Notification.permission : 'default');
+  const [isSubscribingPush, setIsSubscribingPush] = useState(false);
+
+  const handleEnableNotifications = async () => {
+    if (!messaging) {
+      alert("Les notifications Push ne sont pas prises en charge par ce navigateur.");
+      return;
+    }
+    setIsSubscribingPush(true);
+    try {
+      const permission = await Notification.requestPermission();
+      setNotificationPermission(permission);
+      if (permission === 'granted') {
+        const token = await getToken(messaging, { 
+          vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY || undefined
+        });
+        if (token) {
+          const userRef = doc(db, 'users', user.uid);
+          await updateDoc(userRef, {
+            fcmTokens: arrayUnion(token)
+          });
+          alert("Notifications activées avec succès !");
+        } else {
+          console.warn("FCM Token not generated.");
+          alert("Impossible de générer le jeton de notification.");
+        }
+      } else {
+        alert("La permission d'envoi de notifications a été refusée.");
+      }
+    } catch (err) {
+      console.error("Error enabling notifications:", err);
+      alert("Erreur lors de l'activation des notifications.");
+    } finally {
+      setIsSubscribingPush(false);
+    }
+  };
 
   // Sync fieldsConfig for user's association
   useEffect(() => {
@@ -703,6 +741,39 @@ export default function UserProfile({ user, profileData, onBack }) {
                   📄 <a href={aptitudeMedicaleDocUrl} target="_blank" rel="noopener noreferrer" className="text-cordel-wood hover:underline">{t('userProfile.medicalCertDoc')}</a>
                 </div>
               )}
+            </div>
+          )}
+
+          {/* Push Notifications Configuration */}
+          {messaging && (
+            <div className="flex flex-col gap-2 border-t border-dashed border-cordel-master-dark/10 pt-3 mt-1 text-left">
+              <span className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood">
+                Notifications Push
+              </span>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white/40 dark:bg-black/10 p-2.5 rounded border border-dashed border-encre-noire/10 text-xs">
+                <div className="flex flex-col gap-0.5">
+                  <span className="font-bold">Statut des notifications de l'appareil :</span>
+                  <span className="font-semibold text-[10px]">
+                    {notificationPermission === 'granted' ? (
+                      <span className="text-green-700">🟢 Activées</span>
+                    ) : notificationPermission === 'denied' ? (
+                      <span className="text-red-600">🔴 Bloquées par le navigateur</span>
+                    ) : (
+                      <span className="opacity-75">⏳ Non configurées</span>
+                    )}
+                  </span>
+                </div>
+                {notificationPermission !== 'granted' && (
+                  <button
+                    type="button"
+                    disabled={isSubscribingPush}
+                    onClick={handleEnableNotifications}
+                    className="text-[10px] font-black uppercase bg-[#d99f4d]/85 hover:bg-[#d99f4d] text-encre-noire border border-encre-noire px-3 py-1.5 rounded shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none transition-all cursor-pointer whitespace-nowrap"
+                  >
+                    {isSubscribingPush ? "Activation..." : "🔔 Activer les notifications"}
+                  </button>
+                )}
+              </div>
             </div>
           )}
         </CordelCard>

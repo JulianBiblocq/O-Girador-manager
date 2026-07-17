@@ -36,7 +36,7 @@ export default function AssociationSettings({ groupId, onBack, role, isSystemAdm
   const [newInstrument, setNewInstrument] = useState('');
   const [linkedInstruments, setLinkedInstruments] = useState([]);
   const [tagsDisponibles, setTagsDisponibles] = useState([]);
-  const [permissionsMatrice, setPermissionsMatrice] = useState({ troupe: [], logistique: [], studio: [] });
+  const [permissionsMatrice, setPermissionsMatrice] = useState({ troupe: [], tresorerie: [], logistique: [], studio: [] });
   const [newPupitreName, setNewPupitreName] = useState('');
   const [selectedInstrumentsForLink, setSelectedInstrumentsForLink] = useState([]);
   const [varalCategories, setVaralCategories] = useState([]);
@@ -201,11 +201,12 @@ export default function AssociationSettings({ groupId, onBack, role, isSystemAdm
         if (data.permissionsMatrice) {
           setPermissionsMatrice({
             troupe: data.permissionsMatrice.troupe || [],
+            tresorerie: data.permissionsMatrice.tresorerie || [],
             logistique: data.permissionsMatrice.logistique || [],
             studio: data.permissionsMatrice.studio || []
           });
         } else {
-          setPermissionsMatrice({ troupe: [], logistique: [], studio: [] });
+          setPermissionsMatrice({ troupe: [], tresorerie: [], logistique: [], studio: [] });
         }
         
         const adhesionVal = data.montantAdhesion !== undefined ? data.montantAdhesion : (data.montantCotisation || 0);
@@ -1070,11 +1071,44 @@ export default function AssociationSettings({ groupId, onBack, role, isSystemAdm
                     </div>
                   </div>
 
-                  {/* Trésorerie & Logistique */}
+                  {/* Trésorerie */}
                   <div className="flex flex-col gap-1.5 border border-dashed border-cordel-master-dark/15 p-3 rounded bg-white/40 dark:bg-black/10">
-                    <span className="text-[11px] font-extrabold text-encre-noire">🪙 Trésorerie & Logistique</span>
+                    <span className="text-[11px] font-extrabold text-encre-noire">🪙 Trésorerie</span>
                     <span className="text-[9px] text-cordel-master-dark/65 font-semibold -mt-0.5 mb-1.5 block">
-                      Donne accès à : Trésorerie, Inventaire, Commandes
+                      Donne accès à : Gestion des Cotisations, Remboursements Kilométriques
+                    </span>
+                    <div className="flex flex-wrap gap-2">
+                      {tagsDisponibles.map(tag => {
+                        const isChecked = (permissionsMatrice?.tresorerie || []).includes(tag);
+                        return (
+                          <label key={tag} className="flex items-center gap-1.5 cursor-pointer text-[10px] font-bold select-none hover:opacity-85">
+                            <input 
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={(e) => {
+                                const checked = e.target.checked;
+                                setPermissionsMatrice(prev => ({
+                                  ...prev,
+                                  tresorerie: checked ? [...(prev.tresorerie || []), tag] : (prev.tresorerie || []).filter(t => t !== tag)
+                                }));
+                              }}
+                              disabled={saving}
+                              className="rounded cursor-pointer w-3.5 h-3.5"
+                            />
+                            <span className="theme-stamp-badge theme-stamp-badge-wood text-[8.5px] py-0.5 normal-case tracking-normal">
+                              {tag}
+                            </span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Logistique */}
+                  <div className="flex flex-col gap-1.5 border border-dashed border-cordel-master-dark/15 p-3 rounded bg-white/40 dark:bg-black/10">
+                    <span className="text-[11px] font-extrabold text-encre-noire">📦 Logistique</span>
+                    <span className="text-[9px] text-cordel-master-dark/65 font-semibold -mt-0.5 mb-1.5 block">
+                      Donne accès à : Inventaire des Instruments, Gestion des Commandes
                     </span>
                     <div className="flex flex-wrap gap-2">
                       {tagsDisponibles.map(tag => {

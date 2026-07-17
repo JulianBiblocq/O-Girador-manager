@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { doc, onSnapshot } from 'firebase/firestore';
+import { doc, onSnapshot, collection, query, where } from 'firebase/firestore';
 import { db } from '../firebase';
 import WidgetMotMestre from './WidgetMotMestre';
 import WidgetAnnonces from './WidgetAnnonces';
@@ -11,7 +11,7 @@ const WidgetDocuments = React.lazy(() => import('./WidgetDocuments'));
 const WidgetTreasury = React.lazy(() => import('./WidgetTreasury'));
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
-import { XiloSettings, XiloCaixa, XiloBox, XiloPeople, XiloConsole } from './XiloIcons';
+import { XiloSettings, XiloCaixa, XiloBox, XiloPeople, XiloConsole, XiloCoin, XiloCar } from './XiloIcons';
 import { useTranslation } from './LanguageContext';
 import { useTerminologie } from '../hooks/useTerminologie';
 
@@ -27,6 +27,7 @@ export default function Dashboard({ user, profileData, onNavigateToTrombi, onNav
 
   const hasAccessTroupe = isSystemOrSuperAdminOrMestre || userTags.some(t => permissionsMatrice?.troupe?.includes(t));
   const hasAccessLogistique = isSystemOrSuperAdminOrMestre || userTags.some(t => permissionsMatrice?.logistique?.includes(t));
+  const hasAccessTresorerie = isSystemOrSuperAdminOrMestre || userTags.some(t => permissionsMatrice?.tresorerie?.includes(t));
 
   const getWidgetSpan = (id) => {
     switch (id) {
@@ -41,7 +42,11 @@ export default function Dashboard({ user, profileData, onNavigateToTrombi, onNav
     }
   };
 
-  // Real-time synchronization of the pupil widgets display order
+  // Real-time synchronization of the pupil widgets display order and motDuMestre
+  const [motDuMestre, setMotDuMestre] = useState('');
+  const [hasActiveAnnouncements, setHasActiveAnnouncements] = useState(false);
+  const [hasOpenCampaign, setHasOpenCampaign] = useState(false);
+
   useEffect(() => {
     if (!profileData?.groupId) return;
 
@@ -60,9 +65,54 @@ export default function Dashboard({ user, profileData, onNavigateToTrombi, onNav
           setLayout(activeLayout);
         }
         setSequenceurUrl(data.sequenceurUrl || '');
+        setMotDuMestre(data.motDuMestre || '');
       }
     }, (error) => {
       console.error("Dashboard - Erreur onSnapshot association :", error);
+    });
+
+    return () => unsubscribe();
+  }, [profileData?.groupId]);
+
+  // Real-time check for active announcements targeting the user
+  useEffect(() => {
+    if (!profileData?.groupId) return;
+    const announcementsRef = collection(db, 'announcements');
+    const q = query(announcementsRef, where('groupId', '==', profileData.groupId));
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+      const fetched = [];
+      querySnapshot.forEach((doc) => {
+        fetched.push({ id: doc.id, ...doc.data() });
+      });
+
+      const userTags = profileData?.tags || [];
+      const userRole = profileData?.role || 'membre';
+      const visible = fetched.filter(ann => {
+        if (ann.publishOnApp === false) return false;
+        if (!Array.isArray(ann.cibles) || ann.cibles.length === 0) return true;
+        if (ann.cibles.includes('Tous')) return true;
+        if (ann.cibles.includes('role:admin') && (userRole === 'mestre' || userRole === 'super-admin' || profileData?.isSystemAdmin === true)) {
+          return true;
+        }
+        return ann.cibles.some(t => userTags.includes(t));
+      });
+      setHasActiveAnnouncements(visible.length > 0);
+    }, (error) => {
+      console.error("Dashboard - Erreur onSnapshot announcements :", error);
+    });
+
+    return () => unsubscribe();
+  }, [profileData?.groupId, profileData?.tags, profileData?.role, profileData?.isSystemAdmin]);
+
+  // Real-time check for active campaigns (open orders)
+  useEffect(() => {
+    if (!profileData?.groupId) return;
+    const campaignsRef = collection(db, 'campaigns');
+    const q = query(campaignsRef, where('groupId', '==', profileData.groupId), where('status', '==', 'open'));
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+      setHasOpenCampaign(!querySnapshot.empty);
+    }, (error) => {
+      console.error("Dashboard - Erreur onSnapshot campaigns :", error);
     });
 
     return () => unsubscribe();
@@ -86,17 +136,7 @@ export default function Dashboard({ user, profileData, onNavigateToTrombi, onNav
 
   return (
     <div className="flex flex-col gap-4 w-full max-w-full overflow-hidden">
-      {hasAccessTroupe && (
-        <div className="flex justify-end -mb-3">
-          <button 
-            onClick={() => onNavigateToView('system-admin')}
-            className="text-[10px] font-black uppercase tracking-widest bg-cordel-wood text-cordel-bg-light px-3 py-1 border border-encre-noire rounded-[4px_7px_3px_5px] shadow-[2px_2px_0px_0px_#181716] hover:brightness-110 active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none transition-all cursor-pointer flex items-center gap-1.5"
-          >
-            <XiloSettings size={10} className="text-cordel-bg-light" />
-            {t('dashboard.systemAdmin')}
-          </button>
-        </div>
-      )}
+
       {/* Header Panel */}
       <div className="flex justify-between items-center py-2 border-b-2 border-dashed border-cordel-master-dark/30 select-none">
         {/* Toggle Language Button in Header */}
@@ -220,36 +260,23 @@ export default function Dashboard({ user, profileData, onNavigateToTrombi, onNav
           </a>
         )}
 
-        {/* Layout Editor & Inventory Access Buttons (Visible based on permissions) */}
-        {(isSystemOrSuperAdminOrMestre || hasAccessLogistique) && (
+        {/* Treasury Access Buttons (Visible based on permissions) */}
+        {hasAccessTresorerie && (
           <div className="flex flex-col gap-2">
-            {isSystemOrSuperAdminOrMestre && (
-              <button 
-                type="button"
-                onClick={() => onNavigateToView('layout-editor')}
-                className="text-[10px] font-black uppercase tracking-widest bg-cordel-bg border-2 border-dashed border-encre-noire/30 hover:border-encre-noire text-encre-noire py-1.5 w-full rounded-[6px_10px_8px_12px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-105 transition-all cursor-pointer flex items-center justify-center gap-2"
-              >
-                <XiloSettings size={12} /> {t('dashboard.layoutEditor')}
-              </button>
-            )}
-            {hasAccessLogistique && (
-              <>
-                <button 
-                  type="button"
-                  onClick={() => onNavigateToView('inventory')}
-                  className="text-[10px] font-black uppercase tracking-widest bg-cordel-bg border-2 border-dashed border-encre-noire/30 hover:border-encre-noire text-encre-noire py-1.5 w-full rounded-[6px_10px_8px_12px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-105 transition-all cursor-pointer flex items-center justify-center gap-2"
-                >
-                  <XiloCaixa size={12} /> {t('dashboard.inventory')}
-                </button>
-                <button 
-                  type="button"
-                  onClick={() => onNavigateToView('orders-manager')}
-                  className="text-[10px] font-black uppercase tracking-widest bg-cordel-bg border-2 border-dashed border-encre-noire/30 hover:border-encre-noire text-encre-noire py-1.5 w-full rounded-[6px_10px_8px_12px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-105 transition-all cursor-pointer flex items-center justify-center gap-2"
-                >
-                  <XiloBox size={12} /> {t('dashboard.ordersManager')}
-                </button>
-              </>
-            )}
+            <button 
+              type="button"
+              onClick={() => onNavigateToView('treasury')}
+              className="text-[10px] font-black uppercase tracking-widest bg-cordel-bg border-2 border-dashed border-encre-noire/30 hover:border-encre-noire text-encre-noire py-1.5 w-full rounded-[6px_10px_8px_12px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-105 transition-all cursor-pointer flex items-center justify-center gap-2"
+            >
+              <XiloCoin size={12} /> {t('menu.treasury') || "Gestion des Cotisations"}
+            </button>
+            <button 
+              type="button"
+              onClick={() => onNavigateToView('kilometric-reimbursement')}
+              className="text-[10px] font-black uppercase tracking-widest bg-cordel-bg border-2 border-dashed border-encre-noire/30 hover:border-encre-noire text-encre-noire py-1.5 w-full rounded-[6px_10px_8px_12px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-105 transition-all cursor-pointer flex items-center justify-center gap-2"
+            >
+              <XiloCar size={12} /> {t('menu.kilometricReimbursement') || "Remboursements Kilométriques"}
+            </button>
           </div>
         )}
       </div>
@@ -341,6 +368,19 @@ export default function Dashboard({ user, profileData, onNavigateToTrombi, onNav
               break;
             default:
               return null;
+          }
+
+          // Conditional hiding for non-administrators
+          if (!isSystemOrSuperAdminOrMestre) {
+            if (widgetId === 'motMestre' && (!motDuMestre || !motDuMestre.trim())) {
+              return null;
+            }
+            if (widgetId === 'annonces' && !hasActiveAnnouncements) {
+              return null;
+            }
+            if (widgetId === 'commandes' && !hasOpenCampaign) {
+              return null;
+            }
           }
 
           if (!widgetContent) return null;

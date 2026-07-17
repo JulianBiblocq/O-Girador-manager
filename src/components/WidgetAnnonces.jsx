@@ -20,6 +20,7 @@ export default function WidgetAnnonces({ groupId, profileData, role, isSystemAdm
   const [cibles, setCibles] = useState(['Tous']);
   const [publishOnApp, setPublishOnApp] = useState(true);
   const [sendViaEmail, setSendViaEmail] = useState(false);
+  const [sendPushNotification, setSendPushNotification] = useState(false);
 
   const isAdmin = role === 'mestre' || role === 'super-admin' || isSystemAdmin === true;
 
@@ -105,7 +106,8 @@ export default function WidgetAnnonces({ groupId, profileData, role, isSystemAdm
         dateCreation: new Date().toISOString(),
         cibles,
         publishOnApp,
-        sendViaEmail
+        sendViaEmail,
+        sendPushNotification
       };
 
       await addDoc(collection(db, 'announcements'), payload);
@@ -116,6 +118,7 @@ export default function WidgetAnnonces({ groupId, profileData, role, isSystemAdm
       setCibles(['Tous']);
       setPublishOnApp(true);
       setSendViaEmail(false);
+      setSendPushNotification(false);
       setIsAdding(false);
     } catch (err) {
       console.error("WidgetAnnonces - Erreur de sauvegarde :", err);
@@ -310,6 +313,16 @@ export default function WidgetAnnonces({ groupId, profileData, role, isSystemAdm
                     className="accent-cordel-wood scale-105"
                   />
                   <span>{t('widgetAnnonces.channelEmail')}</span>
+                </label>
+                <label className="flex items-center gap-2 text-xs font-semibold cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={sendPushNotification}
+                    onChange={(e) => setSendPushNotification(e.target.checked)}
+                    disabled={saving}
+                    className="accent-cordel-wood scale-105"
+                  />
+                  <span>📢 Envoyer une notification Push aux membres</span>
                 </label>
               </div>
             </div>

@@ -61,19 +61,25 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
   // Find if the user has already responded to this event
   const existingResponse = (event.inscriptions || []).find(ins => ins.userId === user.uid);
 
-  const [status, setStatus] = useState(existingResponse ? existingResponse.status : 'confirm'); // 'present', 'absent', 'confirm'
+  const [status, setStatus] = useState(existingResponse 
+    ? (existingResponse.status === 'pending' || existingResponse.status === 'refused' ? 'present' : existingResponse.status) 
+    : 'confirm'); // 'present', 'absent', 'confirm'
   const [transport, setTransport] = useState(existingResponse ? existingResponse.transport || 'propre' : 'propre'); // 'propre', 'cherche', 'propose'
   const [places, setPlaces] = useState(existingResponse ? existingResponse.places || 0 : 0);
   const [instruments, setInstruments] = useState(existingResponse ? existingResponse.instruments || '' : '');
+  const [demandeRemboursementKm, setDemandeRemboursementKm] = useState(existingResponse ? existingResponse.demandeRemboursementKm === true : false);
   const [saving, setSaving] = useState(false);
   const [isCalendarMenuOpen, setIsCalendarMenuOpen] = useState(false);
 
   useEffect(() => {
     const resp = (event.inscriptions || []).find(ins => ins.userId === user.uid);
-    setStatus(resp ? resp.status : 'confirm');
+    setStatus(resp 
+      ? (resp.status === 'pending' || resp.status === 'refused' ? 'present' : resp.status) 
+      : 'confirm');
     setTransport(resp ? resp.transport || 'propre' : 'propre');
     setPlaces(resp ? resp.places || 0 : 0);
     setInstruments(resp ? resp.instruments || '' : '');
+    setDemandeRemboursementKm(resp ? resp.demandeRemboursementKm === true : false);
     
     setInstrumentChoisi(resp?.instrumentChoisi || profileData?.instrument || 'Autre');
     setIsEditingEvent(false);
@@ -91,7 +97,8 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
       lienDocument: event.lienDocument || '',
       distanceAllerRetourKm: event.distanceAllerRetourKm || '',
       lienSocial: event.lienSocial || '',
-      imageUrl: event.imageUrl || ''
+      imageUrl: event.imageUrl || '',
+      requiresValidation: event.requiresValidation || false
     });
     setSetlist(event.setlist || []);
   }, [event.id, user.uid, profileData?.instrument, event.type]);
@@ -759,15 +766,17 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
       const updatedInscriptions = currentInscriptions.filter(ins => ins.userId !== user.uid);
 
       // 2. Add the new updated response object
+      const finalStatus = (status === 'present' && event.requiresValidation) ? 'pending' : status;
       const newResponse = {
         userId: user.uid,
         userName: `${profileData.prenom} ${profileData.nom}`,
-        status: status,
+        status: finalStatus,
         transport: status === 'present' ? transport : null,
         places: status === 'present' && transport === 'propose' ? parseInt(places) || 0 : 0,
         instruments: status === 'present' && transport === 'propose' ? instruments : "",
         instrumentChoisi: status === 'present' ? instrumentChoisi : null,
-        instrumentImposeParMestre: status === 'present' ? isInstrumentLocked : false
+        instrumentImposeParMestre: status === 'present' ? isInstrumentLocked : false,
+        demandeRemboursementKm: (status === 'present' && (transport === 'propre' || transport === 'propose')) ? demandeRemboursementKm : false
       };
 
       updatedInscriptions.push(newResponse);
@@ -778,7 +787,7 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
         inscriptions: updatedInscriptions
       });
 
-      setToastMessage("Inscription validée");
+      setToastMessage(finalStatus === 'pending' ? "Inscription en attente de validation" : "Inscription validée");
       setTimeout(() => {
         setToastMessage(null);
       }, 3000);
@@ -809,7 +818,8 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
         lienDocument: (editForm.type === 'reunion') ? editForm.lienDocument || '' : '',
         distanceAllerRetourKm: (editForm.type === 'prestation' || editForm.type === 'stage' || editForm.type === 'atelier') ? (parseFloat(editForm.distanceAllerRetourKm) || 0) : 0,
         lienSocial: editForm.lienSocial || '',
-        imageUrl: editForm.imageUrl || ''
+        imageUrl: editForm.imageUrl || '',
+        requiresValidation: editForm.requiresValidation || false
       });
       setIsEditingEvent(false);
       alert("Événement mis à jour avec succès !");
@@ -818,6 +828,35 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
       alert("Erreur lors de l'enregistrement de l'événement.");
     } finally {
       setSavingEvent(false);
+    }
+  };
+
+  const handleValidatePending = async (userId, targetStatus) => {
+    if (!event.id) return;
+    try {
+      const currentInscriptions = event.inscriptions || [];
+      const updatedInscriptions = currentInscriptions.map(ins => {
+        if (ins.userId === userId) {
+          return {
+            ...ins,
+            status: targetStatus
+          };
+        }
+        return ins;
+      });
+
+      const eventRef = doc(db, 'events', event.id);
+      await updateDoc(eventRef, {
+        inscriptions: updatedInscriptions
+      });
+
+      setToastMessage(targetStatus === 'present' ? "Inscription validée" : "Inscription refusée");
+      setTimeout(() => {
+        setToastMessage(null);
+      }, 3000);
+    } catch (error) {
+      console.error("EventDetails - Erreur de validation d'inscription :", error);
+      alert("Erreur lors de la validation de l'inscription.");
     }
   };
 
@@ -1278,6 +1317,20 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
                   )}
                 </div>
               </div>
+
+              {/* Validation Toggle */}
+              <div className="flex items-center gap-2 pt-2 border-t border-dashed border-cordel-master-dark/15">
+                <label className="flex items-center gap-2 text-xs font-semibold cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={editForm.requiresValidation || false}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, requiresValidation: e.target.checked }))}
+                    disabled={savingEvent}
+                    className="accent-cordel-wood scale-105"
+                  />
+                  <span>Inscriptions soumises à validation par l'administrateur</span>
+                </label>
+              </div>
             </div>
 
             <CordelButton
@@ -1483,6 +1536,18 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
             </div>
           )}
 
+          {/* Validation pending / refused warning message */}
+          {existingResponse?.status === 'pending' && (
+            <div className="text-[11px] font-extrabold text-yellow-700 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-950/20 p-2.5 rounded border border-dashed border-yellow-500/30 flex items-center justify-center gap-1.5 mt-1 select-none">
+              ⏳ Votre inscription est en attente de validation par l'administrateur.
+            </div>
+          )}
+          {existingResponse?.status === 'refused' && (
+            <div className="text-[11px] font-extrabold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/20 p-2.5 rounded border border-dashed border-red-500/30 flex items-center justify-center gap-1.5 mt-1 select-none">
+              🚫 Votre inscription a été refusée par l'administrateur.
+            </div>
+          )}
+
           {/* Conditional Transport Options (Only visible when present) */}
           {status === 'present' && (
             <div className="flex flex-col gap-4 border-t border-dashed border-cordel-master-dark/20 pt-4 mt-2">
@@ -1573,6 +1638,22 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
                   <span>Je propose ma voiture</span>
                 </label>
               </div>
+
+              {/* Remboursement Kilométrique option for drivers */}
+              {(transport === 'propre' || transport === 'propose') && (
+                <div className="mt-3 p-2 bg-[#fdfaf2] border border-dashed border-cordel-master-dark/20 rounded">
+                  <label className="flex items-center gap-2 text-xs font-semibold cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={demandeRemboursementKm}
+                      onChange={(e) => setDemandeRemboursementKm(e.target.checked)}
+                      disabled={saving}
+                      className="accent-cordel-wood scale-105"
+                    />
+                    <span className="leading-snug">Demander le remboursement des frais kilométriques (voiture pleine)</span>
+                  </label>
+                </div>
+              )}
 
               {/* Conditional Inputs if "propose ma voiture" */}
               {transport === 'propose' && (
@@ -1769,6 +1850,85 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
                 {(event.inscriptions || []).filter(i => i.status === 'confirm').length === 0 && <span className="opacity-60 italic">Aucun</span>}
               </div>
             </div>
+          </div>
+        )}
+
+        {/* Validation section */}
+        {((event.inscriptions || []).some(i => i.status === 'pending' || i.status === 'refused') || isAuthorized) && (
+          <div className="flex flex-col gap-3.5 theme-inner-panel p-3.5 rounded text-xs text-left mt-3.5 border-t border-dashed border-cordel-master-dark/15">
+            {/* Pending validations list */}
+            {((event.inscriptions || []).some(i => i.status === 'pending') || isAuthorized) && (
+              <div>
+                <strong className="text-yellow-600 block border-b border-dashed border-yellow-500/10 pb-0.5 mb-1">
+                  ⏳ En attente de validation ({(event.inscriptions || []).filter(i => i.status === 'pending').length})
+                </strong>
+                <div className="flex flex-wrap gap-1.5 items-center mt-1">
+                  {(event.inscriptions || []).filter(i => i.status === 'pending').map(i => {
+                    const userInfo = allUsers.find(u => u.id === i.userId) || {};
+                    return (
+                      <div key={i.userId} className="inline-flex items-center gap-1.5 bg-white/60 dark:bg-black/20 px-2 py-1 rounded border border-dashed border-yellow-500/30 text-xs font-semibold text-encre-noire">
+                        <XiloAvatar src={userInfo.photoURL} name={i.userName} size={18} />
+                        <span>{i.userName}</span>
+                        {isAuthorized && (
+                          <div className="flex items-center gap-1 ml-1.5 border-l border-encre-noire/15 pl-1.5">
+                            <button
+                              type="button"
+                              onClick={() => handleValidatePending(i.userId, 'present')}
+                              className="text-green-600 hover:text-green-800 text-[10px] font-black cursor-pointer px-1 py-0.5 bg-green-50 border border-green-300 rounded hover:bg-green-100"
+                              title="Valider l'inscription"
+                            >
+                              ✓
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleValidatePending(i.userId, 'refused')}
+                              className="text-red-600 hover:text-red-800 text-[10px] font-black cursor-pointer px-1 py-0.5 bg-red-50 border border-red-300 rounded hover:bg-red-100"
+                              title="Refuser l'inscription"
+                            >
+                              ✗
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                  {(event.inscriptions || []).filter(i => i.status === 'pending').length === 0 && <span className="opacity-60 italic">Aucun</span>}
+                </div>
+              </div>
+            )}
+
+            {/* Refused registrations list */}
+            {((event.inscriptions || []).some(i => i.status === 'refused') || isAuthorized) && (
+              <div>
+                <strong className="text-gray-600 block border-b border-dashed border-gray-500/10 pb-0.5 mb-1">
+                  🚫 Inscriptions refusées ({(event.inscriptions || []).filter(i => i.status === 'refused').length})
+                </strong>
+                <div className="flex flex-wrap gap-1.5 items-center mt-1">
+                  {(event.inscriptions || []).filter(i => i.status === 'refused').map(i => {
+                    const userInfo = allUsers.find(u => u.id === i.userId) || {};
+                    return (
+                      <div key={i.userId} className="inline-flex items-center gap-1.5 bg-white/60 dark:bg-black/20 px-2 py-1 rounded border border-dashed border-gray-300 text-xs font-semibold text-encre-noire opacity-70">
+                        <XiloAvatar src={userInfo.photoURL} name={i.userName} size={18} />
+                        <span>{i.userName}</span>
+                        {isAuthorized && (
+                          <div className="flex items-center gap-1 ml-1.5 border-l border-encre-noire/15 pl-1.5">
+                            <button
+                              type="button"
+                              onClick={() => handleValidatePending(i.userId, 'present')}
+                              className="text-green-600 hover:text-green-800 text-[10px] font-black cursor-pointer px-1 py-0.5 bg-green-50 border border-green-300 rounded hover:bg-green-100"
+                              title="Valider/Rétablir l'inscription"
+                            >
+                              ✓
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                  {(event.inscriptions || []).filter(i => i.status === 'refused').length === 0 && <span className="opacity-60 italic">Aucun</span>}
+                </div>
+              </div>
+            )}
           </div>
         )}
 

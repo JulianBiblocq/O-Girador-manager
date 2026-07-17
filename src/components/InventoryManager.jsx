@@ -22,7 +22,7 @@ const INSTRUMENT_ICONS = {
   Autre: 'favicon.svg' // default logo icon fallback
 };
 
-export default function InventoryManager({ groupId, onBack, role, isSystemAdmin }) {
+export default function InventoryManager({ groupId, onBack, role, isSystemAdmin, hasAccessLogistique }) {
   const { t } = useTranslation();
 
   const getInstrumentTypeLabel = (type) => {
@@ -59,7 +59,7 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin 
   });
 
   // Security Check: Mestres, Super-Admins and System Admins only
-  const isAuthorized = role === 'mestre' || role === 'super-admin' || isSystemAdmin === true;
+  const isAuthorized = role === 'mestre' || role === 'super-admin' || isSystemAdmin === true || hasAccessLogistique === true;
 
   // Real-time synchronization of users list in the group
   useEffect(() => {

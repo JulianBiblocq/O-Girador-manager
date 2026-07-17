@@ -24,3 +24,7 @@ setPersistence(auth, browserLocalPersistence)
 export const googleProvider = new GoogleAuthProvider();
 export const db = getFirestore(app);
 export const storage = getStorage(app);
+
+// Initialize messaging service only on client side
+import { getMessaging } from 'firebase/messaging';
+export const messaging = typeof window !== 'undefined' ? getMessaging(app) : null;

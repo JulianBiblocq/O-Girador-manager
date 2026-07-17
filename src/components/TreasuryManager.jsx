@@ -6,7 +6,7 @@ import CordelButton from './CordelButton';
 import MemberTreasuryRow from './MemberTreasuryRow';
 import { useTranslation } from './LanguageContext';
 
-export default function TreasuryManager({ groupId, onBack, role, isSystemAdmin }) {
+export default function TreasuryManager({ groupId, onBack, role, isSystemAdmin, hasAccessTresorerie }) {
   const { t } = useTranslation();
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -15,7 +15,7 @@ export default function TreasuryManager({ groupId, onBack, role, isSystemAdmin }
   const [filterStatus, setFilterStatus] = useState('all');
   const [associationSettings, setAssociationSettings] = useState(null);
 
-  const isAuthorized = role === 'mestre' || role === 'super-admin' || isSystemAdmin === true;
+  const isAuthorized = role === 'mestre' || role === 'super-admin' || isSystemAdmin === true || hasAccessTresorerie === true;
 
   // Load association settings (fee amount, payment link, instructions)
   useEffect(() => {

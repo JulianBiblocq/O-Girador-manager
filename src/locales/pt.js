@@ -48,15 +48,19 @@ export const pt = {
     trombinoscope: "Elenco",
     forum: "Porta-Voz",
     settings: "Configuração",
-    treasury: "Tesouraria",
-    orders: "Encomendas",
-    inventory: "Inventário",
+    treasury: "Gestão de Contribuições",
+    orders: "Gestão de Encomendas",
+    inventory: "Inventário de Instrumentos",
     layoutEditor: "Layout",
     tags: "Crachás",
     systemAdmin: "Admin do Sistema",
     adminHeader: "Administração",
     studioSocial: "Studio Social",
-    exportAnnu: "Contatos e Exportação"
+    exportAnnu: "Contatos e Exportação",
+    tresorerie: "Tesouraria",
+    logistique: "Logística",
+    kilometricReimbursement: "Reembolsos Quilométricos",
+    varalManager: "Gerenciador do Varal"
   },
   login: {
     title: "O Girador",

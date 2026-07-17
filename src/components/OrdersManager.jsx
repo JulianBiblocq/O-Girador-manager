@@ -8,7 +8,7 @@ import { XiloClose, XiloBox } from './XiloIcons';
 import { useTranslation } from './LanguageContext';
 import { fr } from '../locales/fr';
 
-export default function OrdersManager({ groupId, onBack, role, isSystemAdmin }) {
+export default function OrdersManager({ groupId, onBack, role, isSystemAdmin, hasAccessLogistique }) {
   const { t } = useTranslation();
 
   const getArticleLabel = (articleKey) => {
@@ -35,7 +35,7 @@ export default function OrdersManager({ groupId, onBack, role, isSystemAdmin }) 
   const [newCampaignTitle, setNewCampaignTitle] = useState('');
   const [isCreating, setIsCreating] = useState(false);
 
-  const isAdmin = role === 'mestre' || role === 'super-admin' || isSystemAdmin === true;
+  const isAdmin = role === 'mestre' || role === 'super-admin' || isSystemAdmin === true || hasAccessLogistique === true;
 
   // Real-time synchronization of campaigns
   useEffect(() => {

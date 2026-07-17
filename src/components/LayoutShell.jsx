@@ -13,7 +13,8 @@ import {
   XiloConsole, 
   XiloSignOut,
   XiloEQ,
-  XiloScroll
+  XiloScroll,
+  XiloCar
 } from './XiloIcons';
 import { useTranslation } from './LanguageContext';
 
@@ -38,8 +39,9 @@ export default function LayoutShell({
 
   const hasAccessTroupe = isSystemOrSuperAdminOrMestre || userTags.some(t => permissionsMatrice?.troupe?.includes(t));
   const hasAccessLogistique = isSystemOrSuperAdminOrMestre || userTags.some(t => permissionsMatrice?.logistique?.includes(t));
+  const hasAccessTresorerie = isSystemOrSuperAdminOrMestre || userTags.some(t => permissionsMatrice?.tresorerie?.includes(t));
   const hasAccessStudio = isSystemOrSuperAdminOrMestre || userTags.some(t => permissionsMatrice?.studio?.includes(t));
-  const hasAdminSectionAccess = hasAccessTroupe || hasAccessLogistique || hasAccessStudio || isSystemOrSuperAdminOrMestre;
+  const hasAdminSectionAccess = hasAccessTroupe || hasAccessLogistique || hasAccessTresorerie || hasAccessStudio || isSystemOrSuperAdminOrMestre;
 
   return (
     <div className={`min-h-screen w-full ${forceLight ? 'bg-cordel-bg-light' : 'bg-cordel-bg-dark'} flex lg:items-center lg:justify-center p-4 md:p-6 lg:p-8`}>
@@ -90,7 +92,7 @@ export default function LayoutShell({
         </div>
 
         {/* Left Sidebar for Desktop (hidden on Mobile & Tablet) */}
-        <div className={`hidden lg:flex ${isAdminOrMestre ? 'w-56' : 'w-44'} border-r-4 border-cordel-master-dark bg-cordel-bg-light flex-col items-center justify-between py-6 px-3 shrink-0 select-none`}>
+        <div className={`hidden lg:flex ${isSystemOrSuperAdminOrMestre ? 'w-56' : 'w-44'} border-r-4 border-cordel-master-dark bg-cordel-bg-light flex-col items-center justify-between py-6 px-3 shrink-0 select-none`}>
           <div className="flex flex-col items-center gap-3 w-full flex-grow min-h-0">
             <div 
               onClick={() => onNavigateToView && onNavigateToView('dashboard')}
@@ -192,33 +194,50 @@ export default function LayoutShell({
                   </>
                 )}
 
-                {/* Trésorerie & Logistique */}
-                {hasAccessLogistique && (
+                {/* Trésorerie */}
+                {hasAccessTresorerie && (
                   <>
                     <div className="border-t border-dashed border-cordel-master-dark/15 my-1 shrink-0" />
                     <span className="text-[7.5px] font-black uppercase tracking-widest text-cordel-wood pl-1 block mb-0.5 shrink-0">
-                      Trésorerie & Logistique
+                      {t('menu.tresorerie') || "Trésorerie"}
                     </span>
 
                     <button
                       onClick={() => onNavigateToView && onNavigateToView('treasury')}
                       className={`theme-btn text-[9px] font-black uppercase tracking-wider py-1.5 px-2 text-left rounded-[4px_6px_3px_5px] flex items-center gap-2 hover:bg-cordel-hover cursor-pointer ${currentView === 'treasury' ? 'bg-cordel-hover text-cordel-wood font-black' : ''}`}
                     >
-                      <XiloCoin size={12} /> {t('menu.treasury') || "Trésorerie"}
+                      <XiloCoin size={12} /> {t('menu.treasury') || "Gestion des Cotisations"}
+                    </button>
+
+                    <button
+                      onClick={() => onNavigateToView && onNavigateToView('kilometric-reimbursement')}
+                      className={`theme-btn text-[9px] font-black uppercase tracking-wider py-1.5 px-2 text-left rounded-[4px_6px_3px_5px] flex items-center gap-2 hover:bg-cordel-hover cursor-pointer ${currentView === 'kilometric-reimbursement' ? 'bg-cordel-hover text-cordel-wood font-black' : ''}`}
+                    >
+                      <XiloCar size={12} /> {t('menu.kilometricReimbursement') || "Remboursements Kilométriques"}
+                    </button>
+                  </>
+                )}
+
+                {/* Logistique */}
+                {hasAccessLogistique && (
+                  <>
+                    <div className="border-t border-dashed border-cordel-master-dark/15 my-1 shrink-0" />
+                    <span className="text-[7.5px] font-black uppercase tracking-widest text-cordel-wood pl-1 block mb-0.5 shrink-0">
+                      {t('menu.logistique') || "Logistique"}
+                    </span>
+
+                    <button
+                      onClick={() => onNavigateToView && onNavigateToView('inventory')}
+                      className={`theme-btn text-[9px] font-black uppercase tracking-wider py-1.5 px-2 text-left rounded-[4px_6px_3px_5px] flex items-center gap-2 hover:bg-cordel-hover cursor-pointer ${currentView === 'inventory' ? 'bg-cordel-hover text-cordel-wood font-black' : ''}`}
+                    >
+                      <XiloDrum size={12} /> {t('menu.inventory') || "Inventaire des Instruments"}
                     </button>
 
                     <button
                       onClick={() => onNavigateToView && onNavigateToView('orders-manager')}
                       className={`theme-btn text-[9px] font-black uppercase tracking-wider py-1.5 px-2 text-left rounded-[4px_6px_3px_5px] flex items-center gap-2 hover:bg-cordel-hover cursor-pointer ${currentView === 'orders-manager' ? 'bg-cordel-hover text-cordel-wood font-black' : ''}`}
                     >
-                      <XiloBox size={12} /> {t('menu.orders') || "Commandes"}
-                    </button>
-
-                    <button
-                      onClick={() => onNavigateToView && onNavigateToView('inventory')}
-                      className={`theme-btn text-[9px] font-black uppercase tracking-wider py-1.5 px-2 text-left rounded-[4px_6px_3px_5px] flex items-center gap-2 hover:bg-cordel-hover cursor-pointer ${currentView === 'inventory' ? 'bg-cordel-hover text-cordel-wood font-black' : ''}`}
-                    >
-                      <XiloDrum size={12} /> {t('menu.inventory') || "Inventaire"}
+                      <XiloBox size={12} /> {t('menu.orders') || "Gestion des Commandes"}
                     </button>
                   </>
                 )}
@@ -236,6 +255,12 @@ export default function LayoutShell({
                       className={`theme-btn text-[9px] font-black uppercase tracking-wider py-1.5 px-2 text-left rounded-[4px_6px_3px_5px] flex items-center gap-2 hover:bg-cordel-hover cursor-pointer ${currentView === 'studio-social' ? 'bg-cordel-hover text-cordel-wood font-black' : ''}`}
                     >
                       <XiloMegaphone size={12} /> {t('menu.studioSocial') || "Studio Social"}
+                    </button>
+                    <button
+                      onClick={() => onNavigateToView && onNavigateToView('varal-manager')}
+                      className={`theme-btn text-[9px] font-black uppercase tracking-wider py-1.5 px-2 text-left rounded-[4px_6px_3px_5px] flex items-center gap-2 hover:bg-cordel-hover cursor-pointer mt-1 ${currentView === 'varal-manager' ? 'bg-cordel-hover text-cordel-wood font-black' : ''}`}
+                    >
+                      <XiloChisel size={12} /> {t('menu.varalManager') || "Gestionnaire Varal"}
                     </button>
                   </>
                 )}
@@ -279,7 +304,7 @@ export default function LayoutShell({
               </a>
             )}
             
-            {isAdminOrMestre && onSignOut && (
+            {onSignOut && (
               <button
                 type="button"
                 onClick={onSignOut}
@@ -432,12 +457,12 @@ export default function LayoutShell({
                   </>
                 )}
 
-                {/* Trésorerie & Logistique */}
-                {hasAccessLogistique && (
+                {/* Trésorerie */}
+                {hasAccessTresorerie && (
                   <>
                     <div className="border-t border-dashed border-cordel-master-dark/15 my-2" />
                     <span className="text-[8px] font-bold uppercase tracking-widest text-cordel-wood pl-1 mb-1 block">
-                      Trésorerie & Logistique
+                      {t('menu.tresorerie') || "Trésorerie"}
                     </span>
 
                     <button
@@ -447,7 +472,37 @@ export default function LayoutShell({
                       }}
                       className="theme-btn text-[10px] font-black uppercase tracking-wider py-2 px-3 text-left rounded-[4px_6px_3px_5px] flex items-center gap-2 hover:bg-cordel-hover cursor-pointer w-full"
                     >
-                      <XiloCoin size={14} /> {t('menu.treasury') || "Trésorerie"}
+                      <XiloCoin size={14} /> {t('menu.treasury') || "Gestion des Cotisations"}
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        if (onNavigateToView) onNavigateToView('kilometric-reimbursement');
+                        setIsDrawerOpen(false);
+                      }}
+                      className="theme-btn text-[10px] font-black uppercase tracking-wider py-2 px-3 text-left rounded-[4px_6px_3px_5px] flex items-center gap-2 hover:bg-cordel-hover cursor-pointer w-full"
+                    >
+                      <XiloCar size={14} /> {t('menu.kilometricReimbursement') || "Remboursements Kilométriques"}
+                    </button>
+                  </>
+                )}
+
+                {/* Logistique */}
+                {hasAccessLogistique && (
+                  <>
+                    <div className="border-t border-dashed border-cordel-master-dark/15 my-2" />
+                    <span className="text-[8px] font-bold uppercase tracking-widest text-cordel-wood pl-1 mb-1 block">
+                      {t('menu.logistique') || "Logistique"}
+                    </span>
+
+                    <button
+                      onClick={() => {
+                        if (onNavigateToView) onNavigateToView('inventory');
+                        setIsDrawerOpen(false);
+                      }}
+                      className="theme-btn text-[10px] font-black uppercase tracking-wider py-2 px-3 text-left rounded-[4px_6px_3px_5px] flex items-center gap-2 hover:bg-cordel-hover cursor-pointer w-full"
+                    >
+                      <XiloDrum size={14} /> {t('menu.inventory') || "Inventaire des Instruments"}
                     </button>
 
                     <button
@@ -457,17 +512,7 @@ export default function LayoutShell({
                       }}
                       className="theme-btn text-[10px] font-black uppercase tracking-wider py-2 px-3 text-left rounded-[4px_6px_3px_5px] flex items-center gap-2 hover:bg-cordel-hover cursor-pointer w-full"
                     >
-                      <XiloBox size={14} /> {t('menu.orders') || "Commandes"}
-                    </button>
-
-                    <button
-                      onClick={() => {
-                        if (onNavigateToView) onNavigateToView('inventory');
-                        setIsDrawerOpen(false);
-                      }}
-                      className="theme-btn text-[10px] font-black uppercase tracking-wider py-2 px-3 text-left rounded-[4px_6px_3px_5px] flex items-center gap-2 hover:bg-cordel-hover cursor-pointer w-full"
-                    >
-                      <XiloDrum size={14} /> {t('menu.inventory') || "Inventaire"}
+                      <XiloBox size={14} /> {t('menu.orders') || "Gestion des Commandes"}
                     </button>
                   </>
                 )}
@@ -488,6 +533,15 @@ export default function LayoutShell({
                       className="theme-btn text-[10px] font-black uppercase tracking-wider py-2 px-3 text-left rounded-[4px_6px_3px_5px] flex items-center gap-2 hover:bg-cordel-hover cursor-pointer w-full"
                     >
                       <XiloMegaphone size={14} /> {t('menu.studioSocial') || "Studio Social"}
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (onNavigateToView) onNavigateToView('varal-manager');
+                        setIsDrawerOpen(false);
+                      }}
+                      className="theme-btn text-[10px] font-black uppercase tracking-wider py-2 px-3 text-left rounded-[4px_6px_3px_5px] flex items-center gap-2 hover:bg-cordel-hover cursor-pointer w-full mt-1.5"
+                    >
+                      <XiloChisel size={14} /> {t('menu.varalManager') || "Gestionnaire Varal"}
                     </button>
                   </>
                 )}

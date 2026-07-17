@@ -20,8 +20,10 @@ const InventoryManager = React.lazy(() => import('./components/InventoryManager'
 const OrdersManager = React.lazy(() => import('./components/OrdersManager'));
 const AssociationSettings = React.lazy(() => import('./components/AssociationSettings'));
 const TreasuryManager = React.lazy(() => import('./components/TreasuryManager'));
+const KilometricReimbursementManager = React.lazy(() => import('./components/KilometricReimbursementManager'));
 const StudioSocial = React.lazy(() => import('./components/StudioSocial'));
 const AdminExport = React.lazy(() => import('./components/AdminExport'));
+const VaralManager = React.lazy(() => import('./components/VaralManager'));
 
 export default function App() {
   const { t } = useTranslation();
@@ -438,6 +440,7 @@ export default function App() {
 
   const hasAccessTroupe = isSystemOrSuperAdminOrMestre || userTags.some(t => permissionsMatrice?.troupe?.includes(t));
   const hasAccessLogistique = isSystemOrSuperAdminOrMestre || userTags.some(t => permissionsMatrice?.logistique?.includes(t));
+  const hasAccessTresorerie = isSystemOrSuperAdminOrMestre || userTags.some(t => permissionsMatrice?.tresorerie?.includes(t));
   const hasAccessStudio = isSystemOrSuperAdminOrMestre || userTags.some(t => permissionsMatrice?.studio?.includes(t));
 
   return (
@@ -511,6 +514,7 @@ export default function App() {
                 groupId={profileData?.groupId}
                 role={profileData?.role}
                 isSystemAdmin={profileData?.isSystemAdmin}
+                hasAccessLogistique={hasAccessLogistique}
                 onBack={() => setCurrentView('dashboard')} 
               />
             ) : (currentView === 'orders-manager' && hasAccessLogistique) ? (
@@ -518,13 +522,23 @@ export default function App() {
                 groupId={profileData?.groupId}
                 role={profileData?.role}
                 isSystemAdmin={profileData?.isSystemAdmin}
+                hasAccessLogistique={hasAccessLogistique}
                 onBack={() => setCurrentView('dashboard')} 
               />
-            ) : (currentView === 'treasury' && hasAccessLogistique) ? (
+            ) : (currentView === 'treasury' && hasAccessTresorerie) ? (
               <TreasuryManager 
                 groupId={profileData?.groupId}
                 role={profileData?.role}
                 isSystemAdmin={profileData?.isSystemAdmin}
+                hasAccessTresorerie={hasAccessTresorerie}
+                onBack={() => setCurrentView('dashboard')} 
+              />
+            ) : (currentView === 'kilometric-reimbursement' && hasAccessTresorerie) ? (
+              <KilometricReimbursementManager 
+                groupId={profileData?.groupId}
+                role={profileData?.role}
+                isSystemAdmin={profileData?.isSystemAdmin}
+                hasAccessTresorerie={hasAccessTresorerie}
                 onBack={() => setCurrentView('dashboard')} 
               />
             ) : (currentView === 'export-annu' && hasAccessTroupe) ? (
@@ -546,6 +560,13 @@ export default function App() {
                 role={profileData?.role}
                 isSystemAdmin={profileData?.isSystemAdmin}
                 branding={branding}
+                onBack={() => setCurrentView('dashboard')} 
+              />
+            ) : (currentView === 'varal-manager' && hasAccessStudio) ? (
+              <VaralManager 
+                groupId={profileData?.groupId}
+                role={profileData?.role}
+                isSystemAdmin={profileData?.isSystemAdmin}
                 onBack={() => setCurrentView('dashboard')} 
               />
             ) : (
