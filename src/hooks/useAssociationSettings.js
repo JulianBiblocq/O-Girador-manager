@@ -73,9 +73,6 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
       actualKey = key.target.name;
       actualValue = key.target.value;
     }
-    if (actualKey === 'pointRassemblementDefaut') {
-      actualKey = 'adresseLocal';
-    }
 
     setFormData(prev => {
       if (actualKey.includes('.')) {
@@ -89,6 +86,15 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
         current[parts[parts.length - 1]] = actualValue;
         return updated;
       }
+      
+      if (actualKey === 'pointRassemblementDefaut' || actualKey === 'adresseLocal') {
+        return {
+          ...prev,
+          adresseLocal: actualValue,
+          pointRassemblementDefaut: actualValue
+        };
+      }
+
       return {
         ...prev,
         [actualKey]: actualValue
