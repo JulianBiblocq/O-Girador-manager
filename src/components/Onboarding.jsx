@@ -8,6 +8,8 @@ import { useTranslation } from './LanguageContext';
 
 const DEFAULT_FIELDS_CONFIG = {
   telephone: { key: "telephone", label: "Téléphone", enabled: true, filledBy: "member" },
+  adresse: { key: "adresse", label: "Adresse physique", enabled: true, filledBy: "member" },
+  surnom: { key: "surnom", label: "Surnom", enabled: true, filledBy: "member" },
   tailleTshirt: { key: "tailleTshirt", label: "Taille T-shirt", enabled: true, filledBy: "member" },
   droitImage: { key: "droitImage", label: "Droit à l'image", enabled: true, filledBy: "member" },
   aptitudeMedicale: { key: "aptitudeMedicale", label: "Aptitude médicale", enabled: true, filledBy: "member" },
@@ -28,6 +30,8 @@ export default function Onboarding({ user, branding, onComplete }) {
     firstName: initialFirstName,
     lastName: initialLastName,
     phone: '',
+    adresse: '',
+    surnom: '',
     tailleTshirt: 'M',
     droitImage: false,
     aptitudeMedicale: false,
@@ -118,6 +122,8 @@ export default function Onboarding({ user, branding, onComplete }) {
         prenom: formData.firstName,
         email: user.email,
         telephone: isFieldVisible('telephone') ? formData.phone : "",
+        adresse: isFieldVisible('adresse') ? formData.adresse : "",
+        surnom: isFieldVisible('surnom') ? formData.surnom : "",
         tailleTshirt: isFieldVisible('tailleTshirt') ? formData.tailleTshirt : "M",
         droitImage: demanderDroitImage ? formData.droitImage : false,
         dateSignatureDroitImage: demanderDroitImage && formData.droitImage ? new Date() : null,
@@ -300,6 +306,41 @@ export default function Onboarding({ user, branding, onComplete }) {
                 />
                 <span>{t('onboarding.phonePublic')}</span>
               </label>
+            </div>
+          )}
+
+          {isFieldVisible('surnom') && (
+            <div className="flex flex-col gap-1">
+              <label className="text-[10px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                {t('onboarding.surnom')}
+              </label>
+              <input
+                type="text"
+                name="surnom"
+                placeholder="Surnom"
+                value={formData.surnom}
+                onChange={handleChange}
+                disabled={submitting}
+                className="theme-input w-full disabled:opacity-50"
+              />
+            </div>
+          )}
+
+          {isFieldVisible('adresse') && (
+            <div className="flex flex-col gap-1">
+              <label className="text-[10px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                {t('onboarding.adresse')}
+              </label>
+              <input
+                type="text"
+                name="adresse"
+                placeholder="123 Rue de la Roda, 75000 Paris"
+                value={formData.adresse}
+                onChange={handleChange}
+                required
+                disabled={submitting}
+                className="theme-input w-full disabled:opacity-50"
+              />
             </div>
           )}
 

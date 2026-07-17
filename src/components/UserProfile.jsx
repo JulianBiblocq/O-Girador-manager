@@ -25,6 +25,8 @@ const INSTRUMENT_ICONS = {
 
 const DEFAULT_FIELDS_CONFIG = {
   telephone: { key: "telephone", label: "Téléphone", enabled: true, filledBy: "member" },
+  adresse: { key: "adresse", label: "Adresse physique", enabled: true, filledBy: "member" },
+  surnom: { key: "surnom", label: "Surnom", enabled: true, filledBy: "member" },
   tailleTshirt: { key: "tailleTshirt", label: "Taille T-shirt", enabled: true, filledBy: "member" },
   droitImage: { key: "droitImage", label: "Droit à l'image", enabled: true, filledBy: "member" },
   aptitudeMedicale: { key: "aptitudeMedicale", label: "Aptitude médicale", enabled: true, filledBy: "member" },
@@ -41,6 +43,8 @@ export default function UserProfile({ user, profileData, onBack }) {
     instrument: profileData?.instrument || 'Autre',
     instrumentsJoues: profileData?.instrumentsJoues || (profileData?.instrument ? [profileData.instrument] : []),
     telephone: profileData?.telephone || '',
+    adresse: profileData?.adresse || '',
+    surnom: profileData?.surnom || '',
     tailleTshirt: profileData?.tailleTshirt || 'M',
     droitImage: profileData?.droitImage !== undefined ? profileData.droitImage : true,
     aptitudeMedicale: profileData?.aptitudeMedicale !== undefined ? profileData.aptitudeMedicale : false,
@@ -214,6 +218,8 @@ export default function UserProfile({ user, profileData, onBack }) {
           ...(formData.instrumentsJoues || [])
         ])).filter(Boolean),
         telephone: isFieldVisible('telephone') ? formData.telephone : (profileData?.telephone || ''),
+        adresse: isFieldVisible('adresse') ? formData.adresse : (profileData?.adresse || ''),
+        surnom: isFieldVisible('surnom') ? formData.surnom : (profileData?.surnom || ''),
         tailleTshirt: isFieldVisible('tailleTshirt') ? formData.tailleTshirt : (profileData?.tailleTshirt || 'M'),
         lateralite: isFieldVisible('lateralite') ? formData.lateralite : (profileData?.lateralite || 'droitier'),
         dateNaissance: isFieldVisible('dateNaissance') ? formData.dateNaissance : (profileData?.dateNaissance || ''),
@@ -543,6 +549,41 @@ export default function UserProfile({ user, profileData, onBack }) {
                 />
                 <span>{t('userProfile.phonePublic')}</span>
               </label>
+            </div>
+          )}
+
+          {isFieldVisible('surnom') && (
+            <div className="flex flex-col gap-1.5 border-t border-dashed border-cordel-master-dark/10 pt-2">
+              <label className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood">
+                {t('userProfile.surnom')}
+              </label>
+              <input
+                type="text"
+                name="surnom"
+                value={formData.surnom}
+                onChange={handleChange}
+                disabled={saving}
+                placeholder="Surnom"
+                className="theme-input w-full disabled:opacity-50 text-xs font-bold"
+              />
+            </div>
+          )}
+
+          {isFieldVisible('adresse') && (
+            <div className="flex flex-col gap-1.5 border-t border-dashed border-cordel-master-dark/10 pt-2">
+              <label className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood">
+                {t('userProfile.adresse')}
+              </label>
+              <input
+                type="text"
+                name="adresse"
+                value={formData.adresse}
+                onChange={handleChange}
+                required
+                disabled={saving}
+                placeholder="123 Rue de la Roda, 75000 Paris"
+                className="theme-input w-full disabled:opacity-50 text-xs font-bold"
+              />
             </div>
           )}
 

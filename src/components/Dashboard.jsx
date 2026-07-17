@@ -15,12 +15,18 @@ import { XiloSettings, XiloCaixa, XiloBox, XiloPeople, XiloConsole } from './Xil
 import { useTranslation } from './LanguageContext';
 import { useTerminologie } from '../hooks/useTerminologie';
 
-export default function Dashboard({ user, profileData, onNavigateToTrombi, onNavigateToView, onSignOut, installPromptAvailable, onTriggerInstall }) {
+export default function Dashboard({ user, profileData, onNavigateToTrombi, onNavigateToView, onSignOut, installPromptAvailable, onTriggerInstall, permissionsMatrice }) {
   const { tRole } = useTerminologie();
   const { locale, toggleLanguage, t } = useTranslation();
   const [layout, setLayout] = useState(["motMestre", "annonces", "agenda", "commandes", "forum", "documents", "tresorerie", "anniversaires"]);
   const [sequenceurUrl, setSequenceurUrl] = useState('');
   const [agendaFocusMode, setAgendaFocusMode] = useState(false);
+
+  const isSystemOrSuperAdminOrMestre = profileData?.isSystemAdmin || profileData?.role === 'super-admin' || profileData?.role === 'mestre';
+  const userTags = profileData?.tags || [];
+
+  const hasAccessTroupe = isSystemOrSuperAdminOrMestre || userTags.some(t => permissionsMatrice?.troupe?.includes(t));
+  const hasAccessLogistique = isSystemOrSuperAdminOrMestre || userTags.some(t => permissionsMatrice?.logistique?.includes(t));
 
   const getWidgetSpan = (id) => {
     switch (id) {
@@ -80,7 +86,7 @@ export default function Dashboard({ user, profileData, onNavigateToTrombi, onNav
 
   return (
     <div className="flex flex-col gap-4 w-full max-w-full overflow-hidden">
-      {(profileData?.isSystemAdmin || profileData?.role === 'super-admin' || profileData?.role === 'mestre') && (
+      {hasAccessTroupe && (
         <div className="flex justify-end -mb-3">
           <button 
             onClick={() => onNavigateToView('system-admin')}
@@ -214,30 +220,36 @@ export default function Dashboard({ user, profileData, onNavigateToTrombi, onNav
           </a>
         )}
 
-        {/* Layout Editor & Inventory Access Buttons (Visible to Mestres, Super-Admins & System Admins) */}
-        {(profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.isSystemAdmin) && (
+        {/* Layout Editor & Inventory Access Buttons (Visible based on permissions) */}
+        {(isSystemOrSuperAdminOrMestre || hasAccessLogistique) && (
           <div className="flex flex-col gap-2">
-            <button 
-              type="button"
-              onClick={() => onNavigateToView('layout-editor')}
-              className="text-[10px] font-black uppercase tracking-widest bg-cordel-bg border-2 border-dashed border-encre-noire/30 hover:border-encre-noire text-encre-noire py-1.5 w-full rounded-[6px_10px_8px_12px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-105 transition-all cursor-pointer flex items-center justify-center gap-2"
-            >
-              <XiloSettings size={12} /> {t('dashboard.layoutEditor')}
-            </button>
-            <button 
-              type="button"
-              onClick={() => onNavigateToView('inventory')}
-              className="text-[10px] font-black uppercase tracking-widest bg-cordel-bg border-2 border-dashed border-encre-noire/30 hover:border-encre-noire text-encre-noire py-1.5 w-full rounded-[6px_10px_8px_12px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-105 transition-all cursor-pointer flex items-center justify-center gap-2"
-            >
-              <XiloCaixa size={12} /> {t('dashboard.inventory')}
-            </button>
-            <button 
-              type="button"
-              onClick={() => onNavigateToView('orders-manager')}
-              className="text-[10px] font-black uppercase tracking-widest bg-cordel-bg border-2 border-dashed border-encre-noire/30 hover:border-encre-noire text-encre-noire py-1.5 w-full rounded-[6px_10px_8px_12px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-105 transition-all cursor-pointer flex items-center justify-center gap-2"
-            >
-              <XiloBox size={12} /> {t('dashboard.ordersManager')}
-            </button>
+            {isSystemOrSuperAdminOrMestre && (
+              <button 
+                type="button"
+                onClick={() => onNavigateToView('layout-editor')}
+                className="text-[10px] font-black uppercase tracking-widest bg-cordel-bg border-2 border-dashed border-encre-noire/30 hover:border-encre-noire text-encre-noire py-1.5 w-full rounded-[6px_10px_8px_12px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-105 transition-all cursor-pointer flex items-center justify-center gap-2"
+              >
+                <XiloSettings size={12} /> {t('dashboard.layoutEditor')}
+              </button>
+            )}
+            {hasAccessLogistique && (
+              <>
+                <button 
+                  type="button"
+                  onClick={() => onNavigateToView('inventory')}
+                  className="text-[10px] font-black uppercase tracking-widest bg-cordel-bg border-2 border-dashed border-encre-noire/30 hover:border-encre-noire text-encre-noire py-1.5 w-full rounded-[6px_10px_8px_12px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-105 transition-all cursor-pointer flex items-center justify-center gap-2"
+                >
+                  <XiloCaixa size={12} /> {t('dashboard.inventory')}
+                </button>
+                <button 
+                  type="button"
+                  onClick={() => onNavigateToView('orders-manager')}
+                  className="text-[10px] font-black uppercase tracking-widest bg-cordel-bg border-2 border-dashed border-encre-noire/30 hover:border-encre-noire text-encre-noire py-1.5 w-full rounded-[6px_10px_8px_12px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-105 transition-all cursor-pointer flex items-center justify-center gap-2"
+                >
+                  <XiloBox size={12} /> {t('dashboard.ordersManager')}
+                </button>
+              </>
+            )}
           </div>
         )}
       </div>

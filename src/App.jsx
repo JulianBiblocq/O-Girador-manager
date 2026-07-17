@@ -34,6 +34,7 @@ export default function App() {
   const [associationName, setAssociationName] = useState('');
   const [majoriteFeminine, setMajoriteFeminine] = useState(false);
   const [sequenceurUrl, setSequenceurUrl] = useState('');
+  const [permissionsMatrice, setPermissionsMatrice] = useState(null);
   const [currentView, setCurrentView] = useState('dashboard'); // 'dashboard', 'trombinoscope', 'forum', 'profil', 'system-admin', 'layout-editor', 'tag-manager'
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [installPromptAvailable, setInstallPromptAvailable] = useState(false);
@@ -54,6 +55,7 @@ export default function App() {
       setAssociationName('');
       setMajoriteFeminine(false);
       setSequenceurUrl('');
+      setPermissionsMatrice(null);
       return;
     }
 
@@ -69,11 +71,13 @@ export default function App() {
         setAssociationName(data.nom || '');
         setMajoriteFeminine(data.majoriteFeminine || false);
         setSequenceurUrl(data.sequenceurUrl || '');
+        setPermissionsMatrice(data.permissionsMatrice || null);
       } else {
         setBranding(null);
         setAssociationName('');
         setMajoriteFeminine(false);
         setSequenceurUrl('');
+        setPermissionsMatrice(null);
       }
     }, (error) => {
       console.error("App - Erreur onSnapshot branding :", error);
@@ -81,6 +85,7 @@ export default function App() {
       setAssociationName('');
       setMajoriteFeminine(false);
       setSequenceurUrl('');
+      setPermissionsMatrice(null);
     });
 
     return () => unsubscribe();
@@ -428,6 +433,13 @@ export default function App() {
   }
 
   // Authenticated and profile exists -> Render based on current view state
+  const isSystemOrSuperAdminOrMestre = profileData?.isSystemAdmin || profileData?.role === 'super-admin' || profileData?.role === 'mestre';
+  const userTags = profileData?.tags || [];
+
+  const hasAccessTroupe = isSystemOrSuperAdminOrMestre || userTags.some(t => permissionsMatrice?.troupe?.includes(t));
+  const hasAccessLogistique = isSystemOrSuperAdminOrMestre || userTags.some(t => permissionsMatrice?.logistique?.includes(t));
+  const hasAccessStudio = isSystemOrSuperAdminOrMestre || userTags.some(t => permissionsMatrice?.studio?.includes(t));
+
   return (
     <TerminologyProvider majoriteFeminine={majoriteFeminine}>
       <div style={brandingStyle} className="min-h-screen flex flex-col w-full">
@@ -439,6 +451,7 @@ export default function App() {
           profileData={profileData}
           onSignOut={handleSignOut}
           unreadPrivateMessagesCount={unreadPrivateMessagesCount}
+          permissionsMatrice={permissionsMatrice}
         >
           <React.Suspense fallback={
             <div className="flex-1 flex flex-col justify-center items-center py-12">
@@ -472,62 +485,62 @@ export default function App() {
                 profileData={profileData} 
                 onBack={() => setCurrentView('dashboard')} 
               />
-            ) : (currentView === 'system-admin' && (profileData?.isSystemAdmin || profileData?.role === 'super-admin' || profileData?.role === 'mestre')) ? (
+            ) : (currentView === 'system-admin' && hasAccessTroupe) ? (
               <SystemAdminPanel 
                 user={user} 
                 profileData={profileData} 
                 onBack={() => setCurrentView('dashboard')} 
                 onNavigateToView={(view) => setCurrentView(view)}
               />
-            ) : (currentView === 'layout-editor' && (profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.isSystemAdmin)) ? (
+            ) : (currentView === 'layout-editor' && isSystemOrSuperAdminOrMestre) ? (
               <LayoutEditor 
                 groupId={profileData?.groupId}
                 role={profileData?.role}
                 isSystemAdmin={profileData?.isSystemAdmin}
                 onBack={() => setCurrentView('dashboard')} 
               />
-            ) : (currentView === 'tag-manager' && (profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.isSystemAdmin)) ? (
+            ) : (currentView === 'tag-manager' && hasAccessTroupe) ? (
               <TagManager 
                 groupId={profileData?.groupId}
                 role={profileData?.role}
                 isSystemAdmin={profileData?.isSystemAdmin}
                 onBack={() => setCurrentView('system-admin')} 
               />
-            ) : (currentView === 'inventory' && (profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.isSystemAdmin)) ? (
+            ) : (currentView === 'inventory' && hasAccessLogistique) ? (
               <InventoryManager 
                 groupId={profileData?.groupId}
                 role={profileData?.role}
                 isSystemAdmin={profileData?.isSystemAdmin}
                 onBack={() => setCurrentView('dashboard')} 
               />
-            ) : (currentView === 'orders-manager' && (profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.isSystemAdmin)) ? (
+            ) : (currentView === 'orders-manager' && hasAccessLogistique) ? (
               <OrdersManager 
                 groupId={profileData?.groupId}
                 role={profileData?.role}
                 isSystemAdmin={profileData?.isSystemAdmin}
                 onBack={() => setCurrentView('dashboard')} 
               />
-            ) : (currentView === 'treasury' && (profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.role === 'tresorier' || profileData?.isSystemAdmin)) ? (
+            ) : (currentView === 'treasury' && hasAccessLogistique) ? (
               <TreasuryManager 
                 groupId={profileData?.groupId}
                 role={profileData?.role}
                 isSystemAdmin={profileData?.isSystemAdmin}
                 onBack={() => setCurrentView('dashboard')} 
               />
-            ) : (currentView === 'export-annu' && (profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.role === 'tresorier' || profileData?.role === 'president' || profileData?.isSystemAdmin)) ? (
+            ) : (currentView === 'export-annu' && hasAccessTroupe) ? (
               <AdminExport 
                 user={user}
                 profileData={profileData}
                 onBack={() => setCurrentView('dashboard')} 
               />
-            ) : (currentView === 'association-settings' && (profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.isSystemAdmin)) ? (
+            ) : (currentView === 'association-settings' && isSystemOrSuperAdminOrMestre) ? (
               <AssociationSettings 
                 groupId={profileData?.groupId}
                 role={profileData?.role}
                 isSystemAdmin={profileData?.isSystemAdmin}
                 onBack={() => setCurrentView('system-admin')} 
               />
-            ) : (currentView === 'studio-social' && (profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.isSystemAdmin)) ? (
+            ) : (currentView === 'studio-social' && hasAccessStudio) ? (
               <StudioSocial 
                 groupId={profileData?.groupId}
                 role={profileData?.role}
@@ -544,6 +557,7 @@ export default function App() {
                 onSignOut={handleSignOut} 
                 installPromptAvailable={installPromptAvailable}
                 onTriggerInstall={triggerInstallPrompt}
+                permissionsMatrice={permissionsMatrice}
               />
             )}
           </React.Suspense>

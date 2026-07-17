@@ -10,6 +10,8 @@ import { generateImageCharterPDF, generateMedicalAttestationPDF } from '../utils
 
 const DEFAULT_FIELDS_CONFIG = {
   telephone: { key: "telephone", label: "Téléphone", enabled: true, filledBy: "member" },
+  adresse: { key: "adresse", label: "Adresse physique", enabled: true, filledBy: "member" },
+  surnom: { key: "surnom", label: "Surnom", enabled: true, filledBy: "member" },
   tailleTshirt: { key: "tailleTshirt", label: "Taille T-shirt", enabled: true, filledBy: "member" },
   droitImage: { key: "droitImage", label: "Droit à l'image", enabled: true, filledBy: "member" },
   aptitudeMedicale: { key: "aptitudeMedicale", label: "Aptitude médicale", enabled: true, filledBy: "member" },
@@ -170,6 +172,12 @@ export default function SystemAdminPanel({ user, profileData, onBack, onNavigate
 
     if (isEnabled('telephone')) {
       updatePayload.telephone = userDraft.telephone !== undefined ? userDraft.telephone : (currentUserItem.telephone || '');
+    }
+    if (isEnabled('adresse')) {
+      updatePayload.adresse = userDraft.adresse !== undefined ? userDraft.adresse : (currentUserItem.adresse || '');
+    }
+    if (isEnabled('surnom')) {
+      updatePayload.surnom = userDraft.surnom !== undefined ? userDraft.surnom : (currentUserItem.surnom || '');
     }
     if (isEnabled('tailleTshirt')) {
       updatePayload.tailleTshirt = userDraft.tailleTshirt !== undefined ? userDraft.tailleTshirt : (currentUserItem.tailleTshirt || 'M');
@@ -373,6 +381,8 @@ export default function SystemAdminPanel({ user, profileData, onBack, onNavigate
               };
               const isAnyFieldModified = 
                 isFieldModified('telephone', userItem.telephone) ||
+                isFieldModified('adresse', userItem.adresse) ||
+                isFieldModified('surnom', userItem.surnom) ||
                 isFieldModified('tailleTshirt', userItem.tailleTshirt) ||
                 isFieldModified('droitImage', userItem.droitImage) ||
                 isFieldModified('aptitudeMedicale', userItem.aptitudeMedicale) ||
@@ -399,9 +409,21 @@ export default function SystemAdminPanel({ user, profileData, onBack, onNavigate
                         ✉️ {userItem.email}
                       </p>
                       <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[8px] font-semibold text-cordel-master-dark/70 mt-0.5">
+                        {(!fieldsConfig || fieldsConfig.surnom?.enabled) && userItem.surnom && (
+                          <>
+                            <span>🎭 {userItem.surnom}</span>
+                            <span>•</span>
+                          </>
+                        )}
                         {(!fieldsConfig || fieldsConfig.telephone?.enabled) && (
                           <>
                             <span>📞 {userItem.telephone || 'Non renseigné'}</span>
+                            <span>•</span>
+                          </>
+                        )}
+                        {(!fieldsConfig || fieldsConfig.adresse?.enabled) && (
+                          <>
+                            <span>📍 {userItem.adresse || 'Non renseignée'}</span>
                             <span>•</span>
                           </>
                         )}
@@ -563,6 +585,36 @@ export default function SystemAdminPanel({ user, profileData, onBack, onNavigate
                                 disabled={savingId === userItem.id}
                                 className="theme-input text-[10px] font-bold py-1 px-1.5 bg-cordel-bg-light"
                                 placeholder="Non renseigné"
+                              />
+                            </div>
+                          )}
+
+                          {/* Surnom */}
+                          {fieldsConfig.surnom?.enabled && (
+                            <div className="flex flex-col gap-0.5">
+                              <span className="text-[8px] font-bold text-cordel-wood">Surnom</span>
+                              <input
+                                type="text"
+                                value={userDraft.surnom !== undefined ? userDraft.surnom : (userItem.surnom || '')}
+                                onChange={(e) => handleFieldChange(userItem.id, 'surnom', e.target.value)}
+                                disabled={savingId === userItem.id}
+                                className="theme-input text-[10px] font-bold py-1 px-1.5 bg-cordel-bg-light"
+                                placeholder="Non renseigné"
+                              />
+                            </div>
+                          )}
+
+                          {/* Adresse */}
+                          {fieldsConfig.adresse?.enabled && (
+                            <div className="flex flex-col gap-0.5">
+                              <span className="text-[8px] font-bold text-cordel-wood">Adresse</span>
+                              <input
+                                type="text"
+                                value={userDraft.adresse !== undefined ? userDraft.adresse : (userItem.adresse || '')}
+                                onChange={(e) => handleFieldChange(userItem.id, 'adresse', e.target.value)}
+                                disabled={savingId === userItem.id}
+                                className="theme-input text-[10px] font-bold py-1 px-1.5 bg-cordel-bg-light"
+                                placeholder="Non renseignée"
                               />
                             </div>
                           )}
