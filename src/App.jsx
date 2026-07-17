@@ -24,6 +24,86 @@ const StudioSocial = React.lazy(() => import('./components/StudioSocial'));
 const AdminExport = React.lazy(() => import('./components/AdminExport'));
 const VaralManager = React.lazy(() => import('./components/VaralManager'));
 const ReunionManager = React.lazy(() => import('./components/ReunionManager'));
+const EventDetails = React.lazy(() => import('./components/EventDetails'));
+const MestreEvents = React.lazy(() => import('./components/mestre/MestreEvents'));
+const MestreStageLayout = React.lazy(() => import('./components/mestre/MestreStageLayout'));
+const MestreSequenceur = React.lazy(() => import('./components/mestre/MestreSequenceur'));
+const MestreWorkshops = React.lazy(() => import('./components/mestre/MestreWorkshops'));
+
+const POLES_CONFIG = [
+  {
+    id: 'accueil',
+    label: 'Accueil / Mon Espace',
+    tabs: [
+      { id: 'dashboard', label: 'Tableau de bord', labelKey: 'tabDashboard' },
+      { id: 'profil', label: 'Mon profil', labelKey: 'tabProfil' },
+      { id: 'trombinoscope', label: 'Trombinoscope', labelKey: 'tabTrombinoscope' },
+      { id: 'forum', label: 'Porte-voix', labelKey: 'tabForum' }
+    ]
+  },
+  {
+    id: 'troupe',
+    label: 'Gestion de la Troupe',
+    tabs: [
+      { id: 'export-annu', label: 'Annuaire et export', labelKey: 'tabExportAnnu' },
+      { id: 'system-admin', label: 'Admin système', labelKey: 'tabSystemAdmin' },
+      { id: 'tag-manager', label: 'Badges', labelKey: 'tabTagManager' },
+      { id: 'instruments', label: 'Pupitres et instruments', labelKey: 'tabInstruments' },
+      { id: 'linked-instruments', label: 'Instruments liés pupitres', labelKey: 'tabLinkedInstruments' }
+    ]
+  },
+  {
+    id: 'tresorerie',
+    label: 'Trésorerie',
+    tabs: [
+      { id: 'cotisations', label: 'Cotisations', labelKey: 'tabCotisations' },
+      { id: 'finance-settings', label: 'Finances', labelKey: 'tabFinances' },
+      { id: 'events-finances', label: 'Événements', labelKey: 'tabEvents' },
+      { id: 'operations-diverses', label: 'Opérations diverses', labelKey: 'tabOperations' },
+      { id: 'frais-km', label: 'Frais kilométriques', labelKey: 'tabFraisKm' },
+      { id: 'reports-exports', label: 'Rapport et exports', labelKey: 'tabReports' }
+    ]
+  },
+  {
+    id: 'logistique',
+    label: 'Logistique',
+    tabs: [
+      { id: 'inventory', label: 'Inventaire des instruments', labelKey: 'tabInventory' },
+      { id: 'orders-manager', label: 'Gestion des commandes', labelKey: 'tabOrders' }
+    ]
+  },
+  {
+    id: 'studio',
+    label: 'Le Studio',
+    tabs: [
+      { id: 'studio-social', label: 'Studio social', labelKey: 'tabStudioSocial' },
+      { id: 'reunion-manager', label: 'Gestion des réunions', labelKey: 'tabReunions' },
+      { id: 'varal-manager', label: 'Gestionnaire de Varal', labelKey: 'tabVaral' }
+    ]
+  },
+  {
+    id: 'mestre',
+    label: 'Espace Mestre',
+    tabs: [
+      { id: 'mestre-events', label: 'Liste des Événements', labelKey: 'tabMestreEvents' },
+      { id: 'mestre-stage-layout', label: 'Plan de Scène', labelKey: 'tabMestreStage' },
+      { id: 'mestre-sequenceur', label: 'Séquenceur (Fichiers JSON)', labelKey: 'tabMestreSequenceur' },
+      { id: 'mestre-workshops', label: 'Ateliers', labelKey: 'tabMestreWorkshops' }
+    ]
+  },
+  {
+    id: 'config',
+    label: 'Configuration',
+    tabs: [
+      { id: 'config-identity', label: 'Identité et liens', labelKey: 'tabConfigIdentity' },
+      { id: 'config-profile', label: 'Organisation et profil', labelKey: 'tabConfigProfile' },
+      { id: 'config-security', label: 'Sécurité et droit', labelKey: 'tabConfigSecurity' },
+      { id: 'config-logistics', label: 'Logistique et covoiturage', labelKey: 'tabConfigLogistics' },
+      { id: 'config-documents', label: 'Documents', labelKey: 'tabConfigDocuments' },
+      { id: 'config-layout', label: 'Mise en page', labelKey: 'tabConfigLayout' }
+    ]
+  }
+];
 
 export default function App() {
   const { t } = useTranslation();
@@ -38,6 +118,10 @@ export default function App() {
   const [sequenceurUrl, setSequenceurUrl] = useState('');
   const [permissionsMatrice, setPermissionsMatrice] = useState(null);
   const [currentView, setCurrentView] = useState('dashboard'); // 'dashboard', 'trombinoscope', 'forum', 'profil', 'system-admin', 'layout-editor', 'tag-manager'
+  const [currentPole, setCurrentPole] = useState('accueil');
+  const [currentTab, setCurrentTab] = useState('dashboard');
+  const [selectedMestreEventId, setSelectedMestreEventId] = useState(null);
+  const [activeMestreEventDetails, setActiveMestreEventDetails] = useState(null);
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [installPromptAvailable, setInstallPromptAvailable] = useState(false);
   const [unreadPrivateMessagesCount, setUnreadPrivateMessagesCount] = useState(0);
@@ -443,6 +527,103 @@ export default function App() {
   const hasAccessTresorerie = isSystemOrSuperAdminOrMestre || userTags.some(t => permissionsMatrice?.tresorerie?.includes(t));
   const hasAccessStudio = isSystemOrSuperAdminOrMestre || userTags.some(t => permissionsMatrice?.studio?.includes(t));
 
+  const handleNavigateToPole = (poleId) => {
+    setCurrentPole(poleId);
+    const poleObj = POLES_CONFIG.find(p => p.id === poleId);
+    if (poleObj && poleObj.tabs.length > 0) {
+      const allowedTab = poleObj.tabs.find(tab => {
+        switch (tab.id) {
+          case 'export-annu':
+          case 'tag-manager':
+            return hasAccessTroupe;
+          case 'system-admin':
+          case 'instruments':
+          case 'linked-instruments':
+            return isSystemOrSuperAdminOrMestre;
+          default:
+            return true;
+        }
+      });
+      setCurrentTab(allowedTab ? allowedTab.id : poleObj.tabs[0].id);
+    }
+  };
+
+  const handleNavigateToView = (viewName) => {
+    switch (viewName) {
+      case 'dashboard':
+        setCurrentPole('accueil');
+        setCurrentTab('dashboard');
+        break;
+      case 'profil':
+        setCurrentPole('accueil');
+        setCurrentTab('profil');
+        break;
+      case 'trombinoscope':
+        setCurrentPole('accueil');
+        setCurrentTab('trombinoscope');
+        break;
+      case 'forum':
+        setCurrentPole('accueil');
+        setCurrentTab('forum');
+        break;
+      case 'export-annu':
+        setCurrentPole('troupe');
+        setCurrentTab('export-annu');
+        break;
+      case 'system-admin':
+        setCurrentPole('troupe');
+        setCurrentTab('system-admin');
+        break;
+      case 'tag-manager':
+        setCurrentPole('troupe');
+        setCurrentTab('tag-manager');
+        break;
+      case 'inventory':
+        setCurrentPole('logistique');
+        setCurrentTab('inventory');
+        break;
+      case 'orders-manager':
+        setCurrentPole('logistique');
+        setCurrentTab('orders-manager');
+        break;
+      case 'treasury':
+        setCurrentPole('tresorerie');
+        setCurrentTab('cotisations');
+        break;
+      case 'kilometric-reimbursement':
+        setCurrentPole('tresorerie');
+        setCurrentTab('frais-km');
+        break;
+      case 'reports-exports':
+        setCurrentPole('tresorerie');
+        setCurrentTab('reports-exports');
+        break;
+      case 'association-settings':
+        setCurrentPole('config');
+        setCurrentTab('config-identity');
+        break;
+      case 'layout-editor':
+        setCurrentPole('config');
+        setCurrentTab('config-layout');
+        break;
+      case 'studio-social':
+        setCurrentPole('studio');
+        setCurrentTab('studio-social');
+        break;
+      case 'varal-manager':
+        setCurrentPole('studio');
+        setCurrentTab('varal-manager');
+        break;
+      case 'reunion-manager':
+        setCurrentPole('studio');
+        setCurrentTab('reunion-manager');
+        break;
+      default:
+        setCurrentPole('accueil');
+        setCurrentTab('dashboard');
+    }
+  };
+
   return (
     <TerminologyProvider majoriteFeminine={majoriteFeminine}>
       <div style={brandingStyle} className="min-h-screen flex flex-col w-full">
@@ -450,8 +631,11 @@ export default function App() {
           logoUrl={branding?.logoUrl} 
           associationName={associationName}
           sequenceurUrl={sequenceurUrl}
-          currentView={currentView}
-          onNavigateToView={(view) => setCurrentView(view)}
+          currentPole={currentPole}
+          onNavigateToPole={handleNavigateToPole}
+          currentTab={currentTab}
+          onNavigateToTab={(tab) => setCurrentTab(tab)}
+          polesList={POLES_CONFIG}
           profileData={profileData}
           onSignOut={handleSignOut}
           unreadPrivateMessagesCount={unreadPrivateMessagesCount}
@@ -465,68 +649,77 @@ export default function App() {
               </span>
             </div>
           }>
-            {currentView === 'trombinoscope' ? (
-              <Trombinoscope 
-                user={user} 
-                profileData={profileData} 
-                onBack={() => setCurrentView('dashboard')} 
-                onContactUser={(otherUserId) => {
-                  setActivePrivateChatUserId(otherUserId);
-                  setCurrentView('forum');
-                }}
+            {activeMestreEventDetails ? (
+              <EventDetails 
+                event={activeMestreEventDetails}
+                user={user}
+                profileData={profileData}
+                onNavigateToView={handleNavigateToView}
+                onClose={() => setActiveMestreEventDetails(null)}
               />
-            ) : currentView === 'forum' ? (
-              <Forum 
-                user={user} 
-                profileData={profileData} 
-                onBack={() => setCurrentView('dashboard')} 
-                activePrivateChatUserId={activePrivateChatUserId}
-                onClearActivePrivateChat={() => setActivePrivateChatUserId(null)}
-              />
-            ) : currentView === 'profil' ? (
+            ) : currentTab === 'profil' ? (
               <UserProfile 
                 user={user} 
                 profileData={profileData} 
-                onBack={() => setCurrentView('dashboard')} 
+                onBack={() => handleNavigateToPole('accueil')} 
               />
-            ) : (currentView === 'system-admin' && hasAccessTroupe) ? (
+            ) : currentTab === 'trombinoscope' ? (
+              <Trombinoscope 
+                user={user} 
+                profileData={profileData} 
+                onBack={() => handleNavigateToPole('accueil')} 
+                onContactUser={(otherUserId) => {
+                  setActivePrivateChatUserId(otherUserId);
+                  handleNavigateToView('forum');
+                }}
+              />
+            ) : currentTab === 'forum' ? (
+              <Forum 
+                user={user} 
+                profileData={profileData} 
+                onBack={() => handleNavigateToPole('accueil')} 
+                activePrivateChatUserId={activePrivateChatUserId}
+                onClearActivePrivateChat={() => setActivePrivateChatUserId(null)}
+              />
+            ) : (currentTab === 'export-annu' && hasAccessTroupe) ? (
+              <AdminExport 
+                user={user}
+                profileData={profileData}
+                onBack={() => handleNavigateToPole('accueil')} 
+              />
+            ) : (currentTab === 'system-admin' && hasAccessTroupe) ? (
               <SystemAdminPanel 
                 user={user} 
                 profileData={profileData} 
-                onBack={() => setCurrentView('dashboard')} 
-                onNavigateToView={(view) => setCurrentView(view)}
+                onBack={() => handleNavigateToPole('accueil')} 
+                onNavigateToView={handleNavigateToView}
               />
-            ) : (currentView === 'layout-editor' && isSystemOrSuperAdminOrMestre) ? (
-              <LayoutEditor 
-                groupId={profileData?.groupId}
-                role={profileData?.role}
-                isSystemAdmin={profileData?.isSystemAdmin}
-                onBack={() => setCurrentView('dashboard')} 
-              />
-            ) : (currentView === 'tag-manager' && hasAccessTroupe) ? (
+            ) : (currentTab === 'tag-manager' && hasAccessTroupe) ? (
               <TagManager 
                 groupId={profileData?.groupId}
                 role={profileData?.role}
                 isSystemAdmin={profileData?.isSystemAdmin}
-                onBack={() => setCurrentView('system-admin')} 
+                onBack={() => setCurrentTab('system-admin')} 
               />
-            ) : (currentView === 'inventory' && hasAccessLogistique) ? (
-              <InventoryManager 
+            ) : (currentTab === 'instruments' && isSystemOrSuperAdminOrMestre) ? (
+              <AssociationSettings 
                 groupId={profileData?.groupId}
                 role={profileData?.role}
                 isSystemAdmin={profileData?.isSystemAdmin}
-                hasAccessLogistique={hasAccessLogistique}
-                onBack={() => setCurrentView('dashboard')} 
+                mode="instruments-only"
+                activeTabProp="organisation"
+                onBack={() => handleNavigateToPole('accueil')}
               />
-            ) : (currentView === 'orders-manager' && hasAccessLogistique) ? (
-              <OrdersManager 
+            ) : (currentTab === 'linked-instruments' && isSystemOrSuperAdminOrMestre) ? (
+              <AssociationSettings 
                 groupId={profileData?.groupId}
                 role={profileData?.role}
                 isSystemAdmin={profileData?.isSystemAdmin}
-                hasAccessLogistique={hasAccessLogistique}
-                onBack={() => setCurrentView('dashboard')} 
+                mode="linked-instruments-only"
+                activeTabProp="organisation"
+                onBack={() => handleNavigateToPole('accueil')}
               />
-            ) : (currentView === 'treasury' && hasAccessTresorerie) ? (
+            ) : (currentTab === 'cotisations' && hasAccessTresorerie) ? (
               <TreasuryManager 
                 groupId={profileData?.groupId}
                 role={profileData?.role}
@@ -534,9 +727,38 @@ export default function App() {
                 hasAccessTresorerie={hasAccessTresorerie}
                 profileData={profileData}
                 initialTab="cotisations"
-                onBack={() => setCurrentView('dashboard')} 
+                onBack={() => handleNavigateToPole('accueil')} 
               />
-            ) : (currentView === 'kilometric-reimbursement' && hasAccessTresorerie) ? (
+            ) : (currentTab === 'finance-settings' && hasAccessTresorerie) ? (
+              <AssociationSettings 
+                groupId={profileData?.groupId}
+                role={profileData?.role}
+                isSystemAdmin={profileData?.isSystemAdmin}
+                mode="finance-settings-only"
+                activeTabProp="finance"
+                onBack={() => handleNavigateToPole('accueil')}
+              />
+            ) : (currentTab === 'events-finances' && hasAccessTresorerie) ? (
+              <TreasuryManager 
+                groupId={profileData?.groupId}
+                role={profileData?.role}
+                isSystemAdmin={profileData?.isSystemAdmin}
+                hasAccessTresorerie={hasAccessTresorerie}
+                profileData={profileData}
+                initialTab="events-finances"
+                onBack={() => handleNavigateToPole('accueil')} 
+              />
+            ) : (currentTab === 'operations-diverses' && hasAccessTresorerie) ? (
+              <TreasuryManager 
+                groupId={profileData?.groupId}
+                role={profileData?.role}
+                isSystemAdmin={profileData?.isSystemAdmin}
+                hasAccessTresorerie={hasAccessTresorerie}
+                profileData={profileData}
+                initialTab="operations-diverses"
+                onBack={() => handleNavigateToPole('accueil')} 
+              />
+            ) : (currentTab === 'frais-km' && hasAccessTresorerie) ? (
               <TreasuryManager 
                 groupId={profileData?.groupId}
                 role={profileData?.role}
@@ -544,15 +766,9 @@ export default function App() {
                 hasAccessTresorerie={hasAccessTresorerie}
                 profileData={profileData}
                 initialTab="frais-km"
-                onBack={() => setCurrentView('dashboard')} 
+                onBack={() => handleNavigateToPole('accueil')} 
               />
-            ) : (currentView === 'export-annu' && hasAccessTroupe) ? (
-              <AdminExport 
-                user={user}
-                profileData={profileData}
-                onBack={() => setCurrentView('dashboard')} 
-              />
-            ) : (currentView === 'reports-exports' && hasAccessTresorerie) ? (
+            ) : (currentTab === 'reports-exports' && hasAccessTresorerie) ? (
               <TreasuryManager 
                 groupId={profileData?.groupId}
                 role={profileData?.role}
@@ -560,43 +776,130 @@ export default function App() {
                 hasAccessTresorerie={hasAccessTresorerie}
                 profileData={profileData}
                 initialTab="reports-exports"
-                onBack={() => setCurrentView('dashboard')} 
+                onBack={() => handleNavigateToPole('accueil')} 
               />
-            ) : (currentView === 'association-settings' && isSystemOrSuperAdminOrMestre) ? (
-              <AssociationSettings 
+            ) : (currentTab === 'inventory' && hasAccessLogistique) ? (
+              <InventoryManager 
                 groupId={profileData?.groupId}
                 role={profileData?.role}
                 isSystemAdmin={profileData?.isSystemAdmin}
-                onBack={() => setCurrentView('system-admin')} 
+                hasAccessLogistique={hasAccessLogistique}
+                onBack={() => handleNavigateToPole('accueil')} 
               />
-            ) : (currentView === 'studio-social' && hasAccessStudio) ? (
+            ) : (currentTab === 'orders-manager' && hasAccessLogistique) ? (
+              <OrdersManager 
+                groupId={profileData?.groupId}
+                role={profileData?.role}
+                isSystemAdmin={profileData?.isSystemAdmin}
+                hasAccessLogistique={hasAccessLogistique}
+                onBack={() => handleNavigateToPole('accueil')} 
+              />
+            ) : (currentTab === 'studio-social' && hasAccessStudio) ? (
               <StudioSocial 
                 groupId={profileData?.groupId}
                 role={profileData?.role}
                 isSystemAdmin={profileData?.isSystemAdmin}
                 branding={branding}
-                onBack={() => setCurrentView('dashboard')} 
+                onBack={() => handleNavigateToPole('accueil')} 
               />
-            ) : (currentView === 'varal-manager' && hasAccessStudio) ? (
-              <VaralManager 
-                groupId={profileData?.groupId}
-                role={profileData?.role}
-                isSystemAdmin={profileData?.isSystemAdmin}
-                onBack={() => setCurrentView('dashboard')} 
-              />
-            ) : (currentView === 'reunion-manager' && hasAccessStudio) ? (
+            ) : (currentTab === 'reunion-manager' && hasAccessStudio) ? (
               <ReunionManager 
                 groupId={profileData?.groupId}
                 user={user}
                 profileData={profileData}
-                onBack={() => setCurrentView('dashboard')} 
+                onBack={() => handleNavigateToPole('accueil')} 
+              />
+            ) : (currentTab === 'varal-manager' && hasAccessStudio) ? (
+              <VaralManager 
+                groupId={profileData?.groupId}
+                role={profileData?.role}
+                isSystemAdmin={profileData?.isSystemAdmin}
+                onBack={() => handleNavigateToPole('accueil')} 
+              />
+            ) : (currentTab === 'mestre-events' && isSystemOrSuperAdminOrMestre) ? (
+              <MestreEvents 
+                groupId={profileData?.groupId} 
+                onSelectForStage={(evt) => {
+                  setSelectedMestreEventId(evt.id);
+                  setCurrentTab('mestre-stage-layout');
+                }} 
+                onOpenDetails={(evt) => setActiveMestreEventDetails(evt)}
+              />
+            ) : (currentTab === 'mestre-stage-layout' && isSystemOrSuperAdminOrMestre) ? (
+              <MestreStageLayout 
+                groupId={profileData?.groupId}
+                user={user}
+                profileData={profileData}
+                selectedEventId={selectedMestreEventId}
+                onSelectEventId={setSelectedMestreEventId}
+              />
+            ) : (currentTab === 'mestre-sequenceur' && isSystemOrSuperAdminOrMestre) ? (
+              <MestreSequenceur 
+                groupId={profileData?.groupId}
+                sequenceurUrl={sequenceurUrl}
+              />
+            ) : (currentTab === 'mestre-workshops' && isSystemOrSuperAdminOrMestre) ? (
+              <MestreWorkshops 
+                groupId={profileData?.groupId}
+              />
+            ) : (currentTab === 'config-identity' && isSystemOrSuperAdminOrMestre) ? (
+              <AssociationSettings 
+                groupId={profileData?.groupId}
+                role={profileData?.role}
+                isSystemAdmin={profileData?.isSystemAdmin}
+                activeTabProp="identity"
+                mode="identity-only"
+                onBack={() => handleNavigateToPole('accueil')} 
+              />
+            ) : (currentTab === 'config-profile' && isSystemOrSuperAdminOrMestre) ? (
+              <AssociationSettings 
+                groupId={profileData?.groupId}
+                role={profileData?.role}
+                isSystemAdmin={profileData?.isSystemAdmin}
+                mode="profile-fields-only"
+                activeTabProp="organisation"
+                onBack={() => handleNavigateToPole('accueil')} 
+              />
+            ) : (currentTab === 'config-security' && isSystemOrSuperAdminOrMestre) ? (
+              <AssociationSettings 
+                groupId={profileData?.groupId}
+                role={profileData?.role}
+                isSystemAdmin={profileData?.isSystemAdmin}
+                activeTabProp="security"
+                mode="security-only"
+                onBack={() => handleNavigateToPole('accueil')} 
+              />
+            ) : (currentTab === 'config-logistics' && isSystemOrSuperAdminOrMestre) ? (
+              <AssociationSettings 
+                groupId={profileData?.groupId}
+                role={profileData?.role}
+                isSystemAdmin={profileData?.isSystemAdmin}
+                activeTabProp="logistics"
+                mode="logistics-only"
+                onBack={() => handleNavigateToPole('accueil')} 
+              />
+            ) : (currentTab === 'config-documents' && isSystemOrSuperAdminOrMestre) ? (
+              <AssociationSettings 
+                groupId={profileData?.groupId}
+                role={profileData?.role}
+                isSystemAdmin={profileData?.isSystemAdmin}
+                mode="documents-only"
+                activeTabProp="finance"
+                onBack={() => handleNavigateToPole('accueil')} 
+              />
+            ) : (currentTab === 'config-layout' && isSystemOrSuperAdminOrMestre) ? (
+              <LayoutEditor 
+                groupId={profileData?.groupId}
+                role={profileData?.role}
+                isSystemAdmin={profileData?.isSystemAdmin}
+                onBack={() => handleNavigateToPole('accueil')} 
               />
             ) : (
               <Dashboard 
                 user={user} 
                 profileData={profileData} 
-                onNavigateToTrombi={() => setCurrentView('trombinoscope')} 
-                onNavigateToView={(view) => setCurrentView(view)}
+                onNavigateToTrombi={() => handleNavigateToView('trombinoscope')} 
+                onNavigateToView={handleNavigateToView}
                 onSignOut={handleSignOut} 
                 installPromptAvailable={installPromptAvailable}
                 onTriggerInstall={triggerInstallPrompt}

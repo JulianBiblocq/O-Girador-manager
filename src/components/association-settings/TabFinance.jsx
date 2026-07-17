@@ -12,7 +12,8 @@ export default function TabFinance({
   saving,
   groupId,
   handleSaveHelloAssoKey,
-  t
+  t,
+  mode
 }) {
   const {
     demanderDroitImage = false,
@@ -71,10 +72,11 @@ export default function TabFinance({
 
   return (
     <>
-      <CordelCard variant="default" useExtremeBorder={true} className="py-4 px-5">
-        <h3 className="text-xs uppercase font-extrabold tracking-wider text-cordel-wood mb-3">
-          📋 Documents de l'Association (RGPD & Médical)
-        </h3>
+      {(!mode || mode === 'documents-only') && (<>
+        <CordelCard variant="default" useExtremeBorder={true} className="py-4 px-5">
+          <h3 className="text-xs uppercase font-extrabold tracking-wider text-cordel-wood mb-3">
+            📋 Documents de l'Association (RGPD & Médical)
+          </h3>
 
         {/* Image Rights Toggle */}
         <div className="flex flex-col gap-1 pb-3 border-b border-dashed border-cordel-master-dark/15 text-left mb-3">
@@ -290,12 +292,14 @@ export default function TabFinance({
             </div>
           )}
         </div>
-      </CordelCard>
+        </CordelCard>
+      </>)}
 
-      <CordelCard variant="default" useExtremeBorder={true} className="py-4 px-5">
-        <h3 className="text-xs uppercase font-extrabold tracking-wider text-cordel-wood mb-3">
-          🪙 Trésorerie (Cotisations)
-        </h3>
+      {(!mode || mode === 'finance-settings-only') && (
+        <CordelCard variant="default" useExtremeBorder={true} className="py-4 px-5">
+          <h3 className="text-xs uppercase font-extrabold tracking-wider text-cordel-wood mb-3">
+            🪙 Trésorerie (Cotisations)
+          </h3>
         <div className="flex flex-col gap-3">
           <div className="flex flex-col gap-1 text-left">
             <label className="text-[9px] uppercase font-extrabold tracking-wider text-cordel-master-dark">
@@ -459,6 +463,7 @@ export default function TabFinance({
           </div>
         </div>
       </CordelCard>
+      )}
     </>
   );
 }
