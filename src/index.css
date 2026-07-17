@@ -109,6 +109,7 @@ body {
   --color-cordel-bleu: #758b9c;   /* Stages */
   --color-cordel-kraft: #c2a385;  /* Réunions */
   --color-cordel-jaune: #e0b443;  /* Ateliers */
+  --color-cordel-bleu-ardoise: #556c7d;  /* Ordres du jour */
 }
 
 /* Brazilian Cordel and Cactus display visual typography (only for strict targets, others fallback to system font) */
@@ -1436,6 +1437,7 @@ body.eco-mode #center-afficheur {
 
 .theme-bg-rouge { background-color: #8b2a1a !important; color: #f4ecd8 !important; }
 .theme-bg-jaune { background-color: #e0b443 !important; color: #1a1a1a !important; }
+.theme-bg-bleu-ardoise { background-color: var(--color-cordel-bleu-ardoise) !important; color: #f4ecd8 !important; }
 
 /* === GLOBAL POPUP & MODAL RESPONSIVE COMPATIBILITY === */
 .modal-overlay, .modal-backdrop, [role="dialog"], .popup-window, .modal-content, [class*="modal"] {

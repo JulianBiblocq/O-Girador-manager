@@ -301,7 +301,17 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
                         const opacityClass = isArchived ? 'opacity-60 hover:opacity-100 transition-opacity duration-200' : 'opacity-100';
 
                         const docType = getDocType(docItem);
-                        const colorClass = getDocColorVariant(docItem);
+                        
+                        let colorClass = 'default';
+                        if (category.id === 'Administratif' || category.nom === 'Administratif') {
+                          const isOrdreDuJour = 
+                            (docItem.sousCategorie && (docItem.sousCategorie.toLowerCase().includes('ordre') || docItem.sousCategorie.toLowerCase().includes('jour'))) ||
+                            (docItem.titre && (docItem.titre.toLowerCase().includes('ordre') || docItem.titre.toLowerCase().includes('jour')));
+                          colorClass = isOrdreDuJour ? 'bleu-ardoise' : 'bleu';
+                        } else {
+                          const colors = ['vert', 'bleu', 'rouge', 'jaune'];
+                          colorClass = colors[index % colors.length];
+                        }
                         const typeIcons = {
                           pdf: '📄',
                           audio: '🎵',
