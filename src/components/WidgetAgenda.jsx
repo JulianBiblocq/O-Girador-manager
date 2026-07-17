@@ -63,7 +63,7 @@ export default function WidgetAgenda({ role, isSystemAdmin, groupId, user, profi
   }, []);
 
   const isMobile = windowWidth < 768;
-  const limit = isMobile ? 3 : 8;
+  const limit = isMobile ? 5 : 8;
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -634,6 +634,18 @@ export default function WidgetAgenda({ role, isSystemAdmin, groupId, user, profi
                       cursor-pointer hover:scale-[1.01] active:scale-95 transition-all
                     `}
                   >
+                    {/* Effet tampon gros "ANNULÉ" en biais */}
+                    {event.status === 'annule' && (
+                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10 select-none">
+                        <span 
+                          style={{ transform: 'rotate(-15deg)' }}
+                          className="text-red-600 dark:text-red-500 border-[3.5px] border-red-600 dark:border-red-500 px-5 py-1.5 rounded-lg font-black text-[15px] tracking-widest uppercase opacity-80 bg-white/5 dark:bg-black/5"
+                        >
+                          ANNULÉ
+                        </span>
+                      </div>
+                    )}
+
                     {/* Left Side: Date Block */}
                     <div className="w-20 shrink-0 flex flex-col justify-center items-center text-center border-r-2 border-dashed border-encre-noire/30 px-2 select-none">
                       <span className="text-2xl font-black tracking-tighter leading-none">{day}</span>
@@ -645,11 +657,6 @@ export default function WidgetAgenda({ role, isSystemAdmin, groupId, user, profi
                     <div className="flex-1 p-4 flex flex-col justify-center text-left pl-5">
                       <div className="flex justify-between items-start gap-2 mb-0.5">
                         <h4 className="font-bold text-sm leading-tight">{event.titre}</h4>
-                        {event.status === 'annule' && (
-                          <span className="text-[8px] font-black px-1.5 py-0.5 bg-red-100 text-red-700 border border-red-300 rounded uppercase tracking-wider shrink-0 select-none">
-                            Annulé
-                          </span>
-                        )}
                       </div>
                       <span className="text-[9px] font-extrabold text-encre-noire/70 mb-1 leading-none select-none">
                         {event.dateFin ? (
