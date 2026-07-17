@@ -94,54 +94,16 @@ export default function EventCarpoolSection({
                     );
                   })}
                   {enableCarpoolReimbursement && event.distanceAllerRetourKm > 0 && indemniteKilometrique > 0 && (
-                    <div className="text-right text-[11px] font-bold text-encre-noire opacity-80 mt-1">
-                      Sous-total : {(convoiDrivers.filter(d => d.isEligibleRefund).length * event.distanceAllerRetourKm * indemniteKilometrique).toFixed(2)} €
+                    <div className="border-t border-double border-encre-noire/25 pt-2 mt-3 flex justify-between items-center font-black text-xs text-encre-noire">
+                      <span>Total Général (Convoi) :</span>
+                      <span className="text-cordel-wood">
+                        {(convoiDrivers.filter(d => d.isEligibleRefund).length * event.distanceAllerRetourKm * indemniteKilometrique).toFixed(2)} €
+                      </span>
                     </div>
                   )}
                 </div>
               )}
             </div>
-
-            {/* 2. Catégorie : Trajets Individuels (Propres Moyens) */}
-            <div className="mt-3">
-              <strong className="text-cordel-wood uppercase text-[10px] tracking-wider block border-b border-dashed border-cordel-master-dark/10 pb-0.5 mb-1.5">
-                🚶 Trajets Individuels / Propres moyens ({individualDrivers.length})
-              </strong>
-              {individualDrivers.length === 0 ? (
-                <p className="text-[11px] italic opacity-60 pl-2">Aucun trajet individuel déclaré.</p>
-              ) : (
-                <div className="flex flex-col gap-1.5 pl-2">
-                  {individualDrivers.map(driver => {
-                    const refund = (event.distanceAllerRetourKm || 0) * indemniteKilometrique;
-                    return (
-                      <div key={driver.id} className="flex justify-between items-center text-xs border-b border-dashed border-encre-noire/5 pb-1 mb-1 last:border-none">
-                        <span className="font-semibold">{driver.nom}</span>
-                        {enableCarpoolReimbursement && (
-                          <span className="font-black text-cordel-wood">
-                            {refund > 0 ? `${refund.toFixed(2)} €` : "0.00 €"}
-                          </span>
-                        )}
-                      </div>
-                    );
-                  })}
-                  {enableCarpoolReimbursement && event.distanceAllerRetourKm > 0 && indemniteKilometrique > 0 && (
-                    <div className="text-right text-[11px] font-bold text-encre-noire opacity-80 mt-1">
-                      Sous-total : {(individualDrivers.length * event.distanceAllerRetourKm * indemniteKilometrique).toFixed(2)} €
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* Total Cumulé */}
-            {enableCarpoolReimbursement && event.distanceAllerRetourKm > 0 && indemniteKilometrique > 0 && (convoiDrivers.length > 0 || individualDrivers.length > 0) && (
-              <div className="border-t border-double border-encre-noire/25 pt-2.5 mt-3 flex justify-between items-center font-black text-sm text-encre-noire">
-                <span>Total Général :</span>
-                <span className="text-cordel-wood">
-                  {((convoiDrivers.filter(d => d.isEligibleRefund).length + individualDrivers.length) * event.distanceAllerRetourKm * indemniteKilometrique).toFixed(2)} €
-                </span>
-              </div>
-            )}
           </div>
         </CordelCard>
       )}

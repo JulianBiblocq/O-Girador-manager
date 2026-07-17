@@ -91,52 +91,78 @@ export function calculateRoadDistance(origin, destination) {
       });
     };
 
-    // Try Distance Matrix first
+    const coordinateRegex = /^[-+]?([1-9]?\d(\.\d+)?|90(\.0+)?),\s*[-+]?(180(\.0+)?|((1[0-7]\d)|([1-9]?\d))(\.\d+)?)$/;
+    const parseLocation = (str) => {
+      if (coordinateRegex.test(str.trim())) {
+        const parts = str.split(',').map(s => parseFloat(s.trim()));
+        return new maps.LatLng(parts[0], parts[1]);
+      }
+      return str;
+    };
+
+    const originLoc = parseLocation(origin);
+    const destLoc = parseLocation(destination);
+
+    // Try DirectionsService first (more reliable, always enabled with core SDK)
     return new Promise((resolve, reject) => {
-      const service = new maps.DistanceMatrixService();
-      
-      const coordinateRegex = /^[-+]?([1-9]?\d(\.\d+)?|90(\.0+)?),\s*[-+]?(180(\.0+)?|((1[0-7]\d)|([1-9]?\d))(\.\d+)?)$/;
-      const parseLocation = (str) => {
-        if (coordinateRegex.test(str.trim())) {
-          const parts = str.split(',').map(s => parseFloat(s.trim()));
-          return new maps.LatLng(parts[0], parts[1]);
-        }
-        return str;
-      };
-
-      const originLoc = parseLocation(origin);
-      const destLoc = parseLocation(destination);
-
-      service.getDistanceMatrix(
+      const directionsService = new maps.DirectionsService();
+      directionsService.route(
         {
-          origins: [originLoc],
-          destinations: [destLoc],
+          origin: originLoc,
+          destination: destLoc,
           travelMode: maps.TravelMode.DRIVING,
-          unitSystem: maps.UnitSystem.METRIC,
         },
-        (response, status) => {
-          if (
-            status === 'OK' &&
-            response &&
-            response.rows &&
-            response.rows[0] &&
-            response.rows[0].elements &&
-            response.rows[0].elements[0] &&
-            response.rows[0].elements[0].status === 'OK'
-          ) {
-            const element = response.rows[0].elements[0];
-            const distanceKm = element.distance.value / 1000;
+        (result, status) => {
+          if (status === 'OK' && result && result.routes && result.routes[0]) {
+            const route = result.routes[0];
+            let totalDistanceMeters = 0;
+            for (let i = 0; i < route.legs.length; i++) {
+              totalDistanceMeters += route.legs[i].distance.value;
+            }
+            const distanceKm = totalDistanceMeters / 1000;
             resolve(distanceKm);
           } else {
-            const errStatus = response?.rows?.[0]?.elements?.[0]?.status || status;
-            reject(new Error(`Distance Matrix failed with status/element status: ${errStatus}`));
+            reject(new Error(`Directions service failed with status: ${status}`));
           }
         }
       );
     })
+    .catch((directionsErr) => {
+      console.warn("DirectionsService failed, trying DistanceMatrixService:", directionsErr);
+      // Fallback 1: Try Distance Matrix
+      return new Promise((resolve, reject) => {
+        const service = new maps.DistanceMatrixService();
+        service.getDistanceMatrix(
+          {
+            origins: [originLoc],
+            destinations: [destLoc],
+            travelMode: maps.TravelMode.DRIVING,
+            unitSystem: maps.UnitSystem.METRIC,
+          },
+          (response, status) => {
+            if (
+              status === 'OK' &&
+              response &&
+              response.rows &&
+              response.rows[0] &&
+              response.rows[0].elements &&
+              response.rows[0].elements[0] &&
+              response.rows[0].elements[0].status === 'OK'
+            ) {
+              const element = response.rows[0].elements[0];
+              const distanceKm = element.distance.value / 1000;
+              resolve(distanceKm);
+            } else {
+              const errStatus = response?.rows?.[0]?.elements?.[0]?.status || status;
+              reject(new Error(`Distance Matrix failed: ${errStatus}`));
+            }
+          }
+        );
+      });
+    })
     .catch((matrixErr) => {
-      console.warn("Distance Matrix failed, falling back to Haversine straight-line distance:", matrixErr);
-      // Fallback: Geocode both addresses and calculate Haversine distance
+      console.warn("All road calculation services failed, falling back to Haversine straight-line distance:", matrixErr);
+      // Fallback 2: Geocode both addresses and calculate Haversine distance
       return Promise.all([getCoords(origin), getCoords(destination)])
         .then(([coords1, coords2]) => {
           const R = 6371; // Earth's radius in km

@@ -635,7 +635,7 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
                       if (adresseLocal && newLieu) {
                         try {
                           const distanceKm = await calculateRoadDistance(adresseLocal, newLieu);
-                          const distanceRoundTrip = Math.round(distanceKm * 2 * 100) / 100;
+                          const distanceRoundTrip = Math.round(distanceKm * 2);
                           setEditForm(prev => ({ ...prev, distanceAllerRetourKm: distanceRoundTrip.toString() }));
                         } catch (err) {
                           console.error("Distance Matrix calculation failed on edit:", err);

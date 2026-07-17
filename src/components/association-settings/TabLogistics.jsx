@@ -67,54 +67,10 @@ export default function TabLogistics({
     <>
       <CordelCard variant="default" useExtremeBorder={true} className="py-4 px-5">
         <h3 className="text-xs uppercase font-extrabold tracking-wider text-cordel-wood mb-3">
-          🚗 Point de départ & Remboursements
+          🚗 Covoiturage, Départ & Défraiements
         </h3>
-        <div className="flex flex-col gap-3">
-          <div className="flex flex-col gap-1 text-left">
-            <label className="text-[9px] uppercase font-extrabold tracking-wider text-cordel-master-dark">
-              Tarif de remboursement par kilomètre (€/km)
-            </label>
-            <input 
-              type="number"
-              step="0.01"
-              min="0"
-              value={indemniteKilometrique}
-              onChange={(e) => handleChange('indemniteKilometrique', parseFloat(e.target.value) || 0)}
-              placeholder="ex: 0.40"
-              className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light w-full"
-            />
-          </div>
-
-          <div className="flex flex-col gap-1 text-left border-t border-dashed border-cordel-master-dark/15 pt-3">
-            <label className="text-[9px] uppercase font-extrabold tracking-wider text-cordel-master-dark">
-              Adresse du local / Point de rassemblement par défaut
-            </label>
-            <React.Suspense fallback={
-              <div className="text-[10px] font-bold py-2 text-cordel-wood animate-pulse">
-                ⏳ Chargement du champ adresse...
-              </div>
-            }>
-              <AddressAutocomplete 
-                name="pointRassemblementDefaut"
-                value={formData.pointRassemblementDefaut || ""}
-                onChange={handleChange}
-                onSelect={handleAddressSelect}
-                placeholder="ex: 12 Rue du Maracatu, 75000 Paris"
-                className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light w-full"
-              />
-            </React.Suspense>
-            <div className="mt-3">
-              <GoogleMapsPreview address={formData.pointRassemblementDefaut || ""} />
-            </div>
-          </div>
-        </div>
-      </CordelCard>
-
-      <CordelCard variant="default" useExtremeBorder={true} className="py-4 px-5">
-        <h3 className="text-xs uppercase font-extrabold tracking-wider text-cordel-wood mb-3">
-          🚗 Covoiturage & Défraiements
-        </h3>
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-3.5">
+          {/* Activer/Désactiver le remboursement */}
           <div className="flex items-start gap-2.5 cursor-pointer select-none">
             <input 
               type="checkbox"
@@ -132,21 +88,49 @@ export default function TabLogistics({
           </div>
 
           {enableCarpoolReimbursement && (
-            <div className="flex flex-col gap-3 border-t border-dashed border-cordel-master-dark/10 pt-3 mt-1 text-left">
-              <div className="flex flex-col gap-1">
+            <div className="flex flex-col gap-3.5 border-t border-dashed border-cordel-master-dark/10 pt-3 mt-1">
+              {/* Tarif Km */}
+              <div className="flex flex-col gap-1 text-left">
                 <label className="text-[9px] uppercase font-extrabold tracking-wider text-cordel-master-dark">
-                  Lieu de départ de référence (ex: Local de l'association)
+                  Tarif de remboursement par kilomètre (€/km)
                 </label>
                 <input 
-                  type="text"
-                  value={defaultDepartureLocation}
-                  onChange={(e) => handleChange('defaultDepartureLocation', e.target.value || '')}
-                  placeholder="Ex: Local de l'association, Mairie..."
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={indemniteKilometrique}
+                  onChange={(e) => handleChange('indemniteKilometrique', parseFloat(e.target.value) || 0)}
+                  placeholder="ex: 0.40"
                   className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light w-full"
                 />
               </div>
 
-              <div className="flex flex-col gap-1">
+              {/* Adresse du Local */}
+              <div className="flex flex-col gap-1 text-left">
+                <label className="text-[9px] uppercase font-extrabold tracking-wider text-cordel-master-dark">
+                  Adresse du local / Point de rassemblement par défaut
+                </label>
+                <React.Suspense fallback={
+                  <div className="text-[10px] font-bold py-2 text-cordel-wood animate-pulse">
+                    ⏳ Chargement du champ adresse...
+                  </div>
+                }>
+                  <AddressAutocomplete 
+                    name="pointRassemblementDefaut"
+                    value={formData.pointRassemblementDefaut || ""}
+                    onChange={handleChange}
+                    onSelect={handleAddressSelect}
+                    placeholder="ex: 12 Rue du Maracatu, 75000 Paris"
+                    className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light w-full"
+                  />
+                </React.Suspense>
+                <div className="mt-2">
+                  <GoogleMapsPreview address={formData.pointRassemblementDefaut || ""} />
+                </div>
+              </div>
+
+              {/* Règle de remboursement */}
+              <div className="flex flex-col gap-1 text-left">
                 <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
                   Règle d'éligibilité au remboursement
                 </label>

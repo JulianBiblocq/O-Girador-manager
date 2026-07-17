@@ -134,7 +134,7 @@ export default function WidgetAgenda({ role, isSystemAdmin, groupId, user, profi
       if (adresseLocal && value) {
         try {
           const distanceKm = await calculateRoadDistance(adresseLocal, value);
-          const distanceRoundTrip = Math.round(distanceKm * 2 * 100) / 100;
+          const distanceRoundTrip = Math.round(distanceKm * 2);
           setFormData((prev) => ({ ...prev, distanceAllerRetourKm: distanceRoundTrip.toString() }));
         } catch (err) {
           console.error("Distance Matrix calculation failed on creation:", err);
