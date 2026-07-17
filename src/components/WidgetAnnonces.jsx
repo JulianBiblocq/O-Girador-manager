@@ -43,8 +43,17 @@ export default function WidgetAnnonces({ groupId, profileData, role, isSystemAdm
       }
 
       if (permission === 'granted') {
+        let registration = undefined;
+        if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+          try {
+            registration = await navigator.serviceWorker.ready;
+          } catch (swErr) {
+            console.warn("Could not get ready service worker:", swErr);
+          }
+        }
         const token = await getToken(messaging, { 
-          vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY || undefined
+          vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY || undefined,
+          serviceWorkerRegistration: registration
         });
         if (token) {
           const userRef = doc(db, 'users', user.uid);

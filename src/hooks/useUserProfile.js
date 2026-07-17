@@ -91,8 +91,17 @@ export function useUserProfile(user, profileData, t) {
       const permission = await Notification.requestPermission();
       setNotificationPermission(permission);
       if (permission === 'granted') {
+        let registration = undefined;
+        if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+          try {
+            registration = await navigator.serviceWorker.ready;
+          } catch (swErr) {
+            console.warn("Could not get ready service worker:", swErr);
+          }
+        }
         const token = await getToken(messaging, { 
-          vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY || undefined
+          vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY || undefined,
+          serviceWorkerRegistration: registration
         });
         if (token) {
           const userRef = doc(db, 'users', user.uid);
@@ -190,8 +199,17 @@ export function useUserProfile(user, profileData, t) {
       if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
         setNotificationPermission('granted');
         try {
+          let registration = undefined;
+          if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+            try {
+              registration = await navigator.serviceWorker.ready;
+            } catch (swErr) {
+              console.warn("Could not get ready service worker for auto-subscribe:", swErr);
+            }
+          }
           const token = await getToken(messaging, {
-            vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY || undefined
+            vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY || undefined,
+            serviceWorkerRegistration: registration
           });
           if (token) {
             const currentTokens = profileData?.fcmTokens || [];

@@ -1445,6 +1445,7 @@ body.eco-mode #center-afficheur {
 gmp-place-autocomplete {
   box-sizing: border-box !important;
   width: 100% !important;
+  color-scheme: light !important; /* Force light theme inside shadow DOM */
 }
 
 gmp-place-autocomplete:focus-within {

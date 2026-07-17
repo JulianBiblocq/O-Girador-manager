@@ -20,7 +20,8 @@ export default defineConfig({
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
         maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
-        navigateFallbackDenylist: [/^\/__/]
+        navigateFallbackDenylist: [/^\/__/],
+        importScripts: ['/firebase-messaging-sw.js']
       }
     })
   ],
