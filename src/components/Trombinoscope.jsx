@@ -19,7 +19,6 @@ export default function Trombinoscope({ user, profileData, onBack, onContactUser
   const [fieldsConfig, setFieldsConfig] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const isViewerAdmin = profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.isSystemAdmin === true;
 
   const [showEditor, setShowEditor] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null);
@@ -33,6 +32,8 @@ export default function Trombinoscope({ user, profileData, onBack, onContactUser
   const [searchQuery, setSearchQuery] = useState('');
   const [filterInstrument, setFilterInstrument] = useState('all');
   const [filterTag, setFilterTag] = useState('all');
+
+  const isViewerAdmin = profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.isSystemAdmin === true;
 
   const getPupitreName = (inst) => {
     if (!inst) return null;
