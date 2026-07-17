@@ -18,6 +18,7 @@ import { useEventSetlist } from '../hooks/useEventSetlist';
 import EventRSVPSection from './event-details/EventRSVPSection';
 import EventCarpoolSection from './event-details/EventCarpoolSection';
 import EventSetlistSection from './event-details/EventSetlistSection';
+import EventReportSection from './event-details/EventReportSection';
 
 export default function EventDetails({ event, user, profileData, onNavigateToView, onClose, onPrev, onNext }) {
   const { t } = useTranslation();
@@ -1133,13 +1134,22 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
 
           {/* 💡 Reunion Specific Ordre du Jour & PDF minutes report manager */}
           {event.type === 'reunion' && (
-            <div className="mt-4 pt-4 border-t border-dashed border-cordel-master-dark/20">
-              <ReunionAgendaManager 
-                event={event}
-                user={user}
-                profileData={profileData}
-              />
-            </div>
+            <>
+              <div className="mt-4 pt-4 border-t border-dashed border-cordel-master-dark/20">
+                <ReunionAgendaManager 
+                  event={event}
+                  user={user}
+                  profileData={profileData}
+                />
+              </div>
+              <div className="mt-6 pt-6 border-t border-dashed border-cordel-master-dark/20">
+                <EventReportSection 
+                  event={event}
+                  user={user}
+                  profileData={profileData}
+                />
+              </div>
+            </>
           )}
         </>
       )}

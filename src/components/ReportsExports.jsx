@@ -48,7 +48,7 @@ const calculateCarStatus = (car, associationSettings) => {
   };
 };
 
-export default function ReportsExports({ groupId, role, isSystemAdmin, hasAccessTresorerie, profileData, onBack }) {
+export default function ReportsExports({ groupId, role, isSystemAdmin, hasAccessTresorerie, profileData, onBack, isEmbedded }) {
   const { t } = useTranslation();
   
   // Set default dates to school year (Sep 1st of current/previous year to Aug 31st of current/next year)
@@ -464,21 +464,23 @@ export default function ReportsExports({ groupId, role, isSystemAdmin, hasAccess
   };
 
   return (
-    <div className="flex flex-col gap-6 text-left select-none max-w-4xl mx-auto w-full">
+    <div className={`flex flex-col text-left select-none w-full ${isEmbedded ? 'gap-4' : 'gap-6 max-w-4xl mx-auto'}`}>
       {/* Header */}
-      <div className="flex justify-between items-center pb-2 border-b-2 border-dashed border-cordel-master-dark/30">
-        <button 
-          type="button" 
-          onClick={onBack} 
-          className="text-[10px] font-black uppercase tracking-widest bg-cordel-bg border border-encre-noire px-3 py-1 rounded-[4px_6px_3px_5px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-95 cursor-pointer flex items-center justify-center"
-        >
-          ⬅️ {t('common.back') || "Retour"}
-        </button>
-        
-        <h2 className="text-sm font-extrabold tracking-widest text-cordel-wood uppercase flex items-center gap-2">
-          <XiloScroll size={16} /> Rapports & Exports
-        </h2>
-      </div>
+      {!isEmbedded && (
+        <div className="flex justify-between items-center pb-2 border-b-2 border-dashed border-cordel-master-dark/30">
+          <button 
+            type="button" 
+            onClick={onBack} 
+            className="text-[10px] font-black uppercase tracking-widest bg-cordel-bg border border-encre-noire px-3 py-1 rounded-[4px_6px_3px_5px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-95 cursor-pointer flex items-center justify-center"
+          >
+            ⬅️ {t('common.back') || "Retour"}
+          </button>
+          
+          <h2 className="text-sm font-extrabold tracking-widest text-cordel-wood uppercase flex items-center gap-2">
+            <XiloScroll size={16} /> Rapports & Exports
+          </h2>
+        </div>
+      )}
 
       {/* Intro info box */}
       <div className="text-xs text-encre-noire dark:text-cordel-bg-light opacity-80 border border-dashed border-cordel-master-dark/30 p-3 rounded-[6px_4px_8px_5px] bg-[#fdfaf2] dark:bg-[#201d1a] leading-relaxed">

@@ -41,7 +41,7 @@ const calculateCarStatus = (car, associationSettings) => {
   };
 };
 
-export default function KilometricReimbursementManager({ groupId, onBack, role, isSystemAdmin, hasAccessTresorerie }) {
+export default function KilometricReimbursementManager({ groupId, onBack, role, isSystemAdmin, hasAccessTresorerie, isEmbedded }) {
   const { t } = useTranslation();
   const [events, setEvents] = useState([]);
   const [members, setMembers] = useState([]);
@@ -296,21 +296,23 @@ export default function KilometricReimbursementManager({ groupId, onBack, role, 
   };
 
   return (
-    <div className="flex flex-col gap-6 text-left select-none max-w-4xl mx-auto w-full">
+    <div className={`flex flex-col text-left select-none w-full ${isEmbedded ? 'gap-4' : 'gap-6 max-w-4xl mx-auto'}`}>
       {/* Header */}
-      <div className="flex justify-between items-center pb-2 border-b-2 border-dashed border-cordel-master-dark/30">
-        <button 
-          type="button" 
-          onClick={onBack} 
-          className="text-[10px] font-black uppercase tracking-widest bg-cordel-bg border border-encre-noire px-3 py-1 rounded-[4px_6px_3px_5px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-95 cursor-pointer flex items-center justify-center"
-        >
-          ⬅️ {t('common.back')}
-        </button>
-        
-        <h2 className="text-sm font-extrabold tracking-widest text-cordel-wood uppercase flex items-center gap-2">
-          <XiloCar size={16} /> {t('menu.kilometricReimbursement') || "Remboursements Kilométriques"}
-        </h2>
-      </div>
+      {!isEmbedded && (
+        <div className="flex justify-between items-center pb-2 border-b-2 border-dashed border-cordel-master-dark/30">
+          <button 
+            type="button" 
+            onClick={onBack} 
+            className="text-[10px] font-black uppercase tracking-widest bg-cordel-bg border border-encre-noire px-3 py-1 rounded-[4px_6px_3px_5px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-95 cursor-pointer flex items-center justify-center"
+          >
+            ⬅️ {t('common.back')}
+          </button>
+          
+          <h2 className="text-sm font-extrabold tracking-widest text-cordel-wood uppercase flex items-center gap-2">
+            <XiloCar size={16} /> {t('menu.kilometricReimbursement') || "Remboursements Kilométriques"}
+          </h2>
+        </div>
+      )}
 
       {/* Info card & Config display */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

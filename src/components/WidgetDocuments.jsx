@@ -23,6 +23,7 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
   const [isAdding, setIsAdding] = useState(false);
   const [documentToEdit, setDocumentToEdit] = useState(null);
   const [editingCategory, setEditingCategory] = useState(null);
+  const [selectedReport, setSelectedReport] = useState(null);
 
   const handleEdit = (docItem) => {
     setDocumentToEdit(docItem);
@@ -317,14 +318,21 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
                           audio: '🎵',
                           image: '📷',
                           video: '🎥',
-                          web: '🌐'
+                          web: '🌐',
+                          report: '📜'
                         };
                         const typeIcon = typeIcons[docType] || '📄';
 
                         return (
                           <div 
                             key={docItem.id}
-                            onClick={() => window.open(docItem.fileUrl, '_blank')}
+                            onClick={() => {
+                              if (docType === 'report') {
+                                setSelectedReport(docItem);
+                              } else {
+                                window.open(docItem.fileUrl, '_blank');
+                              }
+                            }}
                             className={`
                               relative flex flex-col items-center group cursor-pointer
                               transition-all duration-300 origin-top shrink-0
@@ -540,6 +548,77 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
                   Enregistrer
                 </CordelButton>
               </div>
+            </div>
+          </CordelCard>
+        </div>
+      )}
+
+      {/* Modale de lecture du Compte-Rendu (Varal / Cordel) */}
+      {selectedReport && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 select-none animate-fadeIn">
+          <CordelCard variant="default" useExtremeBorder={true} className="w-full max-w-2xl p-6 text-left relative bg-cordel-bg shadow-xl max-h-[85vh] flex flex-col">
+            {/* Header / Stamp */}
+            <div className="flex justify-between items-start border-b-2 border-dashed border-cordel-master-dark/20 pb-3 mb-4 shrink-0">
+              <div>
+                <span className="theme-stamp-badge theme-stamp-badge-wood text-[8px] tracking-wider mb-1 inline-block">
+                  📜 COMPTE-RENDU DE RÉUNION
+                </span>
+                <h3 className="text-base font-extrabold text-cordel-wood uppercase">
+                  {selectedReport.titre}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedReport(null)}
+                className="text-xs font-black uppercase tracking-widest bg-cordel-bg border border-encre-noire px-3 py-1 rounded-[4px_6px_3px_5px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-95 cursor-pointer"
+              >
+                {t('common.close') || "Fermer"}
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto pr-1 flex flex-col gap-4 text-xs">
+              
+              {/* Presents Badge Row */}
+              {selectedReport.presents && selectedReport.presents.length > 0 && (
+                <div className="bg-cordel-bg-light/45 p-3 rounded border border-dashed border-encre-noire/15 flex flex-col gap-1.5">
+                  <span className="text-[8px] font-black uppercase tracking-wider text-cordel-master-dark opacity-65">
+                    Membres présents à cette réunion :
+                  </span>
+                  <div className="flex flex-wrap gap-1">
+                    {selectedReport.presents.map((name, i) => (
+                      <span key={i} className="text-[9px] font-bold px-2 py-0.5 bg-neutral-200/50 rounded">
+                        👤 {name}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Structured points list */}
+              <div className="flex flex-col gap-4 mt-2">
+                {selectedReport.points && selectedReport.points.length > 0 ? (
+                  selectedReport.points.map((p, idx) => (
+                    <div key={p.id || idx} className="theme-inner-panel p-4 rounded-[4px_6px_3px_5px] flex flex-col gap-2">
+                      <span className="font-extrabold text-encre-noire border-b border-dashed border-encre-noire/10 pb-1">
+                        📌 {p.titre}
+                      </span>
+                      <p className="opacity-90 leading-relaxed font-semibold italic whitespace-pre-wrap pl-2 text-encre-noire">
+                        {p.notesCR || "Aucune note rédigée pour ce point."}
+                      </p>
+                    </div>
+                  ))
+                ) : (
+                  <div className="theme-inner-panel p-4 rounded-[4px_6px_3px_5px] whitespace-pre-wrap leading-relaxed italic font-semibold text-encre-noire">
+                    {selectedReport.texte || "Aucun contenu."}
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            {/* Footer */}
+            <div className="mt-4 pt-3 border-t border-dashed border-cordel-master-dark/15 text-center text-[9px] font-black text-cordel-wood opacity-55 shrink-0 select-none uppercase tracking-widest">
+              O Girador - Document Officiel Archivé
             </div>
           </CordelCard>
         </div>

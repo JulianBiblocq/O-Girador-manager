@@ -25,6 +25,7 @@ const StudioSocial = React.lazy(() => import('./components/StudioSocial'));
 const AdminExport = React.lazy(() => import('./components/AdminExport'));
 const VaralManager = React.lazy(() => import('./components/VaralManager'));
 const ReportsExports = React.lazy(() => import('./components/ReportsExports'));
+const ReunionManager = React.lazy(() => import('./components/ReunionManager'));
 
 export default function App() {
   const { t } = useTranslation();
@@ -533,14 +534,18 @@ export default function App() {
                 role={profileData?.role}
                 isSystemAdmin={profileData?.isSystemAdmin}
                 hasAccessTresorerie={hasAccessTresorerie}
+                profileData={profileData}
+                initialTab="cotisations"
                 onBack={() => setCurrentView('dashboard')} 
               />
             ) : (currentView === 'kilometric-reimbursement' && hasAccessTresorerie) ? (
-              <KilometricReimbursementManager 
+              <TreasuryManager 
                 groupId={profileData?.groupId}
                 role={profileData?.role}
                 isSystemAdmin={profileData?.isSystemAdmin}
                 hasAccessTresorerie={hasAccessTresorerie}
+                profileData={profileData}
+                initialTab="frais-km"
                 onBack={() => setCurrentView('dashboard')} 
               />
             ) : (currentView === 'export-annu' && hasAccessTroupe) ? (
@@ -550,12 +555,13 @@ export default function App() {
                 onBack={() => setCurrentView('dashboard')} 
               />
             ) : (currentView === 'reports-exports' && hasAccessTresorerie) ? (
-              <ReportsExports 
+              <TreasuryManager 
                 groupId={profileData?.groupId}
                 role={profileData?.role}
                 isSystemAdmin={profileData?.isSystemAdmin}
                 hasAccessTresorerie={hasAccessTresorerie}
                 profileData={profileData}
+                initialTab="reports-exports"
                 onBack={() => setCurrentView('dashboard')} 
               />
             ) : (currentView === 'association-settings' && isSystemOrSuperAdminOrMestre) ? (
@@ -578,6 +584,13 @@ export default function App() {
                 groupId={profileData?.groupId}
                 role={profileData?.role}
                 isSystemAdmin={profileData?.isSystemAdmin}
+                onBack={() => setCurrentView('dashboard')} 
+              />
+            ) : (currentView === 'reunion-manager' && hasAccessStudio) ? (
+              <ReunionManager 
+                groupId={profileData?.groupId}
+                user={user}
+                profileData={profileData}
                 onBack={() => setCurrentView('dashboard')} 
               />
             ) : (

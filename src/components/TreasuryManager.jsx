@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { collection, query, where, onSnapshot, doc, getDoc, addDoc, deleteDoc, Timestamp } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, doc, getDoc, getDocs, addDoc, deleteDoc, updateDoc, Timestamp } from 'firebase/firestore';
 import { db } from '../firebase';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
 import MemberTreasuryRow from './MemberTreasuryRow';
 import { useTranslation } from './LanguageContext';
+import KilometricReimbursementManager from './KilometricReimbursementManager';
+import ReportsExports from './ReportsExports';
 
-export default function TreasuryManager({ groupId, onBack, role, isSystemAdmin, hasAccessTresorerie }) {
+export default function TreasuryManager({ groupId, onBack, role, isSystemAdmin, hasAccessTresorerie, profileData, initialTab }) {
   const { t } = useTranslation();
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -17,7 +19,7 @@ export default function TreasuryManager({ groupId, onBack, role, isSystemAdmin, 
 
   const isAuthorized = role === 'mestre' || role === 'super-admin' || isSystemAdmin === true || hasAccessTresorerie === true;
 
-  const [activeTab, setActiveTab] = useState('cotisations'); // 'cotisations', 'transactions'
+  const [activeTab, setActiveTab] = useState(initialTab || 'cotisations');
   const [txForm, setTxForm] = useState({
     date: new Date().toISOString().split('T')[0],
     type: 'depense',
@@ -29,8 +31,75 @@ export default function TreasuryManager({ groupId, onBack, role, isSystemAdmin, 
   const [loadingTx, setLoadingTx] = useState(false);
   const [savingTx, setSavingTx] = useState(false);
 
+  // Sync activeTab with initialTab from navigation
   useEffect(() => {
-    if (!groupId || activeTab !== 'transactions') return;
+    if (initialTab) {
+      setActiveTab(initialTab);
+    }
+  }, [initialTab]);
+
+  // Event finances states
+  const [events, setEvents] = useState([]);
+  const [eventInputs, setEventInputs] = useState({});
+  const [loadingEvents, setLoadingEvents] = useState(false);
+  const [updatingEventId, setUpdatingEventId] = useState(null);
+
+  // Load events
+  useEffect(() => {
+    if (!groupId || activeTab !== 'events-finances') return;
+
+    setLoadingEvents(true);
+    const eventsRef = collection(db, 'events');
+    const q = query(eventsRef, where('groupId', '==', groupId));
+
+    getDocs(q).then((querySnapshot) => {
+      const fetched = [];
+      querySnapshot.forEach((doc) => {
+        fetched.push({
+          id: doc.id,
+          ...doc.data()
+        });
+      });
+      // Sort chronologically desc
+      fetched.sort((a, b) => new Date(b.date) - new Date(a.date));
+      setEvents(fetched);
+
+      // Initialize inputs
+      const initialInputs = {};
+      fetched.forEach(evt => {
+        initialInputs[evt.id] = {
+          rec: evt.montantRecette !== undefined ? evt.montantRecette.toString() : '0',
+          dep: evt.montantDepense !== undefined ? evt.montantDepense.toString() : '0'
+        };
+      });
+      setEventInputs(initialInputs);
+      setLoadingEvents(false);
+    }).catch(err => {
+      console.error("TreasuryManager - Erreur load events:", err);
+      setLoadingEvents(false);
+    });
+  }, [groupId, activeTab]);
+
+  const handleUpdateEventFinances = async (eventId, rec, dep) => {
+    setUpdatingEventId(eventId);
+    try {
+      const eventRef = doc(db, 'events', eventId);
+      await updateDoc(eventRef, {
+        montantRecette: parseFloat(rec) || 0,
+        montantDepense: parseFloat(dep) || 0
+      });
+      // Update local state
+      setEvents(prev => prev.map(evt => evt.id === eventId ? { ...evt, montantRecette: parseFloat(rec) || 0, montantDepense: parseFloat(dep) || 0 } : evt));
+    } catch (err) {
+      console.error("TreasuryManager - Erreur update event finances:", err);
+      alert("Erreur lors de l'enregistrement.");
+    } finally {
+      setUpdatingEventId(null);
+    }
+  };
+
+  useEffect(() => {
+    if (!groupId || activeTab !== 'operations-diverses') return;
 
     setLoadingTx(true);
     const txRef = collection(db, 'transactions');
@@ -321,32 +390,65 @@ export default function TreasuryManager({ groupId, onBack, role, isSystemAdmin, 
           </div>
 
           {/* Tabs Navigation */}
-          <div className="flex gap-2 border-b border-dashed border-cordel-master-dark/15 pb-2 shrink-0">
+          <div className="flex flex-wrap gap-1.5 border-b border-dashed border-cordel-master-dark/15 pb-2 shrink-0">
             <button
               type="button"
               onClick={() => setActiveTab('cotisations')}
-              className={`text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-[4px_6px_3px_5px] transition-all cursor-pointer ${
+              className={`text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-[4px_6px_3px_5px] transition-all cursor-pointer ${
                 activeTab === 'cotisations'
                   ? 'bg-cordel-wood text-cordel-bg border-2 border-encre-noire shadow-none'
                   : 'bg-cordel-bg text-cordel-wood border border-encre-noire/30 hover:bg-cordel-hover shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none'
               }`}
             >
-              🏷️ Cotisations des Membres
+              🏷️ Cotisations
             </button>
             <button
               type="button"
-              onClick={() => setActiveTab('transactions')}
-              className={`text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-[4px_6px_3px_5px] transition-all cursor-pointer ${
-                activeTab === 'transactions'
+              onClick={() => setActiveTab('events-finances')}
+              className={`text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-[4px_6px_3px_5px] transition-all cursor-pointer ${
+                activeTab === 'events-finances'
+                  ? 'bg-cordel-wood text-cordel-bg border-2 border-encre-noire shadow-none'
+                  : 'bg-cordel-bg text-cordel-wood border border-encre-noire/30 hover:bg-cordel-hover shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none'
+              }`}
+            >
+              🎭 Finances Événements
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('operations-diverses')}
+              className={`text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-[4px_6px_3px_5px] transition-all cursor-pointer ${
+                activeTab === 'operations-diverses'
                   ? 'bg-cordel-wood text-cordel-bg border-2 border-encre-noire shadow-none'
                   : 'bg-cordel-bg text-cordel-wood border border-encre-noire/30 hover:bg-cordel-hover shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none'
               }`}
             >
               💼 Opérations Diverses
             </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('frais-km')}
+              className={`text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-[4px_6px_3px_5px] transition-all cursor-pointer ${
+                activeTab === 'frais-km'
+                  ? 'bg-cordel-wood text-cordel-bg border-2 border-encre-noire shadow-none'
+                  : 'bg-cordel-bg text-cordel-wood border border-encre-noire/30 hover:bg-cordel-hover shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none'
+              }`}
+            >
+              🚗 Frais Kilométriques
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('reports-exports')}
+              className={`text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-[4px_6px_3px_5px] transition-all cursor-pointer ${
+                activeTab === 'reports-exports'
+                  ? 'bg-cordel-wood text-cordel-bg border-2 border-encre-noire shadow-none'
+                  : 'bg-cordel-bg text-cordel-wood border border-encre-noire/30 hover:bg-cordel-hover shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none'
+              }`}
+            >
+              📊 Rapports & Exports
+            </button>
           </div>
 
-          {activeTab === 'cotisations' ? (
+          {activeTab === 'cotisations' && (
             <>
               {/* Filters and Search Toolbar */}
               <CordelCard variant="default" useExtremeBorder={false} className="p-4 bg-cordel-bg flex flex-col md:flex-row gap-3 items-end">
@@ -418,7 +520,101 @@ export default function TreasuryManager({ groupId, onBack, role, isSystemAdmin, 
                 )}
               </div>
             </>
-          ) : (
+          )}
+
+          {activeTab === 'events-finances' && (
+            <div className="flex flex-col gap-3">
+              <div className="text-xs text-encre-noire dark:text-cordel-bg-light opacity-80 border border-dashed border-cordel-master-dark/30 p-3 rounded-[6px_4px_8px_5px] bg-[#fdfaf2] dark:bg-[#201d1a] leading-relaxed">
+                📈 Saisissez et modifiez directement dans ce tableau les recettes et les dépenses de chaque événement. Les modifications sont enregistrées en temps réel et intégrées dans le Grand Livre Comptable.
+              </div>
+              
+              <CordelCard variant="default" useExtremeBorder={false} className="p-4 bg-cordel-bg">
+                {loadingEvents ? (
+                  <div className="flex justify-center items-center py-12">
+                    <span className="text-xs uppercase tracking-widest font-black animate-pulse opacity-60">⏳</span>
+                  </div>
+                ) : events.length === 0 ? (
+                  <p className="text-xs italic opacity-60 text-center py-8">Aucun événement trouvé.</p>
+                ) : (
+                  <div className="flex flex-col gap-2 overflow-x-auto">
+                    {/* Table Header */}
+                    <div className="grid grid-cols-12 gap-2 text-[9px] font-extrabold uppercase tracking-wider text-cordel-wood border-b border-dashed border-cordel-master-dark/15 pb-1.5 min-w-[650px] px-1">
+                      <div className="col-span-2 text-left">Date</div>
+                      <div className="col-span-3 text-left">Titre / Type</div>
+                      <div className="col-span-2 text-left">Lieu</div>
+                      <div className="col-span-2 text-right">Recette (€)</div>
+                      <div className="col-span-2 text-right">Dépense (€)</div>
+                      <div className="col-span-1 text-center"></div>
+                    </div>
+
+                    {/* Table Rows */}
+                    <div className="flex flex-col gap-1.5 min-w-[650px] max-h-[500px] overflow-y-auto pr-1 mt-1">
+                      {events.map(evt => {
+                        const eventDateStr = evt.date ? evt.date.substring(0, 10) : '';
+                        return (
+                          <div key={evt.id} className="grid grid-cols-12 gap-2 items-center text-xs border-b border-dashed border-encre-noire/5 py-1.5 px-1 hover:bg-cordel-hover/10 rounded">
+                            <div className="col-span-2 font-semibold text-left">{eventDateStr}</div>
+                            <div className="col-span-3 text-left">
+                              <div className="font-bold text-encre-noire dark:text-cordel-bg-light truncate" title={evt.titre}>{evt.titre}</div>
+                              <span className="text-[8px] font-bold uppercase text-cordel-wood opacity-75">{evt.type}</span>
+                            </div>
+                            <div className="col-span-2 text-left truncate" title={evt.lieu}>{evt.lieu || '-'}</div>
+                            
+                            {/* Recette Input */}
+                            <div className="col-span-2 flex justify-end">
+                              <input
+                                type="number"
+                                min="0"
+                                step="any"
+                                value={eventInputs[evt.id]?.rec ?? ''}
+                                onChange={(e) => setEventInputs(prev => ({
+                                  ...prev,
+                                  [evt.id]: { ...prev[evt.id], rec: e.target.value }
+                                }))}
+                                className="theme-input text-xs w-24 text-right py-1 px-2 font-semibold"
+                                placeholder="0.00"
+                              />
+                            </div>
+                            
+                            {/* Depense Input */}
+                            <div className="col-span-2 flex justify-end">
+                              <input
+                                type="number"
+                                min="0"
+                                step="any"
+                                value={eventInputs[evt.id]?.dep ?? ''}
+                                onChange={(e) => setEventInputs(prev => ({
+                                  ...prev,
+                                  [evt.id]: { ...prev[evt.id], dep: e.target.value }
+                                }))}
+                                className="theme-input text-xs w-24 text-right py-1 px-2 font-semibold"
+                                placeholder="0.00"
+                              />
+                            </div>
+
+                            {/* Save Button */}
+                            <div className="col-span-1 flex justify-center">
+                              <button
+                                type="button"
+                                onClick={() => handleUpdateEventFinances(evt.id, eventInputs[evt.id]?.rec, eventInputs[evt.id]?.dep)}
+                                disabled={updatingEventId === evt.id}
+                                className={`text-[9px] font-black uppercase bg-[#84967a] hover:bg-[#728369] text-encre-noire border border-encre-noire px-2.5 py-1.5 rounded-[4px_6px_3px_5px] shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-105 transition-all cursor-pointer flex items-center justify-center gap-1 ${updatingEventId === evt.id ? 'opacity-55' : ''}`}
+                                title="Enregistrer"
+                              >
+                                {updatingEventId === evt.id ? "..." : "💾"}
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </CordelCard>
+            </div>
+          )}
+
+          {activeTab === 'operations-diverses' && (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
               {/* Form */}
               <div className="col-span-1">
@@ -576,6 +772,29 @@ export default function TreasuryManager({ groupId, onBack, role, isSystemAdmin, 
                 </CordelCard>
               </div>
             </div>
+          )}
+
+          {activeTab === 'frais-km' && (
+            <KilometricReimbursementManager 
+              groupId={groupId}
+              role={role}
+              isSystemAdmin={isSystemAdmin}
+              hasAccessTresorerie={hasAccessTresorerie}
+              isEmbedded={true}
+              onBack={onBack}
+            />
+          )}
+
+          {activeTab === 'reports-exports' && (
+            <ReportsExports 
+              groupId={groupId}
+              role={role}
+              isSystemAdmin={isSystemAdmin}
+              hasAccessTresorerie={hasAccessTresorerie}
+              profileData={profileData}
+              isEmbedded={true}
+              onBack={onBack}
+            />
           )}
         </>
       )}

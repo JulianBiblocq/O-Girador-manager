@@ -14,7 +14,8 @@ import {
   XiloSignOut,
   XiloEQ,
   XiloScroll,
-  XiloCar
+  XiloCar,
+  XiloCalendar
 } from './XiloIcons';
 import { useTranslation } from './LanguageContext';
 
@@ -286,6 +287,12 @@ export default function LayoutShell({
                       className={`theme-btn text-[9px] font-black uppercase tracking-wider py-1.5 px-2 text-left rounded-[4px_6px_3px_5px] flex items-center gap-2 hover:bg-cordel-hover cursor-pointer ${currentView === 'studio-social' ? 'bg-cordel-hover text-cordel-wood font-black' : ''}`}
                     >
                       <XiloMegaphone size={12} /> {t('menu.studioSocial') || "Studio Social"}
+                    </button>
+                    <button
+                      onClick={() => onNavigateToView && onNavigateToView('reunion-manager')}
+                      className={`theme-btn text-[9px] font-black uppercase tracking-wider py-1.5 px-2 text-left rounded-[4px_6px_3px_5px] flex items-center gap-2 hover:bg-cordel-hover cursor-pointer mt-1 ${currentView === 'reunion-manager' ? 'bg-cordel-hover text-cordel-wood font-black' : ''}`}
+                    >
+                      <XiloCalendar size={12} /> Gestion des Réunions
                     </button>
                     <button
                       onClick={() => onNavigateToView && onNavigateToView('varal-manager')}
@@ -569,6 +576,15 @@ export default function LayoutShell({
                       className="theme-btn text-[10px] font-black uppercase tracking-wider py-2 px-3 text-left rounded-[4px_6px_3px_5px] flex items-center gap-2 hover:bg-cordel-hover cursor-pointer w-full"
                     >
                       <XiloMegaphone size={14} /> {t('menu.studioSocial') || "Studio Social"}
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (onNavigateToView) onNavigateToView('reunion-manager');
+                        setIsDrawerOpen(false);
+                      }}
+                      className="theme-btn text-[10px] font-black uppercase tracking-wider py-2 px-3 text-left rounded-[4px_6px_3px_5px] flex items-center gap-2 hover:bg-cordel-hover cursor-pointer w-full mt-1.5"
+                    >
+                      <XiloCalendar size={14} /> Gestion des Réunions
                     </button>
                     <button
                       onClick={() => {
