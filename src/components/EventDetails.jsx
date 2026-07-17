@@ -647,6 +647,11 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
                     className="theme-input w-full disabled:opacity-50"
                   />
                 </React.Suspense>
+                {!adresseLocal && (
+                  <span className="text-[9px] text-orange-600 font-bold leading-none mt-1 select-none">
+                    ⚠️ Adresse du local non configurée dans les paramètres de l'association (calcul de distance inactif).
+                  </span>
+                )}
               </div>
 
               {/* Distance A/R (Prestation, Stage & Atelier) */}
