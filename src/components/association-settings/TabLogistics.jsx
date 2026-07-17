@@ -6,8 +6,16 @@ const AddressAutocomplete = React.lazy(() => import('../AddressAutocomplete'));
 const geocodeByAddress = async (address) => {
   const maps = await loadGoogleMaps();
   const geocoder = new maps.Geocoder();
+  const coordinateRegex = /^[-+]?([1-9]?\d(\.\d+)?|90(\.0+)?),\s*[-+]?(180(\.0+)?|((1[0-7]\d)|([1-9]?\d))(\.\d+)?)$/;
+  const isCoords = coordinateRegex.test(address.trim());
+
   return new Promise((resolve, reject) => {
-    geocoder.geocode({ address }, (results, status) => {
+    const request = isCoords ? (() => {
+      const parts = address.split(',').map(s => parseFloat(s.trim()));
+      return { location: { lat: parts[0], lng: parts[1] } };
+    })() : { address };
+
+    geocoder.geocode(request, (results, status) => {
       if (status === 'OK' && results) {
         resolve(results);
       } else {
@@ -182,33 +190,46 @@ function GoogleMapsPreview({ address }) {
             return;
           }
           try {
-            const geocoder = new maps.Geocoder();
-            geocoder.geocode({ address }, (results, status) => {
-              if (!active) return;
-              try {
-                if (status === 'OK' && results[0]) {
-                  const location = results[0].geometry.location;
-                  const map = new maps.Map(mapRef.current, {
-                    center: location,
-                    zoom: 15,
-                    disableDefaultUI: true,
-                    zoomControl: true,
-                  });
-                  new maps.Marker({
-                    position: location,
-                    map,
-                    title: address,
-                  });
-                  setMapError(null);
-                } else {
-                  console.warn(`Geocoding failed with status: ${status}`);
-                  setMapError(`Impossible de localiser cette adresse sur la carte (Erreur Google : ${status})`);
+            const coordinateRegex = /^[-+]?([1-9]?\d(\.\d+)?|90(\.0+)?),\s*[-+]?(180(\.0+)?|((1[0-7]\d)|([1-9]?\d))(\.\d+)?)$/;
+            const isCoords = coordinateRegex.test(address.trim());
+
+            const handleMapInit = (location) => {
+              const map = new maps.Map(mapRef.current, {
+                center: location,
+                zoom: 15,
+                disableDefaultUI: true,
+                zoomControl: true,
+              });
+              new maps.Marker({
+                position: location,
+                map,
+                title: address,
+              });
+              setMapError(null);
+            };
+
+            if (isCoords) {
+              const parts = address.split(',').map(s => parseFloat(s.trim()));
+              const location = { lat: parts[0], lng: parts[1] };
+              handleMapInit(location);
+            } else {
+              const geocoder = new maps.Geocoder();
+              geocoder.geocode({ address }, (results, status) => {
+                if (!active) return;
+                try {
+                  if (status === 'OK' && results[0]) {
+                    const location = results[0].geometry.location;
+                    handleMapInit(location);
+                  } else {
+                    console.warn(`Geocoding failed with status: ${status}`);
+                    setMapError(`Impossible de localiser cette adresse sur la carte (Erreur Google : ${status})`);
+                  }
+                } catch (mapInitErr) {
+                  console.error("Détail Erreur Map :", mapInitErr);
+                  setMapError("Erreur lors de l'initialisation de la carte");
                 }
-              } catch (mapInitErr) {
-                console.error("Détail Erreur Map :", mapInitErr);
-                setMapError("Erreur lors de l'initialisation de la carte");
-              }
-            });
+              });
+            }
           } catch (geocoderErr) {
             console.error("Détail Erreur Map :", geocoderErr);
             setMapError("Erreur lors de la préparation de la localisation");
