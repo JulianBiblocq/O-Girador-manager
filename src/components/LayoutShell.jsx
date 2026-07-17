@@ -20,6 +20,7 @@ import { useTranslation } from './LanguageContext';
 
 export default function LayoutShell({ 
   logoUrl, 
+  associationName,
   sequenceurUrl, 
   currentView, 
   onNavigateToView, 
@@ -61,9 +62,16 @@ export default function LayoutShell({
                 alt="Logo" 
                 className="w-10 h-10 landscape:w-8 landscape:h-8 object-contain rounded-[4px] p-0.5 bg-white border border-encre-noire/25 pointer-events-none" 
               />
-              <span className="font-extrabold text-xs uppercase tracking-widest text-cordel-wood">
-                O Girador
-              </span>
+              <div className="flex flex-col text-left">
+                <span className="font-extrabold text-[8px] uppercase tracking-widest text-cordel-master-dark/50">
+                  O Girador
+                </span>
+                {associationName && (
+                  <span className="font-black text-[10px] uppercase tracking-wider text-cordel-wood truncate max-w-[120px] -mt-0.5">
+                    {associationName}
+                  </span>
+                )}
+              </div>
             </div>
             {sequenceurUrl && (
               <a 
@@ -105,23 +113,30 @@ export default function LayoutShell({
                 className="w-full h-full object-contain pointer-events-none" 
               />
             </div>
-            <div className="flex items-center gap-2 mt-1 justify-center shrink-0">
-              <span 
-                onClick={() => onNavigateToView && onNavigateToView('dashboard')}
-                className="font-black text-sm uppercase tracking-widest text-cordel-wood cursor-pointer hover:opacity-85 transition-opacity"
-              >
-                O Girador
-              </span>
-              {sequenceurUrl && (
-                <a 
-                  href={sequenceurUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="p-1 border border-dashed border-encre-noire/20 hover:border-[#d99f4d] text-[#d99f4d] hover:bg-[#d99f4d]/10 rounded flex items-center justify-center transition-all cursor-pointer"
-                  title="O Girador Séquenceur"
+            <div className="flex flex-col items-center justify-center text-center px-1 shrink-0 mt-1">
+              <div className="flex items-center gap-2 justify-center">
+                <span 
+                  onClick={() => onNavigateToView && onNavigateToView('dashboard')}
+                  className="font-extrabold text-[9px] uppercase tracking-widest text-cordel-master-dark/50 cursor-pointer hover:opacity-85 transition-opacity"
                 >
-                  <XiloEQ size={12} />
-                </a>
+                  O Girador
+                </span>
+                {sequenceurUrl && (
+                  <a 
+                    href={sequenceurUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-1 border border-dashed border-encre-noire/20 hover:border-[#d99f4d] text-[#d99f4d] hover:bg-[#d99f4d]/10 rounded flex items-center justify-center transition-all cursor-pointer"
+                    title="O Girador Séquenceur"
+                  >
+                    <XiloEQ size={10} />
+                  </a>
+                )}
+              </div>
+              {associationName && (
+                <span className="font-black text-xs uppercase tracking-wider text-cordel-wood mt-0.5 leading-tight text-center break-words max-w-[160px]">
+                  {associationName}
+                </span>
               )}
             </div>
             <div className="w-full border-t border-dashed border-cordel-master-dark/20 my-2 shrink-0" />
@@ -357,13 +372,18 @@ export default function LayoutShell({
               </button>
 
               {/* Drawer Header */}
-              <div className="flex flex-col items-center gap-3 mt-4 mb-6 pb-4 border-b border-dashed border-cordel-master-dark/20">
+              <div className="flex flex-col items-center gap-2 mt-4 mb-6 pb-4 border-b border-dashed border-cordel-master-dark/20 text-center">
                 <div className="w-16 h-16 bg-white border border-encre-noire rounded-full flex items-center justify-center p-1.5 shadow-[1.5px_1.5px_0px_0px_#181716]">
                   <img src={finalLogoUrl} alt="Logo" className="w-full h-full object-contain" />
                 </div>
-                <span className="font-black text-xs uppercase tracking-widest text-cordel-wood">
+                <span className="font-extrabold text-[9px] uppercase tracking-widest text-cordel-master-dark/50">
                   O Girador
                 </span>
+                {associationName && (
+                  <span className="font-black text-xs uppercase tracking-wider text-cordel-wood leading-tight text-center break-words max-w-[200px]">
+                    {associationName}
+                  </span>
+                )}
               </div>
 
               {/* Navigation Links */}

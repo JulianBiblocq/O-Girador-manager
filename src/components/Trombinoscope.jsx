@@ -19,6 +19,7 @@ export default function Trombinoscope({ user, profileData, onBack, onContactUser
   const [fieldsConfig, setFieldsConfig] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const isViewerAdmin = profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.isSystemAdmin === true;
 
   const [showEditor, setShowEditor] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null);
@@ -126,10 +127,18 @@ export default function Trombinoscope({ user, profileData, onBack, onContactUser
       const fetchedMembers = [];
       querySnapshot.forEach((doc) => {
         const data = doc.data();
+        const cleanData = { ...data };
+        if (!isViewerAdmin && doc.id !== user.uid) {
+          delete cleanData.adresse;
+          delete cleanData.adresseRue;
+          delete cleanData.adresseCP;
+          delete cleanData.adresseVille;
+          delete cleanData.adressePhysique;
+        }
         fetchedMembers.push({
           id: doc.id,
-          ...data,
-          photoURL: doc.id === user.uid ? (data.photoURL || user.photoURL) : data.photoURL || null
+          ...cleanData,
+          photoURL: doc.id === user.uid ? (cleanData.photoURL || user.photoURL) : cleanData.photoURL || null
         });
       });
 
@@ -331,7 +340,6 @@ export default function Trombinoscope({ user, profileData, onBack, onContactUser
                 const hasRoleBadge = member.role && member.role !== 'membre';
                 const hasTags = member.tags && member.tags.length > 0;
 
-                const isViewerAdmin = profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.isSystemAdmin === true;
                 const isPhoneEnabled = fieldsConfig?.telephone?.enabled !== false;
                 const showPhone = isPhoneEnabled && member.telephone && (member.id === user.uid || isViewerAdmin || member.publierTelephone === true);
 

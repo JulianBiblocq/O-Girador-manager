@@ -448,6 +448,7 @@ export default function App() {
       <div style={brandingStyle} className="min-h-screen flex flex-col w-full">
         <LayoutShell 
           logoUrl={branding?.logoUrl} 
+          associationName={associationName}
           sequenceurUrl={sequenceurUrl}
           currentView={currentView}
           onNavigateToView={(view) => setCurrentView(view)}

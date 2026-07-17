@@ -6,7 +6,7 @@ import { db, storage } from '../firebase';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
 import { useTranslation } from './LanguageContext';
-import { XiloSettings } from './XiloIcons';
+import { XiloSettings, XiloMegaphone } from './XiloIcons';
 import PlacesAutocomplete from './PlacesAutocomplete';
 
 export const DEFAULT_FIELDS_CONFIG = {
@@ -1139,7 +1139,7 @@ export default function AssociationSettings({ groupId, onBack, role, isSystemAdm
 
                   {/* Le Studio */}
                   <div className="flex flex-col gap-1.5 border border-dashed border-cordel-master-dark/15 p-3 rounded bg-white/40 dark:bg-black/10">
-                    <span className="text-[11px] font-extrabold text-encre-noire">📢 Le Studio</span>
+                    <span className="text-[11px] font-extrabold text-encre-noire flex items-center gap-1"><XiloMegaphone size={12} /> Le Studio</span>
                     <span className="text-[9px] text-cordel-master-dark/65 font-semibold -mt-0.5 mb-1.5 block">
                       Donne accès à : Studio Social
                     </span>

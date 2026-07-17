@@ -6,7 +6,7 @@ import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
 import ReunionAgendaManager from './ReunionAgendaManager';
 import { useTranslation } from './LanguageContext';
-import { XiloCalendar } from './XiloIcons';
+import { XiloCalendar, XiloMegaphone } from './XiloIcons';
 import XiloAvatar from './XiloAvatar';
 import PlacesAutocomplete from './PlacesAutocomplete';
 import { calculateRoadDistance } from '../utils/googleMaps';
@@ -412,11 +412,20 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
 
         const recherchePlace = (currentCovoit.recherchePlace || []).filter(item => item.uid !== user.uid);
 
+        const currentInscriptions = eventData.inscriptions || [];
+        const updatedInscriptions = currentInscriptions.map(ins => {
+          if (ins.userId === user.uid) {
+            return { ...ins, transport: 'propre' };
+          }
+          return ins;
+        });
+
         transaction.update(eventRef, {
           covoiturage: {
             voitures: [...voitures, newVoiture],
             recherchePlace: recherchePlace
-          }
+          },
+          inscriptions: updatedInscriptions
         });
       });
 
@@ -590,11 +599,23 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
 
         const updatedVoitures = voitures.filter(v => v.id !== voitureId);
 
+        const currentInscriptions = eventData.inscriptions || [];
+        const updatedInscriptions = currentInscriptions.map(ins => {
+          if (ins.userId === user.uid) {
+            return {
+              ...ins,
+              demandeRemboursementKm: false
+            };
+          }
+          return ins;
+        });
+
         transaction.update(eventRef, {
           covoiturage: {
             voitures: updatedVoitures,
             recherchePlace: recherchePlace
-          }
+          },
+          inscriptions: updatedInscriptions
         });
       });
 
@@ -602,6 +623,46 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
     } catch (err) {
       console.error("EventDetails - Erreur handleRetirerVoiture :", err);
       alert("Erreur lors du retrait de votre voiture.");
+    } finally {
+      setSubmittingCovoit(false);
+    }
+  };
+
+  const handleToggleRemboursement = async (e) => {
+    const newValue = e.target.checked;
+    setDemandeRemboursementKm(newValue);
+
+    if (!user?.uid) return;
+
+    setSubmittingCovoit(true);
+    try {
+      const eventRef = doc(db, 'events', event.id);
+
+      await runTransaction(db, async (transaction) => {
+        const eventDocSnap = await transaction.get(eventRef);
+        if (!eventDocSnap.exists()) return;
+
+        const eventData = eventDocSnap.data();
+        const currentInscriptions = eventData.inscriptions || [];
+        
+        const updatedInscriptions = currentInscriptions.map(ins => {
+          if (ins.userId === user.uid) {
+            return {
+              ...ins,
+              demandeRemboursementKm: newValue
+            };
+          }
+          return ins;
+        });
+
+        transaction.update(eventRef, {
+          inscriptions: updatedInscriptions
+        });
+      });
+    } catch (err) {
+      console.error("EventDetails - Erreur handleToggleRemboursement :", err);
+      alert("Erreur lors de la mise à jour de la demande de remboursement.");
+      setDemandeRemboursementKm(!newValue);
     } finally {
       setSubmittingCovoit(false);
     }
@@ -634,11 +695,20 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
 
         recherchePlace.push({ uid: user.uid, nom: `${profileData?.prenom} ${profileData?.nom}` });
 
+        const currentInscriptions = eventData.inscriptions || [];
+        const updatedInscriptions = currentInscriptions.map(ins => {
+          if (ins.userId === user.uid) {
+            return { ...ins, transport: 'cherche' };
+          }
+          return ins;
+        });
+
         transaction.update(eventRef, {
           covoiturage: {
             voitures: updatedVoitures,
             recherchePlace: recherchePlace
-          }
+          },
+          inscriptions: updatedInscriptions
         });
       });
 
@@ -741,10 +811,6 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
 
   const handleStatusChange = (newStatus) => {
     setStatus(newStatus);
-  };
-
-  const handleTransportChange = (e) => {
-    setTransport(e.target.value);
   };
 
   const handleSave = async (e) => {
@@ -1026,7 +1092,7 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
               onClick={handlePreparePublication}
               className="text-[10px] font-black uppercase bg-cordel-ocre text-black border border-encre-noire px-3 py-1 rounded shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-95 cursor-pointer flex items-center gap-1"
             >
-              📢 Préparer la publication
+              <XiloMegaphone size={12} /> Préparer la publication
             </button>
             <button
               type="button"
@@ -1548,100 +1614,48 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
             </div>
           )}
 
-          {/* Conditional Transport Options (Only visible when present) */}
-          {status === 'present' && (
+          {/* Conditional Instrument Choice Options (Only visible when present and user has choice or is locked) */}
+          {status === 'present' && (isInstrumentLocked || (profileData?.instrumentsJoues && profileData.instrumentsJoues.length > 1)) && (
             <div className="flex flex-col gap-4 border-t border-dashed border-cordel-master-dark/20 pt-4 mt-2">
               
               {/* Choice of Instrument for Polyvalents or locked notice */}
-              {(isInstrumentLocked || (profileData?.instrumentsJoues && profileData.instrumentsJoues.length > 1)) && (
-                <div className="flex flex-col gap-2">
-                  <h4 className="font-bold text-xs uppercase tracking-wider text-cordel-wood">
-                    Choix d'Instrument
-                  </h4>
-                  {isInstrumentLocked ? (
-                    <div className="text-[11px] font-extrabold text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/20 p-2.5 rounded border border-dashed border-blue-500/30 flex items-center justify-center gap-1.5 select-none leading-relaxed">
-                      Le Mestre a défini ton instrument pour cette date : {instrumentChoisi}
-                    </div>
-                  ) : (
-                    <div className="flex flex-col gap-1 text-left">
-                      <label className="text-[9px] uppercase font-extrabold tracking-wider text-cordel-master-dark">
-                        Avec quel instrument vas-tu jouer pour cet événement ?
-                      </label>
-                      <select
-                        value={instrumentChoisi}
-                        onChange={(e) => setInstrumentChoisi(e.target.value)}
-                        disabled={saving}
-                        className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light w-full"
-                      >
-                        {(() => {
-                          const options = getMemberInstrumentOptions(profileData);
-                          if (instrumentChoisi && !options.includes(instrumentChoisi)) {
-                            options.push(instrumentChoisi);
-                          }
-                          return options.map((inst) => {
-                            const pupitreName = getPupitreName(inst);
-                            return (
-                              <option key={inst} value={inst}>
-                                {pupitreName ? `${inst} (${pupitreName})` : inst}
-                              </option>
-                            );
-                          });
-                        })()}
-                      </select>
-                    </div>
-                  )}
-                  <div className="border-b border-dashed border-cordel-master-dark/20 my-2" />
-                </div>
-              )}
-
-              <h4 className="font-bold text-xs uppercase tracking-wider text-cordel-wood">
-                Logistique Covoiturage
-              </h4>
-
               <div className="flex flex-col gap-2">
-                <label className="flex items-center gap-2 text-xs font-semibold cursor-pointer">
-                  <input
-                    type="radio"
-                    name="transport"
-                    value="propre"
-                    checked={transport === 'propre'}
-                    onChange={handleTransportChange}
-                    disabled={saving}
-                    className="accent-cordel-wood scale-110"
-                  />
-                  <span>J'y vais par mes propres moyens</span>
-                </label>
-
-                <label className="flex items-center gap-2 text-xs font-semibold cursor-pointer">
-                  <input
-                    type="radio"
-                    name="transport"
-                    value="cherche"
-                    checked={transport === 'cherche'}
-                    onChange={handleTransportChange}
-                    disabled={saving}
-                    className="accent-cordel-wood scale-110"
-                  />
-                  <span>Je cherche une place</span>
-                </label>
-
-              </div>
-
-              {/* Remboursement Kilométrique option for drivers */}
-              {transport === 'propre' && (
-                <div className="mt-3 p-2 bg-[#fdfaf2] border border-dashed border-cordel-master-dark/20 rounded">
-                  <label className="flex items-center gap-2 text-xs font-semibold cursor-pointer select-none">
-                    <input
-                      type="checkbox"
-                      checked={demandeRemboursementKm}
-                      onChange={(e) => setDemandeRemboursementKm(e.target.checked)}
+                <h4 className="font-bold text-xs uppercase tracking-wider text-cordel-wood">
+                  Choix d'Instrument
+                </h4>
+                {isInstrumentLocked ? (
+                  <div className="text-[11px] font-extrabold text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/20 p-2.5 rounded border border-dashed border-blue-500/30 flex items-center justify-center gap-1.5 select-none leading-relaxed">
+                    Le Mestre a défini ton instrument pour cette date : {instrumentChoisi}
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-1 text-left">
+                    <label className="text-[9px] uppercase font-extrabold tracking-wider text-cordel-master-dark">
+                      Avec quel instrument vas-tu jouer pour cet événement ?
+                    </label>
+                    <select
+                      value={instrumentChoisi}
+                      onChange={(e) => setInstrumentChoisi(e.target.value)}
                       disabled={saving}
-                      className="accent-cordel-wood scale-105"
-                    />
-                    <span className="leading-snug">Demander le remboursement des frais kilométriques (voiture pleine)</span>
-                  </label>
-                </div>
-              )}
+                      className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light w-full"
+                    >
+                      {(() => {
+                        const options = getMemberInstrumentOptions(profileData);
+                        if (instrumentChoisi && !options.includes(instrumentChoisi)) {
+                          options.push(instrumentChoisi);
+                        }
+                        return options.map((inst) => {
+                          const pupitreName = getPupitreName(inst);
+                          return (
+                            <option key={inst} value={inst}>
+                              {pupitreName ? `${inst} (${pupitreName})` : inst}
+                            </option>
+                          );
+                        });
+                      })()}
+                    </select>
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </CordelCard>
@@ -2314,6 +2328,21 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
                                 Confirmer ma place
                               </button>
                             </div>
+                          </div>
+                        )}
+
+                        {enableCarpoolReimbursement && isUserChauffeur && (
+                          <div className="mt-2 p-2 bg-white/60 dark:bg-black/20 border border-dashed border-encre-noire/20 rounded text-[11px] font-semibold">
+                            <label className="flex items-center gap-2 cursor-pointer select-none">
+                              <input
+                                type="checkbox"
+                                checked={demandeRemboursementKm}
+                                onChange={handleToggleRemboursement}
+                                disabled={submittingCovoit}
+                                className="accent-cordel-wood scale-105"
+                              />
+                              <span className="leading-snug">Demander le remboursement des frais kilométriques (voiture pleine)</span>
+                            </label>
                           </div>
                         )}
 

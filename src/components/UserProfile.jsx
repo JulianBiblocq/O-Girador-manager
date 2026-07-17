@@ -949,7 +949,7 @@ export default function UserProfile({ user, profileData, onBack }) {
           {messaging && (
             <div className="flex flex-col gap-2 border-t border-dashed border-cordel-master-dark/10 pt-3 mt-1 text-left">
               <span className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood">
-                Notifications Push
+                Notifications
               </span>
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white/40 dark:bg-black/10 p-2.5 rounded border border-dashed border-encre-noire/10 text-xs">
                 <div className="flex flex-col gap-0.5">

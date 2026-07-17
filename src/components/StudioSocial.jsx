@@ -443,7 +443,7 @@ export default function StudioSocial({ groupId, branding, onBack }) {
           ← {t('common.back') || "Retour"}
         </CordelButton>
         <span className="panel-title text-base font-extrabold tracking-wider text-cordel-wood uppercase flex items-center gap-1.5">
-          📢 {t('studioSocial.title') || "Studio Social"}
+          <XiloMegaphone size={16} /> {t('studioSocial.title') || "Studio Social"}
         </span>
       </div>
 

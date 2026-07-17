@@ -5,7 +5,7 @@ import LayoutShell from './LayoutShell';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
 import { useTranslation } from './LanguageContext';
-import { XiloSettings } from './XiloIcons';
+import { XiloSettings, XiloMegaphone } from './XiloIcons';
 
 // Wobbly, block-print stylized Up Chevron SVG (matches BaqueMix/Sequencer aesthetics)
 const ChevronUp = ({ size = 10, className = '' }) => (
@@ -47,7 +47,7 @@ const WIDGET_NAMES = {
     desc: "Bloc d'actualité rédigé en direct par le Mestre."
   },
   annonces: {
-    title: "Le Mégaphone (Annonces) 📢",
+    title: "Le Mégaphone (Annonces)",
     desc: "Annonces officielles de l'association ciblées par étiquettes."
   },
   agenda: {
@@ -287,7 +287,8 @@ export default function LayoutEditor({ groupId, onBack, role, isSystemAdmin }) {
                   >
                     {/* Info */}
                     <div className="flex-1 min-w-0">
-                      <h4 className="font-extrabold text-sm text-cordel-wood truncate">
+                      <h4 className="font-extrabold text-sm text-cordel-wood truncate flex items-center gap-1.5">
+                        {widgetId === 'annonces' ? <XiloMegaphone size={14} className="text-cordel-wood" /> : null}
                         {widget.title}
                       </h4>
                       <p className="text-[10px] opacity-75 mt-0.5 leading-snug">

@@ -11,7 +11,7 @@ const WidgetDocuments = React.lazy(() => import('./WidgetDocuments'));
 const WidgetTreasury = React.lazy(() => import('./WidgetTreasury'));
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
-import { XiloSettings, XiloCaixa, XiloBox, XiloPeople, XiloConsole, XiloCoin, XiloCar } from './XiloIcons';
+import { XiloSettings, XiloCaixa, XiloBox, XiloPeople, XiloConsole } from './XiloIcons';
 import { useTranslation } from './LanguageContext';
 import { useTerminologie } from '../hooks/useTerminologie';
 
@@ -27,7 +27,6 @@ export default function Dashboard({ user, profileData, onNavigateToTrombi, onNav
 
   const hasAccessTroupe = isSystemOrSuperAdminOrMestre || userTags.some(t => permissionsMatrice?.troupe?.includes(t));
   const hasAccessLogistique = isSystemOrSuperAdminOrMestre || userTags.some(t => permissionsMatrice?.logistique?.includes(t));
-  const hasAccessTresorerie = isSystemOrSuperAdminOrMestre || userTags.some(t => permissionsMatrice?.tresorerie?.includes(t));
 
   const getWidgetSpan = (id) => {
     switch (id) {
@@ -260,25 +259,7 @@ export default function Dashboard({ user, profileData, onNavigateToTrombi, onNav
           </a>
         )}
 
-        {/* Treasury Access Buttons (Visible based on permissions) */}
-        {hasAccessTresorerie && (
-          <div className="flex flex-col gap-2">
-            <button 
-              type="button"
-              onClick={() => onNavigateToView('treasury')}
-              className="text-[10px] font-black uppercase tracking-widest bg-cordel-bg border-2 border-dashed border-encre-noire/30 hover:border-encre-noire text-encre-noire py-1.5 w-full rounded-[6px_10px_8px_12px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-105 transition-all cursor-pointer flex items-center justify-center gap-2"
-            >
-              <XiloCoin size={12} /> {t('menu.treasury') || "Gestion des Cotisations"}
-            </button>
-            <button 
-              type="button"
-              onClick={() => onNavigateToView('kilometric-reimbursement')}
-              className="text-[10px] font-black uppercase tracking-widest bg-cordel-bg border-2 border-dashed border-encre-noire/30 hover:border-encre-noire text-encre-noire py-1.5 w-full rounded-[6px_10px_8px_12px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-105 transition-all cursor-pointer flex items-center justify-center gap-2"
-            >
-              <XiloCar size={12} /> {t('menu.kilometricReimbursement') || "Remboursements Kilométriques"}
-            </button>
-          </div>
-        )}
+
       </div>
 
       {/* Widgets Grid (Dynamically Ordered) */}

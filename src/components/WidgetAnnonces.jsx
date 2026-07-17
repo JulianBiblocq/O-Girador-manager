@@ -251,7 +251,7 @@ export default function WidgetAnnonces({ groupId, profileData, role, isSystemAdm
                       : 'bg-transparent text-encre-noire border-dashed border-encre-noire/30'
                   }`}
                 >
-                  📢 {t('widgetAnnonces.targetAll')}
+                  <span className="inline-flex items-center gap-1"><XiloMegaphone size={10} /> {t('widgetAnnonces.targetAll')}</span>
                 </button>
 
                 <button
@@ -322,7 +322,7 @@ export default function WidgetAnnonces({ groupId, profileData, role, isSystemAdm
                     disabled={saving}
                     className="accent-cordel-wood scale-105"
                   />
-                  <span>📢 Envoyer une notification Push aux membres</span>
+                  <span className="inline-flex items-center gap-1.5"><XiloMegaphone size={12} /> Envoyer une notification Push aux membres</span>
                 </label>
               </div>
             </div>
@@ -379,7 +379,7 @@ export default function WidgetAnnonces({ groupId, profileData, role, isSystemAdm
                     <div className="flex-1 min-w-0">
                       {/* Meta */}
                       <div className="flex flex-wrap items-center gap-1.5 text-[8px] font-bold text-cordel-master-dark/70 select-none">
-                        <span>📢 {t('widgetAnnonces.roleLabel')}</span>
+                        <span className="inline-flex items-center gap-0.5"><XiloMegaphone size={10} /> {t('widgetAnnonces.roleLabel')}</span>
                         <span>•</span>
                         <span>{formattedDate}</span>
                         <span>•</span>
