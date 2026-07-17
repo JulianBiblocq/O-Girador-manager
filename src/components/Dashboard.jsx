@@ -21,6 +21,7 @@ export default function Dashboard({ user, profileData, onNavigateToTrombi, onNav
   const [layout, setLayout] = useState(["motMestre", "annonces", "agenda", "commandes", "forum", "documents", "tresorerie", "anniversaires"]);
   const [sequenceurUrl, setSequenceurUrl] = useState('');
   const [agendaFocusMode, setAgendaFocusMode] = useState(false);
+  const [selectedEventForAgenda, setSelectedEventForAgenda] = useState(null);
 
   const isSystemOrSuperAdminOrMestre = profileData?.isSystemAdmin || profileData?.role === 'super-admin' || profileData?.role === 'mestre';
   const userTags = profileData?.tags || [];
@@ -126,8 +127,13 @@ export default function Dashboard({ user, profileData, onNavigateToTrombi, onNav
           groupId={profileData?.groupId} 
           user={user} 
           profileData={profileData} 
-          onFocusModeChange={(isFocused) => setAgendaFocusMode(isFocused)}
+          onFocusModeChange={(isFocused) => {
+            setAgendaFocusMode(isFocused);
+            if (!isFocused) setSelectedEventForAgenda(null);
+          }}
           onNavigateToView={onNavigateToView}
+          selectedEvent={selectedEventForAgenda}
+          setSelectedEvent={setSelectedEventForAgenda}
         />
       </div>
     );
@@ -299,6 +305,8 @@ export default function Dashboard({ user, profileData, onNavigateToTrombi, onNav
                   profileData={profileData} 
                   onFocusModeChange={(isFocused) => setAgendaFocusMode(isFocused)}
                   onNavigateToView={onNavigateToView}
+                  selectedEvent={selectedEventForAgenda}
+                  setSelectedEvent={setSelectedEventForAgenda}
                 />
               );
               break;

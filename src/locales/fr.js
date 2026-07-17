@@ -154,7 +154,13 @@ export const fr = {
     noGroupWarning: "Vous n'avez pas de groupe associé. Vous ne voyez que votre profil. Rapprochez-vous du Mestre pour obtenir votre lien d'invitation.",
     noMembers: "Aucun membre ne correspond à vos filtres.",
     other: "Autre",
-    group: "Groupe : "
+    group: "Groupe : ",
+    sectionAgbe: "Agbês (Devant)",
+    sectionGongue: "Gonguê (Milieu)",
+    sectionCaixaTarol: "Caixas / Tarol",
+    sectionAlfaia: "Les Alfaias (Au fond)",
+    sectionChantDanse: "Chant / Danse",
+    sectionAutres: "Autres / Non défini"
   },
   pwa: {
     newVersion: "Une nouvelle version est disponible !",

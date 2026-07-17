@@ -154,7 +154,13 @@ export const pt = {
     noGroupWarning: "Você não possui um grupo associado. Você só pode ver o seu próprio perfil. Entre em contato com o Mestre para obter o seu link de convite.",
     noMembers: "Nenhum membro corresponde aos filtros selecionados.",
     other: "Outro",
-    group: "Grupo: "
+    group: "Grupo: ",
+    sectionAgbe: "Ala de Agbê (Frente)",
+    sectionGongue: "Gonguê (Centro)",
+    sectionCaixaTarol: "Caixas / Tarol",
+    sectionAlfaia: "Alfaias (Fundo)",
+    sectionChantDanse: "Canto / Dança",
+    sectionAutres: "Outros / Não definido"
   },
   pwa: {
     newVersion: "Uma nova versão está disponível!",

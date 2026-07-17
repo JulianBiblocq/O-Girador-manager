@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { doc, updateDoc, collection, query, where, onSnapshot } from 'firebase/firestore';
+import { doc, updateDoc, deleteDoc, collection, query, where, onSnapshot } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '../firebase';
 import CordelCard from './CordelCard';
@@ -381,6 +381,26 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
     }
   };
 
+  const handleDeleteEvent = async () => {
+    if (!window.confirm("Êtes-vous sûr de vouloir supprimer définitivement cet événement ?")) {
+      return;
+    }
+    setSavingEvent(true);
+    try {
+      const eventRef = doc(db, 'events', event.id);
+      await deleteDoc(eventRef);
+      alert("Événement supprimé avec succès !");
+      if (onClose) {
+        onClose();
+      }
+    } catch (err) {
+      console.error("EventDetails - Erreur de suppression événement :", err);
+      alert("Erreur lors de la suppression de l'événement.");
+    } finally {
+      setSavingEvent(false);
+    }
+  };
+
   const handlePreparePublication = () => {
     const newUrl = `${window.location.pathname}?eventId=${event.id}`;
     window.history.pushState({}, '', newUrl);
@@ -538,6 +558,14 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
             >
               ✏️ Modifier
             </button>
+            <CordelButton
+              type="button"
+              variant="rouge"
+              onClick={handleDeleteEvent}
+              className="text-[10px] px-3 py-1.5 uppercase font-black flex items-center gap-1"
+            >
+              🗑️ Supprimer
+            </CordelButton>
           </div>
         )}
         {isAuthorized && isEditingEvent && (
@@ -895,6 +923,16 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
             >
               {savingEvent ? "Modification..." : "Enregistrer les modifications"}
             </CordelButton>
+            <CordelButton
+              type="button"
+              variant="rouge"
+              useExtremeBorder={true}
+              disabled={savingEvent}
+              onClick={handleDeleteEvent}
+              className="w-full mt-3 py-3 text-xs font-bold uppercase tracking-widest"
+            >
+              {savingEvent ? "Suppression..." : "🗑️ Supprimer l'événement"}
+            </CordelButton>
           </CordelCard>
         </form>
       ) : (
@@ -1117,20 +1155,22 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
             reimbursementRule={reimbursementRule}
           />
 
-          <EventSetlistSection
-            setlist={setlist}
-            isAuthorized={isAuthorized}
-            updatingSetlist={updatingSetlist}
-            handleRemoveMorceau={handleRemoveMorceau}
-            assocSequenceurUrl={assocSequenceurUrl}
-            handleAddMorceau={handleAddMorceau}
-            newMorceauTitre={newMorceauTitre}
-            setNewMorceauTitre={setNewMorceauTitre}
-            fileInputKey={fileInputKey}
-            setNewMorceauJsonFile={setNewMorceauJsonFile}
-            newMorceauNotes={newMorceauNotes}
-            setNewMorceauNotes={setNewMorceauNotes}
-          />
+          {event.type !== 'reunion' && event.type !== 'atelier' && (
+            <EventSetlistSection
+              setlist={setlist}
+              isAuthorized={isAuthorized}
+              updatingSetlist={updatingSetlist}
+              handleRemoveMorceau={handleRemoveMorceau}
+              assocSequenceurUrl={assocSequenceurUrl}
+              handleAddMorceau={handleAddMorceau}
+              newMorceauTitre={newMorceauTitre}
+              setNewMorceauTitre={setNewMorceauTitre}
+              fileInputKey={fileInputKey}
+              setNewMorceauJsonFile={setNewMorceauJsonFile}
+              newMorceauNotes={newMorceauNotes}
+              setNewMorceauNotes={setNewMorceauNotes}
+            />
+          )}
 
           {/* 💡 Reunion Specific Ordre du Jour & PDF minutes report manager */}
           {event.type === 'reunion' && (

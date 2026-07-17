@@ -30,14 +30,26 @@ const formatDateWithDay = (dateStr, includeYear = true) => {
   }
 };
 
-export default function WidgetAgenda({ role, isSystemAdmin, groupId, user, profileData, onFocusModeChange, onNavigateToView }) {
+export default function WidgetAgenda({
+  role,
+  isSystemAdmin,
+  groupId,
+  user,
+  profileData,
+  onFocusModeChange,
+  onNavigateToView,
+  selectedEvent: propSelectedEvent,
+  setSelectedEvent: propSetSelectedEvent
+}) {
   const { t } = useTranslation();
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
   const [saving, setSaving] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
-  const [selectedEvent, setSelectedEvent] = useState(null);
+  const [localSelectedEvent, setLocalSelectedEvent] = useState(null);
+  const selectedEvent = propSelectedEvent !== undefined ? propSelectedEvent : localSelectedEvent;
+  const setSelectedEvent = propSetSelectedEvent !== undefined ? propSetSelectedEvent : setLocalSelectedEvent;
   const [showAll, setShowAll] = useState(false);
   
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);

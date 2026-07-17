@@ -163,8 +163,8 @@ const MemberCard = React.memo(({
 
         {/* Role Stamp overlay */}
         {hasRoleBadge && (
-          <div className="absolute top-2 -right-1 z-25">
-            <span className="theme-stamp-badge theme-stamp-badge-wood text-[7px] rotate-[-6deg] select-none">
+          <div className="absolute top-2 right-2 z-25 max-w-[70%] flex justify-end">
+            <span className="theme-stamp-badge theme-stamp-badge-wood text-[7px] rotate-[-6deg] select-none break-words whitespace-normal text-right">
               {tRole(role, genre)}
             </span>
           </div>
@@ -195,6 +195,27 @@ const MemberCard = React.memo(({
          JSON.stringify(prevProps.tags) === JSON.stringify(nextProps.tags) &&
          JSON.stringify(prevProps.instrumentsJoues) === JSON.stringify(nextProps.instrumentsJoues);
 });
+
+const SECTION_ORDER = ['agbe', 'gongue', 'caixa_tarol', 'alfaia', 'chant_danse', 'autres'];
+
+const getMemberSection = (member) => {
+  const userInstruments = member.instrumentsJoues && member.instrumentsJoues.length > 0
+    ? member.instrumentsJoues
+    : [member.instrument].filter(Boolean);
+
+  const insts = userInstruments.map(i => i.toLowerCase().trim());
+
+  if (insts.some(i => i.includes('agbê') || i.includes('agbe'))) return 'agbe';
+  if (insts.some(i => i.includes('gonguê') || i.includes('gongue'))) return 'gongue';
+  if (insts.some(i => i.includes('caixa') || i.includes('tarol'))) return 'caixa_tarol';
+  if (insts.some(i => i.includes('alfaia'))) return 'alfaia';
+  
+  const hasDanse = (member.niveauDanse && member.niveauDanse !== 'aucun') || insts.some(i => i.includes('danse'));
+  const hasChant = insts.some(i => i.includes('chant'));
+  if (hasDanse || hasChant) return 'chant_danse';
+  
+  return 'autres';
+};
 
 export default function Trombinoscope({ user, profileData, onBack, onContactUser }) {
   const { t, locale } = useTranslation();
@@ -410,6 +431,25 @@ export default function Trombinoscope({ user, profileData, onBack, onContactUser
     });
   }, [members, searchQuery, filterInstrument, filterTag]);
 
+  // Group members by section
+  const groupedMembers = useMemo(() => {
+    const groups = {
+      agbe: [],
+      gongue: [],
+      caixa_tarol: [],
+      alfaia: [],
+      chant_danse: [],
+      autres: []
+    };
+
+    filteredMembers.forEach(member => {
+      const section = getMemberSection(member);
+      groups[section].push(member);
+    });
+
+    return groups;
+  }, [filteredMembers]);
+
   // Memoized callback handlers
   const handleContactUser = useCallback((memberId) => {
     if (onContactUser) {
@@ -527,38 +567,80 @@ export default function Trombinoscope({ user, profileData, onBack, onContactUser
               <p className="text-xs font-bold opacity-75">{t('trombinoscope.noMembers')}</p>
             </CordelCard>
           ) : (
-            <div 
-              className="grid gap-4"
-              style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))' }}
-            >
-              {filteredMembers.map((member) => (
-                <MemberCard
-                  key={member.id}
-                  id={member.id}
-                  prenom={member.prenom}
-                  nom={member.nom}
-                  photoURL={member.photoURL}
-                  role={member.role}
-                  genre={member.genre}
-                  tags={member.tags}
-                  telephone={member.telephone}
-                  dateNaissance={member.dateNaissance}
-                  publierTelephone={member.publierTelephone}
-                  publierDateNaissance={member.publierDateNaissance}
-                  niveau={member.niveau}
-                  niveauDanse={member.niveauDanse}
-                  instrumentsJoues={member.instrumentsJoues}
-                  instrument={member.instrument}
-                  isCurrentUser={member.id === user.uid}
-                  isViewerAdmin={isViewerAdmin}
-                  fieldsConfig={fieldsConfig}
-                  onContactUser={handleContactUser}
-                  onEditPhoto={handleEditPhoto}
-                  t={t}
-                  tRole={tRole}
-                  getPupitreName={getPupitreName}
-                />
-              ))}
+            <div className="flex flex-col gap-8">
+              {SECTION_ORDER.map((sectionKey) => {
+                const sectionMembers = groupedMembers[sectionKey];
+                if (sectionMembers.length === 0) return null;
+
+                const getSectionIcon = (key) => {
+                  switch (key) {
+                    case 'agbe': return '🪇';
+                    case 'gongue': return '🔔';
+                    case 'caixa_tarol': return '🥁';
+                    case 'alfaia': return '🪵';
+                    case 'chant_danse': return '💃';
+                    default: return '✨';
+                  }
+                };
+
+                const getTranslationKey = (key) => {
+                  switch (key) {
+                    case 'agbe': return 'trombinoscope.sectionAgbe';
+                    case 'gongue': return 'trombinoscope.sectionGongue';
+                    case 'caixa_tarol': return 'trombinoscope.sectionCaixaTarol';
+                    case 'alfaia': return 'trombinoscope.sectionAlfaia';
+                    case 'chant_danse': return 'trombinoscope.sectionChantDanse';
+                    case 'autres': return 'trombinoscope.sectionAutres';
+                    default: return '';
+                  }
+                };
+
+                return (
+                  <div key={sectionKey} className="flex flex-col gap-4">
+                    {/* Section Header */}
+                    <div className="border-b border-dashed border-cordel-master-dark/20 pb-2 text-left mt-2">
+                      <h3 className="panel-title text-sm font-black uppercase tracking-widest text-cordel-wood flex items-center gap-2 select-none">
+                        <span>{getSectionIcon(sectionKey)}</span>
+                        <span>{t(getTranslationKey(sectionKey)) || sectionKey}</span>
+                      </h3>
+                    </div>
+
+                    <div 
+                      className="grid gap-4"
+                      style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))' }}
+                    >
+                      {sectionMembers.map((member) => (
+                        <MemberCard
+                          key={member.id}
+                          id={member.id}
+                          prenom={member.prenom}
+                          nom={member.nom}
+                          photoURL={member.photoURL}
+                          role={member.role}
+                          genre={member.genre}
+                          tags={member.tags}
+                          telephone={member.telephone}
+                          dateNaissance={member.dateNaissance}
+                          publierTelephone={member.publierTelephone}
+                          publierDateNaissance={member.publierDateNaissance}
+                          niveau={member.niveau}
+                          niveauDanse={member.niveauDanse}
+                          instrumentsJoues={member.instrumentsJoues}
+                          instrument={member.instrument}
+                          isCurrentUser={member.id === user.uid}
+                          isViewerAdmin={isViewerAdmin}
+                          fieldsConfig={fieldsConfig}
+                          onContactUser={handleContactUser}
+                          onEditPhoto={handleEditPhoto}
+                          t={t}
+                          tRole={tRole}
+                          getPupitreName={getPupitreName}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
