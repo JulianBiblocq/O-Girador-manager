@@ -434,17 +434,17 @@ export default function UserProfile({ user, profileData, onBack }) {
         {/* Upload picture button */}
         <div className="flex flex-col items-center gap-1.5 mt-1">
           <div className="flex flex-wrap justify-center gap-2">
-            <label className="text-[10px] font-black uppercase tracking-widest bg-cordel-bg border border-encre-noire px-3 py-1.5 rounded-[4px_6px_3px_5px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-95 cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1">
+            <label className="relative overflow-hidden text-[10px] font-black uppercase tracking-widest bg-cordel-bg border border-encre-noire px-3 py-1.5 rounded-[4px_6px_3px_5px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-95 cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1">
               📸 {uploadingPhoto ? "⏳ " + t('userProfile.uploading') : t('userProfile.changePhoto')}
               <input 
                 type="file" 
                 accept="image/*"
                 disabled={uploadingPhoto || saving}
                 onChange={handlePhotoSelected}
-                className="hidden"
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
               />
             </label>
-            <label className="text-[10px] font-black uppercase tracking-widest bg-cordel-bg border border-encre-noire px-3 py-1.5 rounded-[4px_6px_3px_5px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-95 cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1">
+            <label className="relative overflow-hidden text-[10px] font-black uppercase tracking-widest bg-cordel-bg border border-encre-noire px-3 py-1.5 rounded-[4px_6px_3px_5px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-95 cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1">
               📷 {t('userProfile.takePhoto')}
               <input 
                 type="file" 
@@ -452,7 +452,7 @@ export default function UserProfile({ user, profileData, onBack }) {
                 capture="user"
                 disabled={uploadingPhoto || saving}
                 onChange={handlePhotoSelected}
-                className="hidden"
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
               />
             </label>
           </div>

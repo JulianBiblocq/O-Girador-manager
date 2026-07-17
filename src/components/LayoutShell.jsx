@@ -44,9 +44,9 @@ export default function LayoutShell({
   const hasAdminSectionAccess = hasAccessTroupe || hasAccessLogistique || hasAccessTresorerie || hasAccessStudio || isSystemOrSuperAdminOrMestre;
 
   return (
-    <div className={`min-h-screen w-full ${forceLight ? 'bg-cordel-bg-light' : 'bg-cordel-bg-dark'} flex lg:items-center lg:justify-center p-4 md:p-6 lg:p-8`}>
+    <div className={`min-h-screen lg:h-screen w-full ${forceLight ? 'bg-cordel-bg-light' : 'bg-cordel-bg-dark'} flex lg:items-stretch lg:justify-stretch lg:p-0 p-4 md:p-6`}>
       {/* Responsive board container: split into sidebar/content on desktop (lg breakpoint >= 1024px) */}
-      <div className="w-full h-screen lg:h-auto lg:min-h-[85vh] sm:max-w-3xl lg:max-w-5xl xl:max-w-6xl lg:border-8 lg:border-cordel-master-dark lg:rounded-[36px] lg:shadow-[0_20px_50px_rgba(0,0,0,0.6)] overflow-hidden flex flex-col lg:flex-row relative bg-cordel-bg-light text-encre-noire">
+      <div className="w-full h-screen lg:h-screen lg:max-w-none lg:border-none lg:rounded-none lg:shadow-none overflow-hidden flex flex-col lg:flex-row relative bg-cordel-bg-light text-encre-noire">
         
         {/* Top Header / Navbar for Mobile and Tablet (hidden on Desktop) */}
         <div className="lg:hidden w-full h-16 landscape:h-12 border-b-4 border-cordel-master-dark bg-cordel-bg-light flex items-center px-4 justify-between select-none shrink-0 z-30">
@@ -127,7 +127,7 @@ export default function LayoutShell({
             <div className="w-full border-t border-dashed border-cordel-master-dark/20 my-2 shrink-0" />
             
             {hasAdminSectionAccess && (
-              <div className="w-full flex-grow overflow-y-auto flex flex-col gap-1.5 pr-1 max-h-[calc(100vh-320px)] lg:max-h-[calc(85vh-280px)] scrollbar-thin">
+              <div className="w-full flex-grow overflow-y-auto flex flex-col gap-1.5 pr-1 max-h-[calc(100vh-220px)] scrollbar-thin">
                 {currentView !== 'dashboard' && (
                   <button
                     onClick={() => onNavigateToView && onNavigateToView('dashboard')}

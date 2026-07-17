@@ -62,7 +62,21 @@ export default function CordelImageEditor({ imageSrc, lang = 'fr', onComplete, o
       </div>
 
       <div className="flex flex-col gap-3 mt-2 font-bold">
-        {/* Sliders de Zoom, Detail, Shadow */}
+        {/* Sliders d'Intensité, Zoom, Detail, Shadow */}
+        <div className="flex flex-col gap-1">
+          <div className="flex justify-between items-center text-[10px]">
+            <label>🎨 {lang === 'fr' ? "Intensité de l'effet" : 'Intensidade do efeito'}: {options.intensity !== undefined ? options.intensity : 80}%</label>
+          </div>
+          <input 
+            type="range" 
+            min="0" 
+            max="100" 
+            value={options.intensity !== undefined ? options.intensity : 80} 
+            onChange={e => handleOptionChange('intensity', parseInt(e.target.value))} 
+            className="w-full accent-[var(--cordel-text)] cursor-pointer" 
+          />
+        </div>
+
         <div className="flex flex-col gap-1">
           <div className="flex justify-between items-center text-[10px]">
             <label>🔍 {lang === 'fr' ? 'Zoom' : 'Zoom'}: {options.zoom}%</label>

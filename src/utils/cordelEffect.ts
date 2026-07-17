@@ -6,6 +6,7 @@ export interface CordelOptions {
   isFrame: boolean;
   posX: number; // -100 to 100
   posY: number; // -100 to 100
+  intensity: number; // 0 to 100
 }
 
 export const defaultCordelOptions: CordelOptions = {
@@ -16,6 +17,7 @@ export const defaultCordelOptions: CordelOptions = {
   isFrame: false,
   posX: 0,
   posY: 0,
+  intensity: 80, // Default to 80% (soft vintage effect)
 };
 
 export const processCordelEffectBase64 = (base64Img: string, options: CordelOptions, outSize: number = 200): Promise<string> => {
@@ -92,15 +94,32 @@ export const processCordelEffect = (img: HTMLImageElement, options: CordelOption
   const finalCtx = finalCanvas.getContext('2d');
   if (!finalCtx) return '';
 
-  // 1. Draw solid background paper color (#F4ECD8)
-  finalCtx.fillStyle = '#f4ecd8';
-  finalCtx.fillRect(0, 0, outSize, outSize);
+  const intensity = options.intensity !== undefined ? options.intensity : 80;
 
-  // 2. Set filter on the context for old lithography look
+  // 1. Draw solid background paper color if intensity > 0
+  if (intensity > 0) {
+      finalCtx.fillStyle = '#f4ecd8';
+      finalCtx.fillRect(0, 0, outSize, outSize);
+  } else {
+      // White background for normal photo
+      finalCtx.fillStyle = '#ffffff';
+      finalCtx.fillRect(0, 0, outSize, outSize);
+  }
+
+  // 2. Set filter on the context for vintage sepia look
   // Translate shadow slider to contrast, detail slider to brightness
   const contrastPercent = Math.round(100 + (options.shadow - 95) * 0.4);
   const brightnessPercent = Math.round(95 + (options.detail - 45) * 0.2);
-  finalCtx.filter = `grayscale(100%) contrast(${contrastPercent}%) sepia(35%) brightness(${brightnessPercent}%)`;
+  
+  if (intensity > 0) {
+      // Soft Sepia/Vintage filter: sepia, moderate contrast, and brightness, scaled by intensity
+      const sepiaVal = Math.round((intensity / 100) * 60);
+      const contrastVal = Math.round(100 + (intensity / 100) * (contrastPercent - 100));
+      const brightnessVal = Math.round(100 + (intensity / 100) * (brightnessPercent - 100));
+      finalCtx.filter = `sepia(${sepiaVal}%) contrast(${contrastVal}%) brightness(${brightnessVal}%)`;
+  } else {
+      finalCtx.filter = 'none';
+  }
 
   // 3. Setup transform (mirror)
   if (options.isMirror) {
@@ -108,11 +127,39 @@ export const processCordelEffect = (img: HTMLImageElement, options: CordelOption
       finalCtx.scale(-1, 1);
   }
 
-  // 4. Draw image with multiply blend mode
-  finalCtx.globalCompositeOperation = 'multiply';
+  // 4. Draw image with blend mode
+  if (intensity > 0) {
+      finalCtx.globalCompositeOperation = 'multiply';
+  } else {
+      finalCtx.globalCompositeOperation = 'source-over';
+  }
   finalCtx.drawImage(img, sX, sY, cropSize, cropSize, 0, 0, outSize, outSize);
 
-  // 5. Draw frame if enabled
+  // 5. Add a very light noise if intensity > 0
+  if (intensity > 0) {
+      const noiseCanvas = document.createElement('canvas');
+      noiseCanvas.width = outSize;
+      noiseCanvas.height = outSize;
+      const noiseCtx = noiseCanvas.getContext('2d');
+      if (noiseCtx) {
+          const noiseImgData = noiseCtx.createImageData(outSize, outSize);
+          const buffer = noiseImgData.data;
+          const noiseMaxAlpha = Math.round((intensity / 100) * 10); // Very subtle noise
+          for (let i = 0; i < buffer.length; i += 4) {
+              const val = Math.floor(Math.random() * 255);
+              buffer[i] = val;
+              buffer[i+1] = val;
+              buffer[i+2] = val;
+              buffer[i+3] = Math.floor(Math.random() * noiseMaxAlpha);
+          }
+          noiseCtx.putImageData(noiseImgData, 0, 0);
+          finalCtx.globalCompositeOperation = 'source-over';
+          finalCtx.filter = 'none';
+          finalCtx.drawImage(noiseCanvas, 0, 0);
+      }
+  }
+
+  // 6. Draw frame if enabled
   if (options.isFrame) {
       finalCtx.globalCompositeOperation = 'source-over';
       finalCtx.filter = 'none';

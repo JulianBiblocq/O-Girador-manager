@@ -64,9 +64,11 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
   const [status, setStatus] = useState(existingResponse 
     ? (existingResponse.status === 'pending' || existingResponse.status === 'refused' ? 'present' : existingResponse.status) 
     : 'confirm'); // 'present', 'absent', 'confirm'
-  const [transport, setTransport] = useState(existingResponse ? existingResponse.transport || 'propre' : 'propre'); // 'propre', 'cherche', 'propose'
-  const [places, setPlaces] = useState(existingResponse ? existingResponse.places || 0 : 0);
-  const [instruments, setInstruments] = useState(existingResponse ? existingResponse.instruments || '' : '');
+  const getInitialTransport = () => {
+    if (!existingResponse) return 'propre';
+    return existingResponse.transport === 'propose' ? 'propre' : (existingResponse.transport || 'propre');
+  };
+  const [transport, setTransport] = useState(getInitialTransport()); // 'propre', 'cherche'
   const [demandeRemboursementKm, setDemandeRemboursementKm] = useState(existingResponse ? existingResponse.demandeRemboursementKm === true : false);
   const [saving, setSaving] = useState(false);
   const [isCalendarMenuOpen, setIsCalendarMenuOpen] = useState(false);
@@ -76,9 +78,7 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
     setStatus(resp 
       ? (resp.status === 'pending' || resp.status === 'refused' ? 'present' : resp.status) 
       : 'confirm');
-    setTransport(resp ? resp.transport || 'propre' : 'propre');
-    setPlaces(resp ? resp.places || 0 : 0);
-    setInstruments(resp ? resp.instruments || '' : '');
+    setTransport(resp ? (resp.transport === 'propose' ? 'propre' : (resp.transport || 'propre')) : 'propre');
     setDemandeRemboursementKm(resp ? resp.demandeRemboursementKm === true : false);
     
     setInstrumentChoisi(resp?.instrumentChoisi || profileData?.instrument || 'Autre');
@@ -772,11 +772,11 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
         userName: `${profileData.prenom} ${profileData.nom}`,
         status: finalStatus,
         transport: status === 'present' ? transport : null,
-        places: status === 'present' && transport === 'propose' ? parseInt(places) || 0 : 0,
-        instruments: status === 'present' && transport === 'propose' ? instruments : "",
+        places: 0,
+        instruments: "",
         instrumentChoisi: status === 'present' ? instrumentChoisi : null,
         instrumentImposeParMestre: status === 'present' ? isInstrumentLocked : false,
-        demandeRemboursementKm: (status === 'present' && (transport === 'propre' || transport === 'propose')) ? demandeRemboursementKm : false
+        demandeRemboursementKm: (status === 'present' && transport === 'propre') ? demandeRemboursementKm : false
       };
 
       updatedInscriptions.push(newResponse);
@@ -1625,22 +1625,10 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
                   <span>Je cherche une place</span>
                 </label>
 
-                <label className="flex items-center gap-2 text-xs font-semibold cursor-pointer">
-                  <input
-                    type="radio"
-                    name="transport"
-                    value="propose"
-                    checked={transport === 'propose'}
-                    onChange={handleTransportChange}
-                    disabled={saving}
-                    className="accent-cordel-wood scale-110"
-                  />
-                  <span>Je propose ma voiture</span>
-                </label>
               </div>
 
               {/* Remboursement Kilométrique option for drivers */}
-              {(transport === 'propre' || transport === 'propose') && (
+              {transport === 'propre' && (
                 <div className="mt-3 p-2 bg-[#fdfaf2] border border-dashed border-cordel-master-dark/20 rounded">
                   <label className="flex items-center gap-2 text-xs font-semibold cursor-pointer select-none">
                     <input
@@ -1652,42 +1640,6 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
                     />
                     <span className="leading-snug">Demander le remboursement des frais kilométriques (voiture pleine)</span>
                   </label>
-                </div>
-              )}
-
-              {/* Conditional Inputs if "propose ma voiture" */}
-              {transport === 'propose' && (
-                <div className="flex flex-col gap-3 pl-4 border-l-2 border-cordel-wood/30 mt-2">
-                  <div className="flex flex-col gap-1">
-                    <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                      Places passagers disponibles
-                    </label>
-                    <input
-                      type="number"
-                      min="1"
-                      max="8"
-                      value={places}
-                      onChange={(e) => setPlaces(e.target.value)}
-                      required
-                      disabled={saving}
-                      className="theme-input w-24 text-center disabled:opacity-50"
-                    />
-                  </div>
-
-                  <div className="flex flex-col gap-1">
-                    <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                      Espace instruments (Alfaia, Caisses, etc.)
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="Ex: 2 Alfaias + 1 Tarol"
-                      value={instruments}
-                      onChange={(e) => setInstruments(e.target.value)}
-                      required
-                      disabled={saving}
-                      className="theme-input w-full disabled:opacity-50 text-xs"
-                    />
-                  </div>
                 </div>
               )}
             </div>
@@ -2280,11 +2232,11 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
                         {/* Cargo items */}
                         <div className="flex flex-col gap-1 text-[11px] font-semibold text-encre-noire opacity-90 mb-2">
                           <span className="flex items-center gap-1.5">
-                            🥁 <strong className="text-cordel-wood">Coffre (Alfayas) :</strong> {status.alfayasInTrunk}/{voiture.trunkAlfayaCapacity || 0}
+                            🥁 <strong className="text-cordel-wood">Coffre (Alfaias) :</strong> {status.alfayasInTrunk}/{voiture.trunkAlfayaCapacity || 0}
                           </span>
                           {status.alfayasOnSeats > 0 && (
                             <span className="flex items-center gap-1.5 text-amber-700">
-                              ⚠️ <strong className="text-amber-800">Alfayas sur sièges :</strong> {status.alfayasOnSeats}
+                              ⚠️ <strong className="text-amber-800">Alfaias sur sièges :</strong> {status.alfayasOnSeats}
                             </span>
                           )}
                           {voiture.materielCharge && (
@@ -2307,7 +2259,7 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
                                   details.push("Instrument seul");
                                 }
                                 if (p.alfayasCount > 0) {
-                                  details.push(`${p.alfayasCount} Alfaya${p.alfayasCount > 1 ? 's' : ''}`);
+                                  details.push(`${p.alfayasCount} Alfaia${p.alfayasCount > 1 ? 's' : ''}`);
                                 }
                                 return (
                                   <li key={idx}>
@@ -2335,7 +2287,7 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
                             </label>
                             
                             <label className="flex items-center justify-between gap-2">
-                              <span>Nombre d'Alfayas transportées :</span>
+                              <span>Nombre d'Alfaias transportées :</span>
                               <input 
                                 type="number" 
                                 min="0" 
