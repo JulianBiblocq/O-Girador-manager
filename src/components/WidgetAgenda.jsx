@@ -158,7 +158,9 @@ export default function WidgetAgenda({ role, isSystemAdmin, groupId, user, profi
       distanceAllerRetourKm: '',
       lienSocial: '',
       imageUrl: '',
-      requiresValidation: false
+      requiresValidation: false,
+      montantRecette: '',
+      montantDepense: ''
     });
     setIsAdding(true);
   };
@@ -213,7 +215,9 @@ export default function WidgetAgenda({ role, isSystemAdmin, groupId, user, profi
         status: 'confirme',
         lienSocial: formData.lienSocial || '',
         imageUrl: formData.imageUrl || '',
-        requiresValidation: formData.requiresValidation || false
+        requiresValidation: formData.requiresValidation || false,
+        montantRecette: parseFloat(formData.montantRecette) || 0,
+        montantDepense: parseFloat(formData.montantDepense) || 0
       });
       setIsAdding(false);
     } catch (error) {
@@ -599,6 +603,47 @@ export default function WidgetAgenda({ role, isSystemAdmin, groupId, user, profi
                     Supprimer
                   </button>
                 )}
+              </div>
+            </div>
+
+            {/* Finances (Optionnel) */}
+            <div className="flex flex-col gap-3 pt-3 border-t border-dashed border-cordel-master-dark/15">
+              <h5 className="text-[10px] uppercase font-black tracking-widest text-cordel-wood">
+                Finances (Optionnel)
+              </h5>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="flex flex-col gap-1">
+                  <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                    Revenus de l'événement (Prestation payée, etc.)
+                  </label>
+                  <input
+                    type="number"
+                    name="montantRecette"
+                    min="0"
+                    step="any"
+                    value={formData.montantRecette}
+                    onChange={handleChange}
+                    disabled={saving}
+                    placeholder="Ex : 500"
+                    className="theme-input w-full disabled:opacity-50"
+                  />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                    Coûts de l'événement (Location, professeur...)
+                  </label>
+                  <input
+                    type="number"
+                    name="montantDepense"
+                    min="0"
+                    step="any"
+                    value={formData.montantDepense}
+                    onChange={handleChange}
+                    disabled={saving}
+                    placeholder="Ex : 150"
+                    className="theme-input w-full disabled:opacity-50"
+                  />
+                </div>
               </div>
             </div>
 

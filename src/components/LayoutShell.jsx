@@ -239,6 +239,13 @@ export default function LayoutShell({
                     >
                       <XiloCar size={12} /> {t('menu.kilometricReimbursement') || "Remboursements Kilométriques"}
                     </button>
+
+                    <button
+                      onClick={() => onNavigateToView && onNavigateToView('reports-exports')}
+                      className={`theme-btn text-[9px] font-black uppercase tracking-wider py-1.5 px-2 text-left rounded-[4px_6px_3px_5px] flex items-center gap-2 hover:bg-cordel-hover cursor-pointer ${currentView === 'reports-exports' ? 'bg-cordel-hover text-cordel-wood font-black' : ''}`}
+                    >
+                      <XiloScroll size={12} /> Rapports & Exports
+                    </button>
                   </>
                 )}
 

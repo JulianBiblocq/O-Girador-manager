@@ -141,6 +141,17 @@ service cloud.firestore {
       );
     }
 
+    // Transactions: Read if authenticated. Write reserved for admins/mestres.
+    match /transactions/{transaction} {
+      allow read: if isAuthenticated() && (
+        isAdminOrMestre() ||
+        (resource == null || getUserData().groupId == resource.data.groupId)
+      );
+      allow write: if isAdminOrMestre() && (
+        resource == null || getUserData().groupId == resource.data.groupId
+      );
+    }
+
     // Forum Channels: Read if member has roles/transparent, write only by admins (or create by group members)
     match /forum_channels/{channelId} {
       allow read: if isAuthenticated() && (

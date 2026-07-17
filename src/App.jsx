@@ -24,6 +24,7 @@ const KilometricReimbursementManager = React.lazy(() => import('./components/Kil
 const StudioSocial = React.lazy(() => import('./components/StudioSocial'));
 const AdminExport = React.lazy(() => import('./components/AdminExport'));
 const VaralManager = React.lazy(() => import('./components/VaralManager'));
+const ReportsExports = React.lazy(() => import('./components/ReportsExports'));
 
 export default function App() {
   const { t } = useTranslation();
@@ -545,6 +546,15 @@ export default function App() {
             ) : (currentView === 'export-annu' && hasAccessTroupe) ? (
               <AdminExport 
                 user={user}
+                profileData={profileData}
+                onBack={() => setCurrentView('dashboard')} 
+              />
+            ) : (currentView === 'reports-exports' && hasAccessTresorerie) ? (
+              <ReportsExports 
+                groupId={profileData?.groupId}
+                role={profileData?.role}
+                isSystemAdmin={profileData?.isSystemAdmin}
+                hasAccessTresorerie={hasAccessTresorerie}
                 profileData={profileData}
                 onBack={() => setCurrentView('dashboard')} 
               />

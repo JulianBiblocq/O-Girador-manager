@@ -37,7 +37,9 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
     lienDocument: event.lienDocument || '',
     distanceAllerRetourKm: event.distanceAllerRetourKm || '',
     lienSocial: event.lienSocial || '',
-    imageUrl: event.imageUrl || ''
+    imageUrl: event.imageUrl || '',
+    montantRecette: event.montantRecette !== undefined ? event.montantRecette.toString() : '',
+    montantDepense: event.montantDepense !== undefined ? event.montantDepense.toString() : ''
   });
   const [savingEvent, setSavingEvent] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
@@ -141,9 +143,11 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
       distanceAllerRetourKm: event.distanceAllerRetourKm || '',
       lienSocial: event.lienSocial || '',
       imageUrl: event.imageUrl || '',
-      requiresValidation: event.requiresValidation || false
+      requiresValidation: event.requiresValidation || false,
+      montantRecette: event.montantRecette !== undefined ? event.montantRecette.toString() : '',
+      montantDepense: event.montantDepense !== undefined ? event.montantDepense.toString() : ''
     });
-  }, [event.id, event.type]);
+  }, [event.id, event.type, event.montantRecette, event.montantDepense]);
 
   // Load association settings
   useEffect(() => {
@@ -362,7 +366,9 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
         distanceAllerRetourKm: (editForm.type === 'prestation' || editForm.type === 'stage' || editForm.type === 'atelier') ? (parseFloat(editForm.distanceAllerRetourKm) || 0) : 0,
         lienSocial: editForm.lienSocial || '',
         imageUrl: editForm.imageUrl || '',
-        requiresValidation: editForm.requiresValidation || false
+        requiresValidation: editForm.requiresValidation || false,
+        montantRecette: parseFloat(editForm.montantRecette) || 0,
+        montantDepense: parseFloat(editForm.montantDepense) || 0
       });
       setIsEditingEvent(false);
       alert("Événement mis à jour avec succès !");
@@ -825,6 +831,45 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
                 </div>
               </div>
 
+              {/* Finances (Optionnel) */}
+              <div className="flex flex-col gap-3 pt-3 border-t border-dashed border-cordel-master-dark/15">
+                <h5 className="text-[10px] uppercase font-black tracking-widest text-cordel-wood">
+                  Finances (Optionnel)
+                </h5>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                      Revenus de l'événement (Prestation payée, etc.)
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="any"
+                      value={editForm.montantRecette}
+                      onChange={(e) => setEditForm(prev => ({ ...prev, montantRecette: e.target.value }))}
+                      disabled={savingEvent}
+                      placeholder="Ex : 500"
+                      className="theme-input w-full disabled:opacity-50"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                      Coûts de l'événement (Location, professeur...)
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="any"
+                      value={editForm.montantDepense}
+                      onChange={(e) => setEditForm(prev => ({ ...prev, montantDepense: e.target.value }))}
+                      disabled={savingEvent}
+                      placeholder="Ex : 150"
+                      className="theme-input w-full disabled:opacity-50"
+                    />
+                  </div>
+                </div>
+              </div>
+
               {/* Validation Toggle */}
               <div className="flex items-center gap-2 pt-2 border-t border-dashed border-cordel-master-dark/15">
                 <label className="flex items-center gap-2 text-xs font-semibold cursor-pointer select-none">
@@ -971,6 +1016,38 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
               )}
             </div>
           </CordelCard>
+
+          {isAuthorized && ((event.montantRecette && event.montantRecette > 0) || (event.montantDepense && event.montantDepense > 0)) && (
+            <CordelCard variant="default" useExtremeBorder={true} className="py-4 mt-4 text-left border-dashed border-cordel-master-dark/40">
+              <div className="px-4">
+                <h4 className="text-xs uppercase tracking-widest font-black text-cordel-wood mb-2 flex items-center gap-1.5 font-sans">
+                  💰 Bilan financier de l'événement (Admin)
+                </h4>
+                <div className="grid grid-cols-2 gap-4 mt-2">
+                  {event.montantRecette > 0 && (
+                    <div className="flex flex-col">
+                      <span className="text-[9px] uppercase font-bold text-cordel-master-dark">Revenus de l'événement</span>
+                      <span className="text-sm font-black text-green-700">{event.montantRecette} €</span>
+                    </div>
+                  )}
+                  {event.montantDepense > 0 && (
+                    <div className="flex flex-col">
+                      <span className="text-[9px] uppercase font-bold text-cordel-master-dark">Coûts de l'événement</span>
+                      <span className="text-sm font-black text-red-700">{event.montantDepense} €</span>
+                    </div>
+                  )}
+                </div>
+                {event.montantRecette > 0 && event.montantDepense > 0 && (
+                  <div className="mt-3 pt-2.5 border-t border-dashed border-encre-noire/15 flex items-center justify-between">
+                    <span className="text-[9px] uppercase font-bold text-cordel-master-dark">Bilan net</span>
+                    <span className={`text-xs font-black ${event.montantRecette - event.montantDepense >= 0 ? 'text-green-800' : 'text-red-800'}`}>
+                      {event.montantRecette - event.montantDepense >= 0 ? '+' : ''}{event.montantRecette - event.montantDepense} €
+                    </span>
+                  </div>
+                )}
+              </div>
+            </CordelCard>
+          )}
 
           <EventRSVPSection
             event={event}

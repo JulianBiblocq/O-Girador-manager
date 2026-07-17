@@ -50,7 +50,21 @@ export default function WidgetForum({ groupId, onOpen }) {
   }, [groupId]);
 
   return (
-    <CordelCard variant="default" useExtremeBorder={true} className="relative overflow-hidden">
+    <CordelCard 
+      variant="default" 
+      useExtremeBorder={true} 
+      className="relative overflow-hidden cursor-pointer hover:bg-cordel-hover hover:scale-[1.01] transition-all duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cordel-wood"
+      onClick={onOpen}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onOpen();
+        }
+      }}
+      tabIndex={0}
+      role="button"
+      aria-label="Ouvrir le forum"
+    >
       {/* Decorative background stamp simulator */}
       <div className="absolute -right-4 -bottom-4 text-8xl opacity-[0.06] select-none pointer-events-none transform -rotate-12">
         💬
@@ -100,8 +114,12 @@ export default function WidgetForum({ groupId, onOpen }) {
           <div className="flex justify-end mt-1 z-10">
             <CordelButton 
               variant="default" 
-              onClick={onOpen}
+              onClick={(e) => {
+                e.stopPropagation();
+                onOpen();
+              }}
               className="text-[10px] px-3 py-1.5 font-bold uppercase tracking-wider flex items-center gap-1.5"
+              tabIndex={-1}
             >
               💬 Ouvrir le Forum
             </CordelButton>

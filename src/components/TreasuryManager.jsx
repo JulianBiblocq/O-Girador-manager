@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { collection, query, where, onSnapshot, doc, getDoc } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, doc, getDoc, addDoc, deleteDoc, Timestamp } from 'firebase/firestore';
 import { db } from '../firebase';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
@@ -16,6 +16,87 @@ export default function TreasuryManager({ groupId, onBack, role, isSystemAdmin, 
   const [associationSettings, setAssociationSettings] = useState(null);
 
   const isAuthorized = role === 'mestre' || role === 'super-admin' || isSystemAdmin === true || hasAccessTresorerie === true;
+
+  const [activeTab, setActiveTab] = useState('cotisations'); // 'cotisations', 'transactions'
+  const [txForm, setTxForm] = useState({
+    date: new Date().toISOString().split('T')[0],
+    type: 'depense',
+    montant: '',
+    categorie: 'Matériel',
+    libelle: ''
+  });
+  const [transactions, setTransactions] = useState([]);
+  const [loadingTx, setLoadingTx] = useState(false);
+  const [savingTx, setSavingTx] = useState(false);
+
+  useEffect(() => {
+    if (!groupId || activeTab !== 'transactions') return;
+
+    setLoadingTx(true);
+    const txRef = collection(db, 'transactions');
+    const q = query(txRef, where('groupId', '==', groupId));
+
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+      const fetched = [];
+      querySnapshot.forEach((doc) => {
+        fetched.push({
+          id: doc.id,
+          ...doc.data()
+        });
+      });
+      // Sort chronologically desc
+      fetched.sort((a, b) => {
+        const dateA = a.date?.toDate ? a.date.toDate() : new Date(a.date);
+        const dateB = b.date?.toDate ? b.date.toDate() : new Date(b.date);
+        return dateB - dateA;
+      });
+      setTransactions(fetched);
+      setLoadingTx(false);
+    }, (error) => {
+      console.error("TreasuryManager - Erreur onSnapshot transactions :", error);
+      setLoadingTx(false);
+    });
+
+    return () => unsubscribe();
+  }, [groupId, activeTab]);
+
+  const handleAddTx = async (e) => {
+    e.preventDefault();
+    if (!txForm.montant || !txForm.libelle) return;
+    
+    setSavingTx(true);
+    try {
+      const txDate = new Date(txForm.date);
+      await addDoc(collection(db, 'transactions'), {
+        groupId,
+        date: Timestamp.fromDate(txDate),
+        type: txForm.type,
+        montant: parseFloat(txForm.montant) || 0,
+        categorie: txForm.categorie,
+        libelle: txForm.libelle
+      });
+      setTxForm(prev => ({
+        ...prev,
+        montant: '',
+        libelle: ''
+      }));
+    } catch (err) {
+      console.error("TreasuryManager - Erreur addDoc transaction :", err);
+      alert("Erreur lors de l'enregistrement de l'opération.");
+    } finally {
+      setSavingTx(false);
+    }
+  };
+
+  const handleDeleteTx = async (txId) => {
+    if (!window.confirm("Voulez-vous vraiment supprimer cette opération ?")) return;
+    try {
+      await deleteDoc(doc(db, 'transactions', txId));
+    } catch (err) {
+      console.error("TreasuryManager - Erreur suppression transaction :", err);
+      alert("Erreur lors de la suppression de l'opération.");
+    }
+  };
 
   // Load association settings (fee amount, payment link, instructions)
   useEffect(() => {
@@ -239,75 +320,263 @@ export default function TreasuryManager({ groupId, onBack, role, isSystemAdmin, 
             </div>
           </div>
 
-          {/* Filters and Search Toolbar */}
-          <CordelCard variant="default" useExtremeBorder={false} className="p-4 bg-cordel-bg flex flex-col md:flex-row gap-3 items-end">
-            <div className="flex-1 flex flex-col gap-1 text-left w-full">
-              <label className="text-[9px] uppercase font-extrabold tracking-wider text-cordel-wood">
-                {t('widgetTreasury.searchLabel') || "🔍 Rechercher un membre"}
-              </label>
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder={t('widgetTreasury.searchPlaceholder')}
-                className="theme-input w-full text-xs font-bold py-1.5"
-              />
-            </div>
-
-            <div className="flex flex-col gap-1 text-left min-w-[150px] w-full md:w-auto">
-              <label className="text-[9px] uppercase font-extrabold tracking-wider text-cordel-wood">
-                {t('widgetTreasury.statusLabel')}
-              </label>
-              <select
-                value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value)}
-                className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light"
-              >
-                <option value="all">{t('widgetTreasury.allStatuses')}</option>
-                <option value="paid">{t('widgetTreasury.statusPaid')}</option>
-                <option value="partial">{t('widgetTreasury.statusPartial')}</option>
-                <option value="unpaid">{t('widgetTreasury.statusUnpaid')}</option>
-              </select>
-            </div>
-
+          {/* Tabs Navigation */}
+          <div className="flex gap-2 border-b border-dashed border-cordel-master-dark/15 pb-2 shrink-0">
             <button
               type="button"
-              onClick={exportToCSV}
-              className="text-[10px] font-black uppercase tracking-widest bg-[#84967a] hover:bg-[#728369] text-encre-noire border-2 border-encre-noire px-4 py-1.5 rounded-[4px_6px_3px_5px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-105 transition-all cursor-pointer flex items-center justify-center gap-1.5 w-full md:w-auto h-[34px]"
+              onClick={() => setActiveTab('cotisations')}
+              className={`text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-[4px_6px_3px_5px] transition-all cursor-pointer ${
+                activeTab === 'cotisations'
+                  ? 'bg-cordel-wood text-cordel-bg border-2 border-encre-noire shadow-none'
+                  : 'bg-cordel-bg text-cordel-wood border border-encre-noire/30 hover:bg-cordel-hover shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none'
+              }`}
             >
-              {t('widgetTreasury.exportCSV')}
+              🏷️ Cotisations des Membres
             </button>
-          </CordelCard>
+            <button
+              type="button"
+              onClick={() => setActiveTab('transactions')}
+              className={`text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-[4px_6px_3px_5px] transition-all cursor-pointer ${
+                activeTab === 'transactions'
+                  ? 'bg-cordel-wood text-cordel-bg border-2 border-encre-noire shadow-none'
+                  : 'bg-cordel-bg text-cordel-wood border border-encre-noire/30 hover:bg-cordel-hover shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none'
+              }`}
+            >
+              💼 Opérations Diverses
+            </button>
+          </div>
 
-          {/* Members Table / List */}
-          <div className="flex flex-col gap-3">
-            {filteredMembers.length === 0 ? (
-              <CordelCard variant="default" useExtremeBorder={false} className="p-8 text-center bg-cordel-bg">
-                <p className="text-xs font-bold opacity-75">{t('widgetTreasury.noMembers')}</p>
-              </CordelCard>
-            ) : (
-              <div className="flex flex-col gap-2">
-                {/* Table Header for Desktop */}
-                <div className="hidden md:grid grid-cols-12 gap-4 px-4 py-2 border-b border-dashed border-cordel-master-dark/30 text-[9px] font-extrabold uppercase tracking-wider text-cordel-wood">
-                  <div className="col-span-3 text-left">{t('widgetTreasury.tableMemberName')}</div>
-                  <div className="col-span-2 text-center">{t('widgetTreasury.tableBaseAdhesion')}</div>
-                  <div className="col-span-3 text-left">{t('widgetTreasury.tableOptions')}</div>
-                  <div className="col-span-2 text-center">{t('widgetTreasury.tableTotalDue')}</div>
-                  <div className="col-span-2 text-right">{t('widgetTreasury.tablePaymentStatus')}</div>
+          {activeTab === 'cotisations' ? (
+            <>
+              {/* Filters and Search Toolbar */}
+              <CordelCard variant="default" useExtremeBorder={false} className="p-4 bg-cordel-bg flex flex-col md:flex-row gap-3 items-end">
+                <div className="flex-1 flex flex-col gap-1 text-left w-full">
+                  <label className="text-[9px] uppercase font-extrabold tracking-wider text-cordel-wood">
+                    {t('widgetTreasury.searchLabel') || "🔍 Rechercher un membre"}
+                  </label>
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder={t('widgetTreasury.searchPlaceholder')}
+                    className="theme-input w-full text-xs font-bold py-1.5"
+                  />
                 </div>
 
-                {/* Table Rows */}
-                {filteredMembers.map((member) => (
-                  <MemberTreasuryRow
-                    key={member.id}
-                    member={member}
-                    optionsCotisation={optionsCotisation}
-                    baseAdhesionAmount={parseFloat(baseAdhesionAmount) || 0}
-                  />
-                ))}
+                <div className="flex flex-col gap-1 text-left min-w-[150px] w-full md:w-auto">
+                  <label className="text-[9px] uppercase font-extrabold tracking-wider text-cordel-wood">
+                    {t('widgetTreasury.statusLabel')}
+                  </label>
+                  <select
+                    value={filterStatus}
+                    onChange={(e) => setFilterStatus(e.target.value)}
+                    className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light"
+                  >
+                    <option value="all">{t('widgetTreasury.allStatuses')}</option>
+                    <option value="paid">{t('widgetTreasury.statusPaid')}</option>
+                    <option value="partial">{t('widgetTreasury.statusPartial')}</option>
+                    <option value="unpaid">{t('widgetTreasury.statusUnpaid')}</option>
+                  </select>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={exportToCSV}
+                  className="text-[10px] font-black uppercase tracking-widest bg-[#84967a] hover:bg-[#728369] text-encre-noire border-2 border-encre-noire px-4 py-1.5 rounded-[4px_6px_3px_5px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-105 transition-all cursor-pointer flex items-center justify-center gap-1.5 w-full md:w-auto h-[34px]"
+                >
+                  {t('widgetTreasury.exportCSV')}
+                </button>
+              </CordelCard>
+
+              {/* Members Table / List */}
+              <div className="flex flex-col gap-3">
+                {filteredMembers.length === 0 ? (
+                  <CordelCard variant="default" useExtremeBorder={false} className="p-8 text-center bg-cordel-bg">
+                    <p className="text-xs font-bold opacity-75">{t('widgetTreasury.noMembers')}</p>
+                  </CordelCard>
+                ) : (
+                  <div className="flex flex-col gap-2">
+                    {/* Table Header for Desktop */}
+                    <div className="hidden md:grid grid-cols-12 gap-4 px-4 py-2 border-b border-dashed border-cordel-master-dark/30 text-[9px] font-extrabold uppercase tracking-wider text-cordel-wood">
+                      <div className="col-span-3 text-left">{t('widgetTreasury.tableMemberName')}</div>
+                      <div className="col-span-2 text-center">{t('widgetTreasury.tableBaseAdhesion')}</div>
+                      <div className="col-span-3 text-left">{t('widgetTreasury.tableOptions')}</div>
+                      <div className="col-span-2 text-center">{t('widgetTreasury.tableTotalDue')}</div>
+                      <div className="col-span-2 text-right">{t('widgetTreasury.tablePaymentStatus')}</div>
+                    </div>
+
+                    {/* Table Rows */}
+                    {filteredMembers.map((member) => (
+                      <MemberTreasuryRow
+                        key={member.id}
+                        member={member}
+                        optionsCotisation={optionsCotisation}
+                        baseAdhesionAmount={parseFloat(baseAdhesionAmount) || 0}
+                      />
+                    ))}
+                  </div>
+                )}
               </div>
-            )}
-          </div>
+            </>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
+              {/* Form */}
+              <div className="col-span-1">
+                <CordelCard variant="default" useExtremeBorder={true} className="p-4">
+                  <h4 className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood border-b border-dashed border-cordel-master-dark/15 pb-1 mb-3">
+                    Saisir une opération
+                  </h4>
+                  <form onSubmit={handleAddTx} className="flex flex-col gap-3 text-left">
+                    {/* Date */}
+                    <div className="flex flex-col gap-1">
+                      <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">Date</label>
+                      <input 
+                        type="date"
+                        value={txForm.date}
+                        onChange={(e) => setTxForm(prev => ({ ...prev, date: e.target.value }))}
+                        required
+                        disabled={savingTx}
+                        className="theme-input w-full text-xs font-bold"
+                      />
+                    </div>
+
+                    {/* Type */}
+                    <div className="flex flex-col gap-1">
+                      <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">Type</label>
+                      <select
+                        value={txForm.type}
+                        onChange={(e) => setTxForm(prev => ({ ...prev, type: e.target.value }))}
+                        required
+                        disabled={savingTx}
+                        className="theme-input w-full text-xs font-bold bg-cordel-bg-light"
+                      >
+                        <option value="depense">Dépense (Débit)</option>
+                        <option value="recette">Recette (Crédit)</option>
+                      </select>
+                    </div>
+
+                    {/* Categorie */}
+                    <div className="flex flex-col gap-1">
+                      <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">Catégorie</label>
+                      <select
+                        value={txForm.categorie}
+                        onChange={(e) => setTxForm(prev => ({ ...prev, categorie: e.target.value }))}
+                        required
+                        disabled={savingTx}
+                        className="theme-input w-full text-xs font-bold bg-cordel-bg-light"
+                      >
+                        <option value="Matériel">Matériel</option>
+                        <option value="Intervenant">Intervenant</option>
+                        <option value="Local">Local (Location...)</option>
+                        <option value="Subvention">Subvention</option>
+                        <option value="Don">Don</option>
+                        <option value="Autre">Autre</option>
+                      </select>
+                    </div>
+
+                    {/* Libellé */}
+                    <div className="flex flex-col gap-1">
+                      <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">Libellé</label>
+                      <input 
+                        type="text"
+                        placeholder="Ex: Achat peaux Alfaia"
+                        value={txForm.libelle}
+                        onChange={(e) => setTxForm(prev => ({ ...prev, libelle: e.target.value }))}
+                        required
+                        disabled={savingTx}
+                        className="theme-input w-full text-xs"
+                      />
+                    </div>
+
+                    {/* Montant */}
+                    <div className="flex flex-col gap-1">
+                      <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">Montant (€)</label>
+                      <input 
+                        type="number"
+                        min="0.01"
+                        step="any"
+                        placeholder="0.00"
+                        value={txForm.montant}
+                        onChange={(e) => setTxForm(prev => ({ ...prev, montant: e.target.value }))}
+                        required
+                        disabled={savingTx}
+                        className="theme-input w-full text-xs"
+                      />
+                    </div>
+
+                    <CordelButton 
+                      type="submit"
+                      variant="ocre"
+                      useExtremeBorder={true}
+                      disabled={savingTx}
+                      className="w-full text-xs py-2 mt-2 font-bold uppercase tracking-wider"
+                    >
+                      {savingTx ? "Enregistrement..." : "Enregistrer"}
+                    </CordelButton>
+                  </form>
+                </CordelCard>
+              </div>
+
+              {/* List */}
+              <div className="col-span-2 flex flex-col gap-3">
+                <CordelCard variant="default" useExtremeBorder={false} className="p-4 flex-1">
+                  <h4 className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood border-b border-dashed border-cordel-master-dark/15 pb-1 mb-3">
+                    Opérations Enregistrées
+                  </h4>
+                  
+                  {loadingTx ? (
+                    <div className="flex justify-center items-center py-12">
+                      <span className="text-xs uppercase tracking-widest font-black animate-pulse opacity-60">⏳</span>
+                    </div>
+                  ) : transactions.length === 0 ? (
+                    <p className="text-xs italic opacity-60 text-center py-8">Aucune opération libre saisie.</p>
+                  ) : (
+                    <div className="flex flex-col gap-2 max-h-[500px] overflow-y-auto pr-1">
+                      {/* Header Table */}
+                      <div className="grid grid-cols-12 gap-2 text-[9px] font-extrabold uppercase tracking-wider text-cordel-wood border-b border-dashed border-cordel-master-dark/15 pb-1 px-1">
+                        <div className="col-span-2 text-left">Date</div>
+                        <div className="col-span-2 text-left">Catégorie</div>
+                        <div className="col-span-4 text-left">Libellé</div>
+                        <div className="col-span-3 text-right">Montant</div>
+                        <div className="col-span-1 text-center"></div>
+                      </div>
+
+                      {/* Rows */}
+                      {transactions.map(tx => {
+                        const txDateStr = tx.date ? (tx.date.toDate ? tx.date.toDate().toISOString().split('T')[0] : String(tx.date).substring(0, 10)) : '';
+                        return (
+                          <div key={tx.id} className="grid grid-cols-12 gap-2 items-center text-xs border-b border-dashed border-encre-noire/5 py-2 px-1 hover:bg-cordel-hover/10 rounded">
+                            <div className="col-span-2 font-semibold text-left">{txDateStr}</div>
+                            <div className="col-span-2 text-left">
+                              <span className="theme-stamp-badge theme-stamp-badge-wood text-[8px] px-1.5 py-0.5">
+                                {tx.categorie}
+                              </span>
+                            </div>
+                            <div className="col-span-4 font-bold text-encre-noire dark:text-cordel-bg-light truncate text-left" title={tx.libelle}>
+                              {tx.libelle}
+                            </div>
+                            <div className={`col-span-3 text-right font-black ${tx.type === 'recette' ? 'text-green-700' : 'text-red-700'}`}>
+                              {tx.type === 'recette' ? '+' : '-'}{tx.montant} €
+                            </div>
+                            <div className="col-span-1 text-center">
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteTx(tx.id)}
+                                className="text-red-700 hover:text-red-900 font-bold hover:underline select-none text-[10px] cursor-pointer"
+                                title="Supprimer cette opération"
+                              >
+                                ❌
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </CordelCard>
+              </div>
+            </div>
+          )}
         </>
       )}
     </div>
