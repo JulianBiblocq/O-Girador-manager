@@ -235,7 +235,10 @@ export const fr = {
     deleteConfirm: "Voulez-vous supprimer l'annonce",
     noAnnouncements: "Aucune annonce officielle active.",
     loading: "Chargement des annonces...",
-    roleLabel: "ANNONCE"
+    roleLabel: "ANNONCE",
+    bannerTitle: "Activez les notifications",
+    bannerText: "Ne ratez aucune info importante de dernière minute (changement d'horaire, urgences...) ! Abonnez-vous pour recevoir les alertes en temps réel.",
+    bannerBtn: "🔔 M'abonner aux alertes"
   },
   widgetAgenda: {
     title: "Agenda",

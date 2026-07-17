@@ -285,6 +285,7 @@ export default function Dashboard({ user, profileData, onNavigateToTrombi, onNav
                   profileData={profileData}
                   role={profileData?.role} 
                   isSystemAdmin={profileData?.isSystemAdmin} 
+                  user={user}
                 />
               );
               break;

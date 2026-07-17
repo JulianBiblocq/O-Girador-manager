@@ -1,18 +1,72 @@
 import React, { useState, useEffect } from 'react';
-import { collection, query, where, onSnapshot, addDoc, deleteDoc, doc } from 'firebase/firestore';
-import { db } from '../firebase';
+import { collection, query, where, onSnapshot, addDoc, deleteDoc, doc, updateDoc, arrayUnion } from 'firebase/firestore';
+import { db, messaging } from '../firebase';
+import { getToken } from 'firebase/messaging';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
 import { XiloMegaphone, XiloClose } from './XiloIcons';
 import { useTranslation } from './LanguageContext';
 
-export default function WidgetAnnonces({ groupId, profileData, role, isSystemAdmin }) {
+export default function WidgetAnnonces({ groupId, profileData, role, isSystemAdmin, user }) {
   const { t } = useTranslation();
   const [announcements, setAnnouncements] = useState([]);
   const [tagsDisponibles, setTagsDisponibles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  const [showBanner, setShowBanner] = useState(false);
+  const [isSubscribingPush, setIsSubscribingPush] = useState(false);
+
+  // Check notification permission state on mount or when user changes
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'Notification' in window && messaging && user?.uid) {
+      setShowBanner(Notification.permission !== 'granted');
+    }
+  }, [user?.uid]);
+
+  const handleEnableNotifications = async () => {
+    if (!messaging || !user?.uid) {
+      alert("Les notifications Push ne sont pas prises en charge par ce navigateur ou vous n'êtes pas connecté.");
+      return;
+    }
+    setIsSubscribingPush(true);
+    try {
+      let permission = Notification.permission;
+      if (permission === 'default') {
+        permission = await new Promise((resolve) => {
+          const p = Notification.requestPermission(resolve);
+          if (p && typeof p.then === 'function') {
+            p.then(resolve);
+          }
+        });
+      }
+
+      if (permission === 'granted') {
+        const token = await getToken(messaging, { 
+          vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY || undefined
+        });
+        if (token) {
+          const userRef = doc(db, 'users', user.uid);
+          await updateDoc(userRef, {
+            fcmTokens: arrayUnion(token)
+          });
+          alert("Notifications activées avec succès !");
+          setShowBanner(false);
+        } else {
+          console.warn("FCM Token not generated.");
+          alert("Impossible de générer le jeton de notification.");
+        }
+      } else if (permission === 'denied') {
+        alert("La permission d'envoi de notifications a été refusée. Veuillez l'activer dans les paramètres de votre navigateur.");
+      }
+    } catch (err) {
+      console.error("Error enabling notifications:", err);
+      alert("Erreur lors de l'activation des notifications.");
+    } finally {
+      setIsSubscribingPush(false);
+    }
+  };
 
   // Form states
   const [titre, setTitre] = useState('');
@@ -178,6 +232,37 @@ export default function WidgetAnnonces({ groupId, profileData, role, isSystemAdm
           </CordelButton>
         )}
       </div>
+
+      {/* PUSH notifications incentive banner */}
+      {showBanner && messaging && (
+        <CordelCard 
+          variant="ocre" 
+          useExtremeBorder={true} 
+          className="p-3 text-left border-dashed flex flex-col gap-2 bg-[#fdfaf2] dark:bg-black/10"
+        >
+          <div className="flex gap-2 items-start">
+            <span className="text-lg shrink-0">📢</span>
+            <div className="flex-1">
+              <h4 className="font-extrabold text-[11px] text-encre-noire uppercase tracking-wider">
+                {t('widgetAnnonces.bannerTitle')}
+              </h4>
+              <p className="text-[10px] font-semibold leading-relaxed text-encre-noire/80 mt-0.5">
+                {t('widgetAnnonces.bannerText')}
+              </p>
+            </div>
+          </div>
+          <div className="flex justify-end pt-1">
+            <button
+              type="button"
+              disabled={isSubscribingPush}
+              onClick={handleEnableNotifications}
+              className="text-[9px] font-black uppercase bg-cordel-wood text-cordel-bg-light border border-encre-noire px-2.5 py-1 rounded shadow-[1px_1px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none transition-all cursor-pointer whitespace-nowrap"
+            >
+              {isSubscribingPush ? "..." : t('widgetAnnonces.bannerBtn')}
+            </button>
+          </div>
+        </CordelCard>
+      )}
 
       {/* Loading Indicator */}
       {loading && (

@@ -235,7 +235,10 @@ export const pt = {
     deleteConfirm: "Deseja excluir o anúncio",
     noAnnouncements: "Nenhum anúncio oficial ativo.",
     loading: "Carregando anúncios...",
-    roleLabel: "ANÚNCIO"
+    roleLabel: "ANÚNCIO",
+    bannerTitle: "Ative as notificações",
+    bannerText: "Não perca nenhuma informação importante de última hora (alteração de horário, emergências...)! Inscreva-se para receber os alertas importantes em tempo real.",
+    bannerBtn: "🔔 Inscrever-se nos alertas"
   },
   widgetAgenda: {
     title: "Agenda",
