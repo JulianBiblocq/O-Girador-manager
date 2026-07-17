@@ -353,7 +353,14 @@ export default function OrdersManager({ groupId, onBack, role, isSystemAdmin, ha
                       {requests.map((req) => (
                         <div key={req.id} className="text-xs p-2 rounded border border-dashed border-encre-noire/15 bg-cordel-bg-light/20 flex flex-col gap-0.5">
                           <div className="flex justify-between items-start font-bold">
-                            <span className="text-cordel-wood">{req.userName}</span>
+                            <span className="text-cordel-wood flex items-center gap-1.5 flex-wrap">
+                              {req.userName}
+                              {req.isPersonalOrder && (
+                                <span className="theme-stamp-badge theme-stamp-badge-dark text-[7px] px-1 py-0.5 border-dashed">
+                                  {t('ordersManager.personalBadge') || "Achat Perso"}
+                                </span>
+                              )}
+                            </span>
                             <span className="text-encre-noire">{req.quantite}x {getArticleLabel(req.article)}</span>
                           </div>
                           {req.notes && (

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { doc, updateDoc, collection, query, where, onSnapshot, arrayUnion } from 'firebase/firestore';
+import { doc, updateDoc, collection, query, where, onSnapshot, arrayUnion, deleteField } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { signOut } from 'firebase/auth';
 import { db, auth, storage, messaging } from '../firebase';
@@ -38,13 +38,16 @@ const DEFAULT_FIELDS_CONFIG = {
 export default function UserProfile({ user, profileData, onBack }) {
   const { t, locale } = useTranslation();
   const { tRole } = useTerminologie();
+  const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
     prenom: profileData?.prenom || '',
     nom: profileData?.nom || '',
     instrument: profileData?.instrument || 'Autre',
     instrumentsJoues: profileData?.instrumentsJoues || (profileData?.instrument ? [profileData.instrument] : []),
     telephone: profileData?.telephone || '',
-    adresse: profileData?.adresse || '',
+    adresseRue: profileData?.adresseRue || '',
+    adresseCP: profileData?.adresseCP || '',
+    adresseVille: profileData?.adresseVille || '',
     surnom: profileData?.surnom || '',
     tailleTshirt: profileData?.tailleTshirt || 'M',
     droitImage: profileData?.droitImage !== undefined ? profileData.droitImage : true,
@@ -55,6 +58,29 @@ export default function UserProfile({ user, profileData, onBack }) {
     publierTelephone: profileData?.publierTelephone !== undefined ? profileData.publierTelephone : false,
     publierDateNaissance: profileData?.publierDateNaissance !== undefined ? profileData.publierDateNaissance : false
   });
+
+  const handleStartEdit = () => {
+    setFormData({
+      prenom: profileData?.prenom || '',
+      nom: profileData?.nom || '',
+      instrument: profileData?.instrument || 'Autre',
+      instrumentsJoues: profileData?.instrumentsJoues || (profileData?.instrument ? [profileData.instrument] : []),
+      telephone: profileData?.telephone || '',
+      adresseRue: profileData?.adresseRue || '',
+      adresseCP: profileData?.adresseCP || '',
+      adresseVille: profileData?.adresseVille || '',
+      surnom: profileData?.surnom || '',
+      tailleTshirt: profileData?.tailleTshirt || 'M',
+      droitImage: profileData?.droitImage !== undefined ? profileData.droitImage : true,
+      aptitudeMedicale: profileData?.aptitudeMedicale !== undefined ? profileData.aptitudeMedicale : false,
+      lateralite: profileData?.lateralite || 'droitier',
+      dateNaissance: profileData?.dateNaissance || '',
+      genre: profileData?.genre || 'autre',
+      publierTelephone: profileData?.publierTelephone !== undefined ? profileData.publierTelephone : false,
+      publierDateNaissance: profileData?.publierDateNaissance !== undefined ? profileData.publierDateNaissance : false
+    });
+    setIsEditing(true);
+  };
   
   const DEFAULT_INSTRUMENTS = ["Alfaia Marcante", "Alfaia Meião", "Alfaia Repique", "Caixa", "Tarol", "Gonguê", "Agbê", "Mineiro", "Timbal", "Chant", "Danse"];
 
@@ -256,7 +282,9 @@ export default function UserProfile({ user, profileData, onBack }) {
           ...(formData.instrumentsJoues || [])
         ])).filter(Boolean),
         telephone: isFieldVisible('telephone') ? formData.telephone : (profileData?.telephone || ''),
-        adresse: isFieldVisible('adresse') ? formData.adresse : (profileData?.adresse || ''),
+        adresseRue: isFieldVisible('adresse') ? formData.adresseRue : (profileData?.adresseRue || ''),
+        adresseCP: isFieldVisible('adresse') ? formData.adresseCP : (profileData?.adresseCP || ''),
+        adresseVille: isFieldVisible('adresse') ? formData.adresseVille : (profileData?.adresseVille || ''),
         surnom: isFieldVisible('surnom') ? formData.surnom : (profileData?.surnom || ''),
         tailleTshirt: isFieldVisible('tailleTshirt') ? formData.tailleTshirt : (profileData?.tailleTshirt || 'M'),
         lateralite: isFieldVisible('lateralite') ? formData.lateralite : (profileData?.lateralite || 'droitier'),
@@ -265,6 +293,10 @@ export default function UserProfile({ user, profileData, onBack }) {
         publierTelephone: isFieldVisible('telephone') ? formData.publierTelephone : false,
         publierDateNaissance: isFieldVisible('dateNaissance') ? formData.publierDateNaissance : false
       };
+
+      if (isFieldVisible('adresse')) {
+        updatePayload.adresse = deleteField();
+      }
 
       if (demanderDroitImage) {
         updatePayload.droitImage = formData.droitImage;
@@ -291,6 +323,7 @@ export default function UserProfile({ user, profileData, onBack }) {
       const userRef = doc(db, 'users', user.uid);
       await updateDoc(userRef, updatePayload);
       alert(t('userProfile.successMsg'));
+      setIsEditing(false);
     } catch (error) {
       console.error("UserProfile - Erreur lors de la sauvegarde :", error);
       alert(t('userProfile.errorMsg'));
@@ -430,11 +463,145 @@ export default function UserProfile({ user, profileData, onBack }) {
       </div>
 
       {/* Profile Modification Form */}
-      <form onSubmit={handleSave} className="flex flex-col gap-4">
+      {!isEditing ? (
         <CordelCard variant="default" useExtremeBorder={false} className="flex flex-col gap-4">
-          <h4 className="font-bold text-xs uppercase tracking-wider text-cordel-wood border-b border-dashed border-cordel-master-dark/10 pb-1">
-            {t('userProfile.personalInfo')}
+          <h4 className="font-bold text-xs uppercase tracking-wider text-cordel-wood border-b border-dashed border-cordel-master-dark/10 pb-1 flex items-center justify-between">
+            <span>📁 {t('userProfile.personalInfo')}</span>
+            {profileData?.adresse && !profileData?.adresseRue && (
+              <span className="text-[7.5px] font-bold text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-950/20 px-1.5 py-0.5 rounded border border-amber-300/30 uppercase animate-pulse">
+                Format adresse à mettre à jour
+              </span>
+            )}
           </h4>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-3 text-xs text-encre-noire font-semibold">
+            <div>
+              <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70 block">
+                {t('userProfile.firstName')} / {t('userProfile.lastName')}
+              </span>
+              <span className="font-extrabold text-sm">{fullName}</span>
+            </div>
+            <div>
+              <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70 block">
+                {t('onboarding.genre') || "Genre"}
+              </span>
+              <span className="capitalize">{formData.genre === 'homme' ? t('onboarding.genderMale') : formData.genre === 'femme' ? t('onboarding.genderFemale') : t('onboarding.genderOther')}</span>
+            </div>
+            <div>
+              <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70 block">
+                {t('onboarding.instrument') || "Instrument Principal"}
+              </span>
+              <span className="font-bold">{formData.instrument}</span>
+            </div>
+            {isFieldVisible('surnom') && (
+              <div>
+                <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70 block">
+                  {t('userProfile.surnom')}
+                </span>
+                <span>{formData.surnom || <span className="italic opacity-60">Non renseigné</span>}</span>
+              </div>
+            )}
+            {isFieldVisible('telephone') && (
+              <div>
+                <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70 block">
+                  {t('userProfile.phone')}
+                </span>
+                <span>
+                  {formData.telephone ? (
+                    <>
+                      {formData.telephone}{' '}
+                      <span className="text-[8px] font-bold opacity-60 uppercase tracking-wider">
+                        ({formData.publierTelephone ? "Public" : "Privé"})
+                      </span>
+                    </>
+                  ) : (
+                    <span className="italic opacity-60">Non renseigné</span>
+                  )}
+                </span>
+              </div>
+            )}
+            {isFieldVisible('adresse') && (
+              <div className="md:col-span-2">
+                <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70 block">
+                  {t('userProfile.adresse')}
+                </span>
+                <span>
+                  {profileData?.adresseRue 
+                    ? `${profileData.adresseRue}, ${profileData.adresseCP} ${profileData.adresseVille}`
+                    : (profileData?.adresse || <span className="italic opacity-60">Non renseignée</span>)
+                  }
+                </span>
+              </div>
+            )}
+            {isFieldVisible('tailleTshirt') && (
+              <div>
+                <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70 block">
+                  {t('userProfile.tshirtSize')}
+                </span>
+                <span className="font-bold">{formData.tailleTshirt}</span>
+              </div>
+            )}
+            {isFieldVisible('lateralite') && (
+              <div>
+                <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70 block">
+                  {t('userProfile.lateralite')}
+                </span>
+                <span className="capitalize">{formData.lateralite === 'droitier' ? t('onboarding.handRight') : t('onboarding.handLeft')}</span>
+              </div>
+            )}
+            {isFieldVisible('dateNaissance') && (
+              <div>
+                <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70 block">
+                  {t('userProfile.birthdate')}
+                </span>
+                <span>
+                  {formData.dateNaissance ? (
+                    <>
+                      {new Date(formData.dateNaissance).toLocaleDateString()}{' '}
+                      <span className="text-[8px] font-bold opacity-60 uppercase tracking-wider">
+                        ({formData.publierDateNaissance ? "Public" : "Privé"})
+                      </span>
+                    </>
+                  ) : (
+                    <span className="italic opacity-60">Non renseigné</span>
+                  )}
+                </span>
+              </div>
+            )}
+            {demanderDroitImage && (
+              <div>
+                <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70 block">
+                  {t('userProfile.imageRights')}
+                </span>
+                <span>{formData.droitImage ? "✅ Accordé" : "❌ Refusé"}</span>
+              </div>
+            )}
+            {demanderAttestationSante && (
+              <div>
+                <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70 block">
+                  {t('userProfile.medicalCert')}
+                </span>
+                <span>{formData.aptitudeMedicale ? "✅ Attesté" : "❌ Non attesté"}</span>
+              </div>
+            )}
+          </div>
+
+          <CordelButton 
+            type="button" 
+            variant="ocre" 
+            useExtremeBorder={true}
+            onClick={handleStartEdit}
+            className="w-full mt-2 py-3 font-bold uppercase tracking-wider text-xs"
+          >
+            ✏️ {t('userProfile.editBtn') || "Modifier mon profil"}
+          </CordelButton>
+        </CordelCard>
+      ) : (
+        <form onSubmit={handleSave} className="flex flex-col gap-4">
+          <CordelCard variant="default" useExtremeBorder={false} className="flex flex-col gap-4">
+            <h4 className="font-bold text-xs uppercase tracking-wider text-cordel-wood border-b border-dashed border-cordel-master-dark/10 pb-1">
+              {t('userProfile.personalInfo')}
+            </h4>
 
           {/* First Name */}
           <div className="flex flex-col gap-1.5">
@@ -608,20 +775,54 @@ export default function UserProfile({ user, profileData, onBack }) {
           )}
 
           {isFieldVisible('adresse') && (
-            <div className="flex flex-col gap-1.5 border-t border-dashed border-cordel-master-dark/10 pt-2">
-              <label className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood">
-                {t('userProfile.adresse')}
-              </label>
-              <input
-                type="text"
-                name="adresse"
-                value={formData.adresse}
-                onChange={handleChange}
-                required
-                disabled={saving}
-                placeholder="123 Rue de la Roda, 75000 Paris"
-                className="theme-input w-full disabled:opacity-50 text-xs font-bold"
-              />
+            <div className="flex flex-col gap-2.5 border-t border-dashed border-cordel-master-dark/10 pt-2">
+              <div className="flex flex-col gap-1">
+                <label className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood">
+                  {t('userProfile.adresseRue') || "Numéro et Rue"}
+                </label>
+                <input
+                  type="text"
+                  name="adresseRue"
+                  value={formData.adresseRue}
+                  onChange={handleChange}
+                  required
+                  disabled={saving}
+                  placeholder="123 Rue de la Roda"
+                  className="theme-input w-full disabled:opacity-50 text-xs font-bold"
+                />
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                <div className="flex flex-col gap-1 col-span-1">
+                  <label className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood">
+                    {t('userProfile.adresseCP') || "Code Postal"}
+                  </label>
+                  <input
+                    type="text"
+                    name="adresseCP"
+                    value={formData.adresseCP}
+                    onChange={handleChange}
+                    required
+                    disabled={saving}
+                    placeholder="75000"
+                    className="theme-input w-full disabled:opacity-50 text-xs font-bold"
+                  />
+                </div>
+                <div className="flex flex-col gap-1 col-span-2">
+                  <label className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood">
+                    {t('userProfile.adresseVille') || "Ville"}
+                  </label>
+                  <input
+                    type="text"
+                    name="adresseVille"
+                    value={formData.adresseVille}
+                    onChange={handleChange}
+                    required
+                    disabled={saving}
+                    placeholder="Paris"
+                    className="theme-input w-full disabled:opacity-50 text-xs font-semibold"
+                  />
+                </div>
+              </div>
             </div>
           )}
 
@@ -778,17 +979,30 @@ export default function UserProfile({ user, profileData, onBack }) {
           )}
         </CordelCard>
 
-        {/* Validation Button */}
-        <CordelButton 
-          type="submit"
-          variant="ocre" 
-          useExtremeBorder={true}
-          disabled={saving}
-          className="w-full py-3"
-        >
-          {saving ? t('userProfile.saving') : t('userProfile.saveBtn')}
-        </CordelButton>
+        {/* Cancel & Validation Buttons */}
+        <div className="flex gap-3">
+          <CordelButton 
+            type="button"
+            variant="default" 
+            useExtremeBorder={true}
+            disabled={saving}
+            onClick={() => setIsEditing(false)}
+            className="flex-1 py-3"
+          >
+            Annuler
+          </CordelButton>
+          <CordelButton 
+            type="submit"
+            variant="ocre" 
+            useExtremeBorder={true}
+            disabled={saving}
+            className="flex-1 py-3"
+          >
+            {saving ? t('userProfile.saving') : t('userProfile.saveBtn')}
+          </CordelButton>
+        </div>
       </form>
+      )}
 
       {/* Section Mon Matériel */}
       <div className="mt-4 pt-4 border-t border-dashed border-cordel-master-dark/20 flex flex-col gap-3 select-none">

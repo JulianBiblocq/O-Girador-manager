@@ -30,7 +30,9 @@ export default function Onboarding({ user, branding, onComplete }) {
     firstName: initialFirstName,
     lastName: initialLastName,
     phone: '',
-    adresse: '',
+    adresseRue: '',
+    adresseCP: '',
+    adresseVille: '',
     surnom: '',
     tailleTshirt: 'M',
     droitImage: false,
@@ -122,7 +124,9 @@ export default function Onboarding({ user, branding, onComplete }) {
         prenom: formData.firstName,
         email: user.email,
         telephone: isFieldVisible('telephone') ? formData.phone : "",
-        adresse: isFieldVisible('adresse') ? formData.adresse : "",
+        adresseRue: isFieldVisible('adresse') ? formData.adresseRue : "",
+        adresseCP: isFieldVisible('adresse') ? formData.adresseCP : "",
+        adresseVille: isFieldVisible('adresse') ? formData.adresseVille : "",
         surnom: isFieldVisible('surnom') ? formData.surnom : "",
         tailleTshirt: isFieldVisible('tailleTshirt') ? formData.tailleTshirt : "M",
         droitImage: demanderDroitImage ? formData.droitImage : false,
@@ -327,20 +331,54 @@ export default function Onboarding({ user, branding, onComplete }) {
           )}
 
           {isFieldVisible('adresse') && (
-            <div className="flex flex-col gap-1">
-              <label className="text-[10px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                {t('onboarding.adresse')}
-              </label>
-              <input
-                type="text"
-                name="adresse"
-                placeholder="123 Rue de la Roda, 75000 Paris"
-                value={formData.adresse}
-                onChange={handleChange}
-                required
-                disabled={submitting}
-                className="theme-input w-full disabled:opacity-50"
-              />
+            <div className="flex flex-col gap-2.5">
+              <div className="flex flex-col gap-1">
+                <label className="text-[10px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                  {t('onboarding.adresseRue') || "Numéro et Rue"}
+                </label>
+                <input
+                  type="text"
+                  name="adresseRue"
+                  placeholder="123 Rue de la Roda"
+                  value={formData.adresseRue}
+                  onChange={handleChange}
+                  required
+                  disabled={submitting}
+                  className="theme-input w-full disabled:opacity-50"
+                />
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                <div className="flex flex-col gap-1 col-span-1">
+                  <label className="text-[10px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                    {t('onboarding.adresseCP') || "Code Postal"}
+                  </label>
+                  <input
+                    type="text"
+                    name="adresseCP"
+                    placeholder="75000"
+                    value={formData.adresseCP}
+                    onChange={handleChange}
+                    required
+                    disabled={submitting}
+                    className="theme-input w-full disabled:opacity-50 font-bold"
+                  />
+                </div>
+                <div className="flex flex-col gap-1 col-span-2">
+                  <label className="text-[10px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                    {t('onboarding.adresseVille') || "Ville"}
+                  </label>
+                  <input
+                    type="text"
+                    name="adresseVille"
+                    placeholder="Paris"
+                    value={formData.adresseVille}
+                    onChange={handleChange}
+                    required
+                    disabled={submitting}
+                    className="theme-input w-full disabled:opacity-50 font-semibold"
+                  />
+                </div>
+              </div>
             </div>
           )}
 

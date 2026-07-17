@@ -51,6 +51,7 @@ export default function WidgetCommandes({ groupId, user, profileData }) {
   const [article, setArticle] = useState(ARTICLES_LIST[0]);
   const [quantite, setQuantite] = useState(1);
   const [notes, setNotes] = useState('');
+  const [isPersonalOrder, setIsPersonalOrder] = useState(false);
 
   // Sync open campaigns
   useEffect(() => {
@@ -135,7 +136,8 @@ export default function WidgetCommandes({ groupId, user, profileData }) {
         userName: `${profileData?.prenom || tRole('batuqueiro', profileData?.genre)} ${profileData?.nom || ''}`,
         article,
         quantite: parseInt(quantite, 10) || 1,
-        notes: finalNotes
+        notes: finalNotes,
+        isPersonalOrder: isPersonalOrder
       };
 
       await addDoc(collection(db, 'campaignRequests'), payload);
@@ -143,6 +145,7 @@ export default function WidgetCommandes({ groupId, user, profileData }) {
       // Reset inputs
       setQuantite(1);
       setNotes('');
+      setIsPersonalOrder(false);
     } catch (err) {
       console.error("WidgetCommandes - Erreur d'ajout :", err);
       alert("Erreur lors de l'enregistrement de votre demande.");
@@ -257,6 +260,21 @@ export default function WidgetCommandes({ groupId, user, profileData }) {
                 </div>
               </div>
 
+              {/* Personal order checkbox */}
+              <div className="flex items-center gap-2 mt-1">
+                <input
+                  type="checkbox"
+                  id="isPersonalOrder"
+                  checked={isPersonalOrder}
+                  onChange={(e) => setIsPersonalOrder(e.target.checked)}
+                  disabled={saving}
+                  className="accent-cordel-wood scale-105 cursor-pointer"
+                />
+                <label htmlFor="isPersonalOrder" className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark cursor-pointer select-none">
+                  {t('widgetCommandes.personalOrderLabel') || "Ceci est une commande personnelle"}
+                </label>
+              </div>
+
               <CordelButton 
                 type="submit" 
                 variant="ocre" 
@@ -279,8 +297,13 @@ export default function WidgetCommandes({ groupId, user, profileData }) {
                 {userRequests.map((req) => (
                   <div key={req.id} className="text-xs flex justify-between items-center py-1 border-b border-dashed border-encre-noire/5 last:border-0 last:pb-0">
                     <div className="flex-1 min-w-0">
-                      <span className="font-extrabold text-encre-noire">
+                      <span className="font-extrabold text-encre-noire flex items-center gap-1.5 flex-wrap">
                         {req.quantite} {t('widgetCommandes.unit') || "u"} {getArticleLabel(req.article)}
+                        {req.isPersonalOrder && (
+                          <span className="theme-stamp-badge theme-stamp-badge-dark text-[7px] px-1 py-0.5 border-dashed">
+                            {t('widgetCommandes.personalBadge') || "Personnel"}
+                          </span>
+                        )}
                       </span>
                       {req.notes && (
                         <p className="text-[9px] text-cordel-master-dark/70 font-semibold truncate">

@@ -78,9 +78,6 @@ export const processCordelEffect = (img: HTMLImageElement, options: CordelOption
   const cx = (minX + maxX) / 2;
   const cy = (minY + maxY) / 2;
 
-  // Apply crop and offsets
-  const detailSensibility = 185 - options.detail; // Higher threshold -> softer, less thick outlines
-  const shadowLimit = options.shadow - 15;        // Lower threshold -> less black shadow spots
   const zoomVal = options.zoom;
   const cropSize = (boxSize * 1.3) / (zoomVal / 100); 
   
@@ -90,82 +87,39 @@ export const processCordelEffect = (img: HTMLImageElement, options: CordelOption
   const sX = cx - cropSize / 2 + shiftX;
   const sY = cy - cropSize / 2 + shiftY;
 
-  const tempCanvas = document.createElement('canvas');
-  tempCanvas.width = outSize; tempCanvas.height = outSize;
-  const tempCtx = tempCanvas.getContext('2d', { willReadFrequently: true });
-  if (!tempCtx) return '';
-  
-  tempCtx.fillStyle = '#ffffff';
-  tempCtx.fillRect(0, 0, outSize, outSize);
-  
-  if (options.isMirror) {
-      tempCtx.translate(outSize, 0);
-      tempCtx.scale(-1, 1);
-  }
-  
-  tempCtx.drawImage(img, sX, sY, cropSize, cropSize, 0, 0, outSize, outSize);
-  
-  const imgData = tempCtx.getImageData(0, 0, outSize, outSize);
-  const data = imgData.data;
-  const gray = new Float32Array(outSize * outSize);
-  for(let i = 0; i < outSize * outSize; i++) {
-      gray[i] = 0.299 * data[i*4] + 0.587 * data[i*4+1] + 0.114 * data[i*4+2];
-  }
-
   const finalCanvas = document.createElement('canvas');
   finalCanvas.width = outSize; finalCanvas.height = outSize;
   const finalCtx = finalCanvas.getContext('2d');
   if (!finalCtx) return '';
 
-  const finalImgData = finalCtx.createImageData(outSize, outSize);
-  const fData = finalImgData.data;
+  // 1. Draw solid background paper color (#F4ECD8)
+  finalCtx.fillStyle = '#f4ecd8';
+  finalCtx.fillRect(0, 0, outSize, outSize);
 
-  for(let y = 0; y < outSize; y++){
-      for(let x = 0; x < outSize; x++){
-          let i = y * outSize + x;
-          let outIdx = i * 4;
-          
-          let lum = gray[i];
-          let isInk = false;
-          
-          if (y > 0 && y < outSize - 1 && x > 0 && x < outSize - 1) {
-              let tl = gray[i - outSize - 1], tc = gray[i - outSize], tr = gray[i - outSize + 1];
-              let ml = gray[i - 1],                                   mr = gray[i + 1];
-              let bl = gray[i + outSize - 1], bc = gray[i + outSize], br = gray[i + outSize + 1];
-              
-              let dx = (tr + 2*mr + br) - (tl + 2*ml + bl);
-              let dy = (bl + 2*bc + br) - (tl + 2*tc + tr);
-              let edge = Math.sqrt(dx*dx + dy*dy);
+  // 2. Set filter on the context for old lithography look
+  // Translate shadow slider to contrast, detail slider to brightness
+  const contrastPercent = Math.round(100 + (options.shadow - 95) * 0.4);
+  const brightnessPercent = Math.round(95 + (options.detail - 45) * 0.2);
+  finalCtx.filter = `grayscale(100%) contrast(${contrastPercent}%) sepia(35%) brightness(${brightnessPercent}%)`;
 
-              if (edge > detailSensibility && lum < 240) {
-                  isInk = true;
-              }
-          }
-
-          if (!isInk) {
-              let groove = Math.sin((x - y) * 0.4) * 15 + Math.sin(y * 0.1) * 5;
-              let noise = (Math.random() * 30) - 15;
-              if (lum + groove + noise < shadowLimit) {
-                  isInk = true;
-              }
-          }
-
-          if (options.isFrame) {
-              if (x < 15 || x > outSize - 15 || y < 15 || y > outSize - 15) {
-                  isInk = true;
-                  if(Math.random() > 0.8) isInk = false;
-              }
-          }
-
-          if (isInk) {
-              fData[outIdx] = 30; fData[outIdx+1] = 30; fData[outIdx+2] = 30; // Slightly softer black ink
-          } else {
-              fData[outIdx] = 244; fData[outIdx+1] = 236; fData[outIdx+2] = 216; // #F4ECD8 (yellowish/pale sepia paper)
-          }
-          fData[outIdx+3] = 255;
-      }
+  // 3. Setup transform (mirror)
+  if (options.isMirror) {
+      finalCtx.translate(outSize, 0);
+      finalCtx.scale(-1, 1);
   }
 
-  finalCtx.putImageData(finalImgData, 0, 0);
-  return finalCanvas.toDataURL('image/jpeg', 0.8);
+  // 4. Draw image with multiply blend mode
+  finalCtx.globalCompositeOperation = 'multiply';
+  finalCtx.drawImage(img, sX, sY, cropSize, cropSize, 0, 0, outSize, outSize);
+
+  // 5. Draw frame if enabled
+  if (options.isFrame) {
+      finalCtx.globalCompositeOperation = 'source-over';
+      finalCtx.filter = 'none';
+      finalCtx.strokeStyle = '#1e1e1e';
+      finalCtx.lineWidth = Math.round(outSize * 0.075);
+      finalCtx.strokeRect(0, 0, outSize, outSize);
+  }
+
+  return finalCanvas.toDataURL('image/jpeg', 0.85);
 };

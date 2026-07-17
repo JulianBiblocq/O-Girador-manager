@@ -221,6 +221,9 @@ export default function AdminExport({ user, profileData, onBack }) {
           return 'Non payé';
         }
         if (field.key === 'adresse') {
+          if (member.adresseRue || member.adresseCP || member.adresseVille) {
+            return [member.adresseRue, member.adresseCP, member.adresseVille].filter(Boolean).join(', ');
+          }
           return member.adresse || member.adressePhysique || '';
         }
 

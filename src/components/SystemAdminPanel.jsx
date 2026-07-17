@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { collection, query, onSnapshot, doc, updateDoc, deleteDoc, where } from 'firebase/firestore';
+import { collection, query, onSnapshot, doc, updateDoc, deleteDoc, where, deleteField } from 'firebase/firestore';
 import { db } from '../firebase';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
@@ -174,7 +174,11 @@ export default function SystemAdminPanel({ user, profileData, onBack, onNavigate
       updatePayload.telephone = userDraft.telephone !== undefined ? userDraft.telephone : (currentUserItem.telephone || '');
     }
     if (isEnabled('adresse')) {
-      updatePayload.adresse = userDraft.adresse !== undefined ? userDraft.adresse : (currentUserItem.adresse || '');
+      updatePayload.adresseRue = userDraft.adresseRue !== undefined ? userDraft.adresseRue : (currentUserItem.adresseRue || '');
+      updatePayload.adresseCP = userDraft.adresseCP !== undefined ? userDraft.adresseCP : (currentUserItem.adresseCP || '');
+      updatePayload.adresseVille = userDraft.adresseVille !== undefined ? userDraft.adresseVille : (currentUserItem.adresseVille || '');
+      
+      updatePayload.adresse = deleteField();
     }
     if (isEnabled('surnom')) {
       updatePayload.surnom = userDraft.surnom !== undefined ? userDraft.surnom : (currentUserItem.surnom || '');
@@ -423,7 +427,12 @@ export default function SystemAdminPanel({ user, profileData, onBack, onNavigate
                         )}
                         {(!fieldsConfig || fieldsConfig.adresse?.enabled) && (
                           <>
-                            <span>📍 {userItem.adresse || 'Non renseignée'}</span>
+                            <span>
+                              📍 {userItem.adresseRue 
+                                ? `${userItem.adresseRue}, ${userItem.adresseCP} ${userItem.adresseVille}` 
+                                : (userItem.adresse || 'Non renseignée')
+                              }
+                            </span>
                             <span>•</span>
                           </>
                         )}
@@ -606,16 +615,46 @@ export default function SystemAdminPanel({ user, profileData, onBack, onNavigate
 
                           {/* Adresse */}
                           {fieldsConfig.adresse?.enabled && (
-                            <div className="flex flex-col gap-0.5">
-                              <span className="text-[8px] font-bold text-cordel-wood">Adresse</span>
+                            <div className="flex flex-col gap-1 col-span-2">
+                              <span className="text-[8px] font-bold text-cordel-wood">Adresse (Numéro et Rue)</span>
                               <input
                                 type="text"
-                                value={userDraft.adresse !== undefined ? userDraft.adresse : (userItem.adresse || '')}
-                                onChange={(e) => handleFieldChange(userItem.id, 'adresse', e.target.value)}
+                                value={userDraft.adresseRue !== undefined ? userDraft.adresseRue : (userItem.adresseRue || '')}
+                                onChange={(e) => handleFieldChange(userItem.id, 'adresseRue', e.target.value)}
                                 disabled={savingId === userItem.id}
                                 className="theme-input text-[10px] font-bold py-1 px-1.5 bg-cordel-bg-light"
-                                placeholder="Non renseignée"
+                                placeholder="Numéro et rue"
                               />
+                              <div className="grid grid-cols-2 gap-1 mt-0.5">
+                                <div className="flex flex-col gap-0.5">
+                                  <span className="text-[7px] font-bold text-cordel-wood">Code Postal</span>
+                                  <input
+                                    type="text"
+                                    value={userDraft.adresseCP !== undefined ? userDraft.adresseCP : (userItem.adresseCP || '')}
+                                    onChange={(e) => handleFieldChange(userItem.id, 'adresseCP', e.target.value)}
+                                    disabled={savingId === userItem.id}
+                                    className="theme-input text-[10px] font-bold py-1 px-1.5 bg-cordel-bg-light"
+                                    placeholder="Code postal"
+                                  />
+                                </div>
+                                <div className="flex flex-col gap-0.5">
+                                  <span className="text-[7px] font-bold text-cordel-wood">Ville</span>
+                                  <input
+                                    type="text"
+                                    value={userDraft.adresseVille !== undefined ? userDraft.adresseVille : (userItem.adresseVille || '')}
+                                    onChange={(e) => handleFieldChange(userItem.id, 'adresseVille', e.target.value)}
+                                    disabled={savingId === userItem.id}
+                                    className="theme-input text-[10px] font-bold py-1 px-1.5 bg-cordel-bg-light"
+                                    placeholder="Ville"
+                                  />
+                                </div>
+                              </div>
+                              {/* Fallback display of old address format */}
+                              {userItem.adresse && !userItem.adresseRue && (
+                                <span className="text-[7.5px] italic text-cordel-master-dark/70 mt-0.5 block">
+                                  Ancien format : {userItem.adresse}
+                                </span>
+                              )}
                             </div>
                           )}
 
