@@ -51,7 +51,10 @@ export default function TabLogistics({
               <PlacesAutocomplete 
                 name="adresseLocal"
                 value={adresseLocal}
-                onChange={(e) => handleChange('adresseLocal', e.target.value)}
+                onChange={(e) => {
+                  const val = e && e.target ? e.target.value : e;
+                  handleChange('adresseLocal', val || '');
+                }}
                 placeholder="ex: 12 Rue du Maracatu, 75000 Paris"
                 className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light w-full"
               />
