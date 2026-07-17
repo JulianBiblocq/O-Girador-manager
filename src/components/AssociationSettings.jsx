@@ -1291,36 +1291,62 @@ function GoogleMapsPreview({ address }) {
     if (!address) return;
 
     let active = true;
-    loadGoogleMaps()
-      .then((maps) => {
-        if (!active || !mapRef.current) return;
-        const geocoder = new maps.Geocoder();
-        geocoder.geocode({ address }, (results, status) => {
-          if (!active) return;
-          if (status === 'OK' && results[0]) {
-            const location = results[0].geometry.location;
-            const map = new maps.Map(mapRef.current, {
-              center: location,
-              zoom: 15,
-              disableDefaultUI: true,
-              zoomControl: true,
-            });
-            new maps.Marker({
-              position: location,
-              map,
-              title: address,
-            });
-            setMapError(null);
-          } else {
-            console.warn("Geocoding failed:", status);
-            setMapError("Impossible de localiser cette adresse sur la carte");
+    try {
+      loadGoogleMaps()
+        .then((maps) => {
+          if (!active) {
+            console.warn("Détail Erreur Map : composant ou effet inactif lors du retour du chargement SDK");
+            return;
           }
+          if (!mapRef.current) {
+            console.warn("Détail Erreur Map : mapRef.current est null/inactif");
+            return;
+          }
+          try {
+            const geocoder = new maps.Geocoder();
+            geocoder.geocode({ address }, (results, status) => {
+              if (!active) {
+                console.warn("Détail Erreur Map : effet inactif lors du retour du géocodage");
+                return;
+              }
+              if (status === 'OK' && results[0]) {
+                try {
+                  const location = results[0].geometry.location;
+                  const map = new maps.Map(mapRef.current, {
+                    center: location,
+                    zoom: 15,
+                    disableDefaultUI: true,
+                    zoomControl: true,
+                  });
+                  new maps.Marker({
+                    position: location,
+                    map,
+                    title: address,
+                  });
+                  setMapError(null);
+                } catch (mapInitErr) {
+                  console.error("Détail Erreur Map :", mapInitErr);
+                  setMapError("Erreur lors de l'initialisation de la carte");
+                }
+              } else {
+                const geocodeError = new Error(`Geocoding failed with status: ${status}`);
+                console.error("Détail Erreur Map :", geocodeError);
+                setMapError("Impossible de localiser cette adresse sur la carte");
+              }
+            });
+          } catch (geocoderErr) {
+            console.error("Détail Erreur Map :", geocoderErr);
+            setMapError("Erreur lors de la préparation de la localisation");
+          }
+        })
+        .catch((err) => {
+          console.error("Détail Erreur Map :", err);
+          setMapError("Erreur lors du chargement de la carte");
         });
-      })
-      .catch((err) => {
-        console.error("Failed to load Google Maps SDK:", err);
-        setMapError("Erreur lors du chargement de la carte");
-      });
+    } catch (outerErr) {
+      console.error("Détail Erreur Map :", outerErr);
+      setMapError("Erreur inattendue de chargement");
+    }
 
     return () => {
       active = false;

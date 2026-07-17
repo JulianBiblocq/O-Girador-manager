@@ -29,7 +29,7 @@ export default function Dashboard({ user, profileData, onNavigateToTrombi, onNav
       case 'documents':
         return 'col-span-1 md:col-span-2 lg:col-span-3 w-full max-w-full overflow-hidden';
       case 'agenda':
-        return 'col-span-1 md:col-span-2 lg:col-span-2 w-full max-w-full overflow-hidden';
+        return 'col-span-1 md:col-span-2 lg:col-span-3 w-full max-w-full overflow-hidden';
       default:
         return 'col-span-1 w-full max-w-full overflow-hidden';
     }

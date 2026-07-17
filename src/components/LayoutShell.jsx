@@ -30,6 +30,7 @@ export default function LayoutShell({
   const finalLogoUrl = logoUrl || '/Pictures/logo-samambaia.png';
   const { t } = useTranslation();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const isAdminOrMestre = profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.isSystemAdmin;
 
   return (
     <div className={`min-h-screen w-full ${forceLight ? 'bg-cordel-bg-light' : 'bg-cordel-bg-dark'} flex lg:items-center lg:justify-center p-4 md:p-6 lg:p-8`}>
@@ -80,11 +81,11 @@ export default function LayoutShell({
         </div>
 
         {/* Left Sidebar for Desktop (hidden on Mobile & Tablet) */}
-        <div className="hidden lg:flex w-44 border-r-4 border-cordel-master-dark bg-cordel-bg-light flex-col items-center justify-between py-8 px-4 shrink-0 select-none">
-          <div className="flex flex-col items-center gap-3 w-full">
+        <div className={`hidden lg:flex ${isAdminOrMestre ? 'w-56' : 'w-44'} border-r-4 border-cordel-master-dark bg-cordel-bg-light flex-col items-center justify-between py-6 px-3 shrink-0 select-none`}>
+          <div className="flex flex-col items-center gap-3 w-full flex-grow min-h-0">
             <div 
               onClick={() => onNavigateToView && onNavigateToView('dashboard')}
-              className="w-24 h-24 bg-white border-2 border-encre-noire rounded-full flex items-center justify-center p-2 shadow-[2px_2px_0px_0px_#181716] cursor-pointer hover:scale-[1.02] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none transition-all"
+              className="w-20 h-20 bg-white border-2 border-encre-noire rounded-full flex items-center justify-center p-2 shadow-[2px_2px_0px_0px_#181716] cursor-pointer hover:scale-[1.02] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none transition-all shrink-0"
               title={t('menu.dashboard') || "Accueil"}
             >
               <img 
@@ -93,7 +94,7 @@ export default function LayoutShell({
                 className="w-full h-full object-contain pointer-events-none" 
               />
             </div>
-            <div className="flex items-center gap-2 mt-2 justify-center">
+            <div className="flex items-center gap-2 mt-1 justify-center shrink-0">
               <span 
                 onClick={() => onNavigateToView && onNavigateToView('dashboard')}
                 className="font-black text-sm uppercase tracking-widest text-cordel-wood cursor-pointer hover:opacity-85 transition-opacity"
@@ -112,21 +113,134 @@ export default function LayoutShell({
                 </a>
               )}
             </div>
-            <div className="w-full border-t border-dashed border-cordel-master-dark/20 my-4" />
+            <div className="w-full border-t border-dashed border-cordel-master-dark/20 my-2 shrink-0" />
+            
+            {isAdminOrMestre && (
+              <div className="w-full flex-grow overflow-y-auto flex flex-col gap-1.5 pr-1 max-h-[calc(100vh-320px)] lg:max-h-[calc(85vh-280px)] scrollbar-thin">
+                {currentView !== 'dashboard' && (
+                  <button
+                    onClick={() => onNavigateToView && onNavigateToView('dashboard')}
+                    className="theme-btn text-[9px] font-black uppercase tracking-wider py-1.5 px-2 text-left rounded-[4px_6px_3px_5px] flex items-center gap-2 hover:bg-cordel-hover cursor-pointer"
+                  >
+                    <XiloHome size={12} /> {t('menu.dashboard') || "Accueil"}
+                  </button>
+                )}
+                
+                <button
+                  onClick={() => onNavigateToView && onNavigateToView('profil')}
+                  className={`theme-btn text-[9px] font-black uppercase tracking-wider py-1.5 px-2 text-left rounded-[4px_6px_3px_5px] flex items-center gap-2 hover:bg-cordel-hover cursor-pointer ${currentView === 'profil' ? 'bg-cordel-hover text-cordel-wood font-black' : ''}`}
+                >
+                  <XiloUser size={12} /> {t('menu.profile') || "Mon Profil"}
+                </button>
+
+                <button
+                  onClick={() => onNavigateToView && onNavigateToView('trombinoscope')}
+                  className={`theme-btn text-[9px] font-black uppercase tracking-wider py-1.5 px-2 text-left rounded-[4px_6px_3px_5px] flex items-center gap-2 hover:bg-cordel-hover cursor-pointer ${currentView === 'trombinoscope' ? 'bg-cordel-hover text-cordel-wood font-black' : ''}`}
+                >
+                  <XiloPeople size={12} /> {t('menu.trombinoscope') || "Trombinoscope"}
+                </button>
+
+                <button
+                  onClick={() => onNavigateToView && onNavigateToView('forum')}
+                  className={`theme-btn text-[9px] font-black uppercase tracking-wider py-1.5 px-2 text-left rounded-[4px_6px_3px_5px] flex items-center justify-between hover:bg-cordel-hover cursor-pointer w-full ${currentView === 'forum' ? 'bg-cordel-hover text-cordel-wood font-black' : ''}`}
+                >
+                  <span className="flex items-center gap-2"><XiloMegaphone size={12} /> {t('menu.forum') || "Porte-Voix"}</span>
+                  {unreadPrivateMessagesCount > 0 && (
+                    <span className="w-3.5 h-3.5 bg-red-600 text-white text-[8px] font-black rounded-full flex items-center justify-center animate-pulse mr-1 shrink-0">
+                      {unreadPrivateMessagesCount}
+                    </span>
+                  )}
+                </button>
+
+                <div className="border-t border-dashed border-cordel-master-dark/15 my-1 shrink-0" />
+                <span className="text-[7.5px] font-black uppercase tracking-widest text-cordel-master-dark opacity-45 pl-1 block mb-0.5 shrink-0">
+                  {t('menu.adminHeader') || "Administration"}
+                </span>
+
+                <button
+                  onClick={() => onNavigateToView && onNavigateToView('association-settings')}
+                  className={`theme-btn text-[9px] font-black uppercase tracking-wider py-1.5 px-2 text-left rounded-[4px_6px_3px_5px] flex items-center gap-2 hover:bg-cordel-hover cursor-pointer ${currentView === 'association-settings' ? 'bg-cordel-hover text-cordel-wood font-black' : ''}`}
+                >
+                  <XiloSettings size={12} /> {t('menu.settings') || "Configuration"}
+                </button>
+
+                <button
+                  onClick={() => onNavigateToView && onNavigateToView('studio-social')}
+                  className={`theme-btn text-[9px] font-black uppercase tracking-wider py-1.5 px-2 text-left rounded-[4px_6px_3px_5px] flex items-center gap-2 hover:bg-cordel-hover cursor-pointer ${currentView === 'studio-social' ? 'bg-cordel-hover text-cordel-wood font-black' : ''}`}
+                >
+                  <XiloMegaphone size={12} /> {t('menu.studioSocial') || "Studio Social"}
+                </button>
+
+                <button
+                  onClick={() => onNavigateToView && onNavigateToView('treasury')}
+                  className={`theme-btn text-[9px] font-black uppercase tracking-wider py-1.5 px-2 text-left rounded-[4px_6px_3px_5px] flex items-center gap-2 hover:bg-cordel-hover cursor-pointer ${currentView === 'treasury' ? 'bg-cordel-hover text-cordel-wood font-black' : ''}`}
+                >
+                  <XiloCoin size={12} /> {t('menu.treasury') || "Trésorerie"}
+                </button>
+
+                <button
+                  onClick={() => onNavigateToView && onNavigateToView('orders-manager')}
+                  className={`theme-btn text-[9px] font-black uppercase tracking-wider py-1.5 px-2 text-left rounded-[4px_6px_3px_5px] flex items-center gap-2 hover:bg-cordel-hover cursor-pointer ${currentView === 'orders-manager' ? 'bg-cordel-hover text-cordel-wood font-black' : ''}`}
+                >
+                  <XiloBox size={12} /> {t('menu.orders') || "Commandes"}
+                </button>
+
+                <button
+                  onClick={() => onNavigateToView && onNavigateToView('inventory')}
+                  className={`theme-btn text-[9px] font-black uppercase tracking-wider py-1.5 px-2 text-left rounded-[4px_6px_3px_5px] flex items-center gap-2 hover:bg-cordel-hover cursor-pointer ${currentView === 'inventory' ? 'bg-cordel-hover text-cordel-wood font-black' : ''}`}
+                >
+                  <XiloDrum size={12} /> {t('menu.inventory') || "Inventaire"}
+                </button>
+
+                <button
+                  onClick={() => onNavigateToView && onNavigateToView('layout-editor')}
+                  className={`theme-btn text-[9px] font-black uppercase tracking-wider py-1.5 px-2 text-left rounded-[4px_6px_3px_5px] flex items-center gap-2 hover:bg-cordel-hover cursor-pointer ${currentView === 'layout-editor' ? 'bg-cordel-hover text-cordel-wood font-black' : ''}`}
+                >
+                  <XiloChisel size={12} /> {t('menu.layoutEditor') || "Mise en page"}
+                </button>
+
+                <button
+                  onClick={() => onNavigateToView && onNavigateToView('tag-manager')}
+                  className={`theme-btn text-[9px] font-black uppercase tracking-wider py-1.5 px-2 text-left rounded-[4px_6px_3px_5px] flex items-center gap-2 hover:bg-cordel-hover cursor-pointer ${currentView === 'tag-manager' ? 'bg-cordel-hover text-cordel-wood font-black' : ''}`}
+                >
+                  <XiloTag size={12} /> {t('menu.tags') || "Badges"}
+                </button>
+
+                {profileData?.isSystemAdmin && (
+                  <button
+                    onClick={() => onNavigateToView && onNavigateToView('system-admin')}
+                    className={`theme-btn text-[9px] font-black uppercase tracking-wider py-1.5 px-2 text-left rounded-[4px_6px_3px_5px] flex items-center gap-2 hover:bg-cordel-hover cursor-pointer mt-0.5 ${currentView === 'system-admin' ? 'bg-cordel-hover text-cordel-wood font-black' : ''}`}
+                  >
+                    <XiloConsole size={12} /> {t('menu.systemAdmin') || "Admin Système"}
+                  </button>
+                )}
+              </div>
+            )}
           </div>
 
-          <div className="flex flex-col items-center gap-2.5 w-full">
+          <div className="flex flex-col items-center gap-2 w-full mt-4 shrink-0">
             {sequenceurUrl && (
               <a 
                 href={sequenceurUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full py-2 px-1 font-extrabold flex items-center justify-center gap-1.5 bg-[#d99f4d] text-[#1a1a1a] border-2 border-encre-noire rounded-[8px_12px_9px_11px] shadow-[2px_2px_0px_0px_#181716] hover:scale-[1.01] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-105 transition-all text-center text-[9px] uppercase tracking-wide cursor-pointer select-none"
+                className="w-full py-1.5 px-1 font-extrabold flex items-center justify-center gap-1 bg-[#d99f4d] text-[#1a1a1a] border-2 border-encre-noire rounded-[8px_12px_9px_11px] shadow-[2px_2px_0px_0px_#181716] hover:scale-[1.01] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-105 transition-all text-center text-[8px] uppercase tracking-wide cursor-pointer select-none"
               >
-                <XiloEQ size={12} className="inline mr-1" /> O Girador Séquenceur
+                <XiloEQ size={10} className="inline mr-1" /> O Girador Séquenceur
               </a>
             )}
-            <span className="text-[8px] font-black opacity-35 tracking-widest uppercase select-none">
+            
+            {isAdminOrMestre && onSignOut && (
+              <button
+                type="button"
+                onClick={onSignOut}
+                className="w-full py-1.5 text-center text-[8px] font-black uppercase tracking-widest bg-red-800 text-white border-2 border-encre-noire rounded-[8px_12px_9px_11px] shadow-[2px_2px_0px_0px_#181716] hover:brightness-110 active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none transition-all cursor-pointer flex items-center justify-center gap-1"
+              >
+                <XiloSignOut size={10} /> {t('common.signOut') || "Déconnexion"}
+              </button>
+            )}
+            
+            <span className="text-[7.5px] font-black opacity-35 tracking-widest uppercase select-none mt-1">
               {import.meta.env.VITE_APP_VERSION || 'v1.0.1'}
             </span>
           </div>

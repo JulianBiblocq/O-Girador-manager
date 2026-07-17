@@ -63,7 +63,7 @@ export default function WidgetAgenda({ role, isSystemAdmin, groupId, user, profi
   }, []);
 
   const isMobile = windowWidth < 768;
-  const limit = isMobile ? 5 : 8;
+  const limit = isMobile ? 5 : 9;
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -612,7 +612,7 @@ export default function WidgetAgenda({ role, isSystemAdmin, groupId, user, profi
           </CordelCard>
         ) : (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {visibleEvents.map((event) => {
                 const dateObj = new Date(event.date);
                 const day = isNaN(dateObj.getTime()) ? '?' : dateObj.getDate();

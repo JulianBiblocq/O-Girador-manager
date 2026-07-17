@@ -162,13 +162,17 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
       snap.forEach(async (docSnap) => {
         const data = docSnap.data();
         if (!data.channelId) {
+          // Only attempt migration if the user has edit rights (is the author or is a system admin)
+          const canMigrate = data.authorId === user?.uid || profileData?.isSystemAdmin;
+          if (!canMigrate) return;
+
           try {
             await updateDoc(doc(db, 'forum', docSnap.id), {
               channelId: `${profileData.groupId}_general`
             });
             console.log(`Migrated thread ${docSnap.id} to channel ${profileData.groupId}_general`);
           } catch (err) {
-            console.error("Migration error:", err);
+            console.warn("Migration error (insufficient permissions):", err);
           }
         }
       });
@@ -177,7 +181,7 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
     });
 
     return () => unsubscribe();
-  }, [profileData?.groupId, profileData?.role, profileData?.isSystemAdmin]);
+  }, [profileData?.groupId, profileData?.role, profileData?.isSystemAdmin, user?.uid]);
 
   // Sync threads for the active channel
   useEffect(() => {

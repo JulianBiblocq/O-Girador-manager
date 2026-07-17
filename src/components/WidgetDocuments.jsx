@@ -309,7 +309,7 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
                             (docItem.titre && (docItem.titre.toLowerCase().includes('ordre') || docItem.titre.toLowerCase().includes('jour')));
                           colorClass = isOrdreDuJour ? 'bleu-ardoise' : 'bleu';
                         } else {
-                          const colors = ['vert', 'bleu', 'rouge', 'jaune'];
+                          const colors = ['vert', 'bleu', 'rouge', 'jaune', 'violet', 'orange'];
                           colorClass = colors[index % colors.length];
                         }
                         const typeIcons = {

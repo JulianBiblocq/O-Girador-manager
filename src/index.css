@@ -1438,6 +1438,8 @@ body.eco-mode #center-afficheur {
 .theme-bg-rouge { background-color: #8b2a1a !important; color: #f4ecd8 !important; }
 .theme-bg-jaune { background-color: #e0b443 !important; color: #1a1a1a !important; }
 .theme-bg-bleu-ardoise { background-color: var(--color-cordel-bleu-ardoise) !important; color: #f4ecd8 !important; }
+.theme-bg-violet { background-color: #6d28d9 !important; color: #f4ecd8 !important; }
+.theme-bg-orange { background-color: #ea580c !important; color: #1a1a1a !important; }
 
 /* === GLOBAL POPUP & MODAL RESPONSIVE COMPATIBILITY === */
 .modal-overlay, .modal-backdrop, [role="dialog"], .popup-window, .modal-content, [class*="modal"] {
