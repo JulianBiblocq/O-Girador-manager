@@ -112,8 +112,18 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
     if (event.lieu) detailsText += `\n📍 Lieu : ${event.lieu}`;
     if (event.horairesPassages) detailsText += `\n⏱️ Horaires de passage : ${event.horairesPassages}`;
     if (event.horaireCovoiturage) detailsText += `\n🚗 Covoiturage : ${event.horaireCovoiturage}`;
-    if (event.niveauRequis) detailsText += `\n🎯 Niveau requis (Musique) : ${event.niveauRequis === 'confirme' ? 'Confirmés' : 'Tous'}`;
-    if (event.niveauDanseRequis && event.niveauDanseRequis !== 'aucun') detailsText += `\n💃 Danse (Niveau requis) : ${event.niveauDanseRequis === 'confirme' ? 'Confirmés' : 'Débutants'}`;
+    if (event.niveauRequis) {
+      const musLvl = event.niveauRequis === 'aucun' ? 'Pas de musicien' :
+                     event.niveauRequis === 'debutant' ? 'Débutant' :
+                     event.niveauRequis === 'confirme' ? 'Confirmé' : 'Tout le monde';
+      detailsText += `\n🎯 Niveau requis (Musique) : ${musLvl}`;
+    }
+    if (event.niveauDanseRequis) {
+      const danseLvl = event.niveauDanseRequis === 'aucun' ? 'Pas de danse' :
+                       event.niveauDanseRequis === 'debutant' ? 'Débutant' :
+                       event.niveauDanseRequis === 'confirme' ? 'Confirmé' : 'Tout le monde';
+      detailsText += `\n💃 Danse (Niveau requis) : ${danseLvl}`;
+    }
     if (event.lienDocument) detailsText += `\n📄 Document / Ordre du jour : ${event.lienDocument}`;
     return detailsText;
   };
@@ -794,7 +804,7 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
         lieu: editForm.lieu || '',
         horairesPassages: (editForm.type === 'prestation') ? editForm.horairesPassages || '' : '',
         horaireCovoiturage: (editForm.type === 'prestation' || editForm.type === 'stage' || editForm.type === 'atelier') ? editForm.horaireCovoiturage || '' : '',
-        niveauRequis: (editForm.type === 'prestation') ? editForm.niveauRequis || 'tous' : 'tous',
+        niveauRequis: (editForm.type === 'prestation' || editForm.type === 'stage' || editForm.type === 'repetition' || editForm.type === 'atelier') ? editForm.niveauRequis || 'tous' : 'tous',
         niveauDanseRequis: (editForm.type === 'prestation' || editForm.type === 'stage' || editForm.type === 'repetition' || editForm.type === 'atelier') ? editForm.niveauDanseRequis || 'aucun' : 'aucun',
         lienDocument: (editForm.type === 'reunion') ? editForm.lienDocument || '' : '',
         distanceAllerRetourKm: (editForm.type === 'prestation' || editForm.type === 'stage' || editForm.type === 'atelier') ? (parseFloat(editForm.distanceAllerRetourKm) || 0) : 0,
@@ -1143,21 +1153,6 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
                       className="theme-input w-full disabled:opacity-50"
                     />
                   </div>
-
-                  <div className="flex flex-col gap-1">
-                    <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                      {t('widgetAgenda.reqLevelLabel') || "Niveau requis (Musique)"}
-                    </label>
-                    <select
-                      value={editForm.niveauRequis}
-                      onChange={(e) => setEditForm(prev => ({ ...prev, niveauRequis: e.target.value }))}
-                      disabled={savingEvent}
-                      className="theme-input w-full disabled:opacity-50 font-bold bg-cordel-bg-light"
-                    >
-                      <option value="tous">{t('widgetAgenda.levelAll') || "Tous les niveaux"}</option>
-                      <option value="confirme">{t('widgetAgenda.levelConfirm') || "Confirmés uniquement"}</option>
-                    </select>
-                  </div>
                 </>
               )}
 
@@ -1177,23 +1172,43 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
                 </div>
               )}
 
-              {/* Dance Level Selector for Prestation, Stage, Répétition, and Atelier */}
+              {/* Musique & Danse selectors for Prestation, Stage, Répétition, and Atelier */}
               {(editForm.type === 'prestation' || editForm.type === 'stage' || editForm.type === 'repetition' || editForm.type === 'atelier') && (
-                <div className="flex flex-col gap-1">
-                  <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                    {t('widgetAgenda.danceLevelLabel') || "Danse (Niveau requis)"}
-                  </label>
-                  <select
-                    value={editForm.niveauDanseRequis}
-                    onChange={(e) => setEditForm(prev => ({ ...prev, niveauDanseRequis: e.target.value }))}
-                    disabled={savingEvent}
-                    className="theme-input w-full disabled:opacity-50 font-bold bg-cordel-bg-light"
-                  >
-                    <option value="aucun">{t('widgetAgenda.danceLevelNone') || "Pas de danse"}</option>
-                    <option value="debutant">{t('widgetAgenda.danceLevelDeb') || "Niveau débutant"}</option>
-                    <option value="confirme">{t('widgetAgenda.danceLevelConfirm') || "Niveau confirmé"}</option>
-                  </select>
-                </div>
+                <>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                      {t('widgetAgenda.reqLevelLabel') || "Niveau requis (Musique)"}
+                    </label>
+                    <select
+                      value={editForm.niveauRequis}
+                      onChange={(e) => setEditForm(prev => ({ ...prev, niveauRequis: e.target.value }))}
+                      disabled={savingEvent}
+                      className="theme-input w-full disabled:opacity-50 font-bold bg-cordel-bg-light"
+                    >
+                      <option value="aucun">{t('widgetAgenda.levelNone') || "Pas de musicien"}</option>
+                      <option value="debutant">{t('widgetAgenda.levelDeb') || "Niveau débutant"}</option>
+                      <option value="confirme">{t('widgetAgenda.levelConfirm') || "Niveau confirmé"}</option>
+                      <option value="tous">{t('widgetAgenda.levelAll') || "Tout le monde"}</option>
+                    </select>
+                  </div>
+
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                      {t('widgetAgenda.danceLevelLabel') || "Danse (Niveau requis)"}
+                    </label>
+                    <select
+                      value={editForm.niveauDanseRequis}
+                      onChange={(e) => setEditForm(prev => ({ ...prev, niveauDanseRequis: e.target.value }))}
+                      disabled={savingEvent}
+                      className="theme-input w-full disabled:opacity-50 font-bold bg-cordel-bg-light"
+                    >
+                      <option value="aucun">{t('widgetAgenda.danceLevelNone') || "Pas de danse"}</option>
+                      <option value="debutant">{t('widgetAgenda.danceLevelDeb') || "Niveau débutant"}</option>
+                      <option value="confirme">{t('widgetAgenda.danceLevelConfirm') || "Niveau confirmé"}</option>
+                      <option value="tous">{t('widgetAgenda.danceLevelAll') || "Tout le monde"}</option>
+                    </select>
+                  </div>
+                </>
               )}
 
               {/* Reunion specific fields */}
@@ -1353,13 +1368,19 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
           {(event.type === 'prestation' || event.type === 'stage' || event.type === 'atelier') && event.horaireCovoiturage && (
             <span>🚗 <strong>Horaire de convoi :</strong> {event.horaireCovoiturage}</span>
           )}
-          {event.type === 'prestation' && (
-            <span>🎯 <strong>Niveau requis (Musique) :</strong> {event.niveauRequis === 'confirme' ? t('widgetAgenda.levelConfirm') || '🏆 Confirmés uniquement' : t('widgetAgenda.levelAll') || '👥 Tous les niveaux'}</span>
+          {(event.type === 'prestation' || event.type === 'stage' || event.type === 'repetition' || event.type === 'atelier') && (
+            <span>🎯 <strong>Niveau requis (Musique) :</strong> {
+              event.niveauRequis === 'aucun' ? 'Pas de musicien' :
+              event.niveauRequis === 'debutant' ? `🌱 ${t('widgetAgenda.levelDeb') || 'Niveau débutant'}` :
+              event.niveauRequis === 'confirme' ? `🏆 ${t('widgetAgenda.levelConfirm') || 'Niveau confirmé'}` :
+              `👥 ${t('widgetAgenda.levelAll') || 'Tout le monde'}`
+            }</span>
           )}
           {(event.type === 'prestation' || event.type === 'stage' || event.type === 'repetition' || event.type === 'atelier') && (
             <span>💃 <strong>Danse (Niveau requis) :</strong> {
               event.niveauDanseRequis === 'debutant' ? `🌱 ${t('widgetAgenda.danceLevelDeb') || 'Niveau débutant'}` :
               event.niveauDanseRequis === 'confirme' ? `🏆 ${t('widgetAgenda.danceLevelConfirm') || 'Niveau confirmé'}` :
+              event.niveauDanseRequis === 'tous' ? `👥 ${t('widgetAgenda.danceLevelAll') || 'Tout le monde'}` :
               `❌ ${t('widgetAgenda.danceLevelNone') || 'Pas de danse'}`
             }</span>
           )}

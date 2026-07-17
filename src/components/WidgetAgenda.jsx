@@ -446,22 +446,6 @@ export default function WidgetAgenda({ role, isSystemAdmin, groupId, user, profi
                     className="theme-input w-full disabled:opacity-50"
                   />
                 </div>
-
-                <div className="flex flex-col gap-1">
-                  <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                    {t('widgetAgenda.reqLevelLabel') || "Niveau requis (Musique)"}
-                  </label>
-                  <select
-                    name="niveauRequis"
-                    value={formData.niveauRequis}
-                    onChange={handleChange}
-                    disabled={saving}
-                    className="theme-input w-full disabled:opacity-50 font-bold bg-cordel-bg-light"
-                  >
-                    <option value="tous">{t('widgetAgenda.levelAll') || "Tous les niveaux"}</option>
-                    <option value="confirme">{t('widgetAgenda.levelConfirm') || "Confirmés uniquement"}</option>
-                  </select>
-                </div>
               </>
             )}
 
@@ -482,6 +466,27 @@ export default function WidgetAgenda({ role, isSystemAdmin, groupId, user, profi
               </div>
             )}
 
+            {/* Musique (Niveau requis) for Prestation, Stage, Répétition, and Atelier */}
+            {(formData.type === 'prestation' || formData.type === 'stage' || formData.type === 'repetition' || formData.type === 'atelier') && (
+              <div className="flex flex-col gap-1">
+                <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                  {t('widgetAgenda.reqLevelLabel') || "Niveau requis (Musique)"}
+                </label>
+                <select
+                  name="niveauRequis"
+                  value={formData.niveauRequis}
+                  onChange={handleChange}
+                  disabled={saving}
+                  className="theme-input w-full disabled:opacity-50 font-bold bg-cordel-bg-light"
+                >
+                  <option value="aucun">{t('widgetAgenda.levelNone') || "Pas de musicien"}</option>
+                  <option value="debutant">{t('widgetAgenda.levelDeb') || "Niveau débutant"}</option>
+                  <option value="confirme">{t('widgetAgenda.levelConfirm') || "Niveau confirmé"}</option>
+                  <option value="tous">{t('widgetAgenda.levelAll') || "Tout le monde"}</option>
+                </select>
+              </div>
+            )}
+
             {/* Dance Level Selector for Prestation, Stage, Répétition, and Atelier */}
             {(formData.type === 'prestation' || formData.type === 'stage' || formData.type === 'repetition' || formData.type === 'atelier') && (
               <div className="flex flex-col gap-1">
@@ -498,6 +503,7 @@ export default function WidgetAgenda({ role, isSystemAdmin, groupId, user, profi
                   <option value="aucun">{t('widgetAgenda.danceLevelNone') || "Pas de danse"}</option>
                   <option value="debutant">{t('widgetAgenda.danceLevelDeb') || "Niveau débutant"}</option>
                   <option value="confirme">{t('widgetAgenda.danceLevelConfirm') || "Niveau confirmé"}</option>
+                  <option value="tous">{t('widgetAgenda.danceLevelAll') || "Tout le monde"}</option>
                 </select>
               </div>
             )}
