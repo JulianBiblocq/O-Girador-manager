@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useRegisterSW } from 'virtual:pwa-register/react';
 import { useTranslation } from './LanguageContext';
 import CordelButton from './CordelButton';
@@ -28,12 +28,25 @@ export default function ReloadPrompt() {
 
   if (!needRefresh) return null;
 
+  const [isUpdating, setIsUpdating] = useState(false);
+
   const handleUpdate = () => {
-    updateServiceWorker(true);
+    setIsUpdating(true);
+    try {
+      updateServiceWorker(true);
+    } catch (err) {
+      console.error("ReloadPrompt - Error updating service worker:", err);
+    }
+    
     // Explicit force reload to guarantee bypass of any intermediate browser caches
     setTimeout(() => {
-      window.location.reload(true);
-    }, 500);
+      try {
+        window.location.reload();
+      } catch (reloadErr) {
+        console.error("ReloadPrompt - Reload failed:", reloadErr);
+        setIsUpdating(false);
+      }
+    }, 1500);
   };
 
   return (
@@ -62,9 +75,14 @@ export default function ReloadPrompt() {
           variant="ocre"
           useExtremeBorder={false}
           onClick={handleUpdate}
-          className="text-xs font-black px-4 py-1.5 uppercase tracking-wider"
+          disabled={isUpdating}
+          className="text-xs font-black px-4 py-1.5 uppercase tracking-wider flex items-center gap-1.5"
         >
-          {t('pwa.updateBtn')}
+          {isUpdating ? (
+            <>⏳ {t('pwa.updating') || 'Chargement...'}</>
+          ) : (
+            t('pwa.updateBtn') || 'Mettre à jour'
+          )}
         </CordelButton>
       </div>
     </div>
