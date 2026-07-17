@@ -198,7 +198,7 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
               isTransparent: ch.isTransparent
             }, { merge: true });
           } catch (e) {
-            console.log(`Channel seeding skipped or blocked: ${ch.name}`, e.message);
+            console.error(`Channel seeding failed for: ${ch.name}`, e);
           }
         }
       } else {
@@ -247,14 +247,13 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
             await updateDoc(doc(db, 'forum', docSnap.id), {
               channelId: `${profileData.groupId}_general`
             });
-            console.log(`Migrated thread ${docSnap.id} to channel ${profileData.groupId}_general`);
           } catch (err) {
-            console.warn("Migration error (insufficient permissions):", err);
+            console.error("Migration error (insufficient permissions):", err);
           }
         }
       });
     }, (err) => {
-      console.warn("Migration listener failed:", err);
+      console.error("Migration listener failed:", err);
     });
 
     return () => unsubscribe();

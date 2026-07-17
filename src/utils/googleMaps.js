@@ -128,7 +128,7 @@ export function calculateRoadDistance(origin, destination) {
       );
     })
     .catch((directionsErr) => {
-      console.warn("DirectionsService failed, trying DistanceMatrixService:", directionsErr);
+      console.error("DirectionsService failed, trying DistanceMatrixService:", directionsErr);
       // Fallback 1: Try Distance Matrix
       return new Promise((resolve, reject) => {
         const service = new maps.DistanceMatrixService();
@@ -161,7 +161,7 @@ export function calculateRoadDistance(origin, destination) {
       });
     })
     .catch((matrixErr) => {
-      console.warn("All road calculation services failed, falling back to Haversine straight-line distance:", matrixErr);
+      console.error("All road calculation services failed, falling back to Haversine straight-line distance:", matrixErr);
       // Fallback 2: Geocode both addresses and calculate Haversine distance
       return Promise.all([getCoords(origin), getCoords(destination)])
         .then(([coords1, coords2]) => {

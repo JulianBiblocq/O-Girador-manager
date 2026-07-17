@@ -40,7 +40,7 @@ export function useEventRSVP(event, user, profileData, allUsers, isPrestationRes
     setTransport(resp ? (resp.transport === 'propose' ? 'propre' : (resp.transport || 'propre')) : 'propre');
     setDemandeRemboursementKm(resp ? resp.demandeRemboursementKm === true : false);
     setInstrumentChoisi(resp?.instrumentChoisi || profileData?.instrument || 'Autre');
-  }, [event.id, user.uid, profileData?.instrument]);
+  }, [event.id, user.uid, profileData?.instrument, event.inscriptions]);
 
   const handleStatusChange = (newStatus) => {
     setStatus(newStatus);
@@ -53,6 +53,17 @@ export function useEventRSVP(event, user, profileData, allUsers, isPrestationRes
       return;
     }
     setSaving(true);
+
+    const isRegistrationDeadlinePassed = event.dateLimiteInscription
+      ? new Date(event.dateLimiteInscription) < new Date()
+      : false;
+    const isAuthorized = profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.isSystemAdmin === true;
+
+    if (isRegistrationDeadlinePassed && !isAuthorized) {
+      alert("Les inscriptions pour cet événement sont closes.");
+      setSaving(false);
+      return;
+    }
 
     if (isPrestationRestricted && status !== 'absent') {
       alert("Cette prestation est réservée aux musiciens confirmés.");
@@ -182,6 +193,30 @@ export function useEventRSVP(event, user, profileData, allUsers, isPrestationRes
     }
   };
 
+  const handleManualUnregister = async (userId) => {
+    if (!event.id) return;
+    if (!window.confirm("Êtes-vous sûr de vouloir désinscrire ce membre ?")) {
+      return;
+    }
+    try {
+      const currentInscriptions = event.inscriptions || [];
+      const updatedInscriptions = currentInscriptions.filter(ins => ins.userId !== userId);
+      const eventRef = doc(db, 'events', event.id);
+      await updateDoc(eventRef, {
+        inscriptions: updatedInscriptions
+      });
+      if (setToastMessage) {
+        setToastMessage("Membre désinscrit avec succès !");
+        setTimeout(() => {
+          setToastMessage(null);
+        }, 3000);
+      }
+    } catch (error) {
+      console.error("EventDetails - Erreur lors de la désinscription manuelle :", error);
+      alert("Erreur lors de la désinscription du membre.");
+    }
+  };
+
   const handleUpdateStatus = async (newStatus) => {
     if (!event.id) return;
     try {
@@ -246,6 +281,7 @@ export function useEventRSVP(event, user, profileData, allUsers, isPrestationRes
     handleSave,
     handleValidatePending,
     handleManualRegister,
+    handleManualUnregister,
     handleUpdateStatus,
     handleUpdateMemberInstrument
   };

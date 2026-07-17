@@ -63,7 +63,7 @@ export default function AddressAutocomplete({
     // Detect Google Maps authentication failures (e.g. invalid key, billing, referers)
     const originalAuthFailure = window.gm_authFailure;
     window.gm_authFailure = () => {
-      console.warn("AddressAutocomplete - Google Maps Authentication Failure detected!");
+      console.error("AddressAutocomplete - Google Maps Authentication Failure detected!");
       if (active) {
         setHasError(true);
       }

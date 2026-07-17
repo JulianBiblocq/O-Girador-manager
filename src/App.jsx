@@ -20,11 +20,9 @@ const InventoryManager = React.lazy(() => import('./components/InventoryManager'
 const OrdersManager = React.lazy(() => import('./components/OrdersManager'));
 const AssociationSettings = React.lazy(() => import('./components/AssociationSettings'));
 const TreasuryManager = React.lazy(() => import('./components/TreasuryManager'));
-const KilometricReimbursementManager = React.lazy(() => import('./components/KilometricReimbursementManager'));
 const StudioSocial = React.lazy(() => import('./components/StudioSocial'));
 const AdminExport = React.lazy(() => import('./components/AdminExport'));
 const VaralManager = React.lazy(() => import('./components/VaralManager'));
-const ReportsExports = React.lazy(() => import('./components/ReportsExports'));
 const ReunionManager = React.lazy(() => import('./components/ReunionManager'));
 
 export default function App() {
@@ -235,7 +233,7 @@ export default function App() {
           }
           ctx.drawImage(img, 256 - w / 2, 220 - h / 2, w, h);
         } catch (err) {
-          console.warn("App - Erreur logo Canvas PWA fallback text :", err);
+          console.error("App - Erreur logo Canvas PWA fallback text :", err);
           ctx.font = 'bold 36px Courier New, Courier, monospace';
           ctx.fillStyle = textCol;
           ctx.fillText(associationName ? associationName.substring(0, 10).toUpperCase() : 'RODA', 256, 210);

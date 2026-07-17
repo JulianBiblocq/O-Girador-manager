@@ -96,7 +96,7 @@ export function useUserProfile(user, profileData, t) {
           try {
             registration = await navigator.serviceWorker.ready;
           } catch (swErr) {
-            console.warn("Could not get ready service worker:", swErr);
+            console.error("Could not get ready service worker:", swErr);
           }
         }
         const token = await getToken(messaging, { 
@@ -110,7 +110,7 @@ export function useUserProfile(user, profileData, t) {
           });
           alert("Notifications activées avec succès !");
         } else {
-          console.warn("FCM Token not generated.");
+          console.error("FCM Token not generated.");
           alert("Impossible de générer le jeton de notification.");
         }
       } else {
@@ -204,7 +204,7 @@ export function useUserProfile(user, profileData, t) {
             try {
               registration = await navigator.serviceWorker.ready;
             } catch (swErr) {
-              console.warn("Could not get ready service worker for auto-subscribe:", swErr);
+              console.error("Could not get ready service worker for auto-subscribe:", swErr);
             }
           }
           const token = await getToken(messaging, {
@@ -218,7 +218,6 @@ export function useUserProfile(user, profileData, t) {
               await updateDoc(userRef, {
                 fcmTokens: arrayUnion(token)
               });
-              console.log("FCM Token registered automatically.");
             }
           }
         } catch (err) {
@@ -228,7 +227,7 @@ export function useUserProfile(user, profileData, t) {
     };
 
     checkAndAutoSubscribe();
-  }, [user?.uid, messaging, profileData?.fcmTokens]);
+  }, [user?.uid, profileData?.fcmTokens]);
 
   const isFieldVisible = (key) => {
     if (!fieldsConfig) return true;

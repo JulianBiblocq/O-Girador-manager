@@ -10,7 +10,7 @@ const db = admin.firestore();
 exports.helloAssoWebhook = onRequest(async (req, res) => {
   // Accepte uniquement les requêtes POST
   if (req.method !== "POST") {
-    console.warn(`Méthode ${req.method} non autorisée.`);
+    console.error(`Méthode ${req.method} non autorisée.`);
     return res.status(405).send("Méthode non autorisée. Utilisez POST.");
   }
 
@@ -71,11 +71,9 @@ exports.helloAssoWebhook = onRequest(async (req, res) => {
 
   try {
     const payload = req.body;
-    console.log("Payload reçu de HelloAsso :", JSON.stringify(payload));
 
     // On vérifie que c'est bien un événement de type "Order" ou "Payment"
     if (payload.eventType !== 'Order' && payload.eventType !== 'Payment') {
-      console.log(`Événement de type ${payload.eventType} ignoré.`);
       return res.status(200).send("Événement ignoré.");
     }
 
@@ -91,20 +89,17 @@ exports.helloAssoWebhook = onRequest(async (req, res) => {
     const items = payload.data.items || [];
     const optionsPayees = items.map(item => item.name);
 
-    console.log(`Paiement reçu de HelloAsso pour ${payerEmail}. Montant: ${amountEuros}€. Articles:`, optionsPayees);
-
     // Récupération des options de cotisation définies pour l'association
     let optionsCotisation = [];
     let hasBaseAdhesionInOrder = false;
     const matchedOptionIds = [];
 
-    console.log(`Récupération des paramètres pour l'association : ${groupId}`);
     const assocDoc = await db.collection("associations").doc(groupId).get();
     if (assocDoc.exists()) {
       const assocData = assocDoc.data();
       optionsCotisation = assocData.optionsCotisation || [];
     } else {
-      console.warn(`L'association avec l'ID ${groupId} n'existe pas.`);
+      console.error(`L'association avec l'ID ${groupId} n'existe pas.`);
     }
 
     // Algorithme de correspondance des articles avec les options configurées
@@ -117,7 +112,6 @@ exports.helloAssoWebhook = onRequest(async (req, res) => {
         if (itemNameNormalized.includes(optNameNormalized) || optNameNormalized.includes(itemNameNormalized)) {
           matchedOptionIds.push(opt.id);
           matched = true;
-          console.log(`Option correspondante trouvée : "${opt.nom}" -> ID: ${opt.id}`);
           break;
         }
       }
@@ -130,9 +124,6 @@ exports.helloAssoWebhook = onRequest(async (req, res) => {
             itemNameNormalized.includes("base") || 
             itemNameNormalized.includes("membership")) {
           hasBaseAdhesionInOrder = true;
-          console.log(`Adhésion de base identifiée pour l'article : "${item.name}"`);
-        } else {
-          console.log(`Article non identifié (ignoré ou hors cotisation) : "${item.name}"`);
         }
       }
     }
@@ -170,8 +161,6 @@ exports.helloAssoWebhook = onRequest(async (req, res) => {
 
       await userRef.update(updates);
       await userRef.collection("transactions").add(transactionData);
-      
-      console.log(`✅ Trésorerie mise à jour pour l'utilisateur existant : ${payerEmail}`);
     } else {
       // CAS 2 : L'UTILISATEUR N'EXISTE PAS ENCORE -> Mise en attente
       await db.collection("pending_payments").doc(payerEmail).set({
@@ -183,8 +172,6 @@ exports.helloAssoWebhook = onRequest(async (req, res) => {
         transaction: transactionData,
         createdAt: admin.firestore.FieldValue.serverTimestamp()
       });
-      
-      console.log(`⏳ Utilisateur inconnu. Paiement mis en attente pour : ${payerEmail}`);
     }
 
     res.status(200).send("Webhook traité avec succès.");
@@ -203,7 +190,6 @@ exports.onUserCreate = onDocumentCreated("users/{userId}", async (event) => {
   if (!userData.email) return;
 
   const userEmail = userData.email.toLowerCase().trim();
-  console.log(`Nouvel utilisateur détecté en création : ${userEmail}`);
 
   // On vérifie s'il y a un paiement en attente pour cet email
   const pendingRef = db.collection("pending_payments").doc(userEmail);
@@ -211,7 +197,6 @@ exports.onUserCreate = onDocumentCreated("users/{userId}", async (event) => {
 
   if (pendingDoc.exists()) {
     const pendingData = pendingDoc.data();
-    console.log(`Paiement en attente trouvé pour ${userEmail}. Application des droits...`);
 
     const updates = {
       paymentStatus: pendingData.paymentStatus || "paid",
@@ -239,9 +224,6 @@ exports.onUserCreate = onDocumentCreated("users/{userId}", async (event) => {
 
     // Nettoyage de la file d'attente
     await pendingRef.delete();
-    console.log(`🎉 Paiement en attente appliqué avec succès au nouvel utilisateur : ${userEmail}`);
-  } else {
-    console.log(`Aucun paiement en attente trouvé pour l'adresse e-mail : ${userEmail}`);
   }
 });
 
@@ -253,7 +235,6 @@ exports.onAnnouncementCreated = onDocumentCreated("announcements/{announcementId
   const announcement = snapshot.data();
   // Vérifie si la case à cocher pour l'envoi de la notification Push est active
   if (announcement.sendPushNotification !== true) {
-    console.log("Envoi de notification Push non requis pour cette annonce.");
     return;
   }
 
@@ -262,7 +243,7 @@ exports.onAnnouncementCreated = onDocumentCreated("announcements/{announcementId
   const groupId = announcement.groupId;
 
   if (!groupId) {
-    console.warn("Aucun groupId trouvé sur l'annonce, envoi annulé.");
+    console.error("Aucun groupId trouvé sur l'annonce, envoi annulé.");
     return;
   }
 
@@ -285,13 +266,11 @@ exports.onAnnouncementCreated = onDocumentCreated("announcements/{announcementId
     });
 
     if (tokens.length === 0) {
-      console.log("Aucun jeton FCM trouvé parmi les membres de ce groupe.");
       return;
     }
 
     // Retirer les doublons de jetons
     const uniqueTokens = [...new Set(tokens)];
-    console.log(`Préparation de l'envoi à ${uniqueTokens.length} jetons FCM uniques.`);
 
     // 2. Structurer le payload de notification
     const payload = {
@@ -312,8 +291,6 @@ exports.onAnnouncementCreated = onDocumentCreated("announcements/{announcementId
       data: payload.data
     });
 
-    console.log(`Succès : ${response.successCount} messages envoyés. Échecs : ${response.failureCount}.`);
-
     // Optionnel : Nettoyage des jetons invalides (ex: tokens expirés ou non enregistrés)
     if (response.failureCount > 0) {
       const tokensToRemove = [];
@@ -330,7 +307,6 @@ exports.onAnnouncementCreated = onDocumentCreated("announcements/{announcementId
       });
 
       if (tokensToRemove.length > 0) {
-        console.log(`Nettoyage de ${tokensToRemove.length} jetons FCM obsolètes...`);
         const batch = db.batch();
         usersSnap.forEach((doc) => {
           const data = doc.data();
@@ -344,7 +320,6 @@ exports.onAnnouncementCreated = onDocumentCreated("announcements/{announcementId
           }
         });
         await batch.commit();
-        console.log("Nettoyage des jetons obsolètes terminé avec succès.");
       }
     }
   } catch (error) {

@@ -404,7 +404,20 @@ export const fr = {
     successAssignments: "Organisation de la Roda enregistrée !",
     organizeTitle: "Organisation Pupitre",
     doubleRole: "Double Rôle",
-    multiRole: "Multi-Rôles"
+    multiRole: "Multi-Rôles",
+    dateLimiteInscriptionLabel: "Date limite d'inscription (optionnel)",
+    registrationClosed: "🔒 Les inscriptions pour cet événement sont closes.",
+    stageLayoutTitle: "Plan de Scène / Cortejo",
+    stageLayoutConfig: "Configuration de la scène",
+    stageLayoutHelp: "👉 Sélectionnez un membre ci-dessous, puis cliquez sur une case de la grille pour le placer.",
+    stageLayoutReset: "Réinitialiser",
+    stageLayoutSave: "Enregistrer le plan",
+    stageLayoutUnplaced: "Membres à placer",
+    stageFront: "▲ AVANT DE LA SCÈNE (PUBLIC) ▲",
+    stageBack: "▼ FOND DE LA SCÈNE ▼",
+    confirmReset: "Êtes-vous sûr de vouloir réinitialiser le plan de scène ?",
+    saveLayoutSuccess: "Plan de scène enregistré !",
+    saveLayoutError: "Erreur lors de l'enregistrement du plan de scène."
   },
   ordersManager: {
     title: "Commandes Groupées",
@@ -575,9 +588,7 @@ export const fr = {
     invitationMessage: "Rejoins notre groupe sur O Girador Manager : ",
     removeBtn: "Supprimer",
     selectInstrumentsMin: "Sélectionner les instruments du pupitre (minimum 2)",
-    accessDeniedDesc: "Vous devez être administrateur pour configurer l'association.",
-    instrumentExistsAlert: "Cet instrument existe déjà !",
-    linkExistsAlert: "Ce pupitre existe déjà !"
+    accessDeniedDesc: "Vous devez être administrateur pour configurer l'association."
   },
   systemAdmin: {
     title: "Admin Système",

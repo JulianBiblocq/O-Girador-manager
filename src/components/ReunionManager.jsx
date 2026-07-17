@@ -69,7 +69,8 @@ export default function ReunionManager({ groupId, user, profileData, onBack }) {
         lieu: 'Salle de réunion / En ligne',
         horairesPassages: '',
         imageUrl: '',
-        requiresValidation: false
+        requiresValidation: false,
+        dateLimiteInscription: ''
       };
 
       const docRef = await addDoc(collection(db, 'events'), newEvent);

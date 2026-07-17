@@ -217,6 +217,8 @@ const getMemberSection = (member) => {
   return 'autres';
 };
 
+const DEFAULT_INSTRUMENTS = ["Alfaia Marcante", "Alfaia Meião", "Alfaia Repique", "Caixa", "Tarol", "Gonguê", "Agbê", "Mineiro", "Timbal", "Chant", "Danse"];
+
 export default function Trombinoscope({ user, profileData, onBack, onContactUser }) {
   const { t, locale } = useTranslation();
   const { tRole } = useTerminologie();
@@ -228,9 +230,7 @@ export default function Trombinoscope({ user, profileData, onBack, onContactUser
 
   const [showEditor, setShowEditor] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null);
-  const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
-  const DEFAULT_INSTRUMENTS = ["Alfaia Marcante", "Alfaia Meião", "Alfaia Repique", "Caixa", "Tarol", "Gonguê", "Agbê", "Mineiro", "Timbal", "Chant", "Danse"];
   const [instrumentsDisponibles, setInstrumentsDisponibles] = useState(DEFAULT_INSTRUMENTS);
   const [linkedInstruments, setLinkedInstruments] = useState([]);
 

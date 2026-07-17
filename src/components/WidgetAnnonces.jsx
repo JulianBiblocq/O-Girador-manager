@@ -48,7 +48,7 @@ export default function WidgetAnnonces({ groupId, profileData, role, isSystemAdm
           try {
             registration = await navigator.serviceWorker.ready;
           } catch (swErr) {
-            console.warn("Could not get ready service worker:", swErr);
+            console.error("Could not get ready service worker:", swErr);
           }
         }
         const token = await getToken(messaging, { 
@@ -63,7 +63,7 @@ export default function WidgetAnnonces({ groupId, profileData, role, isSystemAdm
           alert("Notifications activées avec succès !");
           setShowBanner(false);
         } else {
-          console.warn("FCM Token not generated.");
+          console.error("FCM Token not generated.");
           alert("Impossible de générer le jeton de notification.");
         }
       } else if (permission === 'denied') {

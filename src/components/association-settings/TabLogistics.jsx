@@ -59,7 +59,7 @@ export default function TabLogistics({
         await getLatLng(results[0]);
       }
     } catch (error) {
-      console.warn("Geocoding ignoré pour cette saisie :", error);
+      console.error("Geocoding ignoré pour cette saisie :", error);
     }
   };
 
@@ -166,11 +166,11 @@ function GoogleMapsPreview({ address }) {
       loadGoogleMaps()
         .then((maps) => {
           if (!active) {
-            console.warn("Détail Erreur Map : composant ou effet inactif lors du retour du chargement SDK");
+            console.error("Détail Erreur Map : composant ou effet inactif lors du retour du chargement SDK");
             return;
           }
           if (!mapRef.current) {
-            console.warn("Détail Erreur Map : mapRef.current est null/inactif");
+            console.error("Détail Erreur Map : mapRef.current est null/inactif");
             return;
           }
           try {
@@ -205,7 +205,7 @@ function GoogleMapsPreview({ address }) {
                     const location = results[0].geometry.location;
                     handleMapInit(location);
                   } else {
-                    console.warn(`Geocoding failed with status: ${status}`);
+                    console.error(`Geocoding failed with status: ${status}`);
                     setMapError(`Impossible de localiser cette adresse sur la carte (Erreur Google : ${status})`);
                   }
                 } catch (mapInitErr) {

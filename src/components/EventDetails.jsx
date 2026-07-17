@@ -19,6 +19,7 @@ import EventRSVPSection from './event-details/EventRSVPSection';
 import EventCarpoolSection from './event-details/EventCarpoolSection';
 import EventSetlistSection from './event-details/EventSetlistSection';
 import EventReportSection from './event-details/EventReportSection';
+import EventStageLayoutSection from './event-details/EventStageLayoutSection';
 
 export default function EventDetails({ event, user, profileData, onNavigateToView, onClose, onPrev, onNext }) {
   const { t } = useTranslation();
@@ -40,7 +41,8 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
     lienSocial: event.lienSocial || '',
     imageUrl: event.imageUrl || '',
     montantRecette: event.montantRecette !== undefined ? event.montantRecette.toString() : '',
-    montantDepense: event.montantDepense !== undefined ? event.montantDepense.toString() : ''
+    montantDepense: event.montantDepense !== undefined ? event.montantDepense.toString() : '',
+    dateLimiteInscription: event.dateLimiteInscription || ''
   });
   const [savingEvent, setSavingEvent] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
@@ -79,6 +81,7 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
     handleSave,
     handleValidatePending,
     handleManualRegister,
+    handleManualUnregister,
     handleUpdateStatus,
     handleUpdateMemberInstrument
   } = useEventRSVP(event, user, profileData, allUsers, isPrestationRestricted, setToastMessage);
@@ -146,9 +149,10 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
       imageUrl: event.imageUrl || '',
       requiresValidation: event.requiresValidation || false,
       montantRecette: event.montantRecette !== undefined ? event.montantRecette.toString() : '',
-      montantDepense: event.montantDepense !== undefined ? event.montantDepense.toString() : ''
+      montantDepense: event.montantDepense !== undefined ? event.montantDepense.toString() : '',
+      dateLimiteInscription: event.dateLimiteInscription || ''
     });
-  }, [event.id, event.type, event.montantRecette, event.montantDepense]);
+  }, [event.id, event.type, event.montantRecette, event.montantDepense, event.dateLimiteInscription]);
 
   // Load association settings
   useEffect(() => {
@@ -206,7 +210,7 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
     if (isPrestationRestricted && status !== 'absent') {
       setStatus('absent');
     }
-  }, [isPrestationRestricted]);
+  }, [isPrestationRestricted, status, setStatus]);
 
   const isAuthorized = profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.isSystemAdmin === true;
 
@@ -369,7 +373,8 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
         imageUrl: editForm.imageUrl || '',
         requiresValidation: editForm.requiresValidation || false,
         montantRecette: parseFloat(editForm.montantRecette) || 0,
-        montantDepense: parseFloat(editForm.montantDepense) || 0
+        montantDepense: parseFloat(editForm.montantDepense) || 0,
+        dateLimiteInscription: editForm.dateLimiteInscription || ''
       });
       setIsEditingEvent(false);
       alert("Événement mis à jour avec succès !");
@@ -433,7 +438,7 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
   if (event.inscriptions && event.inscriptions.length > 0) {
     event.inscriptions.forEach((ins) => {
       if (ins.status === 'present') {
-        const userInfo = allUsers.find(u => u.id === ins.userId) || { prenom: ins.userName, nom: '', instrument: 'Autre' };
+        const userInfo = allUsers.find(u => u.id === ins.userId) || { id: ins.userId, prenom: ins.userName, nom: '', instrument: 'Autre' };
         const inst = ins.instrumentChoisi || userInfo.instrument || 'Autre';
         if (!presentsByInstrument[inst]) {
           presentsByInstrument[inst] = [];
@@ -490,6 +495,19 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
   const formattedTimeFin = hasDateFin
     ? dateFinObj.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
     : '';
+
+  const dateLimiteObj = event.dateLimiteInscription ? new Date(event.dateLimiteInscription) : null;
+  const hasDateLimite = dateLimiteObj && !isNaN(dateLimiteObj.getTime());
+  const formattedDateLimite = hasDateLimite
+    ? dateLimiteObj.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+    : '';
+  const formattedTimeLimite = hasDateLimite
+    ? dateLimiteObj.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+    : '';
+
+  const isRegistrationDeadlinePassed = event.dateLimiteInscription
+    ? new Date(event.dateLimiteInscription) < new Date()
+    : false;
 
   const typeVariants = {
     prestation: 'ocre',
@@ -646,6 +664,20 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
                   type="datetime-local"
                   value={editForm.dateFin || ''}
                   onChange={(e) => setEditForm(prev => ({ ...prev, dateFin: e.target.value }))}
+                  disabled={savingEvent}
+                  className="theme-input w-full disabled:opacity-50"
+                />
+              </div>
+
+              {/* Date limite d'inscription (optionnel) */}
+              <div className="flex flex-col gap-1">
+                <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                  {t('eventDetails.dateLimiteInscriptionLabel') || "Date limite d'inscription (optionnel)"}
+                </label>
+                <input
+                  type="datetime-local"
+                  value={editForm.dateLimiteInscription || ''}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, dateLimiteInscription: e.target.value }))}
                   disabled={savingEvent}
                   className="theme-input w-full disabled:opacity-50"
                 />
@@ -1001,6 +1033,12 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
             </p>
 
             <div className="mt-3 pt-2.5 border-t border-dashed border-encre-noire/15 text-xs flex flex-col gap-1 font-semibold leading-relaxed px-4">
+              {event.dateLimiteInscription && (
+                <span className={isRegistrationDeadlinePassed ? "text-red-600 dark:text-red-400 font-extrabold" : "text-amber-700 dark:text-amber-400"}>
+                  🔒 <strong>Date limite d'inscription :</strong> {formattedDateLimite} {formattedTimeLimite ? `à ${formattedTimeLimite}` : ''}
+                  {isRegistrationDeadlinePassed && " (Closes)"}
+                </span>
+              )}
               {event.lieu && (
                 <span>📍 <strong>Lieu :</strong> {event.lieu}</span>
               )}
@@ -1123,6 +1161,17 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
             setSelectedManualInstrument={setSelectedManualInstrument}
             savingManualRegistration={savingManualRegistration}
             handleManualRegister={handleManualRegister}
+            handleManualUnregister={handleManualUnregister}
+            isRegistrationDeadlinePassed={isRegistrationDeadlinePassed}
+            t={t}
+          />
+
+          <EventStageLayoutSection
+            event={event}
+            user={user}
+            profileData={profileData}
+            allUsers={allUsers}
+            isAuthorized={isAuthorized}
             t={t}
           />
 

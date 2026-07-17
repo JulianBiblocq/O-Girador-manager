@@ -404,7 +404,20 @@ export const pt = {
     successAssignments: "Organização da Roda salva com sucesso!",
     organizeTitle: "Organização do Naipe",
     doubleRole: "Duplo Papel",
-    multiRole: "Múltiplos Papéis"
+    multiRole: "Múltiplos Papéis",
+    dateLimiteInscriptionLabel: "Prazo de inscrição (opcional)",
+    registrationClosed: "🔒 As inscrições para este evento estão encerradas.",
+    stageLayoutTitle: "Mapa do Palco / Cortejo",
+    stageLayoutConfig: "Dimensões da grade",
+    stageLayoutHelp: "👉 Selecione um membro abaixo e depois clique em uma célula da grade para posicioná-lo.",
+    stageLayoutReset: "Limpar",
+    stageLayoutSave: "Salvar mapa",
+    stageLayoutUnplaced: "Membros para posicionar",
+    stageFront: "▲ FRENTE DO PALCO (PÚBLICO) ▲",
+    stageBack: "▼ FUNDO DO PALCO ▼",
+    confirmReset: "Tem certeza de que deseja redefinir o mapa do palco?",
+    saveLayoutSuccess: "Mapa do palco salvo com sucesso!",
+    saveLayoutError: "Erro ao salvar o mapa do palco."
   },
   ordersManager: {
     title: "Gestão de Encomendas",
@@ -575,9 +588,7 @@ export const pt = {
     invitationMessage: "Participe do nosso grupo no O Girador Manager: ",
     removeBtn: "Excluir",
     selectInstrumentsMin: "Selecionar os instrumentos do naipe (mínimo 2)",
-    accessDeniedDesc: "Você deve ser administrador para configurar a associação.",
-    instrumentExistsAlert: "Este instrumento já existe !",
-    linkExistsAlert: "Este naipe já existe !"
+    accessDeniedDesc: "Você deve ser administrador para configurar a associação."
   },
   systemAdmin: {
     title: "Admin do Sistema",

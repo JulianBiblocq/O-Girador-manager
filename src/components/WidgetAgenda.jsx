@@ -99,7 +99,8 @@ export default function WidgetAgenda({
     distanceAllerRetourKm: '',
     lienSocial: '',
     imageUrl: '',
-    requiresValidation: false
+    requiresValidation: false,
+    dateLimiteInscription: ''
   });
 
   const isAuthorized = role === 'mestre' || role === 'super-admin' || isSystemAdmin === true;
@@ -172,7 +173,8 @@ export default function WidgetAgenda({
       imageUrl: '',
       requiresValidation: false,
       montantRecette: '',
-      montantDepense: ''
+      montantDepense: '',
+      dateLimiteInscription: ''
     });
     setIsAdding(true);
   };
@@ -229,7 +231,8 @@ export default function WidgetAgenda({
         imageUrl: formData.imageUrl || '',
         requiresValidation: formData.requiresValidation || false,
         montantRecette: parseFloat(formData.montantRecette) || 0,
-        montantDepense: parseFloat(formData.montantDepense) || 0
+        montantDepense: parseFloat(formData.montantDepense) || 0,
+        dateLimiteInscription: formData.dateLimiteInscription || ''
       });
       setIsAdding(false);
     } catch (error) {
@@ -402,6 +405,21 @@ export default function WidgetAgenda({
                 type="datetime-local"
                 name="dateFin"
                 value={formData.dateFin}
+                onChange={handleChange}
+                disabled={saving}
+                className="theme-input w-full disabled:opacity-50"
+              />
+            </div>
+
+            {/* Date limite d'inscription (optionnel) */}
+            <div className="flex flex-col gap-1">
+              <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                {t('eventDetails.dateLimiteInscriptionLabel') || "Date limite d'inscription (optionnel)"}
+              </label>
+              <input
+                type="datetime-local"
+                name="dateLimiteInscription"
+                value={formData.dateLimiteInscription || ''}
                 onChange={handleChange}
                 disabled={saving}
                 className="theme-input w-full disabled:opacity-50"
