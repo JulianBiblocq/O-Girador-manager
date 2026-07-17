@@ -86,6 +86,15 @@ export default function LayoutShell({
             )}
           </div>
 
+          {/* Nom de l'association au milieu */}
+          {associationName && (
+            <div className="hidden sm:flex flex-grow justify-center px-4 select-none pointer-events-none">
+              <span className="font-black text-xs md:text-sm uppercase tracking-widest text-cordel-wood truncate max-w-[200px] md:max-w-xs">
+                {associationName}
+              </span>
+            </div>
+          )}
+
           {/* Hamburger Menu Button */}
           <button
             type="button"

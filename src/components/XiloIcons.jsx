@@ -714,3 +714,62 @@ export const XiloCar = ({ size = 16, className = '', ...props }) => (
   </svg>
 );
 
+export const XiloMandacaru = ({ size = 16, className = '', ...props }) => (
+  <svg 
+    width={size} 
+    height={size} 
+    viewBox="0 0 100 100" 
+    className={`xilo-icon ${className}`} 
+    {...props}
+  >
+    {/* Soil / ground line at the bottom */}
+    <path d="M 15 88 Q 50 85, 85 88" stroke="currentColor" strokeWidth="3" fill="none" />
+    
+    {/* Main cactus path (body + arms) */}
+    <path 
+      d="
+        M 46 88 
+        L 46 72 
+        C 32 72, 26 65, 26 50 
+        C 26 42, 32 42, 33 42 
+        C 36 42, 36 48, 36 50 
+        C 36 60, 40 64, 46 64 
+        L 46 30 
+        C 46 22, 54 22, 54 30 
+        L 54 52 
+        C 60 52, 64 48, 64 38 
+        C 64 32, 70 32, 72 32 
+        C 74 32, 74 38, 74 38 
+        C 74 58, 68 62, 54 62 
+        L 54 88 
+        Z
+      "
+      fill="currentColor"
+      fillOpacity="0.1"
+      stroke="currentColor"
+      strokeWidth="3.5"
+    />
+    
+    {/* Inner ribs (lines following the contours of trunk and arms) */}
+    {/* Main stem rib */}
+    <path d="M 50 26 L 50 86" stroke="currentColor" strokeWidth="2" strokeDasharray="3 3" />
+    {/* Left arm rib */}
+    <path d="M 31 43 C 31 52, 33 62, 45 68" stroke="currentColor" strokeWidth="2" fill="none" />
+    {/* Right arm rib */}
+    <path d="M 69 33 C 69 45, 68 53, 53 57" stroke="currentColor" strokeWidth="2" fill="none" />
+
+    {/* Thorns (small crossed strokes) */}
+    {/* Top thorn */}
+    <path d="M 50 18 L 50 22 M 48 20 L 52 20" stroke="currentColor" strokeWidth="2" />
+    {/* Left arm thorns */}
+    <path d="M 22 46 L 26 50 M 26 46 L 22 50" stroke="currentColor" strokeWidth="2" />
+    <path d="M 28 60 L 32 64 M 32 60 L 28 64" stroke="currentColor" strokeWidth="2" />
+    {/* Right arm thorns */}
+    <path d="M 72 35 L 76 39 M 76 35 L 72 39" stroke="currentColor" strokeWidth="2" />
+    <path d="M 68 47 L 72 51 M 72 47 L 68 51" stroke="currentColor" strokeWidth="2" />
+    {/* Main trunk thorns */}
+    <path d="M 40 40 L 44 44 M 44 40 L 40 44" stroke="currentColor" strokeWidth="2" />
+    <path d="M 60 70 L 64 74 M 64 70 L 60 74" stroke="currentColor" strokeWidth="2" />
+  </svg>
+);
+

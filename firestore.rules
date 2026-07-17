@@ -20,10 +20,24 @@ service cloud.firestore {
         );
     }
 
+    function isModerator() {
+      return isAuthenticated() &&
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) && (
+          getUserData().role == 'mestre' || 
+          getUserData().role == 'super-admin' || 
+          getUserData().isSystemAdmin == true ||
+          getUserData().role == 'moderator' ||
+          (getUserData().keys().hasAny(['tags']) && 
+           getUserData().tags.hasAny(['Modérateur', 'Modérateur Forum']))
+        );
+    }
+
     function hasChannelReadAccess(channelId) {
       return isAuthenticated() && (
         isAdminOrMestre() ||
+        isModerator() ||
         (
+          channelId != null &&
           exists(/databases/$(database)/documents/forum_channels/$(channelId)) &&
           getUserData().groupId == get(/databases/$(database)/documents/forum_channels/$(channelId)).data.groupId &&
           (
@@ -38,7 +52,9 @@ service cloud.firestore {
     function hasChannelWriteAccess(channelId) {
       return isAuthenticated() && (
         isAdminOrMestre() ||
+        isModerator() ||
         (
+          channelId != null &&
           exists(/databases/$(database)/documents/forum_channels/$(channelId)) &&
           getUserData().groupId == get(/databases/$(database)/documents/forum_channels/$(channelId)).data.groupId &&
           (
@@ -54,25 +70,30 @@ service cloud.firestore {
     // Users: Read if authenticated. Write if editing own profile (without privilege escalation / status tampering) or if admin/mestre.
     match /users/{userId} {
       allow read: if isAuthenticated();
-      allow write: if isAuthenticated() && (
+      allow create: if isAuthenticated() && (
         isAdminOrMestre() || (
           request.auth.uid == userId && (
-            resource == null 
-              ? (
-                  (!request.resource.data.keys().hasAny(['isSystemAdmin']) || request.resource.data.isSystemAdmin == false) &&
-                  (!request.resource.data.keys().hasAny(['paymentStatus']) || request.resource.data.paymentStatus == 'unpaid') &&
-                  (!request.resource.data.keys().hasAny(['role']) || request.resource.data.role == 'membre') &&
-                  (!request.resource.data.keys().hasAny(['statutActuel']) || request.resource.data.statutActuel == 'active') &&
-                  (!request.resource.data.keys().hasAny(['adhesionBase']) || request.resource.data.adhesionBase == true) &&
-                  (!request.resource.data.keys().hasAny(['selectedOptions']) || request.resource.data.selectedOptions.size() == 0) &&
-                  (!request.resource.data.keys().hasAny(['tags']) || request.resource.data.tags.size() == 0)
-                )
-              : !request.resource.data.diff(resource.data).affectedKeys().hasAny([
-                  'paymentStatus', 'role', 'isSystemAdmin', 'adhesionBase', 'selectedOptions', 'tags', 'statutActuel'
-                ])
+            (!request.resource.data.keys().hasAny(['isSystemAdmin']) || request.resource.data.isSystemAdmin == false) &&
+            (!request.resource.data.keys().hasAny(['paymentStatus']) || request.resource.data.paymentStatus == 'unpaid') &&
+            (!request.resource.data.keys().hasAny(['role']) || request.resource.data.role == 'membre') &&
+            (!request.resource.data.keys().hasAny(['statutActuel']) || request.resource.data.statutActuel == 'active') &&
+            (!request.resource.data.keys().hasAny(['adhesionBase']) || request.resource.data.adhesionBase == true) &&
+            (!request.resource.data.keys().hasAny(['selectedOptions']) || request.resource.data.selectedOptions.size() == 0) &&
+            (!request.resource.data.keys().hasAny(['tags']) || request.resource.data.tags.size() == 0)
           )
         )
       );
+      allow update: if isAuthenticated() && (
+        isAdminOrMestre() || (
+          request.auth.uid == userId && (
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['fcmTokens']) ||
+            !request.resource.data.diff(resource.data).affectedKeys().hasAny([
+              'paymentStatus', 'role', 'isSystemAdmin', 'adhesionBase', 'selectedOptions', 'tags', 'statutActuel'
+            ])
+          )
+        )
+      );
+      allow delete: if isAdminOrMestre();
     }
 
     // Inventory: Read if authenticated. Write (create, update, delete) reserved for admins/mestres.
@@ -141,16 +162,20 @@ service cloud.firestore {
     match /forum/{thread} {
       allow read: if isAuthenticated() && (
         isAdminOrMestre() ||
+        isModerator() ||
         hasChannelReadAccess(resource.data.channelId)
       );
       allow create: if isAuthenticated() && (
         hasChannelWriteAccess(request.resource.data.channelId)
       );
       allow update: if isAuthenticated() && (
-        hasChannelWriteAccess(resource.data.channelId) &&
-        (!request.resource.data.keys().hasAny(['channelId']) || request.resource.data.channelId == resource.data.channelId)
+        isModerator() ||
+        (
+          (hasChannelWriteAccess(resource.data.channelId) || !resource.data.keys().hasAny(['channelId'])) &&
+          (!request.resource.data.keys().hasAny(['channelId']) || request.resource.data.channelId == resource.data.channelId)
+        )
       );
-      allow delete: if isAdminOrMestre();
+      allow delete: if isAdminOrMestre() || isModerator();
     }
 
     // Campaign Requests: Read and Write allowed for all authenticated members.

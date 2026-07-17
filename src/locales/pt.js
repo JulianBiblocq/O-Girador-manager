@@ -680,7 +680,13 @@ export const pt = {
     privateConversationsTitle: "Minhas Discussões Privadas",
     noPrivateConversations: "Nenhuma conversa privada no momento. Vá ao Elenco para contatar um membro!",
     writeMessagePlaceholder: "Escrever uma mensagem...",
-    noMessageInbox: "Nenhuma mensagem. Inicie a conversa!"
+    noMessageInbox: "Nenhuma mensagem. Inicie a conversa !",
+    selectChannel: "Selecionar um canal/sala",
+    channelsHeader: "Canais",
+    readOnly: "Apenas leitura",
+    readOnlySalon: "Esta sala é apenas leitura para o seu papel.",
+    targetGroup: "Direcionar a um grupo (Opcional)",
+    targetAll: "-- Todos --"
   },
   studioSocial: {
     title: "Studio Social",

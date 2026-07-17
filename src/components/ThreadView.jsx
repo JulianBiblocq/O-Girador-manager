@@ -1,11 +1,93 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { doc, onSnapshot, updateDoc, arrayUnion } from 'firebase/firestore';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { doc, onSnapshot, updateDoc, arrayUnion, deleteDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
 import { useTranslation } from './LanguageContext';
 
-export default function ThreadView({ threadId, user, profileData, isReadOnly, onClose }) {
+// Memoized ThreadReplyItem component to avoid re-rendering comments when typing
+const ThreadReplyItem = React.memo(({
+  reply,
+  index,
+  userId,
+  profileData,
+  isModeratorOrAdmin,
+  onDeleteReply,
+  t,
+  formattedTime
+}) => {
+  const isCurrentUser = reply.auteurId === userId;
+
+  // Check if message targets user tags/instruments
+  const userPlaysInstrument = (profileData?.instrumentsJoues && profileData.instrumentsJoues.includes(reply.targetTag)) ||
+                               (profileData?.instrument === reply.targetTag);
+  const userHasTag = profileData?.tags && profileData.tags.includes(reply.targetTag);
+  const isTargeted = reply.targetTag && (userPlaysInstrument || userHasTag);
+
+  return (
+    <div 
+      className={`
+        flex flex-col w-full max-w-[85%]
+        ${isCurrentUser ? 'self-end items-end ml-auto' : 'self-start items-start mr-auto'}
+      `}
+    >
+      <div 
+        className={`
+          border-2 p-3 shadow-[2px_2px_0px_0px_#181716] transition-all
+          ${isTargeted 
+            ? 'theme-bg-jaune border-cordel-wood rounded-[6px_10px_6px_10px] scale-[1.02] shadow-[2.5px_2.5px_0px_0px_#8b2a1a]' 
+            : isCurrentUser 
+              ? 'theme-bg-vert border-encre-noire rounded-[10px_2px_8px_10px]' 
+              : 'bg-[var(--cordel-hover-bg)] border-encre-noire text-encre-noire rounded-[2px_10px_10px_8px]'}
+        `}
+      >
+        {isTargeted && (
+          <span className="text-[8px] font-black text-cordel-wood block mb-1 uppercase tracking-wider animate-pulse select-none">
+            🗣️ Ce message vous concerne ({reply.targetTag})
+          </span>
+        )}
+
+        <div className="flex justify-between items-start gap-4 mb-1">
+          {!isCurrentUser ? (
+            <span className="text-[8px] font-extrabold uppercase tracking-widest text-cordel-wood select-none">
+              {reply.auteurNom}
+            </span>
+          ) : <span />}
+          {isModeratorOrAdmin && (
+            <button
+              type="button"
+              onClick={() => onDeleteReply(index)}
+              className="text-red-600 hover:text-red-800 text-[10px] font-black cursor-pointer leading-none select-none"
+              title={t('common.delete') || "Supprimer"}
+            >
+              🗑️
+            </button>
+          )}
+        </div>
+
+        <p className="text-xs leading-relaxed font-semibold text-left whitespace-pre-wrap break-words">
+          {reply.message}
+        </p>
+
+        <span className="text-[7px] font-black opacity-60 block mt-2 text-right select-none">
+          {formattedTime}
+        </span>
+      </div>
+    </div>
+  );
+}, (prevProps, nextProps) => {
+  return prevProps.index === nextProps.index &&
+         prevProps.reply.message === nextProps.reply.message &&
+         prevProps.reply.dateCreation === nextProps.reply.dateCreation &&
+         prevProps.reply.targetTag === nextProps.reply.targetTag &&
+         prevProps.userId === nextProps.userId &&
+         prevProps.profileData === nextProps.profileData &&
+         prevProps.isModeratorOrAdmin === nextProps.isModeratorOrAdmin &&
+         prevProps.formattedTime === nextProps.formattedTime &&
+         prevProps.onDeleteReply === nextProps.onDeleteReply;
+});
+
+export default function ThreadView({ threadId, user, profileData, channels = [], onClose }) {
   const { t } = useTranslation();
 
   const getCategoryLabel = (cat) => {
@@ -19,9 +101,23 @@ export default function ThreadView({ threadId, user, profileData, isReadOnly, on
   const [availableTargets, setAvailableTargets] = useState([]);
   const [selectedTarget, setSelectedTarget] = useState('');
   
+  const threadChannel = channels.find(c => c.id === thread?.channelId);
+  const isModeratorOrAdmin = profileData?.role === 'mestre' || 
+                             profileData?.role === 'super-admin' || 
+                             profileData?.isSystemAdmin === true || 
+                             (profileData?.tags && (profileData.tags.includes('Modérateur') || profileData.tags.includes('Modérateur Forum')));
+
+  const isReadOnly = (() => {
+    if (isModeratorOrAdmin) return false;
+    if (!thread) return true;
+    if (!thread.channelId) return false;
+    if (!threadChannel) return false;
+    const roles = threadChannel.allowedRoles || [];
+    return !(roles.includes('all') || roles.includes(profileData?.role));
+  })();
+  
   const messagesEndRef = useRef(null);
 
-  // Scroll to bottom of messages container
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -61,7 +157,7 @@ export default function ThreadView({ threadId, user, profileData, isReadOnly, on
     }
   }, [thread?.reponses]);
 
-  // Load available tags and instruments from association document in real-time
+  // Load available tags and instruments from association document
   useEffect(() => {
     if (!profileData?.groupId) return;
     const assocRef = doc(db, 'associations', profileData.groupId);
@@ -89,7 +185,6 @@ export default function ThreadView({ threadId, user, profileData, isReadOnly, on
       const nowIso = new Date().toISOString();
       const authorName = `${profileData.prenom} ${profileData.nom}`;
 
-      // Atomic updateDoc adding the new message using arrayUnion and updating the latest modification time
       await updateDoc(threadRef, {
         reponses: arrayUnion({
           auteurId: user.uid,
@@ -110,6 +205,32 @@ export default function ThreadView({ threadId, user, profileData, isReadOnly, on
       setSending(false);
     }
   };
+
+  const handleDeleteThread = async () => {
+    if (!window.confirm("Voulez-vous vraiment supprimer cette discussion ?")) return;
+    try {
+      await deleteDoc(doc(db, 'forum', threadId));
+      onClose();
+    } catch (err) {
+      console.error("Error deleting thread:", err);
+      alert("Erreur lors de la suppression de la discussion.");
+    }
+  };
+
+  const handleDeleteReply = useCallback(async (indexToDelete) => {
+    if (!window.confirm("Voulez-vous vraiment supprimer ce message ?")) return;
+    try {
+      if (!thread) return;
+      const updatedReponses = thread.reponses.filter((_, idx) => idx !== indexToDelete);
+      const threadRef = doc(db, 'forum', threadId);
+      await updateDoc(threadRef, {
+        reponses: updatedReponses
+      });
+    } catch (err) {
+      console.error("Error deleting reply:", err);
+      alert("Erreur lors de la suppression du message.");
+    }
+  }, [thread, threadId]);
 
   const categoryBadges = {
     Général: 'ocre',
@@ -134,21 +255,31 @@ export default function ThreadView({ threadId, user, profileData, isReadOnly, on
       </div>
 
       {loading ? (
-        <div className="flex justify-center items-center py-12">
+        <div className="flex justify-center items-center py-12 select-none">
           <span className="text-xs uppercase tracking-widest font-black animate-pulse opacity-60">⏳ {t('common.loading')}</span>
         </div>
       ) : !thread ? (
-        <CordelCard variant="default" className="p-8 text-center">
+        <CordelCard variant="default" className="p-8 text-center select-none">
           <p className="text-xs opacity-75 font-semibold">{t('forum.notFound')}</p>
         </CordelCard>
       ) : (
         <div className="flex flex-col gap-4 flex-1">
           {/* Thread Header details */}
-          <CordelCard variant={badgeVariant} useExtremeBorder={true} className="py-4 relative">
+          <CordelCard variant={badgeVariant} useExtremeBorder={true} className="py-4 relative select-none">
+            {isModeratorOrAdmin && (
+              <button
+                type="button"
+                onClick={handleDeleteThread}
+                className="absolute top-3 right-3 text-red-600 hover:text-red-800 text-[10px] font-black cursor-pointer border border-red-200 bg-red-50 hover:bg-red-100 rounded px-1.5 py-0.5 shadow-sm"
+                title={t('common.delete') || "Supprimer"}
+              >
+                🗑️ {t('common.delete') || "Supprimer"}
+              </button>
+            )}
             <span className="text-[7px] font-black uppercase tracking-widest opacity-60">
               {getCategoryLabel(thread.categorie)}
             </span>
-            <h3 className="font-extrabold text-base text-encre-noire leading-tight mt-0.5 mb-2">
+            <h3 className="font-extrabold text-base text-encre-noire leading-tight mt-0.5 mb-2 pr-24">
               {thread.titre}
             </h3>
             <p className="text-[10px] font-bold tracking-wide opacity-75">
@@ -159,7 +290,6 @@ export default function ThreadView({ threadId, user, profileData, isReadOnly, on
           {/* Messages Container (Scrollable) */}
           <div className="flex flex-col gap-3 overflow-y-auto max-h-[360px] p-2 bg-cordel-bg-light border-2 border-dashed border-cordel-master-dark/20 rounded-md">
             {(thread.reponses || []).map((reply, index) => {
-              const isCurrentUser = reply.auteurId === user.uid;
               const dateMsg = new Date(reply.dateCreation);
               const formattedTime = isNaN(dateMsg.getTime())
                 ? ''
@@ -167,54 +297,18 @@ export default function ThreadView({ threadId, user, profileData, isReadOnly, on
                     .replace('{time}', dateMsg.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' }))
                     .replace('{date}', dateMsg.toLocaleDateString(undefined, { day: 'numeric', month: 'short' }));
 
-              // Check if message targets user tags/instruments
-              const userPlaysInstrument = (profileData?.instrumentsJoues && profileData.instrumentsJoues.includes(reply.targetTag)) ||
-                                           (profileData?.instrument === reply.targetTag);
-              const userHasTag = profileData?.tags && profileData.tags.includes(reply.targetTag);
-              const isTargeted = reply.targetTag && (userPlaysInstrument || userHasTag);
-
               return (
-                <div 
-                  key={index} 
-                  className={`
-                    flex flex-col w-full max-w-[85%]
-                    ${isCurrentUser ? 'self-end items-end ml-auto' : 'self-start items-start mr-auto'}
-                  `}
-                >
-                  <div 
-                    className={`
-                      border-2 p-3 shadow-[2px_2px_0px_0px_#181716] transition-all
-                      ${isTargeted 
-                        ? 'theme-bg-jaune border-cordel-wood rounded-[6px_10px_6px_10px] scale-[1.02] shadow-[2.5px_2.5px_0px_0px_#8b2a1a]' 
-                        : isCurrentUser 
-                          ? 'theme-bg-vert border-encre-noire rounded-[10px_2px_8px_10px]' 
-                          : 'bg-[var(--cordel-hover-bg)] border-encre-noire text-encre-noire rounded-[2px_10px_10px_8px]'}
-                    `}
-                  >
-                    {isTargeted && (
-                      <span className="text-[8px] font-black text-cordel-wood block mb-1 uppercase tracking-wider animate-pulse">
-                        🗣️ Ce message vous concerne ({reply.targetTag})
-                      </span>
-                    )}
-
-                    {/* Message author (only if not current user) */}
-                    {!isCurrentUser && (
-                      <span className="text-[8px] font-extrabold uppercase tracking-widest text-cordel-wood block mb-1">
-                        {reply.auteurNom}
-                      </span>
-                    )}
-
-                    {/* Message text */}
-                    <p className="text-xs leading-relaxed font-semibold text-left whitespace-pre-wrap break-words">
-                      {reply.message}
-                    </p>
-
-                    {/* Message Date */}
-                    <span className="text-[7px] font-black opacity-60 block mt-2 text-right">
-                      {formattedTime}
-                    </span>
-                  </div>
-                </div>
+                <ThreadReplyItem
+                  key={`${reply.dateCreation}-${index}`}
+                  reply={reply}
+                  index={index}
+                  userId={user.uid}
+                  profileData={profileData}
+                  isModeratorOrAdmin={isModeratorOrAdmin}
+                  onDeleteReply={handleDeleteReply}
+                  t={t}
+                  formattedTime={formattedTime}
+                />
               );
             })}
             <div ref={messagesEndRef} />
@@ -228,7 +322,7 @@ export default function ThreadView({ threadId, user, profileData, isReadOnly, on
               </span>
             </div>
           ) : (
-            <form onSubmit={handleSend} className="flex flex-col gap-2 mt-auto">
+            <form onSubmit={handleSend} className="flex flex-col gap-2 mt-auto select-none">
               {/* Target Group Selector */}
               <div className="flex flex-col gap-1">
                 <label className="text-[8px] uppercase font-bold tracking-wider text-cordel-master-dark">
@@ -256,7 +350,7 @@ export default function ThreadView({ threadId, user, profileData, isReadOnly, on
                 required
                 placeholder={t('forum.writeReplyPlaceholder')}
                 rows="2"
-                className="theme-input w-full resize-none disabled:opacity-50 text-xs py-2"
+                className="theme-input w-full resize-none disabled:opacity-50 text-xs py-2 font-bold"
               />
               <div className="flex justify-end">
                 <CordelButton

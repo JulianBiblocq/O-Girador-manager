@@ -322,7 +322,7 @@ export default function WidgetAnnonces({ groupId, profileData, role, isSystemAdm
                     disabled={saving}
                     className="accent-cordel-wood scale-105"
                   />
-                  <span className="inline-flex items-center gap-1.5"><XiloMegaphone size={12} /> Envoyer une notification Push aux membres</span>
+                  <span className="inline-flex items-center gap-1.5"><XiloMegaphone size={12} /> Envoyer une notification aux membres</span>
                 </label>
               </div>
             </div>

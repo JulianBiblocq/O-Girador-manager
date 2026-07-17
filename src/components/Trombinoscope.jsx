@@ -1,15 +1,200 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { collection, query, where, onSnapshot, doc, getDoc, updateDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '../firebase';
-import LayoutShell from './LayoutShell';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
 import XiloAvatar from './XiloAvatar';
 import { useTerminologie } from '../hooks/useTerminologie';
 import { useTranslation } from './LanguageContext';
 import { XiloCaixa, XiloPeople } from './XiloIcons';
-import CordelImageEditor from './CordelImageEditor';
+const CordelImageEditor = React.lazy(() => import('./CordelImageEditor'));
+
+// Memoized MemberCard subcomponent
+const MemberCard = React.memo(({
+  id,
+  prenom,
+  nom,
+  photoURL,
+  role,
+  genre,
+  tags = [],
+  telephone,
+  dateNaissance,
+  publierTelephone,
+  publierDateNaissance,
+  niveau,
+  niveauDanse,
+  instrumentsJoues = [],
+  instrument,
+  isCurrentUser,
+  isViewerAdmin,
+  fieldsConfig,
+  onContactUser,
+  onEditPhoto,
+  t,
+  tRole,
+  getPupitreName
+}) => {
+  const fullName = `${prenom || ''} ${nom || ''}`;
+  const hasRoleBadge = role && role !== 'membre';
+  const hasTags = tags && tags.length > 0;
+
+  const isPhoneEnabled = fieldsConfig?.telephone?.enabled !== false;
+  const showPhone = isPhoneEnabled && telephone && (isCurrentUser || isViewerAdmin || publierTelephone === true);
+
+  const isBirthdateEnabled = fieldsConfig?.dateNaissance?.enabled !== false;
+  const showBirthdate = isBirthdateEnabled && dateNaissance && (isCurrentUser || isViewerAdmin || publierDateNaissance === true);
+
+  const userInstruments = instrumentsJoues && instrumentsJoues.length > 0
+    ? instrumentsJoues
+    : [instrument].filter(Boolean);
+
+  const percussions = userInstruments.filter(inst => {
+    const norm = inst.toLowerCase().trim();
+    return norm !== 'danse' && norm !== 'chant' && norm !== 'aucun' && norm !== '';
+  });
+
+  const hasPercussions = percussions.length > 0;
+  const hasDanse = (niveauDanse && niveauDanse !== 'aucun') || userInstruments.some(inst => inst.toLowerCase().trim() === 'danse');
+  const danseLevel = niveauDanse && niveauDanse !== 'aucun' ? niveauDanse : null;
+
+  return (
+    <div className="relative flex flex-col items-center">
+      <CordelCard 
+        variant="default" 
+        useExtremeBorder={true} 
+        className="w-full flex flex-col items-center p-4 min-h-[220px] relative overflow-hidden"
+      >
+        {/* Avatar with Xylogravure Filter */}
+        <div className="mb-3 relative group">
+          <XiloAvatar src={photoURL} name={fullName} size={72} />
+          {isCurrentUser && (
+            <button
+              type="button"
+              onClick={() => onEditPhoto(photoURL)}
+              className="absolute -bottom-1 -right-1 bg-encre-noire text-cordel-bg-light hover:bg-cordel-wood rounded-full p-1 border border-encre-noire shadow-[1px_1px_0px_0px_#181716] cursor-pointer z-30 transition-all hover:scale-105 active:scale-95 flex items-center justify-center select-none"
+              title="Éditer la photo (Filtre Xylogravure)"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+              </svg>
+            </button>
+          )}
+        </div>
+
+        {/* Member Name */}
+        <div className="text-center mt-1 w-full select-none">
+          <div className="font-bold text-xs truncate leading-snug">
+            {prenom}
+          </div>
+          <div className="font-bold text-xs truncate leading-none uppercase text-[10px] opacity-75 mt-0.5">
+            {nom}
+          </div>
+        </div>
+
+        {/* Member Details */}
+        <div className="text-center mt-2.5 text-[9px] leading-tight text-cordel-master-dark/85 flex flex-col gap-1.5 w-full select-none">
+          {hasPercussions && (
+            <div className="flex flex-col items-center">
+              <span className="font-extrabold text-cordel-wood flex items-center justify-center gap-0.5 uppercase text-[8.5px] tracking-wider">
+                <XiloCaixa size={9} /> Percussion {niveau && `(${niveau === 'confirme' ? t('userProfile.levelConfirmSimple') || 'Confirmé' : niveau === 'debutant' ? t('userProfile.levelBeginner') || 'Débutant' : t('common.none') || 'Aucun'})`}
+              </span>
+              <span className="font-semibold text-encre-noire text-[9.5px] mt-0.5 leading-snug">
+                {percussions.map((inst) => {
+                  const pupitreName = getPupitreName(inst);
+                  return pupitreName ? `${inst} (${pupitreName})` : inst;
+                }).join(', ')}
+              </span>
+            </div>
+          )}
+
+          {hasDanse && (
+            <div className={`flex flex-col items-center ${hasPercussions ? 'mt-1.5 border-t border-dashed border-cordel-master-dark/10 pt-1.5' : ''}`}>
+              <span className="font-extrabold text-cordel-wood flex items-center justify-center gap-0.5 uppercase text-[8.5px] tracking-wider">
+                💃 Danse
+              </span>
+              <span className="font-semibold text-encre-noire text-[9.5px] mt-0.5">
+                {danseLevel ? (danseLevel === 'confirme' ? t('userProfile.levelConfirmSimple') || 'Confirmé' : t('userProfile.levelBeginner') || 'Débutant') : (t('userProfile.levelBeginner') || 'Débutant')}
+              </span>
+            </div>
+          )}
+
+          {(showPhone || showBirthdate) && (
+            <div className="flex flex-col items-center mt-1.5 border-t border-dashed border-cordel-master-dark/10 pt-1.5 gap-0.5 text-cordel-master-dark/75 font-bold">
+              {showPhone && (
+                <span className="truncate">📞 {telephone}</span>
+              )}
+              {showBirthdate && (
+                <span>🎂 {dateNaissance ? new Date(dateNaissance).toLocaleDateString('fr-FR') : ''}</span>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Member Tags (Custom ink stamp badges) */}
+        {hasTags && (
+          <div className="flex flex-wrap gap-1 mt-3 justify-center max-w-full z-10 select-none">
+            {tags.map((tag, tagIdx) => {
+              const rotation = ((tag.charCodeAt(0) + tagIdx) % 5) - 2;
+              return (
+                <span 
+                  key={tag} 
+                  style={{ transform: `rotate(${rotation}deg)` }}
+                  className="theme-stamp-badge theme-stamp-badge-wood text-[7px] px-1.5 py-0.5 border-dashed select-none bg-transparent shadow-none"
+                >
+                  {tag}
+                </span>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Contact button */}
+        {!isCurrentUser && onContactUser && (
+          <button
+            type="button"
+            onClick={() => onContactUser(id)}
+            className="mt-3 text-[9px] font-black uppercase tracking-wider bg-cordel-bg-light text-encre-noire border border-encre-noire px-3 py-1 rounded-[4px_6px_3px_5px] shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:bg-cordel-hover cursor-pointer flex items-center justify-center gap-1 w-full max-w-[120px] mx-auto transition-all select-none z-10"
+          >
+            ✉️ Contacter
+          </button>
+        )}
+
+        {/* Role Stamp overlay */}
+        {hasRoleBadge && (
+          <div className="absolute top-2 -right-1 z-25">
+            <span className="theme-stamp-badge theme-stamp-badge-wood text-[7px] rotate-[-6deg] select-none">
+              {tRole(role, genre)}
+            </span>
+          </div>
+        )}
+      </CordelCard>
+    </div>
+  );
+}, (prevProps, nextProps) => {
+  // high performance equality check to prevent unneeded card renders
+  return prevProps.id === nextProps.id &&
+         prevProps.prenom === nextProps.prenom &&
+         prevProps.nom === nextProps.nom &&
+         prevProps.photoURL === nextProps.photoURL &&
+         prevProps.role === nextProps.role &&
+         prevProps.genre === nextProps.genre &&
+         prevProps.telephone === nextProps.telephone &&
+         prevProps.dateNaissance === nextProps.dateNaissance &&
+         prevProps.publierTelephone === nextProps.publierTelephone &&
+         prevProps.publierDateNaissance === nextProps.publierDateNaissance &&
+         prevProps.niveau === nextProps.niveau &&
+         prevProps.niveauDanse === nextProps.niveauDanse &&
+         prevProps.instrument === nextProps.instrument &&
+         prevProps.isCurrentUser === nextProps.isCurrentUser &&
+         prevProps.isViewerAdmin === nextProps.isViewerAdmin &&
+         prevProps.fieldsConfig === nextProps.fieldsConfig &&
+         prevProps.onContactUser === nextProps.onContactUser &&
+         prevProps.onEditPhoto === nextProps.onEditPhoto &&
+         JSON.stringify(prevProps.tags) === JSON.stringify(nextProps.tags) &&
+         JSON.stringify(prevProps.instrumentsJoues) === JSON.stringify(nextProps.instrumentsJoues);
+});
 
 export default function Trombinoscope({ user, profileData, onBack, onContactUser }) {
   const { t, locale } = useTranslation();
@@ -35,7 +220,7 @@ export default function Trombinoscope({ user, profileData, onBack, onContactUser
 
   const isViewerAdmin = profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.isSystemAdmin === true;
 
-  const getPupitreName = (inst) => {
+  const getPupitreName = useCallback((inst) => {
     if (!inst) return null;
     const parts = inst.split(' + ').map(p => p.trim());
     const match = linkedInstruments.find(group => {
@@ -55,7 +240,7 @@ export default function Trombinoscope({ user, profileData, onBack, onContactUser
       if (containingGroup) return containingGroup.name;
     }
     return null;
-  };
+  }, [linkedInstruments]);
 
   // Load association tags and instruments
   useEffect(() => {
@@ -165,7 +350,7 @@ export default function Trombinoscope({ user, profileData, onBack, onContactUser
     });
 
     return () => unsubscribe();
-  }, [profileData, user]);
+  }, [profileData, user, isViewerAdmin, t]);
 
   const handleEditorComplete = async (processedBase64) => {
     setShowEditor(false);
@@ -187,18 +372,15 @@ export default function Trombinoscope({ user, profileData, onBack, onContactUser
 
       const blob = base64ToBlob(processedBase64);
 
-      // Upload to Firebase Storage
       const storageRef = ref(storage, `avatars/${user.uid}/profile_pic_${Date.now()}.jpg`);
       const snapshot = await uploadBytes(storageRef, blob);
       const downloadURL = await getDownloadURL(snapshot.ref);
 
-      // Save to Firestore users collection
       const userRef = doc(db, 'users', user.uid);
       await updateDoc(userRef, {
         photoURL: downloadURL
       });
 
-      // Update local state immediately
       setMembers(prev => prev.map(m => m.id === user.uid ? { ...m, photoURL: downloadURL } : m));
 
       alert(t('common.saveSuccess') || "Photo mise à jour !");
@@ -210,38 +392,51 @@ export default function Trombinoscope({ user, profileData, onBack, onContactUser
     }
   };
 
-  // Cascade Filtering logic
-  const filteredMembers = members.filter((member) => {
-    // Exclude archived members from the Trombinoscope
-    if (member.statutActuel === 'archived') return false;
+  // Memoized Filtered Members
+  const filteredMembers = useMemo(() => {
+    return members.filter((member) => {
+      if (member.statutActuel === 'archived') return false;
 
-    const fullName = `${member.prenom || ''} ${member.nom || ''}`.toLowerCase();
-    const matchesSearch = fullName.includes(searchQuery.toLowerCase());
+      const fullName = `${member.prenom || ''} ${member.nom || ''}`.toLowerCase();
+      const matchesSearch = fullName.includes(searchQuery.toLowerCase());
 
-    const matchesInstrument = filterInstrument === 'all' || 
-      member.instrument === filterInstrument;
+      const matchesInstrument = filterInstrument === 'all' || 
+        member.instrument === filterInstrument;
 
-    const matchesTag = filterTag === 'all' || 
-      (member.tags && member.tags.includes(filterTag));
+      const matchesTag = filterTag === 'all' || 
+        (member.tags && member.tags.includes(filterTag));
 
-    return matchesSearch && matchesInstrument && matchesTag;
-  });
+      return matchesSearch && matchesInstrument && matchesTag;
+    });
+  }, [members, searchQuery, filterInstrument, filterTag]);
+
+  // Memoized callback handlers
+  const handleContactUser = useCallback((memberId) => {
+    if (onContactUser) {
+      onContactUser(memberId);
+    }
+  }, [onContactUser]);
+
+  const handleEditPhoto = useCallback((photoURL) => {
+    setSelectedImage(photoURL || user.photoURL);
+    setShowEditor(true);
+  }, [user.photoURL]);
 
   return (
     <div className="flex flex-col gap-6">
       {/* Header */}
       <div className="text-center py-2 border-b-2 border-dashed border-cordel-master-dark/30 flex justify-between items-center">
-        <CordelButton variant="default" onClick={onBack} className="px-3 py-1 text-xs">
+        <CordelButton variant="default" onClick={onBack} className="px-3 py-1 text-xs select-none">
           ← {t('common.back')}
         </CordelButton>
-        <span className="panel-title text-xl font-extrabold tracking-wider text-cordel-wood flex items-center gap-1.5">
+        <span className="panel-title text-xl font-extrabold tracking-wider text-cordel-wood flex items-center gap-1.5 select-none">
           <XiloPeople size={18} /> {t('trombinoscope.title')}
         </span>
-        <div className="w-16"></div> {/* Spacer for symmetry */}
+        <div className="w-16"></div>
       </div>
 
       {/* Info / Group badge */}
-      <div className="text-center -mt-2">
+      <div className="text-center -mt-2 select-none">
         <span className="text-[10px] uppercase font-bold tracking-widest text-cordel-master-dark opacity-65">
           {t('trombinoscope.group')}{profileData?.groupId || t('trombinoscope.noGroup')}
         </span>
@@ -249,7 +444,7 @@ export default function Trombinoscope({ user, profileData, onBack, onContactUser
 
       {/* Dynamic Search & Filters Toolbar */}
       {!loading && !error && (
-        <CordelCard variant="default" useExtremeBorder={false} className="p-4 bg-cordel-bg flex flex-col gap-3">
+        <CordelCard variant="default" useExtremeBorder={false} className="p-4 bg-cordel-bg flex flex-col gap-3 select-none">
           {/* Saisie textuelle */}
           <div className="flex flex-col gap-1 text-left">
             <label className="text-[9px] uppercase font-extrabold tracking-wider text-cordel-wood">
@@ -304,7 +499,7 @@ export default function Trombinoscope({ user, profileData, onBack, onContactUser
 
       {/* Main Content Area */}
       {loading ? (
-        <div className="flex-1 flex flex-col justify-center items-center py-20">
+        <div className="flex-1 flex flex-col justify-center items-center py-20 select-none">
           <div className="animate-spin text-3xl mb-4 select-none">⏳</div>
           <span className="font-bold text-xs uppercase tracking-widest text-cordel-master-dark opacity-75">
             {t('trombinoscope.loading')}
@@ -336,150 +531,34 @@ export default function Trombinoscope({ user, profileData, onBack, onContactUser
               className="grid gap-4"
               style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))' }}
             >
-              {filteredMembers.map((member) => {
-                const fullName = `${member.prenom} ${member.nom}`;
-                const hasRoleBadge = member.role && member.role !== 'membre';
-                const hasTags = member.tags && member.tags.length > 0;
-
-                const isPhoneEnabled = fieldsConfig?.telephone?.enabled !== false;
-                const showPhone = isPhoneEnabled && member.telephone && (member.id === user.uid || isViewerAdmin || member.publierTelephone === true);
-
-                const isBirthdateEnabled = fieldsConfig?.dateNaissance?.enabled !== false;
-                const showBirthdate = isBirthdateEnabled && member.dateNaissance && (member.id === user.uid || isViewerAdmin || member.publierDateNaissance === true);
-
-                // Instruments and Danse conditional logic
-                const userInstruments = member.instrumentsJoues && member.instrumentsJoues.length > 0
-                  ? member.instrumentsJoues
-                  : [member.instrument].filter(Boolean);
-
-                const percussions = userInstruments.filter(inst => {
-                  const norm = inst.toLowerCase().trim();
-                  return norm !== 'danse' && norm !== 'chant' && norm !== 'aucun' && norm !== '';
-                });
-
-                const hasPercussions = percussions.length > 0;
-                const percuLevel = member.niveau;
-
-                const hasDanse = (member.niveauDanse && member.niveauDanse !== 'aucun') || userInstruments.some(inst => inst.toLowerCase().trim() === 'danse');
-                const danseLevel = member.niveauDanse && member.niveauDanse !== 'aucun' ? member.niveauDanse : null;
-
-                return (
-                  <div key={member.id} className="relative flex flex-col items-center">
-                    <CordelCard 
-                      variant="default" 
-                      useExtremeBorder={true} 
-                      className="w-full flex flex-col items-center p-4 min-h-[220px] relative overflow-hidden"
-                    >
-                      {/* Avatar with Xylogravure Filter */}
-                      <div className="mb-3 relative group">
-                        <XiloAvatar src={member.photoURL} name={fullName} size={72} />
-                        {member.id === user.uid && (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setSelectedImage(member.photoURL || user.photoURL);
-                              setShowEditor(true);
-                            }}
-                            className="absolute -bottom-1 -right-1 bg-encre-noire text-cordel-bg-light hover:bg-cordel-wood rounded-full p-1 border border-encre-noire shadow-[1px_1px_0px_0px_#181716] cursor-pointer z-30 transition-all hover:scale-105 active:scale-95 flex items-center justify-center"
-                            title="Éditer la photo (Filtre Xylogravure)"
-                          >
-                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                            </svg>
-                          </button>
-                        )}
-                      </div>
-
-                      {/* Member Name */}
-                      <div className="text-center mt-1 w-full">
-                        <div className="font-bold text-xs truncate leading-snug">
-                          {member.prenom}
-                        </div>
-                        <div className="font-bold text-xs truncate leading-none uppercase text-[10px] opacity-75 mt-0.5">
-                          {member.nom}
-                        </div>
-                      </div>
-
-                      {/* Member Details */}
-                      <div className="text-center mt-2.5 text-[9px] leading-tight text-cordel-master-dark/85 flex flex-col gap-1.5 w-full">
-                        {hasPercussions && (
-                          <div className="flex flex-col items-center">
-                            <span className="font-extrabold text-cordel-wood flex items-center justify-center gap-0.5 uppercase text-[8.5px] tracking-wider">
-                              <XiloCaixa size={9} /> Percussion {percuLevel && `(${percuLevel === 'confirme' ? t('userProfile.levelConfirmSimple') || 'Confirmé' : percuLevel === 'debutant' ? t('userProfile.levelBeginner') || 'Débutant' : t('common.none') || 'Aucun'})`}
-                            </span>
-                            <span className="font-semibold text-encre-noire text-[9.5px] mt-0.5 leading-snug">
-                              {percussions.map((inst) => {
-                                const pupitreName = getPupitreName(inst);
-                                return pupitreName ? `${inst} (${pupitreName})` : inst;
-                              }).join(', ')}
-                            </span>
-                          </div>
-                        )}
-
-                        {hasDanse && (
-                          <div className={`flex flex-col items-center ${hasPercussions ? 'mt-1.5 border-t border-dashed border-cordel-master-dark/10 pt-1.5' : ''}`}>
-                            <span className="font-extrabold text-cordel-wood flex items-center justify-center gap-0.5 uppercase text-[8.5px] tracking-wider">
-                              💃 Danse
-                            </span>
-                            <span className="font-semibold text-encre-noire text-[9.5px] mt-0.5">
-                              {danseLevel ? (danseLevel === 'confirme' ? t('userProfile.levelConfirmSimple') || 'Confirmé' : t('userProfile.levelBeginner') || 'Débutant') : (t('userProfile.levelBeginner') || 'Débutant')}
-                            </span>
-                          </div>
-                        )}
-
-                        {(showPhone || showBirthdate) && (
-                          <div className={`flex flex-col items-center mt-1.5 border-t border-dashed border-cordel-master-dark/10 pt-1.5 gap-0.5 text-cordel-master-dark/75 font-bold`}>
-                            {showPhone && (
-                              <span className="truncate">📞 {member.telephone}</span>
-                            )}
-                            {showBirthdate && (
-                              <span>🎂 {member.dateNaissance ? new Date(member.dateNaissance).toLocaleDateString('fr-FR') : ''}</span>
-                            )}
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Member Tags (Custom ink stamp badges) */}
-                      {hasTags && (
-                        <div className="flex flex-wrap gap-1 mt-3 justify-center max-w-full z-10">
-                          {member.tags.map((tag, tagIdx) => {
-                            const rotation = ((tag.charCodeAt(0) + tagIdx) % 5) - 2; // -2deg to 2deg
-                            return (
-                              <span 
-                                key={tag} 
-                                style={{ transform: `rotate(${rotation}deg)` }}
-                                className="theme-stamp-badge theme-stamp-badge-wood text-[7px] px-1.5 py-0.5 border-dashed select-none bg-transparent shadow-none"
-                              >
-                                {tag}
-                              </span>
-                            );
-                          })}
-                        </div>
-                      )}
-
-                      {/* Contact button */}
-                      {member.id !== user.uid && onContactUser && (
-                        <button
-                          type="button"
-                          onClick={() => onContactUser(member.id)}
-                          className="mt-3 text-[9px] font-black uppercase tracking-wider bg-cordel-bg-light text-encre-noire border border-encre-noire px-3 py-1 rounded-[4px_6px_3px_5px] shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:bg-cordel-hover cursor-pointer flex items-center justify-center gap-1 w-full max-w-[120px] mx-auto transition-all select-none z-10"
-                        >
-                          ✉️ Contacter
-                        </button>
-                      )}
-
-                      {/* Role Stamp overlay */}
-                      {hasRoleBadge && (
-                        <div className="absolute top-2 -right-1 z-25">
-                          <span className="theme-stamp-badge theme-stamp-badge-wood text-[7px] rotate-[-6deg] select-none">
-                            {tRole(member.role, member.genre)}
-                          </span>
-                        </div>
-                      )}
-                    </CordelCard>
-                  </div>
-                );
-              })}
+              {filteredMembers.map((member) => (
+                <MemberCard
+                  key={member.id}
+                  id={member.id}
+                  prenom={member.prenom}
+                  nom={member.nom}
+                  photoURL={member.photoURL}
+                  role={member.role}
+                  genre={member.genre}
+                  tags={member.tags}
+                  telephone={member.telephone}
+                  dateNaissance={member.dateNaissance}
+                  publierTelephone={member.publierTelephone}
+                  publierDateNaissance={member.publierDateNaissance}
+                  niveau={member.niveau}
+                  niveauDanse={member.niveauDanse}
+                  instrumentsJoues={member.instrumentsJoues}
+                  instrument={member.instrument}
+                  isCurrentUser={member.id === user.uid}
+                  isViewerAdmin={isViewerAdmin}
+                  fieldsConfig={fieldsConfig}
+                  onContactUser={handleContactUser}
+                  onEditPhoto={handleEditPhoto}
+                  t={t}
+                  tRole={tRole}
+                  getPupitreName={getPupitreName}
+                />
+              ))}
             </div>
           )}
         </div>
@@ -490,15 +569,24 @@ export default function Trombinoscope({ user, profileData, onBack, onContactUser
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-[var(--cordel-bg)] max-w-md w-full rounded-lg shadow-xl overflow-hidden relative border-4 border-encre-noire max-h-[90vh] overflow-y-auto">
             <div className="p-4">
-              <CordelImageEditor 
-                imageSrc={selectedImage}
-                lang={locale || 'fr'}
-                onComplete={handleEditorComplete}
-                onCancel={() => {
-                  setShowEditor(false);
-                  setSelectedImage(null);
-                }}
-              />
+              <React.Suspense fallback={
+                <div className="flex flex-col justify-center items-center py-12">
+                  <div className="animate-spin text-4xl mb-4 select-none">⏳</div>
+                  <span className="font-bold text-xs uppercase tracking-widest text-cordel-master-dark opacity-75">
+                    Chargement de l'éditeur...
+                  </span>
+                </div>
+              }>
+                <CordelImageEditor 
+                  imageSrc={selectedImage}
+                  lang={locale || 'fr'}
+                  onComplete={handleEditorComplete}
+                  onCancel={() => {
+                    setShowEditor(false);
+                    setSelectedImage(null);
+                  }}
+                />
+              </React.Suspense>
             </div>
           </div>
         </div>

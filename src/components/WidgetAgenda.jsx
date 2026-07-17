@@ -4,10 +4,10 @@ import { db, storage } from '../firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
-import EventDetails from './EventDetails';
+const EventDetails = React.lazy(() => import('./EventDetails'));
 import { useTranslation } from './LanguageContext';
 import { XiloCalendar } from './XiloIcons';
-import PlacesAutocomplete from './PlacesAutocomplete';
+const PlacesAutocomplete = React.lazy(() => import('./PlacesAutocomplete'));
 import { calculateRoadDistance } from '../utils/googleMaps';
 const formatDateWithDay = (dateStr, includeYear = true) => {
   const date = new Date(dateStr);
@@ -264,20 +264,29 @@ export default function WidgetAgenda({ role, isSystemAdmin, groupId, user, profi
   // Render Event Details view if a ticket is clicked
   if (activeEvent) {
     return (
-      <EventDetails 
-        event={activeEvent}
-        user={user}
-        profileData={profileData}
-        onNavigateToView={onNavigateToView}
-        onClose={() => {
-          setSelectedEvent(null);
-          if (onFocusModeChange) {
-            onFocusModeChange(false);
-          }
-        }}
-        onPrev={hasPrev ? handlePrevEvent : null}
-        onNext={hasNext ? handleNextEvent : null}
-      />
+      <React.Suspense fallback={
+        <div className="flex-1 flex flex-col justify-center items-center py-12">
+          <div className="animate-spin text-4xl mb-4 select-none">⏳</div>
+          <span className="font-bold text-xs uppercase tracking-widest text-cordel-master-dark opacity-75">
+            Chargement des détails...
+          </span>
+        </div>
+      }>
+        <EventDetails 
+          event={activeEvent}
+          user={user}
+          profileData={profileData}
+          onNavigateToView={onNavigateToView}
+          onClose={() => {
+            setSelectedEvent(null);
+            if (onFocusModeChange) {
+              onFocusModeChange(false);
+            }
+          }}
+          onPrev={hasPrev ? handlePrevEvent : null}
+          onNext={hasNext ? handleNextEvent : null}
+        />
+      </React.Suspense>
     );
   }
 
@@ -388,15 +397,21 @@ export default function WidgetAgenda({ role, isSystemAdmin, groupId, user, profi
               <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
                 Lieu
               </label>
-              <PlacesAutocomplete
-                name="lieu"
-                value={formData.lieu}
-                onChange={handleChange}
-                required
-                disabled={saving}
-                placeholder="Ex : Local de l'asso, Place de la Mairie..."
-                className="theme-input w-full disabled:opacity-50"
-              />
+              <React.Suspense fallback={
+                <div className="text-[10px] font-bold py-2 text-cordel-wood animate-pulse">
+                  ⏳ Chargement du champ adresse...
+                </div>
+              }>
+                <PlacesAutocomplete
+                  name="lieu"
+                  value={formData.lieu}
+                  onChange={handleChange}
+                  required
+                  disabled={saving}
+                  placeholder="Ex : Local de l'asso, Place de la Mairie..."
+                  className="theme-input w-full disabled:opacity-50"
+                />
+              </React.Suspense>
             </div>
 
             {/* Distance A/R (Prestation, Stage & Atelier) */}

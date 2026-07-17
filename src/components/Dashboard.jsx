@@ -11,7 +11,7 @@ const WidgetDocuments = React.lazy(() => import('./WidgetDocuments'));
 const WidgetTreasury = React.lazy(() => import('./WidgetTreasury'));
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
-import { XiloSettings, XiloCaixa, XiloBox, XiloPeople, XiloConsole } from './XiloIcons';
+import { XiloSettings, XiloCaixa, XiloBox, XiloPeople, XiloConsole, XiloMandacaru } from './XiloIcons';
 import { useTranslation } from './LanguageContext';
 import { useTerminologie } from '../hooks/useTerminologie';
 
@@ -165,8 +165,11 @@ export default function Dashboard({ user, profileData, onNavigateToTrombi, onNav
 
       {/* Welcome & Tags Section */}
       <div className="text-left select-none pb-1 mt-1 border-b border-dashed border-cordel-master-dark/15">
-        <h2 className="text-lg font-black text-cordel-wood">
-          ✨ {t('dashboard.welcome') || "Axé"}, {profileData?.prenom || tRole('batuqueiro', profileData?.genre)} !
+        <h2 className="text-lg font-black text-cordel-wood flex items-center gap-1.5">
+          <XiloMandacaru size={20} className="text-cordel-wood shrink-0" />
+          <span>
+            {t('dashboard.welcome') || "Axé"}, {profileData?.prenom || tRole('batuqueiro', profileData?.genre)} !
+          </span>
         </h2>
         
         <div className="flex flex-wrap gap-2 mt-2">
@@ -201,21 +204,17 @@ export default function Dashboard({ user, profileData, onNavigateToTrombi, onNav
       >
         <CordelCard variant="default" useExtremeBorder={true} className="py-3 px-4">
           <div className="flex items-center gap-3 text-left">
-            {user.photoURL ? (
+            {(profileData?.photoURL || user?.photoURL) && (
               <img 
-                src={user.photoURL} 
+                src={profileData.photoURL || user.photoURL} 
                 alt={`${profileData?.prenom} ${profileData?.nom}`} 
-                className="w-10 h-10 rounded-[8px_4px_7px_6px] border border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716] object-cover select-none pointer-events-none"
+                className="w-10 h-10 rounded-[8px_4px_7px_6px] border border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716] object-cover grayscale contrast-[130%] sepia-[40%] mix-blend-multiply brightness-[95%] select-none pointer-events-none"
               />
-            ) : (
-              <div className="w-10 h-10 rounded-[8px_4px_7px_6px] border border-encre-noire bg-cordel-wood flex items-center justify-center text-cordel-bg-light text-sm font-bold select-none">
-                {profileData?.prenom ? profileData.prenom.charAt(0) : '?'}
-              </div>
             )}
             
             <div className="flex-1 min-w-0">
-              <h3 className="text-xs font-black text-encre-noire truncate">
-                👤 {profileData?.prenom} {profileData?.nom}
+              <h3 className="text-xs font-black text-encre-noire truncate flex items-center gap-1.5">
+                <span>{profileData?.prenom}</span>
               </h3>
               <p className="text-[9px] font-semibold text-cordel-master-dark/70 break-all select-all">
                 {profileData?.email}

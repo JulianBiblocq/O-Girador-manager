@@ -8,7 +8,8 @@ export default function CordelCard({
   children, 
   variant = 'default', // 'default', 'ocre', 'vert', 'bleu', 'kraft'
   useExtremeBorder = true, 
-  className = '' 
+  className = '',
+  ...props
 }) {
   const baseClass = useExtremeBorder 
     ? 'theme-card-extreme' 
@@ -24,7 +25,7 @@ export default function CordelCard({
   };
 
   return (
-    <div className={`${baseClass} ${bgColors[variant] || bgColors.default} ${className}`}>
+    <div className={`${baseClass} ${bgColors[variant] || bgColors.default} ${className}`} {...props}>
       {children}
     </div>
   );

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { collection, query, where, onSnapshot, or, doc, setDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import CordelCard from './CordelCard';
@@ -9,12 +9,94 @@ import PrivateChatView from './PrivateChatView';
 import { useTranslation } from './LanguageContext';
 import XiloAvatar from './XiloAvatar';
 
+// Memoized ThreadCard component to prevent list items re-rendering during search or active inputs
+const ThreadCard = React.memo(({
+  thread,
+  user,
+  profileData,
+  categoryBadges,
+  t,
+  getCategoryLabel,
+  onClick
+}) => {
+  const dateCreationObj = new Date(thread.dateCreation);
+  const formattedDate = isNaN(dateCreationObj.getTime())
+    ? ''
+    : dateCreationObj.toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
+  
+  const repliesCount = thread.reponses ? thread.reponses.length - 1 : 0;
+  const badgeVariant = categoryBadges[thread.categorie] || 'default';
+
+  // Target check for user highlight
+  const userPlaysInstrument = (profileData?.instrumentsJoues && profileData.instrumentsJoues.includes(thread.targetTag)) ||
+                               (profileData?.instrument === thread.targetTag);
+  const userHasTag = profileData?.tags && profileData.tags.includes(thread.targetTag);
+  const isThreadTargeted = thread.targetTag && (userPlaysInstrument || userHasTag);
+
+  return (
+    <CordelCard 
+      variant={isThreadTargeted ? "jaune" : "default"} 
+      useExtremeBorder={false} 
+      className={`hover:scale-[1.01] transition-all relative pr-16 cursor-pointer select-none ${
+        isThreadTargeted ? 'border-cordel-wood border-2 shadow-[2px_2px_0px_0px_#8b2a1a]' : 'bg-cordel-bg'
+      }`}
+      onClick={() => onClick(thread)}
+    >
+      <div className="flex flex-col gap-1 items-start">
+         {isThreadTargeted && (
+           <span className="text-[8px] font-black text-cordel-wood uppercase tracking-wider mb-1 block animate-pulse">
+             🗣️ {(t('forum.targeted') || "Vous concerne ({tag})").replace('{tag}', thread.targetTag)}
+           </span>
+         )}
+        {/* Category Label */}
+        <span className={`theme-stamp-badge theme-stamp-badge-${badgeVariant === 'ocre' || badgeVariant === 'vert' ? 'wood' : 'dark'} text-[7px] rotate-0 mb-1`}>
+          {getCategoryLabel(thread.categorie)}
+        </span>
+
+        {/* Subject */}
+        <h4 className="font-extrabold text-sm text-encre-noire leading-tight">
+          {thread.titre}
+        </h4>
+
+        {/* Meta */}
+        <div className="flex items-center gap-1.5 mt-1 text-[10px] font-semibold text-cordel-master-dark/70">
+          <span>{(t('forum.byAuthor') || "Par {author}").replace('{author}', thread.auteurNom)}</span>
+          <span>•</span>
+          <span>{(t('forum.createdOn') || "Le {date}").replace('{date}', formattedDate)}</span>
+        </div>
+      </div>
+
+      {/* Replies Stamp Overlay */}
+      <div className="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col items-center justify-center">
+        <div className="w-8 h-8 bg-cordel-bg-light border-2 border-encre-noire flex items-center justify-center font-black text-xs rounded-full shadow-[2px_2px_0px_0px_#181716]">
+          {repliesCount}
+        </div>
+        <span className="text-[7px] font-extrabold uppercase mt-1 tracking-wider opacity-60">
+          {repliesCount > 1 ? (t('forum.replies') || "réponses") : (t('forum.reply') || "réponse")}
+        </span>
+      </div>
+    </CordelCard>
+  );
+}, (prevProps, nextProps) => {
+  return prevProps.thread.id === nextProps.thread.id &&
+         prevProps.thread.derniereModification === nextProps.thread.derniereModification &&
+         (prevProps.thread.reponses ? prevProps.thread.reponses.length : 0) === (nextProps.thread.reponses ? nextProps.thread.reponses.length : 0) &&
+         prevProps.thread.targetTag === nextProps.thread.targetTag &&
+         prevProps.thread.titre === nextProps.thread.titre &&
+         prevProps.thread.categorie === nextProps.thread.categorie &&
+         prevProps.thread.auteurNom === nextProps.thread.auteurNom &&
+         prevProps.user?.uid === nextProps.user?.uid &&
+         prevProps.profileData === nextProps.profileData &&
+         prevProps.getCategoryLabel === nextProps.getCategoryLabel &&
+         prevProps.onClick === nextProps.onClick;
+});
+
 export default function Forum({ user, profileData, onBack, activePrivateChatUserId, onClearActivePrivateChat }) {
   const { t } = useTranslation();
 
-  const getCategoryLabel = (cat) => {
+  const getCategoryLabel = useCallback((cat) => {
     return t(`forum.${cat}`) || cat;
-  };
+  }, [t]);
 
   const [threads, setThreads] = useState([]);
   const [channels, setChannels] = useState([]);
@@ -83,7 +165,6 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
     const userRole = profileData?.role || 'membre';
     const isAdmin = profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.isSystemAdmin;
 
-    // Admin query sees all channels. Member query is filtered by allowedRoles and isTransparent
     const q = isAdmin
       ? query(channelsRef, where('groupId', '==', profileData.groupId))
       : query(
@@ -103,7 +184,6 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
       });
 
       if (fetched.length === 0) {
-        // Seed default channels if empty
         const defaults = [
           { id: `${profileData.groupId}_general`, name: "Général", allowedRoles: ["all"], isTransparent: true },
           { id: `${profileData.groupId}_ca`, name: "CA", allowedRoles: ["ca"], isTransparent: false },
@@ -122,7 +202,6 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
           }
         }
       } else {
-        // Sort channels: Général, then CA, then Bureau, then others
         const order = ["Général", "CA", "Bureau"];
         const sorted = fetched.sort((a, b) => {
           const idxA = order.indexOf(a.name);
@@ -135,7 +214,6 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
 
         setChannels(sorted);
 
-        // Auto-select first channel if none is selected
         if (sorted.length > 0) {
           setActiveChannelId(prev => {
             if (prev && sorted.some(c => c.id === prev)) return prev;
@@ -150,7 +228,7 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
     return () => unsubscribe();
   }, [profileData?.groupId, profileData?.role, profileData?.isSystemAdmin]);
 
-  // Migration of old threads without channelId (Admin-only check on load)
+  // Migration of old threads without channelId
   useEffect(() => {
     const isAdmin = profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.isSystemAdmin;
     if (!isAdmin || !profileData?.groupId) return;
@@ -162,7 +240,6 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
       snap.forEach(async (docSnap) => {
         const data = docSnap.data();
         if (!data.channelId) {
-          // Only attempt migration if the user has edit rights (is the author or is a system admin)
           const canMigrate = data.authorId === user?.uid || profileData?.isSystemAdmin;
           if (!canMigrate) return;
 
@@ -208,7 +285,6 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
         });
       });
 
-      // Sort locally: latest modification first
       const sorted = fetchedThreads.sort((a, b) => new Date(b.derniereModification) - new Date(a.derniereModification));
       setThreads(sorted);
       setLoading(false);
@@ -220,41 +296,45 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
     return () => unsubscribe();
   }, [profileData?.groupId, activeChannelId]);
 
-  const categoryBadges = {
+  const categoryBadges = useMemo(() => ({
     Général: 'ocre',
     Costumes: 'vert',
     Covoiturage: 'bleu',
     Autre: 'kraft'
-  };
+  }), []);
 
-  // Group messages by conversational partner
-  const conversationsMap = {};
-  privateMessages.forEach(msg => {
-    const otherId = msg.senderId === user.uid ? msg.recipientId : msg.senderId;
-    if (!conversationsMap[otherId]) {
-      conversationsMap[otherId] = {
-        otherId,
-        messages: [],
-        unreadCount: 0,
-        lastMessage: null
-      };
-    }
-    conversationsMap[otherId].messages.push(msg);
-  });
+  // Group messages by conversational partner using useMemo
+  const conversations = useMemo(() => {
+    const conversationsMap = {};
+    privateMessages.forEach(msg => {
+      const otherId = msg.senderId === user.uid ? msg.recipientId : msg.senderId;
+      if (!conversationsMap[otherId]) {
+        conversationsMap[otherId] = {
+          otherId,
+          messages: [],
+          unreadCount: 0,
+          lastMessage: null
+        };
+      }
+      conversationsMap[otherId].messages.push(msg);
+    });
 
-  Object.values(conversationsMap).forEach(conv => {
-    conv.messages.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-    conv.lastMessage = conv.messages[conv.messages.length - 1];
-    conv.unreadCount = conv.messages.filter(m => m.recipientId === user.uid && !m.read).length;
-  });
+    Object.values(conversationsMap).forEach(conv => {
+      conv.messages.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+      conv.lastMessage = conv.messages[conv.messages.length - 1];
+      conv.unreadCount = conv.messages.filter(m => m.recipientId === user.uid && !m.read).length;
+    });
 
-  const conversations = Object.values(conversationsMap).sort((a, b) => {
-    const timeA = a.lastMessage ? new Date(a.lastMessage.timestamp) : 0;
-    const timeB = b.lastMessage ? new Date(b.lastMessage.timestamp) : 0;
-    return timeB - timeA;
-  });
+    return Object.values(conversationsMap).sort((a, b) => {
+      const timeA = a.lastMessage ? new Date(a.lastMessage.timestamp) : 0;
+      const timeB = b.lastMessage ? new Date(b.lastMessage.timestamp) : 0;
+      return timeB - timeA;
+    });
+  }, [privateMessages, user?.uid]);
 
-  const unreadInboxCount = privateMessages.filter(m => m.recipientId === user.uid && !m.read).length;
+  const unreadInboxCount = useMemo(() => {
+    return privateMessages.filter(m => m.recipientId === user.uid && !m.read).length;
+  }, [privateMessages, user?.uid]);
 
   // Find the currently selected thread in the sync threads state to get real-time messages
   const activeThread = selectedThread
@@ -263,12 +343,21 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
 
   const activeChannel = channels.find(c => c.id === activeChannelId);
 
-  const hasWriteAccess = (channel) => {
+  const hasWriteAccess = useCallback((channel) => {
     if (!channel) return false;
     if (profileData?.isSystemAdmin || profileData?.role === 'mestre' || profileData?.role === 'super-admin') return true;
     const roles = channel.allowedRoles || [];
     return roles.includes('all') || roles.includes(profileData?.role);
-  };
+  }, [profileData]);
+
+  // Memoized handlers
+  const handleSelectThread = useCallback((thread) => {
+    setSelectedThread(thread);
+  }, []);
+
+  const handleCloseThread = useCallback(() => {
+    setSelectedThread(null);
+  }, []);
 
   if (activeChatUserId) {
     const otherUser = usersMap[activeChatUserId] || { id: activeChatUserId };
@@ -288,8 +377,8 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
         threadId={activeThread.id} 
         user={user} 
         profileData={profileData} 
-        isReadOnly={!hasWriteAccess(activeChannel)}
-        onClose={() => setSelectedThread(null)} 
+        channels={channels}
+        onClose={handleCloseThread} 
       />
     );
   }
@@ -347,12 +436,12 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
       {activeTab === 'inbox' ? (
         /* Private Messages Inbox Listing */
         <div className="flex flex-col gap-4">
-          <h2 className="panel-title text-sm font-extrabold text-cordel-master-dark opacity-80 uppercase px-1">
+          <h2 className="panel-title text-sm font-extrabold text-cordel-master-dark opacity-80 uppercase px-1 select-none">
             {t('forum.privateConversationsTitle') || "Mes Discussions Privées"}
           </h2>
 
           {conversations.length === 0 ? (
-            <CordelCard variant="default" useExtremeBorder={false} className="p-8 text-center bg-cordel-bg">
+            <CordelCard variant="default" useExtremeBorder={false} className="p-8 text-center bg-cordel-bg select-none">
               <p className="text-xs opacity-75 font-semibold">{t('forum.noPrivateConversations') || "Aucune discussion privée pour le moment. Allez dans le Trombinoscope pour contacter un membre !"}</p>
             </CordelCard>
           ) : (
@@ -377,7 +466,7 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
                     onClick={() => setActiveChatUserId(conv.otherId)}
                   >
                     <XiloAvatar src={partner.photoURL} name={partnerFullName} size={40} />
-                    <div className="flex flex-col gap-0.5 items-start text-left flex-grow min-w-0 pr-6">
+                    <div className="flex flex-col gap-0.5 items-start text-left flex-grow min-w-0 pr-6 select-none">
                       <span className="font-extrabold text-xs text-encre-noire">
                         {partnerFullName}
                       </span>
@@ -393,7 +482,7 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
 
                     {/* Unread badge overlay */}
                     {isUnread && (
-                      <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center justify-center">
+                      <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center justify-center select-none">
                         <span className="w-5 h-5 bg-red-600 text-white flex items-center justify-center font-black text-[9px] rounded-full shadow-[1.5px_1.5px_0px_0px_#181716]">
                           {conv.unreadCount}
                         </span>
@@ -409,7 +498,7 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
         /* Discussions Tab with Channels sidebar/dropdown */
         <div className="flex flex-col md:flex-row gap-4">
           {/* Channels Sidebar / Dropdown */}
-          <div className="w-full md:w-60 shrink-0 flex flex-col gap-2">
+          <div className="w-full md:w-60 shrink-0 flex flex-col gap-2 select-none">
             {/* Mobile Dropdown */}
             <div className="block md:hidden">
               <label className="text-[10px] font-black uppercase tracking-wider text-cordel-master-dark block mb-1">
@@ -434,7 +523,7 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
             {/* Desktop Sidebar */}
             <div className="hidden md:flex flex-col gap-2 p-3 bg-cordel-bg-light border-2 border-encre-noire rounded-[8px_6px_10px_7px] shadow-[2.5px_2.5px_0px_0px_#181716]">
               <h3 className="text-xs font-black uppercase tracking-widest text-cordel-wood mb-2 border-b border-dashed border-cordel-master-dark/20 pb-1">
-                📁 Salons
+                📁 {t('forum.channelsHeader') || "Salons"}
               </h3>
               <div className="flex flex-col gap-1.5">
                 {channels.map((ch) => {
@@ -464,7 +553,7 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
           {/* Main Discussions Area */}
           <div className="flex-1 min-w-0">
             {loading ? (
-              <div className="flex justify-center items-center py-12">
+              <div className="flex justify-center items-center py-12 select-none">
                 <span className="text-xs uppercase tracking-widest font-black animate-pulse opacity-60">⏳ {t('common.loading')}</span>
               </div>
             ) : isAdding ? (
@@ -479,14 +568,14 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
             ) : (
               /* Thread Listing */
               <div className="flex flex-col gap-4">
-                <div className="flex justify-between items-center px-1">
+                <div className="flex justify-between items-center px-1 select-none">
                   <h2 className="panel-title text-sm font-extrabold text-cordel-master-dark opacity-80 uppercase">
                     {activeChannel ? `# ${activeChannel.name}` : t('forum.threadsList')}
                   </h2>
                   
                   {!hasWriteAccess(activeChannel) ? (
                     <span className="text-[10px] font-black text-cordel-wood border-2 border-dashed border-cordel-wood/30 p-2 rounded bg-cordel-bg-light select-none">
-                      🔒 Lecture seule
+                      🔒 {t('forum.readOnly') || "Lecture seule"}
                     </span>
                   ) : (
                     <CordelButton 
@@ -501,72 +590,23 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
                 </div>
 
                 {threads.length === 0 ? (
-                  <CordelCard variant="default" useExtremeBorder={false} className="p-8 text-center bg-cordel-bg">
+                  <CordelCard variant="default" useExtremeBorder={false} className="p-8 text-center bg-cordel-bg select-none">
                     <p className="text-xs opacity-75 font-semibold">{t('forum.noThreads') || "Aucune discussion lancée dans ce salon. Soyez le premier !"}</p>
                   </CordelCard>
                 ) : (
                   <div className="flex flex-col gap-3">
-                    {threads.map((thread) => {
-                      const dateCreationObj = new Date(thread.dateCreation);
-                      const formattedDate = isNaN(dateCreationObj.getTime())
-                        ? ''
-                        : dateCreationObj.toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
-                      
-                      const repliesCount = thread.reponses ? thread.reponses.length - 1 : 0;
-                      const badgeVariant = categoryBadges[thread.categorie] || 'default';
-
-                      // Target check for user highlight
-                      const userPlaysInstrument = (profileData?.instrumentsJoues && profileData.instrumentsJoues.includes(thread.targetTag)) ||
-                                                   (profileData?.instrument === thread.targetTag);
-                      const userHasTag = profileData?.tags && profileData.tags.includes(thread.targetTag);
-                      const isThreadTargeted = thread.targetTag && (userPlaysInstrument || userHasTag);
-
-                      return (
-                        <CordelCard 
-                          key={thread.id} 
-                          variant={isThreadTargeted ? "jaune" : "default"} 
-                          useExtremeBorder={false} 
-                          className={`hover:scale-[1.01] transition-all relative pr-16 cursor-pointer ${
-                            isThreadTargeted ? 'border-cordel-wood border-2 shadow-[2px_2px_0px_0px_#8b2a1a]' : 'bg-cordel-bg'
-                          }`}
-                          onClick={() => setSelectedThread(thread)}
-                        >
-                          <div className="flex flex-col gap-1 items-start">
-                            {isThreadTargeted && (
-                              <span className="text-[8px] font-black text-cordel-wood uppercase tracking-wider mb-1 block animate-pulse">
-                                🗣️ Vous concerne ({thread.targetTag})
-                              </span>
-                            )}
-                            {/* Category Label */}
-                            <span className={`theme-stamp-badge theme-stamp-badge-${badgeVariant === 'ocre' || badgeVariant === 'vert' ? 'wood' : 'dark'} text-[7px] rotate-0 mb-1`}>
-                              {getCategoryLabel(thread.categorie)}
-                            </span>
-
-                            {/* Subject */}
-                            <h4 className="font-extrabold text-sm text-encre-noire leading-tight">
-                              {thread.titre}
-                            </h4>
-
-                            {/* Meta */}
-                            <div className="flex items-center gap-1.5 mt-1 text-[10px] font-semibold text-cordel-master-dark/70">
-                              <span>{(t('forum.byAuthor') || "Par {author}").replace('{author}', thread.auteurNom)}</span>
-                              <span>•</span>
-                              <span>{(t('forum.createdOn') || "Le {date}").replace('{date}', formattedDate)}</span>
-                            </div>
-                          </div>
-
-                          {/* Replies Stamp Overlay */}
-                          <div className="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col items-center justify-center select-none">
-                            <div className="w-8 h-8 bg-cordel-bg-light border-2 border-encre-noire flex items-center justify-center font-black text-xs rounded-full shadow-[2px_2px_0px_0px_#181716]">
-                              {repliesCount}
-                            </div>
-                            <span className="text-[7px] font-extrabold uppercase mt-1 tracking-wider opacity-60">
-                              {repliesCount > 1 ? (t('forum.replies') || "réponses") : (t('forum.reply') || "réponse")}
-                            </span>
-                          </div>
-                        </CordelCard>
-                      );
-                    })}
+                    {threads.map((thread) => (
+                      <ThreadCard
+                        key={thread.id}
+                        thread={thread}
+                        user={user}
+                        profileData={profileData}
+                        categoryBadges={categoryBadges}
+                        t={t}
+                        getCategoryLabel={getCategoryLabel}
+                        onClick={handleSelectThread}
+                      />
+                    ))}
                   </div>
                 )}
               </div>

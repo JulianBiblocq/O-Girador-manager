@@ -84,7 +84,7 @@ export const generateImageCharterPDF = (member, associationName) => {
   doc.setFontSize(9);
   const sigDate = formatTimestamp(member.dateSignatureDroitImage);
   const sigText = doc.splitTextToSize(
-    `Consentement recueilli et validé électroniquement par l'utilisateur le ${sigDate} depuis son espace personnel O Girador.`,
+    `Consentement recueilli et validé électroniquement par l'utilisateur le ${sigDate} depuis son espace personnel ${assocName}.`,
     160
   );
   doc.text(sigText, 25, signatureY + 18);
@@ -93,7 +93,7 @@ export const generateImageCharterPDF = (member, associationName) => {
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
   doc.setTextColor(120, 120, 120);
-  doc.text(`Document généré par l'application O Girador Manager`, 105, 275, { align: "center" });
+  doc.text(`Document généré par l'application ${assocName} Manager`, 105, 275, { align: "center" });
   
   doc.save(`Charte_Image_${member.prenom}_${member.nom}.pdf`);
 };
@@ -160,7 +160,7 @@ export const generateMedicalAttestationPDF = (member, associationName) => {
   doc.setFontSize(9);
   const sigDate = formatTimestamp(member.dateSignatureAttestationSante);
   const sigText = doc.splitTextToSize(
-    `Consentement recueilli et validé électroniquement par l'utilisateur le ${sigDate} depuis son espace personnel O Girador.`,
+    `Consentement recueilli et validé électroniquement par l'utilisateur le ${sigDate} depuis son espace personnel ${assocName}.`,
     160
   );
   doc.text(sigText, 25, signatureY + 18);
@@ -169,7 +169,7 @@ export const generateMedicalAttestationPDF = (member, associationName) => {
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
   doc.setTextColor(120, 120, 120);
-  doc.text(`Document généré par l'application O Girador Manager`, 105, 275, { align: "center" });
+  doc.text(`Document généré par l'application ${assocName} Manager`, 105, 275, { align: "center" });
   
   doc.save(`Attestation_Sante_${member.prenom}_${member.nom}.pdf`);
 };

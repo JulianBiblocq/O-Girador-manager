@@ -680,7 +680,13 @@ export const fr = {
     privateConversationsTitle: "Mes Discussions Privées",
     noPrivateConversations: "Aucune discussion privée pour le moment. Allez dans le Trombinoscope pour contacter un membre !",
     writeMessagePlaceholder: "Rédiger un message...",
-    noMessageInbox: "Aucun message. Lancez la discussion !"
+    noMessageInbox: "Aucun message. Lancez la discussion !",
+    selectChannel: "Sélectionner un canal/salon",
+    channelsHeader: "Salons",
+    readOnly: "Lecture seule",
+    readOnlySalon: "Ce salon est en lecture seule pour votre rôle.",
+    targetGroup: "Cibler un groupe (Optionnel)",
+    targetAll: "-- Tout le monde --"
   },
   studioSocial: {
     title: "Studio Social",
