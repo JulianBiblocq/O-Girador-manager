@@ -63,6 +63,8 @@ export default function AssociationSettings({ groupId, onBack, role, isSystemAdm
   const [instructionsPaiement, setInstructionsPaiement] = useState('');
   const [helloAssoSignatureKey, setHelloAssoSignatureKey] = useState('');
   const [copySuccess, setCopySuccess] = useState(false);
+  const [demanderDroitImage, setDemanderDroitImage] = useState(false);
+  const [demanderAttestationSante, setDemanderAttestationSante] = useState(false);
 
   const [enableCarpoolReimbursement, setEnableCarpoolReimbursement] = useState(true);
   const [reimbursementRule, setReimbursementRule] = useState('full_cars_only');
@@ -125,6 +127,8 @@ export default function AssociationSettings({ groupId, onBack, role, isSystemAdm
     const unsubscribe = onSnapshot(assocRef, (docSnap) => {
       if (docSnap.exists()) {
         const data = docSnap.data();
+        setDemanderDroitImage(data.demanderDroitImage || false);
+        setDemanderAttestationSante(data.demanderAttestationSante || false);
         if (data.fieldsConfig) {
           // Merge defaults with existing config to ensure new fields (like lateralite) are present
           const merged = { ...DEFAULT_FIELDS_CONFIG, ...data.fieldsConfig };
@@ -339,6 +343,8 @@ export default function AssociationSettings({ groupId, onBack, role, isSystemAdm
         },
         droitImageDocUrl: finalDroitImageDocUrl,
         aptitudeMedicaleDocUrl: finalAptitudeMedicaleDocUrl,
+        demanderDroitImage: demanderDroitImage,
+        demanderAttestationSante: demanderAttestationSante,
         majoriteFeminine: majoriteFeminine,
         indemniteKilometrique: indemniteKilometrique,
         adresseLocal: adresseLocal,
@@ -537,6 +543,27 @@ export default function AssociationSettings({ groupId, onBack, role, isSystemAdm
                 📋 Documents de l'Association (RGPD & Médical)
               </h3>
 
+              {/* Image Rights Toggle */}
+              <div className="flex flex-col gap-1 pb-3 border-b border-dashed border-cordel-master-dark/15 text-left mb-3">
+                <label className="flex items-start gap-2.5 cursor-pointer select-none">
+                  <input 
+                    type="checkbox"
+                    checked={demanderDroitImage}
+                    onChange={(e) => setDemanderDroitImage(e.target.checked)}
+                    disabled={saving}
+                    className="w-4 h-4 cursor-pointer mt-0.5 shrink-0"
+                  />
+                  <div className="flex flex-col">
+                    <span className="text-xs font-bold text-encre-noire">
+                      Activer la demande de Droit à l'Image
+                    </span>
+                    <span className="text-[9px] text-cordel-master-dark/70 font-semibold mt-0.5 leading-relaxed">
+                      Si activé, les adhérents verront un consentement pour l'exploitation de leur image dans leur profil.
+                    </span>
+                  </div>
+                </label>
+              </div>
+
               {/* Droit à l'image Doc */}
               <div className="flex flex-col gap-2 pb-3 border-b border-dashed border-cordel-master-dark/15">
                 <span className="text-[10px] font-bold uppercase tracking-wider text-cordel-master-dark">Charte de Droit à l'image (PDF)</span>
@@ -564,6 +591,27 @@ export default function AssociationSettings({ groupId, onBack, role, isSystemAdm
                     </a>
                   )}
                 </div>
+              </div>
+
+              {/* Medical Aptitude Toggle */}
+              <div className="flex flex-col gap-1 pb-3 border-b border-dashed border-cordel-master-dark/15 text-left mb-3 mt-3">
+                <label className="flex items-start gap-2.5 cursor-pointer select-none">
+                  <input 
+                    type="checkbox"
+                    checked={demanderAttestationSante}
+                    onChange={(e) => setDemanderAttestationSante(e.target.checked)}
+                    disabled={saving}
+                    className="w-4 h-4 cursor-pointer mt-0.5 shrink-0"
+                  />
+                  <div className="flex flex-col">
+                    <span className="text-xs font-bold text-encre-noire">
+                      Activer la demande d'Aptitude Médicale
+                    </span>
+                    <span className="text-[9px] text-cordel-master-dark/70 font-semibold mt-0.5 leading-relaxed">
+                      Si activé, les adhérents devront attester ne présenter aucune contre-indication médicale pour participer aux activités.
+                    </span>
+                  </div>
+                </label>
               </div>
 
               {/* Aptitude médicale Doc */}
@@ -1331,7 +1379,7 @@ function GoogleMapsPreview({ address }) {
               } else {
                 const geocodeError = new Error(`Geocoding failed with status: ${status}`);
                 console.error("Détail Erreur Map :", geocodeError);
-                setMapError("Impossible de localiser cette adresse sur la carte");
+                setMapError(`Impossible de localiser cette adresse sur la carte (Erreur Google : ${status})`);
               }
             });
           } catch (geocoderErr) {

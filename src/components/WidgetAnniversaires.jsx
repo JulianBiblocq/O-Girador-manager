@@ -28,7 +28,7 @@ export default function WidgetAnniversaires({ groupId }) {
       snap.forEach((docSnap) => {
         const data = docSnap.data();
         // Filter active members who have a birthday
-        if (data.statutActuel !== 'inactive' && data.dateNaissance) {
+        if (data.statutActuel !== 'inactive' && data.statutActuel !== 'archived' && data.dateNaissance) {
           // Robust parsing of dateNaissance (YYYY-MM-DD)
           const parts = data.dateNaissance.split('-');
           if (parts.length === 3) {

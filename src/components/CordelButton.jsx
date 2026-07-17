@@ -22,6 +22,7 @@ export default function CordelButton({
     vert: 'theme-bg-vert',
     bleu: 'theme-bg-bleu',
     kraft: 'theme-bg-kraft',
+    rouge: 'theme-bg-rouge',
   };
 
   return (

@@ -21,6 +21,7 @@ const OrdersManager = React.lazy(() => import('./components/OrdersManager'));
 const AssociationSettings = React.lazy(() => import('./components/AssociationSettings'));
 const TreasuryManager = React.lazy(() => import('./components/TreasuryManager'));
 const StudioSocial = React.lazy(() => import('./components/StudioSocial'));
+const AdminExport = React.lazy(() => import('./components/AdminExport'));
 
 export default function App() {
   const { t } = useTranslation();
@@ -471,7 +472,7 @@ export default function App() {
                 profileData={profileData} 
                 onBack={() => setCurrentView('dashboard')} 
               />
-            ) : (currentView === 'system-admin' && profileData?.isSystemAdmin) ? (
+            ) : (currentView === 'system-admin' && (profileData?.isSystemAdmin || profileData?.role === 'super-admin' || profileData?.role === 'mestre')) ? (
               <SystemAdminPanel 
                 user={user} 
                 profileData={profileData} 
@@ -506,11 +507,17 @@ export default function App() {
                 isSystemAdmin={profileData?.isSystemAdmin}
                 onBack={() => setCurrentView('dashboard')} 
               />
-            ) : (currentView === 'treasury' && (profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.isSystemAdmin)) ? (
+            ) : (currentView === 'treasury' && (profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.role === 'tresorier' || profileData?.isSystemAdmin)) ? (
               <TreasuryManager 
                 groupId={profileData?.groupId}
                 role={profileData?.role}
                 isSystemAdmin={profileData?.isSystemAdmin}
+                onBack={() => setCurrentView('dashboard')} 
+              />
+            ) : (currentView === 'export-annu' && (profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.role === 'tresorier' || profileData?.role === 'president' || profileData?.isSystemAdmin)) ? (
+              <AdminExport 
+                user={user}
+                profileData={profileData}
                 onBack={() => setCurrentView('dashboard')} 
               />
             ) : (currentView === 'association-settings' && (profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.isSystemAdmin)) ? (

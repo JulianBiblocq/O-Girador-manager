@@ -12,7 +12,8 @@ import {
   XiloTag, 
   XiloConsole, 
   XiloSignOut,
-  XiloEQ 
+  XiloEQ,
+  XiloScroll
 } from './XiloIcons';
 import { useTranslation } from './LanguageContext';
 
@@ -30,7 +31,10 @@ export default function LayoutShell({
   const finalLogoUrl = logoUrl || '/Pictures/logo-samambaia.png';
   const { t } = useTranslation();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const isAdminOrMestre = profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.isSystemAdmin;
+  const isFullAdmin = profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.isSystemAdmin;
+  const isTreasuryAuthorized = isFullAdmin || profileData?.role === 'tresorier';
+  const isExportAuthorized = isFullAdmin || profileData?.role === 'tresorier' || profileData?.role === 'president';
+  const isAdminOrMestre = isExportAuthorized;
 
   return (
     <div className={`min-h-screen w-full ${forceLight ? 'bg-cordel-bg-light' : 'bg-cordel-bg-dark'} flex lg:items-center lg:justify-center p-4 md:p-6 lg:p-8`}>
@@ -158,55 +162,72 @@ export default function LayoutShell({
                 </span>
 
                 <button
-                  onClick={() => onNavigateToView && onNavigateToView('association-settings')}
-                  className={`theme-btn text-[9px] font-black uppercase tracking-wider py-1.5 px-2 text-left rounded-[4px_6px_3px_5px] flex items-center gap-2 hover:bg-cordel-hover cursor-pointer ${currentView === 'association-settings' ? 'bg-cordel-hover text-cordel-wood font-black' : ''}`}
+                  onClick={() => onNavigateToView && onNavigateToView('export-annu')}
+                  className={`theme-btn text-[9px] font-black uppercase tracking-wider py-1.5 px-2 text-left rounded-[4px_6px_3px_5px] flex items-center gap-2 hover:bg-cordel-hover cursor-pointer ${currentView === 'export-annu' ? 'bg-cordel-hover text-cordel-wood font-black' : ''}`}
                 >
-                  <XiloSettings size={12} /> {t('menu.settings') || "Configuration"}
+                  <XiloScroll size={12} /> {t('menu.exportAnnu') || "Annuaire & Export"}
                 </button>
 
-                <button
-                  onClick={() => onNavigateToView && onNavigateToView('studio-social')}
-                  className={`theme-btn text-[9px] font-black uppercase tracking-wider py-1.5 px-2 text-left rounded-[4px_6px_3px_5px] flex items-center gap-2 hover:bg-cordel-hover cursor-pointer ${currentView === 'studio-social' ? 'bg-cordel-hover text-cordel-wood font-black' : ''}`}
-                >
-                  <XiloMegaphone size={12} /> {t('menu.studioSocial') || "Studio Social"}
-                </button>
+                {isFullAdmin && (
+                  <>
+                    <button
+                      onClick={() => onNavigateToView && onNavigateToView('association-settings')}
+                      className={`theme-btn text-[9px] font-black uppercase tracking-wider py-1.5 px-2 text-left rounded-[4px_6px_3px_5px] flex items-center gap-2 hover:bg-cordel-hover cursor-pointer ${currentView === 'association-settings' ? 'bg-cordel-hover text-cordel-wood font-black' : ''}`}
+                    >
+                      <XiloSettings size={12} /> {t('menu.settings') || "Configuration"}
+                    </button>
 
-                <button
-                  onClick={() => onNavigateToView && onNavigateToView('treasury')}
-                  className={`theme-btn text-[9px] font-black uppercase tracking-wider py-1.5 px-2 text-left rounded-[4px_6px_3px_5px] flex items-center gap-2 hover:bg-cordel-hover cursor-pointer ${currentView === 'treasury' ? 'bg-cordel-hover text-cordel-wood font-black' : ''}`}
-                >
-                  <XiloCoin size={12} /> {t('menu.treasury') || "Trésorerie"}
-                </button>
+                    <button
+                      onClick={() => onNavigateToView && onNavigateToView('studio-social')}
+                      className={`theme-btn text-[9px] font-black uppercase tracking-wider py-1.5 px-2 text-left rounded-[4px_6px_3px_5px] flex items-center gap-2 hover:bg-cordel-hover cursor-pointer ${currentView === 'studio-social' ? 'bg-cordel-hover text-cordel-wood font-black' : ''}`}
+                    >
+                      <XiloMegaphone size={12} /> {t('menu.studioSocial') || "Studio Social"}
+                    </button>
+                  </>
+                )}
 
-                <button
-                  onClick={() => onNavigateToView && onNavigateToView('orders-manager')}
-                  className={`theme-btn text-[9px] font-black uppercase tracking-wider py-1.5 px-2 text-left rounded-[4px_6px_3px_5px] flex items-center gap-2 hover:bg-cordel-hover cursor-pointer ${currentView === 'orders-manager' ? 'bg-cordel-hover text-cordel-wood font-black' : ''}`}
-                >
-                  <XiloBox size={12} /> {t('menu.orders') || "Commandes"}
-                </button>
+                {isTreasuryAuthorized && (
+                  <button
+                    onClick={() => onNavigateToView && onNavigateToView('treasury')}
+                    className={`theme-btn text-[9px] font-black uppercase tracking-wider py-1.5 px-2 text-left rounded-[4px_6px_3px_5px] flex items-center gap-2 hover:bg-cordel-hover cursor-pointer ${currentView === 'treasury' ? 'bg-cordel-hover text-cordel-wood font-black' : ''}`}
+                  >
+                    <XiloCoin size={12} /> {t('menu.treasury') || "Trésorerie"}
+                  </button>
+                )}
 
-                <button
-                  onClick={() => onNavigateToView && onNavigateToView('inventory')}
-                  className={`theme-btn text-[9px] font-black uppercase tracking-wider py-1.5 px-2 text-left rounded-[4px_6px_3px_5px] flex items-center gap-2 hover:bg-cordel-hover cursor-pointer ${currentView === 'inventory' ? 'bg-cordel-hover text-cordel-wood font-black' : ''}`}
-                >
-                  <XiloDrum size={12} /> {t('menu.inventory') || "Inventaire"}
-                </button>
+                {isFullAdmin && (
+                  <>
+                    <button
+                      onClick={() => onNavigateToView && onNavigateToView('orders-manager')}
+                      className={`theme-btn text-[9px] font-black uppercase tracking-wider py-1.5 px-2 text-left rounded-[4px_6px_3px_5px] flex items-center gap-2 hover:bg-cordel-hover cursor-pointer ${currentView === 'orders-manager' ? 'bg-cordel-hover text-cordel-wood font-black' : ''}`}
+                    >
+                      <XiloBox size={12} /> {t('menu.orders') || "Commandes"}
+                    </button>
 
-                <button
-                  onClick={() => onNavigateToView && onNavigateToView('layout-editor')}
-                  className={`theme-btn text-[9px] font-black uppercase tracking-wider py-1.5 px-2 text-left rounded-[4px_6px_3px_5px] flex items-center gap-2 hover:bg-cordel-hover cursor-pointer ${currentView === 'layout-editor' ? 'bg-cordel-hover text-cordel-wood font-black' : ''}`}
-                >
-                  <XiloChisel size={12} /> {t('menu.layoutEditor') || "Mise en page"}
-                </button>
+                    <button
+                      onClick={() => onNavigateToView && onNavigateToView('inventory')}
+                      className={`theme-btn text-[9px] font-black uppercase tracking-wider py-1.5 px-2 text-left rounded-[4px_6px_3px_5px] flex items-center gap-2 hover:bg-cordel-hover cursor-pointer ${currentView === 'inventory' ? 'bg-cordel-hover text-cordel-wood font-black' : ''}`}
+                    >
+                      <XiloDrum size={12} /> {t('menu.inventory') || "Inventaire"}
+                    </button>
 
-                <button
-                  onClick={() => onNavigateToView && onNavigateToView('tag-manager')}
-                  className={`theme-btn text-[9px] font-black uppercase tracking-wider py-1.5 px-2 text-left rounded-[4px_6px_3px_5px] flex items-center gap-2 hover:bg-cordel-hover cursor-pointer ${currentView === 'tag-manager' ? 'bg-cordel-hover text-cordel-wood font-black' : ''}`}
-                >
-                  <XiloTag size={12} /> {t('menu.tags') || "Badges"}
-                </button>
+                    <button
+                      onClick={() => onNavigateToView && onNavigateToView('layout-editor')}
+                      className={`theme-btn text-[9px] font-black uppercase tracking-wider py-1.5 px-2 text-left rounded-[4px_6px_3px_5px] flex items-center gap-2 hover:bg-cordel-hover cursor-pointer ${currentView === 'layout-editor' ? 'bg-cordel-hover text-cordel-wood font-black' : ''}`}
+                    >
+                      <XiloChisel size={12} /> {t('menu.layoutEditor') || "Mise en page"}
+                    </button>
 
-                {profileData?.isSystemAdmin && (
+                    <button
+                      onClick={() => onNavigateToView && onNavigateToView('tag-manager')}
+                      className={`theme-btn text-[9px] font-black uppercase tracking-wider py-1.5 px-2 text-left rounded-[4px_6px_3px_5px] flex items-center gap-2 hover:bg-cordel-hover cursor-pointer ${currentView === 'tag-manager' ? 'bg-cordel-hover text-cordel-wood font-black' : ''}`}
+                    >
+                      <XiloTag size={12} /> {t('menu.tags') || "Badges"}
+                    </button>
+                  </>
+                )}
+
+                {(profileData?.isSystemAdmin || profileData?.role === 'super-admin' || profileData?.role === 'mestre') && (
                   <button
                     onClick={() => onNavigateToView && onNavigateToView('system-admin')}
                     className={`theme-btn text-[9px] font-black uppercase tracking-wider py-1.5 px-2 text-left rounded-[4px_6px_3px_5px] flex items-center gap-2 hover:bg-cordel-hover cursor-pointer mt-0.5 ${currentView === 'system-admin' ? 'bg-cordel-hover text-cordel-wood font-black' : ''}`}
@@ -342,7 +363,7 @@ export default function LayoutShell({
                 </button>
 
                 {/* Admin/Mestre features */}
-                {(profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.isSystemAdmin) && (
+                {isExportAuthorized && (
                   <>
                     <div className="border-t border-dashed border-cordel-master-dark/15 my-2" />
                     <span className="text-[8px] font-bold uppercase tracking-widest text-cordel-master-dark opacity-50 pl-1 mb-1 block">
@@ -351,78 +372,98 @@ export default function LayoutShell({
 
                     <button
                       onClick={() => {
-                        if (onNavigateToView) onNavigateToView('association-settings');
+                        if (onNavigateToView) onNavigateToView('export-annu');
                         setIsDrawerOpen(false);
                       }}
                       className="theme-btn text-[10px] font-black uppercase tracking-wider py-2 px-3 text-left rounded-[4px_6px_3px_5px] flex items-center gap-2 hover:bg-cordel-hover cursor-pointer"
                     >
-                      <XiloSettings size={14} /> {t('menu.settings') || "Configuration"}
+                      <XiloScroll size={14} /> {t('menu.exportAnnu') || "Annuaire & Export"}
                     </button>
 
-                    <button
-                      onClick={() => {
-                        if (onNavigateToView) onNavigateToView('studio-social');
-                        setIsDrawerOpen(false);
-                      }}
-                      className="theme-btn text-[10px] font-black uppercase tracking-wider py-2 px-3 text-left rounded-[4px_6px_3px_5px] flex items-center gap-2 hover:bg-cordel-hover cursor-pointer"
-                    >
-                      <XiloMegaphone size={14} /> {t('menu.studioSocial') || "Studio Social"}
-                    </button>
+                    {isFullAdmin && (
+                      <>
+                        <button
+                          onClick={() => {
+                            if (onNavigateToView) onNavigateToView('association-settings');
+                            setIsDrawerOpen(false);
+                          }}
+                          className="theme-btn text-[10px] font-black uppercase tracking-wider py-2 px-3 text-left rounded-[4px_6px_3px_5px] flex items-center gap-2 hover:bg-cordel-hover cursor-pointer"
+                        >
+                          <XiloSettings size={14} /> {t('menu.settings') || "Configuration"}
+                        </button>
 
-                    <button
-                      onClick={() => {
-                        if (onNavigateToView) onNavigateToView('treasury');
-                        setIsDrawerOpen(false);
-                      }}
-                      className="theme-btn text-[10px] font-black uppercase tracking-wider py-2 px-3 text-left rounded-[4px_6px_3px_5px] flex items-center gap-2 hover:bg-cordel-hover cursor-pointer"
-                    >
-                      <XiloCoin size={14} /> {t('menu.treasury') || "Trésorerie"}
-                    </button>
+                        <button
+                          onClick={() => {
+                            if (onNavigateToView) onNavigateToView('studio-social');
+                            setIsDrawerOpen(false);
+                          }}
+                          className="theme-btn text-[10px] font-black uppercase tracking-wider py-2 px-3 text-left rounded-[4px_6px_3px_5px] flex items-center gap-2 hover:bg-cordel-hover cursor-pointer"
+                        >
+                          <XiloMegaphone size={14} /> {t('menu.studioSocial') || "Studio Social"}
+                        </button>
+                      </>
+                    )}
 
-                    <button
-                      onClick={() => {
-                        if (onNavigateToView) onNavigateToView('orders-manager');
-                        setIsDrawerOpen(false);
-                      }}
-                      className="theme-btn text-[10px] font-black uppercase tracking-wider py-2 px-3 text-left rounded-[4px_6px_3px_5px] flex items-center gap-2 hover:bg-cordel-hover cursor-pointer"
-                    >
-                      <XiloBox size={14} /> {t('menu.orders') || "Commandes"}
-                    </button>
+                    {isTreasuryAuthorized && (
+                      <button
+                        onClick={() => {
+                          if (onNavigateToView) onNavigateToView('treasury');
+                          setIsDrawerOpen(false);
+                        }}
+                        className="theme-btn text-[10px] font-black uppercase tracking-wider py-2 px-3 text-left rounded-[4px_6px_3px_5px] flex items-center gap-2 hover:bg-cordel-hover cursor-pointer"
+                      >
+                        <XiloCoin size={14} /> {t('menu.treasury') || "Trésorerie"}
+                      </button>
+                    )}
 
-                    <button
-                      onClick={() => {
-                        if (onNavigateToView) onNavigateToView('inventory');
-                        setIsDrawerOpen(false);
-                      }}
-                      className="theme-btn text-[10px] font-black uppercase tracking-wider py-2 px-3 text-left rounded-[4px_6px_3px_5px] flex items-center gap-2 hover:bg-cordel-hover cursor-pointer"
-                    >
-                      <XiloDrum size={14} /> {t('menu.inventory') || "Inventaire"}
-                    </button>
+                    {isFullAdmin && (
+                      <>
+                        <button
+                          onClick={() => {
+                            if (onNavigateToView) onNavigateToView('orders-manager');
+                            setIsDrawerOpen(false);
+                          }}
+                          className="theme-btn text-[10px] font-black uppercase tracking-wider py-2 px-3 text-left rounded-[4px_6px_3px_5px] flex items-center gap-2 hover:bg-cordel-hover cursor-pointer"
+                        >
+                          <XiloBox size={14} /> {t('menu.orders') || "Commandes"}
+                        </button>
 
-                    <button
-                      onClick={() => {
-                        if (onNavigateToView) onNavigateToView('layout-editor');
-                        setIsDrawerOpen(false);
-                      }}
-                      className="theme-btn text-[10px] font-black uppercase tracking-wider py-2 px-3 text-left rounded-[4px_6px_3px_5px] flex items-center gap-2 hover:bg-cordel-hover cursor-pointer"
-                    >
-                      <XiloChisel size={14} /> {t('menu.layoutEditor') || "Mise en page"}
-                    </button>
+                        <button
+                          onClick={() => {
+                            if (onNavigateToView) onNavigateToView('inventory');
+                            setIsDrawerOpen(false);
+                          }}
+                          className="theme-btn text-[10px] font-black uppercase tracking-wider py-2 px-3 text-left rounded-[4px_6px_3px_5px] flex items-center gap-2 hover:bg-cordel-hover cursor-pointer"
+                        >
+                          <XiloDrum size={14} /> {t('menu.inventory') || "Inventaire"}
+                        </button>
 
-                    <button
-                      onClick={() => {
-                        if (onNavigateToView) onNavigateToView('tag-manager');
-                        setIsDrawerOpen(false);
-                      }}
-                      className="theme-btn text-[10px] font-black uppercase tracking-wider py-2 px-3 text-left rounded-[4px_6px_3px_5px] flex items-center gap-2 hover:bg-cordel-hover cursor-pointer"
-                    >
-                      <XiloTag size={14} /> {t('menu.tags') || "Badges"}
-                    </button>
+                        <button
+                          onClick={() => {
+                            if (onNavigateToView) onNavigateToView('layout-editor');
+                            setIsDrawerOpen(false);
+                          }}
+                          className="theme-btn text-[10px] font-black uppercase tracking-wider py-2 px-3 text-left rounded-[4px_6px_3px_5px] flex items-center gap-2 hover:bg-cordel-hover cursor-pointer"
+                        >
+                          <XiloChisel size={14} /> {t('menu.layoutEditor') || "Mise en page"}
+                        </button>
+
+                        <button
+                          onClick={() => {
+                            if (onNavigateToView) onNavigateToView('tag-manager');
+                            setIsDrawerOpen(false);
+                          }}
+                          className="theme-btn text-[10px] font-black uppercase tracking-wider py-2 px-3 text-left rounded-[4px_6px_3px_5px] flex items-center gap-2 hover:bg-cordel-hover cursor-pointer"
+                        >
+                          <XiloTag size={14} /> {t('menu.tags') || "Badges"}
+                        </button>
+                      </>
+                    )}
                   </>
                 )}
 
                 {/* System Admin */}
-                {profileData?.isSystemAdmin && (
+                {(profileData?.isSystemAdmin || profileData?.role === 'super-admin' || profileData?.role === 'mestre') && (
                   <button
                     onClick={() => {
                       if (onNavigateToView) onNavigateToView('system-admin');

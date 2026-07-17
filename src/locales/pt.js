@@ -55,7 +55,8 @@ export const pt = {
     tags: "Crachás",
     systemAdmin: "Admin do Sistema",
     adminHeader: "Administração",
-    studioSocial: "Studio Social"
+    studioSocial: "Studio Social",
+    exportAnnu: "Contatos e Exportação"
   },
   login: {
     title: "O Girador",
@@ -72,7 +73,14 @@ export const pt = {
     switchLogin: "Já tem uma conta? Entrar",
     loadingRedirect: "Resolvendo conexão...",
     connectError: "Erro de conexão: ",
-    authError: "Erro de autenticação: "
+    authError: "Erro de autenticação: ",
+    errorOperationNotAllowed: "O cadastro por e-mail e senha não está ativado no console do Firebase. Ative-o nas configurações de autenticação (Sign-in method) do seu projeto Firebase.",
+    errorEmailAlreadyInUse: "Este endereço de e-mail já está em uso por outra conta.",
+    errorInvalidEmail: "O endereço de e-mail não é válido.",
+    errorWeakPassword: "A senha é muito fraca. Deve conter pelo menos 6 caracteres.",
+    errorInvalidCredential: "E-mail ou senha incorretos.",
+    errorUserDisabled: "Esta conta de usuário foi desativada.",
+    errorDefault: "Ocorreu um erro: "
   },
   onboarding: {
     title: "NOVO PERFIL",

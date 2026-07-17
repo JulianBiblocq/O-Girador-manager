@@ -61,6 +61,8 @@ export default function UserProfile({ user, profileData, onBack }) {
   const [aptitudeMedicaleDocUrl, setAptitudeMedicaleDocUrl] = useState('');
   const [fieldsConfig, setFieldsConfig] = useState(null);
   const [instrumentsDisponibles, setInstrumentsDisponibles] = useState(DEFAULT_INSTRUMENTS);
+  const [demanderDroitImage, setDemanderDroitImage] = useState(false);
+  const [demanderAttestationSante, setDemanderAttestationSante] = useState(false);
 
   // Xylogravure photo editor states
   const [selectedImage, setSelectedImage] = useState(null);
@@ -78,6 +80,8 @@ export default function UserProfile({ user, profileData, onBack }) {
     const unsubscribe = onSnapshot(assocRef, (docSnap) => {
       if (docSnap.exists()) {
         const data = docSnap.data();
+        setDemanderDroitImage(data.demanderDroitImage || false);
+        setDemanderAttestationSante(data.demanderAttestationSante || false);
         if (data.fieldsConfig) {
           setFieldsConfig({ ...DEFAULT_FIELDS_CONFIG, ...data.fieldsConfig });
         } else {
@@ -201,8 +205,7 @@ export default function UserProfile({ user, profileData, onBack }) {
 
     setSaving(true);
     try {
-      const userRef = doc(db, 'users', user.uid);
-      await updateDoc(userRef, {
+      const updatePayload = {
         prenom: formData.prenom,
         nom: formData.nom,
         instrument: formData.instrument,
@@ -212,14 +215,37 @@ export default function UserProfile({ user, profileData, onBack }) {
         ])).filter(Boolean),
         telephone: isFieldVisible('telephone') ? formData.telephone : (profileData?.telephone || ''),
         tailleTshirt: isFieldVisible('tailleTshirt') ? formData.tailleTshirt : (profileData?.tailleTshirt || 'M'),
-        droitImage: isFieldVisible('droitImage') ? formData.droitImage : (profileData?.droitImage !== undefined ? profileData.droitImage : true),
-        aptitudeMedicale: isFieldVisible('aptitudeMedicale') ? formData.aptitudeMedicale : (profileData?.aptitudeMedicale !== undefined ? profileData.aptitudeMedicale : false),
         lateralite: isFieldVisible('lateralite') ? formData.lateralite : (profileData?.lateralite || 'droitier'),
         dateNaissance: isFieldVisible('dateNaissance') ? formData.dateNaissance : (profileData?.dateNaissance || ''),
         genre: formData.genre,
         publierTelephone: isFieldVisible('telephone') ? formData.publierTelephone : false,
         publierDateNaissance: isFieldVisible('dateNaissance') ? formData.publierDateNaissance : false
-      });
+      };
+
+      if (demanderDroitImage) {
+        updatePayload.droitImage = formData.droitImage;
+        if (formData.droitImage) {
+          if (!profileData?.droitImage || !profileData?.dateSignatureDroitImage) {
+            updatePayload.dateSignatureDroitImage = new Date();
+          }
+        } else {
+          updatePayload.dateSignatureDroitImage = null;
+        }
+      }
+
+      if (demanderAttestationSante) {
+        updatePayload.aptitudeMedicale = formData.aptitudeMedicale;
+        if (formData.aptitudeMedicale) {
+          if (!profileData?.aptitudeMedicale || !profileData?.dateSignatureAttestationSante) {
+            updatePayload.dateSignatureAttestationSante = new Date();
+          }
+        } else {
+          updatePayload.dateSignatureAttestationSante = null;
+        }
+      }
+
+      const userRef = doc(db, 'users', user.uid);
+      await updateDoc(userRef, updatePayload);
       alert(t('userProfile.successMsg'));
     } catch (error) {
       console.error("UserProfile - Erreur lors de la sauvegarde :", error);
@@ -268,7 +294,7 @@ export default function UserProfile({ user, profileData, onBack }) {
               {tRole(profileData?.role || 'membre', profileData?.genre)}
             </span>
             <span className="theme-stamp-badge theme-stamp-badge-ocre text-[7px] -rotate-6">
-              {profileData?.niveau === 'confirme' ? '🏆 ' + t('userProfile.levelConfirmSimple') : '🌱 ' + t('userProfile.levelBeginner')}
+              {profileData?.niveau === 'confirme' ? '🏆 ' + t('userProfile.levelConfirmSimple') : profileData?.niveau === 'debutant' ? '🌱 ' + t('userProfile.levelBeginner') : '🎵 ' + (t('common.none') || 'Aucun')}
             </span>
             <span className="theme-stamp-badge theme-stamp-badge-ocre text-[7px] rotate-3">
               {profileData?.niveauDanse === 'confirme' ? '💃 ' + t('userProfile.levelConfirmSimple') : profileData?.niveauDanse === 'debutant' ? '🌱 ' + t('userProfile.levelBeginner') : '💃 ' + t('common.none')}
@@ -479,7 +505,7 @@ export default function UserProfile({ user, profileData, onBack }) {
                 {t('systemAdmin.musicLevel') || "Niveau Musique"}
               </span>
               <span className="text-xs font-bold text-encre-noire bg-cordel-bg-light py-1.5 px-3 rounded border border-encre-noire/25 w-full inline-block text-center">
-                {profileData?.niveau === 'confirme' ? '🏆 ' + t('userProfile.levelConfirmSimple') : '🌱 ' + t('userProfile.levelBeginner')}
+                {profileData?.niveau === 'confirme' ? '🏆 ' + t('userProfile.levelConfirmSimple') : profileData?.niveau === 'debutant' ? '🌱 ' + t('userProfile.levelBeginner') : '🎵 ' + (t('common.none') || 'Aucun')}
               </span>
             </div>
             <div className="flex flex-col gap-1.5">
@@ -589,7 +615,7 @@ export default function UserProfile({ user, profileData, onBack }) {
           )}
 
           {/* Droit à l'image Checkbox */}
-          {isFieldVisible('droitImage') && (
+          {demanderDroitImage && (
             <div className="flex flex-col gap-1.5 border-t border-dashed border-cordel-master-dark/10 pt-2">
               <div className="flex items-start gap-2.5">
                 <input
@@ -614,7 +640,7 @@ export default function UserProfile({ user, profileData, onBack }) {
           )}
 
           {/* Aptitude Médicale Checkbox (Required) */}
-          {isFieldVisible('aptitudeMedicale') && (
+          {demanderAttestationSante && (
             <div className="flex flex-col gap-1.5 mt-1">
               <div className="flex items-start gap-2.5">
                 <input

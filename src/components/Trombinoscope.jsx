@@ -202,6 +202,9 @@ export default function Trombinoscope({ user, profileData, onBack, onContactUser
 
   // Cascade Filtering logic
   const filteredMembers = members.filter((member) => {
+    // Exclude archived members from the Trombinoscope
+    if (member.statutActuel === 'archived') return false;
+
     const fullName = `${member.prenom || ''} ${member.nom || ''}`.toLowerCase();
     const matchesSearch = fullName.includes(searchQuery.toLowerCase());
 
@@ -393,7 +396,7 @@ export default function Trombinoscope({ user, profileData, onBack, onContactUser
                         {hasPercussions && (
                           <div className="flex flex-col items-center">
                             <span className="font-extrabold text-cordel-wood flex items-center justify-center gap-0.5 uppercase text-[8.5px] tracking-wider">
-                              <XiloCaixa size={9} /> Percussion {percuLevel && `(${percuLevel === 'confirme' ? t('userProfile.levelConfirmSimple') || 'Confirmé' : t('userProfile.levelBeginner') || 'Débutant'})`}
+                              <XiloCaixa size={9} /> Percussion {percuLevel && `(${percuLevel === 'confirme' ? t('userProfile.levelConfirmSimple') || 'Confirmé' : percuLevel === 'debutant' ? t('userProfile.levelBeginner') || 'Débutant' : t('common.none') || 'Aucun'})`}
                             </span>
                             <span className="font-semibold text-encre-noire text-[9.5px] mt-0.5 leading-snug">
                               {percussions.map((inst) => {

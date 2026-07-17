@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { collection, query, onSnapshot, doc, updateDoc } from 'firebase/firestore';
+import { collection, query, onSnapshot, doc, updateDoc, deleteDoc, where } from 'firebase/firestore';
 import { db } from '../firebase';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
 import { useTranslation } from './LanguageContext';
 import { forceUpdateAndClearCache } from '../utils/pwaUtils';
 import { XiloSettings, XiloPeople } from './XiloIcons';
+import { generateImageCharterPDF, generateMedicalAttestationPDF } from '../utils/pdfGenerator';
 
 const DEFAULT_FIELDS_CONFIG = {
   telephone: { key: "telephone", label: "Téléphone", enabled: true, filledBy: "member" },
@@ -28,13 +29,19 @@ export default function SystemAdminPanel({ user, profileData, onBack, onNavigate
   const [fieldsConfig, setFieldsConfig] = useState(null);
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState(null);
+  const [associationName, setAssociationName] = useState('');
 
   // Synchronize all user profiles in real-time
   useEffect(() => {
-    if (!profileData || profileData.isSystemAdmin !== true) return;
+    if (!profileData) return;
+    const isAuthorized = profileData.isSystemAdmin === true || profileData.role === 'super-admin' || profileData.role === 'mestre';
+    if (!isAuthorized) return;
+
     setLoading(true);
     const usersRef = collection(db, 'users');
-    const q = query(usersRef);
+    const q = profileData.isSystemAdmin === true
+      ? query(usersRef)
+      : query(usersRef, where('groupId', '==', profileData.groupId));
 
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
       const fetchedUsers = [];
@@ -59,12 +66,17 @@ export default function SystemAdminPanel({ user, profileData, onBack, onNavigate
 
   // Real-time synchronization of custom tags list and fieldsConfig from associations collection
   useEffect(() => {
-    if (!profileData || profileData.isSystemAdmin !== true || !profileData?.groupId) return;
+    if (!profileData || !profileData.groupId) return;
+    const isAuthorized = profileData.isSystemAdmin === true || profileData.role === 'super-admin' || profileData.role === 'mestre';
+    if (!isAuthorized) return;
 
     const assocRef = doc(db, 'associations', profileData.groupId);
     const unsubscribe = onSnapshot(assocRef, (docSnap) => {
       if (docSnap.exists()) {
         const data = docSnap.data();
+        if (data.nom) {
+          setAssociationName(data.nom);
+        }
         if (Array.isArray(data.tagsDisponibles)) {
           setAvailableTags(data.tagsDisponibles);
         }
@@ -82,7 +94,8 @@ export default function SystemAdminPanel({ user, profileData, onBack, onNavigate
   }, [profileData]);
 
   // Ultimate Security Verification
-  if (!profileData || profileData.isSystemAdmin !== true) {
+  const isAuthorized = profileData?.isSystemAdmin === true || profileData?.role === 'super-admin' || profileData?.role === 'mestre';
+  if (!profileData || !isAuthorized) {
     return (
       <div className="text-center py-12">
         <div className="w-16 h-16 bg-cordel-wood text-cordel-bg-light rounded-full flex items-center justify-center text-3xl font-black mx-auto mb-4 border-2 border-encre-noire shadow-[3px_3px_0px_0px_#181716] select-none">
@@ -137,7 +150,7 @@ export default function SystemAdminPanel({ user, profileData, onBack, onNavigate
   const handleSavePermissions = async (targetUserId, currentUserItem) => {
     const currentRole = currentUserItem.role || 'membre';
     const currentTags = currentUserItem.tags || [];
-    const currentLevel = currentUserItem.niveau || 'debutant';
+    const currentLevel = currentUserItem.niveau || 'aucun';
     const currentDanceLevel = currentUserItem.niveauDanse || 'aucun';
 
     const newRole = draftRoles[targetUserId] !== undefined ? draftRoles[targetUserId] : currentRole;
@@ -210,6 +223,43 @@ export default function SystemAdminPanel({ user, profileData, onBack, onNavigate
     } catch (error) {
       console.error("SystemAdminPanel - Erreur updateDoc :", error);
       alert(t('common.saveError'));
+    } finally {
+      setSavingId(null);
+    }
+  };
+
+  const handleDeleteUser = async (targetUserId, targetUserName) => {
+    const confirmation = window.confirm(`Voulez-vous vraiment supprimer le membre "${targetUserName}" ? Cette action est irréversible.`);
+    if (!confirmation) return;
+
+    setSavingId(targetUserId);
+    try {
+      const userRef = doc(db, 'users', targetUserId);
+      await deleteDoc(userRef);
+      alert("Membre supprimé avec succès.");
+    } catch (error) {
+      console.error("SystemAdminPanel - Erreur lors de la suppression :", error);
+      alert("Erreur lors de la suppression du membre.");
+    } finally {
+      setSavingId(null);
+    }
+  };
+
+  const handleToggleArchive = async (targetUserId, shouldReactivate) => {
+    const actionText = shouldReactivate ? "réactiver" : "archiver";
+    const confirmation = window.confirm(`Voulez-vous vraiment ${actionText} ce membre ?`);
+    if (!confirmation) return;
+
+    setSavingId(targetUserId);
+    try {
+      const userRef = doc(db, 'users', targetUserId);
+      await updateDoc(userRef, {
+        statutActuel: shouldReactivate ? 'active' : 'archived'
+      });
+      alert(`Membre ${shouldReactivate ? 'réactivé' : 'archivé'} avec succès.`);
+    } catch (error) {
+      console.error("SystemAdminPanel - Erreur lors de l'archivage/réactivation :", error);
+      alert("Une erreur est survenue.");
     } finally {
       setSavingId(null);
     }
@@ -296,7 +346,7 @@ export default function SystemAdminPanel({ user, profileData, onBack, onNavigate
             {usersList.map((userItem) => {
               const currentRole = userItem.role || 'membre';
               const currentTags = userItem.tags || [];
-              const currentLevel = userItem.niveau || 'debutant';
+              const currentLevel = userItem.niveau || 'aucun';
               const currentDanceLevel = userItem.niveauDanse || 'aucun';
               
               const draftRole = draftRoles[userItem.id];
@@ -330,9 +380,15 @@ export default function SystemAdminPanel({ user, profileData, onBack, onNavigate
                 isFieldModified('dateNaissance', userItem.dateNaissance);
 
               const isModified = isRoleModified || isTagsModified || isAnyFieldModified || isLevelModified || isDanceLevelModified;
+              const isArchived = userItem.statutActuel === 'archived';
 
               return (
-                <CordelCard key={userItem.id} variant="default" useExtremeBorder={false} className="py-4 relative pr-4">
+                <CordelCard 
+                  key={userItem.id} 
+                  variant="default" 
+                  useExtremeBorder={false} 
+                  className={`py-4 relative pr-4 ${isArchived ? 'opacity-65 grayscale-[30%] border-dashed border-cordel-master-dark/30' : ''}`}
+                >
                   <div className="flex flex-col gap-3 text-left">
                     {/* User Identification info */}
                     <div>
@@ -368,7 +424,7 @@ export default function SystemAdminPanel({ user, profileData, onBack, onNavigate
                       <p className="text-[9px] font-bold text-cordel-wood mt-0.5 flex flex-wrap gap-x-2">
                         <span>📦 Groupe : <span className="font-mono">{userItem.groupId || 'Aucun'}</span></span>
                         <span>•</span>
-                        <span>🏆 Percu : <strong className="uppercase">{userItem.niveau === 'confirme' ? 'Confirmé' : 'Débutant'}</strong></span>
+                        <span>🏆 Percu : <strong className="uppercase">{userItem.niveau === 'confirme' ? 'Confirmé' : userItem.niveau === 'debutant' ? 'Débutant' : 'Aucun'}</strong></span>
                         <span>•</span>
                         <span>💃 Danse : <strong className="uppercase">{userItem.niveauDanse === 'confirme' ? 'Confirmé' : userItem.niveauDanse === 'debutant' ? 'Débutant' : 'Aucun'}</strong></span>
                       </p>
@@ -423,6 +479,7 @@ export default function SystemAdminPanel({ user, profileData, onBack, onNavigate
                           disabled={savingId === userItem.id}
                           className="theme-input text-xs font-bold py-1.5 px-2 bg-cordel-bg-light"
                         >
+                          <option value="aucun">Aucun</option>
                           <option value="debutant">Débutant</option>
                           <option value="confirme">Confirmé</option>
                         </select>
@@ -444,9 +501,10 @@ export default function SystemAdminPanel({ user, profileData, onBack, onNavigate
                         </select>
                       </div>
 
-                      {/* Action save button (Only clickable when modified) */}
-                      <div className="self-end pb-0.5">
+                      {/* Action buttons (Save, Archive/Reactivate & Delete) */}
+                      <div className="self-end pb-0.5 flex flex-wrap gap-2">
                         <CordelButton
+                          type="button"
                           variant={isModified ? "ocre" : "default"}
                           useExtremeBorder={true}
                           onClick={() => handleSavePermissions(userItem.id, userItem)}
@@ -457,6 +515,32 @@ export default function SystemAdminPanel({ user, profileData, onBack, onNavigate
                         >
                           {savingId === userItem.id ? "..." : "Sauver"}
                         </CordelButton>
+
+                        {userItem.id !== user.uid && (
+                          <CordelButton
+                            type="button"
+                            variant={isArchived ? 'vert' : 'default'}
+                            useExtremeBorder={true}
+                            onClick={() => handleToggleArchive(userItem.id, isArchived)}
+                            disabled={savingId === userItem.id}
+                            className="text-xs px-3 py-1.5 font-bold uppercase tracking-wider"
+                          >
+                            {isArchived ? "Réactiver" : "Archiver"}
+                          </CordelButton>
+                        )}
+
+                        {userItem.id !== user.uid && (
+                          <CordelButton
+                            type="button"
+                            variant="rouge"
+                            useExtremeBorder={true}
+                            onClick={() => handleDeleteUser(userItem.id, `${userItem.prenom} ${userItem.nom}`)}
+                            disabled={savingId === userItem.id}
+                            className="text-xs px-3 py-1.5 font-bold uppercase tracking-wider"
+                          >
+                            Supprimer
+                          </CordelButton>
+                        )}
                       </div>
                     </div>
 
@@ -591,13 +675,45 @@ export default function SystemAdminPanel({ user, profileData, onBack, onNavigate
                         </div>
                       </div>
                     )}
+
+                    {/* PDF Generation section */}
+                    {(userItem.droitImage === true || userItem.aptitudeMedicale === true) && (
+                      <div className="flex flex-wrap gap-2 border-t border-dashed border-cordel-master-dark/10 pt-3 mt-1.5">
+                        <label className="text-[8px] uppercase font-bold tracking-wider text-cordel-master-dark w-full">
+                          Documents Signés (PDF)
+                        </label>
+                        {userItem.droitImage === true && (
+                          <button
+                            type="button"
+                            onClick={() => generateImageCharterPDF(userItem, associationName)}
+                            className="text-[9px] font-black uppercase tracking-widest bg-cordel-bg border border-encre-noire px-2.5 py-1 rounded-[4px_6px_3px_5px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-95 cursor-pointer flex items-center gap-1"
+                          >
+                            📄 Télécharger Charte Image PDF
+                          </button>
+                        )}
+                        {userItem.aptitudeMedicale === true && (
+                          <button
+                            type="button"
+                            onClick={() => generateMedicalAttestationPDF(userItem, associationName)}
+                            className="text-[9px] font-black uppercase tracking-widest bg-cordel-bg border border-encre-noire px-2.5 py-1 rounded-[4px_6px_3px_5px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-95 cursor-pointer flex items-center gap-1"
+                          >
+                            📄 Télécharger Attestation Santé PDF
+                          </button>
+                        )}
+                      </div>
+                    )}
                   </div>
 
-                  {/* Stamp badge representing current live role */}
-                  <div className="absolute right-4 top-4 select-none">
+                  {/* Stamp badge representing current live role and archived status */}
+                  <div className="absolute right-4 top-4 select-none flex flex-col items-end gap-1">
                     <span className="theme-stamp-badge theme-stamp-badge-wood text-[7px]">
                       {currentRole}
                     </span>
+                    {isArchived && (
+                      <span className="theme-stamp-badge theme-stamp-badge-wood text-[7px] border-red-600 text-red-600 font-extrabold uppercase rotate-[-3deg]">
+                        Archivé
+                      </span>
+                    )}
                   </div>
                 </CordelCard>
               );

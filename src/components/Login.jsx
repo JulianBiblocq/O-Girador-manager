@@ -13,6 +13,27 @@ export default function Login({ branding }) {
   const [password, setPassword] = useState('');
   const [isSignUpMode, setIsSignUpMode] = useState(false);
   const [authLoading, setAuthLoading] = useState(false);
+  const getAuthErrorMessage = (error) => {
+    switch (error.code) {
+      case 'auth/operation-not-allowed':
+        return t('login.errorOperationNotAllowed') || "L'inscription par e-mail et mot de passe n'est pas activée. Veuillez l'activer dans la console Firebase.";
+      case 'auth/email-already-in-use':
+        return t('login.errorEmailAlreadyInUse') || "Cette adresse e-mail est déjà utilisée.";
+      case 'auth/invalid-email':
+        return t('login.errorInvalidEmail') || "Adresse e-mail invalide.";
+      case 'auth/weak-password':
+        return t('login.errorWeakPassword') || "Le mot de passe est trop faible (6 caractères minimum).";
+      case 'auth/wrong-password':
+      case 'auth/user-not-found':
+      case 'auth/invalid-credential':
+        return t('login.errorInvalidCredential') || "Identifiants incorrects.";
+      case 'auth/user-disabled':
+        return t('login.errorUserDisabled') || "Ce compte a été désactivé.";
+      default:
+        return (t('login.errorDefault') || "Une erreur est survenue : ") + error.message;
+    }
+  };
+
   const handleLogin = async () => {
     setAuthLoading(true);
     try {
@@ -20,7 +41,7 @@ export default function Login({ branding }) {
       await signInWithPopup(auth, googleProvider);
     } catch (error) {
       console.error("Erreur de connexion :", error);
-      alert(t('login.connectError') + error.message);
+      alert(getAuthErrorMessage(error));
     } finally {
       setAuthLoading(false);
     }
@@ -28,19 +49,19 @@ export default function Login({ branding }) {
 
   const handleEmailAuth = async (e) => {
     e.preventDefault();
-    if (!email.trim() || !password.trim()) return;
+    if (!email.trim() || !password) return;
 
     setAuthLoading(true);
     try {
       if (isSignUpMode) {
-        await createUserWithEmailAndPassword(auth, email.trim(), password.trim());
+        await createUserWithEmailAndPassword(auth, email.trim(), password);
         alert(t('login.accountCreated'));
       } else {
-        await signInWithEmailAndPassword(auth, email.trim(), password.trim());
+        await signInWithEmailAndPassword(auth, email.trim(), password);
       }
     } catch (error) {
       console.error("Erreur d'authentification par email :", error);
-      alert(t('login.authError') + error.message);
+      alert(getAuthErrorMessage(error));
     } finally {
       setAuthLoading(false);
     }

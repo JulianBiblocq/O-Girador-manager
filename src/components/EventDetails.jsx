@@ -282,7 +282,7 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
     return () => unsubscribe();
   }, [event.groupId]);
 
-  const isPrestationRestricted = event.type === 'prestation' && event.niveauRequis === 'confirme' && profileData?.niveau === 'debutant';
+  const isPrestationRestricted = event.type === 'prestation' && event.niveauRequis === 'confirme' && profileData?.niveau !== 'confirme';
 
   // Sync users list to fetch instruments and names in real-time
   useEffect(() => {

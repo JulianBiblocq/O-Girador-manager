@@ -29,7 +29,7 @@ export default function Onboarding({ user, branding, onComplete }) {
     lastName: initialLastName,
     phone: '',
     tailleTshirt: 'M',
-    droitImage: true,
+    droitImage: false,
     aptitudeMedicale: false,
     lateralite: 'droitier',
     dateNaissance: '',
@@ -45,6 +45,8 @@ export default function Onboarding({ user, branding, onComplete }) {
   const [submitting, setSubmitting] = useState(false);
   const [droitImageDocUrl, setDroitImageDocUrl] = useState('');
   const [aptitudeMedicaleDocUrl, setAptitudeMedicaleDocUrl] = useState('');
+  const [demanderDroitImage, setDemanderDroitImage] = useState(false);
+  const [demanderAttestationSante, setDemanderAttestationSante] = useState(false);
 
   // Extract the group ID parameter from the URL if present
   const searchParams = new URLSearchParams(window.location.search);
@@ -64,6 +66,8 @@ export default function Onboarding({ user, branding, onComplete }) {
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
           const data = docSnap.data();
+          setDemanderDroitImage(data.demanderDroitImage || false);
+          setDemanderAttestationSante(data.demanderAttestationSante || false);
           if (data.fieldsConfig) {
             setFieldsConfig({ ...DEFAULT_FIELDS_CONFIG, ...data.fieldsConfig });
           } else {
@@ -115,8 +119,10 @@ export default function Onboarding({ user, branding, onComplete }) {
         email: user.email,
         telephone: isFieldVisible('telephone') ? formData.phone : "",
         tailleTshirt: isFieldVisible('tailleTshirt') ? formData.tailleTshirt : "M",
-        droitImage: isFieldVisible('droitImage') ? formData.droitImage : true,
-        aptitudeMedicale: isFieldVisible('aptitudeMedicale') ? formData.aptitudeMedicale : false,
+        droitImage: demanderDroitImage ? formData.droitImage : false,
+        dateSignatureDroitImage: demanderDroitImage && formData.droitImage ? new Date() : null,
+        aptitudeMedicale: demanderAttestationSante ? formData.aptitudeMedicale : false,
+        dateSignatureAttestationSante: demanderAttestationSante && formData.aptitudeMedicale ? new Date() : null,
         lateralite: isFieldVisible('lateralite') ? formData.lateralite : "droitier",
         dateNaissance: isFieldVisible('dateNaissance') ? formData.dateNaissance : "",
         instrument: formData.instrument || "Autre",
@@ -367,7 +373,7 @@ export default function Onboarding({ user, branding, onComplete }) {
           )}
 
           {/* Image Rights Checkbox */}
-          {isFieldVisible('droitImage') && (
+          {demanderDroitImage && (
             <div className="flex flex-col gap-1 mt-2">
               <div className="flex items-start gap-2.5">
                 <input
@@ -392,7 +398,7 @@ export default function Onboarding({ user, branding, onComplete }) {
           )}
 
           {/* Medical Aptitude Checkbox (Required) */}
-          {isFieldVisible('aptitudeMedicale') && (
+          {demanderAttestationSante && (
             <div className="flex flex-col gap-1 mt-2">
               <div className="flex items-start gap-2.5">
                 <input

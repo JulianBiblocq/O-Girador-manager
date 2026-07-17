@@ -80,8 +80,7 @@ export default function Dashboard({ user, profileData, onNavigateToTrombi, onNav
 
   return (
     <div className="flex flex-col gap-4 w-full max-w-full overflow-hidden">
-      {/* System Admin Button (Top Float) */}
-      {profileData?.isSystemAdmin && (
+      {(profileData?.isSystemAdmin || profileData?.role === 'super-admin' || profileData?.role === 'mestre') && (
         <div className="flex justify-end -mb-3">
           <button 
             onClick={() => onNavigateToView('system-admin')}

@@ -55,7 +55,8 @@ export const fr = {
     tags: "Badges",
     systemAdmin: "Admin Système",
     adminHeader: "Administration",
-    studioSocial: "Studio Social"
+    studioSocial: "Studio Social",
+    exportAnnu: "Annuaire & Export"
   },
   login: {
     title: "O Girador",
@@ -72,7 +73,14 @@ export const fr = {
     switchLogin: "Déjà un compte ? Se connecter",
     loadingRedirect: "Résolution de la connexion...",
     connectError: "Erreur de connexion : ",
-    authError: "Erreur d'authentification : "
+    authError: "Erreur d'authentification : ",
+    errorOperationNotAllowed: "L'inscription par e-mail et mot de passe n'est pas activée dans la console Firebase. Veuillez l'activer dans les paramètres d'authentification (Sign-in method) de votre projet Firebase.",
+    errorEmailAlreadyInUse: "Cette adresse e-mail est déjà utilisée par un autre compte.",
+    errorInvalidEmail: "L'adresse e-mail n'est pas valide.",
+    errorWeakPassword: "Le mot de passe est trop faible. Il doit contenir au moins 6 caractères.",
+    errorInvalidCredential: "Adresse e-mail ou mot de passe incorrect.",
+    errorUserDisabled: "Ce compte utilisateur a été désactivé.",
+    errorDefault: "Une erreur est survenue : "
   },
   onboarding: {
     title: "NOUVEAU PROFIL",
@@ -90,9 +98,9 @@ export const fr = {
     lateralite: "Latéralité (Main principale)",
     birthdate: "Date de naissance",
     birthdatePublic: "Rendre ma date de naissance publique dans le Trombinoscope",
-    imageRights: "J'autorise l'association à utiliser mon image sur ses supports de communication (photos, vidéos).",
+    imageRights: "J'autorise l'exploitation de mon image",
     imageRightsDoc: "Lire la charte de droit à l'image",
-    medicalCert: "* Je certifie sur l'honneur être médicalement apte à la pratique du Maracatu.",
+    medicalCert: "J'atteste n'avoir aucune contre-indication médicale",
     medicalCertDoc: "Lire le règlement de santé / certificat type",
     nextStep: "Étape suivante",
     saving: "Enregistrement...",
@@ -160,9 +168,9 @@ export const fr = {
     lateralite: "Latéralité (Main principale)",
     birthdate: "Date de naissance",
     birthdatePublic: "Rendre ma date de naissance publique dans le Trombinoscope",
-    imageRights: "J'autorise l'association à utiliser mon image sur ses supports de communication (photos, vidéos).",
+    imageRights: "J'autorise l'exploitation de mon image",
     imageRightsDoc: "Lire la charte de droit à l'image",
-    medicalCert: "* Je certifie sur l'honneur être médicalement apte à la pratique du Maracatu.",
+    medicalCert: "J'atteste n'avoir aucune contre-indication médicale",
     medicalCertDoc: "Lire le règlement de santé / certificat type",
     saving: "Enregistrement en cours...",
     saveBtn: "Enregistrer mes modifications",
