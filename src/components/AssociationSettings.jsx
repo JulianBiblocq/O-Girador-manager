@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { doc, onSnapshot, updateDoc, setDoc, getDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { loadGoogleMaps } from '../utils/googleMaps';
 import { db, storage } from '../firebase';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
@@ -984,6 +985,9 @@ export default function AssociationSettings({ groupId, onBack, role, isSystemAdm
                     placeholder="ex: 12 Rue du Maracatu, 75000 Paris"
                     className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light w-full"
                   />
+                  <div className="mt-3">
+                    <GoogleMapsPreview address={adresseLocal} />
+                  </div>
                 </div>
               </div>
             </CordelCard>
@@ -1276,5 +1280,70 @@ export default function AssociationSettings({ groupId, onBack, role, isSystemAdm
 
       </div>
     </>
+  );
+}
+
+function GoogleMapsPreview({ address }) {
+  const mapRef = useRef(null);
+  const [mapError, setMapError] = useState(null);
+
+  useEffect(() => {
+    if (!address) return;
+
+    let active = true;
+    loadGoogleMaps()
+      .then((maps) => {
+        if (!active || !mapRef.current) return;
+        const geocoder = new maps.Geocoder();
+        geocoder.geocode({ address }, (results, status) => {
+          if (!active) return;
+          if (status === 'OK' && results[0]) {
+            const location = results[0].geometry.location;
+            const map = new maps.Map(mapRef.current, {
+              center: location,
+              zoom: 15,
+              disableDefaultUI: true,
+              zoomControl: true,
+            });
+            new maps.Marker({
+              position: location,
+              map,
+              title: address,
+            });
+            setMapError(null);
+          } else {
+            console.warn("Geocoding failed:", status);
+            setMapError("Impossible de localiser cette adresse sur la carte");
+          }
+        });
+      })
+      .catch((err) => {
+        console.error("Failed to load Google Maps SDK:", err);
+        setMapError("Erreur lors du chargement de la carte");
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [address]);
+
+  if (!address) {
+    return (
+      <div className="w-full h-32 bg-cordel-bg-light border border-dashed border-encre-noire/15 rounded flex items-center justify-center text-[10px] text-encre-noire/60 font-bold select-none">
+        📍 Saisissez une adresse pour afficher la carte
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative w-full h-44 rounded border border-encre-noire shadow-sm overflow-hidden bg-cordel-bg-light">
+      {mapError ? (
+        <div className="absolute inset-0 flex items-center justify-center text-[10px] text-red-600 font-bold bg-red-50/50 p-3 text-center">
+          ⚠️ {mapError}
+        </div>
+      ) : (
+        <div ref={mapRef} className="w-full h-full" />
+      )}
+    </div>
   );
 }
