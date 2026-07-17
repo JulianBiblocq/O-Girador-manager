@@ -26,9 +26,9 @@ export default function ReloadPrompt() {
     },
   });
 
-  if (!needRefresh) return null;
-
   const [isUpdating, setIsUpdating] = useState(false);
+
+  if (!needRefresh) return null;
 
   const handleUpdate = () => {
     setIsUpdating(true);
