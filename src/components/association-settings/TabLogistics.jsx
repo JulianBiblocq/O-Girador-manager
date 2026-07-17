@@ -50,7 +50,7 @@ export default function TabLogistics({
             }>
               <PlacesAutocomplete 
                 name="adresseLocal"
-                value={adresseLocal}
+                value={adresseLocal || ""}
                 onChange={(e) => {
                   const val = e && e.target ? e.target.value : e;
                   handleChange('adresseLocal', val || '');
@@ -60,7 +60,7 @@ export default function TabLogistics({
               />
             </React.Suspense>
             <div className="mt-3">
-              <GoogleMapsPreview address={adresseLocal} />
+              <GoogleMapsPreview address={adresseLocal || ""} />
             </div>
           </div>
         </div>
@@ -128,7 +128,10 @@ function GoogleMapsPreview({ address }) {
   const [mapError, setMapError] = useState(null);
 
   useEffect(() => {
-    if (!address) return;
+    if (!address || address.trim() === '') {
+      setMapError(null);
+      return;
+    }
 
     let active = true;
     try {
@@ -145,12 +148,9 @@ function GoogleMapsPreview({ address }) {
           try {
             const geocoder = new maps.Geocoder();
             geocoder.geocode({ address }, (results, status) => {
-              if (!active) {
-                console.warn("Détail Erreur Map : effet inactif lors du retour du géocodage");
-                return;
-              }
-              if (status === 'OK' && results[0]) {
-                try {
+              if (!active) return;
+              try {
+                if (status === 'OK' && results[0]) {
                   const location = results[0].geometry.location;
                   const map = new maps.Map(mapRef.current, {
                     center: location,
@@ -164,14 +164,13 @@ function GoogleMapsPreview({ address }) {
                     title: address,
                   });
                   setMapError(null);
-                } catch (mapInitErr) {
-                  console.error("Détail Erreur Map :", mapInitErr);
-                  setMapError("Erreur lors de l'initialisation de la carte");
+                } else {
+                  console.warn(`Geocoding failed with status: ${status}`);
+                  setMapError(`Impossible de localiser cette adresse sur la carte (Erreur Google : ${status})`);
                 }
-              } else {
-                const geocodeError = new Error(`Geocoding failed with status: ${status}`);
-                console.error("Détail Erreur Map :", geocodeError);
-                setMapError(`Impossible de localiser cette adresse sur la carte (Erreur Google : ${status})`);
+              } catch (mapInitErr) {
+                console.error("Détail Erreur Map :", mapInitErr);
+                setMapError("Erreur lors de l'initialisation de la carte");
               }
             });
           } catch (geocoderErr) {
@@ -193,7 +192,7 @@ function GoogleMapsPreview({ address }) {
     };
   }, [address]);
 
-  if (!address) {
+  if (!address || address.trim() === '') {
     return (
       <div className="w-full h-32 bg-cordel-bg-light border border-dashed border-encre-noire/15 rounded flex items-center justify-center text-[10px] text-encre-noire/60 font-bold select-none">
         📍 Saisissez une adresse pour afficher la carte
