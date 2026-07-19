@@ -584,13 +584,13 @@ export default function Trombinoscope({ user, profileData, onBack, onContactUser
                  const getSectionIcon = (key) => {
                    let iconPath = '';
                    switch (key) {
-                     case 'mestre': iconPath = 'icones/apito.svg'; break;
-                     case 'agbe': iconPath = 'icones/agbe.svg'; break;
-                     case 'gongue': iconPath = 'icones/gongue.svg'; break;
-                     case 'caixa_tarol': iconPath = 'icones/caixa.svg'; break;
-                     case 'alfaia': iconPath = 'icones/alfaia.svg'; break;
-                     case 'chant_danse': iconPath = 'icones/micro.svg'; break;
-                     default: iconPath = 'favicon.svg'; break;
+                      case 'mestre': iconPath = '/icones/apito.svg'; break;
+                      case 'agbe': iconPath = '/icones/agbe.svg'; break;
+                      case 'gongue': iconPath = '/icones/gongue.svg'; break;
+                      case 'caixa_tarol': iconPath = '/icones/caixa.svg'; break;
+                      case 'alfaia': iconPath = '/icones/alfaia.svg'; break;
+                      case 'chant_danse': iconPath = '/icones/micro.svg'; break;
+                      default: iconPath = '/favicon.svg'; break;
                    }
                    return <img src={iconPath} alt={key} className="w-5 h-5 object-contain inline-block dark:invert" />;
                  };

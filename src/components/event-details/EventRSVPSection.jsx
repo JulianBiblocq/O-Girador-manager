@@ -48,17 +48,17 @@ export default function EventRSVPSection({
   const { getColorForInstrument } = useInstrumentColor(profileData?.groupId);
 
   const getInstrumentIconPath = (instName) => {
-    if (!instName) return 'favicon.svg';
+    if (!instName) return '/favicon.svg';
     const name = instName.toLowerCase();
-    if (name.includes('alfaia')) return 'icones/alfaia.svg';
-    if (name.includes('agbê') || name.includes('agbe') || name.includes('sementes')) return 'icones/agbe.svg';
-    if (name.includes('gonguê') || name.includes('gongue')) return 'icones/gongue.svg';
-    if (name.includes('caixa') || name.includes('tarol') || name.includes('caisse')) return 'icones/caixa.svg';
-    if (name.includes('chant') || name.includes('voix') || name.includes('singer') || name.includes('danse') || name.includes('dance')) return 'icones/micro.svg';
-    if (name.includes('timbal')) return 'icones/timbal.svg';
-    if (name.includes('mineiro')) return 'icones/mineiro.svg';
-    if (name.includes('apito') || name.includes('mestre') || name.includes('chef')) return 'icones/apito.svg';
-    return 'favicon.svg';
+    if (name.includes('alfaia')) return '/icones/alfaia.svg';
+    if (name.includes('agbê') || name.includes('agbe') || name.includes('sementes')) return '/icones/agbe.svg';
+    if (name.includes('gonguê') || name.includes('gongue')) return '/icones/gongue.svg';
+    if (name.includes('caixa') || name.includes('tarol') || name.includes('caisse')) return '/icones/caixa.svg';
+    if (name.includes('chant') || name.includes('voix') || name.includes('singer') || name.includes('danse') || name.includes('dance')) return '/icones/micro.svg';
+    if (name.includes('timbal')) return '/icones/timbal.svg';
+    if (name.includes('mineiro')) return '/icones/mineiro.svg';
+    if (name.includes('apito') || name.includes('mestre') || name.includes('chef')) return '/icones/apito.svg';
+    return '/favicon.svg';
   };
 
   return (
