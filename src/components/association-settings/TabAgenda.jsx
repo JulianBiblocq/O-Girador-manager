@@ -16,6 +16,7 @@ export default function TabAgenda({
     agendaEnableCarpool = true,
     agendaEnableFinance = true,
     agendaEnableInscriptions = true,
+    agendaEnableVolunteerShifts = true,
     eventTypes = ['prestation', 'repetition', 'stage', 'atelier', 'reunion']
   } = formData;
 
@@ -40,7 +41,8 @@ export default function TabAgenda({
       agendaEnableImage: true,
       agendaEnableOrdreDuJour: cleanType === 'reunion',
       agendaEnableAdresse: true,
-      agendaEnableUrl: true
+      agendaEnableUrl: true,
+      agendaEnableVolunteerShifts: cleanType === 'prestation' || cleanType === 'stage'
     };
 
     const updatedConfigs = {
@@ -222,6 +224,26 @@ export default function TabAgenda({
             </div>
           </div>
 
+          {/* Créneaux de bénévolat */}
+          <div className="flex items-start gap-2.5 cursor-pointer border-t border-dashed border-cordel-master-dark/10 pt-3">
+            <input 
+              type="checkbox"
+              id="agendaEnableVolunteerShifts"
+              checked={agendaEnableVolunteerShifts}
+              onChange={(e) => handleChange('agendaEnableVolunteerShifts', e.target.checked)}
+              disabled={saving}
+              className="w-4 h-4 cursor-pointer mt-0.5 shrink-0"
+            />
+            <div className="flex flex-col text-left">
+              <label htmlFor="agendaEnableVolunteerShifts" className="font-bold text-encre-noire cursor-pointer">
+                Activer les Créneaux de Bénévolat / Logistique
+              </label>
+              <span className="text-[10px] text-neutral-500 font-medium">
+                Permet d'ajouter des tâches et horaires (ex: montage, buvette) à réaliser par les adhérents sur les événements.
+              </span>
+            </div>
+          </div>
+
         </div>
       </CordelCard>
 
@@ -263,18 +285,20 @@ export default function TabAgenda({
           </span>
           <div className="flex flex-col gap-4 max-h-96 overflow-y-auto pr-1">
             {eventTypes.map((type) => {
-              const config = (formData.eventTypeConfigs && formData.eventTypeConfigs[type]) || {
-                agendaRequireInstrument: false,
-                agendaEnableMaybeStatus: true,
-                agendaEnableStageLayout: true,
-                agendaEnableRevisionProgram: true,
-                agendaEnableCarpool: true,
-                agendaEnableFinance: true,
-                agendaEnableInscriptions: true,
-                agendaEnableImage: true,
-                agendaEnableOrdreDuJour: type === 'reunion',
-                agendaEnableAdresse: true,
-                agendaEnableUrl: true
+              const rawConfig = (formData.eventTypeConfigs && formData.eventTypeConfigs[type]) || {};
+              const config = {
+                agendaRequireInstrument: rawConfig.agendaRequireInstrument || false,
+                agendaEnableMaybeStatus: rawConfig.agendaEnableMaybeStatus !== false,
+                agendaEnableStageLayout: rawConfig.agendaEnableStageLayout !== false,
+                agendaEnableRevisionProgram: rawConfig.agendaEnableRevisionProgram !== false,
+                agendaEnableCarpool: rawConfig.agendaEnableCarpool !== false,
+                agendaEnableFinance: rawConfig.agendaEnableFinance !== false,
+                agendaEnableInscriptions: rawConfig.agendaEnableInscriptions !== false,
+                agendaEnableImage: rawConfig.agendaEnableImage !== false,
+                agendaEnableOrdreDuJour: rawConfig.agendaEnableOrdreDuJour !== undefined ? rawConfig.agendaEnableOrdreDuJour : type === 'reunion',
+                agendaEnableAdresse: rawConfig.agendaEnableAdresse !== false,
+                agendaEnableUrl: rawConfig.agendaEnableUrl !== false,
+                agendaEnableVolunteerShifts: rawConfig.agendaEnableVolunteerShifts !== undefined ? rawConfig.agendaEnableVolunteerShifts : (type === 'prestation' || type === 'stage')
               };
 
               const handleToggleOption = (optionKey, isChecked) => {
@@ -411,6 +435,15 @@ export default function TabAgenda({
                         className="scale-95"
                       />
                       Lien externe / URL
+                    </label>
+                    <label className="flex items-center gap-1.5 cursor-pointer select-none">
+                      <input 
+                        type="checkbox" 
+                        checked={config.agendaEnableVolunteerShifts}
+                        onChange={(e) => handleToggleOption('agendaEnableVolunteerShifts', e.target.checked)}
+                        className="scale-95"
+                      />
+                      Créneaux Bénévolat
                     </label>
                   </div>
                 </div>

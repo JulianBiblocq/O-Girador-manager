@@ -58,6 +58,7 @@ export default function WidgetAgenda({
   const [adresseLocal, setAdresseLocal] = useState('');
   const [eventTypes, setEventTypes] = useState(['prestation', 'repetition', 'stage', 'atelier', 'reunion']);
   const [agendaEnableFinance, setAgendaEnableFinance] = useState(true);
+  const [agendaEnableVolunteerShifts, setAgendaEnableVolunteerShifts] = useState(true);
   const [eventTypeConfigs, setEventTypeConfigs] = useState({});
   const [dressCodes, setDressCodes] = useState([]);
 
@@ -70,6 +71,7 @@ export default function WidgetAgenda({
         const data = docSnap.data();
         setAdresseLocal(data.adresseLocal || '');
         setAgendaEnableFinance(data.agendaEnableFinance !== false);
+        setAgendaEnableVolunteerShifts(data.agendaEnableVolunteerShifts !== false);
         setEventTypeConfigs(data.eventTypeConfigs || {});
         if (Array.isArray(data.eventTypes) && data.eventTypes.length > 0) {
           setEventTypes(data.eventTypes);
@@ -115,7 +117,8 @@ export default function WidgetAgenda({
     imageUrl: '',
     requiresValidation: false,
     dateLimiteInscription: '',
-    tenueRequise: ''
+    tenueRequise: '',
+    volunteerShifts: []
   });
 
   const isAuthorized = role === 'mestre' || role === 'super-admin' || isSystemAdmin === true;
@@ -226,18 +229,20 @@ export default function WidgetAgenda({
     if (!formData.titre || !formData.date) return;
 
     const activeType = formData.type || 'repetition';
-    const activeConfig = eventTypeConfigs[activeType] || {
-      agendaRequireInstrument: false,
-      agendaEnableMaybeStatus: true,
-      agendaEnableStageLayout: true,
-      agendaEnableRevisionProgram: true,
-      agendaEnableCarpool: true,
-      agendaEnableFinance: agendaEnableFinance,
-      agendaEnableInscriptions: true,
-      agendaEnableImage: true,
-      agendaEnableOrdreDuJour: activeType === 'reunion',
-      agendaEnableAdresse: true,
-      agendaEnableUrl: true
+    const rawConfig = eventTypeConfigs[activeType] || {};
+    const activeConfig = {
+      agendaRequireInstrument: rawConfig.agendaRequireInstrument || false,
+      agendaEnableMaybeStatus: rawConfig.agendaEnableMaybeStatus !== false,
+      agendaEnableStageLayout: rawConfig.agendaEnableStageLayout !== false,
+      agendaEnableRevisionProgram: rawConfig.agendaEnableRevisionProgram !== false,
+      agendaEnableCarpool: rawConfig.agendaEnableCarpool !== false,
+      agendaEnableFinance: rawConfig.agendaEnableFinance !== undefined ? rawConfig.agendaEnableFinance : agendaEnableFinance,
+      agendaEnableInscriptions: rawConfig.agendaEnableInscriptions !== false,
+      agendaEnableImage: rawConfig.agendaEnableImage !== false,
+      agendaEnableOrdreDuJour: rawConfig.agendaEnableOrdreDuJour !== undefined ? rawConfig.agendaEnableOrdreDuJour : (activeType === 'reunion'),
+      agendaEnableAdresse: rawConfig.agendaEnableAdresse !== false,
+      agendaEnableUrl: rawConfig.agendaEnableUrl !== false,
+      agendaEnableVolunteerShifts: rawConfig.agendaEnableVolunteerShifts !== undefined ? rawConfig.agendaEnableVolunteerShifts : (agendaEnableVolunteerShifts && (activeType === 'prestation' || activeType === 'stage'))
     };
 
     setSaving(true);
@@ -263,7 +268,8 @@ export default function WidgetAgenda({
         montantRecette: activeConfig.agendaEnableFinance ? (parseFloat(formData.montantRecette) || 0) : 0,
         montantDepense: activeConfig.agendaEnableFinance ? (parseFloat(formData.montantDepense) || 0) : 0,
         dateLimiteInscription: activeConfig.agendaEnableInscriptions ? formData.dateLimiteInscription || '' : '',
-        tenueRequise: formData.tenueRequise || ''
+        tenueRequise: formData.tenueRequise || '',
+        volunteerShifts: formData.volunteerShifts || []
       });
       setIsAdding(false);
     } catch (error) {
@@ -349,18 +355,20 @@ export default function WidgetAgenda({
   }
 
   const activeType = formData.type || 'repetition';
-  const activeConfig = eventTypeConfigs[activeType] || {
-    agendaRequireInstrument: false,
-    agendaEnableMaybeStatus: true,
-    agendaEnableStageLayout: true,
-    agendaEnableRevisionProgram: true,
-    agendaEnableCarpool: true,
-    agendaEnableFinance: agendaEnableFinance,
-    agendaEnableInscriptions: true,
-    agendaEnableImage: true,
-    agendaEnableOrdreDuJour: activeType === 'reunion',
-    agendaEnableAdresse: true,
-    agendaEnableUrl: true
+  const rawConfig = eventTypeConfigs[activeType] || {};
+  const activeConfig = {
+    agendaRequireInstrument: rawConfig.agendaRequireInstrument || false,
+    agendaEnableMaybeStatus: rawConfig.agendaEnableMaybeStatus !== false,
+    agendaEnableStageLayout: rawConfig.agendaEnableStageLayout !== false,
+    agendaEnableRevisionProgram: rawConfig.agendaEnableRevisionProgram !== false,
+    agendaEnableCarpool: rawConfig.agendaEnableCarpool !== false,
+    agendaEnableFinance: rawConfig.agendaEnableFinance !== undefined ? rawConfig.agendaEnableFinance : agendaEnableFinance,
+    agendaEnableInscriptions: rawConfig.agendaEnableInscriptions !== false,
+    agendaEnableImage: rawConfig.agendaEnableImage !== false,
+    agendaEnableOrdreDuJour: rawConfig.agendaEnableOrdreDuJour !== undefined ? rawConfig.agendaEnableOrdreDuJour : (activeType === 'reunion'),
+    agendaEnableAdresse: rawConfig.agendaEnableAdresse !== false,
+    agendaEnableUrl: rawConfig.agendaEnableUrl !== false,
+    agendaEnableVolunteerShifts: rawConfig.agendaEnableVolunteerShifts !== undefined ? rawConfig.agendaEnableVolunteerShifts : (agendaEnableVolunteerShifts && (activeType === 'prestation' || activeType === 'stage'))
   };
 
   return (
@@ -809,6 +817,81 @@ export default function WidgetAgenda({
                   />
                   <span>Inscriptions soumises à validation par l'administrateur</span>
                 </label>
+              </div>
+            )}
+
+            {/* Créneaux de Bénévolat / Logistique */}
+            {activeConfig.agendaEnableVolunteerShifts && (
+              <div className="flex flex-col gap-3 pt-3 border-t border-dashed border-cordel-master-dark/15">
+                <h5 className="text-[10px] uppercase font-black tracking-widest text-cordel-wood flex justify-between items-center">
+                  <span>🤝 Créneaux de Bénévolat / Logistique ({formData.volunteerShifts?.length || 0})</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const newShifts = [...(formData.volunteerShifts || [])];
+                      newShifts.push({
+                        id: Math.random().toString(36).substr(2, 9),
+                        nomTache: '',
+                        horaires: '',
+                        inscrits: []
+                      });
+                      setFormData(prev => ({ ...prev, volunteerShifts: newShifts }));
+                    }}
+                    className="text-[9px] font-black uppercase bg-cordel-vert text-encre-noire border border-encre-noire px-2 py-1 rounded cursor-pointer hover:brightness-95 shadow-[1px_1px_0px_0px_#181716]"
+                  >
+                    ➕ Ajouter un créneau
+                  </button>
+                </h5>
+
+                <div className="flex flex-col gap-3">
+                  {(!formData.volunteerShifts || formData.volunteerShifts.length === 0) ? (
+                    <span className="text-[10px] italic opacity-60 text-center py-2">Aucun créneau configuré pour le moment.</span>
+                  ) : (
+                    formData.volunteerShifts.map((shift, idx) => (
+                      <div key={shift.id || idx} className="flex flex-col sm:flex-row gap-2.5 p-3.5 bg-cordel-bg-light/20 border border-dashed border-encre-noire/10 rounded items-end">
+                        <div className="flex-1 flex flex-col gap-1 w-full">
+                          <label className="text-[9px] uppercase font-bold tracking-wider opacity-85">Nom de la tâche</label>
+                          <input
+                            type="text"
+                            value={shift.nomTache}
+                            placeholder="Ex : Montage du Stand"
+                            onChange={(e) => {
+                              const newShifts = [...formData.volunteerShifts];
+                              newShifts[idx].nomTache = e.target.value;
+                              setFormData(prev => ({ ...prev, volunteerShifts: newShifts }));
+                            }}
+                            className="theme-input py-1 px-2 text-xs w-full"
+                          />
+                        </div>
+                        <div className="flex-1 flex flex-col gap-1 w-full">
+                          <label className="text-[9px] uppercase font-bold tracking-wider opacity-85">Horaires</label>
+                          <input
+                            type="text"
+                            value={shift.horaires}
+                            placeholder="Ex : 14:00 - 16:00"
+                            onChange={(e) => {
+                              const newShifts = [...formData.volunteerShifts];
+                              newShifts[idx].horaires = e.target.value;
+                              setFormData(prev => ({ ...prev, volunteerShifts: newShifts }));
+                            }}
+                            className="theme-input py-1 px-2 text-xs w-full"
+                          />
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newShifts = formData.volunteerShifts.filter((_, sIdx) => sIdx !== idx);
+                            setFormData(prev => ({ ...prev, volunteerShifts: newShifts }));
+                          }}
+                          className="text-[9px] font-black uppercase bg-cordel-rouge text-white border border-encre-noire px-2.5 py-2.5 rounded cursor-pointer hover:bg-red-800 shadow-[1px_1px_0px_0px_#181716] shrink-0"
+                          title="Supprimer ce créneau"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ))
+                  )}
+                </div>
               </div>
             )}
 

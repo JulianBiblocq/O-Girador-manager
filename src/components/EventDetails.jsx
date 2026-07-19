@@ -20,6 +20,7 @@ import EventCarpoolSection from './event-details/EventCarpoolSection';
 import EventSetlistSection from './event-details/EventSetlistSection';
 import EventReportSection from './event-details/EventReportSection';
 import EventStageLayoutSection from './event-details/EventStageLayoutSection';
+import EventVolunteerSection from './event-details/EventVolunteerSection';
 
 export default function EventDetails({ event, user, profileData, onNavigateToView, onClose, onPrev, onNext, viewMode, setViewMode, onGoToStageLayoutEditor }) {
   const { t } = useTranslation();
@@ -31,6 +32,7 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
     titre: event.titre || '',
     type: event.type || 'repetition',
     date: event.date || '',
+    dateFin: event.dateFin || '',
     lieu: event.lieu || '',
     horairesPassages: event.horairesPassages || '',
     horaireCovoiturage: event.horaireCovoiturage || '',
@@ -40,9 +42,12 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
     distanceAllerRetourKm: event.distanceAllerRetourKm || '',
     lienSocial: event.lienSocial || '',
     imageUrl: event.imageUrl || '',
+    requiresValidation: event.requiresValidation || false,
     montantRecette: event.montantRecette !== undefined ? event.montantRecette.toString() : '',
     montantDepense: event.montantDepense !== undefined ? event.montantDepense.toString() : '',
-    dateLimiteInscription: event.dateLimiteInscription || ''
+    dateLimiteInscription: event.dateLimiteInscription || '',
+    tenueRequise: event.tenueRequise || '',
+    volunteerShifts: event.volunteerShifts || []
   });
   const [savingEvent, setSavingEvent] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
@@ -53,6 +58,26 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
   const [linkedInstruments, setLinkedInstruments] = useState([]);
   const [enableCarpoolReimbursement, setEnableCarpoolReimbursement] = useState(true);
   const [reimbursementRule, setReimbursementRule] = useState('full_cars_only');
+
+  const {
+    morceauxSelectionnes,
+    showMorceauxList,
+    setShowMorceauxList,
+    setlist,
+    setSetlist,
+    newMorceauTitre,
+    setNewMorceauTitre,
+    newMorceauJsonFile,
+    setNewMorceauJsonFile,
+    fileInputKey,
+    setFileInputKey,
+    newMorceauNotes,
+    setNewMorceauNotes,
+    updatingSetlist,
+    handleAddMorceau,
+    handleRemoveMorceau
+  } = useEventSetlist(event);
+
   const [assocSequenceurUrl, setAssocSequenceurUrl] = useState('');
   const [agendaRequireInstrument, setAgendaRequireInstrument] = useState(false);
   const [agendaEnableMaybeStatus, setAgendaEnableMaybeStatus] = useState(true);
@@ -61,6 +86,7 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
   const [agendaEnableFinance, setAgendaEnableFinance] = useState(true);
   const [agendaEnableInscriptions, setAgendaEnableInscriptions] = useState(true);
   const [agendaEnableCarpool, setAgendaEnableCarpool] = useState(true);
+  const [agendaEnableVolunteerShifts, setAgendaEnableVolunteerShifts] = useState(true);
   const [associationEventTypes, setAssociationEventTypes] = useState(['prestation', 'repetition', 'stage', 'atelier', 'reunion']);
   const [eventTypeConfigs, setEventTypeConfigs] = useState({});
   const [associationName, setAssociationName] = useState('');
@@ -129,22 +155,7 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
     reimbursementRule
   });
 
-  // useEventSetlist hook
-  const {
-    setlist,
-    setSetlist,
-    newMorceauTitre,
-    setNewMorceauTitre,
-    newMorceauJsonFile,
-    setNewMorceauJsonFile,
-    fileInputKey,
-    setFileInputKey,
-    newMorceauNotes,
-    setNewMorceauNotes,
-    updatingSetlist,
-    handleAddMorceau,
-    handleRemoveMorceau
-  } = useEventSetlist(event);
+
 
   useEffect(() => {
     setIsEditingEvent(false);
@@ -166,9 +177,10 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
       montantRecette: event.montantRecette !== undefined ? event.montantRecette.toString() : '',
       montantDepense: event.montantDepense !== undefined ? event.montantDepense.toString() : '',
       dateLimiteInscription: event.dateLimiteInscription || '',
-      tenueRequise: event.tenueRequise || ''
+      tenueRequise: event.tenueRequise || '',
+      volunteerShifts: event.volunteerShifts || []
     });
-  }, [event.id, event.type, event.montantRecette, event.montantDepense, event.dateLimiteInscription, event.tenueRequise]);
+  }, [event.id, event.type, event.montantRecette, event.montantDepense, event.dateLimiteInscription, event.tenueRequise, event.volunteerShifts]);
 
   // Load association settings
   useEffect(() => {
@@ -192,6 +204,7 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
         setAgendaEnableFinance(data.agendaEnableFinance !== false);
         setAgendaEnableInscriptions(data.agendaEnableInscriptions !== false);
         setAgendaEnableCarpool(data.agendaEnableCarpool !== false);
+        setAgendaEnableVolunteerShifts(data.agendaEnableVolunteerShifts !== false);
         setEventTypeConfigs(data.eventTypeConfigs || {});
         if (Array.isArray(data.eventTypes) && data.eventTypes.length > 0) {
           setAssociationEventTypes(data.eventTypes);
@@ -428,7 +441,8 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
         montantRecette: editConfig.agendaEnableFinance ? (parseFloat(editForm.montantRecette) || 0) : 0,
         montantDepense: editConfig.agendaEnableFinance ? (parseFloat(editForm.montantDepense) || 0) : 0,
         dateLimiteInscription: editConfig.agendaEnableInscriptions ? editForm.dateLimiteInscription || '' : '',
-        tenueRequise: editForm.tenueRequise || ''
+        tenueRequise: editForm.tenueRequise || '',
+        volunteerShifts: editForm.volunteerShifts || []
       });
       setIsEditingEvent(false);
       alert("Événement mis à jour avec succès !");
@@ -595,33 +609,37 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
   const currentVariant = typeVariants[event.type] || 'default';
 
   const eventType = event.type || 'repetition';
-  const currentConfig = eventTypeConfigs[eventType] || {
-    agendaRequireInstrument,
-    agendaEnableMaybeStatus,
-    agendaEnableStageLayout,
-    agendaEnableRevisionProgram,
-    agendaEnableCarpool,
-    agendaEnableFinance,
-    agendaEnableInscriptions,
-    agendaEnableImage: true,
-    agendaEnableOrdreDuJour: eventType === 'reunion',
-    agendaEnableAdresse: true,
-    agendaEnableUrl: true
+  const rawCurrentConfig = eventTypeConfigs[eventType] || {};
+  const currentConfig = {
+    agendaRequireInstrument: rawCurrentConfig.agendaRequireInstrument || false,
+    agendaEnableMaybeStatus: rawCurrentConfig.agendaEnableMaybeStatus !== false,
+    agendaEnableStageLayout: rawCurrentConfig.agendaEnableStageLayout !== false,
+    agendaEnableRevisionProgram: rawCurrentConfig.agendaEnableRevisionProgram !== false,
+    agendaEnableCarpool: rawCurrentConfig.agendaEnableCarpool !== false,
+    agendaEnableFinance: rawCurrentConfig.agendaEnableFinance !== undefined ? rawCurrentConfig.agendaEnableFinance : agendaEnableFinance,
+    agendaEnableInscriptions: rawCurrentConfig.agendaEnableInscriptions !== false,
+    agendaEnableImage: rawCurrentConfig.agendaEnableImage !== false,
+    agendaEnableOrdreDuJour: rawCurrentConfig.agendaEnableOrdreDuJour !== undefined ? rawCurrentConfig.agendaEnableOrdreDuJour : (eventType === 'reunion'),
+    agendaEnableAdresse: rawCurrentConfig.agendaEnableAdresse !== false,
+    agendaEnableUrl: rawCurrentConfig.agendaEnableUrl !== false,
+    agendaEnableVolunteerShifts: rawCurrentConfig.agendaEnableVolunteerShifts !== undefined ? rawCurrentConfig.agendaEnableVolunteerShifts : (agendaEnableVolunteerShifts && (eventType === 'prestation' || eventType === 'stage'))
   };
 
   const editType = editForm.type || 'repetition';
-  const editConfig = eventTypeConfigs[editType] || {
-    agendaRequireInstrument,
-    agendaEnableMaybeStatus,
-    agendaEnableStageLayout,
-    agendaEnableRevisionProgram,
-    agendaEnableCarpool,
-    agendaEnableFinance,
-    agendaEnableInscriptions,
-    agendaEnableImage: true,
-    agendaEnableOrdreDuJour: editType === 'reunion',
-    agendaEnableAdresse: true,
-    agendaEnableUrl: true
+  const rawEditConfig = eventTypeConfigs[editType] || {};
+  const editConfig = {
+    agendaRequireInstrument: rawEditConfig.agendaRequireInstrument || false,
+    agendaEnableMaybeStatus: rawEditConfig.agendaEnableMaybeStatus !== false,
+    agendaEnableStageLayout: rawEditConfig.agendaEnableStageLayout !== false,
+    agendaEnableRevisionProgram: rawEditConfig.agendaEnableRevisionProgram !== false,
+    agendaEnableCarpool: rawEditConfig.agendaEnableCarpool !== false,
+    agendaEnableFinance: rawEditConfig.agendaEnableFinance !== undefined ? rawEditConfig.agendaEnableFinance : agendaEnableFinance,
+    agendaEnableInscriptions: rawEditConfig.agendaEnableInscriptions !== false,
+    agendaEnableImage: rawEditConfig.agendaEnableImage !== false,
+    agendaEnableOrdreDuJour: rawEditConfig.agendaEnableOrdreDuJour !== undefined ? rawEditConfig.agendaEnableOrdreDuJour : (editType === 'reunion'),
+    agendaEnableAdresse: rawEditConfig.agendaEnableAdresse !== false,
+    agendaEnableUrl: rawEditConfig.agendaEnableUrl !== false,
+    agendaEnableVolunteerShifts: rawEditConfig.agendaEnableVolunteerShifts !== undefined ? rawEditConfig.agendaEnableVolunteerShifts : (agendaEnableVolunteerShifts && (editType === 'prestation' || editType === 'stage'))
   };
 
   const unregisteredUsers = allUsers
@@ -1094,6 +1112,81 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
                 </div>
               )}
 
+              {/* Créneaux de Bénévolat / Logistique */}
+              {editConfig.agendaEnableVolunteerShifts && (
+                <div className="flex flex-col gap-3 pt-3 border-t border-dashed border-cordel-master-dark/15">
+                  <h5 className="text-[10px] uppercase font-black tracking-widest text-cordel-wood flex justify-between items-center">
+                    <span>🤝 Créneaux de Bénévolat / Logistique ({editForm.volunteerShifts?.length || 0})</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const newShifts = [...(editForm.volunteerShifts || [])];
+                        newShifts.push({
+                          id: Math.random().toString(36).substr(2, 9),
+                          nomTache: '',
+                          horaires: '',
+                          inscrits: []
+                        });
+                        setEditForm(prev => ({ ...prev, volunteerShifts: newShifts }));
+                      }}
+                      className="text-[9px] font-black uppercase bg-cordel-vert text-encre-noire border border-encre-noire px-2 py-1 rounded cursor-pointer hover:brightness-95 shadow-[1px_1px_0px_0px_#181716]"
+                    >
+                      ➕ Ajouter un créneau
+                    </button>
+                  </h5>
+
+                  <div className="flex flex-col gap-3">
+                    {(!editForm.volunteerShifts || editForm.volunteerShifts.length === 0) ? (
+                      <span className="text-[10px] italic opacity-60 text-center py-2">Aucun créneau configuré pour le moment.</span>
+                    ) : (
+                      editForm.volunteerShifts.map((shift, idx) => (
+                        <div key={shift.id || idx} className="flex flex-col sm:flex-row gap-2.5 p-3.5 bg-cordel-bg-light/20 border border-dashed border-encre-noire/10 rounded items-end">
+                          <div className="flex-1 flex flex-col gap-1 w-full">
+                            <label className="text-[9px] uppercase font-bold tracking-wider opacity-85">Nom de la tâche</label>
+                            <input
+                              type="text"
+                              value={shift.nomTache}
+                              placeholder="Ex : Montage du Stand"
+                              onChange={(e) => {
+                                const newShifts = [...editForm.volunteerShifts];
+                                newShifts[idx].nomTache = e.target.value;
+                                setEditForm(prev => ({ ...prev, volunteerShifts: newShifts }));
+                              }}
+                              className="theme-input py-1 px-2 text-xs w-full"
+                            />
+                          </div>
+                          <div className="flex-1 flex flex-col gap-1 w-full">
+                            <label className="text-[9px] uppercase font-bold tracking-wider opacity-85">Horaires</label>
+                            <input
+                              type="text"
+                              value={shift.horaires}
+                              placeholder="Ex : 14:00 - 16:00"
+                              onChange={(e) => {
+                                const newShifts = [...editForm.volunteerShifts];
+                                newShifts[idx].horaires = e.target.value;
+                                setEditForm(prev => ({ ...prev, volunteerShifts: newShifts }));
+                              }}
+                              className="theme-input py-1 px-2 text-xs w-full"
+                            />
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const newShifts = editForm.volunteerShifts.filter((_, sIdx) => sIdx !== idx);
+                              setEditForm(prev => ({ ...prev, volunteerShifts: newShifts }));
+                            }}
+                            className="text-[9px] font-black uppercase bg-cordel-rouge text-white border border-encre-noire px-2.5 py-2.5 rounded cursor-pointer hover:bg-red-800 shadow-[1px_1px_0px_0px_#181716] shrink-0"
+                            title="Supprimer ce créneau"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
+
               {/* Validation Toggle */}
               {editConfig.agendaEnableInscriptions && (
                 <div className="flex items-center gap-2 pt-2 border-t border-dashed border-cordel-master-dark/15">
@@ -1353,6 +1446,15 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
               t={t}
               readOnly={true}
               onGoToStageLayoutEditor={onGoToStageLayoutEditor}
+            />
+          )}
+
+          {currentConfig.agendaEnableVolunteerShifts && event.volunteerShifts && event.volunteerShifts.length > 0 && (
+            <EventVolunteerSection
+              event={event}
+              user={user}
+              allUsers={allUsers}
+              t={t}
             />
           )}
 
