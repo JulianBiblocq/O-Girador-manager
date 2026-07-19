@@ -8,21 +8,21 @@ import { useTerminologie } from '../hooks/useTerminologie';
 import { useTranslation } from './LanguageContext';
 import { fr } from '../locales/fr';
 
-const ARTICLES_LIST = [
-  "Baguettes d'Alfaia (Grosses, Petites ou Bacalhau)",
-  "Baguettes de Caixa",
-  "Baguette de Gonguê",
-  "Peau de Caixa",
-  "Peau d'Alfaia (18\", 20\" ou 22\")",
-  "Housse de protection Alfaia (18\", 20\" ou 22\")",
-  "Housse de protection Caixa",
-  "Sangle",
-  "Étui à baguettes",
-  "Pantalon",
-  "Chemise",
-  "T-shirt Homme",
-  "T-shirt Femme",
-  "Autre"
+const DEFAULT_CATALOG = [
+  { nom: "Baguettes d'Alfaia (Grosses, Petites ou Bacalhau)", prix: 15, tailles: [] },
+  { nom: "Baguettes de Caixa", prix: 10, tailles: [] },
+  { nom: "Baguette de Gonguê", prix: 12, tailles: [] },
+  { nom: "Peau de Caixa", prix: 25, tailles: [] },
+  { nom: "Peau d'Alfaia (18\", 20\" ou 22\")", prix: 35, tailles: ["18\"", "20\"", "22\""] },
+  { nom: "Housse de protection Alfaia (18\", 20\" ou 22\")", prix: 45, tailles: ["18\"", "20\"", "22\""] },
+  { nom: "Housse de protection Caixa", prix: 30, tailles: [] },
+  { nom: "Sangle", prix: 20, tailles: [] },
+  { nom: "Étui à baguettes", prix: 15, tailles: [] },
+  { nom: "Pantalon", prix: 40, tailles: [] },
+  { nom: "Chemise", prix: 35, tailles: [] },
+  { nom: "T-shirt Homme", prix: 15, tailles: ["S", "M", "L", "XL"] },
+  { nom: "T-shirt Femme", prix: 15, tailles: ["S", "M", "L", "XL"] },
+  { nom: "Autre", prix: 0, tailles: [] }
 ];
 
 export default function WidgetCommandes({ groupId, user, profileData }) {
@@ -48,10 +48,55 @@ export default function WidgetCommandes({ groupId, user, profileData }) {
   const [saving, setSaving] = useState(false);
 
   // Form states
-  const [article, setArticle] = useState(ARTICLES_LIST[0]);
+  const [catalog, setCatalog] = useState([]);
+  const [article, setArticle] = useState('');
+  const [selectedTaille, setSelectedTaille] = useState('');
   const [quantite, setQuantite] = useState(1);
   const [notes, setNotes] = useState('');
   const [isPersonalOrder, setIsPersonalOrder] = useState(false);
+
+  // Sync dynamic catalog
+  useEffect(() => {
+    if (!groupId) {
+      setCatalog(DEFAULT_CATALOG);
+      return;
+    }
+
+    const catalogRef = collection(db, 'associations', groupId, 'catalog');
+    const unsubscribe = onSnapshot(catalogRef, (snap) => {
+      if (!snap.empty) {
+        const fetched = [];
+        snap.forEach(docSnap => {
+          fetched.push({ id: docSnap.id, ...docSnap.data() });
+        });
+        setCatalog(fetched);
+      } else {
+        setCatalog(DEFAULT_CATALOG);
+      }
+    }, (error) => {
+      console.error("WidgetCommandes - Erreur onSnapshot catalog :", error);
+      setCatalog(DEFAULT_CATALOG);
+    });
+
+    return () => unsubscribe();
+  }, [groupId]);
+
+  // Reset selected article when catalog loads
+  useEffect(() => {
+    if (catalog.length > 0 && !catalog.some(c => c.nom === article)) {
+      setArticle(catalog[0].nom);
+    }
+  }, [catalog]);
+
+  // Reset selected size when selected article changes
+  useEffect(() => {
+    const artObj = catalog.find(item => item.nom === article);
+    if (artObj && artObj.tailles && artObj.tailles.length > 0) {
+      setSelectedTaille(artObj.tailles[0]);
+    } else {
+      setSelectedTaille('');
+    }
+  }, [article, catalog]);
 
   // Sync open campaigns
   useEffect(() => {
@@ -123,9 +168,16 @@ export default function WidgetCommandes({ groupId, user, profileData }) {
     setSaving(true);
     try {
       let finalNotes = notes.trim();
+      const artObj = catalog.find(item => item.nom === article);
 
-      // Smart pre-fill: If user orders T-Shirt and notes are empty, auto-fill their size
-      if ((article === "T-shirt Homme" || article === "T-shirt Femme") && !finalNotes) {
+      // Prepend selected size/variation to notes for full backward-compatibility and visual rendering
+      if (selectedTaille) {
+        if (finalNotes) {
+          finalNotes = `Taille : ${selectedTaille} - ${finalNotes}`;
+        } else {
+          finalNotes = `Taille : ${selectedTaille}`;
+        }
+      } else if ((article === "T-shirt Homme" || article === "T-shirt Femme") && !finalNotes) {
         finalNotes = `Taille : ${profileData?.tailleTshirt || 'M'}`;
       }
 
@@ -140,7 +192,9 @@ export default function WidgetCommandes({ groupId, user, profileData }) {
         isPersonalOrder: isPersonalOrder,
         status: 'pending',
         userRole: profileData?.role || 'batuqueiro',
-        isSuggestion: !isPersonalOrder
+        isSuggestion: !isPersonalOrder,
+        prix: artObj ? (parseFloat(artObj.prix) || 0) : 0,
+        taille: selectedTaille || null
       };
 
       await addDoc(collection(db, 'campaignRequests'), payload);
@@ -217,20 +271,45 @@ export default function WidgetCommandes({ groupId, user, profileData }) {
                   disabled={saving}
                   className="theme-input text-xs font-bold py-1.5 px-2 bg-cordel-bg-light"
                 >
-                  {ARTICLES_LIST.map((art) => (
-                    <option key={art} value={art}>{getArticleLabel(art)}</option>
+                  {catalog.map((item) => (
+                    <option key={item.nom} value={item.nom}>
+                      {getArticleLabel(item.nom)} {item.prix > 0 ? `(${item.prix}€)` : ''}
+                    </option>
                   ))}
                 </select>
               </div>
 
-              {/* Helper notice */}
-              {isTshirtSelected && (
+              {/* Dropdown for sizes/variations if configured */}
+              {(() => {
+                const artObj = catalog.find(item => item.nom === article);
+                if (artObj && artObj.tailles && artObj.tailles.length > 0) {
+                  return (
+                    <div className="flex flex-col gap-1 mt-0.5 text-left">
+                      <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">Taille / Déclinaison</label>
+                      <select
+                        value={selectedTaille}
+                        onChange={(e) => setSelectedTaille(e.target.value)}
+                        disabled={saving}
+                        className="theme-input text-xs font-bold py-1.5 px-2 bg-cordel-bg-light w-full"
+                      >
+                        {artObj.tailles.map((sz) => (
+                          <option key={sz} value={sz}>{sz}</option>
+                        ))}
+                      </select>
+                    </div>
+                  );
+                }
+                return null;
+              })()}
+
+              {/* Helper notice fallbacks for legacy/default articles */}
+              {isTshirtSelected && !selectedTaille && (
                 <div className="text-[9px] font-bold text-green-700 dark:text-green-400 bg-white/40 dark:bg-black/20 p-1.5 rounded border border-dashed border-green-300/50 leading-relaxed mt-0.5">
                   {t('widgetCommandes.tshirtNotice') ? t('widgetCommandes.tshirtNotice').replace('{{size}}', profileData?.tailleTshirt || 'M') : `Taille T-shirt : ${profileData?.tailleTshirt || 'M'}`}
                 </div>
               )}
 
-              {isAlfaiaSkinSelected && (
+              {isAlfaiaSkinSelected && !selectedTaille && (
                 <div className="text-[9px] font-bold text-cordel-wood bg-white/40 dark:bg-black/20 p-1.5 rounded border border-dashed border-cordel-wood/40 leading-relaxed mt-0.5 animate-pulse">
                   {t('widgetCommandes.alfaiaNotice') || "Précisez la taille en pouces dans les notes."}
                 </div>

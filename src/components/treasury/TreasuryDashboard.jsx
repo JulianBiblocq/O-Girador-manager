@@ -32,7 +32,7 @@ export default function TreasuryDashboard({
     <div className="flex flex-col gap-6 w-full">
       {/* Introduction */}
       <div className="text-xs text-encre-noire dark:text-cordel-bg-light opacity-80 border border-dashed border-cordel-master-dark/30 p-3.5 rounded-[6px_4px_8px_5px] bg-[#fdfaf2] dark:bg-[#201d1a] leading-relaxed">
-        🪙 <strong>Tableau de Bord Financier</strong> : Suivez en temps réel l'état des finances de l'association. Ce tableau synthétise toutes les écritures comptables (cotisations, recettes/dépenses d'événements, commandes groupées, frais kilométriques et opérations libres) sur la période choisie.
+        🪙 <strong>Tableau de Bord Financier</strong> : Suivez en temps réel l'état des finances de l'association. Ce tableau synthétise toutes les écritures comptables (cotisations, recettes/dépenses d'événements, frais kilométriques et opérations libres) sur la période choisie.
       </div>
 
       {/* Date Filters */}
@@ -111,8 +111,6 @@ export default function TreasuryDashboard({
                 <span className="font-semibold text-encre-noire">Opérations Diverses</span>
                 <span className="font-black text-green-700">{categoriesBreakdown.recette['Opérations Diverses'].toFixed(2)} €</span>
               </div>
-              {/* Spacer matching depenses rows count */}
-              <div className="h-6 hidden md:block"></div>
             </div>
           </div>
 
@@ -127,10 +125,6 @@ export default function TreasuryDashboard({
               <div className="flex justify-between items-center text-xs border-b border-dashed border-encre-noire/10 pb-1.5 text-left">
                 <span className="font-semibold text-encre-noire">Frais Événements</span>
                 <span className="font-black text-red-700">{categoriesBreakdown.depense['Événements'].toFixed(2)} €</span>
-              </div>
-              <div className="flex justify-between items-center text-xs border-b border-dashed border-encre-noire/10 pb-1.5 text-left">
-                <span className="font-semibold text-encre-noire">Commandes Groupées</span>
-                <span className="font-black text-red-700">{categoriesBreakdown.depense['Commandes Groupées'].toFixed(2)} €</span>
               </div>
               <div className="flex justify-between items-center text-xs border-b border-dashed border-encre-noire/10 pb-1.5 text-left">
                 <span className="font-semibold text-encre-noire">Défraiements Kilométriques</span>

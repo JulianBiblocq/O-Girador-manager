@@ -67,7 +67,8 @@ export default function UserProfile({ user, profileData, onBack }) {
     handleChange,
     handleSave,
     handleDisconnect,
-    handleForceUpdate
+    handleForceUpdate,
+    handlePurgeObsoleteInstruments
   } = useUserProfile(user, profileData, t);
 
   const fullName = `${profileData?.prenom || ''} ${profileData?.nom || ''}`;
@@ -256,12 +257,29 @@ export default function UserProfile({ user, profileData, onBack }) {
                 </span>
               </div>
             )}
-            {isFieldVisible('tailleTshirt') && (
-              <div>
-                <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70 block">
-                  {t('userProfile.tshirtSize')}
+            {(isFieldVisible('tailleTshirt') || isFieldVisible('taillePantalon')) && (
+              <div className="col-span-1 sm:col-span-2 border-t border-dashed border-cordel-master-dark/15 pt-2 mt-1">
+                <span className="text-[10px] uppercase font-black text-cordel-wood block mb-2">
+                  👔 Mensurations / Costumes
                 </span>
-                <span className="font-bold">{formData.tailleTshirt}</span>
+                <div className="grid grid-cols-2 gap-4">
+                  {isFieldVisible('tailleTshirt') && (
+                    <div>
+                      <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70 block">
+                        {t('userProfile.tshirtSize')}
+                      </span>
+                      <span className="font-bold">{formData.tailleTshirt}</span>
+                    </div>
+                  )}
+                  {isFieldVisible('taillePantalon') && (
+                    <div>
+                      <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70 block">
+                        {t('userProfile.pantSize') || "Taille Pantalon"}
+                      </span>
+                      <span className="font-bold">{formData.taillePantalon}</span>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
             {isFieldVisible('lateralite') && (
@@ -417,6 +435,19 @@ export default function UserProfile({ user, profileData, onBack }) {
                         );
                       })}
                     </div>
+                    {/* Purge / Réinitialisation button for Mestres/Admins */}
+                    {(profileData?.role === 'mestre' || profileData?.isSystemAdmin === true) && (
+                      <div className="mt-2 text-left">
+                        <button
+                          type="button"
+                          onClick={handlePurgeObsoleteInstruments}
+                          disabled={saving}
+                          className="text-[9px] font-black uppercase tracking-widest bg-red-100 hover:bg-red-200 text-red-700 border border-red-300 px-3 py-1.5 rounded-[4px_6px_3px_5px] shadow-[1px_1px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none cursor-pointer"
+                        >
+                          ⚠️ Réinitialiser les instruments du profil
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </>
               );
@@ -571,25 +602,58 @@ export default function UserProfile({ user, profileData, onBack }) {
               </div>
             )}
 
-            {/* Taille T-Shirt */}
-            {isFieldVisible('tailleTshirt') && (
-              <div className="flex flex-col gap-1.5 border-t border-dashed border-cordel-master-dark/10 pt-2">
-                <label className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood">
-                  {t('userProfile.tshirtSize')}
-                </label>
-                <select
-                  name="tailleTshirt"
-                  value={formData.tailleTshirt}
-                  onChange={handleChange}
-                  disabled={saving}
-                  className="theme-input w-full disabled:opacity-50 text-xs font-bold bg-cordel-bg-light"
-                >
-                  <option value="S">S</option>
-                  <option value="M">M</option>
-                  <option value="L">L</option>
-                  <option value="XL">XL</option>
-                  <option value="XXL">XXL</option>
-                </select>
+            {/* Section Mensurations */}
+            {(isFieldVisible('tailleTshirt') || isFieldVisible('taillePantalon')) && (
+              <div className="col-span-1 sm:col-span-2 flex flex-col gap-3.5 border-t border-dashed border-cordel-master-dark/15 pt-3 mt-1.5 text-left">
+                <span className="font-extrabold text-cordel-wood uppercase tracking-wider text-[10px]">
+                  👔 Mensurations / Tailles pour les costumes
+                </span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  {/* Taille T-Shirt */}
+                  {isFieldVisible('tailleTshirt') && (
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-master-dark">
+                        {t('userProfile.tshirtSize')}
+                      </label>
+                      <select
+                        name="tailleTshirt"
+                        value={formData.tailleTshirt}
+                        onChange={handleChange}
+                        disabled={saving}
+                        className="theme-input w-full disabled:opacity-50 text-xs font-bold bg-cordel-bg-light"
+                      >
+                        <option value="S">S</option>
+                        <option value="M">M</option>
+                        <option value="L">L</option>
+                        <option value="XL">XL</option>
+                        <option value="XXL">XXL</option>
+                      </select>
+                    </div>
+                  )}
+
+                  {/* Taille Pantalon */}
+                  {isFieldVisible('taillePantalon') && (
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood">
+                        {t('userProfile.pantSize') || "Taille Pantalon"}
+                      </label>
+                      <select
+                        name="taillePantalon"
+                        value={formData.taillePantalon}
+                        onChange={handleChange}
+                        disabled={saving}
+                        className="theme-input w-full disabled:opacity-50 text-xs font-bold bg-cordel-bg-light"
+                      >
+                        <option value="XS">XS</option>
+                        <option value="S">S</option>
+                        <option value="M">M</option>
+                        <option value="L">L</option>
+                        <option value="XL">XL</option>
+                        <option value="XXL">XXL</option>
+                      </select>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 

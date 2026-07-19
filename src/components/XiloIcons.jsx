@@ -773,3 +773,22 @@ export const XiloMandacaru = ({ size = 16, className = '', ...props }) => (
   </svg>
 );
 
+export const XiloHanger = ({ size = 16, className = '', ...props }) => (
+  <svg 
+    width={size} 
+    height={size} 
+    viewBox="0 0 24 24" 
+    fill="none" 
+    stroke="currentColor" 
+    strokeWidth="2.5" 
+    strokeLinecap="round" 
+    strokeLinejoin="round" 
+    className={`inline-block ${className}`}
+    {...props}
+  >
+    <path d="M12 2a3 3 0 0 1 3 3c0 1.5-1.5 2.5-3 3.5v.5" />
+    <path d="M2 19h20l-10-8L2 19Z" fill="currentColor" fillOpacity="0.1" />
+  </svg>
+);
+
+

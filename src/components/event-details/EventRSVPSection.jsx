@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 import XiloAvatar from '../XiloAvatar';
@@ -43,9 +43,41 @@ export default function EventRSVPSection({
   isRegistrationDeadlinePassed,
   t,
   agendaRequireInstrument = false,
-  agendaEnableMaybeStatus = true
+  agendaEnableMaybeStatus = true,
+  handleAddInviteExterne,
+  handleRemoveInviteExterne,
+  instrumentsDisponibles = ["Alfaia Marcante", "Alfaia Meião", "Alfaia Repique", "Caixa", "Tarol", "Gonguê", "Agbê", "Mineiro", "Timbal", "Chant", "Danse"]
 }) {
   const { getColorForInstrument } = useInstrumentColor(profileData?.groupId);
+
+  const [isInviteFormOpen, setIsInviteFormOpen] = useState(false);
+  const [inviteNom, setInviteNom] = useState('');
+  const [inviteFonction, setInviteFonction] = useState('');
+  const [inviteInstrument, setInviteInstrument] = useState('');
+  const [addingInvite, setAddingInvite] = useState(false);
+
+  // Initialize guest instrument to first option when list is loaded
+  React.useEffect(() => {
+    if (instrumentsDisponibles && instrumentsDisponibles.length > 0 && !inviteInstrument) {
+      setInviteInstrument(instrumentsDisponibles[0]);
+    }
+  }, [instrumentsDisponibles, inviteInstrument]);
+
+  const onSubmitInvite = async (e) => {
+    if (e) e.preventDefault();
+    if (!inviteNom.trim() || !inviteFonction.trim() || !inviteInstrument) return;
+    setAddingInvite(true);
+    try {
+      await handleAddInviteExterne(inviteNom, inviteFonction, inviteInstrument);
+      setInviteNom('');
+      setInviteFonction('');
+      setIsInviteFormOpen(false);
+    } catch (error) {
+      console.error("Erreur lors de la validation de l'invité externe :", error);
+    } finally {
+      setAddingInvite(false);
+    }
+  };
 
   const getInstrumentIconPath = (instName) => {
     if (!instName) return '/favicon.svg';
@@ -362,18 +394,38 @@ export default function EventRSVPSection({
                            className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded border border-dashed border-encre-noire/15 text-xs font-semibold text-encre-noire"
                            style={{ backgroundColor: getColorForInstrument(inst, 'pastel') }}
                          >
-                           <XiloAvatar src={u.photoURL} name={`${u.prenom} ${u.nom}`} size={18} />
-                          <span>{u.prenom} {u.nom}</span>
-                          {isAuthorized && u.id && (
-                            <button
-                              type="button"
-                              onClick={() => handleManualUnregister(u.id)}
-                              className="text-red-600 hover:text-red-800 text-[10px] font-black cursor-pointer ml-1.5 border-l border-encre-noire/15 pl-1.5"
-                              title="Désinscrire ce membre"
-                            >
-                              ✕
-                            </button>
-                          )}
+                           <XiloAvatar src={u.photoURL} name={u.isInvite ? u.prenom : `${u.prenom} ${u.nom}`} size={18} />
+                           <span>
+                             {u.isInvite ? u.prenom : `${u.prenom} ${u.nom}`}
+                             {u.isInvite && (
+                               <span className="ml-1 px-1 py-0.5 text-[8px] font-extrabold uppercase border border-amber-600/30 text-amber-700 bg-amber-50 dark:bg-amber-950/20 dark:text-amber-400 rounded-sm inline-block select-none leading-none">
+                                 [Invité]
+                               </span>
+                             )}
+                           </span>
+                           {isAuthorized && (
+                             u.isInvite ? (
+                               <button
+                                 type="button"
+                                 onClick={() => handleRemoveInviteExterne(u.id)}
+                                 className="text-red-600 hover:text-red-800 text-[10px] font-black cursor-pointer ml-1.5 border-l border-encre-noire/15 pl-1.5"
+                                 title="Retirer cet invité"
+                               >
+                                 🗑️
+                               </button>
+                             ) : (
+                               u.id && (
+                                 <button
+                                   type="button"
+                                   onClick={() => handleManualUnregister(u.id)}
+                                   className="text-red-600 hover:text-red-800 text-[10px] font-black cursor-pointer ml-1.5 border-l border-encre-noire/15 pl-1.5"
+                                   title="Désinscrire ce membre"
+                                 >
+                                   ✕
+                                 </button>
+                               )
+                             )
+                           )}
                         </div>
                       ))}
                     </div>
@@ -386,7 +438,7 @@ export default function EventRSVPSection({
           <div className="flex flex-col gap-3.5 theme-inner-panel p-3.5 rounded text-xs text-left">
             <div>
               <strong className="text-green-600 block border-b border-dashed border-green-500/10 pb-0.5 mb-1">
-                ✅ Présents ({(event.inscriptions || []).filter(i => i.status === 'present').length})
+                ✅ Présents ({((event.inscriptions || []).filter(i => i.status === 'present').length) + ((event.invitesExternes || []).length)})
               </strong>
               <div className="flex flex-wrap gap-1.5 items-center mt-1">
                 {(event.inscriptions || []).filter(i => i.status === 'present').map(i => {
@@ -412,7 +464,32 @@ export default function EventRSVPSection({
                     </div>
                   );
                 })}
-                {(event.inscriptions || []).filter(i => i.status === 'present').length === 0 && <span className="opacity-60 italic">Aucun</span>}
+                {(event.invitesExternes || []).map(i => (
+                  <div 
+                    key={i.id} 
+                    className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded border border-dashed border-encre-noire/15 text-xs font-semibold text-encre-noire"
+                    style={{ backgroundColor: getColorForInstrument(i.fonction, 'pastel') }}
+                  >
+                    <XiloAvatar src={null} name={i.nom} size={18} />
+                    <span>
+                      {i.nom} <span className="text-[10px] opacity-75 font-normal">({i.fonction})</span>
+                      <span className="ml-1 px-1 py-0.5 text-[8px] font-extrabold uppercase border border-amber-600/30 text-amber-700 bg-amber-50 dark:bg-amber-950/20 dark:text-amber-400 rounded-sm inline-block select-none leading-none">
+                        [Invité]
+                      </span>
+                    </span>
+                    {isAuthorized && (
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveInviteExterne(i.id)}
+                        className="text-red-600 hover:text-red-800 text-[10px] font-black cursor-pointer ml-1.5 border-l border-encre-noire/15 pl-1.5"
+                        title="Retirer cet invité"
+                      >
+                        🗑️
+                      </button>
+                    )}
+                  </div>
+                ))}
+                {(event.inscriptions || []).filter(i => i.status === 'present').length === 0 && (event.invitesExternes || []).length === 0 && <span className="opacity-60 italic">Aucun</span>}
               </div>
             </div>
             <div>
@@ -629,23 +706,32 @@ export default function EventRSVPSection({
         )}
 
         {isAuthorized && (
-          <div className="mt-4 pt-4 border-t border-dashed border-cordel-master-dark/15 text-left">
-            {!isManualRegisterOpen ? (
-              <button
-                type="button"
-                onClick={() => {
-                  setIsManualRegisterOpen(true);
-                  if (unregisteredUsers.length > 0) {
-                    const firstUser = unregisteredUsers[0];
-                    setSelectedManualUserId(firstUser.id);
-                    setSelectedManualInstrument(firstUser.instrument || 'Autre');
-                  }
-                }}
-                className="theme-btn text-[10px] font-black uppercase tracking-wider py-1.5 px-3 rounded-[4px_6px_3px_5px] flex items-center gap-1.5 hover:bg-cordel-hover cursor-pointer"
-              >
-                ➕ Inscrire un membre
-              </button>
-            ) : (
+          <div className="mt-4 pt-4 border-t border-dashed border-cordel-master-dark/15 text-left flex flex-col gap-3">
+            {!isManualRegisterOpen && !isInviteFormOpen ? (
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsManualRegisterOpen(true);
+                    if (unregisteredUsers.length > 0) {
+                      const firstUser = unregisteredUsers[0];
+                      setSelectedManualUserId(firstUser.id);
+                      setSelectedManualInstrument(firstUser.instrument || 'Autre');
+                    }
+                  }}
+                  className="theme-btn text-[10px] font-black uppercase tracking-wider py-1.5 px-3 rounded-[4px_6px_3px_5px] flex items-center gap-1.5 hover:bg-cordel-hover cursor-pointer"
+                >
+                  ➕ Inscrire un membre
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsInviteFormOpen(true)}
+                  className="theme-btn text-[10px] font-black uppercase tracking-wider py-1.5 px-3 rounded-[4px_6px_3px_5px] flex items-center gap-1.5 hover:bg-cordel-hover cursor-pointer"
+                >
+                  👤 Ajouter un invité extérieur
+                </button>
+              </div>
+            ) : isManualRegisterOpen ? (
               <form onSubmit={handleManualRegister} className="flex flex-col gap-3 bg-white/40 dark:bg-black/20 p-3.5 rounded border border-dashed border-encre-noire/15">
                 <div className="flex justify-between items-center border-b border-dashed border-encre-noire/10 pb-1.5">
                   <span className="font-bold text-[10px] uppercase tracking-widest text-cordel-wood">
@@ -731,6 +817,85 @@ export default function EventRSVPSection({
                     className="theme-btn theme-stamp-badge theme-stamp-badge-wood text-[10px] font-black uppercase tracking-wider py-1.5 px-3 cursor-pointer disabled:opacity-50"
                   >
                     {savingManualRegistration ? "Validation..." : "Valider l'inscription"}
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <form onSubmit={onSubmitInvite} className="flex flex-col gap-3 bg-white/40 dark:bg-black/20 p-3.5 rounded border border-dashed border-encre-noire/15">
+                <div className="flex justify-between items-center border-b border-dashed border-encre-noire/10 pb-1.5">
+                  <span className="font-bold text-[10px] uppercase tracking-widest text-cordel-wood">
+                    Ajouter un invité extérieur
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsInviteFormOpen(false);
+                      setInviteNom('');
+                      setInviteFonction('');
+                    }}
+                    className="text-red-600 hover:text-red-800 text-[10px] font-black cursor-pointer"
+                  >
+                    Annuler
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {/* Guest Name */}
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[9px] font-bold uppercase tracking-wider text-cordel-master-dark">
+                      Nom
+                    </label>
+                    <input
+                      type="text"
+                      value={inviteNom}
+                      onChange={(e) => setInviteNom(e.target.value)}
+                      className="theme-input text-[11px] font-bold py-1.5 px-2 bg-cordel-bg-light"
+                      placeholder="Ex: Jean Dupont"
+                      required
+                    />
+                  </div>
+
+                  {/* Guest Function */}
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[9px] font-bold uppercase tracking-wider text-cordel-master-dark">
+                      Fonction
+                    </label>
+                    <input
+                      type="text"
+                      value={inviteFonction}
+                      onChange={(e) => setInviteFonction(e.target.value)}
+                      className="theme-input text-[11px] font-bold py-1.5 px-2 bg-cordel-bg-light"
+                      placeholder="Ex: Musicien remplaçant"
+                      required
+                    />
+                  </div>
+
+                  {/* Guest Instrument/Pupitre */}
+                  <div className="flex flex-col gap-1 sm:col-span-2">
+                    <label className="text-[9px] font-bold uppercase tracking-wider text-cordel-master-dark">
+                      Pupitre / Instrument
+                    </label>
+                    <select
+                      value={inviteInstrument}
+                      onChange={(e) => setInviteInstrument(e.target.value)}
+                      className="theme-input text-[11px] font-bold py-1.5 px-2 bg-cordel-bg-light w-full"
+                      required
+                    >
+                      {instrumentsDisponibles.map(inst => (
+                        <option key={inst} value={inst}>{inst}</option>
+                      ))}
+                      <option value="Autre">Autre</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-2 mt-1">
+                  <button
+                    type="submit"
+                    disabled={addingInvite || !inviteNom.trim() || !inviteFonction.trim()}
+                    className="theme-btn theme-stamp-badge theme-stamp-badge-wood text-[10px] font-black uppercase tracking-wider py-1.5 px-3 cursor-pointer disabled:opacity-50"
+                  >
+                    {addingInvite ? "Ajout..." : "+ Ajouter"}
                   </button>
                 </div>
               </form>

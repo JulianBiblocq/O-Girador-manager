@@ -111,7 +111,7 @@ export default function MestreEvents({ groupId, onSelectForStage, onOpenDetails 
             <tbody>
               {events.map((evt) => {
                 const insList = evt.inscriptions || [];
-                const presentCount = insList.filter(ins => ins.status === 'present').length;
+                const presentCount = insList.filter(ins => ins.status === 'present').length + (evt.invitesExternes || []).length;
                 const totalRegistered = insList.filter(ins => ins.status !== 'absent').length;
 
                 return (

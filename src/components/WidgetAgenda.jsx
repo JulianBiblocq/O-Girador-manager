@@ -59,6 +59,7 @@ export default function WidgetAgenda({
   const [eventTypes, setEventTypes] = useState(['prestation', 'repetition', 'stage', 'atelier', 'reunion']);
   const [agendaEnableFinance, setAgendaEnableFinance] = useState(true);
   const [eventTypeConfigs, setEventTypeConfigs] = useState({});
+  const [dressCodes, setDressCodes] = useState([]);
 
   // Sync association settings to get default local address and km rate
   useEffect(() => {
@@ -75,6 +76,7 @@ export default function WidgetAgenda({
         } else {
           setEventTypes(['prestation', 'repetition', 'stage', 'atelier', 'reunion']);
         }
+        setDressCodes(data.dressCodes || []);
       }
     });
     return () => unsubscribe();
@@ -112,7 +114,8 @@ export default function WidgetAgenda({
     lienSocial: '',
     imageUrl: '',
     requiresValidation: false,
-    dateLimiteInscription: ''
+    dateLimiteInscription: '',
+    tenueRequise: ''
   });
 
   const isAuthorized = role === 'mestre' || role === 'super-admin' || isSystemAdmin === true;
@@ -259,7 +262,8 @@ export default function WidgetAgenda({
         requiresValidation: activeConfig.agendaEnableInscriptions ? (formData.requiresValidation || false) : false,
         montantRecette: activeConfig.agendaEnableFinance ? (parseFloat(formData.montantRecette) || 0) : 0,
         montantDepense: activeConfig.agendaEnableFinance ? (parseFloat(formData.montantDepense) || 0) : 0,
-        dateLimiteInscription: activeConfig.agendaEnableInscriptions ? formData.dateLimiteInscription || '' : ''
+        dateLimiteInscription: activeConfig.agendaEnableInscriptions ? formData.dateLimiteInscription || '' : '',
+        tenueRequise: formData.tenueRequise || ''
       });
       setIsAdding(false);
     } catch (error) {
@@ -654,6 +658,25 @@ export default function WidgetAgenda({
               </div>
             )}
 
+            {/* Tenue requise */}
+            <div className="flex flex-col gap-1">
+              <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                Tenue requise / Dress Code (Optionnel)
+              </label>
+              <select
+                name="tenueRequise"
+                value={formData.tenueRequise || ''}
+                onChange={handleChange}
+                disabled={saving}
+                className="theme-input w-full disabled:opacity-50 font-bold bg-cordel-bg-light"
+              >
+                <option value="">-- Aucune tenue spécifiée --</option>
+                {dressCodes.map(dc => (
+                  <option key={dc.id} value={dc.name}>{dc.name} ({dc.included})</option>
+                ))}
+              </select>
+            </div>
+
             {/* Ordre du jour */}
             {activeConfig.agendaEnableOrdreDuJour && (
               <div className="flex flex-col gap-1">
@@ -851,7 +874,7 @@ export default function WidgetAgenda({
                   const userStatus = userInscription ? userInscription.status : null;
                   
                   // Inscriptions stats
-                  const presentCount = insList.filter(i => i.status === 'present').length;
+                  const presentCount = insList.filter(i => i.status === 'present').length + (event.invitesExternes || []).length;
 
                   return (
                     <tr 
@@ -980,9 +1003,9 @@ export default function WidgetAgenda({
                           </div>
                           
                           {/* Subscriptions counter */}
-                          {event.inscriptions && event.inscriptions.length > 0 && (
+                          {((event.inscriptions && event.inscriptions.length > 0) || (event.invitesExternes && event.invitesExternes.length > 0)) && (
                             <span className="text-[8px] font-bold px-1.5 py-0.5 bg-encre-noire text-cordel-bg-light rounded-sm self-end shrink-0">
-                              {event.inscriptions.filter(i => i.status === 'present').length} {t('common.presentCountLabel')}
+                              {((event.inscriptions || []).filter(i => i.status === 'present').length) + ((event.invitesExternes || []).length)} {t('common.presentCountLabel')}
                             </span>
                           )}
                         </div>

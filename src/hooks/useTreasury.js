@@ -34,8 +34,6 @@ export function useTreasury(groupId) {
   const [transactions, setTransactions] = useState([]);
   const [events, setEvents] = useState([]);
   const [associationSettings, setAssociationSettings] = useState(null);
-  const [campaigns, setCampaigns] = useState([]);
-  const [campaignRequests, setCampaignRequests] = useState([]);
   const [helloAssoSignatureKey, setHelloAssoSignatureKey] = useState('');
 
   const [loadingStates, setLoadingStates] = useState({
@@ -43,8 +41,6 @@ export function useTreasury(groupId) {
     transactions: true,
     events: true,
     settings: true,
-    campaigns: true,
-    campaignRequests: true,
     credentials: true
   });
 
@@ -63,8 +59,6 @@ export function useTreasury(groupId) {
         transactions: false,
         events: false,
         settings: false,
-        campaigns: false,
-        campaignRequests: false,
         credentials: false
       });
       return;
@@ -143,35 +137,7 @@ export function useTreasury(groupId) {
       setLoadingStates(prev => ({ ...prev, settings: false }));
     });
 
-    // 5. Campaigns
-    const campaignsRef = collection(db, 'campaigns');
-    const qCampaigns = query(campaignsRef, where('groupId', '==', groupId));
-    const unsubCampaigns = onSnapshot(qCampaigns, (snap) => {
-      const fetched = [];
-      snap.forEach((docSnap) => {
-        fetched.push({ id: docSnap.id, ...docSnap.data() });
-      });
-      setCampaigns(fetched);
-      setLoadingStates(prev => ({ ...prev, campaigns: false }));
-    }, (err) => {
-      console.error("useTreasury - Error fetching campaigns:", err);
-      setLoadingStates(prev => ({ ...prev, campaigns: false }));
-    });
 
-    // 6. CampaignRequests (orders)
-    const requestsRef = collection(db, 'campaignRequests');
-    const qRequests = query(requestsRef, where('groupId', '==', groupId));
-    const unsubRequests = onSnapshot(qRequests, (snap) => {
-      const fetched = [];
-      snap.forEach((docSnap) => {
-        fetched.push({ id: docSnap.id, ...docSnap.data() });
-      });
-      setCampaignRequests(fetched);
-      setLoadingStates(prev => ({ ...prev, campaignRequests: false }));
-    }, (err) => {
-      console.error("useTreasury - Error fetching campaignRequests:", err);
-      setLoadingStates(prev => ({ ...prev, campaignRequests: false }));
-    });
 
     // 7. HelloAsso Credentials
     const credentialsRef = doc(db, 'associations', groupId, 'private_settings', 'credentials');
@@ -341,45 +307,7 @@ export function useTreasury(groupId) {
       });
     });
 
-    // 2. Commandes groupées (Recettes)
-    const ARTICLE_PRICES = {
-      "Baguettes d'Alfaia (Grosses, Petites ou Bacalhau)": 15,
-      "Baguettes de Caixa": 10,
-      "Baguette de Gonguê": 12,
-      "Peau de Caixa": 25,
-      "Peau d'Alfaia (18\", 20\" ou 22\")": 35,
-      "Housse de protection Alfaia (18\", 20\" ou 22\")": 45,
-      "Housse de protection Caixa": 30,
-      "Sangle": 20,
-      "Étui à baguettes": 15,
-      "Pantalon": 40,
-      "Chemise": 35,
-      "T-shirt Homme": 15,
-      "T-shirt Femme": 15,
-      "Autre": 0
-    };
 
-    campaigns.forEach(camp => {
-      const dateStr = isWithinRange(camp.dateCreation);
-      if (!dateStr) return;
-
-      const campReqs = campaignRequests.filter(r => r.campaignId === camp.id);
-      campReqs.forEach(req => {
-        const itemPrice = req.prix || req.montant || ARTICLE_PRICES[req.article] || 0;
-        const qty = req.quantite || 1;
-        const credit = itemPrice * qty;
-
-        if (credit > 0) {
-          entries.push({
-            date: dateStr,
-            category: 'Commandes Groupées',
-            label: `${req.article} (${qty}x) - ${req.userName || 'Membre'}`,
-            amount: credit,
-            type: 'depense'
-          });
-        }
-      });
-    });
 
     // 3. Événements (Recettes et Dépenses)
     events.forEach(event => {
@@ -522,7 +450,6 @@ export function useTreasury(groupId) {
       },
       depense: {
         'Événements': 0,
-        'Commandes Groupées': 0,
         'Frais Kilométriques': 0,
         'Opérations Diverses': 0
       }
@@ -548,8 +475,6 @@ export function useTreasury(groupId) {
     transactions,
     events,
     associationSettings,
-    campaigns,
-    campaignRequests,
     helloAssoSignatureKey,
     loading,
     error,

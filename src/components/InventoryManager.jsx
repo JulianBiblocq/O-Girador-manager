@@ -252,6 +252,64 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin,
     }
   };
 
+  // Generate and download CSV export of the complete inventory
+  const handleExportCSV = () => {
+    if (instruments.length === 0) return;
+
+    // 1. Headers
+    const headers = [
+      "Nom de l'instrument",
+      "Famille/Pupitre",
+      "État",
+      "Statut",
+      "Emprunteur"
+    ];
+
+    // 2. Rows mapping
+    const rows = instruments.map(inst => {
+      const nom = inst.nom || "";
+      const type = getInstrumentTypeLabel(inst.type);
+      const etat = getEtatLabel(inst.etat);
+      
+      // Status formatting
+      let statusStr = "Au local";
+      if (inst.status === "Emprunté") {
+        statusStr = "Emprunté";
+      } else if (inst.status === "En réparation") {
+        statusStr = "En réparation";
+      }
+      
+      // Borrower resolution
+      const borrowerName = inst.borrowedBy ? (usersMap[inst.borrowedBy] || "Inconnu") : "";
+
+      return [
+        nom,
+        type,
+        etat,
+        statusStr,
+        borrowerName
+      ];
+    });
+
+    // 3. Format CSV string (semicolon separator, UTF-8 BOM, double quotes around values)
+    const csvContent = "\uFEFF" + [headers, ...rows]
+      .map(row => row.map(val => `"${String(val).replace(/"/g, '""')}"`).join(";"))
+      .join("\n");
+
+    // 4. Download trigger
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    
+    const dateStr = new Date().toISOString().split('T')[0];
+    link.setAttribute("download", `O_Girador_Inventaire_${dateStr}.csv`);
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   // Filter local state
   const filteredInstruments = instruments.filter(inst => {
     if (filter === "association") return inst.proprietaire === "Association";
@@ -518,7 +576,7 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin,
         ) : (
           <div className="flex flex-col gap-4">
             {/* Filter buttons & Add trigger */}
-            <div className="flex justify-between items-center gap-2">
+            <div className="flex justify-between items-center gap-2 flex-wrap">
               {/* Dropdown for filters */}
               <select
                 value={filter}
@@ -531,14 +589,27 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin,
                 <option value="repair">{(t('inventory.filterRepair') || "À réparer ({count})").replace('{count}', instruments.filter(i=>i.etat==='À réparer' || i.etat==='Para consertar').length)}</option>
               </select>
 
-              <CordelButton
-                variant="ocre"
-                useExtremeBorder={true}
-                onClick={handleOpenAdd}
-                className="text-[10px] px-3 py-2 uppercase tracking-widest font-black shrink-0"
-              >
-                {t('inventory.addBtn')}
-              </CordelButton>
+              <div className="flex gap-2">
+                <CordelButton
+                  type="button"
+                  variant="default"
+                  useExtremeBorder={false}
+                  onClick={handleExportCSV}
+                  disabled={instruments.length === 0}
+                  className="text-[10px] px-3 py-2 uppercase tracking-widest font-black shrink-0 flex items-center gap-1.5"
+                >
+                  📥 {t('inventory.exportCSV') || "Exporter (CSV)"}
+                </CordelButton>
+
+                <CordelButton
+                  variant="ocre"
+                  useExtremeBorder={true}
+                  onClick={handleOpenAdd}
+                  className="text-[10px] px-3 py-2 uppercase tracking-widest font-black shrink-0"
+                >
+                  {t('inventory.addBtn')}
+                </CordelButton>
+              </div>
             </div>
 
             {/* Instruments List */}

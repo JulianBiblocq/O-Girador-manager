@@ -21,7 +21,7 @@ import EventSetlistSection from './event-details/EventSetlistSection';
 import EventReportSection from './event-details/EventReportSection';
 import EventStageLayoutSection from './event-details/EventStageLayoutSection';
 
-export default function EventDetails({ event, user, profileData, onNavigateToView, onClose, onPrev, onNext, viewMode, setViewMode }) {
+export default function EventDetails({ event, user, profileData, onNavigateToView, onClose, onPrev, onNext, viewMode, setViewMode, onGoToStageLayoutEditor }) {
   const { t } = useTranslation();
   const [isCalendarMenuOpen, setIsCalendarMenuOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState(null);
@@ -63,6 +63,8 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
   const [agendaEnableCarpool, setAgendaEnableCarpool] = useState(true);
   const [associationEventTypes, setAssociationEventTypes] = useState(['prestation', 'repetition', 'stage', 'atelier', 'reunion']);
   const [eventTypeConfigs, setEventTypeConfigs] = useState({});
+  const [associationName, setAssociationName] = useState('');
+  const [dressCodes, setDressCodes] = useState([]);
 
   const isPrestationRestricted = event.type === 'prestation' && event.niveauRequis === 'confirme' && profileData?.niveau !== 'confirme';
 
@@ -92,7 +94,9 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
     handleManualRegister,
     handleManualUnregister,
     handleUpdateStatus,
-    handleUpdateMemberInstrument
+    handleUpdateMemberInstrument,
+    handleAddInviteExterne,
+    handleRemoveInviteExterne
   } = useEventRSVP(event, user, profileData, allUsers, isPrestationRestricted, setToastMessage);
 
   // useEventCarpool hook
@@ -112,7 +116,9 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
     handleRetirerVoiture,
     handleToggleRemboursement,
     handleChercherPlace,
-    handleAnnulerCherchePlace
+    handleAnnulerCherchePlace,
+    handleAssignPassenger,
+    handleRemovePassenger
   } = useEventCarpool({
     event,
     user,
@@ -159,9 +165,10 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
       requiresValidation: event.requiresValidation || false,
       montantRecette: event.montantRecette !== undefined ? event.montantRecette.toString() : '',
       montantDepense: event.montantDepense !== undefined ? event.montantDepense.toString() : '',
-      dateLimiteInscription: event.dateLimiteInscription || ''
+      dateLimiteInscription: event.dateLimiteInscription || '',
+      tenueRequise: event.tenueRequise || ''
     });
-  }, [event.id, event.type, event.montantRecette, event.montantDepense, event.dateLimiteInscription]);
+  }, [event.id, event.type, event.montantRecette, event.montantDepense, event.dateLimiteInscription, event.tenueRequise]);
 
   // Load association settings
   useEffect(() => {
@@ -170,6 +177,9 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
     const unsubscribe = onSnapshot(assocRef, (docSnap) => {
       if (docSnap.exists()) {
         const data = docSnap.data();
+        if (data.nom) {
+          setAssociationName(data.nom);
+        }
         setIndemniteKilometrique(data.indemniteKilometrique || 0);
         setAdresseLocal(data.adresseLocal || '');
         setAssocSequenceurUrl(data.sequenceurUrl || '');
@@ -188,6 +198,7 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
         } else {
           setAssociationEventTypes(['prestation', 'repetition', 'stage', 'atelier', 'reunion']);
         }
+        setDressCodes(data.dressCodes || []);
         if (Array.isArray(data.instrumentsDisponibles)) {
           setInstrumentsDisponibles(data.instrumentsDisponibles);
         }
@@ -292,6 +303,7 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
   const getEventDetailsText = () => {
     let detailsText = `Type d'événement : ${event.type || ''}`;
     if (event.lieu) detailsText += `\n📍 Lieu : ${event.lieu}`;
+    if (event.tenueRequise) detailsText += `\n👕 Tenue requise : ${event.tenueRequise}`;
     if (event.horairesPassages) detailsText += `\n⏱️ Horaires de passage : ${event.horairesPassages}`;
     if (event.horaireCovoiturage) detailsText += `\n🚗 Covoiturage : ${event.horaireCovoiturage}`;
     if (event.niveauRequis) {
@@ -344,14 +356,17 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
     const description = getEventDetailsText().replace(/\n/g, '\\n');
     const location = event.lieu || '';
 
+    const prodIdName = (associationName || 'O Girador').replace(/[^a-zA-Z0-9 ]/g, '');
+    const cleanUidDomain = (associationName || 'o-girador').toLowerCase().replace(/[^a-z0-9]/g, '-');
+
     const icsContent = [
       'BEGIN:VCALENDAR',
       'VERSION:2.0',
-      'PRODID:-//O Girador//Event Calendar//FR',
+      `PRODID:-//${prodIdName}//Event Calendar//FR`,
       'CALSCALE:GREGORIAN',
       'METHOD:PUBLISH',
       'BEGIN:VEVENT',
-      `UID:event-${event.id || Date.now()}@o-girador`,
+      `UID:event-${event.id || Date.now()}@${cleanUidDomain}`,
       `DTSTAMP:${stampStr}`,
       `DTSTART:${startStr}`,
       `DTEND:${endStr}`,
@@ -412,7 +427,8 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
         requiresValidation: editConfig.agendaEnableInscriptions ? (editForm.requiresValidation || false) : false,
         montantRecette: editConfig.agendaEnableFinance ? (parseFloat(editForm.montantRecette) || 0) : 0,
         montantDepense: editConfig.agendaEnableFinance ? (parseFloat(editForm.montantDepense) || 0) : 0,
-        dateLimiteInscription: editConfig.agendaEnableInscriptions ? editForm.dateLimiteInscription || '' : ''
+        dateLimiteInscription: editConfig.agendaEnableInscriptions ? editForm.dateLimiteInscription || '' : '',
+        tenueRequise: editForm.tenueRequise || ''
       });
       setIsEditingEvent(false);
       alert("Événement mis à jour avec succès !");
@@ -481,8 +497,29 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
         if (!presentsByInstrument[inst]) {
           presentsByInstrument[inst] = [];
         }
-        presentsByInstrument[inst].push(userInfo);
+        presentsByInstrument[inst].push({
+          ...userInfo,
+          isInvite: false
+        });
       }
+    });
+  }
+
+  // Add external guests to grouped presence list
+  if (event.invitesExternes && event.invitesExternes.length > 0) {
+    event.invitesExternes.forEach((invite) => {
+      const inst = invite.instrument || invite.fonction || 'Autre';
+      if (!presentsByInstrument[inst]) {
+        presentsByInstrument[inst] = [];
+      }
+      presentsByInstrument[inst].push({
+        id: invite.id,
+        prenom: invite.nom,
+        nom: '',
+        instrument: inst,
+        photoURL: null,
+        isInvite: true
+      });
     });
   }
 
@@ -926,6 +963,24 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
                 </>
               )}
 
+              {/* Tenue requise */}
+              <div className="flex flex-col gap-1">
+                <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                  Tenue requise / Dress Code (Optionnel)
+                </label>
+                <select
+                  value={editForm.tenueRequise || ''}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, tenueRequise: e.target.value }))}
+                  disabled={savingEvent}
+                  className="theme-input w-full disabled:opacity-50 font-bold bg-cordel-bg-light"
+                >
+                  <option value="">-- Aucune tenue spécifiée --</option>
+                  {dressCodes.map(dc => (
+                    <option key={dc.id} value={dc.name}>{dc.name} ({dc.included})</option>
+                  ))}
+                </select>
+              </div>
+
               {/* Ordre du jour */}
               {editConfig.agendaEnableOrdreDuJour && (
                 <div className="flex flex-col gap-1">
@@ -1149,6 +1204,11 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
                   {isRegistrationDeadlinePassed && " (Closes)"}
                 </span>
               )}
+              {event.tenueRequise && (
+                <span className="flex items-center gap-1.5 text-cordel-wood font-extrabold bg-amber-50/50 dark:bg-black/25 px-2 py-1.5 rounded border border-dashed border-cordel-master-dark/15 select-none mt-1 w-fit">
+                  👕 <strong>Tenue requise :</strong> {event.tenueRequise}
+                </span>
+              )}
               {currentConfig.agendaEnableAdresse && event.lieu && (
                 <span>📍 <strong>Lieu :</strong> {event.lieu}</span>
               )}
@@ -1277,6 +1337,9 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
               t={t}
               agendaRequireInstrument={currentConfig.agendaRequireInstrument}
               agendaEnableMaybeStatus={currentConfig.agendaEnableMaybeStatus}
+              handleAddInviteExterne={handleAddInviteExterne}
+              handleRemoveInviteExterne={handleRemoveInviteExterne}
+              instrumentsDisponibles={instrumentsDisponibles}
             />
           )}
 
@@ -1288,6 +1351,8 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
               allUsers={allUsers}
               isAuthorized={isAuthorized}
               t={t}
+              readOnly={true}
+              onGoToStageLayoutEditor={onGoToStageLayoutEditor}
             />
           )}
 
@@ -1319,6 +1384,8 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
               setVoitureForm={setVoitureForm}
               handleProposerVoiture={handleProposerVoiture}
               reimbursementRule={reimbursementRule}
+              handleAssignPassenger={handleAssignPassenger}
+              handleRemovePassenger={handleRemovePassenger}
             />
           )}
 

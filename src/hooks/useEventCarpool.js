@@ -433,6 +433,150 @@ export function useEventCarpool({
     }
   };
 
+  const handleAssignPassenger = async (voitureId, passengerUid, passengerNom, isInvite) => {
+    setSubmittingCovoit(true);
+    try {
+      const eventRef = doc(db, 'events', event.id);
+
+      await runTransaction(db, async (transaction) => {
+        const eventDocSnap = await transaction.get(eventRef);
+        if (!eventDocSnap.exists()) {
+          throw new Error("L'événement n'existe plus !");
+        }
+
+        const eventData = eventDocSnap.data();
+        const currentCovoit = eventData.covoiturage || { voitures: [], recherchePlace: [] };
+        const voitures = currentCovoit.voitures || [];
+        const recherchePlace = currentCovoit.recherchePlace || [];
+
+        const freshVoiture = voitures.find(v => v.id === voitureId);
+        if (!freshVoiture) {
+          throw new Error("Ce véhicule n'est plus disponible.");
+        }
+
+        const cleanPassengers = (freshVoiture.passengers || []).filter(p => p.uid !== passengerUid);
+        const candidatePassenger = {
+          uid: passengerUid,
+          nom: passengerNom,
+          isPassenger: true,
+          alfayasCount: 0,
+          isInvite: !!isInvite
+        };
+
+        const freshSimulatedCar = {
+          ...freshVoiture,
+          passengers: [...cleanPassengers, candidatePassenger]
+        };
+
+        const freshStatus = calculateCarStatus(freshSimulatedCar, { 
+          enableCarpoolReimbursement: !!eventData.enableCarpoolReimbursement, 
+          reimbursementRule: eventData.reimbursementRule || 'full_cars_only' 
+        });
+
+        if (freshStatus.isOverbooked) {
+          throw new Error("Plus assez de place dans cette voiture !");
+        }
+
+        // Update voitures list
+        const updatedVoitures = voitures.map(v => {
+          if (v.id === voitureId) {
+            return {
+              ...v,
+              passengers: [...cleanPassengers, candidatePassenger]
+            };
+          }
+          return v;
+        });
+
+        // Remove from waitlist if present
+        const updatedRecherchePlace = recherchePlace.filter(p => p.uid !== passengerUid);
+
+        // Update inscriptions if it is a member (not an external guest)
+        let updatedInscriptions = eventData.inscriptions || [];
+        if (!isInvite) {
+          updatedInscriptions = updatedInscriptions.map(ins => {
+            if (ins.userId === passengerUid) {
+              return { ...ins, transport: 'covoit' };
+            }
+            return ins;
+          });
+        }
+
+        transaction.update(eventRef, {
+          covoiturage: {
+            voitures: updatedVoitures,
+            recherchePlace: updatedRecherchePlace
+          },
+          inscriptions: updatedInscriptions
+        });
+      });
+    } catch (err) {
+      console.error("Error assigning passenger:", err);
+      alert(err.message || "Erreur lors de l'assignation du passager.");
+    } finally {
+      setSubmittingCovoit(false);
+    }
+  };
+
+  const handleRemovePassenger = async (voitureId, passengerUid) => {
+    setSubmittingCovoit(true);
+    try {
+      const eventRef = doc(db, 'events', event.id);
+
+      await runTransaction(db, async (transaction) => {
+        const eventDocSnap = await transaction.get(eventRef);
+        if (!eventDocSnap.exists()) return;
+
+        const eventData = eventDocSnap.data();
+        const currentCovoit = eventData.covoiturage || { voitures: [], recherchePlace: [] };
+        const voitures = currentCovoit.voitures || [];
+
+        const voiture = voitures.find(v => v.id === voitureId);
+        if (!voiture) return;
+
+        // Find if passenger is an invite
+        const passengerObj = (voiture.passengers || []).find(p => p.uid === passengerUid);
+        const isInvite = passengerObj ? !!passengerObj.isInvite : false;
+
+        const cleanP = (voiture.passengers || []).filter(p => p.uid !== passengerUid);
+
+        const updatedVoitures = voitures.map(v => {
+          if (v.id === voitureId) {
+            return {
+              ...v,
+              passengers: cleanP
+            };
+          }
+          return v;
+        });
+
+        // Update inscriptions if it was a member
+        let updatedInscriptions = eventData.inscriptions || [];
+        if (!isInvite) {
+          updatedInscriptions = updatedInscriptions.map(ins => {
+            if (ins.userId === passengerUid) {
+              return { ...ins, transport: '' }; // reset
+            }
+            return ins;
+          });
+        }
+
+        transaction.update(eventRef, {
+          covoiturage: {
+            ...currentCovoit,
+            voitures: updatedVoitures
+          },
+          inscriptions: updatedInscriptions
+        });
+      });
+    } catch (err) {
+      console.error("Error removing passenger:", err);
+      alert("Erreur lors du retrait du passager.");
+    } finally {
+      setSubmittingCovoit(false);
+    }
+  };
+
   return {
     showProposerForm,
     setShowProposerForm,
@@ -449,6 +593,8 @@ export function useEventCarpool({
     handleRetirerVoiture,
     handleToggleRemboursement,
     handleChercherPlace,
-    handleAnnulerCherchePlace
+    handleAnnulerCherchePlace,
+    handleAssignPassenger,
+    handleRemovePassenger
   };
 }

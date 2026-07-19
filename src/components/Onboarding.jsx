@@ -11,6 +11,7 @@ const DEFAULT_FIELDS_CONFIG = {
   adresse: { key: "adresse", label: "Adresse physique", enabled: true, filledBy: "member" },
   surnom: { key: "surnom", label: "Surnom", enabled: true, filledBy: "member" },
   tailleTshirt: { key: "tailleTshirt", label: "Taille T-shirt", enabled: true, filledBy: "member" },
+  taillePantalon: { key: "taillePantalon", label: "Taille Pantalon/Bas", enabled: true, filledBy: "member" },
   droitImage: { key: "droitImage", label: "Droit à l'image", enabled: true, filledBy: "member" },
   aptitudeMedicale: { key: "aptitudeMedicale", label: "Aptitude médicale", enabled: true, filledBy: "member" },
   lateralite: { key: "lateralite", label: "Latéralité (Gaucher/Droitier)", enabled: true, filledBy: "member" },
@@ -37,6 +38,7 @@ export default function Onboarding({ user, branding, onComplete }) {
     adresseVille: '',
     surnom: '',
     tailleTshirt: 'M',
+    taillePantalon: 'M',
     droitImage: false,
     aptitudeMedicale: false,
     lateralite: 'droitier',
@@ -131,6 +133,7 @@ export default function Onboarding({ user, branding, onComplete }) {
         adresseVille: isFieldVisible('adresse') ? formData.adresseVille : "",
         surnom: isFieldVisible('surnom') ? formData.surnom : "",
         tailleTshirt: isFieldVisible('tailleTshirt') ? formData.tailleTshirt : "M",
+        taillePantalon: isFieldVisible('taillePantalon') ? formData.taillePantalon : "M",
         droitImage: demanderDroitImage ? formData.droitImage : false,
         dateSignatureDroitImage: demanderDroitImage && formData.droitImage ? new Date() : null,
         aptitudeMedicale: demanderAttestationSante ? formData.aptitudeMedicale : false,
@@ -397,25 +400,58 @@ export default function Onboarding({ user, branding, onComplete }) {
             </div>
           )}
 
-          {/* T-Shirt Size Dropdown */}
-          {isFieldVisible('tailleTshirt') && (
-            <div className="flex flex-col gap-1">
-              <label className="text-[10px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                {t('onboarding.tshirtSize')}
-              </label>
-              <select
-                name="tailleTshirt"
-                value={formData.tailleTshirt}
-                onChange={handleChange}
-                disabled={submitting}
-                className="theme-input w-full disabled:opacity-50 font-bold bg-cordel-bg-light"
-              >
-                <option value="S">S</option>
-                <option value="M">M</option>
-                <option value="L">L</option>
-                <option value="XL">XL</option>
-                <option value="XXL">XXL</option>
-              </select>
+          {/* Section Mensurations */}
+          {(isFieldVisible('tailleTshirt') || isFieldVisible('taillePantalon')) && (
+            <div className="flex flex-col gap-3.5 border-t border-dashed border-cordel-master-dark/15 pt-3 mt-1.5 text-left w-full">
+              <span className="font-extrabold text-cordel-wood uppercase tracking-wider text-[10px]">
+                👔 Mensurations / Tailles pour les costumes (Optionnel)
+              </span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                {/* T-Shirt Size Dropdown */}
+                {isFieldVisible('tailleTshirt') && (
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                      {t('onboarding.tshirtSize')}
+                    </label>
+                    <select
+                      name="tailleTshirt"
+                      value={formData.tailleTshirt}
+                      onChange={handleChange}
+                      disabled={submitting}
+                      className="theme-input w-full disabled:opacity-50 font-bold bg-cordel-bg-light"
+                    >
+                      <option value="S">S</option>
+                      <option value="M">M</option>
+                      <option value="L">L</option>
+                      <option value="XL">XL</option>
+                      <option value="XXL">XXL</option>
+                    </select>
+                  </div>
+                )}
+
+                {/* Pantalon Size Dropdown */}
+                {isFieldVisible('taillePantalon') && (
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                      {t('onboarding.pantSize') || "Taille Pantalon"}
+                    </label>
+                    <select
+                      name="taillePantalon"
+                      value={formData.taillePantalon}
+                      onChange={handleChange}
+                      disabled={submitting}
+                      className="theme-input w-full disabled:opacity-50 font-bold bg-cordel-bg-light"
+                    >
+                      <option value="XS">XS</option>
+                      <option value="S">S</option>
+                      <option value="M">M</option>
+                      <option value="L">L</option>
+                      <option value="XL">XL</option>
+                      <option value="XXL">XXL</option>
+                    </select>
+                  </div>
+                )}
+              </div>
             </div>
           )}
 

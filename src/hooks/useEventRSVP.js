@@ -258,6 +258,61 @@ export function useEventRSVP(event, user, profileData, allUsers, isPrestationRes
     }
   };
 
+  const handleAddInviteExterne = async (nom, fonction, instrument) => {
+    if (!event.id) return;
+    if (!nom.trim() || !fonction.trim() || !instrument) {
+      alert("Veuillez remplir le nom, la fonction et l'instrument.");
+      return;
+    }
+    try {
+      const currentInvites = event.invitesExternes || [];
+      const newInvite = {
+        id: Date.now().toString() + Math.random().toString(36).substring(2, 9),
+        nom: nom.trim(),
+        fonction: fonction.trim(),
+        instrument: instrument
+      };
+      const updatedInvites = [...currentInvites, newInvite];
+      const eventRef = doc(db, 'events', event.id);
+      await updateDoc(eventRef, {
+        invitesExternes: updatedInvites
+      });
+      if (setToastMessage) {
+        setToastMessage("Invité externe ajouté !");
+        setTimeout(() => {
+          setToastMessage(null);
+        }, 3000);
+      }
+    } catch (error) {
+      console.error("Erreur lors de l'ajout de l'invité externe :", error);
+      alert("Erreur lors de l'ajout de l'invité externe.");
+    }
+  };
+
+  const handleRemoveInviteExterne = async (inviteId) => {
+    if (!event.id) return;
+    if (!window.confirm("Êtes-vous sûr de vouloir retirer cet invité ?")) {
+      return;
+    }
+    try {
+      const currentInvites = event.invitesExternes || [];
+      const updatedInvites = currentInvites.filter(inv => inv.id !== inviteId);
+      const eventRef = doc(db, 'events', event.id);
+      await updateDoc(eventRef, {
+        invitesExternes: updatedInvites
+      });
+      if (setToastMessage) {
+        setToastMessage("Invité externe retiré !");
+        setTimeout(() => {
+          setToastMessage(null);
+        }, 3000);
+      }
+    } catch (error) {
+      console.error("Erreur lors du retrait de l'invité externe :", error);
+      alert("Erreur lors du retrait de l'invité externe.");
+    }
+  };
+
   return {
     status,
     setStatus,
@@ -283,6 +338,8 @@ export function useEventRSVP(event, user, profileData, allUsers, isPrestationRes
     handleManualRegister,
     handleManualUnregister,
     handleUpdateStatus,
-    handleUpdateMemberInstrument
+    handleUpdateMemberInstrument,
+    handleAddInviteExterne,
+    handleRemoveInviteExterne
   };
 }

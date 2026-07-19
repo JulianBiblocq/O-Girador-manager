@@ -18,6 +18,7 @@ const LayoutEditor = React.lazy(() => import('./components/LayoutEditor'));
 const TagManager = React.lazy(() => import('./components/TagManager'));
 const InventoryManager = React.lazy(() => import('./components/InventoryManager'));
 const OrdersManager = React.lazy(() => import('./components/OrdersManager'));
+const WardrobeManager = React.lazy(() => import('./components/mestre/WardrobeManager'));
 const AssociationSettings = React.lazy(() => import('./components/AssociationSettings'));
 const TreasuryManager = React.lazy(() => import('./components/TreasuryManager'));
 const StudioSocial = React.lazy(() => import('./components/StudioSocial'));
@@ -79,6 +80,16 @@ const POLES_CONFIG = [
     ]
   },
   {
+    id: 'vestiaire',
+    label: 'Vestiaire',
+    labelKey: 'poleWardrobe',
+    tabs: [
+      { id: 'wardrobe-inventory', label: "Inventaire des pièces", labelKey: 'tabWardrobeInventory' },
+      { id: 'wardrobe-couture', label: 'Atelier Couture', labelKey: 'tabWardrobeCouture' },
+      { id: 'wardrobe-sizes', label: 'Mensurations Adhérents', labelKey: 'tabWardrobeSizes' }
+    ]
+  },
+  {
     id: 'studio',
     label: 'Le Studio',
     tabs: [
@@ -131,6 +142,13 @@ export default function App() {
   const [currentTab, setCurrentTab] = useState('dashboard');
   const [selectedMestreEventId, setSelectedMestreEventId] = useState(null);
   const [activeMestreEventDetails, setActiveMestreEventDetails] = useState(null);
+
+  const handleGoToStageLayoutEditor = (eventId) => {
+    setSelectedMestreEventId(eventId);
+    setCurrentPole('espace-mestre');
+    setCurrentTab('mestre-stage-layout');
+    setActiveMestreEventDetails(null);
+  };
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [installPromptAvailable, setInstallPromptAvailable] = useState(false);
   const [unreadPrivateMessagesCount, setUnreadPrivateMessagesCount] = useState(0);
@@ -686,6 +704,7 @@ export default function App() {
                 profileData={profileData}
                 onNavigateToView={handleNavigateToView}
                 onClose={() => setActiveMestreEventDetails(null)}
+                onGoToStageLayoutEditor={handleGoToStageLayoutEditor}
               />
             ) : currentTab === 'profil' ? (
               <UserProfile 
@@ -815,6 +834,18 @@ export default function App() {
                 isSystemAdmin={profileData?.isSystemAdmin}
                 hasAccessLogistique={hasAccessLogistique}
                 onBack={() => handleNavigateToPole('accueil')} 
+              />
+            ) : (['wardrobe-inventory', 'wardrobe-couture', 'wardrobe-sizes'].includes(currentTab) && hasAccessLogistique) ? (
+              <WardrobeManager
+                groupId={profileData?.groupId}
+                role={profileData?.role}
+                isSystemAdmin={profileData?.isSystemAdmin}
+                hasAccessLogistique={hasAccessLogistique}
+                activeTab={
+                  currentTab === 'wardrobe-inventory' ? 'inventory' :
+                  currentTab === 'wardrobe-couture' ? 'couture' : 'sizes'
+                }
+                onBack={() => handleNavigateToPole('accueil')}
               />
             ) : (currentTab === 'studio-social' && hasAccessStudio) ? (
               <StudioSocial 

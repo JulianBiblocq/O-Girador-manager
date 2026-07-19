@@ -169,7 +169,7 @@ export default function TabIdentity({
             useExtremeBorder={true}
             onClick={async () => {
               const invitationUrl = `${window.location.origin}/?groupe=${groupId}`;
-              const shareText = `Rejoins notre groupe sur O Girador Manager : ${invitationUrl}`;
+              const shareText = `Rejoins notre groupe sur ${formData.nom || 'notre association'} : ${invitationUrl}`;
               try {
                 await navigator.clipboard.writeText(shareText);
                 alert("Lien d'invitation copié dans le presse-papiers !");

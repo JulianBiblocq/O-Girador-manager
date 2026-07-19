@@ -68,7 +68,7 @@ export default function ActivityReports({ groupId, onBack, isEmbedded }) {
       const headers = ["Date", "Titre", "Type", "Lieu", "Nombre de présents"];
       const rows = filteredEvents.map(event => {
         const dateStr = event.date ? event.date.substring(0, 10) : '';
-        const presentCount = (event.inscriptions || []).filter(i => i.status === 'present').length;
+        const presentCount = (event.inscriptions || []).filter(i => i.status === 'present').length + (event.invitesExternes || []).length;
         
         let displayType = event.type;
         if (event.type === 'prestation') displayType = "Prestation";

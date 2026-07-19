@@ -15,7 +15,8 @@ import {
   XiloEQ,
   XiloScroll,
   XiloCar,
-  XiloCalendar
+  XiloCalendar,
+  XiloHanger
 } from './XiloIcons';
 import { useTranslation } from './LanguageContext';
 
@@ -75,6 +76,8 @@ export default function LayoutShell({
         return hasAccessTresorerie;
       case 'logistique':
         return hasAccessLogistique;
+      case 'vestiaire':
+        return hasAccessLogistique;
       case 'studio':
         return hasAccessStudio;
       case 'mestre':
@@ -116,6 +119,8 @@ export default function LayoutShell({
         return <XiloCoin size={size} />;
       case 'logistique':
         return <XiloBox size={size} />;
+      case 'vestiaire':
+        return <XiloHanger size={size} />;
       case 'studio':
         return <XiloMegaphone size={size} />;
       case 'mestre':
@@ -347,7 +352,7 @@ export default function LayoutShell({
           <div className="flex flex-col gap-5 w-full flex-1">
             
             {/* Top Horizontal Subcategories Menu */}
-            {isSystemOrSuperAdminOrMestre && visibleTabs.length > 0 && (
+            {(isSystemOrSuperAdminOrMestre || isAdministrativeUser) && visibleTabs.length > 0 && (
               <div className="flex flex-wrap gap-2 border-b border-dashed border-cordel-master-dark/20 pb-3 mb-1 select-none shrink-0">
                 {visibleTabs.map((tab) => {
                   const isActive = currentTab === tab.id;

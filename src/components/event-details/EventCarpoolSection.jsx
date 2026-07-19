@@ -26,10 +26,11 @@ export default function EventCarpoolSection({
   showProposerForm,
   setShowProposerForm,
   voitureForm,
-  setJoinFormState, // Wait, we can pass setVoitureForm and setJoinForm directly
   setVoitureForm,
   handleProposerVoiture,
-  reimbursementRule
+  reimbursementRule,
+  handleAssignPassenger,
+  handleRemovePassenger
 }) {
   return (
     <>
@@ -127,6 +128,14 @@ export default function EventCarpoolSection({
                   const isUserPassager = (voiture.passengers || voiture.passagers || []).some(p => p.uid === user.uid);
                   const passengersList = voiture.passengers || voiture.passagers || [];
 
+                  const assignedPassengerIds = (event.covoiturage?.voitures || []).flatMap(v => (v.passengers || []).map(p => p.uid));
+                  const searchers = (event.covoiturage?.recherchePlace || []).filter(p => !assignedPassengerIds.includes(p.uid));
+                  const unassignedGuests = (event.invitesExternes || []).filter(g => !assignedPassengerIds.includes(g.id));
+                  const potentialPassengers = [
+                    ...searchers.map(p => ({ uid: p.uid, nom: p.nom, isInvite: false })),
+                    ...unassignedGuests.map(g => ({ uid: g.id, nom: `${g.nom} [Invité]`, isInvite: true }))
+                  ];
+
                   return (
                     <div 
                       key={voiture.id}
@@ -175,7 +184,7 @@ export default function EventCarpoolSection({
                         {passengersList.length > 0 && (
                           <div className="theme-inner-panel rounded p-1.5 mb-3">
                             <span className="text-[9px] uppercase font-bold tracking-widest opacity-60 block mb-0.5">Participants :</span>
-                            <ul className="list-disc pl-3 text-[11px] font-bold leading-normal">
+                            <ul className="list-disc pl-3 text-[11px] font-bold leading-normal flex flex-col gap-0.5">
                               {passengersList.map((p, idx) => {
                                 const details = [];
                                 if (p.isPassenger !== false) {
@@ -186,9 +195,23 @@ export default function EventCarpoolSection({
                                 if (p.alfayasCount > 0) {
                                   details.push(`${p.alfayasCount} Alfaia${p.alfayasCount > 1 ? 's' : ''}`);
                                 }
+                                const canRemove = isUserChauffeur || isAuthorized || p.uid === user.uid;
                                 return (
-                                  <li key={idx}>
-                                    {p.nom} <span className="text-[9px] font-semibold text-cordel-master-dark/70">({details.join(', ')})</span>
+                                  <li key={idx} className="flex justify-between items-center gap-2">
+                                    <span>
+                                      {p.nom} {p.isInvite && <span className="text-[8px] font-black uppercase tracking-wider bg-cordel-bg border border-encre-noire text-cordel-master-dark px-1 py-0.5 rounded select-none">[Invité]</span>} <span className="text-[9px] font-semibold text-cordel-master-dark/70">({details.join(', ')})</span>
+                                    </span>
+                                    {canRemove && (
+                                      <button
+                                        type="button"
+                                        disabled={submittingCovoit}
+                                        onClick={() => handleRemovePassenger(voiture.id, p.uid)}
+                                        className="text-[9px] font-black text-red-600 hover:text-red-800 cursor-pointer ml-1 select-none pr-1"
+                                        title="Retirer ce passager"
+                                      >
+                                        ✕
+                                      </button>
+                                    )}
                                   </li>
                                 );
                               })}
@@ -196,6 +219,40 @@ export default function EventCarpoolSection({
                           </div>
                         )}
                       </div>
+
+                      {/* Assign passenger/guest dropdown form (Admin or Chauffeur only) */}
+                      {(isUserChauffeur || isAuthorized) && potentialPassengers.length > 0 && (
+                        <div className="mt-1 mb-3 pt-2.5 border-t border-dashed border-encre-noire/15 flex flex-col gap-1.5 text-left">
+                          <span className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                            Ajouter un passager / invité
+                          </span>
+                          <div className="flex gap-1.5">
+                            <select
+                              id={`assign-select-${voiture.id}`}
+                              disabled={submittingCovoit}
+                              className="theme-input text-[11px] font-bold py-1 px-1.5 bg-white/70 flex-1"
+                            >
+                              {potentialPassengers.map(p => (
+                                <option key={p.uid} value={JSON.stringify(p)}>{p.nom}</option>
+                              ))}
+                            </select>
+                            <button
+                              type="button"
+                              disabled={submittingCovoit}
+                              onClick={() => {
+                                const selectEl = document.getElementById(`assign-select-${voiture.id}`);
+                                if (selectEl && selectEl.value) {
+                                  const p = JSON.parse(selectEl.value);
+                                  handleAssignPassenger(voiture.id, p.uid, p.nom.replace(' [Invité]', ''), p.isInvite);
+                                }
+                              }}
+                              className="text-[10px] font-black uppercase bg-cordel-vert hover:bg-cordel-vert/90 text-encre-noire border border-encre-noire px-2.5 py-1 rounded shadow-[1px_1px_0px_0px_#181716] cursor-pointer"
+                            >
+                              +
+                            </button>
+                          </div>
+                        </div>
+                      )}
 
                       {/* Action buttons / inline form */}
                       <div className="flex flex-col gap-2 mt-auto">

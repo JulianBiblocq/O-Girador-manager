@@ -12,18 +12,25 @@ export default function EventStageLayoutSection({
   profileData,
   allUsers,
   isAuthorized,
-  t
+  t,
+  readOnly = false,
+  onGoToStageLayoutEditor
 }) {
   const { getColorForInstrument } = useInstrumentColor(profileData?.groupId);
   // Check if a layout exists
   const hasLayout = event.stageLayout?.placements && Object.keys(event.stageLayout.placements).length > 0;
 
+  const canEditLayout = isAuthorized || profileData?.role === 'prof-danse' || profileData?.role === 'prof_danse';
+  const isEditingMode = canEditLayout && !readOnly;
+
   // Accordion open/close state: default open for admins or if there is a layout
-  const [isOpen, setIsOpen] = useState(isAuthorized || hasLayout);
+  const [isOpen, setIsOpen] = useState(canEditLayout || hasLayout);
 
   const [layout, setLayout] = useState({
     rows: 5,
     cols: 5,
+    danceRows: 1,
+    danceCols: 5,
     placements: {}
   });
 
@@ -36,30 +43,43 @@ export default function EventStageLayoutSection({
       setLayout({
         rows: event.stageLayout.rows || 5,
         cols: event.stageLayout.cols || 5,
+        danceRows: event.stageLayout.danceRows || 1,
+        danceCols: event.stageLayout.danceCols || 5,
         placements: event.stageLayout.placements || {}
       });
     } else {
       setLayout({
         rows: 5,
         cols: 5,
+        danceRows: 1,
+        danceCols: 5,
         placements: {}
       });
     }
   }, [event.id, event.stageLayout]);
 
-  // Extract present members
-  const presentMembers = (event.inscriptions || [])
-    .filter((ins) => ins.status === 'present')
-    .map((ins) => {
-      const userInfo = allUsers.find((u) => u.id === ins.userId) || {};
-      const instrument = ins.instrumentChoisi || userInfo.instrument || 'Autre';
-      return {
-        id: ins.userId,
-        name: ins.userName || `${userInfo.prenom} ${userInfo.nom}`,
-        photoURL: userInfo.photoURL || '',
-        instrument
-      };
-    });
+  // Extract present members and external guests
+  const presentMembers = [
+    ...(event.inscriptions || [])
+      .filter((ins) => ins.status === 'present')
+      .map((ins) => {
+        const userInfo = allUsers.find((u) => u.id === ins.userId) || {};
+        const instrument = ins.instrumentChoisi || userInfo.instrument || 'Autre';
+        return {
+          id: ins.userId,
+          name: ins.userName || `${userInfo.prenom} ${userInfo.nom}`,
+          photoURL: userInfo.photoURL || '',
+          instrument
+        };
+      }),
+    ...(event.invitesExternes || []).map((guest) => ({
+      id: guest.id,
+      name: `${guest.nom} [Invité]`,
+      photoURL: '',
+      instrument: guest.instrument || guest.fonction || 'Autre',
+      isInvite: true
+    }))
+  ];
 
   // Filter out any placements of members who are no longer registered as present
   const presentUserIds = new Set(presentMembers.map((m) => m.id));
@@ -96,7 +116,7 @@ export default function EventStageLayoutSection({
   };
 
   const handleCellClick = (row, col) => {
-    if (!isAuthorized) return;
+    if (!isEditingMode) return;
 
     // Find if there is a member at these coordinates
     const placedMemberId = Object.keys(activePlacements).find(
@@ -104,6 +124,22 @@ export default function EventStageLayoutSection({
     );
 
     if (selectedMemberId) {
+      // Validate pupitre for Dance row (row < 0)
+      if (row < 0) {
+        const selectedMember = presentMembers.find(m => m.id === selectedMemberId);
+        const isDancer = selectedMember && (
+          selectedMember.instrument === 'Danse' ||
+          selectedMember.instrument === 'danse' ||
+          selectedMember.instrument === 'danseur' ||
+          selectedMember.instrument === 'danseuse' ||
+          selectedMember.instrument.toLowerCase().includes('danse')
+        );
+        if (!isDancer) {
+          alert("⚠️ Seuls les danseurs et danseuses peuvent être placés sur l'Avant-Scène.");
+          return;
+        }
+      }
+
       // Place selected member
       const newPlacements = { ...activePlacements };
 
@@ -125,7 +161,7 @@ export default function EventStageLayoutSection({
 
   const handleUnplaceMember = (e, userId) => {
     e.stopPropagation();
-    if (!isAuthorized) return;
+    if (!isEditingMode) return;
 
     const newPlacements = { ...activePlacements };
     delete newPlacements[userId];
@@ -159,11 +195,35 @@ export default function EventStageLayoutSection({
     setLayout((prev) => ({ ...prev, cols: val, placements: filteredPlacements }));
   };
 
+  const handleDanceRowsChange = (e) => {
+    const val = Math.max(1, Math.min(5, parseInt(e.target.value) || 1));
+    const filteredPlacements = {};
+    Object.entries(activePlacements).forEach(([uid, pos]) => {
+      if (pos.row >= 0 || pos.row >= -val) {
+        filteredPlacements[uid] = pos;
+      }
+    });
+    setLayout((prev) => ({ ...prev, danceRows: val, placements: filteredPlacements }));
+  };
+
+  const handleDanceColsChange = (e) => {
+    const val = Math.max(1, Math.min(10, parseInt(e.target.value) || 5));
+    const filteredPlacements = {};
+    Object.entries(activePlacements).forEach(([uid, pos]) => {
+      if (pos.row >= 0 || pos.col <= val) {
+        filteredPlacements[uid] = pos;
+      }
+    });
+    setLayout((prev) => ({ ...prev, danceCols: val, placements: filteredPlacements }));
+  };
+
   const handleResetLayout = () => {
     if (window.confirm(t('eventDetails.confirmReset') || "Êtes-vous sûr de vouloir réinitialiser le plan de scène ?")) {
       setLayout({
         rows: 5,
         cols: 5,
+        danceRows: 1,
+        danceCols: 5,
         placements: {}
       });
       setSelectedMemberId(null);
@@ -179,6 +239,8 @@ export default function EventStageLayoutSection({
         stageLayout: {
           rows: layout.rows,
           cols: layout.cols,
+          danceRows: layout.danceRows || 1,
+          danceCols: layout.danceCols || 5,
           placements: activePlacements
         }
       });
@@ -197,6 +259,29 @@ export default function EventStageLayoutSection({
     for (let c = 1; c <= layout.cols; c++) {
       gridCells.push({ row: r, col: c });
     }
+  }
+
+  // If no layout is defined and in readOnly mode, display creation prompt for admins
+  if (readOnly && !hasLayout) {
+    if (!canEditLayout) {
+      return null; // hide completely for normal members if no layout is defined
+    }
+    return (
+      <CordelCard variant="default" useExtremeBorder={true} className="py-4 px-5">
+        <div className="text-center py-4 flex flex-col items-center gap-3">
+          <span className="text-xs font-bold opacity-60">🎭 Aucun plan de scène n'a encore été configuré pour cet événement.</span>
+          {onGoToStageLayoutEditor && (
+            <button
+              type="button"
+              onClick={() => onGoToStageLayoutEditor(event.id)}
+              className="text-[10px] font-black uppercase bg-cordel-ocre text-encre-noire border border-encre-noire px-4 py-2 rounded shadow-[2px_2px_0px_0px_#181716] cursor-pointer hover:brightness-95"
+            >
+              🛠️ Créer le plan de scène dans l'Espace Mestre
+            </button>
+          )}
+        </div>
+      </CordelCard>
+    );
   }
 
   // If not admin and there is no layout saved, do not show the section
@@ -220,36 +305,79 @@ export default function EventStageLayoutSection({
 
       {isOpen && (
         <div className="flex flex-col gap-5 text-left">
+          {/* Link to Mestre Space Editor when in readOnly mode */}
+          {readOnly && canEditLayout && onGoToStageLayoutEditor && (
+            <div className="flex justify-end -mb-2">
+              <button
+                type="button"
+                onClick={() => onGoToStageLayoutEditor(event.id)}
+                className="text-[10px] font-black uppercase bg-cordel-ocre text-encre-noire border border-encre-noire px-3 py-1.5 rounded shadow-[1.5px_1.5px_0px_0px_#181716] cursor-pointer hover:brightness-95 flex items-center gap-1.5"
+              >
+                🛠️ Placer / Modifier dans l'Espace Mestre
+              </button>
+            </div>
+          )}
+
           {/* Grid Settings & Instructions for admin */}
-          {isAuthorized && (
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white/40 dark:bg-black/20 p-3.5 rounded border border-dashed border-encre-noire/15 text-xs">
-              <div className="flex flex-col gap-1.5">
-                <span className="font-extrabold text-cordel-wood uppercase tracking-wider text-[10px]">
+          {isEditingMode && (
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white/40 dark:bg-black/20 p-3.5 rounded border border-dashed border-encre-noire/15 text-xs w-full">
+              <div className="flex flex-col gap-2.5 w-full md:w-auto">
+                <span className="font-extrabold text-cordel-wood uppercase tracking-wider text-[10px] mb-1 block">
                   ⚙️ {t('eventDetails.stageLayoutConfig') || "Configuration de la grille"}
                 </span>
-                <div className="flex gap-4 items-center">
-                  <label className="flex items-center gap-2 font-bold text-[11px]">
-                    Lignes:
-                    <input
-                      type="number"
-                      min="2"
-                      max="10"
-                      value={layout.rows}
-                      onChange={handleRowsChange}
-                      className="theme-input py-1 px-2 w-16 text-center"
-                    />
-                  </label>
-                  <label className="flex items-center gap-2 font-bold text-[11px]">
-                    Colonnes:
-                    <input
-                      type="number"
-                      min="2"
-                      max="10"
-                      value={layout.cols}
-                      onChange={handleColsChange}
-                      className="theme-input py-1 px-2 w-16 text-center"
-                    />
-                  </label>
+                <div className="flex flex-col gap-2">
+                  {/* Percussion line */}
+                  <div className="flex gap-4 items-center">
+                    <span className="font-extrabold text-[10px] uppercase text-cordel-wood w-24">🥁 Percussions :</span>
+                    <label className="flex items-center gap-2 font-bold text-[11px]">
+                      Lignes:
+                      <input
+                        type="number"
+                        min="2"
+                        max="10"
+                        value={layout.rows}
+                        onChange={handleRowsChange}
+                        className="theme-input py-0.5 px-1.5 w-12 text-center"
+                      />
+                    </label>
+                    <label className="flex items-center gap-2 font-bold text-[11px]">
+                      Colonnes:
+                      <input
+                        type="number"
+                        min="2"
+                        max="10"
+                        value={layout.cols}
+                        onChange={handleColsChange}
+                        className="theme-input py-0.5 px-1.5 w-12 text-center"
+                      />
+                    </label>
+                  </div>
+                  {/* Danse line */}
+                  <div className="flex gap-4 items-center">
+                    <span className="font-extrabold text-[10px] uppercase text-cordel-wood w-24">💃 Danse :</span>
+                    <label className="flex items-center gap-2 font-bold text-[11px]">
+                      Lignes:
+                      <input
+                        type="number"
+                        min="1"
+                        max="5"
+                        value={layout.danceRows || 1}
+                        onChange={handleDanceRowsChange}
+                        className="theme-input py-0.5 px-1.5 w-12 text-center"
+                      />
+                    </label>
+                    <label className="flex items-center gap-2 font-bold text-[11px]">
+                      Colonnes:
+                      <input
+                        type="number"
+                        min="1"
+                        max="10"
+                        value={layout.danceCols || 5}
+                        onChange={handleDanceColsChange}
+                        className="theme-input py-0.5 px-1.5 w-12 text-center"
+                      />
+                    </label>
+                  </div>
                 </div>
               </div>
               <div className="flex flex-col gap-2 w-full md:w-auto">
@@ -275,11 +403,97 @@ export default function EventStageLayoutSection({
           )}
 
           {/* Main layout view: Grid and list */}
-          <div className="flex flex-col lg:flex-row gap-5 items-start">
+          <div className="flex flex-col lg:flex-row gap-5 items-start w-full">
             {/* The Visual Stage Layout Grid */}
-            <div className="flex-1 w-full flex flex-col items-center">
+            <div className="flex-1 w-full overflow-x-auto pb-4">
+              <div className="w-full min-w-[500px] max-w-[560px] mx-auto flex flex-col items-center">
               <div className="text-[9px] uppercase tracking-wider font-extrabold opacity-60 mb-2">
                 {t('eventDetails.stageFront') || "▲ AVANT DE LA SCÈNE (PUBLIC) ▲"}
+              </div>
+
+              {/* Zone Avant-scène / Danse */}
+              <div className="w-full flex flex-col items-center mb-4 select-none bg-cordel-bg-light/20 p-2.5 rounded border border-dashed border-cordel-wood/30">
+                <span className="text-[8px] uppercase tracking-widest font-black text-cordel-wood mb-2 opacity-80">
+                  💃 Avant-scène / Danse
+                </span>
+                <div className="flex flex-col gap-2 w-full items-center">
+                  {(() => {
+                    const rowsList = [];
+                    for (let r = 1; r <= (layout.danceRows || 1); r++) {
+                      rowsList.push(-r);
+                    }
+                    return rowsList.map((rowVal) => (
+                      <div key={`dance-row-${rowVal}`} className="flex gap-2 justify-center">
+                        {(() => {
+                          const colsList = [];
+                          for (let c = 1; c <= (layout.danceCols || 5); c++) {
+                            colsList.push(c);
+                          }
+                          return colsList.map((c) => {
+                            const memberId = Object.keys(activePlacements).find(
+                              (uid) => activePlacements[uid]?.row === rowVal && activePlacements[uid]?.col === c
+                            );
+                            const member = memberId ? presentMembers.find((m) => m.id === memberId) : null;
+                            const isSelected = selectedMemberId && selectedMemberId === memberId;
+
+                            return (
+                              <div
+                                key={`dance-${rowVal}-${c}`}
+                                onClick={() => !readOnly && handleCellClick(rowVal, c)}
+                                className={`
+                                  relative flex flex-col items-center justify-center p-1 rounded border transition-all text-center
+                                  w-16 h-16 shadow-[1px_1px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:scale-[1.03]
+                                  ${!readOnly ? 'cursor-pointer' : 'cursor-default'}
+                                  ${member 
+                                    ? `${getInstrumentColorClass(member.instrument)} border-2` 
+                                    : 'border-dashed border-cordel-wood/30 bg-orange-50/10 hover:bg-orange-100/20'}
+                                  ${isSelected ? 'ring-2 ring-cordel-wood scale-[1.03] outline-none z-10' : ''}
+                                `}
+                                style={member ? { backgroundColor: getColorForInstrument(member.instrument, 'pastel') } : undefined}
+                                title={member ? `Danse : ${member.name}` : `Emplacement Danse ${Math.abs(rowVal)}, ${c}`}
+                              >
+                                {member ? (
+                                  <>
+                                    <XiloAvatar
+                                      src={member.photoURL}
+                                      name={member.name}
+                                      size={18}
+                                      className="pointer-events-none mb-0.5 border border-encre-noire/10"
+                                    />
+                                    <span className="text-[8px] font-black leading-none truncate max-w-full">
+                                      {formatMemberName(member.name)}
+                                    </span>
+                                    <span className="text-[6px] opacity-75 font-semibold leading-none mt-0.5 uppercase truncate max-w-full">
+                                      Danse
+                                    </span>
+                                    
+                                    {/* Admin remove placement button */}
+                                    {isEditingMode && (
+                                      <button
+                                        type="button"
+                                        onClick={(e) => handleUnplaceMember(e, member.id)}
+                                        className="absolute -top-1.5 -right-1.5 w-3.5 h-3.5 rounded-full bg-red-600 text-white text-[7px] font-black flex items-center justify-center border border-encre-noire shadow hover:bg-red-800 transition-colors cursor-pointer"
+                                        title="Retirer"
+                                      >
+                                        ✕
+                                      </button>
+                                    )}
+                                  </>
+                                ) : (
+                                  isEditingMode ? (
+                                    <span className="text-cordel-wood/40 text-[9px] font-black leading-none">+ Placer</span>
+                                  ) : (
+                                    <span className="text-neutral-400/50 text-[8px] italic">Vide</span>
+                                  )
+                                )}
+                              </div>
+                            );
+                          });
+                        })()}
+                      </div>
+                    ));
+                  })()}
+                </div>
               </div>
 
               {/* Case Mestre dédiée, centrée devant la grille */}
@@ -324,7 +538,7 @@ export default function EventStageLayoutSection({
                           </span>
                           
                           {/* Admin remove placement button */}
-                          {isAuthorized && (
+                          {isEditingMode && (
                             <button
                               type="button"
                               onClick={(e) => handleUnplaceMember(e, mestreMember.id)}
@@ -336,7 +550,7 @@ export default function EventStageLayoutSection({
                           )}
                         </>
                       ) : (
-                        isAuthorized ? (
+                        isEditingMode ? (
                           <span className="text-cordel-wood/40 text-[10px] font-black leading-none">+ Mestre</span>
                         ) : (
                           <span className="text-neutral-400/50 text-[9px] italic">Vide</span>
@@ -369,9 +583,10 @@ export default function EventStageLayoutSection({
                   return (
                     <div
                       key={`${row}-${col}`}
-                      onClick={() => handleCellClick(row, col)}
+                      onClick={() => !readOnly && handleCellClick(row, col)}
                       className={`
-                        relative flex flex-col items-center justify-center p-1 rounded border transition-all cursor-pointer aspect-square text-center
+                        relative flex flex-col items-center justify-center p-1 rounded border transition-all aspect-square text-center
+                        ${!readOnly ? 'cursor-pointer' : 'cursor-default'}
                         ${member 
                           ? `${getInstrumentColorClass(member.instrument)} border-2 shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:scale-[1.03]` 
                           : 'border-dashed border-encre-noire/15 bg-white/20 dark:bg-black/10 hover:bg-white/40 dark:hover:bg-black/20 hover:scale-[1.01]'}
@@ -396,7 +611,7 @@ export default function EventStageLayoutSection({
                           </span>
                           
                           {/* Admin remove placement cross button */}
-                          {isAuthorized && (
+                          {isEditingMode && (
                             <button
                               type="button"
                               onClick={(e) => handleUnplaceMember(e, member.id)}
@@ -408,7 +623,7 @@ export default function EventStageLayoutSection({
                           )}
                         </>
                       ) : (
-                        isAuthorized && (
+                        isEditingMode && (
                           <span className="text-encre-noire/25 text-xs sm:text-sm font-black">+</span>
                         )
                       )}
@@ -421,10 +636,11 @@ export default function EventStageLayoutSection({
                 {t('eventDetails.stageBack') || "▼ FOND DE LA SCÈNE ▼"}
               </div>
             </div>
+          </div>
 
             {/* List of present members to place (only visible in edit mode) */}
-            {isAuthorized && (
-              <div className="w-full lg:w-60 flex flex-col gap-3.5 bg-white/40 dark:bg-black/20 p-3.5 rounded border border-dashed border-encre-noire/15 text-xs self-stretch">
+            {isEditingMode && (
+              <div className="w-full lg:w-80 lg:max-w-[320px] flex flex-col gap-3.5 bg-white/40 dark:bg-black/20 p-3.5 rounded border border-dashed border-encre-noire/15 text-xs self-stretch shrink-0">
                 <span className="font-extrabold text-cordel-wood uppercase tracking-wider text-[10px] border-b border-dashed border-encre-noire/10 pb-1 flex justify-between">
                   <span>👥 {t('eventDetails.stageLayoutUnplaced') || "Membres à placer"}</span>
                   <span className="opacity-70 font-semibold">({unplacedMembers.length})</span>
@@ -453,8 +669,8 @@ export default function EventStageLayoutSection({
                                   ${isCurrentlySelected 
                                     ? 'ring-2 ring-cordel-wood font-black translate-x-[2px] shadow-none' 
                                     : 'border-dashed border-encre-noire/10 hover:translate-x-[1px]'}
-                                `}
-                                style={{ backgroundColor: getColorForInstrument(member.instrument, 'pastel') }}
+                                  `}
+                                  style={{ backgroundColor: getColorForInstrument(member.instrument, 'pastel') }}
                               >
                                 <XiloAvatar src={member.photoURL} name={member.name} size={16} />
                                 <span className="truncate">{member.name}</span>
@@ -471,7 +687,7 @@ export default function EventStageLayoutSection({
           </div>
 
           {/* Action buttons for admin */}
-          {isAuthorized && (
+          {isEditingMode && (
             <div className="flex gap-3 mt-1.5 border-t border-dashed border-cordel-master-dark/15 pt-3">
               <CordelButton
                 type="button"

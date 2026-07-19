@@ -11,6 +11,7 @@ export const DEFAULT_FIELDS_CONFIG = {
   adresse: { key: "adresse", label: "Adresse physique", enabled: true, filledBy: "member" },
   surnom: { key: "surnom", label: "Surnom", enabled: true, filledBy: "member" },
   tailleTshirt: { key: "tailleTshirt", label: "Taille T-shirt", enabled: true, filledBy: "member" },
+  taillePantalon: { key: "taillePantalon", label: "Taille Pantalon/Bas", enabled: true, filledBy: "member" },
   droitImage: { key: "droitImage", label: "Droit à l'image", enabled: true, filledBy: "member" },
   aptitudeMedicale: { key: "aptitudeMedicale", label: "Aptitude médicale", enabled: true, filledBy: "member" },
   lateralite: { key: "lateralite", label: "Latéralité (Gaucher/Droitier)", enabled: true, filledBy: "member" },
@@ -32,6 +33,7 @@ export function useUserProfile(user, profileData, t) {
     adresseVille: profileData?.adresseVille || '',
     surnom: profileData?.surnom || '',
     tailleTshirt: profileData?.tailleTshirt || 'M',
+    taillePantalon: profileData?.taillePantalon || 'M',
     droitImage: profileData?.droitImage !== undefined ? profileData.droitImage : true,
     aptitudeMedicale: profileData?.aptitudeMedicale !== undefined ? profileData.aptitudeMedicale : false,
     lateralite: profileData?.lateralite || 'droitier',
@@ -70,6 +72,7 @@ export function useUserProfile(user, profileData, t) {
       adresseVille: profileData?.adresseVille || '',
       surnom: profileData?.surnom || '',
       tailleTshirt: profileData?.tailleTshirt || 'M',
+      taillePantalon: profileData?.taillePantalon || 'M',
       droitImage: profileData?.droitImage !== undefined ? profileData.droitImage : true,
       aptitudeMedicale: profileData?.aptitudeMedicale !== undefined ? profileData.aptitudeMedicale : false,
       lateralite: profileData?.lateralite || 'droitier',
@@ -300,16 +303,21 @@ export function useUserProfile(user, profileData, t) {
         prenom: formData.prenom,
         nom: formData.nom,
         instrument: formData.instrument,
-        instrumentsJoues: Array.from(new Set([
-          formData.instrument || "Autre",
-          ...(formData.instrumentsJoues || [])
-        ])).filter(Boolean),
+        instrumentsJoues: Array.from(new Set(
+          [
+            formData.instrument,
+            ...(formData.instrumentsJoues || [])
+          ]
+          .map(i => i ? i.trim() : '')
+          .filter(i => i && i.toLowerCase() !== 'autre' && i.toLowerCase() !== 'mestre')
+        )),
         telephone: isFieldVisible('telephone') ? formData.telephone : (profileData?.telephone || ''),
         adresseRue: isFieldVisible('adresse') ? formData.adresseRue : (profileData?.adresseRue || ''),
         adresseCP: isFieldVisible('adresse') ? formData.adresseCP : (profileData?.adresseCP || ''),
         adresseVille: isFieldVisible('adresse') ? formData.adresseVille : (profileData?.adresseVille || ''),
         surnom: isFieldVisible('surnom') ? formData.surnom : (profileData?.surnom || ''),
         tailleTshirt: isFieldVisible('tailleTshirt') ? formData.tailleTshirt : (profileData?.tailleTshirt || 'M'),
+        taillePantalon: isFieldVisible('taillePantalon') ? formData.taillePantalon : (profileData?.taillePantalon || 'M'),
         lateralite: isFieldVisible('lateralite') ? formData.lateralite : (profileData?.lateralite || 'droitier'),
         dateNaissance: isFieldVisible('dateNaissance') ? formData.dateNaissance : (profileData?.dateNaissance || ''),
         genre: formData.genre,
@@ -369,6 +377,33 @@ export function useUserProfile(user, profileData, t) {
     }
   };
 
+  const handlePurgeObsoleteInstruments = async () => {
+    if (!user?.uid) return;
+    setSaving(true);
+    try {
+      const userRef = doc(db, 'users', user.uid);
+      const cleanInsts = (profileData?.instrumentsJoues || [])
+        .map(i => i ? i.trim() : '')
+        .filter(i => i && i.toLowerCase() !== 'autre' && i.toLowerCase() !== 'mestre');
+
+      const cleanPrimary = (profileData?.instrument || '').toLowerCase() === 'mestre' || (profileData?.instrument || '').toLowerCase() === 'autre'
+        ? 'Autre'
+        : (profileData?.instrument || 'Autre');
+
+      await updateDoc(userRef, {
+        instrumentsJoues: cleanInsts,
+        instrument: cleanPrimary
+      });
+      alert("Instruments du profil réinitialisés et purgés avec succès !");
+      forceUpdateAndClearCache();
+    } catch (err) {
+      console.error("Erreur lors de la réinitialisation des instruments :", err);
+      alert("Erreur lors de la réinitialisation.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return {
     isEditing,
     setIsEditing,
@@ -398,6 +433,7 @@ export function useUserProfile(user, profileData, t) {
     handleChange,
     handleSave,
     handleDisconnect,
-    handleForceUpdate
+    handleForceUpdate,
+    handlePurgeObsoleteInstruments
   };
 }
