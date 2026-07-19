@@ -67,6 +67,9 @@ export default function TreasuryManager({ groupId, onBack, role, isSystemAdmin, 
         return (
           <TreasuryDashboard 
             calculateGlobalBalance={calculateGlobalBalance}
+            associationSettings={associationSettings}
+            handleSaveAssociationSettings={handleSaveAssociationSettings}
+            groupId={groupId}
           />
         );
       case 'cotisations':

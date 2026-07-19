@@ -1,8 +1,14 @@
 import React, { useState } from 'react';
 import CordelCard from '../CordelCard';
 import { useTranslation } from '../LanguageContext';
+import BankAccountsTracker from './BankAccountsTracker';
 
-export default function TreasuryDashboard({ calculateGlobalBalance }) {
+export default function TreasuryDashboard({ 
+  calculateGlobalBalance,
+  associationSettings,
+  handleSaveAssociationSettings,
+  groupId
+}) {
   const { t } = useTranslation();
 
   // Set default dates to school year (Sep 1st to Aug 31st)
@@ -146,6 +152,13 @@ export default function TreasuryDashboard({ calculateGlobalBalance }) {
           </span>
         </div>
       </CordelCard>
+
+      {/* Bank Accounts and Projections */}
+      <BankAccountsTracker
+        associationSettings={associationSettings}
+        handleSaveAssociationSettings={handleSaveAssociationSettings}
+        bilanOperationnel={solde}
+      />
     </div>
   );
 }

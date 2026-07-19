@@ -355,7 +355,59 @@ export default function ReportsExports({ groupId, role, isSystemAdmin, hasAccess
         entry.credit !== '' ? entry.credit.toString() : ''
       ]);
 
-      const csvContent = "\uFEFF" + [headers, ...rows]
+      // Calculate totals for Bilan Opérationnel
+      const totalCredit = ledgerEntries.reduce((sum, entry) => sum + (Number(entry.credit) || 0), 0);
+      const totalDebit = ledgerEntries.reduce((sum, entry) => sum + (Number(entry.debit) || 0), 0);
+      const bilanOperationnel = totalCredit - totalDebit;
+
+      // Extract bank accounts
+      const bankAccounts = associationSettings?.bankAccounts || [
+        { id: 'acc_courant', name: 'Compte Courant', balance: 0, threshold: 0, updatedAt: null },
+        { id: 'acc_livreta', name: 'Livret A', balance: 0, threshold: 0, updatedAt: null },
+        { id: 'acc_caisse', name: 'Caisse Espèces', balance: 0, threshold: 0, updatedAt: null }
+      ];
+
+      const totalSoldeBancaire = bankAccounts.reduce((sum, acc) => sum + (parseFloat(acc.balance) || 0), 0);
+      const tresorerieProjetee = totalSoldeBancaire + bilanOperationnel;
+
+      // Helper to format date for Excel
+      const formatCsvDate = (isoString) => {
+        if (!isoString) return "-";
+        try {
+          const date = new Date(isoString);
+          return date.toLocaleDateString('fr-FR', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric'
+          });
+        } catch {
+          return "-";
+        }
+      };
+
+      // Append situation sections to CSV
+      const csvLines = [
+        headers,
+        ...rows,
+        ["", "", "", "", ""], // Blank line separator
+        ["SITUATION DE TRÉSORERIE", "", "", "", ""],
+        ["Indicateur", "Montant (€)", "", "", ""],
+        ["Total Solde Bancaire Actuel", totalSoldeBancaire.toFixed(2), "", "", ""],
+        ["Impact Opérationnel (Bilan de la Période)", bilanOperationnel.toFixed(2), "", "", ""],
+        ["Trésorerie Projetée", tresorerieProjetee.toFixed(2), "", "", ""],
+        ["", "", "", "", ""], // Blank line separator
+        ["Détail des Comptes Bancaires", "", "", "", ""],
+        ["Nom du Compte", "Solde Actuel (€)", "Seuil Critique (€)", "Dernière Mise à jour", ""],
+        ...bankAccounts.map(acc => [
+          acc.name || "Compte sans nom",
+          (parseFloat(acc.balance) || 0).toFixed(2),
+          (parseFloat(acc.threshold) || 0).toFixed(2),
+          formatCsvDate(acc.updatedAt),
+          ""
+        ])
+      ];
+
+      const csvContent = "\uFEFF" + csvLines
         .map(row => row.map(val => `"${String(val).replace(/"/g, '""')}"`).join(";"))
         .join("\n");
 
