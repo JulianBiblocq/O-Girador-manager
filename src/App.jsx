@@ -554,6 +554,8 @@ export default function App() {
   const hasAccessLogistique = isSystemOrSuperAdminOrMestre || userTags.some(t => permissionsMatrice?.logistique?.includes(t));
   const hasAccessTresorerie = isSystemOrSuperAdminOrMestre || userTags.some(t => permissionsMatrice?.tresorerie?.includes(t));
   const hasAccessStudio = isSystemOrSuperAdminOrMestre || userTags.some(t => permissionsMatrice?.studio?.includes(t));
+  const hasAccessVestiaire = isSystemOrSuperAdminOrMestre || userTags.some(t => permissionsMatrice?.vestiaire?.includes(t));
+  const hasAccessMestre = isSystemOrSuperAdminOrMestre || userTags.some(t => permissionsMatrice?.mestre?.includes(t));
 
   const handleNavigateToPole = (poleId) => {
     setCurrentPole(poleId);
@@ -835,12 +837,13 @@ export default function App() {
                 hasAccessLogistique={hasAccessLogistique}
                 onBack={() => handleNavigateToPole('accueil')} 
               />
-            ) : (['wardrobe-inventory', 'wardrobe-couture', 'wardrobe-sizes'].includes(currentTab) && hasAccessLogistique) ? (
+            ) : (['wardrobe-inventory', 'wardrobe-couture', 'wardrobe-sizes'].includes(currentTab) && hasAccessVestiaire) ? (
               <WardrobeManager
                 groupId={profileData?.groupId}
                 role={profileData?.role}
                 isSystemAdmin={profileData?.isSystemAdmin}
-                hasAccessLogistique={hasAccessLogistique}
+                hasAccessLogistique={hasAccessVestiaire}
+                hasAccessVestiaire={hasAccessVestiaire}
                 activeTab={
                   currentTab === 'wardrobe-inventory' ? 'inventory' :
                   currentTab === 'wardrobe-couture' ? 'couture' : 'sizes'
@@ -874,14 +877,14 @@ export default function App() {
                 groupId={profileData?.groupId}
                 onBack={() => handleNavigateToPole('accueil')} 
               />
-            ) : (currentTab === 'mestre-forum-channels' && isSystemOrSuperAdminOrMestre) ? (
+            ) : (currentTab === 'mestre-forum-channels' && hasAccessMestre) ? (
               <ForumChannelsManager 
                 groupId={profileData?.groupId}
                 role={profileData?.role}
                 isSystemAdmin={profileData?.isSystemAdmin}
                 onBack={() => handleNavigateToPole('accueil')} 
               />
-            ) : (currentTab === 'mestre-events' && isSystemOrSuperAdminOrMestre) ? (
+            ) : (currentTab === 'mestre-events' && hasAccessMestre) ? (
               <MestreEvents 
                 groupId={profileData?.groupId} 
                 onSelectForStage={(evt) => {
@@ -890,7 +893,7 @@ export default function App() {
                 }} 
                 onOpenDetails={(evt) => setActiveMestreEventDetails(evt)}
               />
-            ) : (currentTab === 'mestre-stage-layout' && isSystemOrSuperAdminOrMestre) ? (
+            ) : (currentTab === 'mestre-stage-layout' && hasAccessMestre) ? (
               <MestreStageLayout 
                 groupId={profileData?.groupId}
                 user={user}
@@ -898,12 +901,12 @@ export default function App() {
                 selectedEventId={selectedMestreEventId}
                 onSelectEventId={setSelectedMestreEventId}
               />
-            ) : (currentTab === 'mestre-sequenceur' && isSystemOrSuperAdminOrMestre) ? (
+            ) : (currentTab === 'mestre-sequenceur' && hasAccessMestre) ? (
               <MestreSequenceur 
                 groupId={profileData?.groupId}
                 sequenceurUrl={sequenceurUrl}
               />
-            ) : (currentTab === 'mestre-workshops' && isSystemOrSuperAdminOrMestre) ? (
+            ) : (currentTab === 'mestre-workshops' && hasAccessMestre) ? (
               <MestreWorkshops 
                 groupId={profileData?.groupId}
               />

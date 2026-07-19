@@ -47,6 +47,8 @@ export default function LayoutShell({
   const hasAccessLogistique = isSystemOrSuperAdminOrMestre || userTags.some(t => permissionsMatrice?.logistique?.includes(t));
   const hasAccessTresorerie = isSystemOrSuperAdminOrMestre || userTags.some(t => permissionsMatrice?.tresorerie?.includes(t));
   const hasAccessStudio = isSystemOrSuperAdminOrMestre || userTags.some(t => permissionsMatrice?.studio?.includes(t));
+  const hasAccessVestiaire = isSystemOrSuperAdminOrMestre || userTags.some(t => permissionsMatrice?.vestiaire?.includes(t));
+  const hasAccessMestre = isSystemOrSuperAdminOrMestre || userTags.some(t => permissionsMatrice?.mestre?.includes(t));
 
   const isAdministrativeUser = isSystemOrSuperAdminOrMestre || 
                                profileData?.role === 'bureau' || 
@@ -54,7 +56,9 @@ export default function LayoutShell({
                                hasAccessTroupe || 
                                hasAccessLogistique || 
                                hasAccessTresorerie || 
-                               hasAccessStudio;
+                               hasAccessStudio ||
+                               hasAccessVestiaire ||
+                               hasAccessMestre;
 
   const memberMenuItems = [
     { id: 'accueil', label: 'Accueil', icon: <XiloHome size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('accueil'); onNavigateToTab && onNavigateToTab('dashboard'); } },
@@ -77,11 +81,11 @@ export default function LayoutShell({
       case 'logistique':
         return hasAccessLogistique;
       case 'vestiaire':
-        return hasAccessLogistique;
+        return hasAccessVestiaire;
       case 'studio':
         return hasAccessStudio;
       case 'mestre':
-        return isSystemOrSuperAdminOrMestre;
+        return hasAccessMestre;
       case 'config':
         return isSystemOrSuperAdminOrMestre;
       default:
