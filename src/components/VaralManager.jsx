@@ -134,7 +134,9 @@ export default function VaralManager({ groupId, onBack, role, isSystemAdmin }) {
       });
       // Sort initially by order or date
       fetched.sort((a, b) => {
-        if (a.order !== b.order) return (a.order || 0) - (b.order || 0);
+        const orderA = typeof a.order === 'number' ? a.order : 0;
+        const orderB = typeof b.order === 'number' ? b.order : 0;
+        if (orderA !== orderB) return orderA - orderB;
         return new Date(b.dateAjout || 0) - new Date(a.dateAjout || 0);
       });
       setDocuments(fetched);
@@ -457,7 +459,12 @@ export default function VaralManager({ groupId, onBack, role, isSystemAdmin }) {
                   catDocs = [...catDocs].sort((a, b) => (a.titre || '').localeCompare(b.titre || ''));
                 } else {
                   // custom order
-                  catDocs = [...catDocs].sort((a, b) => (a.order || 0) - (b.order || 0));
+                  catDocs = [...catDocs].sort((a, b) => {
+                    const orderA = typeof a.order === 'number' ? a.order : 0;
+                    const orderB = typeof b.order === 'number' ? b.order : 0;
+                    if (orderA !== orderB) return orderA - orderB;
+                    return new Date(b.dateAjout || 0) - new Date(a.dateAjout || 0);
+                  });
                 }
 
                 return (

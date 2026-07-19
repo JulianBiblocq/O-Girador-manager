@@ -95,13 +95,13 @@ export default function WardrobeManager({ groupId, role, isSystemAdmin, hasAcces
     try {
       const borrower = allUsers.find(u => u.id === costumeForm.emprunteurId);
       const payload = {
-        groupId,
-        type: costumeForm.type.trim(),
-        taille: costumeForm.taille,
-        etat: costumeForm.etat,
-        statut: costumeForm.statut,
-        emprunteurId: costumeForm.statut === 'emprunte' ? costumeForm.emprunteurId : '',
-        emprunteurNom: costumeForm.statut === 'emprunte' && borrower ? `${borrower.prenom} ${borrower.nom}` : ''
+        groupId: groupId || '',
+        type: (costumeForm.type || '').trim(),
+        taille: costumeForm.taille || 'M',
+        etat: costumeForm.etat || 'Bon',
+        statut: costumeForm.statut || 'local',
+        emprunteurId: costumeForm.statut === 'emprunte' ? (costumeForm.emprunteurId || '') : '',
+        emprunteurNom: costumeForm.statut === 'emprunte' && borrower ? `${borrower.prenom || ''} ${borrower.nom || ''}`.trim() : ''
       };
 
       if (editingCostume) {
@@ -150,11 +150,11 @@ export default function WardrobeManager({ groupId, role, isSystemAdmin, hasAcces
     setSaving(true);
     try {
       const payload = {
-        groupId,
-        name: projectForm.name.trim(),
-        needs: projectForm.needs.trim(),
+        groupId: groupId || '',
+        name: (projectForm.name || '').trim(),
+        needs: (projectForm.needs || '').trim(),
         cost: parseFloat(projectForm.cost) || 0,
-        status: projectForm.status
+        status: projectForm.status || 'a_commencer'
       };
 
       if (editingProject) {

@@ -124,6 +124,18 @@ service cloud.firestore {
       allow write: if isAdminOrMestre();
     }
 
+    // Wardrobe Inventory: Read if authenticated. Write reserved for admins/mestres.
+    match /wardrobeInventory/{item} {
+      allow read: if isAuthenticated();
+      allow write: if isAdminOrMestre();
+    }
+
+    // Couture Projects: Read if authenticated. Write reserved for admins/mestres.
+    match /coutureProjects/{project} {
+      allow read: if isAuthenticated();
+      allow write: if isAdminOrMestre();
+    }
+
     // Rhythms: Read if authenticated. Write reserved for admins/mestres.
     match /rhythms/{rhythm} {
       allow read: if isAuthenticated();

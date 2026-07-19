@@ -35,6 +35,83 @@ export default function OrdersManager({ groupId, onBack, role, isSystemAdmin, ha
   const [newCampaignTitle, setNewCampaignTitle] = useState('');
   const [isCreating, setIsCreating] = useState(false);
 
+  const [editingArticleId, setEditingArticleId] = useState(null);
+  const [articleName, setArticleName] = useState('');
+  const [articleProvenance, setArticleProvenance] = useState('');
+  const [articleTarif, setArticleTarif] = useState('');
+
+  const handleSaveArticles = async (updatedArticles) => {
+    setSaving(true);
+    try {
+      const campaignRef = doc(db, 'campaigns', selectedCampaign.id);
+      await updateDoc(campaignRef, { articles: updatedArticles });
+      setSelectedCampaign(prev => ({ ...prev, articles: updatedArticles }));
+    } catch (err) {
+      console.error("OrdersManager - Erreur maj articles :", err);
+      alert("Erreur lors de la sauvegarde des articles.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleAddArticle = (e) => {
+    e.preventDefault();
+    if (!articleName.trim()) return;
+    const newArt = {
+      id: Date.now().toString(),
+      nom: articleName.trim(),
+      provenance: articleProvenance.trim(),
+      prix: articleTarif ? parseFloat(articleTarif) : 0
+    };
+    const currentArticles = selectedCampaign.articles || [];
+    const updated = [...currentArticles, newArt];
+    handleSaveArticles(updated);
+    setArticleName('');
+    setArticleProvenance('');
+    setArticleTarif('');
+  };
+
+  const handleDeleteArticle = (artId) => {
+    const confirmDel = window.confirm("Voulez-vous vraiment supprimer cet article de la campagne ?");
+    if (!confirmDel) return;
+    const currentArticles = selectedCampaign.articles || [];
+    const updated = currentArticles.filter(a => a.id !== artId);
+    handleSaveArticles(updated);
+  };
+
+  const startEditArticle = (art) => {
+    setEditingArticleId(art.id);
+    setArticleName(art.nom);
+    setArticleProvenance(art.provenance || '');
+    setArticleTarif(art.prix !== undefined && art.prix !== 0 ? art.prix.toString() : '');
+  };
+
+  const handleSaveEditArticle = (e) => {
+    e.preventDefault();
+    if (!articleName.trim()) return;
+    const currentArticles = selectedCampaign.articles || [];
+    const updated = currentArticles.map(a => {
+      if (a.id === editingArticleId) {
+        return {
+          ...a,
+          nom: articleName.trim(),
+          provenance: articleProvenance.trim(),
+          prix: articleTarif ? parseFloat(articleTarif) : 0
+        };
+      }
+      return a;
+    });
+    handleSaveArticles(updated);
+    cancelEditArticle();
+  };
+
+  const cancelEditArticle = () => {
+    setEditingArticleId(null);
+    setArticleName('');
+    setArticleProvenance('');
+    setArticleTarif('');
+  };
+
   const isAdmin = role === 'mestre' || role === 'super-admin' || isSystemAdmin === true || hasAccessLogistique === true;
 
   // Real-time synchronization of campaigns
@@ -108,6 +185,7 @@ export default function OrdersManager({ groupId, onBack, role, isSystemAdmin, ha
         groupId,
         titre: newCampaignTitle.trim(),
         status: 'open',
+        articles: [],
         dateCreation: new Date().toISOString()
       };
 
@@ -371,6 +449,115 @@ export default function OrdersManager({ groupId, onBack, role, isSystemAdmin, ha
               </div>
             ) : (
               <>
+                {/* Constructeur de Campagne (Gestion des Articles) */}
+                <CordelCard variant="default" useExtremeBorder={false} className="py-4 px-5">
+                  <h4 className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood border-b border-dashed border-cordel-master-dark/15 pb-1 mb-2.5">
+                    📦 Constructeur de Campagne (Gestion des Articles)
+                  </h4>
+                  
+                  {/* Article List */}
+                  {!(selectedCampaign.articles && selectedCampaign.articles.length > 0) ? (
+                    <p className="text-[10px] italic opacity-60 mb-3">
+                      Aucun article configuré dans cette campagne. Utilisez le formulaire ci-dessous pour en ajouter.
+                    </p>
+                  ) : (
+                    <div className="flex flex-col gap-2 mb-4">
+                      {selectedCampaign.articles.map((art) => (
+                        <div key={art.id} className="text-xs p-2 rounded border border-dashed border-encre-noire/15 bg-cordel-bg-light/10 flex justify-between items-center">
+                          <div className="flex flex-col gap-0.5">
+                            <span className="font-bold text-encre-noire">{art.nom}</span>
+                            <span className="text-[9px] text-cordel-master-dark/70 font-medium">
+                              Provenance : {art.provenance || 'Non spécifiée'} • Tarif : {art.prix !== undefined && art.prix !== 0 ? `${art.prix}€` : 'Libre/Optionnel'}
+                            </span>
+                          </div>
+                          
+                          {selectedCampaign.status === 'open' && (
+                            <div className="flex gap-2 select-none">
+                              <button
+                                type="button"
+                                onClick={() => startEditArticle(art)}
+                                className="text-[8.5px] font-bold text-cordel-wood hover:underline cursor-pointer"
+                              >
+                                Modifier
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteArticle(art.id)}
+                                className="text-[8.5px] font-bold text-red-700 hover:underline cursor-pointer"
+                              >
+                                Supprimer
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Add/Edit Form */}
+                  {selectedCampaign.status === 'open' && (
+                    <form onSubmit={editingArticleId ? handleSaveEditArticle : handleAddArticle} className="border-t border-dashed border-cordel-master-dark/15 pt-3 flex flex-col gap-2.5">
+                      <h5 className="text-[9px] uppercase font-black tracking-widest text-cordel-wood">
+                        {editingArticleId ? "✏️ Modifier l'article" : "＋ Ajouter un article à la campagne"}
+                      </h5>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                        <div className="flex flex-col gap-1">
+                          <label className="text-[8px] uppercase font-bold text-cordel-master-dark">Nom de l'article</label>
+                          <input
+                            type="text"
+                            required
+                            value={articleName}
+                            onChange={(e) => setArticleName(e.target.value)}
+                            placeholder="Ex : Baguettes, Housse..."
+                            className="theme-input text-xs py-1 px-2"
+                          />
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <label className="text-[8px] uppercase font-bold text-cordel-master-dark">Provenance (Fournisseur/URL)</label>
+                          <input
+                            type="text"
+                            value={articleProvenance}
+                            onChange={(e) => setArticleProvenance(e.target.value)}
+                            placeholder="Ex : Contemporanea, URL..."
+                            className="theme-input text-xs py-1 px-2"
+                          />
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <label className="text-[8px] uppercase font-bold text-cordel-master-dark">Tarif (€, optionnel)</label>
+                          <input
+                            type="number"
+                            step="any"
+                            min="0"
+                            value={articleTarif}
+                            onChange={(e) => setArticleTarif(e.target.value)}
+                            placeholder="Ex : 25 (vide = libre)"
+                            className="theme-input text-xs py-1 px-2"
+                          />
+                        </div>
+                      </div>
+                      <div className="flex justify-end gap-2 mt-1 select-none">
+                        {editingArticleId && (
+                          <button
+                            type="button"
+                            onClick={cancelEditArticle}
+                            className="text-[9px] font-black uppercase tracking-widest bg-white border border-encre-noire px-3 py-1.5 rounded-[4px] shadow-[1px_1px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] cursor-pointer"
+                          >
+                            Annuler
+                          </button>
+                        )}
+                        <CordelButton
+                          type="submit"
+                          variant="ocre"
+                          disabled={saving || !articleName.trim()}
+                          className="py-1.5 text-[9px] font-bold px-4"
+                        >
+                          {editingArticleId ? "Enregistrer" : "Ajouter"}
+                        </CordelButton>
+                      </div>
+                    </form>
+                  )}
+                </CordelCard>
+
                 {/* 1. Summed totals per article (Supplier Ready) */}
                 <CordelCard variant="default" useExtremeBorder={false} className="py-4 px-5">
                   <h4 className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood border-b border-dashed border-cordel-master-dark/15 pb-1 mb-2.5">
@@ -459,6 +646,11 @@ export default function OrdersManager({ groupId, onBack, role, isSystemAdmin, ha
                           {req.notes && (
                             <p className="text-[10px] italic text-encre-noire/70 mt-0.5 bg-[#fdfaf2] dark:bg-[#1a1816] px-1.5 py-0.5 rounded">
                               ✍️ {t('ordersManager.noteLabel') || "Note"} : {req.notes}
+                            </p>
+                          )}
+                          {req.suggestion && (
+                            <p className="text-[10px] font-bold text-cordel-wood mt-0.5 bg-[#fdfaf2] dark:bg-[#1a1816] border border-dashed border-cordel-wood/25 px-1.5 py-0.5 rounded">
+                              💡 Suggestion : {req.suggestion}
                             </p>
                           )}
                           <div className="flex justify-between items-center mt-1.5 pt-1.5 border-t border-dashed border-encre-noire/5">

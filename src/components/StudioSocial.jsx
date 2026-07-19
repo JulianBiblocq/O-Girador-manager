@@ -226,14 +226,22 @@ export default function StudioSocial({ groupId, branding, onBack }) {
     setPublicationText(text);
   }, [selectedEvent, hashtags]);
 
-  // 8. Image Loader helper
   const loadImage = (src) => {
     return new Promise((resolve, reject) => {
       const img = new Image();
       img.crossOrigin = 'anonymous';
       img.src = src;
       img.onload = () => resolve(img);
-      img.onerror = (e) => reject(e);
+      img.onerror = () => {
+        // Fallback without crossOrigin (image displays but taints canvas)
+        const fallbackImg = new Image();
+        fallbackImg.src = src;
+        fallbackImg.onload = () => {
+          setCanvasError(true);
+          resolve(fallbackImg);
+        };
+        fallbackImg.onerror = (err) => reject(err);
+      };
     });
   };
 

@@ -8,23 +8,6 @@ import { useTerminologie } from '../hooks/useTerminologie';
 import { useTranslation } from './LanguageContext';
 import { fr } from '../locales/fr';
 
-const DEFAULT_CATALOG = [
-  { nom: "Baguettes d'Alfaia (Grosses, Petites ou Bacalhau)", prix: 15, tailles: [] },
-  { nom: "Baguettes de Caixa", prix: 10, tailles: [] },
-  { nom: "Baguette de Gonguê", prix: 12, tailles: [] },
-  { nom: "Peau de Caixa", prix: 25, tailles: [] },
-  { nom: "Peau d'Alfaia (18\", 20\" ou 22\")", prix: 35, tailles: ["18\"", "20\"", "22\""] },
-  { nom: "Housse de protection Alfaia (18\", 20\" ou 22\")", prix: 45, tailles: ["18\"", "20\"", "22\""] },
-  { nom: "Housse de protection Caixa", prix: 30, tailles: [] },
-  { nom: "Sangle", prix: 20, tailles: [] },
-  { nom: "Étui à baguettes", prix: 15, tailles: [] },
-  { nom: "Pantalon", prix: 40, tailles: [] },
-  { nom: "Chemise", prix: 35, tailles: [] },
-  { nom: "T-shirt Homme", prix: 15, tailles: ["S", "M", "L", "XL"] },
-  { nom: "T-shirt Femme", prix: 15, tailles: ["S", "M", "L", "XL"] },
-  { nom: "Autre", prix: 0, tailles: [] }
-];
-
 export default function WidgetCommandes({ groupId, user, profileData }) {
   const { t, locale } = useTranslation();
   const { tRole } = useTerminologie();
@@ -48,38 +31,13 @@ export default function WidgetCommandes({ groupId, user, profileData }) {
   const [saving, setSaving] = useState(false);
 
   // Form states
-  const [catalog, setCatalog] = useState([]);
+  const catalog = openCampaign?.articles || [];
+  const [suggestion, setSuggestion] = useState('');
   const [article, setArticle] = useState('');
   const [selectedTaille, setSelectedTaille] = useState('');
   const [quantite, setQuantite] = useState(1);
   const [notes, setNotes] = useState('');
   const [isPersonalOrder, setIsPersonalOrder] = useState(false);
-
-  // Sync dynamic catalog
-  useEffect(() => {
-    if (!groupId) {
-      setCatalog(DEFAULT_CATALOG);
-      return;
-    }
-
-    const catalogRef = collection(db, 'associations', groupId, 'catalog');
-    const unsubscribe = onSnapshot(catalogRef, (snap) => {
-      if (!snap.empty) {
-        const fetched = [];
-        snap.forEach(docSnap => {
-          fetched.push({ id: docSnap.id, ...docSnap.data() });
-        });
-        setCatalog(fetched);
-      } else {
-        setCatalog(DEFAULT_CATALOG);
-      }
-    }, (error) => {
-      console.error("WidgetCommandes - Erreur onSnapshot catalog :", error);
-      setCatalog(DEFAULT_CATALOG);
-    });
-
-    return () => unsubscribe();
-  }, [groupId]);
 
   // Reset selected article when catalog loads
   useEffect(() => {
@@ -189,6 +147,7 @@ export default function WidgetCommandes({ groupId, user, profileData }) {
         article,
         quantite: parseInt(quantite, 10) || 1,
         notes: finalNotes,
+        suggestion: suggestion.trim() || '',
         isPersonalOrder: isPersonalOrder,
         status: 'pending',
         userRole: profileData?.role || 'batuqueiro',
@@ -202,6 +161,7 @@ export default function WidgetCommandes({ groupId, user, profileData }) {
       // Reset inputs
       setQuantite(1);
       setNotes('');
+      setSuggestion('');
       setIsPersonalOrder(false);
     } catch (err) {
       console.error("WidgetCommandes - Erreur d'ajout :", err);
@@ -342,6 +302,20 @@ export default function WidgetCommandes({ groupId, user, profileData }) {
                 </div>
               </div>
 
+              {/* Suggestion ou demande spéciale */}
+              <div className="flex flex-col gap-1 mt-1">
+                <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                  Suggérer un autre article ou demande spéciale (Optionnel)
+                </label>
+                <textarea
+                  value={suggestion}
+                  onChange={(e) => setSuggestion(e.target.value)}
+                  disabled={saving}
+                  placeholder="Ex : J'aimerais suggérer un autre article ou préciser une demande spéciale..."
+                  className="theme-input text-xs py-1.5 px-2 min-h-[50px] resize-y font-semibold"
+                />
+              </div>
+
               {/* Personal order checkbox */}
               <div className="flex flex-col gap-0.5 mt-1">
                 <div className="flex items-center gap-2">
@@ -411,6 +385,11 @@ export default function WidgetCommandes({ groupId, user, profileData }) {
                       {req.notes && (
                         <p className="text-[9px] text-cordel-master-dark/70 font-semibold truncate">
                           {t('widgetCommandes.notesLabel') || "Note"} : {req.notes}
+                        </p>
+                      )}
+                      {req.suggestion && (
+                        <p className="text-[9px] text-cordel-wood font-extrabold truncate">
+                          💡 Suggestion : {req.suggestion}
                         </p>
                       )}
                     </div>

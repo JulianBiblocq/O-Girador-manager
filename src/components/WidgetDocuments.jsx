@@ -135,8 +135,8 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
 
       // Sort by order asc, then upload date desc
       fetchedDocs.sort((a, b) => {
-        const orderA = typeof a.order === 'number' ? a.order : 9999;
-        const orderB = typeof b.order === 'number' ? b.order : 9999;
+        const orderA = typeof a.order === 'number' ? a.order : 0;
+        const orderB = typeof b.order === 'number' ? b.order : 0;
         if (orderA !== orderB) {
           return orderA - orderB;
         }

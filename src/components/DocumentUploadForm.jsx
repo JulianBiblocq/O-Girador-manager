@@ -111,7 +111,7 @@ export default function DocumentUploadForm({ groupId, varalCategories = [], onCl
         type: type,
         groupId: groupId,
         dateAjout: new Date().toISOString(),
-        order: 9999
+        order: 0
       });
 
       onClose();

@@ -8,6 +8,7 @@ const EventDetails = React.lazy(() => import('./EventDetails'));
 import CalendarGrid from './CalendarGrid';
 import { useTranslation } from './LanguageContext';
 import { XiloCalendar } from './XiloIcons';
+import EventBudgetEditor from './event-details/EventBudgetEditor';
 const AddressAutocomplete = React.lazy(() => import('./AddressAutocomplete'));
 import { calculateRoadDistance } from '../utils/googleMaps';
 const formatDateWithDay = (dateStr, includeYear = true) => {
@@ -48,6 +49,7 @@ export default function WidgetAgenda({
   const [isAdding, setIsAdding] = useState(false);
   const [saving, setSaving] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [imageMode, setImageMode] = useState('upload');
   const [localSelectedEvent, setLocalSelectedEvent] = useState(null);
   const selectedEvent = propSelectedEvent !== undefined ? propSelectedEvent : localSelectedEvent;
   const setSelectedEvent = propSetSelectedEvent !== undefined ? propSetSelectedEvent : setLocalSelectedEvent;
@@ -175,6 +177,7 @@ export default function WidgetAgenda({
   };
 
   const handleOpenForm = () => {
+    setImageMode('upload');
     setFormData({
       titre: '',
       type: 'prestation',
@@ -192,6 +195,8 @@ export default function WidgetAgenda({
       requiresValidation: false,
       montantRecette: '',
       montantDepense: '',
+      budgetRecettes: [],
+      budgetDepenses: [],
       dateLimiteInscription: ''
     });
     setIsAdding(true);
@@ -265,8 +270,10 @@ export default function WidgetAgenda({
         lienSocial: activeConfig.agendaEnableUrl ? formData.lienSocial || '' : '',
         imageUrl: activeConfig.agendaEnableImage ? formData.imageUrl || '' : '',
         requiresValidation: activeConfig.agendaEnableInscriptions ? (formData.requiresValidation || false) : false,
-        montantRecette: activeConfig.agendaEnableFinance ? (parseFloat(formData.montantRecette) || 0) : 0,
-        montantDepense: activeConfig.agendaEnableFinance ? (parseFloat(formData.montantDepense) || 0) : 0,
+        montantRecette: activeConfig.agendaEnableFinance ? ((formData.budgetRecettes || []).reduce((sum, item) => sum + (parseFloat(item.montant) || 0), 0)) : 0,
+        montantDepense: activeConfig.agendaEnableFinance ? ((formData.budgetDepenses || []).reduce((sum, item) => sum + (parseFloat(item.montant) || 0), 0)) : 0,
+        budgetRecettes: activeConfig.agendaEnableFinance ? (formData.budgetRecettes || []) : [],
+        budgetDepenses: activeConfig.agendaEnableFinance ? (formData.budgetDepenses || []) : [],
         dateLimiteInscription: activeConfig.agendaEnableInscriptions ? formData.dateLimiteInscription || '' : '',
         tenueRequise: formData.tenueRequise || '',
         volunteerShifts: formData.volunteerShifts || []
@@ -727,26 +734,67 @@ export default function WidgetAgenda({
                 <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
                   {t('widgetAgenda.imageUrlLabel') || "Image de l'événement / Affiche"}
                 </label>
+                
+                {/* Mode Selector */}
+                <div className="flex gap-2 mb-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setImageMode('upload')}
+                    className={`text-[9px] uppercase font-black px-2.5 py-1 rounded border transition-all ${
+                      imageMode === 'upload'
+                        ? 'bg-cordel-wood text-white border-encre-noire shadow-[1px_1px_0px_0px_#181716]'
+                        : 'bg-white/40 border-dashed border-cordel-master-dark/20 text-cordel-master-dark/70 hover:bg-white/60'
+                    }`}
+                  >
+                    📸 Upload classique
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setImageMode('url')}
+                    className={`text-[9px] uppercase font-black px-2.5 py-1 rounded border transition-all ${
+                      imageMode === 'url'
+                        ? 'bg-cordel-wood text-white border-encre-noire shadow-[1px_1px_0px_0px_#181716]'
+                        : 'bg-white/40 border-dashed border-cordel-master-dark/20 text-cordel-master-dark/70 hover:bg-white/60'
+                    }`}
+                  >
+                    🔗 Lien URL externe
+                  </button>
+                </div>
+
                 <div className="flex items-center gap-3">
                   {formData.imageUrl && (
                     <div className="w-14 h-14 border border-encre-noire rounded-[4px] overflow-hidden bg-white shrink-0 shadow-[1px_1px_0px_0px_rgba(26,26,26,0.15)]">
                       <img src={formData.imageUrl} alt="Affiche preview" className="w-full h-full object-cover" />
                     </div>
                   )}
-                  <label className="text-[10px] font-black uppercase tracking-widest bg-cordel-bg border border-encre-noire px-3 py-2 rounded-[4px_6px_3px_5px] shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-95 cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1.5 shrink-0 select-none">
-                    {uploadingImage ? (
-                      <>⏳ {t('widgetAgenda.uploadingImage') || "Téléversement..."}</>
-                    ) : (
-                      <>📸 {t('widgetAgenda.imageUrlLabel') || "Image / Affiche"}</>
-                    )}
+
+                  {imageMode === 'upload' ? (
+                    <label className="text-[10px] font-black uppercase tracking-widest bg-cordel-bg border border-encre-noire px-3 py-2 rounded-[4px_6px_3px_5px] shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-95 cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1.5 shrink-0 select-none">
+                      {uploadingImage ? (
+                        <>⏳ {t('widgetAgenda.uploadingImage') || "Téléversement..."}</>
+                      ) : (
+                        <>📸 Choisir un fichier</>
+                      )}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        disabled={saving || uploadingImage}
+                        onChange={handleImageUpload}
+                        className="hidden"
+                      />
+                    </label>
+                  ) : (
                     <input
-                      type="file"
-                      accept="image/*"
-                      disabled={saving || uploadingImage}
-                      onChange={handleImageUpload}
-                      className="hidden"
+                      type="url"
+                      name="imageUrl"
+                      value={formData.imageUrl || ''}
+                      onChange={(e) => setFormData(prev => ({ ...prev, imageUrl: e.target.value }))}
+                      disabled={saving}
+                      placeholder="Collez l'URL de l'image (ex: https://site.com/affiche.jpg)"
+                      className="theme-input text-xs py-1.5 px-2 flex-1"
                     />
-                  </label>
+                  )}
+
                   {formData.imageUrl && (
                     <button
                       type="button"
@@ -766,40 +814,13 @@ export default function WidgetAgenda({
                 <h5 className="text-[10px] uppercase font-black tracking-widest text-cordel-wood">
                   Finances (Optionnel)
                 </h5>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="flex flex-col gap-1">
-                    <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                      Revenus de l'événement (Prestation payée, etc.)
-                    </label>
-                    <input
-                      type="number"
-                      name="montantRecette"
-                      min="0"
-                      step="any"
-                      value={formData.montantRecette}
-                      onChange={handleChange}
-                      disabled={saving}
-                      placeholder="Ex : 500"
-                      className="theme-input w-full disabled:opacity-50"
-                    />
-                  </div>
-                  <div className="flex flex-col gap-1">
-                    <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                      Coûts de l'événement (Location, professeur...)
-                    </label>
-                    <input
-                      type="number"
-                      name="montantDepense"
-                      min="0"
-                      step="any"
-                      value={formData.montantDepense}
-                      onChange={handleChange}
-                      disabled={saving}
-                      placeholder="Ex : 150"
-                      className="theme-input w-full disabled:opacity-50"
-                    />
-                  </div>
-                </div>
+                <EventBudgetEditor
+                  budgetRecettes={formData.budgetRecettes}
+                  onChangeRecettes={(items) => setFormData(prev => ({ ...prev, budgetRecettes: items }))}
+                  budgetDepenses={formData.budgetDepenses}
+                  onChangeDepenses={(items) => setFormData(prev => ({ ...prev, budgetDepenses: items }))}
+                  disabled={saving}
+                />
               </div>
             )}
 

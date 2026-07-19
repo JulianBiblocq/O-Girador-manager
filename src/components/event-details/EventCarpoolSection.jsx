@@ -178,6 +178,11 @@ export default function EventCarpoolSection({
                               📦 <strong className="text-cordel-wood">Matériel asso :</strong> {voiture.materielCharge}
                             </span>
                           )}
+                          {voiture.materielTransporte && (
+                            <span className="flex items-center gap-1.5">
+                              💼 <strong className="text-cordel-wood">Matériel transporté :</strong> {voiture.materielTransporte}
+                            </span>
+                          )}
                         </div>
 
                         {/* Passengers listing */}
@@ -457,6 +462,20 @@ export default function EventCarpoolSection({
                     placeholder="Ex: sac de baguettes, 3 caixas..."
                     value={voitureForm.materielCharge}
                     onChange={(e) => setVoitureForm(prev => ({ ...prev, materielCharge: e.target.value }))}
+                    disabled={submittingCovoit}
+                    className="theme-input text-xs font-bold py-1 bg-cordel-bg-light"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                    Matériel transporté (Coffre)
+                  </label>
+                  <input 
+                    type="text"
+                    placeholder="Ex: Je prends 2 Alfaias, mon coffre est plein..."
+                    value={voitureForm.materielTransporte}
+                    onChange={(e) => setVoitureForm(prev => ({ ...prev, materielTransporte: e.target.value }))}
                     disabled={submittingCovoit}
                     className="theme-input text-xs font-bold py-1 bg-cordel-bg-light"
                   />

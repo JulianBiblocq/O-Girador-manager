@@ -54,7 +54,8 @@ export function useEventCarpool({
   const [voitureForm, setVoitureForm] = useState({
     passengerSeats: 3,
     trunkAlfayaCapacity: 0,
-    materielCharge: ''
+    materielCharge: '',
+    materielTransporte: ''
   });
   const [joiningVoitureId, setJoiningVoitureId] = useState(null);
   const [joinForm, setJoinForm] = useState({
@@ -92,6 +93,7 @@ export function useEventCarpool({
           passengerSeats: parseInt(voitureForm.passengerSeats) || 0,
           trunkAlfayaCapacity: parseInt(voitureForm.trunkAlfayaCapacity) || 0,
           materielCharge: voitureForm.materielCharge.trim(),
+          materielTransporte: voitureForm.materielTransporte.trim(),
           passengers: []
         };
 
@@ -115,7 +117,7 @@ export function useEventCarpool({
       });
 
       setShowProposerForm(false);
-      setVoitureForm({ passengerSeats: 3, trunkAlfayaCapacity: 0, materielCharge: '' });
+      setVoitureForm({ passengerSeats: 3, trunkAlfayaCapacity: 0, materielCharge: '', materielTransporte: '' });
       alert("Votre voiture a été ajoutée au convoi !");
     } catch (err) {
       console.error("EventDetails - Erreur handleProposerVoiture :", err);

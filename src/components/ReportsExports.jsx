@@ -134,7 +134,21 @@ export default function ReportsExports({ groupId, role, isSystemAdmin, hasAccess
         const rec = Number(event.montantRecette) || 0;
         const dep = Number(event.montantDepense) || 0;
 
-        if (rec > 0) {
+        // Recettes (detailed or fallback)
+        if (Array.isArray(event.budgetRecettes) && event.budgetRecettes.length > 0) {
+          event.budgetRecettes.forEach(item => {
+            const amount = Number(item.montant) || 0;
+            if (amount > 0) {
+              ledgerEntries.push({
+                date: eventDateStr,
+                category: `Événement (${displayType})`,
+                label: `${item.intitule || 'Recette'} - ${event.titre || 'Événement'}`,
+                debit: '',
+                credit: amount
+              });
+            }
+          });
+        } else if (rec > 0) {
           ledgerEntries.push({
             date: eventDateStr,
             category: `Événement (${displayType})`,
@@ -143,7 +157,22 @@ export default function ReportsExports({ groupId, role, isSystemAdmin, hasAccess
             credit: rec
           });
         }
-        if (dep > 0) {
+
+        // Dépenses (detailed or fallback)
+        if (Array.isArray(event.budgetDepenses) && event.budgetDepenses.length > 0) {
+          event.budgetDepenses.forEach(item => {
+            const amount = Number(item.montant) || 0;
+            if (amount > 0) {
+              ledgerEntries.push({
+                date: eventDateStr,
+                category: `Frais Événement`,
+                label: `${item.intitule || 'Dépense'} - ${event.titre || 'Événement'}`,
+                debit: amount,
+                credit: ''
+              });
+            }
+          });
+        } else if (dep > 0) {
           ledgerEntries.push({
             date: eventDateStr,
             category: `Frais Événement`,
