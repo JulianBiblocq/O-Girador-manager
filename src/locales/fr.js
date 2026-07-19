@@ -284,7 +284,7 @@ export const fr = {
     uploadError: "Erreur lors du téléversement de l'image."
   },
   widgetTreasury: {
-    title: "Ma Trésorerie",
+    title: "Adhésion & cotisation",
     dashboardTitle: "Tableau de Bord Trésorerie",
     infoText: "Suivez les cotisations de vos membres actifs. La méthode de paiement est configurée dans les paramètres de l'association. Les modifications apportées aux statuts des membres sont enregistrées en temps réel.",
     activeConfig: "Configuration Active :",
@@ -336,7 +336,10 @@ export const fr = {
     notesLabel: "Notes / Taille",
     addBtn: "Ajouter à ma commande",
     personalOrderLabel: "Ceci est une commande personnelle",
+    personalOrderDesc: "Achat à vos frais personnels.",
+    suggestionOrderDesc: "Suggestion d'achat pour le parc de l'association (validée par la logistique).",
     personalBadge: "Personnel",
+    suggestionBadge: "Suggestion",
     loading: "Chargement...",
     adding: "Ajout...",
     myRequests: "Ma commande actuelle",
@@ -447,7 +450,16 @@ export const fr = {
     statusOpenText: "Commandes ouvertes aux membres",
     noDemands: "Aucun membre n'a encore enregistré de besoin.",
     noteLabel: "Note",
-    personalBadge: "Achat Perso"
+    personalBadge: "Achat Perso",
+    suggestionBadge: "Suggestion d'achat",
+    associationBadge: "Association",
+    validateBtn: "Valider",
+    unvalidateBtn: "Annuler",
+    validateAllBtn: "Valider toutes les demandes",
+    statusPending: "En attente",
+    statusValidated: "Validé",
+    globalOrderTable: "Tableau de Commande Globale (Articles Validés)",
+    noValidatedRequests: "Aucun article validé pour le moment. Validez les demandes nominatives pour construire le tableau."
   },
   inventory: {
     title: "Inventaire du parc",
@@ -499,7 +511,7 @@ export const fr = {
     widgetOrders: "Achats de Matériel",
     widgetForum: "Le Porte-Voix",
     widgetDocuments: "O Varal",
-    widgetTreasury: "Ma Trésorerie"
+    widgetTreasury: "Adhésion & cotisation"
   },
   tagManager: {
     title: "Gestion des Étiquettes",

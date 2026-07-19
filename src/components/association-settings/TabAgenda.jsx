@@ -28,6 +28,27 @@ export default function TabAgenda({
       alert("Ce type d'événement existe déjà.");
       return;
     }
+
+    const newConfig = {
+      agendaRequireInstrument: false,
+      agendaEnableMaybeStatus: true,
+      agendaEnableStageLayout: true,
+      agendaEnableRevisionProgram: true,
+      agendaEnableCarpool: true,
+      agendaEnableFinance: true,
+      agendaEnableInscriptions: true,
+      agendaEnableImage: true,
+      agendaEnableOrdreDuJour: cleanType === 'reunion',
+      agendaEnableAdresse: true,
+      agendaEnableUrl: true
+    };
+
+    const updatedConfigs = {
+      ...(formData.eventTypeConfigs || {}),
+      [cleanType]: newConfig
+    };
+
+    handleChange('eventTypeConfigs', updatedConfigs);
     handleChange('eventTypes', [...eventTypes, cleanType]);
     setNewType('');
   };
@@ -40,6 +61,9 @@ export default function TabAgenda({
     }
     const confirmMsg = t('widgetAgenda.confirmRemoveType') || `Voulez-vous vraiment supprimer le type "${typeToRemove}" ? Les événements existants de ce type ne seront pas supprimés mais ne seront plus typés dans les filtres.`;
     if (window.confirm(confirmMsg)) {
+      const updatedConfigs = { ...(formData.eventTypeConfigs || {}) };
+      delete updatedConfigs[typeToRemove];
+      handleChange('eventTypeConfigs', updatedConfigs);
       handleChange('eventTypes', eventTypes.filter(t => t !== typeToRemove));
     }
   };
@@ -232,26 +256,166 @@ export default function TabAgenda({
           </div>
         </div>
 
-        {/* Liste des types */}
-        <div className="flex flex-col gap-2 mt-3 text-left">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-cordel-master-dark mb-1">Types actifs</span>
-          <div className="flex flex-wrap gap-1.5 max-h-40 overflow-y-auto pr-1">
-            {eventTypes.map((type) => (
-              <span 
-                key={type}
-                className="theme-stamp-badge theme-stamp-badge-wood text-[9px] px-2 py-0.5 border-dashed flex items-center gap-1.5 capitalize font-bold"
-              >
-                {type}
-                <button 
-                  type="button"
-                  onClick={() => handleRemoveType(type)}
-                  className="text-[9px] hover:text-red-500 font-bold ml-1 cursor-pointer select-none"
-                  title="Supprimer"
-                >
-                  ✕
-                </button>
-              </span>
-            ))}
+        {/* Liste des types et configuration */}
+        <div className="flex flex-col gap-3 mt-3 text-left">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-cordel-master-dark mb-1">
+            Types actifs et Configuration des modules
+          </span>
+          <div className="flex flex-col gap-4 max-h-96 overflow-y-auto pr-1">
+            {eventTypes.map((type) => {
+              const config = (formData.eventTypeConfigs && formData.eventTypeConfigs[type]) || {
+                agendaRequireInstrument: false,
+                agendaEnableMaybeStatus: true,
+                agendaEnableStageLayout: true,
+                agendaEnableRevisionProgram: true,
+                agendaEnableCarpool: true,
+                agendaEnableFinance: true,
+                agendaEnableInscriptions: true,
+                agendaEnableImage: true,
+                agendaEnableOrdreDuJour: type === 'reunion',
+                agendaEnableAdresse: true,
+                agendaEnableUrl: true
+              };
+
+              const handleToggleOption = (optionKey, isChecked) => {
+                const currentConfigs = formData.eventTypeConfigs || {};
+                const updatedTypeConfig = {
+                  ...config,
+                  [optionKey]: isChecked
+                };
+                handleChange('eventTypeConfigs', {
+                  ...currentConfigs,
+                  [type]: updatedTypeConfig
+                });
+              };
+
+              return (
+                <div key={type} className="p-3 border border-dashed border-cordel-master-dark/15 rounded bg-cordel-bg-light/35 flex flex-col gap-2">
+                  <div className="flex justify-between items-center border-b border-dashed border-cordel-master-dark/10 pb-1.5">
+                    <span className="text-xs font-extrabold capitalize text-cordel-wood flex items-center gap-1.5 select-none">
+                      🏷️ {type}
+                    </span>
+                    <button 
+                      type="button"
+                      onClick={() => handleRemoveType(type)}
+                      className="text-[8px] hover:text-red-700 font-extrabold text-red-600 bg-red-500/10 px-2 py-0.5 border border-dashed border-red-300 rounded cursor-pointer select-none"
+                      title="Supprimer ce type"
+                    >
+                      ✕ Supprimer
+                    </button>
+                  </div>
+                  
+                  {/* Checkboxes grid */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-3 gap-y-2 text-[10px] font-semibold text-encre-noire">
+                    <label className="flex items-center gap-1.5 cursor-pointer select-none">
+                      <input 
+                        type="checkbox" 
+                        checked={config.agendaEnableInscriptions}
+                        onChange={(e) => handleToggleOption('agendaEnableInscriptions', e.target.checked)}
+                        className="scale-95"
+                      />
+                      Inscriptions (RSVP)
+                    </label>
+                    
+                    {config.agendaEnableInscriptions && (
+                      <>
+                        <label className="flex items-center gap-1.5 cursor-pointer select-none pl-3 border-l border-dashed border-cordel-master-dark/15">
+                          <input 
+                            type="checkbox" 
+                            checked={config.agendaRequireInstrument}
+                            onChange={(e) => handleToggleOption('agendaRequireInstrument', e.target.checked)}
+                            className="scale-95"
+                          />
+                          Imposer instrument
+                        </label>
+                        <label className="flex items-center gap-1.5 cursor-pointer select-none pl-3 border-l border-dashed border-cordel-master-dark/15">
+                          <input 
+                            type="checkbox" 
+                            checked={config.agendaEnableMaybeStatus}
+                            onChange={(e) => handleToggleOption('agendaEnableMaybeStatus', e.target.checked)}
+                            className="scale-95"
+                          />
+                          Statut "À confirmer"
+                        </label>
+                      </>
+                    )}
+
+                    <label className="flex items-center gap-1.5 cursor-pointer select-none">
+                      <input 
+                        type="checkbox" 
+                        checked={config.agendaEnableStageLayout}
+                        onChange={(e) => handleToggleOption('agendaEnableStageLayout', e.target.checked)}
+                        className="scale-95"
+                      />
+                      Plan de scène
+                    </label>
+                    <label className="flex items-center gap-1.5 cursor-pointer select-none">
+                      <input 
+                        type="checkbox" 
+                        checked={config.agendaEnableRevisionProgram}
+                        onChange={(e) => handleToggleOption('agendaEnableRevisionProgram', e.target.checked)}
+                        className="scale-95"
+                      />
+                      Programme révision
+                    </label>
+                    <label className="flex items-center gap-1.5 cursor-pointer select-none">
+                      <input 
+                        type="checkbox" 
+                        checked={config.agendaEnableCarpool}
+                        onChange={(e) => handleToggleOption('agendaEnableCarpool', e.target.checked)}
+                        className="scale-95"
+                      />
+                      Covoiturage
+                    </label>
+                    <label className="flex items-center gap-1.5 cursor-pointer select-none">
+                      <input 
+                        type="checkbox" 
+                        checked={config.agendaEnableFinance}
+                        onChange={(e) => handleToggleOption('agendaEnableFinance', e.target.checked)}
+                        className="scale-95"
+                      />
+                      Bilan Financier
+                    </label>
+                    <label className="flex items-center gap-1.5 cursor-pointer select-none">
+                      <input 
+                        type="checkbox" 
+                        checked={config.agendaEnableImage}
+                        onChange={(e) => handleToggleOption('agendaEnableImage', e.target.checked)}
+                        className="scale-95"
+                      />
+                      Image / Affiche
+                    </label>
+                    <label className="flex items-center gap-1.5 cursor-pointer select-none">
+                      <input 
+                        type="checkbox" 
+                        checked={config.agendaEnableOrdreDuJour}
+                        onChange={(e) => handleToggleOption('agendaEnableOrdreDuJour', e.target.checked)}
+                        className="scale-95"
+                      />
+                      Ordre du jour (Doc)
+                    </label>
+                    <label className="flex items-center gap-1.5 cursor-pointer select-none">
+                      <input 
+                        type="checkbox" 
+                        checked={config.agendaEnableAdresse}
+                        onChange={(e) => handleToggleOption('agendaEnableAdresse', e.target.checked)}
+                        className="scale-95"
+                      />
+                      Lieu / Adresse
+                    </label>
+                    <label className="flex items-center gap-1.5 cursor-pointer select-none">
+                      <input 
+                        type="checkbox" 
+                        checked={config.agendaEnableUrl}
+                        onChange={(e) => handleToggleOption('agendaEnableUrl', e.target.checked)}
+                        className="scale-95"
+                      />
+                      Lien externe / URL
+                    </label>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       </CordelCard>

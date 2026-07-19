@@ -219,8 +219,18 @@ export default function Dashboard({ user, profileData, onNavigateToTrombi, onNav
             )}
             
             <div className="flex-1 min-w-0">
-              <h3 className="text-xs font-black text-encre-noire truncate flex items-center gap-1.5">
-                <span>{profileData?.prenom}</span>
+              <h3 className="text-xs font-black text-encre-noire truncate flex items-center gap-1.5 flex-wrap">
+                <span>{profileData?.prenom} {profileData?.nom}</span>
+                {profileData?.paymentStatus === 'paid' && (
+                  <span className="theme-stamp-badge theme-stamp-badge-wood bg-green-100 text-green-800 dark:bg-green-950/20 dark:text-green-400 border-green-700/35 uppercase text-[7px] font-black tracking-wider px-1.5 py-0.2 shrink-0 scale-90 rotate-[-1deg]">
+                    Payé
+                  </span>
+                )}
+                {profileData?.paymentStatus === 'exempted' && (
+                  <span className="theme-stamp-badge theme-stamp-badge-wood bg-blue-100 text-blue-800 dark:bg-blue-950/20 dark:text-blue-400 border-blue-700/35 uppercase text-[7px] font-black tracking-wider px-1.5 py-0.2 shrink-0 scale-90 rotate-[-1deg]">
+                    Exonéré
+                  </span>
+                )}
               </h3>
               <p className="text-[9px] font-semibold text-cordel-master-dark/70 break-all select-all">
                 {profileData?.email}
@@ -360,6 +370,13 @@ export default function Dashboard({ user, profileData, onNavigateToTrombi, onNav
           }
 
           // Conditional hiding for non-administrators
+          if (widgetId === 'tresorerie') {
+            const status = profileData?.paymentStatus || 'unpaid';
+            if (status === 'paid' || status === 'exempted') {
+              return null;
+            }
+          }
+
           if (!isSystemOrSuperAdminOrMestre) {
             if (widgetId === 'motMestre' && (!motDuMestre || !motDuMestre.trim())) {
               return null;

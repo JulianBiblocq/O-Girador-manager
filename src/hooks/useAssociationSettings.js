@@ -65,7 +65,8 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
     agendaEnableFinance: true,
     agendaEnableInscriptions: true,
     pupitresColors: { Mestre: '#8b2a1a' },
-    eventTypes: ['prestation', 'repetition', 'stage', 'atelier', 'reunion']
+    eventTypes: ['prestation', 'repetition', 'stage', 'atelier', 'reunion'],
+    eventTypeConfigs: {}
   });
 
   const [logoFile, setLogoFile] = useState(null);
@@ -191,7 +192,8 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
           pupitresColors: data.pupitresColors || { Mestre: '#8b2a1a' },
           eventTypes: Array.isArray(data.eventTypes) && data.eventTypes.length > 0 
             ? data.eventTypes 
-            : ['prestation', 'repetition', 'stage', 'atelier', 'reunion']
+            : ['prestation', 'repetition', 'stage', 'atelier', 'reunion'],
+          eventTypeConfigs: data.eventTypeConfigs || {}
         }));
       }
       setLoading(false);
@@ -284,7 +286,9 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
         agendaEnableFinance: formData.agendaEnableFinance !== undefined ? formData.agendaEnableFinance : true,
         agendaEnableStageLayout: formData.agendaEnableStageLayout !== undefined ? formData.agendaEnableStageLayout : true,
         agendaEnableMaybeStatus: formData.agendaEnableMaybeStatus !== undefined ? formData.agendaEnableMaybeStatus : true,
-        agendaEnableRevisionProgram: formData.agendaEnableRevisionProgram !== undefined ? formData.agendaEnableRevisionProgram : true
+        agendaEnableRevisionProgram: formData.agendaEnableRevisionProgram !== undefined ? formData.agendaEnableRevisionProgram : true,
+        eventTypes: formData.eventTypes || [],
+        eventTypeConfigs: formData.eventTypeConfigs || {}
       }, { merge: true });
 
       const credentialsRef = doc(db, 'associations', groupId, 'private_settings', 'credentials');

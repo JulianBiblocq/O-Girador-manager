@@ -67,7 +67,7 @@ const WIDGET_NAMES = {
     desc: "Partage de paroles, grilles de percussions et administratifs."
   },
   tresorerie: {
-    title: "Ma Trésorerie 🪙",
+    title: "Adhésion & cotisation 🪙",
     desc: "Suivi des cotisations et lien de paiement en ligne."
   }
 };

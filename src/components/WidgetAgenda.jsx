@@ -58,6 +58,7 @@ export default function WidgetAgenda({
   const [adresseLocal, setAdresseLocal] = useState('');
   const [eventTypes, setEventTypes] = useState(['prestation', 'repetition', 'stage', 'atelier', 'reunion']);
   const [agendaEnableFinance, setAgendaEnableFinance] = useState(true);
+  const [eventTypeConfigs, setEventTypeConfigs] = useState({});
 
   // Sync association settings to get default local address and km rate
   useEffect(() => {
@@ -68,6 +69,7 @@ export default function WidgetAgenda({
         const data = docSnap.data();
         setAdresseLocal(data.adresseLocal || '');
         setAgendaEnableFinance(data.agendaEnableFinance !== false);
+        setEventTypeConfigs(data.eventTypeConfigs || {});
         if (Array.isArray(data.eventTypes) && data.eventTypes.length > 0) {
           setEventTypes(data.eventTypes);
         } else {
@@ -220,6 +222,21 @@ export default function WidgetAgenda({
     }
     if (!formData.titre || !formData.date) return;
 
+    const activeType = formData.type || 'repetition';
+    const activeConfig = eventTypeConfigs[activeType] || {
+      agendaRequireInstrument: false,
+      agendaEnableMaybeStatus: true,
+      agendaEnableStageLayout: true,
+      agendaEnableRevisionProgram: true,
+      agendaEnableCarpool: true,
+      agendaEnableFinance: agendaEnableFinance,
+      agendaEnableInscriptions: true,
+      agendaEnableImage: true,
+      agendaEnableOrdreDuJour: activeType === 'reunion',
+      agendaEnableAdresse: true,
+      agendaEnableUrl: true
+    };
+
     setSaving(true);
     try {
       await addDoc(collection(db, 'events'), {
@@ -229,20 +246,20 @@ export default function WidgetAgenda({
         dateFin: formData.dateFin || '',
         groupId: groupId,
         inscriptions: [],
-        lieu: formData.lieu || '',
+        lieu: activeConfig.agendaEnableAdresse ? formData.lieu || '' : '',
         horairesPassages: formData.type === 'prestation' ? formData.horairesPassages || '' : '',
-        horaireCovoiturage: (formData.type === 'prestation' || formData.type === 'stage' || formData.type === 'atelier') ? formData.horaireCovoiturage || '' : '',
+        horaireCovoiturage: activeConfig.agendaEnableCarpool ? formData.horaireCovoiturage || '' : '',
         niveauRequis: formData.type === 'prestation' ? formData.niveauRequis || 'tous' : 'tous',
         niveauDanseRequis: (formData.type === 'prestation' || formData.type === 'stage' || formData.type === 'repetition' || formData.type === 'atelier') ? formData.niveauDanseRequis || 'aucun' : 'aucun',
-        lienDocument: formData.type === 'reunion' ? formData.lienDocument || '' : '',
-        distanceAllerRetourKm: (formData.type === 'prestation' || formData.type === 'stage' || formData.type === 'atelier') ? (parseFloat(formData.distanceAllerRetourKm) || 0) : 0,
+        lienDocument: activeConfig.agendaEnableOrdreDuJour ? formData.lienDocument || '' : '',
+        distanceAllerRetourKm: activeConfig.agendaEnableCarpool ? (parseFloat(formData.distanceAllerRetourKm) || 0) : 0,
         status: 'confirme',
-        lienSocial: formData.lienSocial || '',
-        imageUrl: formData.imageUrl || '',
-        requiresValidation: formData.requiresValidation || false,
-        montantRecette: parseFloat(formData.montantRecette) || 0,
-        montantDepense: parseFloat(formData.montantDepense) || 0,
-        dateLimiteInscription: formData.dateLimiteInscription || ''
+        lienSocial: activeConfig.agendaEnableUrl ? formData.lienSocial || '' : '',
+        imageUrl: activeConfig.agendaEnableImage ? formData.imageUrl || '' : '',
+        requiresValidation: activeConfig.agendaEnableInscriptions ? (formData.requiresValidation || false) : false,
+        montantRecette: activeConfig.agendaEnableFinance ? (parseFloat(formData.montantRecette) || 0) : 0,
+        montantDepense: activeConfig.agendaEnableFinance ? (parseFloat(formData.montantDepense) || 0) : 0,
+        dateLimiteInscription: activeConfig.agendaEnableInscriptions ? formData.dateLimiteInscription || '' : ''
       });
       setIsAdding(false);
     } catch (error) {
@@ -326,6 +343,21 @@ export default function WidgetAgenda({
       </React.Suspense>
     );
   }
+
+  const activeType = formData.type || 'repetition';
+  const activeConfig = eventTypeConfigs[activeType] || {
+    agendaRequireInstrument: false,
+    agendaEnableMaybeStatus: true,
+    agendaEnableStageLayout: true,
+    agendaEnableRevisionProgram: true,
+    agendaEnableCarpool: true,
+    agendaEnableFinance: agendaEnableFinance,
+    agendaEnableInscriptions: true,
+    agendaEnableImage: true,
+    agendaEnableOrdreDuJour: activeType === 'reunion',
+    agendaEnableAdresse: true,
+    agendaEnableUrl: true
+  };
 
   return (
     <div className="flex flex-col gap-3">
@@ -479,35 +511,37 @@ export default function WidgetAgenda({
               />
             </div>
 
-            {/* Lieu (Tous) */}
-            <div className="flex flex-col gap-1">
-              <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                Lieu
-              </label>
-              <React.Suspense fallback={
-                <div className="text-[10px] font-bold py-2 text-cordel-wood animate-pulse">
-                  ⏳ Chargement du champ adresse...
-                </div>
-              }>
-                <AddressAutocomplete
-                  name="lieu"
-                  value={formData.lieu}
-                  onChange={handleChange}
-                  required
-                  disabled={saving}
-                  placeholder="Ex : Local de l'asso, Place de la Mairie..."
-                  className="theme-input w-full disabled:opacity-50"
-                />
-              </React.Suspense>
-              {!adresseLocal && (
-                <span className="text-[9px] text-orange-600 font-bold leading-none mt-1 select-none">
-                  ⚠️ Adresse du local non configurée dans les paramètres de l'association (calcul de distance inactif).
-                </span>
-              )}
-            </div>
+            {/* Lieu (Adresse) */}
+            {activeConfig.agendaEnableAdresse && (
+              <div className="flex flex-col gap-1">
+                <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                  Lieu
+                </label>
+                <React.Suspense fallback={
+                  <div className="text-[10px] font-bold py-2 text-cordel-wood animate-pulse">
+                    ⏳ Chargement du champ adresse...
+                  </div>
+                }>
+                  <AddressAutocomplete
+                    name="lieu"
+                    value={formData.lieu}
+                    onChange={handleChange}
+                    required
+                    disabled={saving}
+                    placeholder="Ex : Local de l'asso, Place de la Mairie..."
+                    className="theme-input w-full disabled:opacity-50"
+                  />
+                </React.Suspense>
+                {!adresseLocal && (
+                  <span className="text-[9px] text-orange-600 font-bold leading-none mt-1 select-none">
+                    ⚠️ Adresse du local non configurée dans les paramètres de l'association (calcul de distance inactif).
+                  </span>
+                )}
+              </div>
+            )}
 
-            {/* Distance A/R (Prestation, Stage & Atelier) */}
-            {(formData.type === 'prestation' || formData.type === 'stage' || formData.type === 'atelier') && (
+            {/* Distance A/R (Covoiturage) */}
+            {activeConfig.agendaEnableCarpool && (formData.type === 'prestation' || formData.type === 'stage' || formData.type === 'atelier') && (
               <div className="flex flex-col gap-1">
                 <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
                   {t('widgetAgenda.distanceLabel') || "Distance Aller-Retour en Km (Covoiturage)"}
@@ -543,24 +577,26 @@ export default function WidgetAgenda({
                   />
                 </div>
 
-                <div className="flex flex-col gap-1">
-                  <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                    {t('widgetAgenda.carpoolingLabel') || "Horaire Covoiturage (Optionnel)"}
-                  </label>
-                  <input
-                    type="time"
-                    name="horaireCovoiturage"
-                    value={formData.horaireCovoiturage}
-                    onChange={handleChange}
-                    disabled={saving}
-                    className="theme-input w-full disabled:opacity-50"
-                  />
-                </div>
+                {activeConfig.agendaEnableCarpool && (
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                      {t('widgetAgenda.carpoolingLabel') || "Horaire Covoiturage (Optionnel)"}
+                    </label>
+                    <input
+                      type="time"
+                      name="horaireCovoiturage"
+                      value={formData.horaireCovoiturage}
+                      onChange={handleChange}
+                      disabled={saving}
+                      className="theme-input w-full disabled:opacity-50"
+                    />
+                  </div>
+                )}
               </>
             )}
 
             {/* Stage & Atelier specific fields */}
-            {(formData.type === 'stage' || formData.type === 'atelier') && (
+            {activeConfig.agendaEnableCarpool && (formData.type === 'stage' || formData.type === 'atelier') && (
               <div className="flex flex-col gap-1">
                 <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
                   {t('widgetAgenda.carpoolingLabel') || "Horaire Covoiturage (Optionnel)"}
@@ -618,8 +654,8 @@ export default function WidgetAgenda({
               </div>
             )}
 
-            {/* Réunion specific fields */}
-            {formData.type === 'reunion' && (
+            {/* Ordre du jour */}
+            {activeConfig.agendaEnableOrdreDuJour && (
               <div className="flex flex-col gap-1">
                 <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
                   Lien du document d'ordre du jour
@@ -637,60 +673,64 @@ export default function WidgetAgenda({
             )}
 
             {/* Lien réseau social / Événement externe (Optionnel) */}
-            <div className="flex flex-col gap-1">
-              <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                {t('widgetAgenda.lienSocialLabel') || "Lien réseau social / Événement externe (URL)"}
-              </label>
-              <input
-                type="url"
-                name="lienSocial"
-                value={formData.lienSocial || ''}
-                onChange={handleChange}
-                disabled={saving || uploadingImage}
-                placeholder="https://..."
-                className="theme-input w-full disabled:opacity-50"
-              />
-            </div>
+            {activeConfig.agendaEnableUrl && (
+              <div className="flex flex-col gap-1">
+                <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                  {t('widgetAgenda.lienSocialLabel') || "Lien réseau social / Événement externe (URL)"}
+                </label>
+                <input
+                  type="url"
+                  name="lienSocial"
+                  value={formData.lienSocial || ''}
+                  onChange={handleChange}
+                  disabled={saving || uploadingImage}
+                  placeholder="https://..."
+                  className="theme-input w-full disabled:opacity-50"
+                />
+              </div>
+            )}
 
             {/* Affiche de l'événement / Image (Optionnel) */}
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                {t('widgetAgenda.imageUrlLabel') || "Image de l'événement / Affiche"}
-              </label>
-              <div className="flex items-center gap-3">
-                {formData.imageUrl && (
-                  <div className="w-14 h-14 border border-encre-noire rounded-[4px] overflow-hidden bg-white shrink-0 shadow-[1px_1px_0px_0px_rgba(26,26,26,0.15)]">
-                    <img src={formData.imageUrl} alt="Affiche preview" className="w-full h-full object-cover" />
-                  </div>
-                )}
-                <label className="text-[10px] font-black uppercase tracking-widest bg-cordel-bg border border-encre-noire px-3 py-2 rounded-[4px_6px_3px_5px] shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-95 cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1.5 shrink-0 select-none">
-                  {uploadingImage ? (
-                    <>⏳ {t('widgetAgenda.uploadingImage') || "Téléversement..."}</>
-                  ) : (
-                    <>📸 {t('widgetAgenda.imageUrlLabel') || "Image / Affiche"}</>
-                  )}
-                  <input
-                    type="file"
-                    accept="image/*"
-                    disabled={saving || uploadingImage}
-                    onChange={handleImageUpload}
-                    className="hidden"
-                  />
+            {activeConfig.agendaEnableImage && (
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                  {t('widgetAgenda.imageUrlLabel') || "Image de l'événement / Affiche"}
                 </label>
-                {formData.imageUrl && (
-                  <button
-                    type="button"
-                    onClick={() => setFormData(prev => ({ ...prev, imageUrl: '' }))}
-                    className="text-[10px] font-bold text-red-700 hover:underline select-none"
-                  >
-                    Supprimer
-                  </button>
-                )}
+                <div className="flex items-center gap-3">
+                  {formData.imageUrl && (
+                    <div className="w-14 h-14 border border-encre-noire rounded-[4px] overflow-hidden bg-white shrink-0 shadow-[1px_1px_0px_0px_rgba(26,26,26,0.15)]">
+                      <img src={formData.imageUrl} alt="Affiche preview" className="w-full h-full object-cover" />
+                    </div>
+                  )}
+                  <label className="text-[10px] font-black uppercase tracking-widest bg-cordel-bg border border-encre-noire px-3 py-2 rounded-[4px_6px_3px_5px] shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-95 cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1.5 shrink-0 select-none">
+                    {uploadingImage ? (
+                      <>⏳ {t('widgetAgenda.uploadingImage') || "Téléversement..."}</>
+                    ) : (
+                      <>📸 {t('widgetAgenda.imageUrlLabel') || "Image / Affiche"}</>
+                    )}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      disabled={saving || uploadingImage}
+                      onChange={handleImageUpload}
+                      className="hidden"
+                    />
+                  </label>
+                  {formData.imageUrl && (
+                    <button
+                      type="button"
+                      onClick={() => setFormData(prev => ({ ...prev, imageUrl: '' }))}
+                      className="text-[10px] font-bold text-red-700 hover:underline select-none"
+                    >
+                      Supprimer
+                    </button>
+                  )}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Finances (Optionnel) */}
-            {agendaEnableFinance && (
+            {activeConfig.agendaEnableFinance && (
               <div className="flex flex-col gap-3 pt-3 border-t border-dashed border-cordel-master-dark/15">
                 <h5 className="text-[10px] uppercase font-black tracking-widest text-cordel-wood">
                   Finances (Optionnel)
@@ -733,19 +773,21 @@ export default function WidgetAgenda({
             )}
 
             {/* Validation Toggle */}
-            <div className="flex items-center gap-2 pt-2 border-t border-dashed border-cordel-master-dark/15">
-              <label className="flex items-center gap-2 text-xs font-semibold cursor-pointer select-none">
-                <input
-                  type="checkbox"
-                  name="requiresValidation"
-                  checked={formData.requiresValidation || false}
-                  onChange={(e) => setFormData(prev => ({ ...prev, requiresValidation: e.target.checked }))}
-                  disabled={saving}
-                  className="accent-cordel-wood scale-105"
-                />
-                <span>Inscriptions soumises à validation par l'administrateur</span>
-              </label>
-            </div>
+            {activeConfig.agendaEnableInscriptions && (
+              <div className="flex items-center gap-2 pt-2 border-t border-dashed border-cordel-master-dark/15">
+                <label className="flex items-center gap-2 text-xs font-semibold cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    name="requiresValidation"
+                    checked={formData.requiresValidation || false}
+                    onChange={(e) => setFormData(prev => ({ ...prev, requiresValidation: e.target.checked }))}
+                    disabled={saving}
+                    className="accent-cordel-wood scale-105"
+                  />
+                  <span>Inscriptions soumises à validation par l'administrateur</span>
+                </label>
+              </div>
+            )}
 
             {/* Actions */}
             <div className="flex gap-3 justify-end mt-2">

@@ -62,6 +62,7 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
   const [agendaEnableInscriptions, setAgendaEnableInscriptions] = useState(true);
   const [agendaEnableCarpool, setAgendaEnableCarpool] = useState(true);
   const [associationEventTypes, setAssociationEventTypes] = useState(['prestation', 'repetition', 'stage', 'atelier', 'reunion']);
+  const [eventTypeConfigs, setEventTypeConfigs] = useState({});
 
   const isPrestationRestricted = event.type === 'prestation' && event.niveauRequis === 'confirme' && profileData?.niveau !== 'confirme';
 
@@ -181,6 +182,7 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
         setAgendaEnableFinance(data.agendaEnableFinance !== false);
         setAgendaEnableInscriptions(data.agendaEnableInscriptions !== false);
         setAgendaEnableCarpool(data.agendaEnableCarpool !== false);
+        setEventTypeConfigs(data.eventTypeConfigs || {});
         if (Array.isArray(data.eventTypes) && data.eventTypes.length > 0) {
           setAssociationEventTypes(data.eventTypes);
         } else {
@@ -374,6 +376,22 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
   const handleSaveEvent = async (e) => {
     e.preventDefault();
     if (!event.id) return;
+
+    const editType = editForm.type || 'repetition';
+    const editConfig = eventTypeConfigs[editType] || {
+      agendaRequireInstrument,
+      agendaEnableMaybeStatus,
+      agendaEnableStageLayout,
+      agendaEnableRevisionProgram,
+      agendaEnableCarpool,
+      agendaEnableFinance,
+      agendaEnableInscriptions,
+      agendaEnableImage: true,
+      agendaEnableOrdreDuJour: editType === 'reunion',
+      agendaEnableAdresse: true,
+      agendaEnableUrl: true
+    };
+
     setSavingEvent(true);
     try {
       const eventRef = doc(db, 'events', event.id);
@@ -382,19 +400,19 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
         type: editForm.type,
         date: editForm.date,
         dateFin: editForm.dateFin || '',
-        lieu: editForm.lieu || '',
+        lieu: editConfig.agendaEnableAdresse ? editForm.lieu || '' : '',
         horairesPassages: (editForm.type === 'prestation') ? editForm.horairesPassages || '' : '',
-        horaireCovoiturage: (editForm.type === 'prestation' || editForm.type === 'stage' || editForm.type === 'atelier') ? editForm.horaireCovoiturage || '' : '',
+        horaireCovoiturage: editConfig.agendaEnableCarpool ? editForm.horaireCovoiturage || '' : '',
         niveauRequis: (editForm.type === 'prestation' || editForm.type === 'stage' || editForm.type === 'repetition' || editForm.type === 'atelier') ? editForm.niveauRequis || 'tous' : 'tous',
         niveauDanseRequis: (editForm.type === 'prestation' || editForm.type === 'stage' || editForm.type === 'repetition' || editForm.type === 'atelier') ? editForm.niveauDanseRequis || 'aucun' : 'aucun',
-        lienDocument: (editForm.type === 'reunion') ? editForm.lienDocument || '' : '',
-        distanceAllerRetourKm: (editForm.type === 'prestation' || editForm.type === 'stage' || editForm.type === 'atelier') ? (parseFloat(editForm.distanceAllerRetourKm) || 0) : 0,
-        lienSocial: editForm.lienSocial || '',
-        imageUrl: editForm.imageUrl || '',
-        requiresValidation: editForm.requiresValidation || false,
-        montantRecette: parseFloat(editForm.montantRecette) || 0,
-        montantDepense: parseFloat(editForm.montantDepense) || 0,
-        dateLimiteInscription: editForm.dateLimiteInscription || ''
+        lienDocument: editConfig.agendaEnableOrdreDuJour ? editForm.lienDocument || '' : '',
+        distanceAllerRetourKm: editConfig.agendaEnableCarpool ? (parseFloat(editForm.distanceAllerRetourKm) || 0) : 0,
+        lienSocial: editConfig.agendaEnableUrl ? editForm.lienSocial || '' : '',
+        imageUrl: editConfig.agendaEnableImage ? editForm.imageUrl || '' : '',
+        requiresValidation: editConfig.agendaEnableInscriptions ? (editForm.requiresValidation || false) : false,
+        montantRecette: editConfig.agendaEnableFinance ? (parseFloat(editForm.montantRecette) || 0) : 0,
+        montantDepense: editConfig.agendaEnableFinance ? (parseFloat(editForm.montantDepense) || 0) : 0,
+        dateLimiteInscription: editConfig.agendaEnableInscriptions ? editForm.dateLimiteInscription || '' : ''
       });
       setIsEditingEvent(false);
       alert("Événement mis à jour avec succès !");
@@ -538,6 +556,36 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
   };
 
   const currentVariant = typeVariants[event.type] || 'default';
+
+  const eventType = event.type || 'repetition';
+  const currentConfig = eventTypeConfigs[eventType] || {
+    agendaRequireInstrument,
+    agendaEnableMaybeStatus,
+    agendaEnableStageLayout,
+    agendaEnableRevisionProgram,
+    agendaEnableCarpool,
+    agendaEnableFinance,
+    agendaEnableInscriptions,
+    agendaEnableImage: true,
+    agendaEnableOrdreDuJour: eventType === 'reunion',
+    agendaEnableAdresse: true,
+    agendaEnableUrl: true
+  };
+
+  const editType = editForm.type || 'repetition';
+  const editConfig = eventTypeConfigs[editType] || {
+    agendaRequireInstrument,
+    agendaEnableMaybeStatus,
+    agendaEnableStageLayout,
+    agendaEnableRevisionProgram,
+    agendaEnableCarpool,
+    agendaEnableFinance,
+    agendaEnableInscriptions,
+    agendaEnableImage: true,
+    agendaEnableOrdreDuJour: editType === 'reunion',
+    agendaEnableAdresse: true,
+    agendaEnableUrl: true
+  };
 
   const unregisteredUsers = allUsers
     .filter(u => u.prenom && !(event.inscriptions || []).some(ins => ins.userId === u.id))
@@ -733,46 +781,48 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
                 />
               </div>
 
-              {/* Lieu */}
-              <div className="flex flex-col gap-1">
-                <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                  Lieu
-                </label>
-                <React.Suspense fallback={
-                  <div className="text-[10px] font-bold py-2 text-cordel-wood animate-pulse">
-                    ⏳ Chargement du champ adresse...
-                  </div>
-                }>
-                  <AddressAutocomplete
-                    name="lieu"
-                    value={editForm.lieu}
-                    onChange={async (e) => {
-                      const newLieu = e.target.value;
-                      setEditForm(prev => ({ ...prev, lieu: newLieu }));
-                      if (adresseLocal && newLieu) {
-                        try {
-                          const distanceKm = await calculateRoadDistance(adresseLocal, newLieu);
-                          const distanceRoundTrip = Math.round(distanceKm * 2);
-                          setEditForm(prev => ({ ...prev, distanceAllerRetourKm: distanceRoundTrip.toString() }));
-                        } catch (err) {
-                          console.error("Distance Matrix calculation failed on edit:", err);
+              {/* Lieu (Adresse) */}
+              {editConfig.agendaEnableAdresse && (
+                <div className="flex flex-col gap-1">
+                  <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                    Lieu
+                  </label>
+                  <React.Suspense fallback={
+                    <div className="text-[10px] font-bold py-2 text-cordel-wood animate-pulse">
+                      ⏳ Chargement du champ adresse...
+                    </div>
+                  }>
+                    <AddressAutocomplete
+                      name="lieu"
+                      value={editForm.lieu}
+                      onChange={async (e) => {
+                        const newLieu = e.target.value;
+                        setEditForm(prev => ({ ...prev, lieu: newLieu }));
+                        if (adresseLocal && newLieu) {
+                          try {
+                            const distanceKm = await calculateRoadDistance(adresseLocal, newLieu);
+                            const distanceRoundTrip = Math.round(distanceKm * 2);
+                            setEditForm(prev => ({ ...prev, distanceAllerRetourKm: distanceRoundTrip.toString() }));
+                          } catch (err) {
+                            console.error("Distance Matrix calculation failed on edit:", err);
+                          }
                         }
-                      }
-                    }}
-                    required
-                    disabled={savingEvent}
-                    className="theme-input w-full disabled:opacity-50"
-                  />
-                </React.Suspense>
-                {!adresseLocal && (
-                  <span className="text-[9px] text-orange-600 font-bold leading-none mt-1 select-none">
-                    ⚠️ Adresse du local non configurée dans les paramètres de l'association (calcul de distance inactif).
-                  </span>
-                )}
-              </div>
+                      }}
+                      required
+                      disabled={savingEvent}
+                      className="theme-input w-full disabled:opacity-50"
+                    />
+                  </React.Suspense>
+                  {!adresseLocal && (
+                    <span className="text-[9px] text-orange-600 font-bold leading-none mt-1 select-none">
+                      ⚠️ Adresse du local non configurée dans les paramètres de l'association (calcul de distance inactif).
+                    </span>
+                  )}
+                </div>
+              )}
 
-              {/* Distance A/R (Prestation, Stage & Atelier) */}
-              {(editForm.type === 'prestation' || editForm.type === 'stage' || editForm.type === 'atelier') && (
+              {/* Distance A/R (Covoiturage) */}
+              {editConfig.agendaEnableCarpool && (editForm.type === 'prestation' || editForm.type === 'stage' || editForm.type === 'atelier') && (
                 <div className="flex flex-col gap-1">
                   <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
                     {t('widgetAgenda.distanceLabel') || "Distance Aller-Retour (Km)"}
@@ -804,23 +854,25 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
                     />
                   </div>
 
-                  <div className="flex flex-col gap-1">
-                    <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                      {t('widgetAgenda.carpoolingLabel') || "Horaire Covoiturage (Optionnel)"}
-                    </label>
-                    <input
-                      type="time"
-                      value={editForm.horaireCovoiturage}
-                      onChange={(e) => setEditForm(prev => ({ ...prev, horaireCovoiturage: e.target.value }))}
-                      disabled={savingEvent}
-                      className="theme-input w-full disabled:opacity-50"
-                    />
-                  </div>
+                  {editConfig.agendaEnableCarpool && (
+                    <div className="flex flex-col gap-1">
+                      <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                        {t('widgetAgenda.carpoolingLabel') || "Horaire Covoiturage (Optionnel)"}
+                      </label>
+                      <input
+                        type="time"
+                        value={editForm.horaireCovoiturage}
+                        onChange={(e) => setEditForm(prev => ({ ...prev, horaireCovoiturage: e.target.value }))}
+                        disabled={savingEvent}
+                        className="theme-input w-full disabled:opacity-50"
+                      />
+                    </div>
+                  )}
                 </>
               )}
 
               {/* Stage & Atelier specific fields */}
-              {(editForm.type === 'stage' || editForm.type === 'atelier') && (
+              {editConfig.agendaEnableCarpool && (editForm.type === 'stage' || editForm.type === 'atelier') && (
                 <div className="flex flex-col gap-1">
                   <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
                     {t('widgetAgenda.carpoolingLabel') || "Horaire Covoiturage (Optionnel)"}
@@ -874,8 +926,8 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
                 </>
               )}
 
-              {/* Reunion specific fields */}
-              {editForm.type === 'reunion' && (
+              {/* Ordre du jour */}
+              {editConfig.agendaEnableOrdreDuJour && (
                 <div className="flex flex-col gap-1">
                   <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
                     Lien du document d'ordre du jour
@@ -891,59 +943,63 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
               )}
 
               {/* Lien réseau social */}
-              <div className="flex flex-col gap-1">
-                <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                  {t('widgetAgenda.lienSocialLabel') || "Lien réseau social / Événement externe (URL)"}
-                </label>
-                <input
-                  type="url"
-                  value={editForm.lienSocial || ''}
-                  onChange={(e) => setEditForm(prev => ({ ...prev, lienSocial: e.target.value }))}
-                  disabled={savingEvent || uploadingImage}
-                  placeholder="https://..."
-                  className="theme-input w-full disabled:opacity-50"
-                />
-              </div>
+              {editConfig.agendaEnableUrl && (
+                <div className="flex flex-col gap-1">
+                  <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                    {t('widgetAgenda.lienSocialLabel') || "Lien réseau social / Événement externe (URL)"}
+                  </label>
+                  <input
+                    type="url"
+                    value={editForm.lienSocial || ''}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, lienSocial: e.target.value }))}
+                    disabled={savingEvent || uploadingImage}
+                    placeholder="https://..."
+                    className="theme-input w-full disabled:opacity-50"
+                  />
+                </div>
+              )}
 
               {/* Image de l'événement */}
-              <div className="flex flex-col gap-1.5">
-                <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                  {t('widgetAgenda.imageUrlLabel') || "Image de l'événement / Affiche"}
-                </label>
-                <div className="flex items-center gap-3">
-                  {editForm.imageUrl && (
-                    <div className="w-14 h-14 border border-encre-noire rounded-[4px] overflow-hidden bg-white shrink-0 shadow-[1px_1px_0px_0px_rgba(26,26,26,0.15)]">
-                      <img src={editForm.imageUrl} alt="Affiche preview" className="w-full h-full object-cover" />
-                    </div>
-                  )}
-                  <label className="text-[10px] font-black uppercase tracking-widest bg-cordel-bg border border-encre-noire px-3 py-2 rounded-[4px_6px_3px_5px] shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-95 cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1.5 shrink-0 select-none">
-                    {uploadingImage ? (
-                      <>⏳ {t('widgetAgenda.uploadingImage') || "Téléversement..."}</>
-                    ) : (
-                      <>📸 {t('widgetAgenda.imageUrlLabel') || "Image / Affiche"}</>
-                    )}
-                    <input
-                      type="file"
-                      accept="image/*"
-                      disabled={savingEvent || uploadingImage}
-                      onChange={handleImageUpload}
-                      className="hidden"
-                    />
+              {editConfig.agendaEnableImage && (
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                    {t('widgetAgenda.imageUrlLabel') || "Image de l'événement / Affiche"}
                   </label>
-                  {editForm.imageUrl && (
-                    <button
-                      type="button"
-                      onClick={() => setEditForm(prev => ({ ...prev, imageUrl: '' }))}
-                      className="text-[10px] font-bold text-red-700 hover:underline select-none"
-                    >
-                      Supprimer
-                    </button>
-                  )}
+                  <div className="flex items-center gap-3">
+                    {editForm.imageUrl && (
+                      <div className="w-14 h-14 border border-encre-noire rounded-[4px] overflow-hidden bg-white shrink-0 shadow-[1px_1px_0px_0px_rgba(26,26,26,0.15)]">
+                        <img src={editForm.imageUrl} alt="Affiche preview" className="w-full h-full object-cover" />
+                      </div>
+                    )}
+                    <label className="text-[10px] font-black uppercase tracking-widest bg-cordel-bg border border-encre-noire px-3 py-2 rounded-[4px_6px_3px_5px] shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-95 cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1.5 shrink-0 select-none">
+                      {uploadingImage ? (
+                        <>⏳ {t('widgetAgenda.uploadingImage') || "Téléversement..."}</>
+                      ) : (
+                        <>📸 {t('widgetAgenda.imageUrlLabel') || "Image / Affiche"}</>
+                      )}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        disabled={savingEvent || uploadingImage}
+                        onChange={handleImageUpload}
+                        className="hidden"
+                      />
+                    </label>
+                    {editForm.imageUrl && (
+                      <button
+                        type="button"
+                        onClick={() => setEditForm(prev => ({ ...prev, imageUrl: '' }))}
+                        className="text-[10px] font-bold text-red-700 hover:underline select-none"
+                      >
+                        Supprimer
+                      </button>
+                    )}
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Finances (Optionnel) */}
-              {agendaEnableFinance && (
+              {editConfig.agendaEnableFinance && (
                 <div className="flex flex-col gap-3 pt-3 border-t border-dashed border-cordel-master-dark/15">
                   <h5 className="text-[10px] uppercase font-black tracking-widest text-cordel-wood">
                     Finances (Optionnel)
@@ -984,18 +1040,20 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
               )}
 
               {/* Validation Toggle */}
-              <div className="flex items-center gap-2 pt-2 border-t border-dashed border-cordel-master-dark/15">
-                <label className="flex items-center gap-2 text-xs font-semibold cursor-pointer select-none">
-                  <input
-                    type="checkbox"
-                    checked={editForm.requiresValidation || false}
-                    onChange={(e) => setEditForm(prev => ({ ...prev, requiresValidation: e.target.checked }))}
-                    disabled={savingEvent}
-                    className="accent-cordel-wood scale-105"
-                  />
-                  <span>Inscriptions soumises à validation par l'administrateur</span>
-                </label>
-              </div>
+              {editConfig.agendaEnableInscriptions && (
+                <div className="flex items-center gap-2 pt-2 border-t border-dashed border-cordel-master-dark/15">
+                  <label className="flex items-center gap-2 text-xs font-semibold cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={editForm.requiresValidation || false}
+                      onChange={(e) => setEditForm(prev => ({ ...prev, requiresValidation: e.target.checked }))}
+                      disabled={savingEvent}
+                      className="accent-cordel-wood scale-105"
+                    />
+                    <span>Inscriptions soumises à validation par l'administrateur</span>
+                  </label>
+                </div>
+              )}
             </div>
 
             <CordelButton
@@ -1085,19 +1143,19 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
             </p>
 
             <div className="mt-3 pt-2.5 border-t border-dashed border-encre-noire/15 text-xs flex flex-col gap-1 font-semibold leading-relaxed px-4">
-              {event.dateLimiteInscription && (
+              {currentConfig.agendaEnableInscriptions && event.dateLimiteInscription && (
                 <span className={isRegistrationDeadlinePassed ? "text-red-600 dark:text-red-400 font-extrabold" : "text-amber-700 dark:text-amber-400"}>
                   🔒 <strong>Date limite d'inscription :</strong> {formattedDateLimite} {formattedTimeLimite ? `à ${formattedTimeLimite}` : ''}
                   {isRegistrationDeadlinePassed && " (Closes)"}
                 </span>
               )}
-              {event.lieu && (
+              {currentConfig.agendaEnableAdresse && event.lieu && (
                 <span>📍 <strong>Lieu :</strong> {event.lieu}</span>
               )}
               {event.type === 'prestation' && event.horairesPassages && (
                 <span>⏱️ <strong>Horaires de passage :</strong> {event.horairesPassages}</span>
               )}
-              {(event.type === 'prestation' || event.type === 'stage' || event.type === 'atelier') && event.horaireCovoiturage && (
+              {currentConfig.agendaEnableCarpool && (event.type === 'prestation' || event.type === 'stage' || event.type === 'atelier') && event.horaireCovoiturage && (
                 <span>🚗 <strong>Horaire de convoi :</strong> {event.horaireCovoiturage}</span>
               )}
               {(event.type === 'prestation' || event.type === 'stage' || event.type === 'repetition' || event.type === 'atelier') && (
@@ -1116,22 +1174,22 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
                   `❌ ${t('widgetAgenda.danceLevelNone') || 'Pas de danse'}`
                 }</span>
               )}
-              {event.type === 'reunion' && event.lienDocument && (
+              {currentConfig.agendaEnableOrdreDuJour && event.lienDocument && (
                 <span className="truncate">
                   📄 <strong>Ordre du jour :</strong> <a href={event.lienDocument} target="_blank" rel="noopener noreferrer" className="text-cordel-wood hover:underline">{event.lienDocument}</a>
                 </span>
               )}
-              {event.lienSocial && (
+              {currentConfig.agendaEnableUrl && event.lienSocial && (
                 <span className="truncate">
                   🔗 <strong>Lien social / Externe :</strong> <a href={event.lienSocial} target="_blank" rel="noopener noreferrer" className="text-cordel-wood hover:underline">{event.lienSocial}</a>
                 </span>
               )}
-              {event.imageUrl && (
+              {currentConfig.agendaEnableImage && event.imageUrl && (
                 <div className="mt-3.5 border-2 border-encre-noire rounded-[8px] overflow-hidden shadow-[2px_2px_0px_0px_rgba(26,26,26,0.15)] bg-white max-h-[300px] flex items-center justify-center">
                   <img src={event.imageUrl} alt={event.titre} className="max-w-full max-h-[300px] object-contain" />
                 </div>
               )}
-              {event.lieu && (
+              {currentConfig.agendaEnableAdresse && event.lieu && (
                 <div className="mt-3.5 border-2 border-encre-noire rounded-[8px] overflow-hidden shadow-[2px_2px_0px_0px_rgba(26,26,26,0.15)] bg-white h-[200px]">
                   <iframe
                     title="Google Maps"
@@ -1178,7 +1236,7 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
             </CordelCard>
           )}
 
-          {agendaEnableInscriptions && (
+          {currentConfig.agendaEnableInscriptions && (
             <EventRSVPSection
               event={event}
               user={user}
@@ -1217,12 +1275,12 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
               handleManualUnregister={handleManualUnregister}
               isRegistrationDeadlinePassed={isRegistrationDeadlinePassed}
               t={t}
-              agendaRequireInstrument={agendaRequireInstrument}
-              agendaEnableMaybeStatus={agendaEnableMaybeStatus}
+              agendaRequireInstrument={currentConfig.agendaRequireInstrument}
+              agendaEnableMaybeStatus={currentConfig.agendaEnableMaybeStatus}
             />
           )}
 
-          {agendaEnableStageLayout && (
+          {currentConfig.agendaEnableStageLayout && (
             <EventStageLayoutSection
               event={event}
               user={user}
@@ -1233,7 +1291,7 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
             />
           )}
 
-          {agendaEnableCarpool && (
+          {currentConfig.agendaEnableCarpool && (
             <EventCarpoolSection
               event={event}
               user={user}
@@ -1264,7 +1322,7 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
             />
           )}
 
-          {event.type !== 'reunion' && event.type !== 'atelier' && agendaEnableRevisionProgram && (
+          {event.type !== 'reunion' && event.type !== 'atelier' && currentConfig.agendaEnableRevisionProgram && (
             <EventSetlistSection
               setlist={setlist}
               isAuthorized={isAuthorized}
@@ -1282,7 +1340,7 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
           )}
 
           {/* 💡 Reunion Specific Ordre du Jour & PDF minutes report manager */}
-          {event.type === 'reunion' && (
+          {currentConfig.agendaEnableOrdreDuJour && (
             <>
               <div className="mt-4 pt-4 border-t border-dashed border-cordel-master-dark/20">
                 <ReunionAgendaManager 

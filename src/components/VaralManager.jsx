@@ -81,6 +81,26 @@ export default function VaralManager({ groupId, onBack, role, isSystemAdmin }) {
     }
   };
 
+  const handleMoveCategory = async (index, direction) => {
+    const newIndex = index + direction;
+    if (newIndex < 0 || newIndex >= varalCategories.length) return;
+    setSavingSettings(true);
+    try {
+      const updatedCategories = [...varalCategories];
+      const temp = updatedCategories[index];
+      updatedCategories[index] = updatedCategories[newIndex];
+      updatedCategories[newIndex] = temp;
+      
+      const assocRef = doc(db, 'associations', groupId);
+      await updateDoc(assocRef, { varalCategories: updatedCategories });
+    } catch (err) {
+      console.error("Error moving category:", err);
+      alert("Erreur lors de la réorganisation des catégories.");
+    } finally {
+      setSavingSettings(false);
+    }
+  };
+
   // 1. Charger les catégories de Varal de l'association
   useEffect(() => {
     if (!groupId) return;
@@ -356,7 +376,7 @@ export default function VaralManager({ groupId, onBack, role, isSystemAdmin }) {
                   <span className="text-[10px] italic opacity-60">Aucune catégorie configurée.</span>
                 ) : (
                   <div className="flex flex-col gap-2 max-h-40 overflow-y-auto pr-1">
-                    {varalCategories.map((cat) => (
+                    {varalCategories.map((cat, idx) => (
                       <div 
                         key={cat.id}
                         className="border border-encre-noire/15 p-2 rounded bg-white/40 dark:bg-black/10 flex justify-between items-center text-xs"
@@ -376,14 +396,34 @@ export default function VaralManager({ groupId, onBack, role, isSystemAdmin }) {
                             )}
                           </div>
                         </div>
-                        <button 
-                          type="button"
-                          onClick={() => handleRemoveCategory(cat.id)}
-                          className="text-xs hover:text-red-500 font-bold px-2 py-1 cursor-pointer select-none"
-                          title="Supprimer"
-                        >
-                          ✕
-                        </button>
+                        <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => handleMoveCategory(idx, -1)}
+                            disabled={idx === 0 || savingSettings}
+                            className="text-xs p-1 hover:text-cordel-wood disabled:opacity-30 cursor-pointer select-none font-bold"
+                            title="Monter"
+                          >
+                            ▲
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleMoveCategory(idx, 1)}
+                            disabled={idx === varalCategories.length - 1 || savingSettings}
+                            className="text-xs p-1 hover:text-cordel-wood disabled:opacity-30 cursor-pointer select-none font-bold"
+                            title="Descendre"
+                          >
+                            ▼
+                          </button>
+                          <button 
+                            type="button"
+                            onClick={() => handleRemoveCategory(cat.id)}
+                            className="text-xs hover:text-red-500 font-bold px-2 py-1 cursor-pointer select-none"
+                            title="Supprimer"
+                          >
+                            ✕
+                          </button>
+                        </div>
                       </div>
                     ))}
                   </div>

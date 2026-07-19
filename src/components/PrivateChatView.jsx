@@ -29,14 +29,14 @@ export default function PrivateChatView({ user, otherUser, profileData, onClose 
 
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
       const fetched = [];
-      querySnapshot.forEach((doc) => {
-        const data = doc.data();
+      querySnapshot.forEach((docSnap) => {
+        const data = docSnap.data();
         // Filter locally to get messages only between this specific pair
         const isBetweenUs = (data.senderId === user.uid && data.recipientId === otherUser.id) ||
                             (data.senderId === otherUser.id && data.recipientId === user.uid);
         if (isBetweenUs) {
           fetched.push({
-            id: doc.id,
+            id: docSnap.id,
             ...data
           });
         }
@@ -48,7 +48,7 @@ export default function PrivateChatView({ user, otherUser, profileData, onClose 
 
       // Auto mark messages from other user as read
       fetched.forEach((msg) => {
-        if (msg.senderId === otherUser.id && !msg.read) {
+        if (msg.recipientId === user.uid && msg.senderId === otherUser.id && !msg.read) {
           updateDoc(doc(db, 'private_messages', msg.id), {
             read: true
           }).catch(err => {

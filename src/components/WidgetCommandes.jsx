@@ -137,7 +137,10 @@ export default function WidgetCommandes({ groupId, user, profileData }) {
         article,
         quantite: parseInt(quantite, 10) || 1,
         notes: finalNotes,
-        isPersonalOrder: isPersonalOrder
+        isPersonalOrder: isPersonalOrder,
+        status: 'pending',
+        userRole: profileData?.role || 'batuqueiro',
+        isSuggestion: !isPersonalOrder
       };
 
       await addDoc(collection(db, 'campaignRequests'), payload);
@@ -261,18 +264,26 @@ export default function WidgetCommandes({ groupId, user, profileData }) {
               </div>
 
               {/* Personal order checkbox */}
-              <div className="flex items-center gap-2 mt-1">
-                <input
-                  type="checkbox"
-                  id="isPersonalOrder"
-                  checked={isPersonalOrder}
-                  onChange={(e) => setIsPersonalOrder(e.target.checked)}
-                  disabled={saving}
-                  className="accent-cordel-wood scale-105 cursor-pointer"
-                />
-                <label htmlFor="isPersonalOrder" className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark cursor-pointer select-none">
-                  {t('widgetCommandes.personalOrderLabel') || "Ceci est une commande personnelle"}
-                </label>
+              <div className="flex flex-col gap-0.5 mt-1">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="isPersonalOrder"
+                    checked={isPersonalOrder}
+                    onChange={(e) => setIsPersonalOrder(e.target.checked)}
+                    disabled={saving}
+                    className="accent-cordel-wood scale-105 cursor-pointer"
+                  />
+                  <label htmlFor="isPersonalOrder" className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark cursor-pointer select-none">
+                    {t('widgetCommandes.personalOrderLabel') || "Ceci est une commande personnelle"}
+                  </label>
+                </div>
+                <span className="text-[8px] font-bold text-cordel-master-dark/65 pl-5">
+                  {isPersonalOrder 
+                    ? (t('widgetCommandes.personalOrderDesc') || "Achat à vos frais personnels.") 
+                    : (t('widgetCommandes.suggestionOrderDesc') || "Suggestion d'achat pour le parc de l'association.")
+                  }
+                </span>
               </div>
 
               <CordelButton 
@@ -299,9 +310,22 @@ export default function WidgetCommandes({ groupId, user, profileData }) {
                     <div className="flex-1 min-w-0">
                       <span className="font-extrabold text-encre-noire flex items-center gap-1.5 flex-wrap">
                         {req.quantite} {t('widgetCommandes.unit') || "u"} {getArticleLabel(req.article)}
-                        {req.isPersonalOrder && (
+                        {req.isPersonalOrder ? (
                           <span className="theme-stamp-badge theme-stamp-badge-dark text-[7px] px-1 py-0.5 border-dashed">
                             {t('widgetCommandes.personalBadge') || "Personnel"}
+                          </span>
+                        ) : (
+                          <span className="theme-stamp-badge theme-stamp-badge-wood text-[7px] px-1 py-0.5 border-dashed">
+                            {t('widgetCommandes.suggestionBadge') || "Suggestion"}
+                          </span>
+                        )}
+                        {req.status === 'validated' ? (
+                          <span className="theme-stamp-badge border-green-600 text-green-600 dark:border-green-400 dark:text-green-400 text-[7px] px-1 py-0.5 border-dashed">
+                            {t('ordersManager.statusValidated') || "Validé"}
+                          </span>
+                        ) : (
+                          <span className="theme-stamp-badge theme-stamp-badge-wood opacity-75 text-[7px] px-1 py-0.5 border-dashed">
+                            {t('ordersManager.statusPending') || "En attente"}
                           </span>
                         )}
                       </span>

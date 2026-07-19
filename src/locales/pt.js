@@ -284,7 +284,7 @@ export const pt = {
     uploadError: "Erro ao enviar a imagem."
   },
   widgetTreasury: {
-    title: "Painel da tesouraria",
+    title: "Adesão & cotização",
     dashboardTitle: "Painel da Tesouraria",
     infoText: "Acompanhe as contribuições dos seus membros ativos. O método de pagamento é configurado nos parâmetros da associação. As alterações feitas no status dos membros são salvas em tempo real.",
     activeConfig: "Configuração Ativa:",
@@ -336,7 +336,10 @@ export const pt = {
     notesLabel: "Observações / Tamanho",
     addBtn: "Adicionar ao meu pedido",
     personalOrderLabel: "Esta é uma encomenda pessoal",
+    personalOrderDesc: "Compra a suas custas pessoais.",
+    suggestionOrderDesc: "Sugestão de compra para a associação (será validada pela logística).",
     personalBadge: "Pessoal",
+    suggestionBadge: "Sugestão",
     loading: "Carregando...",
     adding: "Adicionando...",
     myRequests: "Meu pedido atual",
@@ -447,7 +450,16 @@ export const pt = {
     statusOpenText: "Pedidos abertos aos membros",
     noDemands: "Nenhum membro registrou pedidos ainda.",
     noteLabel: "Nota",
-    personalBadge: "Compra Pessoal"
+    personalBadge: "Compra Pessoal",
+    suggestionBadge: "Sugestão de compra",
+    associationBadge: "Associação",
+    validateBtn: "Validar",
+    unvalidateBtn: "Cancelar",
+    validateAllBtn: "Validar todos os pedidos",
+    statusPending: "Pendente",
+    statusValidated: "Validado",
+    globalOrderTable: "Tabela de Encomenda Global (Itens Validados)",
+    noValidatedRequests: "Nenhum item validado até o momento. Valide os pedidos individuais para construir a tabela."
   },
   inventory: {
     title: "Inventário da sede",
@@ -499,7 +511,7 @@ export const pt = {
     widgetOrders: "Compras de Equipamento",
     widgetForum: "O Porta-Voz",
     widgetDocuments: "O Varal",
-    widgetTreasury: "Minha Tesouraria"
+    widgetTreasury: "Adesão & cotização"
   },
   tagManager: {
     title: "Gerenciador de etiquetas",

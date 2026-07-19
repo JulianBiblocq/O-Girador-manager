@@ -144,11 +144,62 @@ export default function OrdersManager({ groupId, onBack, role, isSystemAdmin, ha
     }
   };
 
-  // Group and sum requests by article for supplier order
-  const summary = requests.reduce((acc, req) => {
+  const handleValidateRequest = async (requestId, newStatus) => {
+    setSaving(true);
+    try {
+      const requestRef = doc(db, 'campaignRequests', requestId);
+      await updateDoc(requestRef, { status: newStatus });
+    } catch (err) {
+      console.error("OrdersManager - Erreur de validation de demande :", err);
+      alert(t('common.saveError') || "Erreur lors de l'enregistrement.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleValidateAll = async () => {
+    const pending = requests.filter(r => r.status !== 'validated');
+    if (pending.length === 0) return;
+
+    const confirmValidate = window.confirm(
+      t('ordersManager.confirmValidateAll') || "Voulez-vous vraiment valider toutes les demandes en attente ?"
+    );
+    if (!confirmValidate) return;
+
+    setSaving(true);
+    try {
+      await Promise.all(
+        pending.map(r => {
+          const requestRef = doc(db, 'campaignRequests', r.id);
+          return updateDoc(requestRef, { status: 'validated' });
+        })
+      );
+    } catch (err) {
+      console.error("OrdersManager - Erreur de validation globale :", err);
+      alert(t('common.saveError') || "Erreur lors de l'enregistrement.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Group and sum requests by article for supplier order (only validated requests)
+  const validatedRequests = requests.filter(req => req.status === 'validated');
+
+  const summary = validatedRequests.reduce((acc, req) => {
     const article = req.article || "Autre";
     const qty = parseInt(req.quantite, 10) || 0;
-    acc[article] = (acc[article] || 0) + qty;
+    if (!acc[article]) {
+      acc[article] = {
+        totalQty: 0,
+        demands: []
+      };
+    }
+    acc[article].totalQty += qty;
+    acc[article].demands.push({
+      userName: req.userName || t('ordersManager.unknownMember') || "Membre",
+      qty,
+      isPersonalOrder: req.isPersonalOrder
+    });
     return acc;
   }, {});
 
@@ -323,18 +374,35 @@ export default function OrdersManager({ groupId, onBack, role, isSystemAdmin, ha
                 {/* 1. Summed totals per article (Supplier Ready) */}
                 <CordelCard variant="default" useExtremeBorder={false} className="py-4 px-5">
                   <h4 className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood border-b border-dashed border-cordel-master-dark/15 pb-1 mb-2.5">
-                    📊 {t('ordersManager.summaryByArticle')}
+                    📊 {t('ordersManager.globalOrderTable') || "Tableau de Commande Globale (Articles Validés)"}
                   </h4>
                   {Object.keys(summary).length === 0 ? (
-                    <p className="text-[10px] italic opacity-60">{t('ordersManager.noRequests')}</p>
+                    <p className="text-[10px] italic opacity-60">
+                      {t('ordersManager.noValidatedRequests') || "Aucun article validé pour le moment. Valisez les demandes nominatives pour construire le tableau."}
+                    </p>
                   ) : (
-                    <ul className="flex flex-col gap-1.5">
-                      {Object.entries(summary).map(([article, qty]) => (
-                        <li key={article} className="flex justify-between items-center text-xs font-bold border-b border-dashed border-encre-noire/5 pb-1.5 last:border-0 last:pb-0">
-                          <span className="text-encre-noire">{getArticleLabel(article)}</span>
-                          <span className="theme-stamp-badge theme-stamp-badge-wood px-2 py-0.5 text-[9px]">
-                            {t('ordersManager.totalQty') || "Total"} : {qty}
-                          </span>
+                    <ul className="flex flex-col gap-2">
+                      {Object.entries(summary).map(([article, data]) => (
+                        <li key={article} className="flex flex-col border-b border-dashed border-encre-noire/5 pb-2 last:border-0 last:pb-0">
+                          <div className="flex justify-between items-center text-xs font-bold">
+                            <span className="text-encre-noire">{getArticleLabel(article)}</span>
+                            <span className="theme-stamp-badge theme-stamp-badge-wood px-2 py-0.5 text-[9px]">
+                              {t('ordersManager.totalQty') || "Total"} : {data.totalQty}
+                            </span>
+                          </div>
+                          {/* List of requesters for this validated article */}
+                          <div className="flex flex-wrap gap-1.5 mt-1.5 pl-2 border-l-2 border-cordel-wood/30">
+                            {data.demands.map((demand, idx) => (
+                              <span key={idx} className="text-[9px] font-semibold text-cordel-master-dark/80 bg-cordel-bg-light/40 px-1.5 py-0.5 rounded flex items-center gap-1">
+                                {demand.userName} ({demand.qty}x)
+                                {demand.isPersonalOrder ? (
+                                  <span className="text-[7.5px] text-neutral-500 font-extrabold uppercase">({t('ordersManager.personalBadge') || "Perso"})</span>
+                                ) : (
+                                  <span className="text-[7.5px] text-cordel-wood font-extrabold uppercase">({t('ordersManager.suggestionBadge') || "Suggestion"})</span>
+                                )}
+                              </span>
+                            ))}
+                          </div>
                         </li>
                       ))}
                     </ul>
@@ -343,9 +411,21 @@ export default function OrdersManager({ groupId, onBack, role, isSystemAdmin, ha
 
                 {/* 2. Detailed user demands */}
                 <CordelCard variant="default" useExtremeBorder={false} className="py-4 px-5">
-                  <h4 className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood border-b border-dashed border-cordel-master-dark/15 pb-1 mb-2.5">
-                    👤 {t('ordersManager.nominativeRequests')}
-                  </h4>
+                  <div className="flex justify-between items-center border-b border-dashed border-cordel-master-dark/15 pb-1 mb-2.5">
+                    <h4 className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood">
+                      👤 {t('ordersManager.nominativeRequests')}
+                    </h4>
+                    {requests.some(r => r.status !== 'validated') && (
+                      <CordelButton
+                        variant="ocre"
+                        onClick={handleValidateAll}
+                        disabled={saving}
+                        className="text-[8px] px-2.5 py-1 uppercase tracking-wider font-extrabold"
+                      >
+                        ✓ {t('ordersManager.validateAllBtn') || "Valider tout"}
+                      </CordelButton>
+                    )}
+                  </div>
                   {requests.length === 0 ? (
                     <p className="text-[10px] italic opacity-60">{t('ordersManager.noDemands') || "Aucun membre n'a encore enregistré de besoin."}</p>
                   ) : (
@@ -355,9 +435,22 @@ export default function OrdersManager({ groupId, onBack, role, isSystemAdmin, ha
                           <div className="flex justify-between items-start font-bold">
                             <span className="text-cordel-wood flex items-center gap-1.5 flex-wrap">
                               {req.userName}
-                              {req.isPersonalOrder && (
+                              {req.isPersonalOrder ? (
                                 <span className="theme-stamp-badge theme-stamp-badge-dark text-[7px] px-1 py-0.5 border-dashed">
                                   {t('ordersManager.personalBadge') || "Achat Perso"}
+                                </span>
+                              ) : (
+                                <span className="theme-stamp-badge theme-stamp-badge-wood text-[7px] px-1 py-0.5 border-dashed">
+                                  {t('ordersManager.suggestionBadge') || "Suggestion"}
+                                </span>
+                              )}
+                              {req.status === 'validated' ? (
+                                <span className="theme-stamp-badge border-green-600 text-green-600 dark:border-green-400 dark:text-green-400 text-[7px] px-1 py-0.5 border-dashed">
+                                  {t('ordersManager.statusValidated') || "Validé"}
+                                </span>
+                              ) : (
+                                <span className="theme-stamp-badge theme-stamp-badge-wood opacity-75 text-[7px] px-1 py-0.5 border-dashed">
+                                  {t('ordersManager.statusPending') || "En attente"}
                                 </span>
                               )}
                             </span>
@@ -368,6 +461,32 @@ export default function OrdersManager({ groupId, onBack, role, isSystemAdmin, ha
                               ✍️ {t('ordersManager.noteLabel') || "Note"} : {req.notes}
                             </p>
                           )}
+                          <div className="flex justify-between items-center mt-1.5 pt-1.5 border-t border-dashed border-encre-noire/5">
+                            <span className="text-[8px] font-bold text-cordel-master-dark/50">
+                              {req.status === 'validated' ? "✓ Validé" : "⏳ En attente"}
+                            </span>
+                            <div className="flex gap-1.5">
+                              {req.status === 'validated' ? (
+                                <button
+                                  type="button"
+                                  onClick={() => handleValidateRequest(req.id, 'pending')}
+                                  disabled={saving}
+                                  className="text-[8.5px] font-bold text-red-500 hover:text-red-700 bg-red-500/10 px-1.5 py-0.5 rounded border border-dashed border-red-300 cursor-pointer"
+                                >
+                                  {t('ordersManager.unvalidateBtn') || "Annuler"}
+                                </button>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => handleValidateRequest(req.id, 'validated')}
+                                  disabled={saving}
+                                  className="text-[8.5px] font-bold text-green-600 hover:text-green-800 bg-green-500/10 px-2 py-0.5 rounded border border-dashed border-green-300 cursor-pointer"
+                                >
+                                  {t('ordersManager.validateBtn') || "Valider"}
+                                </button>
+                              )}
+                            </div>
+                          </div>
                         </div>
                       ))}
                     </div>

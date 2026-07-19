@@ -65,6 +65,12 @@ export default function WidgetTreasury({ groupId, profileData }) {
             ✅ À jour
           </span>
         );
+      case 'exempted':
+        return (
+          <span className="theme-stamp-badge theme-stamp-badge-wood bg-blue-100 text-blue-800 dark:bg-blue-950/20 dark:text-blue-400 border-blue-700/35 uppercase text-[9px] font-black tracking-wider select-none px-2 py-0.5">
+            💙 Exonéré
+          </span>
+        );
       case 'partial':
         return (
           <span className="theme-stamp-badge theme-stamp-badge-wood bg-amber-100 text-amber-800 dark:bg-amber-950/20 dark:text-amber-400 border-amber-700/35 uppercase text-[9px] font-black tracking-wider select-none px-2 py-0.5 animate-pulse">
@@ -86,18 +92,22 @@ export default function WidgetTreasury({ groupId, profileData }) {
       {/* Title */}
       <div className="flex justify-between items-center border-b border-dashed border-cordel-master-dark/20 pb-2">
         <h3 className="text-xs font-black uppercase tracking-wider text-cordel-wood flex items-center gap-1.5">
-          🪙 {t('widgetTreasury.title') || "Ma Trésorerie"}
+          🪙 {t('widgetTreasury.title') || "Adhésion & cotisation"}
         </h3>
         {renderStatusBadge()}
       </div>
 
-      {paymentStatus === 'paid' ? (
+      {paymentStatus === 'paid' || paymentStatus === 'exempted' ? (
         <div className="flex flex-col gap-2 py-2">
           <p className="text-xs font-bold text-encre-noire dark:text-cordel-bg-light">
-            🎉 Axé ! Votre cotisation est entièrement réglée pour cette année.
+            {paymentStatus === 'exempted'
+              ? "🎉 Vous êtes exonéré de cotisation pour cette année."
+              : "🎉 Axé ! Votre cotisation est entièrement réglée pour cette année."}
           </p>
           <p className="text-[10px] font-semibold text-cordel-master-dark/60 leading-relaxed">
-            Merci de votre soutien à l'association. Votre participation contribue au bon fonctionnement de la Roda et à l'entretien du matériel.
+            {paymentStatus === 'exempted'
+              ? "Votre statut d'exonération a été validé par l'administration de l'association."
+              : "Merci de votre soutien à l'association. Votre participation contribue au bon fonctionnement de la Roda et à l'entretien du matériel."}
           </p>
         </div>
       ) : (
