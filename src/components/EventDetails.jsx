@@ -21,7 +21,7 @@ import EventSetlistSection from './event-details/EventSetlistSection';
 import EventReportSection from './event-details/EventReportSection';
 import EventStageLayoutSection from './event-details/EventStageLayoutSection';
 
-export default function EventDetails({ event, user, profileData, onNavigateToView, onClose, onPrev, onNext }) {
+export default function EventDetails({ event, user, profileData, onNavigateToView, onClose, onPrev, onNext, viewMode, setViewMode }) {
   const { t } = useTranslation();
   const [isCalendarMenuOpen, setIsCalendarMenuOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState(null);
@@ -54,6 +54,14 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
   const [enableCarpoolReimbursement, setEnableCarpoolReimbursement] = useState(true);
   const [reimbursementRule, setReimbursementRule] = useState('full_cars_only');
   const [assocSequenceurUrl, setAssocSequenceurUrl] = useState('');
+  const [agendaRequireInstrument, setAgendaRequireInstrument] = useState(false);
+  const [agendaEnableMaybeStatus, setAgendaEnableMaybeStatus] = useState(true);
+  const [agendaEnableStageLayout, setAgendaEnableStageLayout] = useState(true);
+  const [agendaEnableRevisionProgram, setAgendaEnableRevisionProgram] = useState(true);
+  const [agendaEnableFinance, setAgendaEnableFinance] = useState(true);
+  const [agendaEnableInscriptions, setAgendaEnableInscriptions] = useState(true);
+  const [agendaEnableCarpool, setAgendaEnableCarpool] = useState(true);
+  const [associationEventTypes, setAssociationEventTypes] = useState(['prestation', 'repetition', 'stage', 'atelier', 'reunion']);
 
   const isPrestationRestricted = event.type === 'prestation' && event.niveauRequis === 'confirme' && profileData?.niveau !== 'confirme';
 
@@ -166,6 +174,18 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
         setAssocSequenceurUrl(data.sequenceurUrl || '');
         setEnableCarpoolReimbursement(data.enableCarpoolReimbursement !== false);
         setReimbursementRule(data.reimbursementRule || 'full_cars_only');
+        setAgendaRequireInstrument(data.agendaRequireInstrument || false);
+        setAgendaEnableMaybeStatus(data.agendaEnableMaybeStatus !== false);
+        setAgendaEnableStageLayout(data.agendaEnableStageLayout !== false);
+        setAgendaEnableRevisionProgram(data.agendaEnableRevisionProgram !== false);
+        setAgendaEnableFinance(data.agendaEnableFinance !== false);
+        setAgendaEnableInscriptions(data.agendaEnableInscriptions !== false);
+        setAgendaEnableCarpool(data.agendaEnableCarpool !== false);
+        if (Array.isArray(data.eventTypes) && data.eventTypes.length > 0) {
+          setAssociationEventTypes(data.eventTypes);
+        } else {
+          setAssociationEventTypes(['prestation', 'repetition', 'stage', 'atelier', 'reunion']);
+        }
         if (Array.isArray(data.instrumentsDisponibles)) {
           setInstrumentsDisponibles(data.instrumentsDisponibles);
         }
@@ -419,7 +439,7 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
     if (!file) return;
     setUploadingImage(true);
     try {
-      const storagePath = `events/${event.groupId}/uploads/${Date.now()}_${file.name}`;
+      const storagePath = `documents/${event.groupId}/events/${Date.now()}_${file.name}`;
       const fileRef = ref(storage, storagePath);
       const snapshot = await uploadBytes(fileRef, file);
       const downloadURL = await getDownloadURL(snapshot.ref);
@@ -532,7 +552,7 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
       )}
       {/* Header with back button, modifier button & navigation arrows */}
       <div className="flex justify-between items-center border-b-2 border-dashed border-cordel-master-dark/30 pb-2 select-none gap-2">
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1.5 flex-wrap">
           <CordelButton variant="default" onClick={onClose} className="px-3 py-1 text-xs font-black">
             ← {t('common.back')}
           </CordelButton>
@@ -555,6 +575,31 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
             >
               ▶
             </button>
+          )}
+          {setViewMode && (
+            <div className="flex border border-encre-noire rounded-[4px_6px_3px_5px] overflow-hidden bg-cordel-bg shadow-[1px_1px_0px_0px_#181716] select-none text-[8px] font-black uppercase ml-1 sm:ml-2">
+              <button
+                type="button"
+                onClick={() => setViewMode('cards')}
+                className={`px-2 py-0.5 cursor-pointer transition-colors ${viewMode === 'cards' ? 'bg-cordel-master-dark text-cordel-bg-light' : 'bg-cordel-bg-light text-encre-noire hover:bg-neutral-100'}`}
+              >
+                🎴 <span className="hidden sm:inline">Cartes</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode('list')}
+                className={`px-2 py-0.5 cursor-pointer transition-colors ${viewMode === 'list' ? 'bg-cordel-master-dark text-cordel-bg-light' : 'bg-cordel-bg-light text-encre-noire hover:bg-neutral-100'}`}
+              >
+                📋 <span className="hidden sm:inline">Liste</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode('grid')}
+                className={`px-2 py-0.5 cursor-pointer transition-colors ${viewMode === 'grid' ? 'bg-cordel-master-dark text-cordel-bg-light' : 'bg-cordel-bg-light text-encre-noire hover:bg-neutral-100'}`}
+              >
+                📅 <span className="hidden sm:inline">Grille</span>
+              </button>
+            </div>
           )}
         </div>
         <span className="panel-title text-sm font-extrabold tracking-wider text-cordel-wood uppercase flex items-center gap-1">
@@ -632,12 +677,17 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
                   disabled={savingEvent}
                   className="theme-input w-full disabled:opacity-50 font-bold bg-cordel-bg-light"
                 >
-                  <option value="prestation">{t('widgetAgenda.typePrestation') || "Prestation (Ocre)"}</option>
-                  <option value="repetition">{t('widgetAgenda.typeRepetition') || "Répétition (Vert)"}</option>
-                  <option value="stage">{t('widgetAgenda.typeStage') || "Stage (Bleu)"}</option>
-                  <option value="atelier">{t('widgetAgenda.typeAtelier') || "Atelier (Jaune)"}</option>
-                  <option value="reunion">{t('widgetAgenda.typeReunion') || "Réunion (Kraft)"}</option>
-                </select>
+                {associationEventTypes.map(type => (
+                  <option key={type} value={type}>
+                    {type === 'prestation' ? (t('widgetAgenda.typePrestation') || "Prestation (Ocre)") :
+                     type === 'repetition' ? (t('widgetAgenda.typeRepetition') || "Répétition (Vert)") :
+                     type === 'stage' ? (t('widgetAgenda.typeStage') || "Stage (Bleu)") :
+                     type === 'atelier' ? (t('widgetAgenda.typeAtelier') || "Atelier (Jaune)") :
+                     type === 'reunion' ? (t('widgetAgenda.typeReunion') || "Réunion (Kraft)") :
+                     type.charAt(0).toUpperCase() + type.slice(1)}
+                  </option>
+                ))}
+              </select>
               </div>
 
               {/* Date */}
@@ -893,43 +943,45 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
               </div>
 
               {/* Finances (Optionnel) */}
-              <div className="flex flex-col gap-3 pt-3 border-t border-dashed border-cordel-master-dark/15">
-                <h5 className="text-[10px] uppercase font-black tracking-widest text-cordel-wood">
-                  Finances (Optionnel)
-                </h5>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="flex flex-col gap-1">
-                    <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                      Revenus de l'événement (Prestation payée, etc.)
-                    </label>
-                    <input
-                      type="number"
-                      min="0"
-                      step="any"
-                      value={editForm.montantRecette}
-                      onChange={(e) => setEditForm(prev => ({ ...prev, montantRecette: e.target.value }))}
-                      disabled={savingEvent}
-                      placeholder="Ex : 500"
-                      className="theme-input w-full disabled:opacity-50"
-                    />
-                  </div>
-                  <div className="flex flex-col gap-1">
-                    <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                      Coûts de l'événement (Location, professeur...)
-                    </label>
-                    <input
-                      type="number"
-                      min="0"
-                      step="any"
-                      value={editForm.montantDepense}
-                      onChange={(e) => setEditForm(prev => ({ ...prev, montantDepense: e.target.value }))}
-                      disabled={savingEvent}
-                      placeholder="Ex : 150"
-                      className="theme-input w-full disabled:opacity-50"
-                    />
+              {agendaEnableFinance && (
+                <div className="flex flex-col gap-3 pt-3 border-t border-dashed border-cordel-master-dark/15">
+                  <h5 className="text-[10px] uppercase font-black tracking-widest text-cordel-wood">
+                    Finances (Optionnel)
+                  </h5>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="flex flex-col gap-1">
+                      <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                        Revenus de l'événement (Prestation payée, etc.)
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        step="any"
+                        value={editForm.montantRecette}
+                        onChange={(e) => setEditForm(prev => ({ ...prev, montantRecette: e.target.value }))}
+                        disabled={savingEvent}
+                        placeholder="Ex : 500"
+                        className="theme-input w-full disabled:opacity-50"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                        Coûts de l'événement (Location, professeur...)
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        step="any"
+                        value={editForm.montantDepense}
+                        onChange={(e) => setEditForm(prev => ({ ...prev, montantDepense: e.target.value }))}
+                        disabled={savingEvent}
+                        placeholder="Ex : 150"
+                        className="theme-input w-full disabled:opacity-50"
+                      />
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
 
               {/* Validation Toggle */}
               <div className="flex items-center gap-2 pt-2 border-t border-dashed border-cordel-master-dark/15">
@@ -1094,7 +1146,7 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
             </div>
           </CordelCard>
 
-          {isAuthorized && ((event.montantRecette && event.montantRecette > 0) || (event.montantDepense && event.montantDepense > 0)) && (
+          {isAuthorized && agendaEnableFinance && ((event.montantRecette && event.montantRecette > 0) || (event.montantDepense && event.montantDepense > 0)) && (
             <CordelCard variant="default" useExtremeBorder={true} className="py-4 mt-4 text-left border-dashed border-cordel-master-dark/40">
               <div className="px-4">
                 <h4 className="text-xs uppercase tracking-widest font-black text-cordel-wood mb-2 flex items-center gap-1.5 font-sans">
@@ -1126,85 +1178,93 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
             </CordelCard>
           )}
 
-          <EventRSVPSection
-            event={event}
-            user={user}
-            profileData={profileData}
-            status={status}
-            saving={saving}
-            isPrestationRestricted={isPrestationRestricted}
-            existingResponse={existingResponse}
-            instrumentChoisi={instrumentChoisi}
-            setInstrumentChoisi={setInstrumentChoisi}
-            isInstrumentLocked={isInstrumentLocked}
-            transport={transport}
-            demandeRemboursementKm={demandeRemboursementKm}
-            isCalendarMenuOpen={isCalendarMenuOpen}
-            setIsCalendarMenuOpen={setIsCalendarMenuOpen}
-            handleStatusChange={handleStatusChange}
-            handleSave={handleSave}
-            handleAddToGoogleCalendar={handleAddToGoogleCalendar}
-            handleDownloadIcs={handleDownloadIcs}
-            getMemberInstrumentOptions={getMemberInstrumentOptions}
-            getPupitreName={getPupitreName}
-            presentsByInstrument={presentsByInstrument}
-            allUsers={allUsers}
-            isAuthorized={isAuthorized}
-            handleValidatePending={handleValidatePending}
-            handleUpdateMemberInstrument={handleUpdateMemberInstrument}
-            isManualRegisterOpen={isManualRegisterOpen}
-            setIsManualRegisterOpen={setIsManualRegisterOpen}
-            unregisteredUsers={unregisteredUsers}
-            selectedManualUserId={selectedManualUserId}
-            setSelectedManualUserId={setSelectedManualUserId}
-            selectedManualInstrument={selectedManualInstrument}
-            setSelectedManualInstrument={setSelectedManualInstrument}
-            savingManualRegistration={savingManualRegistration}
-            handleManualRegister={handleManualRegister}
-            handleManualUnregister={handleManualUnregister}
-            isRegistrationDeadlinePassed={isRegistrationDeadlinePassed}
-            t={t}
-          />
+          {agendaEnableInscriptions && (
+            <EventRSVPSection
+              event={event}
+              user={user}
+              profileData={profileData}
+              status={status}
+              saving={saving}
+              isPrestationRestricted={isPrestationRestricted}
+              existingResponse={existingResponse}
+              instrumentChoisi={instrumentChoisi}
+              setInstrumentChoisi={setInstrumentChoisi}
+              isInstrumentLocked={isInstrumentLocked}
+              transport={transport}
+              demandeRemboursementKm={demandeRemboursementKm}
+              isCalendarMenuOpen={isCalendarMenuOpen}
+              setIsCalendarMenuOpen={setIsCalendarMenuOpen}
+              handleStatusChange={handleStatusChange}
+              handleSave={handleSave}
+              handleAddToGoogleCalendar={handleAddToGoogleCalendar}
+              handleDownloadIcs={handleDownloadIcs}
+              getMemberInstrumentOptions={getMemberInstrumentOptions}
+              getPupitreName={getPupitreName}
+              presentsByInstrument={presentsByInstrument}
+              allUsers={allUsers}
+              isAuthorized={isAuthorized}
+              handleValidatePending={handleValidatePending}
+              handleUpdateMemberInstrument={handleUpdateMemberInstrument}
+              isManualRegisterOpen={isManualRegisterOpen}
+              setIsManualRegisterOpen={setIsManualRegisterOpen}
+              unregisteredUsers={unregisteredUsers}
+              selectedManualUserId={selectedManualUserId}
+              setSelectedManualUserId={setSelectedManualUserId}
+              selectedManualInstrument={selectedManualInstrument}
+              setSelectedManualInstrument={setSelectedManualInstrument}
+              savingManualRegistration={savingManualRegistration}
+              handleManualRegister={handleManualRegister}
+              handleManualUnregister={handleManualUnregister}
+              isRegistrationDeadlinePassed={isRegistrationDeadlinePassed}
+              t={t}
+              agendaRequireInstrument={agendaRequireInstrument}
+              agendaEnableMaybeStatus={agendaEnableMaybeStatus}
+            />
+          )}
 
-          <EventStageLayoutSection
-            event={event}
-            user={user}
-            profileData={profileData}
-            allUsers={allUsers}
-            isAuthorized={isAuthorized}
-            t={t}
-          />
+          {agendaEnableStageLayout && (
+            <EventStageLayoutSection
+              event={event}
+              user={user}
+              profileData={profileData}
+              allUsers={allUsers}
+              isAuthorized={isAuthorized}
+              t={t}
+            />
+          )}
 
-          <EventCarpoolSection
-            event={event}
-            user={user}
-            profileData={profileData}
-            isAuthorized={isAuthorized}
-            enableCarpoolReimbursement={enableCarpoolReimbursement}
-            indemniteKilometrique={indemniteKilometrique}
-            convoiDrivers={convoiDrivers}
-            individualDrivers={individualDrivers}
-            submittingCovoit={submittingCovoit}
-            joiningVoitureId={joiningVoitureId}
-            setJoiningVoitureId={setJoiningVoitureId}
-            joinForm={joinForm}
-            setJoinForm={setJoinForm}
-            demandeRemboursementKm={demandeRemboursementKm}
-            handleToggleRemboursement={handleToggleRemboursement}
-            handleRetirerVoiture={handleRetirerVoiture}
-            handleQuitterVoiture={handleQuitterVoiture}
-            handleConfirmJoin={handleConfirmJoin}
-            handleChercherPlace={handleChercherPlace}
-            handleAnnulerCherchePlace={handleAnnulerCherchePlace}
-            showProposerForm={showProposerForm}
-            setShowProposerForm={setShowProposerForm}
-            voitureForm={voitureForm}
-            setVoitureForm={setVoitureForm}
-            handleProposerVoiture={handleProposerVoiture}
-            reimbursementRule={reimbursementRule}
-          />
+          {agendaEnableCarpool && (
+            <EventCarpoolSection
+              event={event}
+              user={user}
+              profileData={profileData}
+              isAuthorized={isAuthorized}
+              enableCarpoolReimbursement={enableCarpoolReimbursement}
+              indemniteKilometrique={indemniteKilometrique}
+              convoiDrivers={convoiDrivers}
+              individualDrivers={individualDrivers}
+              submittingCovoit={submittingCovoit}
+              joiningVoitureId={joiningVoitureId}
+              setJoiningVoitureId={setJoiningVoitureId}
+              joinForm={joinForm}
+              setJoinForm={setJoinForm}
+              demandeRemboursementKm={demandeRemboursementKm}
+              handleToggleRemboursement={handleToggleRemboursement}
+              handleRetirerVoiture={handleRetirerVoiture}
+              handleQuitterVoiture={handleQuitterVoiture}
+              handleConfirmJoin={handleConfirmJoin}
+              handleChercherPlace={handleChercherPlace}
+              handleAnnulerCherchePlace={handleAnnulerCherchePlace}
+              showProposerForm={showProposerForm}
+              setShowProposerForm={setShowProposerForm}
+              voitureForm={voitureForm}
+              setVoitureForm={setVoitureForm}
+              handleProposerVoiture={handleProposerVoiture}
+              reimbursementRule={reimbursementRule}
+            />
+          )}
 
-          {event.type !== 'reunion' && event.type !== 'atelier' && (
+          {event.type !== 'reunion' && event.type !== 'atelier' && agendaEnableRevisionProgram && (
             <EventSetlistSection
               setlist={setlist}
               isAuthorized={isAuthorized}

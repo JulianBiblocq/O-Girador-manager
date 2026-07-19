@@ -5,6 +5,7 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
 const EventDetails = React.lazy(() => import('./EventDetails'));
+import CalendarGrid from './CalendarGrid';
 import { useTranslation } from './LanguageContext';
 import { XiloCalendar } from './XiloIcons';
 const AddressAutocomplete = React.lazy(() => import('./AddressAutocomplete'));
@@ -51,9 +52,12 @@ export default function WidgetAgenda({
   const selectedEvent = propSelectedEvent !== undefined ? propSelectedEvent : localSelectedEvent;
   const setSelectedEvent = propSetSelectedEvent !== undefined ? propSetSelectedEvent : setLocalSelectedEvent;
   const [showAll, setShowAll] = useState(false);
+  const [viewMode, setViewMode] = useState('cards'); // 'cards' ou 'list'
   
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
   const [adresseLocal, setAdresseLocal] = useState('');
+  const [eventTypes, setEventTypes] = useState(['prestation', 'repetition', 'stage', 'atelier', 'reunion']);
+  const [agendaEnableFinance, setAgendaEnableFinance] = useState(true);
 
   // Sync association settings to get default local address and km rate
   useEffect(() => {
@@ -63,6 +67,12 @@ export default function WidgetAgenda({
       if (docSnap.exists()) {
         const data = docSnap.data();
         setAdresseLocal(data.adresseLocal || '');
+        setAgendaEnableFinance(data.agendaEnableFinance !== false);
+        if (Array.isArray(data.eventTypes) && data.eventTypes.length > 0) {
+          setEventTypes(data.eventTypes);
+        } else {
+          setEventTypes(['prestation', 'repetition', 'stage', 'atelier', 'reunion']);
+        }
       }
     });
     return () => unsubscribe();
@@ -184,7 +194,7 @@ export default function WidgetAgenda({
     if (!file) return;
     setUploadingImage(true);
     try {
-      const storagePath = `events/${groupId}/uploads/${Date.now()}_${file.name}`;
+      const storagePath = `documents/${groupId}/events/${Date.now()}_${file.name}`;
       const fileRef = ref(storage, storagePath);
       const snapshot = await uploadBytes(fileRef, file);
       const downloadURL = await getDownloadURL(snapshot.ref);
@@ -296,6 +306,14 @@ export default function WidgetAgenda({
           user={user}
           profileData={profileData}
           onNavigateToView={onNavigateToView}
+          viewMode={viewMode}
+          setViewMode={(mode) => {
+            setViewMode(mode);
+            setSelectedEvent(null);
+            if (onFocusModeChange) {
+              onFocusModeChange(false);
+            }
+          }}
           onClose={() => {
             setSelectedEvent(null);
             if (onFocusModeChange) {
@@ -312,19 +330,49 @@ export default function WidgetAgenda({
   return (
     <div className="flex flex-col gap-3">
       {/* Title & Action Bar */}
-      <div className="flex justify-between items-center pl-1 pr-1">
+      <div className="flex justify-between items-center pl-1 pr-1 w-full gap-2">
         <h3 className="text-xs font-extrabold tracking-wider text-cordel-master-dark opacity-75 uppercase text-left flex items-center gap-1">
           <XiloCalendar size={14} /> {t('widgetAgenda.title')}
         </h3>
-        {!loading && isAuthorized && !isAdding && (
-          <CordelButton 
-            variant="default" 
-            onClick={handleOpenForm} 
-            className="text-[10px] px-2 py-1 uppercase tracking-widest font-black"
-          >
-            + Ajouter
-          </CordelButton>
-        )}
+        
+        <div className="flex items-center gap-2">
+          {/* View Mode Toggle */}
+          {!loading && !isAdding && (
+            <div className="flex border border-encre-noire rounded-[4px_6px_3px_5px] overflow-hidden bg-cordel-bg shadow-[1px_1px_0px_0px_#181716] select-none text-[8px] font-black uppercase">
+              <button
+                type="button"
+                onClick={() => setViewMode('cards')}
+                className={`px-2 py-0.5 cursor-pointer transition-colors ${viewMode === 'cards' ? 'bg-cordel-master-dark text-cordel-bg-light' : 'bg-cordel-bg-light text-encre-noire hover:bg-neutral-100'}`}
+              >
+                🎴 <span className="hidden sm:inline">Cartes</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode('list')}
+                className={`px-2 py-0.5 cursor-pointer transition-colors ${viewMode === 'list' ? 'bg-cordel-master-dark text-cordel-bg-light' : 'bg-cordel-bg-light text-encre-noire hover:bg-neutral-100'}`}
+              >
+                📋 <span className="hidden sm:inline">Liste</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode('grid')}
+                className={`px-2 py-0.5 cursor-pointer transition-colors ${viewMode === 'grid' ? 'bg-cordel-master-dark text-cordel-bg-light' : 'bg-cordel-bg-light text-encre-noire hover:bg-neutral-100'}`}
+              >
+                📅 <span className="hidden sm:inline">Grille</span>
+              </button>
+            </div>
+          )}
+
+          {!loading && isAuthorized && !isAdding && (
+            <CordelButton 
+              variant="default" 
+              onClick={handleOpenForm} 
+              className="text-[10px] px-2 py-1 uppercase tracking-widest font-black"
+            >
+              + Ajouter
+            </CordelButton>
+          )}
+        </div>
       </div>
 
       {/* Loading indicator */}
@@ -372,11 +420,16 @@ export default function WidgetAgenda({
                 disabled={saving}
                 className="theme-input w-full disabled:opacity-50"
               >
-                <option value="prestation">{t('widgetAgenda.typePrestation') || "Prestation (Ocre)"}</option>
-                <option value="repetition">{t('widgetAgenda.typeRepetition') || "Répétition (Vert)"}</option>
-                <option value="stage">{t('widgetAgenda.typeStage') || "Stage (Bleu)"}</option>
-                <option value="atelier">{t('widgetAgenda.typeAtelier') || "Atelier (Jaune)"}</option>
-                <option value="reunion">{t('widgetAgenda.typeReunion') || "Réunion (Kraft)"}</option>
+                {eventTypes.map(type => (
+                  <option key={type} value={type}>
+                    {type === 'prestation' ? (t('widgetAgenda.typePrestation') || "Prestation (Ocre)") :
+                     type === 'repetition' ? (t('widgetAgenda.typeRepetition') || "Répétition (Vert)") :
+                     type === 'stage' ? (t('widgetAgenda.typeStage') || "Stage (Bleu)") :
+                     type === 'atelier' ? (t('widgetAgenda.typeAtelier') || "Atelier (Jaune)") :
+                     type === 'reunion' ? (t('widgetAgenda.typeReunion') || "Réunion (Kraft)") :
+                     type.charAt(0).toUpperCase() + type.slice(1)}
+                  </option>
+                ))}
               </select>
             </div>
 
@@ -637,45 +690,47 @@ export default function WidgetAgenda({
             </div>
 
             {/* Finances (Optionnel) */}
-            <div className="flex flex-col gap-3 pt-3 border-t border-dashed border-cordel-master-dark/15">
-              <h5 className="text-[10px] uppercase font-black tracking-widest text-cordel-wood">
-                Finances (Optionnel)
-              </h5>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="flex flex-col gap-1">
-                  <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                    Revenus de l'événement (Prestation payée, etc.)
-                  </label>
-                  <input
-                    type="number"
-                    name="montantRecette"
-                    min="0"
-                    step="any"
-                    value={formData.montantRecette}
-                    onChange={handleChange}
-                    disabled={saving}
-                    placeholder="Ex : 500"
-                    className="theme-input w-full disabled:opacity-50"
-                  />
-                </div>
-                <div className="flex flex-col gap-1">
-                  <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                    Coûts de l'événement (Location, professeur...)
-                  </label>
-                  <input
-                    type="number"
-                    name="montantDepense"
-                    min="0"
-                    step="any"
-                    value={formData.montantDepense}
-                    onChange={handleChange}
-                    disabled={saving}
-                    placeholder="Ex : 150"
-                    className="theme-input w-full disabled:opacity-50"
-                  />
+            {agendaEnableFinance && (
+              <div className="flex flex-col gap-3 pt-3 border-t border-dashed border-cordel-master-dark/15">
+                <h5 className="text-[10px] uppercase font-black tracking-widest text-cordel-wood">
+                  Finances (Optionnel)
+                </h5>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                      Revenus de l'événement (Prestation payée, etc.)
+                    </label>
+                    <input
+                      type="number"
+                      name="montantRecette"
+                      min="0"
+                      step="any"
+                      value={formData.montantRecette}
+                      onChange={handleChange}
+                      disabled={saving}
+                      placeholder="Ex : 500"
+                      className="theme-input w-full disabled:opacity-50"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                      Coûts de l'événement (Location, professeur...)
+                    </label>
+                    <input
+                      type="number"
+                      name="montantDepense"
+                      min="0"
+                      step="any"
+                      value={formData.montantDepense}
+                      onChange={handleChange}
+                      disabled={saving}
+                      placeholder="Ex : 150"
+                      className="theme-input w-full disabled:opacity-50"
+                    />
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
 
             {/* Validation Toggle */}
             <div className="flex items-center gap-2 pt-2 border-t border-dashed border-cordel-master-dark/15">
@@ -723,6 +778,78 @@ export default function WidgetAgenda({
           <CordelCard variant="default" useExtremeBorder={false} className="p-4 text-center">
             <p className="text-xs opacity-75 font-semibold">{t('widgetAgenda.noEvents')}</p>
           </CordelCard>
+        ) : viewMode === 'grid' ? (
+          <CalendarGrid 
+            events={events} 
+            onSelectEvent={handleSelectEvent} 
+            t={t} 
+          />
+        ) : viewMode === 'list' ? (
+          <div className="w-full overflow-x-auto border-2 border-encre-noire rounded-[8px_12px_9px_11px] shadow-[2.5px_2.5px_0px_0px_#181716] bg-cordel-bg-light">
+            <table className="w-full text-xs text-left border-collapse">
+              <thead>
+                <tr className="border-b border-encre-noire bg-cordel-master-light/10 font-black uppercase text-[9px] tracking-wider text-cordel-wood select-none">
+                  <th className="p-2.5 border-r border-encre-noire/15">Date</th>
+                  <th className="p-2.5 border-r border-encre-noire/15">Événement</th>
+                  <th className="p-2.5 border-r border-encre-noire/15">Type</th>
+                  <th className="p-2.5 border-r border-encre-noire/15">Lieu</th>
+                  <th className="p-2.5 text-center">Présence</th>
+                </tr>
+              </thead>
+              <tbody>
+                {visibleEvents.map((event) => {
+                  const dateObj = new Date(event.date);
+                  const formattedDate = isNaN(dateObj.getTime())
+                    ? '?'
+                    : formatDateWithDay(event.date, true);
+                  
+                  const variant = variants[event.type] || 'kraft';
+                  const insList = event.inscriptions || [];
+                  const userInscription = insList.find(ins => ins.userId === user.uid);
+                  const userStatus = userInscription ? userInscription.status : null;
+                  
+                  // Inscriptions stats
+                  const presentCount = insList.filter(i => i.status === 'present').length;
+
+                  return (
+                    <tr 
+                      key={event.id}
+                      onClick={() => handleSelectEvent(event)}
+                      className={`border-b border-encre-noire/15 hover:bg-cordel-master-light/5 transition-colors cursor-pointer ${event.status === 'annule' ? 'opacity-50' : ''}`}
+                    >
+                      <td className="p-2.5 border-r border-encre-noire/15 font-bold whitespace-nowrap">
+                        {formattedDate}
+                      </td>
+                      <td className="p-2.5 border-r border-encre-noire/15 font-extrabold text-encre-noire">
+                        {event.titre}
+                        {event.status === 'annule' && (
+                          <span className="text-red-600 font-bold ml-1.5 uppercase text-[8px] border border-red-600 px-1 rounded select-none">
+                            ANNULÉ
+                          </span>
+                        )}
+                      </td>
+                      <td className="p-2.5 border-r border-encre-noire/15">
+                        <span className={`px-2 py-0.5 border border-dashed rounded-[4px_6px_3px_5px] font-black uppercase text-[8px] theme-bg-${variant}`}>
+                          {event.type}
+                        </span>
+                      </td>
+                      <td className="p-2.5 border-r border-encre-noire/15 truncate max-w-[180px]" title={event.lieu}>
+                        {event.lieu || '-'}
+                      </td>
+                      <td className="p-2.5 text-center font-bold whitespace-nowrap">
+                        {(() => {
+                          if (userStatus === 'present') return <span className="text-green-700 dark:text-green-400 font-black">Présent ({presentCount})</span>;
+                          if (userStatus === 'absent') return <span className="text-red-700 dark:text-red-400 font-black">Absent ({presentCount})</span>;
+                          if (userStatus === 'pending') return <span className="text-yellow-600 dark:text-yellow-400 font-black">En attente ({presentCount})</span>;
+                          return <span className="text-neutral-500 font-bold">Sans réponse ({presentCount})</span>;
+                        })()}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         ) : (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -736,7 +863,7 @@ export default function WidgetAgenda({
                   ? '--h--'
                   : dateObj.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
 
-                const variant = variants[event.type] || 'default';
+                const variant = variants[event.type] || 'kraft';
 
                 return (
                   <div 
@@ -773,46 +900,67 @@ export default function WidgetAgenda({
                     </div>
 
                     {/* Right Side: Details */}
-                    <div className="flex-1 p-4 flex flex-col justify-center text-left pl-5">
-                      <div className="flex justify-between items-start gap-2 mb-0.5">
-                        <h4 className="font-bold text-sm leading-tight">{event.titre}</h4>
-                      </div>
-                      <span className="text-[9px] font-extrabold text-encre-noire/70 mb-1 leading-none select-none">
-                        {event.dateFin ? (
-                          `Du ${formatDateWithDay(event.date, true)} au ${formatDateWithDay(event.dateFin, false)}`
-                        ) : (
-                          `${formatDateWithDay(event.date, true)}`
-                        )}
-                      </span>
-                      <div className="flex justify-between items-center mt-1.5 border-t border-dashed border-encre-noire/10 pt-1.5 gap-2">
-                        <div className="flex flex-col items-start gap-1">
-                          <span className="text-[8px] uppercase tracking-widest font-black opacity-60">
-                            {event.type}
-                          </span>
-                          {/* Connected User Attendance Badge */}
-                          {(() => {
-                            const userInscription = (event.inscriptions || []).find(ins => ins.userId === user.uid);
-                            const userStatus = userInscription ? userInscription.status : null;
-                            if (userStatus === 'present') {
-                              return <span className="text-[8px] font-black px-1.5 py-0.5 rounded-[4px_6px_3px_5px] uppercase tracking-wider badge-status-present leading-none select-none">{t('common.present')}</span>;
-                            } else if (userStatus === 'pending') {
-                              return <span className="text-[8px] font-bold px-1.5 py-0.5 rounded-[4px_6px_3px_5px] uppercase tracking-wider bg-yellow-100 text-yellow-800 border border-yellow-300 leading-none select-none">En attente de validation</span>;
-                            } else if (userStatus === 'refused') {
-                              return <span className="text-[8px] font-black px-1.5 py-0.5 rounded-[4px_6px_3px_5px] uppercase tracking-wider badge-status-absent leading-none select-none">Refusé</span>;
-                            } else if (userStatus === 'absent') {
-                              return <span className="text-[8px] font-black px-1.5 py-0.5 rounded-[4px_6px_3px_5px] uppercase tracking-wider badge-status-absent leading-none select-none">{t('common.absent')}</span>;
-                            } else if (userStatus === 'confirm') {
-                              return <span className="text-[8px] font-black px-1.5 py-0.5 rounded-[4px_6px_3px_5px] uppercase tracking-wider badge-status-confirm leading-none select-none">{t('common.toConfirm')}</span>;
-                            } else {
-                              return <span className="text-[8px] font-bold px-1.5 py-0.5 rounded-[4px_6px_3px_5px] uppercase tracking-wider badge-status-pending leading-none select-none">{t('common.pending')}</span>;
-                            }
-                          })()}
+                    <div className="flex-1 p-4 flex items-center gap-4 text-left pl-5">
+                      <div className="flex-1 flex flex-col justify-center">
+                        <div className="flex justify-between items-start gap-2 mb-0.5">
+                          <h4 className="font-bold text-sm leading-tight">{event.titre}</h4>
                         </div>
-                        
-                        {/* Subscriptions counter */}
-                        {event.inscriptions && event.inscriptions.length > 0 && (
-                          <span className="text-[8px] font-bold px-1.5 py-0.5 bg-encre-noire text-cordel-bg-light rounded-sm self-end shrink-0">
-                            {event.inscriptions.filter(i => i.status === 'present').length} {t('common.presentCountLabel')}
+                        <span className="text-[9px] font-extrabold text-encre-noire/70 mb-1 leading-none select-none">
+                          {event.dateFin ? (
+                            `Du ${formatDateWithDay(event.date, true)} au ${formatDateWithDay(event.dateFin, false)}`
+                          ) : (
+                            `${formatDateWithDay(event.date, true)}`
+                          )}
+                        </span>
+                        <div className="flex justify-between items-center mt-1.5 border-t border-dashed border-encre-noire/10 pt-1.5 gap-2">
+                          <div className="flex flex-col items-start gap-1">
+                            <span className="text-[8px] uppercase tracking-widest font-black opacity-60">
+                              {event.type}
+                            </span>
+                            {/* Connected User Attendance Badge */}
+                            {(() => {
+                              const userInscription = (event.inscriptions || []).find(ins => ins.userId === user.uid);
+                              const userStatus = userInscription ? userInscription.status : null;
+                              if (userStatus === 'present') {
+                                return <span className="text-[8px] font-black px-1.5 py-0.5 rounded-[4px_6px_3px_5px] uppercase tracking-wider badge-status-present leading-none select-none">{t('common.present')}</span>;
+                              } else if (userStatus === 'pending') {
+                                return <span className="text-[8px] font-bold px-1.5 py-0.5 rounded-[4px_6px_3px_5px] uppercase tracking-wider bg-yellow-100 text-yellow-800 border border-yellow-300 leading-none select-none">En attente de validation</span>;
+                              } else if (userStatus === 'refused') {
+                                return <span className="text-[8px] font-black px-1.5 py-0.5 rounded-[4px_6px_3px_5px] uppercase tracking-wider badge-status-absent leading-none select-none">Refusé</span>;
+                              } else if (userStatus === 'absent') {
+                                return <span className="text-[8px] font-black px-1.5 py-0.5 rounded-[4px_6px_3px_5px] uppercase tracking-wider badge-status-absent leading-none select-none">{t('common.absent')}</span>;
+                              } else if (userStatus === 'confirm') {
+                                return <span className="text-[8px] font-black px-1.5 py-0.5 rounded-[4px_6px_3px_5px] uppercase tracking-wider badge-status-confirm leading-none select-none">{t('common.toConfirm')}</span>;
+                              } else {
+                                return <span className="text-[8px] font-bold px-1.5 py-0.5 rounded-[4px_6px_3px_5px] uppercase tracking-wider badge-status-pending leading-none select-none">{t('common.pending')}</span>;
+                              }
+                            })()}
+                          </div>
+                          
+                          {/* Subscriptions counter */}
+                          {event.inscriptions && event.inscriptions.length > 0 && (
+                            <span className="text-[8px] font-bold px-1.5 py-0.5 bg-encre-noire text-cordel-bg-light rounded-sm self-end shrink-0">
+                              {event.inscriptions.filter(i => i.status === 'present').length} {t('common.presentCountLabel')}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Thumbnail (Miniature) */}
+                      <div className="w-14 h-14 md:w-16 md:h-16 shrink-0 rounded border border-encre-noire/30 bg-[#fdfaf2] dark:bg-[#1f1b18] overflow-hidden flex items-center justify-center select-none shadow-[1px_1px_0px_0px_#181716]">
+                        {event.imageUrl ? (
+                          <img 
+                            src={event.imageUrl} 
+                            alt="Visual" 
+                            className="w-full h-full object-cover" 
+                          />
+                        ) : (
+                          <span className="text-lg opacity-40 grayscale select-none">
+                            {event.type === 'prestation' ? '🎭' :
+                             event.type === 'repetition' ? '🥁' :
+                             event.type === 'stage' ? '🎓' :
+                             event.type === 'atelier' ? '🔨' :
+                             event.type === 'reunion' ? '📅' : '📆'}
                           </span>
                         )}
                       </div>

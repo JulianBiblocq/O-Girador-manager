@@ -9,7 +9,48 @@ export default function TabOrganization({
   t,
   mode
 }) {
-  const { instrumentsDisponibles = [], linkedInstruments = [], fieldsConfig = {} } = formData;
+  const { instrumentsDisponibles = [], linkedInstruments = [], fieldsConfig = {}, pupitresColors = {} } = formData;
+
+  const rawPupitres = [
+    'Mestre',
+    ...linkedInstruments.map(g => {
+      const instrumentsArray = g.instruments || (Array.isArray(g) ? g : [g.inst1, g.inst2]);
+      return g.name ? g.name.trim() : instrumentsArray.join(' + ');
+    }).filter(Boolean),
+    ...instrumentsDisponibles.filter(inst => {
+      const isInLinked = linkedInstruments.some(g => {
+        const instrumentsArray = g.instruments || (Array.isArray(g) ? g : [g.inst1, g.inst2]);
+        return instrumentsArray.includes(inst);
+      });
+      return !isInLinked;
+    })
+  ];
+
+  const seen = new Set();
+  const allPupitres = rawPupitres.filter(p => {
+    const lower = p.toLowerCase().trim();
+    if (seen.has(lower)) return false;
+    seen.add(lower);
+    return true;
+  });
+
+  const cordelPalette = [
+    { hex: '#8b2a1a', label: 'Terracotta' },
+    { hex: '#d99f4d', label: 'Ocre' },
+    { hex: '#2d4a36', label: 'Feuillage' },
+    { hex: '#6e473b', label: 'Écorce' },
+    { hex: '#3b5d6e', label: 'Patine' },
+    { hex: '#21201f', label: 'Encre' },
+    { hex: '#8c857b', label: 'Ficelle' }
+  ];
+
+  const handleColorChange = (pupitreName, hexColor) => {
+    const updated = {
+      ...pupitresColors,
+      [pupitreName]: hexColor
+    };
+    handleChange('pupitresColors', updated);
+  };
 
   const [newInstrument, setNewInstrument] = useState('');
   const [newPupitreName, setNewPupitreName] = useState('');
@@ -150,8 +191,7 @@ export default function TabOrganization({
         </CordelCard>
       )}
 
-      {/* Instruments Liés / Pupitres */}
-      {(!mode || mode === 'linked-instruments-only') && (
+      {(!mode || mode === 'linked-instruments-only' || mode === 'instruments-only') && (
         <CordelCard variant="default" useExtremeBorder={true} className="py-4 px-5">
           <h3 className="text-xs uppercase font-extrabold tracking-wider text-cordel-wood mb-3">
             🔗 {t('associationSettings.linkedInstrumentsHeading') || "Instruments Liés / Pupitres"}
@@ -258,6 +298,75 @@ export default function TabOrganization({
                 })}
               </div>
             )}
+          </div>
+        </CordelCard>
+      )}
+
+      {(!mode || mode === 'instruments-only') && (
+        <CordelCard variant="default" useExtremeBorder={true} className="py-4 px-5 mt-4">
+          <h3 className="text-xs uppercase font-extrabold tracking-wider text-cordel-wood mb-3 flex items-center gap-1.5">
+            🎨 Couleurs des Pupitres & Instruments
+          </h3>
+          <p className="text-[10px] text-cordel-master-dark/75 mb-4 text-left leading-relaxed">
+            Configurez les couleurs des pupitres et instruments pour personnaliser l'identité visuelle de la troupe (utilisées sur l'agenda, le trombinoscope et le plan de scène).
+          </p>
+
+          <div className="flex flex-col gap-4 text-left">
+            {allPupitres.map((pupitre) => {
+              const activeColor = pupitresColors[pupitre] || '#8c857b';
+              return (
+                <div 
+                  key={pupitre} 
+                  className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-dashed border-cordel-master-dark/10 last:border-b-0 last:pb-0"
+                >
+                  <div className="flex items-center gap-2">
+                    <span 
+                      className="w-4 h-4 rounded-full border border-encre-noire/35 shadow-[1px_1px_0px_0px_rgba(24,23,22,0.15)] shrink-0" 
+                      style={{ backgroundColor: activeColor }}
+                    />
+                    <span className="font-extrabold text-xs text-encre-noire">{pupitre}</span>
+                  </div>
+
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {/* Palette colors */}
+                    <div className="flex items-center gap-1">
+                      {cordelPalette.map((color) => {
+                        const isSelected = activeColor.toLowerCase() === color.hex.toLowerCase();
+                        return (
+                          <button
+                            key={color.hex}
+                            type="button"
+                            onClick={() => handleColorChange(pupitre, color.hex)}
+                            disabled={saving}
+                            className={`w-5 h-5 rounded-full border cursor-pointer transition-all hover:scale-105 active:scale-95 ${
+                              isSelected 
+                                ? 'border-2 border-encre-noire ring-1 ring-encre-noire/40 scale-105' 
+                                : 'border-encre-noire/30 hover:border-encre-noire'
+                            }`}
+                            style={{ backgroundColor: color.hex }}
+                            title={`${color.label} (${color.hex})`}
+                          />
+                        );
+                      })}
+                    </div>
+
+                    <div className="w-px h-4 bg-cordel-master-dark/20 mx-1 hidden sm:block" />
+
+                    {/* Custom color picker */}
+                    <label className="flex items-center gap-1.5 cursor-pointer text-[10px] font-bold text-cordel-master-dark/80 hover:text-encre-noire">
+                      <input 
+                        type="color"
+                        value={activeColor.startsWith('#') && activeColor.length === 7 ? activeColor : '#8c857b'}
+                        onChange={(e) => handleColorChange(pupitre, e.target.value)}
+                        disabled={saving}
+                        className="w-5 h-5 p-0.5 rounded border border-encre-noire/30 bg-transparent cursor-pointer"
+                      />
+                      <span>Perso</span>
+                    </label>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </CordelCard>
       )}

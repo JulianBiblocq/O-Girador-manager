@@ -197,12 +197,15 @@ export default function MemberTreasuryRow({ member, optionsCotisation, baseAdhes
               ? 'border-green-600/40 text-green-700 dark:text-green-400' 
               : currentStatus === 'partial' 
                 ? 'border-amber-600/40 text-amber-700 dark:text-amber-400' 
-                : 'border-red-600/40 text-red-700 dark:text-red-400'
+                : currentStatus === 'exempted'
+                  ? 'border-blue-600/40 text-blue-700 dark:text-blue-400'
+                  : 'border-red-600/40 text-red-700 dark:text-red-400'
           }`}
         >
-          <option value="unpaid">{t('widgetTreasury.statusUnpaid')}</option>
-          <option value="partial">{t('widgetTreasury.statusPartial')}</option>
-          <option value="paid">{t('widgetTreasury.statusPaid')}</option>
+          <option value="unpaid">{t('widgetTreasury.statusUnpaid') || "Non payé"}</option>
+          <option value="partial">{t('widgetTreasury.statusPartial') || "Partiel"}</option>
+          <option value="paid">{t('widgetTreasury.statusPaid') || "À jour"}</option>
+          <option value="exempted">{t('widgetTreasury.statusExempted') || "Exonéré"}</option>
         </select>
       </div>
 

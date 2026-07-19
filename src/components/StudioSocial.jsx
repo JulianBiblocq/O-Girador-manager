@@ -119,42 +119,75 @@ export default function StudioSocial({ groupId, branding, onBack }) {
     }
   }, [backgroundSource, selectedEvent, selectedVaralImage]);
 
-  // 5. Handle local upload a la volee
-  const handleLocalImageSelected = (e) => {
+  // Sync selectedEvent with the real-time list of events (bidirectional sync)
+  useEffect(() => {
+    if (!selectedEvent || events.length === 0) return;
+    const freshEvent = events.find(x => x.id === selectedEvent.id);
+    if (freshEvent) {
+      if (freshEvent.imageUrl !== selectedEvent.imageUrl) {
+        setSelectedEvent(freshEvent);
+        if (backgroundSource === 'event') {
+          setBackgroundImageUrl(freshEvent.imageUrl || '');
+        }
+      }
+    }
+  }, [events, selectedEvent, backgroundSource]);
+
+  // 5. Handle local upload a la volee (auto-save to Firestore)
+  const handleLocalImageSelected = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    setLocalImageFile(file);
-    
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      setBackgroundImageUrl(event.target.result);
-    };
-    reader.readAsDataURL(file);
+
+    if (selectedEvent) {
+      setSavingOfficialPoster(true);
+      try {
+        const storagePath = `documents/${groupId}/events/${Date.now()}_${file.name}`;
+        const fileRef = ref(storage, storagePath);
+        const snapshot = await uploadBytes(fileRef, file);
+        const downloadURL = await getDownloadURL(snapshot.ref);
+
+        const eventRef = doc(db, 'events', selectedEvent.id);
+        await updateDoc(eventRef, { imageUrl: downloadURL });
+
+        setSelectedEvent(prev => ({ ...prev, imageUrl: downloadURL }));
+        setBackgroundImageUrl(downloadURL);
+        setBackgroundSource('event');
+        setLocalImageFile(null);
+        alert("Image d'illustration mise à jour et associée à l'événement !");
+      } catch (err) {
+        console.error("StudioSocial - Erreur upload direct :", err);
+        alert("Erreur lors du téléversement de l'image.");
+      } finally {
+        setSavingOfficialPoster(false);
+      }
+    } else {
+      setLocalImageFile(file);
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        setBackgroundImageUrl(evt.target.result);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
-  // 6. Save as official event poster
-  const handleSaveAsOfficialPoster = async () => {
-    if (!selectedEvent || !localImageFile) return;
-    setSavingOfficialPoster(true);
-    try {
-      const storagePath = `events/${groupId}/uploads/${Date.now()}_${localImageFile.name}`;
-      const fileRef = ref(storage, storagePath);
-      const snapshot = await uploadBytes(fileRef, localImageFile);
-      const downloadURL = await getDownloadURL(snapshot.ref);
-      
-      const eventRef = doc(db, 'events', selectedEvent.id);
-      await updateDoc(eventRef, { imageUrl: downloadURL });
-      
-      setSelectedEvent(prev => ({ ...prev, imageUrl: downloadURL }));
-      setBackgroundImageUrl(downloadURL);
-      setBackgroundSource('event');
-      setLocalImageFile(null);
-      alert("Affiche enregistrée pour cet événement !");
-    } catch (err) {
-      console.error("StudioSocial - Erreur d'enregistrement d'affiche :", err);
-      alert("Erreur lors de l'enregistrement de l'affiche.");
-    } finally {
-      setSavingOfficialPoster(false);
+  // 6. Handle Varal image selection (auto-save to Firestore)
+  const handleVaralImageChange = async (e) => {
+    const url = e.target.value;
+    setSelectedVaralImage(url);
+    setBackgroundImageUrl(url);
+
+    if (selectedEvent) {
+      try {
+        const eventRef = doc(db, 'events', selectedEvent.id);
+        await updateDoc(eventRef, { imageUrl: url });
+        
+        setSelectedEvent(prev => ({ ...prev, imageUrl: url }));
+        setBackgroundSource('event');
+        alert("Image du Varal associée à l'événement !");
+      } catch (err) {
+        console.error("StudioSocial - Erreur liaison image Varal :", err);
+        alert("Erreur lors de l'association de l'image du Varal.");
+      }
     }
   };
 
@@ -538,7 +571,7 @@ export default function StudioSocial({ groupId, branding, onBack }) {
                     ) : (
                       <select
                         value={selectedVaralImage}
-                        onChange={(e) => setSelectedVaralImage(e.target.value)}
+                        onChange={handleVaralImageChange}
                         className="theme-input w-full bg-cordel-bg-light text-xs font-semibold"
                       >
                         <option value="" disabled>
@@ -555,30 +588,21 @@ export default function StudioSocial({ groupId, branding, onBack }) {
                 )}
 
                 {backgroundSource === 'upload' && (
-                  <div className="flex flex-col gap-2 p-2 bg-cordel-bg border border-dashed border-cordel-master-dark/30 rounded">
+                  <div className="flex flex-col gap-2 p-2 bg-cordel-bg border border-dashed border-cordel-master-dark/30 rounded text-left">
                     <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
                       {t('studioSocial.uploadAvol') || "Sélectionner un fichier local"}
                     </label>
                     <div className="flex items-center gap-2">
                       <label className="text-[10px] font-black uppercase tracking-widest bg-white border border-encre-noire px-3 py-1.5 rounded-[4px_6px_3px_5px] shadow-[1px_1px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:bg-neutral-100 cursor-pointer select-none">
-                        📂 {localImageFile ? localImageFile.name : "Parcourir..."}
+                        {savingOfficialPoster ? "⏳ Téléversement..." : (localImageFile ? `📂 ${localImageFile.name}` : "Parcourir...")}
                         <input
                           type="file"
                           accept="image/*"
                           onChange={handleLocalImageSelected}
+                          disabled={savingOfficialPoster}
                           className="hidden"
                         />
                       </label>
-                      {localImageFile && (
-                        <CordelButton
-                          onClick={handleSaveAsOfficialPoster}
-                          disabled={savingOfficialPoster}
-                          variant="ocre"
-                          className="text-[9px] font-black uppercase px-2 py-1.5"
-                        >
-                          {savingOfficialPoster ? "Enregistrement..." : "💾 Enregistrer sur l'événement"}
-                        </CordelButton>
-                      )}
                     </div>
                   </div>
                 )}

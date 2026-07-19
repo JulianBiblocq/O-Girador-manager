@@ -47,9 +47,27 @@ export default function LayoutShell({
   const hasAccessTresorerie = isSystemOrSuperAdminOrMestre || userTags.some(t => permissionsMatrice?.tresorerie?.includes(t));
   const hasAccessStudio = isSystemOrSuperAdminOrMestre || userTags.some(t => permissionsMatrice?.studio?.includes(t));
 
+  const isAdministrativeUser = isSystemOrSuperAdminOrMestre || 
+                               profileData?.role === 'bureau' || 
+                               profileData?.role === 'ca' || 
+                               hasAccessTroupe || 
+                               hasAccessLogistique || 
+                               hasAccessTresorerie || 
+                               hasAccessStudio;
+
+  const memberMenuItems = [
+    { id: 'accueil', label: 'Accueil', icon: <XiloHome size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('accueil'); onNavigateToTab && onNavigateToTab('dashboard'); } },
+    { id: 'profil', label: 'Mon profil', icon: <XiloUser size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('mon-espace'); onNavigateToTab && onNavigateToTab('profil'); } },
+    { id: 'trombinoscope', label: 'Trombinoscope', icon: <XiloPeople size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('mon-espace'); onNavigateToTab && onNavigateToTab('trombinoscope'); } },
+    { id: 'forum', label: 'Porte-voix', icon: <XiloMegaphone size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('mon-espace'); onNavigateToTab && onNavigateToTab('forum'); } },
+    { id: 'agenda', label: 'Agenda', icon: <XiloCalendar size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('accueil'); onNavigateToTab && onNavigateToTab('agenda'); } },
+    { id: 'varal', label: 'Varal (documents)', icon: <XiloScroll size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('accueil'); onNavigateToTab && onNavigateToTab('varal'); } }
+  ];
+
   const hasAccessToPole = (poleId) => {
     switch (poleId) {
       case 'accueil':
+      case 'mon-espace':
         return true;
       case 'troupe':
         return hasAccessTroupe;
@@ -89,6 +107,8 @@ export default function LayoutShell({
   const getPoleIcon = (poleId, size = 12) => {
     switch (poleId) {
       case 'accueil':
+        return <XiloHome size={size} />;
+      case 'mon-espace':
         return <XiloUser size={size} />;
       case 'troupe':
         return <XiloPeople size={size} />;
@@ -221,35 +241,80 @@ export default function LayoutShell({
             
             {/* Desktop Poles Navigation */}
             <div className="w-full flex-grow overflow-y-auto flex flex-col gap-2 pr-1 max-h-[calc(100vh-220px)] scrollbar-thin">
-              {visiblePoles.map((pole) => {
-                const isActive = currentPole === pole.id;
-                return (
-                  <button
-                    key={pole.id}
-                    onClick={() => onNavigateToPole && onNavigateToPole(pole.id)}
-                    className={`theme-btn text-[10px] font-black uppercase tracking-wider py-2 px-2.5 text-left rounded-[4px_6px_3px_5px] flex items-center justify-between hover:bg-cordel-hover cursor-pointer border-2 transition-all ${
-                      isActive 
-                        ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
-                        : 'bg-cordel-bg text-encre-noire border-encre-noire/30 shadow-[1.5px_1.5px_0px_0px_#181716]'
-                    }`}
-                  >
-                    <span className="flex items-center gap-2">
-                      {getPoleIcon(pole.id, 12)} 
-                      {t(`poles.${pole.id}`) || pole.label}
-                    </span>
-                    {pole.id === 'accueil' && unreadPrivateMessagesCount > 0 && (
-                      <span className="w-3.5 h-3.5 bg-red-600 text-white text-[8px] font-black rounded-full flex items-center justify-center animate-pulse shrink-0">
-                        {unreadPrivateMessagesCount}
+              {isAdministrativeUser ? (
+                visiblePoles.map((pole) => {
+                  const isActive = currentPole === pole.id;
+                  return (
+                    <button
+                      key={pole.id}
+                      onClick={() => onNavigateToPole && onNavigateToPole(pole.id)}
+                      className={`theme-btn text-[10px] font-black uppercase tracking-wider py-2 px-2.5 text-left rounded-[4px_6px_3px_5px] flex items-center justify-between hover:bg-cordel-hover cursor-pointer border-2 transition-all ${
+                        isActive 
+                          ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
+                          : 'bg-cordel-bg text-encre-noire border-encre-noire/30 shadow-[1.5px_1.5px_0px_0px_#181716]'
+                      }`}
+                    >
+                      <span className="flex items-center gap-2">
+                        {getPoleIcon(pole.id, 12)} 
+                        {t(`poles.${pole.id}`) || pole.label}
                       </span>
-                    )}
-                  </button>
-                );
-              })}
+                      {pole.id === 'accueil' && unreadPrivateMessagesCount > 0 && (
+                        <span className="w-3.5 h-3.5 bg-red-600 text-white text-[8px] font-black rounded-full flex items-center justify-center animate-pulse shrink-0">
+                          {unreadPrivateMessagesCount}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })
+              ) : (
+                memberMenuItems.map((item) => {
+                  const isActive = (item.id === 'accueil' && currentPole === 'accueil' && (currentTab === 'dashboard' || !currentTab)) ||
+                                   (item.id !== 'accueil' && currentTab === item.id);
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={item.onClick}
+                      className={`theme-btn text-[10px] font-black uppercase tracking-wider py-2 px-2.5 text-left rounded-[4px_6px_3px_5px] flex items-center justify-between hover:bg-cordel-hover cursor-pointer border-2 transition-all ${
+                        isActive 
+                          ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
+                          : 'bg-cordel-bg text-encre-noire border-encre-noire/30 shadow-[1.5px_1.5px_0px_0px_#181716]'
+                      }`}
+                    >
+                      <span className="flex items-center gap-2">
+                        {item.icon}
+                        {item.label}
+                      </span>
+                      {item.id === 'forum' && unreadPrivateMessagesCount > 0 && (
+                        <span className="w-3.5 h-3.5 bg-red-600 text-white text-[8px] font-black rounded-full flex items-center justify-center animate-pulse shrink-0">
+                          {unreadPrivateMessagesCount}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })
+              )}
             </div>
           </div>
 
           {/* Desktop Footer */}
           <div className="flex flex-col items-center gap-2 w-full mt-4 shrink-0">
+            {isSystemOrSuperAdminOrMestre && (
+              <button
+                type="button"
+                onClick={() => {
+                  if (onNavigateToPole) onNavigateToPole(null);
+                  if (onNavigateToTab) onNavigateToTab('system-admin');
+                }}
+                className={`w-full py-1.5 px-2 font-black uppercase tracking-widest text-center text-[8px] border-2 border-encre-noire rounded-[8px_12px_9px_11px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:scale-[1.01] transition-all cursor-pointer flex items-center justify-center gap-1 ${
+                  currentTab === 'system-admin' 
+                    ? 'theme-bg-ocre text-encre-noire' 
+                    : 'bg-neutral-850 text-encre-noire hover:bg-neutral-100 bg-white'
+                }`}
+              >
+                <XiloConsole size={10} className="inline mr-1" /> {t('poles.tabSystemAdmin') || "Admin Système"}
+              </button>
+            )}
+
             {sequenceurUrl && (
               <a 
                 href={sequenceurUrl}
@@ -282,7 +347,7 @@ export default function LayoutShell({
           <div className="flex flex-col gap-5 w-full flex-1">
             
             {/* Top Horizontal Subcategories Menu */}
-            {visibleTabs.length > 0 && (
+            {isSystemOrSuperAdminOrMestre && visibleTabs.length > 0 && (
               <div className="flex flex-wrap gap-2 border-b border-dashed border-cordel-master-dark/20 pb-3 mb-1 select-none shrink-0">
                 {visibleTabs.map((tab) => {
                   const isActive = currentTab === tab.id;
@@ -357,37 +422,86 @@ export default function LayoutShell({
 
               {/* Drawer Navigation Links */}
               <div className="flex flex-col gap-2.5 flex-grow overflow-y-auto pr-1">
-                {visiblePoles.map((pole) => {
-                  const isActive = currentPole === pole.id;
-                  return (
-                    <button
-                      key={pole.id}
-                      onClick={() => {
-                        if (onNavigateToPole) onNavigateToPole(pole.id);
-                        setIsDrawerOpen(false);
-                      }}
-                      className={`theme-btn text-[10px] font-black uppercase tracking-wider py-2 px-3 text-left rounded-[4px_6px_3px_5px] flex items-center justify-between hover:bg-cordel-hover cursor-pointer border-2 w-full transition-all ${
-                        isActive 
-                          ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
-                          : 'bg-cordel-bg text-encre-noire border-encre-noire/30 shadow-[1.5px_1.5px_0px_0px_#181716]'
-                      }`}
-                    >
-                      <span className="flex items-center gap-2">
-                        {getPoleIcon(pole.id, 14)} 
-                        {t(`poles.${pole.id}`) || pole.label}
-                      </span>
-                      {pole.id === 'accueil' && unreadPrivateMessagesCount > 0 && (
-                        <span className="w-4 h-4 bg-red-600 text-white text-[8px] font-black rounded-full flex items-center justify-center animate-pulse shrink-0">
-                          {unreadPrivateMessagesCount}
+                {isAdministrativeUser ? (
+                  visiblePoles.map((pole) => {
+                    const isActive = currentPole === pole.id;
+                    return (
+                      <button
+                        key={pole.id}
+                        onClick={() => {
+                          if (onNavigateToPole) onNavigateToPole(pole.id);
+                          setIsDrawerOpen(false);
+                        }}
+                        className={`theme-btn text-[10px] font-black uppercase tracking-wider py-2 px-3 text-left rounded-[4px_6px_3px_5px] flex items-center justify-between hover:bg-cordel-hover cursor-pointer border-2 w-full transition-all ${
+                          isActive 
+                            ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
+                            : 'bg-cordel-bg text-encre-noire border-encre-noire/30 shadow-[1.5px_1.5px_0px_0px_#181716]'
+                        }`}
+                      >
+                        <span className="flex items-center gap-2">
+                          {getPoleIcon(pole.id, 14)} 
+                          {t(`poles.${pole.id}`) || pole.label}
                         </span>
-                      )}
-                    </button>
-                  );
-                })}
+                        {pole.id === 'accueil' && unreadPrivateMessagesCount > 0 && (
+                          <span className="w-4 h-4 bg-red-600 text-white text-[8px] font-black rounded-full flex items-center justify-center animate-pulse shrink-0">
+                            {unreadPrivateMessagesCount}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })
+                ) : (
+                  memberMenuItems.map((item) => {
+                    const isActive = (item.id === 'accueil' && currentPole === 'accueil' && (currentTab === 'dashboard' || !currentTab)) ||
+                                     (item.id !== 'accueil' && currentTab === item.id);
+                    return (
+                      <button
+                        key={item.id}
+                        onClick={() => {
+                          item.onClick();
+                          setIsDrawerOpen(false);
+                        }}
+                        className={`theme-btn text-[10px] font-black uppercase tracking-wider py-2 px-3 text-left rounded-[4px_6px_3px_5px] flex items-center justify-between hover:bg-cordel-hover cursor-pointer border-2 w-full transition-all ${
+                          isActive 
+                            ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
+                            : 'bg-cordel-bg text-encre-noire border-encre-noire/30 shadow-[1.5px_1.5px_0px_0px_#181716]'
+                        }`}
+                      >
+                        <span className="flex items-center gap-2">
+                          {item.icon}
+                          {item.label}
+                        </span>
+                        {item.id === 'forum' && unreadPrivateMessagesCount > 0 && (
+                          <span className="w-4 h-4 bg-red-600 text-white text-[8px] font-black rounded-full flex items-center justify-center animate-pulse shrink-0">
+                            {unreadPrivateMessagesCount}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })
+                )}
               </div>
 
               {/* Drawer Footer */}
               <div className="flex flex-col gap-2.5 pt-4 border-t border-dashed border-cordel-master-dark/20 mt-auto select-none shrink-0">
+                {isSystemOrSuperAdminOrMestre && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (onNavigateToPole) onNavigateToPole(null);
+                      if (onNavigateToTab) onNavigateToTab('system-admin');
+                      setIsDrawerOpen(false);
+                    }}
+                    className={`w-full py-1.5 text-center text-[9px] font-black uppercase tracking-widest border border-encre-noire rounded-[6px_9px_7px_8px] shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                      currentTab === 'system-admin' 
+                        ? 'theme-bg-ocre text-encre-noire' 
+                        : 'bg-neutral-850 text-encre-noire hover:bg-neutral-100 bg-white'
+                    }`}
+                  >
+                    <XiloConsole size={12} className="inline mr-1" /> {t('poles.tabSystemAdmin') || "Admin Système"}
+                  </button>
+                )}
+
                 {sequenceurUrl && (
                   <a 
                     href={sequenceurUrl}

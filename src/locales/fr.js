@@ -155,6 +155,7 @@ export const fr = {
     noMembers: "Aucun membre ne correspond à vos filtres.",
     other: "Autre",
     group: "Groupe : ",
+    sectionMestre: "Mestre",
     sectionAgbe: "Agbês (Devant)",
     sectionGongue: "Gonguê (Milieu)",
     sectionCaixaTarol: "Caixas / Tarol",
@@ -301,6 +302,8 @@ export const fr = {
     statusPaid: "À jour ✅",
     statusPartial: "Partiel ⚠️",
     statusUnpaid: "Non payé ❌",
+    statusExempted: "Exonéré 💙",
+    exempted: "Exonéré",
     exportCSV: "Exporter CSV",
     noMembers: "Aucun membre ne correspond aux critères.",
     tableMemberName: "Nom du membre",
@@ -731,7 +734,8 @@ export const fr = {
     loadingImages: "Chargement des images..."
   },
   poles: {
-    accueil: "Accueil / Mon Espace",
+    accueil: "Accueil",
+    'mon-espace': "Mon Espace",
     troupe: "Gestion de la Troupe",
     tresorerie: "Trésorerie",
     logistique: "Logistique",
@@ -758,6 +762,8 @@ export const fr = {
     tabStudioSocial: "Studio social",
     tabReunions: "Gestion des réunions",
     tabVaral: "Gestionnaire de Varal",
+    tabActivityReports: "Rapports d'Activité",
+    tabMestreForumChannels: "Gestion du Porte-voix",
     tabMestreEvents: "Liste des Événements",
     tabMestreStage: "Plan de Scène",
     tabMestreSequenceur: "Séquenceur (Fichiers JSON)",
@@ -767,6 +773,7 @@ export const fr = {
     tabConfigSecurity: "Sécurité et droit",
     tabConfigLogistics: "Logistique et covoiturage",
     tabConfigDocuments: "Documents",
+    tabConfigAgenda: "Configuration de l'agenda",
     tabConfigLayout: "Mise en page"
   },
   mestre: {

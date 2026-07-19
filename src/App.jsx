@@ -24,18 +24,26 @@ const StudioSocial = React.lazy(() => import('./components/StudioSocial'));
 const AdminExport = React.lazy(() => import('./components/AdminExport'));
 const VaralManager = React.lazy(() => import('./components/VaralManager'));
 const ReunionManager = React.lazy(() => import('./components/ReunionManager'));
+const ActivityReports = React.lazy(() => import('./components/studio/ActivityReports'));
 const EventDetails = React.lazy(() => import('./components/EventDetails'));
 const MestreEvents = React.lazy(() => import('./components/mestre/MestreEvents'));
 const MestreStageLayout = React.lazy(() => import('./components/mestre/MestreStageLayout'));
+const ForumChannelsManager = React.lazy(() => import('./components/ForumChannelsManager'));
 const MestreSequenceur = React.lazy(() => import('./components/mestre/MestreSequenceur'));
 const MestreWorkshops = React.lazy(() => import('./components/mestre/MestreWorkshops'));
+const WidgetAgenda = React.lazy(() => import('./components/WidgetAgenda'));
+const WidgetDocuments = React.lazy(() => import('./components/WidgetDocuments'));
 
 const POLES_CONFIG = [
   {
     id: 'accueil',
-    label: 'Accueil / Mon Espace',
+    label: 'Accueil',
+    tabs: []
+  },
+  {
+    id: 'mon-espace',
+    label: 'Mon Espace',
     tabs: [
-      { id: 'dashboard', label: 'Tableau de bord', labelKey: 'tabDashboard' },
       { id: 'profil', label: 'Mon profil', labelKey: 'tabProfil' },
       { id: 'trombinoscope', label: 'Trombinoscope', labelKey: 'tabTrombinoscope' },
       { id: 'forum', label: 'Porte-voix', labelKey: 'tabForum' }
@@ -46,18 +54,16 @@ const POLES_CONFIG = [
     label: 'Gestion de la Troupe',
     tabs: [
       { id: 'export-annu', label: 'Annuaire et export', labelKey: 'tabExportAnnu' },
-      { id: 'system-admin', label: 'Admin système', labelKey: 'tabSystemAdmin' },
       { id: 'tag-manager', label: 'Badges', labelKey: 'tabTagManager' },
-      { id: 'instruments', label: 'Pupitres et instruments', labelKey: 'tabInstruments' },
-      { id: 'linked-instruments', label: 'Instruments liés pupitres', labelKey: 'tabLinkedInstruments' }
+      { id: 'instruments', label: 'Pupitres et instruments', labelKey: 'tabInstruments' }
     ]
   },
   {
     id: 'tresorerie',
     label: 'Trésorerie',
     tabs: [
+      { id: 'dashboard-finance', label: 'Tableau de bord', labelKey: 'tabDashboard' },
       { id: 'cotisations', label: 'Cotisations', labelKey: 'tabCotisations' },
-      { id: 'finance-settings', label: 'Finances', labelKey: 'tabFinances' },
       { id: 'events-finances', label: 'Événements', labelKey: 'tabEvents' },
       { id: 'operations-diverses', label: 'Opérations diverses', labelKey: 'tabOperations' },
       { id: 'frais-km', label: 'Frais kilométriques', labelKey: 'tabFraisKm' },
@@ -78,7 +84,9 @@ const POLES_CONFIG = [
     tabs: [
       { id: 'studio-social', label: 'Studio social', labelKey: 'tabStudioSocial' },
       { id: 'reunion-manager', label: 'Gestion des réunions', labelKey: 'tabReunions' },
-      { id: 'varal-manager', label: 'Gestionnaire de Varal', labelKey: 'tabVaral' }
+      { id: 'varal-manager', label: 'Gestionnaire de Varal', labelKey: 'tabVaral' },
+      { id: 'activity-reports', label: "Rapports d'Activité", labelKey: 'tabActivityReports' },
+      { id: 'mestre-forum-channels', label: 'Gestion du Porte-voix', labelKey: 'tabMestreForumChannels' }
     ]
   },
   {
@@ -100,6 +108,7 @@ const POLES_CONFIG = [
       { id: 'config-security', label: 'Sécurité et droit', labelKey: 'tabConfigSecurity' },
       { id: 'config-logistics', label: 'Logistique et covoiturage', labelKey: 'tabConfigLogistics' },
       { id: 'config-documents', label: 'Documents', labelKey: 'tabConfigDocuments' },
+      { id: 'config-agenda', label: "Gestion de l'Agenda", labelKey: 'tabConfigAgenda' },
       { id: 'config-layout', label: 'Mise en page', labelKey: 'tabConfigLayout' }
     ]
   }
@@ -126,6 +135,7 @@ export default function App() {
   const [installPromptAvailable, setInstallPromptAvailable] = useState(false);
   const [unreadPrivateMessagesCount, setUnreadPrivateMessagesCount] = useState(0);
   const [activePrivateChatUserId, setActivePrivateChatUserId] = useState(null);
+  const [dashboardKey, setDashboardKey] = useState(0);
 
   // Load branding in real-time
   useEffect(() => {
@@ -529,6 +539,11 @@ export default function App() {
 
   const handleNavigateToPole = (poleId) => {
     setCurrentPole(poleId);
+    if (poleId === 'accueil') {
+      setCurrentTab('dashboard');
+      setDashboardKey(prev => prev + 1);
+      return;
+    }
     const poleObj = POLES_CONFIG.find(p => p.id === poleId);
     if (poleObj && poleObj.tabs.length > 0) {
       const allowedTab = poleObj.tabs.find(tab => {
@@ -545,6 +560,8 @@ export default function App() {
         }
       });
       setCurrentTab(allowedTab ? allowedTab.id : poleObj.tabs[0].id);
+    } else {
+      setCurrentTab(null);
     }
   };
 
@@ -553,17 +570,18 @@ export default function App() {
       case 'dashboard':
         setCurrentPole('accueil');
         setCurrentTab('dashboard');
+        setDashboardKey(prev => prev + 1);
         break;
       case 'profil':
-        setCurrentPole('accueil');
+        setCurrentPole('mon-espace');
         setCurrentTab('profil');
         break;
       case 'trombinoscope':
-        setCurrentPole('accueil');
+        setCurrentPole('mon-espace');
         setCurrentTab('trombinoscope');
         break;
       case 'forum':
-        setCurrentPole('accueil');
+        setCurrentPole('mon-espace');
         setCurrentTab('forum');
         break;
       case 'export-annu':
@@ -588,7 +606,7 @@ export default function App() {
         break;
       case 'treasury':
         setCurrentPole('tresorerie');
-        setCurrentTab('cotisations');
+        setCurrentTab('dashboard-finance');
         break;
       case 'kilometric-reimbursement':
         setCurrentPole('tresorerie');
@@ -617,6 +635,18 @@ export default function App() {
       case 'reunion-manager':
         setCurrentPole('studio');
         setCurrentTab('reunion-manager');
+        break;
+      case 'activity-reports':
+        setCurrentPole('studio');
+        setCurrentTab('activity-reports');
+        break;
+      case 'agenda':
+        setCurrentPole('accueil');
+        setCurrentTab('agenda');
+        break;
+      case 'varal':
+        setCurrentPole('accueil');
+        setCurrentTab('varal');
         break;
       default:
         setCurrentPole('accueil');
@@ -699,7 +729,7 @@ export default function App() {
                 groupId={profileData?.groupId}
                 role={profileData?.role}
                 isSystemAdmin={profileData?.isSystemAdmin}
-                onBack={() => setCurrentTab('system-admin')} 
+                onBack={() => setCurrentTab('export-annu')} 
               />
             ) : (currentTab === 'instruments' && isSystemOrSuperAdminOrMestre) ? (
               <AssociationSettings 
@@ -710,14 +740,15 @@ export default function App() {
                 activeTabProp="organisation"
                 onBack={() => handleNavigateToPole('accueil')}
               />
-            ) : (currentTab === 'linked-instruments' && isSystemOrSuperAdminOrMestre) ? (
-              <AssociationSettings 
+            ) : (currentTab === 'dashboard-finance' && hasAccessTresorerie) ? (
+              <TreasuryManager 
                 groupId={profileData?.groupId}
                 role={profileData?.role}
                 isSystemAdmin={profileData?.isSystemAdmin}
-                mode="linked-instruments-only"
-                activeTabProp="organisation"
-                onBack={() => handleNavigateToPole('accueil')}
+                hasAccessTresorerie={hasAccessTresorerie}
+                profileData={profileData}
+                initialTab="dashboard-finance"
+                onBack={() => handleNavigateToPole('accueil')} 
               />
             ) : (currentTab === 'cotisations' && hasAccessTresorerie) ? (
               <TreasuryManager 
@@ -728,15 +759,6 @@ export default function App() {
                 profileData={profileData}
                 initialTab="cotisations"
                 onBack={() => handleNavigateToPole('accueil')} 
-              />
-            ) : (currentTab === 'finance-settings' && hasAccessTresorerie) ? (
-              <AssociationSettings 
-                groupId={profileData?.groupId}
-                role={profileData?.role}
-                isSystemAdmin={profileData?.isSystemAdmin}
-                mode="finance-settings-only"
-                activeTabProp="finance"
-                onBack={() => handleNavigateToPole('accueil')}
               />
             ) : (currentTab === 'events-finances' && hasAccessTresorerie) ? (
               <TreasuryManager 
@@ -810,7 +832,19 @@ export default function App() {
                 onBack={() => handleNavigateToPole('accueil')} 
               />
             ) : (currentTab === 'varal-manager' && hasAccessStudio) ? (
-              <VaralManager 
+               <VaralManager 
+                 groupId={profileData?.groupId}
+                 role={profileData?.role}
+                 isSystemAdmin={profileData?.isSystemAdmin}
+                 onBack={() => handleNavigateToPole('accueil')} 
+               />
+            ) : (currentTab === 'activity-reports' && hasAccessStudio) ? (
+              <ActivityReports 
+                groupId={profileData?.groupId}
+                onBack={() => handleNavigateToPole('accueil')} 
+              />
+            ) : (currentTab === 'mestre-forum-channels' && isSystemOrSuperAdminOrMestre) ? (
+              <ForumChannelsManager 
                 groupId={profileData?.groupId}
                 role={profileData?.role}
                 isSystemAdmin={profileData?.isSystemAdmin}
@@ -887,6 +921,15 @@ export default function App() {
                 activeTabProp="finance"
                 onBack={() => handleNavigateToPole('accueil')} 
               />
+            ) : (currentTab === 'config-agenda' && isSystemOrSuperAdminOrMestre) ? (
+              <AssociationSettings 
+                groupId={profileData?.groupId}
+                role={profileData?.role}
+                isSystemAdmin={profileData?.isSystemAdmin}
+                mode="agenda-only"
+                activeTabProp="agenda"
+                onBack={() => handleNavigateToPole('accueil')} 
+              />
             ) : (currentTab === 'config-layout' && isSystemOrSuperAdminOrMestre) ? (
               <LayoutEditor 
                 groupId={profileData?.groupId}
@@ -894,8 +937,33 @@ export default function App() {
                 isSystemAdmin={profileData?.isSystemAdmin}
                 onBack={() => handleNavigateToPole('accueil')} 
               />
+            ) : currentTab === 'agenda' ? (
+              <div className="max-w-4xl mx-auto w-full">
+                <WidgetAgenda 
+                  role={profileData?.role} 
+                  isSystemAdmin={profileData?.isSystemAdmin} 
+                  groupId={profileData?.groupId} 
+                  user={user} 
+                  profileData={profileData} 
+                  onFocusModeChange={(isFocused) => {
+                    if (!isFocused) handleNavigateToView('dashboard');
+                  }}
+                  onNavigateToView={handleNavigateToView}
+                />
+              </div>
+            ) : currentTab === 'varal' ? (
+              <div className="max-w-4xl mx-auto w-full">
+                <React.Suspense fallback={<div className="animate-pulse py-6 text-xs text-center opacity-65">Chargement du Varal...</div>}>
+                  <WidgetDocuments 
+                    role={profileData?.role} 
+                    isSystemAdmin={profileData?.isSystemAdmin} 
+                    groupId={profileData?.groupId} 
+                  />
+                </React.Suspense>
+              </div>
             ) : (
               <Dashboard 
+                key={dashboardKey}
                 user={user} 
                 profileData={profileData} 
                 onNavigateToTrombi={() => handleNavigateToView('trombinoscope')} 

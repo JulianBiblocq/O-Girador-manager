@@ -21,6 +21,20 @@ const INSTRUMENT_ICONS = {
   Autre: 'favicon.svg'
 };
 
+const getInstrumentIconPath = (instName) => {
+  if (!instName) return 'favicon.svg';
+  const name = instName.toLowerCase().trim();
+  if (name.includes('alfaia')) return 'icones/alfaia.svg';
+  if (name.includes('agbê') || name.includes('agbe') || name.includes('sementes')) return 'icones/agbe.svg';
+  if (name.includes('gonguê') || name.includes('gongue')) return 'icones/gongue.svg';
+  if (name.includes('caixa') || name.includes('tarol') || name.includes('caisse')) return 'icones/caixa.svg';
+  if (name.includes('chant') || name.includes('voix') || name.includes('singer') || name.includes('danse') || name.includes('dance') || name.includes('micro')) return 'icones/micro.svg';
+  if (name.includes('timbal')) return 'icones/timbal.svg';
+  if (name.includes('mineiro')) return 'icones/mineiro.svg';
+  if (name.includes('apito') || name.includes('mestre') || name.includes('chef')) return 'icones/apito.svg';
+  return 'favicon.svg';
+};
+
 export default function UserProfile({ user, profileData, onBack }) {
   const { t, locale } = useTranslation();
   const { tRole } = useTerminologie();
@@ -128,10 +142,11 @@ export default function UserProfile({ user, profileData, onBack }) {
                 return (
                   <span 
                     key={`inst-${inst}`} 
-                    className="theme-stamp-badge theme-stamp-badge-dark text-[9px] px-2.5 py-1 bg-cordel-bg-light/80 border-dashed"
+                    className="theme-stamp-badge theme-stamp-badge-dark text-[9px] px-2.5 py-1 bg-cordel-bg-light/80 border-dashed inline-flex items-center gap-1"
                     style={{ transform: `rotate(${rotation}deg)` }}
                   >
-                    🎵 {inst}
+                    <img src={getInstrumentIconPath(inst)} alt={inst} className="w-3.5 h-3.5 object-contain dark:invert" />
+                    <span>{inst}</span>
                   </span>
                 );
               })}
@@ -346,57 +361,66 @@ export default function UserProfile({ user, profileData, onBack }) {
             </div>
 
             {/* Instrument Dropdown */}
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood">
-                {t('onboarding.instrument')}
-              </label>
-              <select
-                name="instrument"
-                value={formData.instrument}
-                onChange={handleChange}
-                required
-                disabled={saving}
-                className="theme-input w-full disabled:opacity-50 text-xs font-bold bg-cordel-bg-light"
-              >
-                {instrumentsDisponibles.map((inst) => (
-                  <option key={inst} value={inst}>{inst}</option>
-                ))}
-                <option value="Autre">{t('common.other')}</option>
-              </select>
-            </div>
-
-            {/* Instruments pratiqués / Polyvalence */}
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood">
-                {t('onboarding.instrumentsPlayed')}
-              </label>
-              <div className="grid grid-cols-2 gap-2 bg-white/40 dark:bg-black/25 p-3 rounded border border-dashed border-cordel-master-dark/15">
-                {instrumentsDisponibles.map((inst) => {
-                  const isChecked = (formData.instrumentsJoues || []).includes(inst);
-                  return (
-                    <label key={inst} className="flex items-center gap-2 text-xs font-semibold cursor-pointer select-none">
-                      <input
-                        type="checkbox"
-                        checked={isChecked}
-                        disabled={saving}
-                        onChange={(e) => {
-                          const checked = e.target.checked;
-                          setFormData(prev => {
-                            const currentList = prev.instrumentsJoues || [];
-                            const updatedList = checked 
-                              ? [...currentList, inst] 
-                              : currentList.filter(item => item !== inst);
-                            return { ...prev, instrumentsJoues: updatedList };
-                          });
-                        }}
-                        className="accent-cordel-wood scale-105"
-                      />
-                      <span>{inst}</span>
+            {(() => {
+              const allAvailableInsts = instrumentsDisponibles.includes('Mestre') 
+                ? instrumentsDisponibles 
+                : ['Mestre', ...instrumentsDisponibles];
+              return (
+                <>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood">
+                      {t('onboarding.instrument')}
                     </label>
-                  );
-                })}
-              </div>
-            </div>
+                    <select
+                      name="instrument"
+                      value={formData.instrument}
+                      onChange={handleChange}
+                      required
+                      disabled={saving}
+                      className="theme-input w-full disabled:opacity-50 text-xs font-bold bg-cordel-bg-light"
+                    >
+                      {allAvailableInsts.map((inst) => (
+                        <option key={inst} value={inst}>{inst}</option>
+                      ))}
+                      <option value="Autre">{t('common.other')}</option>
+                    </select>
+                  </div>
+
+                  {/* Instruments pratiqués / Polyvalence */}
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood">
+                      {t('onboarding.instrumentsPlayed')}
+                    </label>
+                    <div className="grid grid-cols-2 gap-2 bg-white/40 dark:bg-black/25 p-3 rounded border border-dashed border-cordel-master-dark/15">
+                      {allAvailableInsts.map((inst) => {
+                        const isChecked = (formData.instrumentsJoues || []).includes(inst);
+                        return (
+                          <label key={inst} className="flex items-center gap-2 text-xs font-semibold cursor-pointer select-none">
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              disabled={saving}
+                              onChange={(e) => {
+                                const checked = e.target.checked;
+                                setFormData(prev => {
+                                  const currentList = prev.instrumentsJoues || [];
+                                  const updatedList = checked 
+                                    ? [...currentList, inst] 
+                                    : currentList.filter(item => item !== inst);
+                                  return { ...prev, instrumentsJoues: updatedList };
+                                });
+                              }}
+                              className="accent-cordel-wood scale-105"
+                            />
+                            <span>{inst}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </>
+              );
+            })()}
 
             {/* Genre / Civilité Dropdown */}
             <div className="flex flex-col gap-1.5">
@@ -757,7 +781,7 @@ export default function UserProfile({ user, profileData, onBack }) {
                     {personal.map(inst => (
                       <CordelCard key={inst.id} variant="default" useExtremeBorder={false} className="p-2.5 bg-cordel-bg flex items-center justify-between gap-3 text-left">
                         <div className="flex items-center gap-2.5 min-w-0">
-                          <img src={INSTRUMENT_ICONS[inst.type] || 'favicon.svg'} alt={inst.type} className="w-6 h-6 object-contain shrink-0" />
+                          <img src={getInstrumentIconPath(inst.type)} alt={inst.type} className="w-6 h-6 object-contain shrink-0" />
                           <span className="text-xs font-bold truncate">{inst.nom}</span>
                         </div>
                         <span className={`theme-stamp-badge ${inst.etat === 'À réparer' ? 'border-red-600 text-red-600' : 'theme-stamp-badge-wood'} text-[6px] rotate-2`}>
@@ -781,7 +805,7 @@ export default function UserProfile({ user, profileData, onBack }) {
                     {borrowed.map(inst => (
                       <CordelCard key={inst.id} variant="default" useExtremeBorder={false} className="p-2.5 bg-cordel-bg-light/40 flex items-center justify-between gap-3 text-left">
                         <div className="flex items-center gap-2.5 min-w-0">
-                          <img src={INSTRUMENT_ICONS[inst.type] || 'favicon.svg'} alt={inst.type} className="w-6 h-6 object-contain shrink-0" />
+                          <img src={getInstrumentIconPath(inst.type)} alt={inst.type} className="w-6 h-6 object-contain shrink-0" />
                           <span className="text-xs font-bold truncate">{inst.nom}</span>
                         </div>
                         <span className={`theme-stamp-badge ${inst.etat === 'À réparer' ? 'border-red-600 text-red-600' : 'theme-stamp-badge-dark'} text-[6px] -rotate-1`}>
@@ -805,7 +829,7 @@ export default function UserProfile({ user, profileData, onBack }) {
                     {localAssigned.map(inst => (
                       <CordelCard key={inst.id} variant="default" useExtremeBorder={false} className="p-2.5 bg-cordel-bg-light/40 flex items-center justify-between gap-3 text-left">
                         <div className="flex items-center gap-2.5 min-w-0">
-                          <img src={INSTRUMENT_ICONS[inst.type] || 'favicon.svg'} alt={inst.type} className="w-6 h-6 object-contain shrink-0" />
+                          <img src={getInstrumentIconPath(inst.type)} alt={inst.type} className="w-6 h-6 object-contain shrink-0" />
                           <span className="text-xs font-bold truncate">{inst.nom}</span>
                         </div>
                         <span className="theme-stamp-badge theme-stamp-badge-wood text-[6px] rotate-3">

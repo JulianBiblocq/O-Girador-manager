@@ -56,7 +56,16 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
     instructionsPaiement: '',
     permissionsMatrice: { troupe: [], tresorerie: [], logistique: [], studio: [] },
     helloAssoSignatureKey: '',
-    tagsDisponibles: []
+    tagsDisponibles: [],
+    agendaRequireInstrument: false,
+    agendaEnableMaybeStatus: true,
+    agendaEnableStageLayout: true,
+    agendaEnableRevisionProgram: true,
+    agendaEnableCarpool: true,
+    agendaEnableFinance: true,
+    agendaEnableInscriptions: true,
+    pupitresColors: { Mestre: '#8b2a1a' },
+    eventTypes: ['prestation', 'repetition', 'stage', 'atelier', 'reunion']
   });
 
   const [logoFile, setLogoFile] = useState(null);
@@ -171,7 +180,18 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
           montantAdhesion: data.montantAdhesion !== undefined ? data.montantAdhesion : (data.montantCotisation || 0),
           optionsCotisation: Array.isArray(data.optionsCotisation) ? data.optionsCotisation : [],
           lienPaiementExterne: data.lienPaiementExterne || '',
-          instructionsPaiement: data.instructionsPaiement || ''
+          instructionsPaiement: data.instructionsPaiement || '',
+          agendaRequireInstrument: data.agendaRequireInstrument || false,
+          agendaEnableMaybeStatus: data.agendaEnableMaybeStatus !== false,
+          agendaEnableStageLayout: data.agendaEnableStageLayout !== false,
+          agendaEnableRevisionProgram: data.agendaEnableRevisionProgram !== false,
+          agendaEnableCarpool: data.agendaEnableCarpool !== false,
+          agendaEnableFinance: data.agendaEnableFinance !== false,
+          agendaEnableInscriptions: data.agendaEnableInscriptions !== false,
+          pupitresColors: data.pupitresColors || { Mestre: '#8b2a1a' },
+          eventTypes: Array.isArray(data.eventTypes) && data.eventTypes.length > 0 
+            ? data.eventTypes 
+            : ['prestation', 'repetition', 'stage', 'atelier', 'reunion']
         }));
       }
       setLoading(false);
@@ -257,7 +277,14 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
         optionsCotisation: formData.optionsCotisation,
         lienPaiementExterne: formData.lienPaiementExterne,
         instructionsPaiement: formData.instructionsPaiement,
-        permissionsMatrice: formData.permissionsMatrice
+        permissionsMatrice: formData.permissionsMatrice,
+        pupitresColors: formData.pupitresColors || {},
+        agendaEnableInscriptions: formData.agendaEnableInscriptions !== undefined ? formData.agendaEnableInscriptions : true,
+        agendaEnableCarpool: formData.agendaEnableCarpool !== undefined ? formData.agendaEnableCarpool : true,
+        agendaEnableFinance: formData.agendaEnableFinance !== undefined ? formData.agendaEnableFinance : true,
+        agendaEnableStageLayout: formData.agendaEnableStageLayout !== undefined ? formData.agendaEnableStageLayout : true,
+        agendaEnableMaybeStatus: formData.agendaEnableMaybeStatus !== undefined ? formData.agendaEnableMaybeStatus : true,
+        agendaEnableRevisionProgram: formData.agendaEnableRevisionProgram !== undefined ? formData.agendaEnableRevisionProgram : true
       }, { merge: true });
 
       const credentialsRef = doc(db, 'associations', groupId, 'private_settings', 'credentials');

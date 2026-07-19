@@ -8,6 +8,7 @@ import XiloAvatar from './XiloAvatar';
 import { useTerminologie } from '../hooks/useTerminologie';
 import { useTranslation } from './LanguageContext';
 import { XiloCaixa, XiloPeople } from './XiloIcons';
+import { useInstrumentColor } from '../hooks/useInstrumentColor';
 const CordelImageEditor = React.lazy(() => import('./CordelImageEditor'));
 
 // Memoized MemberCard subcomponent
@@ -34,7 +35,8 @@ const MemberCard = React.memo(({
   onEditPhoto,
   t,
   tRole,
-  getPupitreName
+  getPupitreName,
+  getColorForInstrument
 }) => {
   const fullName = `${prenom || ''} ${nom || ''}`;
   const hasRoleBadge = role && role !== 'membre';
@@ -59,12 +61,16 @@ const MemberCard = React.memo(({
   const hasDanse = (niveauDanse && niveauDanse !== 'aucun') || userInstruments.some(inst => inst.toLowerCase().trim() === 'danse');
   const danseLevel = niveauDanse && niveauDanse !== 'aucun' ? niveauDanse : null;
 
+  const mainInstrument = userInstruments[0] || '';
+  const cardBgColor = getColorForInstrument ? getColorForInstrument(mainInstrument, 'pastel') : undefined;
+
   return (
     <div className="relative flex flex-col items-center">
       <CordelCard 
         variant="default" 
         useExtremeBorder={true} 
         className="w-full flex flex-col items-center p-4 min-h-[220px] relative overflow-hidden"
+        style={cardBgColor ? { backgroundColor: cardBgColor } : undefined}
       >
         {/* Avatar with Xylogravure Filter */}
         <div className="mb-3 relative group">
@@ -189,14 +195,14 @@ const MemberCard = React.memo(({
          prevProps.instrument === nextProps.instrument &&
          prevProps.isCurrentUser === nextProps.isCurrentUser &&
          prevProps.isViewerAdmin === nextProps.isViewerAdmin &&
-         prevProps.fieldsConfig === nextProps.fieldsConfig &&
          prevProps.onContactUser === nextProps.onContactUser &&
          prevProps.onEditPhoto === nextProps.onEditPhoto &&
+         prevProps.getColorForInstrument === nextProps.getColorForInstrument &&
          JSON.stringify(prevProps.tags) === JSON.stringify(nextProps.tags) &&
          JSON.stringify(prevProps.instrumentsJoues) === JSON.stringify(nextProps.instrumentsJoues);
 });
 
-const SECTION_ORDER = ['agbe', 'gongue', 'caixa_tarol', 'alfaia', 'chant_danse', 'autres'];
+const SECTION_ORDER = ['mestre', 'agbe', 'gongue', 'caixa_tarol', 'alfaia', 'chant_danse', 'autres'];
 
 const getMemberSection = (member) => {
   const userInstruments = member.instrumentsJoues && member.instrumentsJoues.length > 0
@@ -205,6 +211,7 @@ const getMemberSection = (member) => {
 
   const insts = userInstruments.map(i => i.toLowerCase().trim());
 
+  if (insts.some(i => i.includes('mestre'))) return 'mestre';
   if (insts.some(i => i.includes('agbê') || i.includes('agbe'))) return 'agbe';
   if (insts.some(i => i.includes('gonguê') || i.includes('gongue'))) return 'gongue';
   if (insts.some(i => i.includes('caixa') || i.includes('tarol'))) return 'caixa_tarol';
@@ -222,6 +229,7 @@ const DEFAULT_INSTRUMENTS = ["Alfaia Marcante", "Alfaia Meião", "Alfaia Repique
 export default function Trombinoscope({ user, profileData, onBack, onContactUser }) {
   const { t, locale } = useTranslation();
   const { tRole } = useTerminologie();
+  const { getColorForInstrument } = useInstrumentColor(profileData?.groupId);
   const [members, setMembers] = useState([]);
   const [tagsDisponibles, setTagsDisponibles] = useState([]);
   const [fieldsConfig, setFieldsConfig] = useState(null);
@@ -434,6 +442,7 @@ export default function Trombinoscope({ user, profileData, onBack, onContactUser
   // Group members by section
   const groupedMembers = useMemo(() => {
     const groups = {
+      mestre: [],
       agbe: [],
       gongue: [],
       caixa_tarol: [],
@@ -572,28 +581,32 @@ export default function Trombinoscope({ user, profileData, onBack, onContactUser
                 const sectionMembers = groupedMembers[sectionKey];
                 if (sectionMembers.length === 0) return null;
 
-                const getSectionIcon = (key) => {
-                  switch (key) {
-                    case 'agbe': return '🪇';
-                    case 'gongue': return '🔔';
-                    case 'caixa_tarol': return '🥁';
-                    case 'alfaia': return '🪵';
-                    case 'chant_danse': return '💃';
-                    default: return '✨';
-                  }
-                };
+                 const getSectionIcon = (key) => {
+                   let iconPath = '';
+                   switch (key) {
+                     case 'mestre': iconPath = 'icones/apito.svg'; break;
+                     case 'agbe': iconPath = 'icones/agbe.svg'; break;
+                     case 'gongue': iconPath = 'icones/gongue.svg'; break;
+                     case 'caixa_tarol': iconPath = 'icones/caixa.svg'; break;
+                     case 'alfaia': iconPath = 'icones/alfaia.svg'; break;
+                     case 'chant_danse': iconPath = 'icones/micro.svg'; break;
+                     default: iconPath = 'favicon.svg'; break;
+                   }
+                   return <img src={iconPath} alt={key} className="w-5 h-5 object-contain inline-block dark:invert" />;
+                 };
 
-                const getTranslationKey = (key) => {
-                  switch (key) {
-                    case 'agbe': return 'trombinoscope.sectionAgbe';
-                    case 'gongue': return 'trombinoscope.sectionGongue';
-                    case 'caixa_tarol': return 'trombinoscope.sectionCaixaTarol';
-                    case 'alfaia': return 'trombinoscope.sectionAlfaia';
-                    case 'chant_danse': return 'trombinoscope.sectionChantDanse';
-                    case 'autres': return 'trombinoscope.sectionAutres';
-                    default: return '';
-                  }
-                };
+                 const getTranslationKey = (key) => {
+                   switch (key) {
+                     case 'mestre': return 'trombinoscope.sectionMestre';
+                     case 'agbe': return 'trombinoscope.sectionAgbe';
+                     case 'gongue': return 'trombinoscope.sectionGongue';
+                     case 'caixa_tarol': return 'trombinoscope.sectionCaixaTarol';
+                     case 'alfaia': return 'trombinoscope.sectionAlfaia';
+                     case 'chant_danse': return 'trombinoscope.sectionChantDanse';
+                     case 'autres': return 'trombinoscope.sectionAutres';
+                     default: return '';
+                   }
+                 };
 
                 return (
                   <div key={sectionKey} className="flex flex-col gap-4">
@@ -635,6 +648,7 @@ export default function Trombinoscope({ user, profileData, onBack, onContactUser
                           t={t}
                           tRole={tRole}
                           getPupitreName={getPupitreName}
+                          getColorForInstrument={getColorForInstrument}
                         />
                       ))}
                     </div>

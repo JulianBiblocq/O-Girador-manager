@@ -23,7 +23,7 @@ export function useEventSetlist(event) {
     try {
       let jsonUrl = '';
       if (newMorceauJsonFile) {
-        const fileRef = ref(storage, `associations/${event.groupId}/events/${event.id}/setlist/${Date.now()}_${newMorceauJsonFile.name}`);
+        const fileRef = ref(storage, `documents/${event.groupId}/events/${event.id}/setlist/${Date.now()}_${newMorceauJsonFile.name}`);
         const snapshot = await uploadBytes(fileRef, newMorceauJsonFile);
         jsonUrl = await getDownloadURL(snapshot.ref);
       }

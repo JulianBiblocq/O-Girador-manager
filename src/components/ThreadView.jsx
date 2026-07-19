@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { doc, onSnapshot, updateDoc, arrayUnion, deleteDoc } from 'firebase/firestore';
+import { doc, onSnapshot, updateDoc, arrayUnion, deleteDoc, collection, addDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
@@ -112,8 +112,20 @@ export default function ThreadView({ threadId, user, profileData, channels = [],
     if (!thread) return true;
     if (!thread.channelId) return false;
     if (!threadChannel) return false;
-    const roles = threadChannel.allowedRoles || [];
-    return !(roles.includes('all') || roles.includes(profileData?.role));
+
+    const userRole = profileData?.role || 'membre';
+    const userTags = profileData?.tags || [];
+
+    const write = threadChannel.writeRoles || ['all'];
+    if (write.includes('all')) return false;
+    if (write.includes(userRole)) return false;
+    if (userTags.some(tag => write.includes(tag))) return false;
+
+    // Rétrocompatibilité
+    if (threadChannel.allowedRoles) {
+      return !(threadChannel.allowedRoles.includes('all') || threadChannel.allowedRoles.includes(userRole));
+    }
+    return true;
   })();
   
   const messagesEndRef = useRef(null);
@@ -177,7 +189,8 @@ export default function ThreadView({ threadId, user, profileData, channels = [],
 
   const handleSend = async (e) => {
     e.preventDefault();
-    if (!replyText.trim() || !threadId) return;
+    const cleanText = replyText.trim();
+    if (!cleanText || !threadId) return;
 
     setSending(true);
     try {
@@ -189,12 +202,37 @@ export default function ThreadView({ threadId, user, profileData, channels = [],
         reponses: arrayUnion({
           auteurId: user.uid,
           auteurNom: authorName,
-          message: replyText,
+          message: cleanText,
           dateCreation: nowIso,
           targetTag: selectedTarget || null
         }),
         derniereModification: nowIso
       });
+
+      // Détecter les mentions @Badge
+      const mentions = availableTargets.filter(tag => {
+        const regex = new RegExp(`@${tag}\\b`, 'gi');
+        return regex.test(cleanText);
+      });
+
+      if (mentions.length > 0) {
+        for (const tag of mentions) {
+          try {
+            await addDoc(collection(db, 'notifications_queue'), {
+              groupId: profileData.groupId,
+              title: `Mention dans le forum (#${threadChannel?.name || 'Discussion'})`,
+              body: `${authorName} vous a mentionné : "${cleanText.slice(0, 100)}${cleanText.length > 100 ? '...' : ''}"`,
+              targetTag: tag,
+              senderId: user.uid,
+              threadId: threadId,
+              channelId: thread?.channelId || null,
+              createdAt: nowIso
+            });
+          } catch (err) {
+            console.error("Error writing notification queue doc:", err);
+          }
+        }
+      }
 
       setReplyText('');
       setSelectedTarget('');
@@ -342,6 +380,22 @@ export default function ThreadView({ threadId, user, profileData, channels = [],
                   ))}
                 </select>
               </div>
+
+              {availableTargets.length > 0 && (
+                <div className="flex flex-wrap items-center gap-1.5 my-1.5 select-none">
+                  <span className="text-[9px] font-black uppercase text-cordel-master-dark opacity-60">Mentionner :</span>
+                  {availableTargets.map(tag => (
+                    <button
+                      key={tag}
+                      type="button"
+                      onClick={() => setReplyText(prev => prev + `@${tag} `)}
+                      className="px-2 py-0.5 text-[9px] font-bold bg-cordel-bg border border-cordel-master-dark/20 rounded hover:border-encre-noire transition-all cursor-pointer shadow-[1px_1px_0px_0px_rgba(24,23,22,0.15)] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none"
+                    >
+                      @{tag}
+                    </button>
+                  ))}
+                </div>
+              )}
 
               <textarea
                 value={replyText}

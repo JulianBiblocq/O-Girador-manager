@@ -2,6 +2,7 @@ import React from 'react';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 import XiloAvatar from '../XiloAvatar';
+import { useInstrumentColor } from '../../hooks/useInstrumentColor';
 
 export default function EventRSVPSection({
   event,
@@ -40,8 +41,26 @@ export default function EventRSVPSection({
   handleManualRegister,
   handleManualUnregister,
   isRegistrationDeadlinePassed,
-  t
+  t,
+  agendaRequireInstrument = false,
+  agendaEnableMaybeStatus = true
 }) {
+  const { getColorForInstrument } = useInstrumentColor(profileData?.groupId);
+
+  const getInstrumentIconPath = (instName) => {
+    if (!instName) return 'favicon.svg';
+    const name = instName.toLowerCase();
+    if (name.includes('alfaia')) return 'icones/alfaia.svg';
+    if (name.includes('agbê') || name.includes('agbe') || name.includes('sementes')) return 'icones/agbe.svg';
+    if (name.includes('gonguê') || name.includes('gongue')) return 'icones/gongue.svg';
+    if (name.includes('caixa') || name.includes('tarol') || name.includes('caisse')) return 'icones/caixa.svg';
+    if (name.includes('chant') || name.includes('voix') || name.includes('singer') || name.includes('danse') || name.includes('dance')) return 'icones/micro.svg';
+    if (name.includes('timbal')) return 'icones/timbal.svg';
+    if (name.includes('mineiro')) return 'icones/mineiro.svg';
+    if (name.includes('apito') || name.includes('mestre') || name.includes('chef')) return 'icones/apito.svg';
+    return 'favicon.svg';
+  };
+
   return (
     <>
       {/* RSVP Form */}
@@ -123,7 +142,7 @@ export default function EventRSVPSection({
             </h4>
             
             {/* Status Selection Buttons */}
-            <div className="grid grid-cols-3 gap-2">
+            <div className={`grid ${agendaEnableMaybeStatus ? 'grid-cols-3' : 'grid-cols-2'} gap-2`}>
               <button
                 type="button"
                 disabled={saving || isPrestationRestricted || event.status === 'annule'}
@@ -154,20 +173,22 @@ export default function EventRSVPSection({
                 Absent
               </button>
 
-              <button
-                type="button"
-                disabled={saving || isPrestationRestricted || event.status === 'annule'}
-                onClick={() => handleStatusChange('confirm')}
-                className={`
-                  theme-btn px-2 py-2 text-xs rounded-[4px_6px_3px_5px] transition-colors cursor-pointer select-none
-                  ${status === 'confirm' 
-                    ? 'theme-bg-ocre font-black border-2 border-encre-noire shadow-none translate-x-[1px] translate-y-[1px]' 
-                    : 'bg-cordel-bg-light text-encre-noire border-2 border-encre-noire shadow-[2px_2px_0px_0px_#181716] hover:bg-cordel-hover'}
-                  ${(isPrestationRestricted || event.status === 'annule') ? 'opacity-40 cursor-not-allowed' : ''}
-                `}
-              >
-                À confirmer
-              </button>
+              {agendaEnableMaybeStatus && (
+                <button
+                  type="button"
+                  disabled={saving || isPrestationRestricted || event.status === 'annule'}
+                  onClick={() => handleStatusChange('confirm')}
+                  className={`
+                    theme-btn px-2 py-2 text-xs rounded-[4px_6px_3px_5px] transition-colors cursor-pointer select-none
+                    ${status === 'confirm' 
+                      ? 'theme-bg-ocre font-black border-2 border-encre-noire shadow-none translate-x-[1px] translate-y-[1px]' 
+                      : 'bg-cordel-bg-light text-encre-noire border-2 border-encre-noire shadow-[2px_2px_0px_0px_#181716] hover:bg-cordel-hover'}
+                    ${(isPrestationRestricted || event.status === 'annule') ? 'opacity-40 cursor-not-allowed' : ''}
+                  `}
+                >
+                  À confirmer
+                </button>
+              )}
             </div>
 
             {/* Cancellation warning message */}
@@ -197,7 +218,7 @@ export default function EventRSVPSection({
             )}
 
             {/* Conditional Instrument Choice Options */}
-            {status === 'present' && (isInstrumentLocked || (profileData?.instrumentsJoues && profileData.instrumentsJoues.length > 1)) && (
+            {status === 'present' && (isInstrumentLocked || agendaRequireInstrument || (profileData?.instrumentsJoues && profileData.instrumentsJoues.length > 1)) && (
               <div className="flex flex-col gap-4 border-t border-dashed border-cordel-master-dark/20 pt-4 mt-2">
                 
                 {/* Choice of Instrument for Polyvalents or locked notice */}
@@ -316,8 +337,9 @@ export default function EventRSVPSection({
                 const isLinked = inst.includes(' + ');
                 return (
                   <div key={inst} className="text-xs leading-normal">
-                    <strong className="text-cordel-wood block mb-1">
-                      🥁 {(() => {
+                    <strong className="text-cordel-wood flex items-center gap-1.5 mb-1">
+                      <img src={getInstrumentIconPath(inst)} alt={inst} className="w-4 h-4 object-contain dark:invert inline-block" />
+                      {(() => {
                         const pupitreName = getPupitreName(inst);
                         return pupitreName ? `${inst} (${pupitreName})` : inst;
                       })()} ({list.length})
@@ -334,9 +356,13 @@ export default function EventRSVPSection({
                       })()} :
                     </strong>
                     <div className="flex flex-wrap gap-1.5 items-center pl-4">
-                      {list.map(u => (
-                        <div key={u.id || `${u.prenom}-${u.nom}`} className="inline-flex items-center gap-1.5 bg-white/60 dark:bg-black/20 px-2 py-0.5 rounded border border-dashed border-encre-noire/10 text-xs font-semibold text-encre-noire">
-                          <XiloAvatar src={u.photoURL} name={`${u.prenom} ${u.nom}`} size={18} />
+                       {list.map(u => (
+                         <div 
+                           key={u.id || `${u.prenom}-${u.nom}`} 
+                           className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded border border-dashed border-encre-noire/15 text-xs font-semibold text-encre-noire"
+                           style={{ backgroundColor: getColorForInstrument(inst, 'pastel') }}
+                         >
+                           <XiloAvatar src={u.photoURL} name={`${u.prenom} ${u.nom}`} size={18} />
                           <span>{u.prenom} {u.nom}</span>
                           {isAuthorized && u.id && (
                             <button
@@ -366,7 +392,11 @@ export default function EventRSVPSection({
                 {(event.inscriptions || []).filter(i => i.status === 'present').map(i => {
                   const userInfo = allUsers.find(u => u.id === i.userId) || {};
                   return (
-                    <div key={i.userId} className="inline-flex items-center gap-1.5 bg-white/60 dark:bg-black/20 px-2 py-0.5 rounded border border-dashed border-encre-noire/10 text-xs font-semibold text-encre-noire">
+                    <div 
+                      key={i.userId} 
+                      className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded border border-dashed border-encre-noire/15 text-xs font-semibold text-encre-noire"
+                      style={{ backgroundColor: getColorForInstrument(userInfo.instrument, 'pastel') }}
+                    >
                       <XiloAvatar src={userInfo.photoURL} name={i.userName} size={18} />
                       <span>{i.userName}</span>
                       {isAuthorized && (

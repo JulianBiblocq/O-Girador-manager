@@ -163,19 +163,11 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
 
     const channelsRef = collection(db, 'forum_channels');
     const userRole = profileData?.role || 'membre';
+    const userTags = profileData?.tags || [];
     const isAdmin = profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.isSystemAdmin;
 
-    const q = isAdmin
-      ? query(channelsRef, where('groupId', '==', profileData.groupId))
-      : query(
-          channelsRef,
-          where('groupId', '==', profileData.groupId),
-          or(
-            where('allowedRoles', 'array-contains', userRole),
-            where('allowedRoles', 'array-contains', 'all'),
-            where('isTransparent', '==', true)
-          )
-        );
+    // Load all channels for this group
+    const q = query(channelsRef, where('groupId', '==', profileData.groupId));
 
     const unsubscribe = onSnapshot(q, async (snap) => {
       const fetched = [];
@@ -185,16 +177,17 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
 
       if (fetched.length === 0) {
         const defaults = [
-          { id: `${profileData.groupId}_general`, name: "Général", allowedRoles: ["all"], isTransparent: true },
-          { id: `${profileData.groupId}_ca`, name: "CA", allowedRoles: ["ca"], isTransparent: false },
-          { id: `${profileData.groupId}_bureau`, name: "Bureau", allowedRoles: ["bureau"], isTransparent: false }
+          { id: `${profileData.groupId}_general`, name: "Général", readRoles: ["all"], writeRoles: ["all"], isTransparent: true },
+          { id: `${profileData.groupId}_ca`, name: "CA", readRoles: ["ca"], writeRoles: ["ca"], isTransparent: false },
+          { id: `${profileData.groupId}_bureau`, name: "Bureau", readRoles: ["bureau"], writeRoles: ["bureau"], isTransparent: false }
         ];
         for (const ch of defaults) {
           try {
             await setDoc(doc(db, 'forum_channels', ch.id), {
               groupId: profileData.groupId,
               name: ch.name,
-              allowedRoles: ch.allowedRoles,
+              readRoles: ch.readRoles,
+              writeRoles: ch.writeRoles,
               isTransparent: ch.isTransparent
             }, { merge: true });
           } catch (e) {
@@ -202,8 +195,27 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
           }
         }
       } else {
+        // Filter client-side
+        const allowedChannels = fetched.filter(ch => {
+          if (isAdmin) return true;
+          
+          // Read roles
+          const read = ch.readRoles || ['all'];
+          if (read.includes('all')) return true;
+          if (read.includes(userRole)) return true;
+          if (userTags.some(tag => read.includes(tag))) return true;
+
+          // Backwards compatibility with old structure
+          if (ch.allowedRoles) {
+            if (ch.allowedRoles.includes('all') || ch.allowedRoles.includes(userRole)) return true;
+          }
+          if (ch.isTransparent === true) return true;
+          
+          return false;
+        });
+
         const order = ["Général", "CA", "Bureau"];
-        const sorted = fetched.sort((a, b) => {
+        const sorted = allowedChannels.sort((a, b) => {
           const idxA = order.indexOf(a.name);
           const idxB = order.indexOf(b.name);
           if (idxA !== -1 && idxB !== -1) return idxA - idxB;
@@ -226,7 +238,7 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
     });
 
     return () => unsubscribe();
-  }, [profileData?.groupId, profileData?.role, profileData?.isSystemAdmin]);
+  }, [profileData?.groupId, profileData?.role, profileData?.tags, profileData?.isSystemAdmin]);
 
   // Migration of old threads without channelId
   useEffect(() => {
@@ -344,9 +356,20 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
 
   const hasWriteAccess = useCallback((channel) => {
     if (!channel) return false;
+    const userRole = profileData?.role || 'membre';
+    const userTags = profileData?.tags || [];
     if (profileData?.isSystemAdmin || profileData?.role === 'mestre' || profileData?.role === 'super-admin') return true;
-    const roles = channel.allowedRoles || [];
-    return roles.includes('all') || roles.includes(profileData?.role);
+    
+    const write = channel.writeRoles || ['all'];
+    if (write.includes('all')) return true;
+    if (write.includes(userRole)) return true;
+    if (userTags.some(tag => write.includes(tag))) return true;
+
+    // Rétrocompatibilité
+    if (channel.allowedRoles) {
+      return channel.allowedRoles.includes('all') || channel.allowedRoles.includes(userRole);
+    }
+    return false;
   }, [profileData]);
 
   // Memoized handlers

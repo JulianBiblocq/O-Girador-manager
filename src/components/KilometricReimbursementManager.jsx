@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { collection, query, where, onSnapshot, doc } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, doc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
 import { useTranslation } from './LanguageContext';
 import { XiloCar, XiloCoin } from './XiloIcons';
+
+const AddressAutocomplete = React.lazy(() => import('./AddressAutocomplete'));
 
 // Algorithme de calcul de l'occupation et éligibilité du véhicule
 const calculateCarStatus = (car, associationSettings) => {
@@ -50,6 +52,12 @@ export default function KilometricReimbursementManager({ groupId, onBack, role, 
   const [activeTab, setActiveTab] = useState('summary'); // 'summary', 'members', 'events'
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedRow, setExpandedRow] = useState(null); // stores member or event ID to expand details
+  const [showConfigPanel, setShowConfigPanel] = useState(false);
+  const [formEnableCarpool, setFormEnableCarpool] = useState(true);
+  const [formIndemnite, setFormIndemnite] = useState(0);
+  const [formPointRassemblement, setFormPointRassemblement] = useState('');
+  const [formReimbursementRule, setFormReimbursementRule] = useState('full_cars_only');
+  const [savingSettings, setSavingSettings] = useState(false);
 
   const isAuthorized = role === 'mestre' || role === 'super-admin' || isSystemAdmin === true || hasAccessTresorerie === true;
 
@@ -57,15 +65,41 @@ export default function KilometricReimbursementManager({ groupId, onBack, role, 
   useEffect(() => {
     if (!groupId) return;
     const assocRef = doc(db, 'associations', groupId);
-    const unsubscribe = onSnapshot(assocRef, (snap) => {
+    const unsubscribe = onSnapshot(assocRef, snap => {
       if (snap.exists()) {
-        setAssociationSettings(snap.data());
+        const data = snap.data();
+        setAssociationSettings(data);
+        setFormEnableCarpool(data.enableCarpoolReimbursement !== false);
+        setFormIndemnite(data.indemniteKilometrique || 0);
+        setFormPointRassemblement(data.pointRassemblementDefaut || data.adresseLocal || '');
+        setFormReimbursementRule(data.reimbursementRule || 'full_cars_only');
       }
     }, (err) => {
       console.error("KilometricReimbursementManager - Error fetching association settings:", err);
     });
     return () => unsubscribe();
   }, [groupId]);
+
+  const handleSaveSettings = async () => {
+    setSavingSettings(true);
+    try {
+      const assocRef = doc(db, 'associations', groupId);
+      await updateDoc(assocRef, {
+        enableCarpoolReimbursement: formEnableCarpool,
+        indemniteKilometrique: formIndemnite,
+        pointRassemblementDefaut: formPointRassemblement,
+        adresseLocal: formPointRassemblement,
+        reimbursementRule: formReimbursementRule
+      });
+      alert("Paramètres de covoiturage mis à jour avec succès !");
+      setShowConfigPanel(false);
+    } catch (err) {
+      console.error("Error updating association settings:", err);
+      alert("Erreur lors de la mise à jour des paramètres.");
+    } finally {
+      setSavingSettings(false);
+    }
+  };
 
   // 2. Charger les membres actifs
   useEffect(() => {
@@ -329,8 +363,109 @@ export default function KilometricReimbursementManager({ groupId, onBack, role, 
           <div>⚙️ Règle de remboursement : <span className="font-black">
             {reimbursementRule === 'full_cars_only' ? "Véhicules complets uniquement" : "Tous les conducteurs"}
           </span></div>
+          {isAuthorized && (
+            <button
+              type="button"
+              onClick={() => setShowConfigPanel(!showConfigPanel)}
+              className="mt-2 text-[9px] font-black uppercase tracking-wider text-cordel-wood hover:underline text-left cursor-pointer flex items-center gap-1 select-none"
+            >
+              ⚙️ {showConfigPanel ? "Masquer la configuration" : "Modifier les paramètres"}
+            </button>
+          )}
         </div>
       </div>
+
+      {/* Formulaire pliable de configuration (Effet miroir) */}
+      {isAuthorized && showConfigPanel && (
+        <CordelCard variant="default" useExtremeBorder={true} className="py-4 px-5">
+          <h3 className="text-xs uppercase font-extrabold tracking-wider text-cordel-wood mb-3">
+            🚗 Configurer le covoiturage & les défraiements
+          </h3>
+          <div className="flex flex-col gap-3.5">
+            <div className="flex items-start gap-2.5 cursor-pointer select-none">
+              <input 
+                type="checkbox"
+                checked={formEnableCarpool}
+                onChange={(e) => setFormEnableCarpool(e.target.checked)}
+                disabled={savingSettings}
+                className="w-4 h-4 cursor-pointer mt-0.5 shrink-0"
+                id="formEnableCarpool"
+              />
+              <div className="flex flex-col text-left">
+                <label htmlFor="formEnableCarpool" className="text-xs font-bold text-encre-noire cursor-pointer">
+                  Activer le calcul automatique des défraiements kilométriques
+                </label>
+              </div>
+            </div>
+
+            {formEnableCarpool && (
+              <div className="flex flex-col gap-3.5 border-t border-dashed border-cordel-master-dark/10 pt-3 mt-1">
+                <div className="flex flex-col gap-1 text-left">
+                  <label className="text-[9px] uppercase font-extrabold tracking-wider text-cordel-master-dark">
+                    Tarif de remboursement par kilomètre (€/km)
+                  </label>
+                  <input 
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={formIndemnite}
+                    onChange={(e) => setFormIndemnite(parseFloat(e.target.value) || 0)}
+                    disabled={savingSettings}
+                    placeholder="ex: 0.40"
+                    className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light w-full"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1 text-left">
+                  <label className="text-[9px] uppercase font-extrabold tracking-wider text-cordel-master-dark">
+                    Adresse du local / Point de rassemblement par défaut
+                  </label>
+                  <React.Suspense fallback={
+                    <div className="text-[10px] font-bold py-2 text-cordel-wood animate-pulse">
+                      ⏳ Chargement du champ adresse...
+                    </div>
+                  }>
+                    <AddressAutocomplete 
+                      name="pointRassemblementDefaut"
+                      value={formPointRassemblement}
+                      onChange={(e) => setFormPointRassemblement(e.target.value)}
+                      disabled={savingSettings}
+                      placeholder="ex: 12 Rue du Maracatu, 75000 Paris"
+                      className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light w-full"
+                    />
+                  </React.Suspense>
+                </div>
+
+                <div className="flex flex-col gap-1 text-left">
+                  <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                    Règle d'éligibilité au remboursement
+                  </label>
+                  <select 
+                    value={formReimbursementRule}
+                    onChange={(e) => setFormReimbursementRule(e.target.value)}
+                    disabled={savingSettings}
+                    className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light w-full cursor-pointer"
+                  >
+                    <option value="all_drivers">Souple : Tous les conducteurs sont éligibles</option>
+                    <option value="full_cars_only">Strict : Uniquement les voitures pleines</option>
+                  </select>
+                </div>
+              </div>
+            )}
+
+            <CordelButton
+              type="button"
+              variant="ocre"
+              useExtremeBorder={true}
+              onClick={handleSaveSettings}
+              disabled={savingSettings}
+              className="py-2 text-[10px] font-black uppercase tracking-widest mt-2"
+            >
+              {savingSettings ? "Enregistrement..." : "Enregistrer la configuration"}
+            </CordelButton>
+          </div>
+        </CordelCard>
+      )}
 
       {/* Tabs bar */}
       <div className="flex gap-2 border-b border-cordel-master-dark/20 pb-2">

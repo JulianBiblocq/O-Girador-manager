@@ -155,6 +155,7 @@ export const pt = {
     noMembers: "Nenhum membro corresponde aos filtros selecionados.",
     other: "Outro",
     group: "Grupo: ",
+    sectionMestre: "Mestre",
     sectionAgbe: "Ala de Agbê (Frente)",
     sectionGongue: "Gonguê (Centro)",
     sectionCaixaTarol: "Caixas / Tarol",
@@ -301,6 +302,8 @@ export const pt = {
     statusPaid: "Em dia ✅",
     statusPartial: "Parcial ⚠️",
     statusUnpaid: "Não pago ❌",
+    statusExempted: "Isento 💙",
+    exempted: "Isento",
     exportCSV: "Exportar CSV",
     noMembers: "Nenhum membro corresponde aos critérios.",
     tableMemberName: "Nome do membro",
@@ -731,7 +734,8 @@ export const pt = {
     loadingImages: "Carregando imagens..."
   },
   poles: {
-    accueil: "Início / Meu Espaço",
+    accueil: "Início",
+    'mon-espace': "Meu Espaço",
     troupe: "Gestão da Roda",
     tresorerie: "Tesouraria",
     logistique: "Logística",
@@ -758,6 +762,8 @@ export const pt = {
     tabStudioSocial: "Studio Social",
     tabReunions: "Gestão de reuniões",
     tabVaral: "Varal",
+    tabActivityReports: "Relatórios de Atividade",
+    tabMestreForumChannels: "Gestão do Fórum",
     tabMestreEvents: "Lista de Eventos",
     tabMestreStage: "Plano de Palco",
     tabMestreSequenceur: "Sequenciador (Arquivos JSON)",
@@ -767,6 +773,7 @@ export const pt = {
     tabConfigSecurity: "Segurança e direitos",
     tabConfigLogistics: "Logística e carona",
     tabConfigDocuments: "Documentos",
+    tabConfigAgenda: "Configuração da agenda",
     tabConfigLayout: "Layout"
   },
   mestre: {

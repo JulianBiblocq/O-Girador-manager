@@ -4,6 +4,7 @@ import { db } from '../../firebase';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 import XiloAvatar from '../XiloAvatar';
+import { useInstrumentColor } from '../../hooks/useInstrumentColor';
 
 export default function EventStageLayoutSection({
   event,
@@ -13,6 +14,7 @@ export default function EventStageLayoutSection({
   isAuthorized,
   t
 }) {
+  const { getColorForInstrument } = useInstrumentColor(profileData?.groupId);
   // Check if a layout exists
   const hasLayout = event.stageLayout?.placements && Object.keys(event.stageLayout.placements).length > 0;
 
@@ -82,16 +84,7 @@ export default function EventStageLayoutSection({
 
   // Instrument color mapping matching the project design system
   const getInstrumentColorClass = (inst) => {
-    if (!inst) return 'theme-bg-default border-encre-noire/30';
-    const name = inst.toLowerCase();
-    if (name.includes('alfaia')) return 'theme-bg-kraft border-amber-900/30 text-encre-noire';
-    if (name.includes('agbê') || name.includes('agbe') || name.includes('sementes')) return 'theme-bg-jaune border-yellow-600/30 text-encre-noire';
-    if (name.includes('gonguê') || name.includes('gongue')) return 'theme-bg-ocre border-amber-600/30 text-encre-noire';
-    if (name.includes('caixa') || name.includes('tarol') || name.includes('caisse')) return 'theme-bg-bleu border-blue-600/30 text-encre-noire';
-    if (name.includes('chant') || name.includes('voix') || name.includes('singer')) return 'theme-bg-vert border-green-600/30 text-encre-noire';
-    if (name.includes('danse') || name.includes('dance')) return 'theme-bg-violet border-purple-600/30 text-white';
-    if (name.includes('timbal') || name.includes('apito') || name.includes('chef')) return 'theme-bg-orange border-orange-600/30 text-encre-noire';
-    return 'theme-bg-default border-encre-noire/30 text-encre-noire';
+    return 'border-encre-noire/30 text-encre-noire';
   };
 
   // Helper to format names to fits in grid cells (e.g. "Julien B.")
@@ -144,10 +137,10 @@ export default function EventStageLayoutSection({
 
   const handleRowsChange = (e) => {
     const val = Math.max(2, Math.min(10, parseInt(e.target.value) || 5));
-    // Clear out of bounds placements
+    // Clear out of bounds placements but keep row 0 (Mestre)
     const filteredPlacements = {};
     Object.entries(activePlacements).forEach(([uid, pos]) => {
-      if (pos.row <= val) {
+      if (pos.row === 0 || pos.row <= val) {
         filteredPlacements[uid] = pos;
       }
     });
@@ -156,10 +149,10 @@ export default function EventStageLayoutSection({
 
   const handleColsChange = (e) => {
     const val = Math.max(2, Math.min(10, parseInt(e.target.value) || 5));
-    // Clear out of bounds placements
+    // Clear out of bounds placements but keep col 0 (Mestre)
     const filteredPlacements = {};
     Object.entries(activePlacements).forEach(([uid, pos]) => {
-      if (pos.col <= val) {
+      if (pos.col === 0 || pos.col <= val) {
         filteredPlacements[uid] = pos;
       }
     });
@@ -289,6 +282,71 @@ export default function EventStageLayoutSection({
                 {t('eventDetails.stageFront') || "▲ AVANT DE LA SCÈNE (PUBLIC) ▲"}
               </div>
 
+              {/* Case Mestre dédiée, centrée devant la grille */}
+              <div className="flex flex-col items-center mb-5 mt-1 select-none">
+                <span className="text-[8px] uppercase tracking-widest font-black text-cordel-wood mb-1 opacity-80">
+                  👑 Chef d'orchestre (Mestre)
+                </span>
+                {(() => {
+                  const mestreMemberId = Object.keys(activePlacements).find(
+                    (uid) => activePlacements[uid]?.row === 0 && activePlacements[uid]?.col === 0
+                  );
+                  const mestreMember = mestreMemberId ? presentMembers.find((m) => m.id === mestreMemberId) : null;
+                  const isSelected = selectedMemberId && selectedMemberId === mestreMemberId;
+
+                  return (
+                    <div
+                      onClick={() => handleCellClick(0, 0)}
+                      className={`
+                        relative flex flex-col items-center justify-center p-2 rounded border-2 transition-all cursor-pointer text-center
+                        w-20 h-20 shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:scale-[1.03]
+                        ${mestreMember 
+                          ? `${getInstrumentColorClass(mestreMember.instrument)} border-double border-4` 
+                          : 'border-dashed border-cordel-wood/40 bg-amber-50/20 hover:bg-amber-100/30'}
+                        ${isSelected ? 'ring-2 ring-cordel-wood scale-[1.03] outline-none z-10' : ''}
+                      `}
+                      style={mestreMember ? { backgroundColor: getColorForInstrument(mestreMember.instrument, 'pastel') } : undefined}
+                      title={mestreMember ? `Mestre : ${mestreMember.name} (${mestreMember.instrument})` : "Case Mestre"}
+                    >
+                      {mestreMember ? (
+                        <>
+                          <XiloAvatar
+                            src={mestreMember.photoURL}
+                            name={mestreMember.name}
+                            size={24}
+                            className="pointer-events-none mb-1 border border-encre-noire/10"
+                          />
+                          <span className="text-[9px] font-black leading-none truncate max-w-full">
+                            {formatMemberName(mestreMember.name)}
+                          </span>
+                          <span className="text-[7px] opacity-75 font-semibold leading-none mt-0.5 uppercase truncate max-w-full">
+                            {mestreMember.instrument.split(' ')[0]}
+                          </span>
+                          
+                          {/* Admin remove placement button */}
+                          {isAuthorized && (
+                            <button
+                              type="button"
+                              onClick={(e) => handleUnplaceMember(e, mestreMember.id)}
+                              className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-red-600 text-white text-[8px] font-black flex items-center justify-center border border-encre-noire shadow hover:bg-red-800 transition-colors cursor-pointer"
+                              title="Retirer le Mestre"
+                            >
+                              ✕
+                            </button>
+                          )}
+                        </>
+                      ) : (
+                        isAuthorized ? (
+                          <span className="text-cordel-wood/40 text-[10px] font-black leading-none">+ Mestre</span>
+                        ) : (
+                          <span className="text-neutral-400/50 text-[9px] italic">Vide</span>
+                        )
+                      )}
+                    </div>
+                  );
+                })()}
+              </div>
+
               <div
                 style={{
                   display: 'grid',
@@ -319,6 +377,7 @@ export default function EventStageLayoutSection({
                           : 'border-dashed border-encre-noire/15 bg-white/20 dark:bg-black/10 hover:bg-white/40 dark:hover:bg-black/20 hover:scale-[1.01]'}
                         ${isSelected ? 'ring-2 ring-cordel-wood scale-[1.03] outline-none z-10' : ''}
                       `}
+                      style={member ? { backgroundColor: getColorForInstrument(member.instrument, 'pastel') } : undefined}
                       title={member ? `${member.name} (${member.instrument})` : `Cellule L${row}-C${col}`}
                     >
                       {member ? (
@@ -395,6 +454,7 @@ export default function EventStageLayoutSection({
                                     ? 'ring-2 ring-cordel-wood font-black translate-x-[2px] shadow-none' 
                                     : 'border-dashed border-encre-noire/10 hover:translate-x-[1px]'}
                                 `}
+                                style={{ backgroundColor: getColorForInstrument(member.instrument, 'pastel') }}
                               >
                                 <XiloAvatar src={member.photoURL} name={member.name} size={16} />
                                 <span className="truncate">{member.name}</span>

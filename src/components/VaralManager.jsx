@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { collection, query, where, onSnapshot, doc, deleteDoc } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, doc, deleteDoc, updateDoc } from 'firebase/firestore';
 import { ref, deleteObject } from 'firebase/storage';
 import { db, storage } from '../firebase';
 import CordelCard from './CordelCard';
@@ -23,8 +23,63 @@ export default function VaralManager({ groupId, onBack, role, isSystemAdmin }) {
   const [isAdding, setIsAdding] = useState(false);
   const [documentToEdit, setDocumentToEdit] = useState(null);
   const [selectedReport, setSelectedReport] = useState(null);
+  
+  // Sorting state per category
+  const [sortMethods, setSortMethods] = useState({});
+
+  const [showCategorySettings, setShowCategorySettings] = useState(false);
+  const [newCatName, setNewCatName] = useState('');
+  const [newCatUpload, setNewCatUpload] = useState(false);
+  const [newCatUploadUrl, setNewCatUploadUrl] = useState('');
+  const [newCatArchive, setNewCatArchive] = useState(false);
+  const [savingSettings, setSavingSettings] = useState(false);
 
   const isAuthorized = role === 'mestre' || role === 'super-admin' || isSystemAdmin === true;
+
+  const handleAddCategory = async () => {
+    if (!newCatName.trim()) return;
+    setSavingSettings(true);
+    try {
+      const newCat = {
+        id: `cat_${Date.now()}`,
+        nom: newCatName.trim(),
+        activerUploadPublic: newCatUpload,
+        lienUploadPublic: newCatUpload ? newCatUploadUrl.trim() : '',
+        activerOpaciteArchive: newCatArchive
+      };
+      
+      const updatedCategories = [...varalCategories, newCat];
+      const assocRef = doc(db, 'associations', groupId);
+      await updateDoc(assocRef, { varalCategories: updatedCategories });
+      
+      setNewCatName('');
+      setNewCatUpload(false);
+      setNewCatUploadUrl('');
+      setNewCatArchive(false);
+    } catch (err) {
+      console.error("Error adding category:", err);
+      alert("Erreur lors de l'ajout de la catégorie.");
+    } finally {
+      setSavingSettings(false);
+    }
+  };
+
+  const handleRemoveCategory = async (id) => {
+    const msg = t('documents.varalSettingsRemoveConfirm') || "Êtes-vous sûr de vouloir supprimer cette corde ? Les documents liés ne seront pas supprimés mais n'auront plus de catégorie associée.";
+    if (window.confirm(msg)) {
+      setSavingSettings(true);
+      try {
+        const updatedCategories = varalCategories.filter(c => c.id !== id);
+        const assocRef = doc(db, 'associations', groupId);
+        await updateDoc(assocRef, { varalCategories: updatedCategories });
+      } catch (err) {
+        console.error("Error removing category:", err);
+        alert("Erreur lors de la suppression de la catégorie.");
+      } finally {
+        setSavingSettings(false);
+      }
+    }
+  };
 
   // 1. Charger les catégories de Varal de l'association
   useEffect(() => {
@@ -57,7 +112,7 @@ export default function VaralManager({ groupId, onBack, role, isSystemAdmin }) {
           ...docSnap.data()
         });
       });
-      // Trier par ordre et par dateCreation
+      // Sort initially by order or date
       fetched.sort((a, b) => {
         if (a.order !== b.order) return (a.order || 0) - (b.order || 0);
         return new Date(b.dateAjout || 0) - new Date(a.dateAjout || 0);
@@ -120,6 +175,47 @@ export default function VaralManager({ groupId, onBack, role, isSystemAdmin }) {
     }
   };
 
+  const getCategoryLabel = (cat) => {
+    const translation = t(`documents.${cat}`);
+    if (translation === `documents.${cat}`) {
+      return cat;
+    }
+    return translation;
+  };
+
+  // Reorder database logic
+  const updateDocumentsOrder = async (newOrderedList) => {
+    try {
+      const promises = newOrderedList.map((docItem, idx) => {
+        const docRef = doc(db, 'documents', docItem.id);
+        return updateDoc(docRef, { order: idx });
+      });
+      await Promise.all(promises);
+    } catch (err) {
+      console.error("VaralManager - Erreur lors de la mise à jour de l'ordre :", err);
+    }
+  };
+
+  const handleMoveUp = async (docItem, docList) => {
+    const idx = docList.findIndex(d => d.id === docItem.id);
+    if (idx <= 0) return;
+    const newList = [...docList];
+    const temp = newList[idx];
+    newList[idx] = newList[idx - 1];
+    newList[idx - 1] = temp;
+    await updateDocumentsOrder(newList);
+  };
+
+  const handleMoveDown = async (docItem, docList) => {
+    const idx = docList.findIndex(d => d.id === docItem.id);
+    if (idx === -1 || idx >= docList.length - 1) return;
+    const newList = [...docList];
+    const temp = newList[idx];
+    newList[idx] = newList[idx + 1];
+    newList[idx + 1] = temp;
+    await updateDocumentsOrder(newList);
+  };
+
   return (
     <div className="flex flex-col gap-6 text-left select-none max-w-5xl mx-auto w-full">
       {/* Header */}
@@ -127,7 +223,7 @@ export default function VaralManager({ groupId, onBack, role, isSystemAdmin }) {
         <button 
           type="button" 
           onClick={onBack} 
-          className="text-[10px] font-black uppercase tracking-widest bg-cordel-bg border border-encre-noire px-3 py-1 rounded-[4px_6px_3px_5px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-95 cursor-pointer flex items-center justify-center"
+          className="text-[10px] font-black uppercase tracking-widest bg-cordel-bg border border-encre-noire px-3 py-1 rounded-[4px_6px_3px_5px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-95 cursor-pointer flex items-center justify-center select-none"
         >
           ⬅️ {t('common.back')}
         </button>
@@ -152,22 +248,152 @@ export default function VaralManager({ groupId, onBack, role, isSystemAdmin }) {
         </div>
       ) : (
         <div className="flex flex-col gap-4">
-          <div className="flex justify-between items-center">
+          <div className="flex justify-between items-start md:items-center flex-col md:flex-row gap-4 select-none">
             <p className="text-xs opacity-75 leading-relaxed max-w-xl">
-              Gérez les fichiers, partitions, tutoriels et enregistrements audios de votre groupe sous forme de tableau épuré. Les modifications apportées ici se répercutent automatiquement sur le Varal de l'accueil.
+              Gérez les fichiers, partitions, tutoriels et enregistrements audios de votre groupe sous forme de tableaux structurés par corde. Les modifications d'ordre personnalisé s'appliquent en direct sur l'accueil.
             </p>
-            <CordelButton 
-              variant="ocre" 
-              useExtremeBorder={true}
-              onClick={() => setIsAdding(true)}
-              className="text-xs px-4 py-2 font-bold whitespace-nowrap"
-            >
-              ➕ Ajouter un document
-            </CordelButton>
+            <div className="flex gap-2 shrink-0">
+              {isAuthorized && (
+                <CordelButton
+                  variant="default"
+                  useExtremeBorder={true}
+                  onClick={() => setShowCategorySettings(!showCategorySettings)}
+                  className="text-xs px-4 py-2 font-bold whitespace-nowrap"
+                >
+                  ⚙️ {showCategorySettings ? "Fermer les cordes" : "Gérer les cordes"}
+                </CordelButton>
+              )}
+              <CordelButton 
+                variant="ocre" 
+                useExtremeBorder={true}
+                onClick={() => setIsAdding(true)}
+                className="text-xs px-4 py-2 font-bold whitespace-nowrap"
+              >
+                + Ajouter un document
+              </CordelButton>
+            </div>
           </div>
 
+          {/* Formulaire pliable de gestion des cordes (rubriques) (Effet miroir) */}
+          {isAuthorized && showCategorySettings && (
+            <CordelCard variant="default" useExtremeBorder={true} className="py-4 px-5 flex flex-col gap-4 mt-2">
+              <h3 className="text-xs uppercase font-extrabold tracking-wider text-cordel-wood">
+                📋 Gérer les Cordes (Rubriques) du Varal
+              </h3>
+              
+              <div className="flex flex-col gap-3 pb-3 border-b border-dashed border-cordel-master-dark/15 text-xs text-left">
+                <div className="flex flex-col gap-2">
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                      Nom de la catégorie (ex: Partitions, Tutoriels...)
+                    </label>
+                    <input 
+                      type="text"
+                      value={newCatName}
+                      onChange={(e) => setNewCatName(e.target.value)}
+                      placeholder="Saisissez un nom..."
+                      className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light w-full"
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-2.5 mt-2">
+                    <label className="flex items-center gap-2 cursor-pointer select-none">
+                      <input 
+                        type="checkbox"
+                        checked={newCatUpload}
+                        onChange={(e) => setNewCatUpload(e.target.checked)}
+                        className="w-3.5 h-3.5 cursor-pointer"
+                      />
+                      <span className="font-semibold text-encre-noire">Activer un lien d'upload public pour cette catégorie</span>
+                    </label>
+
+                    {newCatUpload && (
+                      <div className="flex flex-col gap-1 ml-5">
+                        <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                          Lien d'upload (ex: Google Drive, Dropbox...)
+                        </label>
+                        <input 
+                          type="url"
+                          value={newCatUploadUrl}
+                          onChange={(e) => setNewCatUploadUrl(e.target.value)}
+                          placeholder="https://..."
+                          className="theme-input text-xs font-bold py-1 bg-cordel-bg-light w-full"
+                        />
+                      </div>
+                    )}
+
+                    <label className="flex items-center gap-2 cursor-pointer select-none">
+                      <input 
+                        type="checkbox"
+                        checked={newCatArchive}
+                        onChange={(e) => setNewCatArchive(e.target.checked)}
+                        className="w-3.5 h-3.5 cursor-pointer"
+                      />
+                      <span className="font-semibold text-encre-noire">Activer l'opacité sur les documents archivés (ex: Administratif)</span>
+                    </label>
+                  </div>
+                </div>
+
+                <div className="flex justify-end mt-2">
+                  <CordelButton 
+                    type="button"
+                    variant="ocre"
+                    useExtremeBorder={true}
+                    onClick={handleAddCategory}
+                    disabled={savingSettings || !newCatName.trim() || (newCatUpload && !newCatUploadUrl.trim())}
+                    className="py-1.5 text-[10px] px-3 uppercase tracking-widest font-black shrink-0"
+                  >
+                    + Ajouter
+                  </CordelButton>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-2 mt-2 text-left">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-cordel-master-dark mb-1">
+                  Cordes configurées
+                </span>
+                {varalCategories.length === 0 ? (
+                  <span className="text-[10px] italic opacity-60">Aucune catégorie configurée.</span>
+                ) : (
+                  <div className="flex flex-col gap-2 max-h-40 overflow-y-auto pr-1">
+                    {varalCategories.map((cat) => (
+                      <div 
+                        key={cat.id}
+                        className="border border-encre-noire/15 p-2 rounded bg-white/40 dark:bg-black/10 flex justify-between items-center text-xs"
+                      >
+                        <div className="flex flex-col gap-0.5">
+                          <span className="font-extrabold text-encre-noire">{cat.nom}</span>
+                          <div className="flex flex-wrap gap-1.5 mt-0.5 text-[8px] font-black uppercase text-cordel-wood">
+                            {cat.activerUploadPublic && (
+                              <span className="px-1 bg-blue-100 dark:bg-blue-950/20 text-blue-700 dark:text-blue-400 rounded-sm">
+                                📤 Public
+                              </span>
+                            )}
+                            {cat.activerOpaciteArchive && (
+                              <span className="px-1 bg-purple-100 dark:bg-purple-950/20 text-purple-700 dark:text-purple-400 rounded-sm">
+                                ⏳ Opacité Archive
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <button 
+                          type="button"
+                          onClick={() => handleRemoveCategory(cat.id)}
+                          className="text-xs hover:text-red-500 font-bold px-2 py-1 cursor-pointer select-none"
+                          title="Supprimer"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </CordelCard>
+          )}
+
           {loading ? (
-            <div className="text-center py-12">
+            <div className="text-center py-12 select-none">
               <span className="text-xs font-bold uppercase tracking-widest text-cordel-master-dark opacity-65 animate-pulse">
                 Chargement des documents...
               </span>
@@ -177,73 +403,142 @@ export default function VaralManager({ groupId, onBack, role, isSystemAdmin }) {
               <p className="text-xs italic opacity-60">Aucun document chargé dans le Varal pour le moment.</p>
             </CordelCard>
           ) : (
-            <CordelCard className="p-0 overflow-hidden">
-              <div className="w-full overflow-x-auto">
-                <table className="w-full text-xs text-left border-collapse">
-                  <thead>
-                    <tr className="bg-cordel-master-dark text-cordel-bg-light uppercase tracking-wider text-[9px] font-black border-b border-encre-noire">
-                      <th className="py-2.5 px-3">Nom du fichier</th>
-                      <th className="py-2.5 px-3">Corde assignée</th>
-                      <th className="py-2.5 px-3">Type</th>
-                      <th className="py-2.5 px-3 text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {documents.map((docItem) => (
-                      <tr 
-                        key={docItem.id} 
-                        className="border-b border-dashed border-encre-noire/15 hover:bg-cordel-hover/50 transition-colors"
-                      >
-                        <td className="py-3 px-3 font-bold text-encre-noire">
-                          {docItem.titre}
-                          {docItem.sousCategorie && (
-                            <span className="block text-[8px] font-bold text-cordel-wood uppercase tracking-wider mt-0.5">
-                              📁 {docItem.sousCategorie} ({docItem.annee})
-                            </span>
-                          )}
-                        </td>
-                        <td className="py-3 px-3 font-semibold opacity-85">
-                          🎗️ {docItem.categorie || docItem.categoryId}
-                        </td>
-                        <td className="py-3 px-3 font-semibold text-[10px]">
-                          {getDocTypeBadge(docItem.type || 'pdf')}
-                        </td>
-                        <td className="py-3 px-3 text-right">
-                          <div className="flex items-center justify-end gap-1.5">
-                            {(docItem.fileUrl || docItem.type === 'report') && (
-                              <button
-                                onClick={() => {
-                                  if (docItem.type === 'report') {
-                                    setSelectedReport(docItem);
-                                  } else {
-                                    window.open(docItem.fileUrl, '_blank');
-                                  }
-                                }}
-                                className="text-[10px] font-black uppercase bg-neutral-100 hover:bg-neutral-200 text-encre-noire border border-encre-noire/30 px-2.5 py-1 rounded"
-                              >
-                                Aperçu
-                              </button>
-                            )}
-                            <button
-                              onClick={() => setDocumentToEdit(docItem)}
-                              className="text-[10px] font-black uppercase bg-[#d99f4d]/80 hover:bg-[#d99f4d] text-encre-noire border border-encre-noire/30 px-2.5 py-1 rounded"
-                            >
-                              Modifier
-                            </button>
-                            <button
-                              onClick={() => handleDelete(docItem)}
-                              className="text-[10px] font-black uppercase bg-red-100 hover:bg-red-200 text-red-700 border border-red-300 px-2.5 py-1 rounded"
-                            >
-                              Supprimer
-                            </button>
+            <div className="flex flex-col gap-8">
+              {varalCategories.map((category) => {
+                const sortMethod = sortMethods[category.id] || 'order';
+                
+                // Filter docs by category
+                let catDocs = documents.filter(d => d.categorie === category.id || d.categoryId === category.id);
+                
+                // Sort docs dynamically
+                if (sortMethod === 'date') {
+                  catDocs = [...catDocs].sort((a, b) => new Date(b.dateAjout || 0) - new Date(a.dateAjout || 0));
+                } else if (sortMethod === 'alpha') {
+                  catDocs = [...catDocs].sort((a, b) => (a.titre || '').localeCompare(b.titre || ''));
+                } else {
+                  // custom order
+                  catDocs = [...catDocs].sort((a, b) => (a.order || 0) - (b.order || 0));
+                }
+
+                return (
+                  <div key={category.id} className="flex flex-col">
+                    {/* Header bar with sorting selector */}
+                    <div className="flex justify-between items-center bg-cordel-master-dark text-cordel-bg-light p-3 rounded-t border-t border-x border-encre-noire select-none">
+                      <span className="font-extrabold uppercase tracking-wider text-xs flex items-center gap-1.5">
+                        🎗️ {getCategoryLabel(category.nom)} ({catDocs.length})
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-bg-light/80">Tri :</label>
+                        <select
+                          value={sortMethod}
+                          onChange={(e) => setSortMethods(prev => ({ ...prev, [category.id]: e.target.value }))}
+                          className="theme-input text-[9px] font-bold py-0.5 px-2 bg-cordel-bg-light text-encre-noire border border-encre-noire/30 rounded cursor-pointer"
+                        >
+                          <option value="order">Ordre personnalisé</option>
+                          <option value="date">Date d'ajout</option>
+                          <option value="alpha">Alphabétique (A-Z)</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <CordelCard className="p-0 overflow-hidden rounded-b rounded-t-none border-x border-b border-encre-noire">
+                      <div className="w-full overflow-x-auto">
+                        {catDocs.length === 0 ? (
+                          <div className="p-8 text-center bg-white/30 dark:bg-black/10 select-none">
+                            <p className="text-xs italic opacity-50">Aucun document dans cette rubrique.</p>
                           </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </CordelCard>
+                        ) : (
+                          <table className="w-full text-xs text-left border-collapse">
+                            <thead>
+                              <tr className="bg-cordel-bg-light border-b border-encre-noire text-cordel-master-dark uppercase tracking-wider text-[9px] font-black">
+                                <th className="py-2 px-3">Nom du document</th>
+                                <th className="py-2 px-3">Type</th>
+                                <th className="py-2 px-3 text-center">Déplacer</th>
+                                <th className="py-2 px-3 text-right">Actions</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {catDocs.map((docItem, index) => (
+                                <tr 
+                                  key={docItem.id} 
+                                  className="border-b border-dashed border-encre-noire/15 hover:bg-cordel-hover/50 transition-colors"
+                                >
+                                  <td className="py-2.5 px-3 font-bold text-encre-noire dark:text-cordel-bg-light">
+                                    {docItem.titre}
+                                    {docItem.sousCategorie && (
+                                      <span className="block text-[8px] font-bold text-cordel-wood uppercase tracking-wider mt-0.5">
+                                        📁 {docItem.sousCategorie} ({docItem.annee})
+                                      </span>
+                                    )}
+                                  </td>
+                                  <td className="py-2.5 px-3 font-semibold text-[10px]">
+                                    {getDocTypeBadge(docItem.type || 'pdf')}
+                                  </td>
+                                  <td className="py-2.5 px-3 text-center">
+                                    {sortMethod === 'order' ? (
+                                      <div className="flex justify-center gap-1 select-none">
+                                        <button
+                                          onClick={() => handleMoveUp(docItem, catDocs)}
+                                          disabled={index === 0}
+                                          className="p-1 text-[9px] font-extrabold bg-cordel-bg border border-encre-noire rounded shadow-[1px_1px_0px_0px_#181716] hover:bg-neutral-100 disabled:opacity-30 disabled:shadow-none cursor-pointer"
+                                          title="Déplacer vers le haut"
+                                        >
+                                          ▲
+                                        </button>
+                                        <button
+                                          onClick={() => handleMoveDown(docItem, catDocs)}
+                                          disabled={index === catDocs.length - 1}
+                                          className="p-1 text-[9px] font-extrabold bg-cordel-bg border border-encre-noire rounded shadow-[1px_1px_0px_0px_#181716] hover:bg-neutral-100 disabled:opacity-30 disabled:shadow-none cursor-pointer"
+                                          title="Déplacer vers le bas"
+                                        >
+                                          ▼
+                                        </button>
+                                      </div>
+                                    ) : (
+                                      <span className="text-[9px] italic opacity-40 select-none">-</span>
+                                    )}
+                                  </td>
+                                  <td className="py-2.5 px-3 text-right">
+                                    <div className="flex items-center justify-end gap-1.5">
+                                      {(docItem.fileUrl || docItem.type === 'report') && (
+                                        <button
+                                          onClick={() => {
+                                            if (docItem.type === 'report') {
+                                              setSelectedReport(docItem);
+                                            } else {
+                                              window.open(docItem.fileUrl, '_blank');
+                                            }
+                                          }}
+                                          className="text-[9px] font-black uppercase bg-neutral-100 hover:bg-neutral-200 text-encre-noire border border-encre-noire/30 px-2.5 py-1 rounded"
+                                        >
+                                          Aperçu
+                                        </button>
+                                      )}
+                                      <button
+                                        onClick={() => setDocumentToEdit(docItem)}
+                                        className="text-[9px] font-black uppercase bg-[#d99f4d]/80 hover:bg-[#d99f4d] text-encre-noire border border-encre-noire/30 px-2.5 py-1 rounded"
+                                      >
+                                        Modifier
+                                      </button>
+                                      <button
+                                        onClick={() => handleDelete(docItem)}
+                                        className="text-[9px] font-black uppercase bg-red-100 hover:bg-red-200 text-red-700 border border-red-300 px-2.5 py-1 rounded"
+                                      >
+                                        Supprimer
+                                      </button>
+                                    </div>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        )}
+                      </div>
+                    </CordelCard>
+                  </div>
+                );
+              })}
+            </div>
           )}
         </div>
       )}

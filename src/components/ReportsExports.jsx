@@ -61,15 +61,6 @@ export default function ReportsExports({ groupId, role, isSystemAdmin, hasAccess
   const [startDate, setStartDate] = useState(defaultStartDate);
   const [endDate, setEndDate] = useState(defaultEndDate);
   
-  const [eventTypes, setEventTypes] = useState({
-    prestation: true,
-    repetition: true,
-    stage: true,
-    atelier: true,
-    reunion: true
-  });
-
-  const [exportingActivity, setExportingActivity] = useState(false);
   const [exportingAccounting, setExportingAccounting] = useState(false);
   const [associationSettings, setAssociationSettings] = useState(null);
 
@@ -86,85 +77,7 @@ export default function ReportsExports({ groupId, role, isSystemAdmin, hasAccess
     });
   }, [groupId]);
 
-  const handleCheckboxChange = (type) => {
-    setEventTypes(prev => ({
-      ...prev,
-      [type]: !prev[type]
-    }));
-  };
 
-  const handleExportActivity = async () => {
-    if (!startDate || !endDate) {
-      alert("Veuillez sélectionner une date de début et de fin.");
-      return;
-    }
-    setExportingActivity(true);
-    try {
-      // Fetch events
-      const eventsRef = collection(db, 'events');
-      const q = query(eventsRef, where('groupId', '==', groupId));
-      const querySnapshot = await getDocs(q);
-      
-      const fetchedEvents = [];
-      querySnapshot.forEach((docSnap) => {
-        fetchedEvents.push({ id: docSnap.id, ...docSnap.data() });
-      });
-
-      // Filter events by date range and type
-      const filteredEvents = fetchedEvents.filter(event => {
-        const eventDateStr = event.date ? event.date.substring(0, 10) : '';
-        const matchesDate = eventDateStr && eventDateStr >= startDate && eventDateStr <= endDate;
-        const matchesType = eventTypes[event.type] === true;
-        return matchesDate && matchesType;
-      });
-
-      // Sort chronologically
-      filteredEvents.sort((a, b) => new Date(a.date) - new Date(b.date));
-
-      // Build CSV content
-      const headers = ["Date", "Titre", "Type", "Lieu", "Nombre de présents"];
-      const rows = filteredEvents.map(event => {
-        const dateStr = event.date ? event.date.substring(0, 10) : '';
-        const presentCount = (event.inscriptions || []).filter(i => i.status === 'present').length;
-        
-        let displayType = event.type;
-        if (event.type === 'prestation') displayType = "Prestation";
-        else if (event.type === 'repetition') displayType = "Répétition";
-        else if (event.type === 'stage') displayType = "Stage";
-        else if (event.type === 'atelier') displayType = "Atelier";
-        else if (event.type === 'reunion') displayType = "Réunion";
-
-        return [
-          dateStr,
-          event.titre || '',
-          displayType,
-          event.lieu || '',
-          presentCount.toString()
-        ];
-      });
-
-      // Excel-friendly CSV formatting (semicolon separator, UTF-8 BOM)
-      const csvContent = "\uFEFF" + [headers, ...rows]
-        .map(row => row.map(val => `"${String(val).replace(/"/g, '""')}"`).join(";"))
-        .join("\n");
-
-      // Download trigger
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.setAttribute("href", url);
-      link.setAttribute("download", `Bilan_Activite_${startDate}_au_${endDate}.csv`);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-
-    } catch (error) {
-      console.error("ReportsExports - Error exporting activity:", error);
-      alert("Erreur lors de la génération de l'export d'activité.");
-    } finally {
-      setExportingActivity(false);
-    }
-  };
 
   const handleExportAccounting = async () => {
     if (!startDate || !endDate) {
@@ -317,8 +230,8 @@ export default function ReportsExports({ groupId, role, isSystemAdmin, hasAccess
               date: campDateStr,
               category: "Commande Groupée",
               label: `${req.article} (${qty}x) - ${req.userName || 'Membre'}`,
-              debit: '',
-              credit: credit
+              debit: credit,
+              credit: ''
             });
           }
         });
@@ -501,7 +414,7 @@ export default function ReportsExports({ groupId, role, isSystemAdmin, hasAccess
               type="date" 
               value={startDate} 
               onChange={(e) => setStartDate(e.target.value)} 
-              className="theme-input w-full"
+              className="theme-input w-full font-bold text-xs"
             />
           </div>
           <div className="flex flex-col gap-1.5">
@@ -512,63 +425,17 @@ export default function ReportsExports({ groupId, role, isSystemAdmin, hasAccess
               type="date" 
               value={endDate} 
               onChange={(e) => setEndDate(e.target.value)} 
-              className="theme-input w-full"
+              className="theme-input w-full font-bold text-xs"
             />
           </div>
         </div>
       </CordelCard>
 
-      {/* Grid of exports */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Export 1: Bilan d'Activité */}
-        <CordelCard variant="default" useExtremeBorder={false} className="p-5 flex flex-col justify-between">
-          <div className="flex flex-col gap-3">
-            <h4 className="text-[11px] uppercase font-extrabold tracking-wider text-cordel-wood border-b border-dashed border-cordel-master-dark/15 pb-1.5 mb-1.5">
-              🎭 Bilan d'Activité
-            </h4>
-            <p className="text-[10px] leading-relaxed opacity-85">
-              Génère la liste des événements survenus pendant la période spécifiée avec les détails de présence. Idéal pour votre rapport d'activité.
-            </p>
-            <div className="flex flex-col gap-2 pt-2">
-              <span className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">Types d'événements à inclure :</span>
-              <div className="flex flex-col gap-1.5 pl-1">
-                {Object.keys(eventTypes).map(type => (
-                  <label key={type} className="flex items-center gap-2 text-xs font-semibold cursor-pointer select-none">
-                    <input 
-                      type="checkbox"
-                      checked={eventTypes[type]}
-                      onChange={() => handleCheckboxChange(type)}
-                      className="accent-cordel-wood scale-105"
-                    />
-                    <span className="capitalize">
-                      {type === 'prestation' ? "Prestations" :
-                       type === 'repetition' ? "Répétitions" :
-                       type === 'stage' ? "Stages" :
-                       type === 'atelier' ? "Ateliers" :
-                       type === 'reunion' ? "Réunions" : type}
-                    </span>
-                  </label>
-                ))}
-              </div>
-            </div>
-          </div>
-          
-          <div className="mt-6">
-            <CordelButton
-              variant="ocre"
-              useExtremeBorder={true}
-              onClick={handleExportActivity}
-              disabled={exportingActivity}
-              className="w-full text-xs py-2.5 font-bold uppercase tracking-wider"
-            >
-              {exportingActivity ? "Génération..." : "📄 Exporter l'Activité (CSV)"}
-            </CordelButton>
-          </div>
-        </CordelCard>
-
+      {/* Single export container */}
+      <div className="max-w-xl mx-auto w-full">
         {/* Export 2: Bilan Comptable */}
         <CordelCard variant="default" useExtremeBorder={false} className="p-5 flex flex-col justify-between">
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-3 text-left">
             <h4 className="text-[11px] uppercase font-extrabold tracking-wider text-cordel-wood border-b border-dashed border-cordel-master-dark/15 pb-1.5 mb-1.5">
               💰 Bilan Comptable
             </h4>
@@ -581,7 +448,7 @@ export default function ReportsExports({ groupId, role, isSystemAdmin, hasAccess
                 <li>🟢 **Recettes d'Événements** (Prestations payées, etc.)</li>
                 <li>🔴 **Frais d'Événements** (Professeurs, locations...)</li>
                 <li>🟢 **Cotisations & Options** payées par les membres</li>
-                <li>🟢 **Commandes Groupées** passées par la troupe</li>
+                <li>🔴 **Commandes Groupées** passées par la troupe</li>
                 <li>🔴 **Défraiements Kilométriques** à rembourser aux covoitureurs</li>
               </ul>
             </div>

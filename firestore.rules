@@ -124,6 +124,12 @@ service cloud.firestore {
       allow write: if isAdminOrMestre();
     }
 
+    // Rhythms: Read if authenticated. Write reserved for admins/mestres.
+    match /rhythms/{rhythm} {
+      allow read: if isAuthenticated();
+      allow write: if isAdminOrMestre();
+    }
+
     // Campaigns: Read if authenticated. Write reserved for admins/mestres.
     match /campaigns/{campaign} {
       allow read: if isAuthenticated();

@@ -267,7 +267,72 @@ export default function AdminExport({ user, profileData, onBack }) {
         <div className="w-16" /> {/* Placeholder to balance back button */}
       </div>
 
-      {/* Main Instructions & Export trigger */}
+      {/* Annuaire preview card (Annuaire des membres en premier) */}
+      <CordelCard variant="default" useExtremeBorder={false} className="p-5 flex flex-col gap-4">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <h3 className="text-sm font-black uppercase tracking-wider text-cordel-wood flex items-center gap-1.5">
+            <XiloPeople size={16} className="inline" /> Annuaire des membres ({filteredMembers.length})
+          </h3>
+          <input
+            type="text"
+            placeholder="Rechercher par nom, prénom ou email..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="theme-input w-full md:w-80"
+          />
+        </div>
+
+        {loading ? (
+          <div className="text-center py-12">
+            <span className="text-xs uppercase tracking-widest font-black animate-pulse opacity-60">⏳ Chargement de l'annuaire...</span>
+          </div>
+        ) : filteredMembers.length === 0 ? (
+          <div className="text-center py-12 border border-dashed border-cordel-master-dark/15 rounded-[4px_6px_3px_5px] bg-cordel-bg/30">
+            <span className="text-xs font-bold opacity-60">Aucun membre ne correspond à votre recherche.</span>
+          </div>
+        ) : (
+          <div className="overflow-x-auto border border-dashed border-cordel-master-dark/20 rounded-[4px_6px_3px_5px]">
+            <table className="min-w-full divide-y divide-cordel-master-dark/10 bg-cordel-bg/25">
+              <thead>
+                <tr className="bg-cordel-master-dark/5 text-[9px] font-black uppercase tracking-wider text-cordel-master-dark">
+                  <th className="px-4 py-2.5 text-left">Nom complet</th>
+                  <th className="px-4 py-2.5 text-left">Email</th>
+                  <th className="px-4 py-2.5 text-left">Téléphone</th>
+                  <th className="px-4 py-2.5 text-left">Rôle</th>
+                  <th className="px-4 py-2.5 text-left">Instruments</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-cordel-master-dark/5 text-xs font-semibold text-encre-noire">
+                {filteredMembers.map(member => (
+                  <tr key={member.id} className="hover:bg-cordel-bg/40 transition-colors">
+                    <td className="px-4 py-2.5 font-bold truncate max-w-[150px]">
+                      {member.prenom} {member.nom}
+                    </td>
+                    <td className="px-4 py-2.5 truncate max-w-[200px]">
+                      {member.email}
+                    </td>
+                    <td className="px-4 py-2.5 whitespace-nowrap">
+                      {member.telephone || "-"}
+                    </td>
+                    <td className="px-4 py-2.5 whitespace-nowrap">
+                      <span className="theme-stamp-badge theme-stamp-badge-wood text-[7.5px] border-dashed">
+                        {tRole(member.role || 'membre', member.genre)}
+                      </span>
+                    </td>
+                    <td className="px-4 py-2.5 truncate max-w-[220px]">
+                      {Array.isArray(member.instrumentsJoues) && member.instrumentsJoues.length > 0 
+                        ? member.instrumentsJoues.join(', ')
+                        : member.instrument || "-"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </CordelCard>
+
+      {/* Main Instructions & Export trigger (Colonnes à inclure et Générateur CSV en dessous) */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left column: Selection details (spans 2 columns) */}
         <div className="lg:col-span-2 flex flex-col gap-6">
@@ -348,71 +413,6 @@ export default function AdminExport({ user, profileData, onBack }) {
           </CordelCard>
         </div>
       </div>
-
-      {/* Annuaire preview card */}
-      <CordelCard variant="default" useExtremeBorder={false} className="p-5 flex flex-col gap-4">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <h3 className="text-sm font-black uppercase tracking-wider text-cordel-wood flex items-center gap-1.5">
-            <XiloPeople size={16} className="inline" /> Annuaire des membres ({filteredMembers.length})
-          </h3>
-          <input
-            type="text"
-            placeholder="Rechercher par nom, prénom ou email..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="theme-input w-full md:w-80"
-          />
-        </div>
-
-        {loading ? (
-          <div className="text-center py-12">
-            <span className="text-xs uppercase tracking-widest font-black animate-pulse opacity-60">⏳ Chargement de l'annuaire...</span>
-          </div>
-        ) : filteredMembers.length === 0 ? (
-          <div className="text-center py-12 border border-dashed border-cordel-master-dark/15 rounded-[4px_6px_3px_5px] bg-cordel-bg/30">
-            <span className="text-xs font-bold opacity-60">Aucun membre ne correspond à votre recherche.</span>
-          </div>
-        ) : (
-          <div className="overflow-x-auto border border-dashed border-cordel-master-dark/20 rounded-[4px_6px_3px_5px]">
-            <table className="min-w-full divide-y divide-cordel-master-dark/10 bg-cordel-bg/25">
-              <thead>
-                <tr className="bg-cordel-master-dark/5 text-[9px] font-black uppercase tracking-wider text-cordel-master-dark">
-                  <th className="px-4 py-2.5 text-left">Nom complet</th>
-                  <th className="px-4 py-2.5 text-left">Email</th>
-                  <th className="px-4 py-2.5 text-left">Téléphone</th>
-                  <th className="px-4 py-2.5 text-left">Rôle</th>
-                  <th className="px-4 py-2.5 text-left">Instruments</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-cordel-master-dark/5 text-xs font-semibold text-encre-noire">
-                {filteredMembers.map(member => (
-                  <tr key={member.id} className="hover:bg-cordel-bg/40 transition-colors">
-                    <td className="px-4 py-2.5 font-bold truncate max-w-[150px]">
-                      {member.prenom} {member.nom}
-                    </td>
-                    <td className="px-4 py-2.5 truncate max-w-[200px]">
-                      {member.email}
-                    </td>
-                    <td className="px-4 py-2.5 whitespace-nowrap">
-                      {member.telephone || "-"}
-                    </td>
-                    <td className="px-4 py-2.5 whitespace-nowrap">
-                      <span className="theme-stamp-badge theme-stamp-badge-wood text-[7.5px] border-dashed">
-                        {tRole(member.role || 'membre', member.genre)}
-                      </span>
-                    </td>
-                    <td className="px-4 py-2.5 truncate max-w-[220px]">
-                      {Array.isArray(member.instrumentsJoues) && member.instrumentsJoues.length > 0 
-                        ? member.instrumentsJoues.join(', ')
-                        : member.instrument || "-"}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </CordelCard>
     </div>
   );
 }

@@ -10,6 +10,7 @@ import TabOrganization from './association-settings/TabOrganization';
 import TabSecurity from './association-settings/TabSecurity';
 import TabLogistics from './association-settings/TabLogistics';
 import TabFinance from './association-settings/TabFinance';
+import TabAgenda from './association-settings/TabAgenda';
 
 import { useEffect } from 'react';
 
@@ -120,6 +121,15 @@ export default function AssociationSettings({ groupId, onBack, role, isSystemAdm
             mode={mode}
           />
         );
+      case 'agenda':
+        return (
+          <TabAgenda
+            formData={formData}
+            handleChange={handleChange}
+            saving={saving}
+            t={t}
+          />
+        );
       default:
         return null;
     }
@@ -215,6 +225,17 @@ export default function AssociationSettings({ groupId, onBack, role, isSystemAdm
                 }`}
               >
                 🪙 Cotisations & Docs
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveSettingsTab('agenda')}
+                className={`px-3 py-1.5 text-xs font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer ${
+                  activeSettingsTab === 'agenda'
+                    ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
+                    : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
+                }`}
+              >
+                📅 Gestion de l'Agenda
               </button>
             </div>
           )}

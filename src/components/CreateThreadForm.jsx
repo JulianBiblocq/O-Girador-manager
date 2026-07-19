@@ -34,34 +34,62 @@ export default function CreateThreadForm({ groupId, channelId, user, profileData
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!groupId || !title || !message) return;
+    const cleanTitle = title.trim();
+    const cleanMessage = message.trim();
+    if (!groupId || !cleanTitle || !cleanMessage) return;
 
     setSaving(true);
     const nowIso = new Date().toISOString();
+    const targetChannelId = channelId || `${groupId}_general`;
     
     try {
       const authorName = `${profileData.prenom} ${profileData.nom}`;
 
-      await addDoc(collection(db, 'forum'), {
-        titre: title,
+      const docRef = await addDoc(collection(db, 'forum'), {
+        titre: cleanTitle,
         categorie: category,
         groupId: groupId,
-        channelId: channelId || `${groupId}_general`, // default to general if none passed
+        channelId: targetChannelId,
         auteurId: user.uid,
         auteurNom: authorName,
         dateCreation: nowIso,
         derniereModification: nowIso,
-        targetTag: selectedTarget || null, // Store targeted group at root
+        targetTag: selectedTarget || null,
         reponses: [
           {
             auteurId: user.uid,
             auteurNom: authorName,
-            message: message,
+            message: cleanMessage,
             dateCreation: nowIso,
-            targetTag: selectedTarget || null // Store targeted group in message
+            targetTag: selectedTarget || null
           }
         ]
       });
+
+      // Détecter les mentions @Badge
+      const mentions = availableTargets.filter(tag => {
+        const regex = new RegExp(`@${tag}\\b`, 'gi');
+        return regex.test(cleanMessage);
+      });
+
+      if (mentions.length > 0) {
+        for (const tag of mentions) {
+          try {
+            await addDoc(collection(db, 'notifications_queue'), {
+              groupId: groupId,
+              title: `Mention dans le forum (${cleanTitle})`,
+              body: `${authorName} vous a mentionné : "${cleanMessage.slice(0, 100)}${cleanMessage.length > 100 ? '...' : ''}"`,
+              targetTag: tag,
+              senderId: user.uid,
+              threadId: docRef.id,
+              channelId: targetChannelId,
+              createdAt: nowIso
+            });
+          } catch (err) {
+            console.error("Error writing notification queue doc from thread creator:", err);
+          }
+        }
+      }
 
       onClose();
     } catch (error) {
@@ -139,6 +167,22 @@ export default function CreateThreadForm({ groupId, channelId, user, profileData
           <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
             {t('forum.firstMessageLabel')}
           </label>
+          {availableTargets.length > 0 && (
+            <div className="flex flex-wrap items-center gap-1.5 my-1.5 select-none">
+              <span className="text-[9px] font-black uppercase text-cordel-master-dark opacity-60">Mentionner :</span>
+              {availableTargets.map(tag => (
+                <button
+                  key={tag}
+                  type="button"
+                  onClick={() => setMessage(prev => prev + `@${tag} `)}
+                  className="px-2 py-0.5 text-[9px] font-bold bg-cordel-bg border border-cordel-master-dark/20 rounded hover:border-encre-noire transition-all cursor-pointer shadow-[1px_1px_0px_0px_rgba(24,23,22,0.15)] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none"
+                >
+                  @{tag}
+                </button>
+              ))}
+            </div>
+          )}
+
           <textarea
             value={message}
             onChange={(e) => setMessage(e.target.value)}
