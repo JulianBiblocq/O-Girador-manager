@@ -103,7 +103,7 @@ export default function LayoutShell({
       case 'system-admin':
       case 'instruments':
       case 'linked-instruments':
-        return isSystemOrSuperAdminOrMestre;
+        return hasAccessTroupe;
 
       // Other sections inherit pole permissions
       default:

@@ -574,7 +574,7 @@ export default function App() {
           case 'system-admin':
           case 'instruments':
           case 'linked-instruments':
-            return isSystemOrSuperAdminOrMestre;
+            return hasAccessTroupe;
           default:
             return true;
         }
@@ -752,7 +752,7 @@ export default function App() {
                 isSystemAdmin={profileData?.isSystemAdmin}
                 onBack={() => setCurrentTab('export-annu')} 
               />
-            ) : (currentTab === 'instruments' && isSystemOrSuperAdminOrMestre) ? (
+            ) : (currentTab === 'instruments' && hasAccessTroupe) ? (
               <AssociationSettings 
                 groupId={profileData?.groupId}
                 role={profileData?.role}
@@ -877,7 +877,7 @@ export default function App() {
                 groupId={profileData?.groupId}
                 onBack={() => handleNavigateToPole('accueil')} 
               />
-            ) : (currentTab === 'mestre-forum-channels' && hasAccessMestre) ? (
+            ) : (currentTab === 'mestre-forum-channels' && (hasAccessStudio || hasAccessMestre)) ? (
               <ForumChannelsManager 
                 groupId={profileData?.groupId}
                 role={profileData?.role}
