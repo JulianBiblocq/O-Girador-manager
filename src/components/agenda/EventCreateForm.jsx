@@ -38,17 +38,22 @@ export default function EventCreateForm({
   adresseLocal,
   t
 }) {
+  const translate = (key, fallback) => {
+    const val = t(key);
+    return val === key ? fallback : val;
+  };
+
   return (
     <CordelCard variant="default" useExtremeBorder={true} className="text-left py-6">
       <h4 className="panel-title text-base font-bold mb-4 text-cordel-wood">
-        {t('widgetAgenda.createEventTitle') || "Créer un événement"}
+        {translate('widgetAgenda.createEventTitle', "Créer un événement")}
       </h4>
       
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         {/* Title */}
         <div className="flex flex-col gap-1">
           <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-            {t('widgetAgenda.eventTitleLabel') || "Titre de l'événement"}
+            {translate('widgetAgenda.eventTitleLabel', "Titre de l'événement")}
           </label>
           <input
             type="text"
@@ -65,7 +70,7 @@ export default function EventCreateForm({
         {/* Type Dropdown */}
         <div className="flex flex-col gap-1">
           <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-            {t('widgetAgenda.typeLabel') || "Type"}
+            {translate('widgetAgenda.typeLabel', "Type")}
           </label>
           <select
             name="type"
@@ -77,11 +82,11 @@ export default function EventCreateForm({
           >
             {associationEventTypes.map(type => (
               <option key={type} value={type}>
-                {type === 'prestation' ? (t('widgetAgenda.typePrestation') || "Prestation (Ocre)") :
-                 type === 'repetition' ? (t('widgetAgenda.typeRepetition') || "Répétition (Vert)") :
-                 type === 'stage' ? (t('widgetAgenda.typeStage') || "Stage (Bleu)") :
-                 type === 'atelier' ? (t('widgetAgenda.typeAtelier') || "Atelier (Jaune)") :
-                 type === 'reunion' ? (t('widgetAgenda.typeReunion') || "Réunion (Kraft)") :
+                {type === 'prestation' ? translate('widgetAgenda.typePrestation', "Prestation (Ocre)") :
+                 type === 'repetition' ? translate('widgetAgenda.typeRepetition', "Répétition (Vert)") :
+                 type === 'stage' ? translate('widgetAgenda.typeStage', "Stage (Bleu)") :
+                 type === 'atelier' ? translate('widgetAgenda.typeAtelier', "Atelier (Jaune)") :
+                 type === 'reunion' ? translate('widgetAgenda.typeReunion', "Réunion (Kraft)") :
                  type.charAt(0).toUpperCase() + type.slice(1)}
               </option>
             ))}
@@ -91,14 +96,14 @@ export default function EventCreateForm({
         {/* Description */}
         <div className="flex flex-col gap-1">
           <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-            {t('common.description') || "Description"}
+            {translate('common.description', "Description")}
           </label>
           <textarea
             name="description"
             value={formData.description}
             onChange={handleChange}
             disabled={saving}
-            placeholder={t('widgetAgenda.descriptionPlaceholder') || "Description détaillée de l'événement..."}
+            placeholder={translate('widgetAgenda.descriptionPlaceholder', "Description détaillée de l'événement...")}
             className="theme-input w-full min-h-[80px] disabled:opacity-50 font-medium py-1.5"
           />
         </div>
@@ -106,7 +111,7 @@ export default function EventCreateForm({
         {/* Date Début */}
         <div className="flex flex-col gap-1">
           <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-            {t('widgetAgenda.startDateLabel') || "Date et heure de début"}
+            {translate('widgetAgenda.startDateLabel', "Date et heure de début")}
           </label>
           <input
             type="datetime-local"
@@ -122,7 +127,7 @@ export default function EventCreateForm({
         {/* Date Fin (optionnel) */}
         <div className="flex flex-col gap-1">
           <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-            {t('widgetAgenda.endDateLabel') || "Date et heure de fin (optionnel)"}
+            {translate('widgetAgenda.endDateLabel', "Date et heure de fin (optionnel)")}
           </label>
           <input
             type="datetime-local"
@@ -143,11 +148,11 @@ export default function EventCreateForm({
         {createConfig.agendaEnableAdresse && (
           <div className="flex flex-col gap-1">
             <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-              {t('widgetAgenda.locationLabel') || "Lieu"}
+              {translate('widgetAgenda.locationLabel', "Lieu")}
             </label>
             <React.Suspense fallback={
               <div className="text-[10px] font-bold py-2 text-cordel-wood animate-pulse">
-                ⏳ {t('widgetAgenda.loadingAddress') || "Chargement du champ adresse..."}
+                ⏳ {translate('widgetAgenda.loadingAddress', "Chargement du champ adresse...")}
               </div>
             }>
               <AddressAutocomplete
@@ -168,13 +173,13 @@ export default function EventCreateForm({
                 }}
                 required
                 disabled={saving}
-                placeholder={t('widgetAgenda.locationPlaceholder') || "Ex : Local de l'asso, Place de la Mairie..."}
+                placeholder={translate('widgetAgenda.locationPlaceholder', "Ex : Local de l'asso, Place de la Mairie...")}
                 className="theme-input w-full disabled:opacity-50"
               />
             </React.Suspense>
             {!adresseLocal && (
               <span className="text-[9px] text-orange-600 font-bold leading-none mt-1 select-none text-left">
-                ⚠️ {t('widgetAgenda.localAddressNotConfigured') || "Adresse du local non configurée dans les paramètres de l'association (calcul de distance inactif)."}
+                ⚠️ {translate('widgetAgenda.localAddressNotConfigured', "Adresse du local non configurée dans les paramètres de l'association (calcul de distance inactif).")}
               </span>
             )}
           </div>
@@ -184,7 +189,7 @@ export default function EventCreateForm({
         {rawCreateConfig.agendaEnableCarpool !== false && (formData.type === 'prestation' || formData.type === 'stage' || formData.type === 'atelier') && (
           <div className="flex flex-col gap-1">
             <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-              {t('widgetAgenda.distanceLabel') || "Distance Aller-Retour en Km (Covoiturage)"}
+              {translate('widgetAgenda.distanceLabel', "Distance Aller-Retour en Km (Covoiturage)")}
             </label>
             <input
               type="number"
@@ -203,7 +208,7 @@ export default function EventCreateForm({
         {createConfig.agendaEnableInscriptions && (
           <div className="flex flex-col gap-1">
             <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-              {t('widgetAgenda.deadlineLabel') || "Date limite d'inscription (Optionnel)"}
+              {translate('widgetAgenda.deadlineLabel', "Date limite d'inscription (Optionnel)")}
             </label>
             <input
               type="datetime-local"
@@ -220,7 +225,7 @@ export default function EventCreateForm({
         {formData.type === 'prestation' && (
           <div className="flex flex-col gap-1">
             <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-              {t('widgetAgenda.stageTimesLabel') || "Horaires de passages"}
+              {translate('widgetAgenda.stageTimesLabel', "Horaires de passages")}
             </label>
             <input
               type="text"
@@ -238,7 +243,7 @@ export default function EventCreateForm({
         {rawCreateConfig.agendaEnableCarpool !== false && (formData.type === 'prestation' || formData.type === 'stage' || formData.type === 'atelier') && (
           <div className="flex flex-col gap-1">
             <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-              {t('widgetAgenda.carpoolTimeLabel') || "Horaire de convoi / RDV covoiturage"}
+              {translate('widgetAgenda.carpoolTimeLabel', "Horaire de convoi / RDV covoiturage")}
             </label>
             <input
               type="text"
@@ -257,7 +262,7 @@ export default function EventCreateForm({
           <>
             <div className="flex flex-col gap-1">
               <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                {t('widgetAgenda.musicLevelLabel') || "Musique (Niveau requis)"}
+                {translate('widgetAgenda.musicLevelLabel', "Musique (Niveau requis)")}
               </label>
               <select
                 name="niveauRequis"
@@ -266,16 +271,16 @@ export default function EventCreateForm({
                 disabled={saving}
                 className="theme-input w-full disabled:opacity-50 font-bold bg-cordel-bg-light"
               >
-                <option value="aucun">{t('widgetAgenda.levelNone') || "Pas de musicien"}</option>
-                <option value="debutant">{t('widgetAgenda.levelDeb') || "Niveau débutant"}</option>
-                <option value="confirme">{t('widgetAgenda.levelConfirm') || "Niveau confirmé"}</option>
-                <option value="tous">{t('widgetAgenda.levelAll') || "Tout le monde"}</option>
+                <option value="aucun">{translate('widgetAgenda.levelNone', "Pas de musicien")}</option>
+                <option value="debutant">{translate('widgetAgenda.levelDeb', "Niveau débutant")}</option>
+                <option value="confirme">{translate('widgetAgenda.levelConfirm', "Niveau confirmé")}</option>
+                <option value="tous">{translate('widgetAgenda.levelAll', "Tout le monde")}</option>
               </select>
             </div>
 
             <div className="flex flex-col gap-1">
               <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                {t('widgetAgenda.danceLevelLabel') || "Danse (Niveau requis)"}
+                {translate('widgetAgenda.danceLevelLabel', "Danse (Niveau requis)")}
               </label>
               <select
                 name="niveauDanseRequis"
@@ -284,10 +289,10 @@ export default function EventCreateForm({
                 disabled={saving}
                 className="theme-input w-full disabled:opacity-50 font-bold bg-cordel-bg-light"
               >
-                <option value="aucun">{t('widgetAgenda.danceLevelNone') || "Pas de danse"}</option>
-                <option value="debutant">{t('widgetAgenda.danceLevelDeb') || "Niveau débutant"}</option>
-                <option value="confirme">{t('widgetAgenda.danceLevelConfirm') || "Niveau confirmé"}</option>
-                <option value="tous">{t('widgetAgenda.danceLevelAll') || "Tout le monde"}</option>
+                <option value="aucun">{translate('widgetAgenda.danceLevelNone', "Pas de danse")}</option>
+                <option value="debutant">{translate('widgetAgenda.danceLevelDeb', "Niveau débutant")}</option>
+                <option value="confirme">{translate('widgetAgenda.danceLevelConfirm', "Niveau confirmé")}</option>
+                <option value="tous">{translate('widgetAgenda.danceLevelAll', "Tout le monde")}</option>
               </select>
             </div>
           </>
@@ -296,7 +301,7 @@ export default function EventCreateForm({
         {/* Tenue requise */}
         <div className="flex flex-col gap-1">
           <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-            {t('widgetAgenda.dressCodeLabel') || "Tenue requise / Dress Code (Optionnel)"}
+            {translate('widgetAgenda.dressCodeLabel', "Tenue requise / Dress Code (Optionnel)")}
           </label>
           <select
             name="tenueRequise"
@@ -305,7 +310,7 @@ export default function EventCreateForm({
             disabled={saving}
             className="theme-input w-full disabled:opacity-50 font-bold bg-cordel-bg-light"
           >
-            <option value="">{t('widgetAgenda.noDressCode') || "-- Aucune tenue spécifiée --"}</option>
+            <option value="">{translate('widgetAgenda.noDressCode', "-- Aucune tenue spécifiée --")}</option>
             {dressCodes.map(dc => (
               <option key={dc.id} value={dc.name}>{dc.name} ({dc.included})</option>
             ))}
@@ -316,7 +321,7 @@ export default function EventCreateForm({
         {createConfig.agendaEnableOrdreDuJour && (
           <div className="flex flex-col gap-1">
             <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-              {t('widgetAgenda.agendaDocLinkLabel') || "Lien du document d'ordre du jour"}
+              {translate('widgetAgenda.agendaDocLinkLabel', "Lien du document d'ordre du jour")}
             </label>
             <input
               type="url"
@@ -333,7 +338,7 @@ export default function EventCreateForm({
         {createConfig.agendaEnableUrl && (
           <div className="flex flex-col gap-1">
             <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-              {t('widgetAgenda.socialLinkLabel') || "Lien de publication social / externe"}
+              {translate('widgetAgenda.socialLinkLabel', "Lien de publication social / externe")}
             </label>
             <input
               type="url"
@@ -350,54 +355,16 @@ export default function EventCreateForm({
         {createConfig.agendaEnableFinance && (
           <div className="border-t border-dashed border-cordel-master-dark/15 pt-3.5 mt-2.5 flex flex-col gap-4 text-left">
             <h4 className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood flex items-center gap-1 leading-none">
-              💰 {t('widgetAgenda.finBudgetTitle') || "Budget & Finances Prévisionnelles"}
+              💰 {translate('widgetAgenda.finBudgetTitle', "Budget & Finances Prévisionnelles")}
             </h4>
             
-            <div className="grid grid-cols-2 gap-3 w-full">
-              <div className="flex flex-col gap-1">
-                <label className="text-[8px] uppercase font-bold text-cordel-master-dark">Recette Globale attendue (€)</label>
-                <input
-                  type="number"
-                  name="montantRecette"
-                  min="0"
-                  value={formData.montantRecette}
-                  onChange={handleChange}
-                  disabled={saving}
-                  placeholder="Ex : 500"
-                  className="theme-input text-xs py-1.5 px-3 w-full"
-                />
-              </div>
-              <div className="flex flex-col gap-1">
-                <label className="text-[8px] uppercase font-bold text-cordel-master-dark">Dépense Globale attendue (€)</label>
-                <input
-                  type="number"
-                  name="montantDepense"
-                  min="0"
-                  value={formData.montantDepense}
-                  onChange={handleChange}
-                  disabled={saving}
-                  placeholder="Ex : 200"
-                  className="theme-input text-xs py-1.5 px-3 w-full"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <EventBudgetEditor
-                title="Détail des Recettes"
-                items={formData.budgetRecettes}
-                onChange={(updated) => setFormData(prev => ({ ...prev, budgetRecettes: updated }))}
-                disabled={saving}
-                placeholderName="Ex : Subvention, Cachet..."
-              />
-              <EventBudgetEditor
-                title="Détail des Dépenses"
-                items={formData.budgetDepenses}
-                onChange={(updated) => setFormData(prev => ({ ...prev, budgetDepenses: updated }))}
-                disabled={saving}
-                placeholderName="Ex : Location, Traiteur..."
-              />
-            </div>
+            <EventBudgetEditor
+              budgetRecettes={formData.budgetRecettes}
+              onChangeRecettes={(updated) => setFormData(prev => ({ ...prev, budgetRecettes: updated }))}
+              budgetDepenses={formData.budgetDepenses}
+              onChangeDepenses={(updated) => setFormData(prev => ({ ...prev, budgetDepenses: updated }))}
+              disabled={saving}
+            />
           </div>
         )}
 
@@ -499,7 +466,7 @@ export default function EventCreateForm({
               disabled={saving}
               className="accent-cordel-wood scale-105"
             />
-            <span>🪘 {t('widgetAgenda.includesPercussionLabel') || "Inclut de la percussion"}</span>
+            <span>🪘 {translate('widgetAgenda.includesPercussionLabel', "Inclut de la percussion")}</span>
           </label>
 
           <label className="flex items-center gap-2 text-xs font-bold cursor-pointer select-none">
@@ -511,7 +478,7 @@ export default function EventCreateForm({
               disabled={saving}
               className="accent-cordel-wood scale-105"
             />
-            <span>💃 {t('widgetAgenda.includesDanceLabel') || "Inclut de la danse"}</span>
+            <span>💃 {translate('widgetAgenda.includesDanceLabel', "Inclut de la danse")}</span>
           </label>
         </div>
 
@@ -527,7 +494,7 @@ export default function EventCreateForm({
                 disabled={saving}
                 className="accent-cordel-wood scale-105"
               />
-              <span>🚗 {t('widgetAgenda.enableCarpoolLabel') || "Autoriser le covoiturage pour cet événement"}</span>
+              <span>🚗 {translate('widgetAgenda.enableCarpoolLabel', "Autoriser le covoiturage pour cet événement")}</span>
             </label>
           </div>
         )}
@@ -544,7 +511,7 @@ export default function EventCreateForm({
                 disabled={saving}
                 className="accent-cordel-wood scale-105"
               />
-              <span>{t('widgetAgenda.requiresValidationLabel') || "Inscriptions soumises à validation par l'administrateur"}</span>
+              <span>{translate('widgetAgenda.requiresValidationLabel', "Inscriptions soumises à validation par l'administrateur")}</span>
             </label>
           </div>
         )}
@@ -558,7 +525,7 @@ export default function EventCreateForm({
             disabled={saving}
             className="text-xs px-4 py-2"
           >
-            {t('common.cancel') || "Annuler"}
+            {translate('common.cancel', "Annuler")}
           </CordelButton>
           <CordelButton 
             type="submit"
@@ -567,7 +534,7 @@ export default function EventCreateForm({
             disabled={saving}
             className="text-xs px-4 py-2"
           >
-            {saving ? (t('common.saving') || "Envoi...") : (t('common.validate') || "Valider")}
+            {saving ? translate('common.saving', "Envoi...") : translate('common.validate', "Valider")}
           </CordelButton>
         </div>
       </form>
