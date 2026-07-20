@@ -327,7 +327,6 @@ export default function UserProfile({ user, profileData, onBack }) {
           setIsEditing={setIsEditing}
           saving={saving}
           isFieldVisible={isFieldVisible}
-          demanderTailles={demanderTailles}
           demanderAttestationSante={demanderAttestationSante}
           t={t}
         />

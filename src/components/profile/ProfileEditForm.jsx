@@ -28,7 +28,6 @@ export default function ProfileEditForm({
   setIsEditing,
   saving,
   isFieldVisible,
-  demanderTailles,
   demanderAttestationSante,
   t
 }) {
@@ -184,7 +183,7 @@ export default function ProfileEditForm({
         )}
 
         {/* Tailles Vêtements */}
-        {(isFieldVisible('tailleTshirt') || isFieldVisible('taillePantalon')) && demanderTailles && (
+        {(isFieldVisible('tailleTshirt') || isFieldVisible('taillePantalon')) && (
           <div className="border-t border-dashed border-cordel-master-dark/10 pt-3.5 mt-1 flex flex-col gap-3.5 text-left">
             <h5 className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood">
               {t('userProfile.clothingSizesHeading') || "Tailles Vêtements"}
