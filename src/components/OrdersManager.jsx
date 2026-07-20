@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { collection, query, where, onSnapshot, addDoc, updateDoc, doc } from 'firebase/firestore';
-import { db } from '../firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { db, storage } from '../firebase';
 import LayoutShell from './LayoutShell';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
@@ -39,6 +40,27 @@ export default function OrdersManager({ groupId, onBack, role, isSystemAdmin, ha
   const [articleName, setArticleName] = useState('');
   const [articleProvenance, setArticleProvenance] = useState('');
   const [articleTarif, setArticleTarif] = useState('');
+  const [articleImageUrl, setArticleImageUrl] = useState('');
+  const [uploadingArticleImage, setUploadingArticleImage] = useState(false);
+
+  const handleArticleImageUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingArticleImage(true);
+    try {
+      const storagePath = `documents/${groupId}/orders/${Date.now()}_${file.name}`;
+      const fileRef = ref(storage, storagePath);
+      const snapshot = await uploadBytes(fileRef, file);
+      const downloadURL = await getDownloadURL(snapshot.ref);
+      setArticleImageUrl(downloadURL);
+      alert("Image de l'article téléversée avec succès !");
+    } catch (error) {
+      console.error("OrdersManager - Erreur upload image article :", error);
+      alert("Erreur lors du téléversement de l'image de l'article.");
+    } finally {
+      setUploadingArticleImage(false);
+    }
+  };
 
   const handleSaveArticles = async (updatedArticles) => {
     setSaving(true);
@@ -61,7 +83,8 @@ export default function OrdersManager({ groupId, onBack, role, isSystemAdmin, ha
       id: Date.now().toString(),
       nom: articleName.trim(),
       provenance: articleProvenance.trim(),
-      prix: articleTarif ? parseFloat(articleTarif) : 0
+      prix: articleTarif ? parseFloat(articleTarif) : 0,
+      imageUrl: articleImageUrl
     };
     const currentArticles = selectedCampaign.articles || [];
     const updated = [...currentArticles, newArt];
@@ -69,6 +92,7 @@ export default function OrdersManager({ groupId, onBack, role, isSystemAdmin, ha
     setArticleName('');
     setArticleProvenance('');
     setArticleTarif('');
+    setArticleImageUrl('');
   };
 
   const handleDeleteArticle = (artId) => {
@@ -84,6 +108,7 @@ export default function OrdersManager({ groupId, onBack, role, isSystemAdmin, ha
     setArticleName(art.nom);
     setArticleProvenance(art.provenance || '');
     setArticleTarif(art.prix !== undefined && art.prix !== 0 ? art.prix.toString() : '');
+    setArticleImageUrl(art.imageUrl || '');
   };
 
   const handleSaveEditArticle = (e) => {
@@ -96,7 +121,8 @@ export default function OrdersManager({ groupId, onBack, role, isSystemAdmin, ha
           ...a,
           nom: articleName.trim(),
           provenance: articleProvenance.trim(),
-          prix: articleTarif ? parseFloat(articleTarif) : 0
+          prix: articleTarif ? parseFloat(articleTarif) : 0,
+          imageUrl: articleImageUrl
         };
       }
       return a;
@@ -110,6 +136,7 @@ export default function OrdersManager({ groupId, onBack, role, isSystemAdmin, ha
     setArticleName('');
     setArticleProvenance('');
     setArticleTarif('');
+    setArticleImageUrl('');
   };
 
   const isAdmin = role === 'mestre' || role === 'super-admin' || isSystemAdmin === true || hasAccessLogistique === true;
@@ -463,12 +490,19 @@ export default function OrdersManager({ groupId, onBack, role, isSystemAdmin, ha
                   ) : (
                     <div className="flex flex-col gap-2 mb-4">
                       {selectedCampaign.articles.map((art) => (
-                        <div key={art.id} className="text-xs p-2 rounded border border-dashed border-encre-noire/15 bg-cordel-bg-light/10 flex justify-between items-center">
-                          <div className="flex flex-col gap-0.5">
-                            <span className="font-bold text-encre-noire">{art.nom}</span>
-                            <span className="text-[9px] text-cordel-master-dark/70 font-medium">
-                              Provenance : {art.provenance || 'Non spécifiée'} • Tarif : {art.prix !== undefined && art.prix !== 0 ? `${art.prix}€` : 'Libre/Optionnel'}
-                            </span>
+                        <div key={art.id} className="text-xs p-2 rounded border border-dashed border-encre-noire/15 bg-cordel-bg-light/10 flex justify-between items-center gap-3">
+                          <div className="flex items-center gap-2 flex-1 min-w-0">
+                            {art.imageUrl && (
+                              <div className="w-10 h-10 rounded border border-encre-noire/15 overflow-hidden bg-white shrink-0 shadow-[1px_1px_0px_0px_rgba(26,26,26,0.1)] flex items-center justify-center">
+                                <img src={art.imageUrl} alt={art.nom} className="w-full h-full object-cover" />
+                              </div>
+                            )}
+                            <div className="flex flex-col gap-0.5 min-w-0">
+                              <span className="font-bold text-encre-noire truncate">{art.nom}</span>
+                              <span className="text-[9px] text-cordel-master-dark/70 font-medium truncate">
+                                Provenance : {art.provenance || 'Non spécifiée'} • Tarif : {art.prix !== undefined && art.prix !== 0 ? `${art.prix}€` : 'Libre/Optionnel'}
+                              </span>
+                            </div>
                           </div>
                           
                           {selectedCampaign.status === 'open' && (
@@ -533,6 +567,39 @@ export default function OrdersManager({ groupId, onBack, role, isSystemAdmin, ha
                             placeholder="Ex : 25 (vide = libre)"
                             className="theme-input text-xs py-1 px-2"
                           />
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-1">
+                        <div className="flex flex-col gap-1">
+                          <label className="text-[8px] uppercase font-bold text-cordel-master-dark">Lien de l'image (URL)</label>
+                          <input
+                            type="url"
+                            value={articleImageUrl}
+                            onChange={(e) => setArticleImageUrl(e.target.value)}
+                            placeholder="Ex : https://site.com/image.jpg"
+                            className="theme-input text-xs py-1 px-2"
+                          />
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <label className="text-[8px] uppercase font-bold text-cordel-master-dark">Ou téléverser une photo</label>
+                          <div className="flex items-center gap-2">
+                            <label className="text-[9px] font-black uppercase tracking-widest bg-white border border-encre-noire px-3 py-1.5 rounded shadow-[1px_1px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:bg-neutral-100 cursor-pointer select-none">
+                              {uploadingArticleImage ? "⏳ Téléversement..." : "Parcourir..."}
+                              <input
+                                type="file"
+                                accept="image/*"
+                                onChange={handleArticleImageUpload}
+                                disabled={uploadingArticleImage}
+                                className="hidden"
+                              />
+                            </label>
+                            {articleImageUrl && (
+                              <span className="text-[8.5px] font-bold text-green-700 truncate max-w-xs">
+                                ✓ Photo prête
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
                       <div className="flex justify-end gap-2 mt-1 select-none">

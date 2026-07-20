@@ -50,7 +50,11 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
     budgetDepenses: event.budgetDepenses || [],
     dateLimiteInscription: event.dateLimiteInscription || '',
     tenueRequise: event.tenueRequise || '',
-    volunteerShifts: event.volunteerShifts || []
+    volunteerShifts: event.volunteerShifts || [],
+    includesPercussion: event.includesPercussion || false,
+    includesDance: event.includesDance || false,
+    enableCarpool: event.enableCarpool !== false,
+    description: event.description || ''
   });
   const [savingEvent, setSavingEvent] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
@@ -190,11 +194,15 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
       budgetDepenses: event.budgetDepenses || [],
       dateLimiteInscription: event.dateLimiteInscription || '',
       tenueRequise: event.tenueRequise || '',
-      volunteerShifts: event.volunteerShifts || []
+      volunteerShifts: event.volunteerShifts || [],
+      includesPercussion: event.includesPercussion || false,
+      includesDance: event.includesDance || false,
+      enableCarpool: event.enableCarpool !== false,
+      description: event.description || ''
     });
     const url = event.imageUrl;
     setImageMode(url && (url.startsWith('http://') || url.startsWith('https://')) && !url.includes('firebasestorage') ? 'url' : 'upload');
-  }, [event.id, event.type, event.montantRecette, event.montantDepense, JSON.stringify(event.budgetRecettes), JSON.stringify(event.budgetDepenses), event.dateLimiteInscription, event.tenueRequise, event.volunteerShifts, event.imageUrl]);
+  }, [event.id, event.type, event.montantRecette, event.montantDepense, JSON.stringify(event.budgetRecettes), JSON.stringify(event.budgetDepenses), event.dateLimiteInscription, event.tenueRequise, event.volunteerShifts, event.imageUrl, event.includesPercussion, event.includesDance, event.enableCarpool, event.description]);
 
   // Load association settings
   useEffect(() => {
@@ -420,12 +428,12 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
     if (!event.id) return;
 
     const editType = editForm.type || 'repetition';
-    const editConfig = eventTypeConfigs[editType] || {
+    const editConfig = {
       agendaRequireInstrument,
       agendaEnableMaybeStatus,
       agendaEnableStageLayout,
       agendaEnableRevisionProgram,
-      agendaEnableCarpool,
+      agendaEnableCarpool: agendaEnableCarpool && (editForm.enableCarpool !== false),
       agendaEnableFinance,
       agendaEnableInscriptions,
       agendaEnableImage: true,
@@ -458,7 +466,11 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
         budgetDepenses: editConfig.agendaEnableFinance ? (editForm.budgetDepenses || []) : [],
         dateLimiteInscription: editConfig.agendaEnableInscriptions ? editForm.dateLimiteInscription || '' : '',
         tenueRequise: editForm.tenueRequise || '',
-        volunteerShifts: editForm.volunteerShifts || []
+        volunteerShifts: editForm.volunteerShifts || [],
+        includesPercussion: editForm.includesPercussion || false,
+        includesDance: editForm.includesDance || false,
+        enableCarpool: editForm.enableCarpool !== false,
+        description: editForm.description || ''
       });
       setIsEditingEvent(false);
       alert("Événement mis à jour avec succès !");
@@ -631,7 +643,7 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
     agendaEnableMaybeStatus: rawCurrentConfig.agendaEnableMaybeStatus !== false,
     agendaEnableStageLayout: rawCurrentConfig.agendaEnableStageLayout !== false,
     agendaEnableRevisionProgram: rawCurrentConfig.agendaEnableRevisionProgram !== false,
-    agendaEnableCarpool: rawCurrentConfig.agendaEnableCarpool !== false,
+    agendaEnableCarpool: (rawCurrentConfig.agendaEnableCarpool !== false) && (event.enableCarpool !== false),
     agendaEnableFinance: rawCurrentConfig.agendaEnableFinance !== undefined ? rawCurrentConfig.agendaEnableFinance : agendaEnableFinance,
     agendaEnableInscriptions: rawCurrentConfig.agendaEnableInscriptions !== false,
     agendaEnableImage: rawCurrentConfig.agendaEnableImage !== false,
@@ -648,7 +660,7 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
     agendaEnableMaybeStatus: rawEditConfig.agendaEnableMaybeStatus !== false,
     agendaEnableStageLayout: rawEditConfig.agendaEnableStageLayout !== false,
     agendaEnableRevisionProgram: rawEditConfig.agendaEnableRevisionProgram !== false,
-    agendaEnableCarpool: rawEditConfig.agendaEnableCarpool !== false,
+    agendaEnableCarpool: (rawEditConfig.agendaEnableCarpool !== false) && (editForm.enableCarpool !== false),
     agendaEnableFinance: rawEditConfig.agendaEnableFinance !== undefined ? rawEditConfig.agendaEnableFinance : agendaEnableFinance,
     agendaEnableInscriptions: rawEditConfig.agendaEnableInscriptions !== false,
     agendaEnableImage: rawEditConfig.agendaEnableImage !== false,
@@ -809,10 +821,24 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
               </select>
               </div>
 
+              {/* Description */}
+              <div className="flex flex-col gap-1">
+                <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                  {t('common.description') || "Description"}
+                </label>
+                <textarea
+                  value={editForm.description || ''}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, description: e.target.value }))}
+                  disabled={savingEvent}
+                  placeholder={t('widgetAgenda.descriptionPlaceholder') || "Description détaillée de l'événement..."}
+                  className="theme-input w-full min-h-[80px] disabled:opacity-50 font-medium py-1.5"
+                />
+              </div>
+
               {/* Date */}
               <div className="flex flex-col gap-1">
                 <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                  Date et heure de début
+                  {t('widgetAgenda.startDateLabel') || "Date et heure de début"}
                 </label>
                 <input
                   type="datetime-local"
@@ -827,12 +853,17 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
               {/* Date Fin (optionnel) */}
               <div className="flex flex-col gap-1">
                 <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                  Date et heure de fin (optionnel)
+                  {t('widgetAgenda.endDateLabel') || "Date et heure de fin (optionnel)"}
                 </label>
                 <input
                   type="datetime-local"
                   value={editForm.dateFin || ''}
                   onChange={(e) => setEditForm(prev => ({ ...prev, dateFin: e.target.value }))}
+                  onFocus={() => {
+                    if (!editForm.dateFin && editForm.date) {
+                      setEditForm(prev => ({ ...prev, dateFin: prev.date }));
+                    }
+                  }}
                   disabled={savingEvent}
                   className="theme-input w-full disabled:opacity-50"
                 />
@@ -1008,7 +1039,7 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
                   disabled={savingEvent}
                   className="theme-input w-full disabled:opacity-50 font-bold bg-cordel-bg-light"
                 >
-                  <option value="">-- Aucune tenue spécifiée --</option>
+                  <option value="">{t('widgetAgenda.noDressCode') || "-- Aucune tenue spécifiée --"}</option>
                   {dressCodes.map(dc => (
                     <option key={dc.id} value={dc.name}>{dc.name} ({dc.included})</option>
                   ))}
@@ -1218,6 +1249,47 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
                 </div>
               )}
 
+              {/* Percussion & Danse Toggles */}
+              <div className="flex gap-4 items-center py-2.5 border-t border-b border-dashed border-cordel-master-dark/15 flex-wrap">
+                <label className="flex items-center gap-2 text-xs font-bold cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={editForm.includesPercussion || false}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, includesPercussion: e.target.checked }))}
+                    disabled={savingEvent}
+                    className="accent-cordel-wood scale-105"
+                  />
+                  <span>🪘 {t('widgetAgenda.includesPercussionLabel') || "Inclut de la percussion"}</span>
+                </label>
+
+                <label className="flex items-center gap-2 text-xs font-bold cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={editForm.includesDance || false}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, includesDance: e.target.checked }))}
+                    disabled={savingEvent}
+                    className="accent-cordel-wood scale-105"
+                  />
+                  <span>💃 {t('widgetAgenda.includesDanceLabel') || "Inclut de la danse"}</span>
+                </label>
+              </div>
+
+              {/* Covoiturage Toggle */}
+              {rawEditConfig.agendaEnableCarpool !== false && (
+                <div className="flex items-center gap-2 pt-2 border-t border-dashed border-cordel-master-dark/15">
+                  <label className="flex items-center gap-2 text-xs font-bold cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={editForm.enableCarpool !== false}
+                      onChange={(e) => setEditForm(prev => ({ ...prev, enableCarpool: e.target.checked }))}
+                      disabled={savingEvent}
+                      className="accent-cordel-wood scale-105"
+                    />
+                    <span>🚗 {t('widgetAgenda.enableCarpoolLabel') || "Autoriser le covoiturage pour cet événement"}</span>
+                  </label>
+                </div>
+              )}
+
               {/* Validation Toggle */}
               {editConfig.agendaEnableInscriptions && (
                 <div className="flex items-center gap-2 pt-2 border-t border-dashed border-cordel-master-dark/15">
@@ -1229,7 +1301,7 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
                       disabled={savingEvent}
                       className="accent-cordel-wood scale-105"
                     />
-                    <span>Inscriptions soumises à validation par l'administrateur</span>
+                    <span>{t('widgetAgenda.requiresValidationLabel') || "Inscriptions soumises à validation par l'administrateur"}</span>
                   </label>
                 </div>
               )}
@@ -1321,6 +1393,21 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
               )}
             </p>
 
+            {(event.includesPercussion || event.includesDance) && (
+              <div className="flex gap-2 flex-wrap mt-2 px-4">
+                {event.includesPercussion && (
+                  <span className="inline-flex items-center gap-1 bg-orange-100 dark:bg-orange-950/40 text-orange-800 dark:text-orange-300 text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded border border-orange-200 dark:border-orange-900/50 select-none">
+                    🪘 {t('eventDetails.includesPercussion') || "Percussion"}
+                  </span>
+                )}
+                {event.includesDance && (
+                  <span className="inline-flex items-center gap-1 bg-pink-100 dark:bg-pink-950/40 text-pink-800 dark:text-pink-300 text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded border border-pink-200 dark:border-pink-900/50 select-none">
+                    💃 {t('eventDetails.includesDance') || "Danse"}
+                  </span>
+                )}
+              </div>
+            )}
+
             <div className="mt-3 pt-2.5 border-t border-dashed border-encre-noire/15 text-xs flex flex-col gap-1 font-semibold leading-relaxed px-4">
               {currentConfig.agendaEnableInscriptions && event.dateLimiteInscription && (
                 <span className={isRegistrationDeadlinePassed ? "text-red-600 dark:text-red-400 font-extrabold" : "text-amber-700 dark:text-amber-400"}>
@@ -1344,7 +1431,7 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
               )}
               {(event.type === 'prestation' || event.type === 'stage' || event.type === 'repetition' || event.type === 'atelier') && (
                 <span>🎯 <strong>Niveau requis (Musique) :</strong> {
-                  event.niveauRequis === 'aucun' ? 'Pas de musicien' :
+                  event.niveauRequis === 'aucun' ? (t('widgetAgenda.levelNone') || 'Pas de musicien') :
                   event.niveauRequis === 'debutant' ? `🌱 ${t('widgetAgenda.levelDeb') || 'Niveau débutant'}` :
                   event.niveauRequis === 'confirme' ? `🏆 ${t('widgetAgenda.levelConfirm') || 'Niveau confirmé'}` :
                   `👥 ${t('widgetAgenda.levelAll') || 'Tout le monde'}`
@@ -1383,6 +1470,12 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
                     src={`https://maps.google.com/maps?q=${encodeURIComponent(event.lieu)}&t=&z=14&ie=UTF8&iwloc=&output=embed`}
                     allowFullScreen
                   />
+                </div>
+              )}
+              {event.description && (
+                <div className="mt-3.5 pt-3 border-t border-dashed border-encre-noire/15 whitespace-pre-line text-neutral-700 dark:text-neutral-300">
+                  <p className="font-extrabold text-cordel-wood mb-1">📝 {t('common.description') || "Description"} :</p>
+                  <p>{event.description}</p>
                 </div>
               )}
             </div>

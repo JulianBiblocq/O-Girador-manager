@@ -14,6 +14,7 @@ export default function WidgetMotMestre({ role, isSystemAdmin, groupId, profileD
   const [isEditing, setIsEditing] = useState(false);
   const [draftText, setDraftText] = useState('');
   const [saving, setSaving] = useState(false);
+  const [publie, setPublie] = useState(true);
 
   const isAuthorized = role === 'mestre' || role === 'super-admin' || isSystemAdmin === true;
 
@@ -29,11 +30,14 @@ export default function WidgetMotMestre({ role, isSystemAdmin, groupId, profileD
     const docRef = doc(db, 'associations', groupId);
     const unsubscribe = onSnapshot(docRef, (docSnap) => {
       if (docSnap.exists()) {
-        setMotDuMestre(docSnap.data().motDuMestre || '');
-        setAuteurNom(docSnap.data().motDuMestreAuteur || '');
+        const data = docSnap.data();
+        setMotDuMestre(data.motDuMestre || '');
+        setAuteurNom(data.motDuMestreAuteur || '');
+        setPublie(data.motDuMestrePublie !== false);
       } else {
         setMotDuMestre('');
         setAuteurNom('');
+        setPublie(true);
       }
       setLoading(false);
     }, (error) => {
@@ -76,6 +80,10 @@ export default function WidgetMotMestre({ role, isSystemAdmin, groupId, profileD
   };
 
   const displayedMessage = motDuMestre || t('widgetMotMestre.welcomeDefault');
+
+  if (!loading && !publie) {
+    return null;
+  }
 
   if (!loading && !isAuthorized && (!motDuMestre || !motDuMestre.trim())) {
     return null;

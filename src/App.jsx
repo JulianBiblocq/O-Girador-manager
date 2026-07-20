@@ -32,6 +32,7 @@ const MestreStageLayout = React.lazy(() => import('./components/mestre/MestreSta
 const ForumChannelsManager = React.lazy(() => import('./components/ForumChannelsManager'));
 const MestreSequenceur = React.lazy(() => import('./components/mestre/MestreSequenceur'));
 const MestreWorkshops = React.lazy(() => import('./components/mestre/MestreWorkshops'));
+const MestreMotMestre = React.lazy(() => import('./components/mestre/MestreMotMestre'));
 const WidgetAgenda = React.lazy(() => import('./components/WidgetAgenda'));
 const WidgetDocuments = React.lazy(() => import('./components/WidgetDocuments'));
 
@@ -107,7 +108,8 @@ const POLES_CONFIG = [
       { id: 'mestre-events', label: 'Liste des Événements', labelKey: 'tabMestreEvents' },
       { id: 'mestre-stage-layout', label: 'Plan de Scène', labelKey: 'tabMestreStage' },
       { id: 'mestre-sequenceur', label: 'Séquenceur (Fichiers JSON)', labelKey: 'tabMestreSequenceur' },
-      { id: 'mestre-workshops', label: 'Ateliers', labelKey: 'tabMestreWorkshops' }
+      { id: 'mestre-workshops', label: 'Ateliers', labelKey: 'tabMestreWorkshops' },
+      { id: 'mestre-mot-mestre', label: 'Mot du Mestre', labelKey: 'tabMestreMotMestre' }
     ]
   },
   {
@@ -235,6 +237,43 @@ export default function App() {
   useEffect(() => {
     document.documentElement.classList.remove('dark');
   }, []);
+
+  // Synchroniser la navigation PWA avec l'historique du navigateur (Bouton retour mobile)
+  useEffect(() => {
+    const handlePopState = (event) => {
+      if (event.state && event.state.currentPole && event.state.currentTab) {
+        setCurrentPole(event.state.currentPole);
+        setCurrentTab(event.state.currentTab);
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    
+    // Remplacer l'état initial pour que le bouton retour ramène à l'accueil
+    if (!window.history.state) {
+      window.history.replaceState(
+        { currentPole: currentPole || 'accueil', currentTab: currentTab || 'dashboard' },
+        '',
+        window.location.pathname + window.location.search
+      );
+    }
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, []);
+
+  // Pousser l'état de navigation dans l'historique lors d'un changement d'onglet ou pôle
+  useEffect(() => {
+    const currentState = window.history.state;
+    if (!currentState || currentState.currentPole !== currentPole || currentState.currentTab !== currentTab) {
+      window.history.pushState(
+        { currentPole, currentTab },
+        '',
+        window.location.pathname + window.location.search
+      );
+    }
+  }, [currentPole, currentTab]);
 
   // Intercept PWA installation prompt
   useEffect(() => {
@@ -909,6 +948,11 @@ export default function App() {
             ) : (currentTab === 'mestre-workshops' && hasAccessMestre) ? (
               <MestreWorkshops 
                 groupId={profileData?.groupId}
+              />
+            ) : (currentTab === 'mestre-mot-mestre' && hasAccessMestre) ? (
+              <MestreMotMestre 
+                groupId={profileData?.groupId}
+                profileData={profileData}
               />
             ) : (currentTab === 'config-identity' && isSystemOrSuperAdminOrMestre) ? (
               <AssociationSettings 

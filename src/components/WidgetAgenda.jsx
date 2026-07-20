@@ -120,7 +120,11 @@ export default function WidgetAgenda({
     requiresValidation: false,
     dateLimiteInscription: '',
     tenueRequise: '',
-    volunteerShifts: []
+    volunteerShifts: [],
+    includesPercussion: false,
+    includesDance: false,
+    enableCarpool: true,
+    description: ''
   });
 
   const isAuthorized = role === 'mestre' || role === 'super-admin' || isSystemAdmin === true;
@@ -197,7 +201,11 @@ export default function WidgetAgenda({
       montantDepense: '',
       budgetRecettes: [],
       budgetDepenses: [],
-      dateLimiteInscription: ''
+      dateLimiteInscription: '',
+      includesPercussion: false,
+      includesDance: false,
+      enableCarpool: true,
+      description: ''
     });
     setIsAdding(true);
   };
@@ -240,7 +248,7 @@ export default function WidgetAgenda({
       agendaEnableMaybeStatus: rawConfig.agendaEnableMaybeStatus !== false,
       agendaEnableStageLayout: rawConfig.agendaEnableStageLayout !== false,
       agendaEnableRevisionProgram: rawConfig.agendaEnableRevisionProgram !== false,
-      agendaEnableCarpool: rawConfig.agendaEnableCarpool !== false,
+      agendaEnableCarpool: (rawConfig.agendaEnableCarpool !== false) && (formData.enableCarpool !== false),
       agendaEnableFinance: rawConfig.agendaEnableFinance !== undefined ? rawConfig.agendaEnableFinance : agendaEnableFinance,
       agendaEnableInscriptions: rawConfig.agendaEnableInscriptions !== false,
       agendaEnableImage: rawConfig.agendaEnableImage !== false,
@@ -276,7 +284,11 @@ export default function WidgetAgenda({
         budgetDepenses: activeConfig.agendaEnableFinance ? (formData.budgetDepenses || []) : [],
         dateLimiteInscription: activeConfig.agendaEnableInscriptions ? formData.dateLimiteInscription || '' : '',
         tenueRequise: formData.tenueRequise || '',
-        volunteerShifts: formData.volunteerShifts || []
+        volunteerShifts: formData.volunteerShifts || [],
+        includesPercussion: formData.includesPercussion || false,
+        includesDance: formData.includesDance || false,
+        enableCarpool: formData.enableCarpool !== false,
+        description: formData.description || ''
       });
       setIsAdding(false);
     } catch (error) {
@@ -484,10 +496,25 @@ export default function WidgetAgenda({
               </select>
             </div>
 
+             {/* Description */}
+            <div className="flex flex-col gap-1">
+              <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                {t('common.description') || "Description"}
+              </label>
+              <textarea
+                name="description"
+                value={formData.description || ''}
+                onChange={handleChange}
+                disabled={saving}
+                placeholder={t('widgetAgenda.descriptionPlaceholder') || "Description détaillée de l'événement..."}
+                className="theme-input w-full min-h-[80px] disabled:opacity-50 font-medium py-1.5"
+              />
+            </div>
+
              {/* Date Picker */}
             <div className="flex flex-col gap-1">
               <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                Date et heure de début
+                {t('widgetAgenda.startDateLabel') || "Date et heure de début"}
               </label>
               <input
                 type="datetime-local"
@@ -503,13 +530,18 @@ export default function WidgetAgenda({
             {/* Date Fin Picker (optionnel) */}
             <div className="flex flex-col gap-1">
               <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                Date et heure de fin (optionnel)
+                {t('widgetAgenda.endDateLabel') || "Date et heure de fin (optionnel)"}
               </label>
               <input
                 type="datetime-local"
                 name="dateFin"
                 value={formData.dateFin}
                 onChange={handleChange}
+                onFocus={() => {
+                  if (!formData.dateFin && formData.date) {
+                    setFormData(prev => ({ ...prev, dateFin: prev.date }));
+                  }
+                }}
                 disabled={saving}
                 className="theme-input w-full disabled:opacity-50"
               />
@@ -685,7 +717,7 @@ export default function WidgetAgenda({
                 disabled={saving}
                 className="theme-input w-full disabled:opacity-50 font-bold bg-cordel-bg-light"
               >
-                <option value="">-- Aucune tenue spécifiée --</option>
+                <option value="">{t('widgetAgenda.noDressCode') || "-- Aucune tenue spécifiée --"}</option>
                 {dressCodes.map(dc => (
                   <option key={dc.id} value={dc.name}>{dc.name} ({dc.included})</option>
                 ))}
@@ -824,6 +856,50 @@ export default function WidgetAgenda({
               </div>
             )}
 
+            {/* Percussion & Danse Toggles */}
+            <div className="flex gap-4 items-center py-2.5 border-t border-b border-dashed border-cordel-master-dark/15 flex-wrap">
+              <label className="flex items-center gap-2 text-xs font-bold cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  name="includesPercussion"
+                  checked={formData.includesPercussion || false}
+                  onChange={(e) => setFormData(prev => ({ ...prev, includesPercussion: e.target.checked }))}
+                  disabled={saving}
+                  className="accent-cordel-wood scale-105"
+                />
+                <span>🪘 {t('widgetAgenda.includesPercussionLabel') || "Inclut de la percussion"}</span>
+              </label>
+
+              <label className="flex items-center gap-2 text-xs font-bold cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  name="includesDance"
+                  checked={formData.includesDance || false}
+                  onChange={(e) => setFormData(prev => ({ ...prev, includesDance: e.target.checked }))}
+                  disabled={saving}
+                  className="accent-cordel-wood scale-105"
+                />
+                <span>💃 {t('widgetAgenda.includesDanceLabel') || "Inclut de la danse"}</span>
+              </label>
+            </div>
+
+            {/* Covoiturage Toggle */}
+            {rawConfig.agendaEnableCarpool !== false && (
+              <div className="flex items-center gap-2 pt-2 border-t border-dashed border-cordel-master-dark/15">
+                <label className="flex items-center gap-2 text-xs font-bold cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    name="enableCarpool"
+                    checked={formData.enableCarpool !== false}
+                    onChange={(e) => setFormData(prev => ({ ...prev, enableCarpool: e.target.checked }))}
+                    disabled={saving}
+                    className="accent-cordel-wood scale-105"
+                  />
+                  <span>🚗 {t('widgetAgenda.enableCarpoolLabel') || "Autoriser le covoiturage pour cet événement"}</span>
+                </label>
+              </div>
+            )}
+
             {/* Validation Toggle */}
             {activeConfig.agendaEnableInscriptions && (
               <div className="flex items-center gap-2 pt-2 border-t border-dashed border-cordel-master-dark/15">
@@ -836,7 +912,7 @@ export default function WidgetAgenda({
                     disabled={saving}
                     className="accent-cordel-wood scale-105"
                   />
-                  <span>Inscriptions soumises à validation par l'administrateur</span>
+                  <span>{t('widgetAgenda.requiresValidationLabel') || "Inscriptions soumises à validation par l'administrateur"}</span>
                 </label>
               </div>
             )}

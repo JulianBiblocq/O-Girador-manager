@@ -22,6 +22,7 @@ export default function AddressAutocomplete({
   const cleanupInputRef = useRef(null);
   const cleanupSelectRef = useRef(null);
   const [hasError, setHasError] = useState(false);
+  const [isValidSelected, setIsValidSelected] = useState(true);
 
   // Store callbacks in refs to prevent recreating Google Maps elements
   // when parent handlers change (e.g., inline functions or un-memoized handlers).
@@ -99,13 +100,25 @@ export default function AddressAutocomplete({
             if (input) {
               input.value = value || '';
               placeAutocomplete.placeholder = placeholder || '';
+              if (required) {
+                input.required = true;
+              }
               
               const handleInput = (e) => {
+                const val = e.target.value;
+                if (required || val.trim() !== '') {
+                  setIsValidSelected(false);
+                  input.setCustomValidity("Veuillez sélectionner une adresse suggérée par Google dans la liste.");
+                } else {
+                  setIsValidSelected(true);
+                  input.setCustomValidity("");
+                }
+
                 if (onChangeRef.current) {
                   onChangeRef.current({
                     target: {
                       name: name,
-                      value: e.target.value
+                      value: val
                     }
                   });
                 }
@@ -147,7 +160,9 @@ export default function AddressAutocomplete({
                   const input = findInnerInput(placeAutocomplete);
                   if (input) {
                     input.value = finalVal;
+                    input.setCustomValidity("");
                   }
+                  setIsValidSelected(true);
 
                   if (onChangeRef.current) {
                     onChangeRef.current({
@@ -223,8 +238,12 @@ export default function AddressAutocomplete({
   useEffect(() => {
     if (!autocompleteRef.current) return;
     const input = findInnerInput();
-    if (input && input.value !== (value || '')) {
-      input.value = value || '';
+    if (input) {
+      if (input.value !== (value || '')) {
+        input.value = value || '';
+      }
+      input.setCustomValidity("");
+      setIsValidSelected(true);
     }
   }, [value]);
 
@@ -251,11 +270,18 @@ export default function AddressAutocomplete({
   }
 
   return (
-    <div className="flex flex-col gap-1 w-full">
+    <div className="flex flex-col gap-1 w-full text-left">
       <div ref={containerRef} className="w-full min-h-[38px] flex items-center" />
-      <span className="text-[9px] text-cordel-master-dark/60 font-semibold leading-none mt-1 select-none">
-        Saisissez pour chercher l'adresse
-      </span>
+      {!isValidSelected && value && value.trim() !== '' && (
+        <span className="text-[9px] text-amber-700 font-extrabold leading-none mt-1 select-none animate-pulse">
+          ⚠️ Veuillez sélectionner une adresse suggérée par Google dans la liste.
+        </span>
+      )}
+      {isValidSelected && (
+        <span className="text-[9px] text-cordel-master-dark/60 font-semibold leading-none mt-1 select-none">
+          Saisissez pour chercher l'adresse
+        </span>
+      )}
     </div>
   );
 }

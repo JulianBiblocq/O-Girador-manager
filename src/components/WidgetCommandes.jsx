@@ -239,6 +239,19 @@ export default function WidgetCommandes({ groupId, user, profileData }) {
                 </select>
               </div>
 
+              {/* Selected Article Image Preview */}
+              {(() => {
+                const artObj = catalog.find(item => item.nom === article);
+                if (artObj && artObj.imageUrl) {
+                  return (
+                    <div className="mt-2 mb-1 w-full max-w-[200px] aspect-square rounded border-2 border-encre-noire overflow-hidden bg-white shadow-md mx-auto flex items-center justify-center">
+                      <img src={artObj.imageUrl} alt={artObj.nom} className="w-full h-full object-cover" />
+                    </div>
+                  );
+                }
+                return null;
+              })()}
+
               {/* Dropdown for sizes/variations if configured */}
               {(() => {
                 const artObj = catalog.find(item => item.nom === article);
@@ -359,9 +372,21 @@ export default function WidgetCommandes({ groupId, user, profileData }) {
               </h5>
               <div className="flex flex-col gap-2 max-h-40 overflow-y-auto">
                 {userRequests.map((req) => (
-                  <div key={req.id} className="text-xs flex justify-between items-center py-1 border-b border-dashed border-encre-noire/5 last:border-0 last:pb-0">
-                    <div className="flex-1 min-w-0">
-                      <span className="font-extrabold text-encre-noire flex items-center gap-1.5 flex-wrap">
+                  <div key={req.id} className="text-xs flex justify-between items-center py-1 border-b border-dashed border-encre-noire/5 last:border-0 last:pb-0 gap-2">
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      {(() => {
+                        const artObj = catalog.find(item => item.nom === req.article);
+                        if (artObj && artObj.imageUrl) {
+                          return (
+                            <div className="w-8 h-8 rounded border border-encre-noire/15 overflow-hidden bg-white shrink-0 shadow-[1px_1px_0px_0px_rgba(26,26,26,0.1)] flex items-center justify-center">
+                              <img src={artObj.imageUrl} alt={req.article} className="w-full h-full object-cover" />
+                            </div>
+                          );
+                        }
+                        return null;
+                      })()}
+                      <div className="flex-1 min-w-0">
+                        <span className="font-extrabold text-encre-noire flex items-center gap-1.5 flex-wrap">
                         {req.quantite} {t('widgetCommandes.unit') || "u"} {getArticleLabel(req.article)}
                         {req.isPersonalOrder ? (
                           <span className="theme-stamp-badge theme-stamp-badge-dark text-[7px] px-1 py-0.5 border-dashed">
@@ -393,7 +418,8 @@ export default function WidgetCommandes({ groupId, user, profileData }) {
                         </p>
                       )}
                     </div>
-                    <button
+                  </div>
+                  <button
                       type="button"
                       onClick={() => handleDeleteRequest(req.id)}
                       className="p-1 border border-dashed border-red-400 hover:border-red-600 text-red-500 rounded cursor-pointer shrink-0 ml-2 flex items-center justify-center"

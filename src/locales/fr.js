@@ -281,7 +281,18 @@ export const fr = {
     imageUrlLabel: "Image de l'événement / Affiche",
     uploadingImage: "Téléversement...",
     uploadSuccess: "Image téléversée !",
-    uploadError: "Erreur lors du téléversement de l'image."
+    uploadError: "Erreur lors du téléversement de l'image.",
+    levelNone: "Pas de musicien",
+    levelDeb: "Niveau débutant",
+    danceLevelAll: "Tous les niveaux",
+    includesPercussionLabel: "Inclut de la percussion",
+    includesDanceLabel: "Inclut de la danse",
+    enableCarpoolLabel: "Autoriser le covoiturage pour cet événement",
+    descriptionPlaceholder: "Description détaillée de l'événement...",
+    noDressCode: "-- Aucune tenue spécifiée --",
+    startDateLabel: "Date et heure de début",
+    endDateLabel: "Date et heure de fin (optionnel)",
+    requiresValidationLabel: "Inscriptions soumises à validation par l'administrateur"
   },
   widgetTreasury: {
     title: "Adhésion & cotisation",
@@ -423,7 +434,9 @@ export const fr = {
     stageBack: "▼ FOND DE LA SCÈNE ▼",
     confirmReset: "Êtes-vous sûr de vouloir réinitialiser le plan de scène ?",
     saveLayoutSuccess: "Plan de scène enregistré !",
-    saveLayoutError: "Erreur lors de l'enregistrement du plan de scène."
+    saveLayoutError: "Erreur lors de l'enregistrement du plan de scène.",
+    includesPercussion: "Percussion",
+    includesDance: "Danse"
   },
   ordersManager: {
     title: "Commandes Groupées",
@@ -786,6 +799,7 @@ export const fr = {
     tabMestreStage: "Plan de Scène",
     tabMestreSequenceur: "Séquenceur (Fichiers JSON)",
     tabMestreWorkshops: "Ateliers",
+    tabMestreMotMestre: "Mot du Mestre",
     tabConfigIdentity: "Identité et liens",
     tabConfigProfile: "Organisation et profil",
     tabConfigSecurity: "Sécurité et droit",

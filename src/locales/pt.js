@@ -281,7 +281,18 @@ export const pt = {
     imageUrlLabel: "Imagem do evento / Cartaz",
     uploadingImage: "Enviando...",
     uploadSuccess: "Imagem enviada com sucesso!",
-    uploadError: "Erro ao enviar a imagem."
+    uploadError: "Erro ao enviar a imagem.",
+    levelNone: "Sem músico",
+    levelDeb: "Nível iniciante",
+    danceLevelAll: "Todos os níveis",
+    includesPercussionLabel: "Inclui percussão",
+    includesDanceLabel: "Inclui dança",
+    enableCarpoolLabel: "Autorizar carona para este evento",
+    descriptionPlaceholder: "Descrição detalhada do evento...",
+    noDressCode: "-- Nenhuma roupa especificada --",
+    startDateLabel: "Data e hora de início",
+    endDateLabel: "Data e hora de término (opcional)",
+    requiresValidationLabel: "Inscrições sujeitas a validação pelo administrador"
   },
   widgetTreasury: {
     title: "Adesão & cotização",
@@ -423,7 +434,9 @@ export const pt = {
     stageBack: "▼ FUNDO DO PALCO ▼",
     confirmReset: "Tem certeza de que deseja redefinir o mapa do palco?",
     saveLayoutSuccess: "Mapa do palco salvo com sucesso!",
-    saveLayoutError: "Erro ao salvar o mapa do palco."
+    saveLayoutError: "Erro ao salvar o mapa do palco.",
+    includesPercussion: "Percussão",
+    includesDance: "Dança"
   },
   ordersManager: {
     title: "Gestão de Encomendas",
@@ -786,6 +799,7 @@ export const pt = {
     tabMestreStage: "Plano de Palco",
     tabMestreSequenceur: "Sequenciador (Arquivos JSON)",
     tabMestreWorkshops: "Oficinas",
+    tabMestreMotMestre: "Palavra do Mestre",
     tabConfigIdentity: "Identidade e links",
     tabConfigProfile: "Organização e perfil",
     tabConfigSecurity: "Segurança e direitos",
