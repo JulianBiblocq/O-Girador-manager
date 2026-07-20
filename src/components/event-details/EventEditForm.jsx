@@ -159,12 +159,15 @@ export default function EventEditForm({
                 <AddressAutocomplete
                   name="lieu"
                   value={editForm.lieu}
-                  onChange={async (e) => {
-                    const newLieu = e.target.value;
-                    setEditForm(prev => ({ ...prev, lieu: newLieu }));
-                    if (adresseLocal && newLieu) {
+                  onChange={(e) => {
+                    setEditForm(prev => ({ ...prev, lieu: e.target.value }));
+                  }}
+                  onSelect={async (placeData) => {
+                    const exactAddress = placeData.address || '';
+                    setEditForm(prev => ({ ...prev, lieu: exactAddress }));
+                    if (adresseLocal && exactAddress) {
                       try {
-                        const distanceKm = await calculateRoadDistance(adresseLocal, newLieu);
+                        const distanceKm = await calculateRoadDistance(adresseLocal, exactAddress);
                         const distanceRoundTrip = Math.round(distanceKm * 2);
                         setEditForm(prev => ({ ...prev, distanceAllerRetourKm: distanceRoundTrip.toString() }));
                       } catch (err) {
