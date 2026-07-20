@@ -1,15 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { collection, query, where, onSnapshot, addDoc, doc } from 'firebase/firestore';
-import { db, storage } from '../firebase';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { db } from '../firebase';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
 const EventDetails = React.lazy(() => import('./EventDetails'));
 import CalendarGrid from './CalendarGrid';
+import EventCreateForm from './agenda/EventCreateForm';
 import { useTranslation } from './LanguageContext';
 import { XiloCalendar } from './XiloIcons';
-import EventBudgetEditor from './event-details/EventBudgetEditor';
-const AddressAutocomplete = React.lazy(() => import('./AddressAutocomplete'));
 import { calculateRoadDistance } from '../utils/googleMaps';
 const formatDateWithDay = (dateStr, includeYear = true) => {
   const date = new Date(dateStr);
@@ -48,13 +46,13 @@ export default function WidgetAgenda({
   const [loading, setLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [uploadingImage, setUploadingImage] = useState(false);
-  const [imageMode, setImageMode] = useState('upload');
+
   const [localSelectedEvent, setLocalSelectedEvent] = useState(null);
   const selectedEvent = propSelectedEvent !== undefined ? propSelectedEvent : localSelectedEvent;
   const setSelectedEvent = propSetSelectedEvent !== undefined ? propSetSelectedEvent : setLocalSelectedEvent;
   const [showAll, setShowAll] = useState(false);
   const [viewMode, setViewMode] = useState('cards'); // 'cards' ou 'list'
+  const [selectedTypeFilter, setSelectedTypeFilter] = useState('all');
   
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
   const [adresseLocal, setAdresseLocal] = useState('');
@@ -101,7 +99,11 @@ export default function WidgetAgenda({
     const eDate = new Date(e.date);
     return !isNaN(eDate.getTime()) && eDate >= today;
   });
-  const visibleEvents = showAll ? upcomingEvents : upcomingEvents.slice(0, limit);
+  const filteredEvents = upcomingEvents.filter(e => {
+    if (selectedTypeFilter === 'all') return true;
+    return e.type === selectedTypeFilter;
+  });
+  const visibleEvents = showAll ? filteredEvents : filteredEvents.slice(0, limit);
   
   const [formData, setFormData] = useState({
     titre: '',
@@ -210,24 +212,6 @@ export default function WidgetAgenda({
     setIsAdding(true);
   };
 
-  const handleImageUpload = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setUploadingImage(true);
-    try {
-      const storagePath = `documents/${groupId}/events/${Date.now()}_${file.name}`;
-      const fileRef = ref(storage, storagePath);
-      const snapshot = await uploadBytes(fileRef, file);
-      const downloadURL = await getDownloadURL(snapshot.ref);
-      setFormData(prev => ({ ...prev, imageUrl: downloadURL }));
-      alert(t('widgetAgenda.uploadSuccess') || "Image téléversée !");
-    } catch (error) {
-      console.error("WidgetAgenda - Erreur upload image :", error);
-      alert(t('widgetAgenda.uploadError') || "Erreur lors du téléversement de l'image.");
-    } finally {
-      setUploadingImage(false);
-    }
-  };
 
   const handleCloseForm = () => {
     setIsAdding(false);
@@ -438,6 +422,43 @@ export default function WidgetAgenda({
         </div>
       </div>
 
+      {/* Event Filters (Visible when not loading and not adding) */}
+      {!loading && !isAdding && (
+        <div className="flex flex-wrap gap-1.5 select-none text-[9px] font-black uppercase mt-1 pl-1">
+          <button
+            type="button"
+            onClick={() => setSelectedTypeFilter('all')}
+            className={`px-3 py-1.5 rounded-[4px_6px_3px_5px] border transition-all cursor-pointer ${
+              selectedTypeFilter === 'all'
+                ? 'bg-cordel-wood text-white border-encre-noire shadow-[1px_1px_0px_0px_#181716]'
+                : 'bg-white border-dashed border-cordel-master-dark/20 text-cordel-master-dark/70 hover:bg-neutral-100'
+            }`}
+          >
+            Tous
+          </button>
+          {eventTypes.map(type => {
+            const labelRaw = t(`widgetAgenda.type${type.charAt(0).toUpperCase() + type.slice(1)}`);
+            const label = labelRaw ? labelRaw.split(' ')[0] : type;
+            const isSelected = selectedTypeFilter === type;
+            
+            return (
+              <button
+                key={type}
+                type="button"
+                onClick={() => setSelectedTypeFilter(type)}
+                className={`px-3 py-1.5 rounded-[4px_6px_3px_5px] border transition-all cursor-pointer ${
+                  isSelected
+                    ? 'bg-cordel-wood text-white border-encre-noire shadow-[1px_1px_0px_0px_#181716]'
+                    : 'bg-white border-dashed border-cordel-master-dark/20 text-cordel-master-dark/70 hover:bg-neutral-100'
+                }`}
+              >
+                {label}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
       {/* Loading indicator */}
       {loading && (
         <div className="flex justify-center items-center py-6">
@@ -447,574 +468,20 @@ export default function WidgetAgenda({
 
       {/* Create Event Form (Visible when isAdding is true) */}
       {!loading && isAdding && (
-        <CordelCard variant="default" useExtremeBorder={true} className="text-left py-6">
-          <h4 className="panel-title text-base font-bold mb-4 text-cordel-wood">
-            Créer un événement
-          </h4>
-          
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-            {/* Title */}
-            <div className="flex flex-col gap-1">
-              <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                Titre de l'événement
-              </label>
-              <input
-                type="text"
-                name="titre"
-                value={formData.titre}
-                onChange={handleChange}
-                required
-                disabled={saving}
-                placeholder="Ex : Carnaval ou Répétition"
-                className="theme-input w-full disabled:opacity-50"
-              />
-            </div>
-
-            {/* Type Dropdown */}
-            <div className="flex flex-col gap-1">
-              <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                {t('widgetAgenda.typeLabel') || "Type"}
-              </label>
-              <select
-                name="type"
-                value={formData.type}
-                onChange={handleChange}
-                required
-                disabled={saving}
-                className="theme-input w-full disabled:opacity-50"
-              >
-                {eventTypes.map(type => (
-                  <option key={type} value={type}>
-                    {type === 'prestation' ? (t('widgetAgenda.typePrestation') || "Prestation (Ocre)") :
-                     type === 'repetition' ? (t('widgetAgenda.typeRepetition') || "Répétition (Vert)") :
-                     type === 'stage' ? (t('widgetAgenda.typeStage') || "Stage (Bleu)") :
-                     type === 'atelier' ? (t('widgetAgenda.typeAtelier') || "Atelier (Jaune)") :
-                     type === 'reunion' ? (t('widgetAgenda.typeReunion') || "Réunion (Kraft)") :
-                     type.charAt(0).toUpperCase() + type.slice(1)}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-             {/* Description */}
-            <div className="flex flex-col gap-1">
-              <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                {t('common.description') || "Description"}
-              </label>
-              <textarea
-                name="description"
-                value={formData.description || ''}
-                onChange={handleChange}
-                disabled={saving}
-                placeholder={t('widgetAgenda.descriptionPlaceholder') || "Description détaillée de l'événement..."}
-                className="theme-input w-full min-h-[80px] disabled:opacity-50 font-medium py-1.5"
-              />
-            </div>
-
-             {/* Date Picker */}
-            <div className="flex flex-col gap-1">
-              <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                {t('widgetAgenda.startDateLabel') || "Date et heure de début"}
-              </label>
-              <input
-                type="datetime-local"
-                name="date"
-                value={formData.date}
-                onChange={handleChange}
-                required
-                disabled={saving}
-                className="theme-input w-full disabled:opacity-50"
-              />
-            </div>
-
-            {/* Date Fin Picker (optionnel) */}
-            <div className="flex flex-col gap-1">
-              <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                {t('widgetAgenda.endDateLabel') || "Date et heure de fin (optionnel)"}
-              </label>
-              <input
-                type="datetime-local"
-                name="dateFin"
-                value={formData.dateFin}
-                onChange={handleChange}
-                onFocus={() => {
-                  if (!formData.dateFin && formData.date) {
-                    setFormData(prev => ({ ...prev, dateFin: prev.date }));
-                  }
-                }}
-                disabled={saving}
-                className="theme-input w-full disabled:opacity-50"
-              />
-            </div>
-
-            {/* Date limite d'inscription (optionnel) */}
-            <div className="flex flex-col gap-1">
-              <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                {t('eventDetails.dateLimiteInscriptionLabel') || "Date limite d'inscription (optionnel)"}
-              </label>
-              <input
-                type="datetime-local"
-                name="dateLimiteInscription"
-                value={formData.dateLimiteInscription || ''}
-                onChange={handleChange}
-                disabled={saving}
-                className="theme-input w-full disabled:opacity-50"
-              />
-            </div>
-
-            {/* Lieu (Adresse) */}
-            {activeConfig.agendaEnableAdresse && (
-              <div className="flex flex-col gap-1">
-                <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                  Lieu
-                </label>
-                <React.Suspense fallback={
-                  <div className="text-[10px] font-bold py-2 text-cordel-wood animate-pulse">
-                    ⏳ Chargement du champ adresse...
-                  </div>
-                }>
-                  <AddressAutocomplete
-                    name="lieu"
-                    value={formData.lieu}
-                    onChange={handleChange}
-                    required
-                    disabled={saving}
-                    placeholder="Ex : Local de l'asso, Place de la Mairie..."
-                    className="theme-input w-full disabled:opacity-50"
-                  />
-                </React.Suspense>
-                {!adresseLocal && (
-                  <span className="text-[9px] text-orange-600 font-bold leading-none mt-1 select-none">
-                    ⚠️ Adresse du local non configurée dans les paramètres de l'association (calcul de distance inactif).
-                  </span>
-                )}
-              </div>
-            )}
-
-            {/* Distance A/R (Covoiturage) */}
-            {activeConfig.agendaEnableCarpool && (formData.type === 'prestation' || formData.type === 'stage' || formData.type === 'atelier') && (
-              <div className="flex flex-col gap-1">
-                <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                  {t('widgetAgenda.distanceLabel') || "Distance Aller-Retour en Km (Covoiturage)"}
-                </label>
-                <input
-                  type="number"
-                  name="distanceAllerRetourKm"
-                  min="0"
-                  value={formData.distanceAllerRetourKm}
-                  onChange={handleChange}
-                  disabled={saving}
-                  placeholder="Ex : 120"
-                  className="theme-input w-full disabled:opacity-50"
-                />
-              </div>
-            )}
-
-            {/* Prestation specific fields */}
-            {formData.type === 'prestation' && (
-              <>
-                <div className="flex flex-col gap-1">
-                  <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                    {t('widgetAgenda.passagesLabel') || "Horaires des passages (Optionnel)"}
-                  </label>
-                  <input
-                    type="text"
-                    name="horairesPassages"
-                    value={formData.horairesPassages}
-                    onChange={handleChange}
-                    disabled={saving}
-                    placeholder="Ex : 1er set 14h, 2ème set 16h"
-                    className="theme-input w-full disabled:opacity-50"
-                  />
-                </div>
-
-                {activeConfig.agendaEnableCarpool && (
-                  <div className="flex flex-col gap-1">
-                    <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                      {t('widgetAgenda.carpoolingLabel') || "Horaire Covoiturage (Optionnel)"}
-                    </label>
-                    <input
-                      type="time"
-                      name="horaireCovoiturage"
-                      value={formData.horaireCovoiturage}
-                      onChange={handleChange}
-                      disabled={saving}
-                      className="theme-input w-full disabled:opacity-50"
-                    />
-                  </div>
-                )}
-              </>
-            )}
-
-            {/* Stage & Atelier specific fields */}
-            {activeConfig.agendaEnableCarpool && (formData.type === 'stage' || formData.type === 'atelier') && (
-              <div className="flex flex-col gap-1">
-                <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                  {t('widgetAgenda.carpoolingLabel') || "Horaire Covoiturage (Optionnel)"}
-                </label>
-                <input
-                  type="time"
-                  name="horaireCovoiturage"
-                  value={formData.horaireCovoiturage}
-                  onChange={handleChange}
-                  disabled={saving}
-                  className="theme-input w-full disabled:opacity-50"
-                />
-              </div>
-            )}
-
-            {/* Musique (Niveau requis) for Prestation, Stage, Répétition, and Atelier */}
-            {(formData.type === 'prestation' || formData.type === 'stage' || formData.type === 'repetition' || formData.type === 'atelier') && (
-              <div className="flex flex-col gap-1">
-                <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                  {t('widgetAgenda.reqLevelLabel') || "Niveau requis (Musique)"}
-                </label>
-                <select
-                  name="niveauRequis"
-                  value={formData.niveauRequis}
-                  onChange={handleChange}
-                  disabled={saving}
-                  className="theme-input w-full disabled:opacity-50 font-bold bg-cordel-bg-light"
-                >
-                  <option value="aucun">{t('widgetAgenda.levelNone') || "Pas de musicien"}</option>
-                  <option value="debutant">{t('widgetAgenda.levelDeb') || "Niveau débutant"}</option>
-                  <option value="confirme">{t('widgetAgenda.levelConfirm') || "Niveau confirmé"}</option>
-                  <option value="tous">{t('widgetAgenda.levelAll') || "Tout le monde"}</option>
-                </select>
-              </div>
-            )}
-
-            {/* Dance Level Selector for Prestation, Stage, Répétition, and Atelier */}
-            {(formData.type === 'prestation' || formData.type === 'stage' || formData.type === 'repetition' || formData.type === 'atelier') && (
-              <div className="flex flex-col gap-1">
-                <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                  {t('widgetAgenda.danceLevelLabel') || "Danse (Niveau requis)"}
-                </label>
-                <select
-                  name="niveauDanseRequis"
-                  value={formData.niveauDanseRequis}
-                  onChange={handleChange}
-                  disabled={saving}
-                  className="theme-input w-full disabled:opacity-50 font-bold bg-cordel-bg-light"
-                >
-                  <option value="aucun">{t('widgetAgenda.danceLevelNone') || "Pas de danse"}</option>
-                  <option value="debutant">{t('widgetAgenda.danceLevelDeb') || "Niveau débutant"}</option>
-                  <option value="confirme">{t('widgetAgenda.danceLevelConfirm') || "Niveau confirmé"}</option>
-                  <option value="tous">{t('widgetAgenda.danceLevelAll') || "Tout le monde"}</option>
-                </select>
-              </div>
-            )}
-
-            {/* Tenue requise */}
-            <div className="flex flex-col gap-1">
-              <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                Tenue requise / Dress Code (Optionnel)
-              </label>
-              <select
-                name="tenueRequise"
-                value={formData.tenueRequise || ''}
-                onChange={handleChange}
-                disabled={saving}
-                className="theme-input w-full disabled:opacity-50 font-bold bg-cordel-bg-light"
-              >
-                <option value="">{t('widgetAgenda.noDressCode') || "-- Aucune tenue spécifiée --"}</option>
-                {dressCodes.map(dc => (
-                  <option key={dc.id} value={dc.name}>{dc.name} ({dc.included})</option>
-                ))}
-              </select>
-            </div>
-
-            {/* Ordre du jour */}
-            {activeConfig.agendaEnableOrdreDuJour && (
-              <div className="flex flex-col gap-1">
-                <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                  Lien du document d'ordre du jour
-                </label>
-                <input
-                  type="url"
-                  name="lienDocument"
-                  value={formData.lienDocument}
-                  onChange={handleChange}
-                  disabled={saving}
-                  placeholder="Ex : https://docs.google.com/..."
-                  className="theme-input w-full disabled:opacity-50"
-                />
-              </div>
-            )}
-
-            {/* Lien réseau social / Événement externe (Optionnel) */}
-            {activeConfig.agendaEnableUrl && (
-              <div className="flex flex-col gap-1">
-                <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                  {t('widgetAgenda.lienSocialLabel') || "Lien réseau social / Événement externe (URL)"}
-                </label>
-                <input
-                  type="url"
-                  name="lienSocial"
-                  value={formData.lienSocial || ''}
-                  onChange={handleChange}
-                  disabled={saving || uploadingImage}
-                  placeholder="https://..."
-                  className="theme-input w-full disabled:opacity-50"
-                />
-              </div>
-            )}
-
-            {/* Affiche de l'événement / Image (Optionnel) */}
-            {activeConfig.agendaEnableImage && (
-              <div className="flex flex-col gap-1.5">
-                <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                  {t('widgetAgenda.imageUrlLabel') || "Image de l'événement / Affiche"}
-                </label>
-                
-                {/* Mode Selector */}
-                <div className="flex gap-2 mb-1.5">
-                  <button
-                    type="button"
-                    onClick={() => setImageMode('upload')}
-                    className={`text-[9px] uppercase font-black px-2.5 py-1 rounded border transition-all ${
-                      imageMode === 'upload'
-                        ? 'bg-cordel-wood text-white border-encre-noire shadow-[1px_1px_0px_0px_#181716]'
-                        : 'bg-white/40 border-dashed border-cordel-master-dark/20 text-cordel-master-dark/70 hover:bg-white/60'
-                    }`}
-                  >
-                    📸 Upload classique
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setImageMode('url')}
-                    className={`text-[9px] uppercase font-black px-2.5 py-1 rounded border transition-all ${
-                      imageMode === 'url'
-                        ? 'bg-cordel-wood text-white border-encre-noire shadow-[1px_1px_0px_0px_#181716]'
-                        : 'bg-white/40 border-dashed border-cordel-master-dark/20 text-cordel-master-dark/70 hover:bg-white/60'
-                    }`}
-                  >
-                    🔗 Lien URL externe
-                  </button>
-                </div>
-
-                <div className="flex items-center gap-3">
-                  {formData.imageUrl && (
-                    <div className="w-14 h-14 border border-encre-noire rounded-[4px] overflow-hidden bg-white shrink-0 shadow-[1px_1px_0px_0px_rgba(26,26,26,0.15)]">
-                      <img src={formData.imageUrl} alt="Affiche preview" className="w-full h-full object-cover" />
-                    </div>
-                  )}
-
-                  {imageMode === 'upload' ? (
-                    <label className="text-[10px] font-black uppercase tracking-widest bg-cordel-bg border border-encre-noire px-3 py-2 rounded-[4px_6px_3px_5px] shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-95 cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1.5 shrink-0 select-none">
-                      {uploadingImage ? (
-                        <>⏳ {t('widgetAgenda.uploadingImage') || "Téléversement..."}</>
-                      ) : (
-                        <>📸 Choisir un fichier</>
-                      )}
-                      <input
-                        type="file"
-                        accept="image/*"
-                        disabled={saving || uploadingImage}
-                        onChange={handleImageUpload}
-                        className="hidden"
-                      />
-                    </label>
-                  ) : (
-                    <input
-                      type="url"
-                      name="imageUrl"
-                      value={formData.imageUrl || ''}
-                      onChange={(e) => setFormData(prev => ({ ...prev, imageUrl: e.target.value }))}
-                      disabled={saving}
-                      placeholder="Collez l'URL de l'image (ex: https://site.com/affiche.jpg)"
-                      className="theme-input text-xs py-1.5 px-2 flex-1"
-                    />
-                  )}
-
-                  {formData.imageUrl && (
-                    <button
-                      type="button"
-                      onClick={() => setFormData(prev => ({ ...prev, imageUrl: '' }))}
-                      className="text-[10px] font-bold text-red-700 hover:underline select-none"
-                    >
-                      Supprimer
-                    </button>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Finances (Optionnel) */}
-            {activeConfig.agendaEnableFinance && (
-              <div className="flex flex-col gap-3 pt-3 border-t border-dashed border-cordel-master-dark/15">
-                <h5 className="text-[10px] uppercase font-black tracking-widest text-cordel-wood">
-                  Finances (Optionnel)
-                </h5>
-                <EventBudgetEditor
-                  budgetRecettes={formData.budgetRecettes}
-                  onChangeRecettes={(items) => setFormData(prev => ({ ...prev, budgetRecettes: items }))}
-                  budgetDepenses={formData.budgetDepenses}
-                  onChangeDepenses={(items) => setFormData(prev => ({ ...prev, budgetDepenses: items }))}
-                  disabled={saving}
-                />
-              </div>
-            )}
-
-            {/* Percussion & Danse Toggles */}
-            <div className="flex gap-4 items-center py-2.5 border-t border-b border-dashed border-cordel-master-dark/15 flex-wrap">
-              <label className="flex items-center gap-2 text-xs font-bold cursor-pointer select-none">
-                <input
-                  type="checkbox"
-                  name="includesPercussion"
-                  checked={formData.includesPercussion || false}
-                  onChange={(e) => setFormData(prev => ({ ...prev, includesPercussion: e.target.checked }))}
-                  disabled={saving}
-                  className="accent-cordel-wood scale-105"
-                />
-                <span>🪘 {t('widgetAgenda.includesPercussionLabel') || "Inclut de la percussion"}</span>
-              </label>
-
-              <label className="flex items-center gap-2 text-xs font-bold cursor-pointer select-none">
-                <input
-                  type="checkbox"
-                  name="includesDance"
-                  checked={formData.includesDance || false}
-                  onChange={(e) => setFormData(prev => ({ ...prev, includesDance: e.target.checked }))}
-                  disabled={saving}
-                  className="accent-cordel-wood scale-105"
-                />
-                <span>💃 {t('widgetAgenda.includesDanceLabel') || "Inclut de la danse"}</span>
-              </label>
-            </div>
-
-            {/* Covoiturage Toggle */}
-            {rawConfig.agendaEnableCarpool !== false && (
-              <div className="flex items-center gap-2 pt-2 border-t border-dashed border-cordel-master-dark/15">
-                <label className="flex items-center gap-2 text-xs font-bold cursor-pointer select-none">
-                  <input
-                    type="checkbox"
-                    name="enableCarpool"
-                    checked={formData.enableCarpool !== false}
-                    onChange={(e) => setFormData(prev => ({ ...prev, enableCarpool: e.target.checked }))}
-                    disabled={saving}
-                    className="accent-cordel-wood scale-105"
-                  />
-                  <span>🚗 {t('widgetAgenda.enableCarpoolLabel') || "Autoriser le covoiturage pour cet événement"}</span>
-                </label>
-              </div>
-            )}
-
-            {/* Validation Toggle */}
-            {activeConfig.agendaEnableInscriptions && (
-              <div className="flex items-center gap-2 pt-2 border-t border-dashed border-cordel-master-dark/15">
-                <label className="flex items-center gap-2 text-xs font-semibold cursor-pointer select-none">
-                  <input
-                    type="checkbox"
-                    name="requiresValidation"
-                    checked={formData.requiresValidation || false}
-                    onChange={(e) => setFormData(prev => ({ ...prev, requiresValidation: e.target.checked }))}
-                    disabled={saving}
-                    className="accent-cordel-wood scale-105"
-                  />
-                  <span>{t('widgetAgenda.requiresValidationLabel') || "Inscriptions soumises à validation par l'administrateur"}</span>
-                </label>
-              </div>
-            )}
-
-            {/* Créneaux de Bénévolat / Logistique */}
-            {activeConfig.agendaEnableVolunteerShifts && (
-              <div className="flex flex-col gap-3 pt-3 border-t border-dashed border-cordel-master-dark/15">
-                <h5 className="text-[10px] uppercase font-black tracking-widest text-cordel-wood flex justify-between items-center">
-                  <span>🤝 Créneaux de Bénévolat / Logistique ({formData.volunteerShifts?.length || 0})</span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const newShifts = [...(formData.volunteerShifts || [])];
-                      newShifts.push({
-                        id: Math.random().toString(36).substr(2, 9),
-                        nomTache: '',
-                        horaires: '',
-                        inscrits: []
-                      });
-                      setFormData(prev => ({ ...prev, volunteerShifts: newShifts }));
-                    }}
-                    className="text-[9px] font-black uppercase bg-cordel-vert text-encre-noire border border-encre-noire px-2 py-1 rounded cursor-pointer hover:brightness-95 shadow-[1px_1px_0px_0px_#181716]"
-                  >
-                    ➕ Ajouter un créneau
-                  </button>
-                </h5>
-
-                <div className="flex flex-col gap-3">
-                  {(!formData.volunteerShifts || formData.volunteerShifts.length === 0) ? (
-                    <span className="text-[10px] italic opacity-60 text-center py-2">Aucun créneau configuré pour le moment.</span>
-                  ) : (
-                    formData.volunteerShifts.map((shift, idx) => (
-                      <div key={shift.id || idx} className="flex flex-col sm:flex-row gap-2.5 p-3.5 bg-cordel-bg-light/20 border border-dashed border-encre-noire/10 rounded items-end">
-                        <div className="flex-1 flex flex-col gap-1 w-full">
-                          <label className="text-[9px] uppercase font-bold tracking-wider opacity-85">Nom de la tâche</label>
-                          <input
-                            type="text"
-                            value={shift.nomTache}
-                            placeholder="Ex : Montage du Stand"
-                            onChange={(e) => {
-                              const newShifts = [...formData.volunteerShifts];
-                              newShifts[idx].nomTache = e.target.value;
-                              setFormData(prev => ({ ...prev, volunteerShifts: newShifts }));
-                            }}
-                            className="theme-input py-1 px-2 text-xs w-full"
-                          />
-                        </div>
-                        <div className="flex-1 flex flex-col gap-1 w-full">
-                          <label className="text-[9px] uppercase font-bold tracking-wider opacity-85">Horaires</label>
-                          <input
-                            type="text"
-                            value={shift.horaires}
-                            placeholder="Ex : 14:00 - 16:00"
-                            onChange={(e) => {
-                              const newShifts = [...formData.volunteerShifts];
-                              newShifts[idx].horaires = e.target.value;
-                              setFormData(prev => ({ ...prev, volunteerShifts: newShifts }));
-                            }}
-                            className="theme-input py-1 px-2 text-xs w-full"
-                          />
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const newShifts = formData.volunteerShifts.filter((_, sIdx) => sIdx !== idx);
-                            setFormData(prev => ({ ...prev, volunteerShifts: newShifts }));
-                          }}
-                          className="text-[9px] font-black uppercase bg-cordel-rouge text-white border border-encre-noire px-2.5 py-2.5 rounded cursor-pointer hover:bg-red-800 shadow-[1px_1px_0px_0px_#181716] shrink-0"
-                          title="Supprimer ce créneau"
-                        >
-                          ✕
-                        </button>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Actions */}
-            <div className="flex gap-3 justify-end mt-2">
-              <CordelButton 
-                type="button"
-                variant="default" 
-                onClick={handleCloseForm} 
-                disabled={saving}
-                className="text-xs px-4 py-2"
-              >
-                Annuler
-              </CordelButton>
-              <CordelButton 
-                type="submit"
-                variant="ocre" 
-                useExtremeBorder={true}
-                disabled={saving}
-                className="text-xs px-4 py-2"
-              >
-                {saving ? "Envoi..." : "Valider"}
-              </CordelButton>
-            </div>
-          </form>
-        </CordelCard>
+        <EventCreateForm
+          formData={formData}
+          setFormData={setFormData}
+          handleChange={handleChange}
+          handleSubmit={handleSubmit}
+          handleCloseForm={handleCloseForm}
+          saving={saving}
+          dressCodes={dressCodes}
+          createConfig={activeConfig}
+          rawCreateConfig={rawConfig}
+          associationEventTypes={eventTypes}
+          adresseLocal={adresseLocal}
+          t={t}
+        />
       )}
 
       {/* Events List (Visible when not loading and not adding) */}
@@ -1219,7 +686,7 @@ export default function WidgetAgenda({
               })}
             </div>
             
-            {upcomingEvents.length > limit && (
+            {filteredEvents.length > limit && (
               <div className="flex justify-center mt-3">
                 <CordelButton 
                   variant="default"

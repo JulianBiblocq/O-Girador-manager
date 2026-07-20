@@ -1,7 +1,7 @@
 {
   "name": "tmp-project",
   "private": true,
-  "version": "1.8.8",
+  "version": "1.0.0-beta",
   "type": "module",
   "scripts": {
     "dev": "vite",

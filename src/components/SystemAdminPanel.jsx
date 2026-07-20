@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { collection, query, onSnapshot, doc, updateDoc, deleteDoc, where, deleteField } from 'firebase/firestore';
+import { collection, query, onSnapshot, doc, updateDoc, where, deleteField } from 'firebase/firestore';
 import { db } from '../firebase';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
 import { useTranslation } from './LanguageContext';
 import { forceUpdateAndClearCache } from '../utils/pwaUtils';
 import { XiloSettings, XiloPeople } from './XiloIcons';
-import { generateImageCharterPDF, generateMedicalAttestationPDF } from '../utils/pdfGenerator';
+import SystemUserList from './admin/SystemUserList';
 
 const DEFAULT_FIELDS_CONFIG = {
   telephone: { key: "telephone", label: "Téléphone", enabled: true, filledBy: "member" },
@@ -19,7 +19,7 @@ const DEFAULT_FIELDS_CONFIG = {
   dateNaissance: { key: "dateNaissance", label: "Date de naissance", enabled: true, filledBy: "member" }
 };
 
-export default function SystemAdminPanel({ user, profileData, onBack, onNavigateToView }) {
+export default function SystemAdminPanel({ profileData, onBack, onNavigateToView }) {
   const { t } = useTranslation();
   const [usersList, setUsersList] = useState([]);
   const [availableTags, setAvailableTags] = useState([]);
@@ -240,22 +240,6 @@ export default function SystemAdminPanel({ user, profileData, onBack, onNavigate
     }
   };
 
-  const handleDeleteUser = async (targetUserId, targetUserName) => {
-    const confirmation = window.confirm(`Voulez-vous vraiment supprimer le membre "${targetUserName}" ? Cette action est irréversible.`);
-    if (!confirmation) return;
-
-    setSavingId(targetUserId);
-    try {
-      const userRef = doc(db, 'users', targetUserId);
-      await deleteDoc(userRef);
-      alert("Membre supprimé avec succès.");
-    } catch (error) {
-      console.error("SystemAdminPanel - Erreur lors de la suppression :", error);
-      alert("Erreur lors de la suppression du membre.");
-    } finally {
-      setSavingId(null);
-    }
-  };
 
   const handleToggleArchive = async (targetUserId, shouldReactivate) => {
     const actionText = shouldReactivate ? "réactiver" : "archiver";
@@ -353,463 +337,26 @@ export default function SystemAdminPanel({ user, profileData, onBack, onNavigate
             {t('systemAdmin.usersHeading')}
           </h3>
 
-          {/* User grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {usersList.map((userItem) => {
-              const currentRole = userItem.role || 'membre';
-              const currentTags = userItem.tags || [];
-              const currentLevel = userItem.niveau || 'aucun';
-              const currentDanceLevel = userItem.niveauDanse || 'aucun';
-              
-              const draftRole = draftRoles[userItem.id];
-              const draftTag = draftTags[userItem.id];
-              const draftLevel = draftLevels[userItem.id];
-              const draftDanceLevel = draftDanceLevels[userItem.id];
-              const userDraft = draftFields[userItem.id] || {};
-              
-              const activeRole = draftRole !== undefined ? draftRole : currentRole;
-              const activeTags = draftTag !== undefined ? draftTag : currentTags;
-              const activeLevel = draftLevel !== undefined ? draftLevel : currentLevel;
-              const activeDanceLevel = draftDanceLevel !== undefined ? draftDanceLevel : currentDanceLevel;
-
-              // Check modifications for Role and Tags to toggle Save button
-              const isRoleModified = draftRole !== undefined && draftRole !== currentRole;
-              const sortedCurrentTags = [...currentTags].sort();
-              const sortedActiveTags = [...activeTags].sort();
-              const isTagsModified = JSON.stringify(sortedCurrentTags) !== JSON.stringify(sortedActiveTags);
-              const isLevelModified = draftLevel !== undefined && draftLevel !== currentLevel;
-              const isDanceLevelModified = draftDanceLevel !== undefined && draftDanceLevel !== currentDanceLevel;
-              
-              const isFieldModified = (key, currentVal) => {
-                return userDraft[key] !== undefined && userDraft[key] !== currentVal;
-              };
-              const isAnyFieldModified = 
-                isFieldModified('telephone', userItem.telephone) ||
-                isFieldModified('adresse', userItem.adresse) ||
-                isFieldModified('surnom', userItem.surnom) ||
-                isFieldModified('tailleTshirt', userItem.tailleTshirt) ||
-                isFieldModified('droitImage', userItem.droitImage) ||
-                isFieldModified('aptitudeMedicale', userItem.aptitudeMedicale) ||
-                isFieldModified('lateralite', userItem.lateralite) ||
-                isFieldModified('dateNaissance', userItem.dateNaissance);
-
-              const isModified = isRoleModified || isTagsModified || isAnyFieldModified || isLevelModified || isDanceLevelModified;
-              const isArchived = userItem.statutActuel === 'archived';
-
-              return (
-                <CordelCard 
-                  key={userItem.id} 
-                  variant="default" 
-                  useExtremeBorder={false} 
-                  className={`py-4 relative pr-4 ${isArchived ? 'opacity-65 grayscale-[30%] border-dashed border-cordel-master-dark/30' : ''}`}
-                >
-                  <div className="flex flex-col gap-3 text-left">
-                    {/* User Identification info */}
-                    <div>
-                      <h4 className="font-extrabold text-sm text-encre-noire leading-tight truncate">
-                        {userItem.prenom} {userItem.nom}
-                      </h4>
-                      <p className="text-[9px] font-semibold text-cordel-master-dark/70 break-all select-all mt-0.5">
-                        ✉️ {userItem.email}
-                      </p>
-                      <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[8px] font-semibold text-cordel-master-dark/70 mt-0.5">
-                        {(!fieldsConfig || fieldsConfig.surnom?.enabled) && userItem.surnom && (
-                          <>
-                            <span>🎭 {userItem.surnom}</span>
-                            <span>•</span>
-                          </>
-                        )}
-                        {(!fieldsConfig || fieldsConfig.telephone?.enabled) && (
-                          <>
-                            <span>📞 {userItem.telephone || 'Non renseigné'}</span>
-                            <span>•</span>
-                          </>
-                        )}
-                        {(!fieldsConfig || fieldsConfig.adresse?.enabled) && (
-                          <>
-                            <span>
-                              📍 {userItem.adresseRue 
-                                ? `${userItem.adresseRue}, ${userItem.adresseCP} ${userItem.adresseVille}` 
-                                : (userItem.adresse || 'Non renseignée')
-                              }
-                            </span>
-                            <span>•</span>
-                          </>
-                        )}
-                        {(!fieldsConfig || fieldsConfig.tailleTshirt?.enabled) && (
-                          <>
-                            <span>👕 T-Shirt : <strong>{userItem.tailleTshirt || 'Non spécifié'}</strong></span>
-                            {(!fieldsConfig || fieldsConfig.lateralite?.enabled) && <span>•</span>}
-                          </>
-                        )}
-                        {(!fieldsConfig || fieldsConfig.lateralite?.enabled) && (
-                          <span>👋 Main : <strong>{userItem.lateralite || 'Droitier'}</strong></span>
-                        )}
-                        {(!fieldsConfig || fieldsConfig.dateNaissance?.enabled) && (
-                          <>
-                            {((!fieldsConfig || fieldsConfig.lateralite?.enabled) || (!fieldsConfig || fieldsConfig.tailleTshirt?.enabled)) && <span>•</span>}
-                            <span>🎂 Nais. : <strong>{userItem.dateNaissance || 'Non spécifié'}</strong></span>
-                          </>
-                        )}
-                      </div>
-                      <p className="text-[9px] font-bold text-cordel-wood mt-0.5 flex flex-wrap gap-x-2">
-                        <span>📦 Groupe : <span className="font-mono">{userItem.groupId || 'Aucun'}</span></span>
-                        <span>•</span>
-                        <span>🏆 Percu : <strong className="uppercase">{userItem.niveau === 'confirme' ? 'Confirmé' : userItem.niveau === 'debutant' ? 'Débutant' : 'Aucun'}</strong></span>
-                        <span>•</span>
-                        <span>💃 Danse : <strong className="uppercase">{userItem.niveauDanse === 'confirme' ? 'Confirmé' : userItem.niveauDanse === 'debutant' ? 'Débutant' : 'Aucun'}</strong></span>
-                      </p>
-
-                      {/* Display member instruments */}
-                      {(() => {
-                        const userInstruments = userItem.instrumentsJoues && userItem.instrumentsJoues.length > 0
-                          ? userItem.instrumentsJoues
-                          : [userItem.instrument].filter(Boolean);
-                        
-                        if (userInstruments.length === 0) return null;
-                        return (
-                          <div className="flex flex-wrap gap-1 mt-1">
-                            {userInstruments.map((inst) => (
-                              <span 
-                                key={inst} 
-                                className="inline-block text-[8px] font-black uppercase tracking-wider bg-cordel-bg-light border border-encre-noire/30 px-1.5 py-0.5 rounded-[3px]"
-                              >
-                                🎵 {inst}
-                              </span>
-                            ))}
-                          </div>
-                        );
-                      })()}
-                    </div>
-
-                    {/* Role Control Panel */}
-                    <div className="flex flex-wrap items-center gap-3 border-t border-dashed border-cordel-master-dark/15 pt-3 mt-1">
-                      <div className="flex flex-col gap-1 flex-1 min-w-[90px]">
-                        <label className="text-[8px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                          {t('systemAdmin.roleLabel') || "Rôle"}
-                        </label>
-                        <select
-                          value={activeRole}
-                          onChange={(e) => handleRoleChange(userItem.id, e.target.value)}
-                          disabled={savingId === userItem.id}
-                          className="theme-input text-xs font-bold py-1.5 px-2 bg-cordel-bg-light"
-                        >
-                          <option value="membre">Membre</option>
-                          <option value="mestre">Mestre</option>
-                          <option value="super-admin">Super-Admin</option>
-                        </select>
-                      </div>
-
-                      <div className="flex flex-col gap-1 flex-1 min-w-[90px]">
-                        <label className="text-[8px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                          {t('systemAdmin.musicLevel') || "Niveau Musique"}
-                        </label>
-                        <select
-                          value={activeLevel}
-                          onChange={(e) => handleLevelChange(userItem.id, e.target.value)}
-                          disabled={savingId === userItem.id}
-                          className="theme-input text-xs font-bold py-1.5 px-2 bg-cordel-bg-light"
-                        >
-                          <option value="aucun">Aucun</option>
-                          <option value="debutant">Débutant</option>
-                          <option value="confirme">Confirmé</option>
-                        </select>
-                      </div>
-
-                      <div className="flex flex-col gap-1 flex-1 min-w-[90px]">
-                        <label className="text-[8px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                          {t('systemAdmin.danceLevel') || "Niveau Danse"}
-                        </label>
-                        <select
-                          value={activeDanceLevel}
-                          onChange={(e) => handleDanceLevelChange(userItem.id, e.target.value)}
-                          disabled={savingId === userItem.id}
-                          className="theme-input text-xs font-bold py-1.5 px-2 bg-cordel-bg-light"
-                        >
-                          <option value="aucun">Aucun</option>
-                          <option value="debutant">Débutant</option>
-                          <option value="confirme">Confirmé</option>
-                        </select>
-                      </div>
-
-                      {/* Action buttons (Save, Archive/Reactivate & Delete) */}
-                      <div className="self-end pb-0.5 flex flex-wrap gap-2">
-                        <CordelButton
-                          type="button"
-                          variant={isModified ? "ocre" : "default"}
-                          useExtremeBorder={true}
-                          onClick={() => handleSavePermissions(userItem.id, userItem)}
-                          disabled={!isModified || savingId === userItem.id}
-                          className={`text-xs px-3 py-1.5 font-bold uppercase tracking-wider ${
-                            !isModified ? 'opacity-40 cursor-not-allowed' : ''
-                          }`}
-                        >
-                          {savingId === userItem.id ? "..." : "Sauver"}
-                        </CordelButton>
-
-                        {userItem.id !== user.uid && (
-                          <CordelButton
-                            type="button"
-                            variant={isArchived ? 'vert' : 'default'}
-                            useExtremeBorder={true}
-                            onClick={() => handleToggleArchive(userItem.id, isArchived)}
-                            disabled={savingId === userItem.id}
-                            className="text-xs px-3 py-1.5 font-bold uppercase tracking-wider"
-                          >
-                            {isArchived ? "Réactiver" : "Archiver"}
-                          </CordelButton>
-                        )}
-
-                        {userItem.id !== user.uid && (
-                          <CordelButton
-                            type="button"
-                            variant="rouge"
-                            useExtremeBorder={true}
-                            onClick={() => handleDeleteUser(userItem.id, `${userItem.prenom} ${userItem.nom}`)}
-                            disabled={savingId === userItem.id}
-                            className="text-xs px-3 py-1.5 font-bold uppercase tracking-wider"
-                          >
-                            Supprimer
-                          </CordelButton>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Custom Admin Fields Form (Only renders enabled custom fields) */}
-                    {fieldsConfig && Object.values(fieldsConfig).some(f => f.enabled) && (
-                      <div className="flex flex-col gap-3 border-t border-dashed border-cordel-master-dark/10 pt-3 mt-1.5">
-                        <label className="text-[8px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                          Champs d'Association ({userItem.groupId})
-                        </label>
-                        
-                        <div className="grid grid-cols-2 gap-2">
-                          {/* Telephone */}
-                          {fieldsConfig.telephone?.enabled && (
-                            <div className="flex flex-col gap-0.5">
-                              <span className="text-[8px] font-bold text-cordel-wood">Téléphone</span>
-                              <input
-                                type="tel"
-                                value={userDraft.telephone !== undefined ? userDraft.telephone : (userItem.telephone || '')}
-                                onChange={(e) => handleFieldChange(userItem.id, 'telephone', e.target.value)}
-                                disabled={savingId === userItem.id}
-                                className="theme-input text-[10px] font-bold py-1 px-1.5 bg-cordel-bg-light"
-                                placeholder="Non renseigné"
-                              />
-                            </div>
-                          )}
-
-                          {/* Surnom */}
-                          {fieldsConfig.surnom?.enabled && (
-                            <div className="flex flex-col gap-0.5">
-                              <span className="text-[8px] font-bold text-cordel-wood">Surnom</span>
-                              <input
-                                type="text"
-                                value={userDraft.surnom !== undefined ? userDraft.surnom : (userItem.surnom || '')}
-                                onChange={(e) => handleFieldChange(userItem.id, 'surnom', e.target.value)}
-                                disabled={savingId === userItem.id}
-                                className="theme-input text-[10px] font-bold py-1 px-1.5 bg-cordel-bg-light"
-                                placeholder="Non renseigné"
-                              />
-                            </div>
-                          )}
-
-                          {/* Adresse */}
-                          {fieldsConfig.adresse?.enabled && (
-                            <div className="flex flex-col gap-1 col-span-2">
-                              <span className="text-[8px] font-bold text-cordel-wood">Adresse (Numéro et Rue)</span>
-                              <input
-                                type="text"
-                                value={userDraft.adresseRue !== undefined ? userDraft.adresseRue : (userItem.adresseRue || '')}
-                                onChange={(e) => handleFieldChange(userItem.id, 'adresseRue', e.target.value)}
-                                disabled={savingId === userItem.id}
-                                className="theme-input text-[10px] font-bold py-1 px-1.5 bg-cordel-bg-light"
-                                placeholder="Numéro et rue"
-                              />
-                              <div className="grid grid-cols-2 gap-1 mt-0.5">
-                                <div className="flex flex-col gap-0.5">
-                                  <span className="text-[7px] font-bold text-cordel-wood">Code Postal</span>
-                                  <input
-                                    type="text"
-                                    value={userDraft.adresseCP !== undefined ? userDraft.adresseCP : (userItem.adresseCP || '')}
-                                    onChange={(e) => handleFieldChange(userItem.id, 'adresseCP', e.target.value)}
-                                    disabled={savingId === userItem.id}
-                                    className="theme-input text-[10px] font-bold py-1 px-1.5 bg-cordel-bg-light"
-                                    placeholder="Code postal"
-                                  />
-                                </div>
-                                <div className="flex flex-col gap-0.5">
-                                  <span className="text-[7px] font-bold text-cordel-wood">Ville</span>
-                                  <input
-                                    type="text"
-                                    value={userDraft.adresseVille !== undefined ? userDraft.adresseVille : (userItem.adresseVille || '')}
-                                    onChange={(e) => handleFieldChange(userItem.id, 'adresseVille', e.target.value)}
-                                    disabled={savingId === userItem.id}
-                                    className="theme-input text-[10px] font-bold py-1 px-1.5 bg-cordel-bg-light"
-                                    placeholder="Ville"
-                                  />
-                                </div>
-                              </div>
-                              {/* Fallback display of old address format */}
-                              {userItem.adresse && !userItem.adresseRue && (
-                                <span className="text-[7.5px] italic text-cordel-master-dark/70 mt-0.5 block">
-                                  Ancien format : {userItem.adresse}
-                                </span>
-                              )}
-                            </div>
-                          )}
-
-                          {/* Taille Tshirt */}
-                          {fieldsConfig.tailleTshirt?.enabled && (
-                            <div className="flex flex-col gap-0.5">
-                              <span className="text-[8px] font-bold text-cordel-wood">Taille T-Shirt</span>
-                              <select
-                                value={userDraft.tailleTshirt !== undefined ? userDraft.tailleTshirt : (userItem.tailleTshirt || 'M')}
-                                onChange={(e) => handleFieldChange(userItem.id, 'tailleTshirt', e.target.value)}
-                                disabled={savingId === userItem.id}
-                                className="theme-input text-[10px] font-bold py-1 px-1.5 bg-cordel-bg-light"
-                              >
-                                <option value="S">S</option>
-                                <option value="M">M</option>
-                                <option value="L">L</option>
-                                <option value="XL">XL</option>
-                                <option value="XXL">XXL</option>
-                              </select>
-                            </div>
-                          )}
-
-                          {/* Latéralité */}
-                          {fieldsConfig.lateralite?.enabled && (
-                            <div className="flex flex-col gap-0.5">
-                              <span className="text-[8px] font-bold text-cordel-wood">Latéralité</span>
-                              <select
-                                value={userDraft.lateralite !== undefined ? userDraft.lateralite : (userItem.lateralite || 'droitier')}
-                                onChange={(e) => handleFieldChange(userItem.id, 'lateralite', e.target.value)}
-                                disabled={savingId === userItem.id}
-                                className="theme-input text-[10px] font-bold py-1 px-1.5 bg-cordel-bg-light"
-                              >
-                                <option value="droitier">Droitier</option>
-                                <option value="gaucher">Gaucher</option>
-                              </select>
-                            </div>
-                          )}
-
-                          {/* Date de naissance */}
-                          {fieldsConfig.dateNaissance?.enabled && (
-                            <div className="flex flex-col gap-0.5">
-                              <span className="text-[8px] font-bold text-cordel-wood">Naissance</span>
-                              <input
-                                type="date"
-                                value={userDraft.dateNaissance !== undefined ? userDraft.dateNaissance : (userItem.dateNaissance || '')}
-                                onChange={(e) => handleFieldChange(userItem.id, 'dateNaissance', e.target.value)}
-                                disabled={savingId === userItem.id}
-                                className="theme-input text-[10px] font-bold py-1 px-1.5"
-                              />
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Checkboxes for right to image and medical fitness */}
-                        <div className="flex flex-wrap gap-x-4 gap-y-1.5 mt-0.5">
-                          {fieldsConfig.droitImage?.enabled && (
-                            <label className="flex items-center gap-1.5 cursor-pointer text-[9px] font-bold select-none">
-                              <input
-                                type="checkbox"
-                                checked={userDraft.droitImage !== undefined ? userDraft.droitImage : (userItem.droitImage !== false)}
-                                onChange={(e) => handleFieldChange(userItem.id, 'droitImage', e.target.checked)}
-                                disabled={savingId === userItem.id}
-                                className="w-3 h-3 cursor-pointer"
-                              />
-                              <span>Droit image</span>
-                            </label>
-                          )}
-
-                          {fieldsConfig.aptitudeMedicale?.enabled && (
-                            <label className="flex items-center gap-1.5 cursor-pointer text-[9px] font-bold select-none">
-                              <input
-                                type="checkbox"
-                                checked={userDraft.aptitudeMedicale !== undefined ? userDraft.aptitudeMedicale : (userItem.aptitudeMedicale === true)}
-                                onChange={(e) => handleFieldChange(userItem.id, 'aptitudeMedicale', e.target.checked)}
-                                disabled={savingId === userItem.id}
-                                className="w-3 h-3 cursor-pointer"
-                              />
-                              <span>Aptitude méd.</span>
-                            </label>
-                          )}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Tags Selector Panel (Checkboxes) */}
-                    {availableTags.length > 0 && (
-                      <div className="flex flex-col gap-1.5 border-t border-dashed border-cordel-master-dark/10 pt-3">
-                        <label className="text-[8px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                          Étiquettes attribuées
-                        </label>
-                        <div className="flex flex-wrap gap-x-4 gap-y-1.5 mt-0.5">
-                          {availableTags.map((tag) => {
-                            const isChecked = activeTags.includes(tag);
-                            return (
-                              <label key={tag} className="flex items-center gap-1.5 cursor-pointer text-[10px] font-bold select-none hover:opacity-80">
-                                <input
-                                  type="checkbox"
-                                  checked={isChecked}
-                                  disabled={savingId === userItem.id}
-                                  onChange={(e) => handleTagToggle(userItem.id, tag, e.target.checked, currentTags)}
-                                  className="rounded border-encre-noire text-cordel-wood focus:ring-cordel-wood w-3 h-3 cursor-pointer"
-                                />
-                                <span className="theme-stamp-badge theme-stamp-badge-wood text-[8px] px-1 py-0.5 normal-case tracking-normal rotate-0 bg-transparent shadow-none border-dashed border">
-                                  {tag}
-                                </span>
-                              </label>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* PDF Generation section */}
-                    {(userItem.droitImage === true || userItem.aptitudeMedicale === true) && (
-                      <div className="flex flex-wrap gap-2 border-t border-dashed border-cordel-master-dark/10 pt-3 mt-1.5">
-                        <label className="text-[8px] uppercase font-bold tracking-wider text-cordel-master-dark w-full">
-                          Documents Signés (PDF)
-                        </label>
-                        {userItem.droitImage === true && (
-                          <button
-                            type="button"
-                            onClick={() => generateImageCharterPDF(userItem, associationName)}
-                            className="text-[9px] font-black uppercase tracking-widest bg-cordel-bg border border-encre-noire px-2.5 py-1 rounded-[4px_6px_3px_5px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-95 cursor-pointer flex items-center gap-1"
-                          >
-                            📄 Télécharger Charte Image PDF
-                          </button>
-                        )}
-                        {userItem.aptitudeMedicale === true && (
-                          <button
-                            type="button"
-                            onClick={() => generateMedicalAttestationPDF(userItem, associationName)}
-                            className="text-[9px] font-black uppercase tracking-widest bg-cordel-bg border border-encre-noire px-2.5 py-1 rounded-[4px_6px_3px_5px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-95 cursor-pointer flex items-center gap-1"
-                          >
-                            📄 Télécharger Attestation Santé PDF
-                          </button>
-                        )}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Stamp badge representing current live role and archived status */}
-                  <div className="absolute right-4 top-4 select-none flex flex-col items-end gap-1">
-                    <span className="theme-stamp-badge theme-stamp-badge-wood text-[7px]">
-                      {currentRole}
-                    </span>
-                    {isArchived && (
-                      <span className="theme-stamp-badge theme-stamp-badge-wood text-[7px] border-red-600 text-red-600 font-extrabold uppercase rotate-[-3deg]">
-                        Archivé
-                      </span>
-                    )}
-                  </div>
-                </CordelCard>
-              );
-            })}
-          </div>
+          {/* User list component */}
+          <SystemUserList
+            usersList={usersList}
+            draftRoles={draftRoles}
+            draftTags={draftTags}
+            draftFields={draftFields}
+            draftLevels={draftLevels}
+            draftDanceLevels={draftDanceLevels}
+            savingId={savingId}
+            availableTags={availableTags}
+            fieldsConfig={fieldsConfig}
+            associationName={associationName}
+            handleRoleChange={handleRoleChange}
+            handleTagToggle={handleTagToggle}
+            handleLevelChange={handleLevelChange}
+            handleDanceLevelChange={handleDanceLevelChange}
+            handleFieldChange={handleFieldChange}
+            handleSavePermissions={handleSavePermissions}
+            handleToggleArchive={handleToggleArchive}
+          />
         </div>
       )}
     </div>

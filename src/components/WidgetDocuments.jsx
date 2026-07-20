@@ -15,6 +15,17 @@ export const DEFAULT_VARAL_CATEGORIES = [
   { id: 'Administratif', nom: 'Administratif', activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: true }
 ];
 
+const getDeterministicColor = (docId) => {
+  if (!docId) return 'default';
+  const colors = ['vert', 'bleu', 'rouge', 'jaune', 'violet', 'orange'];
+  let hash = 0;
+  for (let i = 0; i < docId.length; i++) {
+    hash = docId.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const index = Math.abs(hash) % colors.length;
+  return colors[index];
+};
+
 export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
   const { t } = useTranslation();
   const [documents, setDocuments] = useState([]);
@@ -101,14 +112,6 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
     return 'pdf'; // default fallback
   };
 
-  const getDocColorVariant = (docItem) => {
-    const type = getDocType(docItem);
-    if (type === 'video') return 'rouge';
-    if (type === 'pdf') return 'bleu';
-    if (type === 'audio') return 'vert';
-    if (type === 'web') return 'jaune';
-    return 'default'; // fallback
-  };
 
   const isAuthorized = role === 'mestre' || role === 'super-admin' || isSystemAdmin === true;
 
@@ -314,8 +317,7 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
                             (docItem.titre && (docItem.titre.toLowerCase().includes('ordre') || docItem.titre.toLowerCase().includes('jour')));
                           colorClass = isOrdreDuJour ? 'bleu-ardoise' : 'bleu';
                         } else {
-                          const colors = ['vert', 'bleu', 'rouge', 'jaune', 'violet', 'orange'];
-                          colorClass = colors[index % colors.length];
+                          colorClass = getDeterministicColor(docItem.id);
                         }
                         const typeIcons = {
                           pdf: '📄',

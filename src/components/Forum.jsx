@@ -12,7 +12,6 @@ import XiloAvatar from './XiloAvatar';
 // Memoized ThreadCard component to prevent list items re-rendering during search or active inputs
 const ThreadCard = React.memo(({
   thread,
-  user,
   profileData,
   categoryBadges,
   t,
@@ -85,7 +84,6 @@ const ThreadCard = React.memo(({
          prevProps.thread.titre === nextProps.thread.titre &&
          prevProps.thread.categorie === nextProps.thread.categorie &&
          prevProps.thread.auteurNom === nextProps.thread.auteurNom &&
-         prevProps.user?.uid === nextProps.user?.uid &&
          prevProps.profileData === nextProps.profileData &&
          prevProps.getCategoryLabel === nextProps.getCategoryLabel &&
          prevProps.onClick === nextProps.onClick;
@@ -106,6 +104,7 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
   const [selectedThread, setSelectedThread] = useState(null);
   
   const [activeTab, setActiveTab] = useState('discussions'); // 'discussions' or 'inbox'
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [privateMessages, setPrivateMessages] = useState([]);
   const [usersMap, setUsersMap] = useState({});
   const [activeChatUserId, setActiveChatUserId] = useState(null);
@@ -521,25 +520,20 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
         <div className="flex flex-col md:flex-row gap-4">
           {/* Channels Sidebar / Dropdown */}
           <div className="w-full md:w-60 shrink-0 flex flex-col gap-2 select-none">
-            {/* Mobile Dropdown */}
-            <div className="block md:hidden">
-              <label className="text-[10px] font-black uppercase tracking-wider text-cordel-master-dark block mb-1">
-                {t('forum.selectChannel') || "Salon :"}
-              </label>
-              <select
-                value={activeChannelId || ''}
-                onChange={(e) => setActiveChannelId(e.target.value)}
-                className="theme-input w-full font-bold text-xs py-2 bg-cordel-bg-light"
-              >
-                {channels.map((ch) => {
-                  const isReadOnly = !hasWriteAccess(ch);
-                  return (
-                    <option key={ch.id} value={ch.id}>
-                      # {ch.name} {isReadOnly ? "🔒 (Lecture seule)" : ""}
-                    </option>
-                  );
-                })}
-              </select>
+            {/* Mobile Channels Toggle Button */}
+            <div className="block md:hidden mb-2">
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsDrawerOpen(true)}
+                  className="flex items-center gap-1.5 px-3 py-2 text-xs font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 border-encre-noire bg-cordel-bg shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none cursor-pointer"
+                >
+                  📁 Salons
+                </button>
+                <div className="flex-1 px-3 py-2 border-2 border-dashed border-cordel-master-dark/15 rounded bg-cordel-bg-light/40 font-bold text-xs truncate">
+                  # {activeChannel ? activeChannel.name : ''}
+                </div>
+              </div>
             </div>
 
             {/* Desktop Sidebar */}
@@ -621,7 +615,6 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
                       <ThreadCard
                         key={thread.id}
                         thread={thread}
-                        user={user}
                         profileData={profileData}
                         categoryBadges={categoryBadges}
                         t={t}
@@ -634,6 +627,57 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
               </div>
             )}
           </div>
+
+          {/* Mobile Drawer Overlay */}
+          {isDrawerOpen && (
+            <div className="fixed inset-0 z-50 md:hidden">
+              {/* Backdrop */}
+              <div 
+                className="fixed inset-0 bg-black/45 backdrop-blur-xs transition-opacity"
+                onClick={() => setIsDrawerOpen(false)}
+              ></div>
+              {/* Drawer content */}
+              <div className="fixed inset-y-0 left-0 w-64 max-w-full bg-[#fdfaf2] dark:bg-[#1f1b18] border-r-2 border-encre-noire p-4 flex flex-col gap-4 animate-slide-in shadow-2xl">
+                <div className="flex justify-between items-center border-b border-dashed border-cordel-master-dark/20 pb-2">
+                  <h3 className="text-xs font-black uppercase tracking-widest text-cordel-wood">
+                    📁 Salons
+                  </h3>
+                  <button 
+                    type="button" 
+                    onClick={() => setIsDrawerOpen(false)}
+                    className="text-xs font-bold text-cordel-master-dark hover:text-encre-noire p-1 cursor-pointer"
+                  >
+                    ✕ Fermer
+                  </button>
+                </div>
+                <div className="flex flex-col gap-1.5 overflow-y-auto">
+                  {channels.map((ch) => {
+                    const isActive = ch.id === activeChannelId;
+                    const isReadOnly = !hasWriteAccess(ch);
+                    return (
+                      <button
+                        key={ch.id}
+                        onClick={() => {
+                          setActiveChannelId(ch.id);
+                          setIsDrawerOpen(false);
+                        }}
+                        className={`w-full text-left px-3 py-2.5 text-xs font-black rounded transition-all cursor-pointer border flex justify-between items-center ${
+                          isActive
+                            ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
+                            : 'bg-transparent text-encre-noire border-transparent hover:bg-cordel-hover-bg'
+                        }`}
+                      >
+                        <span># {ch.name}</span>
+                        {isReadOnly && (
+                          <span className="text-[9px] opacity-75" title="Lecture seule">🔒</span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
