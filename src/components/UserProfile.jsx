@@ -129,8 +129,13 @@ export default function UserProfile({ user, profileData, onBack }) {
                 return (
                   <span 
                     key={`inst-${inst}`} 
-                    className="theme-stamp-badge theme-stamp-badge-dark text-[9px] px-2.5 py-1 bg-cordel-bg-light/80 border-dashed inline-flex items-center gap-1"
-                    style={{ transform: `rotate(${rotation}deg)` }}
+                    className="theme-stamp-badge theme-stamp-badge-dark text-[9px] px-2.5 py-1 bg-cordel-bg-light/80 border-dashed"
+                    style={{ 
+                      transform: `rotate(${rotation}deg)`,
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px'
+                    }}
                   >
                     <img src={getInstrumentIconPath(inst)} alt={inst} className="w-3.5 h-3.5 object-contain dark:invert" />
                     <span>{inst}</span>
