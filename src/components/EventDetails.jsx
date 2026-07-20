@@ -26,6 +26,11 @@ import EventEditForm from './event-details/EventEditForm';
 
 export default function EventDetails({ event, user, profileData, onNavigateToView, onClose, onPrev, onNext, viewMode, setViewMode, onGoToStageLayoutEditor }) {
   const { t } = useTranslation();
+
+  const translate = (key, fallback) => {
+    const val = t(key);
+    return val === key ? fallback : val;
+  };
   const [isCalendarMenuOpen, setIsCalendarMenuOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState(null);
   const [allUsers, setAllUsers] = useState([]);
@@ -521,10 +526,10 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
       const snapshot = await uploadBytes(fileRef, file);
       const downloadURL = await getDownloadURL(snapshot.ref);
       setEditForm(prev => ({ ...prev, imageUrl: downloadURL }));
-      alert(t('widgetAgenda.uploadSuccess') || "Image téléversée !");
+      alert(translate('widgetAgenda.uploadSuccess', "Image téléversée !"));
     } catch (error) {
       console.error("EventDetails - Erreur upload image :", error);
-      alert(t('widgetAgenda.uploadError') || "Erreur lors du téléversement de l'image.");
+      alert(translate('widgetAgenda.uploadError', "Erreur lors du téléversement de l'image."));
     } finally {
       setUploadingImage(false);
     }
@@ -861,12 +866,12 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
               <div className="flex gap-2 flex-wrap mt-2 px-4">
                 {event.includesPercussion && (
                   <span className="inline-flex items-center gap-1 bg-orange-100 dark:bg-orange-950/40 text-orange-800 dark:text-orange-300 text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded border border-orange-200 dark:border-orange-900/50 select-none">
-                    🪘 {t('eventDetails.includesPercussion') || "Percussion"}
+                    🪘 {translate('eventDetails.includesPercussion', "Percussion")}
                   </span>
                 )}
                 {event.includesDance && (
                   <span className="inline-flex items-center gap-1 bg-pink-100 dark:bg-pink-950/40 text-pink-800 dark:text-pink-300 text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded border border-pink-200 dark:border-pink-900/50 select-none">
-                    💃 {t('eventDetails.includesDance') || "Danse"}
+                    💃 {translate('eventDetails.includesDance', "Danse")}
                   </span>
                 )}
               </div>
@@ -895,18 +900,18 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
               )}
               {(event.type === 'prestation' || event.type === 'stage' || event.type === 'repetition' || event.type === 'atelier') && (
                 <span>🎯 <strong>Niveau requis (Musique) :</strong> {
-                  event.niveauRequis === 'aucun' ? (t('widgetAgenda.levelNone') || 'Pas de musicien') :
-                  event.niveauRequis === 'debutant' ? `🌱 ${t('widgetAgenda.levelDeb') || 'Niveau débutant'}` :
-                  event.niveauRequis === 'confirme' ? `🏆 ${t('widgetAgenda.levelConfirm') || 'Niveau confirmé'}` :
-                  `👥 ${t('widgetAgenda.levelAll') || 'Tout le monde'}`
+                  event.niveauRequis === 'aucun' ? translate('widgetAgenda.levelNone', 'Pas de musicien') :
+                  event.niveauRequis === 'debutant' ? `🌱 ${translate('widgetAgenda.levelDeb', 'Niveau débutant')}` :
+                  event.niveauRequis === 'confirme' ? `🏆 ${translate('widgetAgenda.levelConfirm', 'Niveau confirmé')}` :
+                  `👥 ${translate('widgetAgenda.levelAll', 'Tout le monde')}`
                 }</span>
               )}
               {(event.type === 'prestation' || event.type === 'stage' || event.type === 'repetition' || event.type === 'atelier') && (
                 <span>💃 <strong>Danse (Niveau requis) :</strong> {
-                  event.niveauDanseRequis === 'debutant' ? `🌱 ${t('widgetAgenda.danceLevelDeb') || 'Niveau débutant'}` :
-                  event.niveauDanseRequis === 'confirme' ? `🏆 ${t('widgetAgenda.danceLevelConfirm') || 'Niveau confirmé'}` :
-                  event.niveauDanseRequis === 'tous' ? `👥 ${t('widgetAgenda.danceLevelAll') || 'Tout le monde'}` :
-                  `❌ ${t('widgetAgenda.danceLevelNone') || 'Pas de danse'}`
+                  event.niveauDanseRequis === 'debutant' ? `🌱 ${translate('widgetAgenda.danceLevelDeb', 'Niveau débutant')}` :
+                  event.niveauDanseRequis === 'confirme' ? `🏆 ${translate('widgetAgenda.danceLevelConfirm', 'Niveau confirmé')}` :
+                  event.niveauDanseRequis === 'tous' ? `👥 ${translate('widgetAgenda.danceLevelAll', 'Tout le monde')}` :
+                  `❌ ${translate('widgetAgenda.danceLevelNone', 'Pas de danse')}`
                 }</span>
               )}
               {currentConfig.agendaEnableOrdreDuJour && event.lienDocument && (
@@ -938,7 +943,7 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
               )}
               {event.description && (
                 <div className="mt-3.5 pt-3 border-t border-dashed border-encre-noire/15 whitespace-pre-line text-neutral-700 dark:text-neutral-300">
-                  <p className="font-extrabold text-cordel-wood mb-1">📝 {t('common.description') || "Description"} :</p>
+                  <p className="font-extrabold text-cordel-wood mb-1">📝 {translate('common.description', "Description")} :</p>
                   <p>{event.description}</p>
                 </div>
               )}

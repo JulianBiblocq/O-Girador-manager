@@ -54,6 +54,11 @@ export default function UserProfile({ user, profileData, onBack }) {
 
   const fullName = `${profileData?.prenom || ''} ${profileData?.nom || ''}`;
 
+  const translate = (key, fallback) => {
+    const val = t(key);
+    return val === key ? fallback : val;
+  };
+
   return (
     <div className="flex flex-col gap-4 text-left max-w-3xl mx-auto w-full">
       {/* Header bar */}
@@ -77,10 +82,10 @@ export default function UserProfile({ user, profileData, onBack }) {
               {tRole(profileData?.role || 'membre', profileData?.genre)}
             </span>
             <span className="theme-stamp-badge theme-stamp-badge-ocre text-[7px] -rotate-6">
-              {profileData?.niveau === 'confirme' ? '🏆 ' + t('userProfile.levelConfirmSimple') : profileData?.niveau === 'debutant' ? '🌱 ' + t('userProfile.levelBeginner') : '🎵 ' + (t('common.none') || 'Aucun')}
+              {profileData?.niveau === 'confirme' ? '🏆 ' + translate('userProfile.levelConfirmSimple', "Confirmé") : profileData?.niveau === 'debutant' ? '🌱 ' + translate('userProfile.levelBeginner', "Débutant") : '🎵 ' + translate('common.none', 'Aucun')}
             </span>
             <span className="theme-stamp-badge theme-stamp-badge-ocre text-[7px] rotate-3">
-              {profileData?.niveauDanse === 'confirme' ? '💃 ' + t('userProfile.levelConfirmSimple') : profileData?.niveauDanse === 'debutant' ? '🌱 ' + t('userProfile.levelBeginner') : '💃 ' + t('common.none')}
+              {profileData?.niveauDanse === 'confirme' ? '💃 ' + translate('userProfile.levelConfirmSimple', "Confirmé") : profileData?.niveauDanse === 'debutant' ? '🌱 ' + translate('userProfile.levelBeginner', "Débutant") : '💃 ' + translate('common.none', 'Aucun')}
             </span>
           </div>
         </div>
@@ -188,13 +193,13 @@ export default function UserProfile({ user, profileData, onBack }) {
             </div>
             <div>
               <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70 block">
-                {t('onboarding.genre') || "Genre"}
+                {translate('onboarding.genre', "Genre")}
               </span>
               <span className="capitalize">{formData.genre === 'homme' ? t('onboarding.genderMale') : formData.genre === 'femme' ? t('onboarding.genderFemale') : t('onboarding.genderOther')}</span>
             </div>
             <div>
               <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70 block">
-                {t('onboarding.instrument') || "Instrument Principal"}
+                {translate('onboarding.instrument', "Instrument Principal")}
               </span>
               <span className="font-bold">{formData.instrument}</span>
             </div>
@@ -255,7 +260,7 @@ export default function UserProfile({ user, profileData, onBack }) {
                   {isFieldVisible('taillePantalon') && (
                     <div>
                       <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70 block">
-                        {t('userProfile.pantSize') || "Taille Pantalon"}
+                        {translate('userProfile.pantSize', "Taille Pantalon")}
                       </span>
                       <span className="font-bold">{formData.taillePantalon}</span>
                     </div>
@@ -315,7 +320,7 @@ export default function UserProfile({ user, profileData, onBack }) {
             onClick={handleStartEdit}
             className="w-full mt-2 py-3 font-bold uppercase tracking-wider text-xs"
           >
-            ✏️ {t('userProfile.editBtn') || "Modifier mon profil"}
+            ✏️ {translate('userProfile.editBtn', "Modifier mon profil")}
           </CordelButton>
         </CordelCard>
       ) : (

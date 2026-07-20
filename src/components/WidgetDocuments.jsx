@@ -28,6 +28,12 @@ const getDeterministicColor = (docId) => {
 
 export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
   const { t } = useTranslation();
+
+  const translate = (key, fallback) => {
+    const val = t(key);
+    return val === key ? fallback : val;
+  };
+
   const [documents, setDocuments] = useState([]);
   const [varalCategories, setVaralCategories] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -41,7 +47,7 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
   };
 
   const handleDelete = async (docItem) => {
-    const confirmMsg = t('documents.deleteConfirm') || "Voulez-vous vraiment supprimer ce document ?";
+    const confirmMsg = translate('documents.deleteConfirm', "Voulez-vous vraiment supprimer ce document ?");
     if (!window.confirm(confirmMsg)) return;
 
     try {
@@ -58,7 +64,7 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
       await deleteDoc(docRef);
     } catch (error) {
       console.error("WidgetDocuments - Erreur de suppression :", error);
-      alert(t('documents.deleteError') || "Erreur lors de la suppression du document.");
+      alert(translate('documents.deleteError', "Erreur lors de la suppression du document."));
     }
   };
 
@@ -279,7 +285,7 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
                         rel="noopener noreferrer"
                         className="text-[9px] font-black uppercase text-blue-700 hover:underline flex items-center gap-1 cursor-pointer"
                       >
-                        📤 {t('documents.publicUploadLink') || "Partager vos photos/vidéos"}
+                        📤 {translate('documents.publicUploadLink', "Partager vos photos/vidéos")}
                       </a>
                     )}
                   </div>
@@ -300,7 +306,7 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
                   {/* Hanging Booklets */}
                   <div className="flex flex-nowrap overflow-x-auto justify-start items-start gap-3 sm:gap-4 mt-8 relative z-10 w-full no-scrollbar pb-3 px-4">
                     {docList.length === 0 ? (
-                      <p className="text-[9px] italic opacity-60 self-center py-2">{t('documents.noDocumentsCategory') || "Aucun document dans cette rubrique."}</p>
+                      <p className="text-[9px] italic opacity-60 self-center py-2">{translate('documents.noDocumentsCategory', "Aucun document dans cette rubrique.")}</p>
                     ) : (
                       docList.map((docItem, index) => {
                         // Alternate rotation slightly for that organic handcrafted feel
@@ -345,7 +351,7 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
                               ${rotationClass} hover:rotate-0 hover:scale-105
                               ${opacityClass}
                             `}
-                            title={`${t('common.open') || "Ouvrir"} ${docItem.titre} ${isArchived ? '(' + (t('documents.archiveTag') || "Archive") + ')' : ''}`}
+                            title={`${translate('common.open', "Ouvrir")} ${docItem.titre} ${isArchived ? '(' + translate('documents.archiveTag', "Archive") + ')' : ''}`}
                           >
                             {/* Clothespin Simulator (Pince à linge) */}
                             <div className="absolute -top-3 w-2.5 h-6 bg-[#a67a53] border border-encre-noire rounded-sm shadow-sm z-30 flex flex-col justify-between py-0.5 items-center select-none">
@@ -396,7 +402,7 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
                                       handleEdit(docItem);
                                     }}
                                     className="p-1 rounded bg-[var(--cordel-bg)] text-[var(--cordel-text)] border border-[var(--cordel-border)] hover:bg-[var(--cordel-master-bg)] cursor-pointer select-none flex items-center justify-center shadow-sm"
-                                    title={t('common.edit') || "Modifier"}
+                                    title={translate('common.edit', "Modifier")}
                                   >
                                     <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                                       <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
@@ -409,7 +415,7 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
                                       handleDelete(docItem);
                                     }}
                                     className="p-1 rounded bg-[var(--cordel-bg)] text-red-600 border border-[var(--cordel-border)] hover:bg-[var(--cordel-master-bg)] cursor-pointer select-none flex items-center justify-center shadow-sm"
-                                    title={t('common.delete') || "Supprimer"}
+                                    title={translate('common.delete', "Supprimer")}
                                   >
                                     <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                                       <polyline points="3 6 5 6 21 6" />
@@ -440,7 +446,7 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
                               {/* Booklet Bottom */}
                               <div className="mt-auto select-none">
                                 <div className="text-[7px] text-right font-black uppercase mt-1">
-                                  {t('documents.readBtn') || "Lire ➜"}
+                                  {translate('documents.readBtn', "Lire ➜")}
                                 </div>
                               </div>
                             </div>
@@ -578,7 +584,7 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
                 onClick={() => setSelectedReport(null)}
                 className="text-xs font-black uppercase tracking-widest bg-cordel-bg border border-encre-noire px-3 py-1 rounded-[4px_6px_3px_5px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-95 cursor-pointer"
               >
-                {t('common.close') || "Fermer"}
+                {translate('common.close', "Fermer")}
               </button>
             </div>
 

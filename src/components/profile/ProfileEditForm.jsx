@@ -31,17 +31,22 @@ export default function ProfileEditForm({
   demanderAttestationSante,
   t
 }) {
+  const translate = (key, fallback) => {
+    const val = t(key);
+    return val === key ? fallback : val;
+  };
+
   return (
     <form onSubmit={handleSave} className="flex flex-col gap-4">
       <CordelCard variant="default" useExtremeBorder={false} className="flex flex-col gap-4">
         <h4 className="font-bold text-xs uppercase tracking-wider text-cordel-wood border-b border-dashed border-cordel-master-dark/10 pb-1">
-          {t('userProfile.personalInfo') || "Informations personnelles"}
+          {translate('userProfile.personalInfo', "Informations personnelles")}
         </h4>
 
         {/* First Name */}
         <div className="flex flex-col gap-1.5 text-left">
           <label className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood">
-            {t('userProfile.firstName') || "Prénom"}
+            {translate('userProfile.firstName', "Prénom")}
           </label>
           <input
             type="text"
@@ -57,7 +62,7 @@ export default function ProfileEditForm({
         {/* Last Name */}
         <div className="flex flex-col gap-1.5 text-left">
           <label className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood">
-            {t('userProfile.lastName') || "Nom"}
+            {translate('userProfile.lastName', "Nom")}
           </label>
           <input
             type="text"
@@ -73,7 +78,7 @@ export default function ProfileEditForm({
         {/* Genre */}
         <div className="flex flex-col gap-1.5 text-left">
           <label className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood">
-            {t('onboarding.genre') || "Genre"}
+            {translate('onboarding.genre', "Genre")}
           </label>
           <select
             name="genre"
@@ -83,9 +88,9 @@ export default function ProfileEditForm({
             disabled={saving}
             className="theme-input w-full text-xs bg-cordel-bg-light"
           >
-            <option value="homme">{t('onboarding.genderMale') || "Homme"}</option>
-            <option value="femme">{t('onboarding.genderFemale') || "Femme"}</option>
-            <option value="autre">{t('onboarding.genderOther') || "Autre"}</option>
+            <option value="homme">{translate('onboarding.genderMale', "Homme")}</option>
+            <option value="femme">{translate('onboarding.genderFemale', "Femme")}</option>
+            <option value="autre">{translate('onboarding.genderOther', "Autre")}</option>
           </select>
         </div>
 
@@ -93,7 +98,7 @@ export default function ProfileEditForm({
         {isFieldVisible('telephone') && (
           <div className="flex flex-col gap-1.5 text-left">
             <label className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood">
-              {t('userProfile.phone') || "Téléphone"}
+              {translate('userProfile.phone', "Téléphone")}
             </label>
             <input
               type="tel"
@@ -110,7 +115,7 @@ export default function ProfileEditForm({
         {isFieldVisible('surnom') && (
           <div className="flex flex-col gap-1.5 text-left">
             <label className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood">
-              {t('userProfile.nickname') || "Surnom (Nom de guerre)"}
+              {translate('userProfile.nickname', "Surnom (Nom de guerre)")}
             </label>
             <input
               type="text"
@@ -127,7 +132,7 @@ export default function ProfileEditForm({
         {/* Instrument Principal */}
         <div className="flex flex-col gap-1.5 text-left">
           <label className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood">
-            {t('onboarding.instrument') || "Instrument principal"}
+            {translate('onboarding.instrument', "Instrument principal")}
           </label>
           <select
             name="instrument"
@@ -154,7 +159,7 @@ export default function ProfileEditForm({
         {isFieldVisible('adresse') && (
           <div className="flex flex-col gap-1.5 text-left">
             <label className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood">
-              {t('userProfile.address') || "Adresse"}
+              {translate('userProfile.address', "Adresse")}
             </label>
             <React.Suspense fallback={
               <div className="text-[10px] font-bold py-2 text-cordel-wood animate-pulse">
@@ -186,7 +191,7 @@ export default function ProfileEditForm({
         {(isFieldVisible('tailleTshirt') || isFieldVisible('taillePantalon')) && (
           <div className="border-t border-dashed border-cordel-master-dark/10 pt-3.5 mt-1 flex flex-col gap-3.5 text-left">
             <h5 className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood">
-              {t('userProfile.clothingSizesHeading') || "Tailles Vêtements"}
+              {translate('userProfile.clothingSizesHeading', "Tailles Vêtements")}
             </h5>
             
             <div className="grid grid-cols-2 gap-3">
@@ -243,7 +248,7 @@ export default function ProfileEditForm({
         {isFieldVisible('lateralite') && (
           <div className="flex flex-col gap-1.5 text-left">
             <label className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood">
-              {t('userProfile.laterality') || "Latéralité (Gaucher/Droitier)"}
+              {translate('userProfile.laterality', "Latéralité (Gaucher/Droitier)")}
             </label>
             <select
               name="lateralite"
@@ -252,8 +257,8 @@ export default function ProfileEditForm({
               disabled={saving}
               className="theme-input w-full text-xs bg-cordel-bg-light"
             >
-              <option value="droitier">{t('userProfile.lateralityRight') || "Droitier"}</option>
-              <option value="gaucher">{t('userProfile.lateralityLeft') || "Gaucher"}</option>
+              <option value="droitier">{translate('userProfile.lateralityRight', "Droitier")}</option>
+              <option value="gaucher">{translate('userProfile.lateralityLeft', "Gaucher")}</option>
             </select>
           </div>
         )}
@@ -262,7 +267,7 @@ export default function ProfileEditForm({
         {isFieldVisible('dateNaissance') && (
           <div className="flex flex-col gap-1.5 text-left">
             <label className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood">
-              {t('userProfile.birthdate') || "Date de naissance"}
+              {translate('userProfile.birthdate', "Date de naissance")}
             </label>
             <input
               type="date"
@@ -288,7 +293,7 @@ export default function ProfileEditForm({
                 className="accent-cordel-wood scale-105 mt-0.5"
               />
               <span className="leading-tight">
-                {t('userProfile.medicalCertCheckbox') || "J'atteste sur l'honneur être en bonne condition physique pour la pratique de la percussion et/ou de la danse de maracatu."}
+                {translate('userProfile.medicalCertCheckbox', "J'atteste sur l'honneur être en bonne condition physique pour la pratique de la percussion et/ou de la danse de maracatu.")}
               </span>
             </label>
           </div>
@@ -304,7 +309,7 @@ export default function ProfileEditForm({
             onClick={() => setIsEditing(false)}
             className="flex-1 py-3 text-xs uppercase font-extrabold"
           >
-            {t('common.cancel') || "Annuler"}
+            {translate('common.cancel', "Annuler")}
           </CordelButton>
           <CordelButton 
             type="submit"
@@ -313,7 +318,7 @@ export default function ProfileEditForm({
             disabled={saving}
             className="flex-1 py-3 text-xs uppercase font-extrabold"
           >
-            {saving ? (t('common.saving') || "Envoi...") : (t('common.validate') || "Valider")}
+            {saving ? translate('common.saving', "Envoi...") : translate('common.validate', "Valider")}
           </CordelButton>
         </div>
       </CordelCard>

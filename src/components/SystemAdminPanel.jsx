@@ -21,6 +21,12 @@ const DEFAULT_FIELDS_CONFIG = {
 
 export default function SystemAdminPanel({ profileData, onBack, onNavigateToView }) {
   const { t } = useTranslation();
+
+  const translate = (key, fallback) => {
+    const val = t(key);
+    return val === key ? fallback : val;
+  };
+
   const [usersList, setUsersList] = useState([]);
   const [availableTags, setAvailableTags] = useState([]);
   const [draftRoles, setDraftRoles] = useState({}); // { [userId]: newRole }
@@ -262,7 +268,7 @@ export default function SystemAdminPanel({ profileData, onBack, onNavigateToView
   };
 
   const handleForceUpdate = () => {
-    if (window.confirm(t('pwa.confirmForceUpdate') || "Voulez-vous vraiment vider le cache et forcer la mise à jour ?")) {
+    if (window.confirm(translate('pwa.confirmForceUpdate', "Voulez-vous vraiment vider le cache et forcer la mise à jour ?"))) {
       forceUpdateAndClearCache();
     }
   };
@@ -305,10 +311,10 @@ export default function SystemAdminPanel({ profileData, onBack, onNavigateToView
           <CordelCard variant="ocre" useExtremeBorder={false} className="p-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-left">
             <div className="flex flex-col gap-1">
               <h4 className="text-xs uppercase font-extrabold tracking-wider text-cordel-wood">
-                {t('pwa.maintenanceTitle') || 'Maintenance & Cache'}
+                {translate('pwa.maintenanceTitle', 'Maintenance & Cache')}
               </h4>
               <p className="text-[10px] opacity-75 font-semibold leading-relaxed">
-                {t('pwa.maintenanceDesc') || 'Si des utilisateurs rencontrent des difficultés suite à une mise à jour, forcez la purge du cache local.'}
+                {translate('pwa.maintenanceDesc', 'Si des utilisateurs rencontrent des difficultés suite à une mise à jour, forcez la purge du cache local.')}
               </p>
             </div>
             <CordelButton 

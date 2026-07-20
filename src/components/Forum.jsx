@@ -32,6 +32,11 @@ const ThreadCard = React.memo(({
   const userHasTag = profileData?.tags && profileData.tags.includes(thread.targetTag);
   const isThreadTargeted = thread.targetTag && (userPlaysInstrument || userHasTag);
 
+  const translate = (key, fallback) => {
+    const val = t(key);
+    return val === key ? fallback : val;
+  };
+
   return (
     <CordelCard 
       variant={isThreadTargeted ? "jaune" : "default"} 
@@ -44,7 +49,7 @@ const ThreadCard = React.memo(({
       <div className="flex flex-col gap-1 items-start">
          {isThreadTargeted && (
            <span className="text-[8px] font-black text-cordel-wood uppercase tracking-wider mb-1 block animate-pulse">
-             🗣️ {(t('forum.targeted') || "Vous concerne ({tag})").replace('{tag}', thread.targetTag)}
+             🗣️ {(translate('forum.targeted', "Vous concerne ({tag})")).replace('{tag}', thread.targetTag)}
            </span>
          )}
         {/* Category Label */}
@@ -59,9 +64,9 @@ const ThreadCard = React.memo(({
 
         {/* Meta */}
         <div className="flex items-center gap-1.5 mt-1 text-[10px] font-semibold text-cordel-master-dark/70">
-          <span>{(t('forum.byAuthor') || "Par {author}").replace('{author}', thread.auteurNom)}</span>
+          <span>{(translate('forum.byAuthor', "Par {author}")).replace('{author}', thread.auteurNom)}</span>
           <span>•</span>
-          <span>{(t('forum.createdOn') || "Le {date}").replace('{date}', formattedDate)}</span>
+          <span>{(translate('forum.createdOn', "Le {date}")).replace('{date}', formattedDate)}</span>
         </div>
       </div>
 
@@ -71,7 +76,7 @@ const ThreadCard = React.memo(({
           {repliesCount}
         </div>
         <span className="text-[7px] font-extrabold uppercase mt-1 tracking-wider opacity-60">
-          {repliesCount > 1 ? (t('forum.replies') || "réponses") : (t('forum.reply') || "réponse")}
+          {repliesCount > 1 ? translate('forum.replies', "réponses") : translate('forum.reply', "réponse")}
         </span>
       </div>
     </CordelCard>
@@ -91,6 +96,11 @@ const ThreadCard = React.memo(({
 
 export default function Forum({ user, profileData, onBack, activePrivateChatUserId, onClearActivePrivateChat }) {
   const { t } = useTranslation();
+
+  const translate = (key, fallback) => {
+    const val = t(key);
+    return val === key ? fallback : val;
+  };
 
   const getCategoryLabel = useCallback((cat) => {
     return t(`forum.${cat}`) || cat;
@@ -431,7 +441,7 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
               : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
           }`}
         >
-          💬 {t('forum.discussionsTab') || "Discussions"}
+          💬 {translate('forum.discussionsTab', "Discussions")}
         </button>
         <button
           type="button"
@@ -445,7 +455,7 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
               : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
           }`}
         >
-          ✉️ {t('forum.inboxTab') || "MP / Boîte de réception"}
+          ✉️ {translate('forum.inboxTab', "MP / Boîte de réception")}
           {unreadInboxCount > 0 && (
             <span className="absolute -top-1.5 -right-1.5 w-3.5 h-3.5 bg-red-600 text-white text-[7px] font-black rounded-full flex items-center justify-center animate-pulse">
               {unreadInboxCount}
@@ -458,12 +468,12 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
         /* Private Messages Inbox Listing */
         <div className="flex flex-col gap-4">
           <h2 className="panel-title text-sm font-extrabold text-cordel-master-dark opacity-80 uppercase px-1 select-none">
-            {t('forum.privateConversationsTitle') || "Mes Discussions Privées"}
+            {translate('forum.privateConversationsTitle', "Mes Discussions Privées")}
           </h2>
 
           {conversations.length === 0 ? (
             <CordelCard variant="default" useExtremeBorder={false} className="p-8 text-center bg-cordel-bg select-none">
-              <p className="text-xs opacity-75 font-semibold">{t('forum.noPrivateConversations') || "Aucune discussion privée pour le moment. Allez dans le Trombinoscope pour contacter un membre !"}</p>
+              <p className="text-xs opacity-75 font-semibold">{translate('forum.noPrivateConversations', "Aucune discussion privée pour le moment. Allez dans le Trombinoscope pour contacter un membre !")}</p>
             </CordelCard>
           ) : (
             <div className="flex flex-col gap-3">
@@ -494,7 +504,7 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
                       <p className={`text-[11px] truncate max-w-full text-cordel-master-dark ${
                         isUnread ? 'font-black text-encre-noire' : 'font-semibold opacity-75'
                       }`}>
-                        {isLastMessageFromMe ? `${t('common.you') || "Vous"} : ` : ""}{conv.lastMessage?.content}
+                        {isLastMessageFromMe ? `${translate('common.you', "Vous")} : ` : ""}{conv.lastMessage?.content}
                       </p>
                       <span className="text-[8px] font-black uppercase tracking-wider opacity-50 mt-0.5">
                         {formattedTime}
@@ -539,7 +549,7 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
             {/* Desktop Sidebar */}
             <div className="hidden md:flex flex-col gap-2 p-3 bg-cordel-bg-light border-2 border-encre-noire rounded-[8px_6px_10px_7px] shadow-[2.5px_2.5px_0px_0px_#181716]">
               <h3 className="text-xs font-black uppercase tracking-widest text-cordel-wood mb-2 border-b border-dashed border-cordel-master-dark/20 pb-1">
-                📁 {t('forum.channelsHeader') || "Salons"}
+                📁 {translate('forum.channelsHeader', "Salons")}
               </h3>
               <div className="flex flex-col gap-1.5">
                 {channels.map((ch) => {
@@ -591,7 +601,7 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
                   
                   {!hasWriteAccess(activeChannel) ? (
                     <span className="text-[10px] font-black text-cordel-wood border-2 border-dashed border-cordel-wood/30 p-2 rounded bg-cordel-bg-light select-none">
-                      🔒 {t('forum.readOnly') || "Lecture seule"}
+                      🔒 {translate('forum.readOnly', "Lecture seule")}
                     </span>
                   ) : (
                     <CordelButton 
@@ -607,7 +617,7 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
 
                 {threads.length === 0 ? (
                   <CordelCard variant="default" useExtremeBorder={false} className="p-8 text-center bg-cordel-bg select-none">
-                    <p className="text-xs opacity-75 font-semibold">{t('forum.noThreads') || "Aucune discussion lancée dans ce salon. Soyez le premier !"}</p>
+                    <p className="text-xs opacity-75 font-semibold">{translate('forum.noThreads', "Aucune discussion lancée dans ce salon. Soyez le premier !")}</p>
                   </CordelCard>
                 ) : (
                   <div className="flex flex-col gap-3">
