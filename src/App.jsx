@@ -48,6 +48,8 @@ const POLES_CONFIG = [
     label: 'Mon Espace',
     tabs: [
       { id: 'profil', label: 'Mon profil', labelKey: 'tabProfil' },
+      { id: 'materiel', label: 'Mon matériel', labelKey: 'tabMateriel' },
+      { id: 'vestiaire', label: 'Mon vestiaire', labelKey: 'tabVestiaire' },
       { id: 'trombinoscope', label: 'Trombinoscope', labelKey: 'tabTrombinoscope' },
       { id: 'forum', label: 'Porte-voix', labelKey: 'tabForum' }
     ]
@@ -754,11 +756,20 @@ export default function App() {
                 user={user} 
                 profileData={profileData} 
                 onBack={() => handleNavigateToPole('accueil')} 
-                onNavigateToTuto={(pieceKey) => {
-                  setActiveTutorialPiece(pieceKey);
-                  setCurrentPole('vestiaire');
-                  setCurrentTab('wardrobe-couture');
-                }}
+              />
+            ) : currentTab === 'materiel' ? (
+              <UserMateriel 
+                user={user} 
+                profileData={profileData} 
+                onBack={() => handleNavigateToPole('accueil')} 
+              />
+            ) : currentTab === 'vestiaire' ? (
+              <MonVestiaire 
+                userId={user?.uid} 
+                groupId={profileData?.groupId} 
+                userChecklist={profileData?.userCostumeChecklist || {}} 
+                userSection={profileData?.instrument || ''} 
+                onBack={() => handleNavigateToPole('accueil')} 
               />
             ) : currentTab === 'trombinoscope' ? (
               <Trombinoscope 

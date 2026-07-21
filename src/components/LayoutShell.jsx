@@ -16,7 +16,8 @@ import {
   XiloScroll,
   XiloCar,
   XiloCalendar,
-  XiloHanger
+  XiloHanger,
+  XiloCaixa
 } from './XiloIcons';
 import { useTranslation } from './LanguageContext';
 
@@ -63,6 +64,8 @@ export default function LayoutShell({
   const memberMenuItems = [
     { id: 'accueil', label: 'Accueil', icon: <XiloHome size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('accueil'); onNavigateToTab && onNavigateToTab('dashboard'); } },
     { id: 'profil', label: 'Mon profil', icon: <XiloUser size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('mon-espace'); onNavigateToTab && onNavigateToTab('profil'); } },
+    { id: 'materiel', label: 'Mon matériel', icon: <XiloCaixa size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('mon-espace'); onNavigateToTab && onNavigateToTab('materiel'); } },
+    { id: 'vestiaire', label: 'Mon vestiaire', icon: <XiloHanger size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('mon-espace'); onNavigateToTab && onNavigateToTab('vestiaire'); } },
     { id: 'trombinoscope', label: 'Trombinoscope', icon: <XiloPeople size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('mon-espace'); onNavigateToTab && onNavigateToTab('trombinoscope'); } },
     { id: 'forum', label: 'Porte-voix', icon: <XiloMegaphone size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('mon-espace'); onNavigateToTab && onNavigateToTab('forum'); } },
     { id: 'agenda', label: 'Agenda', icon: <XiloCalendar size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('accueil'); onNavigateToTab && onNavigateToTab('agenda'); } },
