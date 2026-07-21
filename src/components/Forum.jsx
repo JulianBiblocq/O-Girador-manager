@@ -94,6 +94,64 @@ const ThreadCard = React.memo(({
          prevProps.onClick === nextProps.onClick;
 });
 
+function ChannelTreeItem({ channel, channels, activeChannelId, onSelectChannel, hasWriteAccess, level = 0 }) {
+  const [isOpen, setIsOpen] = useState(true);
+  const children = channels.filter(c => c.parentId === channel.id);
+  const hasChildren = children.length > 0;
+  const isActive = channel.id === activeChannelId;
+  const isReadOnly = !hasWriteAccess(channel);
+
+  return (
+    <div className="flex flex-col gap-1">
+      <div className="flex items-center gap-1">
+        {hasChildren ? (
+          <button
+            type="button"
+            onClick={() => setIsOpen(!isOpen)}
+            className="p-1 text-[10px] font-black text-cordel-wood hover:text-encre-noire cursor-pointer select-none"
+          >
+            {isOpen ? '▼' : '►'}
+          </button>
+        ) : (
+          <span className="w-3 shrink-0"></span>
+        )}
+
+        <button
+          type="button"
+          onClick={() => onSelectChannel(channel.id)}
+          className={`flex-1 text-left px-2 py-1.5 text-xs font-black rounded transition-all cursor-pointer border flex justify-between items-center ${
+            isActive
+              ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
+              : 'bg-transparent text-encre-noire border-transparent hover:bg-white/40'
+          }`}
+          style={{ paddingLeft: `${Math.max(6, level * 10 + 6)}px` }}
+        >
+          <span className="truncate flex items-center gap-1">
+            {level === 0 ? '📂' : level === 1 ? '📁' : '📄'} {channel.name}
+          </span>
+          {isReadOnly && <span className="text-[9px] opacity-75">🔒</span>}
+        </button>
+      </div>
+
+      {isOpen && hasChildren && (
+        <div className="flex flex-col gap-1 ml-2 border-l border-dashed border-cordel-master-dark/25 pl-1">
+          {children.map(child => (
+            <ChannelTreeItem
+              key={child.id}
+              channel={child}
+              channels={channels}
+              activeChannelId={activeChannelId}
+              onSelectChannel={onSelectChannel}
+              hasWriteAccess={hasWriteAccess}
+              level={level + 1}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function Forum({ user, profileData, onBack, activePrivateChatUserId, onClearActivePrivateChat }) {
   const { t } = useTranslation();
 
@@ -549,29 +607,20 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
             {/* Desktop Sidebar */}
             <div className="hidden md:flex flex-col gap-2 p-3 bg-cordel-bg-light border-2 border-encre-noire rounded-[8px_6px_10px_7px] shadow-[2.5px_2.5px_0px_0px_#181716]">
               <h3 className="text-xs font-black uppercase tracking-widest text-cordel-wood mb-2 border-b border-dashed border-cordel-master-dark/20 pb-1">
-                📁 {translate('forum.channelsHeader', "Salons")}
+                📂 {translate('forum.channelsHeader', "Salons & Dossiers")}
               </h3>
-              <div className="flex flex-col gap-1.5">
-                {channels.map((ch) => {
-                  const isActive = ch.id === activeChannelId;
-                  const isReadOnly = !hasWriteAccess(ch);
-                  return (
-                    <button
-                      key={ch.id}
-                      onClick={() => setActiveChannelId(ch.id)}
-                      className={`w-full text-left px-3 py-2 text-xs font-black rounded transition-all cursor-pointer border flex justify-between items-center ${
-                        isActive
-                          ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
-                          : 'bg-transparent text-encre-noire border-transparent hover:bg-cordel-hover-bg'
-                      }`}
-                    >
-                      <span># {ch.name}</span>
-                      {isReadOnly && (
-                        <span className="text-[9px] opacity-75" title="Lecture seule">🔒</span>
-                      )}
-                    </button>
-                  );
-                })}
+              <div className="flex flex-col gap-1">
+                {channels.filter(c => !c.parentId).map((ch) => (
+                  <ChannelTreeItem
+                    key={ch.id}
+                    channel={ch}
+                    channels={channels}
+                    activeChannelId={activeChannelId}
+                    onSelectChannel={setActiveChannelId}
+                    hasWriteAccess={hasWriteAccess}
+                    level={0}
+                  />
+                ))}
               </div>
             </div>
           </div>
@@ -594,9 +643,37 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
             ) : (
               /* Thread Listing */
               <div className="flex flex-col gap-4">
+                {/* Breadcrumbs Path */}
+                {(() => {
+                  const path = [];
+                  let current = channels.find(c => c.id === activeChannelId);
+                  while (current) {
+                    path.unshift(current);
+                    if (!current.parentId) break;
+                    current = channels.find(c => c.id === current.parentId);
+                  }
+                  return (
+                    <div className="flex items-center gap-1.5 text-xs font-black text-cordel-wood uppercase tracking-wider select-none flex-wrap bg-white/40 p-2 rounded border border-dashed border-cordel-master-dark/15">
+                      <span className="text-encre-noire">📢 Porte-voix</span>
+                      {path.map((item, idx) => (
+                        <React.Fragment key={item.id}>
+                          <span className="opacity-40 text-encre-noire">/</span>
+                          <button
+                            type="button"
+                            onClick={() => setActiveChannelId(item.id)}
+                            className={`hover:underline ${idx === path.length - 1 ? 'text-encre-noire font-extrabold' : 'text-cordel-wood'}`}
+                          >
+                            {item.name}
+                          </button>
+                        </React.Fragment>
+                      ))}
+                    </div>
+                  );
+                })()}
+
                 <div className="flex justify-between items-center px-1 select-none">
                   <h2 className="panel-title text-sm font-extrabold text-cordel-master-dark opacity-80 uppercase">
-                    {activeChannel ? `# ${activeChannel.name}` : t('forum.threadsList')}
+                    {activeChannel ? `📂 ${activeChannel.name}` : t('forum.threadsList')}
                   </h2>
                   
                   {!hasWriteAccess(activeChannel) ? (
@@ -660,30 +737,21 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
                     ✕ Fermer
                   </button>
                 </div>
-                <div className="flex flex-col gap-1.5 overflow-y-auto">
-                  {channels.map((ch) => {
-                    const isActive = ch.id === activeChannelId;
-                    const isReadOnly = !hasWriteAccess(ch);
-                    return (
-                      <button
-                        key={ch.id}
-                        onClick={() => {
-                          setActiveChannelId(ch.id);
-                          setIsDrawerOpen(false);
-                        }}
-                        className={`w-full text-left px-3 py-2.5 text-xs font-black rounded transition-all cursor-pointer border flex justify-between items-center ${
-                          isActive
-                            ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
-                            : 'bg-transparent text-encre-noire border-transparent hover:bg-cordel-hover-bg'
-                        }`}
-                      >
-                        <span># {ch.name}</span>
-                        {isReadOnly && (
-                          <span className="text-[9px] opacity-75" title="Lecture seule">🔒</span>
-                        )}
-                      </button>
-                    );
-                  })}
+                <div className="flex flex-col gap-1 overflow-y-auto">
+                  {channels.filter(c => !c.parentId).map((ch) => (
+                    <ChannelTreeItem
+                      key={ch.id}
+                      channel={ch}
+                      channels={channels}
+                      activeChannelId={activeChannelId}
+                      onSelectChannel={(id) => {
+                        setActiveChannelId(id);
+                        setIsDrawerOpen(false);
+                      }}
+                      hasWriteAccess={hasWriteAccess}
+                      level={0}
+                    />
+                  ))}
                 </div>
               </div>
             </div>

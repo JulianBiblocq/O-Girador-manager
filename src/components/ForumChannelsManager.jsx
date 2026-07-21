@@ -6,6 +6,10 @@ import CordelButton from './CordelButton';
 import { useTranslation } from './LanguageContext';
 import { XiloMegaphone } from './XiloIcons';
 
+/**
+ * ForumChannelsManager Component
+ * Admin tool for managing hierarchical forum categories, channels, and subfolders (3 levels).
+ */
 export default function ForumChannelsManager({ groupId, role, isSystemAdmin, onBack }) {
   const { t } = useTranslation();
   
@@ -17,6 +21,7 @@ export default function ForumChannelsManager({ groupId, role, isSystemAdmin, onB
   const [isEditing, setIsEditing] = useState(false);
   const [editingChannelId, setEditingChannelId] = useState(null);
   const [name, setName] = useState('');
+  const [parentId, setParentId] = useState(null);
   const [readRoles, setReadRoles] = useState(['all']);
   const [writeRoles, setWriteRoles] = useState(['all']);
   const [saving, setSaving] = useState(false);
@@ -41,6 +46,7 @@ export default function ForumChannelsManager({ groupId, role, isSystemAdmin, onB
       snap.forEach((docSnap) => {
         fetched.push({ id: docSnap.id, ...docSnap.data() });
       });
+      
       // Sort: Général first, CA, Bureau, then alphabetical
       const order = ["Général", "CA", "Bureau"];
       fetched.sort((a, b) => {
@@ -74,10 +80,11 @@ export default function ForumChannelsManager({ groupId, role, isSystemAdmin, onB
     return () => unsubscribe();
   }, [groupId]);
 
-  const handleOpenCreate = () => {
+  const handleOpenCreate = (defaultParentId = null) => {
     setIsEditing(true);
     setEditingChannelId(null);
     setName('');
+    setParentId(defaultParentId);
     setReadRoles(['all']);
     setWriteRoles(['all']);
   };
@@ -86,6 +93,7 @@ export default function ForumChannelsManager({ groupId, role, isSystemAdmin, onB
     setIsEditing(true);
     setEditingChannelId(ch.id);
     setName(ch.name);
+    setParentId(ch.parentId || null);
     setReadRoles(ch.readRoles || ['all']);
     setWriteRoles(ch.writeRoles || ['all']);
   };
@@ -131,6 +139,7 @@ export default function ForumChannelsManager({ groupId, role, isSystemAdmin, onB
       const channelData = {
         groupId,
         name: name.trim(),
+        parentId: parentId || null,
         readRoles,
         writeRoles,
         updatedAt: new Date().toISOString()
@@ -145,6 +154,7 @@ export default function ForumChannelsManager({ groupId, role, isSystemAdmin, onB
 
       setIsEditing(false);
       setName('');
+      setParentId(null);
       setReadRoles(['all']);
       setWriteRoles(['all']);
       setEditingChannelId(null);
@@ -161,7 +171,7 @@ export default function ForumChannelsManager({ groupId, role, isSystemAdmin, onB
       alert("Le salon Général ne peut pas être supprimé.");
       return;
     }
-    const confirm = window.confirm(`Voulez-vous vraiment supprimer le salon "${chName}" ? Toutes les discussions associées à ce salon seront également définitivement supprimées.`);
+    const confirm = window.confirm(`Voulez-vous vraiment supprimer le salon "${chName}" ? Toutes les discussions associées à ce salon et ses sous-dossiers seront également supprimées.`);
     if (!confirm) return;
 
     setSaving(true);
@@ -169,7 +179,13 @@ export default function ForumChannelsManager({ groupId, role, isSystemAdmin, onB
       // 1. Delete the channel document
       await deleteDoc(doc(db, 'forum_channels', chId));
 
-      // 2. Query and delete all threads inside this channel
+      // 2. Query and delete all child channels
+      const childChannels = channels.filter(c => c.parentId === chId);
+      for (const child of childChannels) {
+        await deleteDoc(doc(db, 'forum_channels', child.id));
+      }
+
+      // 3. Query and delete all threads inside this channel
       const forumRef = collection(db, 'forum');
       const q = query(forumRef, where('channelId', '==', chId));
       const snap = await getDocs(q);
@@ -178,6 +194,8 @@ export default function ForumChannelsManager({ groupId, role, isSystemAdmin, onB
         batch.delete(doc(db, 'forum', docSnap.id));
       });
       await batch.commit();
+
+      alert(`Le salon "${chName}" a été supprimé.`);
     } catch (err) {
       console.error("ForumChannelsManager - Delete error:", err);
       alert("Une erreur est survenue lors de la suppression.");
@@ -186,230 +204,246 @@ export default function ForumChannelsManager({ groupId, role, isSystemAdmin, onB
     }
   };
 
-  return (
-    <div className="flex flex-col gap-4 text-left select-none max-w-3xl mx-auto w-full">
-      {/* Header */}
-      <div className="flex justify-between items-center pb-2 border-b-2 border-dashed border-cordel-master-dark/30">
-        <button 
-          type="button" 
-          onClick={onBack} 
-          disabled={saving}
-          className="text-[10px] font-black uppercase tracking-widest bg-cordel-bg border border-encre-noire px-3 py-1 rounded-[4px_6px_3px_5px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-95 cursor-pointer disabled:opacity-50 flex items-center justify-center select-none"
+  // Helper to render channel tree row
+  const renderChannelRow = (ch, level = 0) => {
+    const childChannels = channels.filter(c => c.parentId === ch.id);
+
+    return (
+      <React.Fragment key={ch.id}>
+        <CordelCard
+          variant="default"
+          useExtremeBorder={false}
+          className={`p-3 bg-cordel-bg flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-left transition-all ${
+            level > 0 ? 'ml-4 border-l-2 border-dashed border-cordel-wood/40 bg-white/40' : ''
+          }`}
         >
-          ⬅️ Retour
-        </button>
-        
-        <h2 className="text-sm font-extrabold tracking-widest text-cordel-wood uppercase flex items-center">
-          <XiloMegaphone size={14} className="inline mr-1.5" /> Gestion du Porte-voix
-        </h2>
+          <div className="flex flex-col gap-1 min-w-0">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-black text-encre-noire flex items-center gap-1.5">
+                {level === 0 ? '📂' : level === 1 ? '📁' : '📄'} {ch.name}
+              </span>
+              {ch.name === 'Général' && (
+                <span className="theme-stamp-badge theme-stamp-badge-wood text-[7px]">Par défaut</span>
+              )}
+              {ch.parentId && (
+                <span className="theme-stamp-badge theme-stamp-badge-ocre text-[7px]">Sous-salon</span>
+              )}
+            </div>
+
+            <div className="flex flex-wrap items-center gap-1.5 text-[9px] text-cordel-master-dark opacity-80">
+              <span>Lecture : <b>{ch.readRoles?.join(', ') || 'Tout le monde'}</b></span>
+              <span>•</span>
+              <span>Écriture : <b>{ch.writeRoles?.join(', ') || 'Tout le monde'}</b></span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-center">
+            <button
+              type="button"
+              onClick={() => handleOpenCreate(ch.id)}
+              className="text-[9px] font-bold px-2 py-1 bg-cordel-bg-light border border-encre-noire rounded hover:bg-white cursor-pointer"
+              title="Ajouter un sous-dossier dans ce salon"
+            >
+              + Sous-dossier
+            </button>
+            <button
+              type="button"
+              onClick={() => handleOpenEdit(ch)}
+              className="text-[9px] font-bold px-2 py-1 bg-cordel-bg-light border border-encre-noire rounded hover:bg-white cursor-pointer"
+            >
+              ✏️ Éditer
+            </button>
+            {ch.name !== 'Général' && (
+              <button
+                type="button"
+                onClick={() => handleDelete(ch.id, ch.name)}
+                className="text-[9px] font-bold px-2 py-1 bg-red-100 text-red-700 border border-red-300 rounded hover:bg-red-200 cursor-pointer"
+              >
+                🗑️
+              </button>
+            )}
+          </div>
+        </CordelCard>
+
+        {/* Render nested children */}
+        {childChannels.map(child => renderChannelRow(child, level + 1))}
+      </React.Fragment>
+    );
+  };
+
+  const rootChannels = channels.filter(c => !c.parentId);
+
+  return (
+    <div className="flex flex-col gap-4 text-left max-w-3xl mx-auto w-full select-none">
+      {/* Header bar */}
+      <div className="flex justify-between items-center border-b-2 border-dashed border-cordel-master-dark/30 pb-2">
+        <CordelButton variant="default" onClick={onBack} className="px-3 py-1 text-xs font-bold uppercase">
+          ← {t('common.back')}
+        </CordelButton>
+        <span className="panel-title text-base font-black tracking-wider text-cordel-wood uppercase flex items-center gap-2">
+          📁 Gestion des Salons & Catégories du Forum
+        </span>
+        <div className="w-12"></div>
       </div>
 
-      {loading ? (
-        <div className="flex justify-center items-center py-12">
-          <span className="text-xs uppercase tracking-widest font-black animate-pulse opacity-60">⏳ Chargement...</span>
+      <div className="flex justify-between items-center bg-white/40 p-3 rounded border border-dashed border-cordel-master-dark/20">
+        <p className="text-xs text-cordel-master-dark opacity-80">
+          Organisez les salons du Porte-voix en catégories et sous-dossiers (ex: Général &gt; Les 30 ans &gt; Bénévoles).
+        </p>
+        <CordelButton
+          type="button"
+          variant="ocre"
+          useExtremeBorder={true}
+          onClick={() => handleOpenCreate(null)}
+          className="text-[10px] px-3 py-1.5 font-black uppercase tracking-wider shrink-0"
+        >
+          + Nouvelle Catégorie / Salon
+        </CordelButton>
+      </div>
+
+      {/* Form Modal */}
+      {isEditing && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-encre-noire/70 backdrop-blur-sm animate-fade-in select-none">
+          <div className="relative w-full max-w-lg">
+            <CordelCard variant="default" useExtremeBorder={true} className="p-5 flex flex-col gap-4 text-left bg-cordel-bg">
+              <div className="flex justify-between items-start border-b-2 border-dashed border-cordel-master-dark/25 pb-2">
+                <h3 className="font-cactus font-black text-base text-encre-noire tracking-wider uppercase">
+                  {editingChannelId ? '✏️ Modifier le salon' : '➕ Nouveau Salon / Sous-dossier'}
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => setIsEditing(false)}
+                  className="text-base font-extrabold text-cordel-wood hover:text-red-600 cursor-pointer"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <form onSubmit={handleSave} className="flex flex-col gap-4">
+                {/* Parent Selection */}
+                <div className="flex flex-col gap-1 text-left">
+                  <label className="text-[10px] font-black uppercase text-cordel-master-dark">
+                    Emplacement / Dossier Parent
+                  </label>
+                  <select
+                    value={parentId || ''}
+                    onChange={(e) => setParentId(e.target.value || null)}
+                    className="theme-input text-xs font-bold bg-white"
+                  >
+                    <option value="">📂 Racine (Catégorie principale)</option>
+                    {channels.filter(c => c.id !== editingChannelId).map(ch => (
+                      <option key={ch.id} value={ch.id}>
+                        {ch.parentId ? '  └─ ' : '📁 '} {ch.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Name */}
+                <div className="flex flex-col gap-1 text-left">
+                  <label className="text-[10px] font-black uppercase text-cordel-master-dark">
+                    Nom du Salon / Sous-dossier *
+                  </label>
+                  <input
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Ex: Les 30 ans, Bénévoles, Concerts..."
+                    required
+                    disabled={saving}
+                    className="theme-input text-xs font-bold w-full"
+                  />
+                </div>
+
+                {/* Read Permissions */}
+                <div className="flex flex-col gap-1.5 text-left border-t border-dashed border-cordel-master-dark/15 pt-3">
+                  <label className="text-[10px] font-black uppercase text-cordel-master-dark">
+                    Qui peut LIRE et ACCÉDER à ce salon ?
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    {rolesOptions.map(opt => {
+                      const isSel = readRoles.includes(opt.value);
+                      return (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          onClick={() => handleToggleReadRole(opt.value)}
+                          className={`text-[9.5px] font-extrabold px-2.5 py-1 rounded border transition-all cursor-pointer ${
+                            isSel 
+                              ? 'bg-cordel-wood text-white border-encre-noire shadow-sm'
+                              : 'bg-white/50 text-cordel-master-dark border-cordel-master-dark/20'
+                          }`}
+                        >
+                          {opt.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Write Permissions */}
+                <div className="flex flex-col gap-1.5 text-left">
+                  <label className="text-[10px] font-black uppercase text-cordel-master-dark">
+                    Qui peut ÉCRIRE et CRÉER DES SUJETS dans ce salon ?
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    {rolesOptions.map(opt => {
+                      const isSel = writeRoles.includes(opt.value);
+                      return (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          onClick={() => handleToggleWriteRole(opt.value)}
+                          className={`text-[9.5px] font-extrabold px-2.5 py-1 rounded border transition-all cursor-pointer ${
+                            isSel 
+                              ? 'bg-cordel-wood text-white border-encre-noire shadow-sm'
+                              : 'bg-white/50 text-cordel-master-dark border-cordel-master-dark/20'
+                          }`}
+                        >
+                          {opt.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div className="flex justify-end gap-2 pt-3 border-t border-dashed border-cordel-master-dark/20">
+                  <CordelButton
+                    type="button"
+                    variant="default"
+                    onClick={() => setIsEditing(false)}
+                    disabled={saving}
+                    className="py-2 px-4 text-xs font-bold uppercase"
+                  >
+                    Annuler
+                  </CordelButton>
+                  <CordelButton
+                    type="submit"
+                    variant="ocre"
+                    useExtremeBorder={true}
+                    disabled={saving || !name.trim()}
+                    className="py-2 px-4 text-xs font-black uppercase tracking-wider"
+                  >
+                    {saving ? "Enregistrement..." : "Enregistrer le salon"}
+                  </CordelButton>
+                </div>
+              </form>
+            </CordelCard>
+          </div>
         </div>
-      ) : isEditing ? (
-        <CordelCard variant="default" useExtremeBorder={true} className="py-4 px-5">
-          <h3 className="text-xs uppercase font-extrabold tracking-wider text-cordel-wood mb-4">
-            {editingChannelId ? `✏️ Éditer le salon : ${name}` : '➕ Créer un nouveau salon'}
-          </h3>
-          <form onSubmit={handleSave} className="flex flex-col gap-4">
-            {/* Nom */}
-            <div className="flex flex-col gap-1">
-              <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                Nom du salon
-              </label>
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
-                disabled={saving || name === 'Général'}
-                placeholder="Ex : Bureau, Agbê, Répétitions..."
-                className="theme-input w-full disabled:opacity-50"
-              />
-            </div>
+      )}
 
-            {/* Lecture Matrix */}
-            <div className="flex flex-col gap-1.5 border-t border-dashed border-cordel-master-dark/15 pt-3">
-              <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                👁️ Qui peut VOIR et LIRE ce salon ?
-              </label>
-              <div className="flex flex-wrap gap-2 mt-1">
-                {rolesOptions.map(opt => {
-                  const active = readRoles.includes(opt.value);
-                  return (
-                    <button
-                      key={opt.value}
-                      type="button"
-                      onClick={() => handleToggleReadRole(opt.value)}
-                      disabled={saving}
-                      className={`px-2 py-1 text-[10px] font-bold border rounded-[4px_6px_3px_5px] cursor-pointer transition-all ${
-                        active
-                          ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none'
-                          : 'bg-cordel-bg border-cordel-master-dark/30 hover:border-encre-noire text-encre-noire/70'
-                      }`}
-                    >
-                      👤 {opt.label}
-                    </button>
-                  );
-                })}
-                {availableTags.map(tag => {
-                  const active = readRoles.includes(tag);
-                  return (
-                    <button
-                      key={tag}
-                      type="button"
-                      onClick={() => handleToggleReadRole(tag)}
-                      disabled={saving}
-                      className={`px-2 py-1 text-[10px] font-bold border rounded-[4px_6px_3px_5px] cursor-pointer transition-all ${
-                        active
-                          ? 'theme-bg-vert text-encre-noire border-encre-noire shadow-none'
-                          : 'bg-cordel-bg border-cordel-master-dark/30 hover:border-encre-noire text-encre-noire/70'
-                      }`}
-                    >
-                      🏷️ {tag}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Ecriture Matrix */}
-            <div className="flex flex-col gap-1.5 border-t border-dashed border-cordel-master-dark/15 pt-3">
-              <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                ✍️ Qui peut ÉCRIRE et RÉPONDRE dans ce salon ?
-              </label>
-              <div className="flex flex-wrap gap-2 mt-1">
-                {rolesOptions.map(opt => {
-                  const active = writeRoles.includes(opt.value);
-                  return (
-                    <button
-                      key={opt.value}
-                      type="button"
-                      onClick={() => handleToggleWriteRole(opt.value)}
-                      disabled={saving}
-                      className={`px-2 py-1 text-[10px] font-bold border rounded-[4px_6px_3px_5px] cursor-pointer transition-all ${
-                        active
-                          ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none'
-                          : 'bg-cordel-bg border-cordel-master-dark/30 hover:border-encre-noire text-encre-noire/70'
-                      }`}
-                    >
-                      👤 {opt.label}
-                    </button>
-                  );
-                })}
-                {availableTags.map(tag => {
-                  const active = writeRoles.includes(tag);
-                  return (
-                    <button
-                      key={tag}
-                      type="button"
-                      onClick={() => handleToggleWriteRole(tag)}
-                      disabled={saving}
-                      className={`px-2 py-1 text-[10px] font-bold border rounded-[4px_6px_3px_5px] cursor-pointer transition-all ${
-                        active
-                          ? 'theme-bg-vert text-encre-noire border-encre-noire shadow-none'
-                          : 'bg-cordel-bg border-cordel-master-dark/30 hover:border-encre-noire text-encre-noire/70'
-                      }`}
-                    >
-                      🏷️ {tag}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Actions */}
-            <div className="flex gap-2 justify-end border-t border-dashed border-cordel-master-dark/15 pt-4 mt-2">
-              <CordelButton 
-                variant="default" 
-                type="button" 
-                onClick={() => setIsEditing(false)}
-                disabled={saving}
-                className="px-3 py-1.5 text-xs"
-              >
-                Annuler
-              </CordelButton>
-              <CordelButton 
-                variant="primary" 
-                type="submit"
-                disabled={saving || !name.trim()}
-                className="px-4 py-1.5 text-xs"
-              >
-                {saving ? '⏳ Enregistrement...' : '💾 Enregistrer'}
-              </CordelButton>
-            </div>
-          </form>
+      {/* Tree view list */}
+      {loading ? (
+        <div className="py-8 text-center text-xs opacity-60 animate-pulse">⏳ Chargement de l'arborescence...</div>
+      ) : rootChannels.length === 0 ? (
+        <CordelCard variant="default" useExtremeBorder={false} className="p-6 text-center bg-cordel-bg">
+          <p className="text-xs italic text-cordel-master-dark/70">Aucun salon configuré.</p>
         </CordelCard>
       ) : (
-        <div className="flex flex-col gap-4">
-          <div className="flex justify-end">
-            <CordelButton variant="primary" onClick={handleOpenCreate} className="px-3 py-1.5 text-xs font-black">
-              ➕ Créer un salon
-            </CordelButton>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {channels.map(ch => {
-              const readCount = ch.readRoles?.length || 0;
-              const writeCount = ch.writeRoles?.length || 0;
-              return (
-                <CordelCard key={ch.id} variant="default" useExtremeBorder={true} className="p-4 flex flex-col justify-between">
-                  <div>
-                    <div className="flex justify-between items-start gap-2">
-                      <h4 className="text-xs uppercase font-extrabold tracking-wider text-cordel-wood">
-                        💬 {ch.name}
-                      </h4>
-                      {ch.name !== 'Général' && (
-                        <div className="flex gap-1.5">
-                          <button
-                            type="button"
-                            onClick={() => handleOpenEdit(ch)}
-                            className="text-xs hover:scale-105 active:scale-95 cursor-pointer"
-                            title="Modifier"
-                          >
-                            ✏️
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleDelete(ch.id, ch.name)}
-                            className="text-xs hover:scale-105 active:scale-95 cursor-pointer"
-                            title="Supprimer"
-                          >
-                            🗑️
-                          </button>
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="flex flex-col gap-1.5 mt-3 text-[10px] font-semibold text-encre-noire/80">
-                      <div className="flex flex-wrap items-center gap-1">
-                        <span className="opacity-65">Lecture :</span>
-                        {ch.readRoles?.includes('all') ? (
-                          <span className="bg-amber-100 text-amber-900 px-1 py-0.5 rounded text-[9px] font-bold">Tout le monde</span>
-                        ) : (
-                          ch.readRoles?.map(r => (
-                            <span key={r} className="bg-neutral-100 text-neutral-800 px-1 py-0.5 rounded text-[9px] font-bold">{r}</span>
-                          ))
-                        )}
-                      </div>
-                      <div className="flex flex-wrap items-center gap-1">
-                        <span className="opacity-65">Écriture :</span>
-                        {ch.writeRoles?.includes('all') ? (
-                          <span className="bg-green-100 text-green-900 px-1 py-0.5 rounded text-[9px] font-bold">Tout le monde</span>
-                        ) : (
-                          ch.writeRoles?.map(r => (
-                            <span key={r} className="bg-neutral-100 text-neutral-800 px-1 py-0.5 rounded text-[9px] font-bold">{r}</span>
-                          ))
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </CordelCard>
-              );
-            })}
-          </div>
+        <div className="flex flex-col gap-2">
+          {rootChannels.map(ch => renderChannelRow(ch, 0))}
         </div>
       )}
     </div>
