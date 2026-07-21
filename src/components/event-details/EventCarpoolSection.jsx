@@ -188,23 +188,52 @@ export default function EventCarpoolSection({
                         {/* Passengers listing */}
                         {passengersList.length > 0 && (
                           <div className="theme-inner-panel rounded p-1.5 mb-3">
-                            <span className="text-[9px] uppercase font-bold tracking-widest opacity-60 block mb-0.5">Participants :</span>
+                            <span className="text-[9px] uppercase font-bold tracking-widest opacity-60 block mb-0.5">Participants & Équipements :</span>
                             <ul className="list-disc pl-3 text-[11px] font-bold leading-normal flex flex-col gap-0.5">
                               {passengersList.map((p, idx) => {
+                                const passengerName = p.nom || p.name || p.userName || (p.uid === voiture.chauffeurId ? voiture.chauffeurNom : "Membre");
+                                const isDriver = p.uid === voiture.chauffeurId;
+
                                 const details = [];
-                                if (p.isPassenger !== false) {
-                                  details.push("Passager");
+                                if (isDriver) {
+                                  if (p.isPassenger === false) {
+                                    details.push("Conducteur - Matériel seul");
+                                  } else {
+                                    details.push("Conducteur");
+                                  }
                                 } else {
-                                  details.push("Instrument seul");
+                                  if (p.isPassenger !== false) {
+                                    details.push("Passager");
+                                  } else {
+                                    details.push("Instrument seul");
+                                  }
                                 }
+
+                                if (p.instrument) {
+                                  details.push(p.instrument);
+                                }
+
                                 if (p.alfayasCount > 0) {
                                   details.push(`${p.alfayasCount} Alfaia${p.alfayasCount > 1 ? 's' : ''}`);
                                 }
+
                                 const canRemove = isUserChauffeur || isAuthorized || p.uid === user.uid;
+
                                 return (
-                                  <li key={idx} className="flex justify-between items-center gap-2">
+                                  <li key={p.uid ? `${p.uid}-${idx}` : idx} className="flex justify-between items-center gap-2">
                                     <span>
-                                      {p.nom} {p.isInvite && <span className="text-[8px] font-black uppercase tracking-wider bg-cordel-bg border border-encre-noire text-cordel-master-dark px-1 py-0.5 rounded select-none">[Invité]</span>} <span className="text-[9px] font-semibold text-cordel-master-dark/70">({details.join(', ')})</span>
+                                      {isDriver ? '👨‍✈️ ' : '👤 '}
+                                      <strong className="text-encre-noire">
+                                        {isDriver ? `${passengerName}` : `Passager : ${passengerName}`}
+                                      </strong>
+                                      {p.isInvite && (
+                                        <span className="ml-1 text-[8px] font-black uppercase tracking-wider bg-cordel-bg border border-encre-noire text-cordel-master-dark px-1 py-0.5 rounded select-none">
+                                          [Invité]
+                                        </span>
+                                      )}
+                                      <span className="text-[9px] font-semibold text-cordel-master-dark/75 ml-1">
+                                        ({details.join(' • ')})
+                                      </span>
                                     </span>
                                     {canRemove && (
                                       <button
@@ -212,7 +241,7 @@ export default function EventCarpoolSection({
                                         disabled={submittingCovoit}
                                         onClick={() => handleRemovePassenger(voiture.id, p.uid)}
                                         className="text-[9px] font-black text-red-600 hover:text-red-800 cursor-pointer ml-1 select-none pr-1"
-                                        title="Retirer ce passager"
+                                        title="Retirer cet élément"
                                       >
                                         ✕
                                       </button>

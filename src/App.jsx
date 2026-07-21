@@ -49,8 +49,7 @@ const POLES_CONFIG = [
     tabs: [
       { id: 'profil', label: 'Mon profil', labelKey: 'tabProfil' },
       { id: 'trombinoscope', label: 'Trombinoscope', labelKey: 'tabTrombinoscope' },
-      { id: 'forum', label: 'Porte-voix', labelKey: 'tabForum' },
-      { id: 'atelier-couture', label: 'Atelier Couture', labelKey: 'tabAtelierCouture' }
+      { id: 'forum', label: 'Porte-voix', labelKey: 'tabForum' }
     ]
   },
   {
@@ -757,8 +756,8 @@ export default function App() {
                 onBack={() => handleNavigateToPole('accueil')} 
                 onNavigateToTuto={(pieceKey) => {
                   setActiveTutorialPiece(pieceKey);
-                  setCurrentPole('mon-espace');
-                  setCurrentTab('atelier-couture');
+                  setCurrentPole('vestiaire');
+                  setCurrentTab('wardrobe-couture');
                 }}
               />
             ) : currentTab === 'trombinoscope' ? (

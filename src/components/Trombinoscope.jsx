@@ -9,6 +9,7 @@ import { useTerminologie } from '../hooks/useTerminologie';
 import { useTranslation } from './LanguageContext';
 import { XiloCaixa, XiloPeople } from './XiloIcons';
 import { useInstrumentColor } from '../hooks/useInstrumentColor';
+import ImageLightboxModal from './ImageLightboxModal';
 const CordelImageEditor = React.lazy(() => import('./CordelImageEditor'));
 
 // Memoized MemberCard subcomponent
@@ -33,6 +34,7 @@ const MemberCard = React.memo(({
   fieldsConfig,
   onContactUser,
   onEditPhoto,
+  onOpenLightbox,
   t,
   tRole,
   getPupitreName,
@@ -73,12 +75,19 @@ const MemberCard = React.memo(({
         style={cardBgColor ? { backgroundColor: cardBgColor } : undefined}
       >
         {/* Avatar with Xylogravure Filter */}
-        <div className="mb-3 relative group">
+        <div 
+          className="mb-3 relative group cursor-pointer"
+          onClick={() => photoURL && onOpenLightbox && onOpenLightbox(photoURL, fullName)}
+          title="Cliquer pour agrandir la photo"
+        >
           <XiloAvatar src={photoURL} name={fullName} size={72} />
           {isCurrentUser && (
             <button
               type="button"
-              onClick={() => onEditPhoto(photoURL)}
+              onClick={(e) => {
+                e.stopPropagation();
+                onEditPhoto(photoURL);
+              }}
               className="absolute -bottom-1 -right-1 bg-encre-noire text-cordel-bg-light hover:bg-cordel-wood rounded-full p-1 border border-encre-noire shadow-[1px_1px_0px_0px_#181716] cursor-pointer z-30 transition-all hover:scale-105 active:scale-95 flex items-center justify-center select-none"
               title="Éditer la photo (Filtre Xylogravure)"
             >
@@ -238,6 +247,11 @@ export default function Trombinoscope({ user, profileData, onBack, onContactUser
 
   const [showEditor, setShowEditor] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null);
+  const [lightboxPhoto, setLightboxPhoto] = useState(null);
+
+  const handleOpenLightbox = useCallback((url, name) => {
+    setLightboxPhoto({ url, name });
+  }, []);
 
   const [instrumentsDisponibles, setInstrumentsDisponibles] = useState(DEFAULT_INSTRUMENTS);
   const [linkedInstruments, setLinkedInstruments] = useState([]);
@@ -645,6 +659,7 @@ export default function Trombinoscope({ user, profileData, onBack, onContactUser
                           fieldsConfig={fieldsConfig}
                           onContactUser={handleContactUser}
                           onEditPhoto={handleEditPhoto}
+                          onOpenLightbox={handleOpenLightbox}
                           t={t}
                           tRole={tRole}
                           getPupitreName={getPupitreName}
@@ -687,6 +702,13 @@ export default function Trombinoscope({ user, profileData, onBack, onContactUser
           </div>
         </div>
       )}
+      {/* Lightbox Photo Modal */}
+      <ImageLightboxModal 
+        isOpen={!!lightboxPhoto}
+        photoURL={lightboxPhoto?.url}
+        name={lightboxPhoto?.name}
+        onClose={() => setLightboxPhoto(null)}
+      />
     </div>
   );
 }

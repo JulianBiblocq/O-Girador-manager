@@ -8,6 +8,7 @@ import { useTerminologie } from '../hooks/useTerminologie';
 import { useTranslation } from './LanguageContext';
 import ProfileEditForm from './profile/ProfileEditForm';
 import CostumeChecklist from './profile/CostumeChecklist';
+import ImageLightboxModal from './ImageLightboxModal';
 const CordelImageEditor = React.lazy(() => import('./CordelImageEditor'));
 
 const getInstrumentIconPath = (instName) => {
@@ -75,7 +76,11 @@ export default function UserProfile({ user, profileData, onBack, onNavigateToTut
 
       {/* Avatar Container in Center */}
       <div className="flex flex-col items-center gap-3 py-4 select-none w-full">
-        <div className="relative">
+        <div 
+          className="relative cursor-pointer group hover:scale-105 transition-transform" 
+          onClick={() => (profileData?.photoURL || user?.photoURL) && setLightboxOpen(true)}
+          title="Cliquer pour agrandir la photo"
+        >
           <XiloAvatar src={profileData?.photoURL || user?.photoURL} name={fullName} size={110} />
           {/* Decorative stamp on avatar */}
           <div className="absolute -bottom-1 -right-2 z-20 flex flex-col gap-1 items-end select-none">
@@ -495,6 +500,13 @@ export default function UserProfile({ user, profileData, onBack, onNavigateToTut
           </div>
         </div>
       )}
+      {/* Lightbox Photo Modal */}
+      <ImageLightboxModal 
+        isOpen={lightboxOpen}
+        photoURL={profileData?.photoURL || user?.photoURL}
+        name={fullName}
+        onClose={() => setLightboxOpen(false)}
+      />
     </div>
   );
 }
