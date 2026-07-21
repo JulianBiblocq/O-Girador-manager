@@ -75,7 +75,7 @@ const WoodenClothespin = ({ className = "" }) => (
 
 // Curved SVG Twisted Hemp Rope
 const HangingRopeCurve = () => (
-  <div className="absolute top-7 left-0 right-0 h-16 w-full z-0 select-none pointer-events-none overflow-visible">
+  <div className="absolute top-9 left-0 right-0 h-16 w-full z-0 select-none pointer-events-none overflow-visible">
     <svg className="w-full h-full overflow-visible" viewBox="0 0 1000 65" preserveAspectRatio="none">
       <defs>
         <linearGradient id="hempStrand" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -88,24 +88,24 @@ const HangingRopeCurve = () => (
       </defs>
 
       {/* Left End Fastener Peg */}
-      <circle cx="12" cy="18" r="9" fill="#523218" stroke="#181716" strokeWidth="2" />
-      <circle cx="12" cy="18" r="4.5" fill="#B38350" />
+      <circle cx="12" cy="12" r="9" fill="#523218" stroke="#181716" strokeWidth="2" />
+      <circle cx="12" cy="12" r="4.5" fill="#B38350" />
 
       {/* Right End Fastener Peg */}
-      <circle cx="988" cy="18" r="9" fill="#523218" stroke="#181716" strokeWidth="2" />
-      <circle cx="988" cy="18" r="4.5" fill="#B38350" />
+      <circle cx="988" cy="12" r="9" fill="#523218" stroke="#181716" strokeWidth="2" />
+      <circle cx="988" cy="12" r="4.5" fill="#B38350" />
 
       {/* Rope Soft Drop Shadow */}
-      <path d="M 12 18 Q 500 62 988 18" fill="none" stroke="#181716" strokeWidth="5.5" strokeOpacity="0.25" />
+      <path d="M 12 12 Q 500 50 988 12" fill="none" stroke="#181716" strokeWidth="5.5" strokeOpacity="0.25" />
 
       {/* Main Hemp Rope Body */}
-      <path d="M 12 18 Q 500 62 988 18" fill="none" stroke="url(#hempStrand)" strokeWidth="4.5" strokeLinecap="round" />
+      <path d="M 12 12 Q 500 50 988 12" fill="none" stroke="url(#hempStrand)" strokeWidth="4.5" strokeLinecap="round" />
 
       {/* Twisted Fibers Pattern 1 */}
-      <path d="M 12 18 Q 500 62 988 18" fill="none" stroke="#3D220E" strokeWidth="1.8" strokeDasharray="6 6" strokeLinecap="round" />
+      <path d="M 12 12 Q 500 50 988 12" fill="none" stroke="#3D220E" strokeWidth="1.8" strokeDasharray="6 6" strokeLinecap="round" />
 
       {/* Twisted Fibers Pattern 2 (Golden Highlight) */}
-      <path d="M 12 17 Q 500 61 988 17" fill="none" stroke="#F1D59F" strokeWidth="1.2" strokeDasharray="3 9" strokeLinecap="round" opacity="0.8" />
+      <path d="M 12 11 Q 500 49 988 11" fill="none" stroke="#F1D59F" strokeWidth="1.2" strokeDasharray="3 9" strokeLinecap="round" opacity="0.8" />
     </svg>
   </div>
 );
@@ -378,15 +378,15 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
                   <HangingRopeCurve />
 
                   {/* Hanging Booklets with Natural Sag Offset */}
-                  <div className="flex flex-nowrap overflow-x-auto justify-start items-start gap-4 sm:gap-6 pt-10 pb-8 relative z-10 w-full no-scrollbar px-6 overflow-y-visible min-h-[220px]">
+                  <div className="flex flex-nowrap overflow-x-auto justify-start items-start gap-4 sm:gap-6 pt-11 pb-8 relative z-10 w-full no-scrollbar px-6 overflow-y-visible min-h-[220px]">
                     {docList.length === 0 ? (
                       <p className="text-[10px] italic opacity-60 self-center py-6 text-cordel-master-dark">{translate('documents.noDocumentsCategory', "Aucun document dans cette rubrique.")}</p>
                     ) : (
                       docList.map((docItem, index) => {
                         const totalDocs = Math.max(docList.length, 1);
                         const relPos = docList.length <= 1 ? 0.5 : (index / (totalDocs - 1));
-                        // Parabolic vertical dip according to catenary sag (up to 22px in middle)
-                        const dipY = Math.round(Math.sin(relPos * Math.PI) * 22);
+                        // Parabolic vertical dip according to catenary sag (up to 35px in middle)
+                        const dipY = Math.round(Math.sin(relPos * Math.PI) * 35);
                         const rotationDeg = index % 2 === 0 ? (-3.5 + (index % 3)) : (2.5 - (index % 2));
 
                         const isArchived = category.activerOpaciteArchive && docItem.annee && docItem.annee < currentYear;
@@ -429,7 +429,7 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
                             style={{ transform: `translateY(${dipY}px) rotate(${rotationDeg}deg)` }}
                             title={`${translate('common.open', "Ouvrir")} ${docItem.titre} ${isArchived ? '(' + translate('documents.archiveTag', "Archive") + ')' : ''}`}
                           >
-                            {/* Wooden Clothespin (Pince à linge artisanale) */}
+                            {/* Wooden Clothespin (Pince à linge artisanale accrochée fermement sur la corde) */}
                             <WoodenClothespin className="absolute -top-7 z-30 pointer-events-none" />
 
                             {/* Booklet Cover */}
