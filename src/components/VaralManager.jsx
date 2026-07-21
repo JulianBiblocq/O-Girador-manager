@@ -489,7 +489,7 @@ export default function VaralManager({ groupId, onBack, role, isSystemAdmin }) {
                     </div>
 
                     <CordelCard className="p-0 overflow-hidden rounded-b rounded-t-none border-x border-b border-encre-noire">
-                      <div className="w-full overflow-x-auto">
+                      <div className="w-full max-w-full overflow-x-auto">
                         {catDocs.length === 0 ? (
                           <div className="p-8 text-center bg-white/30 dark:bg-black/10 select-none">
                             <p className="text-xs italic opacity-50">Aucun document dans cette rubrique.</p>
@@ -498,10 +498,10 @@ export default function VaralManager({ groupId, onBack, role, isSystemAdmin }) {
                           <table className="w-full text-xs text-left border-collapse">
                             <thead>
                               <tr className="bg-cordel-bg-light border-b border-encre-noire text-cordel-master-dark uppercase tracking-wider text-[9px] font-black">
-                                <th className="py-2 px-3">Nom du document</th>
-                                <th className="py-2 px-3">Type</th>
-                                <th className="py-2 px-3 text-center">Déplacer</th>
-                                <th className="py-2 px-3 text-right">Actions</th>
+                                <th className="py-1.5 px-2 md:py-2 md:px-3">Nom du document</th>
+                                <th className="py-1.5 px-2 md:py-2 md:px-3">Type</th>
+                                <th className="py-1.5 px-2 md:py-2 md:px-3 text-center">Déplacer</th>
+                                <th className="py-1.5 px-2 md:py-2 md:px-3 text-right">Actions</th>
                               </tr>
                             </thead>
                             <tbody>
@@ -510,7 +510,7 @@ export default function VaralManager({ groupId, onBack, role, isSystemAdmin }) {
                                   key={docItem.id} 
                                   className="border-b border-dashed border-encre-noire/15 hover:bg-cordel-hover/50 transition-colors"
                                 >
-                                  <td className="py-2.5 px-3 font-bold text-encre-noire dark:text-cordel-bg-light">
+                                  <td className="py-2 px-2 md:py-2.5 md:px-3 font-bold text-encre-noire dark:text-cordel-bg-light">
                                     {docItem.titre}
                                     {docItem.sousCategorie && (
                                       <span className="block text-[8px] font-bold text-cordel-wood uppercase tracking-wider mt-0.5">
@@ -518,10 +518,10 @@ export default function VaralManager({ groupId, onBack, role, isSystemAdmin }) {
                                       </span>
                                     )}
                                   </td>
-                                  <td className="py-2.5 px-3 font-semibold text-[10px]">
+                                  <td className="py-2 px-2 md:py-2.5 md:px-3 font-semibold text-[10px]">
                                     {getDocTypeBadge(docItem.type || 'pdf')}
                                   </td>
-                                  <td className="py-2.5 px-3 text-center">
+                                  <td className="py-2 px-2 md:py-2.5 md:px-3 text-center">
                                     {sortMethod === 'order' ? (
                                       <div className="flex justify-center gap-1 select-none">
                                         <button
@@ -545,7 +545,7 @@ export default function VaralManager({ groupId, onBack, role, isSystemAdmin }) {
                                       <span className="text-[9px] italic opacity-40 select-none">-</span>
                                     )}
                                   </td>
-                                  <td className="py-2.5 px-3 text-right">
+                                  <td className="py-2 px-2 md:py-2.5 md:px-3 text-right">
                                     <div className="flex items-center justify-end gap-1.5">
                                       {(docItem.fileUrl || docItem.type === 'report') && (
                                         <button

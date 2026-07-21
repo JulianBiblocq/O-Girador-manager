@@ -122,6 +122,8 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
     setTransport,
     demandeRemboursementKm,
     setDemandeRemboursementKm,
+    besoinTransportInstrument,
+    setBesoinTransportInstrument,
     saving,
     instrumentChoisi,
     setInstrumentChoisi,
@@ -688,73 +690,60 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
         </div>
       )}
       {/* Header with back button, modifier button & navigation arrows */}
-      <div className="flex justify-between items-center border-b-2 border-dashed border-cordel-master-dark/30 pb-2 select-none gap-2">
-        <div className="flex items-center gap-1.5 flex-wrap">
-          <CordelButton variant="default" onClick={onClose} className="px-3 py-1 text-xs font-black">
-            ← {t('common.back')}
-          </CordelButton>
-          {onPrev && (
-            <button
-              type="button"
-              onClick={onPrev}
-              className="text-[10px] font-black uppercase bg-cordel-bg border border-encre-noire px-2.5 py-1.5 rounded shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:bg-neutral-100 cursor-pointer flex items-center justify-center select-none"
-              title="Événement précédent"
-            >
-              ◀
-            </button>
-          )}
-          {onNext && (
-            <button
-              type="button"
-              onClick={onNext}
-              className="text-[10px] font-black uppercase bg-cordel-bg border border-encre-noire px-2.5 py-1.5 rounded shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:bg-neutral-100 cursor-pointer flex items-center justify-center select-none"
-              title="Événement suivant"
-            >
-              ▶
-            </button>
-          )}
-          {setViewMode && (
-            <div className="flex border border-encre-noire rounded-[4px_6px_3px_5px] overflow-hidden bg-cordel-bg shadow-[1px_1px_0px_0px_#181716] select-none text-[8px] font-black uppercase ml-1 sm:ml-2">
+      <div className="flex flex-col md:flex-row md:justify-between md:items-center border-b-2 border-dashed border-cordel-master-dark/30 pb-2.5 select-none gap-3">
+        {/* Navigation & Back buttons */}
+        <div className="flex items-center justify-between w-full md:w-auto gap-2">
+          <div className="flex items-center gap-1.5">
+            <CordelButton variant="default" onClick={onClose} className="px-3 py-1 text-xs font-black">
+              ← {t('common.back')}
+            </CordelButton>
+            {onPrev && (
               <button
                 type="button"
-                onClick={() => setViewMode('cards')}
-                className={`px-2 py-0.5 cursor-pointer transition-colors ${viewMode === 'cards' ? 'bg-cordel-master-dark text-cordel-bg-light' : 'bg-cordel-bg-light text-encre-noire hover:bg-neutral-100'}`}
+                onClick={onPrev}
+                className="text-[10px] font-black uppercase bg-cordel-bg border border-encre-noire px-2.5 py-1.5 rounded shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:bg-neutral-100 cursor-pointer flex items-center justify-center select-none"
+                title="Événement précédent"
               >
-                🎴 <span className="hidden sm:inline">Cartes</span>
+                ◀
               </button>
+            )}
+            {onNext && (
               <button
                 type="button"
-                onClick={() => setViewMode('list')}
-                className={`px-2 py-0.5 cursor-pointer transition-colors ${viewMode === 'list' ? 'bg-cordel-master-dark text-cordel-bg-light' : 'bg-cordel-bg-light text-encre-noire hover:bg-neutral-100'}`}
+                onClick={onNext}
+                className="text-[10px] font-black uppercase bg-cordel-bg border border-encre-noire px-2.5 py-1.5 rounded shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:bg-neutral-100 cursor-pointer flex items-center justify-center select-none"
+                title="Événement suivant"
               >
-                📋 <span className="hidden sm:inline">Liste</span>
+                ▶
               </button>
-              <button
-                type="button"
-                onClick={() => setViewMode('grid')}
-                className={`px-2 py-0.5 cursor-pointer transition-colors ${viewMode === 'grid' ? 'bg-cordel-master-dark text-cordel-bg-light' : 'bg-cordel-bg-light text-encre-noire hover:bg-neutral-100'}`}
-              >
-                📅 <span className="hidden sm:inline">Grille</span>
-              </button>
-            </div>
-          )}
+            )}
+          </div>
+
+          {/* Title on mobile */}
+          <span className="panel-title text-xs font-extrabold tracking-wider text-cordel-wood uppercase flex items-center gap-1 md:hidden">
+            <XiloCalendar size={12} /> {t('eventDetails.title')}
+          </span>
         </div>
-        <span className="panel-title text-sm font-extrabold tracking-wider text-cordel-wood uppercase flex items-center gap-1">
+
+        {/* Title on desktop */}
+        <span className="panel-title text-sm font-extrabold tracking-wider text-cordel-wood uppercase hidden md:flex items-center gap-1">
           <XiloCalendar size={14} /> {t('eventDetails.title')}
         </span>
+
+        {/* Action buttons (Publication, Modify, Delete) */}
         {isAuthorized && !isEditingEvent && (
-          <div className="flex gap-2">
+          <div className="flex gap-2 w-full md:w-auto flex-wrap sm:flex-nowrap justify-end md:justify-start">
             <button
               type="button"
               onClick={handlePreparePublication}
-              className="text-[10px] font-black uppercase bg-cordel-ocre text-black border border-encre-noire px-3 py-1 rounded shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-95 cursor-pointer flex items-center gap-1"
+              className="text-[10px] font-black uppercase bg-cordel-ocre text-black border border-encre-noire px-3 py-1.5 rounded shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-95 cursor-pointer flex items-center gap-1 flex-1 sm:flex-none justify-center"
             >
               <XiloMegaphone size={12} /> Préparer la publication
             </button>
             <button
               type="button"
               onClick={() => setIsEditingEvent(true)}
-              className="text-[10px] font-black uppercase bg-cordel-bg border border-encre-noire px-3 py-1 rounded shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-95 cursor-pointer"
+              className="text-[10px] font-black uppercase bg-cordel-bg border border-encre-noire px-3 py-1.5 rounded shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-95 cursor-pointer flex-1 sm:flex-none justify-center"
             >
               ✏️ Modifier
             </button>
@@ -762,20 +751,24 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
               type="button"
               variant="rouge"
               onClick={handleDeleteEvent}
-              className="text-[10px] px-3 py-1.5 uppercase font-black flex items-center gap-1"
+              className="text-[10px] px-3 py-1.5 uppercase font-black flex items-center gap-1 flex-1 sm:flex-none justify-center"
             >
               🗑️ Supprimer
             </CordelButton>
           </div>
         )}
+
+        {/* Cancel button if editing */}
         {isAuthorized && isEditingEvent && (
-          <button
-            type="button"
-            onClick={() => setIsEditingEvent(false)}
-            className="text-[10px] font-black uppercase bg-neutral-200 border border-encre-noire px-3 py-1 rounded"
-          >
-            Annuler
-          </button>
+          <div className="flex w-full md:w-auto justify-end">
+            <button
+              type="button"
+              onClick={() => setIsEditingEvent(false)}
+              className="text-[10px] font-black uppercase bg-neutral-200 border border-encre-noire px-3 py-1.5 rounded w-full md:w-auto text-center"
+            >
+              Annuler
+            </button>
+          </div>
         )}
       </div>
 
@@ -1090,6 +1083,9 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
               handleAddInviteExterne={handleAddInviteExterne}
               handleRemoveInviteExterne={handleRemoveInviteExterne}
               instrumentsDisponibles={instrumentsDisponibles}
+              besoinTransportInstrument={besoinTransportInstrument}
+              setBesoinTransportInstrument={setBesoinTransportInstrument}
+              enableCarpool={event.enableCarpool !== false}
             />
           )}
 

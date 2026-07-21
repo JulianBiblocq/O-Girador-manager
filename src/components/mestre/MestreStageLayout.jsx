@@ -71,15 +71,15 @@ export default function MestreStageLayout({ groupId, user, profileData, selected
         </h2>
         
         {/* Dropdown selector */}
-        <div className="flex items-center gap-2">
-          <label htmlFor="stage-event-select" className="text-[10px] font-black uppercase tracking-wider text-cordel-master-dark whitespace-nowrap">
+        <div className="flex flex-col md:flex-row md:items-center gap-2 w-full md:w-auto">
+          <label htmlFor="stage-event-select" className="text-[10px] font-black uppercase tracking-wider text-cordel-master-dark md:whitespace-nowrap">
             {t('mestre.selectEventPrompt') || "Sélectionnez un événement :"}
           </label>
           <select
             id="stage-event-select"
             value={selectedEventId || ''}
             onChange={(e) => onSelectEventId(e.target.value)}
-            className="theme-input text-[10px] font-bold py-1 px-3 bg-cordel-bg-light border-encre-noire/30"
+            className="theme-input text-[10px] font-bold py-1 px-3 bg-cordel-bg-light border-encre-noire/30 w-full md:w-auto"
           >
             <option value="">-- Choose Event --</option>
             {events.map(evt => (

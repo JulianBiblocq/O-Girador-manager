@@ -286,14 +286,14 @@ export default function BankAccountsTracker({
         </form>
       ) : (
         <CordelCard className="p-0 overflow-hidden">
-          <div className="w-full overflow-x-auto">
+          <div className="w-full max-w-full overflow-x-auto">
             <table className="w-full text-xs text-left border-collapse">
               <thead>
                 <tr className="bg-cordel-master-dark text-cordel-bg-light uppercase tracking-wider text-[9px] font-black border-b border-encre-noire">
-                  <th className="py-2.5 px-3">Nom du Compte</th>
-                  <th className="py-2.5 px-3 text-right">Solde Actuel</th>
-                  <th className="py-2.5 px-3 text-center">Seuil Alerte</th>
-                  <th className="py-2.5 px-3 text-right">Dernière Mise à jour</th>
+                  <th className="py-2 px-1.5 md:py-2.5 md:px-3">Nom du Compte</th>
+                  <th className="py-2 px-1.5 md:py-2.5 md:px-3 text-right">Solde Actuel</th>
+                  <th className="py-2 px-1.5 md:py-2.5 md:px-3 text-center">Seuil Alerte</th>
+                  <th className="py-2 px-1.5 md:py-2.5 md:px-3 text-right">Dernière Mise à jour</th>
                 </tr>
               </thead>
               <tbody>
@@ -314,10 +314,10 @@ export default function BankAccountsTracker({
                         key={acc.id}
                         className="border-b border-dashed border-encre-noire/15 hover:bg-cordel-hover/30 transition-colors"
                       >
-                        <td className="py-2.5 px-3 font-bold text-encre-noire dark:text-cordel-bg-light">
+                        <td className="py-2 px-1.5 md:py-2.5 md:px-3 font-bold text-encre-noire dark:text-cordel-bg-light">
                           {acc.name || "Compte sans nom"}
                         </td>
-                        <td className={`py-2.5 px-3 text-right font-black ${
+                        <td className={`py-2 px-1.5 md:py-2.5 md:px-3 text-right font-black ${
                           isBelowThreshold 
                             ? 'text-red-700 dark:text-red-400 animate-pulse font-extrabold' 
                             : 'text-encre-noire dark:text-cordel-bg-light'
@@ -325,10 +325,10 @@ export default function BankAccountsTracker({
                           {isBelowThreshold && <span className="mr-1.5" title="Sous le seuil critique !">⚠️</span>}
                           {balanceVal.toFixed(2)} €
                         </td>
-                        <td className="py-2.5 px-3 text-center font-semibold text-encre-noire/60 dark:text-cordel-bg-light/60">
+                        <td className="py-2 px-1.5 md:py-2.5 md:px-3 text-center font-semibold text-encre-noire/60 dark:text-cordel-bg-light/60">
                           {thresholdVal !== 0 ? `${thresholdVal.toFixed(2)} €` : '-'}
                         </td>
-                        <td className="py-2.5 px-3 text-right text-encre-noire/60 dark:text-cordel-bg-light/60 font-mono text-[10px]">
+                        <td className="py-2 px-1.5 md:py-2.5 md:px-3 text-right text-encre-noire/60 dark:text-cordel-bg-light/60 font-mono text-[10px]">
                           {formatDate(acc.updatedAt)}
                         </td>
                       </tr>

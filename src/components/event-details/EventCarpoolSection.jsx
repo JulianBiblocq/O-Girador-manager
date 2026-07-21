@@ -364,41 +364,69 @@ export default function EventCarpoolSection({
 
           {/* Waiting List queue */}
           <div className="mt-5 pt-4 border-t border-dashed border-cordel-master-dark/15 text-left">
-            <h5 className="font-bold text-[10px] uppercase tracking-widest text-cordel-wood mb-2.5 flex justify-between items-center">
-              <span>📋 Membres en recherche de place</span>
-              {!(event.covoiturage?.recherchePlace || []).some(p => p.uid === user.uid) ? (
+            <h5 className="font-bold text-[10px] uppercase tracking-widest text-cordel-wood mb-2.5">
+              📋 Membres en recherche de place
+            </h5>
+
+            {/* Search buttons */}
+            {!(event.covoiturage?.recherchePlace || []).some(p => p.uid === user.uid) ? (
+              <div className="flex flex-col sm:flex-row gap-1.5 mb-3">
                 <button
                   type="button"
                   disabled={submittingCovoit}
-                  onClick={handleChercherPlace}
-                  className="text-[9px] font-black uppercase bg-cordel-bg-light hover:bg-cordel-hover border border-encre-noire px-2 py-1 rounded shadow-[1px_1px_0px_0px_rgba(0,0,0,0.15)]"
+                  onClick={() => handleChercherPlace({ cherchePassager: true, chercheInstrument: false })}
+                  className="text-[9px] font-black uppercase bg-cordel-bg-light hover:bg-cordel-hover border border-encre-noire px-2.5 py-1.5 rounded shadow-[1px_1px_0px_0px_rgba(0,0,0,0.15)] cursor-pointer flex-1 text-center"
                 >
-                  Je cherche une place
+                  🚗 Place passager
                 </button>
-              ) : (
+                <button
+                  type="button"
+                  disabled={submittingCovoit}
+                  onClick={() => handleChercherPlace({ cherchePassager: false, chercheInstrument: true })}
+                  className="text-[9px] font-black uppercase bg-cordel-bg-light hover:bg-cordel-hover border border-encre-noire px-2.5 py-1.5 rounded shadow-[1px_1px_0px_0px_rgba(0,0,0,0.15)] cursor-pointer flex-1 text-center"
+                >
+                  🥁 Place instrument seul
+                </button>
+                <button
+                  type="button"
+                  disabled={submittingCovoit}
+                  onClick={() => handleChercherPlace({ cherchePassager: true, chercheInstrument: true })}
+                  className="text-[9px] font-black uppercase bg-cordel-bg-light hover:bg-cordel-hover border border-encre-noire px-2.5 py-1.5 rounded shadow-[1px_1px_0px_0px_rgba(0,0,0,0.15)] cursor-pointer flex-1 text-center"
+                >
+                  🚗🥁 Les deux
+                </button>
+              </div>
+            ) : (
+              <div className="mb-3">
                 <button
                   type="button"
                   disabled={submittingCovoit}
                   onClick={handleAnnulerCherchePlace}
-                  className="text-[9px] font-black uppercase bg-neutral-200 hover:bg-neutral-300 border border-encre-noire px-2 py-1 rounded"
+                  className="text-[9px] font-black uppercase bg-neutral-200 hover:bg-neutral-300 border border-encre-noire px-2 py-1 rounded cursor-pointer"
                 >
                   Annuler ma recherche
                 </button>
-              )}
-            </h5>
+              </div>
+            )}
 
             {(event.covoiturage?.recherchePlace || []).length === 0 ? (
               <p className="text-[11px] italic opacity-60">Aucun membre en recherche de place actuellement.</p>
             ) : (
               <div className="flex flex-wrap gap-1.5">
-                {(event.covoiturage.recherchePlace).map((p) => (
-                  <span 
-                    key={p.uid}
-                    className="theme-stamp-badge theme-stamp-badge-wood text-[9px] px-2 py-0.5 border-dashed"
-                  >
-                    ⏳ {p.nom}
-                  </span>
-                ))}
+                {(event.covoiturage.recherchePlace).map((p) => {
+                  const icons = [
+                    (p.cherchePassager !== false) ? '🚗' : null,
+                    p.chercheInstrument ? '🥁' : null
+                  ].filter(Boolean).join('');
+                  return (
+                    <span 
+                      key={p.uid}
+                      className="theme-stamp-badge theme-stamp-badge-wood text-[9px] px-2 py-0.5 border-dashed"
+                    >
+                      ⏳{icons} {p.nom}
+                    </span>
+                  );
+                })}
               </div>
             )}
           </div>

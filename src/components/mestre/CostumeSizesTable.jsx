@@ -123,14 +123,14 @@ export default function CostumeSizesTable({ allUsers = [], profileData = {} }) {
 
       {/* Table view */}
       <CordelCard variant="default" useExtremeBorder={true} className="p-0 overflow-hidden">
-        <div className="w-full overflow-x-auto">
+        <div className="w-full max-w-full overflow-x-auto">
           <table className="w-full text-left text-xs font-semibold leading-normal border-collapse">
             <thead>
               <tr className="bg-cordel-bg border-b border-encre-noire text-[9px] uppercase font-black text-cordel-master-dark tracking-wider select-none">
-                <th className="py-2.5 px-4">Membre</th>
-                <th className="py-2.5 px-4">Pupitre</th>
-                <th className="py-2.5 px-4 text-center">Taille T-Shirt</th>
-                <th className="py-2.5 px-4 text-center">Taille Pantalon</th>
+                <th className="py-2 px-2 md:py-2.5 md:px-4">Membre</th>
+                <th className="py-2 px-2 md:py-2.5 md:px-4">Pupitre</th>
+                <th className="py-2 px-2 md:py-2.5 md:px-4 text-center">Taille T-Shirt</th>
+                <th className="py-2 px-2 md:py-2.5 md:px-4 text-center">Taille Pantalon</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-encre-noire/10">
@@ -143,12 +143,12 @@ export default function CostumeSizesTable({ allUsers = [], profileData = {} }) {
               ) : (
                 filteredUsers.map((u) => (
                   <tr key={u.id} className="hover:bg-white/20 transition-colors">
-                    <td className="py-2.5 px-4 flex items-center gap-2.5 font-bold">
+                    <td className="py-2 px-2 md:py-2.5 md:px-4 flex items-center gap-2.5 font-bold">
                       <XiloAvatar src={u.photoURL} name={`${u.prenom} ${u.nom}`} size={24} className="border border-encre-noire/10" />
                       <span>{u.prenom} {u.nom}</span>
                     </td>
-                    <td className="py-2.5 px-4 italic text-cordel-wood/80">{u.instrument || "Autre"}</td>
-                    <td className="py-2.5 px-4 text-center font-black">
+                    <td className="py-2 px-2 md:py-2.5 md:px-4 italic text-cordel-wood/80">{u.instrument || "Autre"}</td>
+                    <td className="py-2 px-2 md:py-2.5 md:px-4 text-center font-black">
                       {u.tailleTshirt ? (
                         <span className="bg-amber-100/50 border border-amber-300 text-amber-900 px-2 py-0.5 rounded text-[10px]">
                           {u.tailleTshirt}
@@ -157,7 +157,7 @@ export default function CostumeSizesTable({ allUsers = [], profileData = {} }) {
                         <span className="text-[10px] opacity-40 font-normal italic">N/A</span>
                       )}
                     </td>
-                    <td className="py-2.5 px-4 text-center font-black">
+                    <td className="py-2 px-2 md:py-2.5 md:px-4 text-center font-black">
                       {u.taillePantalon ? (
                         <span className="bg-orange-100/50 border border-orange-300 text-orange-900 px-2 py-0.5 rounded text-[10px]">
                           {u.taillePantalon}

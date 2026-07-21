@@ -497,15 +497,15 @@ export default function WidgetAgenda({
             t={t} 
           />
         ) : viewMode === 'list' ? (
-          <div className="w-full overflow-x-auto border-2 border-encre-noire rounded-[8px_12px_9px_11px] shadow-[2.5px_2.5px_0px_0px_#181716] bg-cordel-bg-light">
+          <div className="w-full max-w-full overflow-x-auto border-2 border-encre-noire rounded-[8px_12px_9px_11px] shadow-[2.5px_2.5px_0px_0px_#181716] bg-cordel-bg-light">
             <table className="w-full text-xs text-left border-collapse">
               <thead>
                 <tr className="border-b border-encre-noire bg-cordel-master-light/10 font-black uppercase text-[9px] tracking-wider text-cordel-wood select-none">
-                  <th className="p-2.5 border-r border-encre-noire/15">Date</th>
-                  <th className="p-2.5 border-r border-encre-noire/15">Événement</th>
-                  <th className="p-2.5 border-r border-encre-noire/15">Type</th>
-                  <th className="p-2.5 border-r border-encre-noire/15">Lieu</th>
-                  <th className="p-2.5 text-center">Présence</th>
+                  <th className="p-1.5 md:p-2.5 border-r border-encre-noire/15">Date</th>
+                  <th className="p-1.5 md:p-2.5 border-r border-encre-noire/15">Événement</th>
+                  <th className="p-1.5 md:p-2.5 border-r border-encre-noire/15">Type</th>
+                  <th className="p-1.5 md:p-2.5 border-r border-encre-noire/15">Lieu</th>
+                  <th className="p-1.5 md:p-2.5 text-center">Présence</th>
                 </tr>
               </thead>
               <tbody>
@@ -529,10 +529,10 @@ export default function WidgetAgenda({
                       onClick={() => handleSelectEvent(event)}
                       className={`border-b border-encre-noire/15 hover:bg-cordel-master-light/5 transition-colors cursor-pointer ${event.status === 'annule' ? 'opacity-50' : ''}`}
                     >
-                      <td className="p-2.5 border-r border-encre-noire/15 font-bold whitespace-nowrap">
+                      <td className="p-1.5 md:p-2.5 border-r border-encre-noire/15 font-bold whitespace-nowrap">
                         {formattedDate}
                       </td>
-                      <td className="p-2.5 border-r border-encre-noire/15 font-extrabold text-encre-noire">
+                      <td className="p-1.5 md:p-2.5 border-r border-encre-noire/15 font-extrabold text-encre-noire">
                         {event.titre}
                         {event.status === 'annule' && (
                           <span className="text-red-600 font-bold ml-1.5 uppercase text-[8px] border border-red-600 px-1 rounded select-none">
@@ -540,15 +540,15 @@ export default function WidgetAgenda({
                           </span>
                         )}
                       </td>
-                      <td className="p-2.5 border-r border-encre-noire/15">
+                      <td className="p-1.5 md:p-2.5 border-r border-encre-noire/15">
                         <span className={`px-2 py-0.5 border border-dashed rounded-[4px_6px_3px_5px] font-black uppercase text-[8px] theme-bg-${variant}`}>
                           {event.type}
                         </span>
                       </td>
-                      <td className="p-2.5 border-r border-encre-noire/15 truncate max-w-[180px]" title={event.lieu}>
+                      <td className="p-1.5 md:p-2.5 border-r border-encre-noire/15 truncate max-w-[180px]" title={event.lieu}>
                         {event.lieu || '-'}
                       </td>
-                      <td className="p-2.5 text-center font-bold whitespace-nowrap">
+                      <td className="p-1.5 md:p-2.5 text-center font-bold whitespace-nowrap">
                         {(() => {
                           if (userStatus === 'present') return <span className="text-green-700 dark:text-green-400 font-black">Présent ({presentCount})</span>;
                           if (userStatus === 'absent') return <span className="text-red-700 dark:text-red-400 font-black">Absent ({presentCount})</span>;

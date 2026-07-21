@@ -15,6 +15,7 @@ export function useEventRSVP(event, user, profileData, allUsers, isPrestationRes
   };
   const [transport, setTransport] = useState(getInitialTransport());
   const [demandeRemboursementKm, setDemandeRemboursementKm] = useState(existingResponse ? existingResponse.demandeRemboursementKm === true : false);
+  const [besoinTransportInstrument, setBesoinTransportInstrument] = useState(existingResponse ? existingResponse.besoinTransportInstrument === true : false);
   const [saving, setSaving] = useState(false);
 
   const [instrumentChoisi, setInstrumentChoisi] = useState(() => {
@@ -39,6 +40,7 @@ export function useEventRSVP(event, user, profileData, allUsers, isPrestationRes
       : 'confirm');
     setTransport(resp ? (resp.transport === 'propose' ? 'propre' : (resp.transport || 'propre')) : 'propre');
     setDemandeRemboursementKm(resp ? resp.demandeRemboursementKm === true : false);
+    setBesoinTransportInstrument(resp ? resp.besoinTransportInstrument === true : false);
     setInstrumentChoisi(resp?.instrumentChoisi || profileData?.instrument || 'Autre');
   }, [event.id, user.uid, profileData?.instrument, event.inscriptions]);
 
@@ -85,7 +87,8 @@ export function useEventRSVP(event, user, profileData, allUsers, isPrestationRes
         instruments: "",
         instrumentChoisi: status === 'present' ? instrumentChoisi : null,
         instrumentImposeParMestre: status === 'present' ? isInstrumentLocked : false,
-        demandeRemboursementKm: (status === 'present' && transport === 'propre') ? demandeRemboursementKm : false
+        demandeRemboursementKm: (status === 'present' && transport === 'propre') ? demandeRemboursementKm : false,
+        besoinTransportInstrument: status === 'present' ? besoinTransportInstrument : false
       };
 
       updatedInscriptions.push(newResponse);
@@ -320,6 +323,8 @@ export function useEventRSVP(event, user, profileData, allUsers, isPrestationRes
     setTransport,
     demandeRemboursementKm,
     setDemandeRemboursementKm,
+    besoinTransportInstrument,
+    setBesoinTransportInstrument,
     saving,
     instrumentChoisi,
     setInstrumentChoisi,

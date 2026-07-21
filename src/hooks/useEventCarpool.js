@@ -352,8 +352,9 @@ export function useEventCarpool({
     }
   };
 
-  const handleChercherPlace = async () => {
+  const handleChercherPlace = async (options = {}) => {
     if (!user?.uid) return;
+    const { cherchePassager = true, chercheInstrument = false } = options;
 
     setSubmittingCovoit(true);
     try {
@@ -368,16 +369,20 @@ export function useEventCarpool({
         let recherchePlace = currentCovoit.recherchePlace || [];
         const voitures = currentCovoit.voitures || [];
 
-        if (recherchePlace.some(p => p.uid === user.uid)) {
-          return;
-        }
+        // Remove existing entry to allow updating type
+        recherchePlace = recherchePlace.filter(p => p.uid !== user.uid);
 
         const updatedVoitures = voitures.map(voiture => ({
           ...voiture,
           passengers: (voiture.passengers || voiture.passagers || []).filter(p => p.uid !== user.uid)
         }));
 
-        recherchePlace.push({ uid: user.uid, nom: `${profileData?.prenom} ${profileData?.nom}` });
+        recherchePlace.push({
+          uid: user.uid,
+          nom: `${profileData?.prenom} ${profileData?.nom}`,
+          cherchePassager: !!cherchePassager,
+          chercheInstrument: !!chercheInstrument
+        });
 
         const currentInscriptions = eventData.inscriptions || [];
         const updatedInscriptions = currentInscriptions.map(ins => {

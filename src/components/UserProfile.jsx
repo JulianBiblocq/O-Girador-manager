@@ -7,6 +7,7 @@ import { XiloCaixa } from './XiloIcons';
 import { useTerminologie } from '../hooks/useTerminologie';
 import { useTranslation } from './LanguageContext';
 import ProfileEditForm from './profile/ProfileEditForm';
+import CostumeChecklist from './profile/CostumeChecklist';
 const CordelImageEditor = React.lazy(() => import('./CordelImageEditor'));
 
 const getInstrumentIconPath = (instName) => {
@@ -23,7 +24,7 @@ const getInstrumentIconPath = (instName) => {
   return '/favicon.svg';
 };
 
-export default function UserProfile({ user, profileData, onBack }) {
+export default function UserProfile({ user, profileData, onBack, onNavigateToTuto }) {
   const { t, locale } = useTranslation();
   const { tRole } = useTerminologie();
 
@@ -341,6 +342,13 @@ export default function UserProfile({ user, profileData, onBack }) {
           t={t}
         />
       )}
+
+      {/* Checklist Costumes */}
+      <CostumeChecklist
+        userId={user?.uid}
+        costumeChecklist={profileData?.costumeChecklist}
+        onNavigateToTuto={onNavigateToTuto}
+      />
 
       {/* Section Mon Matériel */}
       <div className="mt-4 pt-4 border-t border-dashed border-cordel-master-dark/20 flex flex-col gap-3 select-none">

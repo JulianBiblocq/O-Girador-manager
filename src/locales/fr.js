@@ -776,6 +776,7 @@ export const fr = {
     tabProfil: "Mon profil",
     tabTrombinoscope: "Trombinoscope",
     tabForum: "Porte-voix",
+    tabAtelierCouture: "Atelier Couture",
     tabExportAnnu: "Annuaire et export",
     tabSystemAdmin: "Admin système",
     tabTagManager: "Badges",

@@ -96,16 +96,16 @@ export default function MestreEvents({ groupId, onSelectForStage, onOpenDetails 
           <p className="text-xs font-bold opacity-75">{t('mestre.noEvents') || "Aucune prestation, répétition ou atelier trouvé."}</p>
         </CordelCard>
       ) : (
-        <div className="w-full overflow-x-auto border-2 border-encre-noire rounded-[8px_12px_9px_11px] shadow-[2.5px_2.5px_0px_0px_#181716] bg-cordel-bg-light">
+        <div className="w-full max-w-full overflow-x-auto border-2 border-encre-noire rounded-[8px_12px_9px_11px] shadow-[2.5px_2.5px_0px_0px_#181716] bg-cordel-bg-light">
           <table className="w-full text-xs text-left border-collapse">
             <thead>
               <tr className="border-b-2 border-encre-noire bg-cordel-master-light/50 font-black uppercase text-[10px] tracking-wider text-cordel-wood select-none">
-                <th className="p-3 border-r border-encre-noire/15">{t('mestre.eventDate') || "Date"}</th>
-                <th className="p-3 border-r border-encre-noire/15">{t('mestre.eventTitle') || "Événement"}</th>
-                <th className="p-3 border-r border-encre-noire/15">{t('mestre.eventType') || "Type"}</th>
-                <th className="p-3 border-r border-encre-noire/15">{t('mestre.eventLocation') || "Lieu"}</th>
-                <th className="p-3 border-r border-encre-noire/15 text-center">{t('mestre.eventInscriptions') || "Inscriptions"}</th>
-                <th className="p-3 text-center">{t('common.actions') || "Actions"}</th>
+                <th className="p-1.5 md:p-3 border-r border-encre-noire/15">{t('mestre.eventDate') || "Date"}</th>
+                <th className="p-1.5 md:p-3 border-r border-encre-noire/15">{t('mestre.eventTitle') || "Événement"}</th>
+                <th className="p-1.5 md:p-3 border-r border-encre-noire/15">{t('mestre.eventType') || "Type"}</th>
+                <th className="p-1.5 md:p-3 border-r border-encre-noire/15">{t('mestre.eventLocation') || "Lieu"}</th>
+                <th className="p-1.5 md:p-3 border-r border-encre-noire/15 text-center">{t('mestre.eventInscriptions') || "Inscriptions"}</th>
+                <th className="p-1.5 md:p-3 text-center">{t('common.actions') || "Actions"}</th>
               </tr>
             </thead>
             <tbody>
@@ -116,26 +116,26 @@ export default function MestreEvents({ groupId, onSelectForStage, onOpenDetails 
 
                 return (
                   <tr key={evt.id} className="border-b border-encre-noire/15 hover:bg-cordel-master-light/10 transition-colors">
-                    <td className="p-3 border-r border-encre-noire/15 font-bold whitespace-nowrap">
+                    <td className="p-1.5 md:p-3 border-r border-encre-noire/15 font-bold whitespace-nowrap">
                       {formatDateWithDay(evt.date, locale, true)}
                     </td>
-                    <td className="p-3 border-r border-encre-noire/15 font-extrabold text-encre-noire">
+                    <td className="p-1.5 md:p-3 border-r border-encre-noire/15 font-extrabold text-encre-noire">
                       {evt.titre}
                     </td>
-                    <td className="p-3 border-r border-encre-noire/15">
+                    <td className="p-1.5 md:p-3 border-r border-encre-noire/15">
                       <span className={`px-2 py-0.5 border border-dashed rounded-[4px_6px_3px_5px] font-black uppercase text-[9px] ${getTypeBadgeClass(evt.type)}`}>
                         {getTranslatedType(evt.type)}
                       </span>
                     </td>
-                    <td className="p-3 border-r border-encre-noire/15 truncate max-w-[150px]" title={evt.lieu}>
+                    <td className="p-1.5 md:p-3 border-r border-encre-noire/15 truncate max-w-[150px]" title={evt.lieu}>
                       {evt.lieu || '-'}
                     </td>
-                    <td className="p-3 border-r border-encre-noire/15 text-center font-bold">
+                    <td className="p-1.5 md:p-3 border-r border-encre-noire/15 text-center font-bold">
                       <span className="text-green-700 dark:text-green-400">{presentCount}</span>
                       <span className="opacity-40 font-normal mx-0.5">/</span>
                       <span className="opacity-70">{totalRegistered}</span>
                     </td>
-                    <td className="p-3 text-center flex items-center justify-center gap-1.5 whitespace-nowrap">
+                    <td className="p-1.5 md:p-3 text-center flex items-center justify-center gap-1.5 whitespace-nowrap">
                       <CordelButton
                         type="button"
                         variant="ocre"

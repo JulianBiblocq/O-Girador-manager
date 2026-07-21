@@ -35,6 +35,7 @@ const MestreWorkshops = React.lazy(() => import('./components/mestre/MestreWorks
 const MestreMotMestre = React.lazy(() => import('./components/mestre/MestreMotMestre'));
 const WidgetAgenda = React.lazy(() => import('./components/WidgetAgenda'));
 const WidgetDocuments = React.lazy(() => import('./components/WidgetDocuments'));
+const AtelierCouture = React.lazy(() => import('./components/profile/AtelierCouture'));
 
 const POLES_CONFIG = [
   {
@@ -48,7 +49,8 @@ const POLES_CONFIG = [
     tabs: [
       { id: 'profil', label: 'Mon profil', labelKey: 'tabProfil' },
       { id: 'trombinoscope', label: 'Trombinoscope', labelKey: 'tabTrombinoscope' },
-      { id: 'forum', label: 'Porte-voix', labelKey: 'tabForum' }
+      { id: 'forum', label: 'Porte-voix', labelKey: 'tabForum' },
+      { id: 'atelier-couture', label: 'Atelier Couture', labelKey: 'tabAtelierCouture' }
     ]
   },
   {
@@ -144,6 +146,7 @@ export default function App() {
   const [currentTab, setCurrentTab] = useState('dashboard');
   const [selectedMestreEventId, setSelectedMestreEventId] = useState(null);
   const [activeMestreEventDetails, setActiveMestreEventDetails] = useState(null);
+  const [activeTutorialPiece, setActiveTutorialPiece] = useState(null);
 
   const handleGoToStageLayoutEditor = (eventId) => {
     setSelectedMestreEventId(eventId);
@@ -752,6 +755,11 @@ export default function App() {
                 user={user} 
                 profileData={profileData} 
                 onBack={() => handleNavigateToPole('accueil')} 
+                onNavigateToTuto={(pieceKey) => {
+                  setActiveTutorialPiece(pieceKey);
+                  setCurrentPole('mon-espace');
+                  setCurrentTab('atelier-couture');
+                }}
               />
             ) : currentTab === 'trombinoscope' ? (
               <Trombinoscope 
@@ -770,6 +778,13 @@ export default function App() {
                 onBack={() => handleNavigateToPole('accueil')} 
                 activePrivateChatUserId={activePrivateChatUserId}
                 onClearActivePrivateChat={() => setActivePrivateChatUserId(null)}
+              />
+            ) : currentTab === 'atelier-couture' ? (
+              <AtelierCouture
+                groupId={profileData?.groupId}
+                activePiece={activeTutorialPiece}
+                onClearActivePiece={() => setActiveTutorialPiece(null)}
+                onBack={() => handleNavigateToPole('accueil')}
               />
             ) : (currentTab === 'export-annu' && hasAccessTroupe) ? (
               <AdminExport 

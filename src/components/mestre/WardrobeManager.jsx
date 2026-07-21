@@ -350,16 +350,16 @@ export default function WardrobeManager({ groupId, role, isSystemAdmin, hasAcces
 
           {/* Costume inventory table */}
           <CordelCard variant="default" useExtremeBorder={true} className="p-0 overflow-hidden">
-            <div className="w-full overflow-x-auto">
+            <div className="w-full max-w-full overflow-x-auto">
               <table className="w-full text-left text-xs font-semibold border-collapse">
                 <thead>
                   <tr className="bg-cordel-bg border-b border-encre-noire text-[9px] uppercase font-black text-cordel-master-dark tracking-wider select-none">
-                    <th className="py-2.5 px-4">Type</th>
-                    <th className="py-2.5 px-4 text-center">Taille</th>
-                    <th className="py-2.5 px-4 text-center">État</th>
-                    <th className="py-2.5 px-4">Statut</th>
-                    <th className="py-2.5 px-4">Emprunteur</th>
-                    <th className="py-2.5 px-4 text-right">Actions</th>
+                    <th className="py-2 px-2 md:py-2.5 md:px-4">Type</th>
+                    <th className="py-2 px-2 md:py-2.5 md:px-4 text-center">Taille</th>
+                    <th className="py-2 px-2 md:py-2.5 md:px-4 text-center">État</th>
+                    <th className="py-2 px-2 md:py-2.5 md:px-4">Statut</th>
+                    <th className="py-2 px-2 md:py-2.5 md:px-4">Emprunteur</th>
+                    <th className="py-2 px-2 md:py-2.5 md:px-4 text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-encre-noire/10">
@@ -372,13 +372,13 @@ export default function WardrobeManager({ groupId, role, isSystemAdmin, hasAcces
                   ) : (
                     costumes.map((piece) => (
                       <tr key={piece.id} className="hover:bg-white/20 transition-colors">
-                        <td className="py-2.5 px-4 font-bold">{piece.type}</td>
-                        <td className="py-2.5 px-4 text-center font-black">
+                        <td className="py-2 px-2 md:py-2.5 md:px-4 font-bold">{piece.type}</td>
+                        <td className="py-2 px-2 md:py-2.5 md:px-4 text-center font-black">
                           <span className="bg-amber-100 border border-amber-300 text-amber-900 px-1.5 py-0.5 rounded text-[10px]">
                             {piece.taille}
                           </span>
                         </td>
-                        <td className="py-2.5 px-4 text-center">
+                        <td className="py-2 px-2 md:py-2.5 md:px-4 text-center">
                           <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
                             piece.etat === 'Neuf' ? 'bg-green-100 text-green-800' :
                             piece.etat === 'Bon' ? 'bg-blue-100 text-blue-800' :
@@ -387,13 +387,13 @@ export default function WardrobeManager({ groupId, role, isSystemAdmin, hasAcces
                             {piece.etat}
                           </span>
                         </td>
-                        <td className="py-2.5 px-4 font-bold">
+                        <td className="py-2 px-2 md:py-2.5 md:px-4 font-bold">
                           {piece.statut === 'local' && "🏠 Au local"}
                           {piece.statut === 'emprunte' && "🎒 Emprunte"}
                           {piece.statut === 'reparation' && "🛠️ En réparation"}
                         </td>
-                        <td className="py-2.5 px-4 italic text-cordel-wood/90">{piece.statut === 'emprunte' ? piece.emprunteurNom : '-'}</td>
-                        <td className="py-2.5 px-4 text-right">
+                        <td className="py-2 px-2 md:py-2.5 md:px-4 italic text-cordel-wood/90">{piece.statut === 'emprunte' ? piece.emprunteurNom : '-'}</td>
+                        <td className="py-2 px-2 md:py-2.5 md:px-4 text-right">
                           <div className="flex gap-2.5 justify-end">
                             <button
                               type="button"
@@ -515,15 +515,15 @@ export default function WardrobeManager({ groupId, role, isSystemAdmin, hasAcces
 
           {/* Couture projects table list */}
           <CordelCard variant="default" useExtremeBorder={true} className="p-0 overflow-hidden">
-            <div className="w-full overflow-x-auto">
+            <div className="w-full max-w-full overflow-x-auto">
               <table className="w-full text-left text-xs font-semibold border-collapse">
                 <thead>
                   <tr className="bg-cordel-bg border-b border-encre-noire text-[9px] uppercase font-black text-cordel-master-dark tracking-wider select-none">
-                    <th className="py-2.5 px-4">Projet</th>
-                    <th className="py-2.5 px-4">Besoins répertoriés</th>
-                    <th className="py-2.5 px-4 text-center">Coût estimé</th>
-                    <th className="py-2.5 px-4">Statut</th>
-                    <th className="py-2.5 px-4 text-right">Actions</th>
+                    <th className="py-2 px-2 md:py-2.5 md:px-4">Projet</th>
+                    <th className="py-2 px-2 md:py-2.5 md:px-4">Besoins répertoriés</th>
+                    <th className="py-2 px-2 md:py-2.5 md:px-4 text-center">Coût estimé</th>
+                    <th className="py-2 px-2 md:py-2.5 md:px-4">Statut</th>
+                    <th className="py-2 px-2 md:py-2.5 md:px-4 text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-encre-noire/10">
@@ -536,15 +536,15 @@ export default function WardrobeManager({ groupId, role, isSystemAdmin, hasAcces
                   ) : (
                     projects.map((proj) => (
                       <tr key={proj.id} className="hover:bg-white/20 transition-colors">
-                        <td className="py-2.5 px-4 font-bold text-cordel-wood uppercase text-[10px]">{proj.name}</td>
-                        <td className="py-2.5 px-4 max-w-xs truncate" title={proj.needs}>{proj.needs || <span className="italic opacity-50">Aucun besoin saisi</span>}</td>
-                        <td className="py-2.5 px-4 text-center font-black">{proj.cost.toFixed(2)} €</td>
-                        <td className="py-2.5 px-4 font-bold">
+                        <td className="py-2 px-2 md:py-2.5 md:px-4 font-bold text-cordel-wood uppercase text-[10px]">{proj.name}</td>
+                        <td className="py-2 px-2 md:py-2.5 md:px-4 max-w-xs truncate" title={proj.needs}>{proj.needs || <span className="italic opacity-50">Aucun besoin saisi</span>}</td>
+                        <td className="py-2 px-2 md:py-2.5 md:px-4 text-center font-black">{proj.cost.toFixed(2)} €</td>
+                        <td className="py-2 px-2 md:py-2.5 md:px-4 font-bold">
                           {proj.status === 'a_commencer' && "⏳ À commencer"}
                           {proj.status === 'en_cours' && "🧵 En cours"}
                           {proj.status === 'termine' && "✅ Terminé"}
                         </td>
-                        <td className="py-2.5 px-4 text-right">
+                        <td className="py-2 px-2 md:py-2.5 md:px-4 text-right">
                           <div className="flex gap-2.5 justify-end">
                             <button
                               type="button"

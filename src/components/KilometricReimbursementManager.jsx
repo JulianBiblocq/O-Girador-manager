@@ -582,15 +582,15 @@ export default function KilometricReimbursementManager({ groupId, onBack, role, 
 
               {/* Members table */}
               <CordelCard className="p-0 overflow-hidden">
-                <div className="w-full overflow-x-auto">
+                <div className="w-full max-w-full overflow-x-auto">
                   <table className="w-full text-xs text-left border-collapse">
                     <thead>
                       <tr className="bg-cordel-master-dark text-cordel-bg-light uppercase tracking-wider text-[9px] font-black border-b border-encre-noire">
-                        <th className="py-2.5 px-3">Membre / Conducteur</th>
-                        <th className="py-2.5 px-3 text-center">Trajets</th>
-                        <th className="py-2.5 px-3 text-center">Distance Cumulée</th>
-                        <th className="py-2.5 px-3 text-right">Remboursement</th>
-                        <th className="py-2.5 px-3"></th>
+                        <th className="py-2 px-1.5 md:py-2.5 md:px-3">Membre / Conducteur</th>
+                        <th className="py-2 px-1.5 md:py-2.5 md:px-3 text-center">Trajets</th>
+                        <th className="py-2 px-1.5 md:py-2.5 md:px-3 text-center">Distance Cumulée</th>
+                        <th className="py-2 px-1.5 md:py-2.5 md:px-3 text-right">Remboursement</th>
+                        <th className="py-2 px-1.5 md:py-2.5 md:px-3"></th>
                       </tr>
                     </thead>
                     <tbody>
@@ -611,21 +611,21 @@ export default function KilometricReimbursementManager({ groupId, onBack, role, 
                                   isExpanded ? 'bg-cordel-hover/50' : ''
                                 }`}
                               >
-                                <td className="py-2.5 px-3 font-bold text-encre-noire">{m.nom}</td>
-                                <td className="py-2.5 px-3 text-center font-semibold">
+                                <td className="py-2 px-1.5 md:py-2.5 md:px-3 font-bold text-encre-noire">{m.nom}</td>
+                                <td className="py-2 px-1.5 md:py-2.5 md:px-3 text-center font-semibold">
                                   {m.trips.filter(t => t.isEligible).length}
                                 </td>
-                                <td className="py-2.5 px-3 text-center font-semibold">{m.totalKm.toFixed(0)} km</td>
-                                <td className="py-2.5 px-3 text-right font-black text-green-700">
+                                <td className="py-2 px-1.5 md:py-2.5 md:px-3 text-center font-semibold">{m.totalKm.toFixed(0)} km</td>
+                                <td className="py-2 px-1.5 md:py-2.5 md:px-3 text-right font-black text-green-700">
                                   {m.totalRefund.toFixed(2)} €
                                 </td>
-                                <td className="py-2.5 px-3 text-center text-[10px] text-cordel-wood font-black">
+                                <td className="py-2 px-1.5 md:py-2.5 md:px-3 text-center text-[10px] text-cordel-wood font-black">
                                   {isExpanded ? '▼ Fermer' : '▶ Détails'}
                                 </td>
                               </tr>
                               {isExpanded && (
                                 <tr className="bg-white/30">
-                                  <td colSpan={5} className="py-3 px-6 border-b border-dashed border-encre-noire/25">
+                                  <td colSpan={5} className="py-2 px-3 md:py-3 md:px-6 border-b border-dashed border-encre-noire/25">
                                     <div className="flex flex-col gap-2">
                                       <h4 className="text-[10px] font-black uppercase text-cordel-wood tracking-wide">
                                         Détail des trajets de {m.nom}
@@ -673,15 +673,15 @@ export default function KilometricReimbursementManager({ groupId, onBack, role, 
             <div className="flex flex-col gap-4">
               {/* Events table */}
               <CordelCard className="p-0 overflow-hidden">
-                <div className="w-full overflow-x-auto">
+                <div className="w-full max-w-full overflow-x-auto">
                   <table className="w-full text-xs text-left border-collapse">
                     <thead>
                       <tr className="bg-cordel-master-dark text-cordel-bg-light uppercase tracking-wider text-[9px] font-black border-b border-encre-noire">
-                        <th className="py-2.5 px-3">Date</th>
-                        <th className="py-2.5 px-3">Titre de l'événement</th>
-                        <th className="py-2.5 px-3 text-center">Conducteurs</th>
-                        <th className="py-2.5 px-3 text-right">Remboursement Total</th>
-                        <th className="py-2.5 px-3"></th>
+                        <th className="py-2 px-1.5 md:py-2.5 md:px-3">Date</th>
+                        <th className="py-2 px-1.5 md:py-2.5 md:px-3">Titre de l'événement</th>
+                        <th className="py-2 px-1.5 md:py-2.5 md:px-3 text-center">Conducteurs</th>
+                        <th className="py-2 px-1.5 md:py-2.5 md:px-3 text-right">Remboursement Total</th>
+                        <th className="py-2 px-1.5 md:py-2.5 md:px-3"></th>
                       </tr>
                     </thead>
                     <tbody>
@@ -702,25 +702,25 @@ export default function KilometricReimbursementManager({ groupId, onBack, role, 
                                   isExpanded ? 'bg-cordel-hover/50' : ''
                                 }`}
                               >
-                                <td className="py-2.5 px-3 font-semibold">
+                                <td className="py-2 px-1.5 md:py-2.5 md:px-3 font-semibold">
                                   {new Date(e.date).toLocaleDateString('fr-FR', {
                                     day: '2-digit', month: '2-digit', year: 'numeric'
                                   })}
                                 </td>
-                                <td className="py-2.5 px-3 font-bold text-encre-noire">{e.title}</td>
-                                <td className="py-2.5 px-3 text-center font-semibold">
+                                <td className="py-2 px-1.5 md:py-2.5 md:px-3 font-bold text-encre-noire">{e.title}</td>
+                                <td className="py-2 px-1.5 md:py-2.5 md:px-3 text-center font-semibold">
                                   {e.drivers.filter(d => d.isEligible).length} / {e.drivers.length}
                                 </td>
-                                <td className="py-2.5 px-3 text-right font-black text-green-700">
+                                <td className="py-2 px-1.5 md:py-2.5 md:px-3 text-right font-black text-green-700">
                                   {e.totalRefund.toFixed(2)} €
                                 </td>
-                                <td className="py-2.5 px-3 text-center text-[10px] text-cordel-wood font-black">
+                                <td className="py-2 px-1.5 md:py-2.5 md:px-3 text-center text-[10px] text-cordel-wood font-black">
                                   {isExpanded ? '▼ Fermer' : '▶ Détails'}
                                 </td>
                               </tr>
                               {isExpanded && (
                                 <tr className="bg-white/30">
-                                  <td colSpan={5} className="py-3 px-6 border-b border-dashed border-encre-noire/25">
+                                  <td colSpan={5} className="py-2 px-3 md:py-3 md:px-6 border-b border-dashed border-encre-noire/25">
                                     <div className="flex flex-col gap-2">
                                       <h4 className="text-[10px] font-black uppercase text-cordel-wood tracking-wide">
                                         Frais de déplacement détaillés de l'événement

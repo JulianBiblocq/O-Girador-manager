@@ -229,14 +229,14 @@ export default function ReunionManager({ groupId, user, profileData, onBack }) {
               </CordelCard>
             ) : (
               <CordelCard className="p-0 overflow-hidden">
-                <div className="w-full overflow-x-auto">
+                <div className="w-full max-w-full overflow-x-auto">
                   <table className="w-full text-xs text-left border-collapse">
                     <thead>
                       <tr className="bg-cordel-master-dark text-cordel-bg-light uppercase tracking-wider text-[9px] font-black border-b border-encre-noire">
-                        <th className="py-2.5 px-3">Titre de la Réunion</th>
-                        <th className="py-2.5 px-3">Date et Heure</th>
-                        <th className="py-2.5 px-3">Statut CR</th>
-                        <th className="py-2.5 px-3 text-right">Action</th>
+                        <th className="py-2 px-1.5 md:py-2.5 md:px-3">Titre de la Réunion</th>
+                        <th className="py-2 px-1.5 md:py-2.5 md:px-3">Date et Heure</th>
+                        <th className="py-2 px-1.5 md:py-2.5 md:px-3">Statut CR</th>
+                        <th className="py-2 px-1.5 md:py-2.5 md:px-3 text-right">Action</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -245,16 +245,16 @@ export default function ReunionManager({ groupId, user, profileData, onBack }) {
                           key={ev.id} 
                           className="border-b border-dashed border-encre-noire/15 hover:bg-cordel-hover/50 transition-colors"
                         >
-                          <td className="py-3 px-3 font-bold text-encre-noire">
+                          <td className="py-2 px-1.5 md:py-3 md:px-3 font-bold text-encre-noire">
                             {ev.titre}
                           </td>
-                          <td className="py-3 px-3 font-semibold opacity-85">
+                          <td className="py-2 px-1.5 md:py-3 md:px-3 font-semibold opacity-85">
                             {formatDate(ev.date)}
                           </td>
-                          <td className="py-3 px-3">
+                          <td className="py-2 px-1.5 md:py-3 md:px-3">
                             {getStatusBadge(ev.compteRenduStatus)}
                           </td>
-                          <td className="py-3 px-3 text-right">
+                          <td className="py-2 px-1.5 md:py-3 md:px-3 text-right">
                             <button
                               onClick={() => setSelectedEventId(ev.id)}
                               className="text-[10px] font-black uppercase bg-neutral-100 hover:bg-neutral-200 text-encre-noire border border-encre-noire/30 px-3 py-1 rounded"

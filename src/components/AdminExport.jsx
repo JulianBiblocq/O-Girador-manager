@@ -291,35 +291,35 @@ export default function AdminExport({ user, profileData, onBack }) {
             <span className="text-xs font-bold opacity-60">Aucun membre ne correspond à votre recherche.</span>
           </div>
         ) : (
-          <div className="overflow-x-auto border border-dashed border-cordel-master-dark/20 rounded-[4px_6px_3px_5px]">
+          <div className="w-full max-w-full overflow-x-auto border border-dashed border-cordel-master-dark/20 rounded-[4px_6px_3px_5px]">
             <table className="min-w-full divide-y divide-cordel-master-dark/10 bg-cordel-bg/25">
               <thead>
                 <tr className="bg-cordel-master-dark/5 text-[9px] font-black uppercase tracking-wider text-cordel-master-dark">
-                  <th className="px-4 py-2.5 text-left">Nom complet</th>
-                  <th className="px-4 py-2.5 text-left">Email</th>
-                  <th className="px-4 py-2.5 text-left">Téléphone</th>
-                  <th className="px-4 py-2.5 text-left">Rôle</th>
-                  <th className="px-4 py-2.5 text-left">Instruments</th>
+                  <th className="px-2 py-2 md:px-4 md:py-2.5 text-left">Nom complet</th>
+                  <th className="px-2 py-2 md:px-4 md:py-2.5 text-left">Email</th>
+                  <th className="px-2 py-2 md:px-4 md:py-2.5 text-left">Téléphone</th>
+                  <th className="px-2 py-2 md:px-4 md:py-2.5 text-left">Rôle</th>
+                  <th className="px-2 py-2 md:px-4 md:py-2.5 text-left">Instruments</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-cordel-master-dark/5 text-xs font-semibold text-encre-noire">
                 {filteredMembers.map(member => (
                   <tr key={member.id} className="hover:bg-cordel-bg/40 transition-colors">
-                    <td className="px-4 py-2.5 font-bold truncate max-w-[150px]">
+                    <td className="px-2 py-2 md:px-4 md:py-2.5 font-bold truncate max-w-[150px]">
                       {member.prenom} {member.nom}
                     </td>
-                    <td className="px-4 py-2.5 truncate max-w-[200px]">
+                    <td className="px-2 py-2 md:px-4 md:py-2.5 truncate max-w-[200px]">
                       {member.email}
                     </td>
-                    <td className="px-4 py-2.5 whitespace-nowrap">
+                    <td className="px-2 py-2 md:px-4 md:py-2.5 whitespace-nowrap">
                       {member.telephone || "-"}
                     </td>
-                    <td className="px-4 py-2.5 whitespace-nowrap">
+                    <td className="px-2 py-2 md:px-4 md:py-2.5 whitespace-nowrap">
                       <span className="theme-stamp-badge theme-stamp-badge-wood text-[7.5px] border-dashed">
                         {tRole(member.role || 'membre', member.genre)}
                       </span>
                     </td>
-                    <td className="px-4 py-2.5 truncate max-w-[220px]">
+                    <td className="px-2 py-2 md:px-4 md:py-2.5 truncate max-w-[220px]">
                       {Array.isArray(member.instrumentsJoues) && member.instrumentsJoues.length > 0 
                         ? member.instrumentsJoues.join(', ')
                         : member.instrument || "-"}
