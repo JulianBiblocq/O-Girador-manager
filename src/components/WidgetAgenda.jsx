@@ -437,8 +437,15 @@ export default function WidgetAgenda({
             {t('common.all')}
           </button>
           {eventTypes.map(type => {
-            const labelRaw = t(`widgetAgenda.type${type.charAt(0).toUpperCase() + type.slice(1)}`);
-            const label = labelRaw ? labelRaw.split(' ')[0] : type;
+            const standardTypes = {
+              prestation: t('widgetAgenda.typePrestation'),
+              repetition: t('widgetAgenda.typeRepetition'),
+              stage: t('widgetAgenda.typeStage'),
+              atelier: t('widgetAgenda.typeAtelier'),
+              reunion: t('widgetAgenda.typeReunion')
+            };
+            const labelRaw = standardTypes[type];
+            const label = labelRaw ? labelRaw.split(' ')[0] : (type.charAt(0).toUpperCase() + type.slice(1));
             const isSelected = selectedTypeFilter === type;
             
             return (
