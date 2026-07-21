@@ -26,6 +26,90 @@ const getDeterministicColor = (docId) => {
   return colors[index];
 };
 
+// Realistic Wooden Clothespin (Pince à linge artisanale en bois)
+const WoodenClothespin = ({ className = "" }) => (
+  <svg 
+    width="20" 
+    height="38" 
+    viewBox="0 0 20 38" 
+    fill="none" 
+    className={`select-none drop-shadow-[1px_2px_2px_rgba(24,23,22,0.45)] ${className}`}
+  >
+    <defs>
+      <linearGradient id="woodLeft" x1="0%" y1="0%" x2="100%" y2="0%">
+        <stop offset="0%" stopColor="#D4A359" />
+        <stop offset="50%" stopColor="#B07D3B" />
+        <stop offset="100%" stopColor="#7E5220" />
+      </linearGradient>
+      <linearGradient id="woodRight" x1="0%" y1="0%" x2="100%" y2="0%">
+        <stop offset="0%" stopColor="#E6B873" />
+        <stop offset="50%" stopColor="#C48E44" />
+        <stop offset="100%" stopColor="#7E5220" />
+      </linearGradient>
+      <linearGradient id="springMetal" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stopColor="#DDDDDD" />
+        <stop offset="50%" stopColor="#888888" />
+        <stop offset="100%" stopColor="#444444" />
+      </linearGradient>
+    </defs>
+
+    {/* Upper Wooden Pegs */}
+    <path d="M 3.5 2 Q 4.5 1, 7.5 1 L 7.5 17 L 3.5 16 Z" fill="url(#woodLeft)" stroke="#261A10" strokeWidth="0.8" />
+    <path d="M 12.5 1 Q 15.5 1, 16.5 2 L 16.5 16 L 12.5 17 Z" fill="url(#woodRight)" stroke="#261A10" strokeWidth="0.8" />
+
+    {/* Central Steel Spring Coil */}
+    <rect x="6" y="14" width="8" height="5" rx="1.5" fill="url(#springMetal)" stroke="#1A1A1A" strokeWidth="0.7" />
+    <circle cx="10" cy="16.5" r="1.5" fill="#222222" />
+
+    {/* Lower Clamping Jaws Over Paper & Rope */}
+    <path d="M 3.5 19 L 7.5 19 L 7.5 36 L 5.5 37 Q 3.5 36, 3.5 33 Z" fill="url(#woodLeft)" stroke="#261A10" strokeWidth="0.8" />
+    <path d="M 12.5 19 L 16.5 19 L 16.5 33 Q 16.5 36, 14.5 37 L 12.5 36 Z" fill="url(#woodRight)" stroke="#261A10" strokeWidth="0.8" />
+
+    {/* Fine Woodgrain Textures */}
+    <line x1="5.5" y1="4" x2="5.5" y2="11" stroke="#5E3915" strokeWidth="0.5" opacity="0.5" />
+    <line x1="14.5" y1="4" x2="14.5" y2="12" stroke="#5E3915" strokeWidth="0.5" opacity="0.5" />
+    <line x1="5.5" y1="23" x2="5.5" y2="32" stroke="#5E3915" strokeWidth="0.5" opacity="0.5" />
+    <line x1="14.5" y1="23" x2="14.5" y2="31" stroke="#5E3915" strokeWidth="0.5" opacity="0.5" />
+  </svg>
+);
+
+// Curved SVG Twisted Hemp Rope
+const HangingRopeCurve = () => (
+  <div className="absolute top-7 left-0 right-0 h-16 w-full z-0 select-none pointer-events-none overflow-visible">
+    <svg className="w-full h-full overflow-visible" viewBox="0 0 1000 65" preserveAspectRatio="none">
+      <defs>
+        <linearGradient id="hempStrand" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stopColor="#69401F" />
+          <stop offset="25%" stopColor="#A47242" />
+          <stop offset="50%" stopColor="#C3935B" />
+          <stop offset="75%" stopColor="#A47242" />
+          <stop offset="100%" stopColor="#69401F" />
+        </linearGradient>
+      </defs>
+
+      {/* Left End Fastener Peg */}
+      <circle cx="12" cy="18" r="9" fill="#523218" stroke="#181716" strokeWidth="2" />
+      <circle cx="12" cy="18" r="4.5" fill="#B38350" />
+
+      {/* Right End Fastener Peg */}
+      <circle cx="988" cy="18" r="9" fill="#523218" stroke="#181716" strokeWidth="2" />
+      <circle cx="988" cy="18" r="4.5" fill="#B38350" />
+
+      {/* Rope Soft Drop Shadow */}
+      <path d="M 12 18 Q 500 62 988 18" fill="none" stroke="#181716" strokeWidth="5.5" strokeOpacity="0.25" />
+
+      {/* Main Hemp Rope Body */}
+      <path d="M 12 18 Q 500 62 988 18" fill="none" stroke="url(#hempStrand)" strokeWidth="4.5" strokeLinecap="round" />
+
+      {/* Twisted Fibers Pattern 1 */}
+      <path d="M 12 18 Q 500 62 988 18" fill="none" stroke="#3D220E" strokeWidth="1.8" strokeDasharray="6 6" strokeLinecap="round" />
+
+      {/* Twisted Fibers Pattern 2 (Golden Highlight) */}
+      <path d="M 12 17 Q 500 61 988 17" fill="none" stroke="#F1D59F" strokeWidth="1.2" strokeDasharray="3 9" strokeLinecap="round" opacity="0.8" />
+    </svg>
+  </div>
+);
+
 export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
   const { t } = useTranslation();
 
@@ -257,18 +341,18 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
               const currentYear = new Date().getFullYear();
               
               return (
-                <CordelCard key={category.id} variant="default" useExtremeBorder={true} className="pb-8 pt-4 relative overflow-hidden bg-cordel-bg-light w-full">
+                <CordelCard key={category.id} variant="default" useExtremeBorder={true} className="pt-4 pb-8 relative overflow-visible bg-[#FEF9E7] dark:bg-[#1A1712] border-2 border-cordel-master-dark/30 rounded-xl shadow-[4px_6px_16px_rgba(24,23,22,0.12)] w-full my-5 transition-all">
                   {/* Category Title Stamp */}
-                  <div className="text-left mb-2 pl-2 flex justify-between items-center pr-3 select-none">
+                  <div className="text-left mb-1 pl-3 flex justify-between items-center pr-3 select-none relative z-20">
                     <div className="flex items-center gap-1.5">
-                      <span className={`theme-stamp-badge theme-stamp-badge-${variant === 'ocre' || variant === 'vert' ? 'wood' : 'dark'} text-[8px] tracking-wider`}>
+                      <span className={`theme-stamp-badge theme-stamp-badge-${variant === 'ocre' || variant === 'vert' ? 'wood' : 'dark'} text-[8.5px] tracking-wider font-extrabold`}>
                         {getCategoryLabel(category.nom)}
                       </span>
                       {isAuthorized && (
                         <button
                           type="button"
                           onClick={() => setEditingCategory(category)}
-                          className="p-1 rounded bg-[var(--cordel-bg)] text-[var(--cordel-text)] border border-[var(--cordel-border)] hover:bg-[var(--cordel-master-bg)] cursor-pointer select-none flex items-center justify-center shadow-sm opacity-60 hover:opacity-100 transition-opacity"
+                          className="p-1 rounded bg-[var(--cordel-bg)] text-[var(--cordel-text)] border border-[var(--cordel-border)] hover:bg-[var(--cordel-master-bg)] cursor-pointer select-none flex items-center justify-center shadow-sm opacity-65 hover:opacity-100 transition-opacity"
                           title="Modifier la catégorie"
                         >
                           <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -290,27 +374,21 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
                     )}
                   </div>
 
-                  {/* SVG Curved Clothesline Rope */}
-                  <div className="absolute top-10 left-0 right-0 h-10 w-full z-0 select-none pointer-events-none">
-                    <svg className="w-full h-full" viewBox="0 0 350 30" preserveAspectRatio="none">
-                      <path 
-                        d="M 10 10 Q 175 30 340 10" 
-                        fill="none" 
-                        stroke="var(--cordel-border)" 
-                        strokeWidth="2" 
-                        strokeDasharray="4 3" 
-                      />
-                    </svg>
-                  </div>
+                  {/* Realistic Curved SVG Hemp Rope */}
+                  <HangingRopeCurve />
 
-                  {/* Hanging Booklets */}
-                  <div className="flex flex-nowrap overflow-x-auto justify-start items-start gap-3 sm:gap-4 mt-8 relative z-10 w-full no-scrollbar pb-3 px-4">
+                  {/* Hanging Booklets with Natural Sag Offset */}
+                  <div className="flex flex-nowrap overflow-x-auto justify-start items-start gap-4 sm:gap-6 pt-10 pb-8 relative z-10 w-full no-scrollbar px-6 overflow-y-visible min-h-[220px]">
                     {docList.length === 0 ? (
-                      <p className="text-[9px] italic opacity-60 self-center py-2">{translate('documents.noDocumentsCategory', "Aucun document dans cette rubrique.")}</p>
+                      <p className="text-[10px] italic opacity-60 self-center py-6 text-cordel-master-dark">{translate('documents.noDocumentsCategory', "Aucun document dans cette rubrique.")}</p>
                     ) : (
                       docList.map((docItem, index) => {
-                        // Alternate rotation slightly for that organic handcrafted feel
-                        const rotationClass = index % 2 === 0 ? 'rotate-[-3deg]' : 'rotate-[2.5deg]';
+                        const totalDocs = Math.max(docList.length, 1);
+                        const relPos = docList.length <= 1 ? 0.5 : (index / (totalDocs - 1));
+                        // Parabolic vertical dip according to catenary sag (up to 22px in middle)
+                        const dipY = Math.round(Math.sin(relPos * Math.PI) * 22);
+                        const rotationDeg = index % 2 === 0 ? (-3.5 + (index % 3)) : (2.5 - (index % 2));
+
                         const isArchived = category.activerOpaciteArchive && docItem.annee && docItem.annee < currentYear;
                         const opacityClass = isArchived ? 'opacity-60 hover:opacity-100 transition-opacity duration-200' : 'opacity-100';
 
@@ -318,10 +396,7 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
                         
                         let colorClass = 'default';
                         if (category.id === 'Administratif' || category.nom === 'Administratif') {
-                          const isOrdreDuJour = 
-                            (docItem.sousCategorie && (docItem.sousCategorie.toLowerCase().includes('ordre') || docItem.sousCategorie.toLowerCase().includes('jour'))) ||
-                            (docItem.titre && (docItem.titre.toLowerCase().includes('ordre') || docItem.titre.toLowerCase().includes('jour')));
-                          colorClass = isOrdreDuJour ? 'bleu-ardoise' : 'bleu';
+                          colorClass = 'bleu-ardoise'; // Exclusive slate grey for Administratif
                         } else {
                           colorClass = getDeterministicColor(docItem.id);
                         }
@@ -347,23 +422,21 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
                             }}
                             className={`
                               relative flex flex-col items-center group cursor-pointer
-                              transition-all duration-300 origin-top shrink-0
-                              ${rotationClass} hover:rotate-0 hover:scale-105
+                              transition-all duration-300 origin-top shrink-0 flex-none
+                              hover:z-30 hover:scale-105 hover:rotate-0
                               ${opacityClass}
                             `}
+                            style={{ transform: `translateY(${dipY}px) rotate(${rotationDeg}deg)` }}
                             title={`${translate('common.open', "Ouvrir")} ${docItem.titre} ${isArchived ? '(' + translate('documents.archiveTag', "Archive") + ')' : ''}`}
                           >
-                            {/* Clothespin Simulator (Pince à linge) */}
-                            <div className="absolute -top-3 w-2.5 h-6 bg-[#a67a53] border border-encre-noire rounded-sm shadow-sm z-30 flex flex-col justify-between py-0.5 items-center select-none">
-                              <div className="w-1.5 h-0.5 bg-neutral-800 opacity-60"></div>
-                              <div className="w-1.5 h-0.5 bg-neutral-800 opacity-40"></div>
-                            </div>
+                            {/* Wooden Clothespin (Pince à linge artisanale) */}
+                            <WoodenClothespin className="absolute -top-7 z-30 pointer-events-none" />
 
                             {/* Booklet Cover */}
                             <div 
                               className={`
-                                relative w-28 h-36 border-2 border-encre-noire p-3 flex flex-col justify-between text-left
-                                bg-cordel-bg-light shadow-[3px_3px_0px_0px_#181716]
+                                relative w-32 h-44 border-2 border-encre-noire p-3 flex flex-col justify-between text-left
+                                bg-cordel-bg-light shadow-[4px_4px_0px_0px_#181716]
                                 rounded-[4px_10px_3px_8px]
                                 border-l-4 border-l-double
                                 theme-bg-${colorClass}
