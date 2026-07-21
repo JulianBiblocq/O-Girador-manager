@@ -27,85 +27,90 @@ const getDeterministicColor = (docId) => {
 };
 
 // Realistic Wooden Clothespin (Pince à linge artisanale en bois)
+// Realistic 3D Wooden Clothespin (Pince à linge artisanale en bois)
 const WoodenClothespin = ({ className = "" }) => (
   <svg 
-    width="20" 
-    height="38" 
-    viewBox="0 0 20 38" 
+    width="22" 
+    height="42" 
+    viewBox="0 0 22 42" 
     fill="none" 
-    className={`select-none drop-shadow-[1px_2px_2px_rgba(24,23,22,0.45)] ${className}`}
+    className={`select-none drop-shadow-[1px_2px_3px_rgba(24,23,22,0.5)] ${className}`}
   >
     <defs>
       <linearGradient id="woodLeft" x1="0%" y1="0%" x2="100%" y2="0%">
-        <stop offset="0%" stopColor="#D4A359" />
-        <stop offset="50%" stopColor="#B07D3B" />
+        <stop offset="0%" stopColor="#E2B274" />
+        <stop offset="40%" stopColor="#C48E44" />
         <stop offset="100%" stopColor="#7E5220" />
       </linearGradient>
       <linearGradient id="woodRight" x1="0%" y1="0%" x2="100%" y2="0%">
-        <stop offset="0%" stopColor="#E6B873" />
-        <stop offset="50%" stopColor="#C48E44" />
-        <stop offset="100%" stopColor="#7E5220" />
+        <stop offset="0%" stopColor="#F1C78B" />
+        <stop offset="40%" stopColor="#D4A359" />
+        <stop offset="100%" stopColor="#825220" />
       </linearGradient>
       <linearGradient id="springMetal" x1="0%" y1="0%" x2="0%" y2="100%">
-        <stop offset="0%" stopColor="#DDDDDD" />
-        <stop offset="50%" stopColor="#888888" />
+        <stop offset="0%" stopColor="#EEEEEE" />
+        <stop offset="50%" stopColor="#999999" />
         <stop offset="100%" stopColor="#444444" />
       </linearGradient>
     </defs>
 
-    {/* Upper Wooden Pegs */}
-    <path d="M 3.5 2 Q 4.5 1, 7.5 1 L 7.5 17 L 3.5 16 Z" fill="url(#woodLeft)" stroke="#261A10" strokeWidth="0.8" />
-    <path d="M 12.5 1 Q 15.5 1, 16.5 2 L 16.5 16 L 12.5 17 Z" fill="url(#woodRight)" stroke="#261A10" strokeWidth="0.8" />
+    {/* Top Wooden Handles (Above rope) */}
+    <path d="M 4 2 Q 5 1, 8.5 1 L 8.5 18 L 4 17 Z" fill="url(#woodLeft)" stroke="#261A10" strokeWidth="0.9" />
+    <path d="M 13.5 1 Q 17 1, 18 2 L 18 17 L 13.5 18 Z" fill="url(#woodRight)" stroke="#261A10" strokeWidth="0.9" />
 
     {/* Central Steel Spring Coil */}
-    <rect x="6" y="14" width="8" height="5" rx="1.5" fill="url(#springMetal)" stroke="#1A1A1A" strokeWidth="0.7" />
-    <circle cx="10" cy="16.5" r="1.5" fill="#222222" />
+    <rect x="6.5" y="15" width="9" height="5.5" rx="1.8" fill="url(#springMetal)" stroke="#1A1A1A" strokeWidth="0.8" />
+    <circle cx="11" cy="17.7" r="1.6" fill="#1A1A1A" />
 
-    {/* Lower Clamping Jaws Over Paper & Rope */}
-    <path d="M 3.5 19 L 7.5 19 L 7.5 36 L 5.5 37 Q 3.5 36, 3.5 33 Z" fill="url(#woodLeft)" stroke="#261A10" strokeWidth="0.8" />
-    <path d="M 12.5 19 L 16.5 19 L 16.5 33 Q 16.5 36, 14.5 37 L 12.5 36 Z" fill="url(#woodRight)" stroke="#261A10" strokeWidth="0.8" />
+    {/* Lower Wooden Jaws (Clamping Paper Cover & Rope Notch) */}
+    <path d="M 4 21 L 8.5 21 L 8.5 40 L 6.5 41 Q 4 40, 4 36 Z" fill="url(#woodLeft)" stroke="#261A10" strokeWidth="0.9" />
+    <path d="M 13.5 21 L 18 21 L 18 36 Q 18 40, 15.5 41 L 13.5 40 Z" fill="url(#woodRight)" stroke="#261A10" strokeWidth="0.9" />
 
-    {/* Fine Woodgrain Textures */}
-    <line x1="5.5" y1="4" x2="5.5" y2="11" stroke="#5E3915" strokeWidth="0.5" opacity="0.5" />
-    <line x1="14.5" y1="4" x2="14.5" y2="12" stroke="#5E3915" strokeWidth="0.5" opacity="0.5" />
-    <line x1="5.5" y1="23" x2="5.5" y2="32" stroke="#5E3915" strokeWidth="0.5" opacity="0.5" />
-    <line x1="14.5" y1="23" x2="14.5" y2="31" stroke="#5E3915" strokeWidth="0.5" opacity="0.5" />
+    {/* Woodgrain accents */}
+    <line x1="6" y1="4" x2="6" y2="12" stroke="#5E3915" strokeWidth="0.6" opacity="0.45" />
+    <line x1="16" y1="4" x2="16" y2="13" stroke="#5E3915" strokeWidth="0.6" opacity="0.45" />
+    <line x1="6" y1="25" x2="6" y2="36" stroke="#5E3915" strokeWidth="0.6" opacity="0.45" />
+    <line x1="16" y1="25" x2="16" y2="35" stroke="#5E3915" strokeWidth="0.6" opacity="0.45" />
   </svg>
 );
 
-// Curved SVG Twisted Hemp Rope
+// Curved SVG Twisted Hemp Rope (Solid 3D textured rope)
 const HangingRopeCurve = () => (
-  <div className="absolute top-9 left-0 right-0 h-16 w-full z-0 select-none pointer-events-none overflow-visible">
-    <svg className="w-full h-full overflow-visible" viewBox="0 0 1000 65" preserveAspectRatio="none">
+  <div className="absolute top-6 left-0 right-0 h-16 w-full z-0 select-none pointer-events-none overflow-visible">
+    <svg className="w-full h-full overflow-visible" viewBox="0 0 1000 70" preserveAspectRatio="none">
       <defs>
-        <linearGradient id="hempStrand" x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" stopColor="#69401F" />
-          <stop offset="25%" stopColor="#A47242" />
-          <stop offset="50%" stopColor="#C3935B" />
-          <stop offset="75%" stopColor="#A47242" />
-          <stop offset="100%" stopColor="#69401F" />
+        <linearGradient id="hempMain" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stopColor="#5A3719" />
+          <stop offset="20%" stopColor="#966536" />
+          <stop offset="50%" stopColor="#C49258" />
+          <stop offset="80%" stopColor="#966536" />
+          <stop offset="100%" stopColor="#5A3719" />
+        </linearGradient>
+        <linearGradient id="hempHighlight" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stopColor="#A87948" />
+          <stop offset="50%" stopColor="#F5D296" />
+          <stop offset="100%" stopColor="#A87948" />
         </linearGradient>
       </defs>
 
-      {/* Left End Fastener Peg */}
-      <circle cx="12" cy="12" r="9" fill="#523218" stroke="#181716" strokeWidth="2" />
-      <circle cx="12" cy="12" r="4.5" fill="#B38350" />
+      {/* Left Wall Hook / Knot */}
+      <rect x="4" y="6" width="16" height="14" rx="4" fill="#3D220E" stroke="#181716" strokeWidth="2" />
+      <circle cx="12" cy="13" r="4" fill="#C49258" />
 
-      {/* Right End Fastener Peg */}
-      <circle cx="988" cy="12" r="9" fill="#523218" stroke="#181716" strokeWidth="2" />
-      <circle cx="988" cy="12" r="4.5" fill="#B38350" />
+      {/* Right Wall Hook / Knot */}
+      <rect x="980" y="6" width="16" height="14" rx="4" fill="#3D220E" stroke="#181716" strokeWidth="2" />
+      <circle cx="988" cy="13" r="4" fill="#C49258" />
 
-      {/* Rope Soft Drop Shadow */}
-      <path d="M 12 12 Q 500 50 988 12" fill="none" stroke="#181716" strokeWidth="5.5" strokeOpacity="0.25" />
+      {/* Deep Drop Shadow under Rope */}
+      <path d="M 12 13 Q 500 52 988 13" fill="none" stroke="#181716" strokeWidth="8" strokeOpacity="0.3" strokeLinecap="round" />
 
-      {/* Main Hemp Rope Body */}
-      <path d="M 12 12 Q 500 50 988 12" fill="none" stroke="url(#hempStrand)" strokeWidth="4.5" strokeLinecap="round" />
+      {/* Base Thick Rope Body */}
+      <path d="M 12 13 Q 500 52 988 13" fill="none" stroke="#3D220E" strokeWidth="7.5" strokeLinecap="round" />
+      <path d="M 12 13 Q 500 52 988 13" fill="none" stroke="url(#hempMain)" strokeWidth="6" strokeLinecap="round" />
 
-      {/* Twisted Fibers Pattern 1 */}
-      <path d="M 12 12 Q 500 50 988 12" fill="none" stroke="#3D220E" strokeWidth="1.8" strokeDasharray="6 6" strokeLinecap="round" />
-
-      {/* Twisted Fibers Pattern 2 (Golden Highlight) */}
-      <path d="M 12 11 Q 500 49 988 11" fill="none" stroke="#F1D59F" strokeWidth="1.2" strokeDasharray="3 9" strokeLinecap="round" opacity="0.8" />
+      {/* Tight Woven Twisted Strands (No large gaps) */}
+      <path d="M 12 13 Q 500 52 988 13" fill="none" stroke="#2B1607" strokeWidth="2.2" strokeDasharray="10 4" strokeLinecap="round" />
+      <path d="M 12 12 Q 500 51 988 12" fill="none" stroke="url(#hempHighlight)" strokeWidth="1.6" strokeDasharray="6 8" strokeLinecap="round" opacity="0.9" />
     </svg>
   </div>
 );
@@ -378,15 +383,15 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
                   <HangingRopeCurve />
 
                   {/* Hanging Booklets with Natural Sag Offset */}
-                  <div className="flex flex-nowrap overflow-x-auto justify-start items-start gap-4 sm:gap-6 pt-11 pb-8 relative z-10 w-full no-scrollbar px-6 overflow-y-visible min-h-[220px]">
+                  <div className="flex flex-nowrap overflow-x-auto justify-start items-start gap-4 sm:gap-6 pt-9 pb-8 relative z-10 w-full no-scrollbar px-6 overflow-y-visible min-h-[220px]">
                     {docList.length === 0 ? (
                       <p className="text-[10px] italic opacity-60 self-center py-6 text-cordel-master-dark">{translate('documents.noDocumentsCategory', "Aucun document dans cette rubrique.")}</p>
                     ) : (
                       docList.map((docItem, index) => {
                         const totalDocs = Math.max(docList.length, 1);
                         const relPos = docList.length <= 1 ? 0.5 : (index / (totalDocs - 1));
-                        // Parabolic vertical dip according to catenary sag (up to 35px in middle)
-                        const dipY = Math.round(Math.sin(relPos * Math.PI) * 35);
+                        // Parabolic vertical dip according to catenary sag (up to 39px in middle)
+                        const dipY = Math.round(Math.sin(relPos * Math.PI) * 39);
                         const rotationDeg = index % 2 === 0 ? (-3.5 + (index % 3)) : (2.5 - (index % 2));
 
                         const isArchived = category.activerOpaciteArchive && docItem.annee && docItem.annee < currentYear;
@@ -429,8 +434,8 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
                             style={{ transform: `translateY(${dipY}px) rotate(${rotationDeg}deg)` }}
                             title={`${translate('common.open', "Ouvrir")} ${docItem.titre} ${isArchived ? '(' + translate('documents.archiveTag', "Archive") + ')' : ''}`}
                           >
-                            {/* Wooden Clothespin (Pince à linge artisanale accrochée fermement sur la corde) */}
-                            <WoodenClothespin className="absolute -top-7 z-30 pointer-events-none" />
+                            {/* Wooden Clothespin (Pince à linge 3D pinçant fermement la corde et le papier) */}
+                            <WoodenClothespin className="absolute -top-5 z-30 pointer-events-none" />
 
                             {/* Booklet Cover */}
                             <div 
