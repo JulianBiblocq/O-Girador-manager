@@ -372,7 +372,8 @@ export default function Dashboard({ user, profileData, onNavigateToTrombi, onNav
           // Conditional hiding for non-administrators
           if (widgetId === 'tresorerie') {
             const status = profileData?.paymentStatus || 'unpaid';
-            if (status === 'paid' || status === 'exempted') {
+            const isReturnFromPayment = typeof window !== 'undefined' && window.location.search.includes('payment=success');
+            if ((status === 'paid' || status === 'exempted') && !isReturnFromPayment) {
               return null;
             }
           }

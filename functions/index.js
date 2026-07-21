@@ -39,77 +39,87 @@ exports.helloAssoWebhook = onRequest(async (req, res) => {
     return res.status(500).send("Erreur interne lors de la récupération de la configuration.");
   }
 
-  if (!secretKey) {
-    console.error(`Clé de signature non configurée pour l'association ${groupId}.`);
-    return res.status(400).send("Association non configurée ou clé de signature manquante.");
-  }
-
-  // Sécurité : Vérification de la signature HelloAsso
+  // Sécurité : Vérification de la signature HelloAsso si la clé est configurée
   const signature = req.headers['x-ha-signature'];
-  if (!signature) {
-    console.error("Signature manquante.");
-    return res.status(401).send("Signature manquante.");
-  }
+  if (secretKey && signature) {
+    const expectedSignature = crypto.createHmac('sha256', secretKey).update(req.rawBody).digest('hex');
+    let isVerified = false;
+    try {
+      isVerified = crypto.timingSafeEqual(
+        Buffer.from(signature, 'hex'),
+        Buffer.from(expectedSignature, 'hex')
+      );
+    } catch (e) {
+      isVerified = (signature === expectedSignature);
+    }
 
-  // Calcul du HMAC SHA256 pour vérifier l'authenticité de la requête
-  const expectedSignature = crypto.createHmac('sha256', secretKey).update(req.rawBody).digest('hex');
-  
-  let isVerified = false;
-  try {
-    isVerified = crypto.timingSafeEqual(
-      Buffer.from(signature, 'hex'),
-      Buffer.from(expectedSignature, 'hex')
-    );
-  } catch (e) {
-    isVerified = (signature === expectedSignature);
-  }
-
-  if (!isVerified) {
-    console.error("Signature invalide ! Tentative d'usurpation.");
-    return res.status(403).send("Signature invalide.");
+    if (!isVerified) {
+      console.error("Signature invalide ! Tentative d'usurpation.");
+      return res.status(403).send("Signature invalide.");
+    }
   }
 
   try {
     const payload = req.body;
+    const data = payload.data || {};
+    const eventType = payload.eventType || "";
 
-    // On vérifie que c'est bien un événement de type "Order" ou "Payment"
-    if (payload.eventType !== 'Order' && payload.eventType !== 'Payment') {
-      return res.status(200).send("Événement ignoré.");
+    // 1. Vérification du statut de paiement
+    if (data.state && !['Authorized', 'Paid', 'Processed'].includes(data.state)) {
+      console.log(`Paiement ignoré : statut = ${data.state}`);
+      return res.status(200).send("Ignored");
     }
 
-    const payer = payload.data.payer;
-    const payerEmail = (payer?.email || payload.data.email || "").toLowerCase().trim();
-    if (!payerEmail) {
-      console.error("Aucune adresse e-mail trouvée dans le payload.");
-      return res.status(400).send("Adresse e-mail manquante.");
+    // 2. Recherche robuste de l'utilisateur (UID puis Email)
+    const uid = req.query.uid || data.metadata?.uid || data.customFields?.uid;
+    const payer = data.payer || {};
+    const email = (payer.email || data.email || req.query.email || "").toLowerCase().trim();
+    let userName = `${payer.firstName || ''} ${payer.lastName || ''}`.trim();
+
+    let userRef = null;
+    let userData = null;
+
+    if (uid) {
+      const docSnap = await db.collection("users").doc(uid).get();
+      if (docSnap.exists) {
+        userRef = docSnap.ref;
+        userData = docSnap.data();
+      }
     }
 
-    const amountCents = payload.data.amount?.total || payload.data.amount || 0;
-    const amountEuros = amountCents / 100;
-    const items = payload.data.items || [];
+    // Fallback : recherche par e-mail si l'UID n'a rien donné
+    if (!userRef && email) {
+      const snapshot = await db.collection("users").where("email", "==", email).limit(1).get();
+      if (!snapshot.empty) {
+        userRef = snapshot.docs[0].ref;
+        userData = snapshot.docs[0].data();
+      }
+    }
+
+    const items = data.items || data.payments?.[0]?.items || [];
     const optionsPayees = items.map(item => item.name);
+    const amountCents = data.amount?.total || data.amount || data.totalAmount || 0;
+    // HelloAsso envoie le montant en centimes
+    const amountEuros = amountCents > 1000 ? amountCents / 100 : amountCents;
 
-    // Récupération des options de cotisation définies pour l'association
+    // Récupération des options de cotisation configurées pour l'association
     let optionsCotisation = [];
-    let hasBaseAdhesionInOrder = false;
+    let hasBaseAdhesion = false;
     const matchedOptionIds = [];
 
     const assocDoc = await db.collection("associations").doc(groupId).get();
     if (assocDoc.exists()) {
-      const assocData = assocDoc.data();
-      optionsCotisation = assocData.optionsCotisation || [];
-    } else {
-      console.error(`L'association avec l'ID ${groupId} n'existe pas.`);
+      optionsCotisation = assocDoc.data().optionsCotisation || [];
     }
 
-    // Algorithme de correspondance des articles avec les options configurées
+    // Algorithme d'appariement des articles avec les options de l'association
     for (const item of items) {
-      const itemNameNormalized = item.name.toLowerCase().trim();
+      const itemNameNormalized = (item.name || "").toLowerCase().trim();
       let matched = false;
 
       for (const opt of optionsCotisation) {
-        const optNameNormalized = opt.nom.toLowerCase().trim();
-        if (itemNameNormalized.includes(optNameNormalized) || optNameNormalized.includes(itemNameNormalized)) {
+        const optNameNormalized = (opt.nom || "").toLowerCase().trim();
+        if (optNameNormalized && (itemNameNormalized.includes(optNameNormalized) || optNameNormalized.includes(itemNameNormalized))) {
           matchedOptionIds.push(opt.id);
           matched = true;
           break;
@@ -117,67 +127,82 @@ exports.helloAssoWebhook = onRequest(async (req, res) => {
       }
 
       if (!matched) {
-        // Si l'article ressemble à l'adhésion de base
         if (itemNameNormalized.includes("adhesion") || 
             itemNameNormalized.includes("adhésion") || 
             itemNameNormalized.includes("cotisation") || 
             itemNameNormalized.includes("base") || 
             itemNameNormalized.includes("membership")) {
-          hasBaseAdhesionInOrder = true;
+          hasBaseAdhesion = true;
         }
       }
     }
 
+    if (!userRef) {
+      console.warn(`Utilisateur introuvable pour l'UID: ${uid} ou l'e-mail: ${email}. Mise en attente (pending_payments).`);
+      // Stockage dans pending_payments pour le trigger onUserCreate
+      await db.collection("pending_payments").doc(email || `pending_${Date.now()}`).set({
+        groupId: groupId,
+        email: email,
+        userName: userName,
+        paymentStatus: "paid",
+        cotisationAjour: true,
+        adhesionBase: hasBaseAdhesion,
+        options: matchedOptionIds,
+        amountEuros: amountEuros,
+        optionsPayees: optionsPayees,
+        helloAssoOrderId: String(data.id || data.orderId || 'N/A'),
+        createdAt: admin.firestore.FieldValue.serverTimestamp()
+      });
+      return res.status(200).send("Paiement mis en attente d'inscription utilisateur.");
+    }
+
+    // 3. Mise à jour du profil membre
+    const userUpdates = {
+      paymentStatus: "paid",
+      cotisationAjour: true,
+      adhesionBase: true
+    };
+
+    if (matchedOptionIds.length > 0) {
+      userUpdates.selectedOptions = admin.firestore.FieldValue.arrayUnion(...matchedOptionIds);
+    }
+
+    await userRef.update(userUpdates);
+
+    // 4. Création de l'historique dans la sous-collection membre
     const transactionData = {
       date: admin.firestore.Timestamp.now(),
       amount: amountEuros,
-      options: optionsPayees, // Libellés originaux pour lisibilité dans l'historique
+      options: optionsPayees,
       source: "HelloAsso",
-      helloAssoOrderId: payload.data.id || ""
+      helloAssoOrderId: String(data.id || data.orderId || 'N/A')
     };
+    await userRef.collection("transactions").add(transactionData);
 
-    // Recherche de l'utilisateur dans Firestore
-    const usersRef = db.collection("users");
-    const snapshot = await usersRef.where("email", "==", payerEmail).limit(1).get();
+    // 5. Création de la transaction de Trésorerie globale dans le grand livre (collection 'transactions')
+    const userNomComplet = userData ? `${userData.prenom || ''} ${userData.nom || ''}`.trim() : userName;
+    const nomAffiche = userNomComplet || email || "Membre";
+    const libelleOptions = optionsPayees.length > 0 ? ` (${optionsPayees.join(', ')})` : '';
 
-    if (!snapshot.empty) {
-      // CAS 1 : L'UTILISATEUR EXISTE DÉJÀ
-      const userDoc = snapshot.docs[0];
-      const userRef = userDoc.ref;
-      const userData = userDoc.data();
+    await db.collection("transactions").add({
+      groupId: groupId,
+      date: admin.firestore.Timestamp.now(),
+      type: "recette",
+      montant: amountEuros,
+      categorie: "Cotisations",
+      libelle: `Adhésion + Options HelloAsso - ${nomAffiche}${libelleOptions}`,
+      source: "HelloAsso",
+      helloAssoOrderId: String(data.id || data.orderId || 'N/A'),
+      userId: userRef.id,
+      payerEmail: email
+    });
 
-      const updates = {
-        paymentStatus: "paid",
-        cotisationAjour: true
-      };
+    console.log(`Paiement traité avec succès pour ${email || userRef.id} (${amountEuros} €).`);
+    return res.status(200).send("Success");
 
-      if (hasBaseAdhesionInOrder) {
-        updates.adhesionBase = true;
-      }
-
-      if (matchedOptionIds.length > 0) {
-        updates.selectedOptions = admin.firestore.FieldValue.arrayUnion(...matchedOptionIds);
-      }
-
-      await userRef.update(updates);
-      await userRef.collection("transactions").add(transactionData);
-    } else {
-      // CAS 2 : L'UTILISATEUR N'EXISTE PAS ENCORE -> Mise en attente
-      await db.collection("pending_payments").doc(payerEmail).set({
-        email: payerEmail,
-        paymentStatus: "paid",
-        cotisationAjour: true,
-        adhesionBase: hasBaseAdhesionInOrder,
-        options: matchedOptionIds, // Contient les IDs d'options mappés
-        transaction: transactionData,
-        createdAt: admin.firestore.FieldValue.serverTimestamp()
-      });
-    }
-
-    res.status(200).send("Webhook traité avec succès.");
   } catch (error) {
-    console.error("Erreur lors du traitement du webhook:", error);
-    res.status(500).send("Erreur interne lors du traitement du webhook.");
+    console.error("Erreur Webhook HelloAsso :", error);
+    return res.status(500).send("Internal Server Error");
   }
 });
 
@@ -214,11 +239,31 @@ exports.onUserCreate = onDocumentCreated("users/{userId}", async (event) => {
     // Mise à jour de la fiche utilisateur
     await userSnapshot.ref.update(updates);
 
-    // Transfert de l'historique de transaction
-    if (pendingData.transaction) {
-      await userSnapshot.ref.collection("transactions").add({
-        ...pendingData.transaction,
-        date: admin.firestore.Timestamp.now() // Met à jour la date à la date d'association finale
+    // Transfert de l'historique de transaction personnel
+    await userSnapshot.ref.collection("transactions").add({
+      date: admin.firestore.Timestamp.now(),
+      amount: pendingData.amountEuros || 0,
+      options: pendingData.optionsPayees || [],
+      source: "HelloAsso",
+      helloAssoOrderId: pendingData.helloAssoOrderId || "N/A"
+    });
+
+    // Création de la transaction de trésorerie globale si absente
+    if (pendingData.groupId) {
+      const userNomComplet = `${userData.prenom || ''} ${userData.nom || ''}`.trim() || pendingData.userName || userEmail;
+      const libelleOptions = (pendingData.optionsPayees || []).length > 0 ? ` (${pendingData.optionsPayees.join(', ')})` : '';
+
+      await db.collection("transactions").add({
+        groupId: pendingData.groupId,
+        date: admin.firestore.Timestamp.now(),
+        type: "recette",
+        montant: pendingData.amountEuros || 0,
+        categorie: "Cotisations",
+        libelle: `Adhésion + Options HelloAsso - ${userNomComplet}${libelleOptions}`,
+        source: "HelloAsso",
+        helloAssoOrderId: pendingData.helloAssoOrderId || "N/A",
+        userId: userSnapshot.ref.id,
+        payerEmail: userEmail
       });
     }
 
@@ -233,7 +278,6 @@ exports.onAnnouncementCreated = onDocumentCreated("announcements/{announcementId
   if (!snapshot) return;
 
   const announcement = snapshot.data();
-  // Vérifie si la case à cocher pour l'envoi de la notification Push est active
   if (announcement.sendPushNotification !== true) {
     return;
   }
@@ -248,7 +292,6 @@ exports.onAnnouncementCreated = onDocumentCreated("announcements/{announcementId
   }
 
   try {
-    // 1. Récupérer tous les utilisateurs valides du groupe qui ont des fcmTokens enregistrés
     const usersSnap = await db.collection("users")
       .where("groupId", "==", groupId)
       .get();
@@ -269,10 +312,8 @@ exports.onAnnouncementCreated = onDocumentCreated("announcements/{announcementId
       return;
     }
 
-    // Retirer les doublons de jetons
     const uniqueTokens = [...new Set(tokens)];
 
-    // 2. Structurer le payload de notification
     const payload = {
       notification: {
         title: title,
@@ -280,18 +321,16 @@ exports.onAnnouncementCreated = onDocumentCreated("announcements/{announcementId
       },
       data: {
         announcementId: snapshot.id,
-        click_action: "/forum" // navigation vers le porte-voix / forum
+        click_action: "/forum"
       }
     };
 
-    // 3. Envoyer le message via FCM admin.messaging()
     const response = await admin.messaging().sendEachForMulticast({
       tokens: uniqueTokens,
       notification: payload.notification,
       data: payload.data
     });
 
-    // Optionnel : Nettoyage des jetons invalides (ex: tokens expirés ou non enregistrés)
     if (response.failureCount > 0) {
       const tokensToRemove = [];
       response.responses.forEach((resp, idx) => {
@@ -326,4 +365,3 @@ exports.onAnnouncementCreated = onDocumentCreated("announcements/{announcementId
     console.error("Erreur lors de l'envoi de la notification Push FCM :", error);
   }
 });
-

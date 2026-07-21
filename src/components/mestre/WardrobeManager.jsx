@@ -259,7 +259,7 @@ export default function WardrobeManager({ groupId, role, isSystemAdmin, hasAcces
 
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
                 <div className="flex flex-col gap-1">
-                  <label className="text-[9px] uppercase font-bold text-cordel-master-dark">Type de pièce</label>
+                  <label className="text-[9px] uppercase font-bold text-cordel-master-dark">{t('wardrobe.pieceType')}</label>
                   <input
                     type="text"
                     required
@@ -354,12 +354,12 @@ export default function WardrobeManager({ groupId, role, isSystemAdmin, hasAcces
               <table className="w-full text-left text-xs font-semibold border-collapse">
                 <thead>
                   <tr className="bg-cordel-bg border-b border-encre-noire text-[9px] uppercase font-black text-cordel-master-dark tracking-wider select-none">
-                    <th className="py-2 px-2 md:py-2.5 md:px-4">Type</th>
-                    <th className="py-2 px-2 md:py-2.5 md:px-4 text-center">Taille</th>
-                    <th className="py-2 px-2 md:py-2.5 md:px-4 text-center">État</th>
-                    <th className="py-2 px-2 md:py-2.5 md:px-4">Statut</th>
+                    <th className="py-2 px-2 md:py-2.5 md:px-4">{t('common.type')}</th>
+                    <th className="py-2 px-2 md:py-2.5 md:px-4 text-center">{t('onboarding.tshirtSize')}</th>
+                    <th className="py-2 px-2 md:py-2.5 md:px-4 text-center">{t('common.status')}</th>
+                    <th className="py-2 px-2 md:py-2.5 md:px-4">{t('common.status')}</th>
                     <th className="py-2 px-2 md:py-2.5 md:px-4">Emprunteur</th>
-                    <th className="py-2 px-2 md:py-2.5 md:px-4 text-right">Actions</th>
+                    <th className="py-2 px-2 md:py-2.5 md:px-4 text-right">{t('common.actions')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-encre-noire/10">

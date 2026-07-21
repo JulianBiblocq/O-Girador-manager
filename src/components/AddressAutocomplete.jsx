@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { loadGoogleMaps } from '../utils/googleMaps';
+import { useTranslation } from './LanguageContext';
 
 /**
  * AddressAutocomplete component wraps Google Maps Places AutocompleteElement
@@ -17,6 +18,7 @@ export default function AddressAutocomplete({
   name = 'address', 
   required = false 
 }) {
+  const { t } = useTranslation();
   const containerRef = useRef(null);
   const autocompleteRef = useRef(null);
   const cleanupInputRef = useRef(null);
@@ -108,7 +110,7 @@ export default function AddressAutocomplete({
                 const val = e.target.value;
                 if (required || val.trim() !== '') {
                   setIsValidSelected(false);
-                  input.setCustomValidity("Veuillez sélectionner une adresse suggérée par Google dans la liste.");
+                  input.setCustomValidity(t('addressAutocomplete.selectGoogleSuggestion'));
                 } else {
                   setIsValidSelected(true);
                   input.setCustomValidity("");
@@ -263,7 +265,7 @@ export default function AddressAutocomplete({
           required={required}
         />
         <span className="text-[9px] text-red-600 font-bold leading-none mt-1 select-none">
-          Google Maps inactif, veuillez taper l'adresse manuellement.
+          {t('addressAutocomplete.mapsInactive')}
         </span>
       </div>
     );
@@ -274,12 +276,12 @@ export default function AddressAutocomplete({
       <div ref={containerRef} className="w-full min-h-[38px] flex items-center" />
       {!isValidSelected && value && value.trim() !== '' && (
         <span className="text-[9px] text-amber-700 font-extrabold leading-none mt-1 select-none animate-pulse">
-          ⚠️ Veuillez sélectionner une adresse suggérée par Google dans la liste.
+          {t('addressAutocomplete.selectGoogleSuggestionWarning')}
         </span>
       )}
       {isValidSelected && (
         <span className="text-[9px] text-cordel-master-dark/60 font-semibold leading-none mt-1 select-none">
-          Saisissez pour chercher l'adresse
+          {t('addressAutocomplete.typeToSearch')}
         </span>
       )}
     </div>

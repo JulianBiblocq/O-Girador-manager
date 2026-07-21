@@ -4,6 +4,8 @@ import { db } from '../firebase';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
 import { useTranslation } from './LanguageContext';
+import RichTextEditor from './RichTextEditor';
+import FormattedMessageContent from './FormattedMessageContent';
 
 // Memoized ThreadReplyItem component to avoid re-rendering comments when typing
 const ThreadReplyItem = React.memo(({
@@ -65,9 +67,7 @@ const ThreadReplyItem = React.memo(({
           )}
         </div>
 
-        <p className="text-xs leading-relaxed font-semibold text-left whitespace-pre-wrap break-words">
-          {reply.message}
-        </p>
+        <FormattedMessageContent content={reply.message} />
 
         <span className="text-[7px] font-black opacity-60 block mt-2 text-right select-none">
           {formattedTime}
@@ -397,14 +397,13 @@ export default function ThreadView({ threadId, user, profileData, channels = [],
                 </div>
               )}
 
-              <textarea
+              <RichTextEditor
                 value={replyText}
-                onChange={(e) => setReplyText(e.target.value)}
+                onChange={setReplyText}
                 disabled={sending}
-                required
                 placeholder={t('forum.writeReplyPlaceholder')}
-                rows="2"
-                className="theme-input w-full resize-none disabled:opacity-50 text-xs py-2 font-bold"
+                groupId={profileData?.groupId}
+                minHeight="90px"
               />
               <div className="flex justify-end">
                 <CordelButton

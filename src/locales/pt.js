@@ -35,7 +35,13 @@ export const pt = {
     absent: "Ausente",
     toConfirm: "A confirmar",
     pending: "Em espera",
-    presentCountLabel: "presentes"
+    presentCountLabel: "presentes",
+    sort: "Ordem",
+    all: "Todos",
+    visual: "Visual",
+    document: "Documento",
+    moveUp: "Mover para cima",
+    moveDown: "Mover para baixo"
   },
   tags: {
     managerTitle: "Gerenciador de etiquetas",
@@ -104,6 +110,7 @@ export const pt = {
     adresseVille: "Cidade",
     surnom: "Apelido",
     tshirtSize: "Tamanho da Camiseta",
+    pantSize: "Tamanho de calça",
     lateralite: "Lateralidade (Mão principal)",
     birthdate: "Data de nascimento",
     birthdatePublic: "Tornar minha data de nascimento pública no Trombinoscópio",
@@ -168,6 +175,7 @@ export const pt = {
     newVersionDesc: "Uma atualização está pronta. Clique para carregar as novidades.",
     updateBtn: "Atualizar",
     forceUpdateBtn: "Forçar atualização / Limpar cache",
+    updating: "Atualizando...",
     confirmForceUpdate: "Tem certeza de que deseja limpar o cache e forçar o reinício do aplicativo? Todas as alterações não salvas serão perdidas.",
     maintenanceTitle: "Manutenção & Cache",
     maintenanceDesc: "Se os usuários encontrarem dificuldades ou travamentos, force a limpeza completa do cache local."
@@ -424,6 +432,7 @@ export const pt = {
     multiRole: "Múltiplos Papéis",
     dateLimiteInscriptionLabel: "Prazo de inscrição (opcional)",
     registrationClosed: "🔒 As inscrições para este evento estão encerradas.",
+    presence: "Presença",
     stageLayoutTitle: "Mapa do Palco / Cortejo",
     stageLayoutConfig: "Dimensões da grade",
     stageLayoutHelp: "👉 Selecione um membro abaixo e depois clique em uma célula da grade para posicioná-lo.",
@@ -435,6 +444,7 @@ export const pt = {
     confirmReset: "Tem certeza de que deseja redefinir o mapa do palco?",
     saveLayoutSuccess: "Mapa do palco salvo com sucesso!",
     saveLayoutError: "Erro ao salvar o mapa do palco.",
+    confirmRemoveType: "Tem certeza de que deseja remover este tipo de evento?",
     includesPercussion: "Percussão",
     includesDance: "Dança"
   },
@@ -450,6 +460,8 @@ export const pt = {
     statusOpen: "Aberta",
     statusClosed: "Encerrada",
     closeCampaignBtn: "Encerrar campanha",
+    confirmValidateAll: "Deseja realmente validar todos os itens?",
+    unknownMember: "Membro desconhecido",
     nominativeRequests: "Pedidos Detalhados por Membro",
     noRequests: "Nenhum pedido registrado até o momento.",
     summaryByArticle: "Resumo por item",
@@ -500,6 +512,7 @@ export const pt = {
     filterPersonal: "Equipamento Pessoal ({count})",
     filterRepair: "Para consertar ({count})",
     noInstrumentsFilter: "Nenhum instrumento encontrado para este filtro.",
+    exportCSV: "Exportar para CSV",
     etatNeuf: "Novo",
     etatBon: "Bom",
     etatRepair: "Para consertar",
@@ -518,13 +531,25 @@ export const pt = {
     helpDesc: "Arraste os widgets para reorganizar a ordem de exibição na página dos membros.",
     saveBtn: "Salvar layout",
     successMsg: "Layout salvo com sucesso!",
+    errorMsg: "Erro ao salvar o layout.",
+    accessDenied: "Acesso negado",
+    accessDeniedDesc: "Você não tem as permissões necessárias para editar o layout.",
+    dragToMove: "Arrastar para mover",
+    saving: "Salvando...",
     widgetMotMestre: "Palavra do Mestre",
+    descMotMestre: "A palavra e visão do Mestre",
     widgetMegaphone: "O Megafone",
+    descMegaphone: "Últimos anúncios e notícias do grupo",
     widgetAgenda: "Agenda",
+    descAgenda: "Agenda de ensaios, apresentações e oficinas",
     widgetOrders: "Compras de Equipamento",
+    descOrders: "Pedidos de equipamentos e loja",
     widgetForum: "O Porta-Voz",
+    descForum: "Discussões e canais do fórum",
     widgetDocuments: "O Varal",
-    widgetTreasury: "Adesão & cotização"
+    descDocuments: "Documentos, partituras e recursos da associação",
+    widgetTreasury: "Adesão & cotização",
+    descTreasury: "Visão geral das contribuições e tesouraria"
   },
   tagManager: {
     title: "Gerenciador de etiquetas",
@@ -537,7 +562,10 @@ export const pt = {
     deleteConfirm: "Deseja excluir a etiqueta?",
     availableTags: "Etiquetas disponíveis",
     deleteConfirmText: "Deseja realmente excluir a etiqueta \"{tag}\" ?",
-    deleteTitle: "Excluir esta etiqueta"
+    deleteTitle: "Excluir esta etiqueta",
+    alreadyExists: "Esta etiqueta já existe.",
+    errorAdd: "Erro ao adicionar a etiqueta.",
+    errorDelete: "Erro ao excluir a etiqueta."
   },
   associationSettings: {
     title: "Configurações da Associação",
@@ -585,6 +613,7 @@ export const pt = {
     createPupitreBtn: "Criar o Naipe",
     configuredPupitres: "Naipes configurados",
     noPupitresConfigured: "Nenhum naipe configurado no momento.",
+    selectInstrumentsForGroup: "Selecionar instrumentos para o grupo",
     sequencerHeading: "Link do Sequenciador",
     invitationHeading: "Convite para o grupo",
     invitationDesc: "Permita que novos membros se cadastrem e entrem diretamente na sua associação compartilhando este link de convite único.",
@@ -841,5 +870,23 @@ export const pt = {
     saveWorkshopBtn: "Salvar ficha",
     noWorkshops: "Nenhuma ficha pedagógica de oficina disponível.",
     workshopDeleteConfirm: "Deseja realmente excluir esta ficha de oficina?"
+  },
+  varalManager: {
+    sortCustomOrder: "Ordem personalizada",
+    sortDateAdded: "Data de adição",
+    sortAlphabetical: "Alfabética (A-Z)"
+  },
+  addressAutocomplete: {
+    selectGoogleSuggestion: "Por favor, selecione um endereço sugerido pelo Google na lista.",
+    mapsInactive: "Google Maps inativo, por favor digite o endereço manualmente.",
+    selectGoogleSuggestionWarning: "⚠️ Por favor, selecione um endereço sugerido pelo Google na lista.",
+    typeToSearch: "Digite para buscar o endereço"
+  },
+  wardrobe: {
+    pieceType: "Tipo de peça"
+  },
+  helloAsso: {
+    successMessage: "Pagamento validado pela HelloAsso! A atualização do seu perfil pode demorar alguns instantes.",
+    refreshButton: "Atualizar meu status"
   }
 };

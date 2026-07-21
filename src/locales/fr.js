@@ -35,7 +35,13 @@ export const fr = {
     absent: "Absent",
     toConfirm: "À confirmer",
     pending: "En attente",
-    presentCountLabel: "présents"
+    presentCountLabel: "présents",
+    sort: "Tri",
+    all: "Tous",
+    visual: "Visuel",
+    document: "Document",
+    moveUp: "Monter",
+    moveDown: "Descendre"
   },
   tags: {
     managerTitle: "Gestion des étiquettes",
@@ -104,6 +110,7 @@ export const fr = {
     adresseVille: "Ville",
     surnom: "Surnom",
     tshirtSize: "Taille de T-Shirt",
+    pantSize: "Taille de pantalon",
     lateralite: "Latéralité (Main principale)",
     birthdate: "Date de naissance",
     birthdatePublic: "Rendre ma date de naissance publique dans le Trombinoscope",
@@ -168,6 +175,7 @@ export const fr = {
     newVersionDesc: "Une mise à jour est prête. Cliquez pour charger les nouveautés.",
     updateBtn: "Mettre à jour",
     forceUpdateBtn: "Forcer la mise à jour / Vider le cache",
+    updating: "Mise à jour en cours...",
     confirmForceUpdate: "Voulez-vous vraiment vider le cache et forcer le rechargement de l'application ? Tout changement non enregistré sera perdu.",
     maintenanceTitle: "Maintenance & Cache",
     maintenanceDesc: "Si des utilisateurs rencontrent des difficultés ou des blocages, forcez la purge complète du cache local."
@@ -424,6 +432,7 @@ export const fr = {
     multiRole: "Multi-Rôles",
     dateLimiteInscriptionLabel: "Date limite d'inscription (optionnel)",
     registrationClosed: "🔒 Les inscriptions pour cet événement sont closes.",
+    presence: "Présence",
     stageLayoutTitle: "Plan de Scène / Cortejo",
     stageLayoutConfig: "Configuration de la scène",
     stageLayoutHelp: "👉 Sélectionnez un membre ci-dessous, puis cliquez sur une case de la grille pour le placer.",
@@ -435,6 +444,7 @@ export const fr = {
     confirmReset: "Êtes-vous sûr de vouloir réinitialiser le plan de scène ?",
     saveLayoutSuccess: "Plan de scène enregistré !",
     saveLayoutError: "Erreur lors de l'enregistrement du plan de scène.",
+    confirmRemoveType: "Voulez-vous vraiment supprimer ce type d'événement ?",
     includesPercussion: "Percussion",
     includesDance: "Danse"
   },
@@ -450,6 +460,8 @@ export const fr = {
     statusOpen: "Ouverte",
     statusClosed: "Clôturée",
     closeCampaignBtn: "Clôturer la campagne",
+    confirmValidateAll: "Voulez-vous vraiment valider tous les articles ?",
+    unknownMember: "Membre inconnu",
     nominativeRequests: "Demandes Nominatives Détaillées",
     noRequests: "Aucune demande enregistrée pour le moment.",
     summaryByArticle: "Synthèse par article",
@@ -500,6 +512,7 @@ export const fr = {
     filterPersonal: "Matériel Personnel ({count})",
     filterRepair: "À réparer ({count})",
     noInstrumentsFilter: "Aucun instrument trouvé pour ce filtre.",
+    exportCSV: "Exporter en CSV",
     etatNeuf: "Neuf",
     etatBon: "Bon",
     etatRepair: "À réparer",
@@ -518,13 +531,25 @@ export const fr = {
     helpDesc: "Faites glisser les widgets pour réorganiser l'ordre d'affichage des élèves sur leur tableau de bord.",
     saveBtn: "Enregistrer la mise en page",
     successMsg: "Mise en page enregistrée avec succès !",
+    errorMsg: "Erreur lors de l'enregistrement de la disposition.",
+    accessDenied: "Accès refusé",
+    accessDeniedDesc: "Vous n'avez pas les autorisations nécessaires pour modifier la mise en page.",
+    dragToMove: "Glisser pour déplacer",
+    saving: "Enregistrement...",
     widgetMotMestre: "Le Mot du Mestre",
+    descMotMestre: "Le mot et la vision du Mestre",
     widgetMegaphone: "Le Mégaphone",
+    descMegaphone: "Dernières annonces et actualités du groupe",
     widgetAgenda: "Agenda",
+    descAgenda: "Agenda des répétitions, prestations et ateliers",
     widgetOrders: "Achats de Matériel",
+    descOrders: "Commandes de matériel et boutique",
     widgetForum: "Le Porte-Voix",
+    descForum: "Discussions et salons du forum",
     widgetDocuments: "O Varal",
-    widgetTreasury: "Adhésion & cotisation"
+    descDocuments: "Documents, partitions et ressources de l'association",
+    widgetTreasury: "Adhésion & cotisation",
+    descTreasury: "Aperçu des cotisations et trésorerie"
   },
   tagManager: {
     title: "Gestion des Étiquettes",
@@ -537,7 +562,10 @@ export const fr = {
     deleteConfirm: "Voulez-vous supprimer l'étiquette ?",
     availableTags: "Étiquettes disponibles",
     deleteConfirmText: "Voulez-vous vraiment supprimer l'étiquette \"{tag}\" ?",
-    deleteTitle: "Supprimer cette étiquette"
+    deleteTitle: "Supprimer cette étiquette",
+    alreadyExists: "Cette étiquette existe déjà.",
+    errorAdd: "Erreur lors de l'ajout de l'étiquette.",
+    errorDelete: "Erreur lors de la suppression de l'étiquette."
   },
   associationSettings: {
     title: "Paramètres Association",
@@ -585,6 +613,7 @@ export const fr = {
     createPupitreBtn: "Créer le Pupitre",
     configuredPupitres: "Pupitres configurés",
     noPupitresConfigured: "Aucun pupitre configuré pour le moment.",
+    selectInstrumentsForGroup: "Sélectionner des instruments pour le groupe",
     sequencerHeading: "Lien du Séquenceur",
     invitationHeading: "Invitation au groupe",
     invitationDesc: "Permettez aux nouveaux membres de s'inscrire et de rejoindre directement votre association en partageant ce lien d'invitation unique.",
@@ -841,6 +870,24 @@ export const fr = {
     saveWorkshopBtn: "Enregistrer la fiche",
     noWorkshops: "Aucune fiche pédagogique d'atelier disponible.",
     workshopDeleteConfirm: "Voulez-vous vraiment supprimer cette fiche d'atelier ?"
+  },
+  varalManager: {
+    sortCustomOrder: "Ordre personnalisé",
+    sortDateAdded: "Date d'ajout",
+    sortAlphabetical: "Alphabétique (A-Z)"
+  },
+  addressAutocomplete: {
+    selectGoogleSuggestion: "Veuillez sélectionner une adresse suggérée par Google dans la liste.",
+    mapsInactive: "Google Maps inactif, veuillez taper l'adresse manuellement.",
+    selectGoogleSuggestionWarning: "⚠️ Veuillez sélectionner une adresse suggérée par Google dans la liste.",
+    typeToSearch: "Saisissez pour chercher l'adresse"
+  },
+  wardrobe: {
+    pieceType: "Type de pièce"
+  },
+  helloAsso: {
+    successMessage: "Paiement validé par HelloAsso ! La mise à jour de votre profil peut prendre quelques instants.",
+    refreshButton: "Rafraîchir mon statut"
   }
 };
 

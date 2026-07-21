@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { doc, onSnapshot } from 'firebase/firestore';
+import { doc, getDoc, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase';
 import CordelCard from './CordelCard';
 import { useTranslation } from './LanguageContext';
@@ -13,7 +13,27 @@ export default function WidgetTreasury({ groupId, profileData }) {
   const [instructionsPaiement, setInstructionsPaiement] = useState('');
   const [loading, setLoading] = useState(true);
 
+  const [showSuccessBanner, setShowSuccessBanner] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
   const paymentStatus = profileData?.paymentStatus || 'unpaid';
+
+  // Détection du retour de paiement HelloAsso (?payment=success)
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const searchParams = new URLSearchParams(window.location.search);
+      if (searchParams.get('payment') === 'success') {
+        setShowSuccessBanner(true);
+        // Nettoyage de l'URL pour ne pas laisser le paramètre indéfiniment
+        try {
+          const cleanUrl = window.location.pathname;
+          window.history.replaceState({}, document.title, cleanUrl);
+        } catch (e) {
+          // ignore
+        }
+      }
+    }
+  }, []);
 
   useEffect(() => {
     if (!groupId) {
@@ -42,10 +62,42 @@ export default function WidgetTreasury({ groupId, profileData }) {
   }, [groupId]);
 
   const handlePayClick = () => {
-    if (lienPaiementExterne) {
-      window.open(lienPaiementExterne, '_blank', 'noopener,noreferrer');
-    } else {
+    if (!lienPaiementExterne) {
       alert("Le lien de paiement n'a pas encore été configuré par l'association.");
+      return;
+    }
+
+    try {
+      const returnUrl = encodeURIComponent(`${window.location.origin}${window.location.pathname}?payment=success`);
+      const userEmail = profileData?.email ? encodeURIComponent(profileData.email) : '';
+      const userUid = (profileData?.uid || profileData?.id) ? encodeURIComponent(profileData.uid || profileData.id) : '';
+
+      const hasQuery = lienPaiementExterne.includes('?');
+      const separator = hasQuery ? '&' : '?';
+      const finalUrl = `${lienPaiementExterne}${separator}email=${userEmail}&uid=${userUid}&returnUrl=${returnUrl}`;
+
+      window.open(finalUrl, '_blank', 'noopener,noreferrer');
+    } catch (e) {
+      window.open(lienPaiementExterne, '_blank', 'noopener,noreferrer');
+    }
+  };
+
+  const handleRefreshStatus = async () => {
+    const userUid = profileData?.uid || profileData?.id;
+    if (!userUid) return;
+    setIsRefreshing(true);
+    try {
+      const userDoc = await getDoc(doc(db, 'users', userUid));
+      if (userDoc.exists()) {
+        const freshData = userDoc.data();
+        if (freshData.paymentStatus === 'paid') {
+          setShowSuccessBanner(false);
+        }
+      }
+    } catch (err) {
+      console.error("WidgetTreasury - Error refreshing status:", err);
+    } finally {
+      setIsRefreshing(false);
     }
   };
 
@@ -89,6 +141,23 @@ export default function WidgetTreasury({ groupId, profileData }) {
 
   return (
     <CordelCard variant="default" useExtremeBorder={true} className="p-5 flex flex-col gap-4 text-left">
+      {/* Bandeau de succès Fallback UI si de retour de paiement HelloAsso */}
+      {showSuccessBanner && (
+        <div className="bg-green-100 border-l-4 border-green-600 text-green-900 dark:bg-green-950/40 dark:text-green-300 p-3 rounded text-xs flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-1 animate-fadeIn border border-green-200">
+          <p className="font-bold leading-snug">
+            💳 {t('helloAsso.successMessage') || "Paiement validé par HelloAsso ! La mise à jour de votre profil peut prendre quelques instants."}
+          </p>
+          <button
+            type="button"
+            onClick={handleRefreshStatus}
+            disabled={isRefreshing}
+            className="px-3 py-1.5 font-black uppercase tracking-wider text-[10px] bg-green-700 hover:bg-green-800 text-white rounded border border-green-900 shadow cursor-pointer transition-all shrink-0"
+          >
+            {isRefreshing ? '🔄 ...' : `🔄 ${t('helloAsso.refreshButton') || "Rafraîchir mon statut"}`}
+          </button>
+        </div>
+      )}
+
       {/* Title */}
       <div className="flex justify-between items-center border-b border-dashed border-cordel-master-dark/20 pb-2">
         <h3 className="text-xs font-black uppercase tracking-wider text-cordel-wood flex items-center gap-1.5">

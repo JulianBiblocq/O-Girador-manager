@@ -434,7 +434,7 @@ export default function WidgetAgenda({
                 : 'bg-white border-dashed border-cordel-master-dark/20 text-cordel-master-dark/70 hover:bg-neutral-100'
             }`}
           >
-            Tous
+            {t('common.all')}
           </button>
           {eventTypes.map(type => {
             const labelRaw = t(`widgetAgenda.type${type.charAt(0).toUpperCase() + type.slice(1)}`);
@@ -501,11 +501,11 @@ export default function WidgetAgenda({
             <table className="w-full text-xs text-left border-collapse">
               <thead>
                 <tr className="border-b border-encre-noire bg-cordel-master-light/10 font-black uppercase text-[9px] tracking-wider text-cordel-wood select-none">
-                  <th className="p-1.5 md:p-2.5 border-r border-encre-noire/15">Date</th>
-                  <th className="p-1.5 md:p-2.5 border-r border-encre-noire/15">Événement</th>
-                  <th className="p-1.5 md:p-2.5 border-r border-encre-noire/15">Type</th>
-                  <th className="p-1.5 md:p-2.5 border-r border-encre-noire/15">Lieu</th>
-                  <th className="p-1.5 md:p-2.5 text-center">Présence</th>
+                  <th className="p-1.5 md:p-2.5 border-r border-encre-noire/15">{t('common.date')}</th>
+                  <th className="p-1.5 md:p-2.5 border-r border-encre-noire/15">{t('mestre.eventTitle')}</th>
+                  <th className="p-1.5 md:p-2.5 border-r border-encre-noire/15">{t('common.type')}</th>
+                  <th className="p-1.5 md:p-2.5 border-r border-encre-noire/15">{t('common.location')}</th>
+                  <th className="p-1.5 md:p-2.5 text-center">{t('widgetAgenda.presence')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -663,7 +663,7 @@ export default function WidgetAgenda({
                         {event.imageUrl ? (
                           <img 
                             src={event.imageUrl} 
-                            alt="Visual" 
+                            alt={t('common.visual')} 
                             className="w-full h-full object-cover" 
                           />
                         ) : (

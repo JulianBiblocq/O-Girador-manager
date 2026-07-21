@@ -4,6 +4,7 @@ import { db } from '../firebase';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
 import { useTranslation } from './LanguageContext';
+import RichTextEditor from './RichTextEditor';
 
 export default function CreateThreadForm({ groupId, channelId, user, profileData, onClose }) {
   const { t } = useTranslation();
@@ -183,14 +184,13 @@ export default function CreateThreadForm({ groupId, channelId, user, profileData
             </div>
           )}
 
-          <textarea
+          <RichTextEditor
             value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            required
+            onChange={setMessage}
             disabled={saving}
-            rows="4"
             placeholder={t('forum.messagePlaceholder')}
-            className="theme-input w-full resize-none disabled:opacity-50 text-sm"
+            groupId={groupId}
+            minHeight="140px"
           />
         </div>
 

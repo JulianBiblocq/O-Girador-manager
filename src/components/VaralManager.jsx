@@ -475,15 +475,15 @@ export default function VaralManager({ groupId, onBack, role, isSystemAdmin }) {
                         🎗️ {getCategoryLabel(category.nom)} ({catDocs.length})
                       </span>
                       <div className="flex items-center gap-2">
-                        <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-bg-light/80">Tri :</label>
+                        <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-bg-light/80">{t('common.sort')} :</label>
                         <select
                           value={sortMethod}
                           onChange={(e) => setSortMethods(prev => ({ ...prev, [category.id]: e.target.value }))}
                           className="theme-input text-[9px] font-bold py-0.5 px-2 bg-cordel-bg-light text-encre-noire border border-encre-noire/30 rounded cursor-pointer"
                         >
-                          <option value="order">Ordre personnalisé</option>
-                          <option value="date">Date d'ajout</option>
-                          <option value="alpha">Alphabétique (A-Z)</option>
+                          <option value="order">{t('varalManager.sortCustomOrder')}</option>
+                          <option value="date">{t('varalManager.sortDateAdded')}</option>
+                          <option value="alpha">{t('varalManager.sortAlphabetical')}</option>
                         </select>
                       </div>
                     </div>
@@ -492,16 +492,16 @@ export default function VaralManager({ groupId, onBack, role, isSystemAdmin }) {
                       <div className="w-full max-w-full overflow-x-auto">
                         {catDocs.length === 0 ? (
                           <div className="p-8 text-center bg-white/30 dark:bg-black/10 select-none">
-                            <p className="text-xs italic opacity-50">Aucun document dans cette rubrique.</p>
+                            <p className="text-xs italic opacity-50">{t('documents.noDocumentsCategory')}</p>
                           </div>
                         ) : (
                           <table className="w-full text-xs text-left border-collapse">
                             <thead>
                               <tr className="bg-cordel-bg-light border-b border-encre-noire text-cordel-master-dark uppercase tracking-wider text-[9px] font-black">
-                                <th className="py-1.5 px-2 md:py-2 md:px-3">Nom du document</th>
-                                <th className="py-1.5 px-2 md:py-2 md:px-3">Type</th>
-                                <th className="py-1.5 px-2 md:py-2 md:px-3 text-center">Déplacer</th>
-                                <th className="py-1.5 px-2 md:py-2 md:px-3 text-right">Actions</th>
+                                <th className="py-1.5 px-2 md:py-2 md:px-3">{t('documents.docTitleLabel')}</th>
+                                <th className="py-1.5 px-2 md:py-2 md:px-3">{t('common.type')}</th>
+                                <th className="py-1.5 px-2 md:py-2 md:px-3 text-center">{t('common.moveUp')}/{t('common.moveDown')}</th>
+                                <th className="py-1.5 px-2 md:py-2 md:px-3 text-right">{t('common.actions')}</th>
                               </tr>
                             </thead>
                             <tbody>
