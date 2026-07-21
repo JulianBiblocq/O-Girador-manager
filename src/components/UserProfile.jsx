@@ -11,6 +11,8 @@ import CostumeChecklist from './profile/CostumeChecklist';
 import ImageLightboxModal from './ImageLightboxModal';
 const CordelImageEditor = React.lazy(() => import('./CordelImageEditor'));
 
+import { formatTagGender } from '../utils/tagUtils';
+
 const getInstrumentIconPath = (instName) => {
   if (!instName) return '/favicon.svg';
   const name = instName.toLowerCase().trim();
@@ -39,6 +41,7 @@ export default function UserProfile({ user, profileData, onBack, onNavigateToTut
     uploadingPhoto,
     myInstruments,
     loadingInst,
+    tagsDisponibles,
     demanderDroitImage,
     demanderAttestationSante,
     selectedImage,
@@ -154,14 +157,16 @@ export default function UserProfile({ user, profileData, onBack, onNavigateToTut
           {profileData?.tags && profileData.tags.length > 0 && (
             <div className="flex flex-wrap gap-1.5 justify-center">
               {profileData.tags.map((tag, idx) => {
-                const rotation = ((tag.charCodeAt(0) + idx) % 5) - 2;
+                const formattedTag = formatTagGender(tag, profileData?.genre, profileData?.majoriteFeminine, tagsDisponibles);
+                const tagStr = typeof tag === 'string' ? tag : (tag.id || idx);
+                const rotation = ((String(tagStr).charCodeAt(0) + idx) % 5) - 2;
                 return (
                   <span 
-                    key={`tag-${tag}`} 
+                    key={`tag-${tagStr}`} 
                     className="theme-stamp-badge theme-stamp-badge-wood text-[9px] px-2.5 py-1 bg-white/40"
                     style={{ transform: `rotate(${rotation}deg)` }}
                   >
-                    👤 {tag}
+                    👤 {formattedTag}
                   </span>
                 );
               })}

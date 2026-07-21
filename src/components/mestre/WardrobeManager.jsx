@@ -56,6 +56,8 @@ export default function WardrobeManager({ groupId, role, isSystemAdmin, hasAcces
       });
       fetched.sort((a, b) => `${a.prenom} ${a.nom}`.localeCompare(`${b.prenom} ${b.nom}`));
       setAllUsers(fetched);
+    }, (error) => {
+      console.warn("WardrobeManager - Query users warning:", error?.message || error);
     });
     return () => unsubscribe();
   }, [groupId]);
@@ -70,6 +72,8 @@ export default function WardrobeManager({ groupId, role, isSystemAdmin, hasAcces
         fetched.push({ id: docSnap.id, ...docSnap.data() });
       });
       setCostumes(fetched);
+    }, (error) => {
+      console.warn("WardrobeManager - Query wardrobeInventory warning:", error?.message || error);
     });
     return () => unsubscribe();
   }, [groupId]);
@@ -84,6 +88,8 @@ export default function WardrobeManager({ groupId, role, isSystemAdmin, hasAcces
         fetched.push({ id: docSnap.id, ...docSnap.data() });
       });
       setProjects(fetched);
+    }, (error) => {
+      console.warn("WardrobeManager - Query coutureProjects warning:", error?.message || error);
     });
     return () => unsubscribe();
   }, [groupId]);

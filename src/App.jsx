@@ -601,6 +601,7 @@ export default function App() {
   const hasAccessStudio = isSystemOrSuperAdminOrMestre || userTags.some(t => permissionsMatrice?.studio?.includes(t));
   const hasAccessVestiaire = isSystemOrSuperAdminOrMestre || userTags.some(t => permissionsMatrice?.vestiaire?.includes(t));
   const hasAccessMestre = isSystemOrSuperAdminOrMestre || userTags.some(t => permissionsMatrice?.mestre?.includes(t));
+  const hasAccessForumMod = isSystemOrSuperAdminOrMestre || userTags.some(t => ['Modérateur', 'Modérateur Forum', 'Gestionnaire Porte-voix', 'Porte-voix'].includes(t));
 
   const handleNavigateToPole = (poleId) => {
     setCurrentPole(poleId);
@@ -790,6 +791,7 @@ export default function App() {
                 onBack={() => handleNavigateToPole('accueil')} 
                 activePrivateChatUserId={activePrivateChatUserId}
                 onClearActivePrivateChat={() => setActivePrivateChatUserId(null)}
+                onOpenStudioForum={() => setCurrentTab('mestre-forum-channels')}
               />
             ) : currentTab === 'atelier-couture' ? (
               <AtelierCouture
@@ -943,7 +945,7 @@ export default function App() {
                 groupId={profileData?.groupId}
                 onBack={() => handleNavigateToPole('accueil')} 
               />
-            ) : (currentTab === 'mestre-forum-channels' && (hasAccessStudio || hasAccessMestre)) ? (
+            ) : (currentTab === 'mestre-forum-channels' && (hasAccessStudio || hasAccessMestre || hasAccessForumMod)) ? (
               <ForumChannelsManager 
                 groupId={profileData?.groupId}
                 role={profileData?.role}

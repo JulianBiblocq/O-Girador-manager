@@ -6,6 +6,7 @@ import { db, storage } from '../firebase';
 export function useEventSetlist(event) {
   const [setlist, setSetlist] = useState(event.setlist || []);
   const [newMorceauTitre, setNewMorceauTitre] = useState('');
+  const [selectedCatalogRhythmUrl, setSelectedCatalogRhythmUrl] = useState('');
   const [newMorceauJsonFile, setNewMorceauJsonFile] = useState(null);
   const [fileInputKey, setFileInputKey] = useState(0);
   const [newMorceauNotes, setNewMorceauNotes] = useState('');
@@ -26,6 +27,8 @@ export function useEventSetlist(event) {
         const fileRef = ref(storage, `documents/${event.groupId}/events/${event.id}/setlist/${Date.now()}_${newMorceauJsonFile.name}`);
         const snapshot = await uploadBytes(fileRef, newMorceauJsonFile);
         jsonUrl = await getDownloadURL(snapshot.ref);
+      } else if (selectedCatalogRhythmUrl) {
+        jsonUrl = selectedCatalogRhythmUrl;
       }
 
       const updatedSetlist = [
@@ -45,6 +48,7 @@ export function useEventSetlist(event) {
 
       setSetlist(updatedSetlist);
       setNewMorceauTitre('');
+      setSelectedCatalogRhythmUrl('');
       setNewMorceauNotes('');
       setNewMorceauJsonFile(null);
       setFileInputKey(prev => prev + 1);
@@ -78,6 +82,8 @@ export function useEventSetlist(event) {
     setSetlist,
     newMorceauTitre,
     setNewMorceauTitre,
+    selectedCatalogRhythmUrl,
+    setSelectedCatalogRhythmUrl,
     newMorceauJsonFile,
     setNewMorceauJsonFile,
     fileInputKey,

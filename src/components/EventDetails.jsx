@@ -87,6 +87,8 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
     setSetlist,
     newMorceauTitre,
     setNewMorceauTitre,
+    selectedCatalogRhythmUrl,
+    setSelectedCatalogRhythmUrl,
     newMorceauJsonFile,
     setNewMorceauJsonFile,
     fileInputKey,
@@ -1154,10 +1156,13 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
               handleAddMorceau={handleAddMorceau}
               newMorceauTitre={newMorceauTitre}
               setNewMorceauTitre={setNewMorceauTitre}
+              selectedCatalogRhythmUrl={selectedCatalogRhythmUrl}
+              setSelectedCatalogRhythmUrl={setSelectedCatalogRhythmUrl}
               fileInputKey={fileInputKey}
               setNewMorceauJsonFile={setNewMorceauJsonFile}
               newMorceauNotes={newMorceauNotes}
               setNewMorceauNotes={setNewMorceauNotes}
+              groupId={event?.groupId}
             />
           )}
 

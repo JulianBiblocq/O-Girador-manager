@@ -6,6 +6,8 @@ import CordelButton from './CordelButton';
 import CreateThreadForm from './CreateThreadForm';
 import ThreadView from './ThreadView';
 import PrivateChatView from './PrivateChatView';
+import MoveThreadModal from './MoveThreadModal';
+import { useForumModeration } from '../hooks/useForumModeration';
 import { useTranslation } from './LanguageContext';
 import XiloAvatar from './XiloAvatar';
 
@@ -16,7 +18,11 @@ const ThreadCard = React.memo(({
   categoryBadges,
   t,
   getCategoryLabel,
-  onClick
+  onClick,
+  isModeratorOrAdmin,
+  onMoveThread,
+  onTogglePin,
+  onDeleteThread
 }) => {
   const dateCreationObj = new Date(thread.dateCreation);
   const formattedDate = isNaN(dateCreationObj.getTime())
@@ -39,26 +45,31 @@ const ThreadCard = React.memo(({
 
   return (
     <CordelCard 
-      variant={isThreadTargeted ? "jaune" : "default"} 
+      variant={thread.isPinned ? "jaune" : isThreadTargeted ? "jaune" : "default"} 
       useExtremeBorder={false} 
-      className={`hover:scale-[1.01] transition-all relative pr-16 cursor-pointer select-none ${
+      className={`hover:scale-[1.01] transition-all relative pr-20 cursor-pointer select-none ${
         isThreadTargeted ? 'border-cordel-wood border-2 shadow-[2px_2px_0px_0px_#8b2a1a]' : 'bg-cordel-bg'
       }`}
       onClick={() => onClick(thread)}
     >
       <div className="flex flex-col gap-1 items-start">
-         {isThreadTargeted && (
-           <span className="text-[8px] font-black text-cordel-wood uppercase tracking-wider mb-1 block animate-pulse">
-             🗣️ {(translate('forum.targeted', "Vous concerne ({tag})")).replace('{tag}', thread.targetTag)}
-           </span>
-         )}
+        {thread.isPinned && (
+          <span className="theme-stamp-badge theme-stamp-badge-wood text-[7.5px] uppercase tracking-wider mb-1 flex items-center gap-1">
+            📌 Épinglé
+          </span>
+        )}
+        {isThreadTargeted && (
+          <span className="text-[8px] font-black text-cordel-wood uppercase tracking-wider mb-1 block animate-pulse">
+            🗣️ {(translate('forum.targeted', "Vous concerne ({tag})")).replace('{tag}', thread.targetTag)}
+          </span>
+        )}
         {/* Category Label */}
         <span className={`theme-stamp-badge theme-stamp-badge-${badgeVariant === 'ocre' || badgeVariant === 'vert' ? 'wood' : 'dark'} text-[7px] rotate-0 mb-1`}>
           {getCategoryLabel(thread.categorie)}
         </span>
 
         {/* Subject */}
-        <h4 className="font-extrabold text-sm text-encre-noire leading-tight">
+        <h4 className="font-extrabold text-sm text-encre-noire leading-tight pr-4">
           {thread.titre}
         </h4>
 
@@ -68,6 +79,45 @@ const ThreadCard = React.memo(({
           <span>•</span>
           <span>{(translate('forum.createdOn', "Le {date}")).replace('{date}', formattedDate)}</span>
         </div>
+
+        {/* Moderator Quick Controls */}
+        {isModeratorOrAdmin && (
+          <div className="flex items-center gap-1.5 mt-2 pt-1.5 border-t border-dashed border-cordel-master-dark/15 w-full">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onTogglePin(thread.id, thread.isPinned);
+              }}
+              className="text-[9px] font-bold px-1.5 py-0.5 bg-cordel-bg-light border border-cordel-master-dark/20 rounded hover:bg-white cursor-pointer"
+              title={thread.isPinned ? "Désépingler" : "Épingler"}
+            >
+              📌 {thread.isPinned ? 'Désépingler' : 'Épingler'}
+            </button>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onMoveThread(thread);
+              }}
+              className="text-[9px] font-bold px-1.5 py-0.5 bg-cordel-bg-light border border-cordel-master-dark/20 rounded hover:bg-white cursor-pointer"
+              title="Déplacer vers un autre salon"
+            >
+              🚚 Déplacer
+            </button>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDeleteThread(thread);
+              }}
+              className="text-[9px] font-bold px-1.5 py-0.5 bg-red-50 text-red-700 border border-red-200 rounded hover:bg-red-100 cursor-pointer"
+              title="Supprimer"
+            >
+              🗑️
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Replies Stamp Overlay */}
@@ -83,6 +133,7 @@ const ThreadCard = React.memo(({
   );
 }, (prevProps, nextProps) => {
   return prevProps.thread.id === nextProps.thread.id &&
+         prevProps.thread.isPinned === nextProps.thread.isPinned &&
          prevProps.thread.derniereModification === nextProps.thread.derniereModification &&
          (prevProps.thread.reponses ? prevProps.thread.reponses.length : 0) === (nextProps.thread.reponses ? nextProps.thread.reponses.length : 0) &&
          prevProps.thread.targetTag === nextProps.thread.targetTag &&
@@ -90,6 +141,7 @@ const ThreadCard = React.memo(({
          prevProps.thread.categorie === nextProps.thread.categorie &&
          prevProps.thread.auteurNom === nextProps.thread.auteurNom &&
          prevProps.profileData === nextProps.profileData &&
+         prevProps.isModeratorOrAdmin === nextProps.isModeratorOrAdmin &&
          prevProps.getCategoryLabel === nextProps.getCategoryLabel &&
          prevProps.onClick === nextProps.onClick;
 });
@@ -152,8 +204,9 @@ function ChannelTreeItem({ channel, channels, activeChannelId, onSelectChannel, 
   );
 }
 
-export default function Forum({ user, profileData, onBack, activePrivateChatUserId, onClearActivePrivateChat }) {
+export default function Forum({ user, profileData, onBack, activePrivateChatUserId, onClearActivePrivateChat, onOpenStudioForum }) {
   const { t } = useTranslation();
+  const { actionLoading, moveThread, togglePinThread, deleteThread } = useForumModeration(profileData?.groupId);
 
   const translate = (key, fallback) => {
     const val = t(key);
@@ -170,12 +223,23 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
   const [loading, setLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
   const [selectedThread, setSelectedThread] = useState(null);
+  const [movingThreadModal, setMovingThreadModal] = useState(null);
   
   const [activeTab, setActiveTab] = useState('discussions'); // 'discussions' or 'inbox'
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [privateMessages, setPrivateMessages] = useState([]);
   const [usersMap, setUsersMap] = useState({});
   const [activeChatUserId, setActiveChatUserId] = useState(null);
+
+  const isModeratorOrAdmin = profileData?.role === 'mestre' || 
+                             profileData?.role === 'super-admin' || 
+                             profileData?.isSystemAdmin === true || 
+                             (profileData?.tags && (
+                               profileData.tags.includes('Modérateur') || 
+                               profileData.tags.includes('Modérateur Forum') ||
+                               profileData.tags.includes('Gestionnaire Porte-voix') ||
+                               profileData.tags.includes('Porte-voix')
+                             ));
 
   // Sync users of the association for name/avatar lookup
   useEffect(() => {
@@ -272,7 +336,7 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
           if (read.includes(userRole)) return true;
           if (userTags.some(tag => read.includes(tag))) return true;
 
-          // Backwards compatibility with old structure
+          // Backwards compatibility
           if (ch.allowedRoles) {
             if (ch.allowedRoles.includes('all') || ch.allowedRoles.includes(userRole)) return true;
           }
@@ -283,6 +347,9 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
 
         const order = ["Général", "CA", "Bureau"];
         const sorted = allowedChannels.sort((a, b) => {
+          if (a.order !== undefined && b.order !== undefined) return a.order - b.order;
+          if (a.order !== undefined) return -1;
+          if (b.order !== undefined) return 1;
           const idxA = order.indexOf(a.name);
           const idxB = order.indexOf(b.name);
           if (idxA !== -1 && idxB !== -1) return idxA - idxB;
@@ -306,37 +373,6 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
 
     return () => unsubscribe();
   }, [profileData?.groupId, profileData?.role, profileData?.tags, profileData?.isSystemAdmin]);
-
-  // Migration of old threads without channelId
-  useEffect(() => {
-    const isAdmin = profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.isSystemAdmin;
-    if (!isAdmin || !profileData?.groupId) return;
-
-    const forumRef = collection(db, 'forum');
-    const q = query(forumRef, where('groupId', '==', profileData.groupId));
-
-    const unsubscribe = onSnapshot(q, (snap) => {
-      snap.forEach(async (docSnap) => {
-        const data = docSnap.data();
-        if (!data.channelId) {
-          const canMigrate = data.authorId === user?.uid || profileData?.isSystemAdmin;
-          if (!canMigrate) return;
-
-          try {
-            await updateDoc(doc(db, 'forum', docSnap.id), {
-              channelId: `${profileData.groupId}_general`
-            });
-          } catch (err) {
-            console.error("Migration error (insufficient permissions):", err);
-          }
-        }
-      });
-    }, (err) => {
-      console.error("Migration listener failed:", err);
-    });
-
-    return () => unsubscribe();
-  }, [profileData?.groupId, profileData?.role, profileData?.isSystemAdmin, user?.uid]);
 
   // Sync threads for the active channel
   useEffect(() => {
@@ -363,7 +399,13 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
         });
       });
 
-      const sorted = fetchedThreads.sort((a, b) => new Date(b.derniereModification) - new Date(a.derniereModification));
+      // Sort pinned threads first, then by last modification
+      const sorted = fetchedThreads.sort((a, b) => {
+        if (a.isPinned && !b.isPinned) return -1;
+        if (!a.isPinned && b.isPinned) return 1;
+        return new Date(b.derniereModification) - new Date(a.derniereModification);
+      });
+
       setThreads(sorted);
       setLoading(false);
     }, (error) => {
@@ -419,14 +461,17 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
     ? threads.find(t => t.id === selectedThread.id) || selectedThread
     : null;
 
-  const activeChannel = channels.find(c => c.id === activeChannelId);
+  const handleSelectThread = useCallback((thread) => {
+    setSelectedThread(thread);
+  }, []);
 
   const hasWriteAccess = useCallback((channel) => {
-    if (!channel) return false;
+    if (!channel) return true;
+    if (profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.isSystemAdmin) return true;
+
     const userRole = profileData?.role || 'membre';
     const userTags = profileData?.tags || [];
-    if (profileData?.isSystemAdmin || profileData?.role === 'mestre' || profileData?.role === 'super-admin') return true;
-    
+
     const write = channel.writeRoles || ['all'];
     if (write.includes('all')) return true;
     if (write.includes(userRole)) return true;
@@ -437,29 +482,32 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
       return channel.allowedRoles.includes('all') || channel.allowedRoles.includes(userRole);
     }
     return false;
-  }, [profileData]);
+  }, [profileData?.role, profileData?.tags, profileData?.isSystemAdmin]);
 
-  // Memoized handlers
-  const handleSelectThread = useCallback((thread) => {
-    setSelectedThread(thread);
-  }, []);
+  const activeChannel = useMemo(() => {
+    return channels.find(c => c.id === activeChannelId);
+  }, [channels, activeChannelId]);
 
-  const handleCloseThread = useCallback(() => {
-    setSelectedThread(null);
-  }, []);
+  const handleDeleteThreadPrompt = async (thread) => {
+    if (window.confirm(`Voulez-vous vraiment supprimer la discussion "${thread.titre}" ?`)) {
+      await deleteThread(thread.id);
+    }
+  };
 
+  // If a private chat is active, display the full-page chat view
   if (activeChatUserId) {
-    const otherUser = usersMap[activeChatUserId] || { id: activeChatUserId };
     return (
-      <PrivateChatView 
+      <PrivateChatView
         user={user}
-        otherUser={otherUser}
         profileData={profileData}
-        onClose={() => setActiveChatUserId(null)}
+        recipientId={activeChatUserId}
+        usersMap={usersMap}
+        onBack={() => setActiveChatUserId(null)}
       />
     );
   }
 
+  // If a thread is selected, display the full ThreadView page
   if (activeThread) {
     return (
       <ThreadView 
@@ -467,26 +515,38 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
         user={user} 
         profileData={profileData} 
         channels={channels}
-        onClose={handleCloseThread} 
+        allThreads={threads}
+        onClose={() => setSelectedThread(null)} 
       />
     );
   }
 
   return (
-    <div className="flex flex-col gap-4 text-left">
+    <div className="flex flex-col gap-4 text-left select-none">
       {/* Header bar */}
-      <div className="flex justify-between items-center border-b-2 border-dashed border-cordel-master-dark/30 pb-2 select-none">
+      <div className="flex justify-between items-center border-b-2 border-dashed border-cordel-master-dark/30 pb-2">
         <CordelButton variant="default" onClick={onBack} className="px-3 py-1 text-xs">
           ← {t('common.back')}
         </CordelButton>
         <span className="panel-title text-base font-extrabold tracking-wider text-cordel-wood uppercase">
-          {t('dashboard.forum')}
+          📢 {translate('forum.title', "Le Porte-voix")}
         </span>
-        <div className="w-12"></div>
+        {isModeratorOrAdmin && onOpenStudioForum ? (
+          <CordelButton
+            variant="ocre"
+            onClick={onOpenStudioForum}
+            className="px-2.5 py-1 text-[10px] font-black uppercase tracking-wider shrink-0"
+            title="Accéder au Studio de Gestion du Porte-voix"
+          >
+            🛠️ Studio Porte-voix
+          </CordelButton>
+        ) : (
+          <div className="w-12"></div>
+        )}
       </div>
 
-      {/* Tab Selector */}
-      <div className="flex gap-2 border-b border-dashed border-cordel-master-dark/20 pb-3 mb-1 select-none">
+      {/* Main Tab Navigation (Discussions vs Inbox) */}
+      <div className="flex items-center gap-2 border-b border-dashed border-cordel-master-dark/20 pb-2">
         <button
           type="button"
           onClick={() => {
@@ -707,6 +767,10 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
                         t={t}
                         getCategoryLabel={getCategoryLabel}
                         onClick={handleSelectThread}
+                        isModeratorOrAdmin={isModeratorOrAdmin}
+                        onMoveThread={setMovingThreadModal}
+                        onTogglePin={(id, currentStatus) => togglePinThread(id, currentStatus)}
+                        onDeleteThread={handleDeleteThreadPrompt}
                       />
                     ))}
                   </div>
@@ -757,6 +821,20 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
             </div>
           )}
         </div>
+      )}
+
+      {/* Move Thread Modal */}
+      {movingThreadModal && (
+        <MoveThreadModal
+          thread={movingThreadModal}
+          channels={channels}
+          isSubmitting={actionLoading}
+          onClose={() => setMovingThreadModal(null)}
+          onConfirm={async (newChannelId, newCategory) => {
+            const ok = await moveThread(movingThreadModal.id, newChannelId, newCategory);
+            if (ok) setMovingThreadModal(null);
+          }}
+        />
       )}
     </div>
   );

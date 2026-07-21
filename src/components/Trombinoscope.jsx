@@ -10,6 +10,7 @@ import { useTranslation } from './LanguageContext';
 import { XiloCaixa, XiloPeople } from './XiloIcons';
 import { useInstrumentColor } from '../hooks/useInstrumentColor';
 import ImageLightboxModal from './ImageLightboxModal';
+import { formatTagGender } from '../utils/tagUtils';
 const CordelImageEditor = React.lazy(() => import('./CordelImageEditor'));
 
 // Memoized MemberCard subcomponent
@@ -38,7 +39,8 @@ const MemberCard = React.memo(({
   t,
   tRole,
   getPupitreName,
-  getColorForInstrument
+  getColorForInstrument,
+  tagsDisponibles = []
 }) => {
   const fullName = `${prenom || ''} ${nom || ''}`;
   const hasRoleBadge = role && role !== 'membre';
@@ -151,14 +153,16 @@ const MemberCard = React.memo(({
         {hasTags && (
           <div className="flex flex-wrap gap-1 mt-3 justify-center max-w-full z-10 select-none">
             {tags.map((tag, tagIdx) => {
-              const rotation = ((tag.charCodeAt(0) + tagIdx) % 5) - 2;
+              const formattedTag = formatTagGender(tag, genre, false, tagsDisponibles);
+              const tagStr = typeof tag === 'string' ? tag : (tag.id || tagIdx);
+              const rotation = ((String(tagStr).charCodeAt(0) + tagIdx) % 5) - 2;
               return (
                 <span 
-                  key={tag} 
+                  key={`tag-${tagStr}`} 
                   style={{ transform: `rotate(${rotation}deg)` }}
                   className="theme-stamp-badge theme-stamp-badge-wood text-[7px] px-1.5 py-0.5 border-dashed select-none bg-transparent shadow-none"
                 >
-                  {tag}
+                  {formattedTag}
                 </span>
               );
             })}
@@ -664,6 +668,7 @@ export default function Trombinoscope({ user, profileData, onBack, onContactUser
                           tRole={tRole}
                           getPupitreName={getPupitreName}
                           getColorForInstrument={getColorForInstrument}
+                          tagsDisponibles={tagsDisponibles}
                         />
                       ))}
                     </div>

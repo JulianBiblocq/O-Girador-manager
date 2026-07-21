@@ -1,6 +1,7 @@
 import React from 'react';
 import CordelCard from '../CordelCard';
 import { generateImageCharterPDF, generateMedicalAttestationPDF } from '../../utils/pdfGenerator';
+import { formatTagGender, getTagId } from '../../utils/tagUtils';
 
 /**
  * SystemUserList renders the list of registered users and controls to edit their permissions,
@@ -327,18 +328,20 @@ export default function SystemUserList({
                 </label>
                 <div className="flex flex-wrap gap-x-4 gap-y-1.5 mt-0.5">
                   {availableTags.map((tag) => {
-                    const isChecked = activeTags.includes(tag);
+                    const tagId = getTagId(tag);
+                    const isChecked = activeTags.includes(tagId) || (typeof tag === 'string' && activeTags.includes(tag));
+                    const formattedLabel = formatTagGender(tag, userItem.genre, false, availableTags);
                     return (
-                      <label key={tag} className="flex items-center gap-1.5 cursor-pointer text-[10px] font-bold select-none hover:opacity-80">
+                      <label key={tagId} className="flex items-center gap-1.5 cursor-pointer text-[10px] font-bold select-none hover:opacity-80">
                         <input
                           type="checkbox"
                           checked={isChecked}
                           disabled={savingId === userItem.id}
-                          onChange={(e) => handleTagToggle(userItem.id, tag, e.target.checked, currentTags)}
+                          onChange={(e) => handleTagToggle(userItem.id, tagId, e.target.checked, currentTags)}
                           className="rounded border-encre-noire text-cordel-wood focus:ring-cordel-wood w-3 h-3 cursor-pointer"
                         />
                         <span className="theme-stamp-badge theme-stamp-badge-wood text-[8px] px-1 py-0.5 normal-case tracking-normal rotate-0 bg-transparent shadow-none border-dashed border">
-                          {tag}
+                          {formattedLabel}
                         </span>
                       </label>
                     );

@@ -1,6 +1,7 @@
 import React from 'react';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
+import { useSequencerRhythms } from '../../hooks/useSequencerRhythms';
 
 export default function EventSetlistSection({
   setlist,
@@ -11,11 +12,27 @@ export default function EventSetlistSection({
   handleAddMorceau,
   newMorceauTitre,
   setNewMorceauTitre,
+  selectedCatalogRhythmUrl,
+  setSelectedCatalogRhythmUrl,
   fileInputKey,
   setNewMorceauJsonFile,
   newMorceauNotes,
-  setNewMorceauNotes
+  setNewMorceauNotes,
+  groupId
 }) {
+  const { catalogRhythms, loadingRhythms } = useSequencerRhythms(groupId);
+
+  const handleSelectCatalogRhythm = (e) => {
+    const selectedUrl = e.target.value;
+    setSelectedCatalogRhythmUrl(selectedUrl);
+    if (selectedUrl) {
+      const foundRhythm = catalogRhythms.find(r => r.jsonUrl === selectedUrl);
+      if (foundRhythm) {
+        setNewMorceauTitre(foundRhythm.titre);
+      }
+    }
+  };
+
   return (
     <>
       {/* Setlist & Séquenceur de l'événement */}
@@ -91,7 +108,35 @@ export default function EventSetlistSection({
                 ➕ Ajouter un morceau / rythme
               </h5>
               <form onSubmit={handleAddMorceau} className="flex flex-col gap-2.5">
+                <div className="flex flex-col gap-1 text-left">
+                  <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                    Choisir un rythme du catalogue
+                  </label>
+                  <select
+                    value={selectedCatalogRhythmUrl}
+                    onChange={handleSelectCatalogRhythm}
+                    disabled={updatingSetlist || loadingRhythms}
+                    className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light w-full cursor-pointer"
+                  >
+                    <option value="">
+                      {loadingRhythms 
+                        ? "-- Chargement du catalogue... --" 
+                        : catalogRhythms.length === 0 
+                          ? "-- Aucun rythme dans le catalogue --" 
+                          : "-- Choisir un rythme du catalogue --"}
+                    </option>
+                    {catalogRhythms.map((rhythm) => (
+                      <option key={rhythm.id} value={rhythm.jsonUrl}>
+                        🎵 {rhythm.titre}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
                 <div className="flex flex-col gap-1">
+                  <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark text-left">
+                    Titre du morceau *
+                  </label>
                   <input 
                     type="text"
                     placeholder="Titre du morceau (ex: Baque de Luanda)"
@@ -105,7 +150,7 @@ export default function EventSetlistSection({
 
                 <div className="flex flex-col gap-1 text-left">
                   <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                    Fichier de configuration du morceau (.json)
+                    OU Fichier .json personnalisé
                   </label>
                   <input 
                     key={fileInputKey}
@@ -117,7 +162,10 @@ export default function EventSetlistSection({
                   />
                 </div>
 
-                <div className="flex flex-col gap-1">
+                <div className="flex flex-col gap-1 text-left">
+                  <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                    Notes de révision
+                  </label>
                   <input 
                     type="text"
                     placeholder="Notes de révision (ex: Tempo 120, variations A et B)"

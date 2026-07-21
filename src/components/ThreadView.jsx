@@ -6,6 +6,9 @@ import CordelButton from './CordelButton';
 import { useTranslation } from './LanguageContext';
 import RichTextEditor from './RichTextEditor';
 import FormattedMessageContent from './FormattedMessageContent';
+import MoveThreadModal from './MoveThreadModal';
+import MoveReplyModal from './MoveReplyModal';
+import { useForumModeration } from '../hooks/useForumModeration';
 
 // Memoized ThreadReplyItem component to avoid re-rendering comments when typing
 const ThreadReplyItem = React.memo(({
@@ -15,6 +18,8 @@ const ThreadReplyItem = React.memo(({
   profileData,
   isModeratorOrAdmin,
   onDeleteReply,
+  onMoveReply,
+  onEditReply,
   t,
   formattedTime
 }) => {
@@ -35,7 +40,7 @@ const ThreadReplyItem = React.memo(({
     >
       <div 
         className={`
-          border-2 p-3 shadow-[2px_2px_0px_0px_#181716] transition-all
+          border-2 p-3 shadow-[2px_2px_0px_0px_#181716] transition-all relative group
           ${isTargeted 
             ? 'theme-bg-jaune border-cordel-wood rounded-[6px_10px_6px_10px] scale-[1.02] shadow-[2.5px_2.5px_0px_0px_#8b2a1a]' 
             : isCurrentUser 
@@ -55,23 +60,53 @@ const ThreadReplyItem = React.memo(({
               {reply.auteurNom}
             </span>
           ) : <span />}
-          {isModeratorOrAdmin && (
-            <button
-              type="button"
-              onClick={() => onDeleteReply(index)}
-              className="text-red-600 hover:text-red-800 text-[10px] font-black cursor-pointer leading-none select-none"
-              title={t('common.delete') || "Supprimer"}
-            >
-              🗑️
-            </button>
-          )}
+
+          <div className="flex items-center gap-1">
+            {(isCurrentUser || isModeratorOrAdmin) && (
+              <button
+                type="button"
+                onClick={() => onEditReply(index, reply)}
+                className="text-[10px] font-black cursor-pointer leading-none select-none opacity-70 hover:opacity-100 p-0.5"
+                title="Éditer le message"
+              >
+                ✏️
+              </button>
+            )}
+            {isModeratorOrAdmin && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => onMoveReply(index, reply)}
+                  className="text-[10px] font-black cursor-pointer leading-none select-none opacity-70 hover:opacity-100 p-0.5"
+                  title="Déplacer ce message vers un autre sujet"
+                >
+                  ➡️
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onDeleteReply(index)}
+                  className="text-red-600 hover:text-red-800 text-[10px] font-black cursor-pointer leading-none select-none p-0.5 ml-0.5"
+                  title={t('common.delete') || "Supprimer"}
+                >
+                  🗑️
+                </button>
+              </>
+            )}
+          </div>
         </div>
 
         <FormattedMessageContent content={reply.message} />
 
-        <span className="text-[7px] font-black opacity-60 block mt-2 text-right select-none">
-          {formattedTime}
-        </span>
+        <div className="flex items-center justify-between gap-2 mt-2 select-none">
+          {reply.isEdited && (
+            <span className="text-[7px] italic font-semibold opacity-50">
+              (modifié)
+            </span>
+          )}
+          <span className="text-[7px] font-black opacity-60 block ml-auto">
+            {formattedTime}
+          </span>
+        </div>
       </div>
     </div>
   );
@@ -80,15 +115,27 @@ const ThreadReplyItem = React.memo(({
          prevProps.reply.message === nextProps.reply.message &&
          prevProps.reply.dateCreation === nextProps.reply.dateCreation &&
          prevProps.reply.targetTag === nextProps.reply.targetTag &&
+         prevProps.reply.isEdited === nextProps.reply.isEdited &&
          prevProps.userId === nextProps.userId &&
          prevProps.profileData === nextProps.profileData &&
          prevProps.isModeratorOrAdmin === nextProps.isModeratorOrAdmin &&
          prevProps.formattedTime === nextProps.formattedTime &&
-         prevProps.onDeleteReply === nextProps.onDeleteReply;
+         prevProps.onDeleteReply === nextProps.onDeleteReply &&
+         prevProps.onMoveReply === nextProps.onMoveReply &&
+         prevProps.onEditReply === nextProps.onEditReply;
 });
 
-export default function ThreadView({ threadId, user, profileData, channels = [], onClose }) {
+export default function ThreadView({ threadId, user, profileData, channels = [], allThreads = [], onClose }) {
   const { t } = useTranslation();
+  const {
+    actionLoading,
+    moveThread,
+    togglePinThread,
+    deleteThread,
+    editReply,
+    moveReplyToThread,
+    extractReplyToNewThread
+  } = useForumModeration(profileData?.groupId);
 
   const getCategoryLabel = (cat) => {
     return t(`forum.${cat}`) || cat;
@@ -100,12 +147,22 @@ export default function ThreadView({ threadId, user, profileData, channels = [],
   const [sending, setSending] = useState(false);
   const [availableTargets, setAvailableTargets] = useState([]);
   const [selectedTarget, setSelectedTarget] = useState('');
-  
+
+  // Modals state
+  const [isMoveThreadOpen, setIsMoveThreadOpen] = useState(false);
+  const [movingReplyData, setMovingReplyData] = useState(null); // { reply, index }
+  const [editingReplyData, setEditingReplyData] = useState(null); // { reply, index, text }
+
   const threadChannel = channels.find(c => c.id === thread?.channelId);
   const isModeratorOrAdmin = profileData?.role === 'mestre' || 
                              profileData?.role === 'super-admin' || 
                              profileData?.isSystemAdmin === true || 
-                             (profileData?.tags && (profileData.tags.includes('Modérateur') || profileData.tags.includes('Modérateur Forum')));
+                             (profileData?.tags && (
+                               profileData.tags.includes('Modérateur') || 
+                               profileData.tags.includes('Modérateur Forum') ||
+                               profileData.tags.includes('Gestionnaire Porte-voix') ||
+                               profileData.tags.includes('Porte-voix')
+                             ));
 
   const isReadOnly = (() => {
     if (isModeratorOrAdmin) return false;
@@ -247,7 +304,7 @@ export default function ThreadView({ threadId, user, profileData, channels = [],
   const handleDeleteThread = async () => {
     if (!window.confirm("Voulez-vous vraiment supprimer cette discussion ?")) return;
     try {
-      await deleteDoc(doc(db, 'forum', threadId));
+      await deleteThread(threadId);
       onClose();
     } catch (err) {
       console.error("Error deleting thread:", err);
@@ -269,6 +326,23 @@ export default function ThreadView({ threadId, user, profileData, channels = [],
       alert("Erreur lors de la suppression du message.");
     }
   }, [thread, threadId]);
+
+  const handleOpenEditReply = useCallback((index, reply) => {
+    setEditingReplyData({ index, text: reply.message });
+  }, []);
+
+  const handleSaveEditReply = async (e) => {
+    e.preventDefault();
+    if (!editingReplyData || !editingReplyData.text.trim()) return;
+    const ok = await editReply(threadId, editingReplyData.index, editingReplyData.text.trim());
+    if (ok) {
+      setEditingReplyData(null);
+    }
+  };
+
+  const handleOpenMoveReply = useCallback((index, reply) => {
+    setMovingReplyData({ index, reply });
+  }, []);
 
   const categoryBadges = {
     Général: 'ocre',
@@ -304,25 +378,62 @@ export default function ThreadView({ threadId, user, profileData, channels = [],
         <div className="flex flex-col gap-4 flex-1">
           {/* Thread Header details */}
           <CordelCard variant={badgeVariant} useExtremeBorder={true} className="py-4 relative select-none">
-            {isModeratorOrAdmin && (
-              <button
-                type="button"
-                onClick={handleDeleteThread}
-                className="absolute top-3 right-3 text-red-600 hover:text-red-800 text-[10px] font-black cursor-pointer border border-red-200 bg-red-50 hover:bg-red-100 rounded px-1.5 py-0.5 shadow-sm"
-                title={t('common.delete') || "Supprimer"}
-              >
-                🗑️ {t('common.delete') || "Supprimer"}
-              </button>
-            )}
-            <span className="text-[7px] font-black uppercase tracking-widest opacity-60">
-              {getCategoryLabel(thread.categorie)}
-            </span>
-            <h3 className="font-extrabold text-base text-encre-noire leading-tight mt-0.5 mb-2 pr-24">
+            <div className="flex items-center gap-2 mb-1 flex-wrap">
+              {thread.isPinned && (
+                <span className="theme-stamp-badge theme-stamp-badge-wood text-[8px] flex items-center gap-1">
+                  📌 Épinglé
+                </span>
+              )}
+              <span className="text-[7px] font-black uppercase tracking-widest opacity-60">
+                {getCategoryLabel(thread.categorie)}
+              </span>
+            </div>
+
+            <h3 className="font-extrabold text-base text-encre-noire leading-tight mt-0.5 mb-2 pr-32">
               {thread.titre}
             </h3>
             <p className="text-[10px] font-bold tracking-wide opacity-75">
               {(t('forum.launchedBy') || "Lancé par {author}").replace('{author}', thread.auteurNom)}
             </p>
+
+            {/* Moderator Toolbar Overlay */}
+            {isModeratorOrAdmin && (
+              <div className="absolute top-3 right-3 flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => togglePinThread(thread.id, thread.isPinned)}
+                  disabled={actionLoading}
+                  className={`text-[9px] font-black cursor-pointer border rounded px-1.5 py-0.5 shadow-xs ${
+                    thread.isPinned
+                      ? 'bg-amber-100 text-amber-900 border-amber-300'
+                      : 'bg-white text-encre-noire border-cordel-master-dark/30 hover:bg-amber-50'
+                  }`}
+                  title={thread.isPinned ? "Désépingler" : "Épingler le sujet"}
+                >
+                  📌 {thread.isPinned ? 'Désépingler' : 'Épingler'}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setIsMoveThreadOpen(true)}
+                  disabled={actionLoading}
+                  className="bg-white hover:bg-cordel-bg text-encre-noire border border-cordel-master-dark/30 text-[9px] font-black cursor-pointer rounded px-1.5 py-0.5 shadow-xs"
+                  title="Déplacer vers un autre salon"
+                >
+                  🚚 Déplacer
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleDeleteThread}
+                  disabled={actionLoading}
+                  className="text-red-600 hover:text-red-800 text-[9px] font-black cursor-pointer border border-red-200 bg-red-50 hover:bg-red-100 rounded px-1.5 py-0.5 shadow-xs"
+                  title={t('common.delete') || "Supprimer"}
+                >
+                  🗑️
+                </button>
+              </div>
+            )}
           </CordelCard>
 
           {/* Messages Container (Scrollable) */}
@@ -344,6 +455,8 @@ export default function ThreadView({ threadId, user, profileData, channels = [],
                   profileData={profileData}
                   isModeratorOrAdmin={isModeratorOrAdmin}
                   onDeleteReply={handleDeleteReply}
+                  onMoveReply={handleOpenMoveReply}
+                  onEditReply={handleOpenEditReply}
                   t={t}
                   formattedTime={formattedTime}
                 />
@@ -416,6 +529,107 @@ export default function ThreadView({ threadId, user, profileData, channels = [],
                 </CordelButton>
               </div>
             </form>
+          )}
+
+          {/* Move Thread Modal */}
+          {isMoveThreadOpen && (
+            <MoveThreadModal
+              thread={thread}
+              channels={channels}
+              isSubmitting={actionLoading}
+              onClose={() => setIsMoveThreadOpen(false)}
+              onConfirm={async (newChannelId, newCategory) => {
+                const ok = await moveThread(thread.id, newChannelId, newCategory);
+                if (ok) setIsMoveThreadOpen(false);
+              }}
+            />
+          )}
+
+          {/* Move Reply Modal */}
+          {movingReplyData && (
+            <MoveReplyModal
+              reply={movingReplyData.reply}
+              replyIndex={movingReplyData.index}
+              currentThreadId={thread.id}
+              availableThreads={allThreads}
+              channels={channels}
+              isSubmitting={actionLoading}
+              onClose={() => setMovingReplyData(null)}
+              onMoveToExisting={async (targetThreadId) => {
+                const ok = await moveReplyToThread(thread.id, movingReplyData.index, targetThreadId);
+                if (ok) setMovingReplyData(null);
+              }}
+              onExtractToNew={async (newTitle, newChannelId, newCategory) => {
+                const ok = await extractReplyToNewThread(
+                  thread.id,
+                  movingReplyData.index,
+                  newTitle,
+                  newChannelId,
+                  newCategory,
+                  profileData
+                );
+                if (ok) setMovingReplyData(null);
+              }}
+            />
+          )}
+
+          {/* Edit Reply Modal */}
+          {editingReplyData && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-encre-noire/70 backdrop-blur-sm animate-fade-in select-none">
+              <div className="relative w-full max-w-md">
+                <CordelCard variant="default" useExtremeBorder={true} className="p-5 flex flex-col gap-4 text-left bg-cordel-bg">
+                  <div className="flex justify-between items-start border-b-2 border-dashed border-cordel-master-dark/25 pb-2">
+                    <h3 className="font-cactus font-black text-base text-encre-noire tracking-wider uppercase">
+                      ✏️ Éditer le message
+                    </h3>
+                    <button
+                      type="button"
+                      onClick={() => setEditingReplyData(null)}
+                      className="text-base font-extrabold text-cordel-wood hover:text-red-600 cursor-pointer"
+                    >
+                      ✕
+                    </button>
+                  </div>
+
+                  <form onSubmit={handleSaveEditReply} className="flex flex-col gap-4">
+                    <div className="flex flex-col gap-1 text-left">
+                      <label className="text-[10px] font-black uppercase text-cordel-master-dark">
+                        Message *
+                      </label>
+                      <RichTextEditor
+                        value={editingReplyData.text}
+                        onChange={(val) => setEditingReplyData(prev => ({ ...prev, text: val }))}
+                        disabled={actionLoading}
+                        placeholder="Message..."
+                        groupId={profileData?.groupId}
+                        minHeight="120px"
+                      />
+                    </div>
+
+                    <div className="flex justify-end gap-2 pt-3 border-t border-dashed border-cordel-master-dark/20">
+                      <CordelButton
+                        type="button"
+                        variant="default"
+                        onClick={() => setEditingReplyData(null)}
+                        disabled={actionLoading}
+                        className="py-2 px-4 text-xs font-bold uppercase"
+                      >
+                        Annuler
+                      </CordelButton>
+                      <CordelButton
+                        type="submit"
+                        variant="ocre"
+                        useExtremeBorder={true}
+                        disabled={actionLoading || !editingReplyData.text.trim()}
+                        className="py-2 px-4 text-xs font-black uppercase tracking-wider"
+                      >
+                        {actionLoading ? "Enregistrement..." : "Enregistrer"}
+                      </CordelButton>
+                    </div>
+                  </form>
+                </CordelCard>
+              </div>
+            </div>
           )}
         </div>
       )}

@@ -51,6 +51,7 @@ export function useUserProfile(user, profileData, t) {
   const [aptitudeMedicaleDocUrl, setAptitudeMedicaleDocUrl] = useState('');
   const [fieldsConfig, setFieldsConfig] = useState(null);
   const [instrumentsDisponibles, setInstrumentsDisponibles] = useState(DEFAULT_INSTRUMENTS);
+  const [tagsDisponibles, setTagsDisponibles] = useState([]);
   const [demanderDroitImage, setDemanderDroitImage] = useState(false);
   const [demanderAttestationSante, setDemanderAttestationSante] = useState(false);
 
@@ -151,6 +152,11 @@ export function useUserProfile(user, profileData, t) {
         } else {
           setInstrumentsDisponibles(DEFAULT_INSTRUMENTS);
         }
+        if (Array.isArray(data.tagsDisponibles)) {
+          setTagsDisponibles(data.tagsDisponibles);
+        } else {
+          setTagsDisponibles([]);
+        }
         setDroitImageDocUrl(data.droitImageDocUrl || '');
         setAptitudeMedicaleDocUrl(data.aptitudeMedicaleDocUrl || '');
       }
@@ -159,6 +165,7 @@ export function useUserProfile(user, profileData, t) {
       console.error("UserProfile - Erreur onSnapshot fieldsConfig :", error);
       setFieldsConfig(DEFAULT_FIELDS_CONFIG);
       setInstrumentsDisponibles(DEFAULT_INSTRUMENTS);
+      setTagsDisponibles([]);
       setLoadingInst(false);
     });
 
@@ -466,6 +473,7 @@ export function useUserProfile(user, profileData, t) {
     aptitudeMedicaleDocUrl,
     fieldsConfig,
     instrumentsDisponibles,
+    tagsDisponibles,
     demanderDroitImage,
     demanderAttestationSante,
     selectedImage,

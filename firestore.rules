@@ -149,6 +149,18 @@ service cloud.firestore {
       allow write: if isAdminOrMestre();
     }
 
+    // Workshops: Read if authenticated. Write reserved for admins/mestres.
+    match /workshops/{workshop} {
+      allow read: if isAuthenticated();
+      allow write: if isAdminOrMestre();
+    }
+
+    // Notifications queue: Create if authenticated. Read/Write for admins/mestres.
+    match /notifications_queue/{notif} {
+      allow create: if isAuthenticated();
+      allow read, update, delete: if isAdminOrMestre();
+    }
+
     // Campaigns: Read if authenticated. Write reserved for admins/mestres.
     match /campaigns/{campaign} {
       allow read: if isAuthenticated();

@@ -35,7 +35,8 @@ export default function MestreWorkshops({ groupId }) {
       setWorkshops(fetched);
       setLoading(false);
     }, (error) => {
-      console.error("MestreWorkshops - Error query workshops:", error);
+      console.warn("MestreWorkshops - Problème d'accès ou de droits Firestore :", error?.message || error);
+      setWorkshops([]);
       setLoading(false);
     });
     return () => unsubscribe();

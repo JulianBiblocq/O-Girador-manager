@@ -1,6 +1,7 @@
 import React from 'react';
 import CordelCard from '../CordelCard';
 import { XiloMegaphone } from '../XiloIcons';
+import { formatTagGender, getTagId } from '../../utils/tagUtils';
 
 export default function TabSecurity({
   formData,
@@ -10,15 +11,38 @@ export default function TabSecurity({
 }) {
   const { permissionsMatrice = {}, tagsDisponibles = [] } = formData;
 
-  const handleTogglePermission = (section, tag, checked) => {
+  const handleTogglePermission = (section, tagId, checked) => {
     const sectionTags = permissionsMatrice[section] || [];
     const updatedSection = checked
-      ? [...sectionTags, tag]
-      : sectionTags.filter(t => t !== tag);
+      ? [...sectionTags, tagId]
+      : sectionTags.filter(t => t !== tagId);
     
     handleChange('permissionsMatrice', {
       ...permissionsMatrice,
       [section]: updatedSection
+    });
+  };
+
+  const renderTagCheckboxes = (section) => {
+    return tagsDisponibles.map(tag => {
+      const tagId = getTagId(tag);
+      const isChecked = (permissionsMatrice[section] || []).includes(tagId) || (typeof tag === 'string' && (permissionsMatrice[section] || []).includes(tag));
+      const formattedLabel = formatTagGender(tag, null, formData?.majoriteFeminine, tagsDisponibles);
+
+      return (
+        <label key={tagId} className="flex items-center gap-1.5 cursor-pointer text-[10px] font-bold select-none hover:opacity-85">
+          <input 
+            type="checkbox"
+            checked={isChecked}
+            onChange={(e) => handleTogglePermission(section, tagId, e.target.checked)}
+            disabled={saving}
+            className="rounded cursor-pointer w-3.5 h-3.5"
+          />
+          <span className="theme-stamp-badge theme-stamp-badge-wood text-[8.5px] py-0.5 normal-case tracking-normal">
+            {formattedLabel}
+          </span>
+        </label>
+      );
     });
   };
 
@@ -41,26 +65,10 @@ export default function TabSecurity({
           <div className="flex flex-col gap-1.5 border border-dashed border-cordel-master-dark/15 p-3 rounded bg-white/40 dark:bg-black/10">
             <span className="text-[11px] font-extrabold text-encre-noire">👥 Gestion de la Troupe</span>
             <span className="text-[9px] text-cordel-master-dark/65 font-semibold -mt-0.5 mb-1.5 block">
-              Donne accès à : Annuaire & Export, Admin Système, Badges
+              Donne accès à : Annuaire &amp; Export, Admin Système, Badges
             </span>
             <div className="flex flex-wrap gap-2">
-              {tagsDisponibles.map(tag => {
-                const isChecked = (permissionsMatrice.troupe || []).includes(tag);
-                return (
-                  <label key={tag} className="flex items-center gap-1.5 cursor-pointer text-[10px] font-bold select-none hover:opacity-85">
-                    <input 
-                      type="checkbox"
-                      checked={isChecked}
-                      onChange={(e) => handleTogglePermission('troupe', tag, e.target.checked)}
-                      disabled={saving}
-                      className="rounded cursor-pointer w-3.5 h-3.5"
-                    />
-                    <span className="theme-stamp-badge theme-stamp-badge-wood text-[8.5px] py-0.5 normal-case tracking-normal">
-                      {tag}
-                    </span>
-                  </label>
-                );
-              })}
+              {renderTagCheckboxes('troupe')}
             </div>
           </div>
 
@@ -71,23 +79,7 @@ export default function TabSecurity({
               Donne accès à : Gestion des Cotisations, Remboursements Kilométriques
             </span>
             <div className="flex flex-wrap gap-2">
-              {tagsDisponibles.map(tag => {
-                const isChecked = (permissionsMatrice.tresorerie || []).includes(tag);
-                return (
-                  <label key={tag} className="flex items-center gap-1.5 cursor-pointer text-[10px] font-bold select-none hover:opacity-85">
-                    <input 
-                      type="checkbox"
-                      checked={isChecked}
-                      onChange={(e) => handleTogglePermission('tresorerie', tag, e.target.checked)}
-                      disabled={saving}
-                      className="rounded cursor-pointer w-3.5 h-3.5"
-                    />
-                    <span className="theme-stamp-badge theme-stamp-badge-wood text-[8.5px] py-0.5 normal-case tracking-normal">
-                      {tag}
-                    </span>
-                  </label>
-                );
-              })}
+              {renderTagCheckboxes('tresorerie')}
             </div>
           </div>
 
@@ -95,107 +87,43 @@ export default function TabSecurity({
           <div className="flex flex-col gap-1.5 border border-dashed border-cordel-master-dark/15 p-3 rounded bg-white/40 dark:bg-black/10">
             <span className="text-[11px] font-extrabold text-encre-noire">📦 Logistique</span>
             <span className="text-[9px] text-cordel-master-dark/65 font-semibold -mt-0.5 mb-1.5 block">
-              Donne accès à : Inventaire des Instruments, Gestion des Commandes
+              Donne accès à : Inventaire Matériel &amp; Commandes
             </span>
             <div className="flex flex-wrap gap-2">
-              {tagsDisponibles.map(tag => {
-                const isChecked = (permissionsMatrice.logistique || []).includes(tag);
-                return (
-                  <label key={tag} className="flex items-center gap-1.5 cursor-pointer text-[10px] font-bold select-none hover:opacity-85">
-                    <input 
-                      type="checkbox"
-                      checked={isChecked}
-                      onChange={(e) => handleTogglePermission('logistique', tag, e.target.checked)}
-                      disabled={saving}
-                      className="rounded cursor-pointer w-3.5 h-3.5"
-                    />
-                    <span className="theme-stamp-badge theme-stamp-badge-wood text-[8.5px] py-0.5 normal-case tracking-normal">
-                      {tag}
-                    </span>
-                  </label>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Le Studio */}
-          <div className="flex flex-col gap-1.5 border border-dashed border-cordel-master-dark/15 p-3 rounded bg-white/40 dark:bg-black/10">
-            <span className="text-[11px] font-extrabold text-encre-noire flex items-center gap-1"><XiloMegaphone size={12} /> Le Studio</span>
-            <span className="text-[9px] text-cordel-master-dark/65 font-semibold -mt-0.5 mb-1.5 block">
-              Donne accès à : Studio Social
-            </span>
-            <div className="flex flex-wrap gap-2">
-              {tagsDisponibles.map(tag => {
-                const isChecked = (permissionsMatrice.studio || []).includes(tag);
-                return (
-                  <label key={tag} className="flex items-center gap-1.5 cursor-pointer text-[10px] font-bold select-none hover:opacity-85">
-                    <input 
-                      type="checkbox"
-                      checked={isChecked}
-                      onChange={(e) => handleTogglePermission('studio', tag, e.target.checked)}
-                      disabled={saving}
-                      className="rounded cursor-pointer w-3.5 h-3.5"
-                    />
-                    <span className="theme-stamp-badge theme-stamp-badge-wood text-[8.5px] py-0.5 normal-case tracking-normal">
-                      {tag}
-                    </span>
-                  </label>
-                );
-              })}
+              {renderTagCheckboxes('logistique')}
             </div>
           </div>
 
           {/* Vestiaire */}
           <div className="flex flex-col gap-1.5 border border-dashed border-cordel-master-dark/15 p-3 rounded bg-white/40 dark:bg-black/10">
-            <span className="text-[11px] font-extrabold text-encre-noire flex items-center gap-1">🧥 Vestiaire</span>
+            <span className="text-[11px] font-extrabold text-encre-noire">👗 Vestiaire &amp; Costumes</span>
             <span className="text-[9px] text-cordel-master-dark/65 font-semibold -mt-0.5 mb-1.5 block">
-              Donne accès à : Inventaire des pièces, Atelier couture, Mensurations adhérents
+              Donne accès à : Inventaire Costumes &amp; Suivi Couture
             </span>
             <div className="flex flex-wrap gap-2">
-              {tagsDisponibles.map(tag => {
-                const isChecked = (permissionsMatrice.vestiaire || []).includes(tag);
-                return (
-                  <label key={tag} className="flex items-center gap-1.5 cursor-pointer text-[10px] font-bold select-none hover:opacity-85">
-                    <input 
-                      type="checkbox"
-                      checked={isChecked}
-                      onChange={(e) => handleTogglePermission('vestiaire', tag, e.target.checked)}
-                      disabled={saving}
-                      className="rounded cursor-pointer w-3.5 h-3.5"
-                    />
-                    <span className="theme-stamp-badge theme-stamp-badge-wood text-[8.5px] py-0.5 normal-case tracking-normal">
-                      {tag}
-                    </span>
-                  </label>
-                );
-              })}
+              {renderTagCheckboxes('vestiaire')}
             </div>
           </div>
 
-          {/* Espace Mestre */}
+          {/* Studio Social */}
           <div className="flex flex-col gap-1.5 border border-dashed border-cordel-master-dark/15 p-3 rounded bg-white/40 dark:bg-black/10">
-            <span className="text-[11px] font-extrabold text-encre-noire flex items-center gap-1">🎭 Espace Mestre</span>
+            <span className="text-[11px] font-extrabold text-encre-noire">📢 Studio Social &amp; Varal</span>
             <span className="text-[9px] text-cordel-master-dark/65 font-semibold -mt-0.5 mb-1.5 block">
-              Donne accès à : Liste des Événements, Configuration du plan de scène, Séquenceur, Ateliers
+              Donne accès à : Publications réseaux sociaux, Varal de Médias &amp; Compte-Rendus
             </span>
             <div className="flex flex-wrap gap-2">
-              {tagsDisponibles.map(tag => {
-                const isChecked = (permissionsMatrice.mestre || []).includes(tag);
-                return (
-                  <label key={tag} className="flex items-center gap-1.5 cursor-pointer text-[10px] font-bold select-none hover:opacity-85">
-                    <input 
-                      type="checkbox"
-                      checked={isChecked}
-                      onChange={(e) => handleTogglePermission('mestre', tag, e.target.checked)}
-                      disabled={saving}
-                      className="rounded cursor-pointer w-3.5 h-3.5"
-                    />
-                    <span className="theme-stamp-badge theme-stamp-badge-wood text-[8.5px] py-0.5 normal-case tracking-normal">
-                      {tag}
-                    </span>
-                  </label>
-                );
-              })}
+              {renderTagCheckboxes('studio')}
+            </div>
+          </div>
+
+          {/* Mestre & Pédagogie */}
+          <div className="flex flex-col gap-1.5 border border-dashed border-cordel-master-dark/15 p-3 rounded bg-white/40 dark:bg-black/10">
+            <span className="text-[11px] font-extrabold text-encre-noire">🥁 Mestre &amp; Direction Artistique</span>
+            <span className="text-[9px] text-cordel-master-dark/65 font-semibold -mt-0.5 mb-1.5 block">
+              Donne accès à : Séquenceur, Plan de Scène, Salons Forum &amp; Ateliers
+            </span>
+            <div className="flex flex-wrap gap-2">
+              {renderTagCheckboxes('mestre')}
             </div>
           </div>
         </div>
