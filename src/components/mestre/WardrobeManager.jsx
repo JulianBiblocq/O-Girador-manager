@@ -5,6 +5,7 @@ import { useTranslation } from '../LanguageContext';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 import CostumeSizesTable from './CostumeSizesTable';
+import CostumesAdminManager from './CostumesAdminManager';
 
 export default function WardrobeManager({ groupId, role, isSystemAdmin, hasAccessLogistique, onBack, activeTab = 'inventory' }) {
   const { t } = useTranslation();
@@ -232,11 +233,19 @@ export default function WardrobeManager({ groupId, role, isSystemAdmin, hasAcces
 
       {/* TAB 1: COSTUME INVENTORY */}
       {activeTab === 'inventory' && (
-        <div className="flex flex-col gap-4">
-          <div className="flex justify-between items-center bg-white/40 dark:bg-black/20 p-3 rounded border border-dashed border-encre-noire/15">
-            <span className="text-xs font-bold text-cordel-master-dark">
-              Total : {costumes.length} pièce{costumes.length > 1 ? 's' : ''} répertoriée{costumes.length > 1 ? 's' : ''}
-            </span>
+        <div className="flex flex-col gap-6">
+          {/* Section 1: Costumes & Pièces Management */}
+          <CostumesAdminManager groupId={groupId} />
+
+          {/* Section 2: Physical Items Inventory */}
+          <div className="pt-4 border-t-2 border-dashed border-cordel-master-dark/20 flex flex-col gap-4">
+            <h3 className="font-cactus font-black text-sm text-cordel-wood uppercase tracking-wider text-left">
+              📦 Stock physique & Emprunts de pièces
+            </h3>
+            <div className="flex justify-between items-center bg-white/40 dark:bg-black/20 p-3 rounded border border-dashed border-encre-noire/15">
+              <span className="text-xs font-bold text-cordel-master-dark">
+                Total : {costumes.length} pièce{costumes.length > 1 ? 's' : ''} répertoriée{costumes.length > 1 ? 's' : ''}
+              </span>
             <button
               type="button"
               onClick={() => {
@@ -418,6 +427,7 @@ export default function WardrobeManager({ groupId, role, isSystemAdmin, hasAcces
               </table>
             </div>
           </CordelCard>
+          </div>
         </div>
       )}
 

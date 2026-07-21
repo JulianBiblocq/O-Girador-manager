@@ -7,15 +7,15 @@ import { getToken } from 'firebase/messaging';
 import { forceUpdateAndClearCache } from '../utils/pwaUtils';
 
 export const DEFAULT_FIELDS_CONFIG = {
-  telephone: { key: "telephone", label: "Téléphone", enabled: true, filledBy: "member" },
-  adresse: { key: "adresse", label: "Adresse physique", enabled: true, filledBy: "member" },
-  surnom: { key: "surnom", label: "Surnom", enabled: true, filledBy: "member" },
-  tailleTshirt: { key: "tailleTshirt", label: "Taille T-shirt", enabled: true, filledBy: "member" },
-  taillePantalon: { key: "taillePantalon", label: "Taille Pantalon/Bas", enabled: true, filledBy: "member" },
-  droitImage: { key: "droitImage", label: "Droit à l'image", enabled: true, filledBy: "member" },
-  aptitudeMedicale: { key: "aptitudeMedicale", label: "Aptitude médicale", enabled: true, filledBy: "member" },
-  lateralite: { key: "lateralite", label: "Latéralité (Gaucher/Droitier)", enabled: true, filledBy: "member" },
-  dateNaissance: { key: "dateNaissance", label: "Date de naissance", enabled: true, filledBy: "member" }
+  telephone: { key: "telephone", label: "Téléphone", enabled: true, filledBy: "member", isRequired: false },
+  adresse: { key: "adresse", label: "Adresse physique", enabled: true, filledBy: "member", isRequired: false },
+  surnom: { key: "surnom", label: "Surnom", enabled: true, filledBy: "member", isRequired: false },
+  tailleTshirt: { key: "tailleTshirt", label: "Taille T-shirt", enabled: true, filledBy: "member", isRequired: false },
+  taillePantalon: { key: "taillePantalon", label: "Taille Pantalon/Bas", enabled: true, filledBy: "member", isRequired: false },
+  droitImage: { key: "droitImage", label: "Droit à l'image", enabled: true, filledBy: "member", isRequired: false },
+  aptitudeMedicale: { key: "aptitudeMedicale", label: "Aptitude médicale", enabled: true, filledBy: "member", isRequired: false },
+  lateralite: { key: "lateralite", label: "Latéralité (Gaucher/Droitier)", enabled: true, filledBy: "member", isRequired: false },
+  dateNaissance: { key: "dateNaissance", label: "Date de naissance", enabled: true, filledBy: "member", isRequired: false }
 };
 
 export const DEFAULT_INSTRUMENTS = ["Alfaia Marcante", "Alfaia Meião", "Alfaia Repique", "Caixa", "Tarol", "Gonguê", "Agbê", "Mineiro", "Timbal", "Chant", "Danse"];
@@ -232,10 +232,36 @@ export function useUserProfile(user, profileData, t) {
     checkAndAutoSubscribe();
   }, [user?.uid, profileData?.fcmTokens]);
 
+  const [validationError, setValidationError] = useState('');
+
   const isFieldVisible = (key) => {
     if (!fieldsConfig) return true;
     const cfg = fieldsConfig[key];
     return cfg ? (cfg.enabled && cfg.filledBy === 'member') : true;
+  };
+
+  const isFieldRequired = (key) => {
+    if (!fieldsConfig) return false;
+    const cfg = fieldsConfig[key];
+    return cfg ? (cfg.enabled && cfg.filledBy === 'member' && Boolean(cfg.isRequired)) : false;
+  };
+
+  const getMissingRequiredFields = () => {
+    if (!fieldsConfig) return [];
+    const missing = [];
+    Object.keys(fieldsConfig).forEach(key => {
+      if (!isFieldRequired(key)) return;
+      if (key === 'telephone' && (!formData.telephone || !formData.telephone.trim())) missing.push('telephone');
+      if (key === 'surnom' && (!formData.surnom || !formData.surnom.trim())) missing.push('surnom');
+      if (key === 'adresse' && (!formData.adresse || !formData.adresse.trim()) && (!formData.adresseRue || !formData.adresseRue.trim())) missing.push('adresse');
+      if (key === 'tailleTshirt' && (!formData.tailleTshirt || !formData.tailleTshirt.trim())) missing.push('tailleTshirt');
+      if (key === 'taillePantalon' && (!formData.taillePantalon || !formData.taillePantalon.trim())) missing.push('taillePantalon');
+      if (key === 'lateralite' && (!formData.lateralite || !formData.lateralite.trim())) missing.push('lateralite');
+      if (key === 'dateNaissance' && (!formData.dateNaissance || !formData.dateNaissance.trim())) missing.push('dateNaissance');
+      if (key === 'droitImage' && demanderDroitImage && !formData.droitImage) missing.push('droitImage');
+      if (key === 'aptitudeMedicale' && demanderAttestationSante && !formData.aptitudeMedicale) missing.push('aptitudeMedicale');
+    });
+    return missing;
   };
 
   const handlePhotoSelected = (e) => {
@@ -296,6 +322,29 @@ export function useUserProfile(user, profileData, t) {
   const handleSave = async (e) => {
     if (e && e.preventDefault) e.preventDefault();
     if (!user?.uid) return;
+
+    setValidationError('');
+
+    const missingRequired = Object.keys(fieldsConfig || {}).some(key => {
+      if (!isFieldRequired(key)) return false;
+      if (key === 'telephone') return !formData.telephone || !formData.telephone.trim();
+      if (key === 'surnom') return !formData.surnom || !formData.surnom.trim();
+      if (key === 'adresse') return (!formData.adresse || !formData.adresse.trim()) && (!formData.adresseRue || !formData.adresseRue.trim());
+      if (key === 'tailleTshirt') return !formData.tailleTshirt || !formData.tailleTshirt.trim();
+      if (key === 'taillePantalon') return !formData.taillePantalon || !formData.taillePantalon.trim();
+      if (key === 'lateralite') return !formData.lateralite || !formData.lateralite.trim();
+      if (key === 'dateNaissance') return !formData.dateNaissance || !formData.dateNaissance.trim();
+      if (key === 'droitImage') return demanderDroitImage && !formData.droitImage;
+      if (key === 'aptitudeMedicale') return demanderAttestationSante && !formData.aptitudeMedicale;
+      return false;
+    });
+
+    if (missingRequired) {
+      const errMsg = "Veuillez remplir tous les champs obligatoires.";
+      setValidationError(errMsg);
+      alert(errMsg);
+      return;
+    }
 
     setSaving(true);
     try {
@@ -428,6 +477,9 @@ export function useUserProfile(user, profileData, t) {
     handleStartEdit,
     handleEnableNotifications,
     isFieldVisible,
+    isFieldRequired,
+    getMissingRequiredFields,
+    validationError,
     handlePhotoSelected,
     handleEditorComplete,
     handleChange,

@@ -4,14 +4,15 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '../firebase';
 
 export const DEFAULT_FIELDS_CONFIG = {
-  telephone: { key: "telephone", label: "Téléphone", enabled: true, filledBy: "member" },
-  adresse: { key: "adresse", label: "Adresse physique", enabled: true, filledBy: "member" },
-  surnom: { key: "surnom", label: "Surnom", enabled: true, filledBy: "member" },
-  tailleTshirt: { key: "tailleTshirt", label: "Taille T-shirt", enabled: true, filledBy: "member" },
-  droitImage: { key: "droitImage", label: "Droit à l'image", enabled: true, filledBy: "member" },
-  aptitudeMedicale: { key: "aptitudeMedicale", label: "Aptitude médicale", enabled: true, filledBy: "member" },
-  lateralite: { key: "lateralite", label: "Latéralité (Gaucher/Droitier)", enabled: true, filledBy: "member" },
-  dateNaissance: { key: "dateNaissance", label: "Date de naissance", enabled: true, filledBy: "member" }
+  telephone: { key: "telephone", label: "Téléphone", enabled: true, filledBy: "member", isRequired: false },
+  adresse: { key: "adresse", label: "Adresse physique", enabled: true, filledBy: "member", isRequired: false },
+  surnom: { key: "surnom", label: "Surnom", enabled: true, filledBy: "member", isRequired: false },
+  tailleTshirt: { key: "tailleTshirt", label: "Taille T-shirt", enabled: true, filledBy: "member", isRequired: false },
+  taillePantalon: { key: "taillePantalon", label: "Taille Pantalon/Bas", enabled: true, filledBy: "member", isRequired: false },
+  droitImage: { key: "droitImage", label: "Droit à l'image", enabled: true, filledBy: "member", isRequired: false },
+  aptitudeMedicale: { key: "aptitudeMedicale", label: "Aptitude médicale", enabled: true, filledBy: "member", isRequired: false },
+  lateralite: { key: "lateralite", label: "Latéralité (Gaucher/Droitier)", enabled: true, filledBy: "member", isRequired: false },
+  dateNaissance: { key: "dateNaissance", label: "Date de naissance", enabled: true, filledBy: "member", isRequired: false }
 };
 
 export const DEFAULT_VARAL_CATEGORIES = [

@@ -131,6 +131,17 @@ export default function TabOrganization({
     handleChange('fieldsConfig', updated);
   };
 
+  const handleToggleRequired = (key) => {
+    const updated = {
+      ...fieldsConfig,
+      [key]: {
+        ...fieldsConfig[key],
+        isRequired: !fieldsConfig[key]?.isRequired
+      }
+    };
+    handleChange('fieldsConfig', updated);
+  };
+
   return (
     <>
       {(!mode || mode === 'instruments-only') && (
@@ -404,17 +415,34 @@ export default function TabOrganization({
                 </div>
 
                 {field.enabled && (
-                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 border-t border-dashed border-cordel-master-dark/10 pt-2 mt-0.5 text-left w-full">
-                    <span className="text-[9px] font-semibold text-cordel-master-dark/85 shrink-0">Rempli par :</span>
-                    <select
-                      value={field.filledBy}
-                      onChange={(e) => handleFilledByChange(field.key, e.target.value)}
-                      disabled={saving}
-                      className="theme-input text-[10px] font-bold py-1 px-2 w-full sm:flex-1 bg-cordel-bg-light"
-                    >
-                      <option value="member">L'adhérent (Profil & Inscription)</option>
-                      <option value="admin">L'administrateur (Console Admin uniquement)</option>
-                    </select>
+                  <div className="flex flex-col gap-2 border-t border-dashed border-cordel-master-dark/10 pt-2 mt-0.5 text-left w-full">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+                      <span className="text-[9px] font-semibold text-cordel-master-dark/85 shrink-0">Rempli par :</span>
+                      <select
+                        value={field.filledBy}
+                        onChange={(e) => handleFilledByChange(field.key, e.target.value)}
+                        disabled={saving}
+                        className="theme-input text-[10px] font-bold py-1 px-2 w-full sm:flex-1 bg-cordel-bg-light"
+                      >
+                        <option value="member">L'adhérent (Profil & Inscription)</option>
+                        <option value="admin">L'administrateur (Console Admin uniquement)</option>
+                      </select>
+                    </div>
+
+                    {field.filledBy === 'member' && (
+                      <label className="flex items-center gap-2 cursor-pointer select-none mt-1">
+                        <input 
+                          type="checkbox"
+                          checked={Boolean(field.isRequired)}
+                          onChange={() => handleToggleRequired(field.key)}
+                          disabled={saving}
+                          className="cursor-pointer"
+                        />
+                        <span className="text-[10px] font-bold text-cordel-master-dark">
+                          Rendre ce champ obligatoire pour l'inscription
+                        </span>
+                      </label>
+                    )}
                   </div>
                 )}
               </CordelCard>

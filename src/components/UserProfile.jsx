@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useUserProfile } from '../hooks/useUserProfile';
 import XiloAvatar from './XiloAvatar';
 import CordelCard from './CordelCard';
@@ -28,6 +28,7 @@ const getInstrumentIconPath = (instName) => {
 export default function UserProfile({ user, profileData, onBack, onNavigateToTuto }) {
   const { t, locale } = useTranslation();
   const { tRole } = useTerminologie();
+  const [lightboxOpen, setLightboxOpen] = useState(false);
 
   const {
     isEditing,
@@ -46,6 +47,9 @@ export default function UserProfile({ user, profileData, onBack, onNavigateToTut
     setShowEditor,
     handleStartEdit,
     isFieldVisible,
+    isFieldRequired,
+    getMissingRequiredFields,
+    validationError,
     handlePhotoSelected,
     handleEditorComplete,
     handleChange,
@@ -61,6 +65,21 @@ export default function UserProfile({ user, profileData, onBack, onNavigateToTut
     return val === key ? fallback : val;
   };
 
+  const FIELD_LABELS = {
+    telephone: 'Téléphone',
+    surnom: 'Surnom',
+    adresse: 'Adresse',
+    tailleTshirt: 'Taille T-shirt',
+    taillePantalon: 'Taille Pantalon',
+    lateralite: 'Latéralité',
+    dateNaissance: 'Date de naissance',
+    droitImage: "Droit à l'image",
+    aptitudeMedicale: 'Aptitude médicale'
+  };
+
+  const missingKeys = getMissingRequiredFields ? getMissingRequiredFields() : [];
+  const missingLabels = missingKeys.map(k => FIELD_LABELS[k] || k);
+
   return (
     <div className="flex flex-col gap-4 text-left max-w-3xl mx-auto w-full">
       {/* Header bar */}
@@ -73,6 +92,30 @@ export default function UserProfile({ user, profileData, onBack, onNavigateToTut
         </span>
         <div className="w-12"></div> {/* Spacer for alignment */}
       </div>
+
+      {/* Missing Required Fields Alert Banner */}
+      {missingKeys.length > 0 && (
+        <div className="bg-amber-100 dark:bg-amber-950/40 border-2 border-dashed border-amber-600 text-amber-900 dark:text-amber-200 p-3 rounded flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs text-left shadow-sm animate-fade-in select-none">
+          <div className="flex flex-col">
+            <span className="font-black uppercase tracking-wider text-amber-700 dark:text-amber-400 text-[10px]">
+              ⚠️ Profil incomplet - Informations obligatoires manquantes
+            </span>
+            <span className="font-bold mt-0.5">
+              Veuillez compléter : {missingLabels.join(', ')}.
+            </span>
+          </div>
+          {!isEditing && (
+            <CordelButton
+              variant="ocre"
+              useExtremeBorder={true}
+              onClick={handleStartEdit}
+              className="text-[10px] py-1.5 px-3 uppercase font-black shrink-0"
+            >
+              ✏️ Renseigner maintenant
+            </CordelButton>
+          )}
+        </div>
+      )}
 
       {/* Avatar Container in Center */}
       <div className="flex flex-col items-center gap-3 py-4 select-none w-full">
@@ -343,15 +386,20 @@ export default function UserProfile({ user, profileData, onBack, onNavigateToTut
           setIsEditing={setIsEditing}
           saving={saving}
           isFieldVisible={isFieldVisible}
+          isFieldRequired={isFieldRequired}
+          validationError={validationError}
           demanderAttestationSante={demanderAttestationSante}
           t={t}
         />
       )}
 
-      {/* Checklist Costumes */}
+      {/* Checklist & Vestiaire Costumes */}
       <CostumeChecklist
         userId={user?.uid}
+        groupId={profileData?.groupId}
+        userCostumeChecklist={profileData?.userCostumeChecklist || {}}
         costumeChecklist={profileData?.costumeChecklist}
+        userSection={profileData?.instrument || ''}
         onNavigateToTuto={onNavigateToTuto}
       />
 

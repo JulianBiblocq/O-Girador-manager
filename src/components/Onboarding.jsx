@@ -7,15 +7,15 @@ import CordelButton from './CordelButton';
 import { useTranslation } from './LanguageContext';
 
 const DEFAULT_FIELDS_CONFIG = {
-  telephone: { key: "telephone", label: "Téléphone", enabled: true, filledBy: "member" },
-  adresse: { key: "adresse", label: "Adresse physique", enabled: true, filledBy: "member" },
-  surnom: { key: "surnom", label: "Surnom", enabled: true, filledBy: "member" },
-  tailleTshirt: { key: "tailleTshirt", label: "Taille T-shirt", enabled: true, filledBy: "member" },
-  taillePantalon: { key: "taillePantalon", label: "Taille Pantalon/Bas", enabled: true, filledBy: "member" },
-  droitImage: { key: "droitImage", label: "Droit à l'image", enabled: true, filledBy: "member" },
-  aptitudeMedicale: { key: "aptitudeMedicale", label: "Aptitude médicale", enabled: true, filledBy: "member" },
-  lateralite: { key: "lateralite", label: "Latéralité (Gaucher/Droitier)", enabled: true, filledBy: "member" },
-  dateNaissance: { key: "dateNaissance", label: "Date de naissance", enabled: true, filledBy: "member" }
+  telephone: { key: "telephone", label: "Téléphone", enabled: true, filledBy: "member", isRequired: false },
+  adresse: { key: "adresse", label: "Adresse physique", enabled: true, filledBy: "member", isRequired: false },
+  surnom: { key: "surnom", label: "Surnom", enabled: true, filledBy: "member", isRequired: false },
+  tailleTshirt: { key: "tailleTshirt", label: "Taille T-shirt", enabled: true, filledBy: "member", isRequired: false },
+  taillePantalon: { key: "taillePantalon", label: "Taille Pantalon/Bas", enabled: true, filledBy: "member", isRequired: false },
+  droitImage: { key: "droitImage", label: "Droit à l'image", enabled: true, filledBy: "member", isRequired: false },
+  aptitudeMedicale: { key: "aptitudeMedicale", label: "Aptitude médicale", enabled: true, filledBy: "member", isRequired: false },
+  lateralite: { key: "lateralite", label: "Latéralité (Gaucher/Droitier)", enabled: true, filledBy: "member", isRequired: false },
+  dateNaissance: { key: "dateNaissance", label: "Date de naissance", enabled: true, filledBy: "member", isRequired: false }
 };
 
 const DEFAULT_INSTRUMENTS = ["Alfaia Marcante", "Alfaia Meião", "Alfaia Repique", "Caixa", "Tarol", "Gonguê", "Agbê", "Mineiro", "Timbal", "Chant", "Danse"];
@@ -106,10 +106,18 @@ export default function Onboarding({ user, branding, onComplete }) {
     fetchConfig();
   }, [groupId]);
 
+  const [validationError, setValidationError] = useState('');
+
   const isFieldVisible = (key) => {
     if (!fieldsConfig) return true; // show by default while loading
     const cfg = fieldsConfig[key];
     return cfg ? (cfg.enabled && cfg.filledBy === 'member') : true;
+  };
+
+  const isFieldRequired = (key) => {
+    if (!fieldsConfig) return false;
+    const cfg = fieldsConfig[key];
+    return cfg ? (cfg.enabled && cfg.filledBy === 'member' && Boolean(cfg.isRequired)) : false;
   };
 
   const handleChange = (e) => {
@@ -119,6 +127,29 @@ export default function Onboarding({ user, branding, onComplete }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setValidationError('');
+
+    const missingRequired = Object.keys(fieldsConfig || {}).some(key => {
+      if (!isFieldRequired(key)) return false;
+      if (key === 'telephone') return !formData.phone || !formData.phone.trim();
+      if (key === 'surnom') return !formData.surnom || !formData.surnom.trim();
+      if (key === 'adresse') return (!formData.adresseRue || !formData.adresseRue.trim());
+      if (key === 'tailleTshirt') return !formData.tailleTshirt || !formData.tailleTshirt.trim();
+      if (key === 'taillePantalon') return !formData.taillePantalon || !formData.taillePantalon.trim();
+      if (key === 'lateralite') return !formData.lateralite || !formData.lateralite.trim();
+      if (key === 'dateNaissance') return !formData.dateNaissance || !formData.dateNaissance.trim();
+      if (key === 'droitImage') return demanderDroitImage && !formData.droitImage;
+      if (key === 'aptitudeMedicale') return demanderAttestationSante && !formData.aptitudeMedicale;
+      return false;
+    });
+
+    if (missingRequired) {
+      const errMsg = "Veuillez remplir tous les champs obligatoires.";
+      setValidationError(errMsg);
+      alert(errMsg);
+      return;
+    }
+
     setSubmitting(true);
 
     try {
@@ -188,10 +219,16 @@ export default function Onboarding({ user, branding, onComplete }) {
         </p>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4 text-left">
+          {validationError && (
+            <div className="p-3 bg-red-100 border border-red-400 text-red-700 text-xs font-bold rounded">
+              ⚠️ {validationError}
+            </div>
+          )}
+
           {/* First Name Input */}
           <div className="flex flex-col gap-1">
             <label className="text-[10px] uppercase font-bold tracking-wider text-cordel-master-dark">
-              {t('onboarding.firstName')}
+              {t('onboarding.firstName')} <span className="text-red-500 font-bold ml-0.5">*</span>
             </label>
             <input
               type="text"
@@ -207,7 +244,7 @@ export default function Onboarding({ user, branding, onComplete }) {
           {/* Last Name Input */}
           <div className="flex flex-col gap-1">
             <label className="text-[10px] uppercase font-bold tracking-wider text-cordel-master-dark">
-              {t('onboarding.lastName')}
+              {t('onboarding.lastName')} <span className="text-red-500 font-bold ml-0.5">*</span>
             </label>
             <input
               type="text"
@@ -294,6 +331,7 @@ export default function Onboarding({ user, branding, onComplete }) {
             <div className="flex flex-col gap-1">
               <label className="text-[10px] uppercase font-bold tracking-wider text-cordel-master-dark">
                 {t('onboarding.phone')}
+                {isFieldRequired('telephone') && <span className="text-red-500 font-bold ml-1">*</span>}
               </label>
               <input
                 type="tel"
@@ -301,7 +339,7 @@ export default function Onboarding({ user, branding, onComplete }) {
                 placeholder="06 12 34 56 78"
                 value={formData.phone}
                 onChange={handleChange}
-                required
+                required={isFieldRequired('telephone')}
                 disabled={submitting}
                 className="theme-input w-full disabled:opacity-50"
               />
@@ -322,6 +360,7 @@ export default function Onboarding({ user, branding, onComplete }) {
             <div className="flex flex-col gap-1">
               <label className="text-[10px] uppercase font-bold tracking-wider text-cordel-master-dark">
                 {t('onboarding.surnom')}
+                {isFieldRequired('surnom') && <span className="text-red-500 font-bold ml-1">*</span>}
               </label>
               <input
                 type="text"
@@ -340,6 +379,7 @@ export default function Onboarding({ user, branding, onComplete }) {
               <div className="flex flex-col gap-1">
                 <label className="text-[10px] uppercase font-bold tracking-wider text-cordel-master-dark">
                   {t('onboarding.adresseRue') || "Numéro et Rue"}
+                  {isFieldRequired('adresse') && <span className="text-red-500 font-bold ml-1">*</span>}
                 </label>
                 <React.Suspense fallback={
                   <div className="text-[10px] font-bold py-2 text-cordel-wood animate-pulse">
@@ -358,7 +398,7 @@ export default function Onboarding({ user, branding, onComplete }) {
                         adresseVille: addressData.city
                       }));
                     }}
-                    required
+                    required={isFieldRequired('adresse')}
                     disabled={submitting}
                     placeholder="123 Rue de la Roda"
                     className="theme-input w-full disabled:opacity-50"
@@ -369,6 +409,7 @@ export default function Onboarding({ user, branding, onComplete }) {
                 <div className="flex flex-col gap-1 col-span-1">
                   <label className="text-[10px] uppercase font-bold tracking-wider text-cordel-master-dark">
                     {t('onboarding.adresseCP') || "Code Postal"}
+                    {isFieldRequired('adresse') && <span className="text-red-500 font-bold ml-1">*</span>}
                   </label>
                   <input
                     type="text"
@@ -376,7 +417,7 @@ export default function Onboarding({ user, branding, onComplete }) {
                     placeholder="75000"
                     value={formData.adresseCP}
                     onChange={handleChange}
-                    required
+                    required={isFieldRequired('adresse')}
                     disabled={submitting}
                     className="theme-input w-full disabled:opacity-50 font-bold"
                   />
@@ -384,6 +425,7 @@ export default function Onboarding({ user, branding, onComplete }) {
                 <div className="flex flex-col gap-1 col-span-2">
                   <label className="text-[10px] uppercase font-bold tracking-wider text-cordel-master-dark">
                     {t('onboarding.adresseVille') || "Ville"}
+                    {isFieldRequired('adresse') && <span className="text-red-500 font-bold ml-1">*</span>}
                   </label>
                   <input
                     type="text"
@@ -391,7 +433,7 @@ export default function Onboarding({ user, branding, onComplete }) {
                     placeholder="Paris"
                     value={formData.adresseVille}
                     onChange={handleChange}
-                    required
+                    required={isFieldRequired('adresse')}
                     disabled={submitting}
                     className="theme-input w-full disabled:opacity-50 font-semibold"
                   />
@@ -412,6 +454,7 @@ export default function Onboarding({ user, branding, onComplete }) {
                   <div className="flex flex-col gap-1">
                     <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
                       {t('onboarding.tshirtSize')}
+                      {isFieldRequired('tailleTshirt') && <span className="text-red-500 font-bold ml-1">*</span>}
                     </label>
                     <select
                       name="tailleTshirt"
@@ -434,6 +477,7 @@ export default function Onboarding({ user, branding, onComplete }) {
                   <div className="flex flex-col gap-1">
                     <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
                       {t('onboarding.pantSize') || "Taille Pantalon"}
+                      {isFieldRequired('taillePantalon') && <span className="text-red-500 font-bold ml-1">*</span>}
                     </label>
                     <select
                       name="taillePantalon"
@@ -460,6 +504,7 @@ export default function Onboarding({ user, branding, onComplete }) {
             <div className="flex flex-col gap-1">
               <label className="text-[10px] uppercase font-bold tracking-wider text-cordel-master-dark">
                 {t('onboarding.lateralite')}
+                {isFieldRequired('lateralite') && <span className="text-red-500 font-bold ml-1">*</span>}
               </label>
               <select
                 name="lateralite"
@@ -479,13 +524,14 @@ export default function Onboarding({ user, branding, onComplete }) {
             <div className="flex flex-col gap-1">
               <label className="text-[10px] uppercase font-bold tracking-wider text-cordel-master-dark">
                 {t('onboarding.birthdate')}
+                {isFieldRequired('dateNaissance') && <span className="text-red-500 font-bold ml-1">*</span>}
               </label>
               <input
                 type="date"
                 name="dateNaissance"
                 value={formData.dateNaissance}
                 onChange={handleChange}
-                required
+                required={isFieldRequired('dateNaissance')}
                 disabled={submitting}
                 className="theme-input w-full disabled:opacity-50 font-bold"
               />
@@ -517,6 +563,7 @@ export default function Onboarding({ user, branding, onComplete }) {
                 />
                 <label htmlFor="droitImage" className="text-xs font-semibold leading-snug cursor-pointer select-none">
                   {t('onboarding.imageRights')}
+                  {isFieldRequired('droitImage') && <span className="text-red-500 font-bold ml-1">*</span>}
                 </label>
               </div>
               {droitImageDocUrl && (
@@ -537,12 +584,13 @@ export default function Onboarding({ user, branding, onComplete }) {
                   id="aptitudeMedicale"
                   checked={formData.aptitudeMedicale}
                   onChange={handleChange}
-                  required
+                  required={demanderAttestationSante || isFieldRequired('aptitudeMedicale')}
                   disabled={submitting}
                   className="mt-1"
                 />
                 <label htmlFor="aptitudeMedicale" className="text-xs font-bold leading-snug cursor-pointer select-none text-red-600">
                   {t('onboarding.medicalCert')}
+                  {(demanderAttestationSante || isFieldRequired('aptitudeMedicale')) && <span className="text-red-500 font-bold ml-1">*</span>}
                 </label>
               </div>
               {aptitudeMedicaleDocUrl && (

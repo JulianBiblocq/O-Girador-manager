@@ -28,6 +28,8 @@ export default function ProfileEditForm({
   setIsEditing,
   saving,
   isFieldVisible,
+  isFieldRequired = () => false,
+  validationError = '',
   demanderAttestationSante,
   t
 }) {
@@ -43,10 +45,16 @@ export default function ProfileEditForm({
           {translate('userProfile.personalInfo', "Informations personnelles")}
         </h4>
 
+        {validationError && (
+          <div className="p-3 bg-red-100 dark:bg-red-950/40 border border-red-400 text-red-700 dark:text-red-300 text-xs font-bold rounded">
+            ⚠️ {validationError}
+          </div>
+        )}
+
         {/* First Name */}
         <div className="flex flex-col gap-1.5 text-left">
           <label className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood">
-            {translate('userProfile.firstName', "Prénom")}
+            {translate('userProfile.firstName', "Prénom")} <span className="text-red-500 font-bold ml-0.5">*</span>
           </label>
           <input
             type="text"
@@ -62,7 +70,7 @@ export default function ProfileEditForm({
         {/* Last Name */}
         <div className="flex flex-col gap-1.5 text-left">
           <label className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood">
-            {translate('userProfile.lastName', "Nom")}
+            {translate('userProfile.lastName', "Nom")} <span className="text-red-500 font-bold ml-0.5">*</span>
           </label>
           <input
             type="text"
@@ -99,6 +107,7 @@ export default function ProfileEditForm({
           <div className="flex flex-col gap-1.5 text-left">
             <label className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood">
               {translate('userProfile.phone', "Téléphone")}
+              {isFieldRequired('telephone') && <span className="text-red-500 font-bold ml-1">*</span>}
             </label>
             <input
               type="tel"
@@ -116,6 +125,7 @@ export default function ProfileEditForm({
           <div className="flex flex-col gap-1.5 text-left">
             <label className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood">
               {translate('userProfile.nickname', "Surnom (Nom de guerre)")}
+              {isFieldRequired('surnom') && <span className="text-red-500 font-bold ml-1">*</span>}
             </label>
             <input
               type="text"
@@ -160,6 +170,7 @@ export default function ProfileEditForm({
           <div className="flex flex-col gap-1.5 text-left">
             <label className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood">
               {translate('userProfile.address', "Adresse")}
+              {isFieldRequired('adresse') && <span className="text-red-500 font-bold ml-1">*</span>}
             </label>
             <React.Suspense fallback={
               <div className="text-[10px] font-bold py-2 text-cordel-wood animate-pulse">
@@ -197,7 +208,10 @@ export default function ProfileEditForm({
             <div className="grid grid-cols-2 gap-3">
               {isFieldVisible('tailleTshirt') && (
                 <div className="flex flex-col gap-1">
-                  <label className="text-[9px] uppercase font-semibold text-cordel-master-dark">T-shirt</label>
+                  <label className="text-[9px] uppercase font-semibold text-cordel-master-dark">
+                    T-shirt
+                    {isFieldRequired('tailleTshirt') && <span className="text-red-500 font-bold ml-1">*</span>}
+                  </label>
                   <select
                     name="tailleTshirt"
                     value={formData.tailleTshirt}
@@ -219,7 +233,10 @@ export default function ProfileEditForm({
 
               {isFieldVisible('taillePantalon') && (
                 <div className="flex flex-col gap-1">
-                  <label className="text-[9px] uppercase font-semibold text-cordel-master-dark">Pantalon</label>
+                  <label className="text-[9px] uppercase font-semibold text-cordel-master-dark">
+                    Pantalon
+                    {isFieldRequired('taillePantalon') && <span className="text-red-500 font-bold ml-1">*</span>}
+                  </label>
                   <select
                     name="taillePantalon"
                     value={formData.taillePantalon}
@@ -249,6 +266,7 @@ export default function ProfileEditForm({
           <div className="flex flex-col gap-1.5 text-left">
             <label className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood">
               {translate('userProfile.laterality', "Latéralité (Gaucher/Droitier)")}
+              {isFieldRequired('lateralite') && <span className="text-red-500 font-bold ml-1">*</span>}
             </label>
             <select
               name="lateralite"
@@ -268,6 +286,7 @@ export default function ProfileEditForm({
           <div className="flex flex-col gap-1.5 text-left">
             <label className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood">
               {translate('userProfile.birthdate', "Date de naissance")}
+              {isFieldRequired('dateNaissance') && <span className="text-red-500 font-bold ml-1">*</span>}
             </label>
             <input
               type="date"
@@ -294,6 +313,7 @@ export default function ProfileEditForm({
               />
               <span className="leading-tight">
                 {translate('userProfile.medicalCertCheckbox', "J'atteste sur l'honneur être en bonne condition physique pour la pratique de la percussion et/ou de la danse de maracatu.")}
+                {isFieldRequired('aptitudeMedicale') && <span className="text-red-500 font-bold ml-1">*</span>}
               </span>
             </label>
           </div>
