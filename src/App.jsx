@@ -13,6 +13,8 @@ const Onboarding = React.lazy(() => import('./components/Onboarding'));
 const Trombinoscope = React.lazy(() => import('./components/Trombinoscope'));
 const Forum = React.lazy(() => import('./components/Forum'));
 const UserProfile = React.lazy(() => import('./components/UserProfile'));
+const UserMateriel = React.lazy(() => import('./components/profile/UserMateriel'));
+const MonVestiaire = React.lazy(() => import('./components/profile/MonVestiaire'));
 const SystemAdminPanel = React.lazy(() => import('./components/SystemAdminPanel'));
 const LayoutEditor = React.lazy(() => import('./components/LayoutEditor'));
 const TagManager = React.lazy(() => import('./components/TagManager'));
