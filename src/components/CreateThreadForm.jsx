@@ -6,6 +6,8 @@ import CordelButton from './CordelButton';
 import { useTranslation } from './LanguageContext';
 import RichTextEditor from './RichTextEditor';
 
+import { getTagId } from '../utils/tagUtils';
+
 export default function CreateThreadForm({ groupId, channelId, user, profileData, onClose }) {
   const { t } = useTranslation();
   const [title, setTitle] = useState('');
@@ -23,8 +25,9 @@ export default function CreateThreadForm({ groupId, channelId, user, profileData
       if (snap.exists()) {
         const data = snap.data();
         const tags = data.tagsDisponibles || [];
+        const tagLabels = tags.map(t => getTagId(t)).filter(Boolean);
         const instruments = data.instrumentsDisponibles || [];
-        const combined = [...new Set([...tags, ...instruments])].filter(Boolean).sort();
+        const combined = [...new Set([...tagLabels, ...instruments])].filter(Boolean).sort();
         setAvailableTargets(combined);
       }
     }, (error) => {

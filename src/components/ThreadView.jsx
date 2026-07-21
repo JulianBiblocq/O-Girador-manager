@@ -9,6 +9,7 @@ import FormattedMessageContent from './FormattedMessageContent';
 import MoveThreadModal from './MoveThreadModal';
 import MoveReplyModal from './MoveReplyModal';
 import { useForumModeration } from '../hooks/useForumModeration';
+import { getTagId } from '../utils/tagUtils';
 
 // Memoized ThreadReplyItem component to avoid re-rendering comments when typing
 const ThreadReplyItem = React.memo(({
@@ -234,8 +235,9 @@ export default function ThreadView({ threadId, user, profileData, channels = [],
       if (snap.exists()) {
         const data = snap.data();
         const tags = data.tagsDisponibles || [];
+        const tagLabels = tags.map(t => getTagId(t)).filter(Boolean);
         const instruments = data.instrumentsDisponibles || [];
-        const combined = [...new Set([...tags, ...instruments])].filter(Boolean).sort();
+        const combined = [...new Set([...tagLabels, ...instruments])].filter(Boolean).sort();
         setAvailableTargets(combined);
       }
     }, (error) => {
@@ -497,16 +499,19 @@ export default function ThreadView({ threadId, user, profileData, channels = [],
               {availableTargets.length > 0 && (
                 <div className="flex flex-wrap items-center gap-1.5 my-1.5 select-none">
                   <span className="text-[9px] font-black uppercase text-cordel-master-dark opacity-60">Mentionner :</span>
-                  {availableTargets.map(tag => (
-                    <button
-                      key={tag}
-                      type="button"
-                      onClick={() => setReplyText(prev => prev + `@${tag} `)}
-                      className="px-2 py-0.5 text-[9px] font-bold bg-cordel-bg border border-cordel-master-dark/20 rounded hover:border-encre-noire transition-all cursor-pointer shadow-[1px_1px_0px_0px_rgba(24,23,22,0.15)] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none"
-                    >
-                      @{tag}
-                    </button>
-                  ))}
+                  {availableTargets.map(tag => {
+                    const tagLabel = typeof tag === 'string' ? tag : getTagId(tag);
+                    return (
+                      <button
+                        key={tagLabel}
+                        type="button"
+                        onClick={() => setReplyText(prev => prev + `@${tagLabel} `)}
+                        className="px-2 py-0.5 text-[9px] font-bold bg-cordel-bg border border-cordel-master-dark/20 rounded hover:border-encre-noire transition-all cursor-pointer shadow-[1px_1px_0px_0px_rgba(24,23,22,0.15)] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none"
+                      >
+                        @{tagLabel}
+                      </button>
+                    );
+                  })}
                 </div>
               )}
 

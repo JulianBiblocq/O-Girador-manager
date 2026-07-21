@@ -6,6 +6,7 @@ import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
 import { XiloMegaphone, XiloClose } from './XiloIcons';
 import { useTranslation } from './LanguageContext';
+import { formatTagGender, getTagId } from '../utils/tagUtils';
 
 export default function WidgetAnnonces({ groupId, profileData, role, isSystemAdmin, user }) {
   const { t } = useTranslation();
@@ -362,20 +363,22 @@ export default function WidgetAnnonces({ groupId, profileData, role, isSystemAdm
                 </button>
 
                 {tagsDisponibles.map((tag) => {
-                  const isActive = cibles.includes(tag);
+                  const tagId = getTagId(tag);
+                  const formattedLabel = formatTagGender(tag, null, false, tagsDisponibles);
+                  const isActive = cibles.includes(tagId) || (typeof tag === 'string' && cibles.includes(tag));
                   return (
                     <button
-                      key={tag}
+                      key={tagId}
                       type="button"
                       disabled={saving}
-                      onClick={() => handleCibleToggle(tag)}
+                      onClick={() => handleCibleToggle(tagId)}
                       className={`text-[9px] px-2 py-0.5 border rounded-[3px_5px_2px_4px] transition-all cursor-pointer font-bold ${
                         isActive 
                           ? 'bg-cordel-wood text-cordel-bg-light border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]' 
                           : 'bg-transparent text-encre-noire border-dashed border-encre-noire/30'
                       }`}
                     >
-                      🏷️ {tag}
+                      🏷️ {formattedLabel}
                     </button>
                   );
                 })}

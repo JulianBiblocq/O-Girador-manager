@@ -10,7 +10,7 @@ import { useTranslation } from './LanguageContext';
 import { XiloCaixa, XiloPeople } from './XiloIcons';
 import { useInstrumentColor } from '../hooks/useInstrumentColor';
 import ImageLightboxModal from './ImageLightboxModal';
-import { formatTagGender } from '../utils/tagUtils';
+import { formatTagGender, getTagId } from '../utils/tagUtils';
 const CordelImageEditor = React.lazy(() => import('./CordelImageEditor'));
 
 // Memoized MemberCard subcomponent
@@ -451,7 +451,10 @@ export default function Trombinoscope({ user, profileData, onBack, onContactUser
         member.instrument === filterInstrument;
 
       const matchesTag = filterTag === 'all' || 
-        (member.tags && member.tags.includes(filterTag));
+        (member.tags && (
+          member.tags.includes(filterTag) || 
+          member.tags.some(t => getTagId(t) === filterTag)
+        ));
 
       return matchesSearch && matchesInstrument && matchesTag;
     });
@@ -555,9 +558,13 @@ export default function Trombinoscope({ user, profileData, onBack, onContactUser
                 className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light"
               >
                 <option value="all">{t('trombinoscope.all')}</option>
-                {tagsDisponibles.map((tag) => (
-                  <option key={tag} value={tag}>{tag}</option>
-                ))}
+                {tagsDisponibles.map((tag) => {
+                  const tagId = getTagId(tag);
+                  const formattedLabel = formatTagGender(tag, null, majoriteFeminine, tagsDisponibles);
+                  return (
+                    <option key={tagId} value={tagId}>{formattedLabel}</option>
+                  );
+                })}
               </select>
             </div>
           </div>
