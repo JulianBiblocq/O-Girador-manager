@@ -125,6 +125,7 @@ const POLES_CONFIG = [
       { id: 'config-identity', label: 'Identité et liens', labelKey: 'tabConfigIdentity' },
       { id: 'config-profile', label: 'Organisation et profil', labelKey: 'tabConfigProfile' },
       { id: 'config-security', label: 'Sécurité et droit', labelKey: 'tabConfigSecurity' },
+      { id: 'config-modules', label: 'Modules & Fonctionnalités', labelKey: 'tabConfigModules' },
       { id: 'config-logistics', label: 'Logistique et covoiturage', labelKey: 'tabConfigLogistics' },
       { id: 'config-documents', label: 'Documents', labelKey: 'tabConfigDocuments' },
       { id: 'config-agenda', label: "Gestion de l'Agenda", labelKey: 'tabConfigAgenda' },
@@ -1063,6 +1064,15 @@ export default function App() {
                 isSystemAdmin={profileData?.isSystemAdmin}
                 activeTabProp="security"
                 mode="security-only"
+                onBack={() => handleNavigateToPole('accueil')} 
+              />
+            ) : (currentTab === 'config-modules' && isSystemOrSuperAdminOrMestre) ? (
+              <AssociationSettings 
+                groupId={profileData?.groupId}
+                role={profileData?.role}
+                isSystemAdmin={profileData?.isSystemAdmin}
+                activeTabProp="modules"
+                mode="modules-only"
                 onBack={() => handleNavigateToPole('accueil')} 
               />
             ) : (currentTab === 'config-logistics' && isSystemOrSuperAdminOrMestre) ? (

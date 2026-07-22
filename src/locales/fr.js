@@ -836,6 +836,7 @@ export const fr = {
     tabConfigIdentity: "Identité et liens",
     tabConfigProfile: "Organisation et profil",
     tabConfigSecurity: "Sécurité et droit",
+    tabConfigModules: "Modules & Fonctionnalités",
     tabConfigLogistics: "Logistique et covoiturage",
     tabConfigDocuments: "Documents",
     tabConfigAgenda: "Configuration de l'agenda",
