@@ -154,13 +154,13 @@ function ChannelTreeItem({ channel, channels, activeChannelId, onSelectChannel, 
   const isReadOnly = !hasWriteAccess(channel);
 
   return (
-    <div className="flex flex-col gap-1">
-      <div className="flex items-center gap-1">
+    <div className="flex flex-col gap-1 w-full min-w-0">
+      <div className="flex items-center gap-1 w-full min-w-0">
         {hasChildren ? (
           <button
             type="button"
             onClick={() => setIsOpen(!isOpen)}
-            className="p-1 text-[10px] font-black text-cordel-wood hover:text-encre-noire cursor-pointer select-none"
+            className="p-1 text-[10px] font-black text-cordel-wood hover:text-encre-noire cursor-pointer select-none shrink-0"
           >
             {isOpen ? '▼' : '►'}
           </button>
@@ -171,22 +171,23 @@ function ChannelTreeItem({ channel, channels, activeChannelId, onSelectChannel, 
         <button
           type="button"
           onClick={() => onSelectChannel(channel.id)}
-          className={`flex-1 text-left px-2 py-1.5 text-xs font-black rounded transition-all cursor-pointer border flex justify-between items-center ${
+          className={`flex-1 text-left px-2 py-1.5 text-xs font-black rounded transition-all cursor-pointer border flex justify-between items-center min-w-0 ${
             isActive
               ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
               : 'bg-transparent text-encre-noire border-transparent hover:bg-white/40'
           }`}
           style={{ paddingLeft: `${Math.max(6, level * 10 + 6)}px` }}
         >
-          <span className="truncate flex items-center gap-1">
-            {level === 0 ? '📂' : level === 1 ? '📁' : '📄'} {channel.name}
+          <span className="flex items-center gap-1.5 min-w-0 overflow-hidden flex-1 pr-1">
+            <span className="shrink-0">{level === 0 ? '📂' : level === 1 ? '📁' : '📄'}</span>
+            <span className="truncate">{channel.name}</span>
           </span>
-          {isReadOnly && <span className="text-[9px] opacity-75">🔒</span>}
+          {isReadOnly && <span className="text-[9px] opacity-75 shrink-0 ml-1">🔒</span>}
         </button>
       </div>
 
       {isOpen && hasChildren && (
-        <div className="flex flex-col gap-1 ml-2 border-l border-dashed border-cordel-master-dark/25 pl-1">
+        <div className="flex flex-col gap-1 ml-2 border-l border-dashed border-cordel-master-dark/25 pl-1 min-w-0">
           {children.map(child => (
             <ChannelTreeItem
               key={child.id}
@@ -698,21 +699,21 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
             </div>
 
             {/* Desktop Sidebar */}
-            <div className="hidden md:flex flex-col gap-2 p-3 bg-cordel-bg-light border-2 border-encre-noire rounded-[8px_6px_10px_7px] shadow-[2.5px_2.5px_0px_0px_#181716]">
-              <div className="flex justify-between items-center mb-2 border-b border-dashed border-cordel-master-dark/20 pb-1">
-                <h3 className="text-xs font-black uppercase tracking-widest text-cordel-wood">
+            <div className="hidden md:flex flex-col gap-2 p-3 bg-cordel-bg-light border-2 border-encre-noire rounded-[8px_6px_10px_7px] shadow-[2.5px_2.5px_0px_0px_#181716] min-w-0">
+              <div className="flex justify-between items-center mb-2 border-b border-dashed border-cordel-master-dark/20 pb-1 min-w-0">
+                <h3 className="text-xs font-black uppercase tracking-widest text-cordel-wood truncate">
                   📂 {translate('forum.channelsHeader', "Salons & Dossiers")}
                 </h3>
                 <button
                   type="button"
                   onClick={() => setIsCreatingChannel(true)}
-                  className="text-[9px] font-black uppercase text-cordel-wood hover:underline cursor-pointer flex items-center gap-0.5"
+                  className="text-[9px] font-black uppercase text-cordel-wood hover:underline cursor-pointer flex items-center gap-0.5 shrink-0"
                   title="Créer un salon ou un sous-dossier"
                 >
                   ➕ {translate('forum.addChannelShort', "Salon")}
                 </button>
               </div>
-              <div className="flex flex-col gap-1">
+              <div className="flex flex-col gap-1 min-w-0">
                 {channels.filter(c => !c.parentId).map((ch) => (
                   <ChannelTreeItem
                     key={ch.id}

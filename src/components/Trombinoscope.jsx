@@ -40,7 +40,8 @@ const MemberCard = React.memo(({
   tRole,
   getPupitreName,
   getColorForInstrument,
-  tagsDisponibles = []
+  tagsDisponibles = [],
+  majoriteFeminine = false
 }) => {
   const fullName = `${prenom || ''} ${nom || ''}`;
   const hasRoleBadge = role && role !== 'membre';
@@ -153,7 +154,7 @@ const MemberCard = React.memo(({
         {hasTags && (
           <div className="flex flex-wrap gap-1 mt-3 justify-center max-w-full z-10 select-none">
             {tags.map((tag, tagIdx) => {
-              const formattedTag = formatTagGender(tag, genre, false, tagsDisponibles);
+              const formattedTag = formatTagGender(tag, genre, majoriteFeminine, tagsDisponibles);
               const tagStr = typeof tag === 'string' ? tag : (tag.id || tagIdx);
               const rotation = ((String(tagStr).charCodeAt(0) + tagIdx) % 5) - 2;
               return (
@@ -241,7 +242,7 @@ const DEFAULT_INSTRUMENTS = ["Alfaia Marcante", "Alfaia Meião", "Alfaia Repique
 
 export default function Trombinoscope({ user, profileData, onBack, onContactUser }) {
   const { t, locale } = useTranslation();
-  const { tRole } = useTerminologie();
+  const { tRole, majoriteFeminine } = useTerminologie();
   const { getColorForInstrument } = useInstrumentColor(profileData?.groupId);
   const [members, setMembers] = useState([]);
   const [tagsDisponibles, setTagsDisponibles] = useState([]);
@@ -676,6 +677,7 @@ export default function Trombinoscope({ user, profileData, onBack, onContactUser
                           getPupitreName={getPupitreName}
                           getColorForInstrument={getColorForInstrument}
                           tagsDisponibles={tagsDisponibles}
+                          majoriteFeminine={majoriteFeminine}
                         />
                       ))}
                     </div>
