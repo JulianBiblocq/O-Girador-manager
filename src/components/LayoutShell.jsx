@@ -21,6 +21,7 @@ import {
 } from './XiloIcons';
 import { useTranslation } from './LanguageContext';
 import { usePresence } from '../hooks/usePresence';
+import { PresenceProvider } from '../context/PresenceContext';
 import OnlineStatusWidget from './OnlineStatusWidget';
 
 export default function LayoutShell({ 
@@ -47,6 +48,7 @@ export default function LayoutShell({
   const currentUserId = profileData?.uid;
   const currentGroupId = profileData?.groupId;
   const { onlineMembers, onlineCount } = usePresence(currentUserId, currentGroupId);
+  const onlineUserIds = React.useMemo(() => new Set(onlineMembers.map(m => m.id || m.uid)), [onlineMembers]);
   
   const isSystemOrSuperAdminOrMestre = profileData?.isSystemAdmin || profileData?.role === 'super-admin' || profileData?.role === 'mestre';
   const userTags = profileData?.tags || [];
@@ -433,7 +435,9 @@ export default function LayoutShell({
             )}
 
             <div className="w-full flex-1">
-              {children}
+              <PresenceProvider value={{ onlineMembers, onlineCount, onlineUserIds }}>
+                {children}
+              </PresenceProvider>
             </div>
           </div>
 

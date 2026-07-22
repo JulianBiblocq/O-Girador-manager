@@ -10,6 +10,7 @@ import MoveThreadModal from './MoveThreadModal';
 import MoveReplyModal from './MoveReplyModal';
 import { useForumModeration } from '../hooks/useForumModeration';
 import { getTagId } from '../utils/tagUtils';
+import { usePresenceContext } from '../context/PresenceContext';
 
 // Memoized ThreadReplyItem component to avoid re-rendering comments when typing
 const ThreadReplyItem = React.memo(({
@@ -24,7 +25,9 @@ const ThreadReplyItem = React.memo(({
   t,
   formattedTime
 }) => {
+  const { onlineUserIds } = usePresenceContext();
   const isCurrentUser = reply.auteurId === userId;
+  const isAuthorOnline = reply.auteurId && onlineUserIds.has(reply.auteurId);
 
   // Check if message targets user tags/instruments
   const userPlaysInstrument = (profileData?.instrumentsJoues && profileData.instrumentsJoues.includes(reply.targetTag)) ||
@@ -57,8 +60,14 @@ const ThreadReplyItem = React.memo(({
 
         <div className="flex justify-between items-start gap-4 mb-1">
           {!isCurrentUser ? (
-            <span className="text-[8px] font-extrabold uppercase tracking-widest text-cordel-wood select-none">
-              {reply.auteurNom}
+            <span className="text-[8px] font-extrabold uppercase tracking-widest text-cordel-wood select-none flex items-center gap-1.5">
+              <span>{reply.auteurNom}</span>
+              {isAuthorOnline && (
+                <span className="relative flex h-2 w-2" title="Membre en ligne">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-600"></span>
+                </span>
+              )}
             </span>
           ) : <span />}
 

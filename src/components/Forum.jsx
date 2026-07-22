@@ -10,6 +10,7 @@ import MoveThreadModal from './MoveThreadModal';
 import { useForumModeration } from '../hooks/useForumModeration';
 import { useTranslation } from './LanguageContext';
 import XiloAvatar from './XiloAvatar';
+import { usePresenceContext } from '../context/PresenceContext';
 
 // Memoized ThreadCard component to prevent list items re-rendering during search or active inputs
 const ThreadCard = React.memo(({
@@ -24,6 +25,9 @@ const ThreadCard = React.memo(({
   onTogglePin,
   onDeleteThread
 }) => {
+  const { onlineUserIds } = usePresenceContext();
+  const isAuthorOnline = thread.auteurId && onlineUserIds.has(thread.auteurId);
+
   const dateCreationObj = new Date(thread.dateCreation);
   const formattedDate = isNaN(dateCreationObj.getTime())
     ? ''
@@ -75,7 +79,15 @@ const ThreadCard = React.memo(({
 
         {/* Meta */}
         <div className="flex items-center gap-1.5 mt-1 text-[10px] font-semibold text-cordel-master-dark/70">
-          <span>{(translate('forum.byAuthor', "Par {author}")).replace('{author}', thread.auteurNom)}</span>
+          <span className="flex items-center gap-1">
+            <span>{(translate('forum.byAuthor', "Par {author}")).replace('{author}', thread.auteurNom)}</span>
+            {isAuthorOnline && (
+              <span className="relative flex h-2 w-2" title="Auteur en ligne">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-600"></span>
+              </span>
+            )}
+          </span>
           <span>•</span>
           <span>{(translate('forum.createdOn', "Le {date}")).replace('{date}', formattedDate)}</span>
         </div>
