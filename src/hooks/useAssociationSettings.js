@@ -22,6 +22,18 @@ export const DEFAULT_VARAL_CATEGORIES = [
   { id: 'Administratif', nom: 'Administratif', activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: true }
 ];
 
+export const DEFAULT_ENABLED_MODULES = {
+  tresorerie: true,
+  logistique: true,
+  commandes: true,
+  vestiaire: true,
+  covoiturage: true,
+  studioSocial: true,
+  reunions: true,
+  forum: true,
+  mestre: true
+};
+
 export const DEFAULT_INSTRUMENTS = ["Alfaia Marcante", "Alfaia Meião", "Alfaia Repique", "Caixa", "Tarol", "Gonguê", "Agbê", "Mineiro", "Timbal", "Chant", "Danse"];
 
 export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
@@ -67,7 +79,8 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
     agendaEnableInscriptions: true,
     pupitresColors: { Mestre: '#8b2a1a' },
     eventTypes: ['prestation', 'repetition', 'stage', 'atelier', 'reunion'],
-    eventTypeConfigs: {}
+    eventTypeConfigs: {},
+    enabledModules: DEFAULT_ENABLED_MODULES
   });
 
   const [logoFile, setLogoFile] = useState(null);
@@ -189,7 +202,8 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
           eventTypes: Array.isArray(data.eventTypes) && data.eventTypes.length > 0 
             ? data.eventTypes 
             : ['prestation', 'repetition', 'stage', 'atelier', 'reunion'],
-          eventTypeConfigs: data.eventTypeConfigs || {}
+          eventTypeConfigs: data.eventTypeConfigs || {},
+          enabledModules: data.enabledModules ? { ...DEFAULT_ENABLED_MODULES, ...data.enabledModules } : DEFAULT_ENABLED_MODULES
         }));
       }
       setLoading(false);
@@ -284,7 +298,8 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
         agendaEnableMaybeStatus: formData.agendaEnableMaybeStatus !== undefined ? formData.agendaEnableMaybeStatus : true,
         agendaEnableRevisionProgram: formData.agendaEnableRevisionProgram !== undefined ? formData.agendaEnableRevisionProgram : true,
         eventTypes: formData.eventTypes || [],
-        eventTypeConfigs: formData.eventTypeConfigs || {}
+        eventTypeConfigs: formData.eventTypeConfigs || {},
+        enabledModules: formData.enabledModules || DEFAULT_ENABLED_MODULES
       }, { merge: true });
 
       const credentialsRef = doc(db, 'associations', groupId, 'private_settings', 'credentials');

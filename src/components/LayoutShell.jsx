@@ -35,6 +35,7 @@ export default function LayoutShell({
   unreadPrivateMessagesCount = 0,
   forceLight = false,
   permissionsMatrice,
+  enabledModules,
   children 
 }) {
   const finalLogoUrl = logoUrl || '/Pictures/logo-samambaia.png';
@@ -44,7 +45,32 @@ export default function LayoutShell({
   const isSystemOrSuperAdminOrMestre = profileData?.isSystemAdmin || profileData?.role === 'super-admin' || profileData?.role === 'mestre';
   const userTags = profileData?.tags || [];
 
+  const isModuleEnabled = (tabId, poleId) => {
+    if (!enabledModules) return true;
+
+    // Check Pole-level module toggle
+    if (poleId === 'tresorerie' && enabledModules.tresorerie === false) return false;
+    if (poleId === 'logistique' && enabledModules.logistique === false && enabledModules.commandes === false) return false;
+    if (poleId === 'vestiaire' && enabledModules.vestiaire === false) return false;
+    if (poleId === 'mestre' && enabledModules.mestre === false) return false;
+
+    // Check Tab-level module toggle
+    if (['dashboard-finance', 'cotisations', 'events-finances', 'operations-diverses', 'frais-km', 'reports-exports'].includes(tabId) && enabledModules.tresorerie === false) return false;
+    if (tabId === 'inventory' && enabledModules.logistique === false) return false;
+    if (tabId === 'orders-manager' && enabledModules.commandes === false) return false;
+    if (['vestiaire', 'wardrobe-inventory', 'wardrobe-couture', 'wardrobe-sizes'].includes(tabId) && enabledModules.vestiaire === false) return false;
+    if (['studio-social', 'varal-manager'].includes(tabId) && enabledModules.studioSocial === false) return false;
+    if (tabId === 'reunion-manager' && enabledModules.reunions === false) return false;
+    if (['forum', 'mestre-forum-channels'].includes(tabId) && enabledModules.forum === false) return false;
+    if (['mestre-events', 'mestre-stage-layout', 'mestre-sequenceur', 'mestre-workshops', 'mestre-mot-mestre'].includes(tabId) && enabledModules.mestre === false) return false;
+
+    return true;
+  };
+
   const checkTabAccess = (tabId, poleId) => {
+    // 0. Strict Global Feature Toggle check (Hides for EVERYONE including super-admin if OFF)
+    if (!isModuleEnabled(tabId, poleId)) return false;
+
     if (isSystemOrSuperAdminOrMestre) return true;
 
     // Public member tabs
@@ -88,7 +114,7 @@ export default function LayoutShell({
                                hasAccessVestiaire ||
                                hasAccessMestre;
 
-  const memberMenuItems = [
+  const allMemberMenuItems = [
     { id: 'accueil', label: 'Accueil', icon: <XiloHome size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('accueil'); onNavigateToTab && onNavigateToTab('dashboard'); } },
     { id: 'profil', label: 'Mon profil', icon: <XiloUser size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('mon-espace'); onNavigateToTab && onNavigateToTab('profil'); } },
     { id: 'agenda', label: 'Agenda', icon: <XiloCalendar size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('mon-espace'); onNavigateToTab && onNavigateToTab('agenda'); } },
@@ -99,17 +125,24 @@ export default function LayoutShell({
     { id: 'varal', label: 'Varal (documents)', icon: <XiloScroll size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('accueil'); onNavigateToTab && onNavigateToTab('varal'); } }
   ];
 
+  const memberMenuItems = allMemberMenuItems.filter(item => isModuleEnabled(item.id, 'mon-espace'));
+
   const hasAccessToPole = (poleId) => {
-    if (isSystemOrSuperAdminOrMestre) return true;
-    if (poleId === 'accueil' || poleId === 'mon-espace') return true;
     if (poleId === 'config') return isSystemOrSuperAdminOrMestre;
+    if (poleId === 'accueil' || poleId === 'mon-espace') return true;
+
+    // Strict Feature Toggle check for the entire Pole
+    if (poleId === 'tresorerie' && enabledModules?.tresorerie === false) return false;
+    if (poleId === 'logistique' && enabledModules?.logistique === false && enabledModules?.commandes === false) return false;
+    if (poleId === 'vestiaire' && enabledModules?.vestiaire === false) return false;
+    if (poleId === 'mestre' && enabledModules?.mestre === false) return false;
 
     const poleObj = polesList.find(p => p.id === poleId);
     if (!poleObj) return false;
 
-    // A pole is accessible if user has access to at least ONE tab in it
+    // A pole is accessible if user has access to at least ONE enabled tab in it
     return poleObj.tabs.some(tab => checkTabAccess(tab.id, poleId));
-  };
+  };;
 
   const hasAccessToTab = (tabId) => {
     const activePole = currentPole || 'accueil';

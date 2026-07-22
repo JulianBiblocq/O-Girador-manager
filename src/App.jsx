@@ -145,6 +145,7 @@ export default function App() {
   const [majoriteFeminine, setMajoriteFeminine] = useState(false);
   const [sequenceurUrl, setSequenceurUrl] = useState('');
   const [permissionsMatrice, setPermissionsMatrice] = useState(null);
+  const [enabledModules, setEnabledModules] = useState(null);
   const [currentView, setCurrentView] = useState('dashboard'); // 'dashboard', 'trombinoscope', 'forum', 'profil', 'system-admin', 'layout-editor', 'tag-manager'
   const [currentPole, setCurrentPole] = useState('accueil');
   const [currentTab, setCurrentTab] = useState('dashboard');
@@ -195,12 +196,14 @@ export default function App() {
         setMajoriteFeminine(data.majoriteFeminine || false);
         setSequenceurUrl(data.sequenceurUrl || '');
         setPermissionsMatrice(data.permissionsMatrice || null);
+        setEnabledModules(data.enabledModules || null);
       } else {
         setBranding(null);
         setAssociationName('');
         setMajoriteFeminine(false);
         setSequenceurUrl('');
         setPermissionsMatrice(null);
+        setEnabledModules(null);
       }
     }, (error) => {
       console.error("App - Erreur onSnapshot branding :", error);
@@ -596,7 +599,32 @@ export default function App() {
   const isSystemOrSuperAdminOrMestre = profileData?.isSystemAdmin || profileData?.role === 'super-admin' || profileData?.role === 'mestre';
   const userTags = profileData?.tags || [];
 
+  const isModuleEnabled = (tabId, poleId) => {
+    if (!enabledModules) return true;
+
+    // Check Pole-level module toggle
+    if (poleId === 'tresorerie' && enabledModules.tresorerie === false) return false;
+    if (poleId === 'logistique' && enabledModules.logistique === false && enabledModules.commandes === false) return false;
+    if (poleId === 'vestiaire' && enabledModules.vestiaire === false) return false;
+    if (poleId === 'mestre' && enabledModules.mestre === false) return false;
+
+    // Check Tab-level module toggle
+    if (['dashboard-finance', 'cotisations', 'events-finances', 'operations-diverses', 'frais-km', 'reports-exports'].includes(tabId) && enabledModules.tresorerie === false) return false;
+    if (tabId === 'inventory' && enabledModules.logistique === false) return false;
+    if (tabId === 'orders-manager' && enabledModules.commandes === false) return false;
+    if (['vestiaire', 'wardrobe-inventory', 'wardrobe-couture', 'wardrobe-sizes'].includes(tabId) && enabledModules.vestiaire === false) return false;
+    if (['studio-social', 'varal-manager'].includes(tabId) && enabledModules.studioSocial === false) return false;
+    if (tabId === 'reunion-manager' && enabledModules.reunions === false) return false;
+    if (['forum', 'mestre-forum-channels'].includes(tabId) && enabledModules.forum === false) return false;
+    if (['mestre-events', 'mestre-stage-layout', 'mestre-sequenceur', 'mestre-workshops', 'mestre-mot-mestre'].includes(tabId) && enabledModules.mestre === false) return false;
+
+    return true;
+  };
+
   const checkTabAccess = (tabId, poleId) => {
+    // 0. Strict Global Feature Toggle check (Hides & blocks for EVERYONE including super-admin if OFF)
+    if (!isModuleEnabled(tabId, poleId)) return false;
+
     if (isSystemOrSuperAdminOrMestre) return true;
 
     // Public member tabs
@@ -752,6 +780,7 @@ export default function App() {
           onSignOut={handleSignOut}
           unreadPrivateMessagesCount={unreadPrivateMessagesCount}
           permissionsMatrice={permissionsMatrice}
+          enabledModules={enabledModules}
         >
           <React.Suspense fallback={
             <div className="flex-1 flex flex-col justify-center items-center py-12">
