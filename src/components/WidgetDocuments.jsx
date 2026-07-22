@@ -16,8 +16,9 @@ export const DEFAULT_VARAL_CATEGORIES = [
 ];
 
 const getDeterministicColor = (docId) => {
-  if (!docId) return 'default';
-  const colors = ['vert', 'bleu', 'rouge', 'jaune', 'violet', 'orange'];
+  if (!docId) return 'kraft';
+  // Exclude bleu and bleu-ardoise (reserved exclusively for Administrative documents)
+  const colors = ['vert', 'ocre', 'rouge', 'jaune', 'kraft', 'orange'];
   let hash = 0;
   for (let i = 0; i < docId.length; i++) {
     hash = docId.charCodeAt(i) + ((hash << 5) - hash);
@@ -449,8 +450,19 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
                                 rounded-[4px_10px_3px_8px]
                                 border-l-4 border-l-double
                                 theme-bg-${colorClass}
+                                overflow-hidden
                               `}
                             >
+                              {/* Wood Grain Xylogravure Texture Overlay (Les veines et stries du bois gravé) */}
+                              <div 
+                                className="absolute inset-0 pointer-events-none opacity-[0.16] mix-blend-multiply select-none"
+                                style={{
+                                  backgroundImage: `url("data:image/svg+xml,%3Csvg width='120' height='120' viewBox='0 0 120 120' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='%23181716' stroke-linecap='round'%3E%3Cpath d='M6 0 V120 M17 0 Q22 40 17 80 T17 120 M31 0 V120 M43 0 Q39 50 43 100 V120 M56 0 V120 M70 0 Q74 30 70 85 V120 M85 0 V120 M98 0 Q94 60 98 110 V120 M110 0 V120' stroke-width='1.1' stroke-dasharray='9 3 18 5'/%3E%3Cpath d='M11 0 V120 M25 0 V120 M49 0 V120 M63 0 V120 M78 0 V120 M92 0 V120 M104 0 V120' stroke-width='0.6' stroke-dasharray='4 7 12 6' opacity='0.7'/%3E%3Cpath d='M42 35 C42 28, 48 24, 55 28 C62 32, 59 41, 51 42 C44 43, 42 37, 42 35 Z' stroke-width='1' opacity='0.6'/%3E%3Cpath d='M45 35 C45 31, 49 28, 54 31 C59 34, 57 39, 51 40 C46 41, 45 37, 45 35 Z' stroke-width='0.6' opacity='0.4'/%3E%3C/g%3E%3C/svg%3E")`,
+                                  backgroundRepeat: 'repeat'
+                                }}
+                              />
+                              {/* Aged Cordel Paper Patina Gradient Overlay */}
+                              <div className="absolute inset-0 pointer-events-none bg-gradient-to-br from-amber-200/15 via-transparent to-black/20 select-none" />
                               {/* Edit & Delete & Reorder Action Buttons */}
                               {isAuthorized && (
                                 <div className="absolute top-1.5 right-1.5 flex gap-1 z-40 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
