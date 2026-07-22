@@ -596,12 +596,39 @@ export default function App() {
   const isSystemOrSuperAdminOrMestre = profileData?.isSystemAdmin || profileData?.role === 'super-admin' || profileData?.role === 'mestre';
   const userTags = profileData?.tags || [];
 
-  const hasAccessTroupe = isSystemOrSuperAdminOrMestre || userTags.some(t => permissionsMatrice?.troupe?.includes(t));
-  const hasAccessLogistique = isSystemOrSuperAdminOrMestre || userTags.some(t => permissionsMatrice?.logistique?.includes(t));
-  const hasAccessTresorerie = isSystemOrSuperAdminOrMestre || userTags.some(t => permissionsMatrice?.tresorerie?.includes(t));
-  const hasAccessStudio = isSystemOrSuperAdminOrMestre || userTags.some(t => permissionsMatrice?.studio?.includes(t));
-  const hasAccessVestiaire = isSystemOrSuperAdminOrMestre || userTags.some(t => permissionsMatrice?.vestiaire?.includes(t));
-  const hasAccessMestre = isSystemOrSuperAdminOrMestre || userTags.some(t => permissionsMatrice?.mestre?.includes(t));
+  const checkTabAccess = (tabId, poleId) => {
+    if (isSystemOrSuperAdminOrMestre) return true;
+
+    // Public member tabs
+    if (['profil', 'agenda', 'materiel', 'vestiaire', 'trombinoscope', 'forum', 'dashboard', 'varal'].includes(tabId)) {
+      return true;
+    }
+
+    if (!userTags || userTags.length === 0) return false;
+
+    // 1. Direct tab permission check in permissionsMatrice
+    const tabTags = permissionsMatrice?.[tabId];
+    if (Array.isArray(tabTags) && tabTags.length > 0) {
+      return userTags.some(t => tabTags.includes(t));
+    }
+
+    // 2. Fallback to Pole-level permission check for backward compatibility
+    if (poleId) {
+      const poleTags = permissionsMatrice?.[poleId];
+      if (Array.isArray(poleTags) && poleTags.length > 0) {
+        return userTags.some(t => poleTags.includes(t));
+      }
+    }
+
+    return false;
+  };
+
+  const hasAccessTroupe = isSystemOrSuperAdminOrMestre || checkTabAccess('export-annu', 'troupe') || checkTabAccess('tag-manager', 'troupe') || checkTabAccess('instruments', 'troupe');
+  const hasAccessLogistique = isSystemOrSuperAdminOrMestre || checkTabAccess('inventory', 'logistique') || checkTabAccess('orders-manager', 'logistique');
+  const hasAccessTresorerie = isSystemOrSuperAdminOrMestre || checkTabAccess('dashboard-finance', 'tresorerie') || checkTabAccess('cotisations', 'tresorerie') || checkTabAccess('events-finances', 'tresorerie') || checkTabAccess('operations-diverses', 'tresorerie') || checkTabAccess('frais-km', 'tresorerie') || checkTabAccess('reports-exports', 'tresorerie');
+  const hasAccessStudio = isSystemOrSuperAdminOrMestre || checkTabAccess('studio-social', 'studio') || checkTabAccess('reunion-manager', 'studio') || checkTabAccess('varal-manager', 'studio') || checkTabAccess('activity-reports', 'studio') || checkTabAccess('mestre-forum-channels', 'studio');
+  const hasAccessVestiaire = isSystemOrSuperAdminOrMestre || checkTabAccess('wardrobe-inventory', 'vestiaire') || checkTabAccess('wardrobe-couture', 'vestiaire') || checkTabAccess('wardrobe-sizes', 'vestiaire');
+  const hasAccessMestre = isSystemOrSuperAdminOrMestre || checkTabAccess('mestre-events', 'mestre') || checkTabAccess('mestre-stage-layout', 'mestre') || checkTabAccess('mestre-sequenceur', 'mestre') || checkTabAccess('mestre-workshops', 'mestre') || checkTabAccess('mestre-mot-mestre', 'mestre');
   const hasAccessForumMod = isSystemOrSuperAdminOrMestre || userTags.some(t => ['Modérateur', 'Modérateur Forum', 'Gestionnaire Porte-voix', 'Porte-voix'].includes(t));
 
   const handleNavigateToPole = (poleId) => {
@@ -613,19 +640,7 @@ export default function App() {
     }
     const poleObj = POLES_CONFIG.find(p => p.id === poleId);
     if (poleObj && poleObj.tabs.length > 0) {
-      const allowedTab = poleObj.tabs.find(tab => {
-        switch (tab.id) {
-          case 'export-annu':
-          case 'tag-manager':
-            return hasAccessTroupe;
-          case 'system-admin':
-          case 'instruments':
-          case 'linked-instruments':
-            return hasAccessTroupe;
-          default:
-            return true;
-        }
-      });
+      const allowedTab = poleObj.tabs.find(tab => checkTabAccess(tab.id, poleId));
       setCurrentTab(allowedTab ? allowedTab.id : poleObj.tabs[0].id);
     } else {
       setCurrentTab(null);

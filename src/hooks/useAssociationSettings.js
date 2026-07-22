@@ -173,12 +173,7 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
           reimbursementRule: data.reimbursementRule || 'full_cars_only',
           defaultDepartureLocation: data.defaultDepartureLocation || '',
           tagsDisponibles: Array.isArray(data.tagsDisponibles) ? data.tagsDisponibles : [],
-          permissionsMatrice: data.permissionsMatrice ? {
-            troupe: data.permissionsMatrice.troupe || [],
-            tresorerie: data.permissionsMatrice.tresorerie || [],
-            logistique: data.permissionsMatrice.logistique || [],
-            studio: data.permissionsMatrice.studio || []
-          } : { troupe: [], tresorerie: [], logistique: [], studio: [] },
+          permissionsMatrice: data.permissionsMatrice && typeof data.permissionsMatrice === 'object' ? data.permissionsMatrice : {},
           montantAdhesion: data.montantAdhesion !== undefined ? data.montantAdhesion : (data.montantCotisation || 0),
           optionsCotisation: Array.isArray(data.optionsCotisation) ? data.optionsCotisation : [],
           lienPaiementExterne: data.lienPaiementExterne || '',
