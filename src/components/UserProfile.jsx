@@ -398,17 +398,8 @@ export default function UserProfile({ user, profileData, onBack, onNavigateToTut
         />
       )}
 
-      {/* Disconnect & PWA Emergency Clean Buttons */}
+      {/* Disconnect Button */}
       <div className="mt-4 pt-4 border-t border-dashed border-cordel-master-dark/20 flex flex-col gap-3 items-center">
-        <CordelButton 
-          type="button"
-          variant="ocre"
-          onClick={handleForceUpdate}
-          useExtremeBorder={true}
-          className="w-full py-3 border-2 border-encre-noire shadow-[3px_3px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-110 font-bold transition-all text-sm uppercase tracking-widest flex items-center justify-center gap-2 select-none"
-        >
-          ⚡ {t('pwa.forceUpdateBtn')}
-        </CordelButton>
         <CordelButton 
           type="button"
           variant="default"

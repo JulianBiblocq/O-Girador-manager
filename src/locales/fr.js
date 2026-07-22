@@ -803,6 +803,7 @@ export const fr = {
     config: "Configuration",
     tabDashboard: "Tableau de bord",
     tabProfil: "Mon profil",
+    tabAgenda: "Agenda",
     tabMateriel: "Mon matériel",
     tabVestiaire: "Mon vestiaire",
     tabTrombinoscope: "Trombinoscope",

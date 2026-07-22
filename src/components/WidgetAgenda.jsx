@@ -39,7 +39,8 @@ export default function WidgetAgenda({
   onFocusModeChange,
   onNavigateToView,
   selectedEvent: propSelectedEvent,
-  setSelectedEvent: propSetSelectedEvent
+  setSelectedEvent: propSetSelectedEvent,
+  isFullPage = false
 }) {
   const { t } = useTranslation();
   const [events, setEvents] = useState([]);
@@ -50,8 +51,8 @@ export default function WidgetAgenda({
   const [localSelectedEvent, setLocalSelectedEvent] = useState(null);
   const selectedEvent = propSelectedEvent !== undefined ? propSelectedEvent : localSelectedEvent;
   const setSelectedEvent = propSetSelectedEvent !== undefined ? propSetSelectedEvent : setLocalSelectedEvent;
-  const [showAll, setShowAll] = useState(false);
-  const [viewMode, setViewMode] = useState('cards'); // 'cards' ou 'list'
+  const [showAll, setShowAll] = useState(isFullPage);
+  const [viewMode, setViewMode] = useState('cards'); // 'cards' ou 'list' ou 'grid'
   const [selectedTypeFilter, setSelectedTypeFilter] = useState('all');
   
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
@@ -103,7 +104,7 @@ export default function WidgetAgenda({
     if (selectedTypeFilter === 'all') return true;
     return e.type === selectedTypeFilter;
   });
-  const visibleEvents = showAll ? filteredEvents : filteredEvents.slice(0, limit);
+  const visibleEvents = (isFullPage || showAll) ? filteredEvents : filteredEvents.slice(0, limit);
   
   const [formData, setFormData] = useState({
     titre: '',
@@ -391,21 +392,21 @@ export default function WidgetAgenda({
                 onClick={() => setViewMode('cards')}
                 className={`px-2 py-0.5 cursor-pointer transition-colors ${viewMode === 'cards' ? 'bg-cordel-master-dark text-cordel-bg-light' : 'bg-cordel-bg-light text-encre-noire hover:bg-neutral-100'}`}
               >
-                🎴 <span className="hidden sm:inline">Cartes</span>
+                🎴 <span className={isFullPage ? "inline" : "hidden sm:inline"}>Cartes</span>
               </button>
               <button
                 type="button"
                 onClick={() => setViewMode('list')}
                 className={`px-2 py-0.5 cursor-pointer transition-colors ${viewMode === 'list' ? 'bg-cordel-master-dark text-cordel-bg-light' : 'bg-cordel-bg-light text-encre-noire hover:bg-neutral-100'}`}
               >
-                📋 <span className="hidden sm:inline">Liste</span>
+                📋 <span className={isFullPage ? "inline" : "hidden sm:inline"}>Liste</span>
               </button>
               <button
                 type="button"
                 onClick={() => setViewMode('grid')}
                 className={`px-2 py-0.5 cursor-pointer transition-colors ${viewMode === 'grid' ? 'bg-cordel-master-dark text-cordel-bg-light' : 'bg-cordel-bg-light text-encre-noire hover:bg-neutral-100'}`}
               >
-                📅 <span className="hidden sm:inline">Grille</span>
+                📅 <span className={isFullPage ? "inline" : "hidden sm:inline"}>Grille</span>
               </button>
             </div>
           )}

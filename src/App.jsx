@@ -50,6 +50,7 @@ const POLES_CONFIG = [
     label: 'Mon Espace',
     tabs: [
       { id: 'profil', label: 'Mon profil', labelKey: 'tabProfil' },
+      { id: 'agenda', label: 'Agenda', labelKey: 'tabAgenda' },
       { id: 'materiel', label: 'Mon matériel', labelKey: 'tabMateriel' },
       { id: 'vestiaire', label: 'Mon vestiaire', labelKey: 'tabVestiaire' },
       { id: 'trombinoscope', label: 'Trombinoscope', labelKey: 'tabTrombinoscope' },
@@ -759,6 +760,16 @@ export default function App() {
                 user={user} 
                 profileData={profileData} 
                 onBack={() => handleNavigateToPole('accueil')} 
+              />
+            ) : currentTab === 'agenda' ? (
+              <WidgetAgenda 
+                role={profileData?.role} 
+                isSystemAdmin={profileData?.isSystemAdmin} 
+                groupId={profileData?.groupId} 
+                user={user} 
+                profileData={profileData} 
+                onNavigateToView={handleNavigateToView} 
+                isFullPage={true}
               />
             ) : currentTab === 'materiel' ? (
               <UserMateriel 
