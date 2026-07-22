@@ -34,8 +34,8 @@ export default function Dashboard({ user, profileData, onNavigateToTrombi, onNav
       case 'motMestre':
       case 'annonces':
       case 'documents':
-        return 'col-span-1 md:col-span-2 lg:col-span-3 w-full max-w-full overflow-hidden';
       case 'agenda':
+      case 'forum':
         return 'col-span-1 md:col-span-2 lg:col-span-3 w-full max-w-full overflow-hidden';
       default:
         return 'col-span-1 w-full max-w-full overflow-hidden';
@@ -321,6 +321,7 @@ export default function Dashboard({ user, profileData, onNavigateToTrombi, onNav
               );
               break;
             case 'commandes':
+              if (!hasOpenCampaign) break;
               widgetContent = (
                 <WidgetCommandes 
                   groupId={profileData?.groupId} 
