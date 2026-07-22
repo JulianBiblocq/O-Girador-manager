@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { collection, query, where, onSnapshot, or, doc, setDoc, updateDoc } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, or, doc, setDoc, addDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
@@ -224,6 +224,39 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
   const [isAdding, setIsAdding] = useState(false);
   const [selectedThread, setSelectedThread] = useState(null);
   const [movingThreadModal, setMovingThreadModal] = useState(null);
+  
+  // Member channel & folder creation state
+  const [isCreatingChannel, setIsCreatingChannel] = useState(false);
+  const [newChannelName, setNewChannelName] = useState('');
+  const [newChannelParentId, setNewChannelParentId] = useState('');
+  const [savingChannel, setSavingChannel] = useState(false);
+
+  const handleCreateChannelSubmit = async (e) => {
+    e.preventDefault();
+    if (!newChannelName.trim() || !profileData?.groupId) return;
+
+    setSavingChannel(true);
+    try {
+      const channelData = {
+        groupId: profileData.groupId,
+        name: newChannelName.trim(),
+        parentId: newChannelParentId || null,
+        readRoles: ['all'],
+        writeRoles: ['all'],
+        createdAt: new Date().toISOString()
+      };
+
+      const docRef = await addDoc(collection(db, 'forum_channels'), channelData);
+      setActiveChannelId(docRef.id);
+      setIsCreatingChannel(false);
+      setNewChannelName('');
+      setNewChannelParentId('');
+    } catch (error) {
+      console.error("Forum - Erreur création salon:", error);
+    } finally {
+      setSavingChannel(false);
+    }
+  };
   
   const [activeTab, setActiveTab] = useState('discussions'); // 'discussions' or 'inbox'
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -666,9 +699,19 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
 
             {/* Desktop Sidebar */}
             <div className="hidden md:flex flex-col gap-2 p-3 bg-cordel-bg-light border-2 border-encre-noire rounded-[8px_6px_10px_7px] shadow-[2.5px_2.5px_0px_0px_#181716]">
-              <h3 className="text-xs font-black uppercase tracking-widest text-cordel-wood mb-2 border-b border-dashed border-cordel-master-dark/20 pb-1">
-                📂 {translate('forum.channelsHeader', "Salons & Dossiers")}
-              </h3>
+              <div className="flex justify-between items-center mb-2 border-b border-dashed border-cordel-master-dark/20 pb-1">
+                <h3 className="text-xs font-black uppercase tracking-widest text-cordel-wood">
+                  📂 {translate('forum.channelsHeader', "Salons & Dossiers")}
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => setIsCreatingChannel(true)}
+                  className="text-[9px] font-black uppercase text-cordel-wood hover:underline cursor-pointer flex items-center gap-0.5"
+                  title="Créer un salon ou un sous-dossier"
+                >
+                  ➕ {translate('forum.addChannelShort', "Salon")}
+                </button>
+              </div>
               <div className="flex flex-col gap-1">
                 {channels.filter(c => !c.parentId).map((ch) => (
                   <ChannelTreeItem
@@ -731,25 +774,36 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
                   );
                 })()}
 
-                <div className="flex justify-between items-center px-1 select-none">
+                <div className="flex justify-between items-center px-1 select-none flex-wrap gap-2">
                   <h2 className="panel-title text-sm font-extrabold text-cordel-master-dark opacity-80 uppercase">
                     {activeChannel ? `📂 ${activeChannel.name}` : t('forum.threadsList')}
                   </h2>
                   
-                  {!hasWriteAccess(activeChannel) ? (
-                    <span className="text-[10px] font-black text-cordel-wood border-2 border-dashed border-cordel-wood/30 p-2 rounded bg-cordel-bg-light select-none">
-                      🔒 {translate('forum.readOnly', "Lecture seule")}
-                    </span>
-                  ) : (
+                  <div className="flex items-center gap-2">
                     <CordelButton 
-                      variant="ocre" 
-                      useExtremeBorder={true}
-                      onClick={() => setIsAdding(true)} 
-                      className="text-xs px-3 py-1.5 font-bold uppercase tracking-widest"
+                      variant="default" 
+                      onClick={() => setIsCreatingChannel(true)} 
+                      className="text-xs px-2.5 py-1.5 font-bold uppercase tracking-wider"
+                      title="Créer une nouvelle catégorie ou un salon"
                     >
-                      + {t('forum.newSubject')}
+                      + {translate('forum.newChannelBtn', "Nouveau Salon / Dossier")}
                     </CordelButton>
-                  )}
+
+                    {!hasWriteAccess(activeChannel) ? (
+                      <span className="text-[10px] font-black text-cordel-wood border-2 border-dashed border-cordel-wood/30 p-2 rounded bg-cordel-bg-light select-none">
+                        🔒 {translate('forum.readOnly', "Lecture seule")}
+                      </span>
+                    ) : (
+                      <CordelButton 
+                        variant="ocre" 
+                        useExtremeBorder={true}
+                        onClick={() => setIsAdding(true)} 
+                        className="text-xs px-3 py-1.5 font-bold uppercase tracking-widest"
+                      >
+                        + {t('forum.newSubject')}
+                      </CordelButton>
+                    )}
+                  </div>
                 </div>
 
                 {threads.length === 0 ? (
@@ -791,15 +845,27 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
               <div className="fixed inset-y-0 left-0 w-64 max-w-full bg-[#fdfaf2] dark:bg-[#1f1b18] border-r-2 border-encre-noire p-4 flex flex-col gap-4 animate-slide-in shadow-2xl">
                 <div className="flex justify-between items-center border-b border-dashed border-cordel-master-dark/20 pb-2">
                   <h3 className="text-xs font-black uppercase tracking-widest text-cordel-wood">
-                    📁 Salons
+                    📁 Salons & Dossiers
                   </h3>
-                  <button 
-                    type="button" 
-                    onClick={() => setIsDrawerOpen(false)}
-                    className="text-xs font-bold text-cordel-master-dark hover:text-encre-noire p-1 cursor-pointer"
-                  >
-                    ✕ Fermer
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsDrawerOpen(false);
+                        setIsCreatingChannel(true);
+                      }}
+                      className="text-[9px] font-black uppercase text-cordel-wood hover:underline cursor-pointer"
+                    >
+                      ➕ Nouveau
+                    </button>
+                    <button 
+                      type="button" 
+                      onClick={() => setIsDrawerOpen(false)}
+                      className="text-xs font-bold text-cordel-master-dark hover:text-encre-noire p-1 cursor-pointer"
+                    >
+                      ✕
+                    </button>
+                  </div>
                 </div>
                 <div className="flex flex-col gap-1 overflow-y-auto">
                   {channels.filter(c => !c.parentId).map((ch) => (
@@ -835,6 +901,76 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
             if (ok) setMovingThreadModal(null);
           }}
         />
+      )}
+
+      {/* Modal de création de salon / sous-dossier par les membres */}
+      {isCreatingChannel && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <CordelCard variant="default" useExtremeBorder={true} className="w-full max-w-md bg-cordel-bg p-6 relative select-none">
+            <h3 className="font-extrabold text-sm text-encre-noire uppercase tracking-wider mb-4 border-b border-dashed border-cordel-master-dark/20 pb-2 flex items-center gap-2">
+              📂 {translate('forum.createChannelTitle', "Créer un Salon ou Sous-dossier")}
+            </h3>
+
+            <form onSubmit={handleCreateChannelSubmit} className="flex flex-col gap-4">
+              <div>
+                <label className="block text-xs font-black uppercase text-cordel-master-dark mb-1">
+                  {translate('forum.channelNameLabel', "Nom du salon ou du dossier")} *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={newChannelName}
+                  onChange={(e) => setNewChannelName(e.target.value)}
+                  placeholder="ex: Toadas 2026, Percussions, Commission Fêtes..."
+                  className="w-full p-2.5 text-xs font-bold bg-white border-2 border-encre-noire rounded focus:outline-none focus:ring-2 focus:ring-cordel-wood"
+                  autoFocus
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-black uppercase text-cordel-master-dark mb-1">
+                  {translate('forum.channelParentLabel', "Emplacement (Parent)")}
+                </label>
+                <select
+                  value={newChannelParentId}
+                  onChange={(e) => setNewChannelParentId(e.target.value)}
+                  className="w-full p-2.5 text-xs font-bold bg-white border-2 border-encre-noire rounded focus:outline-none focus:ring-2 focus:ring-cordel-wood cursor-pointer"
+                >
+                  <option value="">📁 Racine (Nouvelle catégorie principale)</option>
+                  {channels.filter(c => !c.parentId).map((ch) => (
+                    <option key={ch.id} value={ch.id}>
+                      📂 Sous-dossier de : {ch.name}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-[9px] italic opacity-60 mt-1">
+                  {newChannelParentId 
+                    ? "Le salon apparaîtra comme un sous-dossier dans la catégorie choisie." 
+                    : "Le salon sera créé comme une nouvelle rubrique principale."}
+                </p>
+              </div>
+
+              <div className="flex justify-end gap-2 mt-4 pt-3 border-t border-dashed border-cordel-master-dark/20">
+                <CordelButton
+                  type="button"
+                  variant="default"
+                  onClick={() => setIsCreatingChannel(false)}
+                  className="px-3 py-1.5 text-xs font-bold"
+                >
+                  {t('common.cancel')}
+                </CordelButton>
+                <CordelButton
+                  type="submit"
+                  variant="ocre"
+                  disabled={savingChannel || !newChannelName.trim()}
+                  className="px-4 py-1.5 text-xs font-black uppercase"
+                >
+                  {savingChannel ? "Création..." : "Créer le salon"}
+                </CordelButton>
+              </div>
+            </form>
+          </CordelCard>
+        </div>
       )}
     </div>
   );

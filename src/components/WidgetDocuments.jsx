@@ -434,8 +434,8 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
                             style={{ transform: `translateY(${dipY}px) rotate(${rotationDeg}deg)` }}
                             title={`${translate('common.open', "Ouvrir")} ${docItem.titre} ${isArchived ? '(' + translate('documents.archiveTag', "Archive") + ')' : ''}`}
                           >
-                            {/* Wooden Clothespin (Pince à linge 3D pinçant fermement la corde et le papier) */}
-                            <WoodenClothespin className="absolute -top-5 z-30 pointer-events-none" />
+                            {/* Wooden Clothespin (Pince à linge 3D mordant fermement la corde et le papier) */}
+                            <WoodenClothespin className="absolute -top-[16px] z-30 pointer-events-none" />
 
                             {/* Booklet Cover */}
                             <div 
