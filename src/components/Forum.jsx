@@ -146,12 +146,37 @@ const ThreadCard = React.memo(({
          prevProps.onClick === nextProps.onClick;
 });
 
-function ChannelTreeItem({ channel, channels, activeChannelId, onSelectChannel, hasWriteAccess, level = 0 }) {
-  const [isOpen, setIsOpen] = useState(true);
+function ChannelTreeItem({ 
+  channel, 
+  channels, 
+  allThreads = [],
+  activeChannelId, 
+  onSelectChannel, 
+  onSelectThread,
+  selectedThreadId,
+  hasWriteAccess, 
+  level = 0 
+}) {
   const children = channels.filter(c => c.parentId === channel.id);
-  const hasChildren = children.length > 0;
+  const channelThreads = useMemo(() => {
+    return allThreads.filter(t => t.channelId === channel.id || (!t.channelId && channel.name === (t.categorie || 'Général')));
+  }, [allThreads, channel.id, channel.name]);
+
+  const hasChildren = children.length > 0 || channelThreads.length > 0;
   const isActive = channel.id === activeChannelId;
   const isReadOnly = !hasWriteAccess(channel);
+
+  const hasActiveThread = useMemo(() => {
+    return selectedThreadId && channelThreads.some(t => t.id === selectedThreadId);
+  }, [selectedThreadId, channelThreads]);
+
+  const [isOpen, setIsOpen] = useState(true);
+
+  useEffect(() => {
+    if (isActive || hasActiveThread) {
+      setIsOpen(true);
+    }
+  }, [isActive, hasActiveThread]);
 
   return (
     <div className="flex flex-col gap-1 w-full min-w-0">
@@ -161,6 +186,7 @@ function ChannelTreeItem({ channel, channels, activeChannelId, onSelectChannel, 
             type="button"
             onClick={() => setIsOpen(!isOpen)}
             className="p-1 text-[10px] font-black text-cordel-wood hover:text-encre-noire cursor-pointer select-none shrink-0"
+            title={isOpen ? "Réduire" : "Déplier les salons et sujets"}
           >
             {isOpen ? '▼' : '►'}
           </button>
@@ -181,6 +207,9 @@ function ChannelTreeItem({ channel, channels, activeChannelId, onSelectChannel, 
           <span className="flex items-center gap-1.5 min-w-0 overflow-hidden flex-1 pr-1">
             <span className="shrink-0">{level === 0 ? '📂' : level === 1 ? '📁' : '📄'}</span>
             <span className="truncate">{channel.name}</span>
+            {channelThreads.length > 0 && (
+              <span className="text-[9px] opacity-60 font-normal shrink-0">({channelThreads.length})</span>
+            )}
           </span>
           {isReadOnly && <span className="text-[9px] opacity-75 shrink-0 ml-1">🔒</span>}
         </button>
@@ -188,17 +217,54 @@ function ChannelTreeItem({ channel, channels, activeChannelId, onSelectChannel, 
 
       {isOpen && hasChildren && (
         <div className="flex flex-col gap-1 ml-2 border-l border-dashed border-cordel-master-dark/25 pl-1 min-w-0">
+          {/* Subchannels */}
           {children.map(child => (
             <ChannelTreeItem
               key={child.id}
               channel={child}
               channels={channels}
+              allThreads={allThreads}
               activeChannelId={activeChannelId}
               onSelectChannel={onSelectChannel}
+              onSelectThread={onSelectThread}
+              selectedThreadId={selectedThreadId}
               hasWriteAccess={hasWriteAccess}
               level={level + 1}
             />
           ))}
+
+          {/* Threads inside this channel */}
+          {channelThreads.map(thread => {
+            const isThreadActive = selectedThreadId === thread.id;
+            const repliesCount = thread.reponses ? thread.reponses.length - 1 : 0;
+            return (
+              <button
+                key={thread.id}
+                type="button"
+                onClick={() => {
+                  onSelectChannel(channel.id);
+                  if (onSelectThread) onSelectThread(thread);
+                }}
+                className={`w-full text-left py-1 px-2 text-[11px] font-semibold rounded transition-all cursor-pointer flex items-center justify-between gap-1 min-w-0 border ${
+                  isThreadActive
+                    ? 'theme-bg-ocre text-encre-noire border-encre-noire font-extrabold shadow-none'
+                    : 'bg-transparent text-cordel-master-dark hover:bg-white/60 border-transparent'
+                }`}
+                style={{ paddingLeft: `${Math.max(10, (level + 1) * 8 + 6)}px` }}
+                title={thread.titre}
+              >
+                <span className="flex items-center gap-1.5 min-w-0 overflow-hidden flex-1 pr-1">
+                  <span className="shrink-0 text-[10px]">{thread.isPinned ? '📌' : '💬'}</span>
+                  <span className="truncate">{thread.titre}</span>
+                </span>
+                {repliesCount > 0 && (
+                  <span className="text-[8.5px] opacity-60 shrink-0 font-bold">
+                    {repliesCount}
+                  </span>
+                )}
+              </button>
+            );
+          })}
         </div>
       )}
     </div>
@@ -408,9 +474,9 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
     return () => unsubscribe();
   }, [profileData?.groupId, profileData?.role, profileData?.tags, profileData?.isSystemAdmin]);
 
-  // Sync threads for the active channel
+  // Sync all threads for the group
   useEffect(() => {
-    if (!profileData?.groupId || !activeChannelId) {
+    if (!profileData?.groupId) {
       setThreads([]);
       setLoading(false);
       return;
@@ -420,8 +486,7 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
     const forumRef = collection(db, 'forum');
     const q = query(
       forumRef, 
-      where('groupId', '==', profileData.groupId),
-      where('channelId', '==', activeChannelId)
+      where('groupId', '==', profileData.groupId)
     );
 
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
@@ -437,7 +502,7 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
       const sorted = fetchedThreads.sort((a, b) => {
         if (a.isPinned && !b.isPinned) return -1;
         if (!a.isPinned && b.isPinned) return 1;
-        return new Date(b.derniereModification) - new Date(a.derniereModification);
+        return new Date(b.derniereModification || b.dateCreation) - new Date(a.derniereModification || a.dateCreation);
       });
 
       setThreads(sorted);
@@ -448,7 +513,17 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
     });
 
     return () => unsubscribe();
-  }, [profileData?.groupId, activeChannelId]);
+  }, [profileData?.groupId]);
+
+  const activeChannelThreads = useMemo(() => {
+    if (!activeChannelId) return [];
+    const activeChan = channels.find(c => c.id === activeChannelId);
+    return threads.filter(t => {
+      if (t.channelId) return t.channelId === activeChannelId;
+      if (activeChan && activeChan.name === (t.categorie || 'Général')) return true;
+      return false;
+    });
+  }, [threads, activeChannelId, channels]);
 
   const categoryBadges = useMemo(() => ({
     Général: 'ocre',
@@ -681,7 +756,7 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
         /* Discussions Tab with Channels sidebar/dropdown */
         <div className="flex flex-col md:flex-row gap-4">
           {/* Channels Sidebar / Dropdown */}
-          <div className="w-full md:w-60 shrink-0 flex flex-col gap-2 select-none">
+          <div className="w-full md:w-72 lg:w-80 shrink-0 flex flex-col gap-2 select-none">
             {/* Mobile Channels Toggle Button */}
             <div className="block md:hidden mb-2">
               <div className="flex items-center gap-2">
@@ -719,8 +794,11 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
                     key={ch.id}
                     channel={ch}
                     channels={channels}
+                    allThreads={threads}
                     activeChannelId={activeChannelId}
                     onSelectChannel={setActiveChannelId}
+                    onSelectThread={handleSelectThread}
+                    selectedThreadId={selectedThread?.id}
                     hasWriteAccess={hasWriteAccess}
                     level={0}
                   />
@@ -807,13 +885,13 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
                   </div>
                 </div>
 
-                {threads.length === 0 ? (
+                {activeChannelThreads.length === 0 ? (
                   <CordelCard variant="default" useExtremeBorder={false} className="p-8 text-center bg-cordel-bg select-none">
                     <p className="text-xs opacity-75 font-semibold">{translate('forum.noThreads', "Aucune discussion lancée dans ce salon. Soyez le premier !")}</p>
                   </CordelCard>
                 ) : (
                   <div className="flex flex-col gap-3">
-                    {threads.map((thread) => (
+                    {activeChannelThreads.map((thread) => (
                       <ThreadCard
                         key={thread.id}
                         thread={thread}
@@ -843,7 +921,7 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
                 onClick={() => setIsDrawerOpen(false)}
               ></div>
               {/* Drawer content */}
-              <div className="fixed inset-y-0 left-0 w-64 max-w-full bg-[#fdfaf2] dark:bg-[#1f1b18] border-r-2 border-encre-noire p-4 flex flex-col gap-4 animate-slide-in shadow-2xl">
+              <div className="fixed inset-y-0 left-0 w-72 max-w-full bg-[#fdfaf2] dark:bg-[#1f1b18] border-r-2 border-encre-noire p-4 flex flex-col gap-4 animate-slide-in shadow-2xl">
                 <div className="flex justify-between items-center border-b border-dashed border-cordel-master-dark/20 pb-2">
                   <h3 className="text-xs font-black uppercase tracking-widest text-cordel-wood">
                     📁 Salons & Dossiers
@@ -874,11 +952,17 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
                       key={ch.id}
                       channel={ch}
                       channels={channels}
+                      allThreads={threads}
                       activeChannelId={activeChannelId}
                       onSelectChannel={(id) => {
                         setActiveChannelId(id);
                         setIsDrawerOpen(false);
                       }}
+                      onSelectThread={(t) => {
+                        handleSelectThread(t);
+                        setIsDrawerOpen(false);
+                      }}
+                      selectedThreadId={selectedThread?.id}
                       hasWriteAccess={hasWriteAccess}
                       level={0}
                     />
