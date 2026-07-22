@@ -22,6 +22,10 @@ export default function TagManager({ groupId, onBack, role, isSystemAdmin }) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
+  // Drag and Drop State
+  const [draggedIndex, setDraggedIndex] = useState(null);
+  const [dragOverIndex, setDragOverIndex] = useState(null);
+
   // Security Check: Mestres, Super-Admins and System Admins only
   const isAuthorized = role === 'mestre' || role === 'super-admin' || isSystemAdmin === true;
 
@@ -51,6 +55,78 @@ export default function TagManager({ groupId, onBack, role, isSystemAdmin }) {
 
   // Normalize all tags for presentation
   const tagsList = rawTags.map(t => normalizeTag(t));
+
+  // Move tag up/down
+  const handleMoveTagOrder = async (index, direction) => {
+    if (!groupId || saving) return;
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= rawTags.length) return;
+
+    const newRawTags = [...rawTags];
+    const temp = newRawTags[index];
+    newRawTags[index] = newRawTags[targetIndex];
+    newRawTags[targetIndex] = temp;
+
+    setRawTags(newRawTags);
+    setSaving(true);
+    try {
+      const assocRef = doc(db, 'associations', groupId);
+      await setDoc(assocRef, { tagsDisponibles: newRawTags }, { merge: true });
+    } catch (error) {
+      console.error("TagManager - Erreur d'ordonnancement :", error);
+      alert("Erreur lors de la réorganisation des étiquettes.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Drag and Drop handlers
+  const handleDragStart = (e, index) => {
+    setDraggedIndex(index);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', index.toString());
+  };
+
+  const handleDragOver = (e, index) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (dragOverIndex !== index) {
+      setDragOverIndex(index);
+    }
+  };
+
+  const handleDragEnd = () => {
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+  };
+
+  const handleDrop = async (e, dropIndex) => {
+    e.preventDefault();
+    if (draggedIndex === null || draggedIndex === dropIndex || !groupId || saving) {
+      setDraggedIndex(null);
+      setDragOverIndex(null);
+      return;
+    }
+
+    const newRawTags = [...rawTags];
+    const [movedItem] = newRawTags.splice(draggedIndex, 1);
+    newRawTags.splice(dropIndex, 0, movedItem);
+
+    setRawTags(newRawTags);
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+    setSaving(true);
+
+    try {
+      const assocRef = doc(db, 'associations', groupId);
+      await setDoc(assocRef, { tagsDisponibles: newRawTags }, { merge: true });
+    } catch (error) {
+      console.error("TagManager - Erreur d'ordonnancement Drag&Drop :", error);
+      alert("Erreur lors du déplacement de l'étiquette.");
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const handleAddTag = async (e) => {
     e.preventDefault();
@@ -267,14 +343,59 @@ export default function TagManager({ groupId, onBack, role, isSystemAdmin }) {
             <p className="text-xs opacity-75 font-semibold">{t('tagManager.noTags') || "Aucune étiquette configurée."}</p>
           </CordelCard>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {tagsList.map((tag) => (
-              <div 
-                key={tag.id}
-                className="flex items-center justify-between border-2 border-encre-noire bg-cordel-bg shadow-[2px_2px_0px_0px_#181716] rounded-[5px_8px_4px_6px] p-3 gap-2"
-              >
-                <div className="flex flex-col gap-1 min-w-0 flex-1">
-                  <div className="flex items-center gap-1.5 flex-wrap">
+          <div className="flex flex-col gap-2.5">
+            {tagsList.map((tag, index) => {
+              const isDragging = draggedIndex === index;
+              const isDragOver = dragOverIndex === index;
+
+              return (
+                <div 
+                  key={tag.id}
+                  draggable={!saving}
+                  onDragStart={(e) => handleDragStart(e, index)}
+                  onDragOver={(e) => handleDragOver(e, index)}
+                  onDragLeave={() => setDragOverIndex(null)}
+                  onDragEnd={handleDragEnd}
+                  onDrop={(e) => handleDrop(e, index)}
+                  className={`flex items-center justify-between border-2 border-encre-noire bg-cordel-bg shadow-[2px_2px_0px_0px_#181716] rounded-[5px_8px_4px_6px] p-2.5 gap-2.5 transition-all select-none ${
+                    isDragging ? 'opacity-30 border-dashed border-cordel-wood scale-[0.99]' : ''
+                  } ${
+                    isDragOver ? 'border-cordel-wood bg-cordel-bg-light scale-[1.01] shadow-md' : ''
+                  }`}
+                >
+                  {/* Reorder controls: Grip & Up/Down Arrows */}
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <span 
+                      className="cursor-grab active:cursor-grabbing text-cordel-master-dark opacity-60 hover:opacity-100 px-1 py-0.5 text-sm font-black select-none"
+                      title="Glisser-déposer pour réorganiser"
+                    >
+                      ⋮⋮
+                    </span>
+
+                    <div className="flex items-center gap-0.5">
+                      <button
+                        type="button"
+                        onClick={() => handleMoveTagOrder(index, 'up')}
+                        disabled={index === 0 || saving}
+                        className="p-1 text-[10px] font-black leading-none text-cordel-wood hover:text-encre-noire disabled:opacity-20 cursor-pointer"
+                        title="Monter"
+                      >
+                        ▲
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleMoveTagOrder(index, 'down')}
+                        disabled={index === tagsList.length - 1 || saving}
+                        className="p-1 text-[10px] font-black leading-none text-cordel-wood hover:text-encre-noire disabled:opacity-20 cursor-pointer"
+                        title="Descendre"
+                      >
+                        ▼
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Badge Names */}
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-1.5 min-w-0 flex-1">
                     <span className="theme-stamp-badge theme-stamp-badge-wood text-[9px] px-2 py-0.5 font-black truncate">
                       👨 {tag.nomM}
                     </span>
@@ -282,31 +403,32 @@ export default function TagManager({ groupId, onBack, role, isSystemAdmin }) {
                       👩 {tag.nomF}
                     </span>
                   </div>
-                </div>
 
-                <div className="flex items-center gap-1 shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => handleOpenEdit(tag)}
-                    disabled={saving}
-                    className="w-7 h-7 flex items-center justify-center border border-encre-noire bg-cordel-bg-light text-encre-noire rounded shadow-[1px_1px_0px_0px_#181716] hover:bg-white cursor-pointer disabled:opacity-50 text-xs font-bold"
-                    title="Modifier l'accord masculin/féminin"
-                  >
-                    ✏️
-                  </button>
+                  {/* Actions */}
+                  <div className="flex items-center gap-1 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => handleOpenEdit(tag)}
+                      disabled={saving}
+                      className="w-7 h-7 flex items-center justify-center border border-encre-noire bg-cordel-bg-light text-encre-noire rounded shadow-[1px_1px_0px_0px_#181716] hover:bg-white cursor-pointer disabled:opacity-50 text-xs font-bold"
+                      title="Modifier l'accord masculin/féminin"
+                    >
+                      ✏️
+                    </button>
 
-                  <button
-                    type="button"
-                    onClick={() => handleDeleteTag(tag)}
-                    disabled={saving}
-                    className="w-7 h-7 flex items-center justify-center border border-encre-noire bg-cordel-wood text-cordel-bg-light rounded shadow-[1px_1px_0px_0px_#181716] hover:brightness-110 cursor-pointer disabled:opacity-50 text-xs font-bold"
-                    title={t('tagManager.deleteTitle') || "Supprimer cette étiquette"}
-                  >
-                    🗑️
-                  </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteTag(tag)}
+                      disabled={saving}
+                      className="w-7 h-7 flex items-center justify-center border border-encre-noire bg-cordel-wood text-cordel-bg-light rounded shadow-[1px_1px_0px_0px_#181716] hover:brightness-110 cursor-pointer disabled:opacity-50 text-xs font-bold"
+                      title={t('tagManager.deleteTitle') || "Supprimer cette étiquette"}
+                    >
+                      🗑️
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
