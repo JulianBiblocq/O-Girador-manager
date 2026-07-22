@@ -19,6 +19,7 @@ const MemberCard = React.memo(({
   prenom,
   nom,
   photoURL,
+  isOnline = false,
   role,
   genre,
   tags = [],
@@ -58,8 +59,8 @@ const MemberCard = React.memo(({
     : [instrument].filter(Boolean);
 
   const percussions = userInstruments.filter(inst => {
-    const norm = inst.toLowerCase().trim();
-    return norm !== 'danse' && norm !== 'chant' && norm !== 'aucun' && norm !== '';
+    const name = inst.toLowerCase().trim();
+    return name !== 'danse' && !name.includes('danse');
   });
 
   const hasPercussions = percussions.length > 0;
@@ -84,6 +85,14 @@ const MemberCard = React.memo(({
           title="Cliquer pour agrandir la photo"
         >
           <XiloAvatar src={photoURL} name={fullName} size={72} />
+          {isOnline && (
+            <span 
+              className="absolute -bottom-0.5 -right-0.5 z-20 w-4 h-4 bg-emerald-500 border-2 border-white rounded-full flex items-center justify-center shadow-md"
+              title="Actuellement en ligne"
+            >
+              <span className="w-1.5 h-1.5 bg-white rounded-full animate-ping"></span>
+            </span>
+          )}
           {isCurrentUser && (
             <button
               type="button"
@@ -195,6 +204,7 @@ const MemberCard = React.memo(({
 }, (prevProps, nextProps) => {
   // high performance equality check to prevent unneeded card renders
   return prevProps.id === nextProps.id &&
+         prevProps.isOnline === nextProps.isOnline &&
          prevProps.prenom === nextProps.prenom &&
          prevProps.nom === nextProps.nom &&
          prevProps.photoURL === nextProps.photoURL &&
@@ -655,6 +665,7 @@ export default function Trombinoscope({ user, profileData, onBack, onContactUser
                           prenom={member.prenom}
                           nom={member.nom}
                           photoURL={member.photoURL}
+                          isOnline={member.isOnline === true}
                           role={member.role}
                           genre={member.genre}
                           tags={member.tags}

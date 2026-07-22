@@ -20,6 +20,8 @@ import {
   XiloCaixa
 } from './XiloIcons';
 import { useTranslation } from './LanguageContext';
+import { usePresence } from '../hooks/usePresence';
+import OnlineStatusWidget from './OnlineStatusWidget';
 
 export default function LayoutShell({ 
   logoUrl, 
@@ -41,6 +43,10 @@ export default function LayoutShell({
   const finalLogoUrl = logoUrl || '/Pictures/logo-samambaia.png';
   const { t } = useTranslation();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  
+  const currentUserId = profileData?.uid;
+  const currentGroupId = profileData?.groupId;
+  const { onlineMembers, onlineCount } = usePresence(currentUserId, currentGroupId);
   
   const isSystemOrSuperAdminOrMestre = profileData?.isSystemAdmin || profileData?.role === 'super-admin' || profileData?.role === 'mestre';
   const userTags = profileData?.tags || [];
@@ -230,17 +236,22 @@ export default function LayoutShell({
             </div>
           )}
 
-          {/* Hamburger Menu Button */}
-          <button
-            type="button"
-            onClick={() => setIsDrawerOpen(true)}
-            className="p-2 border-2 border-dashed border-encre-noire/20 hover:border-encre-noire text-encre-noire rounded-md cursor-pointer flex items-center justify-center transition-colors"
-            title="Ouvrir le menu"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
-          </button>
+          {/* Online Presence Indicator Widget */}
+          <div className="flex items-center gap-2">
+            <OnlineStatusWidget onlineMembers={onlineMembers} onlineCount={onlineCount} />
+
+            {/* Hamburger Menu Button */}
+            <button
+              type="button"
+              onClick={() => setIsDrawerOpen(true)}
+              className="p-2 border-2 border-dashed border-encre-noire/20 hover:border-encre-noire text-encre-noire rounded-md cursor-pointer flex items-center justify-center transition-colors"
+              title="Ouvrir le menu"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+          </div>
         </div>
 
         {/* Left Sidebar for Desktop (hidden on Mobile & Tablet) */}
@@ -282,6 +293,11 @@ export default function LayoutShell({
                   {associationName}
                 </span>
               )}
+
+              {/* Online Presence Indicator Widget in Desktop Sidebar */}
+              <div className="mt-2">
+                <OnlineStatusWidget onlineMembers={onlineMembers} onlineCount={onlineCount} />
+              </div>
             </div>
             
             <div className="w-full border-t border-dashed border-cordel-master-dark/20 my-2 shrink-0" />

@@ -210,13 +210,23 @@ export default function Dashboard({ user, profileData, onNavigateToTrombi, onNav
       >
         <CordelCard variant="default" useExtremeBorder={true} className="py-3 px-4">
           <div className="flex items-center gap-3 text-left">
-            {(profileData?.photoURL || user?.photoURL) && (
-              <img 
-                src={profileData.photoURL || user.photoURL} 
-                alt={`${profileData?.prenom} ${profileData?.nom}`} 
-                className="w-10 h-10 rounded-[8px_4px_7px_6px] border border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716] object-cover grayscale contrast-[130%] sepia-[40%] mix-blend-multiply brightness-[95%] select-none pointer-events-none"
-              />
-            )}
+            <div className="relative shrink-0">
+              {(profileData?.photoURL || user?.photoURL) ? (
+                <img 
+                  src={profileData.photoURL || user.photoURL} 
+                  alt={`${profileData?.prenom} ${profileData?.nom}`} 
+                  className="w-10 h-10 rounded-[8px_4px_7px_6px] border border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716] object-cover grayscale contrast-[130%] sepia-[40%] mix-blend-multiply brightness-[95%] select-none pointer-events-none"
+                />
+              ) : (
+                <div className="w-10 h-10 rounded-[8px_4px_7px_6px] border border-encre-noire bg-cordel-bg flex items-center justify-center font-black text-xs text-cordel-wood">
+                  {profileData?.prenom ? profileData.prenom[0].toUpperCase() : '🥁'}
+                </div>
+              )}
+              {/* Online Green Indicator Dot */}
+              <span className="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-emerald-500 border-2 border-white rounded-full flex items-center justify-center" title="Vous êtes en ligne">
+                <span className="w-1.5 h-1.5 bg-white rounded-full"></span>
+              </span>
+            </div>
             
             <div className="flex-1 min-w-0">
               <h3 className="text-xs font-black text-encre-noire truncate flex items-center gap-1.5 flex-wrap">
