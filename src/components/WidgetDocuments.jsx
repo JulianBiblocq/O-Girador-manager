@@ -200,11 +200,9 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
   };
 
   const getCategoryLabel = (cat) => {
-    const translation = t(`documents.${cat}`);
-    if (translation === `documents.${cat}`) {
-      return cat;
-    }
-    return translation;
+    if (!cat) return '';
+    if (typeof cat === 'string') return cat;
+    return cat.nom || cat.id || '';
   };
 
   const getDocType = (docItem) => {

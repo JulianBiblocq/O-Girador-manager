@@ -7,7 +7,8 @@ export default function TreasuryDashboard({
   calculateGlobalBalance,
   associationSettings,
   handleSaveAssociationSettings,
-  groupId
+  groupId,
+  onSelectTab
 }) {
   const { t } = useTranslation();
 
@@ -146,6 +147,30 @@ export default function TreasuryDashboard({
           </span>
         </div>
       </CordelCard>
+
+      {/* Quick Export Action */}
+      {onSelectTab && (
+        <CordelCard variant="jaune" useExtremeBorder={true} className="p-4 flex flex-col md:flex-row justify-between items-center gap-3 select-none">
+          <div className="flex items-center gap-2">
+            <span className="text-xl">📊</span>
+            <div className="text-left">
+              <h4 className="text-xs font-black text-encre-noire uppercase tracking-wide">
+                Rapports Financiers & Exports Comptables
+              </h4>
+              <p className="text-[10px] font-semibold text-cordel-master-dark/75">
+                Générez le Grand Livre, le bilan par événement ou exportez toutes les écritures au format CSV.
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => onSelectTab('reports-exports')}
+            className="text-xs font-extrabold uppercase px-3 py-1.5 rounded-[4px_6px_3px_5px] bg-cordel-wood text-white border border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] cursor-pointer shrink-0"
+          >
+            Accéder aux Rapports & Exports ➔
+          </button>
+        </CordelCard>
+      )}
 
       {/* Bank Accounts and Projections */}
       <BankAccountsTracker

@@ -21,6 +21,7 @@ export default function CreateThreadForm({ groupId, channelId, user, profileData
   const [showPollForm, setShowPollForm] = useState(false);
   const [pollQuestion, setPollQuestion] = useState('');
   const [pollOptions, setPollOptions] = useState(['', '']);
+  const [pollAllowMultiple, setPollAllowMultiple] = useState(false);
 
   const handleAddPollOption = () => {
     if (pollOptions.length < 10) {
@@ -80,6 +81,8 @@ export default function CreateThreadForm({ groupId, channelId, user, profileData
         if (validOpts.length >= 2) {
           pollPayload = {
             question: pollQuestion.trim(),
+            allowMultiple: pollAllowMultiple,
+            isClosed: false,
             options: validOpts.map((label, idx) => ({
               id: `opt_${Date.now()}_${idx}`,
               label: label.trim(),
@@ -310,6 +313,20 @@ export default function CreateThreadForm({ groupId, channelId, user, profileData
                   </button>
                 )}
               </div>
+
+              {/* Allow Multiple Choices option */}
+              <label className="flex items-center gap-2 cursor-pointer select-none border-t border-dashed border-cordel-master-dark/15 pt-2 mt-1">
+                <input
+                  type="checkbox"
+                  checked={pollAllowMultiple}
+                  onChange={(e) => setPollAllowMultiple(e.target.checked)}
+                  disabled={saving}
+                  className="w-3.5 h-3.5 border border-encre-noire rounded accent-cordel-wood cursor-pointer"
+                />
+                <span className="text-[10px] font-bold text-encre-noire">
+                  Autoriser les choix multiples (les membres peuvent voter pour plusieurs réponses)
+                </span>
+              </label>
             </div>
           )}
         </div>

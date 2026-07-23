@@ -70,6 +70,7 @@ export default function TreasuryManager({ groupId, onBack, role, isSystemAdmin, 
             associationSettings={associationSettings}
             handleSaveAssociationSettings={handleSaveAssociationSettings}
             groupId={groupId}
+            onSelectTab={(tab) => setActiveTab(tab)}
           />
         );
       case 'cotisations':
@@ -150,6 +151,76 @@ export default function TreasuryManager({ groupId, onBack, role, isSystemAdmin, 
           {activeTab === 'frais-km' && "🚗 Frais Kilométriques"}
           {activeTab === 'reports-exports' && "📊 Rapports & Exports"}
         </h2>
+      </div>
+
+      {/* Treasury Sub-Tabs Navigation Bar */}
+      <div className="flex items-center gap-1.5 overflow-x-auto pb-2 border-b border-dashed border-cordel-master-dark/20 text-xs font-black select-none">
+        <button
+          type="button"
+          onClick={() => setActiveTab('dashboard-finance')}
+          className={`px-3 py-1.5 rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer whitespace-nowrap ${
+            activeTab === 'dashboard-finance'
+              ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
+              : 'bg-cordel-bg text-encre-noire border-cordel-master-dark/20 hover:bg-white/50 shadow-[1px_1px_0px_0px_rgba(0,0,0,0.1)]'
+          }`}
+        >
+          🪙 Bilan
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('cotisations')}
+          className={`px-3 py-1.5 rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer whitespace-nowrap ${
+            activeTab === 'cotisations'
+              ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
+              : 'bg-cordel-bg text-encre-noire border-cordel-master-dark/20 hover:bg-white/50 shadow-[1px_1px_0px_0px_rgba(0,0,0,0.1)]'
+          }`}
+        >
+          🏷️ Cotisations
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('events-finances')}
+          className={`px-3 py-1.5 rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer whitespace-nowrap ${
+            activeTab === 'events-finances'
+              ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
+              : 'bg-cordel-bg text-encre-noire border-cordel-master-dark/20 hover:bg-white/50 shadow-[1px_1px_0px_0px_rgba(0,0,0,0.1)]'
+          }`}
+        >
+          🎭 Événements
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('operations-diverses')}
+          className={`px-3 py-1.5 rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer whitespace-nowrap ${
+            activeTab === 'operations-diverses'
+              ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
+              : 'bg-cordel-bg text-encre-noire border-cordel-master-dark/20 hover:bg-white/50 shadow-[1px_1px_0px_0px_rgba(0,0,0,0.1)]'
+          }`}
+        >
+          💼 Opérations
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('frais-km')}
+          className={`px-3 py-1.5 rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer whitespace-nowrap ${
+            activeTab === 'frais-km'
+              ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
+              : 'bg-cordel-bg text-encre-noire border-cordel-master-dark/20 hover:bg-white/50 shadow-[1px_1px_0px_0px_rgba(0,0,0,0.1)]'
+          }`}
+        >
+          🚗 Frais KM
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('reports-exports')}
+          className={`px-3 py-1.5 rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer whitespace-nowrap ${
+            activeTab === 'reports-exports'
+              ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
+              : 'bg-cordel-bg text-encre-noire border-cordel-master-dark/20 hover:bg-white/50 shadow-[1px_1px_0px_0px_rgba(0,0,0,0.1)]'
+          }`}
+        >
+          📊 Rapports & Exports
+        </button>
       </div>
 
       {loading ? (

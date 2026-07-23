@@ -34,8 +34,37 @@ export default function VaralManager({ groupId, onBack, role, isSystemAdmin }) {
   const [newCatUploadUrl, setNewCatUploadUrl] = useState('');
   const [newCatArchive, setNewCatArchive] = useState(false);
   const [savingSettings, setSavingSettings] = useState(false);
+  const [editingCategory, setEditingCategory] = useState(null);
 
   const isAuthorized = role === 'mestre' || role === 'super-admin' || isSystemAdmin === true;
+
+  const handleSaveEditCategory = async (e) => {
+    if (e) e.preventDefault();
+    if (!editingCategory || !editingCategory.nom.trim()) return;
+    setSavingSettings(true);
+    try {
+      const updatedCategories = varalCategories.map(c => {
+        if (c.id === editingCategory.id) {
+          return {
+            ...c,
+            nom: editingCategory.nom.trim(),
+            activerUploadPublic: editingCategory.activerUploadPublic === true,
+            lienUploadPublic: editingCategory.activerUploadPublic ? (editingCategory.lienUploadPublic || '').trim() : '',
+            activerOpaciteArchive: editingCategory.activerOpaciteArchive === true
+          };
+        }
+        return c;
+      });
+      const assocRef = doc(db, 'associations', groupId);
+      await updateDoc(assocRef, { varalCategories: updatedCategories });
+      setEditingCategory(null);
+    } catch (err) {
+      console.error("Error editing category:", err);
+      alert("Erreur lors de la modification de la catégorie.");
+    } finally {
+      setSavingSettings(false);
+    }
+  };
 
   const handleAddCategory = async () => {
     if (!newCatName.trim()) return;
@@ -416,6 +445,15 @@ export default function VaralManager({ groupId, onBack, role, isSystemAdmin }) {
                         <div className="flex items-center gap-1">
                           <button
                             type="button"
+                            onClick={() => setEditingCategory({ ...cat })}
+                            disabled={savingSettings}
+                            className="text-xs px-1.5 py-0.5 border border-cordel-master-dark/20 rounded bg-white hover:bg-neutral-100 font-extrabold cursor-pointer select-none"
+                            title="Modifier le nom de la corde"
+                          >
+                            ✏️
+                          </button>
+                          <button
+                            type="button"
                             onClick={() => handleMoveCategory(idx, -1)}
                             disabled={idx === 0 || savingSettings}
                             className="text-xs p-1 hover:text-cordel-wood disabled:opacity-30 cursor-pointer select-none font-bold"
@@ -447,6 +485,97 @@ export default function VaralManager({ groupId, onBack, role, isSystemAdmin }) {
                 )}
               </div>
             </CordelCard>
+          )}
+
+          {/* Modal de modification du nom de la corde / catégorie */}
+          {editingCategory && (
+            <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+              <CordelCard variant="default" useExtremeBorder={true} className="w-full max-w-md bg-cordel-bg p-5 relative select-none">
+                <h3 className="font-extrabold text-sm text-encre-noire uppercase tracking-wider mb-3 border-b border-dashed border-cordel-master-dark/20 pb-2">
+                  ✏️ Modifier le nom de la Corde
+                </h3>
+
+                <form onSubmit={handleSaveEditCategory} className="flex flex-col gap-3 text-left">
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                      Nom de la corde / rubrique *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={editingCategory.nom}
+                      onChange={(e) => setEditingCategory({ ...editingCategory, nom: e.target.value })}
+                      placeholder="Ex: Administratif, Comptes-rendus, Statuts..."
+                      disabled={savingSettings}
+                      className="theme-input w-full text-xs font-bold"
+                      autoFocus
+                    />
+                  </div>
+
+                  <label className="flex items-center gap-2 cursor-pointer select-none mt-1">
+                    <input
+                      type="checkbox"
+                      checked={editingCategory.activerUploadPublic === true}
+                      onChange={(e) => setEditingCategory({ ...editingCategory, activerUploadPublic: e.target.checked })}
+                      disabled={savingSettings}
+                      className="w-3.5 h-3.5 border border-encre-noire rounded accent-cordel-wood cursor-pointer"
+                    />
+                    <span className="text-[10px] font-bold text-encre-noire">
+                      Activer un lien d'upload public pour cette catégorie
+                    </span>
+                  </label>
+
+                  {editingCategory.activerUploadPublic && (
+                    <div className="flex flex-col gap-1 ml-5">
+                      <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                        Lien d'upload (ex: Drive, Dropbox...)
+                      </label>
+                      <input
+                        type="url"
+                        value={editingCategory.lienUploadPublic || ''}
+                        onChange={(e) => setEditingCategory({ ...editingCategory, lienUploadPublic: e.target.value })}
+                        placeholder="https://..."
+                        disabled={savingSettings}
+                        className="theme-input text-xs font-bold py-1 bg-cordel-bg-light w-full"
+                      />
+                    </div>
+                  )}
+
+                  <label className="flex items-center gap-2 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={editingCategory.activerOpaciteArchive === true}
+                      onChange={(e) => setEditingCategory({ ...editingCategory, activerOpaciteArchive: e.target.checked })}
+                      disabled={savingSettings}
+                      className="w-3.5 h-3.5 border border-encre-noire rounded accent-cordel-wood cursor-pointer"
+                    />
+                    <span className="text-[10px] font-bold text-encre-noire">
+                      Activer l'opacité sur les documents archivés
+                    </span>
+                  </label>
+
+                  <div className="flex justify-end gap-2 mt-3 pt-2 border-t border-dashed border-cordel-master-dark/15">
+                    <CordelButton
+                      type="button"
+                      variant="default"
+                      onClick={() => setEditingCategory(null)}
+                      disabled={savingSettings}
+                      className="px-3 py-1.5 text-xs font-bold"
+                    >
+                      Annuler
+                    </CordelButton>
+                    <CordelButton
+                      type="submit"
+                      variant="ocre"
+                      disabled={savingSettings || !editingCategory.nom.trim()}
+                      className="px-4 py-1.5 text-xs font-black uppercase"
+                    >
+                      {savingSettings ? "Enregistrement..." : "Enregistrer"}
+                    </CordelButton>
+                  </div>
+                </form>
+              </CordelCard>
+            </div>
           )}
 
           {loading ? (

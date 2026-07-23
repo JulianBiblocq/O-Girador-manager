@@ -23,6 +23,7 @@ export default function TreasuryOperations({
     libelle: ''
   });
 
+  const [documentFile, setDocumentFile] = useState(null);
   const [isAddingCategory, setIsAddingCategory] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
 
@@ -57,12 +58,13 @@ export default function TreasuryOperations({
     e.preventDefault();
     if (!txForm.montant || !txForm.libelle) return;
     try {
-      await handleAddTx(txForm);
+      await handleAddTx(txForm, documentFile);
       setTxForm(prev => ({
         ...prev,
         montant: '',
         libelle: ''
       }));
+      setDocumentFile(null);
       alert("Opération enregistrée avec succès !");
     } catch (err) {
       alert(err.message || "Erreur lors de l'enregistrement de l'opération.");
@@ -192,6 +194,26 @@ export default function TreasuryOperations({
               />
             </div>
 
+            {/* Justificatif / Facture */}
+            <div className="flex flex-col gap-1">
+              <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark flex justify-between items-center">
+                <span>Justificatif / Facture</span>
+                <span className="text-[8px] font-normal italic opacity-60">Optionnel</span>
+              </label>
+              <input 
+                type="file"
+                accept="image/*,.pdf"
+                onChange={(e) => setDocumentFile(e.target.files?.[0] || null)}
+                disabled={savingTx}
+                className="theme-input w-full text-[10px] py-1 bg-cordel-bg-light file:mr-2 file:py-0.5 file:px-2 file:rounded file:border file:border-encre-noire file:text-[9px] file:font-black file:bg-cordel-wood file:text-cordel-bg-light cursor-pointer"
+              />
+              {documentFile && (
+                <span className="text-[9px] font-bold text-green-700 truncate">
+                  📎 {documentFile.name}
+                </span>
+              )}
+            </div>
+
             <CordelButton 
               type="submit"
               variant="ocre"
@@ -220,8 +242,9 @@ export default function TreasuryOperations({
               <div className="grid grid-cols-12 gap-2 text-[9px] font-extrabold uppercase tracking-wider text-cordel-wood border-b border-dashed border-cordel-master-dark/15 pb-1 px-1">
                 <div className="col-span-2 text-left">Date</div>
                 <div className="col-span-2 text-left">Catégorie</div>
-                <div className="col-span-4 text-left">Libellé</div>
-                <div className="col-span-3 text-right">Montant</div>
+                <div className="col-span-3 text-left">Libellé</div>
+                <div className="col-span-2 text-center">Justificatif</div>
+                <div className="col-span-2 text-right">Montant</div>
                 <div className="col-span-1 text-center"></div>
               </div>
 
@@ -236,10 +259,25 @@ export default function TreasuryOperations({
                         {tx.categorie}
                       </span>
                     </div>
-                    <div className="col-span-4 font-bold text-encre-noire dark:text-cordel-bg-light truncate text-left" title={tx.libelle}>
+                    <div className="col-span-3 font-bold text-encre-noire dark:text-cordel-bg-light truncate text-left" title={tx.libelle}>
                       {tx.libelle}
                     </div>
-                    <div className={`col-span-3 text-right font-black ${tx.type === 'recette' ? 'text-green-700' : 'text-red-700'}`}>
+                    <div className="col-span-2 text-center">
+                      {tx.justificatifUrl ? (
+                        <a
+                          href={tx.justificatifUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-[9px] font-black text-amber-900 dark:text-amber-300 bg-amber-100 dark:bg-amber-950/40 border border-amber-600/40 px-2 py-0.5 rounded hover:underline cursor-pointer"
+                          title={tx.justificatifNom || "Voir le justificatif"}
+                        >
+                          📎 Voir
+                        </a>
+                      ) : (
+                        <span className="text-[9px] text-neutral-400 italic">-</span>
+                      )}
+                    </div>
+                    <div className={`col-span-2 text-right font-black ${tx.type === 'recette' ? 'text-green-700' : 'text-red-700'}`}>
                       {tx.type === 'recette' ? '+' : '-'}{tx.montant} €
                     </div>
                     <div className="col-span-1 text-center">

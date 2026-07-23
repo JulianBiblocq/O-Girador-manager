@@ -183,14 +183,14 @@ export default function EventRSVPSection({
                 disabled={saving || isPrestationRestricted || event.status === 'annule'}
                 onClick={() => handleStatusChange('present')}
                 className={`
-                  theme-btn px-2 py-2 text-xs rounded-[4px_6px_3px_5px] transition-colors cursor-pointer select-none
+                  theme-btn px-2 py-2.5 text-xs rounded-[4px_6px_3px_5px] transition-all cursor-pointer select-none flex items-center justify-center gap-1.5
                   ${status === 'present' 
-                    ? 'bg-green-600 text-white font-black border-2 border-encre-noire shadow-none translate-x-[1px] translate-y-[1px]' 
-                    : 'bg-cordel-bg-light text-encre-noire border-2 border-encre-noire shadow-[2px_2px_0px_0px_#181716] hover:bg-cordel-hover'}
+                    ? 'theme-btn-status-present-active' 
+                    : 'theme-btn-status-inactive'}
                   ${(isPrestationRestricted || event.status === 'annule') ? 'opacity-40 cursor-not-allowed' : ''}
                 `}
               >
-                Présent
+                <span>✅</span> Présent
               </button>
               
               <button
@@ -198,14 +198,14 @@ export default function EventRSVPSection({
                 disabled={saving || event.status === 'annule'}
                 onClick={() => handleStatusChange('absent')}
                 className={`
-                  theme-btn px-2 py-2 text-xs rounded-[4px_6px_3px_5px] transition-colors cursor-pointer select-none
+                  theme-btn px-2 py-2.5 text-xs rounded-[4px_6px_3px_5px] transition-all cursor-pointer select-none flex items-center justify-center gap-1.5
                   ${status === 'absent' 
-                    ? 'bg-red-600 text-white font-black border-2 border-encre-noire shadow-none translate-x-[1px] translate-y-[1px]' 
-                    : 'bg-cordel-bg-light text-encre-noire border-2 border-encre-noire shadow-[2px_2px_0px_0px_#181716] hover:bg-cordel-hover'}
+                    ? 'theme-btn-status-absent-active' 
+                    : 'theme-btn-status-inactive'}
                   ${event.status === 'annule' ? 'opacity-40 cursor-not-allowed' : ''}
                 `}
               >
-                Absent
+                <span>❌</span> Absent
               </button>
 
               {agendaEnableMaybeStatus && (
@@ -214,14 +214,14 @@ export default function EventRSVPSection({
                   disabled={saving || isPrestationRestricted || event.status === 'annule'}
                   onClick={() => handleStatusChange('confirm')}
                   className={`
-                    theme-btn px-2 py-2 text-xs rounded-[4px_6px_3px_5px] transition-colors cursor-pointer select-none
+                    theme-btn px-2 py-2.5 text-xs rounded-[4px_6px_3px_5px] transition-all cursor-pointer select-none flex items-center justify-center gap-1.5
                     ${status === 'confirm' 
-                      ? 'bg-orange-500 text-white font-black border-2 border-encre-noire shadow-none translate-x-[1px] translate-y-[1px]' 
-                      : 'bg-cordel-bg-light text-encre-noire border-2 border-encre-noire shadow-[2px_2px_0px_0px_#181716] hover:bg-cordel-hover'}
+                      ? 'theme-btn-status-confirm-active' 
+                      : 'theme-btn-status-inactive'}
                     ${(isPrestationRestricted || event.status === 'annule') ? 'opacity-40 cursor-not-allowed' : ''}
                   `}
                 >
-                  À confirmer
+                  <span>⏳</span> À confirmer
                 </button>
               )}
             </div>
@@ -272,7 +272,11 @@ export default function EventRSVPSection({
                       </label>
                       <select
                         value={instrumentChoisi}
-                        onChange={(e) => setInstrumentChoisi(e.target.value)}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setInstrumentChoisi(val);
+                          handleSave(null, status, { instrumentChoisi: val });
+                        }}
                         disabled={saving}
                         className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light w-full"
                       >
@@ -307,7 +311,11 @@ export default function EventRSVPSection({
                   <input
                     type="checkbox"
                     checked={besoinTransportInstrument}
-                    onChange={(e) => setBesoinTransportInstrument(e.target.checked)}
+                    onChange={(e) => {
+                      const checked = e.target.checked;
+                      setBesoinTransportInstrument(checked);
+                      handleSave(null, status, { besoinTransportInstrument: checked });
+                    }}
                     disabled={saving}
                     className="w-4 h-4 border border-encre-noire bg-white rounded mt-0.5 shrink-0 accent-cordel-wood"
                   />
@@ -325,13 +333,21 @@ export default function EventRSVPSection({
           {/* Action Buttons: Validation & Calendar Sync */}
           <div className="flex flex-col sm:flex-row gap-2.5 w-full mt-2">
             <CordelButton 
-              variant="ocre" 
+              variant={status === 'present' ? 'vert' : status === 'absent' ? 'rouge' : 'ocre'} 
               useExtremeBorder={true}
               disabled={saving || event.status === 'annule'}
               type="submit"
-              className="flex-1 py-3"
+              className="flex-1 py-3 font-black text-xs uppercase tracking-wider"
             >
-              {saving ? "Validation..." : "Valider mon inscription"}
+              {saving 
+                ? "Validation..." 
+                : status === 'present' 
+                  ? "✅ Inscription validée (Présent)" 
+                  : status === 'absent' 
+                    ? "❌ Inscription enregistrée (Absent)" 
+                    : status === 'confirm' 
+                      ? "⏳ Inscription enregistrée (À confirmer)" 
+                      : "Valider mon inscription"}
             </CordelButton>
 
             <div className="relative flex-1">

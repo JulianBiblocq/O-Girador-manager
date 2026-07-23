@@ -133,6 +133,10 @@ export default function WidgetForum({ groupId, onOpen }) {
                         <span className="text-[8px] font-black uppercase tracking-wider text-red-800 bg-red-100 border border-red-700/30 px-1.5 py-0.5 rounded">
                           📌 Épinglé
                         </span>
+                      ) : thread.poll ? (
+                        <span className="text-[8px] font-extrabold uppercase tracking-wider text-amber-900 bg-amber-100 border border-amber-600/30 px-1.5 py-0.5 rounded truncate max-w-[120px]">
+                          📊 Sondage
+                        </span>
                       ) : (
                         <span className="text-[8px] font-extrabold uppercase tracking-wider text-cordel-wood bg-cordel-wood/10 border border-cordel-wood/20 px-1.5 py-0.5 rounded truncate max-w-[120px]">
                           💬 Discussion

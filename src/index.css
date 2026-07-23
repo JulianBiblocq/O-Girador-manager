@@ -1510,3 +1510,42 @@ gmp-place-autocomplete:focus-within {
   color: #fb923c !important;
   border: 1px dashed #ea580c !important;
 }
+
+/* Interactive status buttons for Event RSVP */
+.theme-btn-status-present-active {
+  background-color: #16a34a !important;
+  color: #ffffff !important;
+  font-weight: 900;
+  border: 2px solid var(--cordel-border, #181716) !important;
+  box-shadow: none !important;
+  transform: translate(1px, 1px);
+}
+
+.theme-btn-status-absent-active {
+  background-color: #dc2626 !important;
+  color: #ffffff !important;
+  font-weight: 900;
+  border: 2px solid var(--cordel-border, #181716) !important;
+  box-shadow: none !important;
+  transform: translate(1px, 1px);
+}
+
+.theme-btn-status-confirm-active {
+  background-color: #ea580c !important;
+  color: #ffffff !important;
+  font-weight: 900;
+  border: 2px solid var(--cordel-border, #181716) !important;
+  box-shadow: none !important;
+  transform: translate(1px, 1px);
+}
+
+.theme-btn-status-inactive {
+  background-color: var(--cordel-bg-light, #fdfaf2);
+  color: var(--cordel-text, #181716);
+  border: 2px solid var(--cordel-border, #181716);
+  box-shadow: 2px 2px 0px 0px var(--cordel-border, #181716);
+}
+.theme-btn-status-inactive:hover {
+  background-color: var(--cordel-hover, #f5eedb);
+}
+

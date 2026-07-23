@@ -567,9 +567,10 @@ export default function WidgetAgenda({
                       </td>
                       <td className="p-1.5 md:p-2.5 text-center font-bold whitespace-nowrap">
                         {(() => {
-                          if (userStatus === 'present') return <span className="text-green-700 dark:text-green-400 font-black">Présent ({presentCount})</span>;
-                          if (userStatus === 'absent') return <span className="text-red-700 dark:text-red-400 font-black">Absent ({presentCount})</span>;
-                          if (userStatus === 'pending' || userStatus === 'confirm') return <span className="text-orange-600 dark:text-orange-400 font-black">À confirmer ({presentCount})</span>;
+                          if (userStatus === 'present') return <span className="inline-block px-1.5 py-0.5 rounded text-[9px] uppercase font-black badge-status-present">Présent ({presentCount})</span>;
+                          if (userStatus === 'absent') return <span className="inline-block px-1.5 py-0.5 rounded text-[9px] uppercase font-black badge-status-absent">Absent ({presentCount})</span>;
+                          if (userStatus === 'confirm') return <span className="inline-block px-1.5 py-0.5 rounded text-[9px] uppercase font-black badge-status-confirm">À confirmer ({presentCount})</span>;
+                          if (userStatus === 'pending') return <span className="inline-block px-1.5 py-0.5 rounded text-[9px] uppercase font-bold badge-status-pending">En attente ({presentCount})</span>;
                           return <span className="text-neutral-500 font-bold">Sans réponse ({presentCount})</span>;
                         })()}
                       </td>

@@ -136,7 +136,7 @@ const ThreadReplyItem = React.memo(({
          prevProps.onEditReply === nextProps.onEditReply;
 });
 
-export default function ThreadView({ threadId, user, profileData, channels = [], allThreads = [], onClose }) {
+export default function ThreadView({ threadId, user, profileData, channels = [], allThreads = [], allUsers = [], onClose }) {
   const { t } = useTranslation();
   const {
     actionLoading,
@@ -163,6 +163,74 @@ export default function ThreadView({ threadId, user, profileData, channels = [],
   const [isMoveThreadOpen, setIsMoveThreadOpen] = useState(false);
   const [movingReplyData, setMovingReplyData] = useState(null); // { reply, index }
   const [editingReplyData, setEditingReplyData] = useState(null); // { reply, index, text }
+
+  // Add poll modal state
+  const [isAddPollOpen, setIsAddPollOpen] = useState(false);
+  const [newPollQuestion, setNewPollQuestion] = useState('');
+  const [newPollOptions, setNewPollOptions] = useState(['', '']);
+  const [newPollAllowMultiple, setNewPollAllowMultiple] = useState(false);
+  const [savingNewPoll, setSavingNewPoll] = useState(false);
+
+  const handleAddPollOptionToExisting = () => {
+    if (newPollOptions.length < 10) {
+      setNewPollOptions(prev => [...prev, '']);
+    }
+  };
+
+  const handleRemovePollOptionFromExisting = (idx) => {
+    if (newPollOptions.length > 2) {
+      setNewPollOptions(prev => prev.filter((_, i) => i !== idx));
+    }
+  };
+
+  const handlePollOptionChangeExisting = (idx, val) => {
+    setNewPollOptions(prev => {
+      const next = [...prev];
+      next[idx] = val;
+      return next;
+    });
+  };
+
+  const handleCreatePollOnExistingThread = async (e) => {
+    if (e) e.preventDefault();
+    if (!thread?.id || !newPollQuestion.trim()) return;
+
+    const validOpts = newPollOptions.filter(o => o.trim() !== '');
+    if (validOpts.length < 2) {
+      alert("Veuillez saisir au moins 2 choix de réponse.");
+      return;
+    }
+
+    setSavingNewPoll(true);
+    try {
+      const pollPayload = {
+        question: newPollQuestion.trim(),
+        allowMultiple: newPollAllowMultiple,
+        isClosed: false,
+        options: validOpts.map((label, idx) => ({
+          id: `opt_${Date.now()}_${idx}`,
+          label: label.trim(),
+          votes: []
+        }))
+      };
+
+      const threadRef = doc(db, 'forum', thread.id);
+      await updateDoc(threadRef, {
+        poll: pollPayload
+      });
+
+      setIsAddPollOpen(false);
+      setNewPollQuestion('');
+      setNewPollOptions(['', '']);
+      setNewPollAllowMultiple(false);
+      alert("Sondage ajouté avec succès !");
+    } catch (err) {
+      console.error("ThreadView - Erreur ajout sondage:", err);
+      alert("Erreur lors de la création du sondage.");
+    } finally {
+      setSavingNewPoll(false);
+    }
+  };
 
   const threadChannel = channels.find(c => c.id === thread?.channelId);
   const isModeratorOrAdmin = profileData?.role === 'mestre' || 
@@ -451,12 +519,131 @@ export default function ThreadView({ threadId, user, profileData, channels = [],
           </CordelCard>
 
           {/* Interactive Poll Component if attached */}
-          {thread.poll && (
+          {thread.poll ? (
             <PollDisplay 
               poll={thread.poll} 
               threadId={thread.id} 
               userId={user.uid} 
+              allUsers={allUsers}
+              isAuthorOrAdmin={user.uid === thread.auteurId || isModeratorOrAdmin}
             />
+          ) : (
+            (user.uid === thread.auteurId || isModeratorOrAdmin) && (
+              <div className="my-2 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setIsAddPollOpen(true)}
+                  className="text-[10px] font-black uppercase tracking-wider text-cordel-wood bg-cordel-bg-light border border-dashed border-cordel-master-dark/30 hover:bg-cordel-hover px-3 py-1.5 rounded flex items-center gap-1.5 cursor-pointer shadow-xs active:translate-x-[0.5px] active:translate-y-[0.5px]"
+                >
+                  📊 Ajouter un sondage à ce sujet
+                </button>
+              </div>
+            )
+          )}
+
+          {/* Modal de création de sondage sur sujet existant */}
+          {isAddPollOpen && (
+            <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+              <CordelCard variant="default" useExtremeBorder={true} className="w-full max-w-md bg-cordel-bg p-5 relative select-none">
+                <h3 className="font-extrabold text-sm text-encre-noire uppercase tracking-wider mb-3 border-b border-dashed border-cordel-master-dark/20 pb-2 flex items-center gap-2">
+                  📊 Créer un Sondage pour ce sujet
+                </h3>
+
+                <form onSubmit={handleCreatePollOnExistingThread} className="flex flex-col gap-3 text-left">
+                  {/* Question */}
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                      Question du sondage *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={newPollQuestion}
+                      onChange={(e) => setNewPollQuestion(e.target.value)}
+                      placeholder="Ex : Quelle date préférez-vous pour le stage ?"
+                      disabled={savingNewPoll}
+                      className="theme-input w-full text-xs font-bold"
+                      autoFocus
+                    />
+                  </div>
+
+                  {/* Options */}
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                      Choix de réponses (Minimum 2)
+                    </label>
+                    {newPollOptions.map((opt, idx) => (
+                      <div key={idx} className="flex gap-2 items-center">
+                        <input
+                          type="text"
+                          required={idx < 2}
+                          value={opt}
+                          onChange={(e) => handlePollOptionChangeExisting(idx, e.target.value)}
+                          placeholder={`Choix ${idx + 1}...`}
+                          disabled={savingNewPoll}
+                          className="theme-input text-xs flex-1 font-semibold py-1.5"
+                        />
+                        {newPollOptions.length > 2 && (
+                          <button
+                            type="button"
+                            onClick={() => handleRemovePollOptionFromExisting(idx)}
+                            disabled={savingNewPoll}
+                            className="text-red-700 hover:text-red-900 text-xs font-black px-2 py-1 rounded bg-red-50 border border-red-200 cursor-pointer"
+                          >
+                            ✕
+                          </button>
+                        )}
+                      </div>
+                    ))}
+
+                    {newPollOptions.length < 10 && (
+                      <button
+                        type="button"
+                        onClick={handleAddPollOptionToExisting}
+                        disabled={savingNewPoll}
+                        className="text-[9px] font-black uppercase text-cordel-wood hover:underline mt-0.5 self-start cursor-pointer"
+                      >
+                        ➕ Ajouter un choix
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Allow Multiple Choices */}
+                  <label className="flex items-center gap-2 cursor-pointer select-none border-t border-dashed border-cordel-master-dark/15 pt-2">
+                    <input
+                      type="checkbox"
+                      checked={newPollAllowMultiple}
+                      onChange={(e) => setNewPollAllowMultiple(e.target.checked)}
+                      disabled={savingNewPoll}
+                      className="w-3.5 h-3.5 border border-encre-noire rounded accent-cordel-wood cursor-pointer"
+                    />
+                    <span className="text-[10px] font-bold text-encre-noire">
+                      Autoriser les choix multiples
+                    </span>
+                  </label>
+
+                  <div className="flex justify-end gap-2 mt-3 pt-2 border-t border-dashed border-cordel-master-dark/15">
+                    <CordelButton
+                      type="button"
+                      variant="default"
+                      onClick={() => setIsAddPollOpen(false)}
+                      disabled={savingNewPoll}
+                      className="px-3 py-1.5 text-xs font-bold"
+                    >
+                      Annuler
+                    </CordelButton>
+                    <CordelButton
+                      type="submit"
+                      variant="ocre"
+                      disabled={savingNewPoll}
+                      className="px-4 py-1.5 text-xs font-black uppercase"
+                    >
+                      {savingNewPoll ? "Création..." : "Ajouter le sondage"}
+                    </CordelButton>
+                  </div>
+                </form>
+              </CordelCard>
+            </div>
           )}
 
           {/* Messages Container (Scrollable) */}

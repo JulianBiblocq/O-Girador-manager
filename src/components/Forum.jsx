@@ -67,10 +67,17 @@ const ThreadCard = React.memo(({
             🗣️ {(translate('forum.targeted', "Vous concerne ({tag})")).replace('{tag}', thread.targetTag)}
           </span>
         )}
-        {/* Category Label */}
-        <span className={`theme-stamp-badge theme-stamp-badge-${badgeVariant === 'ocre' || badgeVariant === 'vert' ? 'wood' : 'dark'} text-[7px] rotate-0 mb-1`}>
-          {getCategoryLabel(thread.categorie)}
-        </span>
+        {/* Category & Poll Badges */}
+        <div className="flex items-center gap-1.5 flex-wrap mb-1">
+          <span className={`theme-stamp-badge theme-stamp-badge-${badgeVariant === 'ocre' || badgeVariant === 'vert' ? 'wood' : 'dark'} text-[7px] rotate-0`}>
+            {getCategoryLabel(thread.categorie)}
+          </span>
+          {thread.poll && (
+            <span className="theme-stamp-badge theme-stamp-badge-wood text-[7px] rotate-0 bg-amber-100 dark:bg-amber-950/40 text-amber-900 dark:text-amber-300 border-amber-600/40">
+              📊 Sondage {thread.poll.isClosed ? '(Clôturé)' : ''}
+            </span>
+          )}
+        </div>
 
         {/* Subject */}
         <h4 className="font-extrabold text-sm text-encre-noire leading-tight pr-4">
@@ -639,6 +646,7 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
         profileData={profileData} 
         channels={channels}
         allThreads={threads}
+        allUsers={Object.values(usersMap)}
         onClose={() => setSelectedThread(null)} 
       />
     );

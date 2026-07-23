@@ -44,12 +44,8 @@ export function useEventRSVP(event, user, profileData, allUsers, isPrestationRes
     setInstrumentChoisi(resp?.instrumentChoisi || profileData?.instrument || 'Autre');
   }, [event.id, user.uid, profileData?.instrument, event.inscriptions]);
 
-  const handleStatusChange = (newStatus) => {
-    setStatus(newStatus);
-  };
-
-  const handleSave = async (e) => {
-    if (e) e.preventDefault();
+  const handleSave = async (e, overrideStatus = null, overrideOptions = {}) => {
+    if (e && e.preventDefault) e.preventDefault();
     if (event.status === 'annule') {
       alert("Les inscriptions sont désactivées car l'événement est annulé.");
       return;
@@ -67,28 +63,35 @@ export function useEventRSVP(event, user, profileData, allUsers, isPrestationRes
       return;
     }
 
-    if (isPrestationRestricted && status !== 'absent') {
+    const targetStatus = overrideStatus !== null ? overrideStatus : status;
+
+    if (isPrestationRestricted && targetStatus !== 'absent') {
       alert("Cette prestation est réservée aux musiciens confirmés.");
       setSaving(false);
       return;
     }
 
+    const targetInstrument = overrideOptions.instrumentChoisi !== undefined ? overrideOptions.instrumentChoisi : instrumentChoisi;
+    const targetTransport = overrideOptions.transport !== undefined ? overrideOptions.transport : transport;
+    const targetDemandeRemb = overrideOptions.demandeRemboursementKm !== undefined ? overrideOptions.demandeRemboursementKm : demandeRemboursementKm;
+    const targetBesoinTransp = overrideOptions.besoinTransportInstrument !== undefined ? overrideOptions.besoinTransportInstrument : besoinTransportInstrument;
+
     try {
       const currentInscriptions = event.inscriptions || [];
       const updatedInscriptions = currentInscriptions.filter(ins => ins.userId !== user.uid);
 
-      const finalStatus = (status === 'present' && event.requiresValidation) ? 'pending' : status;
+      const finalStatus = (targetStatus === 'present' && event.requiresValidation) ? 'pending' : targetStatus;
       const newResponse = {
         userId: user.uid,
         userName: `${profileData.prenom} ${profileData.nom}`,
         status: finalStatus,
-        transport: status === 'present' ? transport : null,
+        transport: targetStatus === 'present' ? targetTransport : null,
         places: 0,
         instruments: "",
-        instrumentChoisi: status === 'present' ? instrumentChoisi : null,
-        instrumentImposeParMestre: status === 'present' ? isInstrumentLocked : false,
-        demandeRemboursementKm: (status === 'present' && transport === 'propre') ? demandeRemboursementKm : false,
-        besoinTransportInstrument: status === 'present' ? besoinTransportInstrument : false
+        instrumentChoisi: targetStatus === 'present' ? targetInstrument : null,
+        instrumentImposeParMestre: targetStatus === 'present' ? isInstrumentLocked : false,
+        demandeRemboursementKm: (targetStatus === 'present' && targetTransport === 'propre') ? targetDemandeRemb : false,
+        besoinTransportInstrument: targetStatus === 'present' ? targetBesoinTransp : false
       };
 
       updatedInscriptions.push(newResponse);
@@ -99,7 +102,11 @@ export function useEventRSVP(event, user, profileData, allUsers, isPrestationRes
       });
 
       if (setToastMessage) {
-        setToastMessage(finalStatus === 'pending' ? "Inscription en attente de validation" : "Inscription validée");
+        let msg = "Inscription validée (Présent)";
+        if (finalStatus === 'pending') msg = "Inscription en attente de validation";
+        else if (finalStatus === 'absent') msg = "Inscription enregistrée (Absent)";
+        else if (finalStatus === 'confirm') msg = "Inscription enregistrée (À confirmer)";
+        setToastMessage(msg);
         setTimeout(() => {
           setToastMessage(null);
         }, 3000);
@@ -110,6 +117,11 @@ export function useEventRSVP(event, user, profileData, allUsers, isPrestationRes
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleStatusChange = async (newStatus) => {
+    setStatus(newStatus);
+    await handleSave(null, newStatus);
   };
 
   const handleValidatePending = async (userId, targetStatus) => {

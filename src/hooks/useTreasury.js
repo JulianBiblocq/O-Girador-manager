@@ -154,18 +154,30 @@ export function useTreasury(groupId) {
   }, [groupId]);
 
   // Operations
-  const handleAddTx = async (txForm) => {
+  const handleAddTx = async (txForm, documentFile = null) => {
     if (!txForm.montant || !txForm.libelle) return;
     setSavingTx(true);
     try {
       const txDate = new Date(txForm.date);
+      let justificatifUrl = null;
+      let justificatifNom = null;
+
+      if (documentFile && documentFile instanceof File) {
+        const fileRef = ref(storage, `transactions/${groupId}/${Date.now()}_${documentFile.name}`);
+        const snap = await uploadBytes(fileRef, documentFile);
+        justificatifUrl = await getDownloadURL(snap.ref);
+        justificatifNom = documentFile.name;
+      }
+
       await addDoc(collection(db, 'transactions'), {
         groupId,
         date: Timestamp.fromDate(txDate),
         type: txForm.type,
         montant: parseFloat(txForm.montant) || 0,
         categorie: txForm.categorie,
-        libelle: txForm.libelle
+        libelle: txForm.libelle,
+        justificatifUrl: justificatifUrl || null,
+        justificatifNom: justificatifNom || null
       });
     } catch (err) {
       console.error("useTreasury - Erreur addDoc transaction:", err);
