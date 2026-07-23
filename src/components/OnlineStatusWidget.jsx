@@ -4,9 +4,10 @@ import CordelButton from './CordelButton';
 import { XiloPeople } from './XiloIcons';
 import { usePresenceContext } from '../context/PresenceContext';
 
-export default function OnlineStatusWidget({ onlineMembers = [], onlineCount = 0, className = "" }) {
+export default function OnlineStatusWidget({ onlineMembers = [], onlineCount = 0, className = "", isPresenceEnabled: propIsEnabled }) {
   const [isOpen, setIsOpen] = useState(false);
-  const { isPresenceEnabled } = usePresenceContext();
+  const context = usePresenceContext();
+  const isPresenceEnabled = propIsEnabled !== undefined ? propIsEnabled : context?.isPresenceEnabled;
 
   if (isPresenceEnabled === false) return null;
 

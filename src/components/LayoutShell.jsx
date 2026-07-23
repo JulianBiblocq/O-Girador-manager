@@ -242,7 +242,7 @@ export default function LayoutShell({
 
           {/* Online Presence Indicator Widget */}
           <div className="flex items-center gap-2">
-            <OnlineStatusWidget onlineMembers={onlineMembers} onlineCount={onlineCount} />
+            <OnlineStatusWidget onlineMembers={onlineMembers} onlineCount={onlineCount} isPresenceEnabled={isPresenceEnabled} />
 
             {/* Hamburger Menu Button */}
             <button
@@ -300,7 +300,7 @@ export default function LayoutShell({
 
               {/* Online Presence Indicator Widget in Desktop Sidebar */}
               <div className="mt-2">
-                <OnlineStatusWidget onlineMembers={onlineMembers} onlineCount={onlineCount} />
+                <OnlineStatusWidget onlineMembers={onlineMembers} onlineCount={onlineCount} isPresenceEnabled={isPresenceEnabled} />
               </div>
             </div>
             
