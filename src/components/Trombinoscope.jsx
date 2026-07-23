@@ -11,6 +11,7 @@ import { XiloCaixa, XiloPeople } from './XiloIcons';
 import { useInstrumentColor } from '../hooks/useInstrumentColor';
 import ImageLightboxModal from './ImageLightboxModal';
 import { formatTagGender, getTagId } from '../utils/tagUtils';
+import { usePresenceContext } from '../context/PresenceContext';
 const CordelImageEditor = React.lazy(() => import('./CordelImageEditor'));
 
 // Memoized MemberCard subcomponent
@@ -95,6 +96,8 @@ const MemberCard = React.memo(({
   const mainInstrument = userInstruments[0] || '';
   const cardBgColor = getColorForInstrument ? getColorForInstrument(mainInstrument, 'pastel') : undefined;
 
+  const { isPresenceEnabled } = usePresenceContext();
+
   return (
     <div className="relative flex flex-col items-center">
       <CordelCard 
@@ -110,7 +113,7 @@ const MemberCard = React.memo(({
           title="Cliquer pour agrandir la photo"
         >
           <XiloAvatar src={photoURL} name={fullName} size={72} />
-          {isOnline && (
+          {isPresenceEnabled !== false && isOnline && (
             <span 
               className="absolute -bottom-0.5 -right-0.5 z-20 w-4 h-4 bg-emerald-500 border-2 border-white rounded-full flex items-center justify-center shadow-md"
               title="Actuellement en ligne"

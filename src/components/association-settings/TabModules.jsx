@@ -173,6 +173,38 @@ export default function TabModules({
           );
         })}
       </div>
+
+      {/* Online Presence Status Settings */}
+      <div className="mt-6 pt-4 border-t-2 border-dashed border-cordel-master-dark/20 text-left">
+        <h4 className="text-xs uppercase font-extrabold tracking-wider text-cordel-wood mb-2.5 flex items-center gap-2">
+          <span>🟢</span> Présence en Ligne des Membres
+        </h4>
+        <div className={`p-4 border-2 rounded-[6px_10px_6px_8px] flex items-center justify-between transition-all ${
+          formData.activerPresenceEnLigne !== false
+            ? 'border-encre-noire bg-cordel-bg-light shadow-[2.5px_2.5px_0px_0px_#181716]'
+            : 'border-dashed border-cordel-master-dark/30 bg-neutral-100/50 opacity-60'
+        }`}>
+          <div className="text-left pr-4">
+            <h5 className="text-xs font-black text-encre-noire flex items-center gap-2">
+              Afficher le statut en ligne des membres (Pastille verte)
+            </h5>
+            <p className="text-[9px] text-cordel-master-dark/70 font-medium mt-0.5 leading-relaxed">
+              Affiche ou masque les pastilles vertes de présence en ligne sur le Trombinoscope, le Forum et la barre supérieure pour l'ensemble des membres de l'association.
+            </p>
+          </div>
+
+          <label className="relative inline-flex items-center cursor-pointer shrink-0 select-none">
+            <input
+              type="checkbox"
+              checked={formData.activerPresenceEnLigne !== false}
+              onChange={(e) => handleChange('activerPresenceEnLigne', e.target.checked)}
+              disabled={saving}
+              className="sr-only peer"
+            />
+            <div className="w-10 h-5 bg-neutral-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-neutral-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[var(--cordel-wood)]"></div>
+          </label>
+        </div>
+      </div>
     </CordelCard>
   );
 }

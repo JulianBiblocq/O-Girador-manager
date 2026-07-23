@@ -147,6 +147,7 @@ export default function App() {
   const [sequenceurUrl, setSequenceurUrl] = useState('');
   const [permissionsMatrice, setPermissionsMatrice] = useState(null);
   const [enabledModules, setEnabledModules] = useState(null);
+  const [activerPresenceEnLigne, setActiverPresenceEnLigne] = useState(true);
   const [currentView, setCurrentView] = useState('dashboard'); // 'dashboard', 'trombinoscope', 'forum', 'profil', 'system-admin', 'layout-editor', 'tag-manager'
   const [currentPole, setCurrentPole] = useState('accueil');
   const [currentTab, setCurrentTab] = useState('dashboard');
@@ -198,6 +199,7 @@ export default function App() {
         setSequenceurUrl(data.sequenceurUrl || '');
         setPermissionsMatrice(data.permissionsMatrice || null);
         setEnabledModules(data.enabledModules || null);
+        setActiverPresenceEnLigne(data.activerPresenceEnLigne !== false);
       } else {
         setBranding(null);
         setAssociationName('');
@@ -205,6 +207,7 @@ export default function App() {
         setSequenceurUrl('');
         setPermissionsMatrice(null);
         setEnabledModules(null);
+        setActiverPresenceEnLigne(true);
       }
     }, (error) => {
       console.error("App - Erreur onSnapshot branding :", error);
@@ -782,6 +785,7 @@ export default function App() {
           unreadPrivateMessagesCount={unreadPrivateMessagesCount}
           permissionsMatrice={permissionsMatrice}
           enabledModules={enabledModules}
+          activerPresenceEnLigne={activerPresenceEnLigne}
         >
           <React.Suspense fallback={
             <div className="flex-1 flex flex-col justify-center items-center py-12">

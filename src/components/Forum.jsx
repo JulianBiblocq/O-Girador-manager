@@ -25,8 +25,8 @@ const ThreadCard = React.memo(({
   onTogglePin,
   onDeleteThread
 }) => {
-  const { onlineUserIds } = usePresenceContext();
-  const isAuthorOnline = thread.auteurId && onlineUserIds.has(thread.auteurId);
+  const { onlineUserIds, isPresenceEnabled } = usePresenceContext();
+  const isAuthorOnline = isPresenceEnabled !== false && thread.auteurId && onlineUserIds.has(thread.auteurId);
 
   const dateCreationObj = new Date(thread.dateCreation);
   const formattedDate = isNaN(dateCreationObj.getTime())

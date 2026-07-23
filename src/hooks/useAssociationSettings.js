@@ -81,7 +81,8 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
     pupitresColors: { Mestre: '#8b2a1a' },
     eventTypes: ['prestation', 'repetition', 'stage', 'atelier', 'reunion'],
     eventTypeConfigs: {},
-    enabledModules: DEFAULT_ENABLED_MODULES
+    enabledModules: DEFAULT_ENABLED_MODULES,
+    activerPresenceEnLigne: true
   });
 
   const [logoFile, setLogoFile] = useState(null);
@@ -204,7 +205,8 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
             ? data.eventTypes 
             : ['prestation', 'repetition', 'stage', 'atelier', 'reunion'],
           eventTypeConfigs: data.eventTypeConfigs || {},
-          enabledModules: data.enabledModules ? { ...DEFAULT_ENABLED_MODULES, ...data.enabledModules } : DEFAULT_ENABLED_MODULES
+          enabledModules: data.enabledModules ? { ...DEFAULT_ENABLED_MODULES, ...data.enabledModules } : DEFAULT_ENABLED_MODULES,
+          activerPresenceEnLigne: data.activerPresenceEnLigne !== false
         }));
       }
       setLoading(false);
@@ -300,7 +302,8 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
         agendaEnableRevisionProgram: formData.agendaEnableRevisionProgram !== undefined ? formData.agendaEnableRevisionProgram : true,
         eventTypes: formData.eventTypes || [],
         eventTypeConfigs: formData.eventTypeConfigs || {},
-        enabledModules: formData.enabledModules || DEFAULT_ENABLED_MODULES
+        enabledModules: formData.enabledModules || DEFAULT_ENABLED_MODULES,
+        activerPresenceEnLigne: formData.activerPresenceEnLigne !== false
       }, { merge: true });
 
       const credentialsRef = doc(db, 'associations', groupId, 'private_settings', 'credentials');

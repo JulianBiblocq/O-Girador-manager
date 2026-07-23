@@ -32,6 +32,14 @@ export default function EventCarpoolSection({
   handleAssignPassenger,
   handleRemovePassenger
 }) {
+  const voituresList = event.covoiturage?.voitures || [];
+  const hasCarWithAvailableSeats = voituresList.some(v => {
+    const status = calculateCarStatus(v, { enableCarpoolReimbursement, reimbursementRule });
+    return status.availableSeats > 0;
+  });
+  const isUserChauffeurAnyCar = voituresList.some(v => v.chauffeurId === user?.uid);
+  const isProposerDisabled = !isUserChauffeurAnyCar && hasCarWithAvailableSeats;
+
   return (
     <>
       {/* 🚗 Frais de déplacement / Convoi (uniquement pour les administrateurs pour prestation, stage & atelier) */}
@@ -461,15 +469,28 @@ export default function EventCarpoolSection({
           </div>
 
           {/* Proposer ma voiture button/form */}
-          <div className="mt-4 pt-4 border-t border-dashed border-cordel-master-dark/15 text-left">
+          <div className="mt-4 pt-4 border-t border-dashed border-cordel-master-dark/15 text-left flex flex-col gap-2">
             {!showProposerForm ? (
-              <button
-                type="button"
-                onClick={() => setShowProposerForm(true)}
-                className="theme-btn theme-bg-ocre text-encre-noire px-3 py-1.5 text-[10px] font-black rounded-[4px_6px_3px_5px] shadow-[1px_1px_0px_0px_rgba(0,0,0,0.15)] hover:brightness-105 active:translate-x-[0.5px] active:translate-y-[0.5px] w-full text-center"
-              >
-                🚗 Proposer ma voiture pour le trajet
-              </button>
+              <>
+                <button
+                  type="button"
+                  disabled={isProposerDisabled}
+                  onClick={() => !isProposerDisabled && setShowProposerForm(true)}
+                  className={`theme-btn px-3 py-1.5 text-[10px] font-black rounded-[4px_6px_3px_5px] shadow-[1px_1px_0px_0px_rgba(0,0,0,0.15)] w-full text-center transition-all ${
+                    isProposerDisabled
+                      ? 'bg-neutral-200 text-neutral-500 border border-neutral-300 opacity-60 cursor-not-allowed shadow-none'
+                      : 'theme-bg-ocre text-encre-noire hover:brightness-105 active:translate-x-[0.5px] active:translate-y-[0.5px] cursor-pointer'
+                  }`}
+                  title={isProposerDisabled ? "Veuillez remplir les véhicules disponibles avant d'en proposer un nouveau." : "Proposer mon véhicule"}
+                >
+                  🚗 Proposer ma voiture pour le trajet
+                </button>
+                {isProposerDisabled && (
+                  <p className="text-[10px] italic font-bold text-amber-900 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 border border-dashed border-amber-300/80 p-2 rounded text-center leading-relaxed">
+                    ℹ️ Veuillez remplir les véhicules disponibles avant d'en proposer un nouveau.
+                  </p>
+                )}
+              </>
             ) : (
               <form onSubmit={handleProposerVoiture} className="flex flex-col gap-3 theme-inner-panel p-4 rounded">
                 <h5 className="font-bold text-[10px] uppercase tracking-widest text-cordel-wood">

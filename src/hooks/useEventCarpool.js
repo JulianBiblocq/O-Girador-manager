@@ -86,6 +86,15 @@ export function useEventCarpool({
           throw new Error("Vous proposez déjà une voiture pour cet événement.");
         }
 
+        const hasCarWithAvailableSeats = voitures.some(v => {
+          const status = calculateCarStatus(v, { enableCarpoolReimbursement: eventData.enableCarpoolReimbursement !== false });
+          return status.availableSeats > 0;
+        });
+
+        if (hasCarWithAvailableSeats) {
+          throw new Error("Veuillez remplir les véhicules disponibles avant d'en proposer un nouveau.");
+        }
+
         const newVoiture = {
           id: `voiture_${user.uid}`,
           chauffeurId: user.uid,

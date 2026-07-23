@@ -2,9 +2,13 @@ import React, { useState } from 'react';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
 import { XiloPeople } from './XiloIcons';
+import { usePresenceContext } from '../context/PresenceContext';
 
 export default function OnlineStatusWidget({ onlineMembers = [], onlineCount = 0, className = "" }) {
   const [isOpen, setIsOpen] = useState(false);
+  const { isPresenceEnabled } = usePresenceContext();
+
+  if (isPresenceEnabled === false) return null;
 
   return (
     <>

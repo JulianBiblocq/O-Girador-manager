@@ -39,12 +39,14 @@ export default function LayoutShell({
   forceLight = false,
   permissionsMatrice,
   enabledModules,
+  activerPresenceEnLigne = true,
   children 
 }) {
   const finalLogoUrl = logoUrl || '/Pictures/logo-samambaia.png';
   const { t } = useTranslation();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   
+  const isPresenceEnabled = activerPresenceEnLigne !== false;
   const currentUserId = profileData?.uid;
   const currentGroupId = profileData?.groupId;
   const { onlineMembers, onlineCount } = usePresence(currentUserId, currentGroupId);
@@ -435,7 +437,7 @@ export default function LayoutShell({
             )}
 
             <div className="w-full flex-1">
-              <PresenceProvider value={{ onlineMembers, onlineCount, onlineUserIds }}>
+              <PresenceProvider value={{ onlineMembers, onlineCount, onlineUserIds, isPresenceEnabled }}>
                 {children}
               </PresenceProvider>
             </div>

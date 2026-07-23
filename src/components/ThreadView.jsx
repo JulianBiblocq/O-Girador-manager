@@ -26,9 +26,9 @@ const ThreadReplyItem = React.memo(({
   t,
   formattedTime
 }) => {
-  const { onlineUserIds } = usePresenceContext();
+  const { onlineUserIds, isPresenceEnabled } = usePresenceContext();
   const isCurrentUser = reply.auteurId === userId;
-  const isAuthorOnline = reply.auteurId && onlineUserIds.has(reply.auteurId);
+  const isAuthorOnline = isPresenceEnabled !== false && reply.auteurId && onlineUserIds.has(reply.auteurId);
 
   // Check if message targets user tags/instruments
   const userPlaysInstrument = (profileData?.instrumentsJoues && profileData.instrumentsJoues.includes(reply.targetTag)) ||
