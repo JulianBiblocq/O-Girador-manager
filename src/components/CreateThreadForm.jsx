@@ -17,6 +17,31 @@ export default function CreateThreadForm({ groupId, channelId, user, profileData
   const [selectedTarget, setSelectedTarget] = useState('');
   const [saving, setSaving] = useState(false);
 
+  // Poll state
+  const [showPollForm, setShowPollForm] = useState(false);
+  const [pollQuestion, setPollQuestion] = useState('');
+  const [pollOptions, setPollOptions] = useState(['', '']);
+
+  const handleAddPollOption = () => {
+    if (pollOptions.length < 10) {
+      setPollOptions(prev => [...prev, '']);
+    }
+  };
+
+  const handleRemovePollOption = (idx) => {
+    if (pollOptions.length > 2) {
+      setPollOptions(prev => prev.filter((_, i) => i !== idx));
+    }
+  };
+
+  const handlePollOptionChange = (idx, val) => {
+    setPollOptions(prev => {
+      const next = [...prev];
+      next[idx] = val;
+      return next;
+    });
+  };
+
   // Load available tags and instruments from association document in real-time
   useEffect(() => {
     if (!groupId) return;
@@ -49,6 +74,21 @@ export default function CreateThreadForm({ groupId, channelId, user, profileData
     try {
       const authorName = `${profileData.prenom} ${profileData.nom}`;
 
+      let pollPayload = null;
+      if (showPollForm && pollQuestion.trim()) {
+        const validOpts = pollOptions.filter(o => o.trim() !== '');
+        if (validOpts.length >= 2) {
+          pollPayload = {
+            question: pollQuestion.trim(),
+            options: validOpts.map((label, idx) => ({
+              id: `opt_${Date.now()}_${idx}`,
+              label: label.trim(),
+              votes: []
+            }))
+          };
+        }
+      }
+
       const docRef = await addDoc(collection(db, 'forum'), {
         titre: cleanTitle,
         categorie: category,
@@ -59,6 +99,8 @@ export default function CreateThreadForm({ groupId, channelId, user, profileData
         dateCreation: nowIso,
         derniereModification: nowIso,
         targetTag: selectedTarget || null,
+        isPinned: false,
+        ...(pollPayload ? { poll: pollPayload } : {}),
         reponses: [
           {
             auteurId: user.uid,
@@ -195,6 +237,81 @@ export default function CreateThreadForm({ groupId, channelId, user, profileData
             groupId={groupId}
             minHeight="140px"
           />
+        </div>
+
+        {/* Toggle Poll Form Section */}
+        <div className="flex flex-col gap-2 pt-1 border-t border-dashed border-cordel-master-dark/15 select-none">
+          <button
+            type="button"
+            onClick={() => setShowPollForm(!showPollForm)}
+            className="text-[10px] font-black uppercase tracking-wider text-cordel-wood hover:underline flex items-center gap-1.5 w-fit cursor-pointer"
+          >
+            📊 {showPollForm ? "Retirer le sondage" : "Créer un sondage"}
+          </button>
+
+          {showPollForm && (
+            <div className="p-3.5 bg-cordel-bg-light border-2 border-cordel-master-dark/25 rounded-[6px] flex flex-col gap-3">
+              <span className="text-[10px] font-black uppercase tracking-wider text-cordel-wood border-b border-dashed border-cordel-master-dark/15 pb-1">
+                📊 Paramètres du Sondage
+              </span>
+
+              {/* Poll Question */}
+              <div className="flex flex-col gap-1">
+                <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                  Question du sondage
+                </label>
+                <input
+                  type="text"
+                  value={pollQuestion}
+                  onChange={(e) => setPollQuestion(e.target.value)}
+                  placeholder="Ex : Quelle date préférez-vous pour le stage ?"
+                  disabled={saving}
+                  className="theme-input w-full text-xs font-bold"
+                />
+              </div>
+
+              {/* Options */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                  Choix de réponses (Minimum 2)
+                </label>
+                {pollOptions.map((opt, idx) => (
+                  <div key={idx} className="flex gap-2 items-center">
+                    <input
+                      type="text"
+                      value={opt}
+                      onChange={(e) => handlePollOptionChange(idx, e.target.value)}
+                      placeholder={`Choix ${idx + 1}...`}
+                      disabled={saving}
+                      className="theme-input text-xs flex-1 font-semibold py-1.5"
+                    />
+                    {pollOptions.length > 2 && (
+                      <button
+                        type="button"
+                        onClick={() => handleRemovePollOption(idx)}
+                        disabled={saving}
+                        className="text-red-700 hover:text-red-900 text-xs font-black px-2 py-1 rounded bg-red-50 border border-red-200 cursor-pointer"
+                        title="Supprimer ce choix"
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </div>
+                ))}
+
+                {pollOptions.length < 10 && (
+                  <button
+                    type="button"
+                    onClick={handleAddPollOption}
+                    disabled={saving}
+                    className="text-[9px] font-black uppercase text-cordel-wood hover:underline mt-1 self-start cursor-pointer"
+                  >
+                    ➕ Ajouter un choix
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Action Buttons */}

@@ -8,6 +8,7 @@ import RichTextEditor from './RichTextEditor';
 import FormattedMessageContent from './FormattedMessageContent';
 import MoveThreadModal from './MoveThreadModal';
 import MoveReplyModal from './MoveReplyModal';
+import PollDisplay from './forum/PollDisplay';
 import { useForumModeration } from '../hooks/useForumModeration';
 import { getTagId } from '../utils/tagUtils';
 import { usePresenceContext } from '../context/PresenceContext';
@@ -166,6 +167,8 @@ export default function ThreadView({ threadId, user, profileData, channels = [],
   const threadChannel = channels.find(c => c.id === thread?.channelId);
   const isModeratorOrAdmin = profileData?.role === 'mestre' || 
                              profileData?.role === 'super-admin' || 
+                             profileData?.role === 'bureau' || 
+                             profileData?.role === 'ca' || 
                              profileData?.isSystemAdmin === true || 
                              (profileData?.tags && (
                                profileData.tags.includes('Modérateur') || 
@@ -446,6 +449,15 @@ export default function ThreadView({ threadId, user, profileData, channels = [],
               </div>
             )}
           </CordelCard>
+
+          {/* Interactive Poll Component if attached */}
+          {thread.poll && (
+            <PollDisplay 
+              poll={thread.poll} 
+              threadId={thread.id} 
+              userId={user.uid} 
+            />
+          )}
 
           {/* Messages Container (Scrollable) */}
           <div className="flex flex-col gap-3 overflow-y-auto max-h-[360px] p-2 bg-cordel-bg-light border-2 border-dashed border-cordel-master-dark/20 rounded-md">

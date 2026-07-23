@@ -108,9 +108,9 @@ export default function EventRSVPSection({
             {existingResponse && (
               <div className="text-xs font-bold text-encre-noire mb-2 text-left">
                 Votre réponse enregistrée : <span className={`px-2 py-0.5 rounded text-[10px] uppercase font-black ${
-                  existingResponse.status === 'present' ? 'theme-bg-vert' :
-                  existingResponse.status === 'absent' ? 'bg-cordel-wood text-cordel-bg-light' :
-                  existingResponse.status === 'confirm' ? 'theme-bg-ocre' : 'bg-neutral-200'
+                  existingResponse.status === 'present' ? 'bg-green-600 text-white' :
+                  existingResponse.status === 'absent' ? 'bg-red-600 text-white' :
+                  existingResponse.status === 'confirm' ? 'bg-orange-500 text-white' : 'bg-neutral-200'
                 }`}>{
                   existingResponse.status === 'present' ? 'Présent' :
                   existingResponse.status === 'absent' ? 'Absent' :
@@ -185,7 +185,7 @@ export default function EventRSVPSection({
                 className={`
                   theme-btn px-2 py-2 text-xs rounded-[4px_6px_3px_5px] transition-colors cursor-pointer select-none
                   ${status === 'present' 
-                    ? 'theme-bg-vert font-black border-2 border-encre-noire shadow-none translate-x-[1px] translate-y-[1px]' 
+                    ? 'bg-green-600 text-white font-black border-2 border-encre-noire shadow-none translate-x-[1px] translate-y-[1px]' 
                     : 'bg-cordel-bg-light text-encre-noire border-2 border-encre-noire shadow-[2px_2px_0px_0px_#181716] hover:bg-cordel-hover'}
                   ${(isPrestationRestricted || event.status === 'annule') ? 'opacity-40 cursor-not-allowed' : ''}
                 `}
@@ -200,7 +200,7 @@ export default function EventRSVPSection({
                 className={`
                   theme-btn px-2 py-2 text-xs rounded-[4px_6px_3px_5px] transition-colors cursor-pointer select-none
                   ${status === 'absent' 
-                    ? 'bg-cordel-wood text-cordel-bg-light font-black border-2 border-encre-noire shadow-none translate-x-[1px] translate-y-[1px]' 
+                    ? 'bg-red-600 text-white font-black border-2 border-encre-noire shadow-none translate-x-[1px] translate-y-[1px]' 
                     : 'bg-cordel-bg-light text-encre-noire border-2 border-encre-noire shadow-[2px_2px_0px_0px_#181716] hover:bg-cordel-hover'}
                   ${event.status === 'annule' ? 'opacity-40 cursor-not-allowed' : ''}
                 `}
@@ -216,7 +216,7 @@ export default function EventRSVPSection({
                   className={`
                     theme-btn px-2 py-2 text-xs rounded-[4px_6px_3px_5px] transition-colors cursor-pointer select-none
                     ${status === 'confirm' 
-                      ? 'theme-bg-ocre font-black border-2 border-encre-noire shadow-none translate-x-[1px] translate-y-[1px]' 
+                      ? 'bg-orange-500 text-white font-black border-2 border-encre-noire shadow-none translate-x-[1px] translate-y-[1px]' 
                       : 'bg-cordel-bg-light text-encre-noire border-2 border-encre-noire shadow-[2px_2px_0px_0px_#181716] hover:bg-cordel-hover'}
                     ${(isPrestationRestricted || event.status === 'annule') ? 'opacity-40 cursor-not-allowed' : ''}
                   `}
@@ -547,7 +547,7 @@ export default function EventRSVPSection({
               </div>
             </div>
             <div>
-              <strong className="text-amber-600 block border-b border-dashed border-amber-500/10 pb-0.5 mb-1">
+              <strong className="text-orange-600 block border-b border-dashed border-orange-500/10 pb-0.5 mb-1">
                 ⏳ À confirmer ({(event.inscriptions || []).filter(i => i.status === 'confirm').length})
               </strong>
               <div className="flex flex-wrap gap-1.5 items-center mt-1">

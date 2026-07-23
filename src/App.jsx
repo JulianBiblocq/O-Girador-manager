@@ -980,6 +980,8 @@ export default function App() {
                 role={profileData?.role}
                 isSystemAdmin={profileData?.isSystemAdmin}
                 branding={branding}
+                user={user}
+                profileData={profileData}
                 onBack={() => handleNavigateToPole('accueil')} 
               />
             ) : (currentTab === 'reunion-manager' && hasAccessStudio) ? (

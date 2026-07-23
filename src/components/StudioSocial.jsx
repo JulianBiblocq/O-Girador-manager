@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { collection, query, where, onSnapshot, doc, updateDoc } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, doc, updateDoc, addDoc, getDocs } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '../firebase';
 import CordelCard from './CordelCard';
@@ -7,7 +7,7 @@ import CordelButton from './CordelButton';
 import { useTranslation } from './LanguageContext';
 import { XiloMegaphone } from './XiloIcons';
 
-export default function StudioSocial({ groupId, branding, onBack, role, isSystemAdmin }) {
+export default function StudioSocial({ groupId, branding, onBack, role, isSystemAdmin, user, profileData }) {
   const { t } = useTranslation();
   const [events, setEvents] = useState([]);
   const [selectedEvent, setSelectedEvent] = useState(null);
@@ -567,6 +567,101 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
     }, 'image/jpeg', 0.95);
   };
 
+  const [sendingValidation, setSendingValidation] = useState(false);
+
+  const handleSendForValidation = async () => {
+    if (!selectedEvent && !publicationText) {
+      alert("Veuillez sélectionner un événement ou rédiger un texte avant d'envoyer pour validation.");
+      return;
+    }
+    setSendingValidation(true);
+
+    try {
+      const canvas = canvasRef.current;
+      let uploadedVisualUrl = '';
+
+      // 1. Convert Canvas to Blob and upload to Firebase Storage if possible
+      if (canvas) {
+        try {
+          const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.9));
+          if (blob) {
+            const cleanTitle = (selectedEvent?.titre || 'publication').toLowerCase().replace(/[^a-z0-9]/g, '_');
+            const storageRef = ref(storage, `studio_validation/${groupId}/${cleanTitle}_${Date.now()}.jpg`);
+            const snap = await uploadBytes(storageRef, blob);
+            uploadedVisualUrl = await getDownloadURL(snap.ref);
+          }
+        } catch (canvasErr) {
+          console.warn("StudioSocial - Image canvas non exportable, repli sur image de fond :", canvasErr);
+        }
+      }
+
+      const visualUrl = uploadedVisualUrl || backgroundImageUrl || selectedEvent?.imageUrl || '';
+
+      // 2. Select channel ('Bureau', 'CA', 'Validation Comm' or default)
+      let targetChannelId = `${groupId}_bureau`;
+      try {
+        const channelsRef = collection(db, 'forum_channels');
+        const qChan = query(channelsRef, where('groupId', '==', groupId));
+        const chanSnap = await getDocs(qChan);
+        chanSnap.forEach(d => {
+          const cData = d.data();
+          if (cData.name === 'Bureau' || cData.name === 'CA' || cData.name === 'Validation Comm') {
+            targetChannelId = d.id;
+          }
+        });
+      } catch (cErr) {
+        console.warn("StudioSocial - Erreur recherche salon forum :", cErr);
+      }
+
+      const nowIso = new Date().toISOString();
+      const authorName = profileData ? `${profileData.prenom || ''} ${profileData.nom || ''}`.trim() : (user?.displayName || 'Membre');
+      const eventTitle = selectedEvent?.titre || 'Publication Réseaux';
+
+      let messageHtml = `<p>📢 <strong>Proposition de publication réseaux sociaux</strong></p>`;
+      if (visualUrl) {
+        messageHtml += `<p><img src="${visualUrl}" alt="Visuel proposition" style="max-width:100%; max-height:400px; object-fit:contain; border-radius:6px; border:2px solid #181716;" /></p>`;
+      }
+      messageHtml += `<p><strong>Texte & Hashtags proposés :</strong></p><pre style="white-space:pre-wrap; font-family:inherit; background:#fbf9f4; padding:8px; border:1px solid #ccc; border-radius:4px;">${publicationText}</pre>`;
+
+      const poll = {
+        question: `Validation de la publication : "${eventTitle}"`,
+        options: [
+          { id: `opt_val_1`, label: "👍 Approuvé / Valider la publication", votes: [] },
+          { id: `opt_val_2`, label: "💬 À modifier (voir commentaires)", votes: [] },
+          { id: `opt_val_3`, label: "❌ Rejeter la publication", votes: [] }
+        ]
+      };
+
+      await addDoc(collection(db, 'forum'), {
+        titre: `[Validation Comm'] ${eventTitle}`,
+        categorie: 'Général',
+        groupId: groupId,
+        channelId: targetChannelId,
+        auteurId: user?.uid || 'system',
+        auteurNom: authorName,
+        dateCreation: nowIso,
+        derniereModification: nowIso,
+        isPinned: true,
+        poll: poll,
+        reponses: [
+          {
+            auteurId: user?.uid || 'system',
+            auteurNom: authorName,
+            message: messageHtml,
+            dateCreation: nowIso
+          }
+        ]
+      });
+
+      alert("🎉 Brouillon d'aperçu envoyé dans le Forum (CA/Bureau) avec sondage de validation !");
+    } catch (err) {
+      console.error("StudioSocial - Erreur lors de l'envoi pour validation:", err);
+      alert("Erreur lors de l'envoi pour validation : " + (err.message || err));
+    } finally {
+      setSendingValidation(false);
+    }
+  };
+
   const handleBack = () => {
     // Clear eventId from URL parameters
     const newUrl = window.location.pathname;
@@ -877,24 +972,36 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
 
             {selectedEvent && (
               <div className="flex flex-col gap-2 w-full max-w-[400px]">
-                {/* Export buttons */}
-                <div className="grid grid-cols-2 gap-3 w-full">
+                {/* Export & Validation buttons */}
+                <div className="flex flex-col gap-2.5 w-full">
+                  <div className="grid grid-cols-2 gap-3 w-full">
+                    <CordelButton
+                      onClick={handleDownload}
+                      variant="default"
+                      useExtremeBorder={true}
+                      className="text-xs py-2.5 font-bold uppercase tracking-wider"
+                    >
+                      💾 {t('studioSocial.downloadBtn') || "Télécharger"}
+                    </CordelButton>
+                    
+                    <CordelButton
+                      onClick={handleShare}
+                      variant="ocre"
+                      useExtremeBorder={true}
+                      className="text-xs py-2.5 font-bold uppercase tracking-wider"
+                    >
+                      🔗 {t('studioSocial.shareBtn') || "Partager"}
+                    </CordelButton>
+                  </div>
+
                   <CordelButton
-                    onClick={handleDownload}
-                    variant="default"
+                    onClick={handleSendForValidation}
+                    variant="jaune"
                     useExtremeBorder={true}
-                    className="text-xs py-2.5 font-bold uppercase tracking-wider"
+                    disabled={sendingValidation}
+                    className="w-full text-xs py-2.5 font-extrabold uppercase tracking-wider flex items-center justify-center gap-1.5"
                   >
-                    💾 {t('studioSocial.downloadBtn') || "Télécharger"}
-                  </CordelButton>
-                  
-                  <CordelButton
-                    onClick={handleShare}
-                    variant="ocre"
-                    useExtremeBorder={true}
-                    className="text-xs py-2.5 font-bold uppercase tracking-wider"
-                  >
-                    🔗 {t('studioSocial.shareBtn') || "Partager"}
+                    💬 {sendingValidation ? "Envoi en cours..." : "Envoyer pour validation (Forum)"}
                   </CordelButton>
                 </div>
               </div>

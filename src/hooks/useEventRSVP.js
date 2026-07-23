@@ -227,7 +227,12 @@ export function useEventRSVP(event, user, profileData, allUsers, isPrestationRes
       await updateDoc(eventRef, {
         status: newStatus
       });
-      alert(`Statut de l'événement mis à jour : ${newStatus === 'annule' ? 'Annulé' : 'Maintenu'}`);
+      const statusLabels = {
+        annule: 'Annulé',
+        a_confirmer: 'À confirmer',
+        confirme: 'Validé / Maintenu'
+      };
+      alert(`Statut de l'événement mis à jour : ${statusLabels[newStatus] || newStatus}`);
     } catch (err) {
       console.error("EventDetails - Erreur de modification statut :", err);
       alert("Erreur lors de la modification du statut.");

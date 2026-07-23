@@ -18,12 +18,27 @@ export default function WidgetTreasury({ groupId, profileData }) {
 
   const paymentStatus = profileData?.paymentStatus || 'unpaid';
 
-  // Détection du retour de paiement HelloAsso (?payment=success)
+  // Détection du retour de paiement HelloAsso (?payment=success, ?checkout=success...)
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const searchParams = new URLSearchParams(window.location.search);
-      if (searchParams.get('payment') === 'success') {
+      const hashParams = new URLSearchParams(window.location.hash.split('?')[1] || '');
+      
+      const isSuccess = searchParams.get('payment') === 'success' || 
+                        searchParams.get('checkout') === 'success' || 
+                        searchParams.get('status') === 'success' ||
+                        hashParams.get('payment') === 'success' ||
+                        hashParams.get('checkout') === 'success';
+
+      if (isSuccess) {
         setShowSuccessBanner(true);
+        // Auto-rafraîchissement après 1.5s pour vérifier le résultat de la fonction
+        const timer = setTimeout(() => {
+          if (profileData?.uid || profileData?.id) {
+            handleRefreshStatus();
+          }
+        }, 1500);
+
         // Nettoyage de l'URL pour ne pas laisser le paramètre indéfiniment
         try {
           const cleanUrl = window.location.pathname;
@@ -31,6 +46,7 @@ export default function WidgetTreasury({ groupId, profileData }) {
         } catch (e) {
           // ignore
         }
+        return () => clearTimeout(timer);
       }
     }
   }, []);

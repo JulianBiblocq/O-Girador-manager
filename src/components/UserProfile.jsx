@@ -280,7 +280,7 @@ export default function UserProfile({ user, profileData, onBack, onNavigateToTut
                     <>
                       {formData.telephone}{' '}
                       <span className="text-[8px] font-bold opacity-60 uppercase tracking-wider">
-                        ({formData.publierTelephone ? "Public" : "Privé"})
+                        ({(formData.afficherTelephone !== false && formData.publierTelephone !== false) ? "Public dans le Trombinoscope" : "Masqué dans le Trombinoscope"})
                       </span>
                     </>
                   ) : (
@@ -299,6 +299,9 @@ export default function UserProfile({ user, profileData, onBack, onNavigateToTut
                     ? `${profileData.adresseRue}, ${profileData.adresseCP} ${profileData.adresseVille}`
                     : (profileData?.adresse || <span className="italic opacity-60">Non renseignée</span>)
                   }
+                  <span className="text-[8px] font-bold opacity-60 uppercase tracking-wider ml-1.5">
+                    ({formData.visibiliteAdresse === 'ville' ? "Ville uniquement dans le Trombinoscope" : formData.visibiliteAdresse === 'masquee' ? "Masquée dans le Trombinoscope" : "Complète dans le Trombinoscope"})
+                  </span>
                 </span>
               </div>
             )}
@@ -345,7 +348,7 @@ export default function UserProfile({ user, profileData, onBack, onNavigateToTut
                     <>
                       {new Date(formData.dateNaissance).toLocaleDateString()}{' '}
                       <span className="text-[8px] font-bold opacity-60 uppercase tracking-wider">
-                        ({formData.publierDateNaissance ? "Public" : "Privé"})
+                        {(formData.afficherDateNaissance || formData.publierDateNaissance) ? "Public dans le Trombinoscope" : "Masqué dans le Trombinoscope"}
                       </span>
                     </>
                   ) : (

@@ -12,7 +12,8 @@ const DEFAULT_VARAL_CATEGORIES = [
   { id: 'Partitions', nom: 'Partitions', activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false },
   { id: 'Tutoriels', nom: 'Tutoriels', activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false },
   { id: 'Culture', nom: 'Culture', activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false },
-  { id: 'Administratif', nom: 'Administratif', activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: true }
+  { id: 'Administratif', nom: 'Comptes-rendus', activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: true },
+  { id: 'DocumentsFixes', nom: 'Administratif', activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false }
 ];
 
 export default function VaralManager({ groupId, onBack, role, isSystemAdmin }) {
@@ -107,7 +108,21 @@ export default function VaralManager({ groupId, onBack, role, isSystemAdmin }) {
     const assocRef = doc(db, 'associations', groupId);
     const unsubscribe = onSnapshot(assocRef, (docSnap) => {
       if (docSnap.exists()) {
-        setVaralCategories(docSnap.data().varalCategories || DEFAULT_VARAL_CATEGORIES);
+        const rawCats = docSnap.data().varalCategories;
+        if (Array.isArray(rawCats)) {
+          const cats = rawCats.map(c => {
+            if (c.id === 'Administratif' && (c.nom === 'Administratif' || !c.nom)) {
+              return { ...c, nom: 'Comptes-rendus' };
+            }
+            return c;
+          });
+          if (!cats.some(c => c.id === 'DocumentsFixes')) {
+            cats.push({ id: 'DocumentsFixes', nom: 'Administratif', activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false });
+          }
+          setVaralCategories(cats);
+        } else {
+          setVaralCategories(DEFAULT_VARAL_CATEGORIES);
+        }
       } else {
         setVaralCategories(DEFAULT_VARAL_CATEGORIES);
       }

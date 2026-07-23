@@ -967,7 +967,7 @@ export default function EventReportSection({ event, user, profileData }) {
           {/* 5. Message Published */}
           {reportStatus === 'publie' && (
             <div className="p-4 bg-green-50 border border-green-200 rounded text-center text-xs font-bold text-green-800">
-              🎉 Ce compte-rendu a été définitivement approuvé et archivé sous la corde "Administratif" du Varal.
+              🎉 Ce compte-rendu a été définitivement approuvé et archivé sous la corde "Comptes-rendus" du Varal.
             </div>
           )}
 

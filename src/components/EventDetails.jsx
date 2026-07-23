@@ -208,7 +208,9 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
       includesPercussion: event.includesPercussion || false,
       includesDance: event.includesDance || false,
       enableCarpool: event.enableCarpool !== false,
-      description: event.description || ''
+      description: event.description || '',
+      latitude: event.latitude || null,
+      longitude: event.longitude || null
     });
     const url = event.imageUrl;
     setImageMode(url && (url.startsWith('http://') || url.startsWith('https://')) && !url.includes('firebasestorage') ? 'url' : 'upload');
@@ -367,14 +369,25 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
     return detailsText;
   };
 
+  const getEventEndTimestamp = (startDate) => {
+    if (event.dateFin) {
+      const parsedEnd = new Date(event.dateFin);
+      if (!isNaN(parsedEnd.getTime()) && parsedEnd.getTime() > startDate.getTime()) {
+        return parsedEnd;
+      }
+    }
+    // Default duration: 1 hour if no end date specified
+    return new Date(startDate.getTime() + 1 * 60 * 60 * 1000);
+  };
+
   const handleAddToGoogleCalendar = () => {
     const eventDate = new Date(event.date);
     if (isNaN(eventDate.getTime())) {
       alert("Impossible d'ajouter à l'agenda : date invalide.");
       return;
     }
+    const endDate = getEventEndTimestamp(eventDate);
     const startStr = formatToUTCISO8601(eventDate);
-    const endDate = new Date(eventDate.getTime() + 2 * 60 * 60 * 1000);
     const endStr = formatToUTCISO8601(endDate);
 
     const title = encodeURIComponent(event.titre || 'Événement Roda');
@@ -392,8 +405,8 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
       alert("Impossible de générer le fichier iCal : date invalide.");
       return;
     }
+    const endDate = getEventEndTimestamp(eventDate);
     const startStr = formatToUTCISO8601(eventDate);
-    const endDate = new Date(eventDate.getTime() + 2 * 60 * 60 * 1000);
     const endStr = formatToUTCISO8601(endDate);
     const stampStr = formatToUTCISO8601(new Date());
 
@@ -480,7 +493,9 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
         includesPercussion: editForm.includesPercussion || false,
         includesDance: editForm.includesDance || false,
         enableCarpool: editForm.enableCarpool !== false,
-        description: editForm.description || ''
+        description: editForm.description || '',
+        latitude: editForm.latitude ? Number(editForm.latitude) : null,
+        longitude: editForm.longitude ? Number(editForm.longitude) : null
       });
       setIsEditingEvent(false);
       alert("Événement mis à jour avec succès !");
@@ -796,29 +811,43 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
         <>
           {/* Admin Status Panel */}
           {isAuthorized && !isEditingEvent && (
-            <div className="flex items-center justify-between gap-3 p-3 bg-cordel-bg border-2 border-encre-noire rounded-[4px_6px_3px_5px] shadow-[2px_2px_0px_0px_#181716] mb-4">
+            <div className="flex items-center justify-between gap-3 p-3 bg-cordel-bg border-2 border-encre-noire rounded-[4px_6px_3px_5px] shadow-[2px_2px_0px_0px_#181716] mb-4 flex-wrap">
               <div className="flex flex-col text-left">
                 <span className="text-[9px] font-bold uppercase text-cordel-wood">Statut de l'événement</span>
                 <span className="text-xs font-black uppercase">
                   {event.status === 'annule' ? (
                     <span className="text-red-600">❌ Annulé</span>
+                  ) : event.status === 'a_confirmer' ? (
+                    <span className="text-orange-600">📙 À confirmer</span>
                   ) : (
                     <span className="text-green-700">✅ Validé / Maintenu</span>
                   )}
                 </span>
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-1.5 flex-wrap">
                 <button
                   type="button"
                   onClick={() => handleUpdateStatus('confirme')}
-                  disabled={event.status !== 'annule'}
+                  disabled={!event.status || event.status === 'confirme'}
                   className={`text-[9px] font-black uppercase tracking-wider px-2.5 py-1.5 rounded-[4px_6px_3px_5px] transition-all cursor-pointer select-none ${
-                    event.status !== 'annule'
+                    (!event.status || event.status === 'confirme')
                       ? 'bg-gray-200 text-gray-400 border border-gray-300 cursor-not-allowed shadow-none'
                       : 'bg-green-100 text-green-800 border border-green-800 hover:bg-green-200 active:translate-x-[0.5px] active:translate-y-[0.5px] shadow-[1.5px_1.5px_0px_0px_#181716] active:shadow-none'
                   }`}
                 >
                   Maintenir
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleUpdateStatus('a_confirmer')}
+                  disabled={event.status === 'a_confirmer'}
+                  className={`text-[9px] font-black uppercase tracking-wider px-2.5 py-1.5 rounded-[4px_6px_3px_5px] transition-all cursor-pointer select-none ${
+                    event.status === 'a_confirmer'
+                      ? 'bg-gray-200 text-gray-400 border border-gray-300 cursor-not-allowed shadow-none'
+                      : 'bg-orange-100 text-orange-800 border border-orange-700 hover:bg-orange-200 active:translate-x-[0.5px] active:translate-y-[0.5px] shadow-[1.5px_1.5px_0px_0px_#181716] active:shadow-none'
+                  }`}
+                >
+                  À confirmer
                 </button>
                 <button
                   type="button"
@@ -837,7 +866,29 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
           )}
 
           {/* Event General Info Card */}
-          <CordelCard variant={currentVariant} useExtremeBorder={true} className="py-4">
+          <CordelCard variant={currentVariant} useExtremeBorder={true} className="py-4 relative overflow-hidden">
+            {/* Effet tampon statut événement en biais */}
+            {event.status === 'annule' && (
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10 select-none">
+                <span 
+                  style={{ transform: 'rotate(-15deg)' }}
+                  className="text-red-600 dark:text-red-500 border-[3.5px] border-red-600 dark:border-red-500 px-6 py-2 rounded-lg font-black text-xl tracking-widest uppercase opacity-85 bg-white/10 dark:bg-black/10 backdrop-blur-[1px]"
+                >
+                  ANNULÉ
+                </span>
+              </div>
+            )}
+            {event.status === 'a_confirmer' && (
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10 select-none">
+                <span 
+                  style={{ transform: 'rotate(-15deg)' }}
+                  className="text-orange-600 dark:text-orange-400 border-[3.5px] border-orange-600 dark:border-orange-400 px-6 py-2 rounded-lg font-black text-xl tracking-widest uppercase opacity-85 bg-white/10 dark:bg-black/10 backdrop-blur-[1px]"
+                >
+                  À CONFIRMER
+                </span>
+              </div>
+            )}
+
             <div className="flex justify-between items-start px-4">
               <span className="text-[8px] uppercase tracking-widest font-black opacity-60">
                 {event.type}
@@ -845,6 +896,11 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
               {event.status === 'annule' && (
                 <span className="text-[9px] font-black uppercase px-2 py-0.5 bg-red-100 text-red-700 border border-red-300 rounded tracking-wider select-none shrink-0 leading-none">
                   🚫 Annulé
+                </span>
+              )}
+              {event.status === 'a_confirmer' && (
+                <span className="text-[9px] font-black uppercase px-2 py-0.5 bg-orange-100 text-orange-700 border border-orange-300 rounded tracking-wider select-none shrink-0 leading-none">
+                  📙 À confirmer
                 </span>
               )}
             </div>
@@ -924,16 +980,23 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
                   <img src={event.imageUrl} alt={event.titre} className="max-w-full max-h-[300px] object-contain" />
                 </div>
               )}
-              {currentConfig.agendaEnableAdresse && event.lieu && (
-                <div className="mt-3.5 border-2 border-encre-noire rounded-[8px] overflow-hidden shadow-[2px_2px_0px_0px_rgba(26,26,26,0.15)] bg-white h-[200px]">
-                  <iframe
-                    title="Google Maps"
-                    width="100%"
-                    height="100%"
-                    frameBorder="0"
-                    src={`https://maps.google.com/maps?q=${encodeURIComponent(event.lieu)}&t=&z=14&ie=UTF8&iwloc=&output=embed`}
-                    allowFullScreen
-                  />
+              {currentConfig.agendaEnableAdresse && (event.lieu || (event.latitude && event.longitude)) && (
+                <div className="mt-3.5 flex flex-col gap-1">
+                  {event.latitude && event.longitude && (
+                    <span className="text-[9.5px] font-bold text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/20 px-2 py-0.5 rounded border border-amber-300/40 w-fit select-none">
+                      📌 Position GPS exacte : {Number(event.latitude).toFixed(5)}, {Number(event.longitude).toFixed(5)}
+                    </span>
+                  )}
+                  <div className="border-2 border-encre-noire rounded-[8px] overflow-hidden shadow-[2px_2px_0px_0px_rgba(26,26,26,0.15)] bg-white h-[200px]">
+                    <iframe
+                      title="Google Maps"
+                      width="100%"
+                      height="100%"
+                      frameBorder="0"
+                      src={`https://maps.google.com/maps?q=${encodeURIComponent(event.latitude && event.longitude ? `${event.latitude},${event.longitude}` : event.lieu)}&t=&z=16&ie=UTF8&iwloc=&output=embed`}
+                      allowFullScreen
+                    />
+                  </div>
                 </div>
               )}
               {event.description && (

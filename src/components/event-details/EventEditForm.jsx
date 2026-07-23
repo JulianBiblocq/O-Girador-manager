@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 import EventBudgetEditor from './EventBudgetEditor';
 import { calculateRoadDistance } from '../../utils/googleMaps';
+import ManualMapMarkerModal from '../agenda/ManualMapMarkerModal';
 
 const AddressAutocomplete = React.lazy(() => import('../AddressAutocomplete'));
 
@@ -44,6 +45,8 @@ export default function EventEditForm({
   handleImageUpload,
   t
 }) {
+  const [isMapModalOpen, setIsMapModalOpen] = useState(false);
+
   const translate = (key, fallback) => {
     const val = t(key);
     return val === key ? fallback : val;
@@ -181,6 +184,41 @@ export default function EventEditForm({
                   className="theme-input w-full disabled:opacity-50"
                 />
               </React.Suspense>
+
+              <div className="flex flex-col items-start gap-1 mt-1 select-none">
+                <button
+                  type="button"
+                  onClick={() => setIsMapModalOpen(true)}
+                  className="text-[10px] font-extrabold uppercase tracking-wider text-cordel-wood hover:underline flex items-center gap-1 cursor-pointer"
+                >
+                  📌 Placer sur la carte manuellement
+                </button>
+                {editForm.latitude && editForm.longitude && (
+                  <div className="flex items-center gap-2 text-[9px] font-bold bg-amber-50 dark:bg-amber-950/20 text-amber-800 dark:text-amber-300 px-2 py-1 rounded border border-amber-300/60">
+                    <span>📌 Coordonnées manuelles actives : {Number(editForm.latitude).toFixed(5)}, {Number(editForm.longitude).toFixed(5)}</span>
+                    <button
+                      type="button"
+                      onClick={() => setEditForm(prev => ({ ...prev, latitude: null, longitude: null }))}
+                      className="text-red-600 hover:text-red-800 font-black cursor-pointer ml-1"
+                      title="Effacer les coordonnées manuelles"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              <ManualMapMarkerModal
+                isOpen={isMapModalOpen}
+                onClose={() => setIsMapModalOpen(false)}
+                onSave={({ latitude, longitude }) => {
+                  setEditForm(prev => ({ ...prev, latitude, longitude }));
+                }}
+                initialLat={editForm.latitude}
+                initialLng={editForm.longitude}
+                addressContext={editForm.lieu}
+              />
+
               {!adresseLocal && (
                 <span className="text-[9px] text-orange-600 font-bold leading-none mt-1 select-none text-left">
                   ⚠️ {translate('widgetAgenda.localAddressNotConfigured', "Adresse du local non configurée dans les paramètres de l'association (calcul de distance inactif).")}

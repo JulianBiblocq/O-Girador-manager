@@ -1482,26 +1482,31 @@ gmp-place-autocomplete:focus-within {
 
 /* Presence status badges for event cards */
 .badge-status-present {
-  background-color: var(--color-cordel-vert, #84967a) !important;
-  color: #1a1a1a !important;
+  background-color: #16a34a !important; /* Green */
+  color: #ffffff !important;
   border: 1px solid var(--cordel-border, #1a1a1a) !important;
 }
 
 .badge-status-absent {
-  background-color: #8b2a1a !important; /* Theme ocre/red tone */
-  color: #f4ecd8 !important;
+  background-color: #dc2626 !important; /* Red */
+  color: #ffffff !important;
   border: 1px solid var(--cordel-border, #1a1a1a) !important;
 }
 
 .badge-status-confirm {
-  background-color: var(--color-cordel-ocre, #d99f4d) !important;
-  color: #1a1a1a !important;
+  background-color: #ea580c !important; /* Orange */
+  color: #ffffff !important;
   border: 1px solid var(--cordel-border, #1a1a1a) !important;
 }
 
 .badge-status-pending {
-  background-color: transparent !important;
-  color: #1a1a1a !important;
-  opacity: 0.55 !important;
-  border: 1px dashed var(--cordel-border, #1a1a1a) !important;
+  background-color: #ffedd5 !important; /* Soft orange tint */
+  color: #c2410c !important;
+  border: 1px dashed #ea580c !important;
+}
+
+[data-theme='dark'] .badge-status-pending, html.dark .badge-status-pending {
+  background-color: #431407 !important;
+  color: #fb923c !important;
+  border: 1px dashed #ea580c !important;
 }

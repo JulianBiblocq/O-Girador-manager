@@ -24,7 +24,14 @@ const MemberCard = React.memo(({
   genre,
   tags = [],
   telephone,
+  adresseRue,
+  adresseCP,
+  adresseVille,
+  adresse,
   dateNaissance,
+  afficherTelephone,
+  afficherDateNaissance,
+  visibiliteAdresse,
   publierTelephone,
   publierDateNaissance,
   niveau,
@@ -49,10 +56,28 @@ const MemberCard = React.memo(({
   const hasTags = tags && tags.length > 0;
 
   const isPhoneEnabled = fieldsConfig?.telephone?.enabled !== false;
-  const showPhone = isPhoneEnabled && telephone && (isCurrentUser || isViewerAdmin || publierTelephone === true);
+  const isPhoneAllowed = afficherTelephone !== undefined ? afficherTelephone : (publierTelephone === true);
+  const showPhone = isPhoneEnabled && telephone && (isCurrentUser || isViewerAdmin || isPhoneAllowed);
 
   const isBirthdateEnabled = fieldsConfig?.dateNaissance?.enabled !== false;
-  const showBirthdate = isBirthdateEnabled && dateNaissance && (isCurrentUser || isViewerAdmin || publierDateNaissance === true);
+  const isBirthdateAllowed = afficherDateNaissance !== undefined ? afficherDateNaissance : (publierDateNaissance === true);
+  const showBirthdate = isBirthdateEnabled && dateNaissance && (isCurrentUser || isViewerAdmin || isBirthdateAllowed);
+
+  const isAddressEnabled = fieldsConfig?.adresse?.enabled !== false;
+  const addressMode = (isCurrentUser || isViewerAdmin) ? 'complete' : (visibiliteAdresse || 'complete');
+  
+  let displayAddress = null;
+  if (isAddressEnabled) {
+    if (addressMode === 'complete') {
+      const full = [adresseRue, adresseCP, adresseVille].filter(Boolean).join(' ');
+      displayAddress = full || adresse || null;
+    } else if (addressMode === 'ville') {
+      const city = [adresseCP, adresseVille].filter(Boolean).join(' ');
+      displayAddress = city || adresseVille || null;
+    } else {
+      displayAddress = null;
+    }
+  }
 
   const userInstruments = instrumentsJoues && instrumentsJoues.length > 0
     ? instrumentsJoues
@@ -147,13 +172,16 @@ const MemberCard = React.memo(({
             </div>
           )}
 
-          {(showPhone || showBirthdate) && (
+          {(showPhone || showBirthdate || displayAddress) && (
             <div className="flex flex-col items-center mt-1.5 border-t border-dashed border-cordel-master-dark/10 pt-1.5 gap-0.5 text-cordel-master-dark/75 font-bold">
               {showPhone && (
                 <span className="truncate">📞 {telephone}</span>
               )}
               {showBirthdate && (
                 <span>🎂 {dateNaissance ? new Date(dateNaissance).toLocaleDateString('fr-FR') : ''}</span>
+              )}
+              {displayAddress && (
+                <span className="truncate text-[8.5px] max-w-full">📍 {displayAddress}</span>
               )}
             </div>
           )}
@@ -211,7 +239,14 @@ const MemberCard = React.memo(({
          prevProps.role === nextProps.role &&
          prevProps.genre === nextProps.genre &&
          prevProps.telephone === nextProps.telephone &&
+         prevProps.adresseRue === nextProps.adresseRue &&
+         prevProps.adresseCP === nextProps.adresseCP &&
+         prevProps.adresseVille === nextProps.adresseVille &&
+         prevProps.adresse === nextProps.adresse &&
          prevProps.dateNaissance === nextProps.dateNaissance &&
+         prevProps.afficherTelephone === nextProps.afficherTelephone &&
+         prevProps.afficherDateNaissance === nextProps.afficherDateNaissance &&
+         prevProps.visibiliteAdresse === nextProps.visibiliteAdresse &&
          prevProps.publierTelephone === nextProps.publierTelephone &&
          prevProps.publierDateNaissance === nextProps.publierDateNaissance &&
          prevProps.niveau === nextProps.niveau &&
@@ -670,7 +705,14 @@ export default function Trombinoscope({ user, profileData, onBack, onContactUser
                           genre={member.genre}
                           tags={member.tags}
                           telephone={member.telephone}
+                          adresseRue={member.adresseRue}
+                          adresseCP={member.adresseCP}
+                          adresseVille={member.adresseVille}
+                          adresse={member.adresse}
                           dateNaissance={member.dateNaissance}
+                          afficherTelephone={member.afficherTelephone}
+                          afficherDateNaissance={member.afficherDateNaissance}
+                          visibiliteAdresse={member.visibiliteAdresse}
                           publierTelephone={member.publierTelephone}
                           publierDateNaissance={member.publierDateNaissance}
                           niveau={member.niveau}

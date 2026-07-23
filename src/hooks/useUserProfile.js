@@ -39,8 +39,11 @@ export function useUserProfile(user, profileData, t) {
     lateralite: profileData?.lateralite || 'droitier',
     dateNaissance: profileData?.dateNaissance || '',
     genre: profileData?.genre || 'autre',
-    publierTelephone: profileData?.publierTelephone !== undefined ? profileData.publierTelephone : false,
-    publierDateNaissance: profileData?.publierDateNaissance !== undefined ? profileData.publierDateNaissance : false
+    afficherTelephone: profileData?.afficherTelephone !== undefined ? profileData.afficherTelephone : (profileData?.publierTelephone !== undefined ? profileData.publierTelephone : true),
+    afficherDateNaissance: profileData?.afficherDateNaissance !== undefined ? profileData.afficherDateNaissance : (profileData?.publierDateNaissance !== undefined ? profileData.publierDateNaissance : false),
+    visibiliteAdresse: profileData?.visibiliteAdresse || 'complete',
+    publierTelephone: profileData?.afficherTelephone !== undefined ? profileData.afficherTelephone : (profileData?.publierTelephone !== undefined ? profileData.publierTelephone : true),
+    publierDateNaissance: profileData?.afficherDateNaissance !== undefined ? profileData.afficherDateNaissance : (profileData?.publierDateNaissance !== undefined ? profileData.publierDateNaissance : false)
   });
 
   const [saving, setSaving] = useState(false);
@@ -79,8 +82,11 @@ export function useUserProfile(user, profileData, t) {
       lateralite: profileData?.lateralite || 'droitier',
       dateNaissance: profileData?.dateNaissance || '',
       genre: profileData?.genre || 'autre',
-      publierTelephone: profileData?.publierTelephone !== undefined ? profileData.publierTelephone : false,
-      publierDateNaissance: profileData?.publierDateNaissance !== undefined ? profileData.publierDateNaissance : false
+      afficherTelephone: profileData?.afficherTelephone !== undefined ? profileData.afficherTelephone : (profileData?.publierTelephone !== undefined ? profileData.publierTelephone : true),
+      afficherDateNaissance: profileData?.afficherDateNaissance !== undefined ? profileData.afficherDateNaissance : (profileData?.publierDateNaissance !== undefined ? profileData.publierDateNaissance : false),
+      visibiliteAdresse: profileData?.visibiliteAdresse || 'complete',
+      publierTelephone: profileData?.afficherTelephone !== undefined ? profileData.afficherTelephone : (profileData?.publierTelephone !== undefined ? profileData.publierTelephone : true),
+      publierDateNaissance: profileData?.afficherDateNaissance !== undefined ? profileData.afficherDateNaissance : (profileData?.publierDateNaissance !== undefined ? profileData.publierDateNaissance : false)
     });
     setIsEditing(true);
   };
@@ -377,8 +383,11 @@ export function useUserProfile(user, profileData, t) {
         lateralite: isFieldVisible('lateralite') ? formData.lateralite : (profileData?.lateralite || 'droitier'),
         dateNaissance: isFieldVisible('dateNaissance') ? formData.dateNaissance : (profileData?.dateNaissance || ''),
         genre: formData.genre,
-        publierTelephone: isFieldVisible('telephone') ? formData.publierTelephone : false,
-        publierDateNaissance: isFieldVisible('dateNaissance') ? formData.publierDateNaissance : false
+        afficherTelephone: Boolean(formData.afficherTelephone),
+        afficherDateNaissance: Boolean(formData.afficherDateNaissance),
+        visibiliteAdresse: formData.visibiliteAdresse || 'complete',
+        publierTelephone: Boolean(formData.afficherTelephone),
+        publierDateNaissance: Boolean(formData.afficherDateNaissance)
       };
 
       if (isFieldVisible('adresse')) {

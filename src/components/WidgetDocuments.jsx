@@ -12,7 +12,8 @@ export const DEFAULT_VARAL_CATEGORIES = [
   { id: 'Partitions', nom: 'Partitions', activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false },
   { id: 'Tutoriels', nom: 'Tutoriels', activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false },
   { id: 'Culture', nom: 'Culture', activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false },
-  { id: 'Administratif', nom: 'Administratif', activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: true }
+  { id: 'Administratif', nom: 'Comptes-rendus', activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: true },
+  { id: 'DocumentsFixes', nom: 'Administratif', activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false }
 ];
 
 const getDeterministicColor = (docId) => {
@@ -271,7 +272,16 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
       if (docSnap.exists()) {
         const data = docSnap.data();
         if (Array.isArray(data.varalCategories)) {
-          setVaralCategories(data.varalCategories);
+          const cats = data.varalCategories.map(c => {
+            if (c.id === 'Administratif' && (c.nom === 'Administratif' || !c.nom)) {
+              return { ...c, nom: 'Comptes-rendus' };
+            }
+            return c;
+          });
+          if (!cats.some(c => c.id === 'DocumentsFixes')) {
+            cats.push({ id: 'DocumentsFixes', nom: 'Administratif', activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false });
+          }
+          setVaralCategories(cats);
           return;
         }
       }
@@ -301,7 +311,8 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
     'Partitions': 'ocre',
     'Tutoriels': 'vert',
     'Culture': 'ocre',
-    'Administratif': 'bleu'
+    'Administratif': 'rouge',
+    'DocumentsFixes': 'bleu'
   };
 
   return (
@@ -405,8 +416,10 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
                         const docType = getDocType(docItem);
                         
                         let colorClass = 'default';
-                        if (category.id === 'Administratif' || category.nom === 'Administratif') {
-                          colorClass = 'bleu-ardoise'; // Exclusive slate grey for Administratif
+                        if (category.id === 'DocumentsFixes' || category.nom === 'Administratif') {
+                          colorClass = 'bleu-ardoise'; // Exclusive slate grey for fixed administrative documents
+                        } else if (category.id === 'Administratif' || category.nom === 'Comptes-rendus') {
+                          colorClass = 'rouge'; // Distinctive rouge for Comptes-rendus
                         } else {
                           colorClass = getDeterministicColor(docItem.id);
                         }

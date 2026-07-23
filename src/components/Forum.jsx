@@ -345,6 +345,8 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
 
   const isModeratorOrAdmin = profileData?.role === 'mestre' || 
                              profileData?.role === 'super-admin' || 
+                             profileData?.role === 'bureau' || 
+                             profileData?.role === 'ca' || 
                              profileData?.isSystemAdmin === true || 
                              (profileData?.tags && (
                                profileData.tags.includes('Modérateur') || 

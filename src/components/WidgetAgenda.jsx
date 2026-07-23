@@ -127,7 +127,9 @@ export default function WidgetAgenda({
     includesPercussion: false,
     includesDance: false,
     enableCarpool: true,
-    description: ''
+    description: '',
+    latitude: null,
+    longitude: null
   });
 
   const isAuthorized = role === 'mestre' || role === 'super-admin' || isSystemAdmin === true;
@@ -273,7 +275,9 @@ export default function WidgetAgenda({
         includesPercussion: formData.includesPercussion || false,
         includesDance: formData.includesDance || false,
         enableCarpool: formData.enableCarpool !== false,
-        description: formData.description || ''
+        description: formData.description || '',
+        latitude: formData.latitude ? Number(formData.latitude) : null,
+        longitude: formData.longitude ? Number(formData.longitude) : null
       });
       setIsAdding(false);
     } catch (error) {
@@ -547,6 +551,11 @@ export default function WidgetAgenda({
                             ANNULÉ
                           </span>
                         )}
+                        {event.status === 'a_confirmer' && (
+                          <span className="text-orange-600 font-bold ml-1.5 uppercase text-[8px] border border-orange-600 px-1 rounded select-none">
+                            À CONFIRMER
+                          </span>
+                        )}
                       </td>
                       <td className="p-1.5 md:p-2.5 border-r border-encre-noire/15">
                         <span className={`px-2 py-0.5 border border-dashed rounded-[4px_6px_3px_5px] font-black uppercase text-[8px] theme-bg-${variant}`}>
@@ -560,7 +569,7 @@ export default function WidgetAgenda({
                         {(() => {
                           if (userStatus === 'present') return <span className="text-green-700 dark:text-green-400 font-black">Présent ({presentCount})</span>;
                           if (userStatus === 'absent') return <span className="text-red-700 dark:text-red-400 font-black">Absent ({presentCount})</span>;
-                          if (userStatus === 'pending') return <span className="text-yellow-600 dark:text-yellow-400 font-black">En attente ({presentCount})</span>;
+                          if (userStatus === 'pending' || userStatus === 'confirm') return <span className="text-orange-600 dark:text-orange-400 font-black">À confirmer ({presentCount})</span>;
                           return <span className="text-neutral-500 font-bold">Sans réponse ({presentCount})</span>;
                         })()}
                       </td>
@@ -600,7 +609,7 @@ export default function WidgetAgenda({
                       cursor-pointer hover:scale-[1.01] active:scale-95 transition-all
                     `}
                   >
-                    {/* Effet tampon gros "ANNULÉ" en biais */}
+                    {/* Effet tampon gros statut en biais */}
                     {event.status === 'annule' && (
                       <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10 select-none">
                         <span 
@@ -608,6 +617,16 @@ export default function WidgetAgenda({
                           className="text-red-600 dark:text-red-500 border-[3.5px] border-red-600 dark:border-red-500 px-5 py-1.5 rounded-lg font-black text-[15px] tracking-widest uppercase opacity-80 bg-white/5 dark:bg-black/5"
                         >
                           ANNULÉ
+                        </span>
+                      </div>
+                    )}
+                    {event.status === 'a_confirmer' && (
+                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10 select-none">
+                        <span 
+                          style={{ transform: 'rotate(-15deg)' }}
+                          className="text-orange-600 dark:text-orange-400 border-[3.5px] border-orange-600 dark:border-orange-400 px-5 py-1.5 rounded-lg font-black text-[15px] tracking-widest uppercase opacity-80 bg-white/5 dark:bg-black/5"
+                        >
+                          À CONFIRMER
                         </span>
                       </div>
                     )}

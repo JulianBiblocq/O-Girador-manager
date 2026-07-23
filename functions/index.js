@@ -40,9 +40,11 @@ exports.helloAssoWebhook = onRequest(async (req, res) => {
   }
 
   // Sécurité : Vérification de la signature HelloAsso si la clé est configurée
+  // Sécurité : Vérification de la signature HelloAsso si la clé est configurée
   const signature = req.headers['x-ha-signature'];
-  if (secretKey && signature) {
-    const expectedSignature = crypto.createHmac('sha256', secretKey).update(req.rawBody).digest('hex');
+  if (secretKey && secretKey.trim() && signature) {
+    const cleanKey = secretKey.trim();
+    const expectedSignature = crypto.createHmac('sha256', cleanKey).update(req.rawBody).digest('hex');
     let isVerified = false;
     try {
       isVerified = crypto.timingSafeEqual(
@@ -60,8 +62,8 @@ exports.helloAssoWebhook = onRequest(async (req, res) => {
   }
 
   try {
-    const payload = req.body;
-    const data = payload.data || {};
+    const payload = req.body || {};
+    const data = payload.data || payload;
     const eventType = payload.eventType || "";
 
     // 1. Vérification du statut de paiement
@@ -71,8 +73,28 @@ exports.helloAssoWebhook = onRequest(async (req, res) => {
     }
 
     // 2. Recherche robuste de l'utilisateur (UID puis Email)
-    const uid = req.query.uid || data.metadata?.uid || data.customFields?.uid;
-    const payer = data.payer || {};
+    let uid = req.query.uid || data.metadata?.uid;
+
+    if (!uid && Array.isArray(data.customFields)) {
+      const field = data.customFields.find(f => f.name && f.name.toLowerCase().includes('uid'));
+      if (field) uid = field.answer || field.value;
+    }
+
+    const items = data.items || data.payments?.[0]?.items || data.order?.items || [];
+
+    if (!uid && Array.isArray(items)) {
+      for (const item of items) {
+        if (Array.isArray(item.customFields)) {
+          const field = item.customFields.find(f => f.name && f.name.toLowerCase().includes('uid'));
+          if (field) {
+            uid = field.answer || field.value;
+            break;
+          }
+        }
+      }
+    }
+
+    const payer = data.payer || data.user || {};
     const email = (payer.email || data.email || req.query.email || "").toLowerCase().trim();
     let userName = `${payer.firstName || ''} ${payer.lastName || ''}`.trim();
 
@@ -89,22 +111,40 @@ exports.helloAssoWebhook = onRequest(async (req, res) => {
 
     // Fallback : recherche par e-mail si l'UID n'a rien donné
     if (!userRef && email) {
-      const snapshot = await db.collection("users").where("email", "==", email).limit(1).get();
-      if (!snapshot.empty) {
+      let snapshot = await db.collection("users").where("email", "==", email).limit(1).get();
+      if (snapshot.empty) {
+        // Recherche insensible à la casse dans le groupe
+        const groupUsersSnap = await db.collection("users").where("groupId", "==", groupId).get();
+        groupUsersSnap.forEach(d => {
+          const uData = d.data();
+          if (uData.email && uData.email.toLowerCase().trim() === email) {
+            userRef = d.ref;
+            userData = uData;
+          }
+        });
+      } else {
         userRef = snapshot.docs[0].ref;
         userData = snapshot.docs[0].data();
       }
     }
 
-    const items = data.items || data.payments?.[0]?.items || [];
-    const optionsPayees = items.map(item => item.name);
-    const amountCents = data.amount?.total || data.amount || data.totalAmount || 0;
-    // HelloAsso envoie le montant en centimes
-    const amountEuros = amountCents > 1000 ? amountCents / 100 : amountCents;
+    const optionsPayees = items.map(item => item.name || item.customLabel).filter(Boolean);
+
+    // Calcul exact du montant en Euros (HelloAsso API v5 envoie les montants en centimes)
+    let amountCents = 0;
+    if (typeof data.amount === 'number') {
+      amountCents = data.amount;
+    } else if (data.amount && typeof data.amount.total === 'number') {
+      amountCents = data.amount.total;
+    } else if (typeof data.totalAmount === 'number') {
+      amountCents = data.totalAmount;
+    }
+
+    const amountEuros = amountCents > 0 ? Number((amountCents / 100).toFixed(2)) : 0;
 
     // Récupération des options de cotisation configurées pour l'association
     let optionsCotisation = [];
-    let hasBaseAdhesion = false;
+    let hasBaseAdhesion = true; // Tout paiement validé confirme l'adhésion de base
     const matchedOptionIds = [];
 
     const assocDoc = await db.collection("associations").doc(groupId).get();
@@ -114,25 +154,14 @@ exports.helloAssoWebhook = onRequest(async (req, res) => {
 
     // Algorithme d'appariement des articles avec les options de l'association
     for (const item of items) {
-      const itemNameNormalized = (item.name || "").toLowerCase().trim();
-      let matched = false;
+      const itemNameNormalized = (item.name || item.customLabel || "").toLowerCase().trim();
 
       for (const opt of optionsCotisation) {
         const optNameNormalized = (opt.nom || "").toLowerCase().trim();
         if (optNameNormalized && (itemNameNormalized.includes(optNameNormalized) || optNameNormalized.includes(itemNameNormalized))) {
-          matchedOptionIds.push(opt.id);
-          matched = true;
-          break;
-        }
-      }
-
-      if (!matched) {
-        if (itemNameNormalized.includes("adhesion") || 
-            itemNameNormalized.includes("adhésion") || 
-            itemNameNormalized.includes("cotisation") || 
-            itemNameNormalized.includes("base") || 
-            itemNameNormalized.includes("membership")) {
-          hasBaseAdhesion = true;
+          if (!matchedOptionIds.includes(opt.id)) {
+            matchedOptionIds.push(opt.id);
+          }
         }
       }
     }
@@ -156,11 +185,13 @@ exports.helloAssoWebhook = onRequest(async (req, res) => {
       return res.status(200).send("Paiement mis en attente d'inscription utilisateur.");
     }
 
-    // 3. Mise à jour du profil membre
+    // 3. Mise à jour du profil membre (3 éléments cruciaux)
     const userUpdates = {
       paymentStatus: "paid",
       cotisationAjour: true,
-      adhesionBase: true
+      adhesionBase: true,
+      dateAdhesion: admin.firestore.Timestamp.now(),
+      derniereCotisationDate: new Date().toISOString()
     };
 
     if (matchedOptionIds.length > 0) {
@@ -225,12 +256,11 @@ exports.onUserCreate = onDocumentCreated("users/{userId}", async (event) => {
 
     const updates = {
       paymentStatus: pendingData.paymentStatus || "paid",
-      cotisationAjour: pendingData.cotisationAjour !== undefined ? pendingData.cotisationAjour : true
+      cotisationAjour: pendingData.cotisationAjour !== undefined ? pendingData.cotisationAjour : true,
+      adhesionBase: true,
+      dateAdhesion: admin.firestore.Timestamp.now(),
+      derniereCotisationDate: new Date().toISOString()
     };
-
-    if (pendingData.adhesionBase) {
-      updates.adhesionBase = true;
-    }
 
     if (pendingData.options && pendingData.options.length > 0) {
       updates.selectedOptions = admin.firestore.FieldValue.arrayUnion(...pendingData.options);

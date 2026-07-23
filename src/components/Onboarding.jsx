@@ -46,7 +46,10 @@ export default function Onboarding({ user, branding, onComplete }) {
     instrument: 'Alfaia',
     instrumentsJoues: [],
     genre: 'autre',
-    publierTelephone: false,
+    afficherTelephone: true,
+    afficherDateNaissance: false,
+    visibiliteAdresse: 'complete',
+    publierTelephone: true,
     publierDateNaissance: false
   });
 
@@ -181,8 +184,11 @@ export default function Onboarding({ user, branding, onComplete }) {
         statutActuel: "active",
         groupId: groupId,
         tags: [],
-        publierTelephone: isFieldVisible('telephone') ? formData.publierTelephone : false,
-        publierDateNaissance: isFieldVisible('dateNaissance') ? formData.publierDateNaissance : false
+        afficherTelephone: Boolean(formData.afficherTelephone),
+        afficherDateNaissance: Boolean(formData.afficherDateNaissance),
+        visibiliteAdresse: formData.visibiliteAdresse || 'complete',
+        publierTelephone: Boolean(formData.afficherTelephone),
+        publierDateNaissance: Boolean(formData.afficherDateNaissance)
       };
 
       // 3. Write user document to Firestore using Auth UID as the key
@@ -346,12 +352,12 @@ export default function Onboarding({ user, branding, onComplete }) {
               <label className="flex items-center gap-1.5 mt-1 text-[10px] font-semibold cursor-pointer select-none">
                 <input 
                   type="checkbox"
-                  name="publierTelephone"
-                  checked={formData.publierTelephone}
+                  name="afficherTelephone"
+                  checked={formData.afficherTelephone !== false}
                   onChange={handleChange}
                   disabled={submitting}
                 />
-                <span>{t('onboarding.phonePublic')}</span>
+                <span>Afficher mon téléphone dans le Trombinoscope</span>
               </label>
             </div>
           )}
@@ -438,6 +444,22 @@ export default function Onboarding({ user, branding, onComplete }) {
                     className="theme-input w-full disabled:opacity-50 font-semibold"
                   />
                 </div>
+              </div>
+              <div className="flex flex-col gap-1 mt-1.5">
+                <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                  Visibilité de l'adresse (Trombinoscope)
+                </label>
+                <select
+                  name="visibiliteAdresse"
+                  value={formData.visibiliteAdresse || 'complete'}
+                  onChange={handleChange}
+                  disabled={submitting}
+                  className="theme-input w-full text-xs"
+                >
+                  <option value="complete">Adresse complète</option>
+                  <option value="ville">Uniquement la ville</option>
+                  <option value="masquee">Masquée</option>
+                </select>
               </div>
             </div>
           )}
@@ -538,12 +560,12 @@ export default function Onboarding({ user, branding, onComplete }) {
               <label className="flex items-center gap-1.5 mt-1 text-[10px] font-semibold cursor-pointer select-none">
                 <input 
                   type="checkbox"
-                  name="publierDateNaissance"
-                  checked={formData.publierDateNaissance}
+                  name="afficherDateNaissance"
+                  checked={Boolean(formData.afficherDateNaissance)}
                   onChange={handleChange}
                   disabled={submitting}
                 />
-                <span>{t('onboarding.birthdatePublic')}</span>
+                <span>Afficher ma date de naissance dans le Trombinoscope</span>
               </label>
             </div>
           )}

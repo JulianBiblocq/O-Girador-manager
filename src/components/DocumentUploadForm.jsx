@@ -51,7 +51,7 @@ export default function DocumentUploadForm({ groupId, varalCategories = [], onCl
           titre: title,
           categoryId: category,
           categorie: categoryName,
-          sousCategorie: category === 'Administratif' ? sousCategorie : '',
+          sousCategorie: (category === 'Administratif' || category === 'DocumentsFixes') ? sousCategorie : '',
           annee: parseInt(annee, 10) || new Date().getFullYear(),
         });
 
@@ -105,7 +105,7 @@ export default function DocumentUploadForm({ groupId, varalCategories = [], onCl
         titre: title,
         categoryId: category,
         categorie: categoryName,
-        sousCategorie: category === 'Administratif' ? sousCategorie : '',
+        sousCategorie: (category === 'Administratif' || category === 'DocumentsFixes') ? sousCategorie : '',
         annee: parseInt(annee, 10) || new Date().getFullYear(),
         fileUrl: finalUrl,
         type: type,
@@ -186,8 +186,8 @@ export default function DocumentUploadForm({ groupId, varalCategories = [], onCl
           </select>
         </div>
 
-        {/* Subcategory (Only for Administratif) */}
-        {category === 'Administratif' && (
+        {/* Subcategory (For Comptes-rendus & Administratif) */}
+        {(category === 'Administratif' || category === 'DocumentsFixes') && (
           <div className="flex flex-col gap-1">
             <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
               {t('documents.subcategoryLabel')}

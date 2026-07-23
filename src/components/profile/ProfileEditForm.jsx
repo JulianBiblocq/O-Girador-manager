@@ -319,6 +319,54 @@ export default function ProfileEditForm({
           </div>
         )}
 
+        {/* Confidentialité / Visibilité dans le Trombinoscope */}
+        <div className="border-t border-dashed border-cordel-master-dark/15 pt-3 flex flex-col gap-3 text-left">
+          <h5 className="font-bold text-xs uppercase tracking-wider text-cordel-wood flex items-center gap-1.5">
+            🔒 Confidentialité (Trombinoscope)
+          </h5>
+          
+          <label className="flex items-center gap-2 text-xs font-semibold cursor-pointer select-none">
+            <input
+              type="checkbox"
+              name="afficherTelephone"
+              checked={formData.afficherTelephone !== false}
+              onChange={(e) => setFormData(prev => ({ ...prev, afficherTelephone: e.target.checked }))}
+              disabled={saving}
+              className="accent-cordel-wood scale-105"
+            />
+            <span>Afficher mon numéro de téléphone aux autres membres</span>
+          </label>
+
+          <label className="flex items-center gap-2 text-xs font-semibold cursor-pointer select-none">
+            <input
+              type="checkbox"
+              name="afficherDateNaissance"
+              checked={Boolean(formData.afficherDateNaissance)}
+              onChange={(e) => setFormData(prev => ({ ...prev, afficherDateNaissance: e.target.checked }))}
+              disabled={saving}
+              className="accent-cordel-wood scale-105"
+            />
+            <span>Afficher ma date de naissance aux autres membres</span>
+          </label>
+
+          <div className="flex flex-col gap-1 mt-1">
+            <label className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood">
+              Visibilité de mon adresse dans le Trombinoscope
+            </label>
+            <select
+              name="visibiliteAdresse"
+              value={formData.visibiliteAdresse || 'complete'}
+              onChange={handleChange}
+              disabled={saving}
+              className="theme-input w-full text-xs bg-cordel-bg-light"
+            >
+              <option value="complete">Adresse complète (Rue, code postal, ville)</option>
+              <option value="ville">Uniquement la ville</option>
+              <option value="masquee">Masquée (Ne rien afficher)</option>
+            </select>
+          </div>
+        </div>
+
         {/* Actions buttons */}
         <div className="flex gap-3 mt-2 select-none">
           <CordelButton 
