@@ -244,13 +244,18 @@ export default function ReportsExports({ groupId, role, isSystemAdmin, hasAccess
         });
       });
 
-      // 3. Process Group Orders
+      // 3. Process Group Orders (campaignRequests) - Only validated or paid requests
       campaigns.forEach(camp => {
         const campDateStr = camp.dateCreation ? camp.dateCreation.substring(0, 10) : '';
         const isWithinRange = campDateStr && campDateStr >= startDate && campDateStr <= endDate;
         if (!isWithinRange) return;
 
-        const campReqs = requests.filter(r => r.campaignId === camp.id);
+        // Filter ONLY validated or paid requests related to this campaign
+        const campReqs = requests.filter(r => 
+          r.campaignId === camp.id && 
+          (r.status === 'validated' || r.status === 'paid' || r.statut === 'valide' || r.statut === 'paye')
+        );
+
         campReqs.forEach(req => {
           const itemPrice = req.prix || req.montant || ARTICLE_PRICES[req.article] || 0;
           const qty = req.quantite || 1;

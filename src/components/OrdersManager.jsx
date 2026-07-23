@@ -287,6 +287,46 @@ export default function OrdersManager({ groupId, onBack, role, isSystemAdmin, ha
     }
   };
 
+  const handleDeleteRequest = async (requestId) => {
+    const confirmDelete = window.confirm("Voulez-vous vraiment supprimer cette demande de commande ?");
+    if (!confirmDelete) return;
+
+    setSaving(true);
+    try {
+      await deleteDoc(doc(db, 'campaignRequests', requestId));
+    } catch (err) {
+      console.error("OrdersManager - Erreur lors de la suppression de la demande:", err);
+      alert("Erreur lors de la suppression de la demande.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDeleteCampaign = async (campaignId) => {
+    const confirmDelete = window.confirm("Voulez-vous vraiment supprimer l'intégralité de cette campagne de commandes et toutes les demandes associées ?");
+    if (!confirmDelete) return;
+
+    setSaving(true);
+    try {
+      const reqsRef = collection(db, 'campaignRequests');
+      const qReqs = query(reqsRef, where('campaignId', '==', campaignId));
+      const reqsSnap = await getDocs(qReqs);
+      const deletePromises = [];
+      reqsSnap.forEach(d => deletePromises.push(deleteDoc(doc(db, 'campaignRequests', d.id))));
+      await Promise.all(deletePromises);
+
+      await deleteDoc(doc(db, 'campaigns', campaignId));
+      if (selectedCampaign && selectedCampaign.id === campaignId) {
+        setSelectedCampaign(null);
+      }
+    } catch (err) {
+      console.error("OrdersManager - Erreur lors de la suppression de la campagne:", err);
+      alert("Erreur lors de la suppression de la campagne.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   // Group and sum requests by article for supplier order (only validated requests)
   const validatedRequests = requests.filter(req => req.status === 'validated');
 
@@ -433,8 +473,20 @@ export default function OrdersManager({ groupId, onBack, role, isSystemAdmin, ha
 
                     <div className="flex items-center gap-2 select-none">
                       <span className={`theme-stamp-badge ${c.status === 'open' ? 'theme-stamp-badge-wood' : 'theme-stamp-badge-dark'} text-[8px]`}>
-                        {c.status === 'open' ? `🟢 ${t('ordersManager.statusOpen')}` : `🔴 ${t('ordersManager.statusClosed')}`}
+                        {c.status === 'open' ? (t('ordersManager.statusOpen') || "Ouverte") : (t('ordersManager.statusClosed') || "Clôturée")}
                       </span>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteCampaign(c.id);
+                        }}
+                        disabled={saving}
+                        className="text-[9px] font-bold p-1 text-red-700 hover:bg-red-100 rounded border border-red-300 cursor-pointer"
+                        title="Supprimer cette campagne et toutes ses demandes"
+                      >
+                        🗑️
+                      </button>
                     </div>
                   </CordelCard>
                 ))
@@ -724,15 +776,15 @@ export default function OrdersManager({ groupId, onBack, role, isSystemAdmin, ha
                             <span className="text-[8px] font-bold text-cordel-master-dark/50">
                               {req.status === 'validated' ? "✓ Validé" : "⏳ En attente"}
                             </span>
-                            <div className="flex gap-1.5">
+                            <div className="flex gap-1.5 items-center">
                               {req.status === 'validated' ? (
                                 <button
                                   type="button"
                                   onClick={() => handleValidateRequest(req.id, 'pending')}
                                   disabled={saving}
-                                  className="text-[8.5px] font-bold text-red-500 hover:text-red-700 bg-red-500/10 px-1.5 py-0.5 rounded border border-dashed border-red-300 cursor-pointer"
+                                  className="text-[8.5px] font-bold text-amber-800 hover:text-amber-900 bg-amber-500/10 px-1.5 py-0.5 rounded border border-dashed border-amber-400 cursor-pointer"
                                 >
-                                  {t('ordersManager.unvalidateBtn') || "Annuler"}
+                                  {t('ordersManager.unvalidateBtn') || "Invalider"}
                                 </button>
                               ) : (
                                 <button
@@ -744,6 +796,15 @@ export default function OrdersManager({ groupId, onBack, role, isSystemAdmin, ha
                                   {t('ordersManager.validateBtn') || "Valider"}
                                 </button>
                               )}
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteRequest(req.id)}
+                                disabled={saving}
+                                className="text-[8.5px] font-bold text-red-600 hover:text-red-800 bg-red-500/10 px-1.5 py-0.5 rounded border border-dashed border-red-300 cursor-pointer"
+                                title="Supprimer cette demande"
+                              >
+                                🗑️
+                              </button>
                             </div>
                           </div>
                         </div>
