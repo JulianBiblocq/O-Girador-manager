@@ -3,7 +3,7 @@ import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
-import { XiloChat } from './XiloIcons';
+import { XiloChat, XiloMegaphone } from './XiloIcons';
 
 export default function WidgetForum({ groupId, onOpen }) {
   const [threads, setThreads] = useState([]);
@@ -65,8 +65,8 @@ export default function WidgetForum({ groupId, onOpen }) {
       className="relative overflow-hidden p-4 select-none w-full"
     >
       {/* Decorative background stamp simulator */}
-      <div className="absolute -right-4 -bottom-4 text-8xl opacity-[0.05] select-none pointer-events-none transform -rotate-12">
-        📣
+      <div className="absolute -right-4 -bottom-4 opacity-[0.08] select-none pointer-events-none transform -rotate-12">
+        <XiloMegaphone size={96} className="text-cordel-wood" />
       </div>
 
       <div className="flex flex-col gap-3 text-left w-full">

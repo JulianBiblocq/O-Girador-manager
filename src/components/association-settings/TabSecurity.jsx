@@ -47,7 +47,7 @@ const PERMISSION_POLES = [
   },
   {
     id: 'studio',
-    label: '📢 Le Studio',
+    label: 'Le Studio',
     desc: 'Communication, réunions, Varal et comptes-rendus',
     tabs: [
       { id: 'studio-social', label: 'Studio social', desc: 'Gestion et publication sur les réseaux sociaux' },

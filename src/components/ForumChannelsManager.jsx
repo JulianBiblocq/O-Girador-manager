@@ -5,6 +5,7 @@ import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
 import ForumModerationPanel from './ForumModerationPanel';
 import { useTranslation } from './LanguageContext';
+import { XiloMegaphone } from './XiloIcons';
 
 /**
  * ForumChannelsManager Component
@@ -316,7 +317,7 @@ export default function ForumChannelsManager({ groupId, role, isSystemAdmin, onB
           ← {t('common.back')}
         </CordelButton>
         <span className="panel-title text-base font-black tracking-wider text-cordel-wood uppercase flex items-center gap-2">
-          📢 Studio - Gestion du Porte-voix
+          <XiloMegaphone size={16} className="text-cordel-wood" /> Studio - Gestion du Porte-voix
         </span>
         <div className="w-12"></div>
       </div>

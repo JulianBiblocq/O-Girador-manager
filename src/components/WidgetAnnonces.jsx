@@ -251,7 +251,7 @@ export default function WidgetAnnonces({ groupId, profileData, role, isSystemAdm
           className="p-3 text-left border-dashed flex flex-col gap-2 bg-[#fdfaf2] dark:bg-black/10"
         >
           <div className="flex gap-2 items-start">
-            <span className="text-lg shrink-0">📢</span>
+            <XiloMegaphone size={18} className="text-cordel-wood shrink-0 mt-0.5" />
             <div className="flex-1">
               <h4 className="font-extrabold text-[11px] text-encre-noire uppercase tracking-wider">
                 {t('widgetAnnonces.bannerTitle')}

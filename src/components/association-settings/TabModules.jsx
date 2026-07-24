@@ -1,6 +1,7 @@
 import React from 'react';
 import CordelCard from '../CordelCard';
 import { DEFAULT_ENABLED_MODULES } from '../../hooks/useAssociationSettings';
+import { XiloMegaphone } from '../XiloIcons';
 
 const MODULES_CONFIG = [
   {
@@ -35,7 +36,7 @@ const MODULES_CONFIG = [
   },
   {
     key: 'studioSocial',
-    icon: '📢',
+    icon: <XiloMegaphone size={18} className="text-cordel-wood" />,
     title: 'Studio Social & Varal Médias',
     desc: 'Activer les outils de publication sociale et le gestionnaire de Varal.'
   },
@@ -47,7 +48,7 @@ const MODULES_CONFIG = [
   },
   {
     key: 'forum',
-    icon: '📣',
+    icon: <XiloMegaphone size={18} className="text-cordel-wood" />,
     title: 'Porte-voix (Forum & Discussions)',
     desc: 'Activer le forum de la troupe, les salons de discussion et la messagerie.'
   },

@@ -4,6 +4,7 @@ import { db } from '../../firebase';
 import { useTranslation } from '../LanguageContext';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
+import { XiloMegaphone } from '../XiloIcons';
 
 export default function MestreMotMestre({ groupId, profileData }) {
   const { t } = useTranslation();
@@ -65,8 +66,8 @@ export default function MestreMotMestre({ groupId, profileData }) {
 
   return (
     <div className="w-full flex flex-col gap-4 text-left max-w-2xl mx-auto">
-      <h3 className="text-base font-extrabold tracking-wider text-cordel-wood uppercase">
-        📣 Gestion du Mot du Mestre
+      <h3 className="text-base font-extrabold tracking-wider text-cordel-wood uppercase flex items-center gap-2">
+        <XiloMegaphone size={16} className="text-cordel-wood" /> Gestion du Mot du Mestre
       </h3>
 
       <form onSubmit={handleSave} className="flex flex-col gap-4">

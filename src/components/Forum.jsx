@@ -11,6 +11,7 @@ import { useForumModeration } from '../hooks/useForumModeration';
 import { useTranslation } from './LanguageContext';
 import XiloAvatar from './XiloAvatar';
 import { usePresenceContext } from '../context/PresenceContext';
+import { XiloMegaphone } from './XiloIcons';
 
 // Memoized ThreadCard component to prevent list items re-rendering during search or active inputs
 const ThreadCard = React.memo(({
@@ -224,7 +225,7 @@ function ChannelTreeItem({
           style={{ paddingLeft: `${Math.max(6, level * 10 + 6)}px` }}
         >
           <span className="flex items-center gap-1.5 min-w-0 overflow-hidden flex-1 pr-1">
-            <span className="shrink-0">{level === 0 ? '📂' : level === 1 ? '📁' : '📄'}</span>
+            <span className="shrink-0 font-extrabold text-cordel-wood opacity-75">{level === 0 ? '📂' : '#'}</span>
             <span className="truncate">{channel.name}</span>
             {channelThreads.length > 0 && (
               <span className="text-[9px] opacity-60 font-normal shrink-0">({channelThreads.length})</span>
@@ -659,8 +660,9 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
         <CordelButton variant="default" onClick={onBack} className="px-3 py-1 text-xs">
           ← {t('common.back')}
         </CordelButton>
-        <span className="panel-title text-base font-extrabold tracking-wider text-cordel-wood uppercase">
-          📢 {translate('forum.title', "Le Porte-voix")}
+        <span className="panel-title text-base font-extrabold tracking-wider text-cordel-wood uppercase flex items-center justify-center gap-1.5">
+          <XiloMegaphone size={16} className="text-cordel-wood" />
+          {translate('forum.title', "Le Porte-voix")}
         </span>
         {isModeratorOrAdmin && onOpenStudioForum ? (
           <CordelButton
@@ -858,7 +860,9 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
                   }
                   return (
                     <div className="flex items-center gap-1.5 text-xs font-black text-cordel-wood uppercase tracking-wider select-none flex-wrap bg-white/40 p-2 rounded border border-dashed border-cordel-master-dark/15">
-                      <span className="text-encre-noire">📢 Porte-voix</span>
+                      <span className="text-encre-noire flex items-center gap-1">
+                        <XiloMegaphone size={12} className="text-cordel-wood" /> Porte-voix
+                      </span>
                       {path.map((item, idx) => (
                         <React.Fragment key={item.id}>
                           <span className="opacity-40 text-encre-noire">/</span>
