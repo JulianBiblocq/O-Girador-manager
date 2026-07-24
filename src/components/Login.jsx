@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
+import { signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
 import { auth, googleProvider } from '../firebase';
 import LayoutShell from './LayoutShell';
 import CordelCard from './CordelCard';
@@ -8,11 +8,14 @@ import { useTranslation } from './LanguageContext';
 import { XiloCaixa } from './XiloIcons';
 
 export default function Login({ branding }) {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isSignUpMode, setIsSignUpMode] = useState(false);
+  const [isResetPasswordMode, setIsResetPasswordMode] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
   const [authLoading, setAuthLoading] = useState(false);
+
   const getAuthErrorMessage = (error) => {
     switch (error.code) {
       case 'auth/operation-not-allowed':
@@ -23,8 +26,9 @@ export default function Login({ branding }) {
         return t('login.errorInvalidEmail') || "Adresse e-mail invalide.";
       case 'auth/weak-password':
         return t('login.errorWeakPassword') || "Le mot de passe est trop faible (6 caractères minimum).";
-      case 'auth/wrong-password':
       case 'auth/user-not-found':
+        return t('login.errorUserNotFound') || "Aucun compte ne correspond à cette adresse e-mail.";
+      case 'auth/wrong-password':
       case 'auth/invalid-credential':
         return t('login.errorInvalidCredential') || "Identifiants incorrects.";
       case 'auth/user-disabled':
@@ -61,6 +65,24 @@ export default function Login({ branding }) {
       }
     } catch (error) {
       console.error("Erreur d'authentification par email :", error);
+      alert(getAuthErrorMessage(error));
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  const handlePasswordReset = async (e) => {
+    e.preventDefault();
+    if (!email.trim()) return;
+
+    setAuthLoading(true);
+    setResetSent(false);
+    try {
+      auth.languageCode = locale || 'fr';
+      await sendPasswordResetEmail(auth, email.trim());
+      setResetSent(true);
+    } catch (error) {
+      console.error("Erreur de réinitialisation du mot de passe :", error);
       alert(getAuthErrorMessage(error));
     } finally {
       setAuthLoading(false);
@@ -104,84 +126,153 @@ export default function Login({ branding }) {
             </div>
 
             <h2 className="panel-title text-2xl font-bold tracking-wider text-cordel-wood mb-2">
-              {t('login.title')}
+              {isResetPasswordMode ? t('login.resetPasswordTitle') : t('login.title')}
             </h2>
             <p className="text-xs uppercase font-extrabold tracking-widest text-cordel-master-dark/65 mb-6">
               {t('login.gateway')}
             </p>
 
-            <p className="text-sm leading-relaxed mb-8 text-cordel-master-dark/80 px-2">
-              {t('login.welcomeDesc')}
-            </p>
+            {isResetPasswordMode ? (
+              <div className="flex flex-col gap-4 text-left">
+                <p className="text-sm leading-relaxed text-cordel-master-dark/80 px-2 text-center">
+                  {t('login.resetPasswordDesc')}
+                </p>
 
-            <CordelButton 
-              variant="ocre" 
-              useExtremeBorder={true} 
-              onClick={handleLogin} 
-              disabled={authLoading}
-              className="w-full py-3"
-            >
-              {t('login.loginGoogle')}
-            </CordelButton>
+                {resetSent ? (
+                  <div className="p-3 bg-cordel-bg-light border-2 border-encre-noire rounded text-xs font-bold text-cordel-wood text-center my-2 shadow-[2px_2px_0px_0px_#181716]">
+                    ✓ {t('login.resetEmailSent')}
+                  </div>
+                ) : (
+                  <form onSubmit={handlePasswordReset} className="flex flex-col gap-3">
+                    <div className="flex flex-col gap-1">
+                      <label className="text-[9px] uppercase font-extrabold tracking-wider text-cordel-master-dark">
+                        {t('login.email')}
+                      </label>
+                      <input 
+                        type="email"
+                        required
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        disabled={authLoading}
+                        className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light"
+                        placeholder="nom@exemple.com"
+                      />
+                    </div>
 
-            {/* Divider */}
-            <div className="flex items-center gap-2 my-6 opacity-40">
-              <div className="flex-1 border-t border-dashed border-encre-noire"></div>
-              <span className="text-[10px] font-bold uppercase tracking-widest text-cordel-master-dark">{t('login.orEmail')}</span>
-              <div className="flex-1 border-t border-dashed border-encre-noire"></div>
-            </div>
+                    <CordelButton 
+                      variant="ocre" 
+                      useExtremeBorder={true} 
+                      disabled={authLoading || !email.trim()}
+                      className="w-full py-2.5 mt-2 font-bold uppercase text-xs tracking-wider"
+                    >
+                      {authLoading ? t('common.loading') : t('login.sendResetLink')}
+                    </CordelButton>
+                  </form>
+                )}
 
-            {/* Email form */}
-            <form onSubmit={handleEmailAuth} className="flex flex-col gap-3 text-left">
-              <div className="flex flex-col gap-1">
-                <label className="text-[9px] uppercase font-extrabold tracking-wider text-cordel-master-dark">
-                  {t('login.email')}
-                </label>
-                <input 
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  disabled={authLoading}
-                  className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light"
-                  placeholder="nom@exemple.com"
-                />
+                <div className="text-center mt-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsResetPasswordMode(false);
+                      setResetSent(false);
+                    }}
+                    className="text-[10px] font-bold text-cordel-wood hover:underline cursor-pointer"
+                  >
+                    ← {t('login.backToLogin')}
+                  </button>
+                </div>
               </div>
+            ) : (
+              <>
+                <p className="text-sm leading-relaxed mb-8 text-cordel-master-dark/80 px-2">
+                  {t('login.welcomeDesc')}
+                </p>
 
-              <div className="flex flex-col gap-1">
-                <label className="text-[9px] uppercase font-extrabold tracking-wider text-cordel-master-dark">
-                  {t('login.password')}
-                </label>
-                <input 
-                  type="password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                <CordelButton 
+                  variant="ocre" 
+                  useExtremeBorder={true} 
+                  onClick={handleLogin} 
                   disabled={authLoading}
-                  className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light"
-                  placeholder="******"
-                />
-              </div>
-
-              <CordelButton 
-                variant="default" 
-                useExtremeBorder={true} 
-                disabled={authLoading || !email.trim() || !password.trim()}
-                className="w-full py-2.5 mt-2 font-bold uppercase text-xs tracking-wider"
-              >
-                {authLoading ? t('common.loading') : (isSignUpMode ? t('login.createAccountBtn') : t('login.loginBtn'))}
-              </CordelButton>
-
-              <div className="text-center mt-2">
-                <button
-                  type="button"
-                  onClick={() => setIsSignUpMode(!isSignUpMode)}
-                  className="text-[10px] font-bold text-cordel-wood hover:underline cursor-pointer"
+                  className="w-full py-3"
                 >
-                  {isSignUpMode ? t('login.switchLogin') : t('login.switchSignUp')}
-                </button>
-              </div>
-            </form>
+                  {t('login.loginGoogle')}
+                </CordelButton>
+
+                {/* Divider */}
+                <div className="flex items-center gap-2 my-6 opacity-40">
+                  <div className="flex-1 border-t border-dashed border-encre-noire"></div>
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-cordel-master-dark">{t('login.orEmail')}</span>
+                  <div className="flex-1 border-t border-dashed border-encre-noire"></div>
+                </div>
+
+                {/* Email form */}
+                <form onSubmit={handleEmailAuth} className="flex flex-col gap-3 text-left">
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[9px] uppercase font-extrabold tracking-wider text-cordel-master-dark">
+                      {t('login.email')}
+                    </label>
+                    <input 
+                      type="email"
+                      required
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      disabled={authLoading}
+                      className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light"
+                      placeholder="nom@exemple.com"
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-1">
+                    <div className="flex justify-between items-center">
+                      <label className="text-[9px] uppercase font-extrabold tracking-wider text-cordel-master-dark">
+                        {t('login.password')}
+                      </label>
+                      {!isSignUpMode && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsResetPasswordMode(true);
+                            setResetSent(false);
+                          }}
+                          className="text-[9px] font-bold text-cordel-master-dark/70 hover:text-cordel-wood hover:underline cursor-pointer"
+                        >
+                          {t('login.forgotPassword')}
+                        </button>
+                      )}
+                    </div>
+                    <input 
+                      type="password"
+                      required
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      disabled={authLoading}
+                      className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light"
+                      placeholder="******"
+                    />
+                  </div>
+
+                  <CordelButton 
+                    variant="default" 
+                    useExtremeBorder={true} 
+                    disabled={authLoading || !email.trim() || !password.trim()}
+                    className="w-full py-2.5 mt-2 font-bold uppercase text-xs tracking-wider"
+                  >
+                    {authLoading ? t('common.loading') : (isSignUpMode ? t('login.createAccountBtn') : t('login.loginBtn'))}
+                  </CordelButton>
+
+                  <div className="text-center mt-2">
+                    <button
+                      type="button"
+                      onClick={() => setIsSignUpMode(!isSignUpMode)}
+                      className="text-[10px] font-bold text-cordel-wood hover:underline cursor-pointer"
+                    >
+                      {isSignUpMode ? t('login.switchLogin') : t('login.switchSignUp')}
+                    </button>
+                  </div>
+                </form>
+              </>
+            )}
           </CordelCard>
         </div>
 
@@ -195,3 +286,4 @@ export default function Login({ branding }) {
     </div>
   );
 }
+

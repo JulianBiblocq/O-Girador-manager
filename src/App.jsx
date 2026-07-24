@@ -411,60 +411,32 @@ export default function App() {
 
       const iconDataUrl = canvas.toDataURL('image/png');
 
-      const origin = window.location.origin;
-      const defaultIcon192 = new URL('/icon-192.png', origin).href;
-      const defaultIcon512 = new URL('/icon-512.png', origin).href;
+      // Update favicon and apple-touch-icon with branded canvas icon
+      let faviconElement = document.querySelector('link#favicon') || document.querySelector('link[rel="icon"]');
+      if (faviconElement && iconDataUrl) {
+        faviconElement.href = iconDataUrl;
+      }
+      let appleIconElement = document.querySelector('link[rel="apple-touch-icon"]');
+      if (appleIconElement && iconDataUrl) {
+        appleIconElement.href = iconDataUrl;
+      }
 
-      const manifest = {
-        id: origin + '/',
-        name: `O Girador - ${associationName || 'Samambaia'}`,
-        short_name: associationName || 'O Girador',
-        theme_color: primaryCol,
-        background_color: bgCol,
-        start_url: origin + '/',
-        scope: origin + '/',
-        display: 'standalone',
-        orientation: 'portrait',
-        icons: [
-          {
-            src: iconDataUrl || defaultIcon192,
-            sizes: '192x192',
-            type: 'image/png',
-            purpose: 'any'
-          },
-          {
-            src: iconDataUrl || defaultIcon192,
-            sizes: '192x192',
-            type: 'image/png',
-            purpose: 'maskable'
-          },
-          {
-            src: iconDataUrl || defaultIcon512,
-            sizes: '512x512',
-            type: 'image/png',
-            purpose: 'any'
-          },
-          {
-            src: iconDataUrl || defaultIcon512,
-            sizes: '512x512',
-            type: 'image/png',
-            purpose: 'maskable'
-          }
-        ]
-      };
+      // Update meta theme-color
+      let themeMeta = document.querySelector('meta[name="theme-color"]');
+      if (themeMeta && primaryCol) {
+        themeMeta.setAttribute('content', primaryCol);
+      }
 
-      const blob = new Blob([JSON.stringify(manifest, null, 2)], { type: 'application/json' });
-      const manifestUrl = URL.createObjectURL(blob);
-
+      // Ensure manifest link always points to valid static /manifest.json (never a blob: URL)
       let linkElement = document.querySelector('link[rel="manifest"]');
       if (!linkElement) {
         linkElement = document.createElement('link');
         linkElement.rel = 'manifest';
+        linkElement.href = '/manifest.json';
         document.head.appendChild(linkElement);
-      } else if (linkElement.href && linkElement.href.startsWith('blob:')) {
-        URL.revokeObjectURL(linkElement.href);
+      } else {
+        linkElement.href = '/manifest.json';
       }
-      linkElement.href = manifestUrl;
     };
 
     generateAndInjectManifest();

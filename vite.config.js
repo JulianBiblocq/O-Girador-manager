@@ -17,6 +17,7 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       injectRegister: 'auto',
+      includeAssets: ['favicon.svg', 'icon-192.png', 'icon-512.png', 'manifest.json'],
       manifest: false,
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg}'],

@@ -85,11 +85,11 @@ export default function EventCreateForm({
           >
             {associationEventTypes.map(type => (
               <option key={type} value={type}>
-                {type === 'prestation' ? translate('widgetAgenda.typePrestation', "Prestation (Ocre)") :
-                 type === 'repetition' ? translate('widgetAgenda.typeRepetition', "Répétition (Vert)") :
-                 type === 'stage' ? translate('widgetAgenda.typeStage', "Stage (Bleu)") :
-                 type === 'atelier' ? translate('widgetAgenda.typeAtelier', "Atelier (Jaune)") :
-                 type === 'reunion' ? translate('widgetAgenda.typeReunion', "Réunion (Kraft)") :
+                {type === 'prestation' ? translate('widgetAgenda.typePrestation', "Prestation") :
+                 type === 'repetition' ? translate('widgetAgenda.typeRepetition', "Répétition") :
+                 type === 'stage' ? translate('widgetAgenda.typeStage', "Stage") :
+                 type === 'atelier' ? translate('widgetAgenda.typeAtelier', "Atelier") :
+                 type === 'reunion' ? translate('widgetAgenda.typeReunion', "Réunion") :
                  type.charAt(0).toUpperCase() + type.slice(1)}
               </option>
             ))}

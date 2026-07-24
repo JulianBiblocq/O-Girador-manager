@@ -54,6 +54,7 @@ export default function WidgetAgenda({
   const [showAll, setShowAll] = useState(isFullPage);
   const [viewMode, setViewMode] = useState('cards'); // 'cards' ou 'list' ou 'grid'
   const [selectedTypeFilter, setSelectedTypeFilter] = useState('all');
+  const [hiddenTypes, setHiddenTypes] = useState([]);
   
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
   const [adresseLocal, setAdresseLocal] = useState('');
@@ -101,8 +102,11 @@ export default function WidgetAgenda({
     return !isNaN(eDate.getTime()) && eDate >= today;
   });
   const filteredEvents = upcomingEvents.filter(e => {
-    if (selectedTypeFilter === 'all') return true;
-    return e.type === selectedTypeFilter;
+    if (hiddenTypes.includes(e.type)) return false;
+    if (selectedTypeFilter !== 'all' && selectedTypeFilter !== 'custom') {
+      return e.type === selectedTypeFilter;
+    }
+    return true;
   });
   const visibleEvents = (isFullPage || showAll) ? filteredEvents : filteredEvents.slice(0, limit);
   
@@ -446,12 +450,15 @@ export default function WidgetAgenda({
 
       {/* Event Filters (Visible when not loading and not adding) */}
       {!loading && !isAdding && (
-        <div className="flex flex-wrap gap-1.5 select-none text-[9px] font-black uppercase mt-1 pl-1">
+        <div className="flex flex-wrap gap-1.5 select-none text-[9px] font-black uppercase mt-1 pl-1 items-center">
           <button
             type="button"
-            onClick={() => setSelectedTypeFilter('all')}
+            onClick={() => {
+              setSelectedTypeFilter('all');
+              setHiddenTypes([]);
+            }}
             className={`px-3 py-1.5 rounded-[4px_6px_3px_5px] border transition-all cursor-pointer ${
-              selectedTypeFilter === 'all'
+              selectedTypeFilter === 'all' && hiddenTypes.length === 0
                 ? 'bg-cordel-wood text-white border-encre-noire shadow-[1px_1px_0px_0px_#181716]'
                 : 'bg-white border-dashed border-cordel-master-dark/20 text-cordel-master-dark/70 hover:bg-neutral-100'
             }`}
@@ -467,22 +474,77 @@ export default function WidgetAgenda({
               reunion: t('widgetAgenda.typeReunion')
             };
             const labelRaw = standardTypes[type];
-            const label = labelRaw ? labelRaw.split(' ')[0] : (type.charAt(0).toUpperCase() + type.slice(1));
-            const isSelected = selectedTypeFilter === type;
-            
+            const label = labelRaw || (type.charAt(0).toUpperCase() + type.slice(1));
+            const isHidden = hiddenTypes.includes(type);
+            const isFocused = selectedTypeFilter === type && hiddenTypes.length === eventTypes.length - 1;
+
+            const handleTextClick = () => {
+              if (isFocused) {
+                // Reset to all
+                setSelectedTypeFilter('all');
+                setHiddenTypes([]);
+              } else {
+                // Focus only this type
+                setSelectedTypeFilter(type);
+                setHiddenTypes(eventTypes.filter(t => t !== type));
+              }
+            };
+
+            const handleToggleHide = (e) => {
+              e.stopPropagation();
+              if (isHidden) {
+                // Unhide
+                const nextHidden = hiddenTypes.filter(t => t !== type);
+                setHiddenTypes(nextHidden);
+                if (nextHidden.length === 0) {
+                  setSelectedTypeFilter('all');
+                } else {
+                  setSelectedTypeFilter('custom');
+                }
+              } else {
+                // Hide
+                const nextHidden = [...hiddenTypes, type];
+                setHiddenTypes(nextHidden);
+                if (nextHidden.length === eventTypes.length - 1) {
+                  const remaining = eventTypes.find(t => !nextHidden.includes(t));
+                  setSelectedTypeFilter(remaining || 'custom');
+                } else {
+                  setSelectedTypeFilter('custom');
+                }
+              }
+            };
+
             return (
-              <button
+              <div
                 key={type}
-                type="button"
-                onClick={() => setSelectedTypeFilter(type)}
-                className={`px-3 py-1.5 rounded-[4px_6px_3px_5px] border transition-all cursor-pointer ${
-                  isSelected
-                    ? 'bg-cordel-wood text-white border-encre-noire shadow-[1px_1px_0px_0px_#181716]'
-                    : 'bg-white border-dashed border-cordel-master-dark/20 text-cordel-master-dark/70 hover:bg-neutral-100'
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[4px_6px_3px_5px] border transition-all ${
+                  isHidden
+                    ? 'bg-neutral-200/70 border-dashed border-neutral-400 text-neutral-400 line-through opacity-65'
+                    : isFocused || (selectedTypeFilter === type && hiddenTypes.length === 0)
+                      ? 'bg-cordel-wood text-white border-encre-noire shadow-[1px_1px_0px_0px_#181716]'
+                      : 'bg-white border-dashed border-cordel-master-dark/30 text-cordel-master-dark hover:bg-neutral-100'
                 }`}
               >
-                {label}
-              </button>
+                {/* Category label (click text => focus only this type in 1 click) */}
+                <button
+                  type="button"
+                  onClick={handleTextClick}
+                  title={`Voir uniquement ${label}`}
+                  className="cursor-pointer font-extrabold hover:underline"
+                >
+                  {label}
+                </button>
+
+                {/* Eye toggle icon (click eye => hide/show this category in 1 click) */}
+                <button
+                  type="button"
+                  onClick={handleToggleHide}
+                  title={isHidden ? `Afficher les ${label}s` : `Masquer les ${label}s`}
+                  className="cursor-pointer ml-0.5 opacity-80 hover:opacity-100 hover:scale-110 transition-transform p-0.5 select-none"
+                >
+                  {isHidden ? '🙈' : '👁️'}
+                </button>
+              </div>
             );
           })}
         </div>
