@@ -382,35 +382,53 @@ export default function WidgetAgenda({
   return (
     <div className="flex flex-col gap-3">
       {/* Title & Action Bar */}
-      <div className="flex justify-between items-center pl-1 pr-1 w-full gap-2">
-        <h3 className="text-xs font-extrabold tracking-wider text-cordel-master-dark opacity-75 uppercase text-left flex items-center gap-1">
-          <XiloCalendar size={14} /> {t('widgetAgenda.title')}
+      <div className="flex flex-wrap justify-between items-center pl-1 pr-1 w-full gap-2">
+        <h3 className="text-xs font-extrabold tracking-wider text-cordel-master-dark opacity-75 uppercase text-left flex items-center gap-1.5">
+          <XiloCalendar size={16} /> {t('widgetAgenda.title')}
         </h3>
         
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           {/* View Mode Toggle */}
           {!loading && !isAdding && (
-            <div className="flex border border-encre-noire rounded-[4px_6px_3px_5px] overflow-hidden bg-cordel-bg shadow-[1px_1px_0px_0px_#181716] select-none text-[8px] font-black uppercase">
+            <div className="flex items-center border-2 border-encre-noire rounded-[6px_9px_5px_8px] overflow-hidden bg-cordel-bg shadow-[2px_2px_0px_0px_#181716] select-none text-xs font-extrabold uppercase">
               <button
                 type="button"
                 onClick={() => setViewMode('cards')}
-                className={`px-2 py-0.5 cursor-pointer transition-colors ${viewMode === 'cards' ? 'bg-cordel-master-dark text-cordel-bg-light' : 'bg-cordel-bg-light text-encre-noire hover:bg-neutral-100'}`}
+                className={`px-3 py-1.5 cursor-pointer transition-all flex items-center gap-1.5 ${
+                  viewMode === 'cards' 
+                    ? 'bg-cordel-wood text-white font-black' 
+                    : 'bg-cordel-bg-light text-encre-noire hover:bg-amber-100/60'
+                }`}
+                title="Affichage en cartes"
               >
-                🎴 <span className={isFullPage ? "inline" : "hidden sm:inline"}>Cartes</span>
+                <span className="text-sm">🎴</span>
+                <span>Cartes</span>
               </button>
               <button
                 type="button"
                 onClick={() => setViewMode('list')}
-                className={`px-2 py-0.5 cursor-pointer transition-colors ${viewMode === 'list' ? 'bg-cordel-master-dark text-cordel-bg-light' : 'bg-cordel-bg-light text-encre-noire hover:bg-neutral-100'}`}
+                className={`px-3 py-1.5 cursor-pointer transition-all border-l-2 border-encre-noire flex items-center gap-1.5 ${
+                  viewMode === 'list' 
+                    ? 'bg-cordel-wood text-white font-black' 
+                    : 'bg-cordel-bg-light text-encre-noire hover:bg-amber-100/60'
+                }`}
+                title="Affichage en liste"
               >
-                📋 <span className={isFullPage ? "inline" : "hidden sm:inline"}>Liste</span>
+                <span className="text-sm">📋</span>
+                <span>Liste</span>
               </button>
               <button
                 type="button"
                 onClick={() => setViewMode('grid')}
-                className={`px-2 py-0.5 cursor-pointer transition-colors ${viewMode === 'grid' ? 'bg-cordel-master-dark text-cordel-bg-light' : 'bg-cordel-bg-light text-encre-noire hover:bg-neutral-100'}`}
+                className={`px-3 py-1.5 cursor-pointer transition-all border-l-2 border-encre-noire flex items-center gap-1.5 ${
+                  viewMode === 'grid' 
+                    ? 'bg-cordel-wood text-white font-black' 
+                    : 'bg-cordel-bg-light text-encre-noire hover:bg-amber-100/60'
+                }`}
+                title="Affichage en calendrier (Grille)"
               >
-                📅 <span className={isFullPage ? "inline" : "hidden sm:inline"}>Grille</span>
+                <span className="text-sm">📅</span>
+                <span>Grille</span>
               </button>
             </div>
           )}
@@ -419,7 +437,7 @@ export default function WidgetAgenda({
             <CordelButton 
               variant="default" 
               onClick={handleOpenForm} 
-              className="text-[10px] px-2 py-1 uppercase tracking-widest font-black"
+              className="text-xs px-3 py-1.5 uppercase tracking-widest font-black"
             >
               + Ajouter
             </CordelButton>
