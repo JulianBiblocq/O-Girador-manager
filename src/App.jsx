@@ -385,7 +385,7 @@ export default function App() {
             img.onerror = reject;
           });
 
-          const targetSize = 220;
+          const targetSize = 310;
           let w = img.width;
           let h = img.height;
           const ratio = w / h;
@@ -396,17 +396,17 @@ export default function App() {
             h = targetSize;
             w = targetSize * ratio;
           }
-          ctx.drawImage(img, 256 - w / 2, 220 - h / 2, w, h);
+          ctx.drawImage(img, 256 - w / 2, 235 - h / 2, w, h);
         } catch (err) {
           console.error("App - Erreur logo Canvas PWA fallback text :", err);
-          ctx.font = 'bold 36px Courier New, Courier, monospace';
+          ctx.font = 'bold 42px Courier New, Courier, monospace';
           ctx.fillStyle = textCol;
-          ctx.fillText(associationName ? associationName.substring(0, 10).toUpperCase() : 'RODA', 256, 210);
+          ctx.fillText(associationName ? associationName.substring(0, 12).toUpperCase() : 'RODA', 256, 220);
         }
       } else {
-        ctx.font = 'bold 36px Courier New, Courier, monospace';
+        ctx.font = 'bold 42px Courier New, Courier, monospace';
         ctx.fillStyle = textCol;
-        ctx.fillText(associationName ? associationName.substring(0, 10).toUpperCase() : 'RODA', 256, 210);
+        ctx.fillText(associationName ? associationName.substring(0, 12).toUpperCase() : 'RODA', 256, 220);
       }
 
       const iconDataUrl = canvas.toDataURL('image/png');
@@ -808,6 +808,7 @@ export default function App() {
               <UserProfile 
                 user={user} 
                 profileData={profileData} 
+                associationName={associationName}
                 onBack={() => handleNavigateToPole('accueil')} 
               />
             ) : currentTab === 'agenda' ? (
@@ -870,6 +871,7 @@ export default function App() {
               <SystemAdminPanel 
                 user={user} 
                 profileData={profileData} 
+                associationName={associationName}
                 onBack={() => handleNavigateToPole('accueil')} 
                 onNavigateToView={handleNavigateToView}
               />

@@ -20,7 +20,7 @@ const DEFAULT_FIELDS_CONFIG = {
   dateNaissance: { key: "dateNaissance", label: "Date de naissance", enabled: true, filledBy: "member", isRequired: false }
 };
 
-export default function SystemAdminPanel({ profileData, onBack, onNavigateToView }) {
+export default function SystemAdminPanel({ profileData, associationName: propAssociationName, onBack, onNavigateToView }) {
   const { t } = useTranslation();
 
   const translate = (key, fallback) => {
@@ -38,7 +38,13 @@ export default function SystemAdminPanel({ profileData, onBack, onNavigateToView
   const [fieldsConfig, setFieldsConfig] = useState(null);
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState(null);
-  const [associationName, setAssociationName] = useState('');
+  const [associationName, setAssociationName] = useState(propAssociationName || '');
+
+  useEffect(() => {
+    if (propAssociationName) {
+      setAssociationName(propAssociationName);
+    }
+  }, [propAssociationName]);
 
   // Synchronize all user profiles in real-time
   useEffect(() => {

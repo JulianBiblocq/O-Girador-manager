@@ -24,7 +24,7 @@ const formatTimestamp = (ts) => {
 
 export const generateImageCharterPDF = (member, associationName) => {
   const doc = new jsPDF();
-  const assocName = associationName || "O Girador";
+  const assocName = (associationName && typeof associationName === 'string' && associationName.trim()) ? associationName.trim() : "O Girador";
   
   // Title
   doc.setFont("helvetica", "bold");
@@ -100,7 +100,7 @@ export const generateImageCharterPDF = (member, associationName) => {
 
 export const generateMedicalAttestationPDF = (member, associationName) => {
   const doc = new jsPDF();
-  const assocName = associationName || "O Girador";
+  const assocName = (associationName && typeof associationName === 'string' && associationName.trim()) ? associationName.trim() : "O Girador";
   
   // Title
   doc.setFont("helvetica", "bold");

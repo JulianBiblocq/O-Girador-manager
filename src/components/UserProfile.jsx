@@ -27,7 +27,9 @@ const getInstrumentIconPath = (instName) => {
   return '/favicon.svg';
 };
 
-export default function UserProfile({ user, profileData, onBack, onNavigateToTuto }) {
+import { generateImageCharterPDF, generateMedicalAttestationPDF } from '../utils/pdfGenerator';
+
+export default function UserProfile({ user, profileData, associationName, onBack, onNavigateToTuto }) {
   const { t, locale } = useTranslation();
   const { tRole } = useTerminologie();
   const [lightboxOpen, setLightboxOpen] = useState(false);
@@ -362,7 +364,18 @@ export default function UserProfile({ user, profileData, onBack, onNavigateToTut
                 <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70 block">
                   {t('userProfile.imageRights')}
                 </span>
-                <span>{formData.droitImage ? "✅ Accordé" : "❌ Refusé"}</span>
+                <div className="flex items-center gap-2">
+                  <span>{formData.droitImage ? "✅ Accordé" : "❌ Refusé"}</span>
+                  {formData.droitImage && (
+                    <button 
+                      type="button" 
+                      onClick={() => generateImageCharterPDF(profileData, associationName)}
+                      className="text-[9px] font-bold text-cordel-wood hover:underline ml-1"
+                    >
+                      📄 Télécharger PDF
+                    </button>
+                  )}
+                </div>
               </div>
             )}
             {demanderAttestationSante && (
@@ -370,7 +383,18 @@ export default function UserProfile({ user, profileData, onBack, onNavigateToTut
                 <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70 block">
                   {t('userProfile.medicalCert')}
                 </span>
-                <span>{formData.aptitudeMedicale ? "✅ Attesté" : "❌ Non attesté"}</span>
+                <div className="flex items-center gap-2">
+                  <span>{formData.aptitudeMedicale ? "✅ Attesté" : "❌ Non attesté"}</span>
+                  {formData.aptitudeMedicale && (
+                    <button 
+                      type="button" 
+                      onClick={() => generateMedicalAttestationPDF(profileData, associationName)}
+                      className="text-[9px] font-bold text-cordel-wood hover:underline ml-1"
+                    >
+                      📄 Télécharger PDF
+                    </button>
+                  )}
+                </div>
               </div>
             )}
           </div>

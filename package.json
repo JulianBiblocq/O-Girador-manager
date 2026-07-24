@@ -1,7 +1,8 @@
 {
-  "name": "tmp-project",
+  "name": "o-girador-manager",
   "private": true,
   "version": "1.4.3",
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "dev": "vite",

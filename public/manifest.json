@@ -1,0 +1,18 @@
+{
+  "name": "O Girador - Manager",
+  "short_name": "O Girador",
+  "description": "Application de gestion pour les associations de Maracatu",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f4ecd8",
+  "theme_color": "#d99f4d",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
