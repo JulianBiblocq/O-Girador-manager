@@ -120,11 +120,11 @@ export default function ProfileEditForm({
           </div>
         )}
 
-        {/* Surnom / Nom de guerre */}
+        {/* Surnom */}
         {isFieldVisible('surnom') && (
           <div className="flex flex-col gap-1.5 text-left">
             <label className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood">
-              {translate('userProfile.nickname', "Surnom (Nom de guerre)")}
+              {translate('userProfile.nickname', "Surnom")}
               {isFieldRequired('surnom') && <span className="text-red-500 font-bold ml-1">*</span>}
             </label>
             <input

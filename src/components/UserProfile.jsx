@@ -203,7 +203,13 @@ export default function UserProfile({ user, profileData, associationName, onBack
         </div>
 
         {/* Upload picture button */}
-        <div className="flex flex-col items-center gap-1.5 mt-1">
+        <div className="flex flex-col items-center gap-2 mt-1 w-full max-w-md">
+          <div className="bg-cordel-bg-light/90 border border-dashed border-cordel-master-dark/25 p-2.5 rounded-[6px] text-center w-full shadow-sm">
+            <p className="text-[10px] text-cordel-master-dark font-semibold leading-relaxed">
+              💡 <span className="font-extrabold text-cordel-wood">Photo de profil :</span> Choisissez une photo où votre visage est bien visible afin d'aider les autres membres du groupe à vous reconnaître facilement dans le Trombinoscope !
+            </p>
+          </div>
+
           <div className="flex flex-wrap justify-center gap-2">
             <label className="relative overflow-hidden text-[10px] font-black uppercase tracking-widest bg-cordel-bg border border-encre-noire px-3 py-1.5 rounded-[4px_6px_3px_5px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-95 cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1 select-none">
               📸 {uploadingPhoto ? "⏳ " + t('userProfile.uploading') : t('userProfile.changePhoto')}

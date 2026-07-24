@@ -41,9 +41,14 @@ export default function CordelImageEditor({ imageSrc, lang = 'fr', onComplete, o
 
   return (
     <div className="flex flex-col gap-2 p-2 bg-[var(--cordel-bg)] cordel-border-sm text-[var(--cordel-text)] font-sans text-xs max-w-sm w-full mx-auto">
-      <span className="font-cactus font-bold uppercase tracking-wider text-[10px] mb-1 text-center">
-        {lang === 'fr' ? 'Éditeur Xylogravure' : 'Editor Xilogravura'}
-      </span>
+      <div className="flex flex-col items-center gap-0.5 mb-1 text-center">
+        <span className="font-cactus font-bold uppercase tracking-wider text-[10px]">
+          {lang === 'fr' ? 'Éditeur Xylogravure' : 'Editor Xilogravura'}
+        </span>
+        <span className="text-[9px] font-semibold text-cordel-master-dark opacity-75">
+          {lang === 'fr' ? '💡 Veillez à cadrer une photo nette où votre visage est bien reconnaissable.' : '💡 Certifique-se de usar uma foto clara onde seu rosto seja bem reconhecível.'}
+        </span>
+      </div>
       
       <div className="relative aspect-square w-full bg-black/10 cordel-border-sm overflow-hidden flex items-center justify-center">
         {previewBase64 ? (

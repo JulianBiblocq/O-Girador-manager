@@ -204,7 +204,7 @@ export default function SystemUserList({
                   {/* Surnom */}
                   {fieldsConfig.surnom?.enabled && (
                     <div className="flex flex-col gap-0.5">
-                      <span className="text-[8px] font-bold text-cordel-wood">Nom de scène/Surnom</span>
+                      <span className="text-[8px] font-bold text-cordel-wood">Surnom</span>
                       <input
                         type="text"
                         value={userDraft.surnom !== undefined ? userDraft.surnom : (userItem.surnom || '')}
