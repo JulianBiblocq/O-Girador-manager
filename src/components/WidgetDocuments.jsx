@@ -294,8 +294,10 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
 
   // Group documents by category in JavaScript
   const groupedDocs = documents.reduce((acc, docItem) => {
-    // Find matching category object
-    const catObj = varalCategories.find(c => c.id === docItem.categoryId || c.nom === docItem.categorie || c.id === docItem.categorie);
+    // Find matching category object with priority: categoryId first, then name, then fallback id
+    const catObj = (docItem.categoryId && varalCategories.find(c => c.id === docItem.categoryId))
+      || (docItem.categorie && varalCategories.find(c => c.nom === docItem.categorie))
+      || (docItem.categorie && varalCategories.find(c => c.id === docItem.categorie));
     const catId = catObj ? catObj.id : 'Autre';
     
     if (!acc[catId]) {
@@ -431,6 +433,11 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
                         };
                         const typeIcon = typeIcons[docType] || '📄';
 
+                        const isDarkBg = colorClass === 'rouge' || colorClass === 'bleu-ardoise' || colorClass === 'bleu';
+                        const textClass = isDarkBg ? 'text-[#FEF9E7]' : 'text-encre-noire';
+                        const borderDashedClass = isDarkBg ? 'border-[#FEF9E7]/35' : 'border-encre-noire/25';
+                        const yearBadgeClass = isDarkBg ? 'bg-white/25 text-[#FEF9E7]' : 'bg-encre-noire/10 text-encre-noire';
+
                         return (
                           <div 
                             key={docItem.id}
@@ -456,7 +463,7 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
                             {/* Booklet Cover */}
                             <div 
                               className={`
-                                relative w-32 h-44 border-2 border-encre-noire p-3 flex flex-col justify-between text-left
+                                relative w-36 h-48 border-2 border-encre-noire p-3.5 flex flex-col justify-between text-left
                                 bg-cordel-bg-light shadow-[4px_4px_0px_0px_#181716]
                                 rounded-[4px_10px_3px_8px]
                                 border-l-4 border-l-double
@@ -533,24 +540,24 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
                               )}
                               {/* Booklet Top */}
                               <div className="flex flex-col min-w-0">
-                                <div className="w-full border-b border-dashed border-encre-noire/25 pb-1 select-none flex justify-between items-center">
-                                  <span className="text-[10px] select-none">
+                                <div className={`w-full border-b border-dashed ${borderDashedClass} pb-1 select-none flex justify-between items-center`}>
+                                  <span className="text-xs select-none">
                                     {typeIcon}
                                   </span>
                                   {docItem.annee && (
-                                    <span className="text-[7px] font-black bg-encre-noire/10 text-encre-noire px-1 rounded-sm">
+                                    <span className={`text-[8.5px] font-black px-1.5 py-0.5 rounded-sm ${yearBadgeClass}`}>
                                       {docItem.annee}
                                     </span>
                                   )}
                                 </div>
-                                <h4 className="font-extrabold text-[10px] text-encre-noire leading-tight mt-1.5 break-words line-clamp-3">
+                                <h4 className={`font-black text-xs ${textClass} leading-snug mt-2 break-words line-clamp-3`}>
                                   {docItem.titre}
                                 </h4>
                               </div>
 
                               {/* Booklet Bottom */}
                               <div className="mt-auto select-none">
-                                <div className="text-[7px] text-right font-black uppercase mt-1">
+                                <div className={`text-[8.5px] text-right font-black uppercase tracking-wider mt-1 ${textClass}`}>
                                   {translate('documents.readBtn', "Lire ➜")}
                                 </div>
                               </div>

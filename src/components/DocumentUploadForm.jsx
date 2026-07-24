@@ -14,9 +14,10 @@ export default function DocumentUploadForm({ groupId, varalCategories = [], onCl
     if (!documentToEdit) {
       return varalCategories && varalCategories.length > 0 ? varalCategories[0].id : 'Partitions';
     }
-    const catId = documentToEdit.categoryId || documentToEdit.categorie;
-    const match = varalCategories.find(c => c.id === catId || c.nom === catId);
-    return match ? match.id : (catId || 'Partitions');
+    const match = (documentToEdit.categoryId && varalCategories.find(c => c.id === documentToEdit.categoryId))
+      || (documentToEdit.categorie && varalCategories.find(c => c.nom === documentToEdit.categorie))
+      || (documentToEdit.categorie && varalCategories.find(c => c.id === documentToEdit.categorie));
+    return match ? match.id : (documentToEdit.categoryId || documentToEdit.categorie || 'Partitions');
   });
   const [sousCategorie, setSousCategorie] = useState(documentToEdit && documentToEdit.sousCategorie ? documentToEdit.sousCategorie : 'Comptes Rendus');
   const [annee, setAnnee] = useState(documentToEdit ? documentToEdit.annee : new Date().getFullYear());

@@ -186,7 +186,6 @@ export default function WidgetAgenda({
   };
 
   const handleOpenForm = () => {
-    setImageMode('upload');
     setFormData({
       titre: '',
       type: 'prestation',

@@ -217,18 +217,33 @@ export default function SystemUserList({
 
                   {/* Adresse */}
                   {fieldsConfig.adresse?.enabled && (
-                    <div className="flex flex-col gap-0.5 col-span-2">
-                      <span className="text-[8px] font-bold text-cordel-wood">Adresse physique (Ville/Département)</span>
-                      <div className="flex gap-2 items-center">
-                        <div className="flex-1 min-w-0">
-                          <input
-                            type="text"
-                            value={userDraft.adresse !== undefined ? userDraft.adresse : (userItem.adresse || '')}
-                            onChange={(e) => handleFieldChange(userItem.id, 'adresse', e.target.value)}
-                            disabled={savingId === userItem.id}
-                            className="theme-input text-[10px] font-bold py-1 px-1.5 w-full truncate"
-                          />
-                        </div>
+                    <div className="flex flex-col gap-1 col-span-2">
+                      <span className="text-[8px] font-bold text-cordel-wood">Adresse physique (Rue / Code Postal / Ville)</span>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5">
+                        <input
+                          type="text"
+                          placeholder="Rue / Voie"
+                          value={userDraft.adresseRue !== undefined ? userDraft.adresseRue : (userItem.adresseRue || userItem.adresse || '')}
+                          onChange={(e) => handleFieldChange(userItem.id, 'adresseRue', e.target.value)}
+                          disabled={savingId === userItem.id}
+                          className="theme-input text-[10px] font-bold py-1 px-1.5 w-full"
+                        />
+                        <input
+                          type="text"
+                          placeholder="Code Postal"
+                          value={userDraft.adresseCP !== undefined ? userDraft.adresseCP : (userItem.adresseCP || '')}
+                          onChange={(e) => handleFieldChange(userItem.id, 'adresseCP', e.target.value)}
+                          disabled={savingId === userItem.id}
+                          className="theme-input text-[10px] font-bold py-1 px-1.5 w-full"
+                        />
+                        <input
+                          type="text"
+                          placeholder="Ville"
+                          value={userDraft.adresseVille !== undefined ? userDraft.adresseVille : (userItem.adresseVille || '')}
+                          onChange={(e) => handleFieldChange(userItem.id, 'adresseVille', e.target.value)}
+                          disabled={savingId === userItem.id}
+                          className="theme-input text-[10px] font-bold py-1 px-1.5 w-full"
+                        />
                       </div>
                       {/* Fallback display of old address format */}
                       {userItem.adresse && !userItem.adresseRue && (

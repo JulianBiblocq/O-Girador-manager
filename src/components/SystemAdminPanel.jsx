@@ -17,7 +17,8 @@ const DEFAULT_FIELDS_CONFIG = {
   droitImage: { key: "droitImage", label: "Droit à l'image", enabled: true, filledBy: "member", isRequired: false },
   aptitudeMedicale: { key: "aptitudeMedicale", label: "Aptitude médicale", enabled: true, filledBy: "member", isRequired: false },
   lateralite: { key: "lateralite", label: "Latéralité (Gaucher/Droitier)", enabled: true, filledBy: "member", isRequired: false },
-  dateNaissance: { key: "dateNaissance", label: "Date de naissance", enabled: true, filledBy: "member", isRequired: false }
+  dateNaissance: { key: "dateNaissance", label: "Date de naissance", enabled: true, filledBy: "member", isRequired: false },
+  niveaux: { key: "niveaux", label: "Affichage des niveaux dans le trombinoscope", enabled: true, filledBy: "admin", isRequired: false }
 };
 
 export default function SystemAdminPanel({ profileData, associationName: propAssociationName, onBack, onNavigateToView }) {
@@ -187,7 +188,8 @@ export default function SystemAdminPanel({ profileData, associationName: propAss
       updatePayload.telephone = userDraft.telephone !== undefined ? userDraft.telephone : (currentUserItem.telephone || '');
     }
     if (isEnabled('adresse')) {
-      updatePayload.adresseRue = userDraft.adresseRue !== undefined ? userDraft.adresseRue : (currentUserItem.adresseRue || '');
+      const defaultRue = currentUserItem.adresseRue || currentUserItem.adresse || '';
+      updatePayload.adresseRue = userDraft.adresseRue !== undefined ? userDraft.adresseRue : defaultRue;
       updatePayload.adresseCP = userDraft.adresseCP !== undefined ? userDraft.adresseCP : (currentUserItem.adresseCP || '');
       updatePayload.adresseVille = userDraft.adresseVille !== undefined ? userDraft.adresseVille : (currentUserItem.adresseVille || '');
       

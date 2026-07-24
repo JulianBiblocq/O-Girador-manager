@@ -593,8 +593,13 @@ export default function VaralManager({ groupId, onBack, role, isSystemAdmin }) {
               {varalCategories.map((category) => {
                 const sortMethod = sortMethods[category.id] || 'order';
                 
-                // Filter docs by category
-                let catDocs = documents.filter(d => d.categorie === category.id || d.categoryId === category.id);
+                // Filter docs by category (matching priority: categoryId first, then name, then id fallback)
+                let catDocs = documents.filter(d => {
+                  const matchObj = (d.categoryId && varalCategories.find(c => c.id === d.categoryId))
+                    || (d.categorie && varalCategories.find(c => c.nom === d.categorie))
+                    || (d.categorie && varalCategories.find(c => c.id === d.categorie));
+                  return matchObj ? matchObj.id === category.id : false;
+                });
                 
                 // Sort docs dynamically
                 if (sortMethod === 'date') {

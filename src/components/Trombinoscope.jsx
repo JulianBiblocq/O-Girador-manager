@@ -65,6 +65,7 @@ const MemberCard = React.memo(({
   const showBirthdate = isBirthdateEnabled && dateNaissance && (isBirthdateAllowed || (isViewerAdmin && !isCurrentUser));
 
   const isAddressEnabled = fieldsConfig?.adresse?.enabled !== false;
+  const isNiveauxEnabled = fieldsConfig?.niveaux?.enabled !== false;
   const effectiveAddressMode = visibiliteAdresse || 'complete';
   const addressMode = (isViewerAdmin && !isCurrentUser) ? 'complete' : effectiveAddressMode;
   
@@ -154,7 +155,7 @@ const MemberCard = React.memo(({
           {hasPercussions && (
             <div className="flex flex-col items-center">
               <span className="font-extrabold text-cordel-wood flex items-center justify-center gap-0.5 uppercase text-[8.5px] tracking-wider">
-                <XiloCaixa size={9} /> Percussion {niveau && `(${niveau === 'confirme' ? t('userProfile.levelConfirmSimple') || 'Confirmé' : niveau === 'debutant' ? t('userProfile.levelBeginner') || 'Débutant' : t('common.none') || 'Aucun'})`}
+                <XiloCaixa size={9} /> Percussion {isNiveauxEnabled && niveau ? `(${niveau === 'confirme' ? t('userProfile.levelConfirmSimple') || 'Confirmé' : niveau === 'debutant' ? t('userProfile.levelBeginner') || 'Débutant' : t('common.none') || 'Aucun'})` : ''}
               </span>
               <span className="font-semibold text-encre-noire text-[9.5px] mt-0.5 leading-snug">
                 {percussions.map((inst) => {
@@ -170,9 +171,11 @@ const MemberCard = React.memo(({
               <span className="font-extrabold text-cordel-wood flex items-center justify-center gap-0.5 uppercase text-[8.5px] tracking-wider">
                 💃 Danse
               </span>
-              <span className="font-semibold text-encre-noire text-[9.5px] mt-0.5">
-                {danseLevel ? (danseLevel === 'confirme' ? t('userProfile.levelConfirmSimple') || 'Confirmé' : t('userProfile.levelBeginner') || 'Débutant') : (t('userProfile.levelBeginner') || 'Débutant')}
-              </span>
+              {isNiveauxEnabled && (
+                <span className="font-semibold text-encre-noire text-[9.5px] mt-0.5">
+                  {danseLevel ? (danseLevel === 'confirme' ? t('userProfile.levelConfirmSimple') || 'Confirmé' : t('userProfile.levelBeginner') || 'Débutant') : (t('userProfile.levelBeginner') || 'Débutant')}
+                </span>
+              )}
             </div>
           )}
 
@@ -261,6 +264,7 @@ const MemberCard = React.memo(({
          prevProps.onContactUser === nextProps.onContactUser &&
          prevProps.onEditPhoto === nextProps.onEditPhoto &&
          prevProps.getColorForInstrument === nextProps.getColorForInstrument &&
+         prevProps.fieldsConfig?.niveaux?.enabled === nextProps.fieldsConfig?.niveaux?.enabled &&
          JSON.stringify(prevProps.tags) === JSON.stringify(nextProps.tags) &&
          JSON.stringify(prevProps.instrumentsJoues) === JSON.stringify(nextProps.instrumentsJoues);
 });

@@ -411,37 +411,41 @@ export default function App() {
 
       const iconDataUrl = canvas.toDataURL('image/png');
 
+      const origin = window.location.origin;
+      const defaultIcon192 = new URL('/icon-192.png', origin).href;
+      const defaultIcon512 = new URL('/icon-512.png', origin).href;
+
       const manifest = {
-        id: '/',
+        id: origin + '/',
         name: `O Girador - ${associationName || 'Samambaia'}`,
         short_name: associationName || 'O Girador',
         theme_color: primaryCol,
         background_color: bgCol,
-        start_url: '/',
-        scope: '/',
+        start_url: origin + '/',
+        scope: origin + '/',
         display: 'standalone',
         orientation: 'portrait',
         icons: [
           {
-            src: '/icon-192.png',
+            src: iconDataUrl || defaultIcon192,
             sizes: '192x192',
             type: 'image/png',
             purpose: 'any'
           },
           {
-            src: '/icon-192.png',
+            src: iconDataUrl || defaultIcon192,
             sizes: '192x192',
             type: 'image/png',
             purpose: 'maskable'
           },
           {
-            src: '/icon-512.png',
+            src: iconDataUrl || defaultIcon512,
             sizes: '512x512',
             type: 'image/png',
             purpose: 'any'
           },
           {
-            src: '/icon-512.png',
+            src: iconDataUrl || defaultIcon512,
             sizes: '512x512',
             type: 'image/png',
             purpose: 'maskable'
@@ -457,6 +461,8 @@ export default function App() {
         linkElement = document.createElement('link');
         linkElement.rel = 'manifest';
         document.head.appendChild(linkElement);
+      } else if (linkElement.href && linkElement.href.startsWith('blob:')) {
+        URL.revokeObjectURL(linkElement.href);
       }
       linkElement.href = manifestUrl;
     };
