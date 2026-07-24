@@ -57,15 +57,16 @@ const MemberCard = React.memo(({
   const hasTags = tags && tags.length > 0;
 
   const isPhoneEnabled = fieldsConfig?.telephone?.enabled !== false;
-  const isPhoneAllowed = afficherTelephone !== undefined ? afficherTelephone : (publierTelephone === true);
-  const showPhone = isPhoneEnabled && telephone && (isCurrentUser || isViewerAdmin || isPhoneAllowed);
+  const isPhoneAllowed = afficherTelephone !== undefined ? (afficherTelephone === true) : (publierTelephone === true);
+  const showPhone = isPhoneEnabled && telephone && (isPhoneAllowed || (isViewerAdmin && !isCurrentUser));
 
   const isBirthdateEnabled = fieldsConfig?.dateNaissance?.enabled !== false;
-  const isBirthdateAllowed = afficherDateNaissance !== undefined ? afficherDateNaissance : (publierDateNaissance === true);
-  const showBirthdate = isBirthdateEnabled && dateNaissance && (isCurrentUser || isViewerAdmin || isBirthdateAllowed);
+  const isBirthdateAllowed = afficherDateNaissance !== undefined ? (afficherDateNaissance === true) : (publierDateNaissance === true);
+  const showBirthdate = isBirthdateEnabled && dateNaissance && (isBirthdateAllowed || (isViewerAdmin && !isCurrentUser));
 
   const isAddressEnabled = fieldsConfig?.adresse?.enabled !== false;
-  const addressMode = (isCurrentUser || isViewerAdmin) ? 'complete' : (visibiliteAdresse || 'complete');
+  const effectiveAddressMode = visibiliteAdresse || 'complete';
+  const addressMode = (isViewerAdmin && !isCurrentUser) ? 'complete' : effectiveAddressMode;
   
   let displayAddress = null;
   if (isAddressEnabled) {
