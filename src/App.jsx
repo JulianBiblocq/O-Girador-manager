@@ -412,19 +412,39 @@ export default function App() {
       const iconDataUrl = canvas.toDataURL('image/png');
 
       const manifest = {
-        name: `O Girador - ${associationName || 'Maracatu'}`,
+        id: '/',
+        name: `O Girador - ${associationName || 'Samambaia'}`,
         short_name: associationName || 'O Girador',
         theme_color: primaryCol,
         background_color: bgCol,
-        start_url: window.location.origin + (activeGroupId ? `/?groupe=${activeGroupId}` : '/'),
+        start_url: '/',
+        scope: '/',
         display: 'standalone',
         orientation: 'portrait',
         icons: [
           {
-            src: iconDataUrl,
+            src: '/icon-192.png',
+            sizes: '192x192',
+            type: 'image/png',
+            purpose: 'any'
+          },
+          {
+            src: '/icon-192.png',
+            sizes: '192x192',
+            type: 'image/png',
+            purpose: 'maskable'
+          },
+          {
+            src: '/icon-512.png',
             sizes: '512x512',
             type: 'image/png',
-            purpose: 'any maskable'
+            purpose: 'any'
+          },
+          {
+            src: '/icon-512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'maskable'
           }
         ]
       };

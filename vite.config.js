@@ -15,8 +15,9 @@ export default defineConfig({
     react(),
     tailwindcss(),
     VitePWA({
-      registerType: 'prompt',
-      manifest: false, // Generated dynamically in App.jsx
+      registerType: 'autoUpdate',
+      injectRegister: 'auto',
+      manifest: false,
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
         maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,

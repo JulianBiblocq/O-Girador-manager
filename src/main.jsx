@@ -11,19 +11,6 @@ if (storedVersion !== APP_VERSION) {
       });
     }).catch(err => console.error("Error clearing cache:", err));
   }
-  
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.getRegistrations().then((registrations) => {
-      registrations.forEach((registration) => {
-        registration.unregister();
-      });
-    }).catch(err => console.error("Error unregistering SW:", err));
-  }
-
-  // Force reload the page after unregistering and clearing caches
-  setTimeout(() => {
-    window.location.reload();
-  }, 150);
 }
 
 import { StrictMode } from 'react'
