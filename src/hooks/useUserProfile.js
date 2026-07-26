@@ -31,6 +31,7 @@ export function useUserProfile(user, profileData, t) {
     voeuPrincipal: profileData?.voeuPrincipal || '',
     voeuSecondaire: profileData?.voeuSecondaire || '',
     voeuTertiaire: profileData?.voeuTertiaire || '',
+    accordRenfortAncienInstrument: profileData?.accordRenfortAncienInstrument || false,
     instrumentsJoues: profileData?.instrumentsJoues || ([profileData?.instrument, profileData?.instrumentSecondaire].filter(Boolean)),
     telephone: profileData?.telephone || '',
     adresseRue: profileData?.adresseRue || '',
@@ -78,6 +79,7 @@ export function useUserProfile(user, profileData, t) {
       voeuPrincipal: profileData?.voeuPrincipal || '',
       voeuSecondaire: profileData?.voeuSecondaire || '',
       voeuTertiaire: profileData?.voeuTertiaire || '',
+      accordRenfortAncienInstrument: profileData?.accordRenfortAncienInstrument || false,
       instrumentsJoues: profileData?.instrumentsJoues || ([profileData?.instrument, profileData?.instrumentSecondaire].filter(Boolean)),
       telephone: profileData?.telephone || '',
       adresseRue: profileData?.adresseRue || '',
@@ -378,6 +380,7 @@ export function useUserProfile(user, profileData, t) {
         voeuPrincipal: formData.voeuPrincipal || '',
         voeuSecondaire: formData.voeuSecondaire || '',
         voeuTertiaire: formData.voeuTertiaire || '',
+        accordRenfortAncienInstrument: Boolean(formData.accordRenfortAncienInstrument),
         instrumentsJoues: Array.from(new Set(
           [
             profileData?.instrument || formData.instrument,

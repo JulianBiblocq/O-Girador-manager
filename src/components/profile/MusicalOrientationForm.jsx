@@ -93,6 +93,47 @@ export default function MusicalOrientationForm({
             </select>
           </div>
 
+          {/* Conditional checkbox for reinforcement on former main instrument */}
+          {isAncien && formData.instrument && formData.voeuPrincipal && formData.voeuPrincipal !== formData.instrument && (
+            <div className="bg-amber-50 dark:bg-amber-950/40 p-2.5 rounded border border-dashed border-amber-500/40 flex flex-col gap-1.5 text-left text-xs">
+              <label className="flex items-start gap-2.5 cursor-pointer font-semibold text-encre-noire select-none">
+                <input
+                  type="checkbox"
+                  name="accordRenfortAncienInstrument"
+                  checked={formData.accordRenfortAncienInstrument || false}
+                  onChange={(e) => {
+                    const checked = e.target.checked;
+                    handleChange({
+                      target: {
+                        name: 'accordRenfortAncienInstrument',
+                        type: 'checkbox',
+                        checked: checked,
+                        value: checked
+                      }
+                    });
+                    // If checked and no secondary wish set, pre-fill voeuSecondaire with former instrument
+                    if (checked && !formData.voeuSecondaire) {
+                      handleChange({
+                        target: {
+                          name: 'voeuSecondaire',
+                          value: formData.instrument
+                        }
+                      });
+                    }
+                  }}
+                  disabled={saving}
+                  className="accent-cordel-wood scale-110 mt-0.5"
+                />
+                <span>
+                  🤝 <strong>Renfort en prestation :</strong> J'accepte de venir en renfort sur mon ancien instrument (<strong>{formData.instrument}</strong>) si besoin lors des prestations.
+                </span>
+              </label>
+              <span className="text-[10px] italic text-cordel-master-dark/80 pl-6">
+                💡 Cet instrument sera proposé au Mestre comme instrument secondaire.
+              </span>
+            </div>
+          )}
+
           {/* Optional dropdown 2: Learn secondary instrument */}
           <div className="flex flex-col gap-1 text-left">
             <label className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood">

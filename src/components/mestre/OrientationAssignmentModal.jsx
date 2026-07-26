@@ -99,7 +99,7 @@ export default function OrientationAssignmentModal({
           </div>
 
           {/* Expressed Wishes Badge */}
-          {(member.voeuPrincipal || member.voeuSecondaire || member.voeuTertiaire) && (
+          {(member.voeuPrincipal || member.voeuSecondaire || member.voeuTertiaire || member.accordRenfortAncienInstrument) && (
             <div className="mt-1 pt-1.5 border-t border-dashed border-cordel-master-dark/15 flex flex-col gap-1">
               <span className="text-[9px] uppercase font-black tracking-wider text-cordel-wood">
                 Vœux exprimés par l'adhérent :
@@ -118,6 +118,11 @@ export default function OrientationAssignmentModal({
                 {member.voeuTertiaire && (
                   <span className="bg-white/70 dark:bg-black/20 px-2 py-0.5 rounded border border-cordel-master-dark/20">
                     3️⃣ {member.voeuTertiaire}
+                  </span>
+                )}
+                {member.accordRenfortAncienInstrument && member.instrument && (
+                  <span className="bg-amber-100 dark:bg-amber-950/60 text-amber-900 dark:text-amber-200 px-2 py-0.5 rounded border border-amber-300 dark:border-amber-800 font-extrabold flex items-center gap-1">
+                    🤝 Renfort ok : {member.instrument}
                   </span>
                 )}
               </div>
@@ -148,9 +153,20 @@ export default function OrientationAssignmentModal({
 
           {/* Secondary Instrument Dropdown */}
           <div className="flex flex-col gap-1">
-            <label className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood">
-              Valider l'Instrument Secondaire (Optionnel)
-            </label>
+            <div className="flex justify-between items-center">
+              <label className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood">
+                Valider l'Instrument Secondaire (Optionnel)
+              </label>
+              {member.accordRenfortAncienInstrument && member.instrument && secInst !== member.instrument && (
+                <button
+                  type="button"
+                  onClick={() => setSecInst(member.instrument)}
+                  className="text-[9px] font-black uppercase text-amber-800 dark:text-amber-300 underline cursor-pointer hover:opacity-80"
+                >
+                  + Utiliser {member.instrument} (Renfort)
+                </button>
+              )}
+            </div>
             <select
               value={secInst}
               onChange={(e) => setSecInst(e.target.value)}

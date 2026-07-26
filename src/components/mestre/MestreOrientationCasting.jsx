@@ -440,11 +440,23 @@ export default function MestreOrientationCasting({ user, profileData, onNavigate
                                 <strong className="text-cordel-wood">3 :</strong> {m.voeuTertiaire}
                               </span>
                             )}
+                            {m.accordRenfortAncienInstrument && m.instrument && (
+                              <span className="bg-amber-100 dark:bg-amber-950/60 text-amber-900 dark:text-amber-200 px-1.5 py-0.5 rounded border border-amber-300 dark:border-amber-800 font-extrabold flex items-center gap-1">
+                                🤝 Renfort ok : {m.instrument}
+                              </span>
+                            )}
                           </div>
                         ) : (
-                          <span className="text-[10px] italic text-cordel-master-dark/50">
-                            Aucun vœu formulé
-                          </span>
+                          <div className="flex flex-col gap-1 text-[10px]">
+                            <span className="italic text-cordel-master-dark/50">
+                              Aucun vœu formulé
+                            </span>
+                            {m.accordRenfortAncienInstrument && m.instrument && (
+                              <span className="bg-amber-100 dark:bg-amber-950/60 text-amber-900 dark:text-amber-200 px-1.5 py-0.5 rounded border border-amber-300 dark:border-amber-800 font-extrabold flex items-center gap-1 w-max">
+                                🤝 Renfort ok : {m.instrument}
+                              </span>
+                            )}
+                          </div>
                         )}
                       </td>
 
