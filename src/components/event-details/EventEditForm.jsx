@@ -5,7 +5,7 @@ import EventBudgetEditor from './EventBudgetEditor';
 import { calculateRoadDistance } from '../../utils/googleMaps';
 import ManualMapMarkerModal from '../agenda/ManualMapMarkerModal';
 
-const AddressAutocomplete = React.lazy(() => import('../AddressAutocomplete'));
+import AddressAutocomplete from '../AddressAutocomplete';
 
 /**
  * EventEditForm component handles editing details of an event.

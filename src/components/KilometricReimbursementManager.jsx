@@ -6,7 +6,7 @@ import CordelButton from './CordelButton';
 import { useTranslation } from './LanguageContext';
 import { XiloCar, XiloCoin } from './XiloIcons';
 
-const AddressAutocomplete = React.lazy(() => import('./AddressAutocomplete'));
+import AddressAutocomplete from './AddressAutocomplete';
 
 // Algorithme de calcul de l'occupation et éligibilité du véhicule
 const calculateCarStatus = (car, associationSettings) => {

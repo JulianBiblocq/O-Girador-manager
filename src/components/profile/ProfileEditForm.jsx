@@ -18,7 +18,7 @@ import {
   XiloUser 
 } from '../XiloIcons';
 
-const AddressAutocomplete = React.lazy(() => import('../AddressAutocomplete'));
+import AddressAutocomplete from '../AddressAutocomplete';
 
 /**
  * ProfileEditForm component renders the profile editing form for the current user.

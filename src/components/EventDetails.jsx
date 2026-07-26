@@ -8,7 +8,7 @@ import ReunionAgendaManager from './ReunionAgendaManager';
 import { useTranslation } from './LanguageContext';
 import { XiloCalendar, XiloMegaphone } from './XiloIcons';
 import XiloAvatar from './XiloAvatar';
-const AddressAutocomplete = React.lazy(() => import('./AddressAutocomplete'));
+import AddressAutocomplete from './AddressAutocomplete';
 import { calculateRoadDistance } from '../utils/googleMaps';
 
 import { useEventRSVP } from '../hooks/useEventRSVP';

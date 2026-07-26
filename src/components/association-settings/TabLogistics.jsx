@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import CordelCard from '../CordelCard';
 import { loadGoogleMaps } from '../../utils/googleMaps';
-const AddressAutocomplete = React.lazy(() => import('../AddressAutocomplete'));
+import AddressAutocomplete from '../AddressAutocomplete';
 
 const geocodeByAddress = async (address) => {
   const maps = await loadGoogleMaps();

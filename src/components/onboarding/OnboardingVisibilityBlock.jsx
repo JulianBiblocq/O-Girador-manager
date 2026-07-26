@@ -2,7 +2,7 @@ import React from 'react';
 import OnboardingToggleSwitch from './OnboardingToggleSwitch';
 import { XiloEye, XiloInfo } from '../XiloIcons';
 
-const AddressAutocomplete = React.lazy(() => import('../AddressAutocomplete'));
+import AddressAutocomplete from '../AddressAutocomplete';
 
 /**
  * OnboardingVisibilityBlock - Bloc 2 : Paramètres de Visibilité dans le Trombinoscope

@@ -30,3 +30,33 @@ export const forceUpdateAndClearCache = async () => {
   // 3. Force reload the page (true bypasses browser cache)
   window.location.reload(true);
 };
+
+/**
+ * Robust wrapper around React.lazy to auto-recover when dynamic chunk imports fail after new deployments.
+ */
+import React from 'react';
+
+export function lazyWithRetry(componentImport) {
+  return React.lazy(async () => {
+    try {
+      return await componentImport();
+    } catch (error) {
+      console.warn("PWA Utils - Erreur de chargement du module dynamique, purge du cache...", error);
+      const key = 'chunk_lazy_retry_timestamp';
+      const lastReload = sessionStorage.getItem(key);
+      if (!lastReload || Date.now() - parseInt(lastReload, 10) > 8000) {
+        sessionStorage.setItem(key, String(Date.now()));
+        if ('caches' in window) {
+          try {
+            const keys = await caches.keys();
+            await Promise.all(keys.map(k => caches.delete(k)));
+          } catch (e) {
+            // ignore
+          }
+        }
+        window.location.reload();
+      }
+      throw error;
+    }
+  });
+}
