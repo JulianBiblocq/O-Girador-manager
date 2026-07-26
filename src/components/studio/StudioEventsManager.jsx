@@ -51,11 +51,10 @@ export default function StudioEventsManager({ groupId, onBack }) {
     return () => unsubscribe();
   }, [groupId]);
 
-  // Quick field toggle in Firestore
-  const handleToggleField = async (eventId, fieldName, currentValue) => {
+  // Update single field in Firestore dynamically
+  const handleUpdateField = async (eventId, fieldName, newValue) => {
     setUpdatingEventId(eventId);
     setUpdatingField(fieldName);
-    const newValue = !currentValue;
 
     try {
       const eventRef = doc(db, 'events', eventId);
@@ -63,15 +62,9 @@ export default function StudioEventsManager({ groupId, onBack }) {
         [fieldName]: newValue
       });
 
-      // Show brief success toast/notification
       const targetEvent = events.find(e => e.id === eventId);
-      const fieldLabels = {
-        includesPercussion: 'Inclut perc',
-        includesDance: 'Inclut danse',
-        requiresValidation: 'Soumis à validation'
-      };
       setLastNotification({
-        message: `Événement "${targetEvent?.titre || 'Événement'}" - ${fieldLabels[fieldName] || fieldName} mis à jour (${newValue ? 'Oui' : 'Non'})`,
+        message: `Événement "${targetEvent?.titre || 'Événement'}" - ${fieldName} mis à jour.`,
         type: 'success'
       });
       setTimeout(() => setLastNotification(null), 3000);
@@ -86,6 +79,11 @@ export default function StudioEventsManager({ groupId, onBack }) {
       setUpdatingEventId(null);
       setUpdatingField(null);
     }
+  };
+
+  // Quick field toggle in Firestore
+  const handleToggleField = async (eventId, fieldName, currentValue) => {
+    return handleUpdateField(eventId, fieldName, !currentValue);
   };
 
   // Filter events by search & type
@@ -219,6 +217,7 @@ export default function StudioEventsManager({ groupId, onBack }) {
       ) : (
         <EventsDataGrid
           events={filteredEvents}
+          onUpdateField={handleUpdateField}
           onToggleField={handleToggleField}
           updatingEventId={updatingEventId}
           updatingField={updatingField}
