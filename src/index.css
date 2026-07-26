@@ -86,8 +86,19 @@ body {
   width: 100%;
   flex: 1;
   min-width: 0;
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
+}
+
+/* Layout Stability & Zero-CLS Optimizations */
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+svg.xilo-icon {
+  flex-shrink: 0;
 }
 
 @theme {

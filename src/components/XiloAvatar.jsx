@@ -44,6 +44,8 @@ export default function XiloAvatar({ src, name, size = 80 }) {
       <img 
         src={src} 
         alt={name}
+        width={size}
+        height={size}
         onError={() => setError(true)}
         className="w-full h-full object-cover grayscale contrast-[130%] sepia-[40%] mix-blend-multiply brightness-[95%]"
       />

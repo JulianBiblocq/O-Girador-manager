@@ -206,6 +206,8 @@ export default function LayoutShell({
               <img 
                 src={finalLogoUrl} 
                 alt="Logo" 
+                width={40}
+                height={40}
                 className="w-10 h-10 landscape:w-8 landscape:h-8 object-contain rounded-[4px] p-0.5 bg-white border border-encre-noire/25 pointer-events-none" 
               />
               <div className="flex flex-col text-left">
@@ -269,6 +271,8 @@ export default function LayoutShell({
               <img 
                 src={finalLogoUrl} 
                 alt="Logo" 
+                width={80}
+                height={80}
                 className="w-full h-full object-contain pointer-events-none" 
               />
             </div>
