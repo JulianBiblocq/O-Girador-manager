@@ -67,7 +67,9 @@ const MemberCard = React.memo(({
 
   const isAddressEnabled = fieldsConfig?.adresse?.enabled !== false;
   const isNiveauxEnabled = fieldsConfig?.niveaux?.enabled !== false;
-  const effectiveAddressMode = visibiliteAdresse || 'complete';
+  const effectiveAddressMode = (afficherVille !== undefined)
+    ? (afficherVille ? 'ville' : 'masquee')
+    : (visibiliteAdresse || 'ville');
   const addressMode = (isViewerAdmin && !isCurrentUser) ? 'complete' : effectiveAddressMode;
   
   let displayAddress = null;
@@ -191,7 +193,7 @@ const MemberCard = React.memo(({
                 <span className="truncate">📞 {telephone}</span>
               )}
               {showBirthdate && (
-                <span>🎂 {dateNaissance ? new Date(dateNaissance).toLocaleDateString('fr-FR') : ''}</span>
+                <span>🎂 {dateNaissance ? (isViewerAdmin ? new Date(dateNaissance).toLocaleDateString('fr-FR') : new Date(dateNaissance).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })) : ''}</span>
               )}
               {displayAddress && (
                 <span className="truncate text-[8.5px] max-w-full">📍 {displayAddress}</span>

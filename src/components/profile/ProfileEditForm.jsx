@@ -51,21 +51,11 @@ export default function ProfileEditForm({
         </div>
       )}
 
-      {/* BLOC 1 : PROFIL PUBLIC (Trombinoscope) */}
+      {/* EN-TÊTE : IDENTITÉ & ACCORD DU VOCABULAIRE */}
       <CordelCard variant="default" useExtremeBorder={false} className="flex flex-col gap-4">
-        <div className="bg-emerald-50/90 dark:bg-emerald-950/30 border-2 border-dashed border-emerald-500/40 p-3 rounded-[6px] text-left">
-          <div className="flex items-center gap-2.5">
-            <span className="text-xl shrink-0">👁️</span>
-            <div>
-              <h4 className="font-black text-xs uppercase text-emerald-900 dark:text-emerald-300">
-                1. Profil Public (Trombinoscope)
-              </h4>
-              <p className="text-[10px] text-emerald-800 dark:text-emerald-200 opacity-90 font-medium">
-                Ces informations apparaissent directement sur votre fiche dans le Trombinoscope de l'association.
-              </p>
-            </div>
-          </div>
-        </div>
+        <h4 className="font-bold text-xs uppercase tracking-wider text-cordel-wood border-b border-dashed border-cordel-master-dark/10 pb-1">
+          👤 Identité & Préférences Vocabulaire
+        </h4>
 
         {/* First Name & Last Name */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -100,44 +90,63 @@ export default function ProfileEditForm({
           </div>
         </div>
 
-        {/* Surnom & Genre */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {isFieldVisible('surnom') && (
-            <div className="flex flex-col gap-1 text-left">
-              <label className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood">
-                {translate('userProfile.nickname', "Surnom")}
-                {isFieldRequired('surnom') && <span className="text-red-500 font-bold ml-1">*</span>}
-              </label>
-              <input
-                type="text"
-                name="surnom"
-                value={formData.surnom}
-                onChange={handleChange}
-                disabled={saving}
-                placeholder="Ex : Zé, Cacau..."
-                className="theme-input w-full text-xs"
-              />
-            </div>
-          )}
+        {/* Genre pour accord du vocabulaire */}
+        <div className="flex flex-col gap-1 text-left bg-cordel-bg-light/60 p-3 rounded border border-dashed border-cordel-master-dark/20">
+          <label className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood">
+            ✨ Accord du vocabulaire (Genre)
+          </label>
+          <select
+            name="genre"
+            value={formData.genre}
+            onChange={handleChange}
+            required
+            disabled={saving}
+            className="theme-input w-full text-xs bg-white font-medium"
+          >
+            <option value="homme">{translate('onboarding.genderMale', "Homme (ex: Membre, Mestre)")}</option>
+            <option value="femme">{translate('onboarding.genderFemale', "Femme (ex: Membre, Mestra)")}</option>
+            <option value="autre">{translate('onboarding.genderOther', "Autre")}</option>
+          </select>
+          <span className="text-[9px] text-cordel-master-dark opacity-75 italic mt-0.5">
+            💡 Permet d'accorder automatiquement les titres et rôles dans l'interface. N'est pas affiché séparément dans le trombinoscope.
+          </span>
+        </div>
+      </CordelCard>
 
-          <div className="flex flex-col gap-1 text-left">
-            <label className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood">
-              {translate('onboarding.genre', "Genre")}
-            </label>
-            <select
-              name="genre"
-              value={formData.genre}
-              onChange={handleChange}
-              required
-              disabled={saving}
-              className="theme-input w-full text-xs bg-cordel-bg-light font-medium"
-            >
-              <option value="homme">{translate('onboarding.genderMale', "Homme")}</option>
-              <option value="femme">{translate('onboarding.genderFemale', "Femme")}</option>
-              <option value="autre">{translate('onboarding.genderOther', "Autre")}</option>
-            </select>
+      {/* BLOC 1 : PROFIL PUBLIC (Trombinoscope) */}
+      <CordelCard variant="default" useExtremeBorder={false} className="flex flex-col gap-4">
+        <div className="bg-emerald-50/90 dark:bg-emerald-950/30 border-2 border-dashed border-emerald-500/40 p-3 rounded-[6px] text-left">
+          <div className="flex items-center gap-2.5">
+            <span className="text-xl shrink-0">👁️</span>
+            <div>
+              <h4 className="font-black text-xs uppercase text-emerald-900 dark:text-emerald-300">
+                1. Mon Profil Public (Trombinoscope)
+              </h4>
+              <p className="text-[10px] text-emerald-800 dark:text-emerald-200 opacity-90 font-medium">
+                Ces informations apparaissent sur votre fiche dans le Trombinoscope de l'association.
+              </p>
+            </div>
           </div>
         </div>
+
+        {/* Surnom */}
+        {isFieldVisible('surnom') && (
+          <div className="flex flex-col gap-1 text-left">
+            <label className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood">
+              {translate('userProfile.nickname', "Surnom (Affiché entre guillemets)")}
+              {isFieldRequired('surnom') && <span className="text-red-500 font-bold ml-1">*</span>}
+            </label>
+            <input
+              type="text"
+              name="surnom"
+              value={formData.surnom}
+              onChange={handleChange}
+              disabled={saving}
+              placeholder="Ex : Zé, Cacau..."
+              className="theme-input w-full text-xs font-bold"
+            />
+          </div>
+        )}
 
         {/* Évolution & Souhaits d'Instruments */}
         <MusicalOrientationForm
@@ -160,7 +169,7 @@ export default function ProfileEditForm({
                 2. Coordonnées & Contrôle de Visibilité
               </h4>
               <p className="text-[10px] text-amber-800 dark:text-amber-200 opacity-90 font-medium">
-                Vous décidez précisément quelles coordonnées sont partagées dans l'annuaire ou conservées privées.
+                Cochez ci-dessous les informations que vous acceptez de partager dans l'annuaire.
               </p>
             </div>
           </div>
@@ -192,7 +201,7 @@ export default function ProfileEditForm({
                 checked={formData.afficherTelephone !== false}
                 onChange={(e) => setFormData(prev => ({ ...prev, afficherTelephone: e.target.checked }))}
                 disabled={saving}
-                className="w-4 h-4 accent-cordel-wood cursor-pointer"
+                className="w-4 h-4 accent-cordel-wood cursor-pointer shrink-0"
               />
               <span>👁️ Afficher mon numéro aux membres dans le Trombinoscope</span>
             </label>
@@ -204,7 +213,7 @@ export default function ProfileEditForm({
           <div className="flex flex-col gap-2.5 text-left bg-cordel-bg-light/60 p-3 rounded border border-dashed border-cordel-master-dark/20">
             <div className="flex flex-col gap-1">
               <label className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood">
-                🏠 {translate('userProfile.address', "Adresse postale")}
+                🏠 {translate('userProfile.address', "Adresse postale complète (Admin / Logistique)")}
                 {isFieldRequired('adresse') && <span className="text-red-500 font-bold ml-1">*</span>}
               </label>
               <React.Suspense fallback={
@@ -232,94 +241,88 @@ export default function ProfileEditForm({
               </React.Suspense>
             </div>
 
-            <div className="flex flex-col gap-1 mt-1">
-              <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                Niveau de visibilité de l'adresse dans le Trombinoscope :
-              </label>
-              <select
-                name="visibiliteAdresse"
-                value={formData.visibiliteAdresse || 'complete'}
-                onChange={handleChange}
+            <label className="flex items-center gap-2 text-xs font-bold text-encre-noire cursor-pointer select-none mt-1">
+              <input
+                type="checkbox"
+                name="afficherVille"
+                checked={Boolean(formData.afficherVille)}
+                onChange={(e) => setFormData(prev => ({ ...prev, afficherVille: e.target.checked, visibiliteAdresse: e.target.checked ? 'ville' : 'masquee' }))}
                 disabled={saving}
-                className="theme-input w-full text-xs font-bold bg-white"
-              >
-                <option value="complete">👁️ Adresse complète (Rue, Code postal, Ville)</option>
-                <option value="ville">🏙️ Uniquement la ville (Masquer le numéro et la rue)</option>
-                <option value="masquee">🔒 Masquée (Réservée aux administrateurs)</option>
-              </select>
-            </div>
+                className="w-4 h-4 accent-cordel-wood cursor-pointer shrink-0"
+              />
+              <span>🏙️ Afficher ma ville uniquement aux membres (Ex: Nantes)</span>
+            </label>
           </div>
         )}
 
-        {/* Date de naissance & Latéralité */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {isFieldVisible('dateNaissance') && (
-            <div className="flex flex-col gap-2 text-left bg-cordel-bg-light/60 p-3 rounded border border-dashed border-cordel-master-dark/20">
-              <div className="flex flex-col gap-1">
-                <label className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood">
-                  🎂 {translate('userProfile.birthdate', "Date de naissance")}
-                  {isFieldRequired('dateNaissance') && <span className="text-red-500 font-bold ml-1">*</span>}
-                </label>
-                <input
-                  type="date"
-                  name="dateNaissance"
-                  value={formData.dateNaissance}
-                  onChange={handleChange}
-                  disabled={saving}
-                  className="theme-input w-full text-xs font-semibold"
-                />
-              </div>
-
-              <label className="flex items-center gap-2 text-xs font-bold text-encre-noire cursor-pointer select-none mt-1">
-                <input
-                  type="checkbox"
-                  name="afficherDateNaissance"
-                  checked={Boolean(formData.afficherDateNaissance)}
-                  onChange={(e) => setFormData(prev => ({ ...prev, afficherDateNaissance: e.target.checked }))}
-                  disabled={saving}
-                  className="w-4 h-4 accent-cordel-wood cursor-pointer"
-                />
-                <span>🎂 Afficher ma date de naissance</span>
-              </label>
-            </div>
-          )}
-
-          {isFieldVisible('lateralite') && (
-            <div className="flex flex-col gap-1 text-left bg-cordel-bg-light/60 p-3 rounded border border-dashed border-cordel-master-dark/20">
+        {/* Date de naissance */}
+        {isFieldVisible('dateNaissance') && (
+          <div className="flex flex-col gap-2 text-left bg-cordel-bg-light/60 p-3 rounded border border-dashed border-cordel-master-dark/20">
+            <div className="flex flex-col gap-1">
               <label className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood">
-                🖐️ {translate('userProfile.laterality', "Latéralité (Placement scène)")}
-                {isFieldRequired('lateralite') && <span className="text-red-500 font-bold ml-1">*</span>}
+                🎂 {translate('userProfile.birthdate', "Date de naissance")}
+                {isFieldRequired('dateNaissance') && <span className="text-red-500 font-bold ml-1">*</span>}
               </label>
-              <select
-                name="lateralite"
-                value={formData.lateralite}
+              <input
+                type="date"
+                name="dateNaissance"
+                value={formData.dateNaissance}
                 onChange={handleChange}
                 disabled={saving}
-                className="theme-input w-full text-xs bg-white font-semibold mt-1"
-              >
-                <option value="droitier">{translate('userProfile.lateralityRight', "Droitier")}</option>
-                <option value="gaucher">{translate('userProfile.lateralityLeft', "Gaucher")}</option>
-              </select>
+                className="theme-input w-full text-xs font-semibold"
+              />
             </div>
-          )}
-        </div>
+
+            <label className="flex items-center gap-2 text-xs font-bold text-encre-noire cursor-pointer select-none mt-1">
+              <input
+                type="checkbox"
+                name="afficherDateNaissance"
+                checked={Boolean(formData.afficherDateNaissance)}
+                onChange={(e) => setFormData(prev => ({ ...prev, afficherDateNaissance: e.target.checked }))}
+                disabled={saving}
+                className="w-4 h-4 accent-cordel-wood cursor-pointer shrink-0"
+              />
+              <span>🎂 Afficher mon anniversaire dans le Trombinoscope (Jour & Mois uniquement, sans l'année)</span>
+            </label>
+          </div>
+        )}
       </CordelCard>
 
-      {/* BLOC 3 : LOGISTIQUE, COSTUMES & SANTÉ (Strictement Confidentiel Admin) */}
+      {/* BLOC 3 : LOGISTIQUE, PLACEMENT SCÉNIQUE & SANTÉ (Strictement Confidentiel Admin / Mestre) */}
       <CordelCard variant="default" useExtremeBorder={false} className="flex flex-col gap-4">
         <div className="bg-sky-50/90 dark:bg-sky-950/30 border-2 border-dashed border-sky-500/40 p-3 rounded-[6px] text-left">
           <div className="flex items-center gap-2.5">
             <span className="text-xl shrink-0">🛡️</span>
             <div>
               <h4 className="font-black text-xs uppercase text-sky-900 dark:text-sky-300">
-                3. Logistique, Costumes & Santé (Strictement Confidentiel)
+                3. Placement Scénique, Costumes & Santé (Confidentiel Mestre / Admin)
               </h4>
               <p className="text-[10px] text-sky-800 dark:text-sky-200 opacity-90 font-medium">
-                Réservé aux administrateurs et au Mestre pour la gestion des tenues et la sécurité. <strong>Ne sera jamais affiché dans le trombinoscope.</strong>
+                Réservé au Mestre (pour le placement sur scène dans le Séquenceur) et aux administrateurs. <strong>Ne sera jamais affiché dans le trombinoscope.</strong>
               </p>
             </div>
           </div>
         </div>
+
+        {/* Latéralité */}
+        {isFieldVisible('lateralite') && (
+          <div className="flex flex-col gap-1 text-left bg-cordel-bg-light/60 p-3 rounded border border-dashed border-cordel-master-dark/20">
+            <label className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood">
+              🖐️ {translate('userProfile.laterality', "Latéralité (Placement scène pour le Mestre & Séquenceur)")}
+              {isFieldRequired('lateralite') && <span className="text-red-500 font-bold ml-1">*</span>}
+            </label>
+            <select
+              name="lateralite"
+              value={formData.lateralite}
+              onChange={handleChange}
+              disabled={saving}
+              className="theme-input w-full text-xs bg-white font-semibold mt-1"
+            >
+              <option value="droitier">{translate('userProfile.lateralityRight', "Droitier")}</option>
+              <option value="gaucher">{translate('userProfile.lateralityLeft', "Gaucher")}</option>
+            </select>
+          </div>
+        )}
 
         {/* Tailles Vêtements */}
         {(isFieldVisible('tailleTshirt') || isFieldVisible('taillePantalon')) && (

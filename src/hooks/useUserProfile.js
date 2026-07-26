@@ -56,8 +56,9 @@ export function useUserProfile(user, profileData, t) {
     dateNaissance: profileData?.dateNaissance || '',
     genre: profileData?.genre || 'autre',
     afficherTelephone: profileData?.afficherTelephone !== undefined ? profileData.afficherTelephone : (profileData?.publierTelephone !== undefined ? profileData.publierTelephone : true),
+    afficherVille: profileData?.afficherVille !== undefined ? profileData.afficherVille : (profileData?.visibiliteAdresse !== 'masquee'),
     afficherDateNaissance: profileData?.afficherDateNaissance !== undefined ? profileData.afficherDateNaissance : (profileData?.publierDateNaissance !== undefined ? profileData.publierDateNaissance : false),
-    visibiliteAdresse: profileData?.visibiliteAdresse || 'complete',
+    visibiliteAdresse: profileData?.visibiliteAdresse || 'ville',
     publierTelephone: profileData?.afficherTelephone !== undefined ? profileData.afficherTelephone : (profileData?.publierTelephone !== undefined ? profileData.publierTelephone : true),
     publierDateNaissance: profileData?.afficherDateNaissance !== undefined ? profileData.afficherDateNaissance : (profileData?.publierDateNaissance !== undefined ? profileData.publierDateNaissance : false)
   });
@@ -105,8 +106,9 @@ export function useUserProfile(user, profileData, t) {
       dateNaissance: profileData?.dateNaissance || '',
       genre: profileData?.genre || 'autre',
       afficherTelephone: profileData?.afficherTelephone !== undefined ? profileData.afficherTelephone : (profileData?.publierTelephone !== undefined ? profileData.publierTelephone : true),
+      afficherVille: profileData?.afficherVille !== undefined ? profileData.afficherVille : (profileData?.visibiliteAdresse !== 'masquee'),
       afficherDateNaissance: profileData?.afficherDateNaissance !== undefined ? profileData.afficherDateNaissance : (profileData?.publierDateNaissance !== undefined ? profileData.publierDateNaissance : false),
-      visibiliteAdresse: profileData?.visibiliteAdresse || 'complete',
+      visibiliteAdresse: profileData?.visibiliteAdresse || 'ville',
       publierTelephone: profileData?.afficherTelephone !== undefined ? profileData.afficherTelephone : (profileData?.publierTelephone !== undefined ? profileData.publierTelephone : true),
       publierDateNaissance: profileData?.afficherDateNaissance !== undefined ? profileData.afficherDateNaissance : (profileData?.publierDateNaissance !== undefined ? profileData.publierDateNaissance : false)
     });
@@ -443,8 +445,9 @@ export function useUserProfile(user, profileData, t) {
         dateNaissance: isFieldVisible('dateNaissance') ? formData.dateNaissance : (profileData?.dateNaissance || ''),
         genre: formData.genre,
         afficherTelephone: Boolean(formData.afficherTelephone),
+        afficherVille: Boolean(formData.afficherVille),
         afficherDateNaissance: Boolean(formData.afficherDateNaissance),
-        visibiliteAdresse: formData.visibiliteAdresse || 'complete',
+        visibiliteAdresse: formData.afficherVille ? 'ville' : 'masquee',
         publierTelephone: Boolean(formData.afficherTelephone),
         publierDateNaissance: Boolean(formData.afficherDateNaissance)
       };

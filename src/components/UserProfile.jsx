@@ -274,16 +274,9 @@ export default function UserProfile({ user, profileData, associationName, onBack
                   <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70 block">
                     {t('userProfile.surnom')}
                   </span>
-                  <span className="font-bold">{formData.surnom || <span className="italic opacity-50">Aucun</span>}</span>
+                  <span className="font-bold text-cordel-wood">{formData.surnom ? `"${formData.surnom}"` : <span className="italic opacity-50 font-normal">Aucun</span>}</span>
                 </div>
               )}
-
-              <div>
-                <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70 block">
-                  {translate('onboarding.genre', "Genre")}
-                </span>
-                <span className="capitalize">{formData.genre === 'homme' ? t('onboarding.genderMale') : formData.genre === 'femme' ? t('onboarding.genderFemale') : t('onboarding.genderOther')}</span>
-              </div>
 
               <div>
                 <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70 block">
@@ -338,7 +331,7 @@ export default function UserProfile({ user, profileData, associationName, onBack
                     2. Coordonnées & Visibilité Annuaire
                   </h4>
                   <p className="text-[10px] text-amber-800 dark:text-amber-200 opacity-90 font-medium">
-                    Statuts d'affichage en temps réel dans le trombinoscope.
+                    Contrôle des informations partagées dans le trombinoscope des membres.
                   </p>
                 </div>
               </div>
@@ -350,7 +343,7 @@ export default function UserProfile({ user, profileData, associationName, onBack
                   <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70 block">
                     📞 {t('userProfile.phone')}
                   </span>
-                  <div className="flex items-center gap-2 flex-wrap">
+                  <div className="flex items-center gap-2 flex-wrap mt-0.5">
                     <span className="font-extrabold">{formData.telephone || <span className="italic opacity-50">Non renseigné</span>}</span>
                     {formData.telephone && (
                       <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded border ${
@@ -358,7 +351,7 @@ export default function UserProfile({ user, profileData, associationName, onBack
                           ? 'bg-emerald-100 text-emerald-900 border-emerald-400'
                           : 'bg-amber-100 text-amber-900 border-amber-400'
                       }`}>
-                        {(formData.afficherTelephone !== false && formData.publierTelephone !== false) ? "👁️ Visible dans l'annuaire" : "🔒 Masqué aux membres"}
+                        {(formData.afficherTelephone !== false && formData.publierTelephone !== false) ? "👁️ Numéro visible" : "🔒 Masqué aux membres"}
                       </span>
                     )}
                   </div>
@@ -370,15 +363,22 @@ export default function UserProfile({ user, profileData, associationName, onBack
                   <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70 block">
                     🎂 {t('userProfile.birthdate')}
                   </span>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span>{formData.dateNaissance ? new Date(formData.dateNaissance).toLocaleDateString('fr-FR') : <span className="italic opacity-50">Non renseigné</span>}</span>
+                  <div className="flex items-center gap-2 flex-wrap mt-0.5">
+                    <span>
+                      {formData.dateNaissance 
+                        ? (formData.afficherDateNaissance 
+                            ? new Date(formData.dateNaissance).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })
+                            : new Date(formData.dateNaissance).toLocaleDateString('fr-FR')) 
+                        : <span className="italic opacity-50">Non renseigné</span>
+                      }
+                    </span>
                     {formData.dateNaissance && (
                       <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded border ${
-                        (formData.afficherDateNaissance || formData.publierDateNaissance)
+                        formData.afficherDateNaissance
                           ? 'bg-emerald-100 text-emerald-900 border-emerald-400'
                           : 'bg-amber-100 text-amber-900 border-amber-400'
                       }`}>
-                        {(formData.afficherDateNaissance || formData.publierDateNaissance) ? "👁️ Date affichée" : "🔒 Masquée aux membres"}
+                        {formData.afficherDateNaissance ? "🎂 Anniversaire visible (Jour/Mois)" : "🔒 Masqué aux membres"}
                       </span>
                     )}
                   </div>
@@ -388,55 +388,53 @@ export default function UserProfile({ user, profileData, associationName, onBack
               {isFieldVisible('adresse') && (
                 <div className="col-span-1 md:col-span-2 bg-cordel-bg-light/60 p-2.5 rounded border border-dashed border-cordel-master-dark/20">
                   <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70 block">
-                    🏠 {t('userProfile.adresse')}
+                    🏠 {t('userProfile.adresse')} (Admin & Logistique)
                   </span>
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mt-0.5">
                     <span className="font-bold">
                       {formData.adresse || (profileData?.adresseRue ? `${profileData.adresseRue}, ${profileData.adresseCP || ''} ${profileData.adresseVille || ''}` : <span className="italic opacity-50">Non renseignée</span>)}
                     </span>
                     <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded border shrink-0 ${
-                      formData.visibiliteAdresse === 'ville'
-                        ? 'bg-sky-100 text-sky-900 border-sky-400'
-                        : formData.visibiliteAdresse === 'masquee'
-                        ? 'bg-amber-100 text-amber-900 border-amber-400'
-                        : 'bg-emerald-100 text-emerald-900 border-emerald-400'
+                      formData.afficherVille
+                        ? 'bg-emerald-100 text-emerald-900 border-emerald-400'
+                        : 'bg-amber-100 text-amber-900 border-amber-400'
                     }`}>
-                      {formData.visibiliteAdresse === 'ville' ? "🏙️ Ville uniquement dans l'annuaire" : formData.visibiliteAdresse === 'masquee' ? "🔒 Masquée dans l'annuaire" : "👁️ Adresse complète dans l'annuaire"}
+                      {formData.afficherVille ? `🏙️ Ville visible (${profileData?.adresseVille || formData.adresseVille || 'Ville'})` : "🔒 Adresse masquée aux membres"}
                     </span>
                   </div>
-                </div>
-              )}
-
-              {isFieldVisible('lateralite') && (
-                <div>
-                  <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70 block">
-                    🖐️ {t('userProfile.lateralite')} (Placement scène)
-                  </span>
-                  <span className="capitalize font-bold">{formData.lateralite === 'droitier' ? t('onboarding.handRight') : t('onboarding.handLeft')}</span>
                 </div>
               )}
             </div>
           </CordelCard>
 
-          {/* CARTE 3 : LOGISTIQUE, COSTUMES & SANTÉ */}
+          {/* CARTE 3 : LOGISTIQUE, PLACEMENT SCÉNIQUE & SANTÉ */}
           <CordelCard variant="default" useExtremeBorder={false} className="flex flex-col gap-3">
             <div className="bg-sky-50/90 dark:bg-sky-950/30 border-2 border-dashed border-sky-500/40 p-3 rounded-[6px] text-left">
               <div className="flex items-center gap-2.5">
                 <span className="text-xl shrink-0">🛡️</span>
                 <div>
                   <h4 className="font-black text-xs uppercase text-sky-900 dark:text-sky-300">
-                    3. Logistique, Costumes & Santé (Strictement Confidentiel)
+                    3. Placement Scénique, Costumes & Santé (Confidentiel Mestre / Admin)
                   </h4>
                   <p className="text-[10px] text-sky-800 dark:text-sky-200 opacity-90 font-medium">
-                    Réservé aux administrateurs et au Mestre pour la gestion des tenues et la sécurité. <strong>Ne sera jamais affiché dans le trombinoscope.</strong>
+                    Réservé au Mestre (placement sur scène dans le Séquenceur) et aux administrateurs. <strong>Ne sera jamais affiché dans le trombinoscope.</strong>
                   </p>
                 </div>
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-3 text-xs text-encre-noire font-semibold text-left">
+              {isFieldVisible('lateralite') && (
+                <div>
+                  <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70 block">
+                    🖐️ {t('userProfile.lateralite')} (Séquenceur Mestre)
+                  </span>
+                  <span className="capitalize font-extrabold text-cordel-wood">{formData.lateralite === 'droitier' ? t('onboarding.handRight') : t('onboarding.handLeft')}</span>
+                </div>
+              )}
+
               {(isFieldVisible('tailleTshirt') || isFieldVisible('taillePantalon')) && (
-                <div className="col-span-1 md:col-span-2">
+                <div className="col-span-1 md:col-span-2 border-t border-dashed border-cordel-master-dark/15 pt-2 mt-1">
                   <span className="text-[10px] uppercase font-black text-cordel-wood block mb-1">
                     👔 Mensurations / Taille des Costumes
                   </span>
