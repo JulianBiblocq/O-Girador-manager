@@ -3,7 +3,22 @@ import { useUserProfile } from '../hooks/useUserProfile';
 import XiloAvatar from './XiloAvatar';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
-import { XiloCaixa } from './XiloIcons';
+import { 
+  XiloEye, 
+  XiloEyeOff, 
+  XiloLock, 
+  XiloShield, 
+  XiloTrombinoscope, 
+  XiloPhone, 
+  XiloHome, 
+  XiloBirthday, 
+  XiloPin, 
+  XiloShirt, 
+  XiloHand, 
+  XiloSparkles, 
+  XiloDocument, 
+  XiloUser 
+} from './XiloIcons';
 import { useTerminologie } from '../hooks/useTerminologie';
 import { useTranslation } from './LanguageContext';
 import ProfileEditForm from './profile/ProfileEditForm';
@@ -249,9 +264,9 @@ export default function UserProfile({ user, profileData, associationName, onBack
           <CordelCard variant="default" useExtremeBorder={false} className="flex flex-col gap-3">
             <div className="bg-emerald-50/90 dark:bg-emerald-950/30 border-2 border-dashed border-emerald-500/40 p-3 rounded-[6px] text-left">
               <div className="flex items-center gap-2.5">
-                <span className="text-xl shrink-0">👁️</span>
+                <XiloEye size={22} className="text-emerald-700 dark:text-emerald-400 shrink-0" />
                 <div>
-                  <h4 className="font-black text-xs uppercase text-emerald-900 dark:text-emerald-300">
+                  <h4 className="font-black text-xs uppercase text-emerald-900 dark:text-emerald-300 flex items-center gap-1.5">
                     1. Mon Profil Public (Trombinoscope)
                   </h4>
                   <p className="text-[10px] text-emerald-800 dark:text-emerald-200 opacity-90 font-medium">
@@ -266,7 +281,9 @@ export default function UserProfile({ user, profileData, associationName, onBack
                 <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70 block">
                   {t('userProfile.firstName')} / {t('userProfile.lastName')}
                 </span>
-                <span className="font-extrabold text-sm">{fullName}</span>
+                <span className="font-extrabold text-sm flex items-center gap-1">
+                  <XiloUser size={14} className="text-cordel-wood" /> {fullName}
+                </span>
               </div>
 
               {isFieldVisible('surnom') && (
@@ -296,8 +313,8 @@ export default function UserProfile({ user, profileData, associationName, onBack
 
               {(profileData?.voeuPrincipal || profileData?.voeuSecondaire || profileData?.voeuTertiaire) && (
                 <div className="col-span-1 md:col-span-2 bg-cordel-bg-light/60 border border-dashed border-cordel-master-dark/20 p-2.5 rounded mt-1">
-                  <span className="text-[10px] uppercase font-black tracking-wider text-cordel-wood block mb-1">
-                    🎵 Vœux d'Orientation Musicale (Transmis au Mestre) :
+                  <span className="text-[10px] uppercase font-black tracking-wider text-cordel-wood flex items-center gap-1 mb-1">
+                    <XiloSparkles size={12} /> Vœux d'Orientation Musicale (Transmis au Mestre) :
                   </span>
                   <div className="flex flex-wrap gap-2 text-xs">
                     {profileData?.voeuPrincipal && (
@@ -325,9 +342,9 @@ export default function UserProfile({ user, profileData, associationName, onBack
           <CordelCard variant="default" useExtremeBorder={false} className="flex flex-col gap-3">
             <div className="bg-amber-50/90 dark:bg-amber-950/30 border-2 border-dashed border-amber-500/40 p-3 rounded-[6px] text-left">
               <div className="flex items-center gap-2.5">
-                <span className="text-xl shrink-0">🔒</span>
+                <XiloLock size={22} className="text-amber-700 dark:text-amber-400 shrink-0" />
                 <div>
-                  <h4 className="font-black text-xs uppercase text-amber-900 dark:text-amber-300">
+                  <h4 className="font-black text-xs uppercase text-amber-900 dark:text-amber-300 flex items-center gap-1.5">
                     2. Coordonnées & Visibilité Annuaire
                   </h4>
                   <p className="text-[10px] text-amber-800 dark:text-amber-200 opacity-90 font-medium">
@@ -340,18 +357,21 @@ export default function UserProfile({ user, profileData, associationName, onBack
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-3 text-xs text-encre-noire font-semibold text-left">
               {isFieldVisible('telephone') && (
                 <div>
-                  <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70 block">
-                    📞 {t('userProfile.phone')}
+                  <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70 flex items-center gap-1">
+                    <XiloPhone size={12} /> {t('userProfile.phone')}
                   </span>
                   <div className="flex items-center gap-2 flex-wrap mt-0.5">
                     <span className="font-extrabold">{formData.telephone || <span className="italic opacity-50">Non renseigné</span>}</span>
                     {formData.telephone && (
-                      <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded border ${
+                      <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded border flex items-center gap-1 ${
                         (formData.afficherTelephone !== false && formData.publierTelephone !== false)
                           ? 'bg-emerald-100 text-emerald-900 border-emerald-400'
                           : 'bg-amber-100 text-amber-900 border-amber-400'
                       }`}>
-                        {(formData.afficherTelephone !== false && formData.publierTelephone !== false) ? "👁️ Numéro visible" : "🔒 Masqué aux membres"}
+                        {(formData.afficherTelephone !== false && formData.publierTelephone !== false) 
+                          ? <><XiloEye size={10} /> Numéro visible</> 
+                          : <><XiloEyeOff size={10} /> Masqué aux membres</>
+                        }
                       </span>
                     )}
                   </div>
@@ -360,8 +380,8 @@ export default function UserProfile({ user, profileData, associationName, onBack
 
               {isFieldVisible('dateNaissance') && (
                 <div>
-                  <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70 block">
-                    🎂 {t('userProfile.birthdate')}
+                  <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70 flex items-center gap-1">
+                    <XiloBirthday size={12} /> {t('userProfile.birthdate')}
                   </span>
                   <div className="flex items-center gap-2 flex-wrap mt-0.5">
                     <span>
@@ -373,12 +393,15 @@ export default function UserProfile({ user, profileData, associationName, onBack
                       }
                     </span>
                     {formData.dateNaissance && (
-                      <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded border ${
+                      <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded border flex items-center gap-1 ${
                         formData.afficherDateNaissance
                           ? 'bg-emerald-100 text-emerald-900 border-emerald-400'
                           : 'bg-amber-100 text-amber-900 border-amber-400'
                       }`}>
-                        {formData.afficherDateNaissance ? "🎂 Anniversaire visible (Jour/Mois)" : "🔒 Masqué aux membres"}
+                        {formData.afficherDateNaissance 
+                          ? <><XiloBirthday size={10} /> Anniversaire visible (Jour/Mois)</> 
+                          : <><XiloEyeOff size={10} /> Masqué aux membres</>
+                        }
                       </span>
                     )}
                   </div>
@@ -387,19 +410,22 @@ export default function UserProfile({ user, profileData, associationName, onBack
 
               {isFieldVisible('adresse') && (
                 <div className="col-span-1 md:col-span-2 bg-cordel-bg-light/60 p-2.5 rounded border border-dashed border-cordel-master-dark/20">
-                  <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70 block">
-                    🏠 {t('userProfile.adresse')} (Admin & Logistique)
+                  <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70 flex items-center gap-1">
+                    <XiloHome size={12} /> {t('userProfile.adresse')} (Admin & Logistique)
                   </span>
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mt-0.5">
                     <span className="font-bold">
                       {formData.adresse || (profileData?.adresseRue ? `${profileData.adresseRue}, ${profileData.adresseCP || ''} ${profileData.adresseVille || ''}` : <span className="italic opacity-50">Non renseignée</span>)}
                     </span>
-                    <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded border shrink-0 ${
+                    <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded border shrink-0 flex items-center gap-1 ${
                       formData.afficherVille
                         ? 'bg-emerald-100 text-emerald-900 border-emerald-400'
                         : 'bg-amber-100 text-amber-900 border-amber-400'
                     }`}>
-                      {formData.afficherVille ? `🏙️ Ville visible (${profileData?.adresseVille || formData.adresseVille || 'Ville'})` : "🔒 Adresse masquée aux membres"}
+                      {formData.afficherVille 
+                        ? <><XiloPin size={10} /> Ville visible ({profileData?.adresseVille || formData.adresseVille || 'Ville'})</> 
+                        : <><XiloEyeOff size={10} /> Adresse masquée aux membres</>
+                      }
                     </span>
                   </div>
                 </div>
@@ -411,9 +437,9 @@ export default function UserProfile({ user, profileData, associationName, onBack
           <CordelCard variant="default" useExtremeBorder={false} className="flex flex-col gap-3">
             <div className="bg-sky-50/90 dark:bg-sky-950/30 border-2 border-dashed border-sky-500/40 p-3 rounded-[6px] text-left">
               <div className="flex items-center gap-2.5">
-                <span className="text-xl shrink-0">🛡️</span>
+                <XiloShield size={22} className="text-sky-700 dark:text-sky-400 shrink-0" />
                 <div>
-                  <h4 className="font-black text-xs uppercase text-sky-900 dark:text-sky-300">
+                  <h4 className="font-black text-xs uppercase text-sky-900 dark:text-sky-300 flex items-center gap-1.5">
                     3. Placement Scénique, Costumes & Santé (Confidentiel Mestre / Admin)
                   </h4>
                   <p className="text-[10px] text-sky-800 dark:text-sky-200 opacity-90 font-medium">
@@ -426,8 +452,8 @@ export default function UserProfile({ user, profileData, associationName, onBack
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-3 text-xs text-encre-noire font-semibold text-left">
               {isFieldVisible('lateralite') && (
                 <div>
-                  <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70 block">
-                    🖐️ {t('userProfile.lateralite')} (Séquenceur Mestre)
+                  <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70 flex items-center gap-1">
+                    <XiloHand size={12} /> {t('userProfile.lateralite')} (Séquenceur Mestre)
                   </span>
                   <span className="capitalize font-extrabold text-cordel-wood">{formData.lateralite === 'droitier' ? t('onboarding.handRight') : t('onboarding.handLeft')}</span>
                 </div>
@@ -435,8 +461,8 @@ export default function UserProfile({ user, profileData, associationName, onBack
 
               {(isFieldVisible('tailleTshirt') || isFieldVisible('taillePantalon')) && (
                 <div className="col-span-1 md:col-span-2 border-t border-dashed border-cordel-master-dark/15 pt-2 mt-1">
-                  <span className="text-[10px] uppercase font-black text-cordel-wood block mb-1">
-                    👔 Mensurations / Taille des Costumes
+                  <span className="text-[10px] uppercase font-black text-cordel-wood flex items-center gap-1 mb-1">
+                    <XiloShirt size={12} /> Mensurations / Taille des Costumes
                   </span>
                   <div className="grid grid-cols-2 gap-4">
                     {isFieldVisible('tailleTshirt') && (
@@ -470,9 +496,9 @@ export default function UserProfile({ user, profileData, associationName, onBack
                       <button 
                         type="button" 
                         onClick={() => generateImageCharterPDF(profileData, associationName)}
-                        className="text-[9px] font-bold text-cordel-wood hover:underline ml-1"
+                        className="text-[9px] font-bold text-cordel-wood hover:underline ml-1 flex items-center gap-1"
                       >
-                        📄 Télécharger PDF
+                        <XiloDocument size={12} /> Télécharger PDF
                       </button>
                     )}
                   </div>
@@ -490,9 +516,9 @@ export default function UserProfile({ user, profileData, associationName, onBack
                       <button 
                         type="button" 
                         onClick={() => generateMedicalAttestationPDF(profileData, associationName)}
-                        className="text-[9px] font-bold text-cordel-wood hover:underline ml-1"
+                        className="text-[9px] font-bold text-cordel-wood hover:underline ml-1 flex items-center gap-1"
                       >
-                        📄 Télécharger PDF
+                        <XiloDocument size={12} /> Télécharger PDF
                       </button>
                     )}
                   </div>

@@ -2,6 +2,21 @@ import React from 'react';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 import MusicalOrientationForm from './MusicalOrientationForm';
+import { 
+  XiloEye, 
+  XiloEyeOff, 
+  XiloLock, 
+  XiloShield, 
+  XiloTrombinoscope, 
+  XiloPhone, 
+  XiloHome, 
+  XiloBirthday, 
+  XiloPin, 
+  XiloShirt, 
+  XiloHand, 
+  XiloSparkles, 
+  XiloUser 
+} from '../XiloIcons';
 
 const AddressAutocomplete = React.lazy(() => import('../AddressAutocomplete'));
 
@@ -53,8 +68,8 @@ export default function ProfileEditForm({
 
       {/* EN-TÊTE : IDENTITÉ & ACCORD DU VOCABULAIRE */}
       <CordelCard variant="default" useExtremeBorder={false} className="flex flex-col gap-4">
-        <h4 className="font-bold text-xs uppercase tracking-wider text-cordel-wood border-b border-dashed border-cordel-master-dark/10 pb-1">
-          👤 Identité & Préférences Vocabulaire
+        <h4 className="font-bold text-xs uppercase tracking-wider text-cordel-wood border-b border-dashed border-cordel-master-dark/10 pb-1 flex items-center gap-1.5">
+          <XiloUser size={14} /> Identité & Préférences Vocabulaire
         </h4>
 
         {/* First Name & Last Name */}
@@ -92,8 +107,8 @@ export default function ProfileEditForm({
 
         {/* Genre pour accord du vocabulaire */}
         <div className="flex flex-col gap-1 text-left bg-cordel-bg-light/60 p-3 rounded border border-dashed border-cordel-master-dark/20">
-          <label className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood">
-            ✨ Accord du vocabulaire (Genre)
+          <label className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood flex items-center gap-1">
+            <XiloSparkles size={12} /> Accord du vocabulaire (Genre)
           </label>
           <select
             name="genre"
@@ -117,7 +132,7 @@ export default function ProfileEditForm({
       <CordelCard variant="default" useExtremeBorder={false} className="flex flex-col gap-4">
         <div className="bg-emerald-50/90 dark:bg-emerald-950/30 border-2 border-dashed border-emerald-500/40 p-3 rounded-[6px] text-left">
           <div className="flex items-center gap-2.5">
-            <span className="text-xl shrink-0">👁️</span>
+            <XiloEye size={22} className="text-emerald-700 dark:text-emerald-400 shrink-0" />
             <div>
               <h4 className="font-black text-xs uppercase text-emerald-900 dark:text-emerald-300">
                 1. Mon Profil Public (Trombinoscope)
@@ -163,7 +178,7 @@ export default function ProfileEditForm({
       <CordelCard variant="default" useExtremeBorder={false} className="flex flex-col gap-4">
         <div className="bg-amber-50/90 dark:bg-amber-950/30 border-2 border-dashed border-amber-500/40 p-3 rounded-[6px] text-left">
           <div className="flex items-center gap-2.5">
-            <span className="text-xl shrink-0">🔒</span>
+            <XiloLock size={22} className="text-amber-700 dark:text-amber-400 shrink-0" />
             <div>
               <h4 className="font-black text-xs uppercase text-amber-900 dark:text-amber-300">
                 2. Coordonnées & Contrôle de Visibilité
@@ -179,8 +194,8 @@ export default function ProfileEditForm({
         {isFieldVisible('telephone') && (
           <div className="flex flex-col gap-2 text-left bg-cordel-bg-light/60 p-3 rounded border border-dashed border-cordel-master-dark/20">
             <div className="flex flex-col gap-1">
-              <label className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood">
-                📞 {translate('userProfile.phone', "Téléphone")}
+              <label className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood flex items-center gap-1">
+                <XiloPhone size={12} /> {translate('userProfile.phone', "Téléphone")}
                 {isFieldRequired('telephone') && <span className="text-red-500 font-bold ml-1">*</span>}
               </label>
               <input
@@ -203,7 +218,7 @@ export default function ProfileEditForm({
                 disabled={saving}
                 className="w-4 h-4 accent-cordel-wood cursor-pointer shrink-0"
               />
-              <span>👁️ Afficher mon numéro aux membres dans le Trombinoscope</span>
+              <span className="flex items-center gap-1"><XiloEye size={12} /> Afficher mon numéro aux membres dans le Trombinoscope</span>
             </label>
           </div>
         )}
@@ -212,8 +227,8 @@ export default function ProfileEditForm({
         {isFieldVisible('adresse') && (
           <div className="flex flex-col gap-2.5 text-left bg-cordel-bg-light/60 p-3 rounded border border-dashed border-cordel-master-dark/20">
             <div className="flex flex-col gap-1">
-              <label className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood">
-                🏠 {translate('userProfile.address', "Adresse postale complète (Admin / Logistique)")}
+              <label className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood flex items-center gap-1">
+                <XiloHome size={12} /> {translate('userProfile.address', "Adresse postale complète (Admin / Logistique)")}
                 {isFieldRequired('adresse') && <span className="text-red-500 font-bold ml-1">*</span>}
               </label>
               <React.Suspense fallback={
@@ -250,7 +265,7 @@ export default function ProfileEditForm({
                 disabled={saving}
                 className="w-4 h-4 accent-cordel-wood cursor-pointer shrink-0"
               />
-              <span>🏙️ Afficher ma ville uniquement aux membres (Ex: Nantes)</span>
+              <span className="flex items-center gap-1"><XiloPin size={12} /> Afficher ma ville uniquement aux membres (Ex: Nantes)</span>
             </label>
           </div>
         )}
@@ -259,8 +274,8 @@ export default function ProfileEditForm({
         {isFieldVisible('dateNaissance') && (
           <div className="flex flex-col gap-2 text-left bg-cordel-bg-light/60 p-3 rounded border border-dashed border-cordel-master-dark/20">
             <div className="flex flex-col gap-1">
-              <label className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood">
-                🎂 {translate('userProfile.birthdate', "Date de naissance")}
+              <label className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood flex items-center gap-1">
+                <XiloBirthday size={12} /> {translate('userProfile.birthdate', "Date de naissance")}
                 {isFieldRequired('dateNaissance') && <span className="text-red-500 font-bold ml-1">*</span>}
               </label>
               <input
@@ -282,7 +297,7 @@ export default function ProfileEditForm({
                 disabled={saving}
                 className="w-4 h-4 accent-cordel-wood cursor-pointer shrink-0"
               />
-              <span>🎂 Afficher mon anniversaire dans le Trombinoscope (Jour & Mois uniquement, sans l'année)</span>
+              <span className="flex items-center gap-1"><XiloBirthday size={12} /> Afficher mon anniversaire dans le Trombinoscope (Jour & Mois uniquement, sans l'année)</span>
             </label>
           </div>
         )}
@@ -292,7 +307,7 @@ export default function ProfileEditForm({
       <CordelCard variant="default" useExtremeBorder={false} className="flex flex-col gap-4">
         <div className="bg-sky-50/90 dark:bg-sky-950/30 border-2 border-dashed border-sky-500/40 p-3 rounded-[6px] text-left">
           <div className="flex items-center gap-2.5">
-            <span className="text-xl shrink-0">🛡️</span>
+            <XiloShield size={22} className="text-sky-700 dark:text-sky-400 shrink-0" />
             <div>
               <h4 className="font-black text-xs uppercase text-sky-900 dark:text-sky-300">
                 3. Placement Scénique, Costumes & Santé (Confidentiel Mestre / Admin)
@@ -307,8 +322,8 @@ export default function ProfileEditForm({
         {/* Latéralité */}
         {isFieldVisible('lateralite') && (
           <div className="flex flex-col gap-1 text-left bg-cordel-bg-light/60 p-3 rounded border border-dashed border-cordel-master-dark/20">
-            <label className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood">
-              🖐️ {translate('userProfile.laterality', "Latéralité (Placement scène pour le Mestre & Séquenceur)")}
+            <label className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood flex items-center gap-1">
+              <XiloHand size={12} /> {translate('userProfile.laterality', "Latéralité (Placement scène pour le Mestre & Séquenceur)")}
               {isFieldRequired('lateralite') && <span className="text-red-500 font-bold ml-1">*</span>}
             </label>
             <select
@@ -327,8 +342,8 @@ export default function ProfileEditForm({
         {/* Tailles Vêtements */}
         {(isFieldVisible('tailleTshirt') || isFieldVisible('taillePantalon')) && (
           <div className="flex flex-col gap-2 text-left">
-            <h5 className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood">
-              👔 Mensurations / Taille des Costumes
+            <h5 className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood flex items-center gap-1">
+              <XiloShirt size={12} /> Mensurations / Taille des Costumes
             </h5>
             
             <div className="grid grid-cols-2 gap-3">
