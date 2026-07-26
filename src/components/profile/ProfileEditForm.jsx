@@ -47,7 +47,8 @@ export default function ProfileEditForm({
   isFieldRequired = () => false,
   validationError = '',
   isInstrumentsValid = true,
-  demanderAttestationSante,
+  demanderDroitImage = true,
+  demanderAttestationSante = true,
   instrumentsDisponibles,
   t
 }) {
@@ -118,9 +119,9 @@ export default function ProfileEditForm({
             disabled={saving}
             className="theme-input w-full text-xs bg-white font-medium"
           >
-            <option value="homme">{translate('onboarding.genderMale', "Homme (ex: Membre, Mestre)")}</option>
-            <option value="femme">{translate('onboarding.genderFemale', "Femme (ex: Membre, Mestra)")}</option>
-            <option value="autre">{translate('onboarding.genderOther', "Autre")}</option>
+            <option value="homme">{translate('onboarding.genderMale', "Masculin (ex: Membre, Mestre)")}</option>
+            <option value="femme">{translate('onboarding.genderFemale', "Féminin (ex: Membre, Mestra)")}</option>
+            <option value="autre">{translate('onboarding.genderOther', "Autre / Non spécifié")}</option>
           </select>
           <span className="text-[9px] text-cordel-master-dark opacity-75 italic mt-0.5">
             💡 Permet d'accorder automatiquement les titres et rôles dans l'interface. N'est pas affiché séparément dans le trombinoscope.
@@ -402,14 +403,34 @@ export default function ProfileEditForm({
           </div>
         )}
 
+        {/* Droit à l'image & Charte */}
+        {(demanderDroitImage !== false && isFieldVisible('droitImage')) && (
+          <div className="border-t border-dashed border-cordel-master-dark/10 pt-3 flex flex-col gap-1 text-left">
+            <label className="flex items-start gap-2.5 text-xs font-semibold cursor-pointer select-none">
+              <input
+                type="checkbox"
+                name="droitImage"
+                checked={Boolean(formData.droitImage)}
+                onChange={(e) => setFormData(prev => ({ ...prev, droitImage: e.target.checked }))}
+                disabled={saving}
+                className="w-4 h-4 accent-cordel-wood shrink-0 mt-0.5"
+              />
+              <span className="leading-tight">
+                {translate('userProfile.imageRightsCheckbox', "J'autorise l'association à utiliser les photos et vidéos prises lors des événements pour la promotion des activités (Droit à l'image).")}
+                {isFieldRequired('droitImage') && <span className="text-red-500 font-bold ml-1">*</span>}
+              </span>
+            </label>
+          </div>
+        )}
+
         {/* Attestation médicale / Santé */}
-        {demanderAttestationSante && (
+        {(demanderAttestationSante !== false && isFieldVisible('aptitudeMedicale')) && (
           <div className="border-t border-dashed border-cordel-master-dark/10 pt-3 flex flex-col gap-1 text-left">
             <label className="flex items-start gap-2.5 text-xs font-semibold cursor-pointer select-none">
               <input
                 type="checkbox"
                 name="aptitudeMedicale"
-                checked={formData.aptitudeMedicale}
+                checked={Boolean(formData.aptitudeMedicale)}
                 onChange={(e) => setFormData(prev => ({ ...prev, aptitudeMedicale: e.target.checked }))}
                 disabled={saving}
                 className="w-4 h-4 accent-cordel-wood shrink-0 mt-0.5"
