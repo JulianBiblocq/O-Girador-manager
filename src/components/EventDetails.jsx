@@ -1031,8 +1031,8 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
                 </span>
               )}
               {currentConfig.agendaEnableImage && event.imageUrl && (
-                <div className="mt-3.5 border-2 border-encre-noire rounded-[8px] overflow-hidden shadow-[2px_2px_0px_0px_rgba(26,26,26,0.15)] bg-white max-h-[300px] flex items-center justify-center">
-                  <img src={event.imageUrl} alt={event.titre} className="max-w-full max-h-[300px] object-contain" />
+                <div className="mt-3.5 border-2 border-encre-noire rounded-[8px] overflow-hidden shadow-[2px_2px_0px_0px_rgba(26,26,26,0.15)] bg-white max-h-[300px] min-h-[200px] flex items-center justify-center">
+                  <img src={event.imageUrl} alt={event.titre} width={400} height={200} className="max-w-full max-h-[300px] object-contain" />
                 </div>
               )}
               {currentConfig.agendaEnableAdresse && (event.lieu || (event.latitude && event.longitude)) && (

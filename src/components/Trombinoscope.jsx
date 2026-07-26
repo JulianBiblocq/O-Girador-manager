@@ -635,11 +635,22 @@ export default function Trombinoscope({ user, profileData, onBack, onContactUser
 
       {/* Main Content Area */}
       {loading ? (
-        <div className="flex-1 flex flex-col justify-center items-center py-20 select-none">
-          <div className="animate-spin text-3xl mb-4 select-none">⏳</div>
-          <span className="font-bold text-xs uppercase tracking-widest text-cordel-master-dark opacity-75">
-            {t('trombinoscope.loading')}
-          </span>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 min-h-[500px] animate-pulse select-none">
+          {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
+            <div key={n} className="bg-cordel-master-dark/5 border-2 border-dashed border-cordel-master-dark/15 rounded-lg p-4 h-[210px] flex flex-col justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-14 h-14 bg-cordel-master-dark/20 rounded-lg shrink-0" />
+                <div className="flex flex-col gap-2 flex-1">
+                  <div className="h-4 bg-cordel-master-dark/20 rounded w-3/4" />
+                  <div className="h-3 bg-cordel-master-dark/15 rounded w-1/2" />
+                </div>
+              </div>
+              <div className="flex flex-col gap-2 mt-2">
+                <div className="h-3 bg-cordel-master-dark/15 rounded w-full" />
+                <div className="h-3 bg-cordel-master-dark/15 rounded w-2/3" />
+              </div>
+            </div>
+          ))}
         </div>
       ) : error ? (
         <CordelCard variant="default" useExtremeBorder={true} className="text-center py-8">

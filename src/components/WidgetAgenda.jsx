@@ -504,10 +504,21 @@ export default function WidgetAgenda({
         />
       )}
 
-      {/* Loading indicator */}
+      {/* Loading Skeleton Grid with strict min-height */}
       {loading && (
-        <div className="flex justify-center items-center py-6">
-          <span className="text-xs uppercase tracking-widest font-black animate-pulse opacity-60">⏳</span>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 min-h-[420px] animate-pulse select-none my-2">
+          {[1, 2, 3, 4, 5, 6].map((n) => (
+            <div key={n} className="bg-cordel-master-dark/5 border-2 border-dashed border-cordel-master-dark/15 rounded-[8px_12px_9px_11px] p-4 h-[130px] flex flex-col justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-cordel-master-dark/20 rounded-md shrink-0" />
+                <div className="flex flex-col gap-2 flex-1">
+                  <div className="h-4 bg-cordel-master-dark/20 rounded w-2/3" />
+                  <div className="h-3 bg-cordel-master-dark/15 rounded w-1/3" />
+                </div>
+              </div>
+              <div className="h-3 bg-cordel-master-dark/15 rounded w-3/4" />
+            </div>
+          ))}
         </div>
       )}
 
