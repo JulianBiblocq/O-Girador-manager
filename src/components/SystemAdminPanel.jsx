@@ -7,6 +7,7 @@ import { useTranslation } from './LanguageContext';
 import { forceUpdateAndClearCache } from '../utils/pwaUtils';
 import { XiloSettings, XiloPeople } from './XiloIcons';
 import SystemUserList from './admin/SystemUserList';
+import useConfirm from '../hooks/useConfirm';
 
 const DEFAULT_FIELDS_CONFIG = {
   telephone: { key: "telephone", label: "Téléphone", enabled: true, filledBy: "member", isRequired: false },
