@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
-import { doc, updateDoc, runTransaction } from 'firebase/firestore';
+import { useState, useEffect, useMemo } from 'react';
+import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
+import { useFamilyMembers } from './useFamilyMembers';
 
 export function useEventRSVP(event, user, profileData, allUsers, isPrestationRestricted, setToastMessage) {
-  const existingResponse = (event.inscriptions || []).find(ins => ins.userId === user.uid);
+  const existingResponse = (event.inscriptions || []).find(ins => ins.userId === user?.uid);
 
   const [status, setStatus] = useState(() => existingResponse 
     ? (existingResponse.status === 'pending' || existingResponse.status === 'refused' ? 'present' : existingResponse.status) 
@@ -32,9 +33,48 @@ export function useEventRSVP(event, user, profileData, allUsers, isPrestationRes
   const [isManualRegisterOpen, setIsManualRegisterOpen] = useState(false);
   const [savingManualRegistration, setSavingManualRegistration] = useState(false);
 
-  // Sync state with event/user changes
+  // Fetch family members (dependents attached to parent)
+  const { dependents } = useFamilyMembers(user, profileData?.groupId);
+
+  // List of all manageable family members (Parent + Dependents)
+  const familyMembers = useMemo(() => {
+    if (!user?.uid) return [];
+    const parentMember = {
+      id: user.uid,
+      prenom: profileData?.prenom || '',
+      nom: profileData?.nom || '',
+      isParent: true,
+      isDependent: false,
+      instrument: profileData?.instrument || ''
+    };
+    return [parentMember, ...(dependents || [])];
+  }, [user?.uid, profileData?.prenom, profileData?.nom, profileData?.instrument, dependents]);
+
+  // Family RSVP responses state: { [memberId]: { selected, status, instrumentChoisi } }
+  const [familyResponses, setFamilyResponses] = useState({});
+
   useEffect(() => {
-    const resp = (event.inscriptions || []).find(ins => ins.userId === user.uid);
+    const initial = {};
+    familyMembers.forEach(m => {
+      const resp = (event.inscriptions || []).find(ins => ins.userId === m.id);
+      const isSelected = !!resp && resp.status !== 'absent';
+      const mStatus = resp 
+        ? (resp.status === 'pending' || resp.status === 'refused' ? 'present' : resp.status) 
+        : (m.isParent ? status : 'absent');
+      const mInst = resp?.instrumentChoisi || m.instrument || (m.instrumentsJoues?.[0]) || 'Autre';
+
+      initial[m.id] = {
+        selected: isSelected,
+        status: mStatus,
+        instrumentChoisi: mInst
+      };
+    });
+    setFamilyResponses(initial);
+  }, [event.id, event.inscriptions, familyMembers]);
+
+  // Sync state with event/user changes for main parent
+  useEffect(() => {
+    const resp = (event.inscriptions || []).find(ins => ins.userId === user?.uid);
     setStatus(resp 
       ? (resp.status === 'pending' || resp.status === 'refused' ? 'present' : resp.status) 
       : 'confirm');
@@ -42,7 +82,7 @@ export function useEventRSVP(event, user, profileData, allUsers, isPrestationRes
     setDemandeRemboursementKm(resp ? resp.demandeRemboursementKm === true : false);
     setBesoinTransportInstrument(resp ? resp.besoinTransportInstrument === true : false);
     setInstrumentChoisi(resp?.instrumentChoisi || profileData?.instrument || 'Autre');
-  }, [event.id, user.uid, profileData?.instrument, event.inscriptions]);
+  }, [event.id, user?.uid, profileData?.instrument, event.inscriptions]);
 
   const handleSave = async (e, overrideStatus = null, overrideOptions = {}) => {
     if (e && e.preventDefault) e.preventDefault();
@@ -124,6 +164,122 @@ export function useEventRSVP(event, user, profileData, allUsers, isPrestationRes
     await handleSave(null, newStatus);
   };
 
+  // Toggle selection (checkbox) for a family member
+  const handleToggleFamilyMemberSelection = (memberId) => {
+    setFamilyResponses(prev => {
+      const current = prev[memberId] || { selected: false, status: 'present', instrumentChoisi: 'Autre' };
+      const newSelected = !current.selected;
+      return {
+        ...prev,
+        [memberId]: {
+          ...current,
+          selected: newSelected,
+          status: newSelected ? (current.status === 'absent' ? 'present' : current.status) : 'absent'
+        }
+      };
+    });
+  };
+
+  // Change individual status for a family member
+  const handleFamilyMemberStatusChange = (memberId, newStatus) => {
+    setFamilyResponses(prev => {
+      const current = prev[memberId] || { selected: false, status: 'present', instrumentChoisi: 'Autre' };
+      return {
+        ...prev,
+        [memberId]: {
+          ...current,
+          selected: newStatus !== 'absent',
+          status: newStatus
+        }
+      };
+    });
+  };
+
+  // Change individual instrument for a family member
+  const handleFamilyMemberInstrumentChange = (memberId, newInstrument) => {
+    setFamilyResponses(prev => {
+      const current = prev[memberId] || { selected: true, status: 'present', instrumentChoisi: 'Autre' };
+      return {
+        ...prev,
+        [memberId]: {
+          ...current,
+          instrumentChoisi: newInstrument
+        }
+      };
+    });
+  };
+
+  // Save all family members RSVP responses to Firestore
+  const handleFamilySave = async (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    if (event.status === 'annule') {
+      alert("Les inscriptions sont désactivées car l'événement est annulé.");
+      return;
+    }
+    setSaving(true);
+
+    const isRegistrationDeadlinePassed = event.dateLimiteInscription
+      ? new Date(event.dateLimiteInscription) < new Date()
+      : false;
+    const isAuthorized = profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.isSystemAdmin === true;
+
+    if (isRegistrationDeadlinePassed && !isAuthorized) {
+      alert("Les inscriptions pour cet événement sont closes.");
+      setSaving(false);
+      return;
+    }
+
+    try {
+      const currentInscriptions = event.inscriptions || [];
+      const familyIds = new Set(familyMembers.map(m => m.id));
+      const updatedInscriptions = currentInscriptions.filter(ins => !familyIds.has(ins.userId));
+
+      familyMembers.forEach(m => {
+        const mResp = familyResponses[m.id];
+        if (!mResp) return;
+
+        const mSelected = mResp.selected;
+        const mStatus = mSelected ? (mResp.status === 'absent' ? 'present' : mResp.status) : 'absent';
+
+        if (m.isParent) {
+          setStatus(mStatus);
+        }
+
+        const finalStatus = (mStatus === 'present' && event.requiresValidation) ? 'pending' : mStatus;
+
+        updatedInscriptions.push({
+          userId: m.id,
+          userName: `${m.prenom} ${m.nom}`.trim(),
+          status: finalStatus,
+          transport: m.isParent && mStatus === 'present' ? transport : null,
+          places: 0,
+          instruments: "",
+          instrumentChoisi: mStatus === 'present' ? (mResp.instrumentChoisi || m.instrument || 'Autre') : null,
+          instrumentImposeParMestre: m.isParent ? isInstrumentLocked : false,
+          demandeRemboursementKm: m.isParent && mStatus === 'present' && transport === 'propre' ? demandeRemboursementKm : false,
+          besoinTransportInstrument: m.isParent && mStatus === 'present' ? besoinTransportInstrument : false
+        });
+      });
+
+      const eventRef = doc(db, 'events', event.id);
+      await updateDoc(eventRef, {
+        inscriptions: updatedInscriptions
+      });
+
+      if (setToastMessage) {
+        setToastMessage("Inscriptions de la famille enregistrées !");
+        setTimeout(() => {
+          setToastMessage(null);
+        }, 3000);
+      }
+    } catch (error) {
+      console.error("EventDetails - Erreur lors de la sauvegarde RSVP famille :", error);
+      alert("Erreur lors de l'enregistrement de votre inscription.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handleValidatePending = async (userId, targetStatus) => {
     if (!event.id) return;
     try {
@@ -201,102 +357,111 @@ export function useEventRSVP(event, user, profileData, allUsers, isPrestationRes
         }, 3000);
       }
     } catch (error) {
-      console.error("EventDetails - Erreur lors de l'inscription manuelle :", error);
-      alert("Erreur lors de l'inscription manuelle du membre.");
+      console.error("EventDetails - Erreur inscription manuelle :", error);
+      alert("Erreur lors de l'inscription du membre.");
     } finally {
       setSavingManualRegistration(false);
     }
   };
 
-  const handleManualUnregister = async (userId) => {
-    if (!event.id) return;
-    if (!window.confirm("Êtes-vous sûr de vouloir désinscrire ce membre ?")) {
-      return;
-    }
+  const handleManualUnregister = async (targetUserId) => {
+    if (!event.id || !targetUserId) return;
     try {
       const currentInscriptions = event.inscriptions || [];
-      const updatedInscriptions = currentInscriptions.filter(ins => ins.userId !== userId);
+      const updatedInscriptions = currentInscriptions.filter(ins => ins.userId !== targetUserId);
+
       const eventRef = doc(db, 'events', event.id);
       await updateDoc(eventRef, {
         inscriptions: updatedInscriptions
       });
+
       if (setToastMessage) {
-        setToastMessage("Membre désinscrit avec succès !");
+        setToastMessage("Inscription retirée");
         setTimeout(() => {
           setToastMessage(null);
         }, 3000);
       }
     } catch (error) {
-      console.error("EventDetails - Erreur lors de la désinscription manuelle :", error);
-      alert("Erreur lors de la désinscription du membre.");
+      console.error("EventDetails - Erreur désinscription manuelle :", error);
+      alert("Erreur lors du retrait de l'inscription.");
     }
   };
 
-  const handleUpdateStatus = async (newStatus) => {
-    if (!event.id) return;
+  const handleUpdateStatus = async (targetUserId, newStatus) => {
+    if (!event.id || !targetUserId) return;
     try {
+      const currentInscriptions = event.inscriptions || [];
+      const updatedInscriptions = currentInscriptions.map(ins => {
+        if (ins.userId === targetUserId) {
+          return { ...ins, status: newStatus };
+        }
+        return ins;
+      });
+
       const eventRef = doc(db, 'events', event.id);
       await updateDoc(eventRef, {
-        status: newStatus
+        inscriptions: updatedInscriptions
       });
-      const statusLabels = {
-        annule: 'Annulé',
-        a_confirmer: 'À confirmer',
-        confirme: 'Validé / Maintenu'
-      };
-      alert(`Statut de l'événement mis à jour : ${statusLabels[newStatus] || newStatus}`);
-    } catch (err) {
-      console.error("EventDetails - Erreur de modification statut :", err);
-      alert("Erreur lors de la modification du statut.");
+
+      if (setToastMessage) {
+        setToastMessage("Statut mis à jour");
+        setTimeout(() => {
+          setToastMessage(null);
+        }, 3000);
+      }
+    } catch (error) {
+      console.error("EventDetails - Erreur mise à jour statut :", error);
+      alert("Erreur lors de la mise à jour du statut.");
     }
   };
 
-  const handleUpdateMemberInstrument = async (userId, newInstrument, impose) => {
+  const handleUpdateMemberInstrument = async (targetUserId, newInstrument) => {
+    if (!event.id || !targetUserId) return;
     try {
-      const eventRef = doc(db, 'events', event.id);
-      await runTransaction(db, async (transaction) => {
-        const eventDoc = await transaction.get(eventRef);
-        if (!eventDoc.exists()) {
-          throw new Error("L'événement n'existe plus !");
+      const currentInscriptions = event.inscriptions || [];
+      const updatedInscriptions = currentInscriptions.map(ins => {
+        if (ins.userId === targetUserId) {
+          return { ...ins, instrumentChoisi: newInstrument };
         }
-        const currentInscriptions = eventDoc.data().inscriptions || [];
-        const updated = currentInscriptions.map(ins => {
-          if (ins.userId === userId) {
-            return {
-              ...ins,
-              instrumentChoisi: newInstrument,
-              instrumentImposeParMestre: impose
-            };
-          }
-          return ins;
-        });
-        transaction.update(eventRef, { inscriptions: updated });
+        return ins;
       });
-    } catch (err) {
-      console.error("EventDetails - Erreur handleUpdateMemberInstrument :", err);
-      alert("Erreur lors de la modification de l'instrument.");
+
+      const eventRef = doc(db, 'events', event.id);
+      await updateDoc(eventRef, {
+        inscriptions: updatedInscriptions
+      });
+
+      if (setToastMessage) {
+        setToastMessage("Instrument mis à jour");
+        setTimeout(() => {
+          setToastMessage(null);
+        }, 3000);
+      }
+    } catch (error) {
+      console.error("EventDetails - Erreur mise à jour instrument :", error);
+      alert("Erreur lors de la mise à jour de l'instrument.");
     }
   };
 
   const handleAddInviteExterne = async (nom, fonction, instrument) => {
     if (!event.id) return;
-    if (!nom.trim() || !fonction.trim() || !instrument) {
-      alert("Veuillez remplir le nom, la fonction et l'instrument.");
-      return;
-    }
     try {
       const currentInvites = event.invitesExternes || [];
       const newInvite = {
-        id: Date.now().toString() + Math.random().toString(36).substring(2, 9),
-        nom: nom.trim(),
-        fonction: fonction.trim(),
-        instrument: instrument
+        id: `invite_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+        nom,
+        fonction,
+        instrument,
+        addedBy: user.uid,
+        addedAt: new Date().toISOString()
       };
       const updatedInvites = [...currentInvites, newInvite];
+
       const eventRef = doc(db, 'events', event.id);
       await updateDoc(eventRef, {
         invitesExternes: updatedInvites
       });
+
       if (setToastMessage) {
         setToastMessage("Invité externe ajouté !");
         setTimeout(() => {
@@ -347,6 +512,13 @@ export function useEventRSVP(event, user, profileData, allUsers, isPrestationRes
     setInstrumentChoisi,
     isInstrumentLocked,
     existingResponse,
+    dependents,
+    familyMembers,
+    familyResponses,
+    handleToggleFamilyMemberSelection,
+    handleFamilyMemberStatusChange,
+    handleFamilyMemberInstrumentChange,
+    handleFamilySave,
     selectedManualUserId,
     setSelectedManualUserId,
     selectedManualInstrument,

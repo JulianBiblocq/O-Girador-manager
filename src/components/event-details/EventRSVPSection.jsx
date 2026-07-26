@@ -49,7 +49,14 @@ export default function EventRSVPSection({
   instrumentsDisponibles = ["Alfaia Marcante", "Alfaia Meião", "Alfaia Repique", "Caixa", "Tarol", "Gonguê", "Agbê", "Mineiro", "Timbal", "Chant", "Danse"],
   besoinTransportInstrument = false,
   setBesoinTransportInstrument,
-  enableCarpool = true
+  enableCarpool = true,
+  dependents = [],
+  familyMembers = [],
+  familyResponses = {},
+  handleToggleFamilyMemberSelection,
+  handleFamilyMemberStatusChange,
+  handleFamilyMemberInstrumentChange,
+  handleFamilySave
 }) {
   const { getColorForInstrument } = useInstrumentColor(profileData?.groupId);
 
@@ -175,6 +182,112 @@ export default function EventRSVPSection({
             <h4 className="font-bold text-xs uppercase tracking-wider text-cordel-wood">
               Votre présence
             </h4>
+            
+            {/* Multi-Member Family RSVP Section */}
+            {familyMembers.length > 1 && (
+              <div className="flex flex-col gap-3 p-3 bg-cordel-bg-light/80 border-2 border-dashed border-cordel-master-dark/30 rounded-[6px_10px_8px_12px]">
+                <div className="flex items-center justify-between">
+                  <h5 className="font-extrabold text-[11px] uppercase tracking-wider text-cordel-wood flex items-center gap-1.5">
+                    <span>👨‍👩‍👧‍👦</span> Inscription Famille (Comptes rattachés)
+                  </h5>
+                </div>
+
+                <div className="flex flex-col gap-2.5">
+                  {familyMembers.map((m) => {
+                    const mResp = familyResponses[m.id] || { selected: false, status: 'absent', instrumentChoisi: 'Autre' };
+                    const mName = m.isParent ? `${m.prenom} ${m.nom} (Moi)` : `${m.prenom} ${m.nom}`;
+                    const isChecked = mResp.selected;
+
+                    return (
+                      <div key={m.id} className="p-2.5 bg-cordel-bg-light border border-encre-noire/20 rounded flex flex-col gap-2 shadow-xs">
+                        <div className="flex items-center justify-between gap-2 flex-wrap">
+                          <label className="flex items-center gap-2 cursor-pointer font-bold text-xs text-encre-noire select-none">
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={() => handleToggleFamilyMemberSelection && handleToggleFamilyMemberSelection(m.id)}
+                              disabled={saving || event.status === 'annule'}
+                              className="rounded text-cordel-wood focus:ring-0 cursor-pointer w-4 h-4"
+                            />
+                            <span className="flex items-center gap-1">
+                              {m.isParent ? "👤 " : "👶 "}
+                              {mName}
+                            </span>
+                          </label>
+
+                          {/* Individual Status Buttons for Family Member */}
+                          <div className="flex items-center gap-1">
+                            <button
+                              type="button"
+                              disabled={saving || (m.isParent && isPrestationRestricted) || event.status === 'annule'}
+                              onClick={() => handleFamilyMemberStatusChange && handleFamilyMemberStatusChange(m.id, 'present')}
+                              className={`px-2 py-1 text-[10px] font-bold rounded transition-all select-none cursor-pointer ${
+                                mResp.status === 'present' ? 'bg-emerald-600 text-white shadow-sm' : 'bg-black/5 text-encre-noire/70 hover:bg-black/10'
+                              }`}
+                            >
+                              ✅ Présent
+                            </button>
+                            {agendaEnableMaybeStatus && (
+                              <button
+                                type="button"
+                                disabled={saving || (m.isParent && isPrestationRestricted) || event.status === 'annule'}
+                                onClick={() => handleFamilyMemberStatusChange && handleFamilyMemberStatusChange(m.id, 'confirm')}
+                                className={`px-2 py-1 text-[10px] font-bold rounded transition-all select-none cursor-pointer ${
+                                  mResp.status === 'confirm' ? 'bg-amber-500 text-white shadow-sm' : 'bg-black/5 text-encre-noire/70 hover:bg-black/10'
+                                }`}
+                              >
+                                ⏳ À confirmer
+                              </button>
+                            )}
+                            <button
+                              type="button"
+                              disabled={saving || event.status === 'annule'}
+                              onClick={() => handleFamilyMemberStatusChange && handleFamilyMemberStatusChange(m.id, 'absent')}
+                              className={`px-2 py-1 text-[10px] font-bold rounded transition-all select-none cursor-pointer ${
+                                mResp.status === 'absent' ? 'bg-red-600 text-white shadow-sm' : 'bg-black/5 text-encre-noire/70 hover:bg-black/10'
+                              }`}
+                            >
+                              ❌ Absent
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Instrument Selector for Family Member */}
+                        {mResp.status !== 'absent' && (
+                          <div className="flex items-center gap-2 pl-6 text-[10px] select-none">
+                            <span className="font-bold text-cordel-master-dark">Instrument :</span>
+                            <select
+                              value={mResp.instrumentChoisi || m.instrument || 'Autre'}
+                              onChange={(e) => handleFamilyMemberInstrumentChange && handleFamilyMemberInstrumentChange(m.id, e.target.value)}
+                              disabled={saving || (m.isParent && isInstrumentLocked) || event.status === 'annule'}
+                              className="theme-input text-[10px] py-1 px-2 bg-cordel-bg-light border-encre-noire/20 flex-1 max-w-[220px]"
+                            >
+                              {getMemberInstrumentOptions
+                                ? getMemberInstrumentOptions(m.isParent ? profileData : m).map((inst) => (
+                                    <option key={inst} value={inst}>{inst}</option>
+                                  ))
+                                : (instrumentsDisponibles || []).map((inst) => (
+                                    <option key={inst} value={inst}>{inst}</option>
+                                  ))}
+                            </select>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <CordelButton
+                  type="button"
+                  variant="ocre"
+                  onClick={handleFamilySave}
+                  disabled={saving || event.status === 'annule'}
+                  className="w-full mt-1 py-2 font-extrabold uppercase tracking-wider text-xs flex items-center justify-center gap-1.5"
+                >
+                  💾 {saving ? "Enregistrement..." : "Valider l'inscription de la famille"}
+                </CordelButton>
+              </div>
+            )}
             
             {/* Status Selection Buttons */}
             <div className={`grid ${agendaEnableMaybeStatus ? 'grid-cols-3' : 'grid-cols-2'} gap-2`}>

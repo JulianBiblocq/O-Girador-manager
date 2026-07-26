@@ -146,7 +146,14 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
     handleUpdateStatus,
     handleUpdateMemberInstrument,
     handleAddInviteExterne,
-    handleRemoveInviteExterne
+    handleRemoveInviteExterne,
+    dependents,
+    familyMembers,
+    familyResponses,
+    handleToggleFamilyMemberSelection,
+    handleFamilyMemberStatusChange,
+    handleFamilyMemberInstrumentChange,
+    handleFamilySave
   } = useEventRSVP(event, user, profileData, allUsers, isPrestationRestricted, setToastMessage);
 
   // useEventCarpool hook
@@ -1152,6 +1159,13 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
               besoinTransportInstrument={besoinTransportInstrument}
               setBesoinTransportInstrument={setBesoinTransportInstrument}
               enableCarpool={event.enableCarpool !== false}
+              dependents={dependents}
+              familyMembers={familyMembers}
+              familyResponses={familyResponses}
+              handleToggleFamilyMemberSelection={handleToggleFamilyMemberSelection}
+              handleFamilyMemberStatusChange={handleFamilyMemberStatusChange}
+              handleFamilyMemberInstrumentChange={handleFamilyMemberInstrumentChange}
+              handleFamilySave={handleFamilySave}
             />
           )}
 

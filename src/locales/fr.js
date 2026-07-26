@@ -226,7 +226,10 @@ export const fr = {
     changePhoto: "Changer ma photo",
     uploading: "Téléversement...",
     personalInfo: "Informations personnelles",
-    takePhoto: "Prendre une photo"
+    takePhoto: "Prendre une photo",
+    familyHeading: "Ma Famille / Comptes rattachés",
+    addChildBtn: "Ajouter un enfant",
+    dependentBadge: "Enfant / Dépendant"
   },
   widgetMotMestre: {
     title: "Le Mot du Mestre",

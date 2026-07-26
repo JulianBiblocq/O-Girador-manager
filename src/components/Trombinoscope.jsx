@@ -50,7 +50,8 @@ const MemberCard = React.memo(({
   getPupitreName,
   getColorForInstrument,
   tagsDisponibles = [],
-  majoriteFeminine = false
+  majoriteFeminine = false,
+  isDependent = false
 }) => {
   const fullName = `${prenom || ''} ${nom || ''}`;
   const hasRoleBadge = role && role !== 'membre';
@@ -141,7 +142,12 @@ const MemberCard = React.memo(({
         </div>
 
         {/* Member Name */}
-        <div className="text-center mt-1 w-full select-none">
+        <div className="text-center mt-1 w-full select-none flex flex-col items-center">
+          {isDependent && (
+            <span className="bg-amber-200 text-amber-900 border border-amber-400 text-[8px] font-black px-1.5 py-0.2 rounded uppercase mb-0.5 inline-block">
+              👶 Enfant
+            </span>
+          )}
           <div className="font-bold text-xs truncate leading-snug">
             {prenom}
           </div>
@@ -739,6 +745,7 @@ export default function Trombinoscope({ user, profileData, onBack, onContactUser
                           getColorForInstrument={getColorForInstrument}
                           tagsDisponibles={tagsDisponibles}
                           majoriteFeminine={majoriteFeminine}
+                          isDependent={member.isDependent === true}
                         />
                       ))}
                     </div>

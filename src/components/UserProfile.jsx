@@ -9,6 +9,7 @@ import { useTranslation } from './LanguageContext';
 import ProfileEditForm from './profile/ProfileEditForm';
 import CostumeChecklist from './profile/CostumeChecklist';
 import ImageLightboxModal from './ImageLightboxModal';
+import FamilyMembersManager from './profile/FamilyMembersManager';
 const CordelImageEditor = React.lazy(() => import('./CordelImageEditor'));
 
 import { formatTagGender } from '../utils/tagUtils';
@@ -465,6 +466,14 @@ export default function UserProfile({ user, profileData, associationName, onBack
           t={t}
         />
       )}
+
+      {/* Family / Dependent Members Section */}
+      <FamilyMembersManager
+        user={user}
+        profileData={profileData}
+        instrumentsDisponibles={instrumentsDisponibles}
+        t={t}
+      />
 
       {/* Disconnect Button */}
       <div className="mt-4 pt-4 border-t border-dashed border-cordel-master-dark/20 flex flex-col gap-3 items-center">
