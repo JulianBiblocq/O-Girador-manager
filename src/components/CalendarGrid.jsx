@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
+import EventDisciplineBadges from './agenda/EventDisciplineBadges';
 
 export default function CalendarGrid({ events = [], onSelectEvent, t }) {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -163,16 +164,18 @@ export default function CalendarGrid({ events = [], onSelectEvent, t }) {
                         onSelectEvent(event);
                       }}
                       className={`
-                        w-full text-[7px] sm:text-[9px] font-bold text-left px-1.5 py-0.5 rounded-[3px_4px_2px_3px] border border-encre-noire/10 transition-transform hover:scale-[1.02] cursor-pointer leading-tight select-none
+                        w-full text-[7px] sm:text-[9px] font-bold text-left px-1 py-0.5 rounded-[3px_4px_2px_3px] border border-encre-noire/10 transition-transform hover:scale-[1.02] cursor-pointer leading-tight select-none
                         theme-bg-${variant}
                         ${event.status === 'annule' ? 'line-through opacity-50' : ''}
-                        flex items-center gap-1
+                        flex items-center justify-between gap-1
                       `}
                       title={`${event.titre} (${event.type})`}
                     >
-                      {/* Dots representation on mobile, text block on desktop */}
-                      <span className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full border border-encre-noire/15 shrink-0 bg-white/40`} />
-                      <span className="hidden sm:inline truncate">{event.titre}</span>
+                      <div className="flex items-center gap-1 min-w-0 truncate">
+                        <span className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full border border-encre-noire/15 shrink-0 bg-white/40`} />
+                        <span className="hidden sm:inline truncate">{event.titre}</span>
+                      </div>
+                      <EventDisciplineBadges event={event} compact={true} />
                     </button>
                   );
                 })}

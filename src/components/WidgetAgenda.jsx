@@ -6,6 +6,8 @@ import CordelButton from './CordelButton';
 const EventDetails = React.lazy(() => import('./EventDetails'));
 import CalendarGrid from './CalendarGrid';
 import EventCreateForm from './agenda/EventCreateForm';
+import AgendaFilterBar from './agenda/AgendaFilterBar';
+import EventDisciplineBadges from './agenda/EventDisciplineBadges';
 import { useTranslation } from './LanguageContext';
 import { XiloCalendar, XiloEye, XiloEyeOff } from './XiloIcons';
 import { calculateRoadDistance } from '../utils/googleMaps';
@@ -53,6 +55,7 @@ export default function WidgetAgenda({
   const setSelectedEvent = propSetSelectedEvent !== undefined ? propSetSelectedEvent : setLocalSelectedEvent;
   const [showAll, setShowAll] = useState(isFullPage);
   const [viewMode, setViewMode] = useState('cards'); // 'cards' ou 'list' ou 'grid'
+  const [disciplineFilter, setDisciplineFilter] = useState('all'); // 'all' | 'percussion' | 'dance'
   const [selectedTypeFilter, setSelectedTypeFilter] = useState('all');
   const [hiddenTypes, setHiddenTypes] = useState([]);
   
@@ -102,6 +105,11 @@ export default function WidgetAgenda({
     return !isNaN(eDate.getTime()) && eDate >= today;
   });
   const filteredEvents = upcomingEvents.filter(e => {
+    // Discipline filter (percussion vs dance)
+    if (disciplineFilter === 'percussion' && !e.includesPercussion) return false;
+    if (disciplineFilter === 'dance' && !e.includesDance) return false;
+
+    // Type filter
     if (hiddenTypes.includes(e.type)) return false;
     if (selectedTypeFilter !== 'all' && selectedTypeFilter !== 'custom') {
       return e.type === selectedTypeFilter;
@@ -450,108 +458,16 @@ export default function WidgetAgenda({
 
       {/* Event Filters (Visible when not loading and not adding) */}
       {!loading && !isAdding && (
-        <div className="flex flex-wrap gap-1.5 select-none text-[9px] font-black uppercase mt-1 pl-1 items-center">
-          <button
-            type="button"
-            onClick={() => {
-              setSelectedTypeFilter('all');
-              setHiddenTypes([]);
-            }}
-            className={`px-3 py-1.5 rounded-[4px_6px_3px_5px] border transition-all cursor-pointer ${
-              selectedTypeFilter === 'all' && hiddenTypes.length === 0
-                ? 'bg-cordel-wood text-white border-encre-noire shadow-[1px_1px_0px_0px_#181716]'
-                : 'bg-white border-dashed border-cordel-master-dark/20 text-cordel-master-dark/70 hover:bg-neutral-100'
-            }`}
-          >
-            {t('common.all')}
-          </button>
-          {eventTypes.map(type => {
-            const standardTypes = {
-              prestation: t('widgetAgenda.typePrestation'),
-              repetition: t('widgetAgenda.typeRepetition'),
-              stage: t('widgetAgenda.typeStage'),
-              atelier: t('widgetAgenda.typeAtelier'),
-              reunion: t('widgetAgenda.typeReunion')
-            };
-            const labelRaw = standardTypes[type];
-            const label = labelRaw || (type.charAt(0).toUpperCase() + type.slice(1));
-            const isHidden = hiddenTypes.includes(type);
-            const isFocused = selectedTypeFilter === type && hiddenTypes.length === eventTypes.length - 1;
-
-            const handleTextClick = () => {
-              if (isFocused) {
-                // Reset to all
-                setSelectedTypeFilter('all');
-                setHiddenTypes([]);
-              } else {
-                // Focus only this type
-                setSelectedTypeFilter(type);
-                setHiddenTypes(eventTypes.filter(t => t !== type));
-              }
-            };
-
-            const handleToggleHide = (e) => {
-              e.stopPropagation();
-              if (isHidden) {
-                // Unhide
-                const nextHidden = hiddenTypes.filter(t => t !== type);
-                setHiddenTypes(nextHidden);
-                if (nextHidden.length === 0) {
-                  setSelectedTypeFilter('all');
-                } else {
-                  setSelectedTypeFilter('custom');
-                }
-              } else {
-                // Hide
-                const nextHidden = [...hiddenTypes, type];
-                setHiddenTypes(nextHidden);
-                if (nextHidden.length === eventTypes.length - 1) {
-                  const remaining = eventTypes.find(t => !nextHidden.includes(t));
-                  setSelectedTypeFilter(remaining || 'custom');
-                } else {
-                  setSelectedTypeFilter('custom');
-                }
-              }
-            };
-
-            return (
-              <div
-                key={type}
-                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[4px_6px_3px_5px] border transition-all ${
-                  isHidden
-                    ? 'bg-neutral-200/70 border-dashed border-neutral-400 text-neutral-400 line-through opacity-65'
-                    : isFocused || (selectedTypeFilter === type && hiddenTypes.length === 0)
-                      ? 'bg-cordel-wood text-white border-encre-noire shadow-[1px_1px_0px_0px_#181716]'
-                      : 'bg-white border-dashed border-cordel-master-dark/30 text-cordel-master-dark hover:bg-neutral-100'
-                }`}
-              >
-                {/* Category label (click text => focus only this type in 1 click) */}
-                <button
-                  type="button"
-                  onClick={handleTextClick}
-                  title={`Voir uniquement ${label}`}
-                  className="cursor-pointer font-extrabold hover:underline"
-                >
-                  {label}
-                </button>
-
-                {/* Eye toggle icon (click eye => hide/show this category in 1 click) */}
-                <button
-                  type="button"
-                  onClick={handleToggleHide}
-                  title={isHidden ? `Afficher les ${label}s` : `Masquer les ${label}s`}
-                  className="cursor-pointer ml-0.5 opacity-80 hover:opacity-100 hover:scale-110 transition-transform p-0.5 select-none flex items-center justify-center"
-                >
-                  {isHidden ? (
-                    <XiloEyeOff size={13} className="shrink-0 opacity-60" />
-                  ) : (
-                    <XiloEye size={13} className="shrink-0" />
-                  )}
-                </button>
-              </div>
-            );
-          })}
-        </div>
+        <AgendaFilterBar
+          disciplineFilter={disciplineFilter}
+          setDisciplineFilter={setDisciplineFilter}
+          selectedTypeFilter={selectedTypeFilter}
+          setSelectedTypeFilter={setSelectedTypeFilter}
+          hiddenTypes={hiddenTypes}
+          setHiddenTypes={setHiddenTypes}
+          eventTypes={eventTypes}
+          t={t}
+        />
       )}
 
       {/* Loading indicator */}
@@ -628,7 +544,10 @@ export default function WidgetAgenda({
                         {formattedDate}
                       </td>
                       <td className="p-1.5 md:p-2.5 border-r border-encre-noire/15 font-extrabold text-encre-noire">
-                        {event.titre}
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span>{event.titre}</span>
+                          <EventDisciplineBadges event={event} compact={true} />
+                        </div>
                         {event.status === 'annule' && (
                           <span className="text-red-600 font-bold ml-1.5 uppercase text-[8px] border border-red-600 px-1 rounded select-none">
                             ANNULÉ
@@ -737,9 +656,12 @@ export default function WidgetAgenda({
                         </span>
                         <div className="flex justify-between items-center mt-1.5 border-t border-dashed border-encre-noire/10 pt-1.5 gap-2">
                           <div className="flex flex-col items-start gap-1">
-                            <span className="text-[8px] uppercase tracking-widest font-black opacity-60">
-                              {event.type}
-                            </span>
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="text-[8px] uppercase tracking-widest font-black opacity-60">
+                                {event.type}
+                              </span>
+                              <EventDisciplineBadges event={event} />
+                            </div>
                             {/* Connected User Attendance Badge */}
                             {(() => {
                               const userInscription = (event.inscriptions || []).find(ins => ins.userId === user.uid);
