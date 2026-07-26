@@ -445,7 +445,7 @@ export function useUserProfile(user, profileData, t) {
         updatePayload.droitImage = formData.droitImage;
         if (formData.droitImage) {
           if (!profileData?.droitImage || !profileData?.dateSignatureDroitImage) {
-            updatePayload.dateSignatureDroitImage = new Date();
+            updatePayload.dateSignatureDroitImage = new Date().toISOString();
           }
         } else {
           updatePayload.dateSignatureDroitImage = null;
@@ -456,7 +456,7 @@ export function useUserProfile(user, profileData, t) {
         updatePayload.aptitudeMedicale = formData.aptitudeMedicale;
         if (formData.aptitudeMedicale) {
           if (!profileData?.aptitudeMedicale || !profileData?.dateSignatureAttestationSante) {
-            updatePayload.dateSignatureAttestationSante = new Date();
+            updatePayload.dateSignatureAttestationSante = new Date().toISOString();
           }
         } else {
           updatePayload.dateSignatureAttestationSante = null;

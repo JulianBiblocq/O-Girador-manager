@@ -62,6 +62,28 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
     enableCarpool: event.enableCarpool !== false,
     description: event.description || ''
   });
+  const [liveEventData, setLiveEventData] = useState(null);
+
+  // Real-time synchronization for this specific event document
+  useEffect(() => {
+    if (!event?.id) return;
+    const eventRef = doc(db, 'events', event.id);
+    const unsubscribe = onSnapshot(
+      eventRef,
+      (docSnap) => {
+        if (docSnap.exists()) {
+          setLiveEventData({ id: docSnap.id, ...docSnap.data() });
+        }
+      },
+      (err) => {
+        console.error("EventDetails - Erreur snapshot live document :", err);
+      }
+    );
+    return () => unsubscribe();
+  }, [event?.id]);
+
+  const activeEvent = liveEventData ? { ...event, ...liveEventData } : event;
+
   const [savingEvent, setSavingEvent] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [imageMode, setImageMode] = useState(() => {
@@ -923,14 +945,14 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
             {(event.includesPercussion || event.includesDance) && (
               <div className="flex gap-2 flex-wrap mt-2 px-4">
                 {event.includesPercussion && (
-                  <span className="inline-flex items-center gap-1.5 bg-orange-100 dark:bg-orange-950/40 text-orange-800 dark:text-orange-300 text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded border border-orange-200 dark:border-orange-900/50 select-none">
+                  <span className="inline-flex items-center gap-1.5 bg-orange-100 dark:bg-orange-950/40 text-orange-800 dark:text-orange-300 text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded border border-orange-200 dark:border-orange-900/50 select-none" title="Percussion">
                     <img src="/icones/alfaia.svg" alt="Percussion" className="w-3.5 h-3.5 object-contain dark:invert inline-block" />
-                    <span>{translate('eventDetails.includesPercussion', "Percussion")}</span>
+                    <span className="hidden md:inline">{translate('eventDetails.includesPercussion', "Percussion")}</span>
                   </span>
                 )}
                 {event.includesDance && (
-                  <span className="inline-flex items-center gap-1 bg-pink-100 dark:bg-pink-950/40 text-pink-800 dark:text-pink-300 text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded border border-pink-200 dark:border-pink-900/50 select-none">
-                    💃 {translate('eventDetails.includesDance', "Danse")}
+                  <span className="inline-flex items-center gap-1 bg-pink-100 dark:bg-pink-950/40 text-pink-800 dark:text-pink-300 text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded border border-pink-200 dark:border-pink-900/50 select-none" title="Danse">
+                    💃 <span className="hidden md:inline">{translate('eventDetails.includesDance', "Danse")}</span>
                   </span>
                 )}
               </div>

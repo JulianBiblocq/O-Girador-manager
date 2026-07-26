@@ -41,7 +41,7 @@ const getInstrumentIconPath = (instName) => {
  * - Prioritized data table of members (unassigned & wish-expressing members first).
  * - Assignment modal for main and secondary instruments with automatic private messaging.
  */
-export default function MestreOrientationCasting({ user, profileData, onNavigateToMember }) {
+export default function MestreOrientationCasting({ user, profileData, _onNavigateToMember }) {
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [instrumentsDisponibles, setInstrumentsDisponibles] = useState(DEFAULT_INSTRUMENTS);

@@ -57,6 +57,7 @@ export default function UserProfile({ user, profileData, associationName, onBack
     isFieldRequired,
     getMissingRequiredFields,
     validationError,
+    isInstrumentsValid,
     handlePhotoSelected,
     handleEditorComplete,
     handleChange,

@@ -836,6 +836,7 @@ export const fr = {
     tabInventory: "Inventaire des instruments",
     tabOrders: "Gestion des commandes",
     tabWardrobe: "Vestiaire",
+    tabStudioEvents: "Gestion des événements",
     tabStudioSocial: "Studio social",
     tabReunions: "Gestion des réunions",
     tabVaral: "Gestionnaire de Varal",

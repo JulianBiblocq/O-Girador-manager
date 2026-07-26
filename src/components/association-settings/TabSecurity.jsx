@@ -50,6 +50,7 @@ const PERMISSION_POLES = [
     label: 'Le Studio',
     desc: 'Communication, réunions, Varal et comptes-rendus',
     tabs: [
+      { id: 'studio-events', label: 'Gestion des événements', desc: 'Tableau d\'édition rapide et globale des événements' },
       { id: 'studio-social', label: 'Studio social', desc: 'Gestion et publication sur les réseaux sociaux' },
       { id: 'reunion-manager', label: 'Gestion des réunions', desc: 'Ordres du jour et compte-rendus de réunion' },
       { id: 'varal-manager', label: 'Gestionnaire de Varal', desc: 'Gestion des dossiers et documents à afficher sur le Varal' },

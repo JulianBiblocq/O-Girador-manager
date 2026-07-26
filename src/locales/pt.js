@@ -831,6 +831,7 @@ export const pt = {
     tabInventory: "Inventário de instrumentos",
     tabOrders: "Gestão de pedidos",
     tabWardrobe: "Guarda-roupa",
+    tabStudioEvents: "Gestão de Eventos",
     tabStudioSocial: "Studio Social",
     tabReunions: "Gestão de reuniões",
     tabVaral: "Varal",

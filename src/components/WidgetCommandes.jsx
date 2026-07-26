@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { collection, query, where, onSnapshot, addDoc, deleteDoc, doc } from 'firebase/firestore';
+import React, { useState, useEffect, useMemo } from 'react';
+import { collection, query, where, onSnapshot, addDoc, serverTimestamp, doc, deleteDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
@@ -9,7 +9,7 @@ import { useTranslation } from './LanguageContext';
 import { fr } from '../locales/fr';
 
 export default function WidgetCommandes({ groupId, user, profileData }) {
-  const { t, locale } = useTranslation();
+  const { t } = useTranslation();
   const { tRole } = useTerminologie();
 
   const getArticleLabel = (articleKey) => {
@@ -31,7 +31,7 @@ export default function WidgetCommandes({ groupId, user, profileData }) {
   const [saving, setSaving] = useState(false);
 
   // Form states
-  const catalog = openCampaign?.articles || [];
+  const catalog = useMemo(() => openCampaign?.articles || [], [openCampaign?.articles]);
   const [suggestion, setSuggestion] = useState('');
   const [article, setArticle] = useState('');
   const [selectedTaille, setSelectedTaille] = useState('');
@@ -44,7 +44,7 @@ export default function WidgetCommandes({ groupId, user, profileData }) {
     if (catalog.length > 0 && !catalog.some(c => c.nom === article)) {
       setArticle(catalog[0].nom);
     }
-  }, [catalog]);
+  }, [catalog, article]);
 
   // Reset selected size when selected article changes
   useEffect(() => {

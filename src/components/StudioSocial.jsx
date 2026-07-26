@@ -215,7 +215,7 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
     } else if (backgroundSource === 'upload' && !localImageFile) {
       setBackgroundImageUrl('');
     }
-  }, [backgroundSource, selectedEvent, selectedVaralImage]);
+  }, [backgroundSource, selectedEvent, selectedVaralImage, localImageFile]);
 
   // Sync selectedEvent with the real-time list of events (bidirectional sync)
   useEffect(() => {

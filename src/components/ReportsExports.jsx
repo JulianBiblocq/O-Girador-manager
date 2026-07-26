@@ -202,16 +202,9 @@ export default function ReportsExports({ groupId, role, isSystemAdmin, hasAccess
         const status = member.paymentStatus || 'unpaid';
         if (status === 'unpaid') return;
 
-        let paymentDateObj = null;
-        if (member.dateSignatureDroitImage) {
-          paymentDateObj = member.dateSignatureDroitImage.toDate();
-        } else if (member.dateSignatureAttestationSante) {
-          paymentDateObj = member.dateSignatureAttestationSante.toDate();
-        } else {
-          paymentDateObj = new Date(startDate);
-        }
-
-        const paymentDateStr = paymentDateObj.toISOString().split('T')[0];
+        const paymentDateObj = toJsDate(member.dateSignatureDroitImage) || toJsDate(member.dateSignatureAttestationSante) || new Date(startDate);
+        const paymentDateStr = paymentDateObj ? paymentDateObj.toISOString().split('T')[0] : startDate;
+        
         const isWithinRange = paymentDateStr >= startDate && paymentDateStr <= endDate;
         if (!isWithinRange) return;
 

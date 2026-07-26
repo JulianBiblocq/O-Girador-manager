@@ -8,6 +8,7 @@ import LayoutShell from './components/LayoutShell';
 import { TerminologyProvider } from './components/TerminologyContext';
 import { useTranslation } from './components/LanguageContext';
 import ReloadPrompt from './components/ReloadPrompt';
+import ErrorBoundary from './components/ErrorBoundary';
 
 const Onboarding = React.lazy(() => import('./components/Onboarding'));
 const Trombinoscope = React.lazy(() => import('./components/Trombinoscope'));
@@ -24,6 +25,7 @@ const WardrobeManager = React.lazy(() => import('./components/mestre/WardrobeMan
 const AssociationSettings = React.lazy(() => import('./components/AssociationSettings'));
 const TreasuryManager = React.lazy(() => import('./components/TreasuryManager'));
 const StudioSocial = React.lazy(() => import('./components/StudioSocial'));
+const StudioEventsManager = React.lazy(() => import('./components/studio/StudioEventsManager'));
 const AdminExport = React.lazy(() => import('./components/AdminExport'));
 const VaralManager = React.lazy(() => import('./components/VaralManager'));
 const ReunionManager = React.lazy(() => import('./components/ReunionManager'));
@@ -101,6 +103,7 @@ const POLES_CONFIG = [
     id: 'studio',
     label: 'Le Studio',
     tabs: [
+      { id: 'studio-events', label: 'Gestion des événements', labelKey: 'tabStudioEvents' },
       { id: 'studio-social', label: 'Studio social', labelKey: 'tabStudioSocial' },
       { id: 'reunion-manager', label: 'Gestion des réunions', labelKey: 'tabReunions' },
       { id: 'varal-manager', label: 'Gestionnaire de Varal', labelKey: 'tabVaral' },
@@ -666,7 +669,7 @@ export default function App() {
   const hasAccessTroupe = isSystemOrSuperAdminOrMestre || checkTabAccess('export-annu', 'troupe') || checkTabAccess('tag-manager', 'troupe') || checkTabAccess('instruments', 'troupe');
   const hasAccessLogistique = isSystemOrSuperAdminOrMestre || checkTabAccess('inventory', 'logistique') || checkTabAccess('orders-manager', 'logistique');
   const hasAccessTresorerie = isSystemOrSuperAdminOrMestre || checkTabAccess('dashboard-finance', 'tresorerie') || checkTabAccess('cotisations', 'tresorerie') || checkTabAccess('events-finances', 'tresorerie') || checkTabAccess('operations-diverses', 'tresorerie') || checkTabAccess('frais-km', 'tresorerie') || checkTabAccess('reports-exports', 'tresorerie');
-  const hasAccessStudio = isSystemOrSuperAdminOrMestre || checkTabAccess('studio-social', 'studio') || checkTabAccess('reunion-manager', 'studio') || checkTabAccess('varal-manager', 'studio') || checkTabAccess('activity-reports', 'studio') || checkTabAccess('mestre-forum-channels', 'studio');
+  const hasAccessStudio = isSystemOrSuperAdminOrMestre || checkTabAccess('studio-events', 'studio') || checkTabAccess('studio-social', 'studio') || checkTabAccess('reunion-manager', 'studio') || checkTabAccess('varal-manager', 'studio') || checkTabAccess('activity-reports', 'studio') || checkTabAccess('mestre-forum-channels', 'studio');
   const hasAccessVestiaire = isSystemOrSuperAdminOrMestre || checkTabAccess('wardrobe-inventory', 'vestiaire') || checkTabAccess('wardrobe-couture', 'vestiaire') || checkTabAccess('wardrobe-sizes', 'vestiaire');
   const hasAccessMestre = isSystemOrSuperAdminOrMestre || checkTabAccess('mestre-orientation', 'mestre') || checkTabAccess('mestre-events', 'mestre') || checkTabAccess('mestre-stage-layout', 'mestre') || checkTabAccess('mestre-sequenceur', 'mestre') || checkTabAccess('mestre-workshops', 'mestre') || checkTabAccess('mestre-mot-mestre', 'mestre');
   const hasAccessForumMod = isSystemOrSuperAdminOrMestre || userTags.some(t => ['Modérateur', 'Modérateur Forum', 'Gestionnaire Porte-voix', 'Porte-voix'].includes(t));
@@ -746,6 +749,10 @@ export default function App() {
         setCurrentPole('config');
         setCurrentTab('config-layout');
         break;
+      case 'studio-events':
+        setCurrentPole('studio');
+        setCurrentTab('studio-events');
+        break;
       case 'studio-social':
         setCurrentPole('studio');
         setCurrentTab('studio-social');
@@ -803,6 +810,7 @@ export default function App() {
               </span>
             </div>
           }>
+            <ErrorBoundary title={`Section ${currentTab || 'Principale'}`}>
             {activeMestreEventDetails ? (
               <EventDetails 
                 event={activeMestreEventDetails}
@@ -988,6 +996,13 @@ export default function App() {
                 }
                 onBack={() => handleNavigateToPole('accueil')}
               />
+            ) : (currentTab === 'studio-events' && hasAccessStudio) ? (
+              <StudioEventsManager 
+                groupId={profileData?.groupId}
+                user={user}
+                profileData={profileData}
+                onBack={() => handleNavigateToPole('accueil')} 
+              />
             ) : (currentTab === 'studio-social' && hasAccessStudio) ? (
               <StudioSocial 
                 groupId={profileData?.groupId}
@@ -1170,6 +1185,7 @@ export default function App() {
                 permissionsMatrice={permissionsMatrice}
               />
             )}
+            </ErrorBoundary>
           </React.Suspense>
         </LayoutShell>
         <ReloadPrompt />

@@ -46,7 +46,7 @@ export default function EventDisciplineBadges({ event, compact = false, classNam
           title="Événement avec percussion"
         >
           <img src="/icones/alfaia.svg" alt="Percussion" className="w-3 h-3 object-contain dark:invert inline-block shrink-0" />
-          <span>Percussion</span>
+          <span className="hidden md:inline">Percussion</span>
         </span>
       )}
       {includesDance && (
@@ -55,7 +55,7 @@ export default function EventDisciplineBadges({ event, compact = false, classNam
           title="Événement avec danse"
         >
           <span className="text-[10px] leading-none">💃</span>
-          <span>Danse</span>
+          <span className="hidden md:inline">Danse</span>
         </span>
       )}
     </div>
