@@ -22,6 +22,13 @@ export const DEFAULT_FIELDS_CONFIG = {
 
 export const DEFAULT_INSTRUMENTS = ["Alfaia Marcante", "Alfaia Meião", "Alfaia Repique", "Caixa", "Tarol", "Gonguê", "Agbê", "Mineiro", "Timbal", "Chant", "Danse"];
 
+const getFullAddress = (pd) => {
+  if (!pd) return '';
+  if (pd.adresse && typeof pd.adresse === 'string' && pd.adresse.trim()) return pd.adresse;
+  const parts = [pd.adresseRue, pd.adresseCP || pd.adresseCodePostal, pd.adresseVille].filter(Boolean);
+  return parts.join(', ');
+};
+
 export function useUserProfile(user, profileData, t) {
   const { confirm } = useConfirm();
   const [isEditing, setIsEditing] = useState(false);
@@ -36,8 +43,9 @@ export function useUserProfile(user, profileData, t) {
     accordRenfortAncienInstrument: profileData?.accordRenfortAncienInstrument || false,
     instrumentsJoues: profileData?.instrumentsJoues || ([profileData?.instrument, profileData?.instrumentSecondaire].filter(Boolean)),
     telephone: profileData?.telephone || '',
-    adresseRue: profileData?.adresseRue || '',
-    adresseCP: profileData?.adresseCP || '',
+    adresse: getFullAddress(profileData),
+    adresseRue: profileData?.adresseRue || profileData?.adresse || '',
+    adresseCP: profileData?.adresseCP || profileData?.adresseCodePostal || '',
     adresseVille: profileData?.adresseVille || '',
     surnom: profileData?.surnom || '',
     tailleTshirt: profileData?.tailleTshirt || 'M',
@@ -84,8 +92,9 @@ export function useUserProfile(user, profileData, t) {
       accordRenfortAncienInstrument: profileData?.accordRenfortAncienInstrument || false,
       instrumentsJoues: profileData?.instrumentsJoues || ([profileData?.instrument, profileData?.instrumentSecondaire].filter(Boolean)),
       telephone: profileData?.telephone || '',
-      adresseRue: profileData?.adresseRue || '',
-      adresseCP: profileData?.adresseCP || '',
+      adresse: getFullAddress(profileData),
+      adresseRue: profileData?.adresseRue || profileData?.adresse || '',
+      adresseCP: profileData?.adresseCP || profileData?.adresseCodePostal || '',
       adresseVille: profileData?.adresseVille || '',
       surnom: profileData?.surnom || '',
       tailleTshirt: profileData?.tailleTshirt || 'M',
@@ -423,9 +432,10 @@ export function useUserProfile(user, profileData, t) {
           .filter(i => i && i.toLowerCase() !== 'autre' && i.toLowerCase() !== 'mestre')
         )),
         telephone: isFieldVisible('telephone') ? formData.telephone : (profileData?.telephone || ''),
-        adresseRue: isFieldVisible('adresse') ? formData.adresseRue : (profileData?.adresseRue || ''),
-        adresseCP: isFieldVisible('adresse') ? formData.adresseCP : (profileData?.adresseCP || ''),
-        adresseVille: isFieldVisible('adresse') ? formData.adresseVille : (profileData?.adresseVille || ''),
+        adresse: isFieldVisible('adresse') ? (formData.adresse || formData.adresseRue || '') : (profileData?.adresse || ''),
+        adresseRue: isFieldVisible('adresse') ? (formData.adresseRue || formData.adresse || '') : (profileData?.adresseRue || ''),
+        adresseCP: isFieldVisible('adresse') ? (formData.adresseCP || formData.adresseCodePostal || '') : (profileData?.adresseCP || ''),
+        adresseVille: isFieldVisible('adresse') ? (formData.adresseVille || '') : (profileData?.adresseVille || ''),
         surnom: isFieldVisible('surnom') ? formData.surnom : (profileData?.surnom || ''),
         tailleTshirt: isFieldVisible('tailleTshirt') ? formData.tailleTshirt : (profileData?.tailleTshirt || 'M'),
         taillePantalon: isFieldVisible('taillePantalon') ? formData.taillePantalon : (profileData?.taillePantalon || 'M'),
@@ -438,10 +448,6 @@ export function useUserProfile(user, profileData, t) {
         publierTelephone: Boolean(formData.afficherTelephone),
         publierDateNaissance: Boolean(formData.afficherDateNaissance)
       };
-
-      if (isFieldVisible('adresse')) {
-        updatePayload.adresse = deleteField();
-      }
 
       if (demanderDroitImage) {
         updatePayload.droitImage = formData.droitImage;

@@ -242,214 +242,278 @@ export default function UserProfile({ user, profileData, associationName, onBack
         </div>
       </div>
 
-      {/* Profile Modification Form */}
+      {/* Profile Details in 3 Reassuring Cards */}
       {!isEditing ? (
-        <CordelCard variant="default" useExtremeBorder={false} className="flex flex-col gap-4">
-          <h4 className="font-bold text-xs uppercase tracking-wider text-cordel-wood border-b border-dashed border-cordel-master-dark/10 pb-1 flex items-center justify-between">
-            <span>📁 {t('userProfile.personalInfo')}</span>
-            {profileData?.adresse && !profileData?.adresseRue && (
-              <span className="text-[7.5px] font-bold text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-950/20 px-1.5 py-0.5 rounded border border-amber-300/30 uppercase animate-pulse">
-                Format adresse à mettre à jour
-              </span>
-            )}
-          </h4>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-3 text-xs text-encre-noire font-semibold">
-            <div>
-              <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70 block">
-                {t('userProfile.firstName')} / {t('userProfile.lastName')}
-              </span>
-              <span className="font-extrabold text-sm">{fullName}</span>
-            </div>
-            <div>
-              <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70 block">
-                {translate('onboarding.genre', "Genre")}
-              </span>
-              <span className="capitalize">{formData.genre === 'homme' ? t('onboarding.genderMale') : formData.genre === 'femme' ? t('onboarding.genderFemale') : t('onboarding.genderOther')}</span>
-            </div>
-            <div>
-              <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70 block">
-                {translate('onboarding.instrument', "Instrument Principal")}
-              </span>
-              <span className="font-extrabold">{profileData?.instrument || <span className="italic text-cordel-wood">En attente de validation</span>}</span>
-            </div>
-            {profileData?.instrumentSecondaire && (
-              <div>
-                <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70 block">
-                  Instrument Secondaire
-                </span>
-                <span className="font-bold">{profileData.instrumentSecondaire}</span>
-              </div>
-            )}
-            {(profileData?.voeuPrincipal || profileData?.voeuSecondaire || profileData?.voeuTertiaire) && (
-              <div className="col-span-1 md:col-span-2 bg-cordel-bg-light/60 border border-dashed border-cordel-master-dark/20 p-2.5 rounded mt-1">
-                <span className="text-[10px] uppercase font-black tracking-wider text-cordel-wood block mb-1">
-                  🎵 Vœux d'Orientation Musicale (Transmis au Mestre) :
-                </span>
-                <div className="flex flex-wrap gap-2 text-xs">
-                  {profileData?.voeuPrincipal && (
-                    <span className="bg-white/60 dark:bg-black/20 px-2 py-1 rounded border border-cordel-master-dark/15">
-                      <strong className="text-cordel-wood">Vœu 1 :</strong> {profileData.voeuPrincipal}
-                    </span>
-                  )}
-                  {profileData?.voeuSecondaire && (
-                    <span className="bg-white/60 dark:bg-black/20 px-2 py-1 rounded border border-cordel-master-dark/15">
-                      <strong className="text-cordel-wood">Vœu 2 :</strong> {profileData.voeuSecondaire}
-                    </span>
-                  )}
-                  {profileData?.voeuTertiaire && (
-                    <span className="bg-white/60 dark:bg-black/20 px-2 py-1 rounded border border-cordel-master-dark/15">
-                      <strong className="text-cordel-wood">Vœu 3 :</strong> {profileData.voeuTertiaire}
-                    </span>
-                  )}
+        <div className="flex flex-col gap-4">
+          {/* CARTE 1 : PROFIL PUBLIC */}
+          <CordelCard variant="default" useExtremeBorder={false} className="flex flex-col gap-3">
+            <div className="bg-emerald-50/90 dark:bg-emerald-950/30 border-2 border-dashed border-emerald-500/40 p-3 rounded-[6px] text-left">
+              <div className="flex items-center gap-2.5">
+                <span className="text-xl shrink-0">👁️</span>
+                <div>
+                  <h4 className="font-black text-xs uppercase text-emerald-900 dark:text-emerald-300">
+                    1. Mon Profil Public (Trombinoscope)
+                  </h4>
+                  <p className="text-[10px] text-emerald-800 dark:text-emerald-200 opacity-90 font-medium">
+                    Ces informations apparaissent publiquement sur votre fiche dans le Trombinoscope de l'association.
+                  </p>
                 </div>
               </div>
-            )}
-            {isFieldVisible('surnom') && (
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-3 text-xs text-encre-noire font-semibold text-left">
               <div>
                 <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70 block">
-                  {t('userProfile.surnom')}
+                  {t('userProfile.firstName')} / {t('userProfile.lastName')}
                 </span>
-                <span>{formData.surnom || <span className="italic opacity-60">Non renseigné</span>}</span>
+                <span className="font-extrabold text-sm">{fullName}</span>
               </div>
-            )}
-            {isFieldVisible('telephone') && (
-              <div>
-                <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70 block">
-                  {t('userProfile.phone')}
-                </span>
-                <span>
-                  {formData.telephone ? (
-                    <>
-                      {formData.telephone}{' '}
-                      <span className="text-[8px] font-bold opacity-60 uppercase tracking-wider">
-                        ({(formData.afficherTelephone !== false && formData.publierTelephone !== false) ? "Public dans le Trombinoscope" : "Masqué dans le Trombinoscope"})
-                      </span>
-                    </>
-                  ) : (
-                    <span className="italic opacity-60">Non renseigné</span>
-                  )}
-                </span>
-              </div>
-            )}
-            {isFieldVisible('adresse') && (
-              <div className="md:col-span-2">
-                <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70 block">
-                  {t('userProfile.adresse')}
-                </span>
-                <span>
-                  {profileData?.adresseRue 
-                    ? `${profileData.adresseRue}, ${profileData.adresseCP} ${profileData.adresseVille}`
-                    : (profileData?.adresse || <span className="italic opacity-60">Non renseignée</span>)
-                  }
-                  <span className="text-[8px] font-bold opacity-60 uppercase tracking-wider ml-1.5">
-                    ({formData.visibiliteAdresse === 'ville' ? "Ville uniquement dans le Trombinoscope" : formData.visibiliteAdresse === 'masquee' ? "Masquée dans le Trombinoscope" : "Complète dans le Trombinoscope"})
+
+              {isFieldVisible('surnom') && (
+                <div>
+                  <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70 block">
+                    {t('userProfile.surnom')}
                   </span>
-                </span>
-              </div>
-            )}
-            {(isFieldVisible('tailleTshirt') || isFieldVisible('taillePantalon')) && (
-              <div className="col-span-1 sm:col-span-2 border-t border-dashed border-cordel-master-dark/15 pt-2 mt-1">
-                <span className="text-[10px] uppercase font-black text-cordel-wood block mb-2">
-                  👔 Mensurations / Costumes
-                </span>
-                <div className="grid grid-cols-2 gap-4">
-                  {isFieldVisible('tailleTshirt') && (
-                    <div>
-                      <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70 block">
-                        {t('userProfile.tshirtSize')}
-                      </span>
-                      <span className="font-bold">{formData.tailleTshirt}</span>
-                    </div>
-                  )}
-                  {isFieldVisible('taillePantalon') && (
-                    <div>
-                      <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70 block">
-                        {translate('userProfile.pantSize', "Taille Pantalon")}
-                      </span>
-                      <span className="font-bold">{formData.taillePantalon}</span>
-                    </div>
-                  )}
+                  <span className="font-bold">{formData.surnom || <span className="italic opacity-50">Aucun</span>}</span>
                 </div>
-              </div>
-            )}
-            {isFieldVisible('lateralite') && (
-              <div>
-                <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70 block">
-                  {t('userProfile.lateralite')}
-                </span>
-                <span className="capitalize">{formData.lateralite === 'droitier' ? t('onboarding.handRight') : t('onboarding.handLeft')}</span>
-              </div>
-            )}
-            {isFieldVisible('dateNaissance') && (
-              <div>
-                <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70 block">
-                  {t('userProfile.birthdate')}
-                </span>
-                <span>
-                  {formData.dateNaissance ? (
-                    <>
-                      {new Date(formData.dateNaissance).toLocaleDateString()}{' '}
-                      <span className="text-[8px] font-bold opacity-60 uppercase tracking-wider">
-                        {(formData.afficherDateNaissance || formData.publierDateNaissance) ? "Public dans le Trombinoscope" : "Masqué dans le Trombinoscope"}
-                      </span>
-                    </>
-                  ) : (
-                    <span className="italic opacity-60">Non renseigné</span>
-                  )}
-                </span>
-              </div>
-            )}
-            {demanderDroitImage && (
-              <div>
-                <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70 block">
-                  {t('userProfile.imageRights')}
-                </span>
-                <div className="flex items-center gap-2">
-                  <span>{formData.droitImage ? "✅ Accordé" : "❌ Refusé"}</span>
-                  {formData.droitImage && (
-                    <button 
-                      type="button" 
-                      onClick={() => generateImageCharterPDF(profileData, associationName)}
-                      className="text-[9px] font-bold text-cordel-wood hover:underline ml-1"
-                    >
-                      📄 Télécharger PDF
-                    </button>
-                  )}
-                </div>
-              </div>
-            )}
-            {demanderAttestationSante && (
-              <div>
-                <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70 block">
-                  {t('userProfile.medicalCert')}
-                </span>
-                <div className="flex items-center gap-2">
-                  <span>{formData.aptitudeMedicale ? "✅ Attesté" : "❌ Non attesté"}</span>
-                  {formData.aptitudeMedicale && (
-                    <button 
-                      type="button" 
-                      onClick={() => generateMedicalAttestationPDF(profileData, associationName)}
-                      className="text-[9px] font-bold text-cordel-wood hover:underline ml-1"
-                    >
-                      📄 Télécharger PDF
-                    </button>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
+              )}
 
+              <div>
+                <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70 block">
+                  {translate('onboarding.genre', "Genre")}
+                </span>
+                <span className="capitalize">{formData.genre === 'homme' ? t('onboarding.genderMale') : formData.genre === 'femme' ? t('onboarding.genderFemale') : t('onboarding.genderOther')}</span>
+              </div>
+
+              <div>
+                <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70 block">
+                  {translate('onboarding.instrument', "Instrument Principal")}
+                </span>
+                <span className="font-extrabold text-cordel-wood">{profileData?.instrument || <span className="italic">En attente de validation</span>}</span>
+              </div>
+
+              {profileData?.instrumentSecondaire && (
+                <div>
+                  <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70 block">
+                    Instrument Secondaire
+                  </span>
+                  <span className="font-bold">{profileData.instrumentSecondaire}</span>
+                </div>
+              )}
+
+              {(profileData?.voeuPrincipal || profileData?.voeuSecondaire || profileData?.voeuTertiaire) && (
+                <div className="col-span-1 md:col-span-2 bg-cordel-bg-light/60 border border-dashed border-cordel-master-dark/20 p-2.5 rounded mt-1">
+                  <span className="text-[10px] uppercase font-black tracking-wider text-cordel-wood block mb-1">
+                    🎵 Vœux d'Orientation Musicale (Transmis au Mestre) :
+                  </span>
+                  <div className="flex flex-wrap gap-2 text-xs">
+                    {profileData?.voeuPrincipal && (
+                      <span className="bg-white/70 dark:bg-black/20 px-2 py-1 rounded border border-cordel-master-dark/15">
+                        <strong className="text-cordel-wood">Vœu 1 :</strong> {profileData.voeuPrincipal}
+                      </span>
+                    )}
+                    {profileData?.voeuSecondaire && (
+                      <span className="bg-white/70 dark:bg-black/20 px-2 py-1 rounded border border-cordel-master-dark/15">
+                        <strong className="text-cordel-wood">Vœu 2 :</strong> {profileData.voeuSecondaire}
+                      </span>
+                    )}
+                    {profileData?.voeuTertiaire && (
+                      <span className="bg-white/70 dark:bg-black/20 px-2 py-1 rounded border border-cordel-master-dark/15">
+                        <strong className="text-cordel-wood">Vœu 3 :</strong> {profileData.voeuTertiaire}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          </CordelCard>
+
+          {/* CARTE 2 : COORDONNÉES & CONFIDENTIALITÉ */}
+          <CordelCard variant="default" useExtremeBorder={false} className="flex flex-col gap-3">
+            <div className="bg-amber-50/90 dark:bg-amber-950/30 border-2 border-dashed border-amber-500/40 p-3 rounded-[6px] text-left">
+              <div className="flex items-center gap-2.5">
+                <span className="text-xl shrink-0">🔒</span>
+                <div>
+                  <h4 className="font-black text-xs uppercase text-amber-900 dark:text-amber-300">
+                    2. Coordonnées & Visibilité Annuaire
+                  </h4>
+                  <p className="text-[10px] text-amber-800 dark:text-amber-200 opacity-90 font-medium">
+                    Statuts d'affichage en temps réel dans le trombinoscope.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-3 text-xs text-encre-noire font-semibold text-left">
+              {isFieldVisible('telephone') && (
+                <div>
+                  <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70 block">
+                    📞 {t('userProfile.phone')}
+                  </span>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-extrabold">{formData.telephone || <span className="italic opacity-50">Non renseigné</span>}</span>
+                    {formData.telephone && (
+                      <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded border ${
+                        (formData.afficherTelephone !== false && formData.publierTelephone !== false)
+                          ? 'bg-emerald-100 text-emerald-900 border-emerald-400'
+                          : 'bg-amber-100 text-amber-900 border-amber-400'
+                      }`}>
+                        {(formData.afficherTelephone !== false && formData.publierTelephone !== false) ? "👁️ Visible dans l'annuaire" : "🔒 Masqué aux membres"}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {isFieldVisible('dateNaissance') && (
+                <div>
+                  <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70 block">
+                    🎂 {t('userProfile.birthdate')}
+                  </span>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span>{formData.dateNaissance ? new Date(formData.dateNaissance).toLocaleDateString('fr-FR') : <span className="italic opacity-50">Non renseigné</span>}</span>
+                    {formData.dateNaissance && (
+                      <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded border ${
+                        (formData.afficherDateNaissance || formData.publierDateNaissance)
+                          ? 'bg-emerald-100 text-emerald-900 border-emerald-400'
+                          : 'bg-amber-100 text-amber-900 border-amber-400'
+                      }`}>
+                        {(formData.afficherDateNaissance || formData.publierDateNaissance) ? "👁️ Date affichée" : "🔒 Masquée aux membres"}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {isFieldVisible('adresse') && (
+                <div className="col-span-1 md:col-span-2 bg-cordel-bg-light/60 p-2.5 rounded border border-dashed border-cordel-master-dark/20">
+                  <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70 block">
+                    🏠 {t('userProfile.adresse')}
+                  </span>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mt-0.5">
+                    <span className="font-bold">
+                      {formData.adresse || (profileData?.adresseRue ? `${profileData.adresseRue}, ${profileData.adresseCP || ''} ${profileData.adresseVille || ''}` : <span className="italic opacity-50">Non renseignée</span>)}
+                    </span>
+                    <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded border shrink-0 ${
+                      formData.visibiliteAdresse === 'ville'
+                        ? 'bg-sky-100 text-sky-900 border-sky-400'
+                        : formData.visibiliteAdresse === 'masquee'
+                        ? 'bg-amber-100 text-amber-900 border-amber-400'
+                        : 'bg-emerald-100 text-emerald-900 border-emerald-400'
+                    }`}>
+                      {formData.visibiliteAdresse === 'ville' ? "🏙️ Ville uniquement dans l'annuaire" : formData.visibiliteAdresse === 'masquee' ? "🔒 Masquée dans l'annuaire" : "👁️ Adresse complète dans l'annuaire"}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {isFieldVisible('lateralite') && (
+                <div>
+                  <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70 block">
+                    🖐️ {t('userProfile.lateralite')} (Placement scène)
+                  </span>
+                  <span className="capitalize font-bold">{formData.lateralite === 'droitier' ? t('onboarding.handRight') : t('onboarding.handLeft')}</span>
+                </div>
+              )}
+            </div>
+          </CordelCard>
+
+          {/* CARTE 3 : LOGISTIQUE, COSTUMES & SANTÉ */}
+          <CordelCard variant="default" useExtremeBorder={false} className="flex flex-col gap-3">
+            <div className="bg-sky-50/90 dark:bg-sky-950/30 border-2 border-dashed border-sky-500/40 p-3 rounded-[6px] text-left">
+              <div className="flex items-center gap-2.5">
+                <span className="text-xl shrink-0">🛡️</span>
+                <div>
+                  <h4 className="font-black text-xs uppercase text-sky-900 dark:text-sky-300">
+                    3. Logistique, Costumes & Santé (Strictement Confidentiel)
+                  </h4>
+                  <p className="text-[10px] text-sky-800 dark:text-sky-200 opacity-90 font-medium">
+                    Réservé aux administrateurs et au Mestre pour la gestion des tenues et la sécurité. <strong>Ne sera jamais affiché dans le trombinoscope.</strong>
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-3 text-xs text-encre-noire font-semibold text-left">
+              {(isFieldVisible('tailleTshirt') || isFieldVisible('taillePantalon')) && (
+                <div className="col-span-1 md:col-span-2">
+                  <span className="text-[10px] uppercase font-black text-cordel-wood block mb-1">
+                    👔 Mensurations / Taille des Costumes
+                  </span>
+                  <div className="grid grid-cols-2 gap-4">
+                    {isFieldVisible('tailleTshirt') && (
+                      <div>
+                        <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70 block">
+                          T-shirt
+                        </span>
+                        <span className="font-extrabold text-sm">{formData.tailleTshirt}</span>
+                      </div>
+                    )}
+                    {isFieldVisible('taillePantalon') && (
+                      <div>
+                        <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70 block">
+                          Pantalon / Bas
+                        </span>
+                        <span className="font-extrabold text-sm">{formData.taillePantalon}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {demanderDroitImage && (
+                <div>
+                  <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70 block">
+                    {t('userProfile.imageRights')}
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <span>{formData.droitImage ? "✅ Accordé" : "❌ Refusé"}</span>
+                    {formData.droitImage && (
+                      <button 
+                        type="button" 
+                        onClick={() => generateImageCharterPDF(profileData, associationName)}
+                        className="text-[9px] font-bold text-cordel-wood hover:underline ml-1"
+                      >
+                        📄 Télécharger PDF
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {demanderAttestationSante && (
+                <div>
+                  <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70 block">
+                    {t('userProfile.medicalCert')}
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <span>{formData.aptitudeMedicale ? "✅ Attesté sur l'honneur" : "❌ Non attesté"}</span>
+                    {formData.aptitudeMedicale && (
+                      <button 
+                        type="button" 
+                        onClick={() => generateMedicalAttestationPDF(profileData, associationName)}
+                        className="text-[9px] font-bold text-cordel-wood hover:underline ml-1"
+                      >
+                        📄 Télécharger PDF
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          </CordelCard>
+
+          {/* Edit Button */}
           <CordelButton 
             type="button" 
             variant="ocre" 
             useExtremeBorder={true}
             onClick={handleStartEdit}
-            className="w-full mt-2 py-3 font-bold uppercase tracking-wider text-xs"
+            className="w-full py-3.5 font-black uppercase tracking-wider text-xs shadow-[3px_3px_0px_0px_#181716]"
           >
             ✏️ {translate('userProfile.editBtn', "Modifier mon profil")}
           </CordelButton>
-        </CordelCard>
+        </div>
       ) : (
         <ProfileEditForm
           formData={formData}
