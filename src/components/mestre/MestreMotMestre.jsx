@@ -14,6 +14,8 @@ export default function MestreMotMestre({ groupId, profileData }) {
   const [text, setText] = useState('');
   const [auteur, setAuteur] = useState('');
   const [publie, setPublie] = useState(true);
+  const [actionText, setActionText] = useState('');
+  const [actionLink, setActionLink] = useState('');
 
   // Load from associations/{groupId} in real-time
   useEffect(() => {
@@ -26,6 +28,8 @@ export default function MestreMotMestre({ groupId, profileData }) {
         setText(data.motDuMestre || '');
         setAuteur(data.motDuMestreAuteur || '');
         setPublie(data.motDuMestrePublie !== false);
+        setActionText(data.motDuMestreActionText || '');
+        setActionLink(data.motDuMestreActionLink || '');
       }
       setLoading(false);
     }, (error) => {
@@ -45,7 +49,9 @@ export default function MestreMotMestre({ groupId, profileData }) {
       await updateDoc(docRef, {
         motDuMestre: text.trim(),
         motDuMestreAuteur: auteur.trim() || profileData?.prenom || "L'équipe",
-        motDuMestrePublie: publie
+        motDuMestrePublie: publie,
+        motDuMestreActionText: actionText.trim(),
+        motDuMestreActionLink: actionLink.trim()
       });
       alert("Le mot du Mestre a été mis à jour avec succès !");
     } catch (error) {
@@ -115,6 +121,41 @@ export default function MestreMotMestre({ groupId, profileData }) {
               disabled={saving}
               className="theme-input w-full py-1.5 px-3 font-bold text-sm bg-cordel-bg-light"
             />
+          </div>
+
+          {/* Bouton d'action / CTA Optionnel */}
+          <div className="flex flex-col gap-2 border-t border-dashed border-cordel-master-dark/15 pt-3">
+            <label className="text-[10px] uppercase font-bold tracking-wider text-cordel-wood flex items-center gap-1">
+              🚀 Bouton d'action / Call to Action (Optionnel)
+            </label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="flex flex-col gap-1">
+                <label className="text-[9px] uppercase font-bold text-cordel-master-dark">
+                  Texte du bouton
+                </label>
+                <input
+                  type="text"
+                  value={actionText}
+                  onChange={(e) => setActionText(e.target.value)}
+                  disabled={saving}
+                  placeholder="Ex : Mettre à jour mon profil"
+                  className="theme-input w-full py-1.5 px-3 text-xs bg-cordel-bg-light"
+                />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-[9px] uppercase font-bold text-cordel-master-dark">
+                  Page / Route de redirection
+                </label>
+                <input
+                  type="text"
+                  value={actionLink}
+                  onChange={(e) => setActionLink(e.target.value)}
+                  disabled={saving}
+                  placeholder="Ex : /profil ou mestre-orientation"
+                  className="theme-input w-full py-1.5 px-3 text-xs bg-cordel-bg-light"
+                />
+              </div>
+            </div>
           </div>
 
         </CordelCard>

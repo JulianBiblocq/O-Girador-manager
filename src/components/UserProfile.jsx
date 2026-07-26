@@ -43,6 +43,7 @@ export default function UserProfile({ user, profileData, associationName, onBack
     uploadingPhoto,
     myInstruments,
     loadingInst,
+    instrumentsDisponibles,
     tagsDisponibles,
     demanderDroitImage,
     demanderAttestationSante,
@@ -268,8 +269,40 @@ export default function UserProfile({ user, profileData, associationName, onBack
               <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70 block">
                 {translate('onboarding.instrument', "Instrument Principal")}
               </span>
-              <span className="font-bold">{formData.instrument}</span>
+              <span className="font-extrabold">{profileData?.instrument || <span className="italic text-cordel-wood">En attente de validation</span>}</span>
             </div>
+            {profileData?.instrumentSecondaire && (
+              <div>
+                <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70 block">
+                  Instrument Secondaire
+                </span>
+                <span className="font-bold">{profileData.instrumentSecondaire}</span>
+              </div>
+            )}
+            {(profileData?.voeuPrincipal || profileData?.voeuSecondaire || profileData?.voeuTertiaire) && (
+              <div className="col-span-1 md:col-span-2 bg-cordel-bg-light/60 border border-dashed border-cordel-master-dark/20 p-2.5 rounded mt-1">
+                <span className="text-[10px] uppercase font-black tracking-wider text-cordel-wood block mb-1">
+                  🎵 Vœux d'Orientation Musicale (Transmis au Mestre) :
+                </span>
+                <div className="flex flex-wrap gap-2 text-xs">
+                  {profileData?.voeuPrincipal && (
+                    <span className="bg-white/60 dark:bg-black/20 px-2 py-1 rounded border border-cordel-master-dark/15">
+                      <strong className="text-cordel-wood">Vœu 1 :</strong> {profileData.voeuPrincipal}
+                    </span>
+                  )}
+                  {profileData?.voeuSecondaire && (
+                    <span className="bg-white/60 dark:bg-black/20 px-2 py-1 rounded border border-cordel-master-dark/15">
+                      <strong className="text-cordel-wood">Vœu 2 :</strong> {profileData.voeuSecondaire}
+                    </span>
+                  )}
+                  {profileData?.voeuTertiaire && (
+                    <span className="bg-white/60 dark:bg-black/20 px-2 py-1 rounded border border-cordel-master-dark/15">
+                      <strong className="text-cordel-wood">Vœu 3 :</strong> {profileData.voeuTertiaire}
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
             {isFieldVisible('surnom') && (
               <div>
                 <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70 block">
@@ -427,6 +460,7 @@ export default function UserProfile({ user, profileData, associationName, onBack
           isFieldRequired={isFieldRequired}
           validationError={validationError}
           demanderAttestationSante={demanderAttestationSante}
+          instrumentsDisponibles={instrumentsDisponibles}
           t={t}
         />
       )}

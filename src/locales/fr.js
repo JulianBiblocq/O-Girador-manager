@@ -849,7 +849,8 @@ export const fr = {
     tabConfigLogistics: "Logistique et covoiturage",
     tabConfigDocuments: "Documents",
     tabConfigAgenda: "Configuration de l'agenda",
-    tabConfigLayout: "Mise en page"
+    tabConfigLayout: "Mise en page",
+    tabMestreOrientation: "Orientation & Casting"
   },
   mestre: {
     eventsTitle: "Direction Musicale - Liste des Événements",

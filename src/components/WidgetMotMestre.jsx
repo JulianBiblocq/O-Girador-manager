@@ -6,10 +6,12 @@ import CordelButton from './CordelButton';
 import { XiloChisel, XiloClose } from './XiloIcons';
 import { useTranslation } from './LanguageContext';
 
-export default function WidgetMotMestre({ role, isSystemAdmin, groupId, profileData }) {
+export default function WidgetMotMestre({ role, isSystemAdmin, groupId, profileData, onNavigateToView }) {
   const { t } = useTranslation();
   const [motDuMestre, setMotDuMestre] = useState('');
   const [auteurNom, setAuteurNom] = useState('');
+  const [actionText, setActionText] = useState('');
+  const [actionLink, setActionLink] = useState('');
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [draftText, setDraftText] = useState('');
@@ -17,6 +19,21 @@ export default function WidgetMotMestre({ role, isSystemAdmin, groupId, profileD
   const [publie, setPublie] = useState(true);
 
   const isAuthorized = role === 'mestre' || role === 'super-admin' || isSystemAdmin === true;
+
+  const handleCtaClick = (link) => {
+    if (!link) return;
+    const trimmed = link.trim();
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+      window.open(trimmed, '_blank', 'noopener,noreferrer');
+      return;
+    }
+    const cleanRoute = trimmed.startsWith('/') ? trimmed.slice(1) : trimmed;
+    if (onNavigateToView) {
+      onNavigateToView(cleanRoute);
+    } else {
+      window.location.href = trimmed;
+    }
+  };
 
   // Real-time synchronization with Firestore associations/{groupId}
   useEffect(() => {
@@ -34,9 +51,13 @@ export default function WidgetMotMestre({ role, isSystemAdmin, groupId, profileD
         setMotDuMestre(data.motDuMestre || '');
         setAuteurNom(data.motDuMestreAuteur || '');
         setPublie(data.motDuMestrePublie !== false);
+        setActionText(data.motDuMestreActionText || '');
+        setActionLink(data.motDuMestreActionLink || '');
       } else {
         setMotDuMestre('');
         setAuteurNom('');
+        setActionText('');
+        setActionLink('');
         setPublie(true);
       }
       setLoading(false);
@@ -168,6 +189,21 @@ export default function WidgetMotMestre({ role, isSystemAdmin, groupId, profileD
             {!isEditing && (
               <div className="text-right mt-2 text-[10px] font-bold uppercase tracking-widest opacity-65">
                 — {t('widgetMotMestre.signedBy') || "Signé"} {auteurNom || t('widgetMotMestre.team') || "L'équipe"}
+              </div>
+            )}
+
+            {!isEditing && actionText && actionLink && (
+              <div className="mt-3 pt-2.5 border-t border-dashed border-cordel-master-dark/20 flex justify-start select-none">
+                <CordelButton
+                  type="button"
+                  variant="ocre"
+                  useExtremeBorder={true}
+                  onClick={() => handleCtaClick(actionLink)}
+                  className="text-xs py-2 px-3.5 font-black uppercase tracking-wider flex items-center gap-2 shadow-sm hover:scale-[1.02] transition-transform"
+                >
+                  <span>🚀 {actionText}</span>
+                  <span className="text-sm font-bold">→</span>
+                </CordelButton>
               </div>
             )}
           </div>

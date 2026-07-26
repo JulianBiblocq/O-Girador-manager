@@ -62,6 +62,7 @@ const PERMISSION_POLES = [
     label: '🥁 Espace Mestre',
     desc: 'Direction artistique, plan de scène et séquenceur',
     tabs: [
+      { id: 'mestre-orientation', label: 'Orientation & Casting', desc: 'Gestion des affectations d\'instruments et vœux d\'évolution' },
       { id: 'mestre-events', label: 'Liste des Événements', desc: 'Vue mestre détaillée des événements et présences' },
       { id: 'mestre-stage-layout', label: 'Plan de Scène', desc: 'Création et disposition visuelle du placement scénique' },
       { id: 'mestre-sequenceur', label: 'Séquenceur', desc: 'Édition des séquences musicales et structures rhythm' },

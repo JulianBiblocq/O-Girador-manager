@@ -30,6 +30,7 @@ const ReunionManager = React.lazy(() => import('./components/ReunionManager'));
 const ActivityReports = React.lazy(() => import('./components/studio/ActivityReports'));
 const EventDetails = React.lazy(() => import('./components/EventDetails'));
 const MestreEvents = React.lazy(() => import('./components/mestre/MestreEvents'));
+const MestreOrientationCasting = React.lazy(() => import('./components/mestre/MestreOrientationCasting'));
 const MestreStageLayout = React.lazy(() => import('./components/mestre/MestreStageLayout'));
 const ForumChannelsManager = React.lazy(() => import('./components/ForumChannelsManager'));
 const MestreSequenceur = React.lazy(() => import('./components/mestre/MestreSequenceur'));
@@ -111,6 +112,7 @@ const POLES_CONFIG = [
     id: 'mestre',
     label: 'Espace Mestre',
     tabs: [
+      { id: 'mestre-orientation', label: 'Orientation & Casting', labelKey: 'tabMestreOrientation' },
       { id: 'mestre-events', label: 'Liste des Événements', labelKey: 'tabMestreEvents' },
       { id: 'mestre-stage-layout', label: 'Plan de Scène', labelKey: 'tabMestreStage' },
       { id: 'mestre-sequenceur', label: 'Séquenceur (Fichiers JSON)', labelKey: 'tabMestreSequenceur' },
@@ -506,7 +508,7 @@ export default function App() {
           const profileRef = doc(db, 'users', currentUser.uid);
           unsubscribeProfile = onSnapshot(profileRef, (docSnap) => {
             if (docSnap.exists()) {
-              setProfileData(docSnap.data());
+              setProfileData({ uid: docSnap.id, id: docSnap.id, ...docSnap.data() });
               setProfileExists(true);
             } else {
               setProfileData(null);
@@ -618,7 +620,7 @@ export default function App() {
     if (['studio-social', 'varal-manager'].includes(tabId) && enabledModules.studioSocial === false) return false;
     if (tabId === 'reunion-manager' && enabledModules.reunions === false) return false;
     if (['forum', 'mestre-forum-channels'].includes(tabId) && enabledModules.forum === false) return false;
-    if (['mestre-events', 'mestre-stage-layout', 'mestre-sequenceur', 'mestre-workshops', 'mestre-mot-mestre'].includes(tabId) && enabledModules.mestre === false) return false;
+    if (['mestre-orientation', 'mestre-events', 'mestre-stage-layout', 'mestre-sequenceur', 'mestre-workshops', 'mestre-mot-mestre'].includes(tabId) && enabledModules.mestre === false) return false;
 
     return true;
   };
@@ -658,7 +660,7 @@ export default function App() {
   const hasAccessTresorerie = isSystemOrSuperAdminOrMestre || checkTabAccess('dashboard-finance', 'tresorerie') || checkTabAccess('cotisations', 'tresorerie') || checkTabAccess('events-finances', 'tresorerie') || checkTabAccess('operations-diverses', 'tresorerie') || checkTabAccess('frais-km', 'tresorerie') || checkTabAccess('reports-exports', 'tresorerie');
   const hasAccessStudio = isSystemOrSuperAdminOrMestre || checkTabAccess('studio-social', 'studio') || checkTabAccess('reunion-manager', 'studio') || checkTabAccess('varal-manager', 'studio') || checkTabAccess('activity-reports', 'studio') || checkTabAccess('mestre-forum-channels', 'studio');
   const hasAccessVestiaire = isSystemOrSuperAdminOrMestre || checkTabAccess('wardrobe-inventory', 'vestiaire') || checkTabAccess('wardrobe-couture', 'vestiaire') || checkTabAccess('wardrobe-sizes', 'vestiaire');
-  const hasAccessMestre = isSystemOrSuperAdminOrMestre || checkTabAccess('mestre-events', 'mestre') || checkTabAccess('mestre-stage-layout', 'mestre') || checkTabAccess('mestre-sequenceur', 'mestre') || checkTabAccess('mestre-workshops', 'mestre') || checkTabAccess('mestre-mot-mestre', 'mestre');
+  const hasAccessMestre = isSystemOrSuperAdminOrMestre || checkTabAccess('mestre-orientation', 'mestre') || checkTabAccess('mestre-events', 'mestre') || checkTabAccess('mestre-stage-layout', 'mestre') || checkTabAccess('mestre-sequenceur', 'mestre') || checkTabAccess('mestre-workshops', 'mestre') || checkTabAccess('mestre-mot-mestre', 'mestre');
   const hasAccessForumMod = isSystemOrSuperAdminOrMestre || userTags.some(t => ['Modérateur', 'Modérateur Forum', 'Gestionnaire Porte-voix', 'Porte-voix'].includes(t));
 
   const handleNavigateToPole = (poleId) => {
@@ -1013,6 +1015,14 @@ export default function App() {
                 role={profileData?.role}
                 isSystemAdmin={profileData?.isSystemAdmin}
                 onBack={() => handleNavigateToPole('accueil')} 
+              />
+            ) : (currentTab === 'mestre-orientation' && hasAccessMestre) ? (
+              <MestreOrientationCasting 
+                user={user}
+                profileData={profileData}
+                onNavigateToMember={(mId) => {
+                  setCurrentTab('trombinoscope');
+                }}
               />
             ) : (currentTab === 'mestre-events' && hasAccessMestre) ? (
               <MestreEvents 

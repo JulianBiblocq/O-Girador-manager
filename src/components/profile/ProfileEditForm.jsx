@@ -1,6 +1,7 @@
 import React from 'react';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
+import MusicalOrientationForm from './MusicalOrientationForm';
 
 const AddressAutocomplete = React.lazy(() => import('../AddressAutocomplete'));
 
@@ -31,12 +32,15 @@ export default function ProfileEditForm({
   isFieldRequired = () => false,
   validationError = '',
   demanderAttestationSante,
+  instrumentsDisponibles,
   t
 }) {
   const translate = (key, fallback) => {
     const val = t(key);
     return val === key ? fallback : val;
   };
+
+  const isAncien = Boolean(formData.instrument && formData.instrument.trim() !== '');
 
   return (
     <form onSubmit={handleSave} className="flex flex-col gap-4">
@@ -139,31 +143,15 @@ export default function ProfileEditForm({
           </div>
         )}
 
-        {/* Instrument Principal */}
-        <div className="flex flex-col gap-1.5 text-left">
-          <label className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood">
-            {translate('onboarding.instrument', "Instrument principal")}
-          </label>
-          <select
-            name="instrument"
-            value={formData.instrument}
-            onChange={handleChange}
-            required
-            disabled={saving}
-            className="theme-input w-full text-xs bg-cordel-bg-light"
-          >
-            <option value="Alfaia">Alfaia</option>
-            <option value="Caixa">Caixa</option>
-            <option value="Agbê">Agbê</option>
-            <option value="Gonguê">Gonguê</option>
-            <option value="Mineiro">Mineiro</option>
-            <option value="Apito">Apito / Mestre</option>
-            <option value="Timbal">Timbal</option>
-            <option value="Chant">Chant</option>
-            <option value="Danse">Danse</option>
-            <option value="Autre">Autre / Polyvalent</option>
-          </select>
-        </div>
+        {/* Évolution & Souhaits d'Instruments */}
+        <MusicalOrientationForm
+          formData={formData}
+          handleChange={handleChange}
+          saving={saving}
+          instrumentsDisponibles={instrumentsDisponibles}
+          isAncien={isAncien}
+          t={t}
+        />
 
         {/* Adresse (Google Places Autocomplete) */}
         {isFieldVisible('adresse') && (

@@ -301,6 +301,7 @@ export default function Dashboard({ user, profileData, onNavigateToTrombi, onNav
                   isSystemAdmin={profileData?.isSystemAdmin} 
                   groupId={profileData?.groupId} 
                   profileData={profileData}
+                  onNavigateToView={onNavigateToView}
                 />
               );
               break;
@@ -312,6 +313,7 @@ export default function Dashboard({ user, profileData, onNavigateToTrombi, onNav
                   role={profileData?.role} 
                   isSystemAdmin={profileData?.isSystemAdmin} 
                   user={user}
+                  onNavigateToView={onNavigateToView}
                 />
               );
               break;

@@ -791,4 +791,44 @@ export const XiloHanger = ({ size = 16, className = '', ...props }) => (
   </svg>
 );
 
+// 👁️ Œil (Visible / Afficher) - Style Xilogravura Cordel
+export const XiloEye = ({ size = 16, className = '', ...props }) => (
+  <svg 
+    width={size} 
+    height={size} 
+    viewBox="0 0 24 24" 
+    fill="none" 
+    stroke="currentColor" 
+    strokeWidth="2.2" 
+    strokeLinecap="round" 
+    strokeLinejoin="round" 
+    className={`xilo-icon ${className}`} 
+    {...props}
+  >
+    <path d="M2 12C4.5 7 8.5 4.5 12 4.5C15.5 4.5 19.5 7 22 12C19.5 17 15.5 19.5 12 19.5C8.5 19.5 4.5 17 2 12Z" />
+    <circle cx="12" cy="12" r="3.5" fill="currentColor" />
+  </svg>
+);
+
+// 🙈 Œil masqué (Masqué / Cacher) - Style Xilogravura Cordel
+export const XiloEyeOff = ({ size = 16, className = '', ...props }) => (
+  <svg 
+    width={size} 
+    height={size} 
+    viewBox="0 0 24 24" 
+    fill="none" 
+    stroke="currentColor" 
+    strokeWidth="2.2" 
+    strokeLinecap="round" 
+    strokeLinejoin="round" 
+    className={`xilo-icon ${className}`} 
+    {...props}
+  >
+    <path d="M2 12C4.5 7 8.5 4.5 12 4.5C15.5 4.5 19.5 7 22 12C19.5 17 15.5 19.5 12 19.5C8.5 19.5 4.5 17 2 12Z" strokeDasharray="3 2" />
+    <circle cx="12" cy="12" r="2.5" fill="currentColor" opacity="0.6" />
+    <line x1="3" y1="3" x2="21" y2="21" strokeWidth="2.6" strokeLinecap="round" />
+  </svg>
+);
+
+
 

@@ -72,7 +72,7 @@ export default function LayoutShell({
     if (['studio-social', 'varal-manager'].includes(tabId) && enabledModules.studioSocial === false) return false;
     if (tabId === 'reunion-manager' && enabledModules.reunions === false) return false;
     if (['forum', 'mestre-forum-channels'].includes(tabId) && enabledModules.forum === false) return false;
-    if (['mestre-events', 'mestre-stage-layout', 'mestre-sequenceur', 'mestre-workshops', 'mestre-mot-mestre'].includes(tabId) && enabledModules.mestre === false) return false;
+    if (['mestre-orientation', 'mestre-events', 'mestre-stage-layout', 'mestre-sequenceur', 'mestre-workshops', 'mestre-mot-mestre'].includes(tabId) && enabledModules.mestre === false) return false;
 
     return true;
   };
@@ -112,7 +112,7 @@ export default function LayoutShell({
   const hasAccessTresorerie = isSystemOrSuperAdminOrMestre || checkTabAccess('dashboard-finance', 'tresorerie') || checkTabAccess('cotisations', 'tresorerie') || checkTabAccess('events-finances', 'tresorerie') || checkTabAccess('operations-diverses', 'tresorerie') || checkTabAccess('frais-km', 'tresorerie') || checkTabAccess('reports-exports', 'tresorerie');
   const hasAccessStudio = isSystemOrSuperAdminOrMestre || checkTabAccess('studio-social', 'studio') || checkTabAccess('reunion-manager', 'studio') || checkTabAccess('varal-manager', 'studio') || checkTabAccess('activity-reports', 'studio') || checkTabAccess('mestre-forum-channels', 'studio');
   const hasAccessVestiaire = isSystemOrSuperAdminOrMestre || checkTabAccess('wardrobe-inventory', 'vestiaire') || checkTabAccess('wardrobe-couture', 'vestiaire') || checkTabAccess('wardrobe-sizes', 'vestiaire');
-  const hasAccessMestre = isSystemOrSuperAdminOrMestre || checkTabAccess('mestre-events', 'mestre') || checkTabAccess('mestre-stage-layout', 'mestre') || checkTabAccess('mestre-sequenceur', 'mestre') || checkTabAccess('mestre-workshops', 'mestre') || checkTabAccess('mestre-mot-mestre', 'mestre');
+  const hasAccessMestre = isSystemOrSuperAdminOrMestre || checkTabAccess('mestre-orientation', 'mestre') || checkTabAccess('mestre-events', 'mestre') || checkTabAccess('mestre-stage-layout', 'mestre') || checkTabAccess('mestre-sequenceur', 'mestre') || checkTabAccess('mestre-workshops', 'mestre') || checkTabAccess('mestre-mot-mestre', 'mestre');
 
   const isAdministrativeUser = isSystemOrSuperAdminOrMestre || 
                                profileData?.role === 'bureau' || 

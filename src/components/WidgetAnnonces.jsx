@@ -8,7 +8,7 @@ import { XiloMegaphone, XiloClose } from './XiloIcons';
 import { useTranslation } from './LanguageContext';
 import { formatTagGender, getTagId } from '../utils/tagUtils';
 
-export default function WidgetAnnonces({ groupId, profileData, role, isSystemAdmin, user }) {
+export default function WidgetAnnonces({ groupId, profileData, role, isSystemAdmin, user, onNavigateToView }) {
   const { t } = useTranslation();
   const [announcements, setAnnouncements] = useState([]);
   const [tagsDisponibles, setTagsDisponibles] = useState([]);
@@ -81,6 +81,8 @@ export default function WidgetAnnonces({ groupId, profileData, role, isSystemAdm
   // Form states
   const [titre, setTitre] = useState('');
   const [message, setMessage] = useState('');
+  const [actionText, setActionText] = useState('');
+  const [actionLink, setActionLink] = useState('');
   const [cibles, setCibles] = useState(['Tous']);
   const [publishOnApp, setPublishOnApp] = useState(true);
   const [sendViaEmail, setSendViaEmail] = useState(false);
@@ -156,6 +158,21 @@ export default function WidgetAnnonces({ groupId, profileData, role, isSystemAdm
     }
   };
 
+  const handleCtaClick = (link) => {
+    if (!link) return;
+    const trimmed = link.trim();
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+      window.open(trimmed, '_blank', 'noopener,noreferrer');
+      return;
+    }
+    const cleanRoute = trimmed.startsWith('/') ? trimmed.slice(1) : trimmed;
+    if (onNavigateToView) {
+      onNavigateToView(cleanRoute);
+    } else {
+      window.location.href = trimmed;
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!groupId || !titre.trim() || !message.trim()) return;
@@ -166,6 +183,8 @@ export default function WidgetAnnonces({ groupId, profileData, role, isSystemAdm
         groupId,
         titre: titre.trim(),
         message: message.trim(),
+        actionText: actionText.trim(),
+        actionLink: actionLink.trim(),
         auteurNom: `${profileData?.prenom || 'Admin'} ${profileData?.nom || ''}`,
         dateCreation: new Date().toISOString(),
         cibles,
@@ -179,6 +198,8 @@ export default function WidgetAnnonces({ groupId, profileData, role, isSystemAdm
       // Reset form
       setTitre('');
       setMessage('');
+      setActionText('');
+      setActionLink('');
       setCibles(['Tous']);
       setPublishOnApp(true);
       setSendViaEmail(false);
@@ -328,6 +349,41 @@ export default function WidgetAnnonces({ groupId, profileData, role, isSystemAdm
                 placeholder={t('widgetAnnonces.annMsgPlaceholder')}
                 className="theme-input text-xs font-semibold py-1.5 resize-none w-full"
               />
+            </div>
+
+            {/* Call to Action optionnel */}
+            <div className="flex flex-col gap-1.5 pt-2 border-t border-dashed border-cordel-master-dark/15 text-left">
+              <label className="text-[8px] uppercase font-bold tracking-wider text-cordel-master-dark flex items-center gap-1">
+                🚀 Bouton d'action / Call to Action (Optionnel)
+              </label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div className="flex flex-col gap-0.5">
+                  <label className="text-[8px] font-semibold text-cordel-wood uppercase">
+                    Texte du bouton
+                  </label>
+                  <input
+                    type="text"
+                    value={actionText}
+                    onChange={(e) => setActionText(e.target.value)}
+                    disabled={saving}
+                    placeholder="Ex: Mettre à jour mon profil"
+                    className="theme-input text-xs py-1"
+                  />
+                </div>
+                <div className="flex flex-col gap-0.5">
+                  <label className="text-[8px] font-semibold text-cordel-wood uppercase">
+                    Lien / Page de redirection
+                  </label>
+                  <input
+                    type="text"
+                    value={actionLink}
+                    onChange={(e) => setActionLink(e.target.value)}
+                    disabled={saving}
+                    placeholder="Ex: /profil ou mestre-orientation"
+                    className="theme-input text-xs py-1"
+                  />
+                </div>
+              </div>
             </div>
 
             {/* Cibles checklist */}
@@ -506,6 +562,22 @@ export default function WidgetAnnonces({ groupId, profileData, role, isSystemAdm
                   <p className="text-xs font-semibold leading-relaxed mt-2 text-encre-noire/90 whitespace-pre-wrap">
                     {ann.message}
                   </p>
+
+                  {/* Call to Action Button */}
+                  {ann.actionText && ann.actionLink && (
+                    <div className="mt-3 pt-2.5 border-t border-dashed border-cordel-master-dark/20 flex justify-start select-none">
+                      <CordelButton
+                        type="button"
+                        variant="ocre"
+                        useExtremeBorder={true}
+                        onClick={() => handleCtaClick(ann.actionLink)}
+                        className="text-xs py-2 px-3.5 font-black uppercase tracking-wider flex items-center gap-2 shadow-sm hover:scale-[1.02] transition-transform"
+                      >
+                        <span>🚀 {ann.actionText}</span>
+                        <span className="text-sm font-bold">→</span>
+                      </CordelButton>
+                    </div>
+                  )}
 
                   {/* Delete trigger (visible only for admin) */}
                   {isAdmin && (

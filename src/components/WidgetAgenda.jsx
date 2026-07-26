@@ -7,7 +7,7 @@ const EventDetails = React.lazy(() => import('./EventDetails'));
 import CalendarGrid from './CalendarGrid';
 import EventCreateForm from './agenda/EventCreateForm';
 import { useTranslation } from './LanguageContext';
-import { XiloCalendar } from './XiloIcons';
+import { XiloCalendar, XiloEye, XiloEyeOff } from './XiloIcons';
 import { calculateRoadDistance } from '../utils/googleMaps';
 const formatDateWithDay = (dateStr, includeYear = true) => {
   const date = new Date(dateStr);
@@ -540,9 +540,13 @@ export default function WidgetAgenda({
                   type="button"
                   onClick={handleToggleHide}
                   title={isHidden ? `Afficher les ${label}s` : `Masquer les ${label}s`}
-                  className="cursor-pointer ml-0.5 opacity-80 hover:opacity-100 hover:scale-110 transition-transform p-0.5 select-none"
+                  className="cursor-pointer ml-0.5 opacity-80 hover:opacity-100 hover:scale-110 transition-transform p-0.5 select-none flex items-center justify-center"
                 >
-                  {isHidden ? '🙈' : '👁️'}
+                  {isHidden ? (
+                    <XiloEyeOff size={13} className="shrink-0 opacity-60" />
+                  ) : (
+                    <XiloEye size={13} className="shrink-0" />
+                  )}
                 </button>
               </div>
             );

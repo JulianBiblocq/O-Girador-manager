@@ -67,13 +67,14 @@ exports.helloAssoWebhook = onRequest(async (req, res) => {
     const eventType = payload.eventType || "";
 
     // 1. Vérification du statut de paiement
-    if (data.state && !['Authorized', 'Paid', 'Processed'].includes(data.state)) {
-      console.log(`Paiement ignoré : statut = ${data.state}`);
+    const paymentState = data.state || data.payment?.state || data.order?.state || data.status || "";
+    if (paymentState && !['Authorized', 'Paid', 'Processed'].includes(paymentState)) {
+      console.log(`Paiement ignoré : statut = ${paymentState}`);
       return res.status(200).send("Ignored");
     }
 
     // 2. Recherche robuste de l'utilisateur (UID puis Email)
-    let uid = req.query.uid || data.metadata?.uid;
+    let uid = req.query.uid || data.metadata?.uid || data.metadata?.userId || data.metadata?.user_id;
 
     if (!uid && Array.isArray(data.customFields)) {
       const field = data.customFields.find(f => f.name && f.name.toLowerCase().includes('uid'));
@@ -94,7 +95,9 @@ exports.helloAssoWebhook = onRequest(async (req, res) => {
       }
     }
 
-    const payer = data.payer || data.user || {};
+    if (uid) uid = String(uid).trim();
+
+    const payer = data.payer || data.order?.payer || data.user || {};
     const email = (payer.email || data.email || req.query.email || "").toLowerCase().trim();
     let userName = `${payer.firstName || ''} ${payer.lastName || ''}`.trim();
 
@@ -194,6 +197,10 @@ exports.helloAssoWebhook = onRequest(async (req, res) => {
       derniereCotisationDate: new Date().toISOString()
     };
 
+    if (optionsPayees.length > 0) {
+      userUpdates.optionsPayees = admin.firestore.FieldValue.arrayUnion(...optionsPayees);
+    }
+
     if (matchedOptionIds.length > 0) {
       userUpdates.selectedOptions = admin.firestore.FieldValue.arrayUnion(...matchedOptionIds);
     }
@@ -201,19 +208,33 @@ exports.helloAssoWebhook = onRequest(async (req, res) => {
     await userRef.update(userUpdates);
 
     // 4. Création de l'historique dans la sous-collection membre
+    const helloAssoIdStr = String(data.id || data.orderId || 'N/A');
     const transactionData = {
       date: admin.firestore.Timestamp.now(),
       amount: amountEuros,
       options: optionsPayees,
       source: "HelloAsso",
-      helloAssoOrderId: String(data.id || data.orderId || 'N/A')
+      helloAssoOrderId: helloAssoIdStr
     };
     await userRef.collection("transactions").add(transactionData);
 
-    // 5. Création de la transaction de Trésorerie globale dans le grand livre (collection 'transactions')
+    // 5. Création de la transaction de Trésorerie globale (avec déduplication)
     const userNomComplet = userData ? `${userData.prenom || ''} ${userData.nom || ''}`.trim() : userName;
     const nomAffiche = userNomComplet || email || "Membre";
     const libelleOptions = optionsPayees.length > 0 ? ` (${optionsPayees.join(', ')})` : '';
+
+    if (helloAssoIdStr !== 'N/A') {
+      const existingTxSnap = await db.collection("transactions")
+        .where("groupId", "==", groupId)
+        .where("helloAssoOrderId", "==", helloAssoIdStr)
+        .limit(1)
+        .get();
+
+      if (!existingTxSnap.empty) {
+        console.log(`Transaction HelloAsso ${helloAssoIdStr} déjà enregistrée en trésorerie.`);
+        return res.status(200).send("Success (already recorded)");
+      }
+    }
 
     await db.collection("transactions").add({
       groupId: groupId,
@@ -223,7 +244,7 @@ exports.helloAssoWebhook = onRequest(async (req, res) => {
       categorie: "Cotisations",
       libelle: `Adhésion + Options HelloAsso - ${nomAffiche}${libelleOptions}`,
       source: "HelloAsso",
-      helloAssoOrderId: String(data.id || data.orderId || 'N/A'),
+      helloAssoOrderId: helloAssoIdStr,
       userId: userRef.id,
       payerEmail: email
     });

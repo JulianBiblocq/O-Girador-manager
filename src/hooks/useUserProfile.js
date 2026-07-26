@@ -26,8 +26,12 @@ export function useUserProfile(user, profileData, t) {
   const [formData, setFormData] = useState({
     prenom: profileData?.prenom || '',
     nom: profileData?.nom || '',
-    instrument: profileData?.instrument || 'Autre',
-    instrumentsJoues: profileData?.instrumentsJoues || (profileData?.instrument ? [profileData.instrument] : []),
+    instrument: profileData?.instrument || '',
+    instrumentSecondaire: profileData?.instrumentSecondaire || '',
+    voeuPrincipal: profileData?.voeuPrincipal || '',
+    voeuSecondaire: profileData?.voeuSecondaire || '',
+    voeuTertiaire: profileData?.voeuTertiaire || '',
+    instrumentsJoues: profileData?.instrumentsJoues || ([profileData?.instrument, profileData?.instrumentSecondaire].filter(Boolean)),
     telephone: profileData?.telephone || '',
     adresseRue: profileData?.adresseRue || '',
     adresseCP: profileData?.adresseCP || '',
@@ -69,8 +73,12 @@ export function useUserProfile(user, profileData, t) {
     setFormData({
       prenom: profileData?.prenom || '',
       nom: profileData?.nom || '',
-      instrument: profileData?.instrument || 'Autre',
-      instrumentsJoues: profileData?.instrumentsJoues || (profileData?.instrument ? [profileData.instrument] : []),
+      instrument: profileData?.instrument || '',
+      instrumentSecondaire: profileData?.instrumentSecondaire || '',
+      voeuPrincipal: profileData?.voeuPrincipal || '',
+      voeuSecondaire: profileData?.voeuSecondaire || '',
+      voeuTertiaire: profileData?.voeuTertiaire || '',
+      instrumentsJoues: profileData?.instrumentsJoues || ([profileData?.instrument, profileData?.instrumentSecondaire].filter(Boolean)),
       telephone: profileData?.telephone || '',
       adresseRue: profileData?.adresseRue || '',
       adresseCP: profileData?.adresseCP || '',
@@ -365,10 +373,15 @@ export function useUserProfile(user, profileData, t) {
       const updatePayload = {
         prenom: formData.prenom,
         nom: formData.nom,
-        instrument: formData.instrument,
+        instrument: profileData?.instrument || formData.instrument || '',
+        instrumentSecondaire: profileData?.instrumentSecondaire || formData.instrumentSecondaire || '',
+        voeuPrincipal: formData.voeuPrincipal || '',
+        voeuSecondaire: formData.voeuSecondaire || '',
+        voeuTertiaire: formData.voeuTertiaire || '',
         instrumentsJoues: Array.from(new Set(
           [
-            formData.instrument,
+            profileData?.instrument || formData.instrument,
+            profileData?.instrumentSecondaire || formData.instrumentSecondaire,
             ...(formData.instrumentsJoues || [])
           ]
           .map(i => i ? i.trim() : '')

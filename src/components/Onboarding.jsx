@@ -44,7 +44,11 @@ export default function Onboarding({ user, branding, onComplete }) {
     aptitudeMedicale: false,
     lateralite: 'droitier',
     dateNaissance: '',
-    instrument: 'Alfaia',
+    instrument: '',
+    instrumentSecondaire: '',
+    voeuPrincipal: '',
+    voeuSecondaire: '',
+    voeuTertiaire: '',
     instrumentsJoues: [],
     genre: 'autre',
     afficherTelephone: true,
@@ -89,9 +93,6 @@ export default function Onboarding({ user, branding, onComplete }) {
           }
           if (Array.isArray(data.instrumentsDisponibles)) {
             setInstrumentsDisponibles(data.instrumentsDisponibles);
-            if (data.instrumentsDisponibles.length > 0) {
-              setFormData(prev => ({ ...prev, instrument: data.instrumentsDisponibles[0] }));
-            }
           } else {
             setInstrumentsDisponibles(DEFAULT_INSTRUMENTS);
           }
@@ -175,9 +176,14 @@ export default function Onboarding({ user, branding, onComplete }) {
         dateSignatureAttestationSante: demanderAttestationSante && formData.aptitudeMedicale ? new Date() : null,
         lateralite: isFieldVisible('lateralite') ? formData.lateralite : "droitier",
         dateNaissance: isFieldVisible('dateNaissance') ? formData.dateNaissance : "",
-        instrument: formData.instrument || "Autre",
+        instrument: formData.instrument || "",
+        instrumentSecondaire: formData.instrumentSecondaire || "",
+        voeuPrincipal: formData.voeuPrincipal || "",
+        voeuSecondaire: formData.voeuSecondaire || "",
+        voeuTertiaire: formData.voeuTertiaire || "",
         instrumentsJoues: Array.from(new Set([
-          formData.instrument || "Autre",
+          formData.instrument,
+          formData.instrumentSecondaire,
           ...(formData.instrumentsJoues || [])
         ])).filter(Boolean),
         genre: formData.genre,
@@ -264,55 +270,70 @@ export default function Onboarding({ user, branding, onComplete }) {
             />
           </div>
 
-          {/* Instrument Principal Select */}
-          <div className="flex flex-col gap-1">
-            <label className="text-[10px] uppercase font-bold tracking-wider text-cordel-master-dark">
-              {t('onboarding.instrument')}
-            </label>
-            <select
-              name="instrument"
-              value={formData.instrument}
-              onChange={handleChange}
-              disabled={submitting}
-              className="theme-input w-full disabled:opacity-50 font-bold bg-cordel-bg-light"
-            >
-              {instrumentsDisponibles.map((inst) => (
-                <option key={inst} value={inst}>{inst}</option>
-              ))}
-              <option value="Autre">{t('common.other')}</option>
-            </select>
-          </div>
+          {/* Souhaits d'Instruments / Casting */}
+          <div className="border-t border-dashed border-cordel-master-dark/20 pt-3.5 flex flex-col gap-3 text-left">
+            <h5 className="font-bold text-xs uppercase tracking-wider text-cordel-wood flex items-center gap-1.5">
+              🎵 Quels instruments aimerais-tu jouer ?
+            </h5>
+            <p className="text-[10px] text-cordel-master-dark font-medium leading-relaxed bg-cordel-bg-light/90 border border-dashed border-cordel-master-dark/20 p-2.5 rounded">
+              💡 Indique tes préférences. Le Mestre validera ton rôle définitif (Principal/Secondaire) en fonction de l'équilibre du groupe.
+            </p>
 
-          {/* Instruments pratiqués / Polyvalence */}
-          <div className="flex flex-col gap-1 text-left">
-            <label className="text-[10px] uppercase font-bold tracking-wider text-cordel-master-dark mb-1">
-              {t('onboarding.instrumentsPlayed')}
-            </label>
-            <div className="grid grid-cols-2 gap-2 bg-white/40 p-3 rounded border border-dashed border-cordel-master-dark/15">
-              {instrumentsDisponibles.map((inst) => {
-                const isChecked = (formData.instrumentsJoues || []).includes(inst);
-                return (
-                  <label key={inst} className="flex items-center gap-2 text-xs font-semibold cursor-pointer select-none">
-                    <input
-                      type="checkbox"
-                      checked={isChecked}
-                      disabled={submitting}
-                      onChange={(e) => {
-                        const checked = e.target.checked;
-                        setFormData(prev => {
-                          const currentList = prev.instrumentsJoues || [];
-                          const updatedList = checked 
-                            ? [...currentList, inst] 
-                            : currentList.filter(item => item !== inst);
-                          return { ...prev, instrumentsJoues: updatedList };
-                        });
-                      }}
-                      className="accent-cordel-wood scale-105"
-                    />
-                    <span>{inst}</span>
-                  </label>
-                );
-              })}
+            {/* Choix 1 */}
+            <div className="flex flex-col gap-1">
+              <label className="text-[10px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                Choix 1 (Vœu principal)
+              </label>
+              <select
+                name="voeuPrincipal"
+                value={formData.voeuPrincipal || ''}
+                onChange={handleChange}
+                disabled={submitting}
+                className="theme-input w-full disabled:opacity-50 font-bold bg-cordel-bg-light text-xs"
+              >
+                <option value="">-- Choisir un premier voeu --</option>
+                {instrumentsDisponibles.map((inst) => (
+                  <option key={`ob-v1-${inst}`} value={inst}>{inst}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Choix 2 */}
+            <div className="flex flex-col gap-1">
+              <label className="text-[10px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                Choix 2 (Vœu secondaire)
+              </label>
+              <select
+                name="voeuSecondaire"
+                value={formData.voeuSecondaire || ''}
+                onChange={handleChange}
+                disabled={submitting}
+                className="theme-input w-full disabled:opacity-50 bg-cordel-bg-light text-xs"
+              >
+                <option value="">-- Aucun / Pas de second choix --</option>
+                {instrumentsDisponibles.map((inst) => (
+                  <option key={`ob-v2-${inst}`} value={inst}>{inst}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Choix 3 */}
+            <div className="flex flex-col gap-1">
+              <label className="text-[10px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                Choix 3 (Vœu tertiaire)
+              </label>
+              <select
+                name="voeuTertiaire"
+                value={formData.voeuTertiaire || ''}
+                onChange={handleChange}
+                disabled={submitting}
+                className="theme-input w-full disabled:opacity-50 bg-cordel-bg-light text-xs"
+              >
+                <option value="">-- Aucun / Pas de troisième choix --</option>
+                {instrumentsDisponibles.map((inst) => (
+                  <option key={`ob-v3-${inst}`} value={inst}>{inst}</option>
+                ))}
+              </select>
             </div>
           </div>
 
