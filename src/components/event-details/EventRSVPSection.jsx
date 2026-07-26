@@ -105,8 +105,61 @@ export default function EventRSVPSection({
 
   return (
     <>
-      {/* RSVP Form */}
-      {isRegistrationDeadlinePassed && !isAuthorized ? (
+      {/* RSVP Form / Informative Banner */}
+      {event.enableInscriptions === false ? (
+        <div className="flex flex-col gap-4">
+          <CordelCard variant="default" useExtremeBorder={false} className="flex flex-col gap-2 text-center py-5 px-4">
+            <h4 className="font-bold text-xs uppercase tracking-wider text-cordel-wood flex items-center justify-center gap-2">
+              📢 Événement à titre informatif
+            </h4>
+            <p className="text-xs text-cordel-master-dark/80 font-medium leading-relaxed">
+              Cet événement est publié à titre d'information. Aucune réponse de présence (Présent / Absent) n'est demandée.
+            </p>
+          </CordelCard>
+
+          {/* Calendar Sync Button */}
+          <div className="relative w-full">
+            <button
+              type="button"
+              onClick={() => setIsCalendarMenuOpen(!isCalendarMenuOpen)}
+              className="w-full py-3 text-xs font-bold uppercase tracking-wider bg-cordel-bg-light text-encre-noire border-2 border-encre-noire rounded-[8px_12px_9px_11px] shadow-[2.5px_2.5px_0px_0px_#181716] hover:bg-cordel-hover active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:scale-[1.01] transition-all flex items-center justify-center gap-1.5 cursor-pointer h-full min-h-[46px]"
+            >
+              📅 Ajouter à mon agenda
+            </button>
+            
+            {isCalendarMenuOpen && (
+              <>
+                <div 
+                  className="fixed inset-0 z-40" 
+                  onClick={() => setIsCalendarMenuOpen(false)}
+                />
+                <div className="absolute right-0 bottom-full mb-2 w-full min-w-[180px] bg-cordel-bg-light border-2 border-encre-noire rounded-[6px_10px_8px_12px] shadow-[3px_3px_0px_0px_#181716] py-1.5 z-50 flex flex-col text-left">
+                  <button
+                     type="button"
+                     onClick={() => {
+                       handleAddToGoogleCalendar();
+                       setIsCalendarMenuOpen(false);
+                     }}
+                     className="w-full px-4 py-2 text-[10px] font-black uppercase tracking-wider text-encre-noire hover:bg-cordel-hover cursor-pointer text-left"
+                  >
+                    Google Calendar
+                  </button>
+                  <button
+                     type="button"
+                     onClick={() => {
+                       handleDownloadIcs();
+                       setIsCalendarMenuOpen(false);
+                     }}
+                     className="w-full px-4 py-2 text-[10px] font-black uppercase tracking-wider text-encre-noire hover:bg-cordel-hover cursor-pointer text-left border-t border-dashed border-cordel-master-dark/15"
+                  >
+                    Apple / Outlook (.ics)
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      ) : isRegistrationDeadlinePassed && !isAuthorized ? (
         <div className="flex flex-col gap-4">
           <CordelCard variant="default" useExtremeBorder={false} className="flex flex-col gap-4 text-center">
             <h4 className="font-bold text-xs uppercase tracking-wider text-cordel-wood text-left">

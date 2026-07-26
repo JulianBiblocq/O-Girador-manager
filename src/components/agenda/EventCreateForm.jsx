@@ -543,6 +543,21 @@ export default function EventCreateForm({
           </div>
         )}
 
+        {/* Enable Inscriptions Toggle */}
+        <div className="flex items-center gap-2 pt-2 border-t border-dashed border-cordel-master-dark/15 text-left">
+          <label className="flex items-center gap-2 text-xs font-bold cursor-pointer select-none">
+            <input
+              type="checkbox"
+              name="enableInscriptions"
+              checked={formData.enableInscriptions !== false}
+              onChange={(e) => setFormData(prev => ({ ...prev, enableInscriptions: e.target.checked }))}
+              disabled={saving}
+              className="accent-cordel-wood scale-105"
+            />
+            <span>📝 Demander des inscriptions pour cet événement (Présent / Absent / À confirmer)</span>
+          </label>
+        </div>
+
         {/* Validation Toggle */}
         {createConfig.agendaEnableInscriptions && (
           <div className="flex items-center gap-2 pt-2 border-t border-dashed border-cordel-master-dark/15 text-left">

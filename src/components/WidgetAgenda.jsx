@@ -139,6 +139,7 @@ export default function WidgetAgenda({
     includesPercussion: false,
     includesDance: false,
     enableCarpool: true,
+    enableInscriptions: true,
     description: '',
     latitude: null,
     longitude: null
@@ -286,6 +287,7 @@ export default function WidgetAgenda({
         includesPercussion: formData.includesPercussion || false,
         includesDance: formData.includesDance || false,
         enableCarpool: formData.enableCarpool !== false,
+        enableInscriptions: formData.enableInscriptions !== false,
         description: formData.description || '',
         latitude: formData.latitude ? Number(formData.latitude) : null,
         longitude: formData.longitude ? Number(formData.longitude) : null
@@ -569,6 +571,7 @@ export default function WidgetAgenda({
                       </td>
                       <td className="p-1.5 md:p-2.5 text-center font-bold whitespace-nowrap">
                         {(() => {
+                          if (event.enableInscriptions === false) return <span className="inline-block px-1.5 py-0.5 rounded text-[9px] uppercase font-bold bg-neutral-200 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300">📢 Informatif</span>;
                           if (userStatus === 'present') return <span className="inline-block px-1.5 py-0.5 rounded text-[9px] uppercase font-black badge-status-present">Présent ({presentCount})</span>;
                           if (userStatus === 'absent') return <span className="inline-block px-1.5 py-0.5 rounded text-[9px] uppercase font-black badge-status-absent">Absent ({presentCount})</span>;
                           if (userStatus === 'confirm') return <span className="inline-block px-1.5 py-0.5 rounded text-[9px] uppercase font-black badge-status-confirm">À confirmer ({presentCount})</span>;
@@ -664,6 +667,9 @@ export default function WidgetAgenda({
                             </div>
                             {/* Connected User Attendance Badge */}
                             {(() => {
+                              if (event.enableInscriptions === false) {
+                                return <span className="text-[8px] font-bold px-1.5 py-0.5 rounded-[4px_6px_3px_5px] uppercase tracking-wider bg-neutral-200 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300 leading-none select-none">📢 Informatif</span>;
+                              }
                               const userInscription = (event.inscriptions || []).find(ins => ins.userId === user.uid);
                               const userStatus = userInscription ? userInscription.status : null;
                               if (userStatus === 'present') {
@@ -683,7 +689,7 @@ export default function WidgetAgenda({
                           </div>
                           
                           {/* Subscriptions counter */}
-                          {((event.inscriptions && event.inscriptions.length > 0) || (event.invitesExternes && event.invitesExternes.length > 0)) && (
+                          {event.enableInscriptions !== false && ((event.inscriptions && event.inscriptions.length > 0) || (event.invitesExternes && event.invitesExternes.length > 0)) && (
                             <span className="text-[8px] font-bold px-1.5 py-0.5 bg-encre-noire text-cordel-bg-light rounded-sm self-end shrink-0">
                               {((event.inscriptions || []).filter(i => i.status === 'present').length) + ((event.invitesExternes || []).length)} {t('common.presentCountLabel')}
                             </span>

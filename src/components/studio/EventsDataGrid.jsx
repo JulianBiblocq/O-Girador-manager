@@ -32,13 +32,14 @@ export default function EventsDataGrid({
             <th className="p-3 border-r border-[var(--encre-noire)]/15 whitespace-nowrap min-w-[120px]">11. Tenue</th>
             <th className="p-3 border-r border-[var(--encre-noire)]/15 text-center whitespace-nowrap min-w-[95px]">12. Inclut perc</th>
             <th className="p-3 border-r border-[var(--encre-noire)]/15 text-center whitespace-nowrap min-w-[95px]">13. Inclut danse</th>
-            <th className="p-3 text-center whitespace-nowrap min-w-[125px]">14. Soumis à validation</th>
+            <th className="p-3 border-r border-[var(--encre-noire)]/15 text-center whitespace-nowrap min-w-[125px]">14. Soumis à validation</th>
+            <th className="p-3 text-center whitespace-nowrap min-w-[125px]">15. Inscriptions requises</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-[var(--encre-noire)]/10 font-medium">
           {events.length === 0 ? (
             <tr>
-              <td colSpan="14" className="p-8 text-center text-[var(--cordel-text)]/60 font-bold italic">
+              <td colSpan="15" className="p-8 text-center text-[var(--cordel-text)]/60 font-bold italic">
                 Aucun événement disponible.
               </td>
             </tr>

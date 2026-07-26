@@ -237,6 +237,7 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
       includesPercussion: event.includesPercussion || false,
       includesDance: event.includesDance || false,
       enableCarpool: event.enableCarpool !== false,
+      enableInscriptions: event.enableInscriptions !== false,
       description: event.description || '',
       latitude: event.latitude || null,
       longitude: event.longitude || null
@@ -320,6 +321,21 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
       setStatus('absent');
     }
   }, [isPrestationRestricted, status, setStatus]);
+
+  const handleUpdateEventStatus = async (newStatus) => {
+    if (!event.id) return;
+    try {
+      const eventRef = doc(db, 'events', event.id);
+      await updateDoc(eventRef, { status: newStatus });
+      if (setToastMessage) {
+        setToastMessage("Statut de l'événement mis à jour");
+        setTimeout(() => setToastMessage(null), 3000);
+      }
+    } catch (err) {
+      console.error("EventDetails - Erreur mise à jour statut événement :", err);
+      alert("Erreur lors de la mise à jour du statut.");
+    }
+  };
 
   const isAuthorized = profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.isSystemAdmin === true;
 
@@ -522,6 +538,7 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
         includesPercussion: editForm.includesPercussion || false,
         includesDance: editForm.includesDance || false,
         enableCarpool: editForm.enableCarpool !== false,
+        enableInscriptions: editForm.enableInscriptions !== false,
         description: editForm.description || '',
         latitude: editForm.latitude ? Number(editForm.latitude) : null,
         longitude: editForm.longitude ? Number(editForm.longitude) : null
@@ -856,7 +873,7 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
               <div className="flex gap-1.5 flex-wrap">
                 <button
                   type="button"
-                  onClick={() => handleUpdateStatus('confirme')}
+                  onClick={() => handleUpdateEventStatus('confirme')}
                   disabled={!event.status || event.status === 'confirme'}
                   className={`text-[9px] font-black uppercase tracking-wider px-2.5 py-1.5 rounded-[4px_6px_3px_5px] transition-all cursor-pointer select-none ${
                     (!event.status || event.status === 'confirme')
@@ -868,7 +885,7 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
                 </button>
                 <button
                   type="button"
-                  onClick={() => handleUpdateStatus('a_confirmer')}
+                  onClick={() => handleUpdateEventStatus('a_confirmer')}
                   disabled={event.status === 'a_confirmer'}
                   className={`text-[9px] font-black uppercase tracking-wider px-2.5 py-1.5 rounded-[4px_6px_3px_5px] transition-all cursor-pointer select-none ${
                     event.status === 'a_confirmer'
@@ -880,7 +897,7 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
                 </button>
                 <button
                   type="button"
-                  onClick={() => handleUpdateStatus('annule')}
+                  onClick={() => handleUpdateEventStatus('annule')}
                   disabled={event.status === 'annule'}
                   className={`text-[9px] font-black uppercase tracking-wider px-2.5 py-1.5 rounded-[4px_6px_3px_5px] transition-all cursor-pointer select-none ${
                     event.status === 'annule'

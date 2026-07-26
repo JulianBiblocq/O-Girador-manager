@@ -257,7 +257,7 @@ export default function EventsDataGridRow({
       </td>
 
       {/* 14. Soumis à validation (Interactive Toggle) */}
-      <td className="p-2 text-center select-none min-w-[125px]">
+      <td className="p-2 border-r border-[var(--encre-noire)]/10 text-center select-none min-w-[125px]">
         <div className="flex items-center justify-center gap-1.5">
           <EventToggleSwitch
             checked={Boolean(event.requiresValidation)}
@@ -267,6 +267,20 @@ export default function EventsDataGridRow({
             label={`Toggle Validation pour ${event.titre}`}
           />
           <span className="text-xs shrink-0">🔒</span>
+        </div>
+      </td>
+
+      {/* 15. Inscriptions requises (Interactive Toggle) */}
+      <td className="p-2 text-center select-none min-w-[125px]">
+        <div className="flex items-center justify-center gap-1.5">
+          <EventToggleSwitch
+            checked={event.enableInscriptions !== false}
+            onChange={() => onToggleField(event.id, 'enableInscriptions', event.enableInscriptions !== false)}
+            disabled={isUpdatingRow && updatingField === 'enableInscriptions'}
+            activeColor="bg-blue-600 dark:bg-blue-500"
+            label={`Toggle Inscriptions pour ${event.titre}`}
+          />
+          <span className="text-xs shrink-0">📝</span>
         </div>
       </td>
     </tr>
