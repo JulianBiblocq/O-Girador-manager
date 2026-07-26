@@ -7,6 +7,7 @@ import CordelButton from './CordelButton';
 import DocumentUploadForm from './DocumentUploadForm';
 import { useTranslation } from './LanguageContext';
 import { XiloChisel } from './XiloIcons';
+import useConfirm from '../hooks/useConfirm';
 
 const DEFAULT_VARAL_CATEGORIES = [
   { id: 'Partitions', nom: 'Partitions', activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false },
@@ -18,6 +19,7 @@ const DEFAULT_VARAL_CATEGORIES = [
 
 export default function VaralManager({ groupId, onBack, role, isSystemAdmin }) {
   const { t } = useTranslation();
+  const { confirm } = useConfirm();
   const [documents, setDocuments] = useState([]);
   const [varalCategories, setVaralCategories] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -96,7 +98,14 @@ export default function VaralManager({ groupId, onBack, role, isSystemAdmin }) {
 
   const handleRemoveCategory = async (id) => {
     const msg = t('documents.varalSettingsRemoveConfirm') || "Êtes-vous sûr de vouloir supprimer cette corde ? Les documents liés ne seront pas supprimés mais n'auront plus de catégorie associée.";
-    if (window.confirm(msg)) {
+    const isOk = await confirm({
+      title: "Supprimer la catégorie",
+      message: msg,
+      confirmText: "Oui, supprimer",
+      cancelText: "Annuler",
+      variant: "danger"
+    });
+    if (isOk) {
       setSavingSettings(true);
       try {
         const updatedCategories = varalCategories.filter(c => c.id !== id);
@@ -212,7 +221,14 @@ export default function VaralManager({ groupId, onBack, role, isSystemAdmin }) {
 
   const handleDelete = async (docItem) => {
     const confirmMsg = t('documents.deleteConfirm') || "Voulez-vous vraiment supprimer ce document ?";
-    if (!window.confirm(confirmMsg)) return;
+    const isOk = await confirm({
+      title: "Supprimer le document",
+      message: confirmMsg,
+      confirmText: "Oui, supprimer",
+      cancelText: "Annuler",
+      variant: "danger"
+    });
+    if (!isOk) return;
 
     try {
       if (docItem.fileUrl && docItem.fileUrl.includes('firebasestorage.googleapis.com')) {

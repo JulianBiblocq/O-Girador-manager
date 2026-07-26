@@ -12,6 +12,7 @@ import { useTranslation } from './LanguageContext';
 import XiloAvatar from './XiloAvatar';
 import { usePresenceContext } from '../context/PresenceContext';
 import { XiloMegaphone } from './XiloIcons';
+import useConfirm from '../hooks/useConfirm';
 
 // Memoized ThreadCard component to prevent list items re-rendering during search or active inputs
 const ThreadCard = React.memo(({
@@ -293,6 +294,7 @@ function ChannelTreeItem({
 
 export default function Forum({ user, profileData, onBack, activePrivateChatUserId, onClearActivePrivateChat, onOpenStudioForum }) {
   const { t } = useTranslation();
+  const { confirm } = useConfirm();
   const { actionLoading, moveThread, togglePinThread, deleteThread } = useForumModeration(profileData?.groupId);
 
   const translate = (key, fallback) => {
@@ -627,7 +629,14 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
   }, [channels, activeChannelId]);
 
   const handleDeleteThreadPrompt = async (thread) => {
-    if (window.confirm(`Voulez-vous vraiment supprimer la discussion "${thread.titre}" ?`)) {
+    const ok = await confirm({
+      title: "Supprimer la discussion",
+      message: `Voulez-vous vraiment supprimer la discussion "${thread.titre}" ?`,
+      confirmText: "Oui, supprimer",
+      cancelText: "Annuler",
+      variant: "danger"
+    });
+    if (ok) {
       await deleteThread(thread.id);
     }
   };

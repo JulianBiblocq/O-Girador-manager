@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
+import useConfirm from '../../hooks/useConfirm';
 
 export default function TreasuryOperations({
   transactions,
@@ -10,6 +11,7 @@ export default function TreasuryOperations({
   associationSettings,
   handleSaveAssociationSettings
 }) {
+  const { confirm } = useConfirm();
   const defaultCategories = ['Matériel', 'Intervenant', 'Local', 'Subvention', 'Don', 'Autre'];
   const categories = Array.isArray(associationSettings?.categoriesTransactions)
     ? associationSettings.categoriesTransactions
@@ -72,7 +74,14 @@ export default function TreasuryOperations({
   };
 
   const onDelete = async (txId) => {
-    if (!window.confirm("Voulez-vous vraiment supprimer cette opération ?")) return;
+    const isOk = await confirm({
+      title: "Supprimer l'opération",
+      message: "Voulez-vous vraiment supprimer cette opération ?",
+      confirmText: "Oui, supprimer",
+      cancelText: "Annuler",
+      variant: "danger"
+    });
+    if (!isOk) return;
     try {
       await handleDeleteTx(txId);
       alert("Opération supprimée avec succès !");

@@ -7,9 +7,11 @@ import CordelButton from './CordelButton';
 import { XiloMegaphone, XiloClose } from './XiloIcons';
 import { useTranslation } from './LanguageContext';
 import { formatTagGender, getTagId } from '../utils/tagUtils';
+import useConfirm from '../hooks/useConfirm';
 
 export default function WidgetAnnonces({ groupId, profileData, role, isSystemAdmin, user, onNavigateToView }) {
   const { t } = useTranslation();
+  const { confirm } = useConfirm();
   const [announcements, setAnnouncements] = useState([]);
   const [tagsDisponibles, setTagsDisponibles] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -214,7 +216,13 @@ export default function WidgetAnnonces({ groupId, profileData, role, isSystemAdm
   };
 
   const handleDelete = async (annId, annTitre) => {
-    const confirmDelete = window.confirm(`${t('widgetAnnonces.deleteConfirm') || "Voulez-vous supprimer l'annonce"} "${annTitre}" ?`);
+    const confirmDelete = await confirm({
+      title: "Supprimer l'annonce",
+      message: `${t('widgetAnnonces.deleteConfirm') || "Voulez-vous supprimer l'annonce"} "${annTitre}" ?`,
+      confirmText: "Oui, supprimer",
+      cancelText: "Annuler",
+      variant: "danger"
+    });
     if (!confirmDelete) return;
 
     try {

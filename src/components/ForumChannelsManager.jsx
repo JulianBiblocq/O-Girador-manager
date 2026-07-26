@@ -6,6 +6,7 @@ import CordelButton from './CordelButton';
 import ForumModerationPanel from './ForumModerationPanel';
 import { useTranslation } from './LanguageContext';
 import { XiloMegaphone } from './XiloIcons';
+import useConfirm from '../hooks/useConfirm';
 
 /**
  * ForumChannelsManager Component
@@ -13,6 +14,7 @@ import { XiloMegaphone } from './XiloIcons';
  */
 export default function ForumChannelsManager({ groupId, role, isSystemAdmin, onBack }) {
   const { t } = useTranslation();
+  const { confirm } = useConfirm();
   
   const [activeTab, setActiveTab] = useState('channels'); // 'channels' | 'moderation'
   const [channels, setChannels] = useState([]);
@@ -165,8 +167,14 @@ export default function ForumChannelsManager({ groupId, role, isSystemAdmin, onB
       alert("Le salon Général ne peut pas être supprimé.");
       return;
     }
-    const confirm = window.confirm(`Voulez-vous vraiment supprimer le salon "${chName}" ? Toutes les discussions associées à ce salon et ses sous-dossiers seront également supprimées.`);
-    if (!confirm) return;
+    const isOk = await confirm({
+      title: "Supprimer le salon",
+      message: `Voulez-vous vraiment supprimer le salon "${chName}" ? Toutes les discussions associées à ce salon et ses sous-dossiers seront également supprimées.`,
+      confirmText: "Oui, supprimer",
+      cancelText: "Annuler",
+      variant: "danger"
+    });
+    if (!isOk) return;
 
     setSaving(true);
     try {

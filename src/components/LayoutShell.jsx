@@ -49,7 +49,7 @@ export default function LayoutShell({
   const isPresenceEnabled = activerPresenceEnLigne !== false;
   const currentUserId = profileData?.uid;
   const currentGroupId = profileData?.groupId;
-  const { onlineMembers, onlineCount } = usePresence(currentUserId, currentGroupId);
+  const { onlineMembers, onlineCount } = usePresence(currentUserId, currentGroupId, isPresenceEnabled);
   const onlineUserIds = React.useMemo(() => new Set(onlineMembers.map(m => m.id || m.uid)), [onlineMembers]);
   
   const isSystemOrSuperAdminOrMestre = profileData?.isSystemAdmin || profileData?.role === 'super-admin' || profileData?.role === 'mestre';

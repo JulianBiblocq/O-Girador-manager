@@ -12,6 +12,7 @@ import PollDisplay from './forum/PollDisplay';
 import { useForumModeration } from '../hooks/useForumModeration';
 import { getTagId } from '../utils/tagUtils';
 import { usePresenceContext } from '../context/PresenceContext';
+import useConfirm from '../hooks/useConfirm';
 
 // Memoized ThreadReplyItem component to avoid re-rendering comments when typing
 const ThreadReplyItem = React.memo(({
@@ -138,6 +139,7 @@ const ThreadReplyItem = React.memo(({
 
 export default function ThreadView({ threadId, user, profileData, channels = [], allThreads = [], allUsers = [], onClose }) {
   const { t } = useTranslation();
+  const { confirm } = useConfirm();
   const {
     actionLoading,
     moveThread,
@@ -384,7 +386,14 @@ export default function ThreadView({ threadId, user, profileData, channels = [],
   };
 
   const handleDeleteThread = async () => {
-    if (!window.confirm("Voulez-vous vraiment supprimer cette discussion ?")) return;
+    const ok = await confirm({
+      title: "Supprimer la discussion",
+      message: "Voulez-vous vraiment supprimer cette discussion ?",
+      confirmText: "Oui, supprimer",
+      cancelText: "Annuler",
+      variant: "danger"
+    });
+    if (!ok) return;
     try {
       await deleteThread(threadId);
       onClose();
@@ -395,7 +404,14 @@ export default function ThreadView({ threadId, user, profileData, channels = [],
   };
 
   const handleDeleteReply = useCallback(async (indexToDelete) => {
-    if (!window.confirm("Voulez-vous vraiment supprimer ce message ?")) return;
+    const ok = await confirm({
+      title: "Supprimer le message",
+      message: "Voulez-vous vraiment supprimer ce message ?",
+      confirmText: "Oui, supprimer",
+      cancelText: "Annuler",
+      variant: "danger"
+    });
+    if (!ok) return;
     try {
       if (!thread) return;
       const updatedReponses = thread.reponses.filter((_, idx) => idx !== indexToDelete);
@@ -407,7 +423,7 @@ export default function ThreadView({ threadId, user, profileData, channels = [],
       console.error("Error deleting reply:", err);
       alert("Erreur lors de la suppression du message.");
     }
-  }, [thread, threadId]);
+  }, [thread, threadId, confirm]);
 
   const handleOpenEditReply = useCallback((index, reply) => {
     setEditingReplyData({ index, text: reply.message });

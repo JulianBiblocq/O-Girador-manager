@@ -14,6 +14,7 @@ import CordelButton from './CordelButton';
 import { XiloSettings, XiloCaixa, XiloBox, XiloPeople, XiloConsole, XiloMandacaru } from './XiloIcons';
 import { useTranslation } from './LanguageContext';
 import { useTerminologie } from '../hooks/useTerminologie';
+import InstrumentReminderBanner from './dashboard/InstrumentReminderBanner';
 
 export default function Dashboard({ user, profileData, onNavigateToTrombi, onNavigateToView, onSignOut, installPromptAvailable, onTriggerInstall, permissionsMatrice }) {
   const { tRole } = useTerminologie();
@@ -201,6 +202,11 @@ export default function Dashboard({ user, profileData, onNavigateToTrombi, onNav
           })()}
         </div>
       </div>
+
+      {/* Conditional Instrument Reminder Banner after trial sessions */}
+      {!(Boolean(profileData?.instrument || (profileData?.instrumentsJoues && profileData.instrumentsJoues.length > 0) || profileData?.voeuPrincipal)) && (
+        <InstrumentReminderBanner onNavigateToView={onNavigateToView} />
+      )}
 
       {/* Clickable User Information Card */}
       <div 

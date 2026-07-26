@@ -830,5 +830,49 @@ export const XiloEyeOff = ({ size = 16, className = '', ...props }) => (
   </svg>
 );
 
+// 🛡️ Bouclier / Confidentialité (Bureau / Administration) - Style Xilogravura Cordel
+export const XiloShield = ({ size = 16, className = '', ...props }) => (
+  <svg 
+    width={size} 
+    height={size} 
+    viewBox="0 0 24 24" 
+    fill="none" 
+    stroke="currentColor" 
+    strokeWidth="2.2" 
+    strokeLinecap="round" 
+    strokeLinejoin="round" 
+    className={`xilo-icon ${className}`} 
+    {...props}
+  >
+    <path d="M12 2.5 L4.5 5.5 V11.5 C4.5 16.5 7.8 20.5 12 22 C16.2 20.5 19.5 16.5 19.5 11.5 V5.5 L12 2.5 Z" />
+    <path d="M12 6.5 V17.5" strokeDasharray="2 1.5" />
+    <path d="M9.5 11.5 H14.5" />
+  </svg>
+);
+
+// 📇 Trombinoscope / Cartes d'identité - Style Xilogravura Cordel
+export const XiloTrombinoscope = ({ size = 16, className = '', ...props }) => (
+  <svg 
+    width={size} 
+    height={size} 
+    viewBox="0 0 24 24" 
+    fill="none" 
+    stroke="currentColor" 
+    strokeWidth="2.2" 
+    strokeLinecap="round" 
+    strokeLinejoin="round" 
+    className={`xilo-icon ${className}`} 
+    {...props}
+  >
+    <rect x="3" y="4" width="18" height="16" rx="2" strokeWidth="2.2" />
+    <circle cx="9" cy="10" r="2.5" fill="currentColor" />
+    <path d="M5.5 16.5 C5.5 14 7.5 13.5 9 13.5 C10.5 13.5 12.5 14 12.5 16.5" />
+    <path d="M14.5 9 H18.5" />
+    <path d="M14.5 12 H17.5" />
+    <path d="M14.5 15 H16.5" />
+  </svg>
+);
+
+
 
 

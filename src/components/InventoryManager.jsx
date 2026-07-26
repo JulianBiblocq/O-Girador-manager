@@ -7,6 +7,7 @@ import CordelButton from './CordelButton';
 import { XiloClose, XiloChisel, XiloCaixa } from './XiloIcons';
 import { useTranslation } from './LanguageContext';
 import XiloAvatar from './XiloAvatar';
+import useConfirm from '../hooks/useConfirm';
 
 const INSTRUMENT_TYPES = ['Alfaia', 'Caixa', 'Agbê', 'Gonguê', 'Mineiro', 'Apito', 'Timbal', 'Autre'];
 const ETAT_OPTIONS = ['Neuf', 'Bon', 'À réparer'];
@@ -24,6 +25,7 @@ const INSTRUMENT_ICONS = {
 
 export default function InventoryManager({ groupId, onBack, role, isSystemAdmin, hasAccessLogistique }) {
   const { t } = useTranslation();
+  const { confirm } = useConfirm();
 
   const getInstrumentTypeLabel = (type) => {
     if (type === 'Autre') return t('inventory.other') || 'Autre';
@@ -42,6 +44,8 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin,
   const [instruments, setInstruments] = useState([]);
   const [usersList, setUsersList] = useState([]);
   const [filter, setFilter] = useState("all"); // "all", "association", "personal", "repair"
+  const [viewMode, setViewMode] = useState('table'); // 'table' | 'cards'
+  const [sortConfig, setSortConfig] = useState({ key: 'nom', direction: 'asc' });
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingId, setEditingId] = useState(null); // null for create, id for edit
   const [loading, setLoading] = useState(true);
@@ -235,9 +239,13 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin,
   };
 
   const handleDelete = async (instId, name) => {
-    const confirmDelete = window.confirm(
-      (t('inventory.deleteConfirm') || `Voulez-vous vraiment retirer "{name}" de l'inventaire ?`).replace('{name}', name)
-    );
+    const confirmDelete = await confirm({
+      title: "Supprimer de l'inventaire",
+      message: (t('inventory.deleteConfirm') || `Voulez-vous vraiment retirer "${name}" de l'inventaire ?`).replace('{name}', name),
+      confirmText: "Oui, retirer",
+      cancelText: "Annuler",
+      variant: "danger"
+    });
     if (!confirmDelete) return;
 
     setSaving(true);
@@ -314,9 +322,83 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin,
   const filteredInstruments = instruments.filter(inst => {
     if (filter === "association") return inst.proprietaire === "Association";
     if (filter === "personal") return inst.proprietaire !== "Association";
-    if (filter === "repair") return inst.etat === "À réparer";
+    if (filter === "repair") return inst.etat === "À réparer" || inst.etat === "Para consertar";
     return true;
   });
+
+  // Handle Header Click for column sorting
+  const handleSortHeaderClick = (key) => {
+    setSortConfig((prev) => {
+      if (prev.key === key) {
+        return { key, direction: prev.direction === 'asc' ? 'desc' : 'asc' };
+      }
+      return { key, direction: 'asc' };
+    });
+  };
+
+  // Dynamic sort of filtered instruments
+  const sortedInstruments = React.useMemo(() => {
+    const list = [...filteredInstruments];
+    if (!sortConfig.key) return list;
+
+    return list.sort((a, b) => {
+      let valA = '';
+      let valB = '';
+
+      switch (sortConfig.key) {
+        case 'nom':
+          valA = a.nom || '';
+          valB = b.nom || '';
+          break;
+        case 'type':
+          valA = a.type || '';
+          valB = b.type || '';
+          break;
+        case 'proprietaire':
+          valA = a.proprietaire !== "Association" ? (usersMap[a.proprietaire] || '') : "Association";
+          valB = b.proprietaire !== "Association" ? (usersMap[b.proprietaire] || '') : "Association";
+          break;
+        case 'localisation':
+          valA = a.localisationPhysique !== "Local" ? (usersMap[a.localisationPhysique] || 'Chez un membre') : "Local";
+          valB = b.localisationPhysique !== "Local" ? (usersMap[b.localisationPhysique] || 'Chez un membre') : "Local";
+          break;
+        case 'etat':
+          valA = a.etat || '';
+          valB = b.etat || '';
+          break;
+        case 'status':
+          valA = a.status || 'En stock';
+          valB = b.status || 'En stock';
+          break;
+        case 'assignations':
+          valA = (a.assignations || []).length;
+          valB = (b.assignations || []).length;
+          break;
+        default:
+          valA = a[sortConfig.key] || '';
+          valB = b[sortConfig.key] || '';
+      }
+
+      if (typeof valA === 'number' && typeof valB === 'number') {
+        return sortConfig.direction === 'asc' ? valA - valB : valB - valA;
+      }
+
+      const comp = String(valA).localeCompare(String(valB), undefined, { numeric: true, sensitivity: 'base' });
+      return sortConfig.direction === 'asc' ? comp : -comp;
+    });
+  }, [filteredInstruments, sortConfig, usersMap]);
+
+  // Helper to render sort indicator chevrons
+  const renderSortChevron = (key) => {
+    if (sortConfig.key !== key) {
+      return <span className="opacity-30 text-[9px] ml-1 font-bold select-none">↕️</span>;
+    }
+    return (
+      <span className="text-[10px] ml-1 font-black text-cordel-wood select-none">
+        {sortConfig.direction === 'asc' ? '🔼' : '🔽'}
+      </span>
+    );
+  };
 
   // Render Access Denied card if security fails
   if (!isAuthorized) {
@@ -575,19 +657,47 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin,
           </CordelCard>
         ) : (
           <div className="flex flex-col gap-4">
-            {/* Filter buttons & Add trigger */}
+            {/* Filter buttons, View mode & Add trigger */}
             <div className="flex justify-between items-center gap-2 flex-wrap">
-              {/* Dropdown for filters */}
-              <select
-                value={filter}
-                onChange={(e) => setFilter(e.target.value)}
-                className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light pr-8"
-              >
-                <option value="all">{(t('inventory.filterAll') || "Filtre : Tous ({count})").replace('{count}', instruments.length)}</option>
-                <option value="association">{(t('inventory.filterAssoc') || "Association ({count})").replace('{count}', instruments.filter(i=>i.proprietaire==='Association').length)}</option>
-                <option value="personal">{(t('inventory.filterPersonal') || "Matériel Personnel ({count})").replace('{count}', instruments.filter(i=>i.proprietaire!=='Association').length)}</option>
-                <option value="repair">{(t('inventory.filterRepair') || "À réparer ({count})").replace('{count}', instruments.filter(i=>i.etat==='À réparer' || i.etat==='Para consertar').length)}</option>
-              </select>
+              <div className="flex items-center gap-2 flex-wrap">
+                {/* Dropdown for filters */}
+                <select
+                  value={filter}
+                  onChange={(e) => setFilter(e.target.value)}
+                  className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light pr-8"
+                >
+                  <option value="all">{(t('inventory.filterAll') || "Filtre : Tous ({count})").replace('{count}', instruments.length)}</option>
+                  <option value="association">{(t('inventory.filterAssoc') || "Association ({count})").replace('{count}', instruments.filter(i=>i.proprietaire==='Association').length)}</option>
+                  <option value="personal">{(t('inventory.filterPersonal') || "Matériel Personnel ({count})").replace('{count}', instruments.filter(i=>i.proprietaire!=='Association').length)}</option>
+                  <option value="repair">{(t('inventory.filterRepair') || "À réparer ({count})").replace('{count}', instruments.filter(i=>i.etat==='À réparer' || i.etat==='Para consertar').length)}</option>
+                </select>
+
+                {/* View Mode Toggle (Tableau vs Cartes) */}
+                <div className="inline-flex rounded-md border border-encre-noire/30 p-0.5 bg-cordel-bg-light select-none">
+                  <button
+                    type="button"
+                    onClick={() => setViewMode('table')}
+                    className={`px-2.5 py-1 text-[10px] font-black uppercase rounded cursor-pointer transition-all ${
+                      viewMode === 'table'
+                        ? 'bg-cordel-wood text-white shadow-[1px_1px_0px_0px_#181716]'
+                        : 'text-cordel-master-dark hover:bg-black/5'
+                    }`}
+                  >
+                    📊 Tableau
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setViewMode('cards')}
+                    className={`px-2.5 py-1 text-[10px] font-black uppercase rounded cursor-pointer transition-all ${
+                      viewMode === 'cards'
+                        ? 'bg-cordel-wood text-white shadow-[1px_1px_0px_0px_#181716]'
+                        : 'text-cordel-master-dark hover:bg-black/5'
+                    }`}
+                  >
+                    🎴 Cartes
+                  </button>
+                </div>
+              </div>
 
               <div className="flex gap-2">
                 <CordelButton
@@ -612,18 +722,209 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin,
               </div>
             </div>
 
-            {/* Instruments List */}
+            {/* Instruments List / Table */}
             {loading ? (
               <div className="flex justify-center items-center py-12">
                 <span className="text-xs uppercase tracking-widest font-black animate-pulse opacity-60">⏳</span>
               </div>
-            ) : filteredInstruments.length === 0 ? (
+            ) : sortedInstruments.length === 0 ? (
               <CordelCard variant="default" useExtremeBorder={false} className="p-8 text-center bg-cordel-bg">
                 <p className="text-xs font-bold opacity-75">{t('inventory.noInstrumentsFilter') || "Aucun instrument trouvé pour ce filtre."}</p>
               </CordelCard>
+            ) : viewMode === 'table' ? (
+              /* TABLE VIEW WITH CLICKABLE SORTABLE HEADERS */
+              <div className="w-full max-h-[calc(100vh-280px)] overflow-x-auto overflow-y-auto border-2 border-encre-noire rounded-[6px_4px_5px_3px] shadow-[2px_2px_0px_0px_#181716] bg-cordel-card-bg relative">
+                <table className="w-full text-left text-xs border-collapse min-w-[950px]">
+                  <thead className="bg-cordel-bg-light border-b-2 border-encre-noire text-[10px] uppercase tracking-wider text-cordel-wood font-black select-none sticky top-0 z-20">
+                    <tr>
+                      <th 
+                        onClick={() => handleSortHeaderClick('nom')}
+                        className="p-3 border-r border-encre-noire/15 cursor-pointer hover:bg-black/5 transition-colors sticky top-0 left-0 z-30 bg-cordel-bg-light"
+                        title="Cliquer pour trier par Nom / Réf"
+                      >
+                        <div className="flex items-center gap-1">
+                          <span>Nom / Réf</span>
+                          {renderSortChevron('nom')}
+                        </div>
+                      </th>
+                      <th 
+                        onClick={() => handleSortHeaderClick('type')}
+                        className="p-3 border-r border-encre-noire/15 cursor-pointer hover:bg-black/5 transition-colors sticky top-0 z-20"
+                        title="Cliquer pour trier par Famille / Type"
+                      >
+                        <div className="flex items-center gap-1">
+                          <span>Famille / Type</span>
+                          {renderSortChevron('type')}
+                        </div>
+                      </th>
+                      <th 
+                        onClick={() => handleSortHeaderClick('proprietaire')}
+                        className="p-3 border-r border-encre-noire/15 cursor-pointer hover:bg-black/5 transition-colors sticky top-0 z-20"
+                        title="Cliquer pour trier par Propriétaire"
+                      >
+                        <div className="flex items-center gap-1">
+                          <span>Propriétaire</span>
+                          {renderSortChevron('proprietaire')}
+                        </div>
+                      </th>
+                      <th 
+                        onClick={() => handleSortHeaderClick('localisation')}
+                        className="p-3 border-r border-encre-noire/15 cursor-pointer hover:bg-black/5 transition-colors sticky top-0 z-20"
+                        title="Cliquer pour trier par Localisation"
+                      >
+                        <div className="flex items-center gap-1">
+                          <span>Localisation</span>
+                          {renderSortChevron('localisation')}
+                        </div>
+                      </th>
+                      <th 
+                        onClick={() => handleSortHeaderClick('etat')}
+                        className="p-3 border-r border-encre-noire/15 cursor-pointer hover:bg-black/5 transition-colors sticky top-0 z-20"
+                        title="Cliquer pour trier par État"
+                      >
+                        <div className="flex items-center gap-1">
+                          <span>État</span>
+                          {renderSortChevron('etat')}
+                        </div>
+                      </th>
+                      <th 
+                        onClick={() => handleSortHeaderClick('status')}
+                        className="p-3 border-r border-encre-noire/15 cursor-pointer hover:bg-black/5 transition-colors sticky top-0 z-20"
+                        title="Cliquer pour trier par Statut / Prêt"
+                      >
+                        <div className="flex items-center gap-1">
+                          <span>Statut / Prêt</span>
+                          {renderSortChevron('status')}
+                        </div>
+                      </th>
+                      <th 
+                        onClick={() => handleSortHeaderClick('assignations')}
+                        className="p-3 border-r border-encre-noire/15 cursor-pointer hover:bg-black/5 transition-colors sticky top-0 z-20"
+                        title="Cliquer pour trier par Assignations"
+                      >
+                        <div className="flex items-center gap-1">
+                          <span>Assignations</span>
+                          {renderSortChevron('assignations')}
+                        </div>
+                      </th>
+                      <th className="p-3 text-right sticky top-0 z-20">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-encre-noire/10 font-medium">
+                    {sortedInstruments.map((inst) => {
+                      const iconPath = INSTRUMENT_ICONS[inst.type] || 'favicon.svg';
+                      const isPersonal = inst.proprietaire !== "Association";
+                      const ownerName = isPersonal ? (usersMap[inst.proprietaire] || "Chargement...") : "Association";
+                      const isAtHome = inst.localisationPhysique !== "Local";
+                      const locName = isAtHome ? (usersMap[inst.localisationPhysique] || "Chez un membre") : "Local";
+
+                      return (
+                        <tr key={inst.id} className="hover:bg-cordel-hover/50 transition-colors">
+                          {/* Nom (Sticky Column) */}
+                          <td className="p-3 border-r border-encre-noire/15 font-extrabold text-encre-noire sticky left-0 z-10 bg-cordel-bg shadow-[2px_0_5px_-2px_rgba(0,0,0,0.15)]">
+                            <div className="flex items-center gap-2">
+                              <img src={iconPath} alt={inst.type} className="w-5 h-5 object-contain shrink-0" />
+                              <span className="truncate">{inst.nom}</span>
+                            </div>
+                          </td>
+                          {/* Type */}
+                          <td className="p-3 border-r border-encre-noire/10 text-cordel-wood font-bold">
+                            🛠️ {inst.type}
+                          </td>
+                          {/* Propriétaire */}
+                          <td className="p-3 border-r border-encre-noire/10 text-cordel-master-dark font-semibold">
+                            {ownerName}
+                          </td>
+                          {/* Localisation */}
+                          <td className="p-3 border-r border-encre-noire/10">
+                            📍 {locName}
+                          </td>
+                          {/* État */}
+                          <td className="p-3 border-r border-encre-noire/10">
+                            <span className={`theme-stamp-badge ${inst.etat === 'À réparer' || inst.etat === 'Para consertar' ? 'border-red-600 text-red-600' : 'theme-stamp-badge-wood'} text-[8px] px-1.5 py-0.5`}>
+                              {inst.etat}
+                            </span>
+                          </td>
+                          {/* Statut / Prêt */}
+                          <td className="p-3 border-r border-encre-noire/10">
+                            <div className="flex flex-col gap-1">
+                              <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded border inline-block w-fit ${
+                                inst.status === 'Emprunté'
+                                  ? 'bg-amber-100 border-amber-400 text-amber-800'
+                                  : inst.status === 'En réparation'
+                                    ? 'bg-red-100 border-red-400 text-red-800'
+                                    : 'bg-green-100 border-green-400 text-green-800'
+                              }`}>
+                                {inst.status || 'En stock'}
+                              </span>
+                              {inst.status === 'Emprunté' ? (
+                                <div className="flex items-center gap-1.5 text-[9px]">
+                                  <span className="truncate">👤 {usersMap[inst.borrowedBy] || "Membre"}</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleReturnInstrument(inst.id)}
+                                    className="text-[8px] font-black uppercase bg-cordel-wood text-white px-1.5 py-0.5 rounded border border-encre-noire hover:brightness-110 cursor-pointer"
+                                  >
+                                    ↩️ Restitué
+                                  </button>
+                                </div>
+                              ) : (
+                                <select
+                                  value=""
+                                  onChange={(e) => handleAssignBorrower(inst.id, e.target.value)}
+                                  className="theme-input text-[9px] font-bold py-0.5 px-1 bg-white max-w-[130px]"
+                                >
+                                  <option value="">🤝 Prêter à...</option>
+                                  {usersList.map(u => (
+                                    <option key={u.id} value={u.id}>{u.prenom} {u.nom}</option>
+                                  ))}
+                                </select>
+                              )}
+                            </div>
+                          </td>
+                          {/* Assignations */}
+                          <td className="p-3 border-r border-encre-noire/10">
+                            {inst.assignations && inst.assignations.length > 0 ? (
+                              <div className="flex flex-wrap gap-1">
+                                {inst.assignations.map(uid => {
+                                  const u = usersList.find(userObj => userObj.id === uid);
+                                  if (!u) return null;
+                                  const fullName = `${u.prenom} ${u.nom}`;
+                                  return (
+                                    <span key={uid} className="inline-flex items-center gap-1 bg-white/60 px-1.5 py-0.5 rounded border border-dashed border-encre-noire/20 text-[9px] font-semibold">
+                                      <XiloAvatar src={u.photoURL} name={fullName} size={14} />
+                                      <span>{fullName}</span>
+                                    </span>
+                                  );
+                                })}
+                              </div>
+                            ) : (
+                              <span className="text-[10px] opacity-40 italic">-</span>
+                            )}
+                          </td>
+                          {/* Actions */}
+                          <td className="p-3 text-right">
+                            <div className="flex items-center justify-end gap-1.5">
+                              <button
+                                type="button"
+                                onClick={() => handleOpenEdit(inst)}
+                                className="p-1.5 border border-encre-noire bg-cordel-bg-light hover:bg-cordel-hover text-encre-noire rounded shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none cursor-pointer"
+                                title="Modifier l'instrument"
+                              >
+                                <XiloChisel size={10} />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             ) : (
+              /* CARD VIEW WITH SORTED INSTRUMENTS */
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {filteredInstruments.map((inst) => {
+                {sortedInstruments.map((inst) => {
                   const iconPath = INSTRUMENT_ICONS[inst.type] || 'favicon.svg';
                   const isPersonal = inst.proprietaire !== "Association";
                   const ownerName = isPersonal ? (usersMap[inst.proprietaire] || "Chargement...") : "Association";
@@ -732,7 +1033,7 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin,
 
                       {/* Right top status tag stamp */}
                       <div className="absolute top-2 right-2 flex gap-1 select-none">
-                        <span className={`theme-stamp-badge ${inst.etat === 'À réparer' ? 'border-red-600 text-red-600' : 'theme-stamp-badge-wood'} text-[6px] px-1 py-0 rotate-0`}>
+                        <span className={`theme-stamp-badge ${inst.etat === 'À réparer' || inst.etat === 'Para consertar' ? 'border-red-600 text-red-600' : 'theme-stamp-badge-wood'} text-[6px] px-1 py-0 rotate-0`}>
                           {inst.etat}
                         </span>
                       </div>

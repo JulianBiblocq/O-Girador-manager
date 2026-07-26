@@ -7,9 +7,11 @@ import MoveThreadModal from './MoveThreadModal';
 import MoveReplyModal from './MoveReplyModal';
 import { useForumModeration } from '../hooks/useForumModeration';
 import { useTranslation } from './LanguageContext';
+import useConfirm from '../hooks/useConfirm';
 
 export default function ForumModerationPanel({ groupId, channels = [] }) {
   const { t } = useTranslation();
+  const { confirm } = useConfirm();
   const {
     actionLoading,
     moveThread,
@@ -86,13 +88,27 @@ export default function ForumModerationPanel({ groupId, channels = [] }) {
   };
 
   const handleDeleteThreadConfirm = async (thread) => {
-    if (window.confirm(`Voulez-vous vraiment supprimer la discussion "${thread.titre}" et toutes ses réponses ?`)) {
+    const ok = await confirm({
+      title: "Suppression de la discussion",
+      message: `Voulez-vous vraiment supprimer la discussion "${thread.titre}" et toutes ses réponses ?`,
+      confirmText: "Oui, supprimer",
+      cancelText: "Annuler",
+      variant: "danger"
+    });
+    if (ok) {
       await deleteThread(thread.id);
     }
   };
 
   const handleDeleteReplyConfirm = async (threadId, replyIndex) => {
-    if (window.confirm("Voulez-vous vraiment supprimer ce message ?")) {
+    const ok = await confirm({
+      title: "Suppression du message",
+      message: "Voulez-vous vraiment supprimer ce message ?",
+      confirmText: "Oui, supprimer",
+      cancelText: "Annuler",
+      variant: "danger"
+    });
+    if (ok) {
       await deleteReply(threadId, replyIndex);
     }
   };

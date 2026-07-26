@@ -7,6 +7,7 @@ import CordelButton from './CordelButton';
 import DocumentUploadForm from './DocumentUploadForm';
 
 import { useTranslation } from './LanguageContext';
+import useConfirm from '../hooks/useConfirm';
 
 export const DEFAULT_VARAL_CATEGORIES = [
   { id: 'Partitions', nom: 'Partitions', activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false },
@@ -127,6 +128,7 @@ const HangingRopeCurve = () => (
 
 export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
   const { t } = useTranslation();
+  const { confirm } = useConfirm();
 
   const translate = (key, fallback) => {
     const val = t(key);
@@ -147,7 +149,14 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
 
   const handleDelete = async (docItem) => {
     const confirmMsg = translate('documents.deleteConfirm', "Voulez-vous vraiment supprimer ce document ?");
-    if (!window.confirm(confirmMsg)) return;
+    const isOk = await confirm({
+      title: "Supprimer le document",
+      message: confirmMsg,
+      confirmText: "Oui, supprimer",
+      cancelText: "Annuler",
+      variant: "danger"
+    });
+    if (!isOk) return;
 
     try {
       if (docItem.fileUrl && docItem.fileUrl.includes('firebasestorage.googleapis.com')) {

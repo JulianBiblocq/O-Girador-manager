@@ -4,9 +4,11 @@ import { db } from '../../firebase';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 import { useTranslation } from '../LanguageContext';
+import useConfirm from '../../hooks/useConfirm';
 
 export default function EventReportSection({ event, user, profileData }) {
   const { t } = useTranslation();
+  const { confirm } = useConfirm();
   const [localPoints, setLocalPoints] = useState([]);
   const [newPointTitle, setNewPointTitle] = useState('');
   const [activeMicPointId, setActiveMicPointId] = useState(null);
@@ -111,7 +113,13 @@ export default function EventReportSection({ event, user, profileData }) {
 
   // Delete a point
   const handleDeletePoint = async (pointId) => {
-    const confirmDelete = window.confirm("Voulez-vous vraiment supprimer ce point de l'ordre du jour ?");
+    const confirmDelete = await confirm({
+      title: "Supprimer le point",
+      message: "Voulez-vous vraiment supprimer ce point de l'ordre du jour ?",
+      confirmText: "Oui, supprimer",
+      cancelText: "Annuler",
+      variant: "danger"
+    });
     if (!confirmDelete) return;
 
     const updated = localPoints.filter(p => p.id !== pointId);
@@ -241,7 +249,13 @@ export default function EventReportSection({ event, user, profileData }) {
 
   // Submit report for review (attente_relecture)
   const handleSubmitForReview = async () => {
-    const confirmSubmit = window.confirm("Voulez-vous soumettre ce compte-rendu à la relecture par les membres présents ?");
+    const confirmSubmit = await confirm({
+      title: "Soumettre pour relecture",
+      message: "Voulez-vous soumettre ce compte-rendu à la relecture par les membres présents ?",
+      confirmText: "Oui, soumettre",
+      cancelText: "Annuler",
+      variant: "warning"
+    });
     if (!confirmSubmit) return;
 
     setIsSaving(true);

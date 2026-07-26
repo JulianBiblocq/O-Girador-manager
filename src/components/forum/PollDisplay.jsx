@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '../../firebase';
 import CordelCard from '../CordelCard';
+import useConfirm from '../../hooks/useConfirm';
 
 /**
  * PollDisplay component renders interactive poll options, progress bars,
@@ -15,6 +16,7 @@ import CordelCard from '../CordelCard';
  * @param {boolean} props.isAuthorOrAdmin Whether current user can close/reopen poll
  */
 export default function PollDisplay({ poll, threadId, userId, allUsers = [], isAuthorOrAdmin = false }) {
+  const { confirm } = useConfirm();
   const [voting, setVoting] = useState(false);
   const [showVoters, setShowVoters] = useState(false);
   const [updatingCloseState, setUpdatingCloseState] = useState(false);
@@ -82,7 +84,14 @@ export default function PollDisplay({ poll, threadId, userId, allUsers = [], isA
     const confirmMsg = isClosed 
       ? "Voulez-vous rouvrir ce sondage aux votes ?" 
       : "Voulez-vous clôturer ce sondage ? Aucun nouveau vote ne pourra être effectué.";
-    if (!window.confirm(confirmMsg)) return;
+    const isOk = await confirm({
+      title: isClosed ? "Rouvrir le sondage" : "Clôturer le sondage",
+      message: confirmMsg,
+      confirmText: isClosed ? "Oui, rouvrir" : "Oui, clôturer",
+      cancelText: "Annuler",
+      variant: "warning"
+    });
+    if (!isOk) return;
 
     setUpdatingCloseState(true);
     try {

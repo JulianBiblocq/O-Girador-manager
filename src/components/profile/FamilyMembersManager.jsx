@@ -4,6 +4,7 @@ import CordelButton from '../CordelButton';
 import XiloAvatar from '../XiloAvatar';
 import DependentFormModal from './DependentFormModal';
 import { useFamilyMembers } from '../../hooks/useFamilyMembers';
+import useConfirm from '../../hooks/useConfirm';
 
 export default function FamilyMembersManager({
   user,
@@ -11,6 +12,7 @@ export default function FamilyMembersManager({
   instrumentsDisponibles = [],
   t = (k, fb) => fb || k
 }) {
+  const { confirm } = useConfirm();
   const {
     dependents,
     loading,
@@ -54,9 +56,14 @@ export default function FamilyMembersManager({
 
   const handleDeleteDependent = async (dep) => {
     const name = `${dep.prenom} ${dep.nom}`;
-    if (!window.confirm(`Voulez-vous vraiment supprimer le profil rattaché de "${name}" ?`)) {
-      return;
-    }
+    const isOk = await confirm({
+      title: "Supprimer le profil rattaché",
+      message: `Voulez-vous vraiment supprimer le profil rattaché de "${name}" ?`,
+      confirmText: "Oui, supprimer",
+      cancelText: "Annuler",
+      variant: "danger"
+    });
+    if (!isOk) return;
     try {
       await deleteDependent(dep.id);
     } catch (err) {

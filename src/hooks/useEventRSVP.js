@@ -2,8 +2,10 @@ import { useState, useEffect, useMemo } from 'react';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useFamilyMembers } from './useFamilyMembers';
+import useConfirm from './useConfirm';
 
 export function useEventRSVP(event, user, profileData, allUsers, isPrestationRestricted, setToastMessage) {
+  const { confirm } = useConfirm();
   const existingResponse = (event.inscriptions || []).find(ins => ins.userId === user?.uid);
 
   const [status, setStatus] = useState(() => existingResponse 
@@ -476,9 +478,14 @@ export function useEventRSVP(event, user, profileData, allUsers, isPrestationRes
 
   const handleRemoveInviteExterne = async (inviteId) => {
     if (!event.id) return;
-    if (!window.confirm("Êtes-vous sûr de vouloir retirer cet invité ?")) {
-      return;
-    }
+    const isOk = await confirm({
+      title: "Retirer l'invité",
+      message: "Êtes-vous sûr de vouloir retirer cet invité ?",
+      confirmText: "Oui, retirer",
+      cancelText: "Annuler",
+      variant: "danger"
+    });
+    if (!isOk) return;
     try {
       const currentInvites = event.invitesExternes || [];
       const updatedInvites = currentInvites.filter(inv => inv.id !== inviteId);

@@ -5,9 +5,11 @@ import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
 import { useTranslation } from './LanguageContext';
 import { normalizeTag, getTagId } from '../utils/tagUtils';
+import useConfirm from '../hooks/useConfirm';
 
 export default function TagManager({ groupId, onBack, role, isSystemAdmin }) {
   const { t } = useTranslation();
+  const { confirm } = useConfirm();
   const [rawTags, setRawTags] = useState([]);
   
   // Creation form state
@@ -208,9 +210,13 @@ export default function TagManager({ groupId, onBack, role, isSystemAdmin }) {
 
   const handleDeleteTag = async (normTag) => {
     if (!groupId) return;
-    const confirmDelete = window.confirm(
-      (t('tagManager.deleteConfirmText') || `Voulez-vous vraiment supprimer l'étiquette "{tag}" ?`).replace('{tag}', normTag.nomM)
-    );
+    const confirmDelete = await confirm({
+      title: "Supprimer l'étiquette",
+      message: (t('tagManager.deleteConfirmText') || `Voulez-vous vraiment supprimer l'étiquette "{tag}" ?`).replace('{tag}', normTag.nomM),
+      confirmText: "Oui, supprimer",
+      cancelText: "Annuler",
+      variant: "danger"
+    });
     if (!confirmDelete) return;
 
     setSaving(true);

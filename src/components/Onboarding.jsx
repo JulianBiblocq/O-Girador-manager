@@ -5,6 +5,9 @@ import LayoutShell from './LayoutShell';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
 import { useTranslation } from './LanguageContext';
+import OnboardingPublicBlock from './onboarding/OnboardingPublicBlock';
+import OnboardingVisibilityBlock from './onboarding/OnboardingVisibilityBlock';
+import OnboardingPrivateBlock from './onboarding/OnboardingPrivateBlock';
 
 const DEFAULT_FIELDS_CONFIG = {
   telephone: { key: "telephone", label: "Téléphone", enabled: true, filledBy: "member", isRequired: false },
@@ -18,10 +21,6 @@ const DEFAULT_FIELDS_CONFIG = {
   dateNaissance: { key: "dateNaissance", label: "Date de naissance", enabled: true, filledBy: "member", isRequired: false },
   niveaux: { key: "niveaux", label: "Affichage des niveaux dans le trombinoscope", enabled: true, filledBy: "admin", isRequired: false }
 };
-
-const DEFAULT_INSTRUMENTS = ["Alfaia Marcante", "Alfaia Meião", "Alfaia Repique", "Caixa", "Tarol", "Gonguê", "Agbê", "Mineiro", "Timbal", "Chant", "Danse"];
-
-const AddressAutocomplete = React.lazy(() => import('./AddressAutocomplete'));
 
 export default function Onboarding({ user, branding, onComplete }) {
   const { t } = useTranslation();
@@ -50,16 +49,15 @@ export default function Onboarding({ user, branding, onComplete }) {
     voeuSecondaire: '',
     voeuTertiaire: '',
     instrumentsJoues: [],
-    genre: 'autre',
+    genre: 'femme',
     afficherTelephone: true,
     afficherDateNaissance: false,
-    visibiliteAdresse: 'complete',
+    visibiliteAdresse: 'ville',
     publierTelephone: true,
     publierDateNaissance: false
   });
 
   const [fieldsConfig, setFieldsConfig] = useState(null);
-  const [instrumentsDisponibles, setInstrumentsDisponibles] = useState(DEFAULT_INSTRUMENTS);
   const [submitting, setSubmitting] = useState(false);
   const [droitImageDocUrl, setDroitImageDocUrl] = useState('');
   const [aptitudeMedicaleDocUrl, setAptitudeMedicaleDocUrl] = useState('');
@@ -74,7 +72,6 @@ export default function Onboarding({ user, branding, onComplete }) {
   useEffect(() => {
     if (!groupId) {
       setFieldsConfig(DEFAULT_FIELDS_CONFIG);
-      setInstrumentsDisponibles(DEFAULT_INSTRUMENTS);
       return;
     }
 
@@ -91,21 +88,14 @@ export default function Onboarding({ user, branding, onComplete }) {
           } else {
             setFieldsConfig(DEFAULT_FIELDS_CONFIG);
           }
-          if (Array.isArray(data.instrumentsDisponibles)) {
-            setInstrumentsDisponibles(data.instrumentsDisponibles);
-          } else {
-            setInstrumentsDisponibles(DEFAULT_INSTRUMENTS);
-          }
           setDroitImageDocUrl(data.droitImageDocUrl || '');
           setAptitudeMedicaleDocUrl(data.aptitudeMedicaleDocUrl || '');
         } else {
           setFieldsConfig(DEFAULT_FIELDS_CONFIG);
-          setInstrumentsDisponibles(DEFAULT_INSTRUMENTS);
         }
       } catch (err) {
         console.error("Onboarding - Erreur de fetch config :", err);
         setFieldsConfig(DEFAULT_FIELDS_CONFIG);
-        setInstrumentsDisponibles(DEFAULT_INSTRUMENTS);
       }
     };
     fetchConfig();
@@ -148,15 +138,6 @@ export default function Onboarding({ user, branding, onComplete }) {
       return false;
     });
 
-    const isInstrumentsValid = Boolean(formData.voeuPrincipal && formData.voeuSecondaire && formData.voeuPrincipal !== formData.voeuSecondaire);
-
-    if (!isInstrumentsValid) {
-      const errMsg = "Veuillez sélectionner au moins 2 instruments différents (un choix principal et un second choix) pour faciliter la répartition par le Mestre.";
-      setValidationError(errMsg);
-      alert(errMsg);
-      return;
-    }
-
     if (missingRequired) {
       const errMsg = "Veuillez remplir tous les champs obligatoires.";
       setValidationError(errMsg);
@@ -167,7 +148,7 @@ export default function Onboarding({ user, branding, onComplete }) {
     setSubmitting(true);
 
     try {
-      // Build the user document payload according to the specifications
+      // Build the user document payload according to specifications
       const userDoc = {
         nom: formData.lastName,
         prenom: formData.firstName,
@@ -202,21 +183,21 @@ export default function Onboarding({ user, branding, onComplete }) {
         tags: [],
         afficherTelephone: Boolean(formData.afficherTelephone),
         afficherDateNaissance: Boolean(formData.afficherDateNaissance),
-        visibiliteAdresse: formData.visibiliteAdresse || 'complete',
+        visibiliteAdresse: formData.visibiliteAdresse || 'ville',
         publierTelephone: Boolean(formData.afficherTelephone),
         publierDateNaissance: Boolean(formData.afficherDateNaissance)
       };
 
-      // 3. Write user document to Firestore using Auth UID as the key
+      // Write user document to Firestore using Auth UID as the key
       await setDoc(doc(db, 'users', user.uid), userDoc);
 
-      // 4. Redirect the user by triggering the parent callback
+      // Trigger the parent callback to complete onboarding
       if (onComplete) {
         onComplete();
       }
     } catch (error) {
       console.error("Onboarding - Erreur d'écriture dans Firestore :", error);
-      alert(t('onboarding.errorSave') + " (" + error.message + ")");
+      alert((t('onboarding.errorSave') || "Erreur de sauvegarde") + " (" + error.message + ")");
     } finally {
       setSubmitting(false);
     }
@@ -225,471 +206,78 @@ export default function Onboarding({ user, branding, onComplete }) {
   return (
     <div className="force-light-theme w-full flex flex-col min-h-screen">
       <LayoutShell logoUrl={branding?.logoUrl} forceLight={true}>
-        <div className="text-center py-4 border-b-2 border-dashed border-cordel-master-dark/30">
-        <h1 className="panel-title text-2xl font-extrabold tracking-wider text-cordel-wood">
-          {t('onboarding.title')}
-        </h1>
-        <p className="text-[10px] font-bold tracking-widest text-cordel-master-dark opacity-75 mt-1">
-          {t('onboarding.step')}
-        </p>
-      </div>
+        <div className="text-center py-4 border-b-2 border-dashed border-cordel-master-dark/30 max-w-2xl mx-auto w-full">
+          <h1 className="panel-title text-2xl font-extrabold tracking-wider text-cordel-wood">
+            {t('onboarding.title') || "NOUVEAU PROFIL"}
+          </h1>
+          <p className="text-[10px] font-bold tracking-widest text-cordel-master-dark opacity-75 mt-1">
+            {t('onboarding.step') || "INSCRIPTION • ÉTAPE 1 SUR 2"}
+          </p>
+        </div>
 
-      <CordelCard variant="default" useExtremeBorder={true}>
-        <h2 className="panel-title text-lg font-bold mb-2">{t('onboarding.welcome')}</h2>
-        <p className="text-xs leading-relaxed opacity-80 mb-6">
-          {t('onboarding.welcomeDesc')}
-        </p>
-
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4 text-left">
-          {validationError && (
-            <div className="p-3 bg-red-100 border border-red-400 text-red-700 text-xs font-bold rounded">
-              ⚠️ {validationError}
-            </div>
-          )}
-
-          {/* First Name Input */}
-          <div className="flex flex-col gap-1">
-            <label className="text-[10px] uppercase font-bold tracking-wider text-cordel-master-dark">
-              {t('onboarding.firstName')} <span className="text-red-500 font-bold ml-0.5">*</span>
-            </label>
-            <input
-              type="text"
-              name="firstName"
-              value={formData.firstName}
-              onChange={handleChange}
-              required
-              disabled={submitting}
-              className="theme-input w-full disabled:opacity-50"
-            />
-          </div>
-
-          {/* Last Name Input */}
-          <div className="flex flex-col gap-1">
-            <label className="text-[10px] uppercase font-bold tracking-wider text-cordel-master-dark">
-              {t('onboarding.lastName')} <span className="text-red-500 font-bold ml-0.5">*</span>
-            </label>
-            <input
-              type="text"
-              name="lastName"
-              value={formData.lastName}
-              onChange={handleChange}
-              required
-              disabled={submitting}
-              className="theme-input w-full disabled:opacity-50"
-            />
-          </div>
-
-          {/* Souhaits d'Instruments / Casting */}
-          <div className="border-t border-dashed border-cordel-master-dark/20 pt-3.5 flex flex-col gap-3 text-left">
-            <h5 className="font-bold text-xs uppercase tracking-wider text-cordel-wood flex items-center gap-1.5">
-              🎵 Quels instruments aimerais-tu jouer ?
-            </h5>
-            <p className="text-[10px] text-cordel-master-dark font-medium leading-relaxed bg-cordel-bg-light/90 border border-dashed border-cordel-master-dark/20 p-2.5 rounded">
-              💡 Veuillez sélectionner au moins 2 instruments (un choix principal et un second choix) pour faciliter la répartition des pupitres par le Mestre.
+        <div className="max-w-2xl mx-auto w-full my-4 px-2">
+          <CordelCard variant="default" useExtremeBorder={true}>
+            <h2 className="panel-title text-lg font-bold mb-1">
+              {t('onboarding.welcome') || "Bienvenue dans l'association !"}
+            </h2>
+            <p className="text-xs leading-relaxed opacity-80 mb-5">
+              {t('onboarding.welcomeDesc') || "Nous avons besoin de quelques informations pour compléter votre fiche de membre."}
             </p>
 
-            {/* Choix 1 */}
-            <div className="flex flex-col gap-1">
-              <div className="flex items-center justify-between gap-2">
-                <label className="text-[10px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                  Vœu principal <span className="text-red-500 font-bold">*</span>
-                </label>
-                <span className="theme-stamp-badge theme-stamp-badge-wood text-[9px] px-2.5 py-0.5 font-black uppercase">
-                  Choix 1
-                </span>
-              </div>
-              <select
-                name="voeuPrincipal"
-                value={formData.voeuPrincipal || ''}
-                onChange={handleChange}
-                disabled={submitting}
-                className="theme-input w-full disabled:opacity-50 font-bold bg-cordel-bg-light text-xs"
-              >
-                <option value="">-- Choisir un premier voeu (Choix 1) --</option>
-                {instrumentsDisponibles.map((inst) => (
-                  <option key={`ob-v1-${inst}`} value={inst}>{inst}</option>
-                ))}
-              </select>
-            </div>
-
-            {/* Choix 2 */}
-            <div className="flex flex-col gap-1">
-              <div className="flex items-center justify-between gap-2">
-                <label className="text-[10px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                  Vœu secondaire <span className="text-red-500 font-bold">*</span>
-                </label>
-                <span className="theme-stamp-badge theme-stamp-badge-ocre text-[9px] px-2.5 py-0.5 font-black uppercase">
-                  Choix 2
-                </span>
-              </div>
-              <select
-                name="voeuSecondaire"
-                value={formData.voeuSecondaire || ''}
-                onChange={handleChange}
-                disabled={submitting}
-                className="theme-input w-full disabled:opacity-50 font-bold bg-cordel-bg-light text-xs"
-              >
-                <option value="">-- Choisir un second voeu (Choix 2 obligatoire) --</option>
-                {instrumentsDisponibles.map((inst) => (
-                  <option key={`ob-v2-${inst}`} value={inst} disabled={inst === formData.voeuPrincipal}>
-                    {inst} {inst === formData.voeuPrincipal ? '(Déjà choisi en Choix 1)' : ''}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Choix 3 */}
-            <div className="flex flex-col gap-1">
-              <div className="flex items-center justify-between gap-2">
-                <label className="text-[10px] uppercase font-bold tracking-wider text-cordel-master-dark opacity-80">
-                  Vœu tertiaire (Optionnel)
-                </label>
-                <span className="theme-stamp-badge theme-stamp-badge-dark text-[9px] px-2 py-0.5 font-bold opacity-75 shrink-0">
-                  Choix 3
-                </span>
-              </div>
-              <select
-                name="voeuTertiaire"
-                value={formData.voeuTertiaire || ''}
-                onChange={handleChange}
-                disabled={submitting}
-                className="theme-input w-full disabled:opacity-50 bg-cordel-bg-light text-xs"
-              >
-                <option value="">-- Aucun / Pas de troisième choix --</option>
-                {instrumentsDisponibles.map((inst) => (
-                  <option key={`ob-v3-${inst}`} value={inst} disabled={inst === formData.voeuPrincipal || inst === formData.voeuSecondaire}>
-                    {inst} {(inst === formData.voeuPrincipal || inst === formData.voeuSecondaire) ? '(Déjà choisi)' : ''}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {(!formData.voeuPrincipal || !formData.voeuSecondaire || formData.voeuPrincipal === formData.voeuSecondaire) && (
-              <div className="p-2 bg-amber-50 dark:bg-amber-950/40 border border-dashed border-amber-500/50 rounded text-[11px] font-bold text-amber-800 dark:text-amber-300">
-                ⚠️ Veuillez sélectionner au moins 2 instruments différents (Choix 1 et Choix 2).
-              </div>
-            )}
-          </div>
-
-          {/* Genre / Civilité Select */}
-          <div className="flex flex-col gap-1">
-            <label className="text-[10px] uppercase font-bold tracking-wider text-cordel-master-dark">
-              {t('onboarding.genre')}
-            </label>
-            <select
-              name="genre"
-              value={formData.genre}
-              onChange={handleChange}
-              disabled={submitting}
-              className="theme-input w-full disabled:opacity-50 font-bold bg-cordel-bg-light"
-            >
-              <option value="homme">{t('onboarding.genderMale')}</option>
-              <option value="femme">{t('onboarding.genderFemale')}</option>
-              <option value="autre">{t('onboarding.genderOther')}</option>
-            </select>
-          </div>
-
-           {isFieldVisible('telephone') && (
-            <div className="flex flex-col gap-1">
-              <label className="text-[10px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                {t('onboarding.phone')}
-                {isFieldRequired('telephone') && <span className="text-red-500 font-bold ml-1">*</span>}
-              </label>
-              <input
-                type="tel"
-                name="phone"
-                placeholder="06 12 34 56 78"
-                value={formData.phone}
-                onChange={handleChange}
-                required={isFieldRequired('telephone')}
-                disabled={submitting}
-                className="theme-input w-full disabled:opacity-50"
-              />
-              <label className="flex items-center gap-1.5 mt-1 text-[10px] font-semibold cursor-pointer select-none">
-                <input 
-                  type="checkbox"
-                  name="afficherTelephone"
-                  checked={formData.afficherTelephone !== false}
-                  onChange={handleChange}
-                  disabled={submitting}
-                />
-                <span>Afficher mon téléphone dans le Trombinoscope</span>
-              </label>
-            </div>
-          )}
-
-          {isFieldVisible('surnom') && (
-            <div className="flex flex-col gap-1">
-              <label className="text-[10px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                {t('onboarding.surnom')}
-                {isFieldRequired('surnom') && <span className="text-red-500 font-bold ml-1">*</span>}
-              </label>
-              <input
-                type="text"
-                name="surnom"
-                placeholder="Surnom"
-                value={formData.surnom}
-                onChange={handleChange}
-                disabled={submitting}
-                className="theme-input w-full disabled:opacity-50"
-              />
-            </div>
-          )}
-
-          {isFieldVisible('adresse') && (
-            <div className="flex flex-col gap-2.5">
-              <div className="flex flex-col gap-1">
-                <label className="text-[10px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                  {t('onboarding.adresseRue') || "Numéro et Rue"}
-                  {isFieldRequired('adresse') && <span className="text-red-500 font-bold ml-1">*</span>}
-                </label>
-                <React.Suspense fallback={
-                  <div className="text-[10px] font-bold py-2 text-cordel-wood animate-pulse">
-                    ⏳ Chargement de la recherche d'adresse...
-                  </div>
-                }>
-                  <AddressAutocomplete
-                    name="adresseRue"
-                    value={formData.adresseRue}
-                    onChange={handleChange}
-                    onSelect={(addressData) => {
-                      setFormData(prev => ({
-                        ...prev,
-                        adresseRue: addressData.street,
-                        adresseCP: addressData.zipcode,
-                        adresseVille: addressData.city
-                      }));
-                    }}
-                    required={isFieldRequired('adresse')}
-                    disabled={submitting}
-                    placeholder="123 Rue de la Roda"
-                    className="theme-input w-full disabled:opacity-50"
-                  />
-                </React.Suspense>
-              </div>
-              <div className="grid grid-cols-3 gap-2">
-                <div className="flex flex-col gap-1 col-span-1">
-                  <label className="text-[10px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                    {t('onboarding.adresseCP') || "Code Postal"}
-                    {isFieldRequired('adresse') && <span className="text-red-500 font-bold ml-1">*</span>}
-                  </label>
-                  <input
-                    type="text"
-                    name="adresseCP"
-                    placeholder="75000"
-                    value={formData.adresseCP}
-                    onChange={handleChange}
-                    required={isFieldRequired('adresse')}
-                    disabled={submitting}
-                    className="theme-input w-full disabled:opacity-50 font-bold"
-                  />
-                </div>
-                <div className="flex flex-col gap-1 col-span-2">
-                  <label className="text-[10px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                    {t('onboarding.adresseVille') || "Ville"}
-                    {isFieldRequired('adresse') && <span className="text-red-500 font-bold ml-1">*</span>}
-                  </label>
-                  <input
-                    type="text"
-                    name="adresseVille"
-                    placeholder="Paris"
-                    value={formData.adresseVille}
-                    onChange={handleChange}
-                    required={isFieldRequired('adresse')}
-                    disabled={submitting}
-                    className="theme-input w-full disabled:opacity-50 font-semibold"
-                  />
-                </div>
-              </div>
-              <div className="flex flex-col gap-1 mt-1.5">
-                <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                  Visibilité de l'adresse (Trombinoscope)
-                </label>
-                <select
-                  name="visibiliteAdresse"
-                  value={formData.visibiliteAdresse || 'complete'}
-                  onChange={handleChange}
-                  disabled={submitting}
-                  className="theme-input w-full text-xs"
-                >
-                  <option value="complete">Adresse complète</option>
-                  <option value="ville">Uniquement la ville</option>
-                  <option value="masquee">Masquée</option>
-                </select>
-              </div>
-            </div>
-          )}
-
-          {/* Section Mensurations */}
-          {(isFieldVisible('tailleTshirt') || isFieldVisible('taillePantalon')) && (
-            <div className="flex flex-col gap-3.5 border-t border-dashed border-cordel-master-dark/15 pt-3 mt-1.5 text-left w-full">
-              <span className="font-extrabold text-cordel-wood uppercase tracking-wider text-[10px]">
-                👔 Mensurations / Tailles pour les costumes (Optionnel)
-              </span>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                {/* T-Shirt Size Dropdown */}
-                {isFieldVisible('tailleTshirt') && (
-                  <div className="flex flex-col gap-1">
-                    <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                      {t('onboarding.tshirtSize')}
-                      {isFieldRequired('tailleTshirt') && <span className="text-red-500 font-bold ml-1">*</span>}
-                    </label>
-                    <select
-                      name="tailleTshirt"
-                      value={formData.tailleTshirt}
-                      onChange={handleChange}
-                      disabled={submitting}
-                      className="theme-input w-full disabled:opacity-50 font-bold bg-cordel-bg-light"
-                    >
-                      <option value="S">S</option>
-                      <option value="M">M</option>
-                      <option value="L">L</option>
-                      <option value="XL">XL</option>
-                      <option value="XXL">XXL</option>
-                    </select>
-                  </div>
-                )}
-
-                {/* Pantalon Size Dropdown */}
-                {isFieldVisible('taillePantalon') && (
-                  <div className="flex flex-col gap-1">
-                    <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                      {t('onboarding.pantSize') || "Taille Pantalon"}
-                      {isFieldRequired('taillePantalon') && <span className="text-red-500 font-bold ml-1">*</span>}
-                    </label>
-                    <select
-                      name="taillePantalon"
-                      value={formData.taillePantalon}
-                      onChange={handleChange}
-                      disabled={submitting}
-                      className="theme-input w-full disabled:opacity-50 font-bold bg-cordel-bg-light"
-                    >
-                      <option value="XS">XS</option>
-                      <option value="S">S</option>
-                      <option value="M">M</option>
-                      <option value="L">L</option>
-                      <option value="XL">XL</option>
-                      <option value="XXL">XXL</option>
-                    </select>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Latéralité Dropdown */}
-          {isFieldVisible('lateralite') && (
-            <div className="flex flex-col gap-1">
-              <label className="text-[10px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                {t('onboarding.lateralite')}
-                {isFieldRequired('lateralite') && <span className="text-red-500 font-bold ml-1">*</span>}
-              </label>
-              <select
-                name="lateralite"
-                value={formData.lateralite}
-                onChange={handleChange}
-                disabled={submitting}
-                className="theme-input w-full disabled:opacity-50 font-bold bg-cordel-bg-light"
-              >
-                <option value="droitier">{t('onboarding.handRight')}</option>
-                <option value="gaucher">{t('onboarding.handLeft')}</option>
-              </select>
-            </div>
-          )}
-
-          {/* Date de Naissance Input */}
-          {isFieldVisible('dateNaissance') && (
-            <div className="flex flex-col gap-1">
-              <label className="text-[10px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                {t('onboarding.birthdate')}
-                {isFieldRequired('dateNaissance') && <span className="text-red-500 font-bold ml-1">*</span>}
-              </label>
-              <input
-                type="date"
-                name="dateNaissance"
-                value={formData.dateNaissance}
-                onChange={handleChange}
-                required={isFieldRequired('dateNaissance')}
-                disabled={submitting}
-                className="theme-input w-full disabled:opacity-50 font-bold"
-              />
-              <label className="flex items-center gap-1.5 mt-1 text-[10px] font-semibold cursor-pointer select-none">
-                <input 
-                  type="checkbox"
-                  name="afficherDateNaissance"
-                  checked={Boolean(formData.afficherDateNaissance)}
-                  onChange={handleChange}
-                  disabled={submitting}
-                />
-                <span>Afficher ma date de naissance dans le Trombinoscope</span>
-              </label>
-            </div>
-          )}
-
-          {/* Image Rights Checkbox */}
-          {demanderDroitImage && (
-            <div className="flex flex-col gap-1 mt-2">
-              <div className="flex items-start gap-2.5">
-                <input
-                  type="checkbox"
-                  name="droitImage"
-                  id="droitImage"
-                  checked={formData.droitImage}
-                  onChange={handleChange}
-                  disabled={submitting}
-                  className="mt-1"
-                />
-                <label htmlFor="droitImage" className="text-xs font-semibold leading-snug cursor-pointer select-none">
-                  {t('onboarding.imageRights')}
-                  {isFieldRequired('droitImage') && <span className="text-red-500 font-bold ml-1">*</span>}
-                </label>
-              </div>
-              {droitImageDocUrl && (
-                <div className="pl-6 text-[10px] font-bold">
-                  📄 <a href={droitImageDocUrl} target="_blank" rel="noopener noreferrer" className="text-cordel-wood hover:underline">{t('onboarding.imageRightsDoc')}</a>
+            <form onSubmit={handleSubmit} className="flex flex-col gap-6 text-left">
+              {validationError && (
+                <div className="p-3 bg-red-100 border border-red-400 text-red-700 text-xs font-bold rounded">
+                  ⚠️ {validationError}
                 </div>
               )}
-            </div>
-          )}
 
-          {/* Medical Aptitude Checkbox (Required) */}
-          {demanderAttestationSante && (
-            <div className="flex flex-col gap-1 mt-2">
-              <div className="flex items-start gap-2.5">
-                <input
-                  type="checkbox"
-                  name="aptitudeMedicale"
-                  id="aptitudeMedicale"
-                  checked={formData.aptitudeMedicale}
-                  onChange={handleChange}
-                  required={demanderAttestationSante || isFieldRequired('aptitudeMedicale')}
-                  disabled={submitting}
-                  className="mt-1"
-                />
-                <label htmlFor="aptitudeMedicale" className="text-xs font-bold leading-snug cursor-pointer select-none text-red-600">
-                  {t('onboarding.medicalCert')}
-                  {(demanderAttestationSante || isFieldRequired('aptitudeMedicale')) && <span className="text-red-500 font-bold ml-1">*</span>}
-                </label>
-              </div>
-              {aptitudeMedicaleDocUrl && (
-                <div className="pl-6 text-[10px] font-bold">
-                  📄 <a href={aptitudeMedicaleDocUrl} target="_blank" rel="noopener noreferrer" className="text-cordel-wood hover:underline">{t('onboarding.medicalCertDoc')}</a>
-                </div>
-              )}
-            </div>
-          )}
+              {/* Bloc 1 : Ton Profil Public (Trombinoscope) */}
+              <OnboardingPublicBlock
+                formData={formData}
+                handleChange={handleChange}
+                submitting={submitting}
+                isFieldVisible={isFieldVisible}
+                isFieldRequired={isFieldRequired}
+                t={t}
+              />
 
-          <CordelButton 
-            variant="ocre" 
-            useExtremeBorder={true}
-            className="w-full mt-4 py-3 opacity-100 disabled:opacity-50"
-            disabled={submitting || !Boolean(formData.voeuPrincipal && formData.voeuSecondaire && formData.voeuPrincipal !== formData.voeuSecondaire)}
-          >
-            {submitting ? t('onboarding.saving') : t('onboarding.nextStep')}
-          </CordelButton>
-        </form>
-      </CordelCard>
-    </LayoutShell>
+              {/* Bloc 2 : Visibilité & Partage (Trombinoscope) */}
+              <OnboardingVisibilityBlock
+                formData={formData}
+                setFormData={setFormData}
+                handleChange={handleChange}
+                submitting={submitting}
+                isFieldVisible={isFieldVisible}
+                isFieldRequired={isFieldRequired}
+                t={t}
+              />
+
+              {/* Bloc 3 : Informations Confidentielles (Réservé au Bureau) */}
+              <OnboardingPrivateBlock
+                formData={formData}
+                handleChange={handleChange}
+                submitting={submitting}
+                isFieldVisible={isFieldVisible}
+                isFieldRequired={isFieldRequired}
+                demanderDroitImage={demanderDroitImage}
+                demanderAttestationSante={demanderAttestationSante}
+                droitImageDocUrl={droitImageDocUrl}
+                aptitudeMedicaleDocUrl={aptitudeMedicaleDocUrl}
+                t={t}
+              />
+
+              <CordelButton 
+                variant="ocre" 
+                useExtremeBorder={true}
+                className="w-full mt-2 py-3 text-xs font-bold uppercase tracking-wider opacity-100 disabled:opacity-50"
+                disabled={submitting}
+              >
+                {submitting ? (t('onboarding.saving') || "Enregistrement...") : (t('onboarding.nextStep') || "Terminer mon inscription")}
+              </CordelButton>
+            </form>
+          </CordelCard>
+        </div>
+      </LayoutShell>
     </div>
   );
 }

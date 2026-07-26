@@ -14,6 +14,7 @@ import { calculateRoadDistance } from '../utils/googleMaps';
 import { useEventRSVP } from '../hooks/useEventRSVP';
 import { useEventCarpool, calculateCarStatus } from '../hooks/useEventCarpool';
 import { useEventSetlist } from '../hooks/useEventSetlist';
+import useConfirm from '../hooks/useConfirm';
 
 import EventRSVPSection from './event-details/EventRSVPSection';
 import EventCarpoolSection from './event-details/EventCarpoolSection';
@@ -26,6 +27,7 @@ import EventEditForm from './event-details/EventEditForm';
 
 export default function EventDetails({ event, user, profileData, onNavigateToView, onClose, onPrev, onNext, viewMode, setViewMode, onGoToStageLayoutEditor }) {
   const { t } = useTranslation();
+  const { confirm } = useConfirm();
 
   const translate = (key, fallback) => {
     const val = t(key);
@@ -554,9 +556,14 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
   };
 
   const handleDeleteEvent = async () => {
-    if (!window.confirm("Êtes-vous sûr de vouloir supprimer définitivement cet événement ?")) {
-      return;
-    }
+    const ok = await confirm({
+      title: "Suppression définitive",
+      message: "Êtes-vous sûr de vouloir supprimer définitivement cet événement ?",
+      confirmText: "Oui, supprimer",
+      cancelText: "Annuler",
+      variant: "danger"
+    });
+    if (!ok) return;
     setSavingEvent(true);
     try {
       const eventRef = doc(db, 'events', event.id);

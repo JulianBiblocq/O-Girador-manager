@@ -5,6 +5,7 @@ import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 import XiloAvatar from '../XiloAvatar';
 import { useInstrumentColor } from '../../hooks/useInstrumentColor';
+import useConfirm from '../../hooks/useConfirm';
 
 export default function EventStageLayoutSection({
   event,
@@ -16,6 +17,7 @@ export default function EventStageLayoutSection({
   readOnly = false,
   onGoToStageLayoutEditor
 }) {
+  const { confirm } = useConfirm();
   const { getColorForInstrument } = useInstrumentColor(profileData?.groupId);
   // Check if a layout exists
   const hasLayout = event.stageLayout?.placements && Object.keys(event.stageLayout.placements).length > 0;
@@ -217,8 +219,15 @@ export default function EventStageLayoutSection({
     setLayout((prev) => ({ ...prev, danceCols: val, placements: filteredPlacements }));
   };
 
-  const handleResetLayout = () => {
-    if (window.confirm(t('eventDetails.confirmReset') || "Êtes-vous sûr de vouloir réinitialiser le plan de scène ?")) {
+  const handleResetLayout = async () => {
+    const isOk = await confirm({
+      title: "Réinitialiser le plan de scène",
+      message: t('eventDetails.confirmReset') || "Êtes-vous sûr de vouloir réinitialiser le plan de scène ?",
+      confirmText: "Oui, réinitialiser",
+      cancelText: "Annuler",
+      variant: "danger"
+    });
+    if (isOk) {
       setLayout({
         rows: 5,
         cols: 5,

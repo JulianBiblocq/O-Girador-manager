@@ -5,8 +5,10 @@ import { db, storage } from '../firebase';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
 import { XiloClose } from './XiloIcons';
+import useConfirm from '../hooks/useConfirm';
 
 export default function ReunionAgendaManager({ event, user, profileData }) {
+  const { confirm } = useConfirm();
   const [newTopic, setNewTopic] = useState('');
   const [submittingTopic, setSubmittingTopic] = useState(false);
   const [uploadingPdf, setUploadingPdf] = useState(false);
@@ -65,7 +67,13 @@ export default function ReunionAgendaManager({ event, user, profileData }) {
 
   // Remove a topic entirely (Admin or Author only)
   const handleDeleteTopic = async (topicId) => {
-    const confirmDelete = window.confirm("Voulez-vous retirer cette proposition ?");
+    const confirmDelete = await confirm({
+      title: "Retirer la proposition",
+      message: "Voulez-vous retirer cette proposition ?",
+      confirmText: "Oui, retirer",
+      cancelText: "Annuler",
+      variant: "danger"
+    });
     if (!confirmDelete) return;
 
     try {
@@ -113,7 +121,13 @@ export default function ReunionAgendaManager({ event, user, profileData }) {
 
   // Delete Minutes PDF link from event
   const handlePdfDelete = async () => {
-    const confirmDelete = window.confirm("Voulez-vous vraiment détacher le compte-rendu de cette réunion ?");
+    const confirmDelete = await confirm({
+      title: "Détacher le compte-rendu",
+      message: "Voulez-vous vraiment détacher le compte-rendu de cette réunion ?",
+      confirmText: "Oui, détacher",
+      cancelText: "Annuler",
+      variant: "danger"
+    });
     if (!confirmDelete) return;
 
     try {

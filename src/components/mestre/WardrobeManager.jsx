@@ -6,9 +6,11 @@ import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 import CostumeSizesTable from './CostumeSizesTable';
 import CostumesAdminManager from './CostumesAdminManager';
+import useConfirm from '../../hooks/useConfirm';
 
 export default function WardrobeManager({ groupId, role, isSystemAdmin, hasAccessLogistique, onBack, activeTab = 'inventory' }) {
   const { t } = useTranslation();
+  const { confirm } = useConfirm();
   const [allUsers, setAllUsers] = useState([]);
   
   // Costume Inventory State
@@ -141,7 +143,14 @@ export default function WardrobeManager({ groupId, role, isSystemAdmin, hasAcces
   };
 
   const handleDeleteCostume = async (id) => {
-    if (!window.confirm("Êtes-vous sûr de vouloir supprimer cette pièce de l'inventaire ?")) return;
+    const isOk = await confirm({
+      title: "Supprimer la pièce",
+      message: "Êtes-vous sûr de vouloir supprimer cette pièce de l'inventaire ?",
+      confirmText: "Oui, supprimer",
+      cancelText: "Annuler",
+      variant: "danger"
+    });
+    if (!isOk) return;
     try {
       await deleteDoc(doc(db, 'wardrobeInventory', id));
     } catch (err) {
@@ -154,30 +163,26 @@ export default function WardrobeManager({ groupId, role, isSystemAdmin, hasAcces
   const handleProjectSubmit = async (e) => {
     if (e) e.preventDefault();
     if (!projectForm.name.trim()) return;
-    setSaving(true);
+
     try {
-      const payload = {
-        groupId: groupId || '',
-        name: (projectForm.name || '').trim(),
-        needs: (projectForm.needs || '').trim(),
-        cost: parseFloat(projectForm.cost) || 0,
-        status: projectForm.status || 'a_commencer'
-      };
-
       if (editingProject) {
-        await updateDoc(doc(db, 'coutureProjects', editingProject.id), payload);
+        await updateDoc(doc(db, 'coutureProjects', editingProject.id), {
+          ...projectForm,
+          cost: parseFloat(projectForm.cost) || 0
+        });
       } else {
-        await addDoc(collection(db, 'coutureProjects'), payload);
+        await addDoc(collection(db, 'coutureProjects'), {
+          ...projectForm,
+          groupId,
+          cost: parseFloat(projectForm.cost) || 0,
+          createdAt: new Date().toISOString()
+        });
       }
-
-      setProjectForm({ name: '', needs: '', cost: 0, status: 'a_commencer' });
       setShowProjectForm(false);
       setEditingProject(null);
     } catch (err) {
-      console.error("Error saving couture project:", err);
-      alert("Erreur lors de l'enregistrement du projet.");
-    } finally {
-      setSaving(false);
+      console.error("Error saving project:", err);
+      alert("Erreur d'enregistrement.");
     }
   };
 
@@ -193,7 +198,14 @@ export default function WardrobeManager({ groupId, role, isSystemAdmin, hasAcces
   };
 
   const handleDeleteProject = async (id) => {
-    if (!window.confirm("Supprimer ce projet couture ?")) return;
+    const isOk = await confirm({
+      title: "Supprimer le projet couture",
+      message: "Supprimer ce projet couture ?",
+      confirmText: "Oui, supprimer",
+      cancelText: "Annuler",
+      variant: "danger"
+    });
+    if (!isOk) return;
     try {
       await deleteDoc(doc(db, 'coutureProjects', id));
     } catch (err) {

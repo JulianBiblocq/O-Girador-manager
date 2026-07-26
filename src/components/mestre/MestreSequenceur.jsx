@@ -4,9 +4,11 @@ import { storage } from '../../firebase';
 import { useTranslation } from '../LanguageContext';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
+import useConfirm from '../../hooks/useConfirm';
 
 export default function MestreSequenceur({ groupId, sequenceurUrl }) {
   const { t } = useTranslation();
+  const { confirm } = useConfirm();
   const [rhythms, setRhythms] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -87,7 +89,14 @@ export default function MestreSequenceur({ groupId, sequenceurUrl }) {
 
   const handleDeleteRhythm = async (fileName) => {
     const confirmMsg = t('mestre.rhythmDeleteConfirm') || "Voulez-vous vraiment supprimer ce rythme ?";
-    if (!window.confirm(confirmMsg)) return;
+    const isOk = await confirm({
+      title: "Supprimer le rythme",
+      message: confirmMsg,
+      confirmText: "Oui, supprimer",
+      cancelText: "Annuler",
+      variant: "danger"
+    });
+    if (!isOk) return;
 
     try {
       const fileRef = ref(storage, `documents/${groupId}/sequencer/${fileName}`);

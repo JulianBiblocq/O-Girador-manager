@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
+import useConfirm from '../../hooks/useConfirm';
 
 export default function TabFinance({
   formData,
@@ -13,8 +14,9 @@ export default function TabFinance({
   groupId,
   handleSaveHelloAssoKey,
   t,
-  mode
+  mode = null
 }) {
+  const { confirm } = useConfirm();
   const {
     demanderDroitImage = false,
     droitImageDocUrl = '',
@@ -63,9 +65,16 @@ export default function TabFinance({
     setNewCatArchive(false);
   };
 
-  const handleRemoveCategory = (id) => {
+  const handleRemoveCategory = async (id) => {
     const msg = t('documents.varalSettingsRemoveConfirm') || "Êtes-vous sûr de vouloir supprimer cette corde ? Les documents liés ne seront pas supprimés mais n'auront plus de catégorie associée.";
-    if (window.confirm(msg)) {
+    const isOk = await confirm({
+      title: "Supprimer la corde",
+      message: msg,
+      confirmText: "Oui, supprimer",
+      cancelText: "Annuler",
+      variant: "danger"
+    });
+    if (isOk) {
       handleChange('varalCategories', varalCategories.filter(c => c.id !== id));
     }
   };

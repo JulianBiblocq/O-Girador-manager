@@ -5,6 +5,7 @@ import { signOut } from 'firebase/auth';
 import { db, auth, storage, messaging } from '../firebase';
 import { getToken } from 'firebase/messaging';
 import { forceUpdateAndClearCache } from '../utils/pwaUtils';
+import useConfirm from './useConfirm';
 
 export const DEFAULT_FIELDS_CONFIG = {
   telephone: { key: "telephone", label: "Téléphone", enabled: true, filledBy: "member", isRequired: false },
@@ -22,6 +23,7 @@ export const DEFAULT_FIELDS_CONFIG = {
 export const DEFAULT_INSTRUMENTS = ["Alfaia Marcante", "Alfaia Meião", "Alfaia Repique", "Caixa", "Tarol", "Gonguê", "Agbê", "Mineiro", "Timbal", "Chant", "Danse"];
 
 export function useUserProfile(user, profileData, t) {
+  const { confirm } = useConfirm();
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
     prenom: profileData?.prenom || '',
@@ -483,8 +485,15 @@ export function useUserProfile(user, profileData, t) {
     }
   };
 
-  const handleForceUpdate = () => {
-    if (window.confirm(t('pwa.confirmForceUpdate') || "Voulez-vous vraiment vider le cache et forcer la mise à jour ?")) {
+  const handleForceUpdate = async () => {
+    const isOk = await confirm({
+      title: "Forcer la mise à jour",
+      message: t('pwa.confirmForceUpdate') || "Voulez-vous vraiment vider le cache et forcer la mise à jour ?",
+      confirmText: "Oui, forcer la mise à jour",
+      cancelText: "Annuler",
+      variant: "warning"
+    });
+    if (isOk) {
       forceUpdateAndClearCache();
     }
   };

@@ -6,9 +6,11 @@ import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
 import { useTranslation } from './LanguageContext';
 import { XiloMegaphone } from './XiloIcons';
+import useConfirm from '../hooks/useConfirm';
 
 export default function StudioSocial({ groupId, branding, onBack, role, isSystemAdmin, user, profileData }) {
   const { t } = useTranslation();
+  const { confirm } = useConfirm();
   const [events, setEvents] = useState([]);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [varalImages, setVaralImages] = useState([]);
@@ -194,7 +196,14 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
       alert("Le tag #OGirador est fixe et ne peut pas être supprimé.");
       return;
     }
-    if (!window.confirm(`Voulez-vous supprimer le tag ${tagToDelete} ?`)) return;
+    const ok = await confirm({
+      title: "Supprimer le tag",
+      message: `Voulez-vous supprimer le tag ${tagToDelete} ?`,
+      confirmText: "Oui, supprimer",
+      cancelText: "Annuler",
+      variant: "danger"
+    });
+    if (!ok) return;
     const updatedTags = availableSocialTags.filter(t => t !== tagToDelete);
     try {
       const assocRef = doc(db, 'associations', groupId);

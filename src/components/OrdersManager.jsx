@@ -8,9 +8,11 @@ import CordelButton from './CordelButton';
 import { XiloClose, XiloBox } from './XiloIcons';
 import { useTranslation } from './LanguageContext';
 import { fr } from '../locales/fr';
+import useConfirm from '../hooks/useConfirm';
 
 export default function OrdersManager({ groupId, onBack, role, isSystemAdmin, hasAccessLogistique }) {
   const { t } = useTranslation();
+  const { confirm } = useConfirm();
 
   const getArticleLabel = (articleKey) => {
     const trans = t(`widgetCommandes.articles.${articleKey}`);
@@ -95,8 +97,14 @@ export default function OrdersManager({ groupId, onBack, role, isSystemAdmin, ha
     setArticleImageUrl('');
   };
 
-  const handleDeleteArticle = (artId) => {
-    const confirmDel = window.confirm("Voulez-vous vraiment supprimer cet article de la campagne ?");
+  const handleDeleteArticle = async (artId) => {
+    const confirmDel = await confirm({
+      title: "Supprimer l'article",
+      message: "Voulez-vous vraiment supprimer cet article de la campagne ?",
+      confirmText: "Oui, supprimer",
+      cancelText: "Annuler",
+      variant: "danger"
+    });
     if (!confirmDel) return;
     const currentArticles = selectedCampaign.articles || [];
     const updated = currentArticles.filter(a => a.id !== artId);
@@ -228,9 +236,13 @@ export default function OrdersManager({ groupId, onBack, role, isSystemAdmin, ha
   };
 
   const handleCloseCampaign = async (campaignId) => {
-    const confirmClose = window.confirm(
-      t('ordersManager.confirmClose') || "Voulez-vous vraiment clôturer cette campagne de commandes ?"
-    );
+    const confirmClose = await confirm({
+      title: "Clôturer la campagne",
+      message: t('ordersManager.confirmClose') || "Voulez-vous vraiment clôturer cette campagne de commandes ?",
+      confirmText: "Oui, clôturer",
+      cancelText: "Annuler",
+      variant: "warning"
+    });
     if (!confirmClose) return;
 
     setSaving(true);
@@ -266,9 +278,13 @@ export default function OrdersManager({ groupId, onBack, role, isSystemAdmin, ha
     const pending = requests.filter(r => r.status !== 'validated');
     if (pending.length === 0) return;
 
-    const confirmValidate = window.confirm(
-      t('ordersManager.confirmValidateAll') || "Voulez-vous vraiment valider toutes les demandes en attente ?"
-    );
+    const confirmValidate = await confirm({
+      title: "Valider toutes les demandes",
+      message: t('ordersManager.confirmValidateAll') || "Voulez-vous vraiment valider toutes les demandes en attente ?",
+      confirmText: "Oui, tout valider",
+      cancelText: "Annuler",
+      variant: "warning"
+    });
     if (!confirmValidate) return;
 
     setSaving(true);
@@ -288,7 +304,13 @@ export default function OrdersManager({ groupId, onBack, role, isSystemAdmin, ha
   };
 
   const handleDeleteRequest = async (requestId) => {
-    const confirmDelete = window.confirm("Voulez-vous vraiment supprimer cette demande de commande ?");
+    const confirmDelete = await confirm({
+      title: "Supprimer la demande",
+      message: "Voulez-vous vraiment supprimer cette demande de commande ?",
+      confirmText: "Oui, supprimer",
+      cancelText: "Annuler",
+      variant: "danger"
+    });
     if (!confirmDelete) return;
 
     setSaving(true);
@@ -303,7 +325,13 @@ export default function OrdersManager({ groupId, onBack, role, isSystemAdmin, ha
   };
 
   const handleDeleteCampaign = async (campaignId) => {
-    const confirmDelete = window.confirm("Voulez-vous vraiment supprimer l'intégralité de cette campagne de commandes et toutes les demandes associées ?");
+    const confirmDelete = await confirm({
+      title: "Supprimer la campagne",
+      message: "Voulez-vous vraiment supprimer l'intégralité de cette campagne de commandes et toutes les demandes associées ?",
+      confirmText: "Oui, tout supprimer",
+      cancelText: "Annuler",
+      variant: "danger"
+    });
     if (!confirmDelete) return;
 
     setSaving(true);

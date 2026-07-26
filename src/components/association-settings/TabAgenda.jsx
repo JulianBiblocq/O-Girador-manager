@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
+import useConfirm from '../../hooks/useConfirm';
 
 export default function TabAgenda({
   formData,
@@ -8,6 +9,7 @@ export default function TabAgenda({
   saving,
   t
 }) {
+  const { confirm } = useConfirm();
   const {
     agendaRequireInstrument = false,
     agendaEnableMaybeStatus = true,
@@ -55,14 +57,21 @@ export default function TabAgenda({
     setNewType('');
   };
 
-  const handleRemoveType = (typeToRemove) => {
+  const handleRemoveType = async (typeToRemove) => {
     const minTypes = 1;
     if (eventTypes.length <= minTypes) {
       alert("Vous devez conserver au moins un type d'événement.");
       return;
     }
     const confirmMsg = t('widgetAgenda.confirmRemoveType') || `Voulez-vous vraiment supprimer le type "${typeToRemove}" ? Les événements existants de ce type ne seront pas supprimés mais ne seront plus typés dans les filtres.`;
-    if (window.confirm(confirmMsg)) {
+    const isOk = await confirm({
+      title: "Supprimer le type d'événement",
+      message: confirmMsg,
+      confirmText: "Oui, supprimer",
+      cancelText: "Annuler",
+      variant: "danger"
+    });
+    if (isOk) {
       const updatedConfigs = { ...(formData.eventTypeConfigs || {}) };
       delete updatedConfigs[typeToRemove];
       handleChange('eventTypeConfigs', updatedConfigs);

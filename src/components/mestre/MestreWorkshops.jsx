@@ -4,9 +4,11 @@ import { db } from '../../firebase';
 import { useTranslation } from '../LanguageContext';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
+import useConfirm from '../../hooks/useConfirm';
 
 export default function MestreWorkshops({ groupId }) {
   const { t } = useTranslation();
+  const { confirm } = useConfirm();
   const [workshops, setWorkshops] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -101,7 +103,14 @@ export default function MestreWorkshops({ groupId }) {
   const handleDelete = async (id, e) => {
     if (e) e.stopPropagation();
     const confirmMsg = t('mestre.workshopDeleteConfirm') || "Voulez-vous vraiment supprimer cette fiche d'atelier ?";
-    if (!window.confirm(confirmMsg)) return;
+    const isOk = await confirm({
+      title: "Supprimer la fiche d'atelier",
+      message: confirmMsg,
+      confirmText: "Oui, supprimer",
+      cancelText: "Annuler",
+      variant: "danger"
+    });
+    if (!isOk) return;
 
     try {
       await deleteDoc(doc(db, 'workshops', id));

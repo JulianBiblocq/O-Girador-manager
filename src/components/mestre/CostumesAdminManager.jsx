@@ -4,6 +4,7 @@ import { db } from '../../firebase';
 import { useTranslation } from '../LanguageContext';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
+import useConfirm from '../../hooks/useConfirm';
 
 /**
  * CostumesAdminManager Component
@@ -12,6 +13,7 @@ import CordelButton from '../CordelButton';
  */
 export default function CostumesAdminManager({ groupId }) {
   const { t } = useTranslation();
+  const { confirm } = useConfirm();
   const [costumes, setCostumes] = useState([]);
   const [workshops, setWorkshops] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -151,7 +153,14 @@ export default function CostumesAdminManager({ groupId }) {
   };
 
   const handleDeleteCostume = async (costumeId) => {
-    if (!window.confirm("Êtes-vous sûr de vouloir supprimer ce costume ?")) return;
+    const isOk = await confirm({
+      title: "Supprimer le costume",
+      message: "Êtes-vous sûr de vouloir supprimer ce costume ?",
+      confirmText: "Oui, supprimer",
+      cancelText: "Annuler",
+      variant: "danger"
+    });
+    if (!isOk) return;
     try {
       await deleteDoc(doc(db, 'costumes', costumeId));
     } catch (err) {

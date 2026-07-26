@@ -23,6 +23,7 @@ const DEFAULT_FIELDS_CONFIG = {
 
 export default function SystemAdminPanel({ profileData, associationName: propAssociationName, onBack, onNavigateToView }) {
   const { t } = useTranslation();
+  const { confirm } = useConfirm();
 
   const translate = (key, fallback) => {
     const val = t(key);
@@ -258,7 +259,13 @@ export default function SystemAdminPanel({ profileData, associationName: propAss
 
   const handleToggleArchive = async (targetUserId, shouldReactivate) => {
     const actionText = shouldReactivate ? "réactiver" : "archiver";
-    const confirmation = window.confirm(`Voulez-vous vraiment ${actionText} ce membre ?`);
+    const confirmation = await confirm({
+      title: shouldReactivate ? "Réactiver le membre" : "Archiver le membre",
+      message: `Voulez-vous vraiment ${actionText} ce membre ?`,
+      confirmText: shouldReactivate ? "Oui, réactiver" : "Oui, archiver",
+      cancelText: "Annuler",
+      variant: shouldReactivate ? "warning" : "danger"
+    });
     if (!confirmation) return;
 
     setSavingId(targetUserId);
@@ -276,8 +283,15 @@ export default function SystemAdminPanel({ profileData, associationName: propAss
     }
   };
 
-  const handleForceUpdate = () => {
-    if (window.confirm(translate('pwa.confirmForceUpdate', "Voulez-vous vraiment vider le cache et forcer la mise à jour ?"))) {
+  const handleForceUpdate = async () => {
+    const ok = await confirm({
+      title: "Forcer la mise à jour",
+      message: translate('pwa.confirmForceUpdate', "Voulez-vous vraiment vider le cache et forcer la mise à jour ?"),
+      confirmText: "Oui, forcer la mise à jour",
+      cancelText: "Annuler",
+      variant: "warning"
+    });
+    if (ok) {
       forceUpdateAndClearCache();
     }
   };

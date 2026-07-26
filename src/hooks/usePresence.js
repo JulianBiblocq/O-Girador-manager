@@ -2,13 +2,15 @@ import { useEffect, useState } from 'react';
 import { doc, updateDoc, collection, query, where, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase';
 
-export function usePresence(userId, groupId) {
+export function usePresence(userId, groupId, isPresenceEnabled = true) {
   const [onlineMembers, setOnlineMembers] = useState([]);
   const [onlineCount, setOnlineCount] = useState(0);
 
-  // 1. Manage current user presence status with strict quota optimization
+  // 1. Manage current user presence status with strict quota & privacy optimization
   useEffect(() => {
-    if (!userId) return;
+    // Early Return: if presence is disabled by association settings or userId is missing,
+    // DO NOT write isOnline / lastActive to Firebase, DO NOT set up timers or listeners.
+    if (!userId || !isPresenceEnabled) return;
 
     const userRef = doc(db, 'users', userId);
 
@@ -58,11 +60,13 @@ export function usePresence(userId, groupId) {
       window.removeEventListener('pagehide', handleUnload);
       updateStatus(false);
     };
-  }, [userId]);
+  }, [userId, isPresenceEnabled]);
 
   // 2. Real-time subscription to online members of the group
   useEffect(() => {
-    if (!groupId) {
+    // Early Return: if presence is disabled by association settings or groupId is missing,
+    // DO NOT trigger onSnapshot listener, reset state immediately.
+    if (!groupId || !isPresenceEnabled) {
       setOnlineMembers([]);
       setOnlineCount(0);
       return;
@@ -94,7 +98,7 @@ export function usePresence(userId, groupId) {
     });
 
     return () => unsubscribe();
-  }, [groupId]);
+  }, [groupId, isPresenceEnabled]);
 
   return { onlineMembers, onlineCount };
 }
