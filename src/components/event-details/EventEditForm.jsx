@@ -577,7 +577,10 @@ export default function EventEditForm({
                 disabled={savingEvent}
                 className="accent-cordel-wood scale-105"
               />
-              <span>🪘 {translate('widgetAgenda.includesPercussionLabel', "Inclut de la percussion")}</span>
+              <span className="inline-flex items-center gap-1.5">
+                <img src="/icones/alfaia.svg" alt="Percussion" className="w-3.5 h-3.5 object-contain dark:invert inline-block" />
+                <span>{translate('widgetAgenda.includesPercussionLabel', "Inclut de la percussion")}</span>
+              </span>
             </label>
 
             <label className="flex items-center gap-2 text-xs font-bold cursor-pointer select-none">

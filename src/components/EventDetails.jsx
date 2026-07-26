@@ -916,8 +916,9 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
             {(event.includesPercussion || event.includesDance) && (
               <div className="flex gap-2 flex-wrap mt-2 px-4">
                 {event.includesPercussion && (
-                  <span className="inline-flex items-center gap-1 bg-orange-100 dark:bg-orange-950/40 text-orange-800 dark:text-orange-300 text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded border border-orange-200 dark:border-orange-900/50 select-none">
-                    🪘 {translate('eventDetails.includesPercussion', "Percussion")}
+                  <span className="inline-flex items-center gap-1.5 bg-orange-100 dark:bg-orange-950/40 text-orange-800 dark:text-orange-300 text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded border border-orange-200 dark:border-orange-900/50 select-none">
+                    <img src="/icones/alfaia.svg" alt="Percussion" className="w-3.5 h-3.5 object-contain dark:invert inline-block" />
+                    <span>{translate('eventDetails.includesPercussion', "Percussion")}</span>
                   </span>
                 )}
                 {event.includesDance && (
