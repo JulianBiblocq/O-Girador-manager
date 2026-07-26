@@ -16,24 +16,36 @@ export default class ErrorBoundary extends React.Component {
     console.error(`ErrorBoundary [${this.props.title || 'Global'}] a intercepté une erreur :`, error, errorInfo);
     
     // Auto-recover if error is caused by stale lazy-loaded chunk after a new deploy
-    const msg = error?.message || '';
+    const msg = String(error?.message || error || '');
     const isChunkError = 
       msg.includes('Failed to fetch dynamically imported module') ||
       msg.includes('Importing a module script failed') ||
-      msg.includes('Expected a JavaScript-or-Wasm module script');
+      msg.includes('Expected a JavaScript-or-Wasm module script') ||
+      msg.includes('MIME type') ||
+      msg.includes('text/html');
 
     if (isChunkError) {
       const key = 'chunk_reload_retry';
       const lastReload = sessionStorage.getItem(key);
-      if (!lastReload || Date.now() - parseInt(lastReload, 10) > 10000) {
+      if (!lastReload || Date.now() - parseInt(lastReload, 10) > 8000) {
         sessionStorage.setItem(key, String(Date.now()));
-        window.location.reload();
+        if ('caches' in window) {
+          caches.keys().then((keys) => Promise.all(keys.map(k => caches.delete(k))))
+            .finally(() => window.location.reload());
+        } else {
+          window.location.reload();
+        }
       }
     }
   }
 
   handleReload = () => {
-    window.location.reload();
+    if ('caches' in window) {
+      caches.keys().then((keys) => Promise.all(keys.map(k => caches.delete(k))))
+        .finally(() => window.location.reload());
+    } else {
+      window.location.reload();
+    }
   };
 
   handleReset = () => {

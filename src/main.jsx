@@ -1,20 +1,30 @@
-// Auto-reload on stale chunk failure after a new deployment
-window.addEventListener('error', (e) => {
-  const msg = e?.message || e?.error?.message || '';
+// Auto-reload on stale chunk / MIME failure after a new deployment
+const handleStaleChunkError = (reason) => {
+  const msg = String(reason?.message || reason || '');
   const isChunkError = 
     msg.includes('Failed to fetch dynamically imported module') ||
     msg.includes('Importing a module script failed') ||
-    msg.includes('Expected a JavaScript-or-Wasm module script');
+    msg.includes('Expected a JavaScript-or-Wasm module script') ||
+    msg.includes('MIME type') ||
+    msg.includes('text/html');
   
   if (isChunkError) {
     const key = 'chunk_reload_retry';
     const lastReload = sessionStorage.getItem(key);
-    if (!lastReload || Date.now() - parseInt(lastReload, 10) > 10000) {
+    if (!lastReload || Date.now() - parseInt(lastReload, 10) > 8000) {
       sessionStorage.setItem(key, String(Date.now()));
-      window.location.reload();
+      if ('caches' in window) {
+        caches.keys().then((keys) => Promise.all(keys.map(k => caches.delete(k))))
+          .finally(() => window.location.reload());
+      } else {
+        window.location.reload();
+      }
     }
   }
-});
+};
+
+window.addEventListener('error', (e) => handleStaleChunkError(e?.error || e?.message));
+window.addEventListener('unhandledrejection', (e) => handleStaleChunkError(e?.reason));
 
 const BUILD_TIME = String(Date.now());
 const storedBuildTime = localStorage.getItem('app_build_timestamp');
