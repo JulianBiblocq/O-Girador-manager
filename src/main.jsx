@@ -1,9 +1,26 @@
-const APP_VERSION = import.meta.env.VITE_APP_VERSION || 'v1.0.1';
-const storedVersion = localStorage.getItem('app_version');
-
-if (storedVersion !== APP_VERSION) {
-  localStorage.setItem('app_version', APP_VERSION);
+// Auto-reload on stale chunk failure after a new deployment
+window.addEventListener('error', (e) => {
+  const msg = e?.message || e?.error?.message || '';
+  const isChunkError = 
+    msg.includes('Failed to fetch dynamically imported module') ||
+    msg.includes('Importing a module script failed') ||
+    msg.includes('Expected a JavaScript-or-Wasm module script');
   
+  if (isChunkError) {
+    const key = 'chunk_reload_retry';
+    const lastReload = sessionStorage.getItem(key);
+    if (!lastReload || Date.now() - parseInt(lastReload, 10) > 10000) {
+      sessionStorage.setItem(key, String(Date.now()));
+      window.location.reload();
+    }
+  }
+});
+
+const BUILD_TIME = String(Date.now());
+const storedBuildTime = localStorage.getItem('app_build_timestamp');
+
+if (storedBuildTime !== BUILD_TIME) {
+  localStorage.setItem('app_build_timestamp', BUILD_TIME);
   if ('caches' in window) {
     caches.keys().then((names) => {
       names.forEach((name) => {
