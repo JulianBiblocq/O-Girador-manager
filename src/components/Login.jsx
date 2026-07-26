@@ -118,7 +118,7 @@ export default function Login({ branding }) {
                 <img 
                   src={branding.logoUrl} 
                   alt="Logo" 
-                  className="w-full h-full object-cover p-2 bg-white" 
+                  className="w-full h-full object-contain p-2 bg-white" 
                 />
               ) : (
                 <XiloCaixa size={48} className="text-cordel-bg-light" />

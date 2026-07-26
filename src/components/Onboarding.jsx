@@ -148,6 +148,15 @@ export default function Onboarding({ user, branding, onComplete }) {
       return false;
     });
 
+    const isInstrumentsValid = Boolean(formData.voeuPrincipal && formData.voeuSecondaire && formData.voeuPrincipal !== formData.voeuSecondaire);
+
+    if (!isInstrumentsValid) {
+      const errMsg = "Veuillez sélectionner au moins 2 instruments différents (un choix principal et un second choix) pour faciliter la répartition par le Mestre.";
+      setValidationError(errMsg);
+      alert(errMsg);
+      return;
+    }
+
     if (missingRequired) {
       const errMsg = "Veuillez remplir tous les champs obligatoires.";
       setValidationError(errMsg);
@@ -276,14 +285,19 @@ export default function Onboarding({ user, branding, onComplete }) {
               🎵 Quels instruments aimerais-tu jouer ?
             </h5>
             <p className="text-[10px] text-cordel-master-dark font-medium leading-relaxed bg-cordel-bg-light/90 border border-dashed border-cordel-master-dark/20 p-2.5 rounded">
-              💡 Indique tes préférences. Le Mestre validera ton rôle définitif (Principal/Secondaire) en fonction de l'équilibre du groupe.
+              💡 Veuillez sélectionner au moins 2 instruments (un choix principal et un second choix) pour faciliter la répartition des pupitres par le Mestre.
             </p>
 
             {/* Choix 1 */}
             <div className="flex flex-col gap-1">
-              <label className="text-[10px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                Choix 1 (Vœu principal)
-              </label>
+              <div className="flex items-center justify-between gap-2">
+                <label className="text-[10px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                  Vœu principal <span className="text-red-500 font-bold">*</span>
+                </label>
+                <span className="theme-stamp-badge theme-stamp-badge-wood text-[9px] px-2.5 py-0.5 font-black uppercase">
+                  Choix 1
+                </span>
+              </div>
               <select
                 name="voeuPrincipal"
                 value={formData.voeuPrincipal || ''}
@@ -291,7 +305,7 @@ export default function Onboarding({ user, branding, onComplete }) {
                 disabled={submitting}
                 className="theme-input w-full disabled:opacity-50 font-bold bg-cordel-bg-light text-xs"
               >
-                <option value="">-- Choisir un premier voeu --</option>
+                <option value="">-- Choisir un premier voeu (Choix 1) --</option>
                 {instrumentsDisponibles.map((inst) => (
                   <option key={`ob-v1-${inst}`} value={inst}>{inst}</option>
                 ))}
@@ -300,28 +314,40 @@ export default function Onboarding({ user, branding, onComplete }) {
 
             {/* Choix 2 */}
             <div className="flex flex-col gap-1">
-              <label className="text-[10px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                Choix 2 (Vœu secondaire)
-              </label>
+              <div className="flex items-center justify-between gap-2">
+                <label className="text-[10px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                  Vœu secondaire <span className="text-red-500 font-bold">*</span>
+                </label>
+                <span className="theme-stamp-badge theme-stamp-badge-ocre text-[9px] px-2.5 py-0.5 font-black uppercase">
+                  Choix 2
+                </span>
+              </div>
               <select
                 name="voeuSecondaire"
                 value={formData.voeuSecondaire || ''}
                 onChange={handleChange}
                 disabled={submitting}
-                className="theme-input w-full disabled:opacity-50 bg-cordel-bg-light text-xs"
+                className="theme-input w-full disabled:opacity-50 font-bold bg-cordel-bg-light text-xs"
               >
-                <option value="">-- Aucun / Pas de second choix --</option>
+                <option value="">-- Choisir un second voeu (Choix 2 obligatoire) --</option>
                 {instrumentsDisponibles.map((inst) => (
-                  <option key={`ob-v2-${inst}`} value={inst}>{inst}</option>
+                  <option key={`ob-v2-${inst}`} value={inst} disabled={inst === formData.voeuPrincipal}>
+                    {inst} {inst === formData.voeuPrincipal ? '(Déjà choisi en Choix 1)' : ''}
+                  </option>
                 ))}
               </select>
             </div>
 
             {/* Choix 3 */}
             <div className="flex flex-col gap-1">
-              <label className="text-[10px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                Choix 3 (Vœu tertiaire)
-              </label>
+              <div className="flex items-center justify-between gap-2">
+                <label className="text-[10px] uppercase font-bold tracking-wider text-cordel-master-dark opacity-80">
+                  Vœu tertiaire (Optionnel)
+                </label>
+                <span className="theme-stamp-badge theme-stamp-badge-dark text-[9px] px-2 py-0.5 font-bold opacity-75 shrink-0">
+                  Choix 3
+                </span>
+              </div>
               <select
                 name="voeuTertiaire"
                 value={formData.voeuTertiaire || ''}
@@ -331,10 +357,18 @@ export default function Onboarding({ user, branding, onComplete }) {
               >
                 <option value="">-- Aucun / Pas de troisième choix --</option>
                 {instrumentsDisponibles.map((inst) => (
-                  <option key={`ob-v3-${inst}`} value={inst}>{inst}</option>
+                  <option key={`ob-v3-${inst}`} value={inst} disabled={inst === formData.voeuPrincipal || inst === formData.voeuSecondaire}>
+                    {inst} {(inst === formData.voeuPrincipal || inst === formData.voeuSecondaire) ? '(Déjà choisi)' : ''}
+                  </option>
                 ))}
               </select>
             </div>
+
+            {(!formData.voeuPrincipal || !formData.voeuSecondaire || formData.voeuPrincipal === formData.voeuSecondaire) && (
+              <div className="p-2 bg-amber-50 dark:bg-amber-950/40 border border-dashed border-amber-500/50 rounded text-[11px] font-bold text-amber-800 dark:text-amber-300">
+                ⚠️ Veuillez sélectionner au moins 2 instruments différents (Choix 1 et Choix 2).
+              </div>
+            )}
           </div>
 
           {/* Genre / Civilité Select */}
@@ -648,8 +682,8 @@ export default function Onboarding({ user, branding, onComplete }) {
           <CordelButton 
             variant="ocre" 
             useExtremeBorder={true}
-            className="w-full mt-4 py-3"
-            disabled={submitting}
+            className="w-full mt-4 py-3 opacity-100 disabled:opacity-50"
+            disabled={submitting || !Boolean(formData.voeuPrincipal && formData.voeuSecondaire && formData.voeuPrincipal !== formData.voeuSecondaire)}
           >
             {submitting ? t('onboarding.saving') : t('onboarding.nextStep')}
           </CordelButton>

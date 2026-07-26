@@ -561,9 +561,17 @@ export default function App() {
 
   // Loading screen (Auth state resolving or Firestore lookup)
   if (loading || checkingProfile) {
+    const logoSrc = branding?.logoUrl || '/Pictures/logo-samambaia.png';
     return (
       <div style={brandingStyle} className="min-h-screen w-full flex flex-col justify-center items-center p-6 bg-[var(--cordel-bg)] text-[var(--cordel-text)] transition-colors duration-300">
-        <div className="flex flex-col items-center gap-4 text-center">
+        <div className="flex flex-col items-center gap-4 text-center max-w-xs sm:max-w-sm w-full">
+          {logoSrc && (
+            <img 
+              src={logoSrc} 
+              alt="Logo Association" 
+              className="max-w-xs max-h-36 object-contain w-auto h-auto mb-2 select-none" 
+            />
+          )}
           {/* A beautiful double ring spinner utilizing theme variables */}
           <div className="relative w-16 h-16 select-none animate-spin">
             <div className="absolute inset-0 rounded-full border-4 border-[var(--cordel-border)]/20 animate-pulse"></div>

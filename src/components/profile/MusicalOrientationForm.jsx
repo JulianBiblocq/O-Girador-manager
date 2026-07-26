@@ -45,8 +45,8 @@ export default function MusicalOrientationForm({
       </h5>
 
       {/* Help text */}
-      <div className="bg-cordel-bg-light/90 border border-dashed border-cordel-master-dark/20 p-2.5 rounded text-xs text-cordel-master-dark font-medium leading-relaxed">
-        💡 Indique tes préférences. Le Mestre validera ton rôle définitif (Principal/Secondaire) en fonction de l'équilibre du groupe.
+      <div className="bg-cordel-bg-light/90 border border-dashed border-cordel-master-dark/20 p-2.5 rounded text-xs text-cordel-master-dark font-medium leading-relaxed flex flex-col gap-1">
+        <span>💡 Veuillez sélectionner au moins 2 instruments (un choix principal et un second choix) pour faciliter la répartition des pupitres par le Mestre.</span>
       </div>
 
       {isAncien ? (
@@ -55,18 +55,28 @@ export default function MusicalOrientationForm({
           {/* Display current definitive instruments */}
           <div className="bg-white/40 dark:bg-black/10 p-2.5 rounded border border-dashed border-cordel-master-dark/20 flex flex-col gap-1 text-xs">
             <div>
-              <span className="font-extrabold text-cordel-wood uppercase text-[10px] tracking-wider block">
-                Instrument principal actuel :
-              </span>
+              <div className="flex items-center justify-between gap-2 mb-0.5">
+                <span className="font-extrabold text-cordel-wood uppercase text-[10px] tracking-wider block">
+                  Instrument principal actuel :
+                </span>
+                <span className="theme-stamp-badge theme-stamp-badge-wood text-[9px] px-2 py-0.5 font-bold">
+                  Choix 1 (Actuel)
+                </span>
+              </div>
               <span className="font-black text-cordel-master-dark">
                 {formData.instrument || 'Non attribué'}
               </span>
             </div>
             {formData.instrumentSecondaire && (
               <div className="mt-1 pt-1 border-t border-dashed border-cordel-master-dark/10">
-                <span className="font-extrabold text-cordel-wood uppercase text-[10px] tracking-wider block">
-                  Instrument secondaire actuel :
-                </span>
+                <div className="flex items-center justify-between gap-2 mb-0.5">
+                  <span className="font-extrabold text-cordel-wood uppercase text-[10px] tracking-wider block">
+                    Instrument secondaire actuel :
+                  </span>
+                  <span className="theme-stamp-badge theme-stamp-badge-ocre text-[9px] px-2 py-0.5 font-bold">
+                    Choix 2 (Actuel)
+                  </span>
+                </div>
                 <span className="font-bold text-cordel-master-dark">
                   {formData.instrumentSecondaire}
                 </span>
@@ -76,9 +86,16 @@ export default function MusicalOrientationForm({
 
           {/* Optional dropdown 1: Change main instrument */}
           <div className="flex flex-col gap-1 text-left">
-            <label className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood">
-              Souhaites-tu changer d'instrument principal cette année ?
-            </label>
+            <div className="flex items-center justify-between gap-2">
+              <label className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood">
+                Souhaites-tu changer d'instrument principal cette année ?
+              </label>
+              {formData.voeuPrincipal && (
+                <span className="theme-stamp-badge theme-stamp-badge-wood text-[9px] px-2 py-0.5 font-bold shrink-0">
+                  Nouveau Choix 1
+                </span>
+              )}
+            </div>
             <select
               name="voeuPrincipal"
               value={formData.voeuPrincipal || ''}
@@ -136,9 +153,14 @@ export default function MusicalOrientationForm({
 
           {/* Optional dropdown 2: Learn secondary instrument */}
           <div className="flex flex-col gap-1 text-left">
-            <label className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood">
-              Souhaites-tu apprendre un instrument secondaire ?
-            </label>
+            <div className="flex items-center justify-between gap-2">
+              <label className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood">
+                Souhaites-tu apprendre un instrument secondaire ?
+              </label>
+              <span className="theme-stamp-badge theme-stamp-badge-ocre text-[9px] px-2 py-0.5 font-bold shrink-0">
+                Choix 2
+              </span>
+            </div>
             <select
               name="voeuSecondaire"
               value={formData.voeuSecondaire || ''}
@@ -162,9 +184,14 @@ export default function MusicalOrientationForm({
 
           {/* Wish 1 */}
           <div className="flex flex-col gap-1 text-left">
-            <label className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood">
-              Choix 1 (Vœu principal)
-            </label>
+            <div className="flex items-center justify-between gap-2">
+              <label className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood">
+                Vœu principal <span className="text-red-500 font-bold">*</span>
+              </label>
+              <span className="theme-stamp-badge theme-stamp-badge-wood text-[9px] px-2.5 py-0.5 font-black uppercase">
+                Choix 1
+              </span>
+            </div>
             <select
               name="voeuPrincipal"
               value={formData.voeuPrincipal || ''}
@@ -172,7 +199,7 @@ export default function MusicalOrientationForm({
               disabled={saving}
               className="theme-input w-full text-xs bg-cordel-bg-light font-semibold"
             >
-              <option value="">-- Choisir un premier voeu --</option>
+              <option value="">-- Choisir un premier voeu (Choix 1) --</option>
               {instrumentsList.map(inst => (
                 <option key={`nouveau-p-${inst}`} value={inst}>{inst}</option>
               ))}
@@ -181,28 +208,40 @@ export default function MusicalOrientationForm({
 
           {/* Wish 2 */}
           <div className="flex flex-col gap-1 text-left">
-            <label className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood">
-              Choix 2 (Vœu secondaire)
-            </label>
+            <div className="flex items-center justify-between gap-2">
+              <label className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood">
+                Vœu secondaire <span className="text-red-500 font-bold">*</span>
+              </label>
+              <span className="theme-stamp-badge theme-stamp-badge-ocre text-[9px] px-2.5 py-0.5 font-black uppercase">
+                Choix 2
+              </span>
+            </div>
             <select
               name="voeuSecondaire"
               value={formData.voeuSecondaire || ''}
               onChange={handleChange}
               disabled={saving}
-              className="theme-input w-full text-xs bg-cordel-bg-light"
+              className="theme-input w-full text-xs bg-cordel-bg-light font-semibold"
             >
-              <option value="">-- Aucun / Pas de second choix --</option>
+              <option value="">-- Choisir un second voeu (Choix 2 obligatoire) --</option>
               {instrumentsList.map(inst => (
-                <option key={`nouveau-s-${inst}`} value={inst}>{inst}</option>
+                <option key={`nouveau-s-${inst}`} value={inst} disabled={inst === formData.voeuPrincipal}>
+                  {inst} {inst === formData.voeuPrincipal ? '(Déjà choisi en Choix 1)' : ''}
+                </option>
               ))}
             </select>
           </div>
 
           {/* Wish 3 */}
           <div className="flex flex-col gap-1 text-left">
-            <label className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood">
-              Choix 3 (Vœu tertiaire)
-            </label>
+            <div className="flex items-center justify-between gap-2">
+              <label className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood opacity-80">
+                Vœu tertiaire (Optionnel)
+              </label>
+              <span className="theme-stamp-badge theme-stamp-badge-dark text-[9px] px-2 py-0.5 font-bold opacity-75 shrink-0">
+                Choix 3
+              </span>
+            </div>
             <select
               name="voeuTertiaire"
               value={formData.voeuTertiaire || ''}
@@ -212,10 +251,18 @@ export default function MusicalOrientationForm({
             >
               <option value="">-- Aucun / Pas de troisième choix --</option>
               {instrumentsList.map(inst => (
-                <option key={`nouveau-t-${inst}`} value={inst}>{inst}</option>
+                <option key={`nouveau-t-${inst}`} value={inst} disabled={inst === formData.voeuPrincipal || inst === formData.voeuSecondaire}>
+                  {inst} {(inst === formData.voeuPrincipal || inst === formData.voeuSecondaire) ? '(Déjà choisi)' : ''}
+                </option>
               ))}
             </select>
           </div>
+
+          {(!formData.voeuPrincipal || !formData.voeuSecondaire || formData.voeuPrincipal === formData.voeuSecondaire) && (
+            <div className="p-2 bg-amber-50 dark:bg-amber-950/40 border border-dashed border-amber-500/50 rounded text-[11px] font-bold text-amber-800 dark:text-amber-300">
+              ⚠️ Veuillez sélectionner au moins 2 instruments différents (Choix 1 et Choix 2).
+            </div>
+          )}
         </div>
       )}
     </div>

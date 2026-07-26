@@ -61,6 +61,21 @@ export default function OrientationAssignmentModal({
 
   const memberName = `${member.prenom || ''} ${member.nom || ''}`.trim() || 'Membre';
 
+  // Group instrument options: Student wishes first, then remaining catalog instruments
+  const studentWishes = [];
+  if (member.voeuPrincipal) {
+    studentWishes.push({ key: 'v1', name: member.voeuPrincipal, label: `Choix 1 (Vœu principal) : ${member.voeuPrincipal}` });
+  }
+  if (member.voeuSecondaire && !studentWishes.some(w => w.name === member.voeuSecondaire)) {
+    studentWishes.push({ key: 'v2', name: member.voeuSecondaire, label: `Choix 2 (Vœu secondaire) : ${member.voeuSecondaire}` });
+  }
+  if (member.voeuTertiaire && !studentWishes.some(w => w.name === member.voeuTertiaire)) {
+    studentWishes.push({ key: 'v3', name: member.voeuTertiaire, label: `Choix 3 (Vœu tertiaire) : ${member.voeuTertiaire}` });
+  }
+
+  const wishNames = studentWishes.map(w => w.name);
+  const otherInstruments = instrumentsList.filter(inst => !wishNames.includes(inst));
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fade-in select-none">
       <CordelCard
@@ -77,7 +92,7 @@ export default function OrientationAssignmentModal({
             type="button"
             onClick={onClose}
             disabled={saving}
-            className="text-cordel-master-dark hover:text-red-600 font-bold text-sm"
+            className="text-cordel-master-dark hover:text-red-600 font-bold text-sm cursor-pointer"
           >
             ✕
           </button>
@@ -106,7 +121,7 @@ export default function OrientationAssignmentModal({
               </span>
               <div className="flex flex-wrap gap-1.5 text-[10px]">
                 {member.voeuPrincipal && (
-                  <span className="bg-white/70 dark:bg-black/20 px-2 py-0.5 rounded border border-cordel-master-dark/20">
+                  <span className="bg-white/70 dark:bg-black/20 px-2 py-0.5 rounded border border-cordel-master-dark/20 font-bold">
                     1️⃣ {member.voeuPrincipal}
                   </span>
                 )}
@@ -145,9 +160,20 @@ export default function OrientationAssignmentModal({
               className="theme-input w-full text-xs font-bold bg-cordel-bg-light"
             >
               <option value="">-- Sélectionner un instrument principal --</option>
-              {instrumentsList.map((inst) => (
-                <option key={`m-inst-${inst}`} value={inst}>{inst}</option>
-              ))}
+              {studentWishes.length > 0 && (
+                <optgroup label="⭐ Vœux de l'élève">
+                  {studentWishes.map((w) => (
+                    <option key={`m-wish-${w.key}`} value={w.name}>
+                      {w.label}
+                    </option>
+                  ))}
+                </optgroup>
+              )}
+              <optgroup label={studentWishes.length > 0 ? "🎵 Autres instruments du catalogue" : "🎵 Instruments disponibles"}>
+                {otherInstruments.map((inst) => (
+                  <option key={`m-other-${inst}`} value={inst}>{inst}</option>
+                ))}
+              </optgroup>
             </select>
           </div>
 
@@ -174,9 +200,20 @@ export default function OrientationAssignmentModal({
               className="theme-input w-full text-xs bg-cordel-bg-light"
             >
               <option value="">-- Aucun instrument secondaire --</option>
-              {instrumentsList.map((inst) => (
-                <option key={`s-inst-${inst}`} value={inst}>{inst}</option>
-              ))}
+              {studentWishes.length > 0 && (
+                <optgroup label="⭐ Vœux de l'élève">
+                  {studentWishes.map((w) => (
+                    <option key={`s-wish-${w.key}`} value={w.name}>
+                      {w.label}
+                    </option>
+                  ))}
+                </optgroup>
+              )}
+              <optgroup label={studentWishes.length > 0 ? "🎵 Autres instruments du catalogue" : "🎵 Instruments disponibles"}>
+                {otherInstruments.map((inst) => (
+                  <option key={`s-other-${inst}`} value={inst}>{inst}</option>
+                ))}
+              </optgroup>
             </select>
           </div>
 

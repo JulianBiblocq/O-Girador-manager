@@ -55,6 +55,9 @@ export default function TabIdentity({
                 disabled={saving}
                 className="text-[9px] font-bold"
               />
+              <p className="text-[9px] text-cordel-master-dark/65 font-medium mt-0.5">
+                Format recommandé : SVG (pour une netteté parfaite) ou PNG transparent (minimum 512x512 pixels).
+              </p>
               {logoFile && (
                 <span className="text-[9px] text-green-600 font-bold">
                   ✓ Sélectionné : {logoFile.name}

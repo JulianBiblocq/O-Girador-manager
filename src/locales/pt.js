@@ -762,7 +762,8 @@ export const pt = {
     atTime: "{time} em {date}",
     // New keys
     discussionsTab: "Discussão",
-    inboxTab: "Mensagens (Caixa de entrada)",
+    inboxTab: "Mensagens Privadas",
+    backToChannels: "Voltar aos canais",
     privateConversationsTitle: "Minhas Discussões Privadas",
     noPrivateConversations: "Nenhuma conversa privada no momento. Vá ao Elenco para contatar um membro!",
     writeMessagePlaceholder: "Escrever uma mensagem...",

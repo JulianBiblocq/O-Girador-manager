@@ -459,6 +459,7 @@ export default function UserProfile({ user, profileData, associationName, onBack
           isFieldVisible={isFieldVisible}
           isFieldRequired={isFieldRequired}
           validationError={validationError}
+          isInstrumentsValid={isInstrumentsValid}
           demanderAttestationSante={demanderAttestationSante}
           instrumentsDisponibles={instrumentsDisponibles}
           t={t}

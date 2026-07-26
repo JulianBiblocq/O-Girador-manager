@@ -45,6 +45,7 @@ export default function MestreOrientationCasting({ user, profileData, onNavigate
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [instrumentsDisponibles, setInstrumentsDisponibles] = useState(DEFAULT_INSTRUMENTS);
+  const [linkedInstruments, setLinkedInstruments] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedMember, setSelectedMember] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
@@ -80,7 +81,7 @@ export default function MestreOrientationCasting({ user, profileData, onNavigate
     return () => unsubscribeUsers();
   }, [groupId]);
 
-  // Real-time synchronization of available instruments configuration
+  // Real-time synchronization of available instruments configuration and linked instruments
   useEffect(() => {
     if (!groupId) return;
 
@@ -92,6 +93,24 @@ export default function MestreOrientationCasting({ user, profileData, onNavigate
           setInstrumentsDisponibles(data.instrumentsDisponibles);
         } else {
           setInstrumentsDisponibles(DEFAULT_INSTRUMENTS);
+        }
+
+        if (Array.isArray(data.linkedInstruments)) {
+          const normalized = data.linkedInstruments.map(link => {
+            if (Array.isArray(link)) {
+              return { name: '', instruments: link };
+            } else if (link && typeof link === 'object') {
+              if (Array.isArray(link.instruments)) {
+                return { name: link.name || '', instruments: link.instruments };
+              } else if (link.inst1 && link.inst2) {
+                return { name: link.name || '', instruments: [link.inst1, link.inst2] };
+              }
+            }
+            return null;
+          }).filter(Boolean);
+          setLinkedInstruments(normalized);
+        } else {
+          setLinkedInstruments([]);
         }
       }
     }, (error) => {
@@ -106,30 +125,69 @@ export default function MestreOrientationCasting({ user, profileData, onNavigate
     return members.filter(m => m.statutActuel !== 'inactive');
   }, [members]);
 
-  // Real-time calculation of instrument quotas (Primary & Secondary)
-  const quotasByInstrument = useMemo(() => {
+  // Grouped/Linked pupitres combined with standalone instruments
+  const displayPupitres = useMemo(() => {
+    const result = [];
+    const usedInstruments = new Set();
+
+    // 1. Process configured linked instrument groups
+    (linkedInstruments || []).forEach((group, idx) => {
+      const groupInsts = Array.isArray(group.instruments) ? group.instruments : [];
+      if (groupInsts.length > 0) {
+        const name = group.name && group.name.trim() ? group.name.trim() : groupInsts.join(' / ');
+        result.push({
+          id: `linked-${idx}-${name}`,
+          name: name,
+          subTitle: group.name ? groupInsts.join(' + ') : '',
+          isGroup: true,
+          instruments: groupInsts
+        });
+        groupInsts.forEach(i => usedInstruments.add(i.toLowerCase().trim()));
+      }
+    });
+
+    // 2. Add remaining standalone instruments
+    (instrumentsDisponibles || []).forEach(inst => {
+      if (!usedInstruments.has(inst.toLowerCase().trim())) {
+        result.push({
+          id: `single-${inst}`,
+          name: inst,
+          subTitle: '',
+          isGroup: false,
+          instruments: [inst]
+        });
+      }
+    });
+
+    return result;
+  }, [linkedInstruments, instrumentsDisponibles]);
+
+  // Real-time calculation of instrument quotas (Primary & Secondary) by Pupitre
+  const quotasByPupitre = useMemo(() => {
     const counts = {};
-    instrumentsDisponibles.forEach(inst => {
-      counts[inst] = { primary: 0, secondary: 0 };
+    displayPupitres.forEach(pupitre => {
+      counts[pupitre.id] = { primary: 0, secondary: 0 };
     });
 
     activeMembers.forEach(member => {
-      if (member.instrument) {
-        if (!counts[member.instrument]) {
-          counts[member.instrument] = { primary: 0, secondary: 0 };
+      const mainInst = (member.instrument || '').toLowerCase().trim();
+      const secInst = (member.instrumentSecondaire || '').toLowerCase().trim();
+
+      displayPupitres.forEach(pupitre => {
+        const matchMain = pupitre.instruments.some(i => i.toLowerCase().trim() === mainInst);
+        const matchSec = pupitre.instruments.some(i => i.toLowerCase().trim() === secInst);
+
+        if (matchMain) {
+          counts[pupitre.id].primary += 1;
         }
-        counts[member.instrument].primary += 1;
-      }
-      if (member.instrumentSecondaire) {
-        if (!counts[member.instrumentSecondaire]) {
-          counts[member.instrumentSecondaire] = { primary: 0, secondary: 0 };
+        if (matchSec) {
+          counts[pupitre.id].secondary += 1;
         }
-        counts[member.instrumentSecondaire].secondary += 1;
-      }
+      });
     });
 
     return counts;
-  }, [activeMembers, instrumentsDisponibles]);
+  }, [activeMembers, displayPupitres]);
 
   // Sorting logic for members table:
   // Priority 1: Unassigned members OR members who expressed wishes
@@ -271,28 +329,43 @@ export default function MestreOrientationCasting({ user, profileData, onNavigate
         </h3>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2.5">
-          {instrumentsDisponibles.map(inst => {
-            const quota = quotasByInstrument[inst] || { primary: 0, secondary: 0 };
+          {displayPupitres.map(pupitre => {
+            const quota = quotasByPupitre[pupitre.id] || { primary: 0, secondary: 0 };
             const isLow = quota.primary === 0;
+            const iconInst = pupitre.instruments[0] || pupitre.name;
 
             return (
               <div
-                key={`quota-${inst}`}
+                key={`quota-${pupitre.id}`}
                 className={`p-2.5 rounded border flex flex-col justify-between transition-all ${
                   isLow
                     ? 'bg-amber-50 dark:bg-amber-950/30 border-dashed border-amber-400/80 text-amber-950 dark:text-amber-200'
                     : 'bg-white/50 dark:bg-black/20 border-dashed border-cordel-master-dark/20 text-cordel-master-dark'
                 }`}
               >
-                <div className="flex items-center gap-1.5 mb-1.5">
-                  <img
-                    src={getInstrumentIconPath(inst)}
-                    alt={inst}
-                    className="w-4 h-4 object-contain dark:invert"
-                  />
-                  <span className="text-[10px] font-extrabold truncate" title={inst}>
-                    {inst}
-                  </span>
+                <div>
+                  <div className="flex items-center justify-between gap-1 mb-1">
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <img
+                        src={getInstrumentIconPath(iconInst)}
+                        alt={pupitre.name}
+                        className="w-4 h-4 object-contain shrink-0 dark:invert"
+                      />
+                      <span className="text-[10px] font-extrabold truncate" title={pupitre.name}>
+                        {pupitre.name}
+                      </span>
+                    </div>
+                    {pupitre.isGroup && (
+                      <span className="theme-stamp-badge theme-stamp-badge-wood text-[7.5px] px-1 py-0.2 shrink-0">
+                        🔗 Lié
+                      </span>
+                    )}
+                  </div>
+                  {pupitre.subTitle && (
+                    <span className="text-[8.5px] font-semibold text-cordel-wood block truncate mb-1" title={pupitre.subTitle}>
+                      {pupitre.subTitle}
+                    </span>
+                  )}
                 </div>
 
                 <div className="flex items-baseline justify-between mt-1">
@@ -361,17 +434,18 @@ export default function MestreOrientationCasting({ user, profileData, onNavigate
                 filteredMembers.map((m) => {
                   const name = `${m.prenom || ''} ${m.nom || ''}`.trim() || 'Sans Nom';
                   const isUnassigned = !m.instrument || m.instrument.trim() === '';
+                  const isAssigned = !isUnassigned;
                   const hasWishes = Boolean(m.voeuPrincipal || m.voeuSecondaire || m.voeuTertiaire);
 
                   return (
                     <tr
                       key={`member-row-${m.id}`}
-                      className={`hover:bg-cordel-bg-light/80 transition-colors ${
-                        isUnassigned
-                          ? 'bg-amber-100/40 dark:bg-amber-950/20'
-                          : hasWishes
-                          ? 'bg-white/40 dark:bg-black/10'
-                          : ''
+                      className={`hover:bg-cordel-bg-light/80 transition-colors border-b border-dashed border-cordel-master-dark/10 ${
+                        isAssigned
+                          ? 'bg-emerald-50/70 dark:bg-emerald-950/30 border-l-4 border-l-emerald-500'
+                          : isUnassigned
+                          ? 'bg-amber-100/40 dark:bg-amber-950/20 border-l-4 border-l-amber-500'
+                          : 'bg-white/40 dark:bg-black/10 border-l-4 border-l-transparent'
                       }`}
                     >
                       {/* 1. Nom / Avatar */}
@@ -381,9 +455,14 @@ export default function MestreOrientationCasting({ user, profileData, onNavigate
                           <div className="flex flex-col">
                             <span className="font-extrabold text-xs text-cordel-master-dark flex items-center gap-1">
                               {name}
+                              {isAssigned && (
+                                <span className="text-[8px] font-black text-emerald-800 bg-emerald-200 dark:bg-emerald-900/70 dark:text-emerald-200 px-1 py-0.2 rounded uppercase flex items-center gap-0.5">
+                                  ✅ Traité
+                                </span>
+                              )}
                               {isUnassigned && (
                                 <span className="text-[8px] font-black text-amber-700 bg-amber-200 dark:bg-amber-900/60 dark:text-amber-200 px-1 py-0.2 rounded uppercase">
-                                  Nouveau
+                                  À attribuer
                                 </span>
                               )}
                             </span>
@@ -396,7 +475,7 @@ export default function MestreOrientationCasting({ user, profileData, onNavigate
                         </div>
                       </td>
 
-                      {/* 2. Instrument Actuel */}
+                      {/* 2. Instrument Actuel / Validé */}
                       <td className="py-2.5 px-2">
                         <div className="flex flex-col gap-1">
                           <span className="font-bold flex items-center gap-1.5 text-cordel-master-dark">
@@ -406,6 +485,11 @@ export default function MestreOrientationCasting({ user, profileData, onNavigate
                               className="w-3.5 h-3.5 object-contain dark:invert"
                             />
                             <span>{m.instrument || <span className="italic text-amber-600 dark:text-amber-400 font-semibold">Non défini</span>}</span>
+                            {isAssigned && (
+                              <span className="text-[11px] font-black text-emerald-600 dark:text-emerald-400" title="Instrument attribué et validé par le Mestre">
+                                ✅
+                              </span>
+                            )}
                           </span>
                           {m.instrumentSecondaire && (
                             <span className="text-[10px] text-cordel-wood font-semibold flex items-center gap-1">
@@ -426,18 +510,18 @@ export default function MestreOrientationCasting({ user, profileData, onNavigate
                         {hasWishes ? (
                           <div className="flex flex-wrap gap-1 text-[10px]">
                             {m.voeuPrincipal && (
-                              <span className="bg-white/80 dark:bg-black/30 px-1.5 py-0.5 rounded border border-cordel-master-dark/20 font-semibold">
-                                <strong className="text-cordel-wood">1 :</strong> {m.voeuPrincipal}
+                              <span className={`px-1.5 py-0.5 rounded border font-semibold ${m.instrument === m.voeuPrincipal ? 'bg-emerald-100 dark:bg-emerald-950/80 border-emerald-400 text-emerald-900 dark:text-emerald-200 font-black' : 'bg-white/80 dark:bg-black/30 border-cordel-master-dark/20'}`}>
+                                <strong className="text-cordel-wood">1 :</strong> {m.voeuPrincipal} {m.instrument === m.voeuPrincipal ? '✅' : ''}
                               </span>
                             )}
                             {m.voeuSecondaire && (
-                              <span className="bg-white/80 dark:bg-black/30 px-1.5 py-0.5 rounded border border-cordel-master-dark/20">
-                                <strong className="text-cordel-wood">2 :</strong> {m.voeuSecondaire}
+                              <span className={`px-1.5 py-0.5 rounded border ${m.instrument === m.voeuSecondaire || m.instrumentSecondaire === m.voeuSecondaire ? 'bg-emerald-100 dark:bg-emerald-950/80 border-emerald-400 text-emerald-900 dark:text-emerald-200 font-black' : 'bg-white/80 dark:bg-black/30 border-cordel-master-dark/20'}`}>
+                                <strong className="text-cordel-wood">2 :</strong> {m.voeuSecondaire} {(m.instrument === m.voeuSecondaire || m.instrumentSecondaire === m.voeuSecondaire) ? '✅' : ''}
                               </span>
                             )}
                             {m.voeuTertiaire && (
-                              <span className="bg-white/80 dark:bg-black/30 px-1.5 py-0.5 rounded border border-cordel-master-dark/20">
-                                <strong className="text-cordel-wood">3 :</strong> {m.voeuTertiaire}
+                              <span className={`px-1.5 py-0.5 rounded border ${m.instrument === m.voeuTertiaire || m.instrumentSecondaire === m.voeuTertiaire ? 'bg-emerald-100 dark:bg-emerald-950/80 border-emerald-400 text-emerald-900 dark:text-emerald-200 font-black' : 'bg-white/80 dark:bg-black/30 border-cordel-master-dark/20'}`}>
+                                <strong className="text-cordel-wood">3 :</strong> {m.voeuTertiaire} {(m.instrument === m.voeuTertiaire || m.instrumentSecondaire === m.voeuTertiaire) ? '✅' : ''}
                               </span>
                             )}
                             {m.accordRenfortAncienInstrument && m.instrument && (
@@ -468,7 +552,7 @@ export default function MestreOrientationCasting({ user, profileData, onNavigate
                           onClick={() => handleOpenAssignModal(m)}
                           className="text-[10px] py-1 px-2.5 font-extrabold uppercase shrink-0"
                         >
-                          🎯 Affecter / Valider
+                          {isUnassigned ? '🎯 Affecter' : '✏️ Modifier'}
                         </CordelButton>
                       </td>
                     </tr>

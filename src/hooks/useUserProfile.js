@@ -349,6 +349,36 @@ export function useUserProfile(user, profileData, t) {
 
     setValidationError('');
 
+    const isAncien = Boolean((profileData?.instrument || formData.instrument) && (profileData?.instrument || formData.instrument).trim() !== '');
+
+    const getSelectedInstrumentsCount = () => {
+      if (isAncien) {
+        const insts = new Set([
+          profileData?.instrument || formData.instrument,
+          formData.voeuPrincipal,
+          formData.voeuSecondaire,
+          profileData?.instrumentSecondaire || formData.instrumentSecondaire
+        ].filter(Boolean));
+        return insts.size;
+      } else {
+        const insts = new Set([
+          formData.voeuPrincipal,
+          formData.voeuSecondaire,
+          formData.voeuTertiaire
+        ].filter(Boolean));
+        return (formData.voeuPrincipal && formData.voeuSecondaire && formData.voeuPrincipal !== formData.voeuSecondaire) ? insts.size : 0;
+      }
+    };
+
+    const isInstrumentsValid = getSelectedInstrumentsCount() >= 2;
+
+    if (!isInstrumentsValid) {
+      const errMsg = "Veuillez sélectionner au moins 2 instruments différents (un choix principal et un second choix).";
+      setValidationError(errMsg);
+      alert(errMsg);
+      return;
+    }
+
     const missingRequired = Object.keys(fieldsConfig || {}).some(key => {
       if (!isFieldRequired(key)) return false;
       if (key === 'telephone') return !formData.telephone || !formData.telephone.trim();
@@ -486,6 +516,22 @@ export function useUserProfile(user, profileData, t) {
     }
   };
 
+  const isAncien = Boolean((profileData?.instrument || formData.instrument) && (profileData?.instrument || formData.instrument).trim() !== '');
+
+  const isInstrumentsValid = (() => {
+    if (isAncien) {
+      const insts = new Set([
+        profileData?.instrument || formData.instrument,
+        formData.voeuPrincipal,
+        formData.voeuSecondaire,
+        profileData?.instrumentSecondaire || formData.instrumentSecondaire
+      ].filter(Boolean));
+      return insts.size >= 2;
+    } else {
+      return Boolean(formData.voeuPrincipal && formData.voeuSecondaire && formData.voeuPrincipal !== formData.voeuSecondaire);
+    }
+  })();
+
   return {
     isEditing,
     setIsEditing,
@@ -514,6 +560,7 @@ export function useUserProfile(user, profileData, t) {
     isFieldRequired,
     getMissingRequiredFields,
     validationError,
+    isInstrumentsValid,
     handlePhotoSelected,
     handleEditorComplete,
     handleChange,

@@ -762,7 +762,8 @@ export const fr = {
     atTime: "{time} le {date}",
     // New keys
     discussionsTab: "Discussions",
-    inboxTab: "MP / Boîte de réception",
+    inboxTab: "Messages Privés",
+    backToChannels: "Retour aux salons",
     privateConversationsTitle: "Mes Discussions Privées",
     noPrivateConversations: "Aucune discussion privée pour le moment. Allez dans le Trombinoscope pour contacter un membre !",
     writeMessagePlaceholder: "Rédiger un message...",

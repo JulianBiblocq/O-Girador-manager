@@ -31,6 +31,7 @@ export default function ProfileEditForm({
   isFieldVisible,
   isFieldRequired = () => false,
   validationError = '',
+  isInstrumentsValid = true,
   demanderAttestationSante,
   instrumentsDisponibles,
   t
@@ -371,8 +372,8 @@ export default function ProfileEditForm({
             type="submit"
             variant="ocre" 
             useExtremeBorder={true}
-            disabled={saving}
-            className="flex-1 py-3 text-xs uppercase font-extrabold"
+            disabled={saving || !isInstrumentsValid}
+            className="flex-1 py-3 text-xs uppercase font-extrabold opacity-100 disabled:opacity-50"
           >
             {saving ? translate('common.saving', "Envoi...") : translate('common.validate', "Valider")}
           </CordelButton>

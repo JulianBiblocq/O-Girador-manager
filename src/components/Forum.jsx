@@ -346,10 +346,17 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
   };
   
   const [activeTab, setActiveTab] = useState('discussions'); // 'discussions' or 'inbox'
+  const [mobileView, setMobileView] = useState('channels'); // 'channels' (Écran 1) or 'discussion' (Écran 2)
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [privateMessages, setPrivateMessages] = useState([]);
   const [usersMap, setUsersMap] = useState({});
   const [activeChatUserId, setActiveChatUserId] = useState(null);
+
+  const handleSelectChannel = useCallback((channelId) => {
+    setActiveChannelId(channelId);
+    setMobileView('discussion');
+    setIsDrawerOpen(false);
+  }, []);
 
   const isModeratorOrAdmin = profileData?.role === 'mestre' || 
                              profileData?.role === 'super-admin' || 
@@ -662,7 +669,7 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
         </CordelButton>
         <span className="panel-title text-base font-extrabold tracking-wider text-cordel-wood uppercase flex items-center justify-center gap-1.5">
           <XiloMegaphone size={16} className="text-cordel-wood" />
-          {translate('forum.title', "Le Porte-voix")}
+          {translate('forum.title', "Porte-Voix")}
         </span>
         {isModeratorOrAdmin && onOpenStudioForum ? (
           <CordelButton
@@ -678,7 +685,7 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
         )}
       </div>
 
-      {/* Main Tab Navigation (Discussions vs Inbox) */}
+      {/* Main Tab Navigation (Discussions vs Messages Privés) */}
       <div className="flex items-center gap-2 border-b border-dashed border-cordel-master-dark/20 pb-2">
         <button
           type="button"
@@ -706,7 +713,7 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
               : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
           }`}
         >
-          ✉️ {translate('forum.inboxTab', "MP / Boîte de réception")}
+          ✉️ {translate('forum.inboxTab', "Messages Privés")}
           {unreadInboxCount > 0 && (
             <span className="absolute -top-1.5 -right-1.5 w-3.5 h-3.5 bg-red-600 text-white text-[7px] font-black rounded-full flex items-center justify-center animate-pulse">
               {unreadInboxCount}
@@ -777,31 +784,14 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
           )}
         </div>
       ) : (
-        /* Discussions Tab with Channels sidebar/dropdown */
+        /* Discussions Tab with Channels sidebar / discussion view */
         <div className="flex flex-col md:flex-row gap-4">
-          {/* Channels Sidebar / Dropdown */}
-          <div className="w-full md:w-72 lg:w-80 shrink-0 flex flex-col gap-2 select-none">
-            {/* Mobile Channels Toggle Button */}
-            <div className="block md:hidden mb-2">
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setIsDrawerOpen(true)}
-                  className="flex items-center gap-1.5 px-3 py-2 text-xs font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 border-encre-noire bg-cordel-bg shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none cursor-pointer"
-                >
-                  📁 Salons
-                </button>
-                <div className="flex-1 px-3 py-2 border-2 border-dashed border-cordel-master-dark/15 rounded bg-cordel-bg-light/40 font-bold text-xs truncate">
-                  # {activeChannel ? activeChannel.name : ''}
-                </div>
-              </div>
-            </div>
-
-            {/* Desktop Sidebar */}
-            <div className="hidden md:flex flex-col gap-2 p-3 bg-cordel-bg-light border-2 border-encre-noire rounded-[8px_6px_10px_7px] shadow-[2.5px_2.5px_0px_0px_#181716] min-w-0">
+          {/* Column 1: Salons List (Écran 1 on Mobile, Left Sidebar on PC) */}
+          <div className={`${mobileView === 'channels' ? 'block' : 'hidden'} md:block w-full md:w-72 lg:w-80 shrink-0 flex flex-col gap-2 select-none`}>
+            <div className="flex flex-col gap-2 p-3 bg-cordel-bg-light border-2 border-encre-noire rounded-[8px_6px_10px_7px] shadow-[2.5px_2.5px_0px_0px_#181716] min-w-0">
               <div className="flex justify-between items-center mb-2 border-b border-dashed border-cordel-master-dark/20 pb-1 min-w-0">
                 <h3 className="text-xs font-black uppercase tracking-widest text-cordel-wood truncate">
-                  📂 {translate('forum.channelsHeader', "Salons & Dossiers")}
+                  📂 {translate('forum.channelsHeader', "Salons")}
                 </h3>
                 <button
                   type="button"
@@ -820,7 +810,7 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
                     channels={channels}
                     allThreads={threads}
                     activeChannelId={activeChannelId}
-                    onSelectChannel={setActiveChannelId}
+                    onSelectChannel={handleSelectChannel}
                     onSelectThread={handleSelectThread}
                     selectedThreadId={selectedThread?.id}
                     hasWriteAccess={hasWriteAccess}
@@ -831,8 +821,19 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
             </div>
           </div>
 
-          {/* Main Discussions Area */}
-          <div className="flex-1 min-w-0">
+          {/* Column 2: Discussion Area (Écran 2 on Mobile, Right Main Panel on PC) */}
+          <div className={`${mobileView === 'discussion' ? 'block' : 'hidden'} md:block flex-1 min-w-0`}>
+            {/* Mobile Back Button to Salons List */}
+            <div className="block md:hidden mb-3">
+              <CordelButton
+                variant="default"
+                onClick={() => setMobileView('channels')}
+                className="w-full py-2 px-3 text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 border-2 border-encre-noire bg-cordel-bg shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none cursor-pointer"
+              >
+                ⬅️ {translate('forum.backToChannels', "Retour aux salons")}
+              </CordelButton>
+            </div>
+
             {loading ? (
               <div className="flex justify-center items-center py-12 select-none">
                 <span className="text-xs uppercase tracking-widest font-black animate-pulse opacity-60">⏳ {t('common.loading')}</span>
@@ -868,7 +869,7 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
                           <span className="opacity-40 text-encre-noire">/</span>
                           <button
                             type="button"
-                            onClick={() => setActiveChannelId(item.id)}
+                            onClick={() => handleSelectChannel(item.id)}
                             className={`hover:underline ${idx === path.length - 1 ? 'text-encre-noire font-extrabold' : 'text-cordel-wood'}`}
                           >
                             {item.name}
@@ -937,66 +938,6 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
               </div>
             )}
           </div>
-
-          {/* Mobile Drawer Overlay */}
-          {isDrawerOpen && (
-            <div className="fixed inset-0 z-50 md:hidden">
-              {/* Backdrop */}
-              <div 
-                className="fixed inset-0 bg-black/45 backdrop-blur-xs transition-opacity"
-                onClick={() => setIsDrawerOpen(false)}
-              ></div>
-              {/* Drawer content */}
-              <div className="fixed inset-y-0 left-0 w-72 max-w-full bg-[#fdfaf2] dark:bg-[#1f1b18] border-r-2 border-encre-noire p-4 flex flex-col gap-4 animate-slide-in shadow-2xl">
-                <div className="flex justify-between items-center border-b border-dashed border-cordel-master-dark/20 pb-2">
-                  <h3 className="text-xs font-black uppercase tracking-widest text-cordel-wood">
-                    📁 Salons & Dossiers
-                  </h3>
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsDrawerOpen(false);
-                        setIsCreatingChannel(true);
-                      }}
-                      className="text-[9px] font-black uppercase text-cordel-wood hover:underline cursor-pointer"
-                    >
-                      ➕ Nouveau
-                    </button>
-                    <button 
-                      type="button" 
-                      onClick={() => setIsDrawerOpen(false)}
-                      className="text-xs font-bold text-cordel-master-dark hover:text-encre-noire p-1 cursor-pointer"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                </div>
-                <div className="flex flex-col gap-1 overflow-y-auto">
-                  {channels.filter(c => !c.parentId).map((ch) => (
-                    <ChannelTreeItem
-                      key={ch.id}
-                      channel={ch}
-                      channels={channels}
-                      allThreads={threads}
-                      activeChannelId={activeChannelId}
-                      onSelectChannel={(id) => {
-                        setActiveChannelId(id);
-                        setIsDrawerOpen(false);
-                      }}
-                      onSelectThread={(t) => {
-                        handleSelectThread(t);
-                        setIsDrawerOpen(false);
-                      }}
-                      selectedThreadId={selectedThread?.id}
-                      hasWriteAccess={hasWriteAccess}
-                      level={0}
-                    />
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       )}
 
