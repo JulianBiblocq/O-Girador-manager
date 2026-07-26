@@ -238,7 +238,18 @@ export default function WidgetAgenda({
       alert("Erreur : Aucun groupe (groupId) n'est associé à votre compte. Veuillez utiliser un lien d'invitation de groupe.");
       return;
     }
-    if (!formData.titre || !formData.date) return;
+    if (!formData.titre) return;
+
+    if (formData.isPoll) {
+      const validDates = (formData.pollDates || []).filter(d => d && d.trim() !== '');
+      if (validDates.length < 2) {
+        alert("Veuillez renseigner au moins 2 dates différentes pour le sondage.");
+        return;
+      }
+    } else if (!formData.date) {
+      alert("Veuillez spécifier la date de l'événement.");
+      return;
+    }
 
     const activeType = formData.type || 'repetition';
     const rawConfig = eventTypeConfigs[activeType] || {};
@@ -259,39 +270,60 @@ export default function WidgetAgenda({
 
     setSaving(true);
     try {
-      await addDoc(collection(db, 'events'), {
-        titre: formData.titre,
-        type: formData.type,
-        date: formData.date,
-        dateFin: formData.dateFin || '',
-        groupId: groupId,
-        inscriptions: [],
-        lieu: activeConfig.agendaEnableAdresse ? formData.lieu || '' : '',
-        horairesPassages: formData.type === 'prestation' ? formData.horairesPassages || '' : '',
-        horaireCovoiturage: activeConfig.agendaEnableCarpool ? formData.horaireCovoiturage || '' : '',
-        niveauRequis: formData.type === 'prestation' ? formData.niveauRequis || 'tous' : 'tous',
-        niveauDanseRequis: (formData.type === 'prestation' || formData.type === 'stage' || formData.type === 'repetition' || formData.type === 'atelier') ? formData.niveauDanseRequis || 'aucun' : 'aucun',
-        lienDocument: activeConfig.agendaEnableOrdreDuJour ? formData.lienDocument || '' : '',
-        distanceAllerRetourKm: activeConfig.agendaEnableCarpool ? (parseFloat(formData.distanceAllerRetourKm) || 0) : 0,
-        status: 'confirme',
-        lienSocial: activeConfig.agendaEnableUrl ? formData.lienSocial || '' : '',
-        imageUrl: activeConfig.agendaEnableImage ? formData.imageUrl || '' : '',
-        requiresValidation: activeConfig.agendaEnableInscriptions ? (formData.requiresValidation || false) : false,
-        montantRecette: activeConfig.agendaEnableFinance ? ((formData.budgetRecettes || []).reduce((sum, item) => sum + (parseFloat(item.montant) || 0), 0)) : 0,
-        montantDepense: activeConfig.agendaEnableFinance ? ((formData.budgetDepenses || []).reduce((sum, item) => sum + (parseFloat(item.montant) || 0), 0)) : 0,
-        budgetRecettes: activeConfig.agendaEnableFinance ? (formData.budgetRecettes || []) : [],
-        budgetDepenses: activeConfig.agendaEnableFinance ? (formData.budgetDepenses || []) : [],
-        dateLimiteInscription: activeConfig.agendaEnableInscriptions ? formData.dateLimiteInscription || '' : '',
-        tenueRequise: formData.tenueRequise || '',
-        volunteerShifts: formData.volunteerShifts || [],
-        includesPercussion: formData.includesPercussion || false,
-        includesDance: formData.includesDance || false,
-        enableCarpool: formData.enableCarpool !== false,
-        enableInscriptions: formData.enableInscriptions !== false,
-        description: formData.description || '',
-        latitude: formData.latitude ? Number(formData.latitude) : null,
-        longitude: formData.longitude ? Number(formData.longitude) : null
-      });
+      const createSingleDoc = async (dateVal, isPollMode = false, pollGroupId = null, optionIndex = 1, totalOptions = 1) => {
+        await addDoc(collection(db, 'events'), {
+          titre: formData.titre,
+          type: formData.type,
+          date: dateVal,
+          dateFin: formData.dateFin || '',
+          groupId: groupId,
+          inscriptions: [],
+          lieu: activeConfig.agendaEnableAdresse ? formData.lieu || '' : '',
+          horairesPassages: formData.type === 'prestation' ? formData.horairesPassages || '' : '',
+          horaireCovoiturage: activeConfig.agendaEnableCarpool ? formData.horaireCovoiturage || '' : '',
+          niveauRequis: formData.type === 'prestation' ? formData.niveauRequis || 'tous' : 'tous',
+          niveauDanseRequis: (formData.type === 'prestation' || formData.type === 'stage' || formData.type === 'repetition' || formData.type === 'atelier') ? formData.niveauDanseRequis || 'aucun' : 'aucun',
+          lienDocument: activeConfig.agendaEnableOrdreDuJour ? formData.lienDocument || '' : '',
+          distanceAllerRetourKm: activeConfig.agendaEnableCarpool ? (parseFloat(formData.distanceAllerRetourKm) || 0) : 0,
+          status: isPollMode ? 'sondage' : 'confirme',
+          ...(isPollMode ? {
+            pollGroupId: pollGroupId,
+            optionIndex: optionIndex,
+            totalOptions: totalOptions,
+            pollRestrictionType: formData.pollRestrictionType || 'aucun',
+            pollTarget: formData.pollTarget || '',
+            votes: {}
+          } : {}),
+          lienSocial: activeConfig.agendaEnableUrl ? formData.lienSocial || '' : '',
+          imageUrl: activeConfig.agendaEnableImage ? formData.imageUrl || '' : '',
+          requiresValidation: activeConfig.agendaEnableInscriptions ? (formData.requiresValidation || false) : false,
+          montantRecette: activeConfig.agendaEnableFinance ? ((formData.budgetRecettes || []).reduce((sum, item) => sum + (parseFloat(item.montant) || 0), 0)) : 0,
+          montantDepense: activeConfig.agendaEnableFinance ? ((formData.budgetDepenses || []).reduce((sum, item) => sum + (parseFloat(item.montant) || 0), 0)) : 0,
+          budgetRecettes: activeConfig.agendaEnableFinance ? (formData.budgetRecettes || []) : [],
+          budgetDepenses: activeConfig.agendaEnableFinance ? (formData.budgetDepenses || []) : [],
+          dateLimiteInscription: activeConfig.agendaEnableInscriptions ? formData.dateLimiteInscription || '' : '',
+          tenueRequise: formData.tenueRequise || '',
+          volunteerShifts: formData.volunteerShifts || [],
+          includesPercussion: formData.includesPercussion || false,
+          includesDance: formData.includesDance || false,
+          enableCarpool: formData.enableCarpool !== false,
+          enableInscriptions: formData.enableInscriptions !== false,
+          description: formData.description || '',
+          latitude: formData.latitude ? Number(formData.latitude) : null,
+          longitude: formData.longitude ? Number(formData.longitude) : null
+        });
+      };
+
+      if (formData.isPoll) {
+        const validDates = (formData.pollDates || []).filter(d => d && d.trim() !== '');
+        const pollGroupId = `poll_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+        for (let i = 0; i < validDates.length; i++) {
+          await createSingleDoc(validDates[i], true, pollGroupId, i + 1, validDates.length);
+        }
+      } else {
+        await createSingleDoc(formData.date, false);
+      }
+
       setIsAdding(false);
     } catch (error) {
       console.error("WidgetAgenda - Erreur addDoc :", error);
@@ -560,6 +592,11 @@ export default function WidgetAgenda({
                             À CONFIRMER
                           </span>
                         )}
+                        {event.status === 'sondage' && (
+                          <span className="text-amber-900 bg-amber-100 border border-amber-500 font-black ml-1.5 uppercase text-[8px] px-1.5 py-0.5 rounded select-none shadow-sm inline-flex items-center gap-1">
+                            📊 SONDAGE (Opt. {event.optionIndex || 1}/{event.totalOptions || 1}) {event.pollTarget ? `• ${event.pollTarget}` : ''}
+                          </span>
+                        )}
                       </td>
                       <td className="p-1.5 md:p-2.5 border-r border-encre-noire/15">
                         <span className={`px-2 py-0.5 border border-dashed rounded-[4px_6px_3px_5px] font-black uppercase text-[8px] theme-bg-${variant}`}>
@@ -633,6 +670,13 @@ export default function WidgetAgenda({
                           className="text-orange-600 dark:text-orange-400 border-[3.5px] border-orange-600 dark:border-orange-400 px-5 py-1.5 rounded-lg font-black text-[15px] tracking-widest uppercase opacity-80 bg-white/5 dark:bg-black/5"
                         >
                           À CONFIRMER
+                        </span>
+                      </div>
+                    )}
+                    {event.status === 'sondage' && (
+                      <div className="absolute top-2 right-2 flex gap-1 select-none z-10">
+                        <span className="text-amber-900 bg-amber-100/90 border border-amber-600 font-black uppercase text-[8px] px-2 py-0.5 rounded shadow-sm">
+                          📊 SONDAGE ({event.optionIndex || 1}/{event.totalOptions || 1}) {event.pollTarget ? `• ${event.pollTarget}` : ''}
                         </span>
                       </div>
                     )}

@@ -87,8 +87,17 @@ export default function ReunionManager({ groupId, user, profileData, onBack }) {
     }
   };
 
-  const getStatusBadge = (status) => {
-    switch (status) {
+  const getStatusBadge = (eventObj) => {
+    if (eventObj?.status === 'sondage') {
+      return (
+        <span className="theme-stamp-badge theme-stamp-badge-wood text-[8px] bg-amber-100 border-amber-600 text-amber-900 font-bold">
+          📊 SONDAGE ({eventObj.optionIndex || 1}/{eventObj.totalOptions || 1})
+        </span>
+      );
+    }
+
+    const crStatus = eventObj?.compteRenduStatus;
+    switch (crStatus) {
       case 'publie':
         return <span className="theme-stamp-badge theme-stamp-badge-wood text-[8px]">📜 ARCHIVÉ</span>;
       case 'attente_relecture':
@@ -252,7 +261,7 @@ export default function ReunionManager({ groupId, user, profileData, onBack }) {
                             {formatDate(ev.date)}
                           </td>
                           <td className="py-2 px-1.5 md:py-3 md:px-3">
-                            {getStatusBadge(ev.compteRenduStatus)}
+                            {getStatusBadge(ev)}
                           </td>
                           <td className="py-2 px-1.5 md:py-3 md:px-3 text-right">
                             <button

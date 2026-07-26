@@ -111,21 +111,169 @@ export default function EventCreateForm({
           />
         </div>
 
-        {/* Date Début */}
-        <div className="flex flex-col gap-1">
-          <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-            {translate('widgetAgenda.startDateLabel', "Date et heure de début")}
-          </label>
-          <input
-            type="datetime-local"
-            name="date"
-            value={formData.date}
-            onChange={handleChange}
-            required
-            disabled={saving}
-            className="theme-input w-full disabled:opacity-50"
-          />
+        {/* Multi-Date Poll Toggle Section */}
+        <div className="p-3 bg-amber-50/80 dark:bg-amber-950/20 border-2 border-dashed border-amber-500/40 rounded-[6px_8px_5px_7px] flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-base">📊</span>
+              <div>
+                <label className="text-xs font-black uppercase text-cordel-wood cursor-pointer">
+                  Créer un sondage de dates
+                </label>
+                <p className="text-[9px] font-semibold text-encre-noire/70">
+                  Proposer 2 à 4 créneaux temporaires pour soumettre au vote des membres
+                </p>
+              </div>
+            </div>
+            <input
+              type="checkbox"
+              checked={Boolean(formData.isPoll)}
+              onChange={(e) => setFormData(prev => ({ 
+                ...prev, 
+                isPoll: e.target.checked,
+                pollDates: prev.pollDates || [prev.date || '', ''] 
+              }))}
+              className="w-4 h-4 accent-amber-600 cursor-pointer"
+            />
+          </div>
+
+          {formData.isPoll && (
+            <div className="flex flex-col gap-3 pt-2 border-t border-dashed border-amber-500/30">
+              {/* Restriction Selector */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="flex flex-col gap-1">
+                  <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                    Restriction du vote
+                  </label>
+                  <select
+                    value={formData.pollRestrictionType || 'aucun'}
+                    onChange={(e) => setFormData(prev => ({ ...prev, pollRestrictionType: e.target.value, pollTarget: '' }))}
+                    className="theme-input text-xs font-bold py-1 bg-white"
+                  >
+                    <option value="aucun">👥 Tous les membres</option>
+                    <option value="tag">🏷️ Par Étiquette (ex: C.A, Bureau)</option>
+                    <option value="instrument">🥁 Par Pupitre / Instrument</option>
+                  </select>
+                </div>
+
+                {formData.pollRestrictionType === 'tag' && (
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                      Étiquette ciblée
+                    </label>
+                    <input
+                      type="text"
+                      list="available-tags-list"
+                      value={formData.pollTarget || ''}
+                      onChange={(e) => setFormData(prev => ({ ...prev, pollTarget: e.target.value }))}
+                      placeholder="Ex: C.A, Bureau..."
+                      className="theme-input text-xs font-bold py-1 bg-white"
+                    />
+                    <datalist id="available-tags-list">
+                      <option value="C.A" />
+                      <option value="Bureau" />
+                      <option value="Mestre" />
+                      <option value="Modérateur" />
+                      <option value="Commission Logistique" />
+                    </datalist>
+                  </div>
+                )}
+
+                {formData.pollRestrictionType === 'instrument' && (
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                      Pupitre / Instrument ciblé
+                    </label>
+                    <select
+                      value={formData.pollTarget || ''}
+                      onChange={(e) => setFormData(prev => ({ ...prev, pollTarget: e.target.value }))}
+                      className="theme-input text-xs font-bold py-1 bg-white"
+                    >
+                      <option value="">-- Choisir l'instrument --</option>
+                      {['Alfaia', 'Caixa', 'Gonguê', 'Agbê', 'Mineiro', 'Timbal', 'Chant', 'Danse'].map(inst => (
+                        <option key={inst} value={inst}>{inst}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+              </div>
+
+              {/* Candidate Option Dates */}
+              <div className="flex flex-col gap-2">
+                <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                  Créneaux proposés (2 à 4 dates)
+                </label>
+                {(formData.pollDates || ['', '']).map((optDate, idx) => (
+                  <div key={idx} className="flex items-center gap-2">
+                    <span className="text-[10px] font-black text-cordel-wood w-16 shrink-0">
+                      Option {idx + 1} :
+                    </span>
+                    <input
+                      type="datetime-local"
+                      value={optDate}
+                      onChange={(e) => {
+                        const newDates = [...(formData.pollDates || ['', ''])];
+                        newDates[idx] = e.target.value;
+                        setFormData(prev => ({ 
+                          ...prev, 
+                          pollDates: newDates,
+                          date: idx === 0 ? e.target.value : prev.date
+                        }));
+                      }}
+                      required={idx < 2}
+                      className="theme-input text-xs py-1 flex-1 bg-white"
+                    />
+                    {idx >= 2 && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const newDates = (formData.pollDates || []).filter((_, i) => i !== idx);
+                          setFormData(prev => ({ ...prev, pollDates: newDates }));
+                        }}
+                        className="text-[10px] text-red-600 font-bold px-1.5 py-0.5 hover:bg-red-50 rounded cursor-pointer"
+                      >
+                        ✖
+                      </button>
+                    )}
+                  </div>
+                ))}
+
+                {(formData.pollDates || []).length < 4 && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const current = formData.pollDates || ['', ''];
+                      if (current.length < 4) {
+                        setFormData(prev => ({ ...prev, pollDates: [...current, ''] }));
+                      }
+                    }}
+                    className="text-[9px] font-black uppercase text-cordel-wood hover:underline text-left mt-1 cursor-pointer"
+                  >
+                    + Ajouter une 3ème ou 4ème option de date
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
         </div>
+
+        {/* Date Début */}
+        {!formData.isPoll && (
+          <div className="flex flex-col gap-1">
+            <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+              {translate('widgetAgenda.startDateLabel', "Date et heure de début")}
+            </label>
+            <input
+              type="datetime-local"
+              name="date"
+              value={formData.date}
+              onChange={handleChange}
+              required
+              disabled={saving}
+              className="theme-input w-full disabled:opacity-50"
+            />
+          </div>
+        )}
 
         {/* Date Fin (optionnel) */}
         <div className="flex flex-col gap-1">

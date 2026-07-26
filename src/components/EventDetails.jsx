@@ -24,6 +24,7 @@ import EventStageLayoutSection from './event-details/EventStageLayoutSection';
 import EventVolunteerSection from './event-details/EventVolunteerSection';
 import EventBudgetEditor from './event-details/EventBudgetEditor';
 import EventEditForm from './event-details/EventEditForm';
+import EventPollSection from './event-details/EventPollSection';
 
 export default function EventDetails({ event, user, profileData, onNavigateToView, onClose, onPrev, onNext, viewMode, setViewMode, onGoToStageLayoutEditor }) {
   const { t } = useTranslation();
