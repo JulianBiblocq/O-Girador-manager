@@ -1,51 +1,64 @@
 import React from 'react';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
+import { getEmbedVideoUrl } from './AtelierCouture';
+import { XiloClose } from '../XiloIcons';
 
 /**
- * PieceTutorialModal displays detailed fabrication and tailoring instructions
- * for a specific costume piece in the Atelier Couture.
- *
- * @param {Object} props
- * @param {Object} props.piece The costume piece object (name, tutorialNotes, etc.)
- * @param {Object} [props.workshop] Optional linked workshop tutorial object
- * @param {Function} props.onClose Callback to close the modal
+ * PieceTutorialModal Component
+ * Displays the full multimedia booklet format when a member opens a costume element tutorial.
  */
 export default function PieceTutorialModal({ piece, workshop, onClose }) {
   if (!piece) return null;
 
   const title = workshop?.titre || piece.name || "Tutoriel Couture";
+  const description = workshop?.description || "";
+  const cost = workshop?.cost;
+  const materiel = workshop?.materiel || "";
   const content = workshop?.content || piece.tutorialNotes || "Aucune instruction spécifique enregistrée pour cette pièce.";
+  const embedVideo = getEmbedVideoUrl(workshop?.videoUrl);
+  const images = workshop?.images || [];
+  const pdfFiles = workshop?.pdfFiles || [];
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-encre-noire/70 backdrop-blur-sm animate-fade-in select-none">
-      <div className="relative w-full max-w-xl max-h-[85vh] overflow-y-auto">
-        <CordelCard variant="default" useExtremeBorder={true} className="p-5 flex flex-col gap-4 text-left bg-cordel-bg shadow-2xl">
+      <div className="relative w-full max-w-2xl max-h-[85vh] overflow-y-auto">
+        <CordelCard variant="default" useExtremeBorder={true} className="p-6 flex flex-col gap-4 text-left bg-cordel-bg shadow-2xl">
           {/* Header */}
           <div className="flex justify-between items-start border-b-2 border-dashed border-cordel-master-dark/25 pb-3">
             <div>
               <span className="theme-stamp-badge theme-stamp-badge-wood text-[8px] uppercase tracking-wider mb-1 inline-block">
-                🧵 Atelier Couture
+                🧵 Fiche Livret Atelier Couture
               </span>
-              <h3 className="font-cactus font-black text-lg text-encre-noire tracking-wide">
+              <h3 className="font-cactus font-black text-lg text-encre-noire tracking-wide flex items-center gap-2 flex-wrap">
                 {title}
+                {cost > 0 && (
+                  <span className="theme-stamp-badge theme-stamp-badge-wood text-[9px] font-black uppercase">
+                    Coût : {cost} €
+                  </span>
+                )}
               </h3>
+              {description && (
+                <p className="text-xs text-cordel-master-dark font-medium italic opacity-90 mt-1">
+                  {description}
+                </p>
+              )}
             </div>
             <button
               type="button"
               onClick={onClose}
-              className="text-base font-extrabold text-cordel-wood hover:text-red-600 transition-colors p-1"
+              className="text-base font-extrabold text-cordel-wood hover:text-red-600 cursor-pointer p-1"
               title="Fermer"
             >
-              ✕
+              <XiloClose size={20} />
             </button>
           </div>
 
-          {/* Piece info badge */}
+          {/* Piece Badge & Notes */}
           <div className="flex flex-col gap-2">
             <div className="flex items-center gap-2 flex-wrap">
               <span className="text-xs font-extrabold text-cordel-wood">Élément de costume :</span>
-              <span className="theme-stamp-badge theme-stamp-badge-dark text-[9px] px-2 py-0.5">
+              <span className="theme-stamp-badge theme-stamp-badge-dark text-[9px] px-2 py-0.5 font-bold">
                 {piece.name}
               </span>
               {piece.isMandatory !== false ? (
@@ -61,15 +74,100 @@ export default function PieceTutorialModal({ piece, workshop, onClose }) {
 
             {(piece.description || piece.tutorialNotes) && (
               <div className="text-xs bg-amber-50 dark:bg-amber-950/20 p-2.5 rounded border border-amber-300/40 text-amber-900 dark:text-amber-200 font-bold">
-                💡 <strong>Remarque / Matériaux :</strong> {piece.description || piece.tutorialNotes}
+                💡 <strong>Remarque / Matériaux spécifiques :</strong> {piece.description || piece.tutorialNotes}
               </div>
             )}
           </div>
 
-          {/* Tutorial content */}
-          <div className="bg-white/50 dark:bg-black/20 p-4 border border-dashed border-cordel-master-dark/20 rounded text-xs text-encre-noire whitespace-pre-wrap leading-relaxed max-h-96 overflow-y-auto">
-            {content}
-          </div>
+          {/* Section A: Matériel Nécessaire */}
+          {materiel && (
+            <div className="bg-amber-50/70 dark:bg-amber-950/30 p-3.5 rounded border border-dashed border-amber-600/30 flex flex-col gap-1 text-xs">
+              <h4 className="font-cactus font-black text-xs text-cordel-wood uppercase tracking-wider flex items-center gap-1.5">
+                🧵 Matériel Nécessaire
+              </h4>
+              <div className="whitespace-pre-wrap font-medium opacity-90 pl-1">
+                {materiel}
+              </div>
+            </div>
+          )}
+
+          {/* Section B: Étapes de Fabrication */}
+          {content && (
+            <div className="flex flex-col gap-1 text-xs">
+              <h4 className="font-cactus font-black text-xs text-cordel-wood uppercase tracking-wider flex items-center gap-1.5">
+                📜 Étapes de Fabrication pas à pas
+              </h4>
+              <div className="bg-white/60 dark:bg-black/30 p-4 rounded border border-dashed border-cordel-master-dark/20 whitespace-pre-wrap leading-relaxed max-h-72 overflow-y-auto">
+                {content}
+              </div>
+            </div>
+          )}
+
+          {/* Section C: Video Embed */}
+          {embedVideo && (
+            <div className="flex flex-col gap-2">
+              <h4 className="font-cactus font-black text-xs text-cordel-wood uppercase tracking-wider flex items-center gap-1.5">
+                🎬 Tutoriel Vidéo de démonstration
+              </h4>
+              <div className="relative w-full aspect-video rounded-lg overflow-hidden border-2 border-encre-noire shadow-md bg-black">
+                <iframe
+                  src={embedVideo}
+                  title={`Vidéo - ${title}`}
+                  className="w-full h-full border-0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Section D: Patrons et Images */}
+          {images.length > 0 && (
+            <div className="flex flex-col gap-2">
+              <h4 className="font-cactus font-black text-xs text-cordel-wood uppercase tracking-wider flex items-center gap-1.5">
+                🎨 Patrons & Visuels ({images.length})
+              </h4>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {images.map((img, idx) => (
+                  <a
+                    key={idx}
+                    href={img.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="relative group border-2 border-encre-noire rounded overflow-hidden bg-white aspect-square block shadow-sm"
+                  >
+                    <img src={img.url} alt={img.name || 'Patron'} className="w-full h-full object-cover" />
+                    <div className="absolute inset-0 bg-encre-noire/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-[9px] font-black uppercase">
+                      🔍 Voir l'image
+                    </div>
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Section E: PDF Files */}
+          {pdfFiles.length > 0 && (
+            <div className="flex flex-col gap-2">
+              <h4 className="font-cactus font-black text-xs text-cordel-wood uppercase tracking-wider flex items-center gap-1.5">
+                📄 Documents Joints (PDF)
+              </h4>
+              <div className="flex flex-wrap gap-2">
+                {pdfFiles.map((pdf, idx) => (
+                  <a
+                    key={idx}
+                    href={pdf.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 bg-cordel-wood text-white hover:bg-cordel-wood/90 px-3 py-1.5 rounded font-bold text-xs border border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]"
+                  >
+                    <span>📄 {pdf.name}</span>
+                    <span className="text-[8px] uppercase bg-white/20 px-1 py-0.5 rounded">Ouvrir ↗</span>
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Footer button */}
           <div className="flex justify-end pt-2 border-t border-dashed border-cordel-master-dark/15">
