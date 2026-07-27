@@ -23,6 +23,7 @@ import { useTranslation } from './LanguageContext';
 import { usePresence } from '../hooks/usePresence';
 import { PresenceProvider } from '../context/PresenceContext';
 import OnlineStatusWidget from './OnlineStatusWidget';
+import { resolveEffectiveUserTags } from '../utils/tagUtils';
 
 export default function LayoutShell({ 
   logoUrl, 
@@ -42,6 +43,7 @@ export default function LayoutShell({
   activerPresenceEnLigne = true,
   breakGlassActive = false,
   onToggleBreakGlass,
+  tagsDisponibles = [],
   children 
 }) {
   const finalLogoUrl = logoUrl || '/Pictures/logo-samambaia.png';
@@ -66,7 +68,8 @@ export default function LayoutShell({
   const onlineUserIds = React.useMemo(() => new Set(onlineMembers.map(m => m.id || m.uid)), [onlineMembers]);
   
   const isSystemOrSuperAdminOrMestre = profileData?.isSystemAdmin || profileData?.role === 'super-admin' || profileData?.role === 'mestre';
-  const userTags = profileData?.tags || [];
+  const isMasterKeyActive = isSystemOrSuperAdminOrMestre && breakGlassActive;
+  const userTags = resolveEffectiveUserTags(profileData?.tags || [], tagsDisponibles);
 
   const isModuleEnabled = (tabId, poleId) => {
     if (!enabledModules) return true;
@@ -94,7 +97,8 @@ export default function LayoutShell({
     // 0. Strict Global Feature Toggle check (Hides for EVERYONE including super-admin if OFF)
     if (!isModuleEnabled(tabId, poleId)) return false;
 
-    if (isSystemOrSuperAdminOrMestre) return true;
+    // Master Key Bypass ONLY if Break-Glass Technical Intervention Mode is ACTIVE
+    if (isMasterKeyActive) return true;
 
     // Public member tabs
     if (['profil', 'agenda', 'materiel', 'vestiaire', 'trombinoscope', 'forum', 'dashboard', 'varal'].includes(tabId)) {
@@ -120,12 +124,12 @@ export default function LayoutShell({
     return false;
   };
 
-  const hasAccessTroupe = isSystemOrSuperAdminOrMestre || checkTabAccess('export-annu', 'troupe') || checkTabAccess('tag-manager', 'troupe') || checkTabAccess('instruments', 'troupe');
-  const hasAccessLogistique = isSystemOrSuperAdminOrMestre || checkTabAccess('inventory', 'logistique') || checkTabAccess('orders-manager', 'logistique');
-  const hasAccessTresorerie = isSystemOrSuperAdminOrMestre || checkTabAccess('dashboard-finance', 'tresorerie') || checkTabAccess('cotisations', 'tresorerie') || checkTabAccess('events-finances', 'tresorerie') || checkTabAccess('operations-diverses', 'tresorerie') || checkTabAccess('frais-km', 'tresorerie') || checkTabAccess('reports-exports', 'tresorerie');
-  const hasAccessStudio = isSystemOrSuperAdminOrMestre || checkTabAccess('studio-events', 'studio') || checkTabAccess('studio-social', 'studio') || checkTabAccess('reunion-manager', 'studio') || checkTabAccess('varal-manager', 'studio') || checkTabAccess('activity-reports', 'studio') || checkTabAccess('mestre-forum-channels', 'studio');
-  const hasAccessVestiaire = isSystemOrSuperAdminOrMestre || checkTabAccess('wardrobe-inventory', 'vestiaire') || checkTabAccess('wardrobe-couture', 'vestiaire') || checkTabAccess('wardrobe-sizes', 'vestiaire');
-  const hasAccessMestre = isSystemOrSuperAdminOrMestre || checkTabAccess('mestre-orientation', 'mestre') || checkTabAccess('mestre-events', 'mestre') || checkTabAccess('mestre-stage-layout', 'mestre') || checkTabAccess('mestre-sequenceur', 'mestre') || checkTabAccess('mestre-workshops', 'mestre') || checkTabAccess('mestre-mot-mestre', 'mestre');
+  const hasAccessTroupe = isMasterKeyActive || checkTabAccess('export-annu', 'troupe') || checkTabAccess('tag-manager', 'troupe') || checkTabAccess('instruments', 'troupe');
+  const hasAccessLogistique = isMasterKeyActive || checkTabAccess('inventory', 'logistique') || checkTabAccess('orders-manager', 'logistique');
+  const hasAccessTresorerie = isMasterKeyActive || checkTabAccess('dashboard-finance', 'tresorerie') || checkTabAccess('cotisations', 'tresorerie') || checkTabAccess('events-finances', 'tresorerie') || checkTabAccess('operations-diverses', 'tresorerie') || checkTabAccess('frais-km', 'tresorerie') || checkTabAccess('reports-exports', 'tresorerie');
+  const hasAccessStudio = isMasterKeyActive || checkTabAccess('studio-events', 'studio') || checkTabAccess('studio-social', 'studio') || checkTabAccess('reunion-manager', 'studio') || checkTabAccess('varal-manager', 'studio') || checkTabAccess('activity-reports', 'studio') || checkTabAccess('mestre-forum-channels', 'studio');
+  const hasAccessVestiaire = isMasterKeyActive || checkTabAccess('wardrobe-inventory', 'vestiaire') || checkTabAccess('wardrobe-couture', 'vestiaire') || checkTabAccess('wardrobe-sizes', 'vestiaire');
+  const hasAccessMestre = isMasterKeyActive || checkTabAccess('mestre-orientation', 'mestre') || checkTabAccess('mestre-events', 'mestre') || checkTabAccess('mestre-stage-layout', 'mestre') || checkTabAccess('mestre-sequenceur', 'mestre') || checkTabAccess('mestre-workshops', 'mestre') || checkTabAccess('mestre-mot-mestre', 'mestre');
 
   const isAdministrativeUser = isSystemOrSuperAdminOrMestre || 
                                profileData?.role === 'bureau' || 

@@ -829,6 +829,7 @@ export default function App() {
           activerPresenceEnLigne={activerPresenceEnLigne}
           breakGlassActive={breakGlassActive}
           onToggleBreakGlass={handleToggleBreakGlass}
+          tagsDisponibles={tagsDisponibles}
         >
           <React.Suspense fallback={
             <div className="flex-1 flex flex-col justify-center items-center py-12">
