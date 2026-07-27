@@ -6,6 +6,14 @@ import CordelButton from './CordelButton';
 import { XiloScroll } from './XiloIcons';
 import { useTranslation } from './LanguageContext';
 
+const toJsDate = (val) => {
+  if (!val) return null;
+  if (typeof val.toDate === 'function') return val.toDate();
+  if (val.seconds !== undefined) return new Date(val.seconds * 1000);
+  const d = new Date(val);
+  return isNaN(d.getTime()) ? null : d;
+};
+
 const ARTICLE_PRICES = {
   "Baguettes d'Alfaia (Grosses, Petites ou Bacalhau)": 15,
   "Baguettes de Caixa": 10,
