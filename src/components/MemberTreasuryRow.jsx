@@ -5,7 +5,7 @@ import XiloAvatar from './XiloAvatar';
 import { useTranslation } from './LanguageContext';
 import { useTerminologie } from '../hooks/useTerminologie';
 
-export default function MemberTreasuryRow({ member, optionsCotisation, baseAdhesionAmount }) {
+function MemberTreasuryRow({ member, optionsCotisation, baseAdhesionAmount }) {
   const { t } = useTranslation();
   const { tRole } = useTerminologie();
   const [showOptionsDropdown, setShowOptionsDropdown] = useState(false);
@@ -212,3 +212,5 @@ export default function MemberTreasuryRow({ member, optionsCotisation, baseAdhes
     </div>
   );
 }
+
+export default React.memo(MemberTreasuryRow);

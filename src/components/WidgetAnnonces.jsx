@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { collection, query, where, onSnapshot, addDoc, deleteDoc, doc, updateDoc, arrayUnion } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, addDoc, deleteDoc, doc, updateDoc, arrayUnion, limit } from 'firebase/firestore';
 import { db, messaging } from '../firebase';
 import { getToken } from 'firebase/messaging';
 import CordelCard from './CordelCard';
@@ -102,7 +102,7 @@ export default function WidgetAnnonces({ groupId, profileData, role, isSystemAdm
 
     setLoading(true);
     const announcementsRef = collection(db, 'announcements');
-    const q = query(announcementsRef, where('groupId', '==', groupId));
+    const q = query(announcementsRef, where('groupId', '==', groupId), limit(15));
 
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
       const fetched = [];

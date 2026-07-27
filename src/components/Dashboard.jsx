@@ -225,6 +225,7 @@ export default function Dashboard({ user, profileData, onNavigateToTrombi, onNav
                   alt={`${profileData?.prenom} ${profileData?.nom}`} 
                   width={40}
                   height={40}
+                  loading="lazy"
                   className="w-10 h-10 rounded-[8px_4px_7px_6px] border border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716] object-cover grayscale contrast-[130%] sepia-[40%] mix-blend-multiply brightness-[95%] select-none pointer-events-none"
                 />
               ) : (

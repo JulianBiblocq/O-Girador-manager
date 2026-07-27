@@ -21,7 +21,7 @@ const toTimeValue = (rawTime, rawDate) => {
  * EventsDataGridRow - Interactive table row allowing inline editing for all event fields.
  * Keeps local state to maintain input focus during typing and saves to Firestore on blur/change.
  */
-export default function EventsDataGridRow({
+function EventsDataGridRow({
   event,
   onUpdateField,
   onToggleField,
@@ -286,3 +286,5 @@ export default function EventsDataGridRow({
     </tr>
   );
 }
+
+export default React.memo(EventsDataGridRow);

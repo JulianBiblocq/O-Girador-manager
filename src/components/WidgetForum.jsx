@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { collection, query, where, onSnapshot } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, limit } from 'firebase/firestore';
 import { db } from '../firebase';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
@@ -22,7 +22,7 @@ export default function WidgetForum({ groupId, onOpen }) {
 
     setLoading(true);
     const forumRef = collection(db, 'forum');
-    const q = query(forumRef, where('groupId', '==', groupId));
+    const q = query(forumRef, where('groupId', '==', groupId), limit(20));
 
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
       const fetchedThreads = [];
