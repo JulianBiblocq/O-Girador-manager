@@ -434,6 +434,34 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
     return resolveEffectiveUserTags(profileData?.tags || [], tagsDisponibles);
   }, [profileData?.tags, tagsDisponibles]);
 
+  // Helper function to check if a user role/tag matches an allowed role/tag list
+  const checkUserAccessToList = useCallback((allowedList = ['all'], userRole, userTags = [], tagsAvailable = []) => {
+    if (!Array.isArray(allowedList) || allowedList.length === 0) return true;
+    if (allowedList.includes('all')) return true;
+
+    const lowerRole = (userRole || '').toLowerCase();
+    if (allowedList.some(r => String(r).toLowerCase() === lowerRole)) return true;
+
+    // Check user effective tags against allowed roles/tags
+    return allowedList.some(r => {
+      const targetLower = String(r).toLowerCase();
+
+      return userTags.some(t => {
+        const tagStr = typeof t === 'string' ? t : getTagId(t);
+        if (tagStr.toLowerCase() === targetLower) return true;
+
+        const tagObj = findTagObject(tagStr, tagsAvailable);
+        if (tagObj) {
+          if (tagObj.id && String(tagObj.id).toLowerCase() === targetLower) return true;
+          if (tagObj.nomM && String(tagObj.nomM).toLowerCase() === targetLower) return true;
+          if (tagObj.nomF && String(tagObj.nomF).toLowerCase() === targetLower) return true;
+        }
+
+        return false;
+      });
+    });
+  }, []);
+
   // Real-time synchronization of channels (salons)
   useEffect(() => {
     if (!profileData?.groupId) {
@@ -480,20 +508,9 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
         const allowedChannels = fetched.filter(ch => {
           if (isMasterKeyActive) return true;
           
-          // Read roles
-          const read = ch.readRoles || ['all'];
-          if (read.includes('all')) return true;
-          if (read.includes(userRole)) return true;
+          const readList = ch.readRoles || ch.allowedRoles || ['all'];
+          if (checkUserAccessToList(readList, userRole, userTags, tagsDisponibles)) return true;
 
-          const hasTagAccess = read.some(r => 
-            userTags.some(t => t.toLowerCase() === r.toLowerCase())
-          );
-          if (hasTagAccess) return true;
-
-          // Backwards compatibility
-          if (ch.allowedRoles) {
-            if (ch.allowedRoles.includes('all') || ch.allowedRoles.includes(userRole)) return true;
-          }
           if (ch.isTransparent === true) return true;
           
           return false;
@@ -519,14 +536,18 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
             if (prev && sorted.some(c => c.id === prev)) return prev;
             return sorted[0].id;
           });
+        } else {
+          setActiveChannelId(null);
         }
       }
+      setLoading(false);
     }, (error) => {
-      console.error("Forum - Error syncing channels:", error);
+      console.error("Forum - Erreur onSnapshot channels :", error);
+      setLoading(false);
     });
 
     return () => unsubscribe();
-  }, [profileData?.groupId, profileData?.role, effectiveUserTags, profileData?.isSystemAdmin, breakGlassActive]);
+  }, [profileData?.groupId, profileData?.role, effectiveUserTags, profileData?.isSystemAdmin, breakGlassActive, tagsDisponibles, checkUserAccessToList]);
 
   // Sync all threads for the group
   useEffect(() => {
@@ -630,22 +651,16 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
 
   const hasWriteAccess = useCallback((channel) => {
     if (!channel) return true;
-    if (profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.isSystemAdmin) return true;
+    const isAdminUser = profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.isSystemAdmin;
+    const isMasterKeyActive = isAdminUser && breakGlassActive;
+    if (isMasterKeyActive) return true;
 
     const userRole = profileData?.role || 'membre';
     const userTags = effectiveUserTags;
 
-    const write = channel.writeRoles || ['all'];
-    if (write.includes('all')) return true;
-    if (write.includes(userRole)) return true;
-    if (userTags.some(tag => write.includes(tag))) return true;
-
-    // Rétrocompatibilité
-    if (channel.allowedRoles) {
-      return channel.allowedRoles.includes('all') || channel.allowedRoles.includes(userRole);
-    }
-    return false;
-  }, [profileData?.role, effectiveUserTags, profileData?.isSystemAdmin]);
+    const writeList = channel.writeRoles || channel.allowedRoles || ['all'];
+    return checkUserAccessToList(writeList, userRole, userTags, tagsDisponibles);
+  }, [profileData?.role, effectiveUserTags, profileData?.isSystemAdmin, breakGlassActive, tagsDisponibles, checkUserAccessToList]);
 
   const activeChannel = useMemo(() => {
     return channels.find(c => c.id === activeChannelId);

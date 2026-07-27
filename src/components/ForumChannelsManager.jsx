@@ -8,6 +8,8 @@ import { useTranslation } from './LanguageContext';
 import { XiloMegaphone } from './XiloIcons';
 import useConfirm from '../hooks/useConfirm';
 
+import { normalizeTag } from '../utils/tagUtils';
+
 /**
  * ForumChannelsManager Component
  * Admin tool for managing hierarchical forum categories, channels, subfolders, and thread/message moderation.
@@ -18,6 +20,7 @@ export default function ForumChannelsManager({ groupId, role, isSystemAdmin, onB
   
   const [activeTab, setActiveTab] = useState('channels'); // 'channels' | 'moderation'
   const [channels, setChannels] = useState([]);
+  const [tagsDisponibles, setTagsDisponibles] = useState([]);
   const [loading, setLoading] = useState(true);
   
   // Form State
@@ -29,14 +32,43 @@ export default function ForumChannelsManager({ groupId, role, isSystemAdmin, onB
   const [writeRoles, setWriteRoles] = useState(['all']);
   const [saving, setSaving] = useState(false);
 
-  const rolesOptions = [
-    { value: 'all', label: 'Tout le monde' },
-    { value: 'mestre', label: 'Mestre' },
-    { value: 'super-admin', label: 'Super Admin' },
-    { value: 'ca', label: 'CA' },
-    { value: 'bureau', label: 'Bureau' },
-    { value: 'membre', label: 'Membre' }
-  ];
+  // Sync tagsDisponibles for the association
+  useEffect(() => {
+    if (!groupId) return;
+    const assocRef = doc(db, 'associations', groupId);
+    const unsubscribe = onSnapshot(assocRef, (docSnap) => {
+      if (docSnap.exists()) {
+        setTagsDisponibles(docSnap.data().tagsDisponibles || []);
+      }
+    });
+    return () => unsubscribe();
+  }, [groupId]);
+
+  const rolesOptions = React.useMemo(() => {
+    const base = [
+      { value: 'all', label: 'Tout le monde' },
+      { value: 'mestre', label: 'Mestre' },
+      { value: 'super-admin', label: 'Super Admin' },
+      { value: 'ca', label: 'CA' },
+      { value: 'bureau', label: 'Bureau' },
+      { value: 'membre', label: 'Membre' }
+    ];
+
+    if (Array.isArray(tagsDisponibles)) {
+      tagsDisponibles.forEach(tag => {
+        const norm = normalizeTag(tag);
+        const tagVal = norm.id || norm.nomM;
+        if (tagVal && !base.some(b => b.value.toLowerCase() === tagVal.toLowerCase())) {
+          base.push({
+            value: tagVal,
+            label: `Badge: ${norm.nomM}`
+          });
+        }
+      });
+    }
+
+    return base;
+  }, [tagsDisponibles]);
 
   // 1. Sync available channels
   useEffect(() => {
