@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { doc, onSnapshot, updateDoc, arrayUnion, deleteDoc, collection, addDoc } from 'firebase/firestore';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { doc, onSnapshot, updateDoc, arrayUnion, collection, addDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
