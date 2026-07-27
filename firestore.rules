@@ -68,7 +68,7 @@ service cloud.firestore {
 
     // Collection Rules
 
-    // Users: Read if authenticated. Write if editing own profile (without privilege escalation / status tampering) or if admin/mestre.
+    // Users: Read if authenticated. Write if editing own profile (without privilege escalation / status tampering), managing owned dependent child profile, or if admin/mestre.
     match /users/{userId} {
       allow read: if isAuthenticated();
       allow create: if isAuthenticated() && (
@@ -82,6 +82,14 @@ service cloud.firestore {
             (!request.resource.data.keys().hasAny(['selectedOptions']) || request.resource.data.selectedOptions.size() == 0) &&
             (!request.resource.data.keys().hasAny(['tags']) || request.resource.data.tags.size() == 0)
           )
+        ) || (
+          request.resource.data.isDependent == true &&
+          request.resource.data.managedBy == request.auth.uid && (
+            (!request.resource.data.keys().hasAny(['isSystemAdmin']) || request.resource.data.isSystemAdmin == false) &&
+            (!request.resource.data.keys().hasAny(['role']) || request.resource.data.role == 'membre') &&
+            (!request.resource.data.keys().hasAny(['statutActuel']) || request.resource.data.statutActuel == 'active') &&
+            (!request.resource.data.keys().hasAny(['tags']) || request.resource.data.tags.size() == 0)
+          )
         )
       );
       allow update: if isAuthenticated() && (
@@ -91,9 +99,20 @@ service cloud.firestore {
               'paymentStatus', 'role', 'isSystemAdmin', 'adhesionBase', 'selectedOptions', 'tags', 'statutActuel'
             ])
           )
+        ) || (
+          resource.data.managedBy == request.auth.uid &&
+          resource.data.isDependent == true && (
+            !request.resource.data.diff(resource.data).affectedKeys().hasAny([
+              'paymentStatus', 'role', 'isSystemAdmin', 'adhesionBase', 'selectedOptions', 'tags', 'statutActuel', 'managedBy', 'isDependent'
+            ])
+          )
         )
       );
-      allow delete: if isAdminOrMestre();
+      allow delete: if isAdminOrMestre() || (
+        isAuthenticated() &&
+        resource.data.managedBy == request.auth.uid &&
+        resource.data.isDependent == true
+      );
     }
 
     // Inventory: Read if authenticated. Write (create, update, delete) reserved for admins/mestres.

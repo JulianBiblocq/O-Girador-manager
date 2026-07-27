@@ -68,23 +68,45 @@ const MemberCard = React.memo(({
 
   const isAddressEnabled = fieldsConfig?.adresse?.enabled !== false;
   const isNiveauxEnabled = fieldsConfig?.niveaux?.enabled !== false;
-  const effectiveAddressMode = (afficherVille !== undefined)
-    ? (afficherVille ? 'ville' : 'masquee')
-    : (visibiliteAdresse || 'ville');
-  const addressMode = (isViewerAdmin && !isCurrentUser) ? 'complete' : effectiveAddressMode;
-  
-  let displayAddress = null;
-  if (isAddressEnabled) {
-    if (addressMode === 'complete') {
-      const full = [adresseRue, adresseCP, adresseVille].filter(Boolean).join(' ');
-      displayAddress = full || adresse || null;
-    } else if (addressMode === 'ville') {
-      const city = [adresseCP, adresseVille].filter(Boolean).join(' ');
-      displayAddress = city || adresseVille || null;
-    } else {
-      displayAddress = null;
+  const isAddressAllowed = afficherVille !== undefined ? (afficherVille === true) : (visibiliteAdresse !== 'masquee');
+  const showCity = isAddressEnabled && (isAddressAllowed || (isViewerAdmin && !isCurrentUser));
+
+  const getDisplayCity = (cityVal, cpVal, fullAddr) => {
+    if (cityVal && cityVal.trim()) return cityVal.trim();
+    if (fullAddr) {
+      if (cpVal) {
+        const parts = fullAddr.split(cpVal);
+        if (parts.length > 1 && parts[1].trim()) {
+          return parts[1].trim().replace(/^,/, '').trim();
+        }
+      }
+      const match = fullAddr.match(/(?:\d{5}|\d{4})\s+([A-Za-zÀ-ÿ\s\-]+)/);
+      if (match && match[1]) return match[1].trim();
     }
-  }
+    return null;
+  };
+
+  const displayAddress = showCity ? getDisplayCity(adresseVille, adresseCP, adresse) : null;
+
+  const formatBirthday = (dateStr) => {
+    if (!dateStr) return '';
+    const parts = dateStr.split('-');
+    if (parts.length === 3) {
+      const year = parseInt(parts[0], 10);
+      const month = parseInt(parts[1], 10) - 1;
+      const day = parseInt(parts[2], 10);
+      if (!isNaN(day) && !isNaN(month)) {
+        const d = new Date(year, month, day);
+        return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' });
+      }
+    }
+    try {
+      const d = new Date(dateStr);
+      return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' });
+    } catch {
+      return dateStr;
+    }
+  };
 
   const userInstruments = instrumentsJoues && instrumentsJoues.length > 0
     ? instrumentsJoues
@@ -194,7 +216,7 @@ const MemberCard = React.memo(({
                 <span className="truncate">📞 {telephone}</span>
               )}
               {showBirthdate && (
-                <span>🎂 {dateNaissance ? (isViewerAdmin ? new Date(dateNaissance).toLocaleDateString('fr-FR') : new Date(dateNaissance).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })) : ''}</span>
+                <span>🎂 {formatBirthday(dateNaissance)}</span>
               )}
               {displayAddress && (
                 <span className="truncate text-[8.5px] max-w-full">📍 {displayAddress}</span>
@@ -262,6 +284,7 @@ const MemberCard = React.memo(({
          prevProps.dateNaissance === nextProps.dateNaissance &&
          prevProps.afficherTelephone === nextProps.afficherTelephone &&
          prevProps.afficherDateNaissance === nextProps.afficherDateNaissance &&
+         prevProps.afficherVille === nextProps.afficherVille &&
          prevProps.visibiliteAdresse === nextProps.visibiliteAdresse &&
          prevProps.publierTelephone === nextProps.publierTelephone &&
          prevProps.publierDateNaissance === nextProps.publierDateNaissance &&
@@ -428,7 +451,6 @@ export default function Trombinoscope({ user, profileData, onBack, onContactUser
           delete cleanData.adresse;
           delete cleanData.adresseRue;
           delete cleanData.adresseCP;
-          delete cleanData.adresseVille;
           delete cleanData.adressePhysique;
         }
         fetchedMembers.push({
