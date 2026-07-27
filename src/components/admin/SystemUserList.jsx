@@ -25,7 +25,8 @@ export default function SystemUserList({
   handleDanceLevelChange,
   handleFieldChange,
   handleSavePermissions,
-  handleToggleArchive
+  handleToggleArchive,
+  handleDeleteUser
 }) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -87,15 +88,15 @@ export default function SystemUserList({
 
             {/* Actions panel */}
             <div className="flex justify-between items-center gap-2 border-t border-dashed border-cordel-master-dark/10 pt-3">
-              <span className="text-[10px] font-black uppercase text-cordel-wood">Actions rôle</span>
+              <span className="text-[10px] font-black uppercase text-cordel-wood">Actions rôle & membre</span>
               
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5">
                 {isArchived ? (
                   <button
                     type="button"
                     onClick={() => handleToggleArchive(userItem.id, true)}
                     disabled={savingId === userItem.id}
-                    className="text-[9px] font-black uppercase bg-green-100 hover:bg-green-200 border border-green-700 text-green-700 px-3 py-1 rounded shadow-[1px_1px_0px_0px_rgba(22,101,52,0.15)] active:translate-x-[0.5px] active:translate-y-[0.5px] cursor-pointer"
+                    className="text-[9px] font-black uppercase bg-green-100 hover:bg-green-200 border border-green-700 text-green-700 px-2.5 py-1 rounded shadow-[1px_1px_0px_0px_rgba(22,101,52,0.15)] active:translate-x-[0.5px] active:translate-y-[0.5px] cursor-pointer"
                   >
                     Désarchiver
                   </button>
@@ -105,7 +106,8 @@ export default function SystemUserList({
                       type="button"
                       onClick={() => handleToggleArchive(userItem.id, false)}
                       disabled={savingId === userItem.id}
-                      className="text-[9px] font-black uppercase bg-red-100 hover:bg-red-200 border border-red-700 text-red-700 px-3 py-1 rounded shadow-[1px_1px_0px_0px_rgba(185,28,28,0.15)] active:translate-x-[0.5px] active:translate-y-[0.5px] cursor-pointer"
+                      className="text-[9px] font-black uppercase bg-red-50 hover:bg-red-100 border border-red-700 text-red-700 px-2 py-1 rounded shadow-[1px_1px_0px_0px_rgba(185,28,28,0.15)] active:translate-x-[0.5px] active:translate-y-[0.5px] cursor-pointer"
+                      title="Masquer le membre de l'annuaire actif"
                     >
                       Archiver
                     </button>
@@ -114,12 +116,24 @@ export default function SystemUserList({
                         type="button"
                         onClick={() => handleSavePermissions(userItem.id, userItem)}
                         disabled={savingId === userItem.id}
-                        className="text-[9px] font-black uppercase bg-amber-500 hover:bg-amber-600 border border-encre-noire text-white px-3 py-1 rounded shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] cursor-pointer animate-pulse"
+                        className="text-[9px] font-black uppercase bg-amber-500 hover:bg-amber-600 border border-encre-noire text-white px-2.5 py-1 rounded shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] cursor-pointer animate-pulse"
                       >
                         {savingId === userItem.id ? "..." : "Enregistrer"}
                       </button>
                     )}
                   </>
+                )}
+
+                {handleDeleteUser && (
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteUser(userItem.id, `${userItem.prenom || ''} ${userItem.nom || ''}`.trim())}
+                    disabled={savingId === userItem.id}
+                    className="text-[9px] font-black uppercase bg-red-700 hover:bg-red-800 border border-encre-noire text-white px-2 py-1 rounded shadow-[1px_1px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] cursor-pointer"
+                    title="Supprimer définitivement la fiche de ce membre"
+                  >
+                    🗑️ Supprimer
+                  </button>
                 )}
               </div>
             </div>

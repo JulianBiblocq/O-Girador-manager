@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { collection, query, onSnapshot, doc, updateDoc, where, deleteField } from 'firebase/firestore';
+import { collection, query, onSnapshot, doc, updateDoc, where, deleteField, deleteDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
@@ -285,6 +285,30 @@ export default function SystemAdminPanel({ profileData, associationName: propAss
     }
   };
 
+  const handleDeleteUser = async (targetUserId, userFullName) => {
+    if (!targetUserId) return;
+    const confirmation = await confirm({
+      title: "Supprimer définitivement le membre",
+      message: `Voulez-vous vraiment SUPPRIMER définitivement le membre "${userFullName || 'ce membre'}" ?\n\nCette action est irréversible et supprimera le profil de la base de données.`,
+      confirmText: "Oui, supprimer définitivement",
+      cancelText: "Annuler",
+      variant: "danger"
+    });
+    if (!confirmation) return;
+
+    setSavingId(targetUserId);
+    try {
+      const userRef = doc(db, 'users', targetUserId);
+      await deleteDoc(userRef);
+      alert(`Le membre ${userFullName || ''} a été définitivement supprimé.`);
+    } catch (error) {
+      console.error("SystemAdminPanel - Erreur lors de la suppression du membre :", error);
+      alert("Erreur lors de la suppression : " + (error.message || error));
+    } finally {
+      setSavingId(null);
+    }
+  };
+
   const handleForceUpdate = async () => {
     const ok = await confirm({
       title: "Forcer la mise à jour",
@@ -388,6 +412,7 @@ export default function SystemAdminPanel({ profileData, associationName: propAss
             handleFieldChange={handleFieldChange}
             handleSavePermissions={handleSavePermissions}
             handleToggleArchive={handleToggleArchive}
+            handleDeleteUser={handleDeleteUser}
           />
         </div>
       )}
