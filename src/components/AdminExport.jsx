@@ -50,6 +50,13 @@ export default function AdminExport({ user, profileData, onBack }) {
         { key: 'montantTotal', label: 'Montant total', defaultSelected: false },
         { key: 'anneeEnCours', label: 'Année en cours', defaultSelected: false }
       ]
+    },
+    logistics: {
+      label: "Logistique & Santé",
+      fields: [
+        { key: 'dietaryRestrictions', label: 'Régime / Préférences alimentaires', defaultSelected: false },
+        { key: 'allergies', label: 'Allergies & Précisions', defaultSelected: false }
+      ]
     }
   };
 
@@ -225,6 +232,12 @@ export default function AdminExport({ user, profileData, onBack }) {
             return [member.adresseRue, member.adresseCP, member.adresseVille].filter(Boolean).join(', ');
           }
           return member.adresse || member.adressePhysique || '';
+        }
+        if (field.key === 'dietaryRestrictions') {
+          return Array.isArray(val) ? val.join(', ') : (val || '');
+        }
+        if (field.key === 'allergies') {
+          return val || '';
         }
 
         // Default formatting

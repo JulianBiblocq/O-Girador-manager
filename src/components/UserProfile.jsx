@@ -524,6 +524,35 @@ export default function UserProfile({ user, profileData, associationName, onBack
                   </div>
                 </div>
               )}
+
+              {/* Préférences Alimentaires & Allergies */}
+              <div className="col-span-1 md:col-span-2 border-t border-dashed border-cordel-master-dark/15 pt-2 mt-1">
+                <span className="text-[10px] uppercase font-black text-cordel-wood flex items-center gap-1 mb-1">
+                  🍽️ Préférences Alimentaires & Allergies (Confidentiel Admin)
+                </span>
+                <div className="flex flex-col gap-1 text-xs">
+                  <div>
+                    <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70 inline-block mr-1">Régime :</span>
+                    {formData.dietaryRestrictions && formData.dietaryRestrictions.length > 0 ? (
+                      <span className="font-extrabold text-cordel-wood bg-cordel-bg-light px-2 py-0.5 rounded border border-dashed border-cordel-master-dark/20">
+                        {formData.dietaryRestrictions.join(', ')}
+                      </span>
+                    ) : (
+                      <span className="italic opacity-50">Aucun régime spécifique</span>
+                    )}
+                  </div>
+                  <div className="mt-0.5">
+                    <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70 inline-block mr-1">Allergies / Précisions :</span>
+                    {formData.allergies && formData.allergies.trim() ? (
+                      <span className="font-bold text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-950/30 px-2 py-0.5 rounded border border-red-200 dark:border-red-900/40">
+                        ⚠️ {formData.allergies.trim()}
+                      </span>
+                    ) : (
+                      <span className="italic opacity-50">Aucune allergie signalée</span>
+                    )}
+                  </div>
+                </div>
+              </div>
             </div>
           </CordelCard>
 

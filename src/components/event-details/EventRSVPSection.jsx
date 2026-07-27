@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 import XiloAvatar from '../XiloAvatar';
+import Tooltip from '../Tooltip';
 import { useInstrumentColor } from '../../hooks/useInstrumentColor';
 
 export default function EventRSVPSection({
@@ -564,11 +565,84 @@ export default function EventRSVPSection({
     </>
   );
 
-  const renderAttendanceTable = () => (
-    <CordelCard variant="default" useExtremeBorder={true} className="py-4 px-5 select-none">
-      <h4 className="font-bold text-xs uppercase tracking-wider text-cordel-wood border-b border-dashed border-cordel-master-dark/15 pb-1 mb-3">
-        👥 Tableau de présence / Inscriptions
-      </h4>
+  const getDietaryTooltipText = (userObj) => {
+    if (!userObj) return null;
+    const restrictions = Array.isArray(userObj.dietaryRestrictions) && userObj.dietaryRestrictions.length > 0
+      ? `Régime : ${userObj.dietaryRestrictions.join(', ')}`
+      : null;
+    const allergies = userObj.allergies && userObj.allergies.trim()
+      ? `Allergies : ${userObj.allergies.trim()}`
+      : null;
+    if (!restrictions && !allergies) return null;
+    return [restrictions, allergies].filter(Boolean).join(' | ');
+  };
+
+  const getDietarySummary = (presentUsersList) => {
+    const counts = {};
+    const specificAllergies = [];
+
+    (presentUsersList || []).forEach(u => {
+      if (!u) return;
+      if (Array.isArray(u.dietaryRestrictions)) {
+        u.dietaryRestrictions.forEach(r => {
+          if (r) {
+            counts[r] = (counts[r] || 0) + 1;
+          }
+        });
+      }
+      if (u.allergies && u.allergies.trim()) {
+        const name = `${u.prenom || ''} ${u.nom || ''}`.trim() || 'Membre';
+        specificAllergies.push(`${name} (${u.allergies.trim()})`);
+      }
+    });
+
+    const restrictionParts = Object.entries(counts)
+      .filter(([_, qty]) => qty > 0)
+      .map(([name, qty]) => `${qty} ${name}${qty > 1 ? 's' : ''}`);
+
+    const totalWithDiet = (presentUsersList || []).filter(u => 
+      u && ((Array.isArray(u.dietaryRestrictions) && u.dietaryRestrictions.length > 0) || (u.allergies && u.allergies.trim()))
+    ).length;
+
+    return {
+      hasAny: restrictionParts.length > 0 || specificAllergies.length > 0,
+      restrictionParts,
+      specificAllergies,
+      totalWithDiet
+    };
+  };
+
+  const renderAttendanceTable = () => {
+    const presentUsers = (event.inscriptions || [])
+      .filter(i => i.status === 'present')
+      .map(i => allUsers.find(u => u.id === i.userId) || { id: i.userId, prenom: i.userName });
+    const dietarySummary = isAuthorized ? getDietarySummary(presentUsers) : { hasAny: false };
+
+    return (
+      <CordelCard variant="default" useExtremeBorder={true} className="py-4 px-5 select-none">
+        <h4 className="font-bold text-xs uppercase tracking-wider text-cordel-wood border-b border-dashed border-cordel-master-dark/15 pb-1 mb-3">
+          👥 Tableau de présence / Inscriptions
+        </h4>
+
+        {isAuthorized && dietarySummary.hasAny && (
+          <div className="bg-amber-50/90 dark:bg-amber-950/30 border-2 border-dashed border-amber-500/40 p-2.5 rounded text-left text-xs mb-3 flex flex-col gap-1">
+            <div className="flex items-center gap-1.5 font-black text-amber-900 dark:text-amber-300 uppercase text-[11px]">
+              <span>🍽️</span> Logistique Repas & Spécificités ({dietarySummary.totalWithDiet} membre{dietarySummary.totalWithDiet > 1 ? 's' : ''})
+            </div>
+            <div className="text-[11px] text-amber-900 dark:text-amber-200 leading-snug">
+              {dietarySummary.restrictionParts.length > 0 && (
+                <span className="font-extrabold mr-3">
+                  Régimes : {dietarySummary.restrictionParts.join(', ')}
+                </span>
+              )}
+              {dietarySummary.specificAllergies.length > 0 && (
+                <span className="font-bold text-red-800 dark:text-red-300">
+                  ⚠️ Allergies : {dietarySummary.specificAllergies.join(' | ')}
+                </span>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Grouped by instrument for prestation, repetition, stage, atelier */}
         {(event.type === 'prestation' || event.type === 'repetition' || event.type === 'stage' || event.type === 'atelier') ? (
@@ -600,46 +674,56 @@ export default function EventRSVPSection({
                       })()} :
                     </strong>
                     <div className="flex flex-wrap gap-1.5 items-center pl-4">
-                       {list.map(u => (
-                         <div 
-                           key={u.id || `${u.prenom}-${u.nom}`} 
-                           className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded border border-dashed border-encre-noire/15 text-xs font-semibold text-encre-noire"
-                           style={{ backgroundColor: getColorForInstrument(inst, 'pastel') }}
-                         >
-                           <XiloAvatar src={u.photoURL} name={u.isInvite ? u.prenom : `${u.prenom} ${u.nom}`} size={18} />
-                           <span>
-                             {u.isInvite ? u.prenom : `${u.prenom} ${u.nom}`}
-                             {u.isInvite && (
-                               <span className="ml-1 px-1 py-0.5 text-[8px] font-extrabold uppercase border border-amber-600/30 text-amber-700 bg-amber-50 dark:bg-amber-950/20 dark:text-amber-400 rounded-sm inline-block select-none leading-none">
-                                 [Invité]
-                               </span>
-                             )}
-                           </span>
-                           {isAuthorized && (
-                             u.isInvite ? (
-                               <button
-                                 type="button"
-                                 onClick={() => handleRemoveInviteExterne(u.id)}
-                                 className="text-red-600 hover:text-red-800 text-[10px] font-black cursor-pointer ml-1.5 border-l border-encre-noire/15 pl-1.5"
-                                 title="Retirer cet invité"
-                               >
-                                 🗑️
-                               </button>
-                             ) : (
-                               u.id && (
+                       {list.map(u => {
+                         const dietaryText = isAuthorized ? getDietaryTooltipText(u) : null;
+                         return (
+                           <div 
+                             key={u.id || `${u.prenom}-${u.nom}`} 
+                             className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded border border-dashed border-encre-noire/15 text-xs font-semibold text-encre-noire"
+                             style={{ backgroundColor: getColorForInstrument(inst, 'pastel') }}
+                           >
+                             <XiloAvatar src={u.photoURL} name={u.isInvite ? u.prenom : `${u.prenom} ${u.nom}`} size={18} />
+                             <span className="inline-flex items-center gap-1">
+                               {u.isInvite ? u.prenom : `${u.prenom} ${u.nom}`}
+                               {u.isInvite && (
+                                 <span className="ml-1 px-1 py-0.5 text-[8px] font-extrabold uppercase border border-amber-600/30 text-amber-700 bg-amber-50 dark:bg-amber-950/20 dark:text-amber-400 rounded-sm inline-block select-none leading-none">
+                                   [Invité]
+                                 </span>
+                               )}
+                               {dietaryText && (
+                                 <Tooltip text={dietaryText} position="top">
+                                   <span className="cursor-help text-xs select-none" role="img" aria-label="Préférences alimentaires & allergies">
+                                     🍽️
+                                   </span>
+                                 </Tooltip>
+                               )}
+                             </span>
+                             {isAuthorized && (
+                               u.isInvite ? (
                                  <button
                                    type="button"
-                                   onClick={() => handleManualUnregister(u.id)}
+                                   onClick={() => handleRemoveInviteExterne(u.id)}
                                    className="text-red-600 hover:text-red-800 text-[10px] font-black cursor-pointer ml-1.5 border-l border-encre-noire/15 pl-1.5"
-                                   title="Désinscrire ce membre"
+                                   title="Retirer cet invité"
                                  >
-                                   ✕
+                                   🗑️
                                  </button>
+                               ) : (
+                                 u.id && (
+                                   <button
+                                     type="button"
+                                     onClick={() => handleManualUnregister(u.id)}
+                                     className="text-red-600 hover:text-red-800 text-[10px] font-black cursor-pointer ml-1.5 border-l border-encre-noire/15 pl-1.5"
+                                     title="Désinscrire ce membre"
+                                   >
+                                     ✕
+                                   </button>
+                                 )
                                )
-                             )
-                           )}
-                        </div>
-                      ))}
+                             )}
+                           </div>
+                         );
+                       })}
                     </div>
                   </div>
                 );
@@ -655,6 +739,7 @@ export default function EventRSVPSection({
               <div className="flex flex-wrap gap-1.5 items-center mt-1">
                 {(event.inscriptions || []).filter(i => i.status === 'present').map(i => {
                   const userInfo = allUsers.find(u => u.id === i.userId) || {};
+                  const dietaryText = isAuthorized ? getDietaryTooltipText(userInfo) : null;
                   return (
                     <div 
                       key={i.userId} 
@@ -662,7 +747,16 @@ export default function EventRSVPSection({
                       style={{ backgroundColor: getColorForInstrument(userInfo.instrument, 'pastel') }}
                     >
                       <XiloAvatar src={userInfo.photoURL} name={i.userName} size={18} />
-                      <span>{i.userName}</span>
+                      <span className="inline-flex items-center gap-1">
+                        {i.userName}
+                        {dietaryText && (
+                          <Tooltip text={dietaryText} position="top">
+                            <span className="cursor-help text-xs select-none" role="img" aria-label="Préférences alimentaires & allergies">
+                              🍽️
+                            </span>
+                          </Tooltip>
+                        )}
+                      </span>
                       {isAuthorized && (
                         <button
                           type="button"
@@ -1115,7 +1209,8 @@ export default function EventRSVPSection({
           </div>
         )}
       </CordelCard>
-  );
+    );
+  };
 
   if (mode === 'rsvp') {
     return renderRSVPForm();
