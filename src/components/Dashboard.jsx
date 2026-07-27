@@ -284,20 +284,6 @@ export default function Dashboard({ user, profileData, onNavigateToTrombi, onNav
           <XiloPeople size={14} />
           {t('dashboard.seeTrombi')}
         </CordelButton>
-
-        {sequenceurUrl && (
-          <a 
-            href={sequenceurUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="w-full py-2.5 font-extrabold flex items-center justify-center gap-2 bg-[#d99f4d] text-encre-noire border-2 border-encre-noire rounded-[8px_12px_9px_11px] shadow-[2px_2px_0px_0px_#181716] hover:scale-[1.01] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-105 transition-all text-center text-xs"
-          >
-            <XiloConsole size={14} />
-            {t('dashboard.sequencer')}
-          </a>
-        )}
-
-
       </div>
 
       {/* Widgets Grid (Dynamically Ordered) */}

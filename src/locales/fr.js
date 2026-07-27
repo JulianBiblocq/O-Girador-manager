@@ -273,17 +273,7 @@ export const fr = {
     noPast: "Aucun événement passé dans l'historique.",
     pastEventsCount: "événement(s) passé(s)"
   },
-  widgetAgenda: {
-    title: "Agenda",
-    addBtn: "+ Ajouter",
-    viewCards: "Cartes",
-    viewCardsTooltip: "Affichage en cartes",
-    viewList: "Liste",
-    viewListTooltip: "Affichage en liste",
-    viewGrid: "Grille",
-    viewGridTooltip: "Affichage en calendrier (Grille)",
-    createTitle: "Créer un événement",
-    eventTitleLabel: "Titre de l'événement",
+  widgetAnnonces: {
     title: "Le Mégaphone (Annonces)",
     announceBtn: "+ Annoncer",
     publishTitle: "Publier une annonce",
@@ -304,9 +294,18 @@ export const fr = {
     roleLabel: "ANNONCE",
     bannerTitle: "Activez les notifications",
     bannerText: "Ne ratez aucune info importante de dernière minute (changement d'horaire, urgences...) ! Abonnez-vous pour recevoir les alertes en temps réel.",
-    bannerBtn: "🔔 M'abonner aux alertes"
+    bannerBtn: "🔔 M'abonner aux alertes",
+    deleteTitle: "Supprimer l'annonce"
   },
   widgetAgenda: {
+    title: "Agenda",
+    addBtn: "+ Ajouter",
+    viewCards: "Cartes",
+    viewCardsTooltip: "Affichage en cartes",
+    viewList: "Liste",
+    viewListTooltip: "Affichage en liste",
+    viewGrid: "Grille",
+    viewGridTooltip: "Affichage en calendrier (Grille)",
     title: "Agenda",
     addBtn: "+ Ajouter",
     createTitle: "Créer un événement",
