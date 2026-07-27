@@ -4,6 +4,7 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '../firebase';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
+import CordelAccordion, { CordelAccordionGroup } from './CordelAccordion';
 import ReunionAgendaManager from './ReunionAgendaManager';
 import { useTranslation } from './LanguageContext';
 import { XiloCalendar, XiloMegaphone } from './XiloIcons';
@@ -862,10 +863,10 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
           t={t}
         />
       ) : (
-        <>
+        <CordelAccordionGroup className="flex flex-col gap-3.5">
           {/* Admin Status Panel */}
           {isAuthorized && !isEditingEvent && (
-            <div className="flex items-center justify-between gap-3 p-3 bg-cordel-bg border-2 border-encre-noire rounded-[4px_6px_3px_5px] shadow-[2px_2px_0px_0px_#181716] mb-4 flex-wrap">
+            <div className="flex items-center justify-between gap-3 p-3 bg-cordel-bg border-2 border-encre-noire rounded-[4px_6px_3px_5px] shadow-[2px_2px_0px_0px_#181716] mb-1 flex-wrap">
               <div className="flex flex-col text-left">
                 <span className="text-[9px] font-bold uppercase text-cordel-wood">Statut de l'événement</span>
                 <span className="text-xs font-black uppercase">
@@ -919,398 +920,520 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
             </div>
           )}
 
-          {/* Event General Info Card */}
-          <CordelCard variant={currentVariant} useExtremeBorder={true} className="py-4 relative overflow-hidden">
-            {/* Effet tampon statut événement en biais */}
-            {event.status === 'annule' && (
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10 select-none">
-                <span 
-                  style={{ transform: 'rotate(-15deg)' }}
-                  className="text-red-600 dark:text-red-500 border-[3.5px] border-red-600 dark:border-red-500 px-6 py-2 rounded-lg font-black text-xl tracking-widest uppercase opacity-85 bg-white/10 dark:bg-black/10 backdrop-blur-[1px]"
-                >
-                  ANNULÉ
-                </span>
-              </div>
-            )}
-            {event.status === 'a_confirmer' && (
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10 select-none">
-                <span 
-                  style={{ transform: 'rotate(-15deg)' }}
-                  className="text-orange-600 dark:text-orange-400 border-[3.5px] border-orange-600 dark:border-orange-400 px-6 py-2 rounded-lg font-black text-xl tracking-widest uppercase opacity-85 bg-white/10 dark:bg-black/10 backdrop-blur-[1px]"
-                >
-                  À CONFIRMER
-                </span>
-              </div>
-            )}
-
-            <div className="flex justify-between items-start px-4">
-              <span className="text-[8px] uppercase tracking-widest font-black opacity-60">
-                {event.type}
-              </span>
+          {/* ACCORDION 1: Event General Info (Déplié par défaut) */}
+          <CordelAccordion
+            title={event.titre || "Détails de l'événement"}
+            subtitle={`${(event.type || 'événement').toUpperCase()} • ${formattedDate}`}
+            icon="📅"
+            defaultOpen={true}
+          >
+            <div className="relative overflow-hidden">
+              {/* Effet tampon statut événement en biais */}
               {event.status === 'annule' && (
-                <span className="text-[9px] font-black uppercase px-2 py-0.5 bg-red-100 text-red-700 border border-red-300 rounded tracking-wider select-none shrink-0 leading-none">
-                  🚫 Annulé
-                </span>
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10 select-none">
+                  <span 
+                    style={{ transform: 'rotate(-15deg)' }}
+                    className="text-red-600 dark:text-red-500 border-[3.5px] border-red-600 dark:border-red-500 px-6 py-2 rounded-lg font-black text-xl tracking-widest uppercase opacity-85 bg-white/10 dark:bg-black/10 backdrop-blur-[1px]"
+                  >
+                    ANNULÉ
+                  </span>
+                </div>
               )}
               {event.status === 'a_confirmer' && (
-                <span className="text-[9px] font-black uppercase px-2 py-0.5 bg-orange-100 text-orange-700 border border-orange-300 rounded tracking-wider select-none shrink-0 leading-none">
-                  📙 À confirmer
-                </span>
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10 select-none">
+                  <span 
+                    style={{ transform: 'rotate(-15deg)' }}
+                    className="text-orange-600 dark:text-orange-400 border-[3.5px] border-orange-600 dark:border-orange-400 px-6 py-2 rounded-lg font-black text-xl tracking-widest uppercase opacity-85 bg-white/10 dark:bg-black/10 backdrop-blur-[1px]"
+                  >
+                    À CONFIRMER
+                  </span>
+                </div>
               )}
-            </div>
-            <h3 className="font-bold text-lg leading-tight mt-0.5 mb-2 px-4">{event.titre}</h3>
-            <p className="text-xs font-semibold leading-relaxed px-4">
-              {hasDateFin ? (
-                <span>📅 Du {formattedDate} {formattedTime ? `à ${formattedTime}` : ''} au {formattedDateFin} {formattedTimeFin ? `à ${formattedTimeFin}` : ''}</span>
-              ) : (
-                <span>📅 {formattedDate} {formattedTime ? `à ${formattedTime}` : ''}</span>
-              )}
-            </p>
 
-            {(event.includesPercussion || event.includesDance) && (
-              <div className="flex gap-2 flex-wrap mt-2 px-4">
-                {event.includesPercussion && (
-                  <span className="inline-flex items-center gap-1.5 bg-orange-100 dark:bg-orange-950/40 text-orange-800 dark:text-orange-300 text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded border border-orange-200 dark:border-orange-900/50 select-none" title="Percussion">
-                    <img src="/icones/alfaia.svg" alt="Percussion" className="w-3.5 h-3.5 object-contain dark:invert inline-block" />
-                    <span className="hidden md:inline">{translate('eventDetails.includesPercussion', "Percussion")}</span>
+              <div className="flex justify-between items-start">
+                <span className="text-[8px] uppercase tracking-widest font-black opacity-60">
+                  {event.type}
+                </span>
+                {event.status === 'annule' && (
+                  <span className="text-[9px] font-black uppercase px-2 py-0.5 bg-red-100 text-red-700 border border-red-300 rounded tracking-wider select-none shrink-0 leading-none">
+                    🚫 Annulé
                   </span>
                 )}
-                {event.includesDance && (
-                  <span className="inline-flex items-center gap-1 bg-pink-100 dark:bg-pink-950/40 text-pink-800 dark:text-pink-300 text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded border border-pink-200 dark:border-pink-900/50 select-none" title="Danse">
-                    💃 <span className="hidden md:inline">{translate('eventDetails.includesDance', "Danse")}</span>
+                {event.status === 'a_confirmer' && (
+                  <span className="text-[9px] font-black uppercase px-2 py-0.5 bg-orange-100 text-orange-700 border border-orange-300 rounded tracking-wider select-none shrink-0 leading-none">
+                    📙 À confirmer
                   </span>
                 )}
               </div>
-            )}
+              <h3 className="font-bold text-lg leading-tight mt-0.5 mb-2">{event.titre}</h3>
+              <p className="text-xs font-semibold leading-relaxed">
+                {hasDateFin ? (
+                  <span>📅 Du {formattedDate} {formattedTime ? `à ${formattedTime}` : ''} au {formattedDateFin} {formattedTimeFin ? `à ${formattedTimeFin}` : ''}</span>
+                ) : (
+                  <span>📅 {formattedDate} {formattedTime ? `à ${formattedTime}` : ''}</span>
+                )}
+              </p>
 
-            <div className="mt-3 pt-2.5 border-t border-dashed border-encre-noire/15 text-xs flex flex-col gap-1 font-semibold leading-relaxed px-4">
-              {currentConfig.agendaEnableInscriptions && event.dateLimiteInscription && (
-                <span className={isRegistrationDeadlinePassed ? "text-red-600 dark:text-red-400 font-extrabold" : "text-amber-700 dark:text-amber-400"}>
-                  🔒 <strong>Date limite d'inscription :</strong> {formattedDateLimite} {formattedTimeLimite ? `à ${formattedTimeLimite}` : ''}
-                  {isRegistrationDeadlinePassed && " (Closes)"}
-                </span>
-              )}
-              {event.tenueRequise && (
-                <span className="flex items-center gap-1.5 text-cordel-wood font-extrabold bg-amber-50/50 dark:bg-black/25 px-2 py-1.5 rounded border border-dashed border-cordel-master-dark/15 select-none mt-1 w-fit">
-                  👕 <strong>Tenue requise :</strong> {event.tenueRequise}
-                </span>
-              )}
-              {currentConfig.agendaEnableAdresse && event.lieu && (
-                <span>📍 <strong>Lieu :</strong> {event.lieu}</span>
-              )}
-              {event.type === 'prestation' && event.horairesPassages && (
-                <span>⏱️ <strong>Horaires de passage :</strong> {event.horairesPassages}</span>
-              )}
-              {currentConfig.agendaEnableCarpool && (event.type === 'prestation' || event.type === 'stage' || event.type === 'atelier') && event.horaireCovoiturage && (
-                <span>🚗 <strong>Horaire de convoi :</strong> {event.horaireCovoiturage}</span>
-              )}
-              {(event.type === 'prestation' || event.type === 'stage' || event.type === 'repetition' || event.type === 'atelier') && (
-                <span>🎯 <strong>Niveau requis (Musique) :</strong> {
-                  event.niveauRequis === 'aucun' ? translate('widgetAgenda.levelNone', 'Pas de musicien') :
-                  event.niveauRequis === 'debutant' ? `🌱 ${translate('widgetAgenda.levelDeb', 'Niveau débutant')}` :
-                  event.niveauRequis === 'confirme' ? `🏆 ${translate('widgetAgenda.levelConfirm', 'Niveau confirmé')}` :
-                  `👥 ${translate('widgetAgenda.levelAll', 'Tout le monde')}`
-                }</span>
-              )}
-              {(event.type === 'prestation' || event.type === 'stage' || event.type === 'repetition' || event.type === 'atelier') && (
-                <span>💃 <strong>Danse (Niveau requis) :</strong> {
-                  event.niveauDanseRequis === 'debutant' ? `🌱 ${translate('widgetAgenda.danceLevelDeb', 'Niveau débutant')}` :
-                  event.niveauDanseRequis === 'confirme' ? `🏆 ${translate('widgetAgenda.danceLevelConfirm', 'Niveau confirmé')}` :
-                  event.niveauDanseRequis === 'tous' ? `👥 ${translate('widgetAgenda.danceLevelAll', 'Tout le monde')}` :
-                  `❌ ${translate('widgetAgenda.danceLevelNone', 'Pas de danse')}`
-                }</span>
-              )}
-              {currentConfig.agendaEnableOrdreDuJour && event.lienDocument && (
-                <span className="truncate">
-                  📄 <strong>Ordre du jour :</strong> <a href={event.lienDocument} target="_blank" rel="noopener noreferrer" className="text-cordel-wood hover:underline">{event.lienDocument}</a>
-                </span>
-              )}
-              {currentConfig.agendaEnableUrl && event.lienSocial && (
-                <span className="truncate">
-                  🔗 <strong>Lien social / Externe :</strong> <a href={event.lienSocial} target="_blank" rel="noopener noreferrer" className="text-cordel-wood hover:underline">{event.lienSocial}</a>
-                </span>
-              )}
-              {currentConfig.agendaEnableImage && event.imageUrl && (
-                <div className="mt-3.5 border-2 border-encre-noire rounded-[8px] overflow-hidden shadow-[2px_2px_0px_0px_rgba(26,26,26,0.15)] bg-white max-h-[300px] min-h-[200px] flex items-center justify-center">
-                  <img src={event.imageUrl} alt={event.titre} width={400} height={200} className="max-w-full max-h-[300px] object-contain" />
-                </div>
-              )}
-              {currentConfig.agendaEnableAdresse && (event.lieu || (event.latitude && event.longitude)) && (
-                <div className="mt-3.5 flex flex-col gap-1">
-                  {event.latitude && event.longitude && (
-                    <span className="text-[9.5px] font-bold text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/20 px-2 py-0.5 rounded border border-amber-300/40 w-fit select-none">
-                      📌 Position GPS exacte : {Number(event.latitude).toFixed(5)}, {Number(event.longitude).toFixed(5)}
+              {(event.includesPercussion || event.includesDance) && (
+                <div className="flex gap-2 flex-wrap mt-2">
+                  {event.includesPercussion && (
+                    <span className="inline-flex items-center gap-1.5 bg-orange-100 dark:bg-orange-950/40 text-orange-800 dark:text-orange-300 text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded border border-orange-200 dark:border-orange-900/50 select-none" title="Percussion">
+                      <img src="/icones/alfaia.svg" alt="Percussion" className="w-3.5 h-3.5 object-contain dark:invert inline-block" />
+                      <span className="hidden md:inline">{translate('eventDetails.includesPercussion', "Percussion")}</span>
                     </span>
                   )}
-                  <div className="border-2 border-encre-noire rounded-[8px] overflow-hidden shadow-[2px_2px_0px_0px_rgba(26,26,26,0.15)] bg-white h-[200px]">
-                    <iframe
-                      title="Google Maps"
-                      width="100%"
-                      height="100%"
-                      frameBorder="0"
-                      src={`https://maps.google.com/maps?q=${encodeURIComponent(event.latitude && event.longitude ? `${event.latitude},${event.longitude}` : event.lieu)}&t=&z=16&ie=UTF8&iwloc=&output=embed`}
-                      allowFullScreen
-                    />
-                  </div>
+                  {event.includesDance && (
+                    <span className="inline-flex items-center gap-1 bg-pink-100 dark:bg-pink-950/40 text-pink-800 dark:text-pink-300 text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded border border-pink-200 dark:border-pink-900/50 select-none" title="Danse">
+                      💃 <span className="hidden md:inline">{translate('eventDetails.includesDance', "Danse")}</span>
+                    </span>
+                  )}
                 </div>
               )}
-              {event.description && (
-                <div className="mt-3.5 pt-3 border-t border-dashed border-encre-noire/15 whitespace-pre-line text-neutral-700 dark:text-neutral-300">
-                  <p className="font-extrabold text-cordel-wood mb-1">📝 {translate('common.description', "Description")} :</p>
-                  <p>{event.description}</p>
-                </div>
-              )}
-            </div>
-          </CordelCard>
 
-          {isAuthorized && agendaEnableFinance && ((event.montantRecette && event.montantRecette > 0) || (event.montantDepense && event.montantDepense > 0)) && (
-            <CordelCard variant="default" useExtremeBorder={true} className="py-4 mt-4 text-left border-dashed border-cordel-master-dark/40">
-              <div className="px-4">
-                <h4 className="text-xs uppercase tracking-widest font-black text-cordel-wood mb-3 flex items-center gap-1.5 font-sans">
-                  💰 Bilan financier de l'événement (Admin)
-                </h4>
-                
-                {((Array.isArray(event.budgetRecettes) && event.budgetRecettes.length > 0) || 
-                  (Array.isArray(event.budgetDepenses) && event.budgetDepenses.length > 0)) ? (
-                  <div className="flex flex-col gap-4">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      {/* Recettes */}
-                      <div className="flex flex-col gap-1 bg-green-50/50 dark:bg-green-950/10 p-2.5 border border-dashed border-green-700/10 rounded">
-                        <span className="text-[10px] uppercase font-black text-green-800 mb-1">📈 Recettes</span>
-                        <div className="flex flex-col gap-1 text-[11px]">
-                          {(!event.budgetRecettes || event.budgetRecettes.length === 0) ? (
-                            <span className="italic opacity-60">Aucune recette renseignée.</span>
-                          ) : (
-                            event.budgetRecettes.map((item, idx) => (
-                              <div key={item.id || idx} className="flex justify-between py-0.5 border-b border-dashed border-encre-noire/5">
-                                <span className="font-semibold text-neutral-700">{item.intitule || 'Recette'}</span>
-                                <span className="font-bold text-green-700">{(parseFloat(item.montant) || 0).toFixed(2)} €</span>
-                              </div>
-                            ))
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Dépenses */}
-                      <div className="flex flex-col gap-1 bg-red-50/50 dark:bg-red-950/10 p-2.5 border border-dashed border-red-700/10 rounded">
-                        <span className="text-[10px] uppercase font-black text-red-800 mb-1">📉 Dépenses</span>
-                        <div className="flex flex-col gap-1 text-[11px]">
-                          {(!event.budgetDepenses || event.budgetDepenses.length === 0) ? (
-                            <span className="italic opacity-60">Aucune dépense renseignée.</span>
-                          ) : (
-                            event.budgetDepenses.map((item, idx) => (
-                              <div key={item.id || idx} className="flex justify-between py-0.5 border-b border-dashed border-encre-noire/5">
-                                <span className="font-semibold text-neutral-700">{item.intitule || 'Dépense'}</span>
-                                <span className="font-bold text-red-700">{(parseFloat(item.montant) || 0).toFixed(2)} €</span>
-                              </div>
-                            ))
-                          )}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Synthèse */}
-                    <div className="pt-2.5 border-t border-dashed border-encre-noire/15 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-                      <div className="flex gap-4 text-[11px] font-bold">
-                        <div>
-                          <span className="opacity-70">Total Recettes : </span>
-                          <span className="text-green-700 font-extrabold">{(event.montantRecette || 0).toFixed(2)} €</span>
-                        </div>
-                        <div>
-                          <span className="opacity-70">Total Dépenses : </span>
-                          <span className="text-red-700 font-extrabold">{(event.montantDepense || 0).toFixed(2)} €</span>
-                        </div>
-                      </div>
-                      <div className="text-[11px] font-bold">
-                        <span>Solde Net : </span>
-                        <span className={`font-black px-2 py-0.5 rounded border border-encre-noire/10 ${((event.montantRecette || 0) - (event.montantDepense || 0)) >= 0 ? 'bg-green-100 text-green-800 dark:bg-green-950/30' : 'bg-red-100 text-red-800 dark:bg-red-950/30'}`}>
-                          {((event.montantRecette || 0) - (event.montantDepense || 0)) >= 0 ? '+' : ''}{((event.montantRecette || 0) - (event.montantDepense || 0)).toFixed(2)} €
-                        </span>
-                      </div>
-                    </div>
+              <div className="mt-3 pt-2.5 border-t border-dashed border-encre-noire/15 text-xs flex flex-col gap-1 font-semibold leading-relaxed">
+                {currentConfig.agendaEnableInscriptions && event.dateLimiteInscription && (
+                  <span className={isRegistrationDeadlinePassed ? "text-red-600 dark:text-red-400 font-extrabold" : "text-amber-700 dark:text-amber-400"}>
+                    🔒 <strong>Date limite d'inscription :</strong> {formattedDateLimite} {formattedTimeLimite ? `à ${formattedTimeLimite}` : ''}
+                    {isRegistrationDeadlinePassed && " (Closes)"}
+                  </span>
+                )}
+                {event.tenueRequise && (
+                  <span className="flex items-center gap-1.5 text-cordel-wood font-extrabold bg-amber-50/50 dark:bg-black/25 px-2 py-1.5 rounded border border-dashed border-cordel-master-dark/15 select-none mt-1 w-fit">
+                    👕 <strong>Tenue requise :</strong> {event.tenueRequise}
+                  </span>
+                )}
+                {currentConfig.agendaEnableAdresse && event.lieu && (
+                  <span>📍 <strong>Lieu :</strong> {event.lieu}</span>
+                )}
+                {event.type === 'prestation' && event.horairesPassages && (
+                  <span>⏱️ <strong>Horaires de passage :</strong> {event.horairesPassages}</span>
+                )}
+                {currentConfig.agendaEnableCarpool && (event.type === 'prestation' || event.type === 'stage' || event.type === 'atelier') && event.horaireCovoiturage && (
+                  <span>🚗 <strong>Horaire de convoi :</strong> {event.horaireCovoiturage}</span>
+                )}
+                {(event.type === 'prestation' || event.type === 'stage' || event.type === 'repetition' || event.type === 'atelier') && (
+                  <span>🎯 <strong>Niveau requis (Musique) :</strong> {
+                    event.niveauRequis === 'aucun' ? translate('widgetAgenda.levelNone', 'Pas de musicien') :
+                    event.niveauRequis === 'debutant' ? `🌱 ${translate('widgetAgenda.levelDeb', 'Niveau débutant')}` :
+                    event.niveauRequis === 'confirme' ? `🏆 ${translate('widgetAgenda.levelConfirm', 'Niveau confirmé')}` :
+                    `👥 ${translate('widgetAgenda.levelAll', 'Tout le monde')}`
+                  }</span>
+                )}
+                {(event.type === 'prestation' || event.type === 'stage' || event.type === 'repetition' || event.type === 'atelier') && (
+                  <span>💃 <strong>Danse (Niveau requis) :</strong> {
+                    event.niveauDanseRequis === 'debutant' ? `🌱 ${translate('widgetAgenda.danceLevelDeb', 'Niveau débutant')}` :
+                    event.niveauDanseRequis === 'confirme' ? `🏆 ${translate('widgetAgenda.danceLevelConfirm', 'Niveau confirmé')}` :
+                    event.niveauDanseRequis === 'tous' ? `👥 ${translate('widgetAgenda.danceLevelAll', 'Tout le monde')}` :
+                    `❌ ${translate('widgetAgenda.danceLevelNone', 'Pas de danse')}`
+                  }</span>
+                )}
+                {currentConfig.agendaEnableOrdreDuJour && event.lienDocument && (
+                  <span className="truncate">
+                    📄 <strong>Ordre du jour :</strong> <a href={event.lienDocument} target="_blank" rel="noopener noreferrer" className="text-cordel-wood hover:underline">{event.lienDocument}</a>
+                  </span>
+                )}
+                {currentConfig.agendaEnableUrl && event.lienSocial && (
+                  <span className="truncate">
+                    🔗 <strong>Lien social / Externe :</strong> <a href={event.lienSocial} target="_blank" rel="noopener noreferrer" className="text-cordel-wood hover:underline">{event.lienSocial}</a>
+                  </span>
+                )}
+                {currentConfig.agendaEnableImage && event.imageUrl && (
+                  <div className="mt-3.5 border-2 border-encre-noire rounded-[8px] overflow-hidden shadow-[2px_2px_0px_0px_rgba(26,26,26,0.15)] bg-white max-h-[300px] min-h-[200px] flex items-center justify-center">
+                    <img src={event.imageUrl} alt={event.titre} width={400} height={200} className="max-w-full max-h-[300px] object-contain" />
                   </div>
-                ) : (
-                  <>
-                    <div className="grid grid-cols-2 gap-4 mt-2">
-                      {event.montantRecette > 0 && (
-                        <div className="flex flex-col">
-                          <span className="text-[9px] uppercase font-bold text-cordel-master-dark">Revenus de l'événement</span>
-                          <span className="text-sm font-black text-green-700">{event.montantRecette} €</span>
-                        </div>
-                      )}
-                      {event.montantDepense > 0 && (
-                        <div className="flex flex-col">
-                          <span className="text-[9px] uppercase font-bold text-cordel-master-dark">Coûts de l'événement</span>
-                          <span className="text-sm font-black text-red-700">{event.montantDepense} €</span>
-                        </div>
-                      )}
-                    </div>
-                    {event.montantRecette > 0 && event.montantDepense > 0 && (
-                      <div className="mt-3 pt-2.5 border-t border-dashed border-encre-noire/15 flex items-center justify-between">
-                        <span className="text-[9px] uppercase font-bold text-cordel-master-dark">Bilan net</span>
-                        <span className={`text-xs font-black ${event.montantRecette - event.montantDepense >= 0 ? 'text-green-800' : 'text-red-800'}`}>
-                          {event.montantRecette - event.montantDepense >= 0 ? '+' : ''}{event.montantRecette - event.montantDepense} €
-                        </span>
-                      </div>
+                )}
+                {currentConfig.agendaEnableAdresse && (event.lieu || (event.latitude && event.longitude)) && (
+                  <div className="mt-3.5 flex flex-col gap-1">
+                    {event.latitude && event.longitude && (
+                      <span className="text-[9.5px] font-bold text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/20 px-2 py-0.5 rounded border border-amber-300/40 w-fit select-none">
+                        📌 Position GPS exacte : {Number(event.latitude).toFixed(5)}, {Number(event.longitude).toFixed(5)}
+                      </span>
                     )}
-                  </>
+                    <div className="border-2 border-encre-noire rounded-[8px] overflow-hidden shadow-[2px_2px_0px_0px_rgba(26,26,26,0.15)] bg-white h-[200px]">
+                      <iframe
+                        title="Google Maps"
+                        width="100%"
+                        height="100%"
+                        frameBorder="0"
+                        src={`https://maps.google.com/maps?q=${encodeURIComponent(event.latitude && event.longitude ? `${event.latitude},${event.longitude}` : event.lieu)}&t=&z=16&ie=UTF8&iwloc=&output=embed`}
+                        allowFullScreen
+                      />
+                    </div>
+                  </div>
+                )}
+                {event.description && (
+                  <div className="mt-3.5 pt-3 border-t border-dashed border-encre-noire/15 whitespace-pre-line text-neutral-700 dark:text-neutral-300">
+                    <p className="font-extrabold text-cordel-wood mb-1">📝 {translate('common.description', "Description")} :</p>
+                    <p>{event.description}</p>
+                  </div>
                 )}
               </div>
-            </CordelCard>
-          )}
+            </div>
+          </CordelAccordion>
 
+          {/* ACCORDION 2: Votre Présence (Déplié par défaut) */}
           {currentConfig.agendaEnableInscriptions && (
-            <EventRSVPSection
-              event={event}
-              user={user}
-              profileData={profileData}
-              status={status}
-              saving={saving}
-              isPrestationRestricted={isPrestationRestricted}
-              existingResponse={existingResponse}
-              instrumentChoisi={instrumentChoisi}
-              setInstrumentChoisi={setInstrumentChoisi}
-              isInstrumentLocked={isInstrumentLocked}
-              transport={transport}
-              demandeRemboursementKm={demandeRemboursementKm}
-              isCalendarMenuOpen={isCalendarMenuOpen}
-              setIsCalendarMenuOpen={setIsCalendarMenuOpen}
-              handleStatusChange={handleStatusChange}
-              handleSave={handleSave}
-              handleAddToGoogleCalendar={handleAddToGoogleCalendar}
-              handleDownloadIcs={handleDownloadIcs}
-              getMemberInstrumentOptions={getMemberInstrumentOptions}
-              getPupitreName={getPupitreName}
-              presentsByInstrument={presentsByInstrument}
-              allUsers={allUsers}
-              isAuthorized={isAuthorized}
-              handleValidatePending={handleValidatePending}
-              handleUpdateMemberInstrument={handleUpdateMemberInstrument}
-              isManualRegisterOpen={isManualRegisterOpen}
-              setIsManualRegisterOpen={setIsManualRegisterOpen}
-              unregisteredUsers={unregisteredUsers}
-              selectedManualUserId={selectedManualUserId}
-              setSelectedManualUserId={setSelectedManualUserId}
-              selectedManualInstrument={selectedManualInstrument}
-              setSelectedManualInstrument={setSelectedManualInstrument}
-              savingManualRegistration={savingManualRegistration}
-              handleManualRegister={handleManualRegister}
-              handleManualUnregister={handleManualUnregister}
-              isRegistrationDeadlinePassed={isRegistrationDeadlinePassed}
-              t={t}
-              agendaRequireInstrument={currentConfig.agendaRequireInstrument}
-              agendaEnableMaybeStatus={currentConfig.agendaEnableMaybeStatus}
-              handleAddInviteExterne={handleAddInviteExterne}
-              handleRemoveInviteExterne={handleRemoveInviteExterne}
-              instrumentsDisponibles={instrumentsDisponibles}
-              besoinTransportInstrument={besoinTransportInstrument}
-              setBesoinTransportInstrument={setBesoinTransportInstrument}
-              enableCarpool={event.enableCarpool !== false}
-              dependents={dependents}
-              familyMembers={familyMembers}
-              familyResponses={familyResponses}
-              handleToggleFamilyMemberSelection={handleToggleFamilyMemberSelection}
-              handleFamilyMemberStatusChange={handleFamilyMemberStatusChange}
-              handleFamilyMemberInstrumentChange={handleFamilyMemberInstrumentChange}
-              handleFamilySave={handleFamilySave}
-            />
+            <CordelAccordion
+              title="Votre présence & Inscription"
+              subtitle={existingResponse ? `Statut actuel : ${existingResponse.status === 'present' ? '✅ Présent' : existingResponse.status === 'absent' ? '❌ Absent' : '⏳ À confirmer'}` : "Veuillez enregistrer votre statut de présence"}
+              icon="🎟️"
+              defaultOpen={true}
+            >
+              <EventRSVPSection
+                event={event}
+                user={user}
+                profileData={profileData}
+                status={status}
+                saving={saving}
+                isPrestationRestricted={isPrestationRestricted}
+                existingResponse={existingResponse}
+                instrumentChoisi={instrumentChoisi}
+                setInstrumentChoisi={setInstrumentChoisi}
+                isInstrumentLocked={isInstrumentLocked}
+                transport={transport}
+                demandeRemboursementKm={demandeRemboursementKm}
+                isCalendarMenuOpen={isCalendarMenuOpen}
+                setIsCalendarMenuOpen={setIsCalendarMenuOpen}
+                handleStatusChange={handleStatusChange}
+                handleSave={handleSave}
+                handleAddToGoogleCalendar={handleAddToGoogleCalendar}
+                handleDownloadIcs={handleDownloadIcs}
+                getMemberInstrumentOptions={getMemberInstrumentOptions}
+                getPupitreName={getPupitreName}
+                presentsByInstrument={presentsByInstrument}
+                allUsers={allUsers}
+                isAuthorized={isAuthorized}
+                handleValidatePending={handleValidatePending}
+                handleUpdateMemberInstrument={handleUpdateMemberInstrument}
+                isManualRegisterOpen={isManualRegisterOpen}
+                setIsManualRegisterOpen={setIsManualRegisterOpen}
+                unregisteredUsers={unregisteredUsers}
+                selectedManualUserId={selectedManualUserId}
+                setSelectedManualUserId={setSelectedManualUserId}
+                selectedManualInstrument={selectedManualInstrument}
+                setSelectedManualInstrument={setSelectedManualInstrument}
+                savingManualRegistration={savingManualRegistration}
+                handleManualRegister={handleManualRegister}
+                handleManualUnregister={handleManualUnregister}
+                isRegistrationDeadlinePassed={isRegistrationDeadlinePassed}
+                t={t}
+                agendaRequireInstrument={currentConfig.agendaRequireInstrument}
+                agendaEnableMaybeStatus={currentConfig.agendaEnableMaybeStatus}
+                handleAddInviteExterne={handleAddInviteExterne}
+                handleRemoveInviteExterne={handleRemoveInviteExterne}
+                instrumentsDisponibles={instrumentsDisponibles}
+                besoinTransportInstrument={besoinTransportInstrument}
+                setBesoinTransportInstrument={setBesoinTransportInstrument}
+                enableCarpool={event.enableCarpool !== false}
+                dependents={dependents}
+                familyMembers={familyMembers}
+                familyResponses={familyResponses}
+                handleToggleFamilyMemberSelection={handleToggleFamilyMemberSelection}
+                handleFamilyMemberStatusChange={handleFamilyMemberStatusChange}
+                handleFamilyMemberInstrumentChange={handleFamilyMemberInstrumentChange}
+                handleFamilySave={handleFamilySave}
+                mode="rsvp"
+              />
+            </CordelAccordion>
           )}
 
+          {/* ACCORDION 3: Tableau de présence / Inscriptions (Replié par défaut) */}
+          {currentConfig.agendaEnableInscriptions && (
+            <CordelAccordion
+              title="Tableau de présence / Inscriptions"
+              subtitle="Liste des membres inscrits et des invités par pupitre"
+              icon="👥"
+              badge={(() => {
+                const count = (event.inscriptions || []).filter(ins => ins.status === 'present').length + (event.invitesExternes || []).length;
+                return count > 0 ? `${count} présent${count > 1 ? 's' : ''}` : null;
+              })()}
+              defaultOpen={false}
+            >
+              <EventRSVPSection
+                event={event}
+                user={user}
+                profileData={profileData}
+                status={status}
+                saving={saving}
+                isPrestationRestricted={isPrestationRestricted}
+                existingResponse={existingResponse}
+                instrumentChoisi={instrumentChoisi}
+                setInstrumentChoisi={setInstrumentChoisi}
+                isInstrumentLocked={isInstrumentLocked}
+                transport={transport}
+                demandeRemboursementKm={demandeRemboursementKm}
+                isCalendarMenuOpen={isCalendarMenuOpen}
+                setIsCalendarMenuOpen={setIsCalendarMenuOpen}
+                handleStatusChange={handleStatusChange}
+                handleSave={handleSave}
+                handleAddToGoogleCalendar={handleAddToGoogleCalendar}
+                handleDownloadIcs={handleDownloadIcs}
+                getMemberInstrumentOptions={getMemberInstrumentOptions}
+                getPupitreName={getPupitreName}
+                presentsByInstrument={presentsByInstrument}
+                allUsers={allUsers}
+                isAuthorized={isAuthorized}
+                handleValidatePending={handleValidatePending}
+                handleUpdateMemberInstrument={handleUpdateMemberInstrument}
+                isManualRegisterOpen={isManualRegisterOpen}
+                setIsManualRegisterOpen={setIsManualRegisterOpen}
+                unregisteredUsers={unregisteredUsers}
+                selectedManualUserId={selectedManualUserId}
+                setSelectedManualUserId={setSelectedManualUserId}
+                selectedManualInstrument={selectedManualInstrument}
+                setSelectedManualInstrument={setSelectedManualInstrument}
+                savingManualRegistration={savingManualRegistration}
+                handleManualRegister={handleManualRegister}
+                handleManualUnregister={handleManualUnregister}
+                isRegistrationDeadlinePassed={isRegistrationDeadlinePassed}
+                t={t}
+                agendaRequireInstrument={currentConfig.agendaRequireInstrument}
+                agendaEnableMaybeStatus={currentConfig.agendaEnableMaybeStatus}
+                handleAddInviteExterne={handleAddInviteExterne}
+                handleRemoveInviteExterne={handleRemoveInviteExterne}
+                instrumentsDisponibles={instrumentsDisponibles}
+                besoinTransportInstrument={besoinTransportInstrument}
+                setBesoinTransportInstrument={setBesoinTransportInstrument}
+                enableCarpool={event.enableCarpool !== false}
+                dependents={dependents}
+                familyMembers={familyMembers}
+                familyResponses={familyResponses}
+                handleToggleFamilyMemberSelection={handleToggleFamilyMemberSelection}
+                handleFamilyMemberStatusChange={handleFamilyMemberStatusChange}
+                handleFamilyMemberInstrumentChange={handleFamilyMemberInstrumentChange}
+                handleFamilySave={handleFamilySave}
+                mode="attendance"
+              />
+            </CordelAccordion>
+          )}
+
+          {/* ACCORDION 4: Bilan Financier Admin (Replié par défaut) */}
+          {isAuthorized && agendaEnableFinance && ((event.montantRecette && event.montantRecette > 0) || (event.montantDepense && event.montantDepense > 0)) && (
+            <CordelAccordion
+              title="Bilan financier de l'événement (Admin)"
+              subtitle="Synthèse des recettes, dépenses et solde net"
+              icon="💰"
+              defaultOpen={false}
+            >
+              {((Array.isArray(event.budgetRecettes) && event.budgetRecettes.length > 0) || 
+                (Array.isArray(event.budgetDepenses) && event.budgetDepenses.length > 0)) ? (
+                <div className="flex flex-col gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {/* Recettes */}
+                    <div className="flex flex-col gap-1 bg-green-50/50 dark:bg-green-950/10 p-2.5 border border-dashed border-green-700/10 rounded">
+                      <span className="text-[10px] uppercase font-black text-green-800 mb-1">📈 Recettes</span>
+                      <div className="flex flex-col gap-1 text-[11px]">
+                        {(!event.budgetRecettes || event.budgetRecettes.length === 0) ? (
+                          <span className="italic opacity-60">Aucune recette renseignée.</span>
+                        ) : (
+                          event.budgetRecettes.map((item, idx) => (
+                            <div key={item.id || idx} className="flex justify-between py-0.5 border-b border-dashed border-encre-noire/5">
+                              <span className="font-semibold text-neutral-700">{item.intitule || 'Recette'}</span>
+                              <span className="font-bold text-green-700">{(parseFloat(item.montant) || 0).toFixed(2)} €</span>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Dépenses */}
+                    <div className="flex flex-col gap-1 bg-red-50/50 dark:bg-red-950/10 p-2.5 border border-dashed border-red-700/10 rounded">
+                      <span className="text-[10px] uppercase font-black text-red-800 mb-1">📉 Dépenses</span>
+                      <div className="flex flex-col gap-1 text-[11px]">
+                        {(!event.budgetDepenses || event.budgetDepenses.length === 0) ? (
+                          <span className="italic opacity-60">Aucune dépense renseignée.</span>
+                        ) : (
+                          event.budgetDepenses.map((item, idx) => (
+                            <div key={item.id || idx} className="flex justify-between py-0.5 border-b border-dashed border-encre-noire/5">
+                              <span className="font-semibold text-neutral-700">{item.intitule || 'Dépense'}</span>
+                              <span className="font-bold text-red-700">{(parseFloat(item.montant) || 0).toFixed(2)} €</span>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Synthèse */}
+                  <div className="pt-2.5 border-t border-dashed border-encre-noire/15 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                    <div className="flex gap-4 text-[11px] font-bold">
+                      <div>
+                        <span className="opacity-70">Total Recettes : </span>
+                        <span className="text-green-700 font-extrabold">{(event.montantRecette || 0).toFixed(2)} €</span>
+                      </div>
+                      <div>
+                        <span className="opacity-70">Total Dépenses : </span>
+                        <span className="text-red-700 font-extrabold">{(event.montantDepense || 0).toFixed(2)} €</span>
+                      </div>
+                    </div>
+                    <div className="text-[11px] font-bold">
+                      <span>Solde Net : </span>
+                      <span className={`font-black px-2 py-0.5 rounded border border-encre-noire/10 ${((event.montantRecette || 0) - (event.montantDepense || 0)) >= 0 ? 'bg-green-100 text-green-800 dark:bg-green-950/30' : 'bg-red-100 text-red-800 dark:bg-red-950/30'}`}>
+                        {((event.montantRecette || 0) - (event.montantDepense || 0)) >= 0 ? '+' : ''}{((event.montantRecette || 0) - (event.montantDepense || 0)).toFixed(2)} €
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div className="grid grid-cols-2 gap-4 mt-2">
+                    {event.montantRecette > 0 && (
+                      <div className="flex flex-col">
+                        <span className="text-[9px] uppercase font-bold text-cordel-master-dark">Revenus de l'événement</span>
+                        <span className="text-sm font-black text-green-700">{event.montantRecette} €</span>
+                      </div>
+                    )}
+                    {event.montantDepense > 0 && (
+                      <div className="flex flex-col">
+                        <span className="text-[9px] uppercase font-bold text-cordel-master-dark">Coûts de l'événement</span>
+                        <span className="text-sm font-black text-red-700">{event.montantDepense} €</span>
+                      </div>
+                    )}
+                  </div>
+                  {event.montantRecette > 0 && event.montantDepense > 0 && (
+                    <div className="mt-3 pt-2.5 border-t border-dashed border-encre-noire/15 flex items-center justify-between">
+                      <span className="text-[9px] uppercase font-bold text-cordel-master-dark">Bilan net</span>
+                      <span className={`text-xs font-black ${event.montantRecette - event.montantDepense >= 0 ? 'text-green-800' : 'text-red-800'}`}>
+                        {event.montantRecette - event.montantDepense >= 0 ? '+' : ''}{event.montantRecette - event.montantDepense} €
+                      </span>
+                    </div>
+                  )}
+                </>
+              )}
+            </CordelAccordion>
+          )}
+
+          {/* ACCORDION 5: Plan de scène & Placement (Replié par défaut) */}
           {currentConfig.agendaEnableStageLayout && (
-            <EventStageLayoutSection
-              event={event}
-              user={user}
-              profileData={profileData}
-              allUsers={allUsers}
-              isAuthorized={isAuthorized}
-              t={t}
-              readOnly={true}
-              onGoToStageLayoutEditor={onGoToStageLayoutEditor}
-            />
+            <CordelAccordion
+              title="Plan de scène & Placement"
+              subtitle="Disposition et positionnement des pupitres sur scène"
+              icon="🎪"
+              defaultOpen={false}
+            >
+              <EventStageLayoutSection
+                event={event}
+                user={user}
+                profileData={profileData}
+                allUsers={allUsers}
+                isAuthorized={isAuthorized}
+                t={t}
+                readOnly={true}
+                onGoToStageLayoutEditor={onGoToStageLayoutEditor}
+              />
+            </CordelAccordion>
           )}
 
+          {/* ACCORDION 6: Missions Bénévoles (Replié par défaut) */}
           {currentConfig.agendaEnableVolunteerShifts && event.volunteerShifts && event.volunteerShifts.length > 0 && (
-            <EventVolunteerSection
-              event={event}
-              user={user}
-              allUsers={allUsers}
-              t={t}
-            />
+            <CordelAccordion
+              title="Missions bénévoles"
+              subtitle="Inscriptions aux créneaux et postes"
+              icon="🙋"
+              defaultOpen={false}
+            >
+              <EventVolunteerSection
+                event={event}
+                user={user}
+                allUsers={allUsers}
+                t={t}
+              />
+            </CordelAccordion>
           )}
 
+          {/* ACCORDION 7: Covoiturage & Logistique Convoi (Replié par défaut) */}
           {currentConfig.agendaEnableCarpool && (
-            <EventCarpoolSection
-              event={event}
-              user={user}
-              profileData={profileData}
-              isAuthorized={isAuthorized}
-              enableCarpoolReimbursement={enableCarpoolReimbursement}
-              indemniteKilometrique={indemniteKilometrique}
-              convoiDrivers={convoiDrivers}
-              individualDrivers={individualDrivers}
-              submittingCovoit={submittingCovoit}
-              joiningVoitureId={joiningVoitureId}
-              setJoiningVoitureId={setJoiningVoitureId}
-              joinForm={joinForm}
-              setJoinForm={setJoinForm}
-              demandeRemboursementKm={demandeRemboursementKm}
-              handleToggleRemboursement={handleToggleRemboursement}
-              handleRetirerVoiture={handleRetirerVoiture}
-              handleQuitterVoiture={handleQuitterVoiture}
-              handleConfirmJoin={handleConfirmJoin}
-              handleChercherPlace={handleChercherPlace}
-              handleAnnulerCherchePlace={handleAnnulerCherchePlace}
-              showProposerForm={showProposerForm}
-              setShowProposerForm={setShowProposerForm}
-              voitureForm={voitureForm}
-              setVoitureForm={setVoitureForm}
-              handleProposerVoiture={handleProposerVoiture}
-              reimbursementRule={reimbursementRule}
-              handleAssignPassenger={handleAssignPassenger}
-              handleRemovePassenger={handleRemovePassenger}
-            />
+            <CordelAccordion
+              title="Covoiturage & Logistique convoi"
+              subtitle="Organisation des véhicules et des trajets"
+              icon="🚗"
+              badge={event.covoiturage?.voitures?.length ? `${event.covoiturage.voitures.length} voiture${event.covoiturage.voitures.length > 1 ? 's' : ''}` : null}
+              defaultOpen={false}
+            >
+              <EventCarpoolSection
+                event={event}
+                user={user}
+                profileData={profileData}
+                isAuthorized={isAuthorized}
+                enableCarpoolReimbursement={enableCarpoolReimbursement}
+                indemniteKilometrique={indemniteKilometrique}
+                convoiDrivers={convoiDrivers}
+                individualDrivers={individualDrivers}
+                submittingCovoit={submittingCovoit}
+                joiningVoitureId={joiningVoitureId}
+                setJoiningVoitureId={setJoiningVoitureId}
+                joinForm={joinForm}
+                setJoinForm={setJoinForm}
+                demandeRemboursementKm={demandeRemboursementKm}
+                handleToggleRemboursement={handleToggleRemboursement}
+                handleRetirerVoiture={handleRetirerVoiture}
+                handleQuitterVoiture={handleQuitterVoiture}
+                handleConfirmJoin={handleConfirmJoin}
+                handleChercherPlace={handleChercherPlace}
+                handleAnnulerCherchePlace={handleAnnulerCherchePlace}
+                showProposerForm={showProposerForm}
+                setShowProposerForm={setShowProposerForm}
+                voitureForm={voitureForm}
+                setVoitureForm={setVoitureForm}
+                handleProposerVoiture={handleProposerVoiture}
+                reimbursementRule={reimbursementRule}
+                handleAssignPassenger={handleAssignPassenger}
+                handleRemovePassenger={handleRemovePassenger}
+              />
+            </CordelAccordion>
           )}
 
+          {/* ACCORDION 8: Programme de révision / Morceaux (Replié par défaut) */}
           {event.type !== 'reunion' && event.type !== 'atelier' && currentConfig.agendaEnableRevisionProgram && (
-            <EventSetlistSection
-              setlist={setlist}
-              isAuthorized={isAuthorized}
-              updatingSetlist={updatingSetlist}
-              handleRemoveMorceau={handleRemoveMorceau}
-              assocSequenceurUrl={assocSequenceurUrl}
-              handleAddMorceau={handleAddMorceau}
-              newMorceauTitre={newMorceauTitre}
-              setNewMorceauTitre={setNewMorceauTitre}
-              selectedCatalogRhythmUrl={selectedCatalogRhythmUrl}
-              setSelectedCatalogRhythmUrl={setSelectedCatalogRhythmUrl}
-              fileInputKey={fileInputKey}
-              setNewMorceauJsonFile={setNewMorceauJsonFile}
-              newMorceauNotes={newMorceauNotes}
-              setNewMorceauNotes={setNewMorceauNotes}
-              groupId={event?.groupId}
-            />
+            <CordelAccordion
+              title="Programme de révision & Morceaux"
+              subtitle="Setlist et répertoires de la prestation"
+              icon="🎵"
+              defaultOpen={false}
+            >
+              <EventSetlistSection
+                setlist={setlist}
+                isAuthorized={isAuthorized}
+                updatingSetlist={updatingSetlist}
+                handleRemoveMorceau={handleRemoveMorceau}
+                assocSequenceurUrl={assocSequenceurUrl}
+                handleAddMorceau={handleAddMorceau}
+                newMorceauTitre={newMorceauTitre}
+                setNewMorceauTitre={setNewMorceauTitre}
+                selectedCatalogRhythmUrl={selectedCatalogRhythmUrl}
+                setSelectedCatalogRhythmUrl={setSelectedCatalogRhythmUrl}
+                fileInputKey={fileInputKey}
+                setNewMorceauJsonFile={setNewMorceauJsonFile}
+                newMorceauNotes={newMorceauNotes}
+                setNewMorceauNotes={setNewMorceauNotes}
+                groupId={event?.groupId}
+              />
+            </CordelAccordion>
           )}
 
-          {/* 💡 Reunion Specific Ordre du Jour & PDF minutes report manager */}
+          {/* ACCORDION 9: Ordre du jour & PV de réunion (Replié par défaut) */}
           {currentConfig.agendaEnableOrdreDuJour && (
-            <>
+            <CordelAccordion
+              title="Ordre du jour & PV de réunion"
+              subtitle="Procès-verbal et documents de séance"
+              icon="📝"
+              defaultOpen={false}
+            >
+              <ReunionAgendaManager 
+                event={event}
+                user={user}
+                profileData={profileData}
+              />
               <div className="mt-4 pt-4 border-t border-dashed border-cordel-master-dark/20">
-                <ReunionAgendaManager 
-                  event={event}
-                  user={user}
-                  profileData={profileData}
-                />
-              </div>
-              <div className="mt-6 pt-6 border-t border-dashed border-cordel-master-dark/20">
                 <EventReportSection 
                   event={event}
                   user={user}
                   profileData={profileData}
                 />
               </div>
-            </>
+            </CordelAccordion>
           )}
-        </>
+        </CordelAccordionGroup>
       )}
     </div>
   );

@@ -56,7 +56,8 @@ export default function EventRSVPSection({
   handleToggleFamilyMemberSelection,
   handleFamilyMemberStatusChange,
   handleFamilyMemberInstrumentChange,
-  handleFamilySave
+  handleFamilySave,
+  mode // 'rsvp' | 'attendance' | undefined (both)
 }) {
   const { getColorForInstrument } = useInstrumentColor(profileData?.groupId);
 
@@ -103,7 +104,7 @@ export default function EventRSVPSection({
     return '/favicon.svg';
   };
 
-  return (
+  const renderRSVPForm = () => (
     <>
       {/* RSVP Form / Informative Banner */}
       {event.enableInscriptions === false ? (
@@ -560,12 +561,14 @@ export default function EventRSVPSection({
           </div>
         </form>
       )}
+    </>
+  );
 
-      {/* 👥 Tableau nominatif des présences */}
-      <CordelCard variant="default" useExtremeBorder={true} className="py-4 px-5 select-none">
-        <h4 className="font-bold text-xs uppercase tracking-wider text-cordel-wood border-b border-dashed border-cordel-master-dark/15 pb-1 mb-3">
-          👥 Tableau de présence / Inscriptions
-        </h4>
+  const renderAttendanceTable = () => (
+    <CordelCard variant="default" useExtremeBorder={true} className="py-4 px-5 select-none">
+      <h4 className="font-bold text-xs uppercase tracking-wider text-cordel-wood border-b border-dashed border-cordel-master-dark/15 pb-1 mb-3">
+        👥 Tableau de présence / Inscriptions
+      </h4>
 
         {/* Grouped by instrument for prestation, repetition, stage, atelier */}
         {(event.type === 'prestation' || event.type === 'repetition' || event.type === 'stage' || event.type === 'atelier') ? (
@@ -1112,6 +1115,20 @@ export default function EventRSVPSection({
           </div>
         )}
       </CordelCard>
+  );
+
+  if (mode === 'rsvp') {
+    return renderRSVPForm();
+  }
+
+  if (mode === 'attendance') {
+    return renderAttendanceTable();
+  }
+
+  return (
+    <>
+      {renderRSVPForm()}
+      {renderAttendanceTable()}
     </>
   );
 }
