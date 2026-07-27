@@ -1,6 +1,7 @@
 export const fr = {
   common: {
     back: "Retour",
+    accessRestricted: "Accès restreint",
     save: "Enregistrer",
     cancel: "Annuler",
     loading: "Chargement...",

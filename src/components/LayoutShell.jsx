@@ -150,22 +150,32 @@ export default function LayoutShell({
 
   const memberMenuItems = allMemberMenuItems.filter(item => isModuleEnabled(item.id, 'mon-espace'));
 
-  const hasAccessToPole = (poleId) => {
+  // Strict Feature Toggle check for the entire Pole (enabled globally for group)
+  const isPoleEnabled = (poleId) => {
     if (poleId === 'config') return isSystemOrSuperAdminOrMestre;
     if (poleId === 'accueil' || poleId === 'mon-espace') return true;
 
-    // Strict Feature Toggle check for the entire Pole
     if (poleId === 'tresorerie' && enabledModules?.tresorerie === false) return false;
     if (poleId === 'logistique' && enabledModules?.logistique === false && enabledModules?.commandes === false) return false;
     if (poleId === 'vestiaire' && enabledModules?.vestiaire === false) return false;
     if (poleId === 'mestre' && enabledModules?.mestre === false) return false;
 
+    return true;
+  };
+
+  // Dynamic Cascade Permission Check:
+  // A Pole is UNLOCKED (accessible) if the user has access to at least 1 enabled sub-tab.
+  // It is LOCKED (verrouillé) if 100% of its enabled sub-tabs are inaccessible to the user.
+  const isPoleUnlocked = (poleId) => {
+    if (!isPoleEnabled(poleId)) return false;
+    if (poleId === 'accueil' || poleId === 'mon-espace') return true;
+    if (poleId === 'config') return isSystemOrSuperAdminOrMestre;
+
     const poleObj = polesList.find(p => p.id === poleId);
     if (!poleObj) return false;
 
-    // A pole is accessible if user has access to at least ONE enabled tab in it
-    return poleObj.tabs.some(tab => checkTabAccess(tab.id, poleId));
-  };;
+    return poleObj.tabs.some(tab => isModuleEnabled(tab.id, poleId) && checkTabAccess(tab.id, poleId));
+  };
 
   const hasAccessToTab = (tabId) => {
     const activePole = currentPole || 'accueil';
@@ -197,10 +207,12 @@ export default function LayoutShell({
     }
   };
 
-  const visiblePoles = polesList.filter(p => hasAccessToPole(p.id));
+  // Poles that are enabled in group configuration stay visible for discoverability
+  const visiblePoles = polesList.filter(p => isPoleEnabled(p.id));
   const activePoleObj = polesList.find(p => p.id === currentPole);
+  // Enabled tabs in the active pole stay visible in horizontal sub-menu
   const visibleTabs = activePoleObj 
-    ? activePoleObj.tabs.filter(tab => hasAccessToTab(tab.id))
+    ? activePoleObj.tabs.filter(tab => isModuleEnabled(tab.id, activePoleObj.id))
     : [];
 
   return (
@@ -331,7 +343,30 @@ export default function LayoutShell({
             <div className="w-full flex-grow overflow-y-auto flex flex-col gap-2 pr-1 max-h-[calc(100vh-220px)] scrollbar-thin">
               {isAdministrativeUser ? (
                 visiblePoles.map((pole) => {
+                  const isUnlocked = isPoleUnlocked(pole.id);
                   const isActive = currentPole === pole.id;
+                  const isRestrictedTitle = t('common.accessRestricted') || "Accès restreint";
+
+                  if (!isUnlocked) {
+                    return (
+                      <button
+                        key={pole.id}
+                        type="button"
+                        disabled={true}
+                        title={isRestrictedTitle}
+                        className="theme-btn text-[10px] font-black uppercase tracking-wider py-2 px-2.5 text-left rounded-[4px_6px_3px_5px] flex items-center justify-between opacity-50 grayscale cursor-not-allowed bg-cordel-bg/50 text-encre-noire/50 border-encre-noire/20 select-none shadow-none"
+                      >
+                        <span className="flex items-center gap-2">
+                          {getPoleIcon(pole.id, 12)} 
+                          {t(`poles.${pole.id}`) || pole.label}
+                        </span>
+                        <span className="text-[11px] shrink-0 opacity-75" title={isRestrictedTitle}>
+                          🔒
+                        </span>
+                      </button>
+                    );
+                  }
+
                   return (
                     <button
                       key={pole.id}
@@ -469,7 +504,25 @@ export default function LayoutShell({
             {(isSystemOrSuperAdminOrMestre || isAdministrativeUser) && visibleTabs.length > 0 && (
               <div className="flex flex-wrap gap-2 border-b border-dashed border-cordel-master-dark/20 pb-3 mb-1 select-none shrink-0">
                 {visibleTabs.map((tab) => {
+                  const isUnlocked = checkTabAccess(tab.id, activePoleObj?.id);
                   const isActive = currentTab === tab.id;
+                  const isRestrictedTitle = t('common.accessRestricted') || "Accès restreint";
+
+                  if (!isUnlocked) {
+                    return (
+                      <button
+                        key={tab.id}
+                        type="button"
+                        disabled={true}
+                        title={isRestrictedTitle}
+                        className="px-3 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all opacity-50 grayscale cursor-not-allowed bg-cordel-bg/50 text-encre-noire/50 border-encre-noire/20 select-none shadow-none flex items-center gap-1.5"
+                      >
+                        <span className="text-[11px] opacity-75">🔒</span>
+                        <span>{t(`poles.${tab.labelKey}`) || tab.label}</span>
+                      </button>
+                    );
+                  }
+
                   return (
                     <button
                       key={tab.id}
@@ -545,7 +598,30 @@ export default function LayoutShell({
               <div className="flex flex-col gap-2.5 flex-grow overflow-y-auto pr-1">
                 {isAdministrativeUser ? (
                   visiblePoles.map((pole) => {
+                    const isUnlocked = isPoleUnlocked(pole.id);
                     const isActive = currentPole === pole.id;
+                    const isRestrictedTitle = t('common.accessRestricted') || "Accès restreint";
+
+                    if (!isUnlocked) {
+                      return (
+                        <button
+                          key={pole.id}
+                          type="button"
+                          disabled={true}
+                          title={isRestrictedTitle}
+                          className="theme-btn text-[10px] font-black uppercase tracking-wider py-2 px-3 text-left rounded-[4px_6px_3px_5px] flex items-center justify-between opacity-50 grayscale cursor-not-allowed bg-cordel-bg/50 text-encre-noire/50 border-encre-noire/20 w-full select-none shadow-none"
+                        >
+                          <span className="flex items-center gap-2">
+                            {getPoleIcon(pole.id, 14)} 
+                            {t(`poles.${pole.id}`) || pole.label}
+                          </span>
+                          <span className="text-[12px] shrink-0 opacity-75" title={isRestrictedTitle}>
+                            🔒
+                          </span>
+                        </button>
+                      );
+                    }
+
                     return (
                       <button
                         key={pole.id}

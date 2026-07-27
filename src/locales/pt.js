@@ -1,6 +1,7 @@
 export const pt = {
   common: {
     back: "Voltar",
+    accessRestricted: "Acesso restrito",
     save: "Salvar",
     cancel: "Cancelar",
     loading: "Carregando...",
