@@ -282,6 +282,17 @@ export const pt = {
     percussion: "Percussão",
     dance: "Dança"
   },
+  agendaTemporal: {
+    filterLabel: "Exibir:",
+    upcoming: "Próximos (Padrão)",
+    past: "Passados",
+    all: "Todos",
+    seePastHistory: "📜 Ver histórico de eventos passados",
+    hidePastHistory: "📜 Ocultar histórico de eventos passados",
+    noUpcoming: "Nenhum próximo evento.",
+    noPast: "Nenhum evento passado no histórico.",
+    pastEventsCount: "evento(s) passado(s)"
+  },
   widgetAgenda: {
     title: "Agenda",
     addBtn: "+ Adicionar",

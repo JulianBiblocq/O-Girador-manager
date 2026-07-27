@@ -12,6 +12,8 @@ import EventDisciplineBadges from './agenda/EventDisciplineBadges';
 import { useTranslation } from './LanguageContext';
 import { XiloCalendar, XiloEye, XiloEyeOff } from './XiloIcons';
 import { calculateRoadDistance } from '../utils/googleMaps';
+import { splitEventsByTime } from '../utils/dateUtils';
+
 const formatDateWithDay = (dateStr, includeYear = true) => {
   const date = new Date(dateStr);
   if (isNaN(date.getTime())) return '';
@@ -55,12 +57,13 @@ export default function WidgetAgenda({
   const selectedEvent = propSelectedEvent !== undefined ? propSelectedEvent : localSelectedEvent;
   const setSelectedEvent = propSetSelectedEvent !== undefined ? propSetSelectedEvent : setLocalSelectedEvent;
   const [showAll, setShowAll] = useState(isFullPage);
+  const [showPastHistory, setShowPastHistory] = useState(false);
   const [viewMode, setViewMode] = useState('cards'); // 'cards' ou 'list' ou 'grid'
   const [disciplineFilter, setDisciplineFilter] = useState('all'); // 'all' | 'percussion' | 'dance'
   const [selectedTypeFilter, setSelectedTypeFilter] = useState('all');
   const [hiddenTypes, setHiddenTypes] = useState([]);
   
-  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+  const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1024);
   const [adresseLocal, setAdresseLocal] = useState('');
   const [eventTypes, setEventTypes] = useState(['prestation', 'repetition', 'stage', 'atelier', 'reunion']);
   const [agendaEnableFinance, setAgendaEnableFinance] = useState(true);
@@ -99,13 +102,10 @@ export default function WidgetAgenda({
   const isMobile = windowWidth < 768;
   const limit = isMobile ? 5 : 9;
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const upcomingEvents = events.filter(e => {
-    const eDate = new Date(e.date);
-    return !isNaN(eDate.getTime()) && eDate >= today;
-  });
-  const filteredEvents = upcomingEvents.filter(e => {
+  // Split and sort events into upcoming (chronological) and past (antichronological)
+  const { upcomingEvents, pastEvents } = splitEventsByTime(events);
+
+  const filterFn = (e) => {
     // Discipline filter (percussion vs dance)
     if (disciplineFilter === 'percussion' && !e.includesPercussion) return false;
     if (disciplineFilter === 'dance' && !e.includesDance) return false;
@@ -116,8 +116,19 @@ export default function WidgetAgenda({
       return e.type === selectedTypeFilter;
     }
     return true;
-  });
-  const visibleEvents = (isFullPage || showAll) ? filteredEvents : filteredEvents.slice(0, limit);
+  };
+
+  const filteredUpcoming = upcomingEvents.filter(filterFn);
+  const filteredPast = pastEvents.filter(filterFn);
+
+  // Default display: upcoming events only. If showPastHistory is true, append past events.
+  const activeFilteredEvents = showPastHistory
+    ? [...filteredUpcoming, ...filteredPast]
+    : filteredUpcoming;
+
+  const visibleEvents = (isFullPage || showAll || showPastHistory)
+    ? activeFilteredEvents
+    : activeFilteredEvents.slice(0, limit);
   
   const [formData, setFormData] = useState({
     titre: '',
@@ -785,7 +796,7 @@ export default function WidgetAgenda({
               })}
             </div>
             
-            {filteredEvents.length > limit && (
+            {filteredUpcoming.length > limit && !showPastHistory && (
               <div className="flex justify-center mt-3">
                 <CordelButton 
                   variant="default"
@@ -794,6 +805,24 @@ export default function WidgetAgenda({
                 >
                   {showAll ? t('widgetAgenda.seeLessEvents') : t('widgetAgenda.seeAllEvents')}
                 </CordelButton>
+              </div>
+            )}
+
+            {/* Discrete Past Events History Toggle Button */}
+            {filteredPast.length > 0 && (
+              <div className="flex justify-center mt-4 pt-3 border-t border-dashed border-cordel-master-dark/20">
+                <button
+                  type="button"
+                  onClick={() => setShowPastHistory(prev => !prev)}
+                  className="text-[10px] font-black uppercase tracking-wider bg-cordel-bg-light text-cordel-wood border-2 border-encre-noire px-3.5 py-1.5 rounded-[6px_9px_5px_8px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:bg-amber-100/60 cursor-pointer transition-all flex items-center gap-1.5 select-none"
+                >
+                  <span>
+                    {showPastHistory
+                      ? (t('agendaTemporal.hidePastHistory') || "📜 Cacher l'historique des événements passés")
+                      : `${t('agendaTemporal.seePastHistory') || "📜 Voir l'historique des événements passés"} (${filteredPast.length})`
+                    }
+                  </span>
+                </button>
               </div>
             )}
           </>

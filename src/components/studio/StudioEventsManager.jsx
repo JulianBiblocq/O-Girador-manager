@@ -5,6 +5,7 @@ import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 import EventsDataGrid from './EventsDataGrid';
 import { useTranslation } from '../LanguageContext';
+import { isPastEvent } from '../../utils/dateUtils';
 
 export default function StudioEventsManager({ groupId, onBack }) {
   const { t } = useTranslation();
@@ -12,6 +13,7 @@ export default function StudioEventsManager({ groupId, onBack }) {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
+  const [timeFilter, setTimeFilter] = useState('upcoming'); // 'upcoming' (default), 'past', 'all'
   const [updatingEventId, setUpdatingEventId] = useState(null);
   const [updatingField, setUpdatingField] = useState(null);
   const [lastNotification, setLastNotification] = useState(null);
@@ -30,13 +32,6 @@ export default function StudioEventsManager({ groupId, onBack }) {
         const fetched = [];
         snapshot.forEach((docSnap) => {
           fetched.push({ id: docSnap.id, ...docSnap.data() });
-        });
-
-        // Sort chronologically (most recent or upcoming first)
-        fetched.sort((a, b) => {
-          const dateA = a.date || '';
-          const dateB = b.date || '';
-          return dateB.localeCompare(dateA);
         });
 
         setEvents(fetched);
@@ -86,7 +81,7 @@ export default function StudioEventsManager({ groupId, onBack }) {
     return handleUpdateField(eventId, fieldName, !currentValue);
   };
 
-  // Filter events by search & type
+  // Filter events by search, type, and temporal state
   const filteredEvents = events.filter((ev) => {
     const titleMatch = (ev.titre || '').toLowerCase().includes(searchTerm.toLowerCase());
     const descMatch = (ev.description || '').toLowerCase().includes(searchTerm.toLowerCase());
@@ -94,7 +89,23 @@ export default function StudioEventsManager({ groupId, onBack }) {
     const matchesSearch = titleMatch || descMatch || lieuMatch;
 
     const matchesType = typeFilter === 'all' || ev.type === typeFilter;
-    return matchesSearch && matchesType;
+
+    const isPast = isPastEvent(ev);
+    let matchesTime = true;
+    if (timeFilter === 'upcoming') matchesTime = !isPast;
+    if (timeFilter === 'past') matchesTime = isPast;
+
+    return matchesSearch && matchesType && matchesTime;
+  });
+
+  // Intelligent sorting:
+  // - Upcoming events: chronological ascending (nearest event first)
+  // - Past events: antichronological descending (most recent past event first)
+  const sortedFilteredEvents = [...filteredEvents].sort((a, b) => {
+    if (timeFilter === 'past') {
+      return new Date(b.dateFin || b.date) - new Date(a.dateFin || a.date);
+    }
+    return new Date(a.date) - new Date(b.date);
   });
 
   // Extract unique event types for filtering
@@ -163,18 +174,60 @@ export default function StudioEventsManager({ groupId, onBack }) {
         )}
 
         {/* Filter bar */}
-        <div className="mt-5 flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-dashed border-cordel-master-dark/15">
-          <div className="w-full sm:w-72">
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="🔍 Rechercher par titre, lieu..."
-              className="theme-input w-full text-xs py-1.5 px-3"
-            />
+        <div className="mt-5 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 pt-4 border-t border-dashed border-cordel-master-dark/15">
+          <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
+            <div className="w-full sm:w-64">
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="🔍 Rechercher par titre, lieu..."
+                className="theme-input w-full text-xs py-1.5 px-3"
+              />
+            </div>
+
+            {/* Selector: Afficher : [ À venir (Défaut) | Passés | Tous ] */}
+            <div className="flex items-center gap-1 shrink-0 w-full sm:w-auto overflow-x-auto select-none">
+              <span className="text-[10px] font-black uppercase tracking-wider text-cordel-master-dark/60 shrink-0 mr-1">
+                {t('agendaTemporal.filterLabel') || "Afficher :"}
+              </span>
+              <button
+                type="button"
+                onClick={() => setTimeFilter('upcoming')}
+                className={`px-2.5 py-1 text-[9.5px] font-black uppercase rounded transition-all cursor-pointer ${
+                  timeFilter === 'upcoming'
+                    ? 'bg-cordel-wood text-white border border-encre-noire shadow-[1px_1px_0px_0px_#181716]'
+                    : 'bg-black/5 dark:bg-white/10 text-cordel-master-dark/70 hover:bg-black/10'
+                }`}
+              >
+                {t('agendaTemporal.upcoming') || "À venir (Défaut)"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setTimeFilter('past')}
+                className={`px-2.5 py-1 text-[9.5px] font-black uppercase rounded transition-all cursor-pointer ${
+                  timeFilter === 'past'
+                    ? 'bg-cordel-wood text-white border border-encre-noire shadow-[1px_1px_0px_0px_#181716]'
+                    : 'bg-black/5 dark:bg-white/10 text-cordel-master-dark/70 hover:bg-black/10'
+                }`}
+              >
+                {t('agendaTemporal.past') || "Passés"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setTimeFilter('all')}
+                className={`px-2.5 py-1 text-[9.5px] font-black uppercase rounded transition-all cursor-pointer ${
+                  timeFilter === 'all'
+                    ? 'bg-cordel-wood text-white border border-encre-noire shadow-[1px_1px_0px_0px_#181716]'
+                    : 'bg-black/5 dark:bg-white/10 text-cordel-master-dark/70 hover:bg-black/10'
+                }`}
+              >
+                {t('agendaTemporal.all') || "Tous"}
+              </button>
+            </div>
           </div>
 
-          <div className="flex items-center gap-2 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
+          <div className="flex items-center gap-2 w-full md:w-auto overflow-x-auto pb-1 md:pb-0">
             <span className="text-[10px] font-black uppercase tracking-wider text-cordel-master-dark/60 shrink-0">
               Type :
             </span>
@@ -216,7 +269,7 @@ export default function StudioEventsManager({ groupId, onBack }) {
         </CordelCard>
       ) : (
         <EventsDataGrid
-          events={filteredEvents}
+          events={sortedFilteredEvents}
           onUpdateField={handleUpdateField}
           onToggleField={handleToggleField}
           updatingEventId={updatingEventId}

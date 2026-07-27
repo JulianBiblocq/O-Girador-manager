@@ -4,6 +4,7 @@ import { db } from '../../firebase';
 import { useTranslation } from '../LanguageContext';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
+import { isPastEvent } from '../../utils/dateUtils';
 
 const formatDateWithDay = (dateStr, locale, includeYear = true) => {
   const date = new Date(dateStr);
@@ -22,6 +23,7 @@ export default function MestreEvents({ groupId, onSelectForStage, onOpenDetails 
   const { t, locale } = useTranslation();
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [timeFilter, setTimeFilter] = useState('upcoming'); // 'upcoming' (default), 'past', 'all'
 
   useEffect(() => {
     if (!groupId) return;
@@ -41,8 +43,6 @@ export default function MestreEvents({ groupId, onSelectForStage, onOpenDetails 
           fetched.push({ id: docSnap.id, ...data });
         }
       });
-      // Sort chronologically (descending: recent / upcoming first)
-      fetched.sort((a, b) => new Date(b.date) - new Date(a.date));
       setEvents(fetched);
       setLoading(false);
     }, (error) => {
@@ -52,6 +52,20 @@ export default function MestreEvents({ groupId, onSelectForStage, onOpenDetails 
 
     return () => unsubscribe();
   }, [groupId]);
+
+  const filteredEvents = events.filter(evt => {
+    const isPast = isPastEvent(evt);
+    if (timeFilter === 'upcoming') return !isPast;
+    if (timeFilter === 'past') return isPast;
+    return true;
+  });
+
+  const sortedEvents = [...filteredEvents].sort((a, b) => {
+    if (timeFilter === 'past') {
+      return new Date(b.dateFin || b.date) - new Date(a.dateFin || a.date);
+    }
+    return new Date(a.date) - new Date(b.date);
+  });
 
   const getTypeBadgeClass = (type) => {
     switch (type) {
@@ -68,30 +82,66 @@ export default function MestreEvents({ groupId, onSelectForStage, onOpenDetails 
 
   const getTranslatedType = (type) => {
     switch (type) {
-      case 'prestation':
-        return t('widgetAgenda.typePrestation') || 'Prestation';
-      case 'repetition':
-        return t('widgetAgenda.typeRepetition') || 'Répétition';
-      case 'atelier':
-        return t('widgetAgenda.typeAtelier') || 'Atelier';
-      default:
-        return type;
+      case 'prestation': return t('common.typePrestation') || 'Prestation';
+      case 'repetition': return t('common.typeRepetition') || 'Répétition';
+      case 'atelier': return t('common.typeAtelier') || 'Atelier';
+      default: return type;
     }
   };
 
   return (
     <div className="flex flex-col gap-4 text-left select-none w-full max-w-5xl mx-auto">
-      <div className="flex justify-between items-center pb-2 border-b-2 border-dashed border-cordel-master-dark/30">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pb-2 border-b-2 border-dashed border-cordel-master-dark/30">
         <h2 className="text-sm font-extrabold tracking-widest text-cordel-wood uppercase">
           🎭 {t('mestre.eventsTitle') || "Direction Musicale - Liste des Événements"}
         </h2>
+
+        {/* Temporal Filter Selector */}
+        <div className="flex items-center gap-1 shrink-0 select-none">
+          <span className="text-[10px] font-black uppercase tracking-wider text-cordel-master-dark/60 shrink-0 mr-1">
+            {t('agendaTemporal.filterLabel') || "Afficher :"}
+          </span>
+          <button
+            type="button"
+            onClick={() => setTimeFilter('upcoming')}
+            className={`px-2.5 py-1 text-[9.5px] font-black uppercase rounded transition-all cursor-pointer ${
+              timeFilter === 'upcoming'
+                ? 'bg-cordel-wood text-white border border-encre-noire shadow-[1px_1px_0px_0px_#181716]'
+                : 'bg-black/5 dark:bg-white/10 text-cordel-master-dark/70 hover:bg-black/10'
+            }`}
+          >
+            {t('agendaTemporal.upcoming') || "À venir (Défaut)"}
+          </button>
+          <button
+            type="button"
+            onClick={() => setTimeFilter('past')}
+            className={`px-2.5 py-1 text-[9.5px] font-black uppercase rounded transition-all cursor-pointer ${
+              timeFilter === 'past'
+                ? 'bg-cordel-wood text-white border border-encre-noire shadow-[1px_1px_0px_0px_#181716]'
+                : 'bg-black/5 dark:bg-white/10 text-cordel-master-dark/70 hover:bg-black/10'
+            }`}
+          >
+            {t('agendaTemporal.past') || "Passés"}
+          </button>
+          <button
+            type="button"
+            onClick={() => setTimeFilter('all')}
+            className={`px-2.5 py-1 text-[9.5px] font-black uppercase rounded transition-all cursor-pointer ${
+              timeFilter === 'all'
+                ? 'bg-cordel-wood text-white border border-encre-noire shadow-[1px_1px_0px_0px_#181716]'
+                : 'bg-black/5 dark:bg-white/10 text-cordel-master-dark/70 hover:bg-black/10'
+            }`}
+          >
+            {t('agendaTemporal.all') || "Tous"}
+          </button>
+        </div>
       </div>
 
       {loading ? (
         <div className="flex justify-center items-center py-12">
           <span className="text-xs uppercase tracking-widest font-black animate-pulse opacity-60">⏳</span>
         </div>
-      ) : events.length === 0 ? (
+      ) : sortedEvents.length === 0 ? (
         <CordelCard variant="default" useExtremeBorder={true} className="p-8 text-center">
           <p className="text-xs font-bold opacity-75">{t('mestre.noEvents') || "Aucune prestation, répétition ou atelier trouvé."}</p>
         </CordelCard>
@@ -109,7 +159,7 @@ export default function MestreEvents({ groupId, onSelectForStage, onOpenDetails 
               </tr>
             </thead>
             <tbody>
-              {events.map((evt) => {
+              {sortedEvents.map((evt) => {
                 const insList = evt.inscriptions || [];
                 const presentCount = insList.filter(ins => ins.status === 'present').length + (evt.invitesExternes || []).length;
                 const totalRegistered = insList.filter(ins => ins.status !== 'absent').length;

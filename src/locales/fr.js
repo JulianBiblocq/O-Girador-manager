@@ -262,6 +262,17 @@ export const fr = {
     percussion: "Percussion",
     dance: "Danse"
   },
+  agendaTemporal: {
+    filterLabel: "Afficher :",
+    upcoming: "À venir (Défaut)",
+    past: "Passés",
+    all: "Tous",
+    seePastHistory: "📜 Voir l'historique des événements passés",
+    hidePastHistory: "📜 Cacher l'historique des événements passés",
+    noUpcoming: "Aucun événement à venir.",
+    noPast: "Aucun événement passé dans l'historique.",
+    pastEventsCount: "événement(s) passé(s)"
+  },
   widgetAgenda: {
     title: "Agenda",
     addBtn: "+ Ajouter",
