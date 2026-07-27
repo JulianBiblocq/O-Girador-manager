@@ -34,7 +34,7 @@ export default function CostumesAdminManager({ groupId }) {
     name: '',
     emplacement: 'torse',
     isMandatory: true,
-    tutorialNotes: '',
+    description: '',
     tutorialId: ''
   });
 
@@ -76,7 +76,7 @@ export default function CostumesAdminManager({ groupId }) {
       description: '',
       pieces: []
     });
-    setPieceForm({ name: '', emplacement: 'torse', isMandatory: true, tutorialNotes: '', tutorialId: '' });
+    setPieceForm({ name: '', emplacement: 'torse', isMandatory: true, description: '', tutorialId: '' });
     setShowCostumeModal(true);
   };
 
@@ -88,7 +88,7 @@ export default function CostumesAdminManager({ groupId }) {
       description: costume.description || '',
       pieces: costume.pieces || []
     });
-    setPieceForm({ name: '', emplacement: 'torse', isMandatory: true, tutorialNotes: '', tutorialId: '' });
+    setPieceForm({ name: '', emplacement: 'torse', isMandatory: true, description: '', tutorialId: '' });
     setShowCostumeModal(true);
   };
 
@@ -99,8 +99,8 @@ export default function CostumesAdminManager({ groupId }) {
       name: pieceForm.name.trim(),
       emplacement: pieceForm.emplacement || 'torse',
       isMandatory: pieceForm.isMandatory,
-      tutorialNotes: pieceForm.tutorialNotes.trim(),
-      tutorialId: pieceForm.tutorialId
+      description: pieceForm.description.trim(),
+      tutorialId: pieceForm.tutorialId || ''
     };
 
     setCostumeForm(prev => ({
@@ -108,7 +108,7 @@ export default function CostumesAdminManager({ groupId }) {
       pieces: [...prev.pieces, newPiece]
     }));
 
-    setPieceForm({ name: '', emplacement: 'torse', isMandatory: true, tutorialNotes: '', tutorialId: '' });
+    setPieceForm({ name: '', emplacement: 'torse', isMandatory: true, description: '', tutorialId: '' });
   };
 
   const handleRemovePieceFromCostume = (pieceId) => {
@@ -414,31 +414,34 @@ export default function CostumesAdminManager({ groupId }) {
                       </select>
                     </div>
 
-                    <textarea
-                      placeholder="Instructions de fabrication pour l'Atelier Couture (tissus, peinture, tutoriel)..."
-                      value={pieceForm.tutorialNotes}
-                      onChange={(e) => setPieceForm(prev => ({ ...prev, tutorialNotes: e.target.value }))}
-                      rows={2}
-                      className="theme-input text-xs w-full"
+                    {/* Short Description / Materials */}
+                    <input
+                      type="text"
+                      placeholder="Description / Matériaux (ex: Fait avec des perles de l'association)"
+                      value={pieceForm.description || ''}
+                      onChange={(e) => setPieceForm(prev => ({ ...prev, description: e.target.value }))}
+                      className="theme-input text-xs font-bold w-full"
                     />
 
-                    {workshops.length > 0 && (
-                      <div className="flex flex-col gap-1">
-                        <label className="text-[9px] uppercase font-bold text-cordel-master-dark">
-                          Lier à un tutoriel existant de l'Atelier (Optionnel)
-                        </label>
-                        <select
-                          value={pieceForm.tutorialId}
-                          onChange={(e) => setPieceForm(prev => ({ ...prev, tutorialId: e.target.value }))}
-                          className="theme-input text-xs bg-white"
-                        >
-                          <option value="">-- Aucun tuto lié --</option>
-                          {workshops.map(ws => (
-                            <option key={ws.id} value={ws.id}>{ws.titre}</option>
-                          ))}
-                        </select>
-                      </div>
-                    )}
+                    {/* Tutorial dropdown selection */}
+                    <div className="flex flex-col gap-1">
+                      <label className="text-[9px] uppercase font-extrabold tracking-wider text-cordel-wood flex items-center gap-1">
+                        🧵 Liaison avec un tutoriel de l'Atelier Couture
+                      </label>
+                      <select
+                        value={pieceForm.tutorialId || ''}
+                        onChange={(e) => setPieceForm(prev => ({ ...prev, tutorialId: e.target.value }))}
+                        className="theme-input text-xs font-bold bg-white"
+                      >
+                        <option value="">-- Aucun tutoriel lié --</option>
+                        {workshops.map(ws => (
+                          <option key={ws.id} value={ws.id}>📖 {ws.titre}</option>
+                        ))}
+                      </select>
+                      <span className="text-[8px] text-cordel-master-dark opacity-70 italic">
+                        Lier cette pièce à un tutoriel débloque le bouton "Tutoriel de fabrication" sur la fiche du membre.
+                      </span>
+                    </div>
 
                     <div className="flex justify-end mt-1">
                       <CordelButton

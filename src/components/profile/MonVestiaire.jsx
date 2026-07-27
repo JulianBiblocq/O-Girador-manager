@@ -311,6 +311,11 @@ export default function MonVestiaire({ userId, groupId, userChecklist = {}, user
                                   }`}>
                                     {piece.name}
                                   </span>
+                                  {(piece.description || piece.tutorialNotes) && (
+                                    <span className="text-[9px] text-cordel-wood font-semibold truncate opacity-90">
+                                      {piece.description || piece.tutorialNotes}
+                                    </span>
+                                  )}
                                   <span className="text-[8px] font-semibold text-cordel-master-dark opacity-70">
                                     {piece.isMandatory !== false ? "★ Obligatoire" : "Optionnel"}
                                   </span>
@@ -320,10 +325,10 @@ export default function MonVestiaire({ userId, groupId, userChecklist = {}, user
                               <button
                                 type="button"
                                 onClick={() => handleOpenTutorial(piece)}
-                                className="text-[8px] font-black uppercase tracking-wider bg-cordel-bg hover:bg-cordel-bg-light border border-encre-noire px-2 py-1 rounded shadow-[1px_1px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none cursor-pointer shrink-0"
-                                title="Voir la fiche dans l'Atelier Couture"
+                                className="text-[9px] font-black uppercase tracking-wider bg-cordel-wood text-white hover:bg-cordel-wood/90 border border-encre-noire px-2.5 py-1 rounded shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none cursor-pointer shrink-0 flex items-center gap-1"
+                                title="Voir le tutoriel de fabrication dans l'Atelier Couture"
                               >
-                                🧵 Tuto
+                                🧵 Tutoriel de fabrication
                               </button>
                             </div>
                           );
@@ -346,7 +351,7 @@ export default function MonVestiaire({ userId, groupId, userChecklist = {}, user
               <div className="flex justify-between items-start border-b-2 border-dashed border-cordel-master-dark/25 pb-2">
                 <div>
                   <span className="theme-stamp-badge theme-stamp-badge-wood text-[8px] uppercase tracking-wider mb-1 inline-block">
-                    📌 Pièce de costume
+                    📌 Élément de costume
                   </span>
                   <h3 className="font-cactus font-black text-base text-encre-noire tracking-wide">
                     {actionPiece.name}
@@ -377,6 +382,12 @@ export default function MonVestiaire({ userId, groupId, userChecklist = {}, user
                 )}
               </div>
 
+              {(actionPiece.description || actionPiece.tutorialNotes) && (
+                <div className="text-xs bg-white/50 p-2.5 rounded border border-dashed border-cordel-master-dark/20 text-cordel-wood font-bold">
+                  {actionPiece.description || actionPiece.tutorialNotes}
+                </div>
+              )}
+
               {/* Validation Action Button */}
               {(() => {
                 const costumeChecklist = userChecklist[actionPiece.costumeId] || {};
@@ -406,7 +417,7 @@ export default function MonVestiaire({ userId, groupId, userChecklist = {}, user
                       }}
                       className="w-full py-2 text-xs font-bold uppercase tracking-wider"
                     >
-                      🧵 Voir dans l'Atelier Couture
+                      🧵 Tutoriel de fabrication
                     </CordelButton>
                   </div>
                 );

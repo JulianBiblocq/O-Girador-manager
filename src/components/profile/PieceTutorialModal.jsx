@@ -42,19 +42,27 @@ export default function PieceTutorialModal({ piece, workshop, onClose }) {
           </div>
 
           {/* Piece info badge */}
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-extrabold text-cordel-wood">Pièce :</span>
-            <span className="theme-stamp-badge theme-stamp-badge-dark text-[9px] px-2 py-0.5">
-              {piece.name}
-            </span>
-            {piece.isMandatory ? (
-              <span className="theme-stamp-badge theme-stamp-badge-wood text-[8px] px-2 py-0.5">
-                ★ Obligatoire
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-xs font-extrabold text-cordel-wood">Élément de costume :</span>
+              <span className="theme-stamp-badge theme-stamp-badge-dark text-[9px] px-2 py-0.5">
+                {piece.name}
               </span>
-            ) : (
-              <span className="theme-stamp-badge theme-stamp-badge-ocre text-[8px] px-2 py-0.5 opacity-80">
-                Optionnelle
-              </span>
+              {piece.isMandatory !== false ? (
+                <span className="theme-stamp-badge theme-stamp-badge-wood text-[8px] px-2 py-0.5">
+                  ★ Obligatoire
+                </span>
+              ) : (
+                <span className="theme-stamp-badge theme-stamp-badge-ocre text-[8px] px-2 py-0.5 opacity-80">
+                  Optionnel
+                </span>
+              )}
+            </div>
+
+            {(piece.description || piece.tutorialNotes) && (
+              <div className="text-xs bg-amber-50 dark:bg-amber-950/20 p-2.5 rounded border border-amber-300/40 text-amber-900 dark:text-amber-200 font-bold">
+                💡 <strong>Remarque / Matériaux :</strong> {piece.description || piece.tutorialNotes}
+              </div>
             )}
           </div>
 
