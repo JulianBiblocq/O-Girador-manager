@@ -155,6 +155,7 @@ export default function App() {
   const [sequenceurUrl, setSequenceurUrl] = useState('');
   const [permissionsMatrice, setPermissionsMatrice] = useState(null);
   const [enabledModules, setEnabledModules] = useState(null);
+  const [tagsDisponibles, setTagsDisponibles] = useState([]);
   const [activerPresenceEnLigne, setActiverPresenceEnLigne] = useState(true);
   const [breakGlassActive, setBreakGlassActive] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -224,6 +225,7 @@ export default function App() {
         setSequenceurUrl(data.sequenceurUrl || '');
         setPermissionsMatrice(data.permissionsMatrice || null);
         setEnabledModules(data.enabledModules || null);
+        setTagsDisponibles(Array.isArray(data.tagsDisponibles) ? data.tagsDisponibles : []);
         setActiverPresenceEnLigne(data.activerPresenceEnLigne !== false);
       } else {
         setBranding(null);
@@ -232,6 +234,7 @@ export default function App() {
         setSequenceurUrl('');
         setPermissionsMatrice(null);
         setEnabledModules(null);
+        setTagsDisponibles([]);
         setActiverPresenceEnLigne(true);
       }
     }, (error) => {
@@ -241,6 +244,7 @@ export default function App() {
       setMajoriteFeminine(false);
       setSequenceurUrl('');
       setPermissionsMatrice(null);
+      setTagsDisponibles([]);
     });
 
     return () => unsubscribe();
