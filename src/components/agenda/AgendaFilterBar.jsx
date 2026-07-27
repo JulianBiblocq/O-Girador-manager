@@ -21,7 +21,7 @@ export default function AgendaFilterBar({
       {/* Étage 1 : Filtrage par Discipline (Percussion / Danse) */}
       <div className="flex items-center gap-1.5 flex-wrap">
         <span className="text-[9px] font-extrabold tracking-wider text-cordel-master-dark/60 mr-1 uppercase">
-          Discipline :
+          {t ? t('agendaFilter.disciplineLabel') : 'Discipline :'}
         </span>
 
         {/* Option Tous */}
@@ -34,7 +34,7 @@ export default function AgendaFilterBar({
               : 'bg-white border-dashed border-cordel-master-dark/20 text-cordel-master-dark/70 hover:bg-neutral-100'
           }`}
         >
-          <span>Toutes</span>
+          <span>{t ? t('agendaFilter.allDisciplines') : 'Toutes'}</span>
         </button>
 
         {/* Option Percussion */}
@@ -48,7 +48,7 @@ export default function AgendaFilterBar({
           }`}
         >
           <img src="/icones/alfaia.svg" alt="Percussion" className={`w-3 h-3 object-contain inline-block shrink-0 ${disciplineFilter === 'percussion' ? 'invert' : ''}`} />
-          <span>Percussion</span>
+          <span>{t ? t('agendaFilter.percussion') : 'Percussion'}</span>
         </button>
 
         {/* Option Danse */}
@@ -62,14 +62,14 @@ export default function AgendaFilterBar({
           }`}
         >
           <span className="text-[11px]">💃</span>
-          <span>Danse</span>
+          <span>{t ? t('agendaFilter.dance') : 'Danse'}</span>
         </button>
       </div>
 
       {/* Étage 2 : Filtrage par Type d'événement */}
       <div className="flex items-center gap-1.5 flex-wrap pt-1 border-t border-dashed border-cordel-master-dark/15">
         <span className="text-[9px] font-extrabold tracking-wider text-cordel-master-dark/60 mr-1 uppercase">
-          Type :
+          {t ? t('agendaFilter.typeLabel') : 'Type :'}
         </span>
 
         {/* Type Filter "Tous" */}

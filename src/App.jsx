@@ -52,43 +52,43 @@ const POLES_CONFIG = [
   },
   {
     id: 'mon-espace',
-    label: 'Mon Espace',
+    label: 'Espace',
     tabs: [
-      { id: 'profil', label: 'Mon profil', labelKey: 'tabProfil' },
+      { id: 'profil', label: 'Profil', labelKey: 'tabProfil' },
       { id: 'agenda', label: 'Agenda', labelKey: 'tabAgenda' },
-      { id: 'materiel', label: 'Mon matériel', labelKey: 'tabMateriel' },
-      { id: 'vestiaire', label: 'Mon vestiaire', labelKey: 'tabVestiaire' },
+      { id: 'materiel', label: 'Matériel', labelKey: 'tabMateriel' },
+      { id: 'vestiaire', label: 'Vestiaire', labelKey: 'tabVestiaire' },
       { id: 'trombinoscope', label: 'Trombinoscope', labelKey: 'tabTrombinoscope' },
       { id: 'forum', label: 'Porte-voix', labelKey: 'tabForum' }
     ]
   },
   {
     id: 'troupe',
-    label: 'Gestion de la Troupe',
+    label: 'Troupe',
     tabs: [
-      { id: 'export-annu', label: 'Annuaire et export', labelKey: 'tabExportAnnu' },
+      { id: 'export-annu', label: 'Annuaire', labelKey: 'tabExportAnnu' },
       { id: 'tag-manager', label: 'Badges', labelKey: 'tabTagManager' },
-      { id: 'instruments', label: 'Pupitres et instruments', labelKey: 'tabInstruments' }
+      { id: 'instruments', label: 'Pupitres', labelKey: 'tabInstruments' }
     ]
   },
   {
     id: 'tresorerie',
     label: 'Trésorerie',
     tabs: [
-      { id: 'dashboard-finance', label: 'Tableau de bord', labelKey: 'tabDashboard' },
+      { id: 'dashboard-finance', label: 'Synthèse', labelKey: 'tabDashboard' },
       { id: 'cotisations', label: 'Cotisations', labelKey: 'tabCotisations' },
       { id: 'events-finances', label: 'Événements', labelKey: 'tabEvents' },
-      { id: 'operations-diverses', label: 'Opérations diverses', labelKey: 'tabOperations' },
-      { id: 'frais-km', label: 'Frais kilométriques', labelKey: 'tabFraisKm' },
-      { id: 'reports-exports', label: 'Rapport et exports', labelKey: 'tabReports' }
+      { id: 'operations-diverses', label: 'Opérations', labelKey: 'tabOperations' },
+      { id: 'frais-km', label: 'Frais', labelKey: 'tabFraisKm' },
+      { id: 'reports-exports', label: 'Exports', labelKey: 'tabReports' }
     ]
   },
   {
     id: 'logistique',
     label: 'Logistique',
     tabs: [
-      { id: 'inventory', label: 'Inventaire des instruments', labelKey: 'tabInventory' },
-      { id: 'orders-manager', label: 'Gestion des commandes', labelKey: 'tabOrders' }
+      { id: 'inventory', label: 'Instruments', labelKey: 'tabInventory' },
+      { id: 'orders-manager', label: 'Commandes', labelKey: 'tabOrders' }
     ]
   },
   {
@@ -96,47 +96,47 @@ const POLES_CONFIG = [
     label: 'Vestiaire',
     labelKey: 'poleWardrobe',
     tabs: [
-      { id: 'wardrobe-inventory', label: "Inventaire des pièces", labelKey: 'tabWardrobeInventory' },
+      { id: 'wardrobe-inventory', label: "Costumes", labelKey: 'tabWardrobeInventory' },
       { id: 'wardrobe-couture', label: 'Atelier Couture', labelKey: 'tabWardrobeCouture' },
-      { id: 'wardrobe-sizes', label: 'Mensurations Adhérents', labelKey: 'tabWardrobeSizes' }
+      { id: 'wardrobe-sizes', label: 'Mensurations', labelKey: 'tabWardrobeSizes' }
     ]
   },
   {
     id: 'studio',
-    label: 'Le Studio',
+    label: 'Studio',
     tabs: [
-      { id: 'studio-events', label: 'Gestion des événements', labelKey: 'tabStudioEvents' },
+      { id: 'studio-events', label: 'Événements', labelKey: 'tabStudioEvents' },
       { id: 'studio-social', label: 'Studio social', labelKey: 'tabStudioSocial' },
-      { id: 'reunion-manager', label: 'Gestion des réunions', labelKey: 'tabReunions' },
-      { id: 'varal-manager', label: 'Gestionnaire de Varal', labelKey: 'tabVaral' },
-      { id: 'activity-reports', label: "Rapports d'Activité", labelKey: 'tabActivityReports' },
-      { id: 'mestre-forum-channels', label: 'Gestion du Porte-voix', labelKey: 'tabMestreForumChannels' }
+      { id: 'reunion-manager', label: 'Réunions', labelKey: 'tabReunions' },
+      { id: 'varal-manager', label: 'Varal', labelKey: 'tabVaral' },
+      { id: 'activity-reports', label: "Rapports", labelKey: 'tabActivityReports' },
+      { id: 'mestre-forum-channels', label: 'Porte-voix', labelKey: 'tabMestreForumChannels' }
     ]
   },
   {
     id: 'mestre',
-    label: 'Espace Mestre',
+    label: 'Mestria',
     tabs: [
-      { id: 'mestre-orientation', label: 'Orientation & Casting', labelKey: 'tabMestreOrientation' },
-      { id: 'mestre-events', label: 'Liste des Événements', labelKey: 'tabMestreEvents' },
+      { id: 'mestre-orientation', label: 'Casting', labelKey: 'tabMestreOrientation' },
+      { id: 'mestre-events', label: 'Événements', labelKey: 'tabMestreEvents' },
       { id: 'mestre-stage-layout', label: 'Plan de Scène', labelKey: 'tabMestreStage' },
-      { id: 'mestre-sequenceur', label: 'Séquenceur (Fichiers JSON)', labelKey: 'tabMestreSequenceur' },
+      { id: 'mestre-sequenceur', label: 'Séquenceur', labelKey: 'tabMestreSequenceur' },
       { id: 'mestre-workshops', label: 'Ateliers', labelKey: 'tabMestreWorkshops' },
-      { id: 'mestre-mot-mestre', label: 'Mot du Mestre', labelKey: 'tabMestreMotMestre' }
+      { id: 'mestre-mot-mestre', label: 'Annonces', labelKey: 'tabMestreMotMestre' }
     ]
   },
   {
     id: 'config',
     label: 'Configuration',
     tabs: [
-      { id: 'config-identity', label: 'Identité et liens', labelKey: 'tabConfigIdentity' },
-      { id: 'config-profile', label: 'Organisation et profil', labelKey: 'tabConfigProfile' },
-      { id: 'config-security', label: 'Sécurité et droit', labelKey: 'tabConfigSecurity' },
+      { id: 'config-identity', label: 'Identité', labelKey: 'tabConfigIdentity' },
+      { id: 'config-profile', label: 'Organisation', labelKey: 'tabConfigProfile' },
+      { id: 'config-security', label: 'Sécurité', labelKey: 'tabConfigSecurity' },
       { id: 'config-modules', label: 'Modules & Fonctionnalités', labelKey: 'tabConfigModules' },
-      { id: 'config-logistics', label: 'Logistique et covoiturage', labelKey: 'tabConfigLogistics' },
+      { id: 'config-logistics', label: 'Logistique', labelKey: 'tabConfigLogistics' },
       { id: 'config-documents', label: 'Documents', labelKey: 'tabConfigDocuments' },
-      { id: 'config-agenda', label: "Gestion de l'Agenda", labelKey: 'tabConfigAgenda' },
-      { id: 'config-layout', label: 'Mise en page', labelKey: 'tabConfigLayout' }
+      { id: 'config-agenda', label: "Configuration de l'agenda", labelKey: 'tabConfigAgenda' },
+      { id: 'config-layout', label: 'Apparence', labelKey: 'tabConfigLayout' }
     ]
   }
 ];

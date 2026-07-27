@@ -15,10 +15,12 @@ import { XiloSettings, XiloCaixa, XiloBox, XiloPeople, XiloConsole, XiloMandacar
 import { useTranslation } from './LanguageContext';
 import { useTerminologie } from '../hooks/useTerminologie';
 import InstrumentReminderBanner from './dashboard/InstrumentReminderBanner';
+import { usePresenceContext } from '../context/PresenceContext';
 
 export default function Dashboard({ user, profileData, onNavigateToTrombi, onNavigateToView, onSignOut, installPromptAvailable, onTriggerInstall, permissionsMatrice }) {
   const { tRole } = useTerminologie();
   const { locale, toggleLanguage, t } = useTranslation();
+  const { isPresenceEnabled } = usePresenceContext();
   const [layout, setLayout] = useState(["motMestre", "annonces", "agenda", "commandes", "forum", "documents", "tresorerie", "anniversaires"]);
   const [sequenceurUrl, setSequenceurUrl] = useState('');
   const [agendaFocusMode, setAgendaFocusMode] = useState(false);
@@ -211,7 +213,7 @@ export default function Dashboard({ user, profileData, onNavigateToTrombi, onNav
       {/* Clickable User Information Card */}
       <div 
         onClick={() => onNavigateToView('profil')}
-        className="cursor-pointer hover:scale-[1.01] active:scale-95 transition-all"
+        className="cursor-pointer hover:translate-x-[-1px] hover:translate-y-[-1px] active:translate-x-[0.5px] active:translate-y-[0.5px] transition-all"
         title="Modifier mon profil / Paramètres"
       >
         <CordelCard variant="default" useExtremeBorder={true} className="py-3 px-4">
@@ -231,9 +233,11 @@ export default function Dashboard({ user, profileData, onNavigateToTrombi, onNav
                 </div>
               )}
               {/* Online Green Indicator Dot */}
-              <span className="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-emerald-500 border-2 border-white rounded-full flex items-center justify-center" title="Vous êtes en ligne">
-                <span className="w-1.5 h-1.5 bg-white rounded-full"></span>
-              </span>
+              {isPresenceEnabled !== false && (
+                <span className="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-emerald-500 border-2 border-white rounded-full flex items-center justify-center" title="Vous êtes en ligne">
+                  <span className="w-1.5 h-1.5 bg-white rounded-full"></span>
+                </span>
+              )}
             </div>
             
             <div className="flex-1 min-w-0">
@@ -296,7 +300,7 @@ export default function Dashboard({ user, profileData, onNavigateToTrombi, onNav
       </div>
 
       {/* Widgets Grid (Dynamically Ordered) */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full max-w-full overflow-hidden">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full max-w-full p-1 overflow-visible">
         {layout.map((widgetId) => {
           const spanClass = getWidgetSpan(widgetId);
           

@@ -5,6 +5,7 @@ import { db, storage } from '../firebase';
 import LayoutShell from './LayoutShell';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
+import EmptyState from './EmptyState';
 import { XiloClose, XiloBox } from './XiloIcons';
 import { useTranslation } from './LanguageContext';
 import { fr } from '../locales/fr';
@@ -478,9 +479,14 @@ export default function OrdersManager({ groupId, onBack, role, isSystemAdmin, ha
                 {t('ordersManager.campaignsList')}
               </h3>
               {campaigns.length === 0 ? (
-                <CordelCard variant="default" className="p-6 text-center bg-cordel-bg opacity-75">
-                  <p className="text-[10px] italic font-semibold">{t('ordersManager.noCampaigns') || "Aucune campagne de commande créée."}</p>
-                </CordelCard>
+                <EmptyState
+                  icon="📦"
+                  title="Aucune commande groupée en cours"
+                  description="Créez une nouvelle campagne d'achats groupés (T-shirts, peaux d'alfaia, goodies...) pour collecter les commandes des membres."
+                  actionLabel="+ Créer une commande groupée"
+                  onAction={() => setIsCreating(true)}
+                  className="col-span-full"
+                />
               ) : (
                 campaigns.map((c) => (
                   <CordelCard 

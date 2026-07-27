@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
+import EmptyState from '../EmptyState';
+import Tooltip from '../Tooltip';
 import useConfirm from '../../hooks/useConfirm';
 
 export default function TreasuryOperations({
@@ -239,12 +241,17 @@ export default function TreasuryOperations({
       {/* List */}
       <div className="col-span-2 flex flex-col gap-3">
         <CordelCard variant="default" useExtremeBorder={false} className="p-4 flex-1">
-          <h4 className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood border-b border-dashed border-cordel-master-dark/15 pb-1 mb-3 text-left">
-            Opérations Enregistrées
+          <h4 className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood border-b border-dashed border-cordel-master-dark/15 pb-1 mb-3 text-left flex items-center gap-1.5">
+            <span>Opérations Enregistrées</span>
+            <Tooltip text="Historique complet des mouvements financiers crédités et débités du compte de l'association." />
           </h4>
           
           {transactions.length === 0 ? (
-            <p className="text-xs italic opacity-60 text-center py-8">Aucune opération libre saisie.</p>
+            <EmptyState
+              icon="💰"
+              title="Aucune opération financière enregistrée"
+              description="Le livre de caisse est vide. Saisissez votre première recette ou dépense à l'aide du formulaire ci-contre."
+            />
           ) : (
             <div className="flex flex-col gap-2 max-h-[500px] overflow-y-auto pr-1">
               {/* Header Table */}

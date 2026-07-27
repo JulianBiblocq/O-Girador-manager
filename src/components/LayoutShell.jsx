@@ -45,6 +45,17 @@ export default function LayoutShell({
   const finalLogoUrl = logoUrl || '/Pictures/logo-samambaia.png';
   const { t } = useTranslation();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [isLogoTilting, setIsLogoTilting] = useState(false);
+
+  const handleLogoClick = () => {
+    setIsLogoTilting(true);
+    setTimeout(() => {
+      setIsLogoTilting(false);
+    }, 750);
+
+    if (onNavigateToPole) onNavigateToPole('accueil');
+    if (onNavigateToTab) onNavigateToTab('dashboard');
+  };
   
   const isPresenceEnabled = activerPresenceEnLigne !== false;
   const currentUserId = profileData?.uid;
@@ -126,13 +137,13 @@ export default function LayoutShell({
 
   const allMemberMenuItems = [
     { id: 'accueil', label: 'Accueil', icon: <XiloHome size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('accueil'); onNavigateToTab && onNavigateToTab('dashboard'); } },
-    { id: 'profil', label: 'Mon profil', icon: <XiloUser size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('mon-espace'); onNavigateToTab && onNavigateToTab('profil'); } },
+    { id: 'profil', label: 'Profil', icon: <XiloUser size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('mon-espace'); onNavigateToTab && onNavigateToTab('profil'); } },
     { id: 'agenda', label: 'Agenda', icon: <XiloCalendar size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('mon-espace'); onNavigateToTab && onNavigateToTab('agenda'); } },
-    { id: 'materiel', label: 'Mon matériel', icon: <XiloCaixa size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('mon-espace'); onNavigateToTab && onNavigateToTab('materiel'); } },
-    { id: 'vestiaire', label: 'Mon vestiaire', icon: <XiloHanger size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('mon-espace'); onNavigateToTab && onNavigateToTab('vestiaire'); } },
+    { id: 'materiel', label: 'Matériel', icon: <XiloCaixa size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('mon-espace'); onNavigateToTab && onNavigateToTab('materiel'); } },
+    { id: 'vestiaire', label: 'Vestiaire', icon: <XiloHanger size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('mon-espace'); onNavigateToTab && onNavigateToTab('vestiaire'); } },
     { id: 'trombinoscope', label: 'Trombinoscope', icon: <XiloPeople size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('mon-espace'); onNavigateToTab && onNavigateToTab('trombinoscope'); } },
     { id: 'forum', label: 'Porte-voix', icon: <XiloMegaphone size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('mon-espace'); onNavigateToTab && onNavigateToTab('forum'); } },
-    { id: 'varal', label: 'Varal (documents)', icon: <XiloScroll size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('accueil'); onNavigateToTab && onNavigateToTab('varal'); } }
+    { id: 'varal', label: 'Varal', icon: <XiloScroll size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('accueil'); onNavigateToTab && onNavigateToTab('varal'); } }
   ];
 
   const memberMenuItems = allMemberMenuItems.filter(item => isModuleEnabled(item.id, 'mon-espace'));
@@ -199,8 +210,10 @@ export default function LayoutShell({
         <div className="lg:hidden w-full h-16 landscape:h-12 border-b-4 border-cordel-master-dark bg-cordel-bg-light flex items-center px-4 justify-between select-none shrink-0 z-30">
           <div className="flex items-center gap-3">
             <div 
-              onClick={() => onNavigateToPole && onNavigateToPole('accueil')}
-              className="flex items-center gap-3 cursor-pointer hover:opacity-90 transition-opacity"
+              onClick={handleLogoClick}
+              className={`flex items-center gap-3 cursor-pointer hover:opacity-90 transition-all ${
+                isLogoTilting ? 'animate-logo-tilt' : ''
+              }`}
               title={t('poles.accueil')}
             >
               <img 
@@ -264,8 +277,10 @@ export default function LayoutShell({
         <div className="hidden lg:flex w-56 border-r-4 border-cordel-master-dark bg-cordel-bg-light flex-col items-center justify-between py-6 px-3 shrink-0 select-none">
           <div className="flex flex-col items-center gap-3 w-full flex-grow min-h-0">
             <div 
-              onClick={() => onNavigateToPole && onNavigateToPole('accueil')}
-              className="w-20 h-20 bg-white border-2 border-encre-noire rounded-full flex items-center justify-center p-2 shadow-[2px_2px_0px_0px_#181716] cursor-pointer hover:scale-[1.02] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none transition-all shrink-0"
+              onClick={handleLogoClick}
+              className={`w-20 h-20 bg-white border-2 border-encre-noire rounded-full flex items-center justify-center p-2 shadow-[2px_2px_0px_0px_#181716] cursor-pointer hover:scale-[1.04] hover:rotate-[-4deg] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none transition-all duration-300 shrink-0 ${
+                isLogoTilting ? 'animate-logo-tilt' : ''
+              }`}
               title={t('poles.accueil')}
             >
               <img 
@@ -279,7 +294,7 @@ export default function LayoutShell({
             <div className="flex flex-col items-center justify-center text-center px-1 shrink-0 mt-1">
               <div className="flex items-center gap-2 justify-center">
                 <span 
-                  onClick={() => onNavigateToPole && onNavigateToPole('accueil')}
+                  onClick={handleLogoClick}
                   className="font-extrabold text-[9px] uppercase tracking-widest text-cordel-master-dark/50 cursor-pointer hover:opacity-85 transition-opacity"
                 >
                   O Girador
@@ -382,7 +397,7 @@ export default function LayoutShell({
                     : 'bg-neutral-850 text-encre-noire hover:bg-neutral-100 bg-white'
                 }`}
               >
-                <XiloConsole size={10} className="inline mr-1" /> {t('poles.tabSystemAdmin') || "Admin Système"}
+                <XiloConsole size={10} className="inline mr-1" /> {t('poles.tabSystemAdmin') || "Système"}
               </button>
             )}
 
@@ -414,7 +429,7 @@ export default function LayoutShell({
         </div>
 
         {/* Main Content Area */}
-        <div className="flex-1 overflow-y-auto cordel-bg p-5 sm:p-6 md:p-8 flex flex-col justify-between">
+        <div className="flex-1 overflow-y-auto cordel-bg p-5 sm:px-7 md:px-9 sm:py-6 md:py-8 flex flex-col justify-between">
           <div className="flex flex-col gap-5 w-full flex-1">
             
             {/* Top Horizontal Subcategories Menu */}

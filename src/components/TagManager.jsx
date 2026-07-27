@@ -3,6 +3,7 @@ import { doc, onSnapshot, setDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
+import PermissionsGuideBox from './PermissionsGuideBox';
 import { useTranslation } from './LanguageContext';
 import { normalizeTag, getTagId } from '../utils/tagUtils';
 import useConfirm from '../hooks/useConfirm';
@@ -273,6 +274,9 @@ export default function TagManager({ groupId, onBack, role, isSystemAdmin }) {
           🏷️ {t('tags.managerTitle') || "Gestionnaire d'Étiquettes / Rôles"}
         </h2>
       </div>
+
+      {/* Guide Box */}
+      <PermissionsGuideBox defaultOpen={false} />
 
       {/* Add Tag Form */}
       <CordelCard variant="default" useExtremeBorder={true} className="p-5">

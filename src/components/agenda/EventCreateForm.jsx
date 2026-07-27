@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
+import CordelAccordion, { CordelAccordionGroup } from '../CordelAccordion';
 import EventBudgetEditor from '../event-details/EventBudgetEditor';
 import { calculateRoadDistance } from '../../utils/googleMaps';
 import ManualMapMarkerModal from './ManualMapMarkerModal';
@@ -9,7 +10,7 @@ import AddressAutocomplete from '../AddressAutocomplete';
 
 /**
  * EventCreateForm component handles creation details of a new event.
- * Extracted from WidgetAgenda to enforce code modularity.
+ * Organized into logical accordions for Progressive Disclosure ergonomics.
  *
  * @param {Object} props Component properties
  * @param {Object} props.formData Form state containing new event fields
@@ -48,683 +49,727 @@ export default function EventCreateForm({
 
   return (
     <CordelCard variant="default" useExtremeBorder={true} className="text-left py-6">
-      <h4 className="panel-title text-base font-bold mb-4 text-cordel-wood">
-        {translate('widgetAgenda.createEventTitle', "Créer un événement")}
+      <h4 className="panel-title text-base font-bold mb-4 text-cordel-wood flex items-center justify-between">
+        <span>{translate('widgetAgenda.createEventTitle', "Créer un événement")}</span>
+        <span className="text-xs font-normal opacity-75 text-[var(--encre-noire)]">
+          Organisé en 4 blocs dépliables
+        </span>
       </h4>
       
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        {/* Title */}
-        <div className="flex flex-col gap-1">
-          <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-            {translate('widgetAgenda.eventTitleLabel', "Titre de l'événement")}
-          </label>
-          <input
-            type="text"
-            name="titre"
-            value={formData.titre}
-            onChange={handleChange}
-            required
-            disabled={saving}
-            placeholder="Ex : Carnaval ou Répétition"
-            className="theme-input w-full disabled:opacity-50"
-          />
-        </div>
-
-        {/* Type Dropdown */}
-        <div className="flex flex-col gap-1">
-          <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-            {translate('widgetAgenda.typeLabel', "Type")}
-          </label>
-          <select
-            name="type"
-            value={formData.type}
-            onChange={handleChange}
-            required
-            disabled={saving}
-            className="theme-input w-full disabled:opacity-50 font-bold bg-cordel-bg-light"
+        <CordelAccordionGroup>
+          {/* BLOCK 1: INFORMATIONS GÉNÉRALES (Open by default) */}
+          <CordelAccordion
+            title="1. Informations Générales"
+            subtitle="Titre, type, date, horaire, lieu et description de l'événement"
+            icon="📌"
+            defaultOpen={true}
           >
-            {associationEventTypes.map(type => (
-              <option key={type} value={type}>
-                {type === 'prestation' ? translate('widgetAgenda.typePrestation', "Prestation") :
-                 type === 'repetition' ? translate('widgetAgenda.typeRepetition', "Répétition") :
-                 type === 'stage' ? translate('widgetAgenda.typeStage', "Stage") :
-                 type === 'atelier' ? translate('widgetAgenda.typeAtelier', "Atelier") :
-                 type === 'reunion' ? translate('widgetAgenda.typeReunion', "Réunion") :
-                 type.charAt(0).toUpperCase() + type.slice(1)}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Description */}
-        <div className="flex flex-col gap-1">
-          <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-            {translate('common.description', "Description")}
-          </label>
-          <textarea
-            name="description"
-            value={formData.description}
-            onChange={handleChange}
-            disabled={saving}
-            placeholder={translate('widgetAgenda.descriptionPlaceholder', "Description détaillée de l'événement...")}
-            className="theme-input w-full min-h-[80px] disabled:opacity-50 font-medium py-1.5"
-          />
-        </div>
-
-        {/* Multi-Date Poll Toggle Section */}
-        <div className="p-3 bg-amber-50/80 dark:bg-amber-950/20 border-2 border-dashed border-amber-500/40 rounded-[6px_8px_5px_7px] flex flex-col gap-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="text-base">📊</span>
-              <div>
-                <label className="text-xs font-black uppercase text-cordel-wood cursor-pointer">
-                  Créer un sondage de dates
+            <div className="flex flex-col gap-4">
+              {/* Title */}
+              <div className="flex flex-col gap-1">
+                <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                  {translate('widgetAgenda.eventTitleLabel', "Titre de l'événement")} *
                 </label>
-                <p className="text-[9px] font-semibold text-encre-noire/70">
-                  Proposer 2 à 4 créneaux temporaires pour soumettre au vote des membres
-                </p>
+                <input
+                  type="text"
+                  name="titre"
+                  value={formData.titre}
+                  onChange={handleChange}
+                  required
+                  disabled={saving}
+                  placeholder="Ex : Carnaval ou Répétition"
+                  className="theme-input w-full disabled:opacity-50"
+                />
               </div>
-            </div>
-            <input
-              type="checkbox"
-              checked={Boolean(formData.isPoll)}
-              onChange={(e) => setFormData(prev => ({ 
-                ...prev, 
-                isPoll: e.target.checked,
-                pollDates: prev.pollDates || [prev.date || '', ''] 
-              }))}
-              className="w-4 h-4 accent-amber-600 cursor-pointer"
-            />
-          </div>
 
-          {formData.isPoll && (
-            <div className="flex flex-col gap-3 pt-2 border-t border-dashed border-amber-500/30">
-              {/* Restriction Selector */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* Type Dropdown */}
+              <div className="flex flex-col gap-1">
+                <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                  {translate('widgetAgenda.typeLabel', "Type")} *
+                </label>
+                <select
+                  name="type"
+                  value={formData.type}
+                  onChange={handleChange}
+                  required
+                  disabled={saving}
+                  className="theme-input w-full disabled:opacity-50 font-bold bg-cordel-bg-light"
+                >
+                  {associationEventTypes.map(type => (
+                    <option key={type} value={type}>
+                      {type === 'prestation' ? translate('widgetAgenda.typePrestation', "Prestation") :
+                       type === 'repetition' ? translate('widgetAgenda.typeRepetition', "Répétition") :
+                       type === 'stage' ? translate('widgetAgenda.typeStage', "Stage") :
+                       type === 'atelier' ? translate('widgetAgenda.typeAtelier', "Atelier") :
+                       type === 'reunion' ? translate('widgetAgenda.typeReunion', "Réunion") :
+                       type.charAt(0).toUpperCase() + type.slice(1)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Description */}
+              <div className="flex flex-col gap-1">
+                <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                  {translate('common.description', "Description")}
+                </label>
+                <textarea
+                  name="description"
+                  value={formData.description}
+                  onChange={handleChange}
+                  disabled={saving}
+                  placeholder={translate('widgetAgenda.descriptionPlaceholder', "Description détaillée de l'événement...")}
+                  className="theme-input w-full min-h-[80px] disabled:opacity-50 font-medium py-1.5"
+                />
+              </div>
+
+              {/* Date Début */}
+              {!formData.isPoll && (
                 <div className="flex flex-col gap-1">
                   <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                    Restriction du vote
+                    {translate('widgetAgenda.startDateLabel', "Date et heure de début")} *
                   </label>
-                  <select
-                    value={formData.pollRestrictionType || 'aucun'}
-                    onChange={(e) => setFormData(prev => ({ ...prev, pollRestrictionType: e.target.value, pollTarget: '' }))}
-                    className="theme-input text-xs font-bold py-1 bg-white"
-                  >
-                    <option value="aucun">👥 Tous les membres</option>
-                    <option value="tag">🏷️ Par Étiquette (ex: C.A, Bureau)</option>
-                    <option value="instrument">🥁 Par Pupitre / Instrument</option>
-                  </select>
-                </div>
-
-                {formData.pollRestrictionType === 'tag' && (
-                  <div className="flex flex-col gap-1">
-                    <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                      Étiquette ciblée
-                    </label>
-                    <input
-                      type="text"
-                      list="available-tags-list"
-                      value={formData.pollTarget || ''}
-                      onChange={(e) => setFormData(prev => ({ ...prev, pollTarget: e.target.value }))}
-                      placeholder="Ex: C.A, Bureau..."
-                      className="theme-input text-xs font-bold py-1 bg-white"
-                    />
-                    <datalist id="available-tags-list">
-                      <option value="C.A" />
-                      <option value="Bureau" />
-                      <option value="Mestre" />
-                      <option value="Modérateur" />
-                      <option value="Commission Logistique" />
-                    </datalist>
-                  </div>
-                )}
-
-                {formData.pollRestrictionType === 'instrument' && (
-                  <div className="flex flex-col gap-1">
-                    <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                      Pupitre / Instrument ciblé
-                    </label>
-                    <select
-                      value={formData.pollTarget || ''}
-                      onChange={(e) => setFormData(prev => ({ ...prev, pollTarget: e.target.value }))}
-                      className="theme-input text-xs font-bold py-1 bg-white"
-                    >
-                      <option value="">-- Choisir l'instrument --</option>
-                      {['Alfaia', 'Caixa', 'Gonguê', 'Agbê', 'Mineiro', 'Timbal', 'Chant', 'Danse'].map(inst => (
-                        <option key={inst} value={inst}>{inst}</option>
-                      ))}
-                    </select>
-                  </div>
-                )}
-              </div>
-
-              {/* Candidate Option Dates */}
-              <div className="flex flex-col gap-2">
-                <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                  Créneaux proposés (2 à 4 dates)
-                </label>
-                {(formData.pollDates || ['', '']).map((optDate, idx) => (
-                  <div key={idx} className="flex items-center gap-2">
-                    <span className="text-[10px] font-black text-cordel-wood w-16 shrink-0">
-                      Option {idx + 1} :
-                    </span>
-                    <input
-                      type="datetime-local"
-                      value={optDate}
-                      onChange={(e) => {
-                        const newDates = [...(formData.pollDates || ['', ''])];
-                        newDates[idx] = e.target.value;
-                        setFormData(prev => ({ 
-                          ...prev, 
-                          pollDates: newDates,
-                          date: idx === 0 ? e.target.value : prev.date
-                        }));
-                      }}
-                      required={idx < 2}
-                      className="theme-input text-xs py-1 flex-1 bg-white"
-                    />
-                    {idx >= 2 && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const newDates = (formData.pollDates || []).filter((_, i) => i !== idx);
-                          setFormData(prev => ({ ...prev, pollDates: newDates }));
-                        }}
-                        className="text-[10px] text-red-600 font-bold px-1.5 py-0.5 hover:bg-red-50 rounded cursor-pointer"
-                      >
-                        ✖
-                      </button>
-                    )}
-                  </div>
-                ))}
-
-                {(formData.pollDates || []).length < 4 && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const current = formData.pollDates || ['', ''];
-                      if (current.length < 4) {
-                        setFormData(prev => ({ ...prev, pollDates: [...current, ''] }));
-                      }
-                    }}
-                    className="text-[9px] font-black uppercase text-cordel-wood hover:underline text-left mt-1 cursor-pointer"
-                  >
-                    + Ajouter une 3ème ou 4ème option de date
-                  </button>
-                )}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Date Début */}
-        {!formData.isPoll && (
-          <div className="flex flex-col gap-1">
-            <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-              {translate('widgetAgenda.startDateLabel', "Date et heure de début")}
-            </label>
-            <input
-              type="datetime-local"
-              name="date"
-              value={formData.date}
-              onChange={handleChange}
-              required
-              disabled={saving}
-              className="theme-input w-full disabled:opacity-50"
-            />
-          </div>
-        )}
-
-        {/* Date Fin (optionnel) */}
-        <div className="flex flex-col gap-1">
-          <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-            {translate('widgetAgenda.endDateLabel', "Date et heure de fin (optionnel)")}
-          </label>
-          <input
-            type="datetime-local"
-            name="dateFin"
-            value={formData.dateFin}
-            onChange={handleChange}
-            onFocus={() => {
-              if (!formData.dateFin && formData.date) {
-                setFormData(prev => ({ ...prev, dateFin: prev.date }));
-              }
-            }}
-            disabled={saving}
-            className="theme-input w-full disabled:opacity-50"
-          />
-        </div>
-
-        {/* Lieu (Adresse) */}
-        {createConfig.agendaEnableAdresse && (
-          <div className="flex flex-col gap-1">
-            <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-              {translate('widgetAgenda.locationLabel', "Lieu")}
-            </label>
-            <React.Suspense fallback={
-              <div className="text-[10px] font-bold py-2 text-cordel-wood animate-pulse">
-                ⏳ {translate('widgetAgenda.loadingAddress', "Chargement du champ adresse...")}
-              </div>
-            }>
-              <AddressAutocomplete
-                name="lieu"
-                value={formData.lieu}
-                onChange={(e) => {
-                  setFormData(prev => ({ ...prev, lieu: e.target.value }));
-                }}
-                onSelect={async (placeData) => {
-                  const exactAddress = placeData.address || '';
-                  setFormData(prev => ({ ...prev, lieu: exactAddress }));
-                  if (adresseLocal && exactAddress) {
-                    try {
-                      const distanceKm = await calculateRoadDistance(adresseLocal, exactAddress);
-                      const distanceRoundTrip = Math.round(distanceKm * 2);
-                      setFormData(prev => ({ ...prev, distanceAllerRetourKm: distanceRoundTrip.toString() }));
-                    } catch (err) {
-                      console.error("Distance Matrix calculation failed on create:", err);
-                    }
-                  }
-                }}
-                required
-                disabled={saving}
-                placeholder={translate('widgetAgenda.locationPlaceholder', "Ex : Local de l'asso, Place de la Mairie...")}
-                className="theme-input w-full disabled:opacity-50"
-              />
-            </React.Suspense>
-            
-            <div className="flex flex-col items-start gap-1 mt-1 select-none">
-              <button
-                type="button"
-                onClick={() => setIsMapModalOpen(true)}
-                className="text-[10px] font-extrabold uppercase tracking-wider text-cordel-wood hover:underline flex items-center gap-1 cursor-pointer"
-              >
-                📌 Placer sur la carte manuellement
-              </button>
-              {formData.latitude && formData.longitude && (
-                <div className="flex items-center gap-2 text-[9px] font-bold bg-amber-50 dark:bg-amber-950/20 text-amber-800 dark:text-amber-300 px-2 py-1 rounded border border-amber-300/60">
-                  <span>📌 Coordonnées manuelles actives : {Number(formData.latitude).toFixed(5)}, {Number(formData.longitude).toFixed(5)}</span>
-                  <button
-                    type="button"
-                    onClick={() => setFormData(prev => ({ ...prev, latitude: null, longitude: null }))}
-                    className="text-red-600 hover:text-red-800 font-black cursor-pointer ml-1"
-                    title="Effacer les coordonnées manuelles"
-                  >
-                    ✕
-                  </button>
+                  <input
+                    type="datetime-local"
+                    name="date"
+                    value={formData.date}
+                    onChange={handleChange}
+                    required={!formData.isPoll}
+                    disabled={saving}
+                    className="theme-input w-full disabled:opacity-50"
+                  />
                 </div>
               )}
+
+              {/* Date Fin (optionnel) */}
+              <div className="flex flex-col gap-1">
+                <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                  {translate('widgetAgenda.endDateLabel', "Date et heure de fin (optionnel)")}
+                </label>
+                <input
+                  type="datetime-local"
+                  name="dateFin"
+                  value={formData.dateFin}
+                  onChange={handleChange}
+                  onFocus={() => {
+                    if (!formData.dateFin && formData.date) {
+                      setFormData(prev => ({ ...prev, dateFin: prev.date }));
+                    }
+                  }}
+                  disabled={saving}
+                  className="theme-input w-full disabled:opacity-50"
+                />
+              </div>
+
+              {/* Lieu (Adresse) */}
+              {createConfig.agendaEnableAdresse && (
+                <div className="flex flex-col gap-1">
+                  <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                    {translate('widgetAgenda.locationLabel', "Lieu")}
+                  </label>
+                  <React.Suspense fallback={
+                    <div className="text-[10px] font-bold py-2 text-cordel-wood animate-pulse">
+                      ⏳ {translate('widgetAgenda.loadingAddress', "Chargement du champ adresse...")}
+                    </div>
+                  }>
+                    <AddressAutocomplete
+                      name="lieu"
+                      value={formData.lieu}
+                      onChange={(e) => {
+                        setFormData(prev => ({ ...prev, lieu: e.target.value }));
+                      }}
+                      onSelect={async (placeData) => {
+                        const exactAddress = placeData.address || '';
+                        setFormData(prev => ({ ...prev, lieu: exactAddress }));
+                        if (adresseLocal && exactAddress) {
+                          try {
+                            const distanceKm = await calculateRoadDistance(adresseLocal, exactAddress);
+                            const distanceRoundTrip = Math.round(distanceKm * 2);
+                            setFormData(prev => ({ ...prev, distanceAllerRetourKm: distanceRoundTrip.toString() }));
+                          } catch (err) {
+                            console.error("Distance Matrix calculation failed on create:", err);
+                          }
+                        }
+                      }}
+                      disabled={saving}
+                      placeholder={translate('widgetAgenda.locationPlaceholder', "Ex : Local de l'asso, Place de la Mairie...")}
+                      className="theme-input w-full disabled:opacity-50"
+                    />
+                  </React.Suspense>
+                  
+                  <div className="flex flex-col items-start gap-1 mt-1 select-none">
+                    <button
+                      type="button"
+                      onClick={() => setIsMapModalOpen(true)}
+                      className="text-[10px] font-extrabold uppercase tracking-wider text-cordel-wood hover:underline flex items-center gap-1 cursor-pointer"
+                    >
+                      📌 Placer sur la carte manuellement
+                    </button>
+                    {formData.latitude && formData.longitude && (
+                      <div className="flex items-center gap-2 text-[9px] font-bold bg-amber-50 dark:bg-amber-950/20 text-amber-800 dark:text-amber-300 px-2 py-1 rounded border border-amber-300/60">
+                        <span>📌 Coordonnées manuelles actives : {Number(formData.latitude).toFixed(5)}, {Number(formData.longitude).toFixed(5)}</span>
+                        <button
+                          type="button"
+                          onClick={() => setFormData(prev => ({ ...prev, latitude: null, longitude: null }))}
+                          className="text-red-600 hover:text-red-800 font-black cursor-pointer ml-1"
+                          title="Effacer les coordonnées manuelles"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  <ManualMapMarkerModal
+                    isOpen={isMapModalOpen}
+                    onClose={() => setIsMapModalOpen(false)}
+                    onSave={({ latitude, longitude }) => {
+                      setFormData(prev => ({ ...prev, latitude, longitude }));
+                    }}
+                    initialLat={formData.latitude}
+                    initialLng={formData.longitude}
+                    addressContext={formData.lieu}
+                  />
+
+                  {!adresseLocal && (
+                    <span className="text-[9px] text-orange-600 font-bold leading-none mt-1 select-none text-left">
+                      ⚠️ {translate('widgetAgenda.localAddressNotConfigured', "Adresse du local non configurée dans les paramètres de l'association (calcul de distance inactif).")}
+                    </span>
+                  )}
+                </div>
+              )}
+
+              {/* Tenue requise */}
+              <div className="flex flex-col gap-1">
+                <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                  {translate('widgetAgenda.dressCodeLabel', "Tenue requise / Dress Code (Optionnel)")}
+                </label>
+                <select
+                  name="tenueRequise"
+                  value={formData.tenueRequise}
+                  onChange={handleChange}
+                  disabled={saving}
+                  className="theme-input w-full disabled:opacity-50 font-bold bg-cordel-bg-light"
+                >
+                  <option value="">{translate('widgetAgenda.noDressCode', "-- Aucune tenue spécifiée --")}</option>
+                  {dressCodes.map(dc => (
+                    <option key={dc.id} value={dc.name}>{dc.name} ({dc.included})</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Date Limite Inscription */}
+              {createConfig.agendaEnableInscriptions && (
+                <div className="flex flex-col gap-1">
+                  <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                    {translate('widgetAgenda.deadlineLabel', "Date limite d'inscription (Optionnel)")}
+                  </label>
+                  <input
+                    type="datetime-local"
+                    name="dateLimiteInscription"
+                    value={formData.dateLimiteInscription}
+                    onChange={handleChange}
+                    disabled={saving}
+                    className="theme-input w-full disabled:opacity-50"
+                  />
+                </div>
+              )}
+
+              {/* Enable Inscriptions Toggle */}
+              <div className="flex items-center gap-2 pt-1 text-left">
+                <label className="flex items-center gap-2 text-xs font-bold cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    name="enableInscriptions"
+                    checked={formData.enableInscriptions !== false}
+                    onChange={(e) => setFormData(prev => ({ ...prev, enableInscriptions: e.target.checked }))}
+                    disabled={saving}
+                    className="accent-cordel-wood scale-105"
+                  />
+                  <span>📝 Demander des inscriptions pour cet événement (Présent / Absent / À confirmer)</span>
+                </label>
+              </div>
             </div>
+          </CordelAccordion>
 
-            <ManualMapMarkerModal
-              isOpen={isMapModalOpen}
-              onClose={() => setIsMapModalOpen(false)}
-              onSave={({ latitude, longitude }) => {
-                setFormData(prev => ({ ...prev, latitude, longitude }));
-              }}
-              initialLat={formData.latitude}
-              initialLng={formData.longitude}
-              addressContext={formData.lieu}
-            />
-
-            {!adresseLocal && (
-              <span className="text-[9px] text-orange-600 font-bold leading-none mt-1 select-none text-left">
-                ⚠️ {translate('widgetAgenda.localAddressNotConfigured', "Adresse du local non configurée dans les paramètres de l'association (calcul de distance inactif).")}
-              </span>
-            )}
-          </div>
-        )}
-
-        {/* Distance A/R (Covoiturage) */}
-        {rawCreateConfig.agendaEnableCarpool !== false && (formData.type === 'prestation' || formData.type === 'stage' || formData.type === 'atelier') && (
-          <div className="flex flex-col gap-1">
-            <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-              {translate('widgetAgenda.distanceLabel', "Distance Aller-Retour en Km (Covoiturage)")}
-            </label>
-            <input
-              type="number"
-              name="distanceAllerRetourKm"
-              min="0"
-              value={formData.distanceAllerRetourKm}
-              onChange={handleChange}
-              disabled={saving}
-              placeholder="Ex : 120"
-              className="theme-input w-full disabled:opacity-50"
-            />
-          </div>
-        )}
-
-        {/* Date Limite Inscription */}
-        {createConfig.agendaEnableInscriptions && (
-          <div className="flex flex-col gap-1">
-            <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-              {translate('widgetAgenda.deadlineLabel', "Date limite d'inscription (Optionnel)")}
-            </label>
-            <input
-              type="datetime-local"
-              name="dateLimiteInscription"
-              value={formData.dateLimiteInscription}
-              onChange={handleChange}
-              disabled={saving}
-              className="theme-input w-full disabled:opacity-50"
-            />
-          </div>
-        )}
-
-        {/* Horaires Passages (prestation) */}
-        {formData.type === 'prestation' && (
-          <div className="flex flex-col gap-1">
-            <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-              {translate('widgetAgenda.stageTimesLabel', "Horaires de passages")}
-            </label>
-            <input
-              type="text"
-              name="horairesPassages"
-              value={formData.horairesPassages}
-              onChange={handleChange}
-              disabled={saving}
-              placeholder="Ex : 14:30 - 15:15"
-              className="theme-input w-full disabled:opacity-50"
-            />
-          </div>
-        )}
-
-        {/* Horaire Covoiturage */}
-        {rawCreateConfig.agendaEnableCarpool !== false && (formData.type === 'prestation' || formData.type === 'stage' || formData.type === 'atelier') && (
-          <div className="flex flex-col gap-1">
-            <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-              {translate('widgetAgenda.carpoolTimeLabel', "Horaire de convoi / RDV covoiturage")}
-            </label>
-            <input
-              type="text"
-              name="horaireCovoiturage"
-              value={formData.horaireCovoiturage}
-              onChange={handleChange}
-              disabled={saving}
-              placeholder="Ex : 13h00 au local"
-              className="theme-input w-full disabled:opacity-50"
-            />
-          </div>
-        )}
-
-        {/* Niveaux Requis (Musique et Danse) */}
-        {(formData.type === 'prestation' || formData.type === 'stage' || formData.type === 'repetition' || formData.type === 'atelier') && (
-          <>
-            <div className="flex flex-col gap-1">
-              <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                {translate('widgetAgenda.musicLevelLabel', "Musique (Niveau requis)")}
-              </label>
-              <select
-                name="niveauRequis"
-                value={formData.niveauRequis}
-                onChange={handleChange}
-                disabled={saving}
-                className="theme-input w-full disabled:opacity-50 font-bold bg-cordel-bg-light"
-              >
-                <option value="aucun">{translate('widgetAgenda.levelNone', "Pas de musicien")}</option>
-                <option value="debutant">{translate('widgetAgenda.levelDeb', "Niveau débutant")}</option>
-                <option value="confirme">{translate('widgetAgenda.levelConfirm', "Niveau confirmé")}</option>
-                <option value="tous">{translate('widgetAgenda.levelAll', "Tout le monde")}</option>
-              </select>
-            </div>
-
-            <div className="flex flex-col gap-1">
-              <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                {translate('widgetAgenda.danceLevelLabel', "Danse (Niveau requis)")}
-              </label>
-              <select
-                name="niveauDanseRequis"
-                value={formData.niveauDanseRequis}
-                onChange={handleChange}
-                disabled={saving}
-                className="theme-input w-full disabled:opacity-50 font-bold bg-cordel-bg-light"
-              >
-                <option value="aucun">{translate('widgetAgenda.danceLevelNone', "Pas de danse")}</option>
-                <option value="debutant">{translate('widgetAgenda.danceLevelDeb', "Niveau débutant")}</option>
-                <option value="confirme">{translate('widgetAgenda.danceLevelConfirm', "Niveau confirmé")}</option>
-                <option value="tous">{translate('widgetAgenda.danceLevelAll', "Tout le monde")}</option>
-              </select>
-            </div>
-          </>
-        )}
-
-        {/* Tenue requise */}
-        <div className="flex flex-col gap-1">
-          <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-            {translate('widgetAgenda.dressCodeLabel', "Tenue requise / Dress Code (Optionnel)")}
-          </label>
-          <select
-            name="tenueRequise"
-            value={formData.tenueRequise}
-            onChange={handleChange}
-            disabled={saving}
-            className="theme-input w-full disabled:opacity-50 font-bold bg-cordel-bg-light"
+          {/* BLOCK 2: LOGISTIQUE & COVOITURAGE (Closed by default) */}
+          <CordelAccordion
+            title="2. Logistique & Covoiturage"
+            subtitle="Covoiturage, horaires de convoi, distance, budget prévisionnel et bénévoles"
+            icon="🚗"
+            defaultOpen={false}
           >
-            <option value="">{translate('widgetAgenda.noDressCode', "-- Aucune tenue spécifiée --")}</option>
-            {dressCodes.map(dc => (
-              <option key={dc.id} value={dc.name}>{dc.name} ({dc.included})</option>
-            ))}
-          </select>
-        </div>
+            <div className="flex flex-col gap-4">
+              {/* Covoiturage Toggle */}
+              {rawCreateConfig.agendaEnableCarpool !== false && (
+                <div className="flex items-center gap-2 text-left">
+                  <label className="flex items-center gap-2 text-xs font-bold cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      name="enableCarpool"
+                      checked={formData.enableCarpool}
+                      onChange={(e) => setFormData(prev => ({ ...prev, enableCarpool: e.target.checked }))}
+                      disabled={saving}
+                      className="accent-cordel-wood scale-105"
+                    />
+                    <span>🚗 {translate('widgetAgenda.enableCarpoolLabel', "Autoriser le covoiturage pour cet événement")}</span>
+                  </label>
+                </div>
+              )}
 
-        {/* Ordre du jour */}
-        {createConfig.agendaEnableOrdreDuJour && (
-          <div className="flex flex-col gap-1">
-            <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-              {translate('widgetAgenda.agendaDocLinkLabel', "Lien du document d'ordre du jour")}
-            </label>
-            <input
-              type="url"
-              name="lienDocument"
-              value={formData.lienDocument}
-              onChange={handleChange}
-              disabled={saving}
-              className="theme-input w-full disabled:opacity-50"
-            />
-          </div>
-        )}
+              {/* Horaire Covoiturage */}
+              {rawCreateConfig.agendaEnableCarpool !== false && (formData.type === 'prestation' || formData.type === 'stage' || formData.type === 'atelier') && (
+                <div className="flex flex-col gap-1">
+                  <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                    {translate('widgetAgenda.carpoolTimeLabel', "Horaire de convoi / RDV covoiturage")}
+                  </label>
+                  <input
+                    type="text"
+                    name="horaireCovoiturage"
+                    value={formData.horaireCovoiturage}
+                    onChange={handleChange}
+                    disabled={saving}
+                    placeholder="Ex : 13h00 au local"
+                    className="theme-input w-full disabled:opacity-50"
+                  />
+                </div>
+              )}
 
-        {/* Lien externe/social */}
-        {createConfig.agendaEnableUrl && (
-          <div className="flex flex-col gap-1">
-            <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-              {translate('widgetAgenda.socialLinkLabel', "Lien de publication social / externe")}
-            </label>
-            <input
-              type="url"
-              name="lienSocial"
-              value={formData.lienSocial}
-              onChange={handleChange}
-              disabled={saving}
-              className="theme-input w-full disabled:opacity-50"
-            />
-          </div>
-        )}
+              {/* Distance A/R (Covoiturage) */}
+              {rawCreateConfig.agendaEnableCarpool !== false && (formData.type === 'prestation' || formData.type === 'stage' || formData.type === 'atelier') && (
+                <div className="flex flex-col gap-1">
+                  <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                    {translate('widgetAgenda.distanceLabel', "Distance Aller-Retour en Km (Covoiturage)")}
+                  </label>
+                  <input
+                    type="number"
+                    name="distanceAllerRetourKm"
+                    min="0"
+                    value={formData.distanceAllerRetourKm}
+                    onChange={handleChange}
+                    disabled={saving}
+                    placeholder="Ex : 120"
+                    className="theme-input w-full disabled:opacity-50"
+                  />
+                </div>
+              )}
 
-        {/* Finances / Budget */}
-        {createConfig.agendaEnableFinance && (
-          <div className="border-t border-dashed border-cordel-master-dark/15 pt-3.5 mt-2.5 flex flex-col gap-4 text-left">
-            <h4 className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood flex items-center gap-1 leading-none">
-              💰 {translate('widgetAgenda.finBudgetTitle', "Budget & Finances Prévisionnelles")}
-            </h4>
-            
-            <EventBudgetEditor
-              budgetRecettes={formData.budgetRecettes}
-              onChangeRecettes={(updated) => setFormData(prev => ({ ...prev, budgetRecettes: updated }))}
-              budgetDepenses={formData.budgetDepenses}
-              onChangeDepenses={(updated) => setFormData(prev => ({ ...prev, budgetDepenses: updated }))}
-              disabled={saving}
-            />
-          </div>
-        )}
+              {/* Horaires Passages (prestation) */}
+              {formData.type === 'prestation' && (
+                <div className="flex flex-col gap-1">
+                  <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                    {translate('widgetAgenda.stageTimesLabel', "Horaires de passages")}
+                  </label>
+                  <input
+                    type="text"
+                    name="horairesPassages"
+                    value={formData.horairesPassages}
+                    onChange={handleChange}
+                    disabled={saving}
+                    placeholder="Ex : 14:30 - 15:15"
+                    className="theme-input w-full disabled:opacity-50"
+                  />
+                </div>
+              )}
 
-        {/* Créneaux Bénévoles (Volunteer shifts) */}
-        {createConfig.agendaEnableVolunteers && (
-          <div className="border-t border-dashed border-cordel-master-dark/15 pt-3.5 mt-2.5 flex flex-col gap-3.5 text-left">
-            <div className="flex justify-between items-center">
-              <h4 className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood flex items-center gap-1 leading-none">
-                🤝 Créneaux Bénévoles requis
-              </h4>
-              <button
-                type="button"
-                onClick={() => {
-                  const newShifts = [...formData.volunteerShifts, { label: '', horaires: '', neededCount: 1 }];
-                  setFormData(prev => ({ ...prev, volunteerShifts: newShifts }));
-                }}
-                className="text-[9px] font-black uppercase tracking-wider bg-cordel-bg-light border border-encre-noire px-2.5 py-1 rounded cursor-pointer hover:bg-cordel-hover"
-              >
-                {t('common.add') || "＋ Ajouter"}
-              </button>
-            </div>
+              {/* Finances / Budget */}
+              {createConfig.agendaEnableFinance && (
+                <div className="border-t border-dashed border-cordel-master-dark/15 pt-3 mt-1 flex flex-col gap-3 text-left">
+                  <h4 className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood flex items-center gap-1 leading-none">
+                    💰 {translate('widgetAgenda.finBudgetTitle', "Budget & Finances Prévisionnelles")}
+                  </h4>
+                  
+                  <EventBudgetEditor
+                    budgetRecettes={formData.budgetRecettes}
+                    onChangeRecettes={(updated) => setFormData(prev => ({ ...prev, budgetRecettes: updated }))}
+                    budgetDepenses={formData.budgetDepenses}
+                    onChangeDepenses={(updated) => setFormData(prev => ({ ...prev, budgetDepenses: updated }))}
+                    disabled={saving}
+                  />
+                </div>
+              )}
 
-            <div className="flex flex-col gap-2">
-              {formData.volunteerShifts.length === 0 ? (
-                <p className="text-[10px] italic opacity-60">Aucun créneau bénévole requis configuré.</p>
-              ) : (
-                formData.volunteerShifts.map((shift, idx) => (
-                  <div key={idx} className="flex gap-2 items-end p-2 bg-cordel-bg border border-dashed border-cordel-master-dark/25 rounded relative">
-                    <div className="flex-1 flex flex-col gap-1 w-full">
-                      <label className="text-[8px] uppercase font-bold text-cordel-master-dark">Titre de la mission</label>
-                      <input
-                        type="text"
-                        value={shift.label}
-                        placeholder="Ex : Tenue de bar, Accueil"
-                        onChange={(e) => {
-                          const newShifts = [...formData.volunteerShifts];
-                          newShifts[idx].label = e.target.value;
-                          setFormData(prev => ({ ...prev, volunteerShifts: newShifts }));
-                        }}
-                        className="theme-input py-1 px-2 text-xs w-full"
-                        required
-                      />
-                    </div>
-                    <div className="w-16 flex flex-col gap-1">
-                      <label className="text-[8px] uppercase font-bold text-cordel-master-dark">Besoin</label>
-                      <input
-                        type="number"
-                        min="1"
-                        value={shift.neededCount}
-                        onChange={(e) => {
-                          const newShifts = [...formData.volunteerShifts];
-                          newShifts[idx].neededCount = parseInt(e.target.value) || 1;
-                          setFormData(prev => ({ ...prev, volunteerShifts: newShifts }));
-                        }}
-                        className="theme-input py-1 px-2 text-xs w-full text-center"
-                        required
-                      />
-                    </div>
-                    <div className="flex-1 flex flex-col gap-1 w-full">
-                      <label className="text-[8px] uppercase font-bold text-cordel-master-dark">Horaires</label>
-                      <input
-                        type="text"
-                        value={shift.horaires}
-                        placeholder="Ex : 14:00 - 16:00"
-                        onChange={(e) => {
-                          const newShifts = [...formData.volunteerShifts];
-                          newShifts[idx].horaires = e.target.value;
-                          setFormData(prev => ({ ...prev, volunteerShifts: newShifts }));
-                        }}
-                        className="theme-input py-1 px-2 text-xs w-full"
-                      />
-                    </div>
+              {/* Créneaux Bénévoles (Volunteer shifts) */}
+              {createConfig.agendaEnableVolunteers && (
+                <div className="border-t border-dashed border-cordel-master-dark/15 pt-3 mt-1 flex flex-col gap-3 text-left">
+                  <div className="flex justify-between items-center">
+                    <h4 className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood flex items-center gap-1 leading-none">
+                      🤝 Créneaux Bénévoles requis
+                    </h4>
                     <button
                       type="button"
                       onClick={() => {
-                        const newShifts = formData.volunteerShifts.filter((_, sIdx) => sIdx !== idx);
+                        const newShifts = [...formData.volunteerShifts, { label: '', horaires: '', neededCount: 1 }];
                         setFormData(prev => ({ ...prev, volunteerShifts: newShifts }));
                       }}
-                      className="text-[9.5px] font-black uppercase bg-cordel-rouge text-white border border-encre-noire px-2.5 py-2.5 rounded cursor-pointer hover:bg-red-800 shadow-[1px_1px_0px_0px_#181716] shrink-0"
-                      title="Supprimer ce créneau"
+                      className="text-[9px] font-black uppercase tracking-wider bg-cordel-bg-light border border-encre-noire px-2.5 py-1 rounded cursor-pointer hover:bg-cordel-hover"
                     >
-                      ✕
+                      {t('common.add') || "＋ Ajouter"}
                     </button>
                   </div>
-                ))
+
+                  <div className="flex flex-col gap-2">
+                    {formData.volunteerShifts.length === 0 ? (
+                      <p className="text-[10px] italic opacity-60">Aucun créneau bénévole requis configuré.</p>
+                    ) : (
+                      formData.volunteerShifts.map((shift, idx) => (
+                        <div key={idx} className="flex gap-2 items-end p-2 bg-cordel-bg border border-dashed border-cordel-master-dark/25 rounded relative">
+                          <div className="flex-1 flex flex-col gap-1 w-full">
+                            <label className="text-[8px] uppercase font-bold text-cordel-master-dark">Titre de la mission</label>
+                            <input
+                              type="text"
+                              value={shift.label}
+                              placeholder="Ex : Tenue de bar, Accueil"
+                              onChange={(e) => {
+                                const newShifts = [...formData.volunteerShifts];
+                                newShifts[idx].label = e.target.value;
+                                setFormData(prev => ({ ...prev, volunteerShifts: newShifts }));
+                              }}
+                              className="theme-input py-1 px-2 text-xs w-full"
+                              required
+                            />
+                          </div>
+                          <div className="w-16 flex flex-col gap-1">
+                            <label className="text-[8px] uppercase font-bold text-cordel-master-dark">Besoin</label>
+                            <input
+                              type="number"
+                              min="1"
+                              value={shift.neededCount}
+                              onChange={(e) => {
+                                const newShifts = [...formData.volunteerShifts];
+                                newShifts[idx].neededCount = parseInt(e.target.value) || 1;
+                                setFormData(prev => ({ ...prev, volunteerShifts: newShifts }));
+                              }}
+                              className="theme-input py-1 px-2 text-xs w-full text-center"
+                              required
+                            />
+                          </div>
+                          <div className="flex-1 flex flex-col gap-1 w-full">
+                            <label className="text-[8px] uppercase font-bold text-cordel-master-dark">Horaires</label>
+                            <input
+                              type="text"
+                              value={shift.horaires}
+                              placeholder="Ex : 14:00 - 16:00"
+                              onChange={(e) => {
+                                const newShifts = [...formData.volunteerShifts];
+                                newShifts[idx].horaires = e.target.value;
+                                setFormData(prev => ({ ...prev, volunteerShifts: newShifts }));
+                              }}
+                              className="theme-input py-1 px-2 text-xs w-full"
+                            />
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const newShifts = formData.volunteerShifts.filter((_, sIdx) => sIdx !== idx);
+                              setFormData(prev => ({ ...prev, volunteerShifts: newShifts }));
+                            }}
+                            className="text-[9.5px] font-black uppercase bg-cordel-rouge text-white border border-encre-noire px-2.5 py-2.5 rounded cursor-pointer hover:bg-red-800 shadow-[1px_1px_0px_0px_#181716] shrink-0"
+                            title="Supprimer ce créneau"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
               )}
             </div>
-          </div>
-        )}
+          </CordelAccordion>
 
-        {/* Percussion & Danse Toggles */}
-        <div className="flex gap-4 items-center py-2.5 border-t border-b border-dashed border-cordel-master-dark/15 flex-wrap text-left">
-          <label className="flex items-center gap-2 text-xs font-bold cursor-pointer select-none">
-            <input
-              type="checkbox"
-              name="includesPercussion"
-              checked={formData.includesPercussion}
-              onChange={(e) => setFormData(prev => ({ ...prev, includesPercussion: e.target.checked }))}
-              disabled={saving}
-              className="accent-cordel-wood scale-105"
-            />
-            <span className="inline-flex items-center gap-1.5">
-              <img src="/icones/alfaia.svg" alt="Percussion" className="w-3.5 h-3.5 object-contain dark:invert inline-block" />
-              <span>{translate('widgetAgenda.includesPercussionLabel', "Inclut de la percussion")}</span>
-            </span>
-          </label>
+          {/* BLOCK 3: CASTING & INSTRUMENTS (Closed by default) */}
+          <CordelAccordion
+            title="3. Casting & Instruments"
+            subtitle="Niveaux requis, options musique/danse, liens documents et validation admin"
+            icon="🥁"
+            defaultOpen={false}
+          >
+            <div className="flex flex-col gap-4">
+              {/* Niveaux Requis (Musique et Danse) */}
+              {(formData.type === 'prestation' || formData.type === 'stage' || formData.type === 'repetition' || formData.type === 'atelier') && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                      {translate('widgetAgenda.musicLevelLabel', "Musique (Niveau requis)")}
+                    </label>
+                    <select
+                      name="niveauRequis"
+                      value={formData.niveauRequis}
+                      onChange={handleChange}
+                      disabled={saving}
+                      className="theme-input w-full disabled:opacity-50 font-bold bg-cordel-bg-light"
+                    >
+                      <option value="aucun">{translate('widgetAgenda.levelNone', "Pas de musicien")}</option>
+                      <option value="debutant">{translate('widgetAgenda.levelDeb', "Niveau débutant")}</option>
+                      <option value="confirme">{translate('widgetAgenda.levelConfirm', "Niveau confirmé")}</option>
+                      <option value="tous">{translate('widgetAgenda.levelAll', "Tout le monde")}</option>
+                    </select>
+                  </div>
 
-          <label className="flex items-center gap-2 text-xs font-bold cursor-pointer select-none">
-            <input
-              type="checkbox"
-              name="includesDance"
-              checked={formData.includesDance}
-              onChange={(e) => setFormData(prev => ({ ...prev, includesDance: e.target.checked }))}
-              disabled={saving}
-              className="accent-cordel-wood scale-105"
-            />
-            <span>💃 {translate('widgetAgenda.includesDanceLabel', "Inclut de la danse")}</span>
-          </label>
-        </div>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                      {translate('widgetAgenda.danceLevelLabel', "Danse (Niveau requis)")}
+                    </label>
+                    <select
+                      name="niveauDanseRequis"
+                      value={formData.niveauDanseRequis}
+                      onChange={handleChange}
+                      disabled={saving}
+                      className="theme-input w-full disabled:opacity-50 font-bold bg-cordel-bg-light"
+                    >
+                      <option value="aucun">{translate('widgetAgenda.danceLevelNone', "Pas de danse")}</option>
+                      <option value="debutant">{translate('widgetAgenda.danceLevelDeb', "Niveau débutant")}</option>
+                      <option value="confirme">{translate('widgetAgenda.danceLevelConfirm', "Niveau confirmé")}</option>
+                      <option value="tous">{translate('widgetAgenda.danceLevelAll', "Tout le monde")}</option>
+                    </select>
+                  </div>
+                </div>
+              )}
 
-        {/* Covoiturage Toggle */}
-        {rawCreateConfig.agendaEnableCarpool !== false && (
-          <div className="flex items-center gap-2 pt-2 border-t border-dashed border-cordel-master-dark/15 text-left">
-            <label className="flex items-center gap-2 text-xs font-bold cursor-pointer select-none">
-              <input
-                type="checkbox"
-                name="enableCarpool"
-                checked={formData.enableCarpool}
-                onChange={(e) => setFormData(prev => ({ ...prev, enableCarpool: e.target.checked }))}
-                disabled={saving}
-                className="accent-cordel-wood scale-105"
-              />
-              <span>🚗 {translate('widgetAgenda.enableCarpoolLabel', "Autoriser le covoiturage pour cet événement")}</span>
-            </label>
-          </div>
-        )}
+              {/* Percussion & Danse Toggles */}
+              <div className="flex gap-4 items-center py-2.5 border-t border-b border-dashed border-cordel-master-dark/15 flex-wrap text-left">
+                <label className="flex items-center gap-2 text-xs font-bold cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    name="includesPercussion"
+                    checked={formData.includesPercussion}
+                    onChange={(e) => setFormData(prev => ({ ...prev, includesPercussion: e.target.checked }))}
+                    disabled={saving}
+                    className="accent-cordel-wood scale-105"
+                  />
+                  <span className="inline-flex items-center gap-1.5">
+                    <img src="/icones/alfaia.svg" alt="Percussion" className="w-3.5 h-3.5 object-contain dark:invert inline-block" />
+                    <span>{translate('widgetAgenda.includesPercussionLabel', "Inclut de la percussion")}</span>
+                  </span>
+                </label>
 
-        {/* Enable Inscriptions Toggle */}
-        <div className="flex items-center gap-2 pt-2 border-t border-dashed border-cordel-master-dark/15 text-left">
-          <label className="flex items-center gap-2 text-xs font-bold cursor-pointer select-none">
-            <input
-              type="checkbox"
-              name="enableInscriptions"
-              checked={formData.enableInscriptions !== false}
-              onChange={(e) => setFormData(prev => ({ ...prev, enableInscriptions: e.target.checked }))}
-              disabled={saving}
-              className="accent-cordel-wood scale-105"
-            />
-            <span>📝 Demander des inscriptions pour cet événement (Présent / Absent / À confirmer)</span>
-          </label>
-        </div>
+                <label className="flex items-center gap-2 text-xs font-bold cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    name="includesDance"
+                    checked={formData.includesDance}
+                    onChange={(e) => setFormData(prev => ({ ...prev, includesDance: e.target.checked }))}
+                    disabled={saving}
+                    className="accent-cordel-wood scale-105"
+                  />
+                  <span>💃 {translate('widgetAgenda.includesDanceLabel', "Inclut de la danse")}</span>
+                </label>
+              </div>
 
-        {/* Validation Toggle */}
-        {createConfig.agendaEnableInscriptions && (
-          <div className="flex items-center gap-2 pt-2 border-t border-dashed border-cordel-master-dark/15 text-left">
-            <label className="flex items-center gap-2 text-xs font-semibold cursor-pointer select-none">
-              <input
-                type="checkbox"
-                name="requiresValidation"
-                checked={formData.requiresValidation}
-                onChange={(e) => setFormData(prev => ({ ...prev, requiresValidation: e.target.checked }))}
-                disabled={saving}
-                className="accent-cordel-wood scale-105"
-              />
-              <span>{translate('widgetAgenda.requiresValidationLabel', "Inscriptions soumises à validation par l'administrateur")}</span>
-            </label>
-          </div>
-        )}
+              {/* Ordre du jour / partition */}
+              {createConfig.agendaEnableOrdreDuJour && (
+                <div className="flex flex-col gap-1">
+                  <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                    {translate('widgetAgenda.agendaDocLinkLabel', "Lien du document d'ordre du jour / partition")}
+                  </label>
+                  <input
+                    type="url"
+                    name="lienDocument"
+                    value={formData.lienDocument}
+                    onChange={handleChange}
+                    disabled={saving}
+                    placeholder="https://..."
+                    className="theme-input w-full disabled:opacity-50"
+                  />
+                </div>
+              )}
 
-        {/* Actions */}
-        <div className="flex gap-3 justify-end mt-2">
+              {/* Lien externe/social */}
+              {createConfig.agendaEnableUrl && (
+                <div className="flex flex-col gap-1">
+                  <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                    {translate('widgetAgenda.socialLinkLabel', "Lien de publication social / externe")}
+                  </label>
+                  <input
+                    type="url"
+                    name="lienSocial"
+                    value={formData.lienSocial}
+                    onChange={handleChange}
+                    disabled={saving}
+                    placeholder="https://facebook.com/..."
+                    className="theme-input w-full disabled:opacity-50"
+                  />
+                </div>
+              )}
+
+              {/* Validation Toggle */}
+              {createConfig.agendaEnableInscriptions && (
+                <div className="flex items-center gap-2 pt-2 border-t border-dashed border-cordel-master-dark/15 text-left">
+                  <label className="flex items-center gap-2 text-xs font-semibold cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      name="requiresValidation"
+                      checked={formData.requiresValidation}
+                      onChange={(e) => setFormData(prev => ({ ...prev, requiresValidation: e.target.checked }))}
+                      disabled={saving}
+                      className="accent-cordel-wood scale-105"
+                    />
+                    <span>{translate('widgetAgenda.requiresValidationLabel', "Inscriptions soumises à validation par l'administrateur")}</span>
+                  </label>
+                </div>
+              )}
+            </div>
+          </CordelAccordion>
+
+          {/* BLOCK 4: SONDAGE & RÉUNION (Closed by default) */}
+          <CordelAccordion
+            title="4. Sondage & Réunions"
+            subtitle="Création de sondages de dates et liaisons aux réunions"
+            icon="📊"
+            defaultOpen={false}
+          >
+            {/* Multi-Date Poll Toggle Section */}
+            <div className="p-3 bg-amber-50/80 dark:bg-amber-950/20 border-2 border-dashed border-amber-500/40 rounded-[6px_8px_5px_7px] flex flex-col gap-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-base">📊</span>
+                  <div>
+                    <label className="text-xs font-black uppercase text-cordel-wood cursor-pointer">
+                      Créer un sondage de dates
+                    </label>
+                    <p className="text-[9px] font-semibold text-encre-noire/70">
+                      Proposer 2 à 4 créneaux temporaires pour soumettre au vote des membres
+                    </p>
+                  </div>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={Boolean(formData.isPoll)}
+                  onChange={(e) => setFormData(prev => ({ 
+                    ...prev, 
+                    isPoll: e.target.checked,
+                    pollDates: prev.pollDates || [prev.date || '', ''] 
+                  }))}
+                  className="w-4 h-4 accent-amber-600 cursor-pointer"
+                />
+              </div>
+
+              {formData.isPoll && (
+                <div className="flex flex-col gap-3 pt-2 border-t border-dashed border-amber-500/30">
+                  {/* Restriction Selector */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="flex flex-col gap-1">
+                      <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                        Restriction du vote
+                      </label>
+                      <select
+                        value={formData.pollRestrictionType || 'aucun'}
+                        onChange={(e) => setFormData(prev => ({ ...prev, pollRestrictionType: e.target.value, pollTarget: '' }))}
+                        className="theme-input text-xs font-bold py-1 bg-white"
+                      >
+                        <option value="aucun">👥 Tous les membres</option>
+                        <option value="tag">🏷️ Par Étiquette (ex: C.A, Bureau)</option>
+                        <option value="instrument">🥁 Par Pupitre / Instrument</option>
+                      </select>
+                    </div>
+
+                    {formData.pollRestrictionType === 'tag' && (
+                      <div className="flex flex-col gap-1">
+                        <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                          Étiquette ciblée
+                        </label>
+                        <input
+                          type="text"
+                          list="available-tags-list"
+                          value={formData.pollTarget || ''}
+                          onChange={(e) => setFormData(prev => ({ ...prev, pollTarget: e.target.value }))}
+                          placeholder="Ex: C.A, Bureau..."
+                          className="theme-input text-xs font-bold py-1 bg-white"
+                        />
+                        <datalist id="available-tags-list">
+                          <option value="C.A" />
+                          <option value="Bureau" />
+                          <option value="Mestre" />
+                          <option value="Modérateur" />
+                          <option value="Commission Logistique" />
+                        </datalist>
+                      </div>
+                    )}
+
+                    {formData.pollRestrictionType === 'instrument' && (
+                      <div className="flex flex-col gap-1">
+                        <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                          Pupitre / Instrument ciblé
+                        </label>
+                        <select
+                          value={formData.pollTarget || ''}
+                          onChange={(e) => setFormData(prev => ({ ...prev, pollTarget: e.target.value }))}
+                          className="theme-input text-xs font-bold py-1 bg-white"
+                        >
+                          <option value="">-- Choisir l'instrument --</option>
+                          {['Alfaia', 'Caixa', 'Gonguê', 'Agbê', 'Mineiro', 'Timbal', 'Chant', 'Danse'].map(inst => (
+                            <option key={inst} value={inst}>{inst}</option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Candidate Option Dates */}
+                  <div className="flex flex-col gap-2">
+                    <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                      Créneaux proposés (2 à 4 dates)
+                    </label>
+                    {(formData.pollDates || ['', '']).map((optDate, idx) => (
+                      <div key={idx} className="flex items-center gap-2">
+                        <span className="text-[10px] font-black text-cordel-wood w-16 shrink-0">
+                          Option {idx + 1} :
+                        </span>
+                        <input
+                          type="datetime-local"
+                          value={optDate}
+                          onChange={(e) => {
+                            const newDates = [...(formData.pollDates || ['', ''])];
+                            newDates[idx] = e.target.value;
+                            setFormData(prev => ({ 
+                              ...prev, 
+                              pollDates: newDates,
+                              date: idx === 0 ? e.target.value : prev.date
+                            }));
+                          }}
+                          required={idx < 2}
+                          className="theme-input text-xs py-1 flex-1 bg-white"
+                        />
+                        {idx >= 2 && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const newDates = (formData.pollDates || []).filter((_, i) => i !== idx);
+                              setFormData(prev => ({ ...prev, pollDates: newDates }));
+                            }}
+                            className="text-[10px] text-red-600 font-bold px-1.5 py-0.5 hover:bg-red-50 rounded cursor-pointer"
+                          >
+                            ✖
+                          </button>
+                        )}
+                      </div>
+                    ))}
+
+                    {(formData.pollDates || []).length < 4 && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const current = formData.pollDates || ['', ''];
+                          if (current.length < 4) {
+                            setFormData(prev => ({ ...prev, pollDates: [...current, ''] }));
+                          }
+                        }}
+                        className="text-[9px] font-black uppercase text-cordel-wood hover:underline text-left mt-1 cursor-pointer"
+                      >
+                        + Ajouter une 3ème ou 4ème option de date
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          </CordelAccordion>
+        </CordelAccordionGroup>
+
+        {/* Form Action Buttons */}
+        <div className="flex gap-3 justify-end mt-4 pt-2 border-t border-[var(--cordel-border)]">
           <CordelButton 
             type="button"
             variant="default" 

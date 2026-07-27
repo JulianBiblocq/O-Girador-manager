@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import CordelCard from '../CordelCard';
+import Tooltip from '../Tooltip';
 import { useTranslation } from '../LanguageContext';
 import BankAccountsTracker from './BankAccountsTracker';
 
@@ -70,15 +71,24 @@ export default function TreasuryDashboard({
       {/* Financial Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="border border-encre-noire/25 p-3.5 bg-green-50/40 dark:bg-green-950/10 rounded-[5px_3px_6px_4px] text-center shadow-[1px_1px_0px_0px_rgba(0,0,0,0.1)]">
-          <div className="text-[10px] uppercase font-black text-green-700 dark:text-green-400 opacity-80 tracking-wider">Total Recettes (+)</div>
+          <div className="text-[10px] uppercase font-black text-green-700 dark:text-green-400 opacity-80 tracking-wider flex items-center justify-center gap-1">
+            <span>Total Recettes (+)</span>
+            <Tooltip text="Cumul de toutes les entrées d'argent (cotisations, recettes événements, subventions)." />
+          </div>
           <div className="text-2xl font-black text-green-700 dark:text-green-400 mt-1">{totalRecettes.toFixed(2)} €</div>
         </div>
         <div className="border border-encre-noire/25 p-3.5 bg-red-50/40 dark:bg-red-950/10 rounded-[4px_6px_3px_5px] text-center shadow-[1px_1px_0px_0px_rgba(0,0,0,0.1)]">
-          <div className="text-[10px] uppercase font-black text-red-700 dark:text-red-400 opacity-80 tracking-wider">Total Dépenses (-)</div>
+          <div className="text-[10px] uppercase font-black text-red-700 dark:text-red-400 opacity-80 tracking-wider flex items-center justify-center gap-1">
+            <span>Total Dépenses (-)</span>
+            <Tooltip text="Cumul de tous les coûts (frais d'événements, défraiements kilométriques, achats matériel)." />
+          </div>
           <div className="text-2xl font-black text-red-700 dark:text-red-400 mt-1">{totalDepenses.toFixed(2)} €</div>
         </div>
         <div className={`border-2 border-encre-noire p-3.5 rounded-[6px_4px_5px_3px] text-center shadow-[2px_2px_0px_0px_#181716] ${solde >= 0 ? 'bg-[#e2ecc8] dark:bg-emerald-950/20' : 'bg-[#f7d6d0] dark:bg-rose-950/20'}`}>
-          <div className="text-[10px] uppercase font-black text-encre-noire tracking-wider">Solde Net</div>
+          <div className="text-[10px] uppercase font-black text-encre-noire tracking-wider flex items-center justify-center gap-1">
+            <span>Solde Net</span>
+            <Tooltip text="Différence nette entre les recettes totales et les dépenses sur la période." />
+          </div>
           <div className={`text-2xl font-black mt-1 ${solde >= 0 ? 'text-green-800 dark:text-green-300' : 'text-red-800 dark:text-red-300'}`}>
             {solde >= 0 ? '+' : ''}{solde.toFixed(2)} €
           </div>
@@ -87,8 +97,9 @@ export default function TreasuryDashboard({
 
       {/* Global Balance Table */}
       <CordelCard variant="default" useExtremeBorder={false} className="p-5">
-        <h3 className="text-xs font-black tracking-widest text-cordel-wood uppercase border-b border-dashed border-cordel-master-dark/15 pb-2 mb-4 text-left">
-          📊 Bilan Financier Détaillé
+        <h3 className="text-xs font-black tracking-widest text-cordel-wood uppercase border-b border-dashed border-cordel-master-dark/15 pb-2 mb-4 text-left flex items-center gap-1.5">
+          <span>📊 Bilan Financier Détaillé</span>
+          <Tooltip text="Ventilation complète des recettes et dépenses par catégorie pour le rapport de gestion." />
         </h3>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">

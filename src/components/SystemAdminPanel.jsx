@@ -3,6 +3,7 @@ import { collection, query, onSnapshot, doc, updateDoc, where, deleteField } fro
 import { db } from '../firebase';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
+import Tooltip from './Tooltip';
 import { useTranslation } from './LanguageContext';
 import { forceUpdateAndClearCache } from '../utils/pwaUtils';
 import { XiloSettings, XiloPeople } from './XiloIcons';
@@ -334,8 +335,9 @@ export default function SystemAdminPanel({ profileData, associationName: propAss
           {/* PWA Cache Action Card */}
           <CordelCard variant="ocre" useExtremeBorder={false} className="p-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-left">
             <div className="flex flex-col gap-1">
-              <h4 className="text-xs uppercase font-extrabold tracking-wider text-cordel-wood">
-                {translate('pwa.maintenanceTitle', 'Maintenance & Cache')}
+              <h4 className="text-xs uppercase font-extrabold tracking-wider text-cordel-wood flex items-center gap-1.5">
+                <span>{translate('pwa.maintenanceTitle', 'Maintenance & Cache')}</span>
+                <Tooltip text="Recharge l'application et force le vidage des caches navigateurs pour appliquer les dernières mises à jour pour tous les utilisateurs." />
               </h4>
               <p className="text-[10px] opacity-75 font-semibold leading-relaxed">
                 {translate('pwa.maintenanceDesc', 'Si des utilisateurs rencontrent des difficultés suite à une mise à jour, forcez la purge du cache local.')}

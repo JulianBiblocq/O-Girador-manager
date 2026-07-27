@@ -4,8 +4,10 @@ import { db } from '../firebase';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
 import { XiloChat, XiloMegaphone } from './XiloIcons';
+import { useTranslation } from './LanguageContext';
 
 export default function WidgetForum({ groupId, onOpen }) {
+  const { t } = useTranslation();
   const [threads, setThreads] = useState([]);
   const [threadCount, setThreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -62,7 +64,7 @@ export default function WidgetForum({ groupId, onOpen }) {
     <CordelCard 
       variant="default" 
       useExtremeBorder={true} 
-      className="relative overflow-hidden p-4 select-none w-full"
+      className="relative p-4 select-none w-full"
     >
       {/* Decorative background stamp simulator */}
       <div className="absolute -right-4 -bottom-4 opacity-[0.08] select-none pointer-events-none transform -rotate-12">
@@ -78,10 +80,10 @@ export default function WidgetForum({ groupId, onOpen }) {
             </div>
             <div>
               <h3 className="text-xs uppercase font-black tracking-wider text-cordel-wood flex items-center gap-1.5">
-                Le Porte-Voix <span className="opacity-60 text-[10px] font-bold">({threadCount} sujet{threadCount > 1 ? 's' : ''})</span>
+                {t('widgetForum.title') || "Porte-Voix"} <span className="opacity-60 text-[10px] font-bold">({threadCount} {t('widgetForum.subjectCountLabel') || 'sujet'}{threadCount > 1 ? 's' : ''})</span>
               </h3>
               <p className="text-[9px] font-semibold text-cordel-master-dark/70">
-                Dernières discussions & sujets de la communauté
+                {t('widgetForum.subtitle') || "Dernières discussions & sujets de la communauté"}
               </p>
             </div>
           </div>
@@ -91,7 +93,7 @@ export default function WidgetForum({ groupId, onOpen }) {
             onClick={onOpen}
             className="text-[10px] px-3 py-1 font-bold uppercase tracking-wider flex items-center gap-1 shrink-0"
           >
-            💬 Ouvrir le Forum
+            {t('widgetForum.openForum') || "💬 Ouvrir le Forum"}
           </CordelButton>
         </div>
 
@@ -106,14 +108,14 @@ export default function WidgetForum({ groupId, onOpen }) {
             className="p-4 border-2 border-dashed border-cordel-master-dark/20 rounded-[6px_10px_6px_8px] bg-white/40 text-center cursor-pointer hover:bg-white/60 transition-colors"
           >
             <p className="text-xs font-bold text-cordel-master-dark/70">
-              Aucun sujet dans le Porte-Voix pour le moment.
+              {t('widgetForum.noThreads') || "Aucun sujet dans le Porte-Voix pour le moment."}
             </p>
             <span className="text-[10px] text-cordel-wood font-extrabold uppercase mt-1 inline-block">
-              + Lancer la première discussion
+              {t('widgetForum.startFirst') || "+ Lancer la première discussion"}
             </span>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 w-full mt-1">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 w-full mt-1 p-1 overflow-visible">
             {recentThreads.map((thread, index) => {
               const replyCount = Array.isArray(thread.reponses) ? thread.reponses.length : 0;
               const dateFormatted = formatDateShort(thread.derniereModification || thread.dateCreation);
@@ -122,7 +124,7 @@ export default function WidgetForum({ groupId, onOpen }) {
                 <div
                   key={thread.id}
                   onClick={onOpen}
-                  className={`p-3 border-2 border-encre-noire rounded-[6px_10px_6px_8px] bg-cordel-bg-light shadow-[2px_2px_0px_0px_#181716] cursor-pointer hover:scale-[1.015] hover:bg-cordel-hover transition-all flex flex-col justify-between ${
+                  className={`p-3 border-2 border-encre-noire rounded-[6px_10px_6px_8px] bg-cordel-bg-light shadow-[2px_2px_0px_0px_#181716] cursor-pointer hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[3.5px_3.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] hover:bg-cordel-hover transition-all flex flex-col justify-between ${
                     index >= 1 ? 'hidden md:flex' : ''
                   } ${index >= 2 ? 'hidden lg:flex' : ''}`}
                   title={`Ouvrir le sujet: ${thread.titre}`}
@@ -131,15 +133,15 @@ export default function WidgetForum({ groupId, onOpen }) {
                     <div className="flex items-center justify-between gap-1 mb-1">
                       {thread.isPinned ? (
                         <span className="text-[8px] font-black uppercase tracking-wider text-red-800 bg-red-100 border border-red-700/30 px-1.5 py-0.5 rounded">
-                          📌 Épinglé
+                          {t('widgetForum.pinned') || "📌 Épinglé"}
                         </span>
                       ) : thread.poll ? (
                         <span className="text-[8px] font-extrabold uppercase tracking-wider text-amber-900 bg-amber-100 border border-amber-600/30 px-1.5 py-0.5 rounded truncate max-w-[120px]">
-                          📊 Sondage
+                          {t('widgetForum.poll') || "📊 Sondage"}
                         </span>
                       ) : (
                         <span className="text-[8px] font-extrabold uppercase tracking-wider text-cordel-wood bg-cordel-wood/10 border border-cordel-wood/20 px-1.5 py-0.5 rounded truncate max-w-[120px]">
-                          💬 Discussion
+                          {t('widgetForum.discussion') || "💬 Discussion"}
                         </span>
                       )}
 
@@ -162,9 +164,9 @@ export default function WidgetForum({ groupId, onOpen }) {
                   </div>
 
                   <div className="mt-2.5 pt-2 border-t border-dashed border-cordel-master-dark/15 flex justify-between items-center text-[9px] font-bold">
-                    <span className="text-cordel-wood">Voir la discussion ➔</span>
+                    <span className="text-cordel-wood">{t('widgetForum.viewDiscussion') || "Voir la discussion ➔"}</span>
                     <span className="bg-cordel-wood/15 text-cordel-wood font-black px-1.5 py-0.5 rounded-full border border-cordel-wood/30">
-                      {replyCount} rép.
+                      {replyCount} {t('widgetForum.replyCountSuffix') || "rép."}
                     </span>
                   </div>
                 </div>

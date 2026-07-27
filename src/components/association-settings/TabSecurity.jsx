@@ -1,16 +1,16 @@
-import React, { useState } from 'react';
 import CordelCard from '../CordelCard';
+import PermissionsGuideBox from '../PermissionsGuideBox';
 import { formatTagGender, getTagId } from '../../utils/tagUtils';
 
 const PERMISSION_POLES = [
   {
     id: 'troupe',
-    label: '👥 Gestion de la Troupe',
+    label: '👥 Troupe',
     desc: 'Accès aux membres, exports et gestion des badges',
     tabs: [
-      { id: 'export-annu', label: 'Annuaire et export', desc: 'Accès à la liste des membres et à la génération des exports CSV/Excel' },
-      { id: 'tag-manager', label: 'Gestion des Badges', desc: 'Gestion de l\'ordre et des intitulés des badges/rôles' },
-      { id: 'instruments', label: 'Pupitres et instruments', desc: 'Association des instruments aux pupitres de la troupe' }
+      { id: 'export-annu', label: 'Annuaire', desc: 'Accès à la liste des membres et à la génération des exports CSV/Excel' },
+      { id: 'tag-manager', label: 'Badges', desc: 'Gestion de l\'ordre et des intitulés des badges/rôles' },
+      { id: 'instruments', label: 'Pupitres', desc: 'Association des instruments aux pupitres de la troupe' }
     ]
   },
   {
@@ -18,12 +18,12 @@ const PERMISSION_POLES = [
     label: '🪙 Trésorerie',
     desc: 'Gestion financière, cotisations et frais kilométriques',
     tabs: [
-      { id: 'dashboard-finance', label: 'Tableau de bord financier', desc: 'Aperçu global de la trésorerie et synthèses' },
-      { id: 'cotisations', label: 'Gestion des Cotisations', desc: 'Suivi et enregistrement des adhésions et cotisations' },
-      { id: 'events-finances', label: 'Finances Événements', desc: 'Suivi financier dédié aux prestations et événements' },
-      { id: 'operations-diverses', label: 'Opérations diverses', desc: 'Saisie des recettes et dépenses courantes hors événements' },
-      { id: 'frais-km', label: 'Frais kilométriques', desc: 'Validation et remboursement des indemnités kilométriques' },
-      { id: 'reports-exports', label: 'Rapports & Exports financiers', desc: 'Génération du grand livre et exports comptables' }
+      { id: 'dashboard-finance', label: 'Synthèse', desc: 'Aperçu global de la trésorerie et synthèses' },
+      { id: 'cotisations', label: 'Cotisations', desc: 'Suivi et enregistrement des adhésions et cotisations' },
+      { id: 'events-finances', label: 'Événements', desc: 'Suivi financier dédié aux prestations et événements' },
+      { id: 'operations-diverses', label: 'Opérations', desc: 'Saisie des recettes et dépenses courantes hors événements' },
+      { id: 'frais-km', label: 'Frais', desc: 'Validation et remboursement des indemnités kilométriques' },
+      { id: 'reports-exports', label: 'Exports', desc: 'Génération du grand livre et exports comptables' }
     ]
   },
   {
@@ -31,44 +31,44 @@ const PERMISSION_POLES = [
     label: '📦 Logistique',
     desc: 'Inventaire du matériel et des commandes',
     tabs: [
-      { id: 'inventory', label: 'Inventaire des instruments', desc: 'Gestion du parc d\'instruments et état du matériel' },
-      { id: 'orders-manager', label: 'Gestion des commandes', desc: 'Suivi des achats et commandes de matériel' }
+      { id: 'inventory', label: 'Instruments', desc: 'Gestion du parc d\'instruments et état du matériel' },
+      { id: 'orders-manager', label: 'Commandes', desc: 'Suivi des achats et commandes de matériel' }
     ]
   },
   {
     id: 'vestiaire',
-    label: '👗 Vestiaire & Costumes',
+    label: '👗 Vestiaire',
     desc: 'Gestion des costumes, stock et mensurations',
     tabs: [
-      { id: 'wardrobe-inventory', label: 'Inventaire des pièces', desc: 'Gestion du catalogue et du stock des costumes' },
+      { id: 'wardrobe-inventory', label: 'Costumes', desc: 'Gestion du catalogue et du stock des costumes' },
       { id: 'wardrobe-couture', label: 'Atelier Couture', desc: 'Suivi de confection, réparations et tutoriels couture' },
-      { id: 'wardrobe-sizes', label: 'Mensurations Adhérents', desc: 'Consultation des tailles et mensurations des membres' }
+      { id: 'wardrobe-sizes', label: 'Mensurations', desc: 'Consultation des tailles et mensurations des membres' }
     ]
   },
   {
     id: 'studio',
-    label: 'Le Studio',
+    label: 'Studio',
     desc: 'Communication, réunions, Varal et comptes-rendus',
     tabs: [
-      { id: 'studio-events', label: 'Gestion des événements', desc: 'Tableau d\'édition rapide et globale des événements' },
+      { id: 'studio-events', label: 'Événements', desc: 'Tableau d\'édition rapide et globale des événements' },
       { id: 'studio-social', label: 'Studio social', desc: 'Gestion et publication sur les réseaux sociaux' },
-      { id: 'reunion-manager', label: 'Gestion des réunions', desc: 'Ordres du jour et compte-rendus de réunion' },
-      { id: 'varal-manager', label: 'Gestionnaire de Varal', desc: 'Gestion des dossiers et documents à afficher sur le Varal' },
-      { id: 'activity-reports', label: "Rapports d'Activité", desc: 'Rédaction et archivage des bilans d\'activité' },
-      { id: 'mestre-forum-channels', label: 'Gestion du Porte-voix', desc: 'Modération et configuration des salons du forum' }
+      { id: 'reunion-manager', label: 'Réunions', desc: 'Ordres du jour et compte-rendus de réunion' },
+      { id: 'varal-manager', label: 'Varal', desc: 'Gestion des dossiers et documents à afficher sur le Varal' },
+      { id: 'activity-reports', label: 'Rapports', desc: 'Rédaction et archivage des bilans d\'activité' },
+      { id: 'mestre-forum-channels', label: 'Porte-voix', desc: 'Modération et configuration des salons du forum' }
     ]
   },
   {
     id: 'mestre',
-    label: '🥁 Espace Mestre',
+    label: '🥁 Mestria',
     desc: 'Direction artistique, plan de scène et séquenceur',
     tabs: [
-      { id: 'mestre-orientation', label: 'Orientation & Casting', desc: 'Gestion des affectations d\'instruments et vœux d\'évolution' },
-      { id: 'mestre-events', label: 'Liste des Événements', desc: 'Vue mestre détaillée des événements et présences' },
+      { id: 'mestre-orientation', label: 'Casting', desc: 'Gestion des affectations d\'instruments et vœux d\'évolution' },
+      { id: 'mestre-events', label: 'Événements', desc: 'Vue mestre détaillée des événements et présences' },
       { id: 'mestre-stage-layout', label: 'Plan de Scène', desc: 'Création et disposition visuelle du placement scénique' },
       { id: 'mestre-sequenceur', label: 'Séquenceur', desc: 'Édition des séquences musicales et structures rhythm' },
-      { id: 'mestre-workshops', label: 'Ateliers & Masterclasses', desc: 'Organisation des ateliers de transmission' },
-      { id: 'mestre-mot-mestre', label: 'Mot du Mestre', desc: 'Publication des communications officielles du Mestre' }
+      { id: 'mestre-workshops', label: 'Ateliers', desc: 'Organisation des ateliers de transmission' },
+      { id: 'mestre-mot-mestre', label: 'Annonces', desc: 'Publication des communications officielles du Mestre' }
     ]
   }
 ];
@@ -172,7 +172,11 @@ export default function TabSecurity({
   };
 
   return (
-    <CordelCard variant="default" useExtremeBorder={true} className="py-4 px-5">
+    <div className="flex flex-col gap-4">
+      {/* Permanent Explanatory Guide Box */}
+      <PermissionsGuideBox defaultOpen={true} />
+
+      <CordelCard variant="default" useExtremeBorder={true} className="py-4 px-5">
       <div className="flex justify-between items-center mb-3">
         <h3 className="text-xs uppercase font-extrabold tracking-wider text-cordel-wood text-left flex items-center gap-2">
           <span>🪢</span> Matrice des Permissions (Par Onglet)
@@ -302,5 +306,6 @@ export default function TabSecurity({
         </div>
       )}
     </CordelCard>
+    </div>
   );
 }

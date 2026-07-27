@@ -412,7 +412,7 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
                   <HangingRopeCurve />
 
                   {/* Hanging Booklets Directly Mounted on Rope Line */}
-                  <div className="flex flex-nowrap overflow-x-auto overflow-y-hidden justify-start items-start gap-4 sm:gap-6 pt-5 pb-3 relative z-10 w-full no-scrollbar px-6 min-h-[200px]">
+                  <div className="flex flex-nowrap overflow-x-auto overflow-y-visible justify-start items-start gap-4 sm:gap-6 pt-6 pb-6 relative z-10 w-full no-scrollbar px-6 min-h-[210px]">
                     {docList.length === 0 ? (
                       <p className="text-[10px] italic opacity-60 self-center py-6 text-cordel-master-dark">{translate('documents.noDocumentsCategory', "Aucun document dans cette rubrique.")}</p>
                     ) : (

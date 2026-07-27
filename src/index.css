@@ -1560,3 +1560,27 @@ gmp-place-autocomplete:focus-within {
   background-color: var(--cordel-hover, #f5eedb);
 }
 
+/* Elegant Logo Tilt Micro-Animation */
+@keyframes logoTiltBounce {
+  0% {
+    transform: rotate(0deg) scale(1);
+  }
+  25% {
+    transform: rotate(-18deg) scale(1.12);
+  }
+  55% {
+    transform: rotate(8deg) scale(1.05);
+  }
+  80% {
+    transform: rotate(-3deg) scale(1.02);
+  }
+  100% {
+    transform: rotate(0deg) scale(1);
+  }
+}
+
+.animate-logo-tilt {
+  animation: logoTiltBounce 0.75s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+

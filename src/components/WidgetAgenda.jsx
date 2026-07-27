@@ -6,6 +6,7 @@ import CordelButton from './CordelButton';
 const EventDetails = React.lazy(() => import('./EventDetails'));
 import CalendarGrid from './CalendarGrid';
 import EventCreateForm from './agenda/EventCreateForm';
+import EmptyState from './EmptyState';
 import AgendaFilterBar from './agenda/AgendaFilterBar';
 import EventDisciplineBadges from './agenda/EventDisciplineBadges';
 import { useTranslation } from './LanguageContext';
@@ -444,10 +445,10 @@ export default function WidgetAgenda({
                     ? 'bg-cordel-wood text-white font-black' 
                     : 'bg-cordel-bg-light text-encre-noire hover:bg-amber-100/60'
                 }`}
-                title="Affichage en cartes"
+                title={t('widgetAgenda.viewCardsTooltip') || "Affichage en cartes"}
               >
                 <span className="text-sm">🎴</span>
-                <span>Cartes</span>
+                <span>{t('widgetAgenda.viewCards') || "Cartes"}</span>
               </button>
               <button
                 type="button"
@@ -457,10 +458,10 @@ export default function WidgetAgenda({
                     ? 'bg-cordel-wood text-white font-black' 
                     : 'bg-cordel-bg-light text-encre-noire hover:bg-amber-100/60'
                 }`}
-                title="Affichage en liste"
+                title={t('widgetAgenda.viewListTooltip') || "Affichage en liste"}
               >
                 <span className="text-sm">📋</span>
-                <span>Liste</span>
+                <span>{t('widgetAgenda.viewList') || "Liste"}</span>
               </button>
               <button
                 type="button"
@@ -470,10 +471,10 @@ export default function WidgetAgenda({
                     ? 'bg-cordel-wood text-white font-black' 
                     : 'bg-cordel-bg-light text-encre-noire hover:bg-amber-100/60'
                 }`}
-                title="Affichage en calendrier (Grille)"
+                title={t('widgetAgenda.viewGridTooltip') || "Affichage en calendrier (Grille)"}
               >
                 <span className="text-sm">📅</span>
-                <span>Grille</span>
+                <span>{t('widgetAgenda.viewGrid') || "Grille"}</span>
               </button>
             </div>
           )}
@@ -484,7 +485,7 @@ export default function WidgetAgenda({
               onClick={handleOpenForm} 
               className="text-xs px-3 py-1.5 uppercase tracking-widest font-black"
             >
-              + Ajouter
+              {t('widgetAgenda.addBtn') || "+ Ajouter"}
             </CordelButton>
           )}
         </div>
@@ -543,9 +544,13 @@ export default function WidgetAgenda({
       {/* Events List (Visible when not loading and not adding) */}
       {!loading && !isAdding && (
         visibleEvents.length === 0 ? (
-          <CordelCard variant="default" useExtremeBorder={false} className="p-4 text-center">
-            <p className="text-xs opacity-75 font-semibold">{t('widgetAgenda.noEvents')}</p>
-          </CordelCard>
+          <EmptyState
+            icon="📅"
+            title={t('widgetAgenda.noEvents') || "Aucun événement prévu pour le moment"}
+            description="L'agenda est vide pour cette période. Organisez une répétition, une prestation, un stage ou une réunion en un clic !"
+            actionLabel={isAuthorized ? "+ Créer mon premier événement" : null}
+            onAction={isAuthorized ? () => setIsAdding(true) : null}
+          />
         ) : viewMode === 'grid' ? (
           <CalendarGrid 
             events={events} 
@@ -635,7 +640,7 @@ export default function WidgetAgenda({
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-1 overflow-visible">
               {visibleEvents.map((event) => {
                 const dateObj = new Date(event.date);
                 const day = isNaN(dateObj.getTime()) ? '?' : dateObj.getDate();
@@ -660,7 +665,7 @@ export default function WidgetAgenda({
                       rounded-[8px_12px_9px_11px]
                       flex items-stretch
                       min-h-[90px]
-                      cursor-pointer hover:scale-[1.01] active:scale-95 transition-all
+                      cursor-pointer hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[5.5px_5.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-[2px_2px_0px_0px_#181716] transition-all
                     `}
                   >
                     {/* Effet tampon gros statut en biais */}

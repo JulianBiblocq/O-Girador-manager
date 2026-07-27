@@ -3,6 +3,7 @@ import { collection, query, where, onSnapshot, addDoc, serverTimestamp, doc, del
 import { db } from '../firebase';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
+import EmptyState from './EmptyState';
 import { XiloClose, XiloBox } from './XiloIcons';
 import { useTerminologie } from '../hooks/useTerminologie';
 import { useTranslation } from './LanguageContext';
@@ -205,9 +206,11 @@ export default function WidgetCommandes({ groupId, user, profileData }) {
 
       {/* No open campaigns */}
       {!loading && !openCampaign && (
-        <CordelCard variant="default" className="p-4 text-center bg-cordel-bg opacity-75">
-          <p className="text-[10px] italic font-semibold">{t('widgetCommandes.noCampaign') || "Aucune campagne active."}</p>
-        </CordelCard>
+        <EmptyState
+          icon="🛍️"
+          title="Aucune campagne active"
+          description="Aucune commande groupée n'est ouverte pour le moment. Revenez bientôt ou contactez l'équipe logistique."
+        />
       )}
 
       {/* Campaign open form */}
