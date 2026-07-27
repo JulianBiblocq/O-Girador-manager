@@ -366,31 +366,18 @@ export function useUserProfile(user, profileData, t) {
 
     setValidationError('');
 
-    const isAncien = Boolean((profileData?.instrument || formData.instrument) && (profileData?.instrument || formData.instrument).trim() !== '');
+    const isAncien = Boolean(
+      (profileData?.instrument || formData.instrument || '').trim() !== '' ||
+      (profileData?.instrumentsJoues && profileData.instrumentsJoues.length > 0)
+    );
 
-    const getSelectedInstrumentsCount = () => {
-      if (isAncien) {
-        const insts = new Set([
-          profileData?.instrument || formData.instrument,
-          formData.voeuPrincipal,
-          formData.voeuSecondaire,
-          profileData?.instrumentSecondaire || formData.instrumentSecondaire
-        ].filter(Boolean));
-        return insts.size;
-      } else {
-        const insts = new Set([
-          formData.voeuPrincipal,
-          formData.voeuSecondaire,
-          formData.voeuTertiaire
-        ].filter(Boolean));
-        return (formData.voeuPrincipal && formData.voeuSecondaire && formData.voeuPrincipal !== formData.voeuSecondaire) ? insts.size : 0;
-      }
-    };
-
-    const isInstrumentsValid = getSelectedInstrumentsCount() >= 2;
+    const isInstrumentsValid = isAncien ? true : Boolean(
+      (formData.voeuPrincipal && formData.voeuPrincipal.trim()) ||
+      (formData.instrument && formData.instrument.trim())
+    );
 
     if (!isInstrumentsValid) {
-      const errMsg = "Veuillez sélectionner au moins 2 instruments différents (un choix principal et un second choix).";
+      const errMsg = "Veuillez sélectionner au moins un instrument ou vœu d'orientation.";
       setValidationError(errMsg);
       alert(errMsg);
       return;
@@ -540,21 +527,15 @@ export function useUserProfile(user, profileData, t) {
     }
   };
 
-  const isAncien = Boolean((profileData?.instrument || formData.instrument) && (profileData?.instrument || formData.instrument).trim() !== '');
+  const isAncien = Boolean(
+    (profileData?.instrument || formData.instrument || '').trim() !== '' ||
+    (profileData?.instrumentsJoues && profileData.instrumentsJoues.length > 0)
+  );
 
-  const isInstrumentsValid = (() => {
-    if (isAncien) {
-      const insts = new Set([
-        profileData?.instrument || formData.instrument,
-        formData.voeuPrincipal,
-        formData.voeuSecondaire,
-        profileData?.instrumentSecondaire || formData.instrumentSecondaire
-      ].filter(Boolean));
-      return insts.size >= 2;
-    } else {
-      return Boolean(formData.voeuPrincipal && formData.voeuSecondaire && formData.voeuPrincipal !== formData.voeuSecondaire);
-    }
-  })();
+  const isInstrumentsValid = isAncien ? true : Boolean(
+    (formData.voeuPrincipal && formData.voeuPrincipal.trim()) ||
+    (formData.instrument && formData.instrument.trim())
+  );
 
   return {
     isEditing,
