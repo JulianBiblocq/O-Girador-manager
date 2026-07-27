@@ -32,6 +32,7 @@ const MemberCard = React.memo(({
   dateNaissance,
   afficherTelephone,
   afficherDateNaissance,
+  afficherVille,
   visibiliteAdresse,
   publierTelephone,
   publierDateNaissance,
@@ -739,6 +740,7 @@ export default function Trombinoscope({ user, profileData, onBack, onContactUser
                           dateNaissance={member.dateNaissance}
                           afficherTelephone={member.afficherTelephone}
                           afficherDateNaissance={member.afficherDateNaissance}
+                          afficherVille={member.afficherVille}
                           visibiliteAdresse={member.visibiliteAdresse}
                           publierTelephone={member.publierTelephone}
                           publierDateNaissance={member.publierDateNaissance}
