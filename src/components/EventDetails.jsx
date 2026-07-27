@@ -23,6 +23,7 @@ import EventSetlistSection from './event-details/EventSetlistSection';
 import EventReportSection from './event-details/EventReportSection';
 import EventStageLayoutSection from './event-details/EventStageLayoutSection';
 import EventVolunteerSection from './event-details/EventVolunteerSection';
+import { resolveEffectiveUserTags, findTagObject, getTagId } from '../utils/tagUtils';
 import EventBudgetEditor from './event-details/EventBudgetEditor';
 import EventEditForm from './event-details/EventEditForm';
 import EventPollSection from './event-details/EventPollSection';
@@ -342,6 +343,64 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
   };
 
   const isAuthorized = profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.isSystemAdmin === true;
+
+  const [tagsDisponibles, setTagsDisponibles] = useState([]);
+  const [permissionsMatrice, setPermissionsMatrice] = useState(null);
+
+  useEffect(() => {
+    if (!event?.groupId) return;
+    const assocRef = doc(db, 'associations', event.groupId);
+    const unsubscribe = onSnapshot(assocRef, (docSnap) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        setTagsDisponibles(Array.isArray(data.tagsDisponibles) ? data.tagsDisponibles : []);
+        setPermissionsMatrice(data.permissionsMatrice || null);
+      }
+    });
+    return () => unsubscribe();
+  }, [event?.groupId]);
+
+  const effectiveUserTags = React.useMemo(() => {
+    return resolveEffectiveUserTags(profileData?.tags || [], tagsDisponibles);
+  }, [profileData?.tags, tagsDisponibles]);
+
+  const hasFinanceAccess = React.useMemo(() => {
+    if (isAuthorized) return true;
+
+    // Check permissionsMatrice for 'events-finances' or 'tresorerie'
+    if (permissionsMatrice) {
+      const allowed = permissionsMatrice['events-finances'] || permissionsMatrice['tresorerie'] || [];
+      if (allowed.includes('all')) return true;
+      if (allowed.includes(profileData?.role)) return true;
+
+      const hasTag = allowed.some(r => {
+        const targetLower = String(r).toLowerCase();
+        return effectiveUserTags.some(t => {
+          const tagStr = typeof t === 'string' ? t : getTagId(t);
+          if (tagStr.toLowerCase() === targetLower) return true;
+          const tagObj = findTagObject(tagStr, tagsDisponibles);
+          if (tagObj) {
+            if (tagObj.id && String(tagObj.id).toLowerCase() === targetLower) return true;
+            if (tagObj.nomM && String(tagObj.nomM).toLowerCase() === targetLower) return true;
+            if (tagObj.nomF && String(tagObj.nomF).toLowerCase() === targetLower) return true;
+          }
+          return false;
+        });
+      });
+      if (hasTag) return true;
+    }
+
+    // Keyword fallback check (tresorier, tresorerie, bureau, ca, president, etc.)
+    const financeKeywords = ['tresorier', 'tresoriere', 'tresorerie', 'bureau', 'ca', 'president', 'presidente'];
+    return effectiveUserTags.some(t => {
+      const tagStr = typeof t === 'string' ? t : getTagId(t);
+      const lower = tagStr.toLowerCase();
+      const tagObj = findTagObject(tagStr, tagsDisponibles);
+      const nomMLower = tagObj?.nomM?.toLowerCase() || '';
+      const nomFLower = tagObj?.nomF?.toLowerCase() || '';
+      return financeKeywords.some(kw => lower.includes(kw) || nomMLower.includes(kw) || nomFLower.includes(kw));
+    });
+  }, [isAuthorized, profileData?.role, permissionsMatrice, effectiveUserTags, tagsDisponibles]);
 
   const getPupitreName = (inst) => {
     if (!inst) return null;
@@ -1207,11 +1266,11 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
             </CordelAccordion>
           )}
 
-          {/* ACCORDION 4: Bilan Financier Admin (Replié par défaut) */}
-          {isAuthorized && agendaEnableFinance && ((event.montantRecette && event.montantRecette > 0) || (event.montantDepense && event.montantDepense > 0)) && (
+          {/* ACCORDION 4: Bilan Financier (Restreint Trésorerie / Bureau / Admins) */}
+          {(isAuthorized || hasFinanceAccess) && agendaEnableFinance && ((event.montantRecette && event.montantRecette > 0) || (event.montantDepense && event.montantDepense > 0) || isAuthorized || hasFinanceAccess) && (
             <CordelAccordion
-              title="Bilan financier de l'événement (Admin)"
-              subtitle="Synthèse des recettes, dépenses et solde net"
+              title="Bilan financier de l'événement"
+              subtitle="Synthèse des recettes, dépenses et solde net (Accès habilité)"
               icon="💰"
               defaultOpen={false}
             >
