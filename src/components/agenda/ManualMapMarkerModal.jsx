@@ -93,7 +93,8 @@ export default function ManualMapMarkerModal({
           mapTypeControl: true,
           streetViewControl: false,
           fullscreenControl: false,
-          zoomControl: true
+          zoomControl: true,
+          mapId: 'DEMO_MAP_ID',
         });
         mapInstanceRef.current = map;
 
@@ -101,35 +102,61 @@ export default function ManualMapMarkerModal({
           ? startCenter
           : startCenter;
 
-        const marker = new maps.Marker({
-          position: markerPos,
-          map: map,
-          draggable: true,
-          title: "Glissez ce marqueur jusqu'à la position exacte"
-        });
+        let marker;
+        if (maps.marker && maps.marker.AdvancedMarkerElement) {
+          marker = new maps.marker.AdvancedMarkerElement({
+            position: markerPos,
+            map: map,
+            gmpDraggable: true,
+            title: "Glissez ce marqueur jusqu'à la position exacte"
+          });
+
+          marker.addListener('dragend', () => {
+            const pos = marker.position;
+            if (pos) {
+              const lat = typeof pos.lat === 'function' ? pos.lat() : (pos.lat !== undefined ? pos.lat : pos[0]);
+              const lng = typeof pos.lng === 'function' ? pos.lng() : (pos.lng !== undefined ? pos.lng : pos[1]);
+              setCoords({ lat, lng });
+            }
+          });
+
+          map.addListener('click', (e) => {
+            if (e.latLng) {
+              const clickLat = e.latLng.lat();
+              const clickLng = e.latLng.lng();
+              marker.position = e.latLng;
+              setCoords({ lat: clickLat, lng: clickLng });
+            }
+          });
+        } else {
+          marker = new maps.Marker({
+            position: markerPos,
+            map: map,
+            draggable: true,
+            title: "Glissez ce marqueur jusqu'à la position exacte"
+          });
+
+          marker.addListener('dragend', () => {
+            const pos = marker.getPosition();
+            if (pos) {
+              setCoords({ lat: pos.lat(), lng: pos.lng() });
+            }
+          });
+
+          map.addListener('click', (e) => {
+            if (e.latLng) {
+              const clickLat = e.latLng.lat();
+              const clickLng = e.latLng.lng();
+              marker.setPosition(e.latLng);
+              setCoords({ lat: clickLat, lng: clickLng });
+            }
+          });
+        }
         markerInstanceRef.current = marker;
 
         if (!coords.lat || !coords.lng) {
           setCoords(markerPos);
         }
-
-        // Listen for drag end
-        marker.addListener('dragend', () => {
-          const pos = marker.getPosition();
-          if (pos) {
-            setCoords({ lat: pos.lat(), lng: pos.lng() });
-          }
-        });
-
-        // Listen for map click to reposition marker
-        map.addListener('click', (e) => {
-          if (e.latLng) {
-            const clickLat = e.latLng.lat();
-            const clickLng = e.latLng.lng();
-            marker.setPosition(e.latLng);
-            setCoords({ lat: clickLat, lng: clickLng });
-          }
-        });
 
         setLoading(false);
       })

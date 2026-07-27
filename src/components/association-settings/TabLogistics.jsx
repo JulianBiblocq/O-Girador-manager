@@ -293,12 +293,22 @@ function GoogleMapsPreview({ address }) {
                 zoom: 15,
                 disableDefaultUI: true,
                 zoomControl: true,
+                mapId: 'DEMO_MAP_ID',
               });
-              new maps.Marker({
-                position: location,
-                map,
-                title: address,
-              });
+
+              if (maps.marker && maps.marker.AdvancedMarkerElement) {
+                new maps.marker.AdvancedMarkerElement({
+                  position: location,
+                  map,
+                  title: address,
+                });
+              } else {
+                new maps.Marker({
+                  position: location,
+                  map,
+                  title: address,
+                });
+              }
               setMapError(null);
             };
 
