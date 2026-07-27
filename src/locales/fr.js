@@ -615,7 +615,10 @@ export const fr = {
     deleteTitle: "Supprimer cette étiquette",
     alreadyExists: "Cette étiquette existe déjà.",
     errorAdd: "Erreur lors de l'ajout de l'étiquette.",
-    errorDelete: "Erreur lors de la suppression de l'étiquette."
+    errorDelete: "Erreur lors de la suppression de l'étiquette.",
+    inheritsFromLabel: "Cette étiquette inclut également les droits de :",
+    inheritsFromHelp: "Les membres ayant cette étiquette hériteront automatiquement de tous les accès et permissions des étiquettes cochées ci-dessous.",
+    noInherited: "Aucun rôle hérité"
   },
   associationSettings: {
     title: "Paramètres Association",

@@ -11,6 +11,7 @@ import ReloadPrompt from './components/ReloadPrompt';
 import ErrorBoundary from './components/ErrorBoundary';
 
 import { lazyWithRetry } from './utils/pwaUtils';
+import { resolveEffectiveUserTags } from './utils/tagUtils';
 
 const Onboarding = lazyWithRetry(() => import('./components/Onboarding'));
 const Trombinoscope = lazyWithRetry(() => import('./components/Trombinoscope'));
@@ -614,7 +615,7 @@ export default function App() {
 
   // Authenticated and profile exists -> Render based on current view state
   const isSystemOrSuperAdminOrMestre = profileData?.isSystemAdmin || profileData?.role === 'super-admin' || profileData?.role === 'mestre';
-  const userTags = profileData?.tags || [];
+  const userTags = resolveEffectiveUserTags(profileData?.tags || [], tagsDisponibles);
 
   const isModuleEnabled = (tabId, poleId) => {
     if (!enabledModules) return true;

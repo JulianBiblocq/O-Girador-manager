@@ -16,11 +16,13 @@ export default function TagManager({ groupId, onBack, role, isSystemAdmin }) {
   // Creation form state
   const [nomM, setNomM] = useState("");
   const [nomF, setNomF] = useState("");
+  const [inheritsFrom, setInheritsFrom] = useState([]);
   
   // Edit modal state
   const [editingTag, setEditingTag] = useState(null); // normalized tag object
   const [editNomM, setEditNomM] = useState("");
   const [editNomF, setEditNomF] = useState("");
+  const [editInheritsFrom, setEditInheritsFrom] = useState([]);
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -153,7 +155,8 @@ export default function TagManager({ groupId, onBack, role, isSystemAdmin }) {
       const newTagObject = {
         id: cleanM,
         nomM: cleanM,
-        nomF: cleanF
+        nomF: cleanF,
+        inheritsFrom
       };
 
       const assocRef = doc(db, 'associations', groupId);
@@ -162,6 +165,7 @@ export default function TagManager({ groupId, onBack, role, isSystemAdmin }) {
       
       setNomM("");
       setNomF("");
+      setInheritsFrom([]);
     } catch (error) {
       console.error("TagManager - Erreur d'ajout d'étiquette :", error);
       alert(t('tagManager.errorAdd') || "Erreur lors de la création.");
@@ -174,6 +178,7 @@ export default function TagManager({ groupId, onBack, role, isSystemAdmin }) {
     setEditingTag(normTag);
     setEditNomM(normTag.nomM);
     setEditNomF(normTag.nomF);
+    setEditInheritsFrom(normTag.inheritsFrom || []);
   };
 
   const handleSaveEdit = async (e) => {
@@ -191,7 +196,8 @@ export default function TagManager({ groupId, onBack, role, isSystemAdmin }) {
           return {
             id: targetId,
             nomM: cleanM,
-            nomF: cleanF
+            nomF: cleanF,
+            inheritsFrom: editInheritsFrom
           };
         }
         return item;
@@ -324,6 +330,47 @@ export default function TagManager({ groupId, onBack, role, isSystemAdmin }) {
             </div>
           </div>
 
+          {/* Role Inheritance selection (Creation) */}
+          {tagsList.length > 0 && (
+            <div className="flex flex-col gap-1.5 mt-2 pt-3 border-t border-dashed border-cordel-master-dark/15">
+              <label className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood flex items-center gap-1">
+                🔗 {t('tagManager.inheritsFromLabel') || "Cette étiquette inclut également les droits de :"}
+              </label>
+              <p className="text-[9.5px] text-cordel-master-dark/75 font-medium leading-tight">
+                {t('tagManager.inheritsFromHelp') || "Les membres ayant cette étiquette hériteront automatiquement de tous les accès et permissions des étiquettes cochées ci-dessous."}
+              </p>
+              <div className="flex flex-wrap gap-1.5 max-h-36 overflow-y-auto p-2 border border-cordel-master-dark/20 rounded bg-white/50 dark:bg-black/20 mt-1">
+                {tagsList.map(parentTag => {
+                  const isChecked = inheritsFrom.includes(parentTag.id);
+                  return (
+                    <label
+                      key={`create-inherit-${parentTag.id}`}
+                      className={`flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded border cursor-pointer select-none transition-all ${
+                        isChecked
+                          ? 'bg-amber-100 dark:bg-amber-950/80 border-amber-500 text-amber-900 dark:text-amber-200'
+                          : 'bg-cordel-bg-light border-cordel-master-dark/20 text-cordel-master-dark/70 hover:bg-white'
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={isChecked}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setInheritsFrom(prev => [...prev, parentTag.id]);
+                          } else {
+                            setInheritsFrom(prev => prev.filter(id => id !== parentTag.id));
+                          }
+                        }}
+                        className="rounded accent-cordel-wood cursor-pointer"
+                      />
+                      <span>{parentTag.nomM}</span>
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           <div className="flex justify-end pt-2">
             <CordelButton 
               type="submit" 
@@ -404,14 +451,21 @@ export default function TagManager({ groupId, onBack, role, isSystemAdmin }) {
                     </div>
                   </div>
 
-                  {/* Badge Names */}
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-1.5 min-w-0 flex-1">
+                  {/* Badge Names & Inherited Roles */}
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-1.5 min-w-0 flex-1 flex-wrap">
                     <span className="theme-stamp-badge theme-stamp-badge-wood text-[9px] px-2 py-0.5 font-black truncate">
                       👨 {tag.nomM}
                     </span>
                     <span className="theme-stamp-badge theme-stamp-badge-ocre text-[9px] px-2 py-0.5 font-black truncate">
                       👩 {tag.nomF}
                     </span>
+
+                    {/* Inherited Roles Indicator Badge */}
+                    {tag.inheritsFrom && tag.inheritsFrom.length > 0 && (
+                      <span className="text-[8.5px] font-bold px-1.5 py-0.5 rounded bg-amber-100/90 text-amber-900 border border-amber-400 dark:bg-amber-950/70 dark:text-amber-200 dark:border-amber-700 flex items-center gap-1">
+                        🔗 Inclut : {tag.inheritsFrom.join(', ')}
+                      </span>
+                    )}
                   </div>
 
                   {/* Actions */}
@@ -421,7 +475,7 @@ export default function TagManager({ groupId, onBack, role, isSystemAdmin }) {
                       onClick={() => handleOpenEdit(tag)}
                       disabled={saving}
                       className="w-7 h-7 flex items-center justify-center border border-encre-noire bg-cordel-bg-light text-encre-noire rounded shadow-[1px_1px_0px_0px_#181716] hover:bg-white cursor-pointer disabled:opacity-50 text-xs font-bold"
-                      title="Modifier l'accord masculin/féminin"
+                      title="Modifier l'étiquette et ses héritages de rôles"
                     >
                       ✏️
                     </button>
@@ -488,6 +542,47 @@ export default function TagManager({ groupId, onBack, role, isSystemAdmin }) {
                     maxLength={30}
                     className="theme-input text-xs py-2 font-bold w-full"
                   />
+                </div>
+
+                {/* Role Inheritance selection (Edition Modal) */}
+                <div className="flex flex-col gap-1.5 pt-3 border-t border-dashed border-cordel-master-dark/15">
+                  <label className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood flex items-center gap-1">
+                    🔗 {t('tagManager.inheritsFromLabel') || "Cette étiquette inclut également les droits de :"}
+                  </label>
+                  <p className="text-[9.5px] text-cordel-master-dark/75 font-medium leading-tight">
+                    {t('tagManager.inheritsFromHelp') || "Les membres ayant cette étiquette hériteront automatiquement de tous les accès et permissions des étiquettes cochées ci-dessous."}
+                  </p>
+                  <div className="flex flex-wrap gap-1.5 max-h-36 overflow-y-auto p-2 border border-cordel-master-dark/20 rounded bg-white/50 dark:bg-black/20 mt-1">
+                    {tagsList
+                      .filter(tItem => tItem.id.toLowerCase() !== editingTag.id.toLowerCase())
+                      .map(parentTag => {
+                        const isChecked = editInheritsFrom.includes(parentTag.id);
+                        return (
+                          <label
+                            key={`edit-inherit-${parentTag.id}`}
+                            className={`flex items-center gap-1.5 text-xs font-bold px-2 py-1 rounded border cursor-pointer select-none transition-all ${
+                              isChecked
+                                ? 'bg-amber-100 dark:bg-amber-950/80 border-amber-500 text-amber-900 dark:text-amber-200'
+                                : 'bg-cordel-bg-light border-cordel-master-dark/20 text-cordel-master-dark/70 hover:bg-white'
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setEditInheritsFrom(prev => [...prev, parentTag.id]);
+                                } else {
+                                  setEditInheritsFrom(prev => prev.filter(id => id !== parentTag.id));
+                                }
+                              }}
+                              className="rounded accent-cordel-wood cursor-pointer"
+                            />
+                            <span>{parentTag.nomM}</span>
+                          </label>
+                        );
+                      })}
+                  </div>
                 </div>
 
                 <div className="flex justify-end gap-2 pt-3 border-t border-dashed border-cordel-master-dark/20">

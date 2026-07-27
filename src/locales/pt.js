@@ -633,7 +633,10 @@ export const pt = {
     deleteTitle: "Excluir esta etiqueta",
     alreadyExists: "Esta etiqueta já existe.",
     errorAdd: "Erro ao adicionar a etiqueta.",
-    errorDelete: "Erro ao excluir a etiqueta."
+    errorDelete: "Erro ao excluir a etiqueta.",
+    inheritsFromLabel: "Esta etiqueta inclui também as permissões de:",
+    inheritsFromHelp: "Os membros com esta etiqueta herdarão automaticamente todos os acessos e permissões das etiquetas marcadas abaixo.",
+    noInherited: "Nenhum papel herdado"
   },
   associationSettings: {
     title: "Configurações da Associação",

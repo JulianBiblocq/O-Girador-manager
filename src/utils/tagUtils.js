@@ -7,17 +7,19 @@
  * { id: string, nomM: string, nomF: string }
  */
 export function normalizeTag(tag) {
-  if (!tag) return { id: '', nomM: '', nomF: '' };
+  if (!tag) return { id: '', nomM: '', nomF: '', inheritsFrom: [] };
   if (typeof tag === 'string') {
-    return { id: tag, nomM: tag, nomF: tag };
+    return { id: tag, nomM: tag, nomF: tag, inheritsFrom: [] };
   }
   const name = tag.nomM || tag.name || tag.nom || tag.id || '';
   const nomM = tag.nomM || tag.nomMasculin || name;
   const nomF = tag.nomF || tag.nomFeminin || nomM || name;
+  const inheritsFrom = Array.isArray(tag.inheritsFrom) ? tag.inheritsFrom : [];
   return {
     id: tag.id || nomM || name,
     nomM,
-    nomF
+    nomF,
+    inheritsFrom
   };
 }
 
@@ -105,4 +107,68 @@ export function formatTagGender(tag, userGenre, globalUseFeminine = false, tagsD
   }
 
   return nomM || nomF;
+}
+
+/**
+ * Resolves effective user tags including all inherited tags recursively via inheritsFrom.
+ * 
+ * @param {Array<string|object>} userTags - Direct user tags assigned to the user profile
+ * @param {Array<object|string>} tagsDisponibles - Full list of available association tags
+ * @returns {Array<string>} Array of effective tag IDs/names (direct + inherited)
+ */
+export function resolveEffectiveUserTags(userTags = [], tagsDisponibles = []) {
+  if (!Array.isArray(userTags) || userTags.length === 0) return [];
+
+  const effectiveTagIds = new Set();
+  const queue = [];
+
+  // Initialize queue with direct user tag IDs
+  userTags.forEach(t => {
+    const tagId = getTagId(t);
+    if (tagId) {
+      queue.push(tagId);
+    }
+  });
+
+  // Map for fast tag lookup by ID/name
+  const tagMap = new Map();
+  if (Array.isArray(tagsDisponibles)) {
+    tagsDisponibles.forEach(item => {
+      if (item) {
+        const id = getTagId(item);
+        if (id) {
+          tagMap.set(id.toLowerCase(), item);
+        }
+        if (typeof item === 'object') {
+          if (item.nomM) tagMap.set(item.nomM.toLowerCase(), item);
+          if (item.nomF) tagMap.set(item.nomF.toLowerCase(), item);
+        }
+      }
+    });
+  }
+
+  // BFS with visited set to prevent infinite loops in case of circular references
+  const visited = new Set();
+
+  while (queue.length > 0) {
+    const currentTagId = queue.shift();
+    const currentLower = currentTagId.toLowerCase();
+
+    if (visited.has(currentLower)) continue;
+    visited.add(currentLower);
+    effectiveTagIds.add(currentTagId);
+
+    // Look up tag object in tagsDisponibles to check for inheritsFrom
+    const tagObj = tagMap.get(currentLower);
+    if (tagObj && typeof tagObj === 'object' && Array.isArray(tagObj.inheritsFrom)) {
+      tagObj.inheritsFrom.forEach(parentTagId => {
+        const parentId = getTagId(parentTagId);
+        if (parentId && !visited.has(parentId.toLowerCase())) {
+          queue.push(parentId);
+        }
+      });
+    }
+  }
+
+  return Array.from(effectiveTagIds);
 }

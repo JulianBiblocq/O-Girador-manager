@@ -13,6 +13,7 @@ import XiloAvatar from './XiloAvatar';
 import { usePresenceContext } from '../context/PresenceContext';
 import { XiloMegaphone } from './XiloIcons';
 import useConfirm from '../hooks/useConfirm';
+import { resolveEffectiveUserTags } from '../utils/tagUtils';
 
 // Memoized ThreadCard component to prevent list items re-rendering during search or active inputs
 const ThreadCard = React.memo(({
@@ -416,6 +417,23 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
     }
   }, [activePrivateChatUserId, onClearActivePrivateChat]);
 
+  const [tagsDisponibles, setTagsDisponibles] = useState([]);
+
+  useEffect(() => {
+    if (!profileData?.groupId) return;
+    const assocRef = doc(db, 'associations', profileData.groupId);
+    const unsubscribe = onSnapshot(assocRef, (docSnap) => {
+      if (docSnap.exists()) {
+        setTagsDisponibles(docSnap.data().tagsDisponibles || []);
+      }
+    });
+    return () => unsubscribe();
+  }, [profileData?.groupId]);
+
+  const effectiveUserTags = useMemo(() => {
+    return resolveEffectiveUserTags(profileData?.tags || [], tagsDisponibles);
+  }, [profileData?.tags, tagsDisponibles]);
+
   // Real-time synchronization of channels (salons)
   useEffect(() => {
     if (!profileData?.groupId) {
@@ -425,7 +443,7 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
 
     const channelsRef = collection(db, 'forum_channels');
     const userRole = profileData?.role || 'membre';
-    const userTags = profileData?.tags || [];
+    const userTags = effectiveUserTags;
     const isAdmin = profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.isSystemAdmin;
 
     // Load all channels for this group
@@ -610,7 +628,7 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
     if (profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.isSystemAdmin) return true;
 
     const userRole = profileData?.role || 'membre';
-    const userTags = profileData?.tags || [];
+    const userTags = effectiveUserTags;
 
     const write = channel.writeRoles || ['all'];
     if (write.includes('all')) return true;
@@ -622,7 +640,7 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
       return channel.allowedRoles.includes('all') || channel.allowedRoles.includes(userRole);
     }
     return false;
-  }, [profileData?.role, profileData?.tags, profileData?.isSystemAdmin]);
+  }, [profileData?.role, effectiveUserTags, profileData?.isSystemAdmin]);
 
   const activeChannel = useMemo(() => {
     return channels.find(c => c.id === activeChannelId);
