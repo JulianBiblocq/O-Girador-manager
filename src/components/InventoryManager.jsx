@@ -224,6 +224,19 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin,
     }
   };
 
+  const handleInlineFieldChange = async (instId, fieldName, value) => {
+    if (!instId || !fieldName) return;
+    try {
+      const docRef = doc(db, 'inventory', instId);
+      await updateDoc(docRef, {
+        [fieldName]: value
+      });
+    } catch (error) {
+      console.error(`InventoryManager - Error updating ${fieldName}:`, error);
+      alert(t('common.saveError') || "Erreur lors de la sauvegarde.");
+    }
+  };
+
   const handleReturnInstrument = async (instId) => {
     if (!instId) return;
     try {
@@ -813,77 +826,161 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin,
                   <tbody className="divide-y divide-encre-noire/10 font-medium">
                     {sortedInstruments.map((inst) => {
                       const iconPath = INSTRUMENT_ICONS[inst.type] || 'favicon.svg';
-                      const isPersonal = inst.proprietaire !== "Association";
-                      const ownerName = isPersonal ? (usersMap[inst.proprietaire] || "Chargement...") : "Association";
-                      const isAtHome = inst.localisationPhysique !== "Local";
-                      const locName = isAtHome ? (usersMap[inst.localisationPhysique] || "Chez un membre") : "Local";
 
                       return (
                         <tr key={inst.id} className="hover:bg-cordel-hover/50 transition-colors">
-                          {/* Nom (Sticky Column) */}
-                          <td className="p-3 border-r border-encre-noire/15 font-extrabold text-encre-noire sticky left-0 z-10 bg-cordel-bg shadow-[2px_0_5px_-2px_rgba(0,0,0,0.15)]">
+                          {/* Nom / Réf (Sticky Column Input) */}
+                          <td className="p-2 border-r border-encre-noire/15 font-extrabold text-encre-noire sticky left-0 z-10 bg-cordel-bg shadow-[2px_0_5px_-2px_rgba(0,0,0,0.15)] min-w-[170px]">
                             <div className="flex items-center gap-2">
                               <img src={iconPath} alt={inst.type} className="w-5 h-5 object-contain shrink-0" />
-                              <span className="truncate">{inst.nom}</span>
+                              <input
+                                type="text"
+                                key={inst.id + '_nom_' + inst.nom}
+                                defaultValue={inst.nom}
+                                onBlur={(e) => {
+                                  const val = e.target.value.trim();
+                                  if (val && val !== inst.nom) {
+                                    handleInlineFieldChange(inst.id, 'nom', val);
+                                  }
+                                }}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') e.target.blur();
+                                }}
+                                className="theme-input text-xs font-extrabold py-1 px-1.5 bg-white/80 focus:bg-white border-encre-noire/20 hover:border-encre-noire w-full rounded"
+                                placeholder="Nom de l'instrument"
+                                title="Cliquer pour modifier le nom"
+                              />
                             </div>
                           </td>
-                          {/* Type */}
-                          <td className="p-3 border-r border-encre-noire/10 text-cordel-wood font-bold">
-                            🛠️ {inst.type}
+
+                          {/* Type / Famille (Dropdown) */}
+                          <td className="p-2 border-r border-encre-noire/10 min-w-[120px]">
+                            <select
+                              value={inst.type || 'Alfaia'}
+                              onChange={(e) => handleInlineFieldChange(inst.id, 'type', e.target.value)}
+                              className="theme-input text-xs font-bold py-1 px-2 bg-cordel-bg-light/90 border-encre-noire/20 hover:border-encre-noire w-full rounded text-cordel-wood cursor-pointer"
+                              title="Modifier la famille d'instrument"
+                            >
+                              {INSTRUMENT_TYPES.map(t => (
+                                <option key={t} value={t}>{t}</option>
+                              ))}
+                            </select>
                           </td>
-                          {/* Propriétaire */}
-                          <td className="p-3 border-r border-encre-noire/10 text-cordel-master-dark font-semibold">
-                            {ownerName}
+
+                          {/* Propriétaire (Dropdown) */}
+                          <td className="p-2 border-r border-encre-noire/10 min-w-[155px]">
+                            <select
+                              value={inst.proprietaire || 'Association'}
+                              onChange={(e) => handleInlineFieldChange(inst.id, 'proprietaire', e.target.value)}
+                              className="theme-input text-xs font-bold py-1 px-2 bg-cordel-bg-light/90 border-encre-noire/20 hover:border-encre-noire w-full rounded text-cordel-master-dark cursor-pointer"
+                              title="Modifier le propriétaire"
+                            >
+                              <option value="Association">🏢 Association</option>
+                              <optgroup label="Membres">
+                                {usersList.map(u => (
+                                  <option key={u.id} value={u.id}>👤 {u.prenom} {u.nom}</option>
+                                ))}
+                              </optgroup>
+                            </select>
                           </td>
-                          {/* Localisation */}
-                          <td className="p-3 border-r border-encre-noire/10">
-                            📍 {locName}
+
+                          {/* Localisation (Dropdown) */}
+                          <td className="p-2 border-r border-encre-noire/10 min-w-[155px]">
+                            <select
+                              value={inst.localisationPhysique || 'Local'}
+                              onChange={(e) => handleInlineFieldChange(inst.id, 'localisationPhysique', e.target.value)}
+                              className="theme-input text-xs font-bold py-1 px-2 bg-cordel-bg-light/90 border-encre-noire/20 hover:border-encre-noire w-full rounded text-encre-noire cursor-pointer"
+                              title="Modifier le lieu de stockage"
+                            >
+                              <option value="Local">📍 Local</option>
+                              <optgroup label="Chez un membre">
+                                {usersList.map(u => (
+                                  <option key={u.id} value={u.id}>🏠 Chez {u.prenom} {u.nom}</option>
+                                ))}
+                              </optgroup>
+                            </select>
                           </td>
-                          {/* État */}
-                          <td className="p-3 border-r border-encre-noire/10">
-                            <span className={`theme-stamp-badge ${inst.etat === 'À réparer' || inst.etat === 'Para consertar' ? 'border-red-600 text-red-600' : 'theme-stamp-badge-wood'} text-[8px] px-1.5 py-0.5`}>
-                              {inst.etat}
-                            </span>
+
+                          {/* État (Dropdown) */}
+                          <td className="p-2 border-r border-encre-noire/10 min-w-[110px]">
+                            <select
+                              value={inst.etat || 'Bon'}
+                              onChange={(e) => handleInlineFieldChange(inst.id, 'etat', e.target.value)}
+                              className={`theme-input text-xs font-extrabold py-1 px-2 rounded border w-full cursor-pointer ${
+                                inst.etat === 'À réparer' || inst.etat === 'Para consertar'
+                                  ? 'bg-red-50 text-red-700 border-red-400 font-black'
+                                  : inst.etat === 'Neuf'
+                                    ? 'bg-green-50 text-green-700 border-green-400'
+                                    : 'bg-cordel-bg-light/90 text-cordel-wood border-encre-noire/20'
+                              }`}
+                              title="Modifier l'état"
+                            >
+                              {ETAT_OPTIONS.map(eOpt => (
+                                <option key={eOpt} value={eOpt}>{getEtatLabel(eOpt)}</option>
+                              ))}
+                            </select>
                           </td>
-                          {/* Statut / Prêt */}
-                          <td className="p-3 border-r border-encre-noire/10">
+
+                          {/* Statut / Prêt (Dropdown & Borrower) */}
+                          <td className="p-2 border-r border-encre-noire/10 min-w-[160px]">
                             <div className="flex flex-col gap-1">
-                              <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded border inline-block w-fit ${
-                                inst.status === 'Emprunté'
-                                  ? 'bg-amber-100 border-amber-400 text-amber-800'
-                                  : inst.status === 'En réparation'
-                                    ? 'bg-red-100 border-red-400 text-red-800'
-                                    : 'bg-green-100 border-green-400 text-green-800'
-                              }`}>
-                                {inst.status || 'En stock'}
-                              </span>
-                              {inst.status === 'Emprunté' ? (
-                                <div className="flex items-center gap-1.5 text-[9px]">
-                                  <span className="truncate">👤 {usersMap[inst.borrowedBy] || "Membre"}</span>
-                                  <button
-                                    type="button"
-                                    onClick={() => handleReturnInstrument(inst.id)}
-                                    className="text-[8px] font-black uppercase bg-cordel-wood text-white px-1.5 py-0.5 rounded border border-encre-noire hover:brightness-110 cursor-pointer"
+                              <select
+                                value={inst.status || 'En stock'}
+                                onChange={(e) => {
+                                  const newStatus = e.target.value;
+                                  if (newStatus !== 'Emprunté') {
+                                    handleInlineFieldChange(inst.id, 'status', newStatus);
+                                    if (inst.borrowedBy) {
+                                      handleInlineFieldChange(inst.id, 'borrowedBy', null);
+                                    }
+                                  } else {
+                                    handleInlineFieldChange(inst.id, 'status', 'Emprunté');
+                                  }
+                                }}
+                                className={`text-[10px] font-black uppercase py-1 px-2 rounded border w-full cursor-pointer ${
+                                  inst.status === 'Emprunté'
+                                    ? 'bg-amber-100 border-amber-400 text-amber-800'
+                                    : inst.status === 'En réparation'
+                                      ? 'bg-red-100 border-red-400 text-red-800'
+                                      : 'bg-green-100 border-green-400 text-green-800'
+                                }`}
+                                title="Modifier le statut d'utilisation"
+                              >
+                                <option value="En stock">En stock</option>
+                                <option value="Emprunté">Emprunté</option>
+                                <option value="En réparation">En réparation</option>
+                              </select>
+
+                              {inst.status === 'Emprunté' && (
+                                <div className="flex items-center gap-1 mt-0.5">
+                                  <select
+                                    value={inst.borrowedBy || ''}
+                                    onChange={(e) => handleAssignBorrower(inst.id, e.target.value)}
+                                    className="theme-input text-[9px] font-bold py-0.5 px-1 bg-white border-amber-400 w-full"
+                                    title="Membre emprunteur"
                                   >
-                                    ↩️ Restitué
-                                  </button>
+                                    <option value="">🤝 Emprunteur...</option>
+                                    {usersList.map(u => (
+                                      <option key={u.id} value={u.id}>{u.prenom} {u.nom}</option>
+                                    ))}
+                                  </select>
+                                  {inst.borrowedBy && (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleReturnInstrument(inst.id)}
+                                      className="text-[8px] font-black uppercase bg-cordel-wood text-white px-1.5 py-1 rounded border border-encre-noire hover:brightness-110 cursor-pointer shrink-0"
+                                      title="Restituer l'instrument"
+                                    >
+                                      ↩️
+                                    </button>
+                                  )}
                                 </div>
-                              ) : (
-                                <select
-                                  value=""
-                                  onChange={(e) => handleAssignBorrower(inst.id, e.target.value)}
-                                  className="theme-input text-[9px] font-bold py-0.5 px-1 bg-white max-w-[130px]"
-                                >
-                                  <option value="">🤝 Prêter à...</option>
-                                  {usersList.map(u => (
-                                    <option key={u.id} value={u.id}>{u.prenom} {u.nom}</option>
-                                  ))}
-                                </select>
                               )}
                             </div>
                           </td>
+
                           {/* Assignations */}
-                          <td className="p-3 border-r border-encre-noire/10">
+                          <td className="p-2 border-r border-encre-noire/10">
                             {inst.assignations && inst.assignations.length > 0 ? (
                               <div className="flex flex-wrap gap-1">
                                 {inst.assignations.map(uid => {
@@ -902,16 +999,25 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin,
                               <span className="text-[10px] opacity-40 italic">-</span>
                             )}
                           </td>
+
                           {/* Actions */}
-                          <td className="p-3 text-right">
+                          <td className="p-2 text-right">
                             <div className="flex items-center justify-end gap-1.5">
                               <button
                                 type="button"
                                 onClick={() => handleOpenEdit(inst)}
                                 className="p-1.5 border border-encre-noire bg-cordel-bg-light hover:bg-cordel-hover text-encre-noire rounded shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none cursor-pointer"
-                                title="Modifier l'instrument"
+                                title="Formulaire d'édition complet (assignations, etc.)"
                               >
                                 <XiloChisel size={10} />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDelete(inst.id, inst.nom)}
+                                className="p-1.5 border border-red-700 bg-red-50 hover:bg-red-100 text-red-700 rounded shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none cursor-pointer text-[10px]"
+                                title="Supprimer de l'inventaire"
+                              >
+                                🗑️
                               </button>
                             </div>
                           </td>
