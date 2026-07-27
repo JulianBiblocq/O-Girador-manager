@@ -156,6 +156,23 @@ export default function App() {
   const [permissionsMatrice, setPermissionsMatrice] = useState(null);
   const [enabledModules, setEnabledModules] = useState(null);
   const [activerPresenceEnLigne, setActiverPresenceEnLigne] = useState(true);
+  const [breakGlassActive, setBreakGlassActive] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('breakGlassActive') === 'true';
+    }
+    return false;
+  });
+
+  const handleToggleBreakGlass = () => {
+    setBreakGlassActive(prev => {
+      const nextVal = !prev;
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('breakGlassActive', String(nextVal));
+      }
+      return nextVal;
+    });
+  };
+
   const [currentView, setCurrentView] = useState('dashboard'); // 'dashboard', 'trombinoscope', 'forum', 'profil', 'system-admin', 'layout-editor', 'tag-manager'
   const [currentPole, setCurrentPole] = useState('accueil');
   const [currentTab, setCurrentTab] = useState('dashboard');
@@ -615,6 +632,7 @@ export default function App() {
 
   // Authenticated and profile exists -> Render based on current view state
   const isSystemOrSuperAdminOrMestre = profileData?.isSystemAdmin || profileData?.role === 'super-admin' || profileData?.role === 'mestre';
+  const isMasterKeyActive = isSystemOrSuperAdminOrMestre && breakGlassActive;
   const userTags = resolveEffectiveUserTags(profileData?.tags || [], tagsDisponibles);
 
   const isModuleEnabled = (tabId, poleId) => {
@@ -643,7 +661,8 @@ export default function App() {
     // 0. Strict Global Feature Toggle check (Hides & blocks for EVERYONE including super-admin if OFF)
     if (!isModuleEnabled(tabId, poleId)) return false;
 
-    if (isSystemOrSuperAdminOrMestre) return true;
+    // Master Key Bypass ONLY if Break-Glass Technical Intervention Mode is ACTIVE
+    if (isMasterKeyActive) return true;
 
     // Public member tabs
     if (['profil', 'agenda', 'materiel', 'vestiaire', 'trombinoscope', 'forum', 'dashboard', 'varal'].includes(tabId)) {
@@ -669,13 +688,13 @@ export default function App() {
     return false;
   };
 
-  const hasAccessTroupe = isSystemOrSuperAdminOrMestre || checkTabAccess('export-annu', 'troupe') || checkTabAccess('tag-manager', 'troupe') || checkTabAccess('instruments', 'troupe');
-  const hasAccessLogistique = isSystemOrSuperAdminOrMestre || checkTabAccess('inventory', 'logistique') || checkTabAccess('orders-manager', 'logistique');
-  const hasAccessTresorerie = isSystemOrSuperAdminOrMestre || checkTabAccess('dashboard-finance', 'tresorerie') || checkTabAccess('cotisations', 'tresorerie') || checkTabAccess('events-finances', 'tresorerie') || checkTabAccess('operations-diverses', 'tresorerie') || checkTabAccess('frais-km', 'tresorerie') || checkTabAccess('reports-exports', 'tresorerie');
-  const hasAccessStudio = isSystemOrSuperAdminOrMestre || checkTabAccess('studio-events', 'studio') || checkTabAccess('studio-social', 'studio') || checkTabAccess('reunion-manager', 'studio') || checkTabAccess('varal-manager', 'studio') || checkTabAccess('activity-reports', 'studio') || checkTabAccess('mestre-forum-channels', 'studio');
-  const hasAccessVestiaire = isSystemOrSuperAdminOrMestre || checkTabAccess('wardrobe-inventory', 'vestiaire') || checkTabAccess('wardrobe-couture', 'vestiaire') || checkTabAccess('wardrobe-sizes', 'vestiaire');
+  const hasAccessTroupe = isMasterKeyActive || checkTabAccess('export-annu', 'troupe') || checkTabAccess('tag-manager', 'troupe') || checkTabAccess('instruments', 'troupe');
+  const hasAccessLogistique = isMasterKeyActive || checkTabAccess('inventory', 'logistique') || checkTabAccess('orders-manager', 'logistique');
+  const hasAccessTresorerie = isMasterKeyActive || checkTabAccess('dashboard-finance', 'tresorerie') || checkTabAccess('cotisations', 'tresorerie') || checkTabAccess('events-finances', 'tresorerie') || checkTabAccess('operations-diverses', 'tresorerie') || checkTabAccess('frais-km', 'tresorerie') || checkTabAccess('reports-exports', 'tresorerie');
+  const hasAccessStudio = isMasterKeyActive || checkTabAccess('studio-events', 'studio') || checkTabAccess('studio-social', 'studio') || checkTabAccess('reunion-manager', 'studio') || checkTabAccess('varal-manager', 'studio') || checkTabAccess('activity-reports', 'studio') || checkTabAccess('mestre-forum-channels', 'studio');
+  const hasAccessVestiaire = isMasterKeyActive || checkTabAccess('wardrobe-inventory', 'vestiaire') || checkTabAccess('wardrobe-couture', 'vestiaire') || checkTabAccess('wardrobe-sizes', 'vestiaire');
   const hasAccessMestre = isSystemOrSuperAdminOrMestre || checkTabAccess('mestre-orientation', 'mestre') || checkTabAccess('mestre-events', 'mestre') || checkTabAccess('mestre-stage-layout', 'mestre') || checkTabAccess('mestre-sequenceur', 'mestre') || checkTabAccess('mestre-workshops', 'mestre') || checkTabAccess('mestre-mot-mestre', 'mestre');
-  const hasAccessForumMod = isSystemOrSuperAdminOrMestre || userTags.some(t => ['Modérateur', 'Modérateur Forum', 'Gestionnaire Porte-voix', 'Porte-voix'].includes(t));
+  const hasAccessForumMod = isMasterKeyActive || userTags.some(t => ['Modérateur', 'Modérateur Forum', 'Gestionnaire Porte-voix', 'Porte-voix'].includes(t));
 
   const handleNavigateToPole = (poleId) => {
     setCurrentPole(poleId);
@@ -804,6 +823,8 @@ export default function App() {
           permissionsMatrice={permissionsMatrice}
           enabledModules={enabledModules}
           activerPresenceEnLigne={activerPresenceEnLigne}
+          breakGlassActive={breakGlassActive}
+          onToggleBreakGlass={handleToggleBreakGlass}
         >
           <React.Suspense fallback={
             <div className="flex-1 flex flex-col justify-center items-center py-12">
@@ -872,6 +893,7 @@ export default function App() {
                 activePrivateChatUserId={activePrivateChatUserId}
                 onClearActivePrivateChat={() => setActivePrivateChatUserId(null)}
                 onOpenStudioForum={() => setCurrentTab('mestre-forum-channels')}
+                breakGlassActive={breakGlassActive}
               />
             ) : currentTab === 'atelier-couture' ? (
               <AtelierCouture

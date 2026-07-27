@@ -638,6 +638,12 @@ export const pt = {
     inheritsFromHelp: "Os membros com esta etiqueta herdarão automaticamente todos os acessos e permissões das etiquetas marcadas abaixo.",
     noInherited: "Nenhum papel herdado"
   },
+  breakGlass: {
+    activeBanner: "Modo de Intervenção Técnica Ativo (Passe-partout completo)",
+    switchActive: "🔓 Modo Intervenção",
+    switchInactive: "🔒 Modo Padrão",
+    switchTooltip: "Alternar para desbloquear os canais e módulos restritos"
+  },
   associationSettings: {
     title: "Configurações da Associação",
     brandingHeading: "Identidade Visual e Logos",

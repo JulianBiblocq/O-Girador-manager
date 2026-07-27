@@ -620,6 +620,12 @@ export const fr = {
     inheritsFromHelp: "Les membres ayant cette étiquette hériteront automatiquement de tous les accès et permissions des étiquettes cochées ci-dessous.",
     noInherited: "Aucun rôle hérité"
   },
+  breakGlass: {
+    activeBanner: "Mode Intervention Technique Actif (Passe-partout complet)",
+    switchActive: "🔓 Mode Intervention",
+    switchInactive: "🔒 Mode Standard",
+    switchTooltip: "Basculez pour déverrouiller les salons et modules restreints"
+  },
   associationSettings: {
     title: "Paramètres Association",
     brandingHeading: "Charte graphique & Logos",

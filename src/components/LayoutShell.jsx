@@ -40,6 +40,8 @@ export default function LayoutShell({
   permissionsMatrice,
   enabledModules,
   activerPresenceEnLigne = true,
+  breakGlassActive = false,
+  onToggleBreakGlass,
   children 
 }) {
   const finalLogoUrl = logoUrl || '/Pictures/logo-samambaia.png';
@@ -412,6 +414,21 @@ export default function LayoutShell({
               </a>
             )}
             
+            {isSystemOrSuperAdminOrMestre && (
+              <button
+                type="button"
+                onClick={onToggleBreakGlass}
+                className={`w-full py-1.5 px-2 rounded-[6px_9px_5px_8px] text-[8.5px] font-black uppercase tracking-wider border-2 transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-[1.5px_1.5px_0px_0px_#181716] ${
+                  breakGlassActive
+                    ? 'bg-amber-400 text-encre-noire border-encre-noire animate-pulse'
+                    : 'bg-cordel-bg text-cordel-master-dark/75 border-cordel-master-dark/30 hover:border-encre-noire'
+                }`}
+                title={t('breakGlass.switchTooltip') || "Basculez pour déverrouiller les salons et modules restreints"}
+              >
+                <span>{breakGlassActive ? (t('breakGlass.switchActive') || '🔓 Mode Intervention') : (t('breakGlass.switchInactive') || '🔒 Mode Standard')}</span>
+              </button>
+            )}
+
             {onSignOut && (
               <button
                 type="button"
@@ -432,6 +449,22 @@ export default function LayoutShell({
         <div className="flex-1 overflow-y-auto cordel-bg p-5 sm:px-7 md:px-9 sm:py-6 md:py-8 flex flex-col justify-between">
           <div className="flex flex-col gap-5 w-full flex-1">
             
+            {/* Break-Glass Active Warning Banner */}
+            {breakGlassActive && isSystemOrSuperAdminOrMestre && (
+              <div className="w-full mb-1 px-3.5 py-2 bg-amber-400 text-encre-noire border-2 border-encre-noire rounded-[5px_8px_4px_7px] shadow-[2px_2px_0px_0px_#181716] text-[10px] font-black uppercase tracking-wider flex items-center justify-between z-20 select-none animate-fade-in shrink-0">
+                <span className="flex items-center gap-2 truncate">
+                  🔓 {t('breakGlass.activeBanner') || "Mode Intervention Technique Actif (Passe-partout complet)"}
+                </span>
+                <button
+                  type="button"
+                  onClick={onToggleBreakGlass}
+                  className="bg-encre-noire text-white text-[9px] px-2.5 py-1 rounded font-black uppercase hover:bg-neutral-800 cursor-pointer shadow-xs shrink-0 ml-2"
+                >
+                  ✕ Désactiver
+                </button>
+              </div>
+            )}
+
             {/* Top Horizontal Subcategories Menu */}
             {(isSystemOrSuperAdminOrMestre || isAdministrativeUser) && visibleTabs.length > 0 && (
               <div className="flex flex-wrap gap-2 border-b border-dashed border-cordel-master-dark/20 pb-3 mb-1 select-none shrink-0">

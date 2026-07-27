@@ -293,7 +293,7 @@ function ChannelTreeItem({
   );
 }
 
-export default function Forum({ user, profileData, onBack, activePrivateChatUserId, onClearActivePrivateChat, onOpenStudioForum }) {
+export default function Forum({ user, profileData, onBack, activePrivateChatUserId, onClearActivePrivateChat, onOpenStudioForum, breakGlassActive = false }) {
   const { t } = useTranslation();
   const { confirm } = useConfirm();
   const { actionLoading, moveThread, togglePinThread, deleteThread } = useForumModeration(profileData?.groupId);
@@ -444,7 +444,8 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
     const channelsRef = collection(db, 'forum_channels');
     const userRole = profileData?.role || 'membre';
     const userTags = effectiveUserTags;
-    const isAdmin = profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.isSystemAdmin;
+    const isAdminUser = profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.isSystemAdmin;
+    const isMasterKeyActive = isAdminUser && breakGlassActive;
 
     // Load all channels for this group
     const q = query(channelsRef, where('groupId', '==', profileData.groupId));
@@ -475,15 +476,19 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
           }
         }
       } else {
-        // Filter client-side
+        // Filter client-side based on effective tags or Master Key (Break-Glass Active)
         const allowedChannels = fetched.filter(ch => {
-          if (isAdmin) return true;
+          if (isMasterKeyActive) return true;
           
           // Read roles
           const read = ch.readRoles || ['all'];
           if (read.includes('all')) return true;
           if (read.includes(userRole)) return true;
-          if (userTags.some(tag => read.includes(tag))) return true;
+
+          const hasTagAccess = read.some(r => 
+            userTags.some(t => t.toLowerCase() === r.toLowerCase())
+          );
+          if (hasTagAccess) return true;
 
           // Backwards compatibility
           if (ch.allowedRoles) {
@@ -521,7 +526,7 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
     });
 
     return () => unsubscribe();
-  }, [profileData?.groupId, profileData?.role, profileData?.tags, profileData?.isSystemAdmin]);
+  }, [profileData?.groupId, profileData?.role, effectiveUserTags, profileData?.isSystemAdmin, breakGlassActive]);
 
   // Sync all threads for the group
   useEffect(() => {
