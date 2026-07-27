@@ -26,7 +26,8 @@ export default function RichTextEditor({
         codeBlock: false,
         blockquote: false,
         heading: false,
-        horizontalRule: false
+        horizontalRule: false,
+        link: false
       }),
       Link.configure({
         openOnClick: false,
