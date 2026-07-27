@@ -697,7 +697,8 @@ export default function App() {
   const hasAccessTresorerie = isMasterKeyActive || checkTabAccess('dashboard-finance', 'tresorerie') || checkTabAccess('cotisations', 'tresorerie') || checkTabAccess('events-finances', 'tresorerie') || checkTabAccess('operations-diverses', 'tresorerie') || checkTabAccess('frais-km', 'tresorerie') || checkTabAccess('reports-exports', 'tresorerie');
   const hasAccessStudio = isMasterKeyActive || checkTabAccess('studio-events', 'studio') || checkTabAccess('studio-social', 'studio') || checkTabAccess('reunion-manager', 'studio') || checkTabAccess('varal-manager', 'studio') || checkTabAccess('activity-reports', 'studio') || checkTabAccess('mestre-forum-channels', 'studio');
   const hasAccessVestiaire = isMasterKeyActive || checkTabAccess('wardrobe-inventory', 'vestiaire') || checkTabAccess('wardrobe-couture', 'vestiaire') || checkTabAccess('wardrobe-sizes', 'vestiaire');
-  const hasAccessMestre = isSystemOrSuperAdminOrMestre || checkTabAccess('mestre-orientation', 'mestre') || checkTabAccess('mestre-events', 'mestre') || checkTabAccess('mestre-stage-layout', 'mestre') || checkTabAccess('mestre-sequenceur', 'mestre') || checkTabAccess('mestre-workshops', 'mestre') || checkTabAccess('mestre-mot-mestre', 'mestre');
+  const hasAccessMestre = isMasterKeyActive || checkTabAccess('mestre-orientation', 'mestre') || checkTabAccess('mestre-events', 'mestre') || checkTabAccess('mestre-stage-layout', 'mestre') || checkTabAccess('mestre-sequenceur', 'mestre') || checkTabAccess('mestre-workshops', 'mestre') || checkTabAccess('mestre-mot-mestre', 'mestre');
+  const hasAccessConfig = isMasterKeyActive || checkTabAccess('config-identity', 'config') || checkTabAccess('config-profile', 'config') || checkTabAccess('config-security', 'config') || checkTabAccess('config-modules', 'config') || checkTabAccess('config-logistics', 'config') || checkTabAccess('config-documents', 'config') || checkTabAccess('config-agenda', 'config') || checkTabAccess('config-layout', 'config');
   const hasAccessForumMod = isMasterKeyActive || userTags.some(t => ['Modérateur', 'Modérateur Forum', 'Gestionnaire Porte-voix', 'Porte-voix'].includes(t));
 
   const handleNavigateToPole = (poleId) => {
@@ -1108,7 +1109,7 @@ export default function App() {
                 groupId={profileData?.groupId}
                 profileData={profileData}
               />
-            ) : (currentTab === 'config-identity' && isSystemOrSuperAdminOrMestre) ? (
+            ) : (currentTab === 'config-identity' && checkTabAccess('config-identity', 'config')) ? (
               <AssociationSettings 
                 groupId={profileData?.groupId}
                 role={profileData?.role}
@@ -1117,7 +1118,7 @@ export default function App() {
                 mode="identity-only"
                 onBack={() => handleNavigateToPole('accueil')} 
               />
-            ) : (currentTab === 'config-profile' && isSystemOrSuperAdminOrMestre) ? (
+            ) : (currentTab === 'config-profile' && checkTabAccess('config-profile', 'config')) ? (
               <AssociationSettings 
                 groupId={profileData?.groupId}
                 role={profileData?.role}
@@ -1126,7 +1127,7 @@ export default function App() {
                 activeTabProp="organisation"
                 onBack={() => handleNavigateToPole('accueil')} 
               />
-            ) : (currentTab === 'config-security' && isSystemOrSuperAdminOrMestre) ? (
+            ) : (currentTab === 'config-security' && checkTabAccess('config-security', 'config')) ? (
               <AssociationSettings 
                 groupId={profileData?.groupId}
                 role={profileData?.role}
@@ -1135,7 +1136,7 @@ export default function App() {
                 mode="security-only"
                 onBack={() => handleNavigateToPole('accueil')} 
               />
-            ) : (currentTab === 'config-modules' && isSystemOrSuperAdminOrMestre) ? (
+            ) : (currentTab === 'config-modules' && checkTabAccess('config-modules', 'config')) ? (
               <AssociationSettings 
                 groupId={profileData?.groupId}
                 role={profileData?.role}
@@ -1144,7 +1145,7 @@ export default function App() {
                 mode="modules-only"
                 onBack={() => handleNavigateToPole('accueil')} 
               />
-            ) : (currentTab === 'config-logistics' && isSystemOrSuperAdminOrMestre) ? (
+            ) : (currentTab === 'config-logistics' && checkTabAccess('config-logistics', 'config')) ? (
               <AssociationSettings 
                 groupId={profileData?.groupId}
                 role={profileData?.role}
@@ -1153,7 +1154,7 @@ export default function App() {
                 mode="logistics-only"
                 onBack={() => handleNavigateToPole('accueil')} 
               />
-            ) : (currentTab === 'config-documents' && isSystemOrSuperAdminOrMestre) ? (
+            ) : (currentTab === 'config-documents' && checkTabAccess('config-documents', 'config')) ? (
               <AssociationSettings 
                 groupId={profileData?.groupId}
                 role={profileData?.role}
@@ -1162,7 +1163,7 @@ export default function App() {
                 activeTabProp="finance"
                 onBack={() => handleNavigateToPole('accueil')} 
               />
-            ) : (currentTab === 'config-agenda' && isSystemOrSuperAdminOrMestre) ? (
+            ) : (currentTab === 'config-agenda' && checkTabAccess('config-agenda', 'config')) ? (
               <AssociationSettings 
                 groupId={profileData?.groupId}
                 role={profileData?.role}
@@ -1171,7 +1172,7 @@ export default function App() {
                 activeTabProp="agenda"
                 onBack={() => handleNavigateToPole('accueil')} 
               />
-            ) : (currentTab === 'config-layout' && isSystemOrSuperAdminOrMestre) ? (
+            ) : (currentTab === 'config-layout' && checkTabAccess('config-layout', 'config')) ? (
               <LayoutEditor 
                 groupId={profileData?.groupId}
                 role={profileData?.role}

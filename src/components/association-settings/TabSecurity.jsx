@@ -71,6 +71,21 @@ const PERMISSION_POLES = [
       { id: 'mestre-workshops', label: 'Ateliers', desc: 'Organisation des ateliers de transmission' },
       { id: 'mestre-mot-mestre', label: 'Annonces', desc: 'Publication des communications officielles du Mestre' }
     ]
+  },
+  {
+    id: 'config',
+    label: '⚙️ Configuration',
+    desc: 'Paramètres généraux de l\'association, identité, sécurité, modules et mise en page',
+    tabs: [
+      { id: 'config-identity', label: 'Identité', desc: 'Nom, logo, réseaux et slogan de l\'association' },
+      { id: 'config-profile', label: 'Organisation', desc: 'Structure et champs de profil des adhérents' },
+      { id: 'config-security', label: 'Sécurité & Badges', desc: 'Matrice des rôles, permissions et déverrouillage' },
+      { id: 'config-modules', label: 'Modules & Fonctionnalités', desc: 'Activation/Désactivation des modules' },
+      { id: 'config-logistics', label: 'Logistique & Adresses', desc: 'Gestion des adresses et lieux habituels' },
+      { id: 'config-documents', label: 'Documents & Modèles', desc: 'Gestion des documents administratifs et modèles' },
+      { id: 'config-agenda', label: 'Agenda & Calendrier', desc: 'Paramètres du calendrier et synchronisation' },
+      { id: 'config-layout', label: 'Apparence & Thème', desc: 'Personnalisation du style visuel et thème Cordel' }
+    ]
   }
 ];
 

@@ -156,7 +156,6 @@ export default function LayoutShell({
 
   // Strict Feature Toggle check for the entire Pole (enabled globally for group)
   const isPoleEnabled = (poleId) => {
-    if (poleId === 'config') return isSystemOrSuperAdminOrMestre;
     if (poleId === 'accueil' || poleId === 'mon-espace') return true;
 
     if (poleId === 'tresorerie' && enabledModules?.tresorerie === false) return false;
@@ -173,7 +172,6 @@ export default function LayoutShell({
   const isPoleUnlocked = (poleId) => {
     if (!isPoleEnabled(poleId)) return false;
     if (poleId === 'accueil' || poleId === 'mon-espace') return true;
-    if (poleId === 'config') return isSystemOrSuperAdminOrMestre;
 
     const poleObj = polesList.find(p => p.id === poleId);
     if (!poleObj) return false;
