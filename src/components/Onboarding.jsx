@@ -47,10 +47,12 @@ export default function Onboarding({ user, branding, onComplete }) {
     instrumentSecondaire: '',
     voeuPrincipal: '',
     voeuSecondaire: '',
-    voeuTertiaire: '',
     instrumentsJoues: [],
     voeuxInstruments: [],
     pratiqueDanse: false,
+    estAncienMembre: false,
+    souhaiteChangerInstrument: false,
+    volontaireAncienInstrument: false,
     genre: 'femme',
     afficherTelephone: true,
     afficherDateNaissance: false,
@@ -60,6 +62,7 @@ export default function Onboarding({ user, branding, onComplete }) {
   });
 
   const [fieldsConfig, setFieldsConfig] = useState(null);
+  const [nomAssociation, setNomAssociation] = useState(branding?.nomAssociation || branding?.nom || branding?.name || '');
   const [instrumentsDisponibles, setInstrumentsDisponibles] = useState(["Alfaia Marcante", "Alfaia Meião", "Alfaia Repique", "Caixa", "Tarol", "Gonguê", "Agbê", "Mineiro", "Timbal", "Chant"]);
   const [submitting, setSubmitting] = useState(false);
   const [droitImageDocUrl, setDroitImageDocUrl] = useState('');
@@ -71,7 +74,7 @@ export default function Onboarding({ user, branding, onComplete }) {
   const searchParams = new URLSearchParams(window.location.search);
   const groupId = searchParams.get('groupe') || null;
 
-  // Load custom fields configuration for Onboarding
+  // Load custom fields configuration and association details for Onboarding
   useEffect(() => {
     if (!groupId) {
       setFieldsConfig(DEFAULT_FIELDS_CONFIG);
@@ -84,6 +87,9 @@ export default function Onboarding({ user, branding, onComplete }) {
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
           const data = docSnap.data();
+          if (data.nomAssociation || data.nom || data.name) {
+            setNomAssociation(data.nomAssociation || data.nom || data.name);
+          }
           setDemanderDroitImage(data.demanderDroitImage || false);
           setDemanderAttestationSante(data.demanderAttestationSante || false);
           if (Array.isArray(data.instrumentsDisponibles) && data.instrumentsDisponibles.length > 0) {
@@ -104,6 +110,7 @@ export default function Onboarding({ user, branding, onComplete }) {
         setFieldsConfig(DEFAULT_FIELDS_CONFIG);
       }
     };
+
     fetchConfig();
   }, [groupId]);
 
@@ -131,11 +138,33 @@ export default function Onboarding({ user, branding, onComplete }) {
     setValidationError('');
 
     const cleanVoeux = Array.isArray(formData.voeuxInstruments) ? formData.voeuxInstruments.filter(Boolean) : [];
-    if (cleanVoeux.length < 2 || cleanVoeux.length > 3) {
-      const errMsg = "Veuillez sélectionner entre 2 et 3 vœux d'instruments de percussion.";
-      setValidationError(errMsg);
-      alert(errMsg);
-      return;
+    const isDanse = Boolean(formData.pratiqueDanse);
+    const isAncien = Boolean(formData.estAncienMembre);
+
+    // Règle de validation Danse & Percussions
+    if (isDanse) {
+      if (cleanVoeux.length === 1) {
+        const errMsg = "En choisissant la Danse, merci de sélectionner soit 0 percussion (profil 100% Danse), soit au moins 2 vœux de percussions.";
+        setValidationError(errMsg);
+        alert(errMsg);
+        return;
+      }
+    } else {
+      if (!isAncien) {
+        if (cleanVoeux.length < 2 || cleanVoeux.length > 3) {
+          const errMsg = "Veuillez sélectionner entre 2 et 3 vœux d'instruments de percussion (ou cocher la Danse pour un profil 100% Danse).";
+          setValidationError(errMsg);
+          alert(errMsg);
+          return;
+        }
+      } else {
+        if (formData.souhaiteChangerInstrument && cleanVoeux.length === 0) {
+          const errMsg = "Veuillez sélectionner au moins 1 nouveau vœu d'instrument si vous souhaitez changer d'instrument.";
+          setValidationError(errMsg);
+          alert(errMsg);
+          return;
+        }
+      }
     }
 
     const missingRequired = Object.keys(fieldsConfig || {}).some(key => {
@@ -162,7 +191,7 @@ export default function Onboarding({ user, branding, onComplete }) {
     setSubmitting(true);
 
     try {
-      // Build the user document payload according to specifications
+      // Construction de la fiche utilisateur Firestore
       const userDoc = {
         nom: formData.lastName,
         prenom: formData.firstName,
@@ -180,13 +209,17 @@ export default function Onboarding({ user, branding, onComplete }) {
         dateSignatureAttestationSante: demanderAttestationSante && formData.aptitudeMedicale ? new Date() : null,
         lateralite: isFieldVisible('lateralite') ? formData.lateralite : "droitier",
         dateNaissance: isFieldVisible('dateNaissance') ? formData.dateNaissance : "",
-        pratiqueDanse: Boolean(formData.pratiqueDanse),
+        pratiqueDanse: isDanse,
+        estAncienMembre: isAncien,
+        souhaiteChangerInstrument: Boolean(formData.souhaiteChangerInstrument),
+        volontaireAncienInstrument: Boolean(formData.volontaireAncienInstrument),
+        accordRenfortAncienInstrument: Boolean(formData.volontaireAncienInstrument),
         voeuxInstruments: cleanVoeux,
         voeuPrincipal: cleanVoeux[0] || "",
         voeuSecondaire: cleanVoeux[1] || "",
         voeuTertiaire: cleanVoeux[2] || "",
-        instrument: "En attente",
-        instrumentPrincipal: "En attente",
+        instrument: isAncien ? "En attente" : (cleanVoeux.length > 0 ? "En attente" : ""),
+        instrumentPrincipal: isAncien ? "En attente" : (cleanVoeux.length > 0 ? "En attente" : ""),
         instrumentSecondaire: "",
         instrumentsJoues: cleanVoeux,
         genre: formData.genre,
@@ -253,6 +286,7 @@ export default function Onboarding({ user, branding, onComplete }) {
                 isFieldVisible={isFieldVisible}
                 isFieldRequired={isFieldRequired}
                 instrumentsDisponibles={instrumentsDisponibles}
+                nomAssociation={nomAssociation}
                 t={t}
               />
 

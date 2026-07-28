@@ -369,23 +369,33 @@ export function useUserProfile(user, profileData, t) {
     if (e && e.preventDefault) e.preventDefault();
     if (!user?.uid) return;
 
-    setValidationError('');
+    const cleanVoeux = Array.isArray(formData.voeuxInstruments)
+      ? formData.voeuxInstruments.filter(Boolean)
+      : [formData.voeuPrincipal, formData.voeuSecondaire, formData.voeuTertiaire].filter(Boolean);
 
+    const isDanse = Boolean(formData.pratiqueDanse);
     const isAncien = Boolean(
-      (profileData?.instrument || formData.instrument || '').trim() !== '' ||
+      formData.estAncienMembre ||
+      (profileData?.instrument || profileData?.instrumentPrincipal || formData.instrument || '').trim() !== '' ||
       (profileData?.instrumentsJoues && profileData.instrumentsJoues.length > 0)
     );
 
-    const isInstrumentsValid = isAncien ? true : Boolean(
-      (formData.voeuPrincipal && formData.voeuPrincipal.trim()) ||
-      (formData.instrument && formData.instrument.trim())
-    );
-
-    if (!isInstrumentsValid) {
-      const errMsg = "Veuillez sélectionner au moins un instrument ou vœu d'orientation.";
-      setValidationError(errMsg);
-      alert(errMsg);
-      return;
+    if (isDanse) {
+      if (cleanVoeux.length === 1) {
+        const errMsg = "En choisissant la Danse, merci de sélectionner soit 0 percussion (profil 100% Danse), soit au moins 2 vœux de percussions.";
+        setValidationError(errMsg);
+        alert(errMsg);
+        return;
+      }
+    } else {
+      if (!isAncien) {
+        if (cleanVoeux.length < 2 || cleanVoeux.length > 3) {
+          const errMsg = "Veuillez sélectionner entre 2 et 3 vœux d'instruments de percussion (ou cocher la Danse pour un profil 100% Danse).";
+          setValidationError(errMsg);
+          alert(errMsg);
+          return;
+        }
+      }
     }
 
     const missingRequired = Object.keys(fieldsConfig || {}).some(key => {
