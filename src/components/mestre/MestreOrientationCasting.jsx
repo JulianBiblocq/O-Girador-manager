@@ -160,7 +160,7 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
     return () => unsubscribeUsers();
   }, [groupId]);
 
-  // Synchronisation en temps réel des instruments configurés et liés
+  // Synchronisation en temps réel des instruments configurés et liés de l'association
   useEffect(() => {
     if (!groupId) return;
 
@@ -168,11 +168,14 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
     const unsubscribeAssoc = onSnapshot(assocRef, (docSnap) => {
       if (docSnap.exists()) {
         const data = docSnap.data();
-        if (Array.isArray(data.instrumentsActifs) && data.instrumentsActifs.length > 0) {
+        if (Array.isArray(data.instrumentsDisponibles) && data.instrumentsDisponibles.length > 0) {
+          setInstrumentsDisponibles(data.instrumentsDisponibles);
+        } else if (Array.isArray(data.instrumentsActifs) && data.instrumentsActifs.length > 0) {
           setInstrumentsDisponibles(data.instrumentsActifs);
         } else {
-          setInstrumentsDisponibles(DEFAULT_INSTRUMENTS);
+          setInstrumentsDisponibles([]);
         }
+
         if (Array.isArray(data.linkedInstruments)) {
           setLinkedInstruments(data.linkedInstruments);
         } else {
@@ -180,7 +183,7 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
         }
       }
     }, (error) => {
-      console.error("MestreOrientationCasting - Error fetching instruments configuration:", error);
+      console.error("MestreOrientationCasting - Erreur de chargement des instruments :", error);
     });
 
     return () => unsubscribeAssoc();
@@ -191,16 +194,16 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
     return members.filter(m => m.statutActuel !== 'inactive');
   }, [members]);
 
-  // Pupitres combinés (groupes liés + instruments seuls + Danse tout au bout)
+  // Pupitres combinés (groupes liés + instruments configurés seuls + Danse tout au bout)
   const displayPupitres = useMemo(() => {
     const result = [];
     const usedInstruments = new Set();
 
-    // 1. Groupes d'instruments liés (exclut Danse)
+    // 1. Groupes d'instruments liés configurés (exclut Danse)
     (linkedInstruments || []).forEach((group, idx) => {
       const groupInsts = Array.isArray(group.instruments) ? group.instruments : [];
       if (groupInsts.length > 0) {
-        const name = group.name && group.name.trim() ? group.name.trim() : groupInsts.join(' / ');
+        const name = group.name && group.name.trim() ? group.name.trim() : groupInsts.join(' + ');
         result.push({
           id: `linked-${idx}-${name}`,
           name: name,
@@ -212,9 +215,10 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
       }
     });
 
-    // 2. Instruments de percussions seuls
+    // 2. Instruments autonomes configurés dans l'association (exclut Danse et rôle Mestre)
     (instrumentsDisponibles || []).forEach(inst => {
-      if (inst.toLowerCase().trim() !== 'danse' && !usedInstruments.has(inst.toLowerCase().trim())) {
+      const lower = inst.toLowerCase().trim();
+      if (lower !== 'danse' && lower !== 'mestre' && lower !== 'direction' && !usedInstruments.has(lower)) {
         result.push({
           id: `single-${inst}`,
           name: inst,
@@ -225,7 +229,7 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
       }
     });
 
-    // 3. Placer la Danse TOUT AU BOUT
+    // 3. Placer le pupitre Danse TOUT AU BOUT
     result.push({
       id: 'single-Danse',
       name: 'Danse',
@@ -237,7 +241,7 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
     return result;
   }, [linkedInstruments, instrumentsDisponibles]);
 
-  // Calcul en temps réel des quotas d'effectifs par pupitre (avec intégration exacte de la Danse)
+  // Calcul en temps réel des quotas d'effectifs par pupitre
   const quotasByPupitre = useMemo(() => {
     const counts = {};
     displayPupitres.forEach(pupitre => {
@@ -250,13 +254,18 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
 
       displayPupitres.forEach(pupitre => {
         if (pupitre.name.toLowerCase() === 'danse') {
-          // Compte les personnes inscrites à la Danse (pratiqueDanse: true ou instrument: 'danse')
           if (member.pratiqueDanse === true || mainInst === 'danse') {
             counts[pupitre.id].primary += 1;
           }
         } else {
-          const matchMain = pupitre.instruments.some(i => i.toLowerCase().trim() === mainInst);
-          const matchSec = pupitre.instruments.some(i => i.toLowerCase().trim() === secInst);
+          const matchMain = pupitre.instruments.some(i => {
+            const clean = i.toLowerCase().trim();
+            return clean === mainInst || (mainInst && (mainInst.includes(clean) || clean.includes(mainInst)));
+          });
+          const matchSec = pupitre.instruments.some(i => {
+            const clean = i.toLowerCase().trim();
+            return clean === secInst || (secInst && (secInst.includes(clean) || clean.includes(secInst)));
+          });
 
           if (matchMain) {
             counts[pupitre.id].primary += 1;
