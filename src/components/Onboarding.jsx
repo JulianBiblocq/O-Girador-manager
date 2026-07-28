@@ -150,12 +150,20 @@ export default function Onboarding({ user, branding, onComplete }) {
       return;
     }
 
-    // Validation spécifique pour les Anciens membres souhaitant changer d'instrument
-    if (isAncien && isPercussion && formData.souhaiteChangerInstrument && cleanVoeux.length === 0) {
-      const errMsg = "Veuillez sélectionner au moins 1 nouveau vœu d'instrument si vous souhaitez changer d'instrument.";
-      setValidationError(errMsg);
-      alert(errMsg);
-      return;
+    // Validation pour les Anciens membres : Sélection de l'instrument actuel obligatoire si percussion
+    if (isAncien && isPercussion) {
+      if (!formData.instrumentPrincipal || !formData.instrumentPrincipal.trim()) {
+        const errMsg = "Veuillez sélectionner votre instrument actuel.";
+        setValidationError(errMsg);
+        alert(errMsg);
+        return;
+      }
+      if (formData.souhaiteChangerInstrument && cleanVoeux.length === 0) {
+        const errMsg = "Veuillez sélectionner au moins 1 nouveau vœu d'instrument si vous souhaitez changer d'instrument.";
+        setValidationError(errMsg);
+        alert(errMsg);
+        return;
+      }
     }
 
     const missingRequired = Object.keys(fieldsConfig || {}).some(key => {
@@ -182,6 +190,8 @@ export default function Onboarding({ user, branding, onComplete }) {
     setSubmitting(true);
 
     try {
+      const currentInstVal = isAncien ? (formData.instrumentPrincipal || "") : (isPercussion ? "En attente" : "");
+
       // Construction de la fiche utilisateur Firestore
       const userDoc = {
         nom: formData.lastName,
@@ -210,8 +220,8 @@ export default function Onboarding({ user, branding, onComplete }) {
         voeuPrincipal: cleanVoeux[0] || "",
         voeuSecondaire: cleanVoeux[1] || "",
         voeuTertiaire: cleanVoeux[2] || "",
-        instrument: isPercussion ? "En attente" : "",
-        instrumentPrincipal: isPercussion ? "En attente" : "",
+        instrument: currentInstVal,
+        instrumentPrincipal: currentInstVal,
         instrumentSecondaire: "",
         instrumentsJoues: cleanVoeux,
         genre: formData.genre,

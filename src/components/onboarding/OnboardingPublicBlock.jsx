@@ -1,5 +1,6 @@
 import React from 'react';
 import { XiloTrombinoscope, XiloEye } from '../XiloIcons';
+import { filterPublicPercussionInstruments } from '../../utils/tagUtils';
 
 /**
  * OnboardingPublicBlock - Bloc 1 : Ton Profil Public (Trombinoscope)
@@ -220,7 +221,35 @@ export default function OnboardingPublicBlock({
               🥁 Orientation Percussions (Ancien Membre)
             </span>
 
+            {/* Sélecteur d'instrument actuel (Indispensable pour la première année d'inscription) */}
             <div className="flex flex-col gap-1 text-left">
+              <label className="text-[10.5px] uppercase font-black tracking-wider text-cordel-wood flex items-center gap-1">
+                <span>Mon instrument actuel</span>
+                <span className="text-red-500 font-bold">*</span>
+              </label>
+              <select
+                name="instrumentPrincipal"
+                value={formData.instrumentPrincipal || ''}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setFormData(prev => ({
+                    ...prev,
+                    instrumentPrincipal: val,
+                    instrument: val
+                  }));
+                }}
+                disabled={submitting}
+                className="theme-input w-full text-xs font-bold bg-cordel-bg-light"
+              >
+                <option value="">-- Sélectionner mon instrument actuel --</option>
+                {filterPublicPercussionInstruments(instrumentsDisponibles || []).map(inst => (
+                  <option key={inst} value={inst}>{inst}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Question de réorientation : Souhaites-tu apprendre un nouvel instrument ? */}
+            <div className="flex flex-col gap-1 text-left pt-1 border-t border-dashed border-cordel-master-dark/20">
               <label className="text-[10.5px] uppercase font-black tracking-wider text-cordel-wood">
                 Souhaites-tu apprendre un nouvel instrument cette année ?
               </label>
@@ -260,11 +289,9 @@ export default function OnboardingPublicBlock({
                       className="theme-input w-full text-xs font-semibold bg-cordel-bg-light"
                     >
                       <option value="">-- Choisir --</option>
-                      {(instrumentsDisponibles || [])
-                        .filter(inst => !['danse', 'mestre', 'direction', 'chef de bateria'].includes(inst.toLowerCase().trim()))
-                        .map(inst => (
-                          <option key={inst} value={inst}>{inst}</option>
-                        ))}
+                      {filterPublicPercussionInstruments(instrumentsDisponibles || []).map(inst => (
+                        <option key={inst} value={inst}>{inst}</option>
+                      ))}
                     </select>
                   </div>
 
@@ -286,11 +313,9 @@ export default function OnboardingPublicBlock({
                       className="theme-input w-full text-xs font-semibold bg-cordel-bg-light"
                     >
                       <option value="">-- Optionnel --</option>
-                      {(instrumentsDisponibles || [])
-                        .filter(inst => !['danse', 'mestre', 'direction', 'chef de bateria'].includes(inst.toLowerCase().trim()))
-                        .map(inst => (
-                          <option key={inst} value={inst}>{inst}</option>
-                        ))}
+                      {filterPublicPercussionInstruments(instrumentsDisponibles || []).map(inst => (
+                        <option key={inst} value={inst}>{inst}</option>
+                      ))}
                     </select>
                   </div>
                 </div>
@@ -306,7 +331,7 @@ export default function OnboardingPublicBlock({
                     className="w-4 h-4 accent-cordel-wood cursor-pointer shrink-0 mt-0.5"
                   />
                   <label htmlFor="volontaireAncienInstrument" className="font-bold text-encre-noire cursor-pointer select-none">
-                    🤝 <strong>Renfort en prestation :</strong> J'accepte de jouer mon ancien instrument lors des prestations si le groupe en a besoin.
+                    🤝 <strong>Renfort en prestation :</strong> J'accepte de jouer mon ancien instrument ({formData.instrumentPrincipal || 'actuel'}) lors des prestations si le groupe en a besoin.
                   </label>
                 </div>
               </div>

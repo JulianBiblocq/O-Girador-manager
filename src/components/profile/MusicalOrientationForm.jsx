@@ -83,18 +83,38 @@ export default function MusicalOrientationForm({
         /* Parcours Ancien Élève */
         <div className="flex flex-col gap-3 p-3 rounded bg-white/60 dark:bg-black/20 border border-cordel-master-dark/15">
           {/* Instrument actuel */}
-          <div className="bg-white/50 dark:bg-black/10 p-2.5 rounded border border-dashed border-cordel-master-dark/20 flex flex-col gap-1 text-xs">
+          <div className="bg-white/50 dark:bg-black/10 p-2.5 rounded border border-dashed border-cordel-master-dark/20 flex flex-col gap-1 text-xs text-left">
             <div className="flex items-center justify-between gap-2">
               <span className="font-extrabold text-cordel-wood uppercase text-[10px] tracking-wider block">
                 Mon instrument actuel :
               </span>
-              <span className="theme-stamp-badge theme-stamp-badge-wood text-[9px] px-2 py-0.5 font-bold">
-                Attribué
-              </span>
+              {(formData.instrumentPrincipal && formData.instrumentPrincipal !== 'En attente') ? (
+                <span className="theme-stamp-badge theme-stamp-badge-wood text-[9px] px-2 py-0.5 font-bold">
+                  Attribué
+                </span>
+              ) : (
+                <span className="theme-stamp-badge theme-stamp-badge-secondary text-[9px] px-2 py-0.5 font-bold">
+                  À préciser
+                </span>
+              )}
             </div>
-            <span className="font-black text-cordel-master-dark text-sm">
-              {formData.instrumentPrincipal || formData.instrument || 'Non attribué'}
-            </span>
+
+            <select
+              name="instrumentPrincipal"
+              value={formData.instrumentPrincipal || formData.instrument || ''}
+              onChange={(e) => {
+                const val = e.target.value;
+                handleChange({ target: { name: 'instrumentPrincipal', value: val } });
+                handleChange({ target: { name: 'instrument', value: val } });
+              }}
+              disabled={saving}
+              className="theme-input w-full text-xs font-bold bg-cordel-bg-light mt-1"
+            >
+              <option value="">-- Sélectionner mon instrument actuel --</option>
+              {instrumentsList.map((inst) => (
+                <option key={inst} value={inst}>{inst}</option>
+              ))}
+            </select>
           </div>
 
           {/* Question : Souhaites-tu apprendre un nouvel instrument cette année ? */}
