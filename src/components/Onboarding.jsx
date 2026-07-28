@@ -139,32 +139,23 @@ export default function Onboarding({ user, branding, onComplete }) {
 
     const cleanVoeux = Array.isArray(formData.voeuxInstruments) ? formData.voeuxInstruments.filter(Boolean) : [];
     const isDanse = Boolean(formData.pratiqueDanse);
+    const isPercussion = Boolean(formData.pratiquePercussion);
     const isAncien = Boolean(formData.estAncienMembre);
 
-    // Règle de validation Danse & Percussions
-    if (isDanse) {
-      if (cleanVoeux.length === 1) {
-        const errMsg = "En choisissant la Danse, merci de sélectionner soit 0 percussion (profil 100% Danse), soit au moins 2 vœux de percussions.";
-        setValidationError(errMsg);
-        alert(errMsg);
-        return;
-      }
-    } else {
-      if (!isAncien) {
-        if (cleanVoeux.length < 2 || cleanVoeux.length > 3) {
-          const errMsg = "Veuillez sélectionner entre 2 et 3 vœux d'instruments de percussion (ou cocher la Danse pour un profil 100% Danse).";
-          setValidationError(errMsg);
-          alert(errMsg);
-          return;
-        }
-      } else {
-        if (formData.souhaiteChangerInstrument && cleanVoeux.length === 0) {
-          const errMsg = "Veuillez sélectionner au moins 1 nouveau vœu d'instrument si vous souhaitez changer d'instrument.";
-          setValidationError(errMsg);
-          alert(errMsg);
-          return;
-        }
-      }
+    // Validation : Au moins une discipline doit être sélectionnée
+    if (!isPercussion && !isDanse) {
+      const errMsg = "Veuillez sélectionner au moins une discipline (Percussion ou Danse).";
+      setValidationError(errMsg);
+      alert(errMsg);
+      return;
+    }
+
+    // Validation spécifique pour les Anciens membres souhaitant changer d'instrument
+    if (isAncien && isPercussion && formData.souhaiteChangerInstrument && cleanVoeux.length === 0) {
+      const errMsg = "Veuillez sélectionner au moins 1 nouveau vœu d'instrument si vous souhaitez changer d'instrument.";
+      setValidationError(errMsg);
+      alert(errMsg);
+      return;
     }
 
     const missingRequired = Object.keys(fieldsConfig || {}).some(key => {
@@ -209,6 +200,7 @@ export default function Onboarding({ user, branding, onComplete }) {
         dateSignatureAttestationSante: demanderAttestationSante && formData.aptitudeMedicale ? new Date() : null,
         lateralite: isFieldVisible('lateralite') ? formData.lateralite : "droitier",
         dateNaissance: isFieldVisible('dateNaissance') ? formData.dateNaissance : "",
+        pratiquePercussion: isPercussion,
         pratiqueDanse: isDanse,
         estAncienMembre: isAncien,
         souhaiteChangerInstrument: Boolean(formData.souhaiteChangerInstrument),
@@ -218,8 +210,8 @@ export default function Onboarding({ user, branding, onComplete }) {
         voeuPrincipal: cleanVoeux[0] || "",
         voeuSecondaire: cleanVoeux[1] || "",
         voeuTertiaire: cleanVoeux[2] || "",
-        instrument: isAncien ? "En attente" : (cleanVoeux.length > 0 ? "En attente" : ""),
-        instrumentPrincipal: isAncien ? "En attente" : (cleanVoeux.length > 0 ? "En attente" : ""),
+        instrument: isPercussion ? "En attente" : "",
+        instrumentPrincipal: isPercussion ? "En attente" : "",
         instrumentSecondaire: "",
         instrumentsJoues: cleanVoeux,
         genre: formData.genre,
