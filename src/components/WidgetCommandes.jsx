@@ -57,7 +57,7 @@ export default function WidgetCommandes({ groupId, user, profileData }) {
     }
   }, [article, catalog]);
 
-  // Sync open campaigns
+  // Synchronisation des campagnes ouvertes
   useEffect(() => {
     if (!groupId) {
       setOpenCampaign(null);
@@ -71,7 +71,7 @@ export default function WidgetCommandes({ groupId, user, profileData }) {
 
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
       if (!querySnapshot.empty) {
-        // Take the most recent open campaign
+        // Prendre la campagne ouverte la plus récente
         const list = [];
         querySnapshot.forEach((doc) => {
           list.push({ id: doc.id, ...doc.data() });
@@ -90,7 +90,7 @@ export default function WidgetCommandes({ groupId, user, profileData }) {
     return () => unsubscribe();
   }, [groupId]);
 
-  // Sync user's requests for the open campaign
+  // Synchronisation des commandes de l'utilisateur pour la campagne ouverte
   useEffect(() => {
     if (!openCampaign || !user?.uid) {
       setUserRequests([]);

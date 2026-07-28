@@ -13,6 +13,10 @@ These are the core architectural and design system rules for the O-Girador-manag
 - **Isolation du thème** : Le design actuel "Cordel" (police Cactus, fonds de papier, cordes de suspension, bordures asymétriques) doit être remplaçable par un futur thème (ex. "Capoeira") en changeant uniquement les définitions dans la feuille de styles CSS (ex. `src/index.css`), sans avoir à modifier le code structurel des composants React.
 
 ## 3. Francisation Absolue de la Base de Code (Commentaires)
-- **Langue obligatoire des commentaires** : L'intégralité des annotations, commentaires explicatifs, marqueurs (ex. `// TODO:`) et docstrings dans les fichiers du projet (composants React, hooks, utilitaires, configuration) doit être rédigée exclusivement en français.
 - **Directive pour l'IA** : Tout nouveau code généré, modifié ou commenté par l'IA doit comporter des commentaires 100% en français.
+
+## 4. Code Couleur Sémantique Cordel (Validation, Suppression/Absence, Attente)
+- **Vert Validation (`#2d6a4f` / `--color-cordel-vert`)** : À utiliser impérativement pour toutes les validations, confirmations, succès, boutons positifs et statut "Présent".
+- **Rouge Terre Cuite (`#8b2a1a` / `--color-cordel-rouge` / `--cordel-wood`)** : À utiliser impérativement pour toutes les fonctions de suppression, désactivation, refus, statut "Absent" et actions destructives.
+- **Ocre Ambré (`#c05621` / `--color-cordel-ocre`)** : À utiliser impérativement pour tout ce qui est en attente, le statut "À confirmer", les avertissements neutres et la modération temporaire.
 

@@ -3,7 +3,6 @@ import { collection, query, where, onSnapshot, or, doc, setDoc, addDoc, updateDo
 import { db } from '../firebase';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
-import CreateThreadForm from './CreateThreadForm';
 import ThreadView from './ThreadView';
 import PrivateChatView from './PrivateChatView';
 import MoveThreadModal from './MoveThreadModal';
@@ -14,159 +13,12 @@ import { usePresenceContext } from '../context/PresenceContext';
 import { XiloMegaphone } from './XiloIcons';
 import useConfirm from '../hooks/useConfirm';
 import { resolveEffectiveUserTags } from '../utils/tagUtils';
+import { useForumThreads } from '../hooks/useForumThreads';
+import ForumChannelHeader from './forum/ForumChannelHeader';
+import ForumThreadCard from './forum/ForumThreadCard';
+import NewThreadModal from './forum/NewThreadModal';
 
-// Composant ThreadCard mémoïsé pour éviter les rendus inutiles lors de la recherche ou de la saisie
-const ThreadCard = React.memo(({
-  thread,
-  profileData,
-  categoryBadges,
-  t,
-  getCategoryLabel,
-  onClick,
-  isModeratorOrAdmin,
-  onMoveThread,
-  onTogglePin,
-  onDeleteThread
-}) => {
-  const { onlineUserIds, isPresenceEnabled } = usePresenceContext();
-  const isAuthorOnline = isPresenceEnabled !== false && thread.auteurId && onlineUserIds.has(thread.auteurId);
-
-  const dateCreationObj = new Date(thread.dateCreation);
-  const formattedDate = isNaN(dateCreationObj.getTime())
-    ? ''
-    : dateCreationObj.toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
-  
-  const repliesCount = thread.reponses ? thread.reponses.length - 1 : 0;
-  const badgeVariant = categoryBadges[thread.categorie] || 'default';
-
-  // Vérification du ciblage pour la mise en valeur du membre
-  const userPlaysInstrument = (profileData?.instrumentsJoues && profileData.instrumentsJoues.includes(thread.targetTag)) ||
-                               (profileData?.instrument === thread.targetTag);
-  const userHasTag = profileData?.tags && profileData.tags.includes(thread.targetTag);
-  const isThreadTargeted = thread.targetTag && (userPlaysInstrument || userHasTag);
-
-  const translate = (key, fallback) => {
-    const val = t(key);
-    return val === key ? fallback : val;
-  };
-
-  return (
-    <CordelCard 
-      variant={thread.isPinned ? "jaune" : isThreadTargeted ? "jaune" : "default"} 
-      useExtremeBorder={false} 
-      className={`hover:scale-[1.01] transition-all relative pr-20 cursor-pointer select-none ${
-        isThreadTargeted ? 'border-cordel-wood border-2 shadow-[2px_2px_0px_0px_#8b2a1a]' : 'bg-cordel-bg'
-      }`}
-      onClick={() => onClick(thread)}
-    >
-      <div className="flex flex-col gap-1 items-start">
-        {thread.isPinned && (
-          <span className="theme-stamp-badge theme-stamp-badge-wood text-[7.5px] uppercase tracking-wider mb-1 flex items-center gap-1">
-            📌 Épinglé
-          </span>
-        )}
-        {isThreadTargeted && (
-          <span className="text-[8px] font-black text-cordel-wood uppercase tracking-wider mb-1 block animate-pulse">
-            🗣️ {(translate('forum.targeted', "Vous concerne ({tag})")).replace('{tag}', thread.targetTag)}
-          </span>
-        )}
-        {/* Category & Poll Badges */}
-        <div className="flex items-center gap-1.5 flex-wrap mb-1">
-          <span className={`theme-stamp-badge theme-stamp-badge-${badgeVariant === 'ocre' || badgeVariant === 'vert' ? 'wood' : 'dark'} text-[7px] rotate-0`}>
-            {getCategoryLabel(thread.categorie)}
-          </span>
-          {thread.poll && (
-            <span className="theme-stamp-badge theme-stamp-badge-wood text-[7px] rotate-0 bg-amber-100 dark:bg-amber-950/40 text-amber-900 dark:text-amber-300 border-amber-600/40">
-              📊 Sondage {thread.poll.isClosed ? '(Clôturé)' : ''}
-            </span>
-          )}
-        </div>
-
-        {/* Subject */}
-        <h4 className="font-extrabold text-sm text-encre-noire leading-tight pr-4">
-          {thread.titre}
-        </h4>
-
-        {/* Meta */}
-        <div className="flex items-center gap-1.5 mt-1 text-[10px] font-semibold text-cordel-master-dark/70">
-          <span className="flex items-center gap-1">
-            <span>{(translate('forum.byAuthor', "Par {author}")).replace('{author}', thread.auteurNom)}</span>
-            {isAuthorOnline && (
-              <span className="relative flex h-2 w-2" title="Auteur en ligne">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-600"></span>
-              </span>
-            )}
-          </span>
-          <span>•</span>
-          <span>{(translate('forum.createdOn', "Le {date}")).replace('{date}', formattedDate)}</span>
-        </div>
-
-        {/* Moderator Quick Controls */}
-        {isModeratorOrAdmin && (
-          <div className="flex items-center gap-1.5 mt-2 pt-1.5 border-t border-dashed border-cordel-master-dark/15 w-full">
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onTogglePin(thread.id, thread.isPinned);
-              }}
-              className="text-[9px] font-bold px-1.5 py-0.5 bg-cordel-bg-light border border-cordel-master-dark/20 rounded hover:bg-white cursor-pointer"
-              title={thread.isPinned ? "Désépingler" : "Épingler"}
-            >
-              📌 {thread.isPinned ? 'Désépingler' : 'Épingler'}
-            </button>
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onMoveThread(thread);
-              }}
-              className="text-[9px] font-bold px-1.5 py-0.5 bg-cordel-bg-light border border-cordel-master-dark/20 rounded hover:bg-white cursor-pointer"
-              title="Déplacer vers un autre salon"
-            >
-              🚚 Déplacer
-            </button>
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onDeleteThread(thread);
-              }}
-              className="text-[9px] font-bold px-1.5 py-0.5 bg-red-50 text-red-700 border border-red-200 rounded hover:bg-red-100 cursor-pointer"
-              title="Supprimer"
-            >
-              🗑️
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* Replies Stamp Overlay */}
-      <div className="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col items-center justify-center">
-        <div className="w-8 h-8 bg-cordel-bg-light border-2 border-encre-noire flex items-center justify-center font-black text-xs rounded-full shadow-[2px_2px_0px_0px_#181716]">
-          {repliesCount}
-        </div>
-        <span className="text-[7px] font-extrabold uppercase mt-1 tracking-wider opacity-60">
-          {repliesCount > 1 ? translate('forum.replies', "réponses") : translate('forum.reply', "réponse")}
-        </span>
-      </div>
-    </CordelCard>
-  );
-}, (prevProps, nextProps) => {
-  return prevProps.thread.id === nextProps.thread.id &&
-         prevProps.thread.isPinned === nextProps.thread.isPinned &&
-         prevProps.thread.derniereModification === nextProps.thread.derniereModification &&
-         (prevProps.thread.reponses ? prevProps.thread.reponses.length : 0) === (nextProps.thread.reponses ? nextProps.thread.reponses.length : 0) &&
-         prevProps.thread.targetTag === nextProps.thread.targetTag &&
-         prevProps.thread.titre === nextProps.thread.titre &&
-         prevProps.thread.categorie === nextProps.thread.categorie &&
-         prevProps.thread.auteurNom === nextProps.thread.auteurNom &&
-         prevProps.profileData === nextProps.profileData &&
-         prevProps.isModeratorOrAdmin === nextProps.isModeratorOrAdmin &&
-         prevProps.getCategoryLabel === nextProps.getCategoryLabel &&
-         prevProps.onClick === nextProps.onClick;
-});
+// Utilisation du composant réutilisable ForumThreadCard importé depuis ./forum/ForumThreadCard
 
 function ChannelTreeItem({ 
   channel, 
@@ -980,18 +832,16 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
                 ) : (
                   <div className="flex flex-col gap-3">
                     {activeChannelThreads.map((thread) => (
-                      <ThreadCard
+                      <ForumThreadCard
                         key={thread.id}
                         thread={thread}
                         profileData={profileData}
-                        categoryBadges={categoryBadges}
-                        t={t}
-                        getCategoryLabel={getCategoryLabel}
                         onClick={handleSelectThread}
                         isModeratorOrAdmin={isModeratorOrAdmin}
-                        onMoveThread={setMovingThreadModal}
                         onTogglePin={(id, currentStatus) => togglePinThread(id, currentStatus)}
+                        onMoveThread={setMovingThreadModal}
                         onDeleteThread={handleDeleteThreadPrompt}
+                        t={t}
                       />
                     ))}
                   </div>

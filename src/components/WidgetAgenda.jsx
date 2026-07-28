@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { collection, query, where, onSnapshot, addDoc, doc } from 'firebase/firestore';
 import { db } from '../firebase';
 import CordelCard from './CordelCard';
@@ -13,6 +13,7 @@ import { useTranslation } from './LanguageContext';
 import { XiloCalendar, XiloEye, XiloEyeOff } from './XiloIcons';
 import { calculateRoadDistance } from '../utils/googleMaps';
 import { splitEventsByTime } from '../utils/dateUtils';
+import { getSocialVideoThumbnail } from '../utils/videoUtils';
 
 const formatDateWithDay = (dateStr, includeYear = true) => {
   const date = new Date(dateStr);
@@ -71,7 +72,7 @@ export default function WidgetAgenda({
   const [eventTypeConfigs, setEventTypeConfigs] = useState({});
   const [dressCodes, setDressCodes] = useState([]);
 
-  // Sync association settings to get default local address and km rate
+  // Synchronisation des paramètres de l'association pour l'adresse locale et le tarif kilométrique par défaut
   useEffect(() => {
     if (!groupId) return;
     const assocRef = doc(db, 'associations', groupId);
@@ -89,6 +90,8 @@ export default function WidgetAgenda({
         }
         setDressCodes(data.dressCodes || []);
       }
+    }, (err) => {
+      console.error("WidgetAgenda - Erreur snapshot assocRef :", err);
     });
     return () => unsubscribe();
   }, [groupId]);
@@ -119,9 +122,20 @@ export default function WidgetAgenda({
   };
 
   const filteredUpcoming = upcomingEvents.filter(filterFn);
-  const filteredPast = pastEvents.filter(filterFn);
+  const filteredPast = pastEvents.filter(filterFn);  // Affichage par défaut : événements à venir uniquement. Si l'historique est activé, inclure les événements passés.
+  const displayEvents = useMemo(() => {
+    if (showPastHistory) {
+      return events;
+    }
+    return events.filter(ev => {
+      if (!ev.date) return false;
+      const evDate = new Date(ev.date);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      return evDate >= today;
+    });
+  }, [events, showPastHistory]);
 
-  // Default display: upcoming events only. If showPastHistory is true, append past events.
   const activeFilteredEvents = showPastHistory
     ? [...filteredUpcoming, ...filteredPast]
     : filteredUpcoming;
@@ -768,24 +782,50 @@ export default function WidgetAgenda({
                         </div>
                       </div>
 
-                      {/* Thumbnail (Miniature) */}
-                      <div className="w-14 h-14 md:w-16 md:h-16 shrink-0 rounded border border-encre-noire/30 bg-[#fdfaf2] dark:bg-[#1f1b18] overflow-hidden flex items-center justify-center select-none shadow-[1px_1px_0px_0px_#181716]">
-                        {event.imageUrl ? (
-                          <img 
-                            src={event.imageUrl} 
-                            alt={t('common.visual')} 
-                            className="w-full h-full object-cover" 
-                          />
-                        ) : (
-                          <span className="text-lg opacity-40 grayscale select-none">
-                            {event.type === 'prestation' ? '🎭' :
-                             event.type === 'repetition' ? '🥁' :
-                             event.type === 'stage' ? '🎓' :
-                             event.type === 'atelier' ? '🔨' :
-                             event.type === 'reunion' ? '📅' : '📆'}
-                          </span>
-                        )}
-                      </div>
+                      {/* Thumbnail (Miniature) avec support vidéo et badge Play filigrane */}
+                      {(() => {
+                        const videoUrl = event.socialVideoUrl || event.videoUrl;
+                        const thumbnailCandidate = event.socialThumbnailUrl || (videoUrl ? getSocialVideoThumbnail(videoUrl) : null) || event.imageUrl;
+                        const isVideo = Boolean(videoUrl || event.socialThumbnailUrl);
+
+                        return (
+                          <div 
+                            className="w-14 h-14 md:w-16 md:h-16 shrink-0 rounded border border-encre-noire/30 bg-[#fdfaf2] dark:bg-[#1f1b18] overflow-hidden flex items-center justify-center select-none shadow-[1px_1px_0px_0px_#181716] relative group cursor-pointer"
+                            onClick={(e) => {
+                              if (videoUrl) {
+                                e.stopPropagation();
+                                window.open(videoUrl, '_blank', 'noopener,noreferrer');
+                              }
+                            }}
+                            title={videoUrl ? `Regarder la vidéo (${videoUrl})` : t('common.visual')}
+                          >
+                            {thumbnailCandidate ? (
+                              <img 
+                                src={thumbnailCandidate} 
+                                alt={t('common.visual')} 
+                                className="w-full h-full object-cover group-hover:scale-105 transition-transform" 
+                              />
+                            ) : (
+                              <span className="text-lg opacity-40 grayscale select-none">
+                                {event.type === 'prestation' ? '🎭' :
+                                 event.type === 'repetition' ? '🥁' :
+                                 event.type === 'stage' ? '🎓' :
+                                 event.type === 'atelier' ? '🔨' :
+                                 event.type === 'reunion' ? '📅' : '📆'}
+                              </span>
+                            )}
+
+                            {/* Icône Play (▶️) filigrane discrète superposée pour les événements avec vidéo */}
+                            {isVideo && (
+                              <div className="absolute inset-0 bg-black/35 flex items-center justify-center transition-all group-hover:bg-black/50">
+                                <div className="w-6 h-6 rounded-full bg-red-600/90 text-white flex items-center justify-center text-[10px] font-black shadow-md border border-white/70 transform group-hover:scale-110 transition-transform">
+                                  ▶
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })()}
                     </div>
 
                     {/* Ticket Circular Cut-out notches (blends dynamically with theme background using var(--cordel-bg)) */}

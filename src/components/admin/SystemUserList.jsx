@@ -100,7 +100,7 @@ export default function SystemUserList({
                     type="button"
                     onClick={() => handleToggleArchive(userItem.id, true)}
                     disabled={savingId === userItem.id}
-                    className="text-[9px] font-black uppercase bg-green-100 hover:bg-green-200 border border-green-700 text-green-700 px-2.5 py-1 rounded shadow-[1px_1px_0px_0px_rgba(22,101,52,0.15)] active:translate-x-[0.5px] active:translate-y-[0.5px] cursor-pointer"
+                    className="text-[9px] font-black uppercase bg-[#2d6a4f]/10 hover:bg-[#2d6a4f] text-[#2d6a4f] hover:text-white border border-[#2d6a4f]/40 px-2.5 py-1 rounded shadow-xs active:translate-x-[0.5px] active:translate-y-[0.5px] cursor-pointer transition-colors"
                   >
                     Désarchiver
                   </button>
@@ -110,7 +110,7 @@ export default function SystemUserList({
                       type="button"
                       onClick={() => handleToggleArchive(userItem.id, false)}
                       disabled={savingId === userItem.id}
-                      className="text-[9px] font-black uppercase bg-red-50 hover:bg-red-100 border border-red-700 text-red-700 px-2 py-1 rounded shadow-[1px_1px_0px_0px_rgba(185,28,28,0.15)] active:translate-x-[0.5px] active:translate-y-[0.5px] cursor-pointer"
+                      className="text-[9px] font-black uppercase bg-[#8b2a1a]/10 hover:bg-[#8b2a1a] text-[#8b2a1a] hover:text-white border border-[#8b2a1a]/40 px-2 py-1 rounded shadow-xs active:translate-x-[0.5px] active:translate-y-[0.5px] cursor-pointer transition-colors"
                       title="Masquer le membre de l'annuaire actif"
                     >
                       Archiver

@@ -3,7 +3,7 @@ import { doc, onSnapshot, collection, query, where } from 'firebase/firestore';
 import { db } from '../firebase';
 import WidgetMotMestre from './WidgetMotMestre';
 import WidgetAnnonces from './WidgetAnnonces';
-import WidgetAgenda from './WidgetAgenda';
+const WidgetAgenda = React.lazy(() => import('./WidgetAgenda'));
 import WidgetCommandes from './WidgetCommandes';
 import WidgetForum from './WidgetForum';
 import WidgetAnniversaires from './WidgetAnniversaires';

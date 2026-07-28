@@ -346,7 +346,7 @@ export default function Trombinoscope({ user, profileData, onBack, onContactUser
   const [instrumentsDisponibles, setInstrumentsDisponibles] = useState(DEFAULT_INSTRUMENTS);
   const [linkedInstruments, setLinkedInstruments] = useState([]);
 
-  // Filter States
+  // États des filtres
   const [searchQuery, setSearchQuery] = useState('');
   const [filterInstrument, setFilterInstrument] = useState('all');
   const [filterTag, setFilterTag] = useState('all');
@@ -375,7 +375,7 @@ export default function Trombinoscope({ user, profileData, onBack, onContactUser
     return null;
   }, [linkedInstruments]);
 
-  // Load association tags and instruments
+  // Charger les étiquettes et instruments de l'association
   useEffect(() => {
     if (!profileData?.groupId) return;
     const loadAssocData = async () => {

@@ -7,6 +7,7 @@ import CordelButton from './CordelButton';
 import { useTranslation } from './LanguageContext';
 import { XiloMegaphone } from './XiloIcons';
 import useConfirm from '../hooks/useConfirm';
+import { getSocialVideoThumbnail } from '../utils/videoUtils';
 
 export default function StudioSocial({ groupId, branding, onBack, role, isSystemAdmin, user, profileData }) {
   const { t } = useTranslation();
@@ -20,6 +21,10 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
   const [backgroundImageUrl, setBackgroundImageUrl] = useState('');
   const [selectedVaralImage, setSelectedVaralImage] = useState('');
   const [localImageFile, setLocalImageFile] = useState(null);
+  
+  // Vidéo sociale & miniature
+  const [socialVideoUrl, setSocialVideoUrl] = useState('');
+  const [savingVideoUrl, setSavingVideoUrl] = useState(false);
   
   const [hashtags, setHashtags] = useState('#OGirador');
   const [publicationText, setPublicationText] = useState('');
@@ -45,6 +50,8 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
         const data = docSnap.data();
         setAvailableSocialTags(data.studioSocialTags || []);
       }
+    }, (err) => {
+      console.error("StudioSocial - Erreur snapshot tags :", err);
     });
     return () => unsubscribe();
   }, [groupId]);
@@ -75,6 +82,8 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
         .sort((a, b) => new Date(b.date) - new Date(a.date));
       
       setEvents([...upcoming, ...past]);
+    }, (err) => {
+      console.error("StudioSocial - Erreur snapshot événements :", err);
     });
     return () => unsubscribe();
   }, [groupId]);
@@ -88,9 +97,11 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
       const ev = events.find(x => x.id === urlEventId);
       if (ev) {
         setSelectedEvent(ev);
-        if (ev.imageUrl) {
+        setSocialVideoUrl(ev.socialVideoUrl || ev.videoUrl || '');
+        const thumb = ev.socialThumbnailUrl || (ev.socialVideoUrl ? getSocialVideoThumbnail(ev.socialVideoUrl) : null);
+        if (ev.imageUrl || thumb) {
           setBackgroundSource('event');
-          setBackgroundImageUrl(ev.imageUrl);
+          setBackgroundImageUrl(ev.imageUrl || thumb || '');
         } else {
           setBackgroundSource('upload');
           setBackgroundImageUrl('');
@@ -110,6 +121,8 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
         fetchedDocs.push({ id: docSnap.id, ...docSnap.data() });
       });
       setVaralImages(fetchedDocs);
+    }, (err) => {
+      console.error("StudioSocial - Erreur snapshot images varal :", err);
     });
     return () => unsubscribe();
   }, [groupId]);
@@ -121,11 +134,13 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
     setSelectedEvent(ev || null);
     setLocalImageFile(null);
     setSelectedVaralImage('');
+    setSocialVideoUrl(ev?.socialVideoUrl || ev?.videoUrl || '');
     
     if (ev) {
-      if (ev.imageUrl) {
+      const thumb = ev.socialThumbnailUrl || (ev.socialVideoUrl ? getSocialVideoThumbnail(ev.socialVideoUrl) : null);
+      if (ev.imageUrl || thumb) {
         setBackgroundSource('event');
-        setBackgroundImageUrl(ev.imageUrl);
+        setBackgroundImageUrl(ev.imageUrl || thumb || '');
       } else {
         setBackgroundSource('upload');
         setBackgroundImageUrl('');
@@ -136,6 +151,44 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
 
     const defaultTags = ['#OGirador', ...availableSocialTags].join(' ');
     setHashtags(defaultTags);
+  };
+
+  /**
+   * Sauvegarde le lien vidéo et sa miniature générée automatiquement dans Firestore
+   */
+  const handleSaveVideoUrl = async () => {
+    if (!selectedEvent?.id) return;
+    setSavingVideoUrl(true);
+    try {
+      const cleanUrl = socialVideoUrl.trim();
+      const thumbnailUrl = getSocialVideoThumbnail(cleanUrl);
+      const eventRef = doc(db, 'events', selectedEvent.id);
+
+      const updatePayload = {
+        socialVideoUrl: cleanUrl,
+        socialThumbnailUrl: thumbnailUrl || null
+      };
+
+      // Si aucune affiche visuelle n'existait, utiliser la miniature vidéo générée
+      if (thumbnailUrl && !selectedEvent.imageUrl) {
+        updatePayload.imageUrl = thumbnailUrl;
+      }
+
+      await updateDoc(eventRef, updatePayload);
+
+      // Mettre à jour l'événement local sélectionné
+      setSelectedEvent(prev => prev ? { ...prev, ...updatePayload } : null);
+
+      if (thumbnailUrl && (!backgroundImageUrl || backgroundSource === 'event')) {
+        setBackgroundImageUrl(thumbnailUrl);
+        setBackgroundSource('event');
+      }
+    } catch (err) {
+      console.error("StudioSocial - Erreur sauvegarde vidéo :", err);
+      alert("Erreur lors de l'enregistrement du lien vidéo.");
+    } finally {
+      setSavingVideoUrl(false);
+    }
   };
 
   const handleAddSocialTag = async (e) => {
@@ -722,6 +775,38 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
 
             {selectedEvent && (
               <>
+                {/* Champ optionnel : Lien Vidéo (YouTube...) */}
+                <div className="flex flex-col gap-1.5 p-3 bg-cordel-bg-light border border-dashed border-cordel-master-dark/20 rounded-[5px]">
+                  <label className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-master-dark flex items-center justify-between">
+                    <span>🎬 {t('studioSocial.videoUrlLabel') || "Lien de la vidéo (YouTube, Vimeo...)"}</span>
+                    {socialVideoUrl && getSocialVideoThumbnail(socialVideoUrl) && (
+                      <span className="text-[9px] text-green-700 font-extrabold px-1.5 py-0.5 bg-green-100 border border-green-400 rounded select-none">
+                        ✓ Miniature YouTube détectée
+                      </span>
+                    )}
+                  </label>
+                  <div className="flex gap-2 items-center">
+                    <input
+                      type="url"
+                      value={socialVideoUrl}
+                      onChange={(e) => setSocialVideoUrl(e.target.value)}
+                      placeholder="https://www.youtube.com/watch?v=..."
+                      className="theme-input text-xs font-bold flex-1 bg-white"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleSaveVideoUrl}
+                      disabled={savingVideoUrl || !socialVideoUrl.trim()}
+                      className="px-3 py-1.5 bg-cordel-wood text-white text-xs font-bold rounded-[3px_5px] shadow-[1px_1px_0px_0px_#181716] hover:brightness-105 active:translate-x-[0.5px] active:translate-y-[0.5px] cursor-pointer disabled:opacity-50 shrink-0"
+                    >
+                      {savingVideoUrl ? "..." : (t('common.save') || "Enregistrer")}
+                    </button>
+                  </div>
+                  <p className="text-[9.5px] font-semibold text-cordel-master-dark/70 italic">
+                    La miniature vidéo sera automatiquement générée et affichée sur le billet d'événement dans l'Agenda avec l'icône Play ▶️.
+                  </p>
+                </div>
+
                 {/* Background Image Source selection */}
                 <div className="flex flex-col gap-1.5">
                   <label className="text-[10px] uppercase font-bold tracking-wider text-cordel-master-dark">

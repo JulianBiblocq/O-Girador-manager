@@ -18,12 +18,8 @@ export default function EventRSVPSection({
   isInstrumentLocked,
   transport,
   demandeRemboursementKm,
-  isCalendarMenuOpen,
-  setIsCalendarMenuOpen,
   handleStatusChange,
   handleSave,
-  handleAddToGoogleCalendar,
-  handleDownloadIcs,
   getMemberInstrumentOptions,
   getPupitreName,
   presentsByInstrument,
@@ -67,6 +63,7 @@ export default function EventRSVPSection({
   const [inviteFonction, setInviteFonction] = useState('');
   const [inviteInstrument, setInviteInstrument] = useState('');
   const [addingInvite, setAddingInvite] = useState(false);
+  const [isCalendarMenuOpen, setIsCalendarMenuOpen] = useState(false);
 
   // Initialize guest instrument to first option when list is loaded
   React.useEffect(() => {
@@ -170,8 +167,8 @@ export default function EventRSVPSection({
             {existingResponse && (
               <div className="text-xs font-bold text-encre-noire mb-2 text-left">
                 Votre réponse enregistrée : <span className={`px-2 py-0.5 rounded text-[10px] uppercase font-black ${
-                  existingResponse.status === 'present' ? 'bg-green-600 text-white' :
-                  existingResponse.status === 'absent' ? 'bg-red-600 text-white' :
+                  existingResponse.status === 'present' ? 'bg-[#2d6a4f] text-white' :
+                  existingResponse.status === 'absent' ? 'bg-cordel-wood text-white' :
                   existingResponse.status === 'confirm' ? 'bg-orange-500 text-white' : 'bg-neutral-200'
                 }`}>{
                   existingResponse.status === 'present' ? 'Présent' :
@@ -277,7 +274,7 @@ export default function EventRSVPSection({
                               disabled={saving || (m.isParent && isPrestationRestricted) || event.status === 'annule'}
                               onClick={() => handleFamilyMemberStatusChange && handleFamilyMemberStatusChange(m.id, 'present')}
                               className={`px-2 py-1 text-[10px] font-bold rounded transition-all select-none cursor-pointer ${
-                                mResp.status === 'present' ? 'bg-emerald-600 text-white shadow-sm' : 'bg-black/5 text-encre-noire/70 hover:bg-black/10'
+                                mResp.status === 'present' ? 'theme-bg-vert text-white shadow-sm' : 'bg-black/5 text-encre-noire/70 hover:bg-black/10'
                               }`}
                             >
                               ✅ Présent
@@ -288,7 +285,7 @@ export default function EventRSVPSection({
                                 disabled={saving || (m.isParent && isPrestationRestricted) || event.status === 'annule'}
                                 onClick={() => handleFamilyMemberStatusChange && handleFamilyMemberStatusChange(m.id, 'confirm')}
                                 className={`px-2 py-1 text-[10px] font-bold rounded transition-all select-none cursor-pointer ${
-                                  mResp.status === 'confirm' ? 'bg-amber-500 text-white shadow-sm' : 'bg-black/5 text-encre-noire/70 hover:bg-black/10'
+                                  mResp.status === 'confirm' ? 'theme-bg-ocre text-encre-noire shadow-sm' : 'bg-black/5 text-encre-noire/70 hover:bg-black/10'
                                 }`}
                               >
                                 ⏳ À confirmer
@@ -299,7 +296,7 @@ export default function EventRSVPSection({
                               disabled={saving || event.status === 'annule'}
                               onClick={() => handleFamilyMemberStatusChange && handleFamilyMemberStatusChange(m.id, 'absent')}
                               className={`px-2 py-1 text-[10px] font-bold rounded transition-all select-none cursor-pointer ${
-                                mResp.status === 'absent' ? 'bg-red-600 text-white shadow-sm' : 'bg-black/5 text-encre-noire/70 hover:bg-black/10'
+                                mResp.status === 'absent' ? 'bg-cordel-wood text-white shadow-sm' : 'bg-black/5 text-encre-noire/70 hover:bg-black/10'
                               }`}
                             >
                               ❌ Absent
@@ -876,7 +873,7 @@ export default function EventRSVPSection({
                             <button
                               type="button"
                               onClick={() => handleValidatePending(i.userId, 'present')}
-                              className="text-green-600 hover:text-green-800 text-[10px] font-black cursor-pointer px-1 py-0.5 bg-green-50 border border-green-300 rounded hover:bg-green-100"
+                              className="text-[#2d6a4f] hover:text-white text-[10px] font-black cursor-pointer px-1.5 py-0.5 bg-[#2d6a4f]/10 hover:bg-[#2d6a4f] border border-[#2d6a4f]/30 rounded transition-colors"
                               title="Valider l'inscription"
                             >
                               ✓
@@ -884,7 +881,7 @@ export default function EventRSVPSection({
                             <button
                               type="button"
                               onClick={() => handleValidatePending(i.userId, 'refused')}
-                              className="text-red-600 hover:text-red-800 text-[10px] font-black cursor-pointer px-1 py-0.5 bg-red-50 border border-red-300 rounded hover:bg-red-100 animate-none"
+                              className="text-[#8b2a1a] hover:text-white text-[10px] font-black cursor-pointer px-1.5 py-0.5 bg-[#8b2a1a]/10 hover:bg-[#8b2a1a] border border-[#8b2a1a]/30 rounded transition-colors"
                               title="Refuser l'inscription"
                             >
                               ✗
@@ -892,7 +889,7 @@ export default function EventRSVPSection({
                             <button
                               type="button"
                               onClick={() => handleManualUnregister(i.userId)}
-                              className="text-red-600 hover:text-red-800 text-[10px] font-black cursor-pointer ml-1 pl-1 border-l border-encre-noire/15"
+                              className="text-[#8b2a1a] hover:text-red-900 text-[10px] font-black cursor-pointer ml-1 pl-1 border-l border-encre-noire/15"
                               title="Désinscrire ce membre"
                             >
                               ✕
@@ -925,7 +922,7 @@ export default function EventRSVPSection({
                             <button
                               type="button"
                               onClick={() => handleValidatePending(i.userId, 'present')}
-                              className="text-green-600 hover:text-green-800 text-[10px] font-black cursor-pointer px-1 py-0.5 bg-green-50 border border-green-300 rounded hover:bg-green-100"
+                              className="text-[#2d6a4f] hover:text-white text-[10px] font-black cursor-pointer px-1.5 py-0.5 bg-[#2d6a4f]/10 hover:bg-[#2d6a4f] border border-[#2d6a4f]/30 rounded transition-colors"
                               title="Valider/Rétablir l'inscription"
                             >
                               ✓
@@ -933,7 +930,7 @@ export default function EventRSVPSection({
                             <button
                               type="button"
                               onClick={() => handleManualUnregister(i.userId)}
-                              className="text-red-600 hover:text-red-800 text-[10px] font-black cursor-pointer ml-1.5 border-l border-encre-noire/15 pl-1.5 font-black"
+                              className="text-[#8b2a1a] hover:text-red-900 text-[10px] font-black cursor-pointer ml-1.5 border-l border-encre-noire/15 pl-1.5 font-black"
                               title="Désinscrire ce membre"
                             >
                               ✕

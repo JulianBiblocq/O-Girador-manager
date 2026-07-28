@@ -45,7 +45,7 @@ export function useInstrumentColor(groupId) {
       return format === 'pastel' ? 'rgba(140, 133, 123, 0.12)' : '#8c857b';
     }
 
-    // Default mapping for fallback colors (in case not configured in DB)
+    // Correspondance par défaut (au cas où non configuré en base de données)
     const defaultColors = {
       'mestre': '#8b2a1a',
       'agbê': '#d99f4d',
@@ -59,10 +59,10 @@ export function useInstrumentColor(groupId) {
 
     const cleanName = instrumentName.trim().toLowerCase();
     
-    // Find matching configuration
+    // Rechercher la configuration correspondante
     let foundHex = null;
     
-    // Exact match in database colors (case insensitive)
+    // Correspondance exacte dans les couleurs de la base (insensible à la casse)
     const dbKey = Object.keys(pupitresColors).find(
       key => key.toLowerCase() === cleanName
     );
@@ -70,7 +70,7 @@ export function useInstrumentColor(groupId) {
       foundHex = pupitresColors[dbKey];
     }
     
-    // Fallback: look if the instrument name is a substring of a database key or vice-versa
+    // De secours : vérifier si le nom de l'instrument est une sous-chaîne ou vice-versa
     if (!foundHex) {
       const matchKey = Object.keys(pupitresColors).find(
         key => cleanName.includes(key.toLowerCase()) || key.toLowerCase().includes(cleanName)
@@ -80,7 +80,7 @@ export function useInstrumentColor(groupId) {
       }
     }
     
-    // Fallback to static defaults
+    // De secours : utiliser les couleurs statiques par défaut
     if (!foundHex) {
       const defaultKey = Object.keys(defaultColors).find(
         key => cleanName.includes(key) || key.includes(cleanName)

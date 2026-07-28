@@ -1,8 +1,8 @@
 {
   "id": "/",
-  "name": "O Girador - Manager",
-  "short_name": "O Girador",
-  "description": "Application de gestion pour le groupe O Girador Maracatu",
+  "name": "O Girador Samambaia",
+  "short_name": "O Girador Samambaia",
+  "description": "Application de gestion pour le groupe O Girador Samambaia",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

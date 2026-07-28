@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { collection, query, where, onSnapshot, doc, addDoc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { useTranslation } from '../LanguageContext';
@@ -38,12 +38,12 @@ export default function WardrobeManager({ groupId, role, isSystemAdmin, hasAcces
 
   const [saving, setSaving] = useState(false);
 
-  const profileData = {
+  const profileData = useMemo(() => ({
     groupId,
     role,
     isSystemAdmin,
     hasAccessLogistique
-  };
+  }), [groupId, role, isSystemAdmin, hasAccessLogistique]);
 
   const isAuthorized = role === 'mestre' || role === 'super-admin' || isSystemAdmin === true || hasAccessLogistique === true;
 
@@ -407,9 +407,9 @@ export default function WardrobeManager({ groupId, role, isSystemAdmin, hasAcces
                         </td>
                         <td className="py-2 px-2 md:py-2.5 md:px-4 text-center">
                           <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
-                            piece.etat === 'Neuf' ? 'bg-green-100 text-green-800' :
-                            piece.etat === 'Bon' ? 'bg-blue-100 text-blue-800' :
-                            piece.etat === 'Moyen' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'
+                            piece.etat === 'Neuf' ? 'bg-[#2d6a4f]/15 text-[#2d6a4f] border border-[#2d6a4f]/30 font-black' :
+                            piece.etat === 'Bon' ? 'bg-[#2d6a4f]/10 text-[#2d6a4f] border border-[#2d6a4f]/20' :
+                            piece.etat === 'Moyen' ? 'bg-[#c05621]/15 text-[#c05621] border border-[#c05621]/30 font-bold' : 'bg-[#8b2a1a]/15 text-[#8b2a1a] border border-[#8b2a1a]/30 font-black'
                           }`}>
                             {piece.etat}
                           </span>

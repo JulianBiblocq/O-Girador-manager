@@ -15,10 +15,10 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 
-// Enforce browserLocalPersistence for reliable offline/standalone session persistence
+// Forcer la persistance locale du navigateur pour maintenir la session hors-ligne
 setPersistence(auth, browserLocalPersistence)
   .catch((err) => {
-    console.error("Firebase Auth - Error setting persistence:", err);
+    console.error("Firebase Auth - Erreur de persistance :", err);
   });
 
 export const googleProvider = new GoogleAuthProvider();
@@ -27,6 +27,6 @@ export const db = initializeFirestore(app, {
 });
 export const storage = getStorage(app);
 
-// Initialize messaging service only on client side
+// Initialiser le service de messagerie push uniquement côté client
 import { getMessaging } from 'firebase/messaging';
 export const messaging = typeof window !== 'undefined' ? getMessaging(app) : null;

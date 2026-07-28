@@ -27,6 +27,10 @@ import { resolveEffectiveUserTags, findTagObject, getTagId } from '../utils/tagU
 import EventBudgetEditor from './event-details/EventBudgetEditor';
 import EventEditForm from './event-details/EventEditForm';
 import EventPollSection from './event-details/EventPollSection';
+import { useEventDetailsController } from '../hooks/useEventDetailsController';
+import EventHeaderCard from './event-details/EventHeaderCard';
+import EventQuickActionsBar from './event-details/EventQuickActionsBar';
+import EventLocationMapBox from './event-details/EventLocationMapBox';
 
 export default function EventDetails({ event, user, profileData, onNavigateToView, onClose, onPrev, onNext, viewMode, setViewMode, onGoToStageLayoutEditor }) {
   const { t } = useTranslation();
@@ -36,10 +40,21 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
     const val = t(key);
     return val === key ? fallback : val;
   };
-  const [isCalendarMenuOpen, setIsCalendarMenuOpen] = useState(false);
-  const [toastMessage, setToastMessage] = useState(null);
+
+  const {
+    activeEvent,
+    isEditingEvent,
+    setIsEditingEvent,
+    toggleEditing,
+    toastMessage,
+    setToastMessage,
+    showToast,
+    savingEvent,
+    setSavingEvent,
+    handleDeleteEvent
+  } = useEventDetailsController(event, onClose, t);
+
   const [allUsers, setAllUsers] = useState([]);
-  const [isEditingEvent, setIsEditingEvent] = useState(false);
   const [editForm, setEditForm] = useState({
     titre: event.titre || '',
     type: event.type || 'repetition',
@@ -67,29 +82,7 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
     enableCarpool: event.enableCarpool !== false,
     description: event.description || ''
   });
-  const [liveEventData, setLiveEventData] = useState(null);
 
-  // Real-time synchronization for this specific event document
-  useEffect(() => {
-    if (!event?.id) return;
-    const eventRef = doc(db, 'events', event.id);
-    const unsubscribe = onSnapshot(
-      eventRef,
-      (docSnap) => {
-        if (docSnap.exists()) {
-          setLiveEventData({ id: docSnap.id, ...docSnap.data() });
-        }
-      },
-      (err) => {
-        console.error("EventDetails - Erreur snapshot live document :", err);
-      }
-    );
-    return () => unsubscribe();
-  }, [event?.id]);
-
-  const activeEvent = liveEventData ? { ...event, ...liveEventData } : event;
-
-  const [savingEvent, setSavingEvent] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [imageMode, setImageMode] = useState(() => {
     const url = event.imageUrl;
@@ -616,31 +609,6 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
     }
   };
 
-  const handleDeleteEvent = async () => {
-    const ok = await confirm({
-      title: "Suppression définitive",
-      message: "Êtes-vous sûr de vouloir supprimer définitivement cet événement ?",
-      confirmText: "Oui, supprimer",
-      cancelText: "Annuler",
-      variant: "danger"
-    });
-    if (!ok) return;
-    setSavingEvent(true);
-    try {
-      const eventRef = doc(db, 'events', event.id);
-      await deleteDoc(eventRef);
-      alert("Événement supprimé avec succès !");
-      if (onClose) {
-        onClose();
-      }
-    } catch (err) {
-      console.error("EventDetails - Erreur de suppression événement :", err);
-      alert("Erreur lors de la suppression de l'événement.");
-    } finally {
-      setSavingEvent(false);
-    }
-  };
-
   const handlePreparePublication = () => {
     const newUrl = `${window.location.pathname}?eventId=${event.id}`;
     window.history.pushState({}, '', newUrl);
@@ -1091,34 +1059,57 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
                     📄 <strong>Ordre du jour :</strong> <a href={event.lienDocument} target="_blank" rel="noopener noreferrer" className="text-cordel-wood hover:underline">{event.lienDocument}</a>
                   </span>
                 )}
+                {(event.socialVideoUrl || event.videoUrl) && (
+                  <span className="truncate flex items-center gap-1.5 text-xs">
+                    🎬 <strong>Vidéo attachée :</strong> 
+                    <a 
+                      href={event.socialVideoUrl || event.videoUrl} 
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      className="text-cordel-wood font-extrabold hover:underline truncate"
+                    >
+                      {event.socialVideoUrl || event.videoUrl} ↗
+                    </a>
+                  </span>
+                )}
                 {currentConfig.agendaEnableUrl && event.lienSocial && (
-                  <span className="truncate">
+                  <span className="truncate text-xs">
                     🔗 <strong>Lien social / Externe :</strong> <a href={event.lienSocial} target="_blank" rel="noopener noreferrer" className="text-cordel-wood hover:underline">{event.lienSocial}</a>
                   </span>
                 )}
-                {currentConfig.agendaEnableImage && event.imageUrl && (
-                  <div className="mt-3.5 border-2 border-encre-noire rounded-[8px] overflow-hidden shadow-[2px_2px_0px_0px_rgba(26,26,26,0.15)] bg-white max-h-[300px] min-h-[200px] flex items-center justify-center">
-                    <img src={event.imageUrl} alt={event.titre} width={400} height={200} className="max-w-full max-h-[300px] object-contain" />
+                {currentConfig.agendaEnableImage && (event.imageUrl || event.socialThumbnailUrl) && (
+                  <div 
+                    className="mt-3.5 border-2 border-encre-noire rounded-[8px] overflow-hidden shadow-[2px_2px_0px_0px_rgba(26,26,26,0.15)] bg-white max-h-[300px] min-h-[180px] flex items-center justify-center relative group cursor-pointer"
+                    onClick={() => {
+                      const vUrl = event.socialVideoUrl || event.videoUrl;
+                      if (vUrl) {
+                        window.open(vUrl, '_blank', 'noopener,noreferrer');
+                      }
+                    }}
+                  >
+                    <img 
+                      src={event.socialThumbnailUrl || event.imageUrl} 
+                      alt={event.titre} 
+                      width={400} 
+                      height={200} 
+                      className="max-w-full max-h-[300px] object-contain" 
+                    />
+                    {(event.socialVideoUrl || event.videoUrl || event.socialThumbnailUrl) && (
+                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center transition-all group-hover:bg-black/55">
+                        <div className="px-3 py-1.5 bg-red-600/90 text-white rounded-full text-xs font-black shadow-lg border border-white/80 flex items-center gap-1.5 transform group-hover:scale-105 transition-transform">
+                          <span>▶</span> <span>Regarder la vidéo</span>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
-                {currentConfig.agendaEnableAdresse && (event.lieu || (event.latitude && event.longitude)) && (
-                  <div className="mt-3.5 flex flex-col gap-1">
-                    {event.latitude && event.longitude && (
-                      <span className="text-[9.5px] font-bold text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/20 px-2 py-0.5 rounded border border-amber-300/40 w-fit select-none">
-                        📌 Position GPS exacte : {Number(event.latitude).toFixed(5)}, {Number(event.longitude).toFixed(5)}
-                      </span>
-                    )}
-                    <div className="border-2 border-encre-noire rounded-[8px] overflow-hidden shadow-[2px_2px_0px_0px_rgba(26,26,26,0.15)] bg-white h-[200px]">
-                      <iframe
-                        title="Google Maps"
-                        width="100%"
-                        height="100%"
-                        frameBorder="0"
-                        src={`https://maps.google.com/maps?q=${encodeURIComponent(event.latitude && event.longitude ? `${event.latitude},${event.longitude}` : event.lieu)}&t=&z=16&ie=UTF8&iwloc=&output=embed`}
-                        allowFullScreen
-                      />
-                    </div>
-                  </div>
+                {currentConfig.agendaEnableAdresse && (
+                  <EventLocationMapBox 
+                    event={event} 
+                    isAdmin={isAuthorized} 
+                    onOpenMapModal={() => setIsMapModalOpen(true)} 
+                    t={t} 
+                  />
                 )}
                 {event.description && (
                   <div className="mt-3.5 pt-3 border-t border-dashed border-encre-noire/15 whitespace-pre-line text-neutral-700 dark:text-neutral-300">
@@ -1151,12 +1142,8 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
                 isInstrumentLocked={isInstrumentLocked}
                 transport={transport}
                 demandeRemboursementKm={demandeRemboursementKm}
-                isCalendarMenuOpen={isCalendarMenuOpen}
-                setIsCalendarMenuOpen={setIsCalendarMenuOpen}
                 handleStatusChange={handleStatusChange}
                 handleSave={handleSave}
-                handleAddToGoogleCalendar={handleAddToGoogleCalendar}
-                handleDownloadIcs={handleDownloadIcs}
                 getMemberInstrumentOptions={getMemberInstrumentOptions}
                 getPupitreName={getPupitreName}
                 presentsByInstrument={presentsByInstrument}
@@ -1221,12 +1208,8 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
                 isInstrumentLocked={isInstrumentLocked}
                 transport={transport}
                 demandeRemboursementKm={demandeRemboursementKm}
-                isCalendarMenuOpen={isCalendarMenuOpen}
-                setIsCalendarMenuOpen={setIsCalendarMenuOpen}
                 handleStatusChange={handleStatusChange}
                 handleSave={handleSave}
-                handleAddToGoogleCalendar={handleAddToGoogleCalendar}
-                handleDownloadIcs={handleDownloadIcs}
                 getMemberInstrumentOptions={getMemberInstrumentOptions}
                 getPupitreName={getPupitreName}
                 presentsByInstrument={presentsByInstrument}

@@ -493,7 +493,7 @@ export function useEventCarpool({
           throw new Error("Plus assez de place dans cette voiture !");
         }
 
-        // Update voitures list
+        // Mise à jour de la liste des voitures
         const updatedVoitures = voitures.map(v => {
           if (v.id === voitureId) {
             return {
@@ -504,10 +504,10 @@ export function useEventCarpool({
           return v;
         });
 
-        // Remove from waitlist if present
+        // Retirer de la liste d'attente si présent
         const updatedRecherchePlace = recherchePlace.filter(p => p.uid !== passengerUid);
 
-        // Update inscriptions if it is a member (not an external guest)
+        // Mettre à jour les inscriptions s'il s'agit d'un membre (pas d'un invité externe)
         let updatedInscriptions = eventData.inscriptions || [];
         if (!isInvite) {
           updatedInscriptions = updatedInscriptions.map(ins => {
@@ -527,7 +527,7 @@ export function useEventCarpool({
         });
       });
     } catch (err) {
-      console.error("Error assigning passenger:", err);
+      console.error("Erreur d'assignation du passager :", err);
       alert(err.message || "Erreur lors de l'assignation du passager.");
     } finally {
       setSubmittingCovoit(false);
@@ -550,7 +550,7 @@ export function useEventCarpool({
         const voiture = voitures.find(v => v.id === voitureId);
         if (!voiture) return;
 
-        // Find if passenger is an invite
+        // Déterminer si le passager est un invité
         const passengerObj = (voiture.passengers || []).find(p => p.uid === passengerUid);
         const isInvite = passengerObj ? !!passengerObj.isInvite : false;
 
@@ -566,7 +566,7 @@ export function useEventCarpool({
           return v;
         });
 
-        // Update inscriptions if it was a member
+        // Mettre à jour les inscriptions s'il s'agissait d'un membre
         let updatedInscriptions = eventData.inscriptions || [];
         if (!isInvite) {
           updatedInscriptions = updatedInscriptions.map(ins => {

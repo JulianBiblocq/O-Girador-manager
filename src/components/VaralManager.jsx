@@ -822,7 +822,7 @@ export default function VaralManager({ groupId, onBack, role, isSystemAdmin }) {
                   </span>
                   <div className="flex flex-wrap gap-1">
                     {selectedReport.presents.map((name, i) => (
-                      <span key={i} className="text-[9px] font-bold px-2 py-0.5 bg-neutral-200/50 rounded">
+                      <span key={`${name}-${i}`} className="text-[9px] font-bold px-2 py-0.5 bg-neutral-200/50 rounded">
                         👤 {name}
                       </span>
                     ))}

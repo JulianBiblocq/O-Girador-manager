@@ -525,7 +525,7 @@ export default function ThreadView({ threadId, user, profileData, channels = [],
                   type="button"
                   onClick={handleDeleteThread}
                   disabled={actionLoading}
-                  className="text-red-600 hover:text-red-800 text-[9px] font-black cursor-pointer border border-red-200 bg-red-50 hover:bg-red-100 rounded px-1.5 py-0.5 shadow-xs"
+                  className="text-[#8b2a1a] hover:text-white text-[9px] font-black cursor-pointer border border-[#8b2a1a]/30 bg-[#8b2a1a]/10 hover:bg-[#8b2a1a] rounded px-1.5 py-0.5 shadow-xs transition-colors"
                   title={t('common.delete') || "Supprimer"}
                 >
                   🗑️
@@ -604,7 +604,7 @@ export default function ThreadView({ threadId, user, profileData, channels = [],
                             type="button"
                             onClick={() => handleRemovePollOptionFromExisting(idx)}
                             disabled={savingNewPoll}
-                            className="text-red-700 hover:text-red-900 text-xs font-black px-2 py-1 rounded bg-red-50 border border-red-200 cursor-pointer"
+                            className="text-[#8b2a1a] hover:text-white text-xs font-black px-2 py-1 rounded bg-[#8b2a1a]/10 hover:bg-[#8b2a1a] border border-[#8b2a1a]/30 cursor-pointer transition-colors"
                           >
                             ✕
                           </button>

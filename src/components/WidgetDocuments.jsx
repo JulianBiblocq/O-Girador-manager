@@ -227,7 +227,7 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
 
   const isAuthorized = role === 'mestre' || role === 'super-admin' || isSystemAdmin === true;
 
-  // Real-time synchronization with Firestore documents collection
+  // Synchronisation en temps réel avec la collection Firestore des documents
   useEffect(() => {
     if (!groupId) {
       setDocuments([]);
@@ -248,7 +248,7 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
         });
       });
 
-      // Sort by order asc, then upload date desc
+      // Trier par ordre croissant, puis par date d'ajout descendante
       fetchedDocs.sort((a, b) => {
         const orderA = typeof a.order === 'number' ? a.order : 0;
         const orderB = typeof b.order === 'number' ? b.order : 0;
@@ -267,7 +267,7 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
     return () => unsubscribe();
   }, [groupId]);
 
-  // Sync varalCategories from association configuration
+  // Synchroniser varalCategories depuis la configuration de l'association
   useEffect(() => {
     if (!groupId) {
       setVaralCategories(DEFAULT_VARAL_CATEGORIES);
@@ -758,7 +758,7 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
                   </span>
                   <div className="flex flex-wrap gap-1">
                     {selectedReport.presents.map((name, i) => (
-                      <span key={i} className="text-[9px] font-bold px-2 py-0.5 bg-neutral-200/50 rounded">
+                      <span key={`${name}-${i}`} className="text-[9px] font-bold px-2 py-0.5 bg-neutral-200/50 rounded">
                         👤 {name}
                       </span>
                     ))}

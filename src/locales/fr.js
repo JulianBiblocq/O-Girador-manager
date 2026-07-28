@@ -710,7 +710,7 @@ export const fr = {
     fieldFilledByMemberSelect: "L'adhérent (Profil & Inscription)",
     fieldFilledByAdminSelect: "L'administrateur (Console Admin uniquement)",
     cantCopyInvitation: "Impossible de copier le lien automatiquement. Voici le lien d'invitation : ",
-    invitationMessage: "Rejoins notre groupe sur O Girador Manager : ",
+    invitationMessage: "Rejoins notre groupe sur O Girador : ",
     removeBtn: "Supprimer",
     selectInstrumentsMin: "Sélectionner les instruments du pupitre (minimum 2)",
     accessDeniedDesc: "Vous devez être administrateur pour configurer l'association."

@@ -17,7 +17,7 @@ export const defaultCordelOptions: CordelOptions = {
   isFrame: false,
   posX: 0,
   posY: 0,
-  intensity: 80, // Default to 80% (soft vintage effect)
+  intensity: 80, // Effet vintage doux par défaut (80%)
 };
 
 export const processCordelEffectBase64 = (base64Img: string, options: CordelOptions, outSize: number = 200): Promise<string> => {

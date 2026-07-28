@@ -728,7 +728,7 @@ export const pt = {
     fieldFilledByMemberSelect: "O membro (Perfil e Cadastro)",
     fieldFilledByAdminSelect: "Apenas administradores (Painel Admin)",
     cantCopyInvitation: "Não foi possível copiar o link automaticamente. Aqui está o link de convite: ",
-    invitationMessage: "Participe do nosso grupo no O Girador Manager: ",
+    invitationMessage: "Participe do nosso grupo no O Girador : ",
     removeBtn: "Excluir",
     selectInstrumentsMin: "Selecionar os instrumentos do naipe (mínimo 2)",
     accessDeniedDesc: "Você deve ser administrador para configurar a associação."

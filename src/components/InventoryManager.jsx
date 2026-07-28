@@ -1,27 +1,13 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { collection, query, where, onSnapshot, doc, addDoc, updateDoc, deleteDoc } from 'firebase/firestore';
-import { db } from '../firebase';
+import React from 'react';
 import LayoutShell from './LayoutShell';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
-import { XiloClose, XiloChisel, XiloCaixa } from './XiloIcons';
+import { XiloClose } from './XiloIcons';
 import { useTranslation } from './LanguageContext';
-import XiloAvatar from './XiloAvatar';
-import useConfirm from '../hooks/useConfirm';
-
-const INSTRUMENT_TYPES = ['Alfaia', 'Caixa', 'Agbê', 'Gonguê', 'Mineiro', 'Apito', 'Timbal', 'Autre'];
-const ETAT_OPTIONS = ['Neuf', 'Bon', 'À réparer'];
-
-const INSTRUMENT_ICONS = {
-  Alfaia: 'icones/alfaia.svg',
-  Caixa: 'icones/caixa.svg',
-  Agbê: 'icones/agbe.svg',
-  Gonguê: 'icones/gongue.svg',
-  Mineiro: 'icones/mineiro.svg',
-  Apito: 'icones/apito.svg',
-  Timbal: 'icones/timbal.svg',
-  Autre: 'favicon.svg' // default logo icon fallback
-};
+import { useInventoryData } from '../hooks/useInventoryData';
+import InventoryFilterBar from './inventory/InventoryFilterBar';
+import InventoryItemCard from './inventory/InventoryItemCard';
+import InventoryFormModal from './inventory/InventoryFormModal';
 
 export default function InventoryManager({ groupId, onBack, role, isSystemAdmin, hasAccessLogistique }) {
   const { t } = useTranslation();
@@ -41,90 +27,31 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin,
     }
   };
 
-  const [instruments, setInstruments] = useState([]);
-  const [usersList, setUsersList] = useState([]);
-  const [filter, setFilter] = useState("all"); // "all", "association", "personal", "repair"
-  const [viewMode, setViewMode] = useState('table'); // 'table' | 'cards'
-  const [sortConfig, setSortConfig] = useState({ key: 'nom', direction: 'asc' });
-  const [isFormOpen, setIsFormOpen] = useState(false);
-  const [editingId, setEditingId] = useState(null); // null for create, id for edit
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-
-  const [formData, setFormData] = useState({
-    nom: '',
-    type: 'Alfaia',
-    etat: 'Bon',
-    proprietaire: 'Association',
-    localisationPhysique: 'Local',
-    assignations: [],
-    status: 'En stock',
-    borrowedBy: ''
-  });
-
-  // Security Check: Mestres, Super-Admins and System Admins only
+  // Contrôle de sécurité : Mestre, Super-Admin, Admin Système ou Accès Logistique
   const isAuthorized = role === 'mestre' || role === 'super-admin' || isSystemAdmin === true || hasAccessLogistique === true;
 
-  // Real-time synchronization of users list in the group
-  useEffect(() => {
-    if (!isAuthorized || !groupId) return;
+  const {
+    instruments,
+    usersList,
+    usersMap,
+    loading,
+    saving,
+    isFormOpen,
+    setIsFormOpen,
+    editingId,
+    formData,
+    setFormData,
+    handleOpenAdd,
+    handleOpenEdit,
+    handleSave,
+    handleDelete,
+    handleToggleBorrowStatus
+  } = useInventoryData(groupId, isAuthorized, t);
 
-    const usersRef = collection(db, 'users');
-    const q = query(usersRef, where('groupId', '==', groupId));
-
-    const unsubscribe = onSnapshot(q, (querySnapshot) => {
-      const fetchedUsers = [];
-      querySnapshot.forEach((doc) => {
-        fetchedUsers.push({
-          id: doc.id,
-          ...doc.data()
-        });
-      });
-      // Sort users by last name
-      fetchedUsers.sort((a, b) => (a.nom || '').localeCompare(b.nom || ''));
-      setUsersList(fetchedUsers);
-    }, (error) => {
-      console.error("InventoryManager - Erreur onSnapshot users :", error);
-    });
-
-    return () => unsubscribe();
-  }, [groupId, isAuthorized]);
-
-  // Real-time synchronization of the group's instrument inventory
-  useEffect(() => {
-    if (!isAuthorized || !groupId) {
-      setLoading(false);
-      return;
-    }
-
-    const inventoryRef = collection(db, 'inventory');
-    const q = query(inventoryRef, where('groupId', '==', groupId));
-
-    const unsubscribe = onSnapshot(q, (querySnapshot) => {
-      const fetchedInstruments = [];
-      querySnapshot.forEach((doc) => {
-        fetchedInstruments.push({
-          id: doc.id,
-          ...doc.data()
-        });
-      });
-      // Sort instruments by name
-      fetchedInstruments.sort((a, b) => (a.nom || '').localeCompare(b.nom || ''));
-      setInstruments(fetchedInstruments);
-      setLoading(false);
-    }, (error) => {
-      console.error("InventoryManager - Erreur onSnapshot inventory :", error);
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, [groupId, isAuthorized]);
-
-  // Map UIDs to full names for direct O(1) resolution
-  const usersMap = usersList.reduce((acc, u) => {
-    acc[u.id] = `${u.prenom} ${u.nom}`;
-    return acc;
-  }, {});
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filter, setFilter] = useState("all");
+  const [viewMode, setViewMode] = useState('table');
+  const [sortConfig, setSortConfig] = useState({ key: 'nom', direction: 'asc' });
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -142,72 +69,6 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin,
       }
       return { ...prev, assignations: copy };
     });
-  };
-
-  const handleOpenAdd = () => {
-    setFormData({
-      nom: '',
-      type: 'Alfaia',
-      etat: 'Bon',
-      proprietaire: 'Association',
-      localisationPhysique: 'Local',
-      assignations: [],
-      status: 'En stock',
-      borrowedBy: ''
-    });
-    setEditingId(null);
-    setIsFormOpen(true);
-  };
-
-  const handleOpenEdit = (inst) => {
-    setFormData({
-      nom: inst.nom || '',
-      type: inst.type || 'Alfaia',
-      etat: inst.etat || 'Bon',
-      proprietaire: inst.proprietaire || 'Association',
-      localisationPhysique: inst.localisationPhysique || 'Local',
-      assignations: inst.assignations || [],
-      status: inst.status || 'En stock',
-      borrowedBy: inst.borrowedBy || ''
-    });
-    setEditingId(inst.id);
-    setIsFormOpen(true);
-  };
-
-  const handleSave = async (e) => {
-    e.preventDefault();
-    if (!groupId || !formData.nom.trim()) return;
-
-    setSaving(true);
-    try {
-      const payload = {
-        nom: formData.nom.trim(),
-        type: formData.type,
-        etat: formData.etat,
-        proprietaire: formData.proprietaire,
-        localisationPhysique: formData.localisationPhysique,
-        assignations: formData.assignations,
-        status: formData.status || 'En stock',
-        borrowedBy: formData.borrowedBy || null,
-        groupId: groupId
-      };
-
-      if (editingId) {
-        // Edit existing instrument
-        const docRef = doc(db, 'inventory', editingId);
-        await updateDoc(docRef, payload);
-      } else {
-        // Create new instrument
-        const collRef = collection(db, 'inventory');
-        await addDoc(collRef, payload);
-      }
-      setIsFormOpen(false);
-    } catch (error) {
-      console.error("Erreur Firebase Inventaire :", error);
-      alert(`${t('common.saveError')} : ${error.message}`);
-    } finally {
-      setSaving(false);
-    }
   };
 
   const handleAssignBorrower = async (instId, borrowerId) => {
@@ -248,28 +109,6 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin,
     } catch (error) {
       console.error("InventoryManager - Error returning instrument:", error);
       alert(t('common.saveError'));
-    }
-  };
-
-  const handleDelete = async (instId, name) => {
-    const confirmDelete = await confirm({
-      title: "Supprimer de l'inventaire",
-      message: (t('inventory.deleteConfirm') || `Voulez-vous vraiment retirer "${name}" de l'inventaire ?`).replace('{name}', name),
-      confirmText: "Oui, retirer",
-      cancelText: "Annuler",
-      variant: "danger"
-    });
-    if (!confirmDelete) return;
-
-    setSaving(true);
-    try {
-      await deleteDoc(doc(db, 'inventory', instId));
-      setIsFormOpen(false);
-    } catch (error) {
-      console.error("Erreur Firebase Inventaire :", error);
-      alert(`${t('common.saveError')} : ${error.message}`);
-    } finally {
-      setSaving(false);
     }
   };
 
@@ -670,70 +509,17 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin,
           </CordelCard>
         ) : (
           <div className="flex flex-col gap-4">
-            {/* Filter buttons, View mode & Add trigger */}
-            <div className="flex justify-between items-center gap-2 flex-wrap">
-              <div className="flex items-center gap-2 flex-wrap">
-                {/* Dropdown for filters */}
-                <select
-                  value={filter}
-                  onChange={(e) => setFilter(e.target.value)}
-                  className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light pr-8"
-                >
-                  <option value="all">{(t('inventory.filterAll') || "Filtre : Tous ({count})").replace('{count}', instruments.length)}</option>
-                  <option value="association">{(t('inventory.filterAssoc') || "Association ({count})").replace('{count}', instruments.filter(i=>i.proprietaire==='Association').length)}</option>
-                  <option value="personal">{(t('inventory.filterPersonal') || "Matériel Personnel ({count})").replace('{count}', instruments.filter(i=>i.proprietaire!=='Association').length)}</option>
-                  <option value="repair">{(t('inventory.filterRepair') || "À réparer ({count})").replace('{count}', instruments.filter(i=>i.etat==='À réparer' || i.etat==='Para consertar').length)}</option>
-                </select>
-
-                {/* View Mode Toggle (Tableau vs Cartes) */}
-                <div className="inline-flex rounded-md border border-encre-noire/30 p-0.5 bg-cordel-bg-light select-none">
-                  <button
-                    type="button"
-                    onClick={() => setViewMode('table')}
-                    className={`px-2.5 py-1 text-[10px] font-black uppercase rounded cursor-pointer transition-all ${
-                      viewMode === 'table'
-                        ? 'bg-cordel-wood text-white shadow-[1px_1px_0px_0px_#181716]'
-                        : 'text-cordel-master-dark hover:bg-black/5'
-                    }`}
-                  >
-                    📊 Tableau
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setViewMode('cards')}
-                    className={`px-2.5 py-1 text-[10px] font-black uppercase rounded cursor-pointer transition-all ${
-                      viewMode === 'cards'
-                        ? 'bg-cordel-wood text-white shadow-[1px_1px_0px_0px_#181716]'
-                        : 'text-cordel-master-dark hover:bg-black/5'
-                    }`}
-                  >
-                    🎴 Cartes
-                  </button>
-                </div>
-              </div>
-
-              <div className="flex gap-2">
-                <CordelButton
-                  type="button"
-                  variant="default"
-                  useExtremeBorder={false}
-                  onClick={handleExportCSV}
-                  disabled={instruments.length === 0}
-                  className="text-[10px] px-3 py-2 uppercase tracking-widest font-black shrink-0 flex items-center gap-1.5"
-                >
-                  📥 {t('inventory.exportCSV') || "Exporter (CSV)"}
-                </CordelButton>
-
-                <CordelButton
-                  variant="ocre"
-                  useExtremeBorder={true}
-                  onClick={handleOpenAdd}
-                  className="text-[10px] px-3 py-2 uppercase tracking-widest font-black shrink-0"
-                >
-                  {t('inventory.addBtn')}
-                </CordelButton>
-              </div>
-            </div>
+            {/* BARRE DE FILTRES ET D'ACTIONS REUTILISABLE */}
+            <InventoryFilterBar
+              searchQuery={searchQuery}
+              setSearchQuery={setSearchQuery}
+              filter={filter}
+              setFilter={setFilter}
+              viewMode={viewMode}
+              setViewMode={setViewMode}
+              onOpenAdd={handleOpenAdd}
+              t={t}
+            />
 
             {/* Instruments List / Table */}
             {loading ? (
@@ -1028,138 +814,36 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin,
                 </table>
               </div>
             ) : (
-              /* CARD VIEW WITH SORTED INSTRUMENTS */
+              /* VUE EN CARTES AVEC LE COMPOSANT REUTILISABLE INVENTORYITEMCARD */
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {sortedInstruments.map((inst) => {
-                  const iconPath = INSTRUMENT_ICONS[inst.type] || 'favicon.svg';
-                  const isPersonal = inst.proprietaire !== "Association";
-                  const ownerName = isPersonal ? (usersMap[inst.proprietaire] || "Chargement...") : "Association";
-                  const isAtHome = inst.localisationPhysique !== "Local";
-                  const locName = isAtHome ? (usersMap[inst.localisationPhysique] || "Chez un membre") : "Local";
-                  
-                  return (
-                    <CordelCard 
-                      key={inst.id}
-                      variant="default"
-                      useExtremeBorder={false}
-                      className="p-3 bg-cordel-bg flex flex-col gap-2 w-full relative pr-12 text-left"
-                    >
-                      {/* Top Part: Icon + Info details */}
-                      <div className="flex items-center gap-4 w-full">
-                        {/* Left Side: Instrument Icon */}
-                        <div className="w-10 h-10 border-2 border-encre-noire bg-cordel-bg-light rounded-[8px_6px_10px_7px] flex items-center justify-center shrink-0 shadow-[1.5px_1.5px_0px_0px_#181716] select-none p-1.5">
-                          <img src={iconPath} alt={inst.type} className="w-full h-full object-contain pointer-events-none" />
-                        </div>
-
-                        {/* Middle: Details */}
-                        <div className="flex-1 min-w-0">
-                          <h4 className="font-extrabold text-xs text-encre-noire leading-tight truncate">
-                            {inst.nom}
-                          </h4>
-                          <div className="flex flex-wrap gap-x-2 gap-y-0.5 mt-1 text-[8px] font-semibold text-cordel-master-dark/70">
-                            <span>🛠️ {inst.type}</span>
-                            <span>•</span>
-                            <span>Proprio : <strong className="text-cordel-wood">{ownerName}</strong></span>
-                          </div>
-                          <div className="flex flex-wrap gap-x-2 gap-y-0.5 mt-0.5 text-[8px] font-semibold text-cordel-master-dark/70">
-                            <span>📍 Localisation : <strong>{locName}</strong></span>
-                            
-                            {/* Assignations Display */}
-                            {inst.assignations && inst.assignations.length > 0 && (
-                              <>
-                                <span>•</span>
-                                <span className="inline-flex items-center gap-1">
-                                  Assigné à : 
-                                  <span className="flex flex-wrap gap-1.5 items-center">
-                                    {inst.assignations.map(uid => {
-                                      const u = usersList.find(userObj => userObj.id === uid);
-                                      if (!u) return <strong key={uid} className="font-bold text-encre-noire">...</strong>;
-                                      const fullName = `${u.prenom} ${u.nom}`;
-                                      return (
-                                        <span key={uid} className="inline-flex items-center gap-1 bg-white/40 dark:bg-black/10 px-1.5 py-0.5 rounded border border-dashed border-encre-noire/10 text-[9px] font-semibold text-encre-noire">
-                                          <XiloAvatar src={u.photoURL} name={fullName} size={14} />
-                                          <span>{fullName}</span>
-                                        </span>
-                                      );
-                                    })}
-                                  </span>
-                                </span>
-                              </>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Borrowing / Lending Controls Section */}
-                      <div className="mt-1 pt-1.5 border-t border-dashed border-cordel-master-dark/15 flex flex-col gap-1.5 w-full">
-                        <div className="flex items-center gap-1.5 select-none">
-                          <span className="text-[9px] font-black text-cordel-wood uppercase">Statut :</span>
-                          <span className={`text-[8px] font-black uppercase px-1.5 py-0.5 rounded border ${
-                            inst.status === 'Emprunté'
-                              ? 'bg-amber-100 border-amber-400 text-amber-800'
-                              : inst.status === 'En réparation'
-                                ? 'bg-red-100 border-red-400 text-red-800'
-                                : 'bg-green-100 border-green-400 text-green-800'
-                          }`}>
-                            {inst.status || 'En stock'}
-                          </span>
-                        </div>
-
-                        {inst.status === 'Emprunté' ? (
-                          <div className="flex items-center justify-between gap-2 bg-white/40 dark:bg-black/10 p-1.5 rounded border border-dashed border-encre-noire/15">
-                            <span className="text-[9px] font-bold text-cordel-master-dark/95 truncate">
-                              👤 Emprunté par : <strong className="font-extrabold text-encre-noire">{usersMap[inst.borrowedBy] || "Membre"}</strong>
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() => handleReturnInstrument(inst.id)}
-                              className="text-[8px] font-black uppercase tracking-wider bg-cordel-wood text-cordel-bg-light px-2.5 py-1.5 border border-encre-noire rounded shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-110 cursor-pointer shrink-0"
-                            >
-                              ↩️ Restitué
-                            </button>
-                          </div>
-                        ) : (
-                          <div className="flex items-center gap-2 bg-white/40 dark:bg-black/10 p-1.5 rounded border border-dashed border-encre-noire/15">
-                            <span className="text-[9px] font-bold text-cordel-master-dark/95 shrink-0">
-                              🤝 Prêter à :
-                            </span>
-                            <select
-                              value=""
-                              onChange={(e) => handleAssignBorrower(inst.id, e.target.value)}
-                              className="theme-input text-[9px] font-bold py-0.5 px-1 bg-white shrink-0 max-w-[120px] ml-auto"
-                            >
-                              <option value="">-- Choisir --</option>
-                              {usersList.map(u => (
-                                <option key={u.id} value={u.id}>{u.prenom} {u.nom}</option>
-                              ))}
-                            </select>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Right top status tag stamp */}
-                      <div className="absolute top-2 right-2 flex gap-1 select-none">
-                        <span className={`theme-stamp-badge ${inst.etat === 'À réparer' || inst.etat === 'Para consertar' ? 'border-red-600 text-red-600' : 'theme-stamp-badge-wood'} text-[6px] px-1 py-0 rotate-0`}>
-                          {inst.etat}
-                        </span>
-                      </div>
-
-                      {/* Right Edit Button */}
-                      <button
-                        type="button"
-                        onClick={() => handleOpenEdit(inst)}
-                        className="absolute bottom-2 right-2 p-1.5 border border-encre-noire bg-cordel-bg-light hover:bg-cordel-hover text-encre-noire rounded shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none cursor-pointer flex items-center justify-center"
-                        title="Modifier l'instrument"
-                      >
-                        <XiloChisel size={10} />
-                      </button>
-                    </CordelCard>
-                  );
-                })}
+                {sortedInstruments.map((inst) => (
+                  <InventoryItemCard
+                    key={inst.id}
+                    item={inst}
+                    usersMap={usersMap}
+                    onEdit={handleOpenEdit}
+                    onDelete={handleDelete}
+                    onToggleBorrow={handleToggleBorrowStatus}
+                    t={t}
+                  />
+                ))}
               </div>
             )}
           </div>
         )}
+
+        {/* MODALE DE FORMULAIRE REUTILISABLE */}
+        <InventoryFormModal
+          isOpen={isFormOpen}
+          onClose={() => setIsFormOpen(false)}
+          formData={formData}
+          setFormData={setFormData}
+          saving={saving}
+          editingId={editingId}
+          usersList={usersList}
+          onSave={handleSave}
+          t={t}
+        />
       </div>
     </>
   );

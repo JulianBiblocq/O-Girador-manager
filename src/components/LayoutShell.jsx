@@ -553,7 +553,7 @@ export default function LayoutShell({
 
           <div className="w-full flex justify-between items-center mt-8 border-t border-dashed border-cordel-master-dark/10 pt-2 select-none shrink-0">
             <span className="text-[8px] font-black uppercase tracking-wider opacity-20">
-              © O Girador Manager
+              © O Girador {associationName || 'Samambaia'}
             </span>
             <span className="text-[8px] font-black uppercase tracking-widest opacity-25 lg:hidden">
               {import.meta.env.VITE_APP_VERSION || 'v1.0.1'}

@@ -276,6 +276,17 @@ export default function App() {
     }
   }, [branding?.logoUrl]);
 
+  // Personnalisation dynamique du titre du document HTML et de la PWA selon le nom de l'association
+  useEffect(() => {
+    const fullAppName = associationName ? `O Girador ${associationName}` : "O Girador Samambaia";
+    document.title = fullAppName;
+
+    const appleTitleMeta = document.querySelector('meta[name="apple-mobile-web-app-title"]');
+    if (appleTitleMeta) {
+      appleTitleMeta.setAttribute('content', fullAppName);
+    }
+  }, [associationName]);
+
   const brandingStyle = branding?.colors ? {
     '--cordel-bg': branding.colors.background,
     '--cordel-bg-light-color': branding.colors.background,

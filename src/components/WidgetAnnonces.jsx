@@ -21,7 +21,7 @@ export default function WidgetAnnonces({ groupId, profileData, role, isSystemAdm
   const [showBanner, setShowBanner] = useState(false);
   const [isSubscribingPush, setIsSubscribingPush] = useState(false);
 
-  // Check notification permission state on mount or when user changes
+  // Vérifier la permission des notifications au chargement ou au changement d'utilisateur
   useEffect(() => {
     if (typeof window !== 'undefined' && 'Notification' in window && messaging && user?.uid) {
       setShowBanner(Notification.permission !== 'granted');
@@ -92,7 +92,7 @@ export default function WidgetAnnonces({ groupId, profileData, role, isSystemAdm
 
   const isAdmin = role === 'mestre' || role === 'super-admin' || isSystemAdmin === true;
 
-  // Real-time synchronization of announcements
+  // Synchronisation en temps réel des annonces
   useEffect(() => {
     if (!groupId) {
       setAnnouncements([]);
@@ -112,7 +112,7 @@ export default function WidgetAnnonces({ groupId, profileData, role, isSystemAdm
           ...doc.data()
         });
       });
-      // Sort by dateCreation desc locally
+      // Trier par dateCreation descendante
       fetched.sort((a, b) => new Date(b.dateCreation) - new Date(a.dateCreation));
       setAnnouncements(fetched);
       setLoading(false);
@@ -124,7 +124,7 @@ export default function WidgetAnnonces({ groupId, profileData, role, isSystemAdm
     return () => unsubscribe();
   }, [groupId]);
 
-  // Load tags available in the association document
+  // Charger les étiquettes disponibles dans le document d'association
   useEffect(() => {
     if (!groupId) return;
 

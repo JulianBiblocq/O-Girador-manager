@@ -35,10 +35,10 @@ export function useEventRSVP(event, user, profileData, allUsers, isPrestationRes
   const [isManualRegisterOpen, setIsManualRegisterOpen] = useState(false);
   const [savingManualRegistration, setSavingManualRegistration] = useState(false);
 
-  // Fetch family members (dependents attached to parent)
+  // Récupération des membres de la famille (ayants droit rattachés au parent)
   const { dependents } = useFamilyMembers(user, profileData?.groupId);
 
-  // List of all manageable family members (Parent + Dependents)
+  // Liste de tous les membres gérables de la famille (Parent + Dépendants)
   const familyMembers = useMemo(() => {
     if (!user?.uid) return [];
     const parentMember = {
@@ -52,7 +52,7 @@ export function useEventRSVP(event, user, profileData, allUsers, isPrestationRes
     return [parentMember, ...(dependents || [])];
   }, [user?.uid, profileData?.prenom, profileData?.nom, profileData?.instrument, dependents]);
 
-  // Family RSVP responses state: { [memberId]: { selected, status, instrumentChoisi } }
+  // État des réponses d'inscription famille : { [memberId]: { selected, status, instrumentChoisi } }
   const [familyResponses, setFamilyResponses] = useState({});
 
   useEffect(() => {
@@ -166,7 +166,7 @@ export function useEventRSVP(event, user, profileData, allUsers, isPrestationRes
     await handleSave(null, newStatus);
   };
 
-  // Toggle selection (checkbox) for a family member
+  // Basculer la sélection (case à cocher) pour un membre de la famille
   const handleToggleFamilyMemberSelection = (memberId) => {
     setFamilyResponses(prev => {
       const current = prev[memberId] || { selected: false, status: 'present', instrumentChoisi: 'Autre' };
@@ -182,7 +182,7 @@ export function useEventRSVP(event, user, profileData, allUsers, isPrestationRes
     });
   };
 
-  // Change individual status for a family member
+  // Modifier le statut individuel pour un membre de la famille
   const handleFamilyMemberStatusChange = (memberId, newStatus) => {
     setFamilyResponses(prev => {
       const current = prev[memberId] || { selected: false, status: 'present', instrumentChoisi: 'Autre' };
@@ -197,7 +197,7 @@ export function useEventRSVP(event, user, profileData, allUsers, isPrestationRes
     });
   };
 
-  // Change individual instrument for a family member
+  // Modifier l'instrument individuel pour un membre de la famille
   const handleFamilyMemberInstrumentChange = (memberId, newInstrument) => {
     setFamilyResponses(prev => {
       const current = prev[memberId] || { selected: true, status: 'present', instrumentChoisi: 'Autre' };
@@ -211,7 +211,7 @@ export function useEventRSVP(event, user, profileData, allUsers, isPrestationRes
     });
   };
 
-  // Save all family members RSVP responses to Firestore
+  // Sauvegarder les réponses d'inscription de tous les membres de la famille dans Firestore
   const handleFamilySave = async (e) => {
     if (e && e.preventDefault) e.preventDefault();
     if (event.status === 'annule') {

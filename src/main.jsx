@@ -1,4 +1,4 @@
-// Auto-reload on stale chunk / MIME failure after a new deployment
+// Rechargement automatique en cas d'erreur de module obsolète après un nouveau déploiement
 const handleStaleChunkError = (reason) => {
   const msg = String(reason?.message || reason || '');
   const isChunkError = 

@@ -53,11 +53,11 @@ export default function ConfirmModal({
           <div className="flex items-center gap-2.5">
             <span className={`p-2 rounded border shadow-xs shrink-0 ${
               isSuccess
-                ? 'bg-emerald-100 dark:bg-emerald-950/70 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800'
+                ? 'bg-[#2d6a4f]/15 text-[#2d6a4f] dark:text-emerald-400 border-[#2d6a4f]/30'
                 : isDanger 
-                ? 'bg-red-100 dark:bg-red-950/70 text-red-700 dark:text-red-300 border-red-300 dark:border-red-800' 
+                ? 'bg-[#8b2a1a]/15 text-[#8b2a1a] dark:text-red-400 border-[#8b2a1a]/30' 
                 : isWarning 
-                ? 'bg-amber-100 dark:bg-amber-950/70 text-amber-800 dark:text-amber-300 border-amber-300 dark:border-amber-800'
+                ? 'bg-[#c05621]/15 text-[#c05621] dark:text-amber-400 border-[#c05621]/30'
                 : 'bg-blue-100 dark:bg-blue-950/70 text-blue-800 dark:text-blue-300 border-blue-300 dark:border-blue-800'
             }`}>
               {isSuccess ? <XiloSparkles size={22} /> : <XiloShield size={22} />}
@@ -106,10 +106,10 @@ export default function ConfirmModal({
             onClick={onConfirm}
             className={`text-xs font-black uppercase tracking-wider px-5 py-2 rounded-[4px_6px_3px_5px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none transition-all border border-encre-noire cursor-pointer ${
               isSuccess
-                ? 'bg-emerald-700 hover:bg-emerald-800 text-white'
+                ? 'bg-[#2d6a4f] hover:brightness-110 text-white'
                 : isDanger
-                ? 'bg-red-700 hover:bg-red-800 text-white'
-                : 'bg-amber-600 hover:bg-amber-700 text-white'
+                ? 'bg-[#8b2a1a] hover:brightness-110 text-white'
+                : 'bg-[#c05621] hover:brightness-110 text-white'
             }`}
           >
             {confirmText || (isAlert ? "OK" : "Confirmer")}

@@ -34,7 +34,7 @@ export function usePresence(userId, groupId, isPresenceEnabled = true) {
       }
     }, HEARTBEAT_INTERVAL);
 
-    // Handle tab visibility change
+    // Gérer le changement de visibilité de l'onglet
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
         updateStatus(true);
@@ -43,7 +43,7 @@ export function usePresence(userId, groupId, isPresenceEnabled = true) {
       }
     };
 
-    // Handle page unload / close
+    // Gérer la fermeture / déchargement de la page
     const handleUnload = () => {
       updateStatus(false);
     };

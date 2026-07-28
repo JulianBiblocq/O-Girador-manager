@@ -51,7 +51,7 @@ export function useTreasury(groupId) {
 
   const loading = Object.values(loadingStates).some(state => state === true);
 
-  // Sync real-time data from Firestore
+  // Synchronisation des données en temps réel depuis Firestore
   useEffect(() => {
     if (!groupId) {
       setLoadingStates({
@@ -233,7 +233,7 @@ export function useTreasury(groupId) {
 
       await updateDoc(assocRef, finalUpdates);
 
-      // Save HelloAsso key if included in updates
+      // Sauvegarder la clé HelloAsso si incluse dans les mises à jour
       if (updates.helloAssoSignatureKey !== undefined) {
         const credentialsRef = doc(db, 'associations', groupId, 'private_settings', 'credentials');
         await setDoc(credentialsRef, {
