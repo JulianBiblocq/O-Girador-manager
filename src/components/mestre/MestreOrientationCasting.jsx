@@ -697,12 +697,13 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
               ) : (
                 filteredMembers.map((m) => {
                   const name = `${m.prenom || ''} ${m.nom || ''}`.trim() || 'Sans Nom';
-                  const isUnassigned = !m.instrument || m.instrument.trim() === '' || m.instrument === 'En attente';
-                  const isAssigned = !isUnassigned;
+                  const isPercussionist = isPercussionistMember(m);
+                  const isUnassigned = isPercussionist && isUnassignedForMestre(m);
+                  const isAssigned = isPercussionist && !isUnassigned;
                   const wishesList = Array.isArray(m.voeuxInstruments) && m.voeuxInstruments.length > 0
                     ? m.voeuxInstruments
                     : [m.voeuPrincipal, m.voeuSecondaire, m.voeuTertiaire].filter(Boolean);
-                  const hasWishes = wishesList.length > 0;
+                  const hasWishes = isPercussionist && wishesList.length > 0;
 
                   return (
                     <tr
@@ -750,19 +751,30 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
                       {/* 2. Instrument Actuel / Validé & Danse (Oui/Non) */}
                       <td className="py-2.5 px-2">
                         <div className="flex flex-col gap-1 text-left">
-                          <span className="font-bold flex items-center gap-1.5 text-cordel-master-dark">
-                            <img
-                              src={getInstrumentIconPath(m.instrumentPrincipal || m.instrument)}
-                              alt={m.instrumentPrincipal || m.instrument || 'Aucun'}
-                              className="w-3.5 h-3.5 object-contain dark:invert"
-                            />
-                            <span>{m.instrumentPrincipal || m.instrument || <span className="italic text-amber-600 dark:text-amber-400 font-semibold">En attente</span>}</span>
-                            {isAssigned && (
-                              <span className="text-[11px] font-black text-emerald-600 dark:text-emerald-400" title="Instrument attribué et validé par le Mestre">
-                                ✅
-                              </span>
-                            )}
-                          </span>
+                          {isPercussionist ? (
+                            <span className="font-bold flex items-center gap-1.5 text-cordel-master-dark">
+                              <img
+                                src={getInstrumentIconPath(m.instrumentPrincipal || m.instrument)}
+                                alt={m.instrumentPrincipal || m.instrument || 'Aucun'}
+                                className="w-3.5 h-3.5 object-contain dark:invert"
+                              />
+                              <span>{m.instrumentPrincipal || m.instrument || <span className="italic text-amber-600 dark:text-amber-400 font-semibold">En attente</span>}</span>
+                              {isAssigned && (
+                                <span className="text-[11px] font-black text-emerald-600 dark:text-emerald-400" title="Instrument attribué et validé par le Mestre">
+                                  ✅
+                                </span>
+                              )}
+                            </span>
+                          ) : (
+                            <span className="font-bold flex items-center gap-1.5 text-amber-900 dark:text-amber-200">
+                              <img
+                                src="/icones/danse.svg"
+                                alt="Danse"
+                                className="w-3.5 h-3.5 object-contain dark:invert"
+                              />
+                              <span>Danse (Section libre)</span>
+                            </span>
+                          )}
 
                           <span className="text-[9.5px] font-bold flex items-center gap-1">
                             <span>💃 Danse :</span>
