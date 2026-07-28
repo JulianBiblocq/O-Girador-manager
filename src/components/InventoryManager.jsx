@@ -4,6 +4,7 @@ import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
 import { XiloClose } from './XiloIcons';
 import { useTranslation } from './LanguageContext';
+import useConfirm from '../hooks/useConfirm';
 import { useInventoryData } from '../hooks/useInventoryData';
 import InventoryFilterBar from './inventory/InventoryFilterBar';
 import InventoryItemCard from './inventory/InventoryItemCard';
