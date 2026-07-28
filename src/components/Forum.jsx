@@ -227,13 +227,15 @@ function ChannelTreeItem({
           style={{ paddingLeft: `${Math.max(6, level * 10 + 6)}px` }}
         >
           <span className="flex items-center gap-1.5 min-w-0 overflow-hidden flex-1 pr-1">
-            <span className="shrink-0 font-extrabold text-cordel-wood opacity-75">{level === 0 ? '📂' : '#'}</span>
+            <span className="shrink-0 font-extrabold text-cordel-wood opacity-75">
+              {channel.readOnlyForMembers ? '📢' : (!channel.readRoles || channel.readRoles.includes('all') || channel.readRoles.length === 0) ? (level === 0 ? '📂' : '#') : '🔒'}
+            </span>
             <span className="truncate">{channel.name}</span>
             {channelThreads.length > 0 && (
               <span className="text-[9px] opacity-60 font-normal shrink-0">({channelThreads.length})</span>
             )}
           </span>
-          {isReadOnly && <span className="text-[9px] opacity-75 shrink-0 ml-1">🔒</span>}
+          {isReadOnly && <span className="text-[9px] opacity-75 shrink-0 ml-1" title="Lecture seule">🔒</span>}
         </button>
       </div>
 
@@ -472,8 +474,7 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
     const channelsRef = collection(db, 'forum_channels');
     const userRole = profileData?.role || 'membre';
     const userTags = effectiveUserTags;
-    const isAdminUser = profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.isSystemAdmin;
-    const isMasterKeyActive = isAdminUser && breakGlassActive;
+    const isMestreOrAdmin = profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.role === 'admin' || profileData?.isSystemAdmin;
 
     // Load all channels for this group
     const q = query(channelsRef, where('groupId', '==', profileData.groupId));
@@ -504,15 +505,17 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
           }
         }
       } else {
-        // Filter client-side based on effective tags or Master Key (Break-Glass Active)
+        // Filter client-side: Mestre/Admins see EVERYTHING. Regular members see public + matching tag channels.
         const allowedChannels = fetched.filter(ch => {
-          if (isMasterKeyActive) return true;
-          
-          const readList = ch.readRoles || ch.allowedRoles || ['all'];
+          if (isMestreOrAdmin || breakGlassActive) return true;
+
+          const readList = ch.readRoles || ch.allowedRoles || ch.allowedTags || ['all'];
+          if (!readList || readList.length === 0 || readList.includes('all')) return true;
+
           if (checkUserAccessToList(readList, userRole, userTags, tagsDisponibles)) return true;
 
           if (ch.isTransparent === true) return true;
-          
+
           return false;
         });
 
@@ -651,9 +654,11 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
 
   const hasWriteAccess = useCallback((channel) => {
     if (!channel) return true;
-    const isAdminUser = profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.isSystemAdmin;
-    const isMasterKeyActive = isAdminUser && breakGlassActive;
-    if (isMasterKeyActive) return true;
+    const isAdminUser = profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.role === 'admin' || profileData?.isSystemAdmin;
+    if (isAdminUser || breakGlassActive) return true;
+
+    // Check if channel is explicitly read-only for regular members
+    if (channel.readOnlyForMembers === true) return false;
 
     const userRole = profileData?.role || 'membre';
     const userTags = effectiveUserTags;

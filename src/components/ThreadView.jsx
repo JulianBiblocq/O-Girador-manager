@@ -248,23 +248,23 @@ export default function ThreadView({ threadId, user, profileData, channels = [],
                              ));
 
   const isReadOnly = (() => {
-    if (isModeratorOrAdmin) return false;
+    const isMestreOrAdmin = profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.role === 'admin' || profileData?.isSystemAdmin;
+    if (isMestreOrAdmin) return false;
     if (!thread) return true;
-    if (!thread.channelId) return false;
-    if (!threadChannel) return false;
+
+    // Check if channel is explicitly read-only for regular members
+    if (threadChannel && threadChannel.readOnlyForMembers === true) return true;
+
+    if (!thread.channelId || !threadChannel) return false;
 
     const userRole = profileData?.role || 'membre';
     const userTags = profileData?.tags || [];
 
-    const write = threadChannel.writeRoles || ['all'];
-    if (write.includes('all')) return false;
+    const write = threadChannel.writeRoles || threadChannel.allowedRoles || ['all'];
+    if (!write || write.length === 0 || write.includes('all')) return false;
     if (write.includes(userRole)) return false;
     if (userTags.some(tag => write.includes(tag))) return false;
 
-    // Rétrocompatibilité
-    if (threadChannel.allowedRoles) {
-      return !(threadChannel.allowedRoles.includes('all') || threadChannel.allowedRoles.includes(userRole));
-    }
     return true;
   })();
   

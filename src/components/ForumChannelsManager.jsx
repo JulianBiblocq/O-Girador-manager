@@ -30,6 +30,7 @@ export default function ForumChannelsManager({ groupId, role, isSystemAdmin, onB
   const [parentId, setParentId] = useState(null);
   const [readRoles, setReadRoles] = useState(['all']);
   const [writeRoles, setWriteRoles] = useState(['all']);
+  const [readOnlyForMembers, setReadOnlyForMembers] = useState(false);
   const [saving, setSaving] = useState(false);
 
   // Sync tagsDisponibles for the association
@@ -48,9 +49,7 @@ export default function ForumChannelsManager({ groupId, role, isSystemAdmin, onB
     const base = [
       { value: 'all', label: 'Tout le monde' },
       { value: 'mestre', label: 'Mestre' },
-      { value: 'super-admin', label: 'Super Admin' },
-      { value: 'ca', label: 'CA' },
-      { value: 'bureau', label: 'Bureau' },
+      { value: 'admin', label: 'Admin' },
       { value: 'membre', label: 'Membre' }
     ];
 
@@ -112,6 +111,7 @@ export default function ForumChannelsManager({ groupId, role, isSystemAdmin, onB
     setParentId(defaultParentId);
     setReadRoles(['all']);
     setWriteRoles(['all']);
+    setReadOnlyForMembers(false);
   };
 
   const handleOpenEdit = (ch) => {
@@ -119,8 +119,9 @@ export default function ForumChannelsManager({ groupId, role, isSystemAdmin, onB
     setEditingChannelId(ch.id);
     setName(ch.name);
     setParentId(ch.parentId || null);
-    setReadRoles(ch.readRoles || ['all']);
-    setWriteRoles(ch.writeRoles || ['all']);
+    setReadRoles(ch.readRoles || ch.allowedRoles || ['all']);
+    setWriteRoles(ch.writeRoles || ch.allowedRoles || ['all']);
+    setReadOnlyForMembers(ch.readOnlyForMembers === true);
   };
 
   const handleToggleReadRole = (value) => {
@@ -167,6 +168,7 @@ export default function ForumChannelsManager({ groupId, role, isSystemAdmin, onB
         parentId: parentId || null,
         readRoles,
         writeRoles,
+        readOnlyForMembers: Boolean(readOnlyForMembers),
         updatedAt: new Date().toISOString()
       };
 
@@ -185,6 +187,7 @@ export default function ForumChannelsManager({ groupId, role, isSystemAdmin, onB
       setParentId(null);
       setReadRoles(['all']);
       setWriteRoles(['all']);
+      setReadOnlyForMembers(false);
       setEditingChannelId(null);
     } catch (err) {
       console.error("ForumChannelsManager - Save error:", err);
@@ -509,6 +512,24 @@ export default function ForumChannelsManager({ groupId, role, isSystemAdmin, onB
                           );
                         })}
                       </div>
+                    </div>
+
+                    {/* Read-Only Option */}
+                    <div className="border-t border-dashed border-cordel-master-dark/15 pt-3">
+                      <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-encre-noire select-none">
+                        <input
+                          type="checkbox"
+                          checked={readOnlyForMembers}
+                          onChange={(e) => setReadOnlyForMembers(e.target.checked)}
+                          className="w-4 h-4 rounded border-encre-noire text-cordel-wood focus:ring-cordel-wood cursor-pointer"
+                        />
+                        <span className="flex items-center gap-1">
+                          📢 Salon en lecture seule pour les membres (Annonces)
+                        </span>
+                      </label>
+                      <p className="text-[9px] italic text-cordel-master-dark opacity-70 mt-1 pl-6">
+                        Si cette option est cochée, seuls le Mestre et les Administrateurs pourront créer des sujets ou publier des messages dans ce salon.
+                      </p>
                     </div>
 
                     {/* Actions */}

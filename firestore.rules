@@ -34,6 +34,10 @@ service cloud.firestore {
         );
     }
 
+    function getChannelData(channelId) {
+      return get(/databases/$(database)/documents/forum_channels/$(channelId)).data;
+    }
+
     function hasChannelReadAccess(channelId) {
       return isAuthenticated() && (
         isAdminOrMestre() ||
@@ -41,11 +45,15 @@ service cloud.firestore {
         (
           channelId != null &&
           exists(/databases/$(database)/documents/forum_channels/$(channelId)) &&
-          getUserData().groupId == get(/databases/$(database)/documents/forum_channels/$(channelId)).data.groupId &&
+          getUserData().groupId == getChannelData(channelId).groupId &&
           (
-            get(/databases/$(database)/documents/forum_channels/$(channelId)).data.allowedRoles.hasAny([getUserData().role]) ||
-            get(/databases/$(database)/documents/forum_channels/$(channelId)).data.allowedRoles.hasAny(['all']) ||
-            get(/databases/$(database)/documents/forum_channels/$(channelId)).data.isTransparent == true
+            getChannelData(channelId).isTransparent == true ||
+            getChannelData(channelId).readRoles == null ||
+            getChannelData(channelId).readRoles.size() == 0 ||
+            getChannelData(channelId).readRoles.hasAny(['all']) ||
+            (getChannelData(channelId).keys().hasAny(['allowedRoles']) && getChannelData(channelId).allowedRoles.hasAny(['all'])) ||
+            getChannelData(channelId).readRoles.hasAny([getUserData().role]) ||
+            (getUserData().keys().hasAny(['tags']) && getUserData().tags.hasAny(getChannelData(channelId).readRoles))
           )
         )
       );
@@ -58,10 +66,15 @@ service cloud.firestore {
         (
           channelId != null &&
           exists(/databases/$(database)/documents/forum_channels/$(channelId)) &&
-          getUserData().groupId == get(/databases/$(database)/documents/forum_channels/$(channelId)).data.groupId &&
+          getUserData().groupId == getChannelData(channelId).groupId &&
+          (!getChannelData(channelId).keys().hasAny(['readOnlyForMembers']) || getChannelData(channelId).readOnlyForMembers != true) &&
           (
-            get(/databases/$(database)/documents/forum_channels/$(channelId)).data.allowedRoles.hasAny([getUserData().role]) ||
-            get(/databases/$(database)/documents/forum_channels/$(channelId)).data.allowedRoles.hasAny(['all'])
+            getChannelData(channelId).writeRoles == null ||
+            getChannelData(channelId).writeRoles.size() == 0 ||
+            getChannelData(channelId).writeRoles.hasAny(['all']) ||
+            (getChannelData(channelId).keys().hasAny(['allowedRoles']) && getChannelData(channelId).allowedRoles.hasAny(['all'])) ||
+            getChannelData(channelId).writeRoles.hasAny([getUserData().role]) ||
+            (getUserData().keys().hasAny(['tags']) && getUserData().tags.hasAny(getChannelData(channelId).writeRoles))
           )
         )
       );
@@ -209,16 +222,21 @@ service cloud.firestore {
       );
     }
 
-    // Forum Channels: Read if member has roles/transparent, write only by admins (or create by group members)
+    // Forum Channels: Read if member has roles/tags/transparent or public, write only by admins (or create by group members)
     match /forum_channels/{channelId} {
       allow read: if isAuthenticated() && (
         isAdminOrMestre() ||
         (
           getUserData().groupId == resource.data.groupId &&
           (
-            resource.data.allowedRoles.hasAny([getUserData().role]) ||
-            resource.data.allowedRoles.hasAny(['all']) ||
-            resource.data.isTransparent == true
+            resource.data.isTransparent == true ||
+            resource.data.readRoles == null ||
+            resource.data.readRoles.size() == 0 ||
+            resource.data.readRoles.hasAny(['all']) ||
+            (resource.data.keys().hasAny(['allowedRoles']) && resource.data.allowedRoles.hasAny(['all'])) ||
+            (resource.data.keys().hasAny(['allowedRoles']) && resource.data.allowedRoles.hasAny([getUserData().role])) ||
+            resource.data.readRoles.hasAny([getUserData().role]) ||
+            (getUserData().keys().hasAny(['tags']) && getUserData().tags.hasAny(resource.data.readRoles))
           )
         )
       );
