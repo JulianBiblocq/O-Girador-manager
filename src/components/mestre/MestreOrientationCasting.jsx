@@ -83,15 +83,24 @@ const sanitizeMemberDanseWishes = (memberData, memberId) => {
     if (needsUpdate && memberId) {
       try {
         const userRef = doc(db, 'users', memberId);
-        updateDoc(userRef, {
+        const updatePayload = {
           pratiqueDanse: true,
-          voeuxInstruments: copy.voeuxInstruments,
-          voeuPrincipal: copy.voeuPrincipal,
-          voeuSecondaire: copy.voeuSecondaire,
-          voeuTertiaire: copy.voeuTertiaire,
-          instrument: copy.instrument,
-          instrumentPrincipal: copy.instrumentPrincipal
-        }).catch(err => console.error("MestreOrientationCasting - Erreur de sauvegarde assainissement :", err));
+          voeuxInstruments: copy.voeuxInstruments || [],
+          voeuPrincipal: copy.voeuPrincipal || '',
+          voeuSecondaire: copy.voeuSecondaire || '',
+          voeuTertiaire: copy.voeuTertiaire || '',
+          instrument: copy.instrument || 'En attente',
+          instrumentPrincipal: copy.instrumentPrincipal || 'En attente'
+        };
+
+        // Sécurité supplémentaire : filtrer tout champ resté undefined
+        Object.keys(updatePayload).forEach(key => {
+          if (updatePayload[key] === undefined) {
+            delete updatePayload[key];
+          }
+        });
+
+        updateDoc(userRef, updatePayload).catch(err => console.error("MestreOrientationCasting - Erreur de sauvegarde assainissement :", err));
       } catch (e) {
         console.error("MestreOrientationCasting - Erreur d'assainissement :", e);
       }
