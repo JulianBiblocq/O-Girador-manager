@@ -1,10 +1,10 @@
 /**
- * Utility functions for Tag / Badge normalization and gender formatting.
+ * Fonctions utilitaires pour la normalisation et le formatage de genre des Étiquettes / Badges.
  */
 
 /**
- * Normalizes a tag item (string or object) into a standard tag object:
- * { id: string, nomM: string, nomF: string }
+ * Normalise un élément d'étiquette (chaîne ou objet) vers un objet standard :
+ * { id: string, nomM: string, nomF: string, inheritsFrom: Array }
  */
 export function normalizeTag(tag) {
   if (!tag) return { id: '', nomM: '', nomF: '', inheritsFrom: [] };
@@ -24,7 +24,7 @@ export function normalizeTag(tag) {
 }
 
 /**
- * Returns the unique ID/Key of a tag (string or object)
+ * Retourne l'identifiant unique ou la clé d'une étiquette (chaîne ou objet).
  */
 export function getTagId(tag) {
   if (!tag) return '';
@@ -33,7 +33,7 @@ export function getTagId(tag) {
 }
 
 /**
- * Finds the matching tag object in tagsDisponibles list by tag ID or name
+ * Recherche l'objet étiquette correspondant dans la liste tagsDisponibles par identifiant ou nom.
  */
 export function findTagObject(tagKey, tagsDisponibles = []) {
   if (!tagKey) return null;
@@ -62,18 +62,18 @@ export function findTagObject(tagKey, tagsDisponibles = []) {
 }
 
 /**
- * Formats a tag's display label based on user's gender and association fallback
+ * Formate le libellé d'affichage d'une étiquette selon le genre du membre et la préférence de l'association.
  * 
- * Rules:
+ * Règles :
  * 1. userGenre === 'femme' -> tag.nomF
  * 2. userGenre === 'homme' -> tag.nomM
- * 3. userGenre === 'autre' or empty -> fallback to globalUseFeminine (if true -> tag.nomF, else tag.nomM)
+ * 3. userGenre === 'autre' ou vide -> secours vers globalUseFeminine (si true -> tag.nomF, sinon tag.nomM)
  * 
- * @param {string|object} tag - The tag string or object
- * @param {string} userGenre - User's gender ('homme', 'femme', 'autre', or empty)
- * @param {boolean} globalUseFeminine - Association setting for feminine fallback
- * @param {Array} tagsDisponibles - Optional array of association tags for object lookup
- * @returns {string} Formatted tag label (Masculine or Feminine)
+ * @param {string|object} tag - L'étiquette (chaîne ou objet)
+ * @param {string} userGenre - Genre du membre ('homme', 'femme', 'autre', ou vide)
+ * @param {boolean} globalUseFeminine - Réglage d'association pour la valeur par défaut au féminin
+ * @param {Array} tagsDisponibles - Liste optionnelle des étiquettes d'association pour recherche
+ * @returns {string} Libellé d'étiquette formaté (Masculin ou Féminin)
  */
 export function formatTagGender(tag, userGenre, globalUseFeminine = false, tagsDisponibles = []) {
   let tagObj = null;

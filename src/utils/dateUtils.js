@@ -1,13 +1,13 @@
 /**
- * dateUtils.js - Helper functions for event temporal filtering & sorting.
+ * dateUtils.js - Fonctions utilitaires pour le filtrage temporel et le tri des événements.
  */
 
 /**
- * Checks whether an event is in the past (before today at 00:00:00).
- * Uses dateFin if present, otherwise date.
+ * Vérifie si un événement est passé (antérieur à aujourd'hui 00:00:00).
+ * Utilise dateFin si présent, sinon date.
  * 
  * @param {Object} event
- * @returns {boolean} true if past event
+ * @returns {boolean} true si l'événement est passé
  */
 export const isPastEvent = (event) => {
   if (!event || (!event.date && !event.dateFin)) return false;
@@ -23,8 +23,8 @@ export const isPastEvent = (event) => {
 };
 
 /**
- * Sorts upcoming events in ascending chronological order (nearest first).
- * e.g. Oct 15, Oct 22, Nov 01...
+ * Trie les événements à venir par ordre chronologique croissant (les plus proches en premier).
+ * ex: 15 oct, 22 oct, 01 nov...
  */
 export const sortUpcomingEvents = (events = []) => {
   return [...events].sort((a, b) => {
@@ -35,8 +35,8 @@ export const sortUpcomingEvents = (events = []) => {
 };
 
 /**
- * Sorts past events in descending antichronological order (most recent past first).
- * e.g. Yesterday, Last week, Last month...
+ * Trie les événements passés par ordre antichronologique décroissant (les plus récents en premier).
+ * ex: Hier, La semaine dernière, Le mois dernier...
  */
 export const sortPastEvents = (events = []) => {
   return [...events].sort((a, b) => {
@@ -47,7 +47,7 @@ export const sortPastEvents = (events = []) => {
 };
 
 /**
- * Splits a list of events into upcoming and past events with appropriate sorting.
+ * Sépare une liste d'événements en événements à venir et événements passés avec leur tri respectif.
  * 
  * @param {Array} events 
  * @returns {{ upcomingEvents: Array, pastEvents: Array }}

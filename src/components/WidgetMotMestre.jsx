@@ -35,7 +35,7 @@ export default function WidgetMotMestre({ role, isSystemAdmin, groupId, profileD
     }
   };
 
-  // Real-time synchronization with Firestore associations/{groupId}
+  // Synchronisation en temps réel avec la collection Firestore associations/{groupId}
   useEffect(() => {
     if (!groupId) {
       setMotDuMestre('');
@@ -82,7 +82,7 @@ export default function WidgetMotMestre({ role, isSystemAdmin, groupId, profileD
     setSaving(true);
     try {
       const docRef = doc(db, 'associations', groupId);
-      // Merge updates only the motDuMestre and motDuMestreAuteur fields
+      // La fusion (merge) met uniquement à jour les champs motDuMestre et motDuMestreAuteur
       await setDoc(docRef, { 
         motDuMestre: draftText,
         motDuMestreAuteur: profileData?.prenom || "L'équipe"

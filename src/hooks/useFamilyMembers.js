@@ -3,8 +3,8 @@ import { collection, query, where, onSnapshot, addDoc, updateDoc, deleteDoc, doc
 import { db } from '../firebase';
 
 /**
- * Hook for managing dependent child accounts ("comptes rattachés")
- * for a parent user.
+ * Hook pour la gestion des comptes enfants ou dépendants rattachés
+ * au profil d'un membre parent.
  */
 export function useFamilyMembers(user, groupId) {
   const [dependents, setDependents] = useState([]);

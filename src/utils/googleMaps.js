@@ -1,11 +1,11 @@
 let googleMapsPromise = null;
 
 /**
- * Dynamically loads the Google Maps JS SDK with the Places library.
- * Reuses the same promise so the script tag is only injected once.
+ * Charge dynamiquement le SDK Google Maps JS avec la bibliothèque Places.
+ * Réutilise la même promesse pour ne pas injecter plusieurs balises script.
  */
 export function loadGoogleMaps() {
-  if (typeof window === 'undefined') return Promise.reject(new Error('Window is undefined'));
+  if (typeof window === 'undefined') return Promise.reject(new Error('Window est indéfini'));
   
   if (window.google && window.google.maps) {
     return Promise.resolve(window.google.maps);
@@ -16,7 +16,7 @@ export function loadGoogleMaps() {
       try {
         const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || import.meta.env.VITE_FIREBASE_API_KEY;
         if (!apiKey) {
-          reject(new Error('API Key (VITE_GOOGLE_MAPS_API_KEY or VITE_FIREBASE_API_KEY) is missing in environment variables'));
+          reject(new Error('La clé d\'API (VITE_GOOGLE_MAPS_API_KEY ou VITE_FIREBASE_API_KEY) est absente des variables d\'environnement'));
           return;
         }
 
@@ -27,7 +27,7 @@ export function loadGoogleMaps() {
             if (window.google && window.google.maps) {
               resolve(window.google.maps);
             } else {
-              reject(new Error('Google Maps script loaded but window.google.maps is undefined'));
+              reject(new Error('Script Google Maps chargé mais window.google.maps est indéfini'));
             }
           } catch (callbackErr) {
             reject(callbackErr);
@@ -41,7 +41,7 @@ export function loadGoogleMaps() {
 
         script.onerror = (err) => {
           delete window[callbackName];
-          reject(err || new Error('Failed to load Google Maps script tag'));
+          reject(err || new Error('Échec du chargement de la balise script Google Maps'));
         };
 
         document.head.appendChild(script);
@@ -55,12 +55,12 @@ export function loadGoogleMaps() {
 }
 
 /**
- * Calculates road distance in kilometers between an origin and destination address
- * using the Google Maps Distance Matrix service.
+ * Calcule la distance routière en kilomètres entre une adresse d'origine et de destination
+ * en utilisant le service Google Maps Distance Matrix.
  * 
  * @param {string} origin 
  * @param {string} destination 
- * @returns {Promise<number>} Distance in kilometers
+ * @returns {Promise<number>} Distance en kilomètres
  */
 export function calculateRoadDistance(origin, destination) {
   if (!origin || !destination) {
@@ -85,7 +85,7 @@ export function calculateRoadDistance(origin, destination) {
               lng: typeof loc.lng === 'function' ? loc.lng() : loc.lng
             });
           } else {
-            reject(new Error(`Geocoding failed for "${addr}" with status: ${status}`));
+            reject(new Error(`Géocodage échoué pour "${addr}" avec le statut : ${status}`));
           }
         });
       });
@@ -103,7 +103,7 @@ export function calculateRoadDistance(origin, destination) {
     const originLoc = parseLocation(origin);
     const destLoc = parseLocation(destination);
 
-    // Try DirectionsService first (more reliable, always enabled with core SDK)
+    // Essayer d'abord le service d'itinéraires DirectionsService (le plus fiable)
     return new Promise((resolve, reject) => {
       const directionsService = new maps.DirectionsService();
       directionsService.route(
@@ -122,14 +122,14 @@ export function calculateRoadDistance(origin, destination) {
             const distanceKm = totalDistanceMeters / 1000;
             resolve(distanceKm);
           } else {
-            reject(new Error(`Directions service failed with status: ${status}`));
+            reject(new Error(`Service d'itinéraires échoué avec le statut : ${status}`));
           }
         }
       );
     })
     .catch((directionsErr) => {
-      console.error("DirectionsService failed, trying DistanceMatrixService:", directionsErr);
-      // Fallback 1: Try Distance Matrix
+      console.error("Échec DirectionsService, tentative avec DistanceMatrixService :", directionsErr);
+      // Secours 1 : Essayer la matrice de distance (Distance Matrix)
       return new Promise((resolve, reject) => {
         const service = new maps.DistanceMatrixService();
         service.getDistanceMatrix(
@@ -154,18 +154,18 @@ export function calculateRoadDistance(origin, destination) {
               resolve(distanceKm);
             } else {
               const errStatus = response?.rows?.[0]?.elements?.[0]?.status || status;
-              reject(new Error(`Distance Matrix failed: ${errStatus}`));
+              reject(new Error(`Distance Matrix a échoué : ${errStatus}`));
             }
           }
         );
       });
     })
     .catch((matrixErr) => {
-      console.error("All road calculation services failed, falling back to Haversine straight-line distance:", matrixErr);
-      // Fallback 2: Geocode both addresses and calculate Haversine distance
+      console.error("Échec des services routiers, calcul de secours en vol d'oiseau (Haversine) :", matrixErr);
+      // Secours 2 : Géocoder les deux adresses et calculer la distance à vol d'oiseau (formule de Haversine)
       return Promise.all([getCoords(origin), getCoords(destination)])
         .then(([coords1, coords2]) => {
-          const R = 6371; // Earth's radius in km
+          const R = 6371; // Rayon de la Terre en km
           const dLat = (coords2.lat - coords1.lat) * Math.PI / 180;
           const dLng = (coords2.lng - coords1.lng) * Math.PI / 180;
           const a = 
@@ -175,7 +175,7 @@ export function calculateRoadDistance(origin, destination) {
           const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
           const haversineDist = R * c;
           
-          // Estimate road distance by multiplying by a factor of 1.25
+          // Estimation de la distance routière en appliquant un coefficient multiplicateur de 1.25
           const estimatedRoadDist = haversineDist * 1.25;
           return estimatedRoadDist;
         });
