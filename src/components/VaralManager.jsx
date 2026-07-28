@@ -198,6 +198,9 @@ export default function VaralManager({ groupId, onBack, role, isSystemAdmin }) {
       console.error("VaralManager - Error fetching documents:", err);
       setLoading(false);
     });
+    return () => unsubscribe();
+  }, [groupId, isAuthorized]);
+
   // Identification globale du tout dernier document ajouté sur l'ensemble du Varal
   const newestDocumentId = React.useMemo(() => {
     if (!documents || documents.length === 0) return null;
@@ -223,9 +226,6 @@ export default function VaralManager({ groupId, onBack, role, isSystemAdmin }) {
 
     return newestId || (documents[0] ? documents[0].id : null);
   }, [documents]);
-
-  return () => unsubscribe();
-  }, [groupId, isAuthorized]);
 
   if (!isAuthorized) {
     return (
