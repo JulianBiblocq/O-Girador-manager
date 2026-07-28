@@ -54,18 +54,20 @@ export default function EventEditForm({
     const seen = new Set();
 
     (wardrobeCostumes || []).forEach(item => {
-      const name = typeof item === 'string' ? item : (item.name || item.type || '');
+      const name = typeof item === 'string' ? item : (item.name || item.title || item.titre || item.type || '');
       if (name && !seen.has(name)) {
         seen.add(name);
-        list.push({ id: name, name, category: 'Vestiaire' });
+        const label = item.targetCategory ? `${name} (${item.targetCategory})` : name;
+        list.push({ id: item.id || name, name, displayName: label, category: item.targetCategory || 'Vestiaire' });
       }
     });
 
     (dressCodes || []).forEach(dc => {
-      const name = typeof dc === 'string' ? dc : (dc.name || dc.type || '');
+      const name = typeof dc === 'string' ? dc : (dc.name || dc.title || dc.type || '');
       if (name && !seen.has(name)) {
         seen.add(name);
-        list.push({ id: name, name: dc.included ? `${name} (${dc.included})` : name, category: 'Paramètres' });
+        const label = dc.included ? `${name} (${dc.included})` : name;
+        list.push({ id: dc.id || name, name, displayName: label, category: 'Paramètres' });
       }
     });
 
@@ -277,7 +279,7 @@ export default function EventEditForm({
                   >
                     <option value="">-- Aucune tenue spécifiée / Libre --</option>
                     {combinedCostumeOptions.map(opt => (
-                      <option key={`perc-${opt.id}`} value={opt.name}>{opt.name}</option>
+                      <option key={`perc-${opt.id}`} value={opt.name}>{opt.displayName || opt.name}</option>
                     ))}
                   </select>
                 </div>
@@ -295,7 +297,7 @@ export default function EventEditForm({
                   >
                     <option value="">-- Aucune tenue spécifiée / Libre --</option>
                     {combinedCostumeOptions.map(opt => (
-                      <option key={`danse-${opt.id}`} value={opt.name}>{opt.name}</option>
+                      <option key={`danse-${opt.id}`} value={opt.name}>{opt.displayName || opt.name}</option>
                     ))}
                   </select>
                 </div>

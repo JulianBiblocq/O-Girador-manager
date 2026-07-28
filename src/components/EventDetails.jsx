@@ -320,21 +320,59 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
 
   useEffect(() => {
     if (!event?.groupId) return;
-    const q = query(collection(db, 'wardrobeInventory'), where('groupId', '==', event.groupId));
-    const unsubscribe = onSnapshot(q, (snap) => {
-      const costumesSet = new Map();
-      snap.forEach((docSnap) => {
-        const data = docSnap.data();
-        const typeName = data.type || data.nom || data.name;
-        if (typeName && !costumesSet.has(typeName)) {
-          costumesSet.set(typeName, { id: docSnap.id, name: typeName });
+
+    const qCostumes = query(collection(db, 'costumes'), where('groupId', '==', event.groupId));
+    const qInventory = query(collection(db, 'wardrobeInventory'), where('groupId', '==', event.groupId));
+
+    let costumesData = [];
+    let inventoryData = [];
+
+    const syncCostumes = () => {
+      const merged = new Map();
+
+      costumesData.forEach(c => {
+        const name = (c.title || c.titre || c.name || c.type || '').trim();
+        if (name && !merged.has(name)) {
+          merged.set(name, {
+            id: c.id || name,
+            name: name,
+            targetCategory: c.targetCategory || 'Toutes'
+          });
         }
       });
-      setWardrobeCostumes(Array.from(costumesSet.values()));
-    }, (err) => {
-      console.warn("EventDetails - Erreur snapshot wardrobeInventory :", err);
-    });
-    return () => unsubscribe();
+
+      inventoryData.forEach(i => {
+        const name = (i.type || i.nom || i.name || i.title || '').trim();
+        if (name && !merged.has(name)) {
+          merged.set(name, {
+            id: i.id || name,
+            name: name,
+            targetCategory: i.category || 'Pièce'
+          });
+        }
+      });
+
+      setWardrobeCostumes(Array.from(merged.values()));
+    };
+
+    const unsubCostumes = onSnapshot(qCostumes, (snap) => {
+      const list = [];
+      snap.forEach(docSnap => list.push({ id: docSnap.id, ...docSnap.data() }));
+      costumesData = list;
+      syncCostumes();
+    }, (err) => console.warn("EventDetails - Erreur snapshot costumes:", err));
+
+    const unsubInventory = onSnapshot(qInventory, (snap) => {
+      const list = [];
+      snap.forEach(docSnap => list.push({ id: docSnap.id, ...docSnap.data() }));
+      inventoryData = list;
+      syncCostumes();
+    }, (err) => console.warn("EventDetails - Erreur snapshot wardrobeInventory:", err));
+
+    return () => {
+      unsubCostumes();
+      unsubInventory();
+    };
   }, [event?.groupId]);
 
   // Enforce absent status if prestation is restricted for beginners
