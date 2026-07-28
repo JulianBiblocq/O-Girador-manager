@@ -36,7 +36,7 @@ export const DEFAULT_ENABLED_MODULES = {
   mestre: true
 };
 
-export const DEFAULT_INSTRUMENTS = ["Alfaia Marcante", "Alfaia Meião", "Alfaia Repique", "Caixa", "Tarol", "Gonguê", "Agbê", "Mineiro", "Timbal", "Chant", "Danse"];
+export const DEFAULT_INSTRUMENTS = ["Alfaia Marcante", "Alfaia Meião", "Alfaia Repique", "Caixa", "Tarol", "Gonguê", "Agbê", "Mineiro", "Timbal", "Chant"];
 
 export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
   const [formData, setFormData] = useState({

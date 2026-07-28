@@ -5,6 +5,7 @@ import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 import XiloAvatar from '../XiloAvatar';
 import OrientationAssignmentModal from './OrientationAssignmentModal';
+import { filterPublicPercussionInstruments } from '../../utils/tagUtils';
 
 const DEFAULT_INSTRUMENTS = [
   "Alfaia Marcante",
@@ -16,8 +17,7 @@ const DEFAULT_INSTRUMENTS = [
   "Agbê",
   "Mineiro",
   "Timbal",
-  "Chant",
-  "Danse"
+  "Chant"
 ];
 
 const getInstrumentIconPath = (instName) => {
@@ -35,11 +35,9 @@ const getInstrumentIconPath = (instName) => {
 };
 
 /**
- * MestreOrientationCasting component renders the "Orientation & Casting" dashboard for the Mestre.
- * Features:
- * - Real-time quota calculation by primary and secondary instruments.
- * - Prioritized data table of members (unassigned & wish-expressing members first).
- * - Assignment modal for main and secondary instruments with automatic private messaging.
+ * Composant MestreOrientationCasting
+ * Tableau de bord "Orientation & Casting" pour le Mestre.
+ * Permet la validation à 1-clic des vœux d'instruments et la gestion des pupitres.
  */
 export default function MestreOrientationCasting({ user, profileData, _onNavigateToMember }) {
   const [members, setMembers] = useState([]);
@@ -47,6 +45,7 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
   const [instrumentsDisponibles, setInstrumentsDisponibles] = useState(DEFAULT_INSTRUMENTS);
   const [linkedInstruments, setLinkedInstruments] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [showPendingOnly, setShowPendingOnly] = useState(false);
   const [selectedMember, setSelectedMember] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -215,11 +214,21 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
     });
   }, [activeMembers]);
 
-  // Filtered members according to search query
+  // Membres filtrés selon la recherche et le filtre de vœux en attente
   const filteredMembers = useMemo(() => {
-    if (!searchTerm.trim()) return sortedMembers;
+    let list = sortedMembers;
+
+    if (showPendingOnly) {
+      list = list.filter(m => {
+        const isUnassigned = !m.instrument || m.instrument.trim() === '' || m.instrument === 'En attente';
+        const hasPendingWishes = Boolean(m.souhaiteChangerInstrument || (Array.isArray(m.voeuxInstruments) && m.voeuxInstruments.length > 0) || m.voeuPrincipal);
+        return isUnassigned || hasPendingWishes;
+      });
+    }
+
+    if (!searchTerm.trim()) return list;
     const term = searchTerm.toLowerCase().trim();
-    return sortedMembers.filter(m => {
+    return list.filter(m => {
       const fullName = `${m.prenom || ''} ${m.nom || ''}`.toLowerCase();
       const surnom = (m.surnom || '').toLowerCase();
       const inst = (m.instrument || '').toLowerCase();
@@ -229,31 +238,53 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
       const v3 = (m.voeuTertiaire || '').toLowerCase();
       return fullName.includes(term) || surnom.includes(term) || inst.includes(term) || secInst.includes(term) || v1.includes(term) || v2.includes(term) || v3.includes(term);
     });
-  }, [sortedMembers, searchTerm]);
+  }, [sortedMembers, searchTerm, showPendingOnly]);
 
-  // Open assignment modal for a selected member
+  // Ouverture de la modale d'affectation complète
   const handleOpenAssignModal = (member) => {
     setSelectedMember(member);
     setModalOpen(true);
   };
 
-  // Save assignment and optionally send private message
+  // Validation directe à 1-clic d'un vœu d'instrument par le Mestre
+  const handleQuickValidate = async (memberTarget, validatedInstrument) => {
+    if (!memberTarget || !validatedInstrument) return;
+    setSaving(true);
+    try {
+      const userRef = doc(db, 'users', memberTarget.id);
+      const updatePayload = {
+        instrument: validatedInstrument,
+        instrumentPrincipal: validatedInstrument,
+        souhaiteChangerInstrument: false
+      };
+
+      await updateDoc(userRef, updatePayload);
+      alert(`✅ Vœu validé ! ${memberTarget.prenom || 'Le membre'} est à présent affecté(e) à ${validatedInstrument}.`);
+    } catch (err) {
+      console.error("MestreOrientationCasting - Erreur validation 1-clic :", err);
+      alert("Erreur lors de la validation rapide : " + (err.message || err));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Sauvegarde depuis la modale
   const handleSaveAssignment = async (mainInst, secInst, messageToMember) => {
     if (!selectedMember || !user?.uid) return;
 
     setSaving(true);
     try {
-      // 1. Update user document in Firestore
       const userRef = doc(db, 'users', selectedMember.id);
       const updatePayload = {
         instrument: mainInst,
+        instrumentPrincipal: mainInst,
         instrumentSecondaire: secInst || '',
+        souhaiteChangerInstrument: false,
         instrumentsJoues: Array.from(new Set([mainInst, secInst].filter(Boolean)))
       };
 
       await updateDoc(userRef, updatePayload);
 
-      // 2. If a message was composed by Mestre, send as a Private Message
       if (messageToMember && messageToMember.trim()) {
         await addDoc(collection(db, 'private_messages'), {
           senderId: user.uid,
@@ -269,7 +300,7 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
       setModalOpen(false);
       setSelectedMember(null);
     } catch (err) {
-      console.error("MestreOrientationCasting - Error updating assignment:", err);
+      console.error("MestreOrientationCasting - Erreur mise à jour affectation :", err);
       alert("Erreur lors de la sauvegarde : " + (err.message || err));
     } finally {
       setSaving(false);
@@ -396,12 +427,36 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
       {/* 2. Tableau d'Affectation */}
       <CordelCard variant="default" useExtremeBorder={false} className="flex flex-col gap-3">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-dashed border-cordel-master-dark/15 pb-2">
-          <h3 className="font-bold text-xs uppercase tracking-wider text-cordel-wood">
-            📋 Tableau d'Affectation des Membres
-          </h3>
+          <div className="flex items-center gap-2 flex-wrap">
+            <h3 className="font-bold text-xs uppercase tracking-wider text-cordel-wood">
+              📋 Tableau d'Affectation
+            </h3>
+            {/* Filtre Tous / Vœux en attente */}
+            <div className="flex items-center gap-1.5 text-xs">
+              <button
+                type="button"
+                onClick={() => setShowPendingOnly(false)}
+                className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all cursor-pointer ${!showPendingOnly ? 'bg-cordel-wood text-white shadow-xs' : 'bg-white/60 dark:bg-black/20 text-cordel-master-dark border border-cordel-master-dark/20'}`}
+              >
+                Tous ({activeMembers.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowPendingOnly(true)}
+                className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all cursor-pointer flex items-center gap-1 ${showPendingOnly ? 'bg-amber-600 text-white shadow-xs' : 'bg-amber-100 text-amber-900 border border-amber-300'}`}
+              >
+                <span>⏳ Vœux en attente</span>
+                {(unassignedCount > 0 || wishCount > 0) && (
+                  <span className="bg-red-500 text-white text-[8px] px-1.5 py-0.2 rounded-full font-black">
+                    {unassignedCount + wishCount}
+                  </span>
+                )}
+              </button>
+            </div>
+          </div>
 
           {/* Search bar */}
-          <div className="w-full sm:w-64">
+          <div className="w-full sm:w-56">
             <input
               type="text"
               placeholder="🔍 Rechercher un membre ou vœu..."
@@ -419,7 +474,7 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
               <tr className="border-b-2 border-dashed border-cordel-master-dark/20 text-[9.5px] uppercase tracking-wider font-extrabold text-cordel-wood">
                 <th className="py-2 px-2">Membre</th>
                 <th className="py-2 px-2">Instrument Actuel</th>
-                <th className="py-2 px-2">Vœux Formulés</th>
+                <th className="py-2 px-2">Vœux Formulés (Validation 1-Clic)</th>
                 <th className="py-2 px-2 text-right">Action</th>
               </tr>
             </thead>
@@ -427,15 +482,18 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
               {filteredMembers.length === 0 ? (
                 <tr>
                   <td colSpan={4} className="py-6 text-center text-xs font-bold text-cordel-master-dark/60 italic">
-                    Aucun membre ne correspond à la recherche.
+                    Aucun membre ne correspond aux critères de recherche.
                   </td>
                 </tr>
               ) : (
                 filteredMembers.map((m) => {
                   const name = `${m.prenom || ''} ${m.nom || ''}`.trim() || 'Sans Nom';
-                  const isUnassigned = !m.instrument || m.instrument.trim() === '';
+                  const isUnassigned = !m.instrument || m.instrument.trim() === '' || m.instrument === 'En attente';
                   const isAssigned = !isUnassigned;
-                  const hasWishes = Boolean(m.voeuPrincipal || m.voeuSecondaire || m.voeuTertiaire);
+                  const wishesList = Array.isArray(m.voeuxInstruments) && m.voeuxInstruments.length > 0
+                    ? m.voeuxInstruments
+                    : [m.voeuPrincipal, m.voeuSecondaire, m.voeuTertiaire].filter(Boolean);
+                  const hasWishes = wishesList.length > 0;
 
                   return (
                     <tr
@@ -455,6 +513,11 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
                           <div className="flex flex-col">
                             <span className="font-extrabold text-xs text-cordel-master-dark flex items-center gap-1">
                               {name}
+                              {m.pratiqueDanse && (
+                                <span className="text-[9px] font-bold text-amber-800 bg-amber-100 px-1 py-0.2 rounded" title="Pratique la Danse">
+                                  💃 Danse
+                                </span>
+                              )}
                               {isAssigned && (
                                 <span className="text-[8px] font-black text-emerald-800 bg-emerald-200 dark:bg-emerald-900/70 dark:text-emerald-200 px-1 py-0.2 rounded uppercase flex items-center gap-0.5">
                                   ✅ Traité
@@ -480,11 +543,11 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
                         <div className="flex flex-col gap-1">
                           <span className="font-bold flex items-center gap-1.5 text-cordel-master-dark">
                             <img
-                              src={getInstrumentIconPath(m.instrument)}
-                              alt={m.instrument || 'Aucun'}
+                              src={getInstrumentIconPath(m.instrumentPrincipal || m.instrument)}
+                              alt={m.instrumentPrincipal || m.instrument || 'Aucun'}
                               className="w-3.5 h-3.5 object-contain dark:invert"
                             />
-                            <span>{m.instrument || <span className="italic text-amber-600 dark:text-amber-400 font-semibold">Non défini</span>}</span>
+                            <span>{m.instrumentPrincipal || m.instrument || <span className="italic text-amber-600 dark:text-amber-400 font-semibold">En attente</span>}</span>
                             {isAssigned && (
                               <span className="text-[11px] font-black text-emerald-600 dark:text-emerald-400" title="Instrument attribué et validé par le Mestre">
                                 ✅
@@ -505,28 +568,36 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
                         </div>
                       </td>
 
-                      {/* 3. Vœux Formulés */}
+                      {/* 3. Vœux Formulés (Boutons 1-Clic) */}
                       <td className="py-2.5 px-2">
                         {hasWishes ? (
-                          <div className="flex flex-wrap gap-1 text-[10px]">
-                            {m.voeuPrincipal && (
-                              <span className={`px-1.5 py-0.5 rounded border font-semibold ${m.instrument === m.voeuPrincipal ? 'bg-emerald-100 dark:bg-emerald-950/80 border-emerald-400 text-emerald-900 dark:text-emerald-200 font-black' : 'bg-white/80 dark:bg-black/30 border-cordel-master-dark/20'}`}>
-                                <strong className="text-cordel-wood">1 :</strong> {m.voeuPrincipal} {m.instrument === m.voeuPrincipal ? '✅' : ''}
-                              </span>
-                            )}
-                            {m.voeuSecondaire && (
-                              <span className={`px-1.5 py-0.5 rounded border ${m.instrument === m.voeuSecondaire || m.instrumentSecondaire === m.voeuSecondaire ? 'bg-emerald-100 dark:bg-emerald-950/80 border-emerald-400 text-emerald-900 dark:text-emerald-200 font-black' : 'bg-white/80 dark:bg-black/30 border-cordel-master-dark/20'}`}>
-                                <strong className="text-cordel-wood">2 :</strong> {m.voeuSecondaire} {(m.instrument === m.voeuSecondaire || m.instrumentSecondaire === m.voeuSecondaire) ? '✅' : ''}
-                              </span>
-                            )}
-                            {m.voeuTertiaire && (
-                              <span className={`px-1.5 py-0.5 rounded border ${m.instrument === m.voeuTertiaire || m.instrumentSecondaire === m.voeuTertiaire ? 'bg-emerald-100 dark:bg-emerald-950/80 border-emerald-400 text-emerald-900 dark:text-emerald-200 font-black' : 'bg-white/80 dark:bg-black/30 border-cordel-master-dark/20'}`}>
-                                <strong className="text-cordel-wood">3 :</strong> {m.voeuTertiaire} {(m.instrument === m.voeuTertiaire || m.instrumentSecondaire === m.voeuTertiaire) ? '✅' : ''}
-                              </span>
-                            )}
-                            {m.accordRenfortAncienInstrument && m.instrument && (
-                              <span className="bg-amber-100 dark:bg-amber-950/60 text-amber-900 dark:text-amber-200 px-1.5 py-0.5 rounded border border-amber-300 dark:border-amber-800 font-extrabold flex items-center gap-1">
-                                🤝 Renfort ok : {m.instrument}
+                          <div className="flex flex-col gap-1 text-[10px]">
+                            <div className="flex flex-wrap gap-1 items-center">
+                              {wishesList.map((wish, idx) => {
+                                const isCurrentMain = (m.instrumentPrincipal || m.instrument) === wish;
+                                return (
+                                  <div key={idx} className="flex items-center gap-1">
+                                    <span className={`px-1.5 py-0.5 rounded border font-semibold ${isCurrentMain ? 'bg-emerald-100 dark:bg-emerald-950/80 border-emerald-400 text-emerald-900 dark:text-emerald-200 font-black' : 'bg-white/80 dark:bg-black/30 border-cordel-master-dark/20'}`}>
+                                      <strong className="text-cordel-wood">{idx + 1} :</strong> {wish} {isCurrentMain ? '✅' : ''}
+                                    </span>
+                                    {!isCurrentMain && (
+                                      <button
+                                        type="button"
+                                        onClick={() => handleQuickValidate(m, wish)}
+                                        disabled={saving}
+                                        className="bg-emerald-600 hover:bg-emerald-700 text-white text-[9px] font-black px-1.5 py-0.5 rounded shadow-xs cursor-pointer transition-all shrink-0"
+                                        title={`Valider ${wish} en 1 seul clic`}
+                                      >
+                                        ✓ Valider
+                                      </button>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                            {(m.volontaireAncienInstrument || m.accordRenfortAncienInstrument) && (m.instrumentPrincipal || m.instrument) && (
+                              <span className="bg-amber-100 dark:bg-amber-950/60 text-amber-900 dark:text-amber-200 px-1.5 py-0.5 rounded border border-amber-300 dark:border-amber-800 font-extrabold flex items-center gap-1 w-max">
+                                🤝 Renfort ancien instrument ok
                               </span>
                             )}
                           </div>
@@ -535,11 +606,6 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
                             <span className="italic text-cordel-master-dark/50">
                               Aucun vœu formulé
                             </span>
-                            {m.accordRenfortAncienInstrument && m.instrument && (
-                              <span className="bg-amber-100 dark:bg-amber-950/60 text-amber-900 dark:text-amber-200 px-1.5 py-0.5 rounded border border-amber-300 dark:border-amber-800 font-extrabold flex items-center gap-1 w-max">
-                                🤝 Renfort ok : {m.instrument}
-                              </span>
-                            )}
                           </div>
                         )}
                       </td>

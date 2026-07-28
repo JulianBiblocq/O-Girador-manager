@@ -3,6 +3,22 @@
  */
 
 /**
+ * Filtre une liste d'instruments pour exclure les rôles de direction et la pratique de la danse
+ * des choix de percussions accessibles aux élèves (Mestre, Direction, Danse, etc.).
+ * @param {Array<string>} list - Liste brute des instruments de l'association
+ * @returns {Array<string>} Liste filtrée d'instruments de percussion pour les élèves
+ */
+export function filterPublicPercussionInstruments(list = []) {
+  if (!Array.isArray(list)) return [];
+  const EXCLUDED_KEYWORDS = ['mestre', 'direction', 'chef de bateria', 'danse'];
+  return list.filter(item => {
+    if (!item || typeof item !== 'string') return false;
+    const lower = item.toLowerCase().trim();
+    return !EXCLUDED_KEYWORDS.some(k => lower === k || lower.includes(k));
+  });
+}
+
+/**
  * Normalise un élément d'étiquette (chaîne ou objet) vers un objet standard :
  * { id: string, nomM: string, nomF: string, inheritsFrom: Array }
  */

@@ -109,6 +109,89 @@ export default function OnboardingPublicBlock({
           </select>
         </div>
       </div>
+
+      {/* Section Pratique de la Danse */}
+      <div className="p-3 rounded bg-amber-100/70 border border-cordel-wood/30 flex items-center justify-between gap-3 text-left">
+        <div className="flex flex-col gap-0.5">
+          <span className="font-cactus font-bold text-xs uppercase text-cordel-wood flex items-center gap-1.5">
+            💃 Pratique de la Danse
+          </span>
+          <span className="text-[10px] text-cordel-master-dark/80 font-medium">
+            Cochez cette case si vous vous inscrivez également aux cours et ateliers de Danse.
+          </span>
+        </div>
+        <input
+          type="checkbox"
+          id="pratiqueDanse"
+          name="pratiqueDanse"
+          checked={Boolean(formData.pratiqueDanse)}
+          onChange={(e) => setFormData(prev => ({ ...prev, pratiqueDanse: e.target.checked }))}
+          disabled={submitting}
+          className="w-5 h-5 accent-cordel-wood cursor-pointer shrink-0"
+        />
+      </div>
+
+      {/* Section Vœux d'Instruments de Percussion pour Nouvel Élève */}
+      <div className="flex flex-col gap-2.5 p-3 rounded bg-white/60 dark:bg-black/20 border border-cordel-master-dark/15 text-left">
+        <div className="flex flex-col gap-0.5">
+          <label className="text-[11px] uppercase font-black tracking-wider text-cordel-wood flex items-center gap-1.5">
+            <span>🥁 Vœux d'Instruments de Percussion</span>
+            <span className="text-red-600 font-bold ml-1">* (2 à 3 choix requis)</span>
+          </label>
+          <p className="text-[10px] text-cordel-master-dark/80 font-medium">
+            Sélectionnez 2 à 3 percussions par ordre de préférence. Votre attribution définitive sera validée par le Mestre.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-1">
+          {['Vœu 1 (Préféré)', 'Vœu 2 (Second choix)', 'Vœu 3 (Troisième choix)'].map((label, idx) => {
+            const currentVal = (formData.voeuxInstruments || [])[idx] || '';
+            const availableList = (instrumentsDisponibles || [])
+              .filter(inst => {
+                const lower = inst.toLowerCase().trim();
+                return lower !== 'danse' && lower !== 'mestre' && lower !== 'direction' && lower !== 'chef de bateria';
+              });
+
+            return (
+              <div key={idx} className="flex flex-col gap-1">
+                <span className="text-[9px] font-black uppercase text-cordel-master-dark opacity-80">
+                  {label} {idx < 2 && <span className="text-red-500">*</span>}
+                </span>
+                <select
+                  value={currentVal}
+                  onChange={(e) => {
+                    const nextVal = e.target.value;
+                    setFormData(prev => {
+                      const updated = [...(prev.voeuxInstruments || [])];
+                      updated[idx] = nextVal;
+                      return {
+                        ...prev,
+                        voeuxInstruments: updated,
+                        voeuPrincipal: updated[0] || '',
+                        voeuSecondaire: updated[1] || '',
+                        voeuTertiaire: updated[2] || ''
+                      };
+                    });
+                  }}
+                  disabled={submitting}
+                  className="theme-input w-full text-xs font-semibold bg-cordel-bg-light disabled:opacity-50"
+                >
+                  <option value="">-- Choisir --</option>
+                  {availableList.map((inst) => (
+                    <option 
+                      key={inst} 
+                      value={inst}
+                      disabled={(formData.voeuxInstruments || []).some((v, i) => i !== idx && v === inst)}
+                    >
+                      {inst}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            );
+          })}
+        </div>
+      </div>
     </div>
   );
 }

@@ -20,7 +20,7 @@ export const DEFAULT_FIELDS_CONFIG = {
   niveaux: { key: "niveaux", label: "Affichage des niveaux dans le trombinoscope", enabled: true, filledBy: "admin", isRequired: false }
 };
 
-export const DEFAULT_INSTRUMENTS = ["Alfaia Marcante", "Alfaia Meião", "Alfaia Repique", "Caixa", "Tarol", "Gonguê", "Agbê", "Mineiro", "Timbal", "Chant", "Danse"];
+export const DEFAULT_INSTRUMENTS = ["Alfaia Marcante", "Alfaia Meião", "Alfaia Repique", "Caixa", "Tarol", "Gonguê", "Agbê", "Mineiro", "Timbal", "Chant"];
 
 const getFullAddress = (pd) => {
   if (!pd) return '';
@@ -35,12 +35,17 @@ export function useUserProfile(user, profileData, t) {
   const [formData, setFormData] = useState({
     prenom: profileData?.prenom || '',
     nom: profileData?.nom || '',
-    instrument: profileData?.instrument || '',
+    instrument: profileData?.instrument || profileData?.instrumentPrincipal || '',
+    instrumentPrincipal: profileData?.instrumentPrincipal || profileData?.instrument || '',
     instrumentSecondaire: profileData?.instrumentSecondaire || '',
+    pratiqueDanse: profileData?.pratiqueDanse !== undefined ? profileData.pratiqueDanse : (profileData?.instrument === 'Danse' || (Array.isArray(profileData?.instrumentsJoues) && profileData.instrumentsJoues.includes('Danse'))),
+    voeuxInstruments: Array.isArray(profileData?.voeuxInstruments) ? profileData.voeuxInstruments : ([profileData?.voeuPrincipal, profileData?.voeuSecondaire, profileData?.voeuTertiaire].filter(Boolean)),
+    souhaiteChangerInstrument: profileData?.souhaiteChangerInstrument || false,
+    volontaireAncienInstrument: profileData?.volontaireAncienInstrument !== undefined ? profileData.volontaireAncienInstrument : (profileData?.accordRenfortAncienInstrument || false),
     voeuPrincipal: profileData?.voeuPrincipal || '',
     voeuSecondaire: profileData?.voeuSecondaire || '',
     voeuTertiaire: profileData?.voeuTertiaire || '',
-    accordRenfortAncienInstrument: profileData?.accordRenfortAncienInstrument || false,
+    accordRenfortAncienInstrument: profileData?.volontaireAncienInstrument !== undefined ? profileData.volontaireAncienInstrument : (profileData?.accordRenfortAncienInstrument || false),
     instrumentsJoues: profileData?.instrumentsJoues || ([profileData?.instrument, profileData?.instrumentSecondaire].filter(Boolean)),
     telephone: profileData?.telephone || '',
     adresse: getFullAddress(profileData),
@@ -406,15 +411,24 @@ export function useUserProfile(user, profileData, t) {
 
     setSaving(true);
     try {
+      const cleanVoeux = Array.isArray(formData.voeuxInstruments)
+        ? formData.voeuxInstruments.filter(Boolean)
+        : [formData.voeuPrincipal, formData.voeuSecondaire, formData.voeuTertiaire].filter(Boolean);
+
       const updatePayload = {
         prenom: formData.prenom,
         nom: formData.nom,
-        instrument: profileData?.instrument || formData.instrument || '',
+        instrument: profileData?.instrument || profileData?.instrumentPrincipal || formData.instrument || '',
+        instrumentPrincipal: profileData?.instrumentPrincipal || profileData?.instrument || formData.instrument || '',
         instrumentSecondaire: profileData?.instrumentSecondaire || formData.instrumentSecondaire || '',
-        voeuPrincipal: formData.voeuPrincipal || '',
-        voeuSecondaire: formData.voeuSecondaire || '',
-        voeuTertiaire: formData.voeuTertiaire || '',
-        accordRenfortAncienInstrument: Boolean(formData.accordRenfortAncienInstrument),
+        pratiqueDanse: Boolean(formData.pratiqueDanse),
+        voeuxInstruments: cleanVoeux,
+        souhaiteChangerInstrument: Boolean(formData.souhaiteChangerInstrument),
+        volontaireAncienInstrument: Boolean(formData.volontaireAncienInstrument),
+        accordRenfortAncienInstrument: Boolean(formData.volontaireAncienInstrument),
+        voeuPrincipal: cleanVoeux[0] || '',
+        voeuSecondaire: cleanVoeux[1] || '',
+        voeuTertiaire: cleanVoeux[2] || '',
         instrumentsJoues: Array.from(new Set(
           [
             profileData?.instrument || formData.instrument,
@@ -422,7 +436,7 @@ export function useUserProfile(user, profileData, t) {
             ...(formData.instrumentsJoues || [])
           ]
           .map(i => i ? i.trim() : '')
-          .filter(i => i && i.toLowerCase() !== 'autre' && i.toLowerCase() !== 'mestre')
+          .filter(i => i && i.toLowerCase() !== 'autre' && i.toLowerCase() !== 'mestre' && i.toLowerCase() !== 'danse')
         )),
         telephone: isFieldVisible('telephone') ? formData.telephone : (profileData?.telephone || ''),
         adresse: isFieldVisible('adresse') ? (formData.adresse || formData.adresseRue || '') : (profileData?.adresse || ''),

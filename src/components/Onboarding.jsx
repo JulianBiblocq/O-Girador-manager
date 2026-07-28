@@ -49,6 +49,8 @@ export default function Onboarding({ user, branding, onComplete }) {
     voeuSecondaire: '',
     voeuTertiaire: '',
     instrumentsJoues: [],
+    voeuxInstruments: [],
+    pratiqueDanse: false,
     genre: 'femme',
     afficherTelephone: true,
     afficherDateNaissance: false,
@@ -58,6 +60,7 @@ export default function Onboarding({ user, branding, onComplete }) {
   });
 
   const [fieldsConfig, setFieldsConfig] = useState(null);
+  const [instrumentsDisponibles, setInstrumentsDisponibles] = useState(["Alfaia Marcante", "Alfaia Meião", "Alfaia Repique", "Caixa", "Tarol", "Gonguê", "Agbê", "Mineiro", "Timbal", "Chant"]);
   const [submitting, setSubmitting] = useState(false);
   const [droitImageDocUrl, setDroitImageDocUrl] = useState('');
   const [aptitudeMedicaleDocUrl, setAptitudeMedicaleDocUrl] = useState('');
@@ -83,6 +86,9 @@ export default function Onboarding({ user, branding, onComplete }) {
           const data = docSnap.data();
           setDemanderDroitImage(data.demanderDroitImage || false);
           setDemanderAttestationSante(data.demanderAttestationSante || false);
+          if (Array.isArray(data.instrumentsDisponibles) && data.instrumentsDisponibles.length > 0) {
+            setInstrumentsDisponibles(data.instrumentsDisponibles);
+          }
           if (data.fieldsConfig) {
             setFieldsConfig({ ...DEFAULT_FIELDS_CONFIG, ...data.fieldsConfig });
           } else {
@@ -123,6 +129,14 @@ export default function Onboarding({ user, branding, onComplete }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setValidationError('');
+
+    const cleanVoeux = Array.isArray(formData.voeuxInstruments) ? formData.voeuxInstruments.filter(Boolean) : [];
+    if (cleanVoeux.length < 2 || cleanVoeux.length > 3) {
+      const errMsg = "Veuillez sélectionner entre 2 et 3 vœux d'instruments de percussion.";
+      setValidationError(errMsg);
+      alert(errMsg);
+      return;
+    }
 
     const missingRequired = Object.keys(fieldsConfig || {}).some(key => {
       if (!isFieldRequired(key)) return false;
@@ -166,16 +180,15 @@ export default function Onboarding({ user, branding, onComplete }) {
         dateSignatureAttestationSante: demanderAttestationSante && formData.aptitudeMedicale ? new Date() : null,
         lateralite: isFieldVisible('lateralite') ? formData.lateralite : "droitier",
         dateNaissance: isFieldVisible('dateNaissance') ? formData.dateNaissance : "",
-        instrument: formData.instrument || "",
-        instrumentSecondaire: formData.instrumentSecondaire || "",
-        voeuPrincipal: formData.voeuPrincipal || "",
-        voeuSecondaire: formData.voeuSecondaire || "",
-        voeuTertiaire: formData.voeuTertiaire || "",
-        instrumentsJoues: Array.from(new Set([
-          formData.instrument,
-          formData.instrumentSecondaire,
-          ...(formData.instrumentsJoues || [])
-        ])).filter(Boolean),
+        pratiqueDanse: Boolean(formData.pratiqueDanse),
+        voeuxInstruments: cleanVoeux,
+        voeuPrincipal: cleanVoeux[0] || "",
+        voeuSecondaire: cleanVoeux[1] || "",
+        voeuTertiaire: cleanVoeux[2] || "",
+        instrument: "En attente",
+        instrumentPrincipal: "En attente",
+        instrumentSecondaire: "",
+        instrumentsJoues: cleanVoeux,
         genre: formData.genre,
         role: "membre",
         statutActuel: "active",
@@ -234,10 +247,12 @@ export default function Onboarding({ user, branding, onComplete }) {
               {/* Bloc 1 : Ton Profil Public (Trombinoscope) */}
               <OnboardingPublicBlock
                 formData={formData}
+                setFormData={setFormData}
                 handleChange={handleChange}
                 submitting={submitting}
                 isFieldVisible={isFieldVisible}
                 isFieldRequired={isFieldRequired}
+                instrumentsDisponibles={instrumentsDisponibles}
                 t={t}
               />
 

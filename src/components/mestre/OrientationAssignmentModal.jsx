@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
+import { filterPublicPercussionInstruments } from '../../utils/tagUtils';
 
 const DEFAULT_INSTRUMENTS = [
   "Alfaia Marcante",
@@ -12,21 +13,12 @@ const DEFAULT_INSTRUMENTS = [
   "Agbê",
   "Mineiro",
   "Timbal",
-  "Chant",
-  "Danse"
+  "Chant"
 ];
 
 /**
- * OrientationAssignmentModal component renders the modal for the Mestre to validate
- * primary & secondary instruments for a member, and optionally send a private message.
- *
- * @param {Object} props
- * @param {boolean} props.isOpen Modal visibility state
- * @param {Function} props.onClose Modal close callback
- * @param {Object} props.member Targeted member object
- * @param {Array<string>} [props.instrumentsDisponibles] List of available instruments
- * @param {Function} props.onSave Callback function (mainInstrument, secondaryInstrument, messageToMember)
- * @param {boolean} props.saving Loading indicator state
+ * Composant OrientationAssignmentModal
+ * Permet au Mestre de valider l'instrument principal et secondaire d'un membre et d'envoyer un message privé automatique.
  */
 export default function OrientationAssignmentModal({
   isOpen,
@@ -42,7 +34,7 @@ export default function OrientationAssignmentModal({
 
   useEffect(() => {
     if (member) {
-      setMainInst(member.instrument || member.voeuPrincipal || '');
+      setMainInst(member.instrumentPrincipal || member.instrument || member.voeuPrincipal || '');
       setSecInst(member.instrumentSecondaire || member.voeuSecondaire || '');
       setMessageToMember('');
     }
@@ -50,9 +42,11 @@ export default function OrientationAssignmentModal({
 
   if (!isOpen || !member) return null;
 
-  const instrumentsList = Array.isArray(instrumentsDisponibles) && instrumentsDisponibles.length > 0
+  const rawList = Array.isArray(instrumentsDisponibles) && instrumentsDisponibles.length > 0
     ? instrumentsDisponibles
     : DEFAULT_INSTRUMENTS;
+
+  const instrumentsList = filterPublicPercussionInstruments(rawList);
 
   const handleSubmit = (e) => {
     e.preventDefault();
