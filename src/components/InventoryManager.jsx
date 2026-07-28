@@ -1,14 +1,20 @@
 import React, { useState } from 'react';
+import { doc, updateDoc } from 'firebase/firestore';
+import { db } from '../firebase';
 import LayoutShell from './LayoutShell';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
-import { XiloClose, XiloCaixa } from './XiloIcons';
+import { XiloClose, XiloCaixa, XiloChisel } from './XiloIcons';
 import { useTranslation } from './LanguageContext';
+import XiloAvatar from './XiloAvatar';
 import useConfirm from '../hooks/useConfirm';
 import { useInventoryData } from '../hooks/useInventoryData';
 import InventoryFilterBar from './inventory/InventoryFilterBar';
 import InventoryItemCard from './inventory/InventoryItemCard';
 import InventoryFormModal from './inventory/InventoryFormModal';
+
+const INSTRUMENT_TYPES = ['Alfaia', 'Caixa', 'Agbê', 'Gonguê', 'Mineiro', 'Apito', 'Timbal', 'Autre'];
+const ETAT_OPTIONS = ['Neuf', 'Bon', 'À réparer'];
 
 const INSTRUMENT_ICONS = {
   Alfaia: 'icones/alfaia.svg',
