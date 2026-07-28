@@ -10,6 +10,17 @@ import InventoryFilterBar from './inventory/InventoryFilterBar';
 import InventoryItemCard from './inventory/InventoryItemCard';
 import InventoryFormModal from './inventory/InventoryFormModal';
 
+const INSTRUMENT_ICONS = {
+  Alfaia: 'icones/alfaia.svg',
+  Caixa: 'icones/caixa.svg',
+  Agbê: 'icones/agbe.svg',
+  Gonguê: 'icones/gongue.svg',
+  Mineiro: 'icones/mineiro.svg',
+  Apito: 'icones/apito.svg',
+  Timbal: 'icones/timbal.svg',
+  Autre: 'favicon.svg'
+};
+
 export default function InventoryManager({ groupId, onBack, role, isSystemAdmin, hasAccessLogistique }) {
   const { t } = useTranslation();
   const { confirm } = useConfirm();
