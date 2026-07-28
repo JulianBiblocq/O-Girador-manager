@@ -51,6 +51,7 @@ const PERMISSION_POLES = [
     label: 'Studio',
     desc: 'Communication, réunions, Varal et comptes-rendus',
     tabs: [
+      { id: 'agenda', label: '📅 Agenda & Événements', desc: 'Droits de création, modification et suppression des événements' },
       { id: 'studio-events', label: 'Événements', desc: 'Tableau d\'édition rapide et globale des événements' },
       { id: 'studio-social', label: 'Studio social', desc: 'Gestion et publication sur les réseaux sociaux' },
       { id: 'reunion-manager', label: 'Réunions', desc: 'Ordres du jour et compte-rendus de réunion' },

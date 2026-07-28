@@ -24,6 +24,7 @@ import EventReportSection from './event-details/EventReportSection';
 import EventStageLayoutSection from './event-details/EventStageLayoutSection';
 import EventVolunteerSection from './event-details/EventVolunteerSection';
 import { resolveEffectiveUserTags, findTagObject, getTagId } from '../utils/tagUtils';
+import { canManageEvents } from '../utils/permissionUtils';
 import EventBudgetEditor from './event-details/EventBudgetEditor';
 import EventEditForm from './event-details/EventEditForm';
 import EventPollSection from './event-details/EventPollSection';
@@ -335,8 +336,6 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
     }
   };
 
-  const isAuthorized = profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.isSystemAdmin === true;
-
   const [tagsDisponibles, setTagsDisponibles] = useState([]);
   const [permissionsMatrice, setPermissionsMatrice] = useState(null);
 
@@ -356,6 +355,10 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
   const effectiveUserTags = React.useMemo(() => {
     return resolveEffectiveUserTags(profileData?.tags || [], tagsDisponibles);
   }, [profileData?.tags, tagsDisponibles]);
+
+  const isAuthorized = React.useMemo(() => {
+    return canManageEvents(profileData, permissionsMatrice, effectiveUserTags);
+  }, [profileData, permissionsMatrice, effectiveUserTags]);
 
   const hasFinanceAccess = React.useMemo(() => {
     if (isAuthorized) return true;

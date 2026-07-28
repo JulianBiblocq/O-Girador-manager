@@ -14,6 +14,8 @@ import { XiloCalendar, XiloEye, XiloEyeOff } from './XiloIcons';
 import { calculateRoadDistance } from '../utils/googleMaps';
 import { splitEventsByTime } from '../utils/dateUtils';
 import { getSocialVideoThumbnail } from '../utils/videoUtils';
+import { canManageEvents } from '../utils/permissionUtils';
+import { resolveEffectiveUserTags } from '../utils/tagUtils';
 
 const formatDateWithDay = (dateStr, includeYear = true) => {
   const date = new Date(dateStr);
@@ -89,6 +91,8 @@ export default function WidgetAgenda({
           setEventTypes(['prestation', 'repetition', 'stage', 'atelier', 'reunion']);
         }
         setDressCodes(data.dressCodes || []);
+        setPermissionsMatrice(data.permissionsMatrice || null);
+        setTagsDisponibles(Array.isArray(data.tagsDisponibles) ? data.tagsDisponibles : []);
       }
     }, (err) => {
       console.error("WidgetAgenda - Erreur snapshot assocRef :", err);
@@ -171,7 +175,16 @@ export default function WidgetAgenda({
     longitude: null
   });
 
-  const isAuthorized = role === 'mestre' || role === 'super-admin' || isSystemAdmin === true;
+  const [permissionsMatrice, setPermissionsMatrice] = useState(null);
+  const [tagsDisponibles, setTagsDisponibles] = useState([]);
+
+  const effectiveUserTags = useMemo(() => {
+    return resolveEffectiveUserTags(profileData?.tags || [], tagsDisponibles);
+  }, [profileData?.tags, tagsDisponibles]);
+
+  const isAuthorized = useMemo(() => {
+    return canManageEvents(profileData || { role, isSystemAdmin }, permissionsMatrice, effectiveUserTags);
+  }, [profileData, role, isSystemAdmin, permissionsMatrice, effectiveUserTags]);
 
   // Real-time synchronization with Firestore events collection
   useEffect(() => {

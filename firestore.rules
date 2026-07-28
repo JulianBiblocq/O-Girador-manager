@@ -17,8 +17,13 @@ service cloud.firestore {
           getUserData().role == 'mestre' || 
           getUserData().role == 'super-admin' || 
           getUserData().role == 'admin' ||
+          getUserData().role == 'bureau' ||
+          getUserData().role == 'ca' ||
           getUserData().isSystemAdmin == true ||
-          (getUserData().keys().hasAny(['hasAccessLogistique']) && getUserData().hasAccessLogistique == true)
+          (getUserData().keys().hasAny(['hasAccessLogistique']) && getUserData().hasAccessLogistique == true) ||
+          (getUserData().keys().hasAny(['tags']) && getUserData().tags.hasAny([
+            'Bureau', 'Président', 'Présidente', 'Présidence', 'CA', 'Direction', 'Admin', 'Modérateur'
+          ]))
         );
     }
 
