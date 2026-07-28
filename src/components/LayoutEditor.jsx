@@ -75,6 +75,7 @@ const WIDGET_NAMES = {
 export default function LayoutEditor({ groupId, onBack, role, isSystemAdmin }) {
   const { t } = useTranslation();
   const [items, setItems] = useState(["motMestre", "annonces", "agenda", "commandes", "forum", "documents", "tresorerie"]);
+  const [birthdayWidgetPosition, setBirthdayWidgetPosition] = useState('bottom');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [dragOverIndex, setDragOverIndex] = useState(null);
@@ -89,6 +90,7 @@ export default function LayoutEditor({ groupId, onBack, role, isSystemAdmin }) {
       case 'forum': return t('layoutEditor.widgetForum');
       case 'documents': return t('layoutEditor.widgetDocuments');
       case 'tresorerie': return t('layoutEditor.widgetTreasury') || "Ma Trésorerie 🪙";
+      case 'anniversaires': return t('layoutEditor.widgetBirthdays') || "Anniversaires du mois 🎂";
       default: return id;
     }
   };
@@ -102,11 +104,12 @@ export default function LayoutEditor({ groupId, onBack, role, isSystemAdmin }) {
       case 'forum': return t('layoutEditor.descForum');
       case 'documents': return t('layoutEditor.descDocuments');
       case 'tresorerie': return t('layoutEditor.descTreasury') || "Suivi des cotisations et lien de paiement en ligne.";
+      case 'anniversaires': return t('layoutEditor.descBirthdays') || "Affiche les membres fêtant leur anniversaire ce mois-ci.";
       default: return '';
     }
   };
 
-  // Security Check: Mestres, Super-Admins and System Admins only
+  // Contrôle de sécurité : Mestres, Super-Admins et Admins Système uniquement
   const isAuthorized = role === 'mestre' || role === 'super-admin' || isSystemAdmin === true;
 
   useEffect(() => {
@@ -115,7 +118,7 @@ export default function LayoutEditor({ groupId, onBack, role, isSystemAdmin }) {
       return;
     }
 
-    // Load initial layout configuration from associations/{groupId}
+    // Chargement de la disposition initiale et du positionnement du widget anniversaires depuis associations/{groupId}
     const assocRef = doc(db, 'associations', groupId);
     const unsubscribe = onSnapshot(assocRef, (docSnap) => {
       if (docSnap.exists()) {
@@ -126,6 +129,9 @@ export default function LayoutEditor({ groupId, onBack, role, isSystemAdmin }) {
             activeLayout.push("tresorerie");
           }
           setItems(activeLayout);
+        }
+        if (data.birthdayWidgetPosition) {
+          setBirthdayWidgetPosition(data.birthdayWidgetPosition);
         }
       }
       setLoading(false);
@@ -203,8 +209,11 @@ export default function LayoutEditor({ groupId, onBack, role, isSystemAdmin }) {
     setSaving(true);
     try {
       const docRef = doc(db, 'associations', groupId);
-      // setDoc with merge creates document if it does not exist
-      await setDoc(docRef, { layoutEleves: items }, { merge: true });
+      // setDoc avec merge crée le document s'il n'existe pas encore
+      await setDoc(docRef, { 
+        layoutEleves: items,
+        birthdayWidgetPosition: birthdayWidgetPosition
+      }, { merge: true });
       alert(t('layoutEditor.successMsg'));
       onBack();
     } catch (error) {
@@ -215,7 +224,7 @@ export default function LayoutEditor({ groupId, onBack, role, isSystemAdmin }) {
     }
   };
 
-  // Render Access Denied card if security fails
+  // Affichage de la carte d'accès refusé si la sécurité échoue
   if (!isAuthorized) {
     return (
       <>
@@ -239,7 +248,7 @@ export default function LayoutEditor({ groupId, onBack, role, isSystemAdmin }) {
   return (
     <>
       <div className="flex flex-col gap-5 text-left">
-        {/* Header bar */}
+        {/* Barre d'en-tête */}
         <div className="flex justify-between items-center pb-2 border-b-2 border-dashed border-cordel-master-dark/30 select-none">
           <button 
             type="button" 
@@ -255,12 +264,65 @@ export default function LayoutEditor({ groupId, onBack, role, isSystemAdmin }) {
           </h2>
         </div>
 
-        {/* Info card */}
+        {/* Carte d'information */}
         <div className="text-xs text-encre-noire dark:text-cordel-bg-light opacity-80 border border-dashed border-cordel-master-dark/30 p-3 rounded-[6px_4px_8px_5px] bg-[#fdfaf2] dark:bg-[#201d1a] leading-relaxed">
           {t('layoutEditor.helpDesc')}
         </div>
 
-        {/* Loading Indicator */}
+        {/* Sélection de la position du widget Anniversaires */}
+        {!loading && (
+          <CordelCard variant="default" useExtremeBorder={false} className="p-4 bg-cordel-bg flex flex-col gap-2.5">
+            <label className="font-extrabold text-xs text-cordel-wood uppercase tracking-wider flex items-center gap-1.5 select-none">
+              🎂 {t('layoutEditor.birthdayPositionTitle') || "Emplacement du bloc Anniversaires"}
+            </label>
+            <p className="text-[11px] opacity-75 leading-snug">
+              {t('layoutEditor.birthdayPositionHelp') || "Choisissez si le widget des anniversaires s'affiche en haut du tableau de bord (sous le Mégaphone) ou tout en bas."}
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3 mt-1 select-none">
+              <label 
+                className={`flex-1 flex items-center gap-2.5 p-3 rounded-[6px_8px_5px_7px] border-2 border-encre-noire cursor-pointer transition-all ${
+                  birthdayWidgetPosition === 'top' 
+                    ? 'bg-[#d99f4d]/20 border-cordel-wood font-black shadow-[2px_2px_0px_0px_#181716]' 
+                    : 'bg-cordel-bg-light/40 opacity-75 hover:opacity-100'
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="birthdayPosition"
+                  value="top"
+                  checked={birthdayWidgetPosition === 'top'}
+                  onChange={() => setBirthdayWidgetPosition('top')}
+                  className="accent-cordel-wood cursor-pointer w-4 h-4"
+                />
+                <span className="text-xs uppercase font-extrabold tracking-wider">
+                  ⬆️ {t('layoutEditor.birthdayPositionTop') || "En haut du tableau de bord"}
+                </span>
+              </label>
+
+              <label 
+                className={`flex-1 flex items-center gap-2.5 p-3 rounded-[6px_8px_5px_7px] border-2 border-encre-noire cursor-pointer transition-all ${
+                  birthdayWidgetPosition === 'bottom' 
+                    ? 'bg-[#d99f4d]/20 border-cordel-wood font-black shadow-[2px_2px_0px_0px_#181716]' 
+                    : 'bg-cordel-bg-light/40 opacity-75 hover:opacity-100'
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="birthdayPosition"
+                  value="bottom"
+                  checked={birthdayWidgetPosition === 'bottom'}
+                  onChange={() => setBirthdayWidgetPosition('bottom')}
+                  className="accent-cordel-wood cursor-pointer w-4 h-4"
+                />
+                <span className="text-xs uppercase font-extrabold tracking-wider">
+                  ⬇️ {t('layoutEditor.birthdayPositionBottom') || "En bas du tableau de bord"}
+                </span>
+              </label>
+            </div>
+          </CordelCard>
+        )}
+
+        {/* Indicateur de chargement */}
         {loading ? (
           <div className="flex justify-center items-center py-12">
             <span className="text-xs uppercase tracking-widest font-black animate-pulse opacity-60">⏳</span>

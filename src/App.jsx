@@ -382,7 +382,7 @@ export default function App() {
       ctx.stroke();
       ctx.setLineDash([]);
 
-      // Draw circular text "★ O GIRADOR ★" at the bottom inside the ring
+      // Dessin du texte circulaire "★ O GIRADOR ★" en bas à l'intérieur de l'anneau (de gauche à droite)
       ctx.font = 'bold 24px Courier New, Courier, monospace';
       ctx.fillStyle = textCol;
       ctx.textAlign = 'center';
@@ -391,10 +391,12 @@ export default function App() {
       const label = "★ O GIRADOR ★";
       const radius = 175;
       const angleStep = 0.16;
-      const startAngle = Math.PI / 2 - (label.length - 1) * angleStep / 2;
+      // Pour afficher le texte de gauche à droite sur l'arc inférieur (angle PI/2 = bas) :
+      // L'angle de départ commence du côté gauche (> PI/2) et diminue vers le côté droit (< PI/2).
+      const startAngle = Math.PI / 2 + (label.length - 1) * angleStep / 2;
 
       for (let i = 0; i < label.length; i++) {
-        const charAngle = startAngle + i * angleStep;
+        const charAngle = startAngle - i * angleStep;
         const x = 256 + Math.cos(charAngle) * radius;
         const y = 256 + Math.sin(charAngle) * radius;
         

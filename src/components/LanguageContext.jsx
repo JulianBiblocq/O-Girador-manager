@@ -28,26 +28,39 @@ export function LanguageProvider({ children }) {
     setLocale(prev => (prev === 'fr' ? 'pt' : 'fr'));
   };
 
-  const t = (path) => {
+  const t = (path, params) => {
     const keys = path.split('.');
     let value = translations[locale];
     for (const key of keys) {
       if (value && value[key] !== undefined) {
         value = value[key];
       } else {
-        // Fallback to French if translation key is missing
+        // Option de repli vers le français si la clé de traduction est manquante
         let fallbackValue = translations['fr'];
         for (const fKey of keys) {
           if (fallbackValue && fallbackValue[fKey] !== undefined) {
             fallbackValue = fallbackValue[fKey];
           } else {
-            fallbackValue = path; // Return path if not found
+            fallbackValue = path; // Retourne le chemin brut si non trouvé
             break;
           }
         }
-        return fallbackValue;
+        value = fallbackValue;
+        break;
       }
     }
+
+    // Remplacement dynamique des variables dans la chaîne (ex: {day})
+    if (typeof value === 'string' && params !== undefined && params !== null) {
+      if (typeof params === 'object') {
+        Object.keys(params).forEach((paramKey) => {
+          value = value.replace(new RegExp(`\\{${paramKey}\\}`, 'g'), params[paramKey]);
+        });
+      } else {
+        value = value.replace(/\{day\}/g, String(params)).replace(/\{0\}/g, String(params));
+      }
+    }
+
     return value;
   };
 

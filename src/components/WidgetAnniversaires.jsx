@@ -101,7 +101,7 @@ export default function WidgetAnniversaires({ groupId }) {
                     {member.prenom}
                   </p>
                   <p className="text-[10px] font-semibold text-cordel-master-dark/75">
-                    {t('dashboard.birthdayOn') || "le"} {member.day}
+                    {t('dashboard.birthdayOn', { day: member.day })}
                   </p>
                 </div>
                 <div className="text-xs animate-bounce select-none">🎈</div>

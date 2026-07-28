@@ -198,7 +198,33 @@ export default function VaralManager({ groupId, onBack, role, isSystemAdmin }) {
       console.error("VaralManager - Error fetching documents:", err);
       setLoading(false);
     });
-    return () => unsubscribe();
+  // Identification globale du tout dernier document ajouté sur l'ensemble du Varal
+  const newestDocumentId = React.useMemo(() => {
+    if (!documents || documents.length === 0) return null;
+
+    let newestId = null;
+    let newestTimestamp = -Infinity;
+
+    documents.forEach((docItem) => {
+      let ts = 0;
+      if (docItem.dateAjout) {
+        ts = new Date(docItem.dateAjout).getTime();
+      } else if (docItem.createdAt) {
+        ts = typeof docItem.createdAt.toMillis === 'function' 
+          ? docItem.createdAt.toMillis() 
+          : new Date(docItem.createdAt).getTime();
+      }
+      
+      if (!isNaN(ts) && ts > newestTimestamp) {
+        newestTimestamp = ts;
+        newestId = docItem.id;
+      }
+    });
+
+    return newestId || (documents[0] ? documents[0].id : null);
+  }, [documents]);
+
+  return () => unsubscribe();
   }, [groupId, isAuthorized]);
 
   if (!isAuthorized) {
@@ -676,7 +702,14 @@ export default function VaralManager({ groupId, onBack, role, isSystemAdmin }) {
                                   className="border-b border-dashed border-encre-noire/15 hover:bg-cordel-hover/50 transition-colors"
                                 >
                                   <td className="py-2 px-2 md:py-2.5 md:px-3 font-bold text-encre-noire dark:text-cordel-bg-light">
-                                    {docItem.titre}
+                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                      <span>{docItem.titre}</span>
+                                      {docItem.id === newestDocumentId && (
+                                        <span className="theme-stamp-badge theme-stamp-badge-wood text-[7.5px] font-black uppercase tracking-wider px-1.5 py-0.2 bg-[#d99f4d]/30 text-encre-noire border border-encre-noire animate-pulse select-none">
+                                          {t('documents.newestBadge') || "✨ Nouveau"}
+                                        </span>
+                                      )}
+                                    </div>
                                     {docItem.sousCategorie && (
                                       <span className="block text-[8px] font-bold text-cordel-wood uppercase tracking-wider mt-0.5">
                                         📁 {docItem.sousCategorie} ({docItem.annee})

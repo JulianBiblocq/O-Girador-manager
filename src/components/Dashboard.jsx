@@ -45,7 +45,7 @@ export default function Dashboard({ user, profileData, onNavigateToTrombi, onNav
     }
   };
 
-  // Real-time synchronization of the pupil widgets display order and motDuMestre
+  // Synchronisation en temps réel de l'ordre d'affichage des widgets élèves et de motDuMestre
   const [motDuMestre, setMotDuMestre] = useState('');
   const [hasActiveAnnouncements, setHasActiveAnnouncements] = useState(false);
   const [hasOpenCampaign, setHasOpenCampaign] = useState(false);
@@ -57,16 +57,33 @@ export default function Dashboard({ user, profileData, onNavigateToTrombi, onNav
     const unsubscribe = onSnapshot(assocRef, (docSnap) => {
       if (docSnap.exists()) {
         const data = docSnap.data();
+        const bPosition = data.birthdayWidgetPosition || 'bottom';
+        
+        let baseLayout = ["motMestre", "annonces", "agenda", "commandes", "forum", "documents", "tresorerie"];
         if (Array.isArray(data.layoutEleves) && data.layoutEleves.length > 0) {
-          const activeLayout = [...data.layoutEleves];
-          if (!activeLayout.includes("tresorerie")) {
-            activeLayout.push("tresorerie");
-          }
-          if (!activeLayout.includes("anniversaires")) {
-            activeLayout.push("anniversaires");
-          }
-          setLayout(activeLayout);
+          baseLayout = data.layoutEleves.filter(id => id !== "anniversaires");
         }
+        if (!baseLayout.includes("tresorerie")) {
+          baseLayout.push("tresorerie");
+        }
+
+        // Insertion dynamique du widget "anniversaires" selon le paramètre birthdayWidgetPosition ('top' ou 'bottom')
+        const activeLayout = [...baseLayout];
+        if (bPosition === 'top') {
+          let insertIndex = 0;
+          const annoncesIdx = activeLayout.indexOf("annonces");
+          const motMestreIdx = activeLayout.indexOf("motMestre");
+          if (annoncesIdx !== -1) {
+            insertIndex = annoncesIdx + 1;
+          } else if (motMestreIdx !== -1) {
+            insertIndex = motMestreIdx + 1;
+          }
+          activeLayout.splice(insertIndex, 0, "anniversaires");
+        } else {
+          activeLayout.push("anniversaires");
+        }
+
+        setLayout(activeLayout);
         setSequenceurUrl(data.sequenceurUrl || '');
         setMotDuMestre(data.motDuMestre || '');
       }

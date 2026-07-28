@@ -154,7 +154,9 @@ export const fr = {
     sequencer: "Séquenceur de la Roda (Révisions)",
     loadingProfile: "Vérification du profil...",
     loadingPage: "Chargement de la page...",
-    systemAdmin: "Admin Système"
+    systemAdmin: "Admin Système",
+    birthdaysMonth: "Anniversaires du mois",
+    birthdayOn: "Anniversaire le {day}"
   },
   trombinoscope: {
     title: "TROMBINOSCOPE",
@@ -600,7 +602,13 @@ export const fr = {
     widgetDocuments: "O Varal",
     descDocuments: "Documents, partitions et ressources de l'association",
     widgetTreasury: "Adhésion & cotisation",
-    descTreasury: "Aperçu des cotisations et trésorerie"
+    descTreasury: "Aperçu des cotisations et trésorerie",
+    widgetBirthdays: "Anniversaires du mois 🎂",
+    descBirthdays: "Affiche les membres qui fêtent leur anniversaire durant le mois en cours.",
+    birthdayPositionTitle: "Emplacement du bloc Anniversaires",
+    birthdayPositionHelp: "Choisissez si le widget des anniversaires s'affiche en haut du tableau de bord (sous le Mégaphone) ou tout en bas.",
+    birthdayPositionTop: "En haut du tableau de bord",
+    birthdayPositionBottom: "En bas du tableau de bord"
   },
   tagManager: {
     title: "Gestion des Étiquettes",
@@ -740,6 +748,7 @@ export const fr = {
     noDocumentsCategory: "Aucun document dans cette rubrique.",
     readBtn: "Lire ➜",
     archiveTag: "Archive",
+    newestBadge: "✨ Nouveau",
     addDocTitle: "Ajouter un document",
     docTitleLabel: "Titre du document",
     docTitlePlaceholder: "Ex : Paroles Samba, Compte rendu AG",

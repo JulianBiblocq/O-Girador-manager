@@ -301,9 +301,35 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
     return () => unsubscribe();
   }, [groupId]);
 
-  // Group documents by category in JavaScript
+  // 1. Identification globale du tout dernier document ajouté sur l'ensemble du Varal (toutes catégories confondues)
+  const newestDocumentId = React.useMemo(() => {
+    if (!documents || documents.length === 0) return null;
+
+    let newestId = null;
+    let newestTimestamp = -Infinity;
+
+    documents.forEach((docItem) => {
+      let ts = 0;
+      if (docItem.dateAjout) {
+        ts = new Date(docItem.dateAjout).getTime();
+      } else if (docItem.createdAt) {
+        ts = typeof docItem.createdAt.toMillis === 'function' 
+          ? docItem.createdAt.toMillis() 
+          : new Date(docItem.createdAt).getTime();
+      }
+      
+      if (!isNaN(ts) && ts > newestTimestamp) {
+        newestTimestamp = ts;
+        newestId = docItem.id;
+      }
+    });
+
+    return newestId || (documents[0] ? documents[0].id : null);
+  }, [documents]);
+
+  // Groupement des documents par catégorie en JavaScript
   const groupedDocs = documents.reduce((acc, docItem) => {
-    // Find matching category object with priority: categoryId first, then name, then fallback id
+    // Recherche de la catégorie correspondante par priorité : categoryId d'abord, puis nom, puis id
     const catObj = (docItem.categoryId && varalCategories.find(c => c.id === docItem.categoryId))
       || (docItem.categorie && varalCategories.find(c => c.nom === docItem.categorie))
       || (docItem.categorie && varalCategories.find(c => c.id === docItem.categorie));
@@ -418,6 +444,7 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
                     ) : (
                       docList.map((docItem, index) => {
                         const rotationDeg = index % 2 === 0 ? (-3 + (index % 3)) : (2.5 - (index % 2));
+                        const isLatestDoc = docItem.id === newestDocumentId;
 
                         const isArchived = category.activerOpaciteArchive && docItem.annee && docItem.annee < currentYear;
                         const opacityClass = isArchived ? 'opacity-60 hover:opacity-100 transition-opacity duration-200' : 'opacity-100';
@@ -426,9 +453,9 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
                         
                         let colorClass = 'default';
                         if (category.id === 'DocumentsFixes' || category.nom === 'Administratif') {
-                          colorClass = 'bleu-ardoise'; // Exclusive slate grey for fixed administrative documents
+                          colorClass = 'bleu-ardoise'; // Slate grey exclusif pour les documents administratifs fixes
                         } else if (category.id === 'Administratif' || category.nom === 'Comptes-rendus') {
-                          colorClass = 'rouge'; // Distinctive rouge for Comptes-rendus
+                          colorClass = 'rouge'; // Rouge distinctif pour les Comptes-rendus
                         } else {
                           colorClass = getDeterministicColor(docItem.id);
                         }
@@ -447,6 +474,10 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
                         const borderDashedClass = isDarkBg ? 'border-[#FEF9E7]/35' : 'border-encre-noire/25';
                         const yearBadgeClass = isDarkBg ? 'bg-white/25 text-[#FEF9E7]' : 'bg-encre-noire/10 text-encre-noire';
 
+                        const cardAnimationClass = isLatestDoc
+                          ? 'animate-varal-newest'
+                          : 'hover:z-30 hover:scale-105 hover:rotate-0';
+
                         return (
                           <div 
                             key={docItem.id}
@@ -460,13 +491,20 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
                             className={`
                               relative flex flex-col items-center group cursor-pointer
                               transition-all duration-300 origin-top shrink-0 flex-none
-                              hover:z-30 hover:scale-105 hover:rotate-0
+                              ${cardAnimationClass}
                               ${opacityClass}
                             `}
-                            style={{ transform: `rotate(${rotationDeg}deg)` }}
+                            style={isLatestDoc ? {} : { transform: `rotate(${rotationDeg}deg)` }}
                             title={`${translate('common.open', "Ouvrir")} ${docItem.titre} ${isArchived ? '(' + translate('documents.archiveTag', "Archive") + ')' : ''}`}
                           >
-                            {/* Wooden Clothespin (Pince à linge 3D mordant la corde et le haut du livret) */}
+                            {/* Badge "✨ Nouveau" exclusif au tout dernier document global */}
+                            {isLatestDoc && (
+                              <span className="absolute -top-2.5 -left-3 z-40 bg-[#d99f4d] text-encre-noire border-2 border-encre-noire rounded-[4px_6px_3px_5px] px-2 py-0.5 text-[8.5px] font-black uppercase tracking-wider shadow-[2px_2px_0px_0px_#181716] animate-bounce select-none">
+                                {translate('documents.newestBadge', "✨ Nouveau")}
+                              </span>
+                            )}
+
+                            {/* Pince à linge 3D (Wooden Clothespin) */}
                             <WoodenClothespin className="absolute -top-[16px] z-30 pointer-events-none" />
 
                             {/* Booklet Cover */}

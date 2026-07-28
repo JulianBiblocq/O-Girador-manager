@@ -154,7 +154,9 @@ export const pt = {
     sequencer: "Sequenciador da Roda (Revisões)",
     loadingProfile: "Verificando perfil...",
     loadingPage: "Carregando a página...",
-    systemAdmin: "Admin do Sistema"
+    systemAdmin: "Admin do Sistema",
+    birthdaysMonth: "Aniversariantes do mês",
+    birthdayOn: "Aniversário no dia {day}"
   },
   trombinoscope: {
     title: "TROMBINOSCÓPIO",
@@ -618,7 +620,13 @@ export const pt = {
     widgetDocuments: "O Varal",
     descDocuments: "Documentos, partituras e recursos da associação",
     widgetTreasury: "Adesão & cotização",
-    descTreasury: "Visão geral das contribuições e tesouraria"
+    descTreasury: "Visão geral das contribuições e tesouraria",
+    widgetBirthdays: "Aniversariantes do mês 🎂",
+    descBirthdays: "Exibe os membros que comemoram aniversário durante o mês atual.",
+    birthdayPositionTitle: "Posição do bloco de Aniversários",
+    birthdayPositionHelp: "Escolha se o widget de aniversários será exibido no topo do painel de controle (abaixo do Megafone) ou no rodapé.",
+    birthdayPositionTop: "No topo do painel de controle",
+    birthdayPositionBottom: "No rodapé do painel de controle"
   },
   tagManager: {
     title: "Gerenciador de etiquetas",
@@ -758,6 +766,7 @@ export const pt = {
     noDocumentsCategory: "Nenhum documento nesta seção.",
     readBtn: "Ler ➜",
     archiveTag: "Arquivo",
+    newestBadge: "✨ Novo",
     addDocTitle: "Adicionar um documento",
     docTitleLabel: "Título do documento",
     docTitlePlaceholder: "Ex: Letras de Samba, Ata de Reunião",
