@@ -307,6 +307,85 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
     }
   };
 
+  // Exporter en CSV les affectations et vœux des membres
+  const handleExportCSV = () => {
+    const listToExport = filteredMembers;
+    if (listToExport.length === 0) {
+      alert("Aucun membre à exporter.");
+      return;
+    }
+
+    const headers = [
+      "Prénom",
+      "Nom",
+      "Surnom",
+      "Disciplines",
+      "Ancienneté",
+      "Instrument Actuel / Validé",
+      "Statut Affectation",
+      "Souhait Réorientation",
+      "Vœu 1",
+      "Vœu 2",
+      "Vœu 3",
+      "Renfort Ancien Instrument"
+    ];
+
+    const rows = listToExport.map(m => {
+      const prenom = (m.prenom || '').replace(/"/g, '""');
+      const nom = (m.nom || '').replace(/"/g, '""');
+      const surnom = (m.surnom || '').replace(/"/g, '""');
+
+      const disciplinesList = [];
+      if (m.pratiquePercussion !== false && m.instrument !== 'Danse') disciplinesList.push("Percussion");
+      if (m.pratiqueDanse) disciplinesList.push("Danse");
+      const disciplinesStr = disciplinesList.join(' + ');
+
+      const ancienneteStr = m.estAncienMembre ? 'Ancien' : 'Nouveau';
+
+      const currentInst = (m.instrumentPrincipal || m.instrument || 'En attente').replace(/"/g, '""');
+      const isAssigned = m.instrument && m.instrument.trim() !== '' && m.instrument !== 'En attente';
+      const statutAffectation = isAssigned ? 'Validé' : 'En attente';
+
+      const souhaiteChangerStr = m.souhaiteChangerInstrument ? 'Oui' : 'Non';
+
+      const cleanVoeux = Array.isArray(m.voeuxInstruments) && m.voeuxInstruments.length > 0
+        ? m.voeuxInstruments
+        : [m.voeuPrincipal, m.voeuSecondaire, m.voeuTertiaire].filter(Boolean);
+
+      const voeu1 = (cleanVoeux[0] || '').replace(/"/g, '""');
+      const voeu2 = (cleanVoeux[1] || '').replace(/"/g, '""');
+      const voeu3 = (cleanVoeux[2] || '').replace(/"/g, '""');
+
+      const renfortStr = (m.volontaireAncienInstrument || m.accordRenfortAncienInstrument) ? 'Oui' : 'Non';
+
+      return [
+        `"${prenom}"`,
+        `"${nom}"`,
+        `"${surnom}"`,
+        `"${disciplinesStr}"`,
+        `"${ancienneteStr}"`,
+        `"${currentInst}"`,
+        `"${statutAffectation}"`,
+        `"${souhaiteChangerStr}"`,
+        `"${voeu1}"`,
+        `"${voeu2}"`,
+        `"${voeu3}"`,
+        `"${renfortStr}"`
+      ].join(';');
+    });
+
+    const csvContent = '\uFEFF' + [headers.join(';'), ...rows].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    const dateStr = new Date().toISOString().slice(0, 10);
+    link.setAttribute('download', `affectations_maracatu_${dateStr}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center p-8 gap-3">
@@ -455,15 +534,27 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
             </div>
           </div>
 
-          {/* Search bar */}
-          <div className="w-full sm:w-56">
-            <input
-              type="text"
-              placeholder="🔍 Rechercher un membre ou vœu..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="theme-input w-full text-xs py-1 px-2.5"
-            />
+          {/* Search bar & Export CSV button */}
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <div className="w-full sm:w-52">
+              <input
+                type="text"
+                placeholder="🔍 Rechercher un membre ou vœu..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="theme-input w-full text-xs py-1 px-2.5"
+              />
+            </div>
+
+            <CordelButton
+              type="button"
+              variant="wood"
+              onClick={handleExportCSV}
+              className="text-[10px] py-1 px-2.5 shrink-0 flex items-center gap-1 font-bold shadow-xs cursor-pointer"
+              title="Exporter les affectations et vœux au format CSV (Excel)"
+            >
+              <span>📥 Exporter (CSV)</span>
+            </CordelButton>
           </div>
         </div>
 
