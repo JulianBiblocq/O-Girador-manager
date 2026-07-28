@@ -836,9 +836,9 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
           )}
         </div>
       ) : (
-        /* Discussions Tab with Channels sidebar / discussion view */
+        /* Onglet Discussions avec barre latérale des salons / vue des discussions */
         <div className="flex flex-col md:flex-row gap-4">
-          {/* Column 1: Salons List (Écran 1 on Mobile, Left Sidebar on PC) */}
+          {/* Colonne 1 : Liste des salons (Écran 1 sur Mobile, Barre latérale gauche sur PC) */}
           <div className={`${mobileView === 'channels' ? 'block' : 'hidden'} md:block w-full md:w-72 lg:w-80 shrink-0 flex flex-col gap-2 select-none`}>
             <div className="flex flex-col gap-2 p-3 bg-cordel-bg-light border-2 border-encre-noire rounded-[8px_6px_10px_7px] shadow-[2.5px_2.5px_0px_0px_#181716] min-w-0">
               <div className="flex justify-between items-center mb-2 border-b border-dashed border-cordel-master-dark/20 pb-1 min-w-0">
@@ -873,9 +873,9 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
             </div>
           </div>
 
-          {/* Column 2: Discussion Area (Écran 2 on Mobile, Right Main Panel on PC) */}
+          {/* Colonne 2 : Zone de discussion (Écran 2 sur Mobile, Panneau principal droit sur PC) */}
           <div className={`${mobileView === 'discussion' ? 'block' : 'hidden'} md:block flex-1 min-w-0`}>
-            {/* Mobile Back Button to Salons List */}
+            {/* Bouton de retour mobile vers la liste des salons */}
             <div className="block md:hidden mb-3">
               <CordelButton
                 variant="default"
@@ -891,7 +891,7 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
                 <span className="text-xs uppercase tracking-widest font-black animate-pulse opacity-60">⏳ {t('common.loading')}</span>
               </div>
             ) : isAdding ? (
-              /* Create thread form panel */
+              /* Formulaire de création de sujet */
               <CreateThreadForm 
                 groupId={profileData.groupId} 
                 channelId={activeChannelId}
@@ -900,9 +900,9 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
                 onClose={() => setIsAdding(false)} 
               />
             ) : (
-              /* Thread Listing */
+              /* Liste des discussions */
               <div className="flex flex-col gap-4">
-                {/* Breadcrumbs Path */}
+                {/* Chemin de navigation (Fil d'Ariane) */}
                 {(() => {
                   const path = [];
                   let current = channels.find(c => c.id === activeChannelId);

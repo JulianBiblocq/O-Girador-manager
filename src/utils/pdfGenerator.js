@@ -26,21 +26,21 @@ export const generateImageCharterPDF = (member, associationName) => {
   const doc = new jsPDF();
   const assocName = (associationName && typeof associationName === 'string' && associationName.trim()) ? associationName.trim() : "O Girador";
   
-  // Title
+  // Titre du document
   doc.setFont("helvetica", "bold");
   doc.setFontSize(18);
   doc.text("CHARTE DE DROIT À L'IMAGE", 105, 30, { align: "center" });
   
-  // Subtitle
+  // Sous-titre
   doc.setFontSize(11);
   doc.setFont("helvetica", "normal");
   doc.text(`Document officiel de l'association : ${assocName}`, 105, 40, { align: "center" });
   
-  // Horizontal line
+  // Ligne horizontale de séparation
   doc.setDrawColor(180, 180, 180);
   doc.line(20, 45, 190, 45);
   
-  // Member Details
+  // Informations du membre
   doc.setFont("helvetica", "bold");
   doc.setFontSize(11);
   doc.text("BÉNÉFICIAIRE DU CONSENTEMENT :", 20, 60);
@@ -51,15 +51,15 @@ export const generateImageCharterPDF = (member, associationName) => {
   doc.text(`Prénom : ${member.prenom || ""}`, 25, 78);
   doc.text(`Adresse email : ${member.email || ""}`, 25, 86);
   
-  // Separator
+  // Ligne de séparation
   doc.line(20, 95, 190, 95);
   
-  // Body Text Title
+  // Titre du corps du texte
   doc.setFont("helvetica", "bold");
   doc.setFontSize(11);
   doc.text("Autorisation d'exploitation de l'image", 20, 108);
   
-  // Body Text Content
+  // Contenu du texte
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
   const textLines = doc.splitTextToSize(
@@ -68,18 +68,18 @@ export const generateImageCharterPDF = (member, associationName) => {
   );
   doc.text(textLines, 20, 118);
   
-  // Electronic Signature box
+  // Encadré de signature électronique
   const signatureY = 175;
   doc.setDrawColor(24, 23, 22);
   doc.setFillColor(248, 248, 247);
   doc.rect(20, signatureY, 170, 38, "FD");
   
-  // Signature Box Header
+  // En-tête de l'encadré de signature
   doc.setFont("helvetica", "bold");
   doc.setFontSize(9);
   doc.text("VALIDATION ET SIGNATURE ÉLECTRONIQUE", 25, signatureY + 8);
   
-  // Signature Box Content
+  // Contenu de l'encadré de signature
   doc.setFont("helvetica", "italic");
   doc.setFontSize(9);
   const sigDate = formatTimestamp(member.dateSignatureDroitImage);
@@ -89,7 +89,7 @@ export const generateImageCharterPDF = (member, associationName) => {
   );
   doc.text(sigText, 25, signatureY + 18);
   
-  // Footer
+  // Pied de page
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
   doc.setTextColor(120, 120, 120);
@@ -102,21 +102,21 @@ export const generateMedicalAttestationPDF = (member, associationName) => {
   const doc = new jsPDF();
   const assocName = (associationName && typeof associationName === 'string' && associationName.trim()) ? associationName.trim() : "O Girador";
   
-  // Title
+  // Titre du document
   doc.setFont("helvetica", "bold");
   doc.setFontSize(18);
   doc.text("ATTESTATION D'APTITUDE MÉDICALE", 105, 30, { align: "center" });
   
-  // Subtitle
+  // Sous-titre
   doc.setFontSize(11);
   doc.setFont("helvetica", "normal");
   doc.text(`Document officiel de l'association : ${assocName}`, 105, 40, { align: "center" });
   
-  // Horizontal line
+  // Ligne horizontale de séparation
   doc.setDrawColor(180, 180, 180);
   doc.line(20, 45, 190, 45);
   
-  // Member Details
+  // Informations du membre
   doc.setFont("helvetica", "bold");
   doc.setFontSize(11);
   doc.text("DÉCLARANT :", 20, 60);
@@ -127,15 +127,15 @@ export const generateMedicalAttestationPDF = (member, associationName) => {
   doc.text(`Prénom : ${member.prenom || ""}`, 25, 78);
   doc.text(`Adresse email : ${member.email || ""}`, 25, 86);
   
-  // Separator
+  // Ligne de séparation
   doc.line(20, 95, 190, 95);
   
-  // Body Text Title
+  // Titre du corps du texte
   doc.setFont("helvetica", "bold");
   doc.setFontSize(11);
   doc.text("Attestation sur l'honneur d'absence de contre-indication médicale", 20, 108);
   
-  // Body Text Content
+  // Contenu du texte
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
   const textLines = doc.splitTextToSize(
@@ -144,18 +144,18 @@ export const generateMedicalAttestationPDF = (member, associationName) => {
   );
   doc.text(textLines, 20, 118);
   
-  // Electronic Signature box
+  // Encadré de signature électronique
   const signatureY = 175;
   doc.setDrawColor(24, 23, 22);
   doc.setFillColor(248, 248, 247);
   doc.rect(20, signatureY, 170, 38, "FD");
   
-  // Signature Box Header
+  // En-tête de l'encadré de signature
   doc.setFont("helvetica", "bold");
   doc.setFontSize(9);
   doc.text("VALIDATION ET SIGNATURE ÉLECTRONIQUE", 25, signatureY + 8);
   
-  // Signature Box Content
+  // Contenu de l'encadré de signature
   doc.setFont("helvetica", "italic");
   doc.setFontSize(9);
   const sigDate = formatTimestamp(member.dateSignatureAttestationSante);
@@ -165,7 +165,7 @@ export const generateMedicalAttestationPDF = (member, associationName) => {
   );
   doc.text(sigText, 25, signatureY + 18);
   
-  // Footer
+  // Pied de page
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
   doc.setTextColor(120, 120, 120);

@@ -91,17 +91,17 @@ export function formatTagGender(tag, userGenre, globalUseFeminine = false, tagsD
 
   const cleanGenre = (userGenre || '').toLowerCase();
 
-  // Rule 1: Femme -> Feminine label
+  // Règle 1 : Genre Femme -> Libellé féminin
   if (cleanGenre === 'femme') {
     return nomF || nomM;
   }
 
-  // Rule 2: Homme -> Masculine label
+  // Règle 2 : Genre Homme -> Libellé masculin
   if (cleanGenre === 'homme') {
     return nomM || nomF;
   }
 
-  // Rule 3: Autre / Empty -> Global association preference
+  // Règle 3 : Autre / Non spécifié -> Préférence globale de l'association
   if (globalUseFeminine) {
     return nomF || nomM;
   }
@@ -110,11 +110,11 @@ export function formatTagGender(tag, userGenre, globalUseFeminine = false, tagsD
 }
 
 /**
- * Resolves effective user tags including all inherited tags recursively via inheritsFrom.
+ * Résout les étiquettes effectives d'un membre en incluant l'héritage récursif via inheritsFrom.
  * 
- * @param {Array<string|object>} userTags - Direct user tags assigned to the user profile
- * @param {Array<object|string>} tagsDisponibles - Full list of available association tags
- * @returns {Array<string>} Array of effective tag IDs/names (direct + inherited)
+ * @param {Array<string|object>} userTags - Étiquettes directes attribuées au profil utilisateur
+ * @param {Array<object|string>} tagsDisponibles - Liste complète des étiquettes disponibles de l'association
+ * @returns {Array<string>} Tableau des identifiants/noms d'étiquettes effectifs (directs + hérités)
  */
 export function resolveEffectiveUserTags(userTags = [], tagsDisponibles = []) {
   if (!Array.isArray(userTags) || userTags.length === 0) return [];
@@ -122,7 +122,7 @@ export function resolveEffectiveUserTags(userTags = [], tagsDisponibles = []) {
   const effectiveTagIds = new Set();
   const queue = [];
 
-  // Initialize queue with direct user tag IDs
+  // Initialisation de la file avec les étiquettes directes du membre
   userTags.forEach(t => {
     const tagId = getTagId(t);
     if (tagId) {
@@ -130,7 +130,7 @@ export function resolveEffectiveUserTags(userTags = [], tagsDisponibles = []) {
     }
   });
 
-  // Map for fast tag lookup by ID/name
+  // Dictionnaire pour une recherche rapide des badges par identifiant/nom
   const tagMap = new Map();
   if (Array.isArray(tagsDisponibles)) {
     tagsDisponibles.forEach(item => {
@@ -147,7 +147,7 @@ export function resolveEffectiveUserTags(userTags = [], tagsDisponibles = []) {
     });
   }
 
-  // BFS with visited set to prevent infinite loops in case of circular references
+  // Parcours en largeur (BFS) avec protection contre les boucles d'héritage circulaires
   const visited = new Set();
 
   while (queue.length > 0) {
@@ -158,7 +158,7 @@ export function resolveEffectiveUserTags(userTags = [], tagsDisponibles = []) {
     visited.add(currentLower);
     effectiveTagIds.add(currentTagId);
 
-    // Look up tag object in tagsDisponibles to check for inheritsFrom
+    // Recherche de l'objet badge dans tagsDisponibles pour vérifier les héritages (inheritsFrom)
     const tagObj = tagMap.get(currentLower);
     if (tagObj && typeof tagObj === 'object' && Array.isArray(tagObj.inheritsFrom)) {
       tagObj.inheritsFrom.forEach(parentTagId => {

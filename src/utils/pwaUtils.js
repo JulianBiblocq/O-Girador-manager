@@ -1,9 +1,9 @@
 /**
- * Utility to clear all browser caches, unregister service workers, and force reload the page.
- * Used for emergency manual update / cache clearing by users.
+ * Utilitaire pour vider tous les caches du navigateur, désinscrire les service workers et forcer le rechargement.
+ * Utilisé pour les mises à jour manuelles d'urgence et le nettoyage du cache par les membres.
  */
 export const forceUpdateAndClearCache = async () => {
-  // 1. Delete all cache storages
+  // 1. Supprimer tous les espaces de stockage en cache
   if ('caches' in window) {
     try {
       const keys = await caches.keys();
@@ -11,11 +11,11 @@ export const forceUpdateAndClearCache = async () => {
         return caches.delete(key);
       }));
     } catch (err) {
-      console.error("PWA Utils - Error deleting caches:", err);
+      console.error("PWA Utils - Erreur lors de la suppression des caches :", err);
     }
   }
 
-  // 2. Unregister all active Service Workers
+  // 2. Désinscrire tous les Service Workers actifs
   if ('serviceWorker' in navigator) {
     try {
       const registrations = await navigator.serviceWorker.getRegistrations();
@@ -23,16 +23,16 @@ export const forceUpdateAndClearCache = async () => {
         return registration.unregister();
       }));
     } catch (err) {
-      console.error("PWA Utils - Error unregistering service workers:", err);
+      console.error("PWA Utils - Erreur lors de la désinscription des service workers :", err);
     }
   }
 
-  // 3. Force reload the page (true bypasses browser cache)
+  // 3. Forcer le rechargement de la page (contourne le cache du navigateur)
   window.location.reload(true);
 };
 
 /**
- * Robust wrapper around React.lazy to auto-recover when dynamic chunk imports fail after new deployments.
+ * Enveloppe robuste autour de React.lazy pour récupérer automatiquement les échecs d'importation de modules dynamiques lors de nouveaux déploiements.
  */
 import React from 'react';
 
@@ -51,7 +51,7 @@ export function lazyWithRetry(componentImport) {
             const keys = await caches.keys();
             await Promise.all(keys.map(k => caches.delete(k)));
           } catch (e) {
-            // ignore
+            // Ignorer
           }
         }
         window.location.reload();
