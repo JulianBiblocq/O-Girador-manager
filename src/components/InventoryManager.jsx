@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import LayoutShell from './LayoutShell';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
-import { XiloClose } from './XiloIcons';
+import { XiloClose, XiloCaixa } from './XiloIcons';
 import { useTranslation } from './LanguageContext';
 import useConfirm from '../hooks/useConfirm';
 import { useInventoryData } from '../hooks/useInventoryData';
