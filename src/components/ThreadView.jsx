@@ -14,7 +14,7 @@ import { getTagId } from '../utils/tagUtils';
 import { usePresenceContext } from '../context/PresenceContext';
 import useConfirm from '../hooks/useConfirm';
 
-// Memoized ThreadReplyItem component to avoid re-rendering comments when typing
+// Composant ThreadReplyItem mémoïsé pour éviter les rendus inutiles lors de la saisie
 const ThreadReplyItem = React.memo(({
   reply,
   index,
@@ -31,7 +31,7 @@ const ThreadReplyItem = React.memo(({
   const isCurrentUser = reply.auteurId === userId;
   const isAuthorOnline = isPresenceEnabled !== false && reply.auteurId && onlineUserIds.has(reply.auteurId);
 
-  // Check if message targets user tags/instruments
+  // Vérification si le message cible des étiquettes ou des instruments du membre
   const userPlaysInstrument = (profileData?.instrumentsJoues && profileData.instrumentsJoues.includes(reply.targetTag)) ||
                                (profileData?.instrument === reply.targetTag);
   const userHasTag = profileData?.tags && profileData.tags.includes(reply.targetTag);
@@ -252,7 +252,7 @@ export default function ThreadView({ threadId, user, profileData, channels = [],
     if (isMestreOrAdmin) return false;
     if (!thread) return true;
 
-    // Check if channel is explicitly read-only for regular members
+    // Vérifier si le salon est explicitement en lecture seule pour les membres simples
     if (threadChannel && threadChannel.readOnlyForMembers === true) return true;
 
     if (!thread.channelId || !threadChannel) return false;
@@ -274,7 +274,7 @@ export default function ThreadView({ threadId, user, profileData, channels = [],
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  // Listen to this specific thread document in real-time
+  // Écoute en temps réel du document de cette discussion spécifique
   useEffect(() => {
     if (!threadId) {
       setLoading(false);
@@ -302,14 +302,14 @@ export default function ThreadView({ threadId, user, profileData, channels = [],
     return () => unsubscribe();
   }, [threadId]);
 
-  // Scroll down when thread messages update
+  // Fait défiler vers le bas lors de la mise à jour des messages
   useEffect(() => {
     if (thread?.reponses) {
       scrollToBottom();
     }
   }, [thread?.reponses]);
 
-  // Load available tags and instruments from association document
+  // Chargement en temps réel des étiquettes et instruments disponibles
   useEffect(() => {
     if (!profileData?.groupId) return;
     const assocRef = doc(db, 'associations', profileData.groupId);
@@ -323,7 +323,7 @@ export default function ThreadView({ threadId, user, profileData, channels = [],
         setAvailableTargets(combined);
       }
     }, (error) => {
-      console.error("ThreadView - Error fetching targets:", error);
+      console.error("ThreadView - Erreur chargement cibles :", error);
     });
     return () => unsubscribe();
   }, [profileData?.groupId]);

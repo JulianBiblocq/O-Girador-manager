@@ -5,9 +5,10 @@ import { formatTagGender, getTagId } from '../../utils/tagUtils';
 import { getMigratedRoleAndTags, VALID_SYSTEM_ROLES } from '../../utils/roleMigration';
 
 /**
- * SystemUserList renders the list of registered users and controls to edit their permissions,
- * levels, custom fields, and print PDF certificates.
- * Extracted from SystemAdminPanel to modularize user management.
+ * Composant SystemUserList
+ * Affiche la liste des membres inscrits et fournit les contrôles pour modifier leurs rôles système,
+ * leurs étiquettes (tags), leurs niveaux, leurs champs personnalisés et imprimer leurs attestations PDF.
+ * Extrait de SystemAdminPanel pour modulariser la gestion des utilisateurs.
  */
 export default function SystemUserList({
   usersList,

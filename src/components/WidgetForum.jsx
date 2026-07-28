@@ -66,13 +66,13 @@ export default function WidgetForum({ groupId, onOpen }) {
       useExtremeBorder={true} 
       className="relative p-4 select-none w-full"
     >
-      {/* Decorative background stamp simulator */}
+      {/* Simulateur de filigrane décoratif en arrière-plan */}
       <div className="absolute -right-4 -bottom-4 opacity-[0.08] select-none pointer-events-none transform -rotate-12">
         <XiloMegaphone size={96} className="text-cordel-wood" />
       </div>
 
       <div className="flex flex-col gap-3 text-left w-full">
-        {/* Header Bar */}
+        {/* Barre d'en-tête */}
         <div className="flex justify-between items-center w-full pb-2 border-b border-dashed border-cordel-master-dark/20">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 bg-cordel-master-dark text-cordel-bg-light border border-encre-noire flex items-center justify-center rounded-[6px_4px_8px_5px] shrink-0 select-none shadow-[1px_1px_0px_0px_#181716]">
@@ -97,7 +97,7 @@ export default function WidgetForum({ groupId, onOpen }) {
           </CordelButton>
         </div>
 
-        {/* Responsive Threads Grid (1 col on mobile, 2 cols on tablet, 3 cols on desktop) */}
+        {/* Grille responsive des discussions (1 col sur mobile, 2 cols sur tablette, 3 cols sur PC) */}
         {loading ? (
           <div className="flex justify-center items-center py-6">
             <span className="text-xs uppercase tracking-widest font-black animate-pulse opacity-60">⏳</span>

@@ -775,7 +775,7 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
       </div>
 
       {activeTab === 'inbox' ? (
-        /* Private Messages Inbox Listing */
+        /* Liste des discussions privées */
         <div className="flex flex-col gap-4">
           <h2 className="panel-title text-sm font-extrabold text-cordel-master-dark opacity-80 uppercase px-1 select-none">
             {translate('forum.privateConversationsTitle', "Mes Discussions Privées")}
@@ -821,7 +821,7 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
                       </span>
                     </div>
 
-                    {/* Unread badge overlay */}
+                    {/* Badge de messages non lus */}
                     {isUnread && (
                       <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center justify-center select-none">
                         <span className="w-5 h-5 bg-red-600 text-white flex items-center justify-center font-black text-[9px] rounded-full shadow-[1.5px_1.5px_0px_0px_#181716]">
@@ -993,7 +993,7 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
         </div>
       )}
 
-      {/* Move Thread Modal */}
+      {/* Modal de déplacement de sujet */}
       {movingThreadModal && (
         <MoveThreadModal
           thread={movingThreadModal}

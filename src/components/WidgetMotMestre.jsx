@@ -112,12 +112,12 @@ export default function WidgetMotMestre({ role, isSystemAdmin, groupId, profileD
 
   return (
     <CordelCard variant="default" useExtremeBorder={true} className="relative overflow-hidden">
-      {/* Decorative background stamp simulator */}
+      {/* Simulateur de filigrane décoratif en arrière-plan */}
       <div className="absolute -right-4 -bottom-4 text-8xl opacity-[0.06] select-none pointer-events-none transform rotate-12">
         M
       </div>
 
-      {/* Edit Trigger Buttons (visible only for authorized members when not loading) */}
+      {/* Boutons d'édition (visibles uniquement pour les membres autorisés quand le chargement est terminé) */}
       {!loading && isAuthorized && (
         <div className="absolute top-3 right-3 z-10 flex gap-2">
           {isEditing ? (
@@ -161,7 +161,7 @@ export default function WidgetMotMestre({ role, isSystemAdmin, groupId, profileD
         </div>
       ) : (
         <div className="flex gap-4 items-start text-left">
-          {/* Mestre avatar/stamp simulator */}
+          {/* Avatar/Tampon du Mestre */}
           <div className="w-12 h-12 bg-cordel-master-dark text-cordel-bg-light border-2 border-encre-noire flex items-center justify-center font-bold text-lg shrink-0 rounded-[8px_14px_6px_10px] shadow-[2px_2px_0px_0px_#181716] select-none">
             M
           </div>

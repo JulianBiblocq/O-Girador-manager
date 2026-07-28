@@ -51,7 +51,7 @@ export default function SystemAdminPanel({ profileData, associationName: propAss
     }
   }, [propAssociationName]);
 
-  // Synchronize all user profiles in real-time
+  // Synchronisation en temps réel de l'ensemble des profils membres
   useEffect(() => {
     if (!profileData) return;
     const isAuthorized = profileData.isSystemAdmin === true || profileData.role === 'super-admin' || profileData.role === 'mestre';
@@ -89,7 +89,7 @@ export default function SystemAdminPanel({ profileData, associationName: propAss
         }
       });
 
-      // Sort users by last name
+      // Trier les membres par nom de famille
       fetchedUsers.sort((a, b) => (a.nom || '').localeCompare(b.nom || ''));
       setUsersList(fetchedUsers);
       setLoading(false);
@@ -101,7 +101,7 @@ export default function SystemAdminPanel({ profileData, associationName: propAss
     return () => unsubscribe();
   }, [profileData]);
 
-  // Real-time synchronization of custom tags list and fieldsConfig from associations collection
+  // Synchronisation temps réel de la liste des étiquettes et des paramètres depuis la collection associations
   useEffect(() => {
     if (!profileData || !profileData.groupId) return;
     const isAuthorized = profileData.isSystemAdmin === true || profileData.role === 'super-admin' || profileData.role === 'mestre';
@@ -130,7 +130,7 @@ export default function SystemAdminPanel({ profileData, associationName: propAss
     return () => unsubscribe();
   }, [profileData]);
 
-  // Ultimate Security Verification
+  // Contrôle de sécurité ultime
   const isAuthorized = profileData?.isSystemAdmin === true || profileData?.role === 'super-admin' || profileData?.role === 'mestre';
   if (!profileData || !isAuthorized) {
     return (

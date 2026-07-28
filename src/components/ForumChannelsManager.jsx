@@ -11,8 +11,8 @@ import useConfirm from '../hooks/useConfirm';
 import { normalizeTag } from '../utils/tagUtils';
 
 /**
- * ForumChannelsManager Component
- * Admin tool for managing hierarchical forum categories, channels, subfolders, and thread/message moderation.
+ * Composant ForumChannelsManager
+ * Outil d'administration pour gérer la hiérarchie des catégories du forum, les salons, sous-dossiers et la modération des messages.
  */
 export default function ForumChannelsManager({ groupId, role, isSystemAdmin, onBack }) {
   const { t } = useTranslation();
@@ -23,7 +23,7 @@ export default function ForumChannelsManager({ groupId, role, isSystemAdmin, onB
   const [tagsDisponibles, setTagsDisponibles] = useState([]);
   const [loading, setLoading] = useState(true);
   
-  // Form State
+  // État du formulaire
   const [isEditing, setIsEditing] = useState(false);
   const [editingChannelId, setEditingChannelId] = useState(null);
   const [name, setName] = useState('');
@@ -33,7 +33,7 @@ export default function ForumChannelsManager({ groupId, role, isSystemAdmin, onB
   const [readOnlyForMembers, setReadOnlyForMembers] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  // Sync tagsDisponibles for the association
+  // Synchronisation des étiquettes disponibles de l'association
   useEffect(() => {
     if (!groupId) return;
     const assocRef = doc(db, 'associations', groupId);
