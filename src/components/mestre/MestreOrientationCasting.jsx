@@ -35,6 +35,73 @@ const getInstrumentIconPath = (instName) => {
 };
 
 /**
+ * Assainit les vœux d'orientation d'un membre pour extraire "Danse" des vœux de percussions.
+ * Si "Danse" figurait dans voeuPrincipal, voeuSecondaire, voeuTertiaire ou voeuxInstruments :
+ * 1. Bascule pratiqueDanse à true.
+ * 2. Purge "Danse" du tableau des vœux de percussions.
+ * 3. Persiste l'assainissement dans Firestore si nécessaire.
+ */
+const sanitizeMemberDanseWishes = (memberData, memberId) => {
+  if (!memberData) return memberData;
+
+  const copy = { ...memberData };
+  let needsUpdate = false;
+
+  const rawWishes = [
+    copy.voeuPrincipal,
+    copy.voeuSecondaire,
+    copy.voeuTertiaire,
+    ...(Array.isArray(copy.voeuxInstruments) ? copy.voeuxInstruments : [])
+  ].filter(Boolean);
+
+  const containsDanseWish = rawWishes.some(w => typeof w === 'string' && w.toLowerCase().trim() === 'danse');
+  const containsDanseInstrument = (copy.instrument || '').toLowerCase().trim() === 'danse' || (copy.instrumentPrincipal || '').toLowerCase().trim() === 'danse';
+
+  if (containsDanseWish || containsDanseInstrument) {
+    if (!copy.pratiqueDanse) {
+      copy.pratiqueDanse = true;
+      needsUpdate = true;
+    }
+
+    const cleanPercussionWishes = rawWishes.filter(w => typeof w === 'string' && w.toLowerCase().trim() !== 'danse');
+    const uniqueCleanWishes = Array.from(new Set(cleanPercussionWishes));
+
+    if (JSON.stringify(copy.voeuxInstruments || []) !== JSON.stringify(uniqueCleanWishes)) {
+      copy.voeuxInstruments = uniqueCleanWishes;
+      copy.voeuPrincipal = uniqueCleanWishes[0] || '';
+      copy.voeuSecondaire = uniqueCleanWishes[1] || '';
+      copy.voeuTertiaire = uniqueCleanWishes[2] || '';
+      needsUpdate = true;
+    }
+
+    if (containsDanseInstrument) {
+      copy.instrument = (copy.instrumentPrincipal && copy.instrumentPrincipal.toLowerCase().trim() !== 'danse') ? copy.instrumentPrincipal : (uniqueCleanWishes[0] || 'En attente');
+      copy.instrumentPrincipal = copy.instrument;
+      needsUpdate = true;
+    }
+
+    if (needsUpdate && memberId) {
+      try {
+        const userRef = doc(db, 'users', memberId);
+        updateDoc(userRef, {
+          pratiqueDanse: true,
+          voeuxInstruments: copy.voeuxInstruments,
+          voeuPrincipal: copy.voeuPrincipal,
+          voeuSecondaire: copy.voeuSecondaire,
+          voeuTertiaire: copy.voeuTertiaire,
+          instrument: copy.instrument,
+          instrumentPrincipal: copy.instrumentPrincipal
+        }).catch(err => console.error("MestreOrientationCasting - Erreur de sauvegarde assainissement :", err));
+      } catch (e) {
+        console.error("MestreOrientationCasting - Erreur d'assainissement :", e);
+      }
+    }
+  }
+
+  return copy;
+};
+
+/**
  * Composant MestreOrientationCasting
  * Tableau de bord "Orientation & Casting" pour le Mestre.
  * Permet la validation à 1-clic des vœux d'instruments et la gestion des pupitres.
@@ -52,7 +119,7 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
 
   const groupId = profileData?.groupId || null;
 
-  // Real-time synchronization of members list
+  // Synchronisation en temps réel de la liste des membres avec assainissement des anciens vœux "Danse"
   useEffect(() => {
     if (!groupId) {
       setLoading(false);
@@ -65,15 +132,18 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
     const unsubscribeUsers = onSnapshot(q, (snapshot) => {
       const fetched = [];
       snapshot.forEach((docSnap) => {
+        const rawData = docSnap.data();
+        const memberId = docSnap.id;
+        const sanitized = sanitizeMemberDanseWishes(rawData, memberId);
         fetched.push({
-          id: docSnap.id,
-          ...docSnap.data()
+          id: memberId,
+          ...sanitized
         });
       });
       setMembers(fetched);
       setLoading(false);
     }, (error) => {
-      console.error("MestreOrientationCasting - Error fetching users:", error);
+      console.error("MestreOrientationCasting - Erreur de fetch des utilisateurs :", error);
       setLoading(false);
     });
 
