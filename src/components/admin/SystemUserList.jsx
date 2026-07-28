@@ -2,6 +2,7 @@ import React from 'react';
 import CordelCard from '../CordelCard';
 import { generateImageCharterPDF, generateMedicalAttestationPDF } from '../../utils/pdfGenerator';
 import { formatTagGender, getTagId } from '../../utils/tagUtils';
+import { getMigratedRoleAndTags, VALID_SYSTEM_ROLES } from '../../utils/roleMigration';
 
 /**
  * SystemUserList renders the list of registered users and controls to edit their permissions,
@@ -31,7 +32,8 @@ export default function SystemUserList({
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       {usersList.map((userItem) => {
-        const currentRole = userItem.role || 'membre';
+        const migrated = getMigratedRoleAndTags(userItem);
+        const currentRole = migrated.newRole;
         const currentTags = userItem.tags || [];
         const currentLevel = userItem.niveau || 'aucun';
         const currentDanceLevel = userItem.niveauDanse || 'aucun';
@@ -43,6 +45,7 @@ export default function SystemUserList({
         const userDraft = draftFields[userItem.id] || {};
         
         const activeRole = draftRole !== undefined ? draftRole : currentRole;
+        const normalizedActiveRole = VALID_SYSTEM_ROLES.includes(activeRole) ? activeRole : getMigratedRoleAndTags({ role: activeRole }).newRole;
         const activeTags = draftTag !== undefined ? draftTag : currentTags;
         const activeLevel = draftLevel !== undefined ? draftLevel : currentLevel;
         const activeDanceLevel = draftDanceLevel !== undefined ? draftDanceLevel : currentDanceLevel;
@@ -146,16 +149,14 @@ export default function SystemUserList({
                     Attribuer un rôle
                   </label>
                   <select
-                    value={activeRole}
+                    value={normalizedActiveRole}
                     onChange={(e) => handleRoleChange(userItem.id, e.target.value)}
                     disabled={savingId === userItem.id}
                     className="theme-input text-[10px] font-bold py-1 px-1.5 bg-cordel-bg-light"
                   >
                     <option value="membre">Membre</option>
-                    <option value="tresorier">Trésorier</option>
-                    <option value="logistique">Logistique</option>
-                    <option value="mestre">Mestre</option>
-                    <option value="super-admin">Super Admin</option>
+                    <option value="admin">Admin</option>
+                    <option value="mestre">Mestre (Super-Admin)</option>
                   </select>
                 </div>
 

@@ -9,6 +9,7 @@ import { forceUpdateAndClearCache } from '../utils/pwaUtils';
 import { XiloSettings, XiloPeople } from './XiloIcons';
 import SystemUserList from './admin/SystemUserList';
 import useConfirm from '../hooks/useConfirm';
+import { getMigratedRoleAndTags, VALID_SYSTEM_ROLES } from '../utils/roleMigration';
 
 const DEFAULT_FIELDS_CONFIG = {
   telephone: { key: "telephone", label: "Téléphone", enabled: true, filledBy: "member", isRequired: false },
@@ -64,11 +65,28 @@ export default function SystemAdminPanel({ profileData, associationName: propAss
 
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
       const fetchedUsers = [];
-      querySnapshot.forEach((doc) => {
-        fetchedUsers.push({
-          id: doc.id,
-          ...doc.data()
-        });
+      querySnapshot.forEach((docSnap) => {
+        const uData = docSnap.data();
+        const migration = getMigratedRoleAndTags(uData);
+        if (migration.needsMigration) {
+          const uRef = doc(db, 'users', docSnap.id);
+          updateDoc(uRef, {
+            role: migration.newRole,
+            tags: migration.newTags
+          }).catch(err => console.error("SystemAdminPanel - Erreur migration utilisateur :", err));
+
+          fetchedUsers.push({
+            id: docSnap.id,
+            ...uData,
+            role: migration.newRole,
+            tags: migration.newTags
+          });
+        } else {
+          fetchedUsers.push({
+            id: docSnap.id,
+            ...uData
+          });
+        }
       });
 
       // Sort users by last name
@@ -172,8 +190,10 @@ export default function SystemAdminPanel({ profileData, associationName: propAss
     const currentLevel = currentUserItem.niveau || 'aucun';
     const currentDanceLevel = currentUserItem.niveauDanse || 'aucun';
 
-    const newRole = draftRoles[targetUserId] !== undefined ? draftRoles[targetUserId] : currentRole;
-    const newTags = draftTags[targetUserId] !== undefined ? draftTags[targetUserId] : (currentTags || []);
+    const rawRole = draftRoles[targetUserId] !== undefined ? draftRoles[targetUserId] : currentRole;
+    const migration = getMigratedRoleAndTags({ role: rawRole, tags: currentTags });
+    const finalRole = VALID_SYSTEM_ROLES.includes(rawRole) ? rawRole : migration.newRole;
+    const newTags = draftTags[targetUserId] !== undefined ? draftTags[targetUserId] : (migration.needsMigration ? migration.newTags : currentTags);
     const newLevel = draftLevels[targetUserId] !== undefined ? draftLevels[targetUserId] : currentLevel;
     const newDanceLevel = draftDanceLevels[targetUserId] !== undefined ? draftDanceLevels[targetUserId] : currentDanceLevel;
 
@@ -181,7 +201,7 @@ export default function SystemAdminPanel({ profileData, associationName: propAss
     const isEnabled = (key) => fieldsConfig?.[key]?.enabled === true;
 
     const updatePayload = {
-      role: newRole,
+      role: finalRole,
       tags: newTags,
       niveau: newLevel,
       niveauDanse: newDanceLevel

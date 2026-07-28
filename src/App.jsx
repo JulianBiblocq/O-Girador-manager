@@ -12,6 +12,7 @@ import ErrorBoundary from './components/ErrorBoundary';
 
 import { lazyWithRetry } from './utils/pwaUtils';
 import { resolveEffectiveUserTags } from './utils/tagUtils';
+import { getMigratedRoleAndTags } from './utils/roleMigration';
 
 const Onboarding = lazyWithRetry(() => import('./components/Onboarding'));
 const Trombinoscope = lazyWithRetry(() => import('./components/Trombinoscope'));
@@ -531,11 +532,21 @@ export default function App() {
 
         if (currentUser) {
           setCheckingProfile(true);
-          // Real-time synchronization of the user profile document
           const profileRef = doc(db, 'users', currentUser.uid);
           unsubscribeProfile = onSnapshot(profileRef, (docSnap) => {
             if (docSnap.exists()) {
-              setProfileData({ uid: docSnap.id, id: docSnap.id, ...docSnap.data() });
+              const data = docSnap.data();
+              const migration = getMigratedRoleAndTags(data);
+              if (migration.needsMigration) {
+                updateDoc(profileRef, {
+                  role: migration.newRole,
+                  tags: migration.newTags
+                }).catch(err => console.error("App - Erreur migration profil utilisateur :", err));
+
+                setProfileData({ uid: docSnap.id, id: docSnap.id, ...data, role: migration.newRole, tags: migration.newTags });
+              } else {
+                setProfileData({ uid: docSnap.id, id: docSnap.id, ...data });
+              }
               setProfileExists(true);
             } else {
               setProfileData(null);
