@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="200" height="200">
+  <rect width="100" height="100" fill="#000000" />
+  <g fill="none" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Tête -->
+    <circle cx="50" cy="22" r="7" fill="#FFFFFF"/>
+    <!-- Bras & Haut du corps -->
+    <path d="M 28 35 C 38 28, 50 36, 50 44 C 50 36, 62 28, 72 35" stroke-width="3"/>
+    <!-- Buste -->
+    <path d="M 50 44 L 50 58" stroke-width="3"/>
+    <!-- Jupe / Robe Maracatu -->
+    <path d="M 50 58 Q 30 75 18 85 L 82 85 Q 70 75 50 58 Z" stroke-width="2.5"/>
+    <path d="M 28 85 Q 50 88 72 85" stroke-width="1.5" stroke-dasharray="3 3"/>
+    <!-- Jambes -->
+    <path d="M 42 85 L 38 95 M 58 85 L 62 95" stroke-width="2.5"/>
+  </g>
+</svg>

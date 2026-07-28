@@ -23,11 +23,12 @@ const DEFAULT_INSTRUMENTS = [
 const getInstrumentIconPath = (instName) => {
   if (!instName) return '/favicon.svg';
   const name = instName.toLowerCase().trim();
+  if (name.includes('danse') || name.includes('dance')) return '/icones/danse.svg';
   if (name.includes('alfaia')) return '/icones/alfaia.svg';
   if (name.includes('agbê') || name.includes('agbe') || name.includes('sementes')) return '/icones/agbe.svg';
   if (name.includes('gonguê') || name.includes('gongue')) return '/icones/gongue.svg';
   if (name.includes('caixa') || name.includes('tarol') || name.includes('caisse')) return '/icones/caixa.svg';
-  if (name.includes('chant') || name.includes('voix') || name.includes('singer') || name.includes('danse') || name.includes('dance') || name.includes('micro')) return '/icones/micro.svg';
+  if (name.includes('chant') || name.includes('voix') || name.includes('singer') || name.includes('micro')) return '/icones/micro.svg';
   if (name.includes('timbal')) return '/icones/timbal.svg';
   if (name.includes('mineiro')) return '/icones/mineiro.svg';
   if (name.includes('apito') || name.includes('mestre') || name.includes('chef')) return '/icones/apito.svg';
@@ -159,7 +160,7 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
     return () => unsubscribeUsers();
   }, [groupId]);
 
-  // Real-time synchronization of available instruments configuration and linked instruments
+  // Synchronisation en temps réel des instruments configurés et liés
   useEffect(() => {
     if (!groupId) return;
 
@@ -167,26 +168,13 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
     const unsubscribeAssoc = onSnapshot(assocRef, (docSnap) => {
       if (docSnap.exists()) {
         const data = docSnap.data();
-        if (Array.isArray(data.instrumentsDisponibles) && data.instrumentsDisponibles.length > 0) {
-          setInstrumentsDisponibles(data.instrumentsDisponibles);
+        if (Array.isArray(data.instrumentsActifs) && data.instrumentsActifs.length > 0) {
+          setInstrumentsDisponibles(data.instrumentsActifs);
         } else {
           setInstrumentsDisponibles(DEFAULT_INSTRUMENTS);
         }
-
         if (Array.isArray(data.linkedInstruments)) {
-          const normalized = data.linkedInstruments.map(link => {
-            if (Array.isArray(link)) {
-              return { name: '', instruments: link };
-            } else if (link && typeof link === 'object') {
-              if (Array.isArray(link.instruments)) {
-                return { name: link.name || '', instruments: link.instruments };
-              } else if (link.inst1 && link.inst2) {
-                return { name: link.name || '', instruments: [link.inst1, link.inst2] };
-              }
-            }
-            return null;
-          }).filter(Boolean);
-          setLinkedInstruments(normalized);
+          setLinkedInstruments(data.linkedInstruments);
         } else {
           setLinkedInstruments([]);
         }
@@ -198,17 +186,17 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
     return () => unsubscribeAssoc();
   }, [groupId]);
 
-  // Filter active members (exclude inactive)
+  // Filtrer les membres actifs (exclure les inactifs)
   const activeMembers = useMemo(() => {
     return members.filter(m => m.statutActuel !== 'inactive');
   }, [members]);
 
-  // Grouped/Linked pupitres combined with standalone instruments
+  // Pupitres combinés (groupes liés + instruments seuls + Danse tout au bout)
   const displayPupitres = useMemo(() => {
     const result = [];
     const usedInstruments = new Set();
 
-    // 1. Process configured linked instrument groups
+    // 1. Groupes d'instruments liés (exclut Danse)
     (linkedInstruments || []).forEach((group, idx) => {
       const groupInsts = Array.isArray(group.instruments) ? group.instruments : [];
       if (groupInsts.length > 0) {
@@ -224,9 +212,9 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
       }
     });
 
-    // 2. Add remaining standalone instruments
+    // 2. Instruments de percussions seuls
     (instrumentsDisponibles || []).forEach(inst => {
-      if (!usedInstruments.has(inst.toLowerCase().trim())) {
+      if (inst.toLowerCase().trim() !== 'danse' && !usedInstruments.has(inst.toLowerCase().trim())) {
         result.push({
           id: `single-${inst}`,
           name: inst,
@@ -237,10 +225,19 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
       }
     });
 
+    // 3. Placer la Danse TOUT AU BOUT
+    result.push({
+      id: 'single-Danse',
+      name: 'Danse',
+      subTitle: 'Section Danse',
+      isGroup: false,
+      instruments: ['Danse']
+    });
+
     return result;
   }, [linkedInstruments, instrumentsDisponibles]);
 
-  // Real-time calculation of instrument quotas (Primary & Secondary) by Pupitre
+  // Calcul en temps réel des quotas d'effectifs par pupitre (avec intégration exacte de la Danse)
   const quotasByPupitre = useMemo(() => {
     const counts = {};
     displayPupitres.forEach(pupitre => {
@@ -248,18 +245,25 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
     });
 
     activeMembers.forEach(member => {
-      const mainInst = (member.instrument || '').toLowerCase().trim();
+      const mainInst = (member.instrument || member.instrumentPrincipal || '').toLowerCase().trim();
       const secInst = (member.instrumentSecondaire || '').toLowerCase().trim();
 
       displayPupitres.forEach(pupitre => {
-        const matchMain = pupitre.instruments.some(i => i.toLowerCase().trim() === mainInst);
-        const matchSec = pupitre.instruments.some(i => i.toLowerCase().trim() === secInst);
+        if (pupitre.name.toLowerCase() === 'danse') {
+          // Compte les personnes inscrites à la Danse (pratiqueDanse: true ou instrument: 'danse')
+          if (member.pratiqueDanse === true || mainInst === 'danse') {
+            counts[pupitre.id].primary += 1;
+          }
+        } else {
+          const matchMain = pupitre.instruments.some(i => i.toLowerCase().trim() === mainInst);
+          const matchSec = pupitre.instruments.some(i => i.toLowerCase().trim() === secInst);
 
-        if (matchMain) {
-          counts[pupitre.id].primary += 1;
-        }
-        if (matchSec) {
-          counts[pupitre.id].secondary += 1;
+          if (matchMain) {
+            counts[pupitre.id].primary += 1;
+          }
+          if (matchSec) {
+            counts[pupitre.id].secondary += 1;
+          }
         }
       });
     });
@@ -267,32 +271,52 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
     return counts;
   }, [activeMembers, displayPupitres]);
 
-  // Détermine si un membre pratique ou souhaite pratiquer la percussion (exclut les danseurs 100% Danse)
+  // Détermine si un membre pratique ou souhaite pratiquer la percussion (exclut les danseurs 100% Danse sans percussion)
   const isPercussionistMember = (m) => {
     if (!m) return false;
     if (m.pratiquePercussion === false) return false;
+    if (m.pratiquePercussion === true) return true;
+
     const inst = (m.instrument || m.instrumentPrincipal || '').toLowerCase().trim();
     const wishesList = Array.isArray(m.voeuxInstruments) && m.voeuxInstruments.length > 0
       ? m.voeuxInstruments.filter(Boolean)
       : [m.voeuPrincipal, m.voeuSecondaire, m.voeuTertiaire].filter(Boolean);
-    
-    if ((inst === 'danse' || !inst) && wishesList.length === 0 && m.pratiqueDanse === true && m.pratiquePercussion !== true) {
-      return false;
-    }
-    return true;
+
+    const hasAssignedPercussion = inst && inst !== 'danse' && inst !== 'en attente';
+    const hasPercussionWishes = wishesList.length > 0;
+
+    return hasAssignedPercussion || hasPercussionWishes;
   };
 
-  // Tri des membres du tableau :
-  // Priorité 1 : Percussionnistes sans instrument ou avec des vœux exprimés
-  // Priorité 2 : Ordre alphabétique par nom
+  // Détermine si un membre a un vœu réellement EN ATTENTE de traitement par le Mestre
+  const hasPendingWishForMestre = (m) => {
+    if (!isPercussionistMember(m)) return false;
+
+    const isUnassigned = !m.instrument || m.instrument.trim() === '' || m.instrument === 'En attente';
+    const hasFormulatedWishes = Boolean((Array.isArray(m.voeuxInstruments) && m.voeuxInstruments.length > 0) || m.voeuPrincipal);
+    const wantsChange = Boolean(m.souhaiteChangerInstrument);
+
+    // Si pas encore d'instrument attribué et des vœux formulés -> en attente
+    if (isUnassigned && hasFormulatedWishes) return true;
+
+    // Si instrument déjà attribué, en attente uniquement si demande de réorientation explicite
+    if (!isUnassigned && wantsChange && hasFormulatedWishes) return true;
+
+    return false;
+  };
+
+  // Détermine si un percussionniste n'a pas encore d'instrument attribué
+  const isUnassignedForMestre = (m) => {
+    if (!isPercussionistMember(m)) return false;
+    return !m.instrument || m.instrument.trim() === '' || m.instrument === 'En attente';
+  };
+
+  // Tri des membres du tableau
   const sortedMembers = useMemo(() => {
     const list = [...activeMembers];
 
     const needsAttention = (m) => {
-      if (!isPercussionistMember(m)) return false;
-      const hasNoDefinitive = !m.instrument || m.instrument.trim() === '' || m.instrument === 'En attente';
-      const hasWishes = Boolean(m.souhaiteChangerInstrument || (Array.isArray(m.voeuxInstruments) && m.voeuxInstruments.length > 0) || m.voeuPrincipal);
-      return hasNoDefinitive || hasWishes;
+      return isUnassignedForMestre(m) || hasPendingWishForMestre(m);
     };
 
     return list.sort((a, b) => {
@@ -309,16 +333,13 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
     });
   }, [activeMembers]);
 
-  // Membres filtrés selon la recherche et le filtre de vœux en attente (exclusion des danseurs 100% Danse)
+  // Membres filtrés selon la recherche et le filtre de vœux en attente
   const filteredMembers = useMemo(() => {
     let list = sortedMembers;
 
     if (showPendingOnly) {
       list = list.filter(m => {
-        if (!isPercussionistMember(m)) return false; // Exclusion stricte des danseurs 100% Danse
-        const isUnassigned = !m.instrument || m.instrument.trim() === '' || m.instrument === 'En attente';
-        const hasPendingWishes = Boolean(m.souhaiteChangerInstrument || (Array.isArray(m.voeuxInstruments) && m.voeuxInstruments.length > 0) || m.voeuPrincipal);
-        return isUnassigned || hasPendingWishes;
+        return isUnassignedForMestre(m) || hasPendingWishForMestre(m);
       });
     }
 
@@ -431,8 +452,9 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
       const nom = (m.nom || '').replace(/"/g, '""');
       const surnom = (m.surnom || '').replace(/"/g, '""');
 
+      const isPerc = isPercussionistMember(m);
       const disciplinesList = [];
-      if (m.pratiquePercussion !== false && m.instrument !== 'Danse') disciplinesList.push("Percussion");
+      if (isPerc) disciplinesList.push("Percussion");
       if (m.pratiqueDanse) disciplinesList.push("Danse");
       const disciplinesStr = disciplinesList.join(' + ');
 
@@ -493,8 +515,8 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
     );
   }
 
-  const unassignedCount = activeMembers.filter(m => isPercussionistMember(m) && (!m.instrument || m.instrument.trim() === '' || m.instrument === 'En attente')).length;
-  const wishCount = activeMembers.filter(m => isPercussionistMember(m) && (m.souhaiteChangerInstrument || (Array.isArray(m.voeuxInstruments) && m.voeuxInstruments.length > 0) || m.voeuPrincipal)).length;
+  const unassignedCount = activeMembers.filter(m => isUnassignedForMestre(m)).length;
+  const wishCount = activeMembers.filter(m => hasPendingWishForMestre(m)).length;
 
   return (
     <div className="flex flex-col gap-5 text-left max-w-5xl mx-auto w-full select-none">
