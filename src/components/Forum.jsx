@@ -15,7 +15,7 @@ import { XiloMegaphone } from './XiloIcons';
 import useConfirm from '../hooks/useConfirm';
 import { resolveEffectiveUserTags } from '../utils/tagUtils';
 
-// Memoized ThreadCard component to prevent list items re-rendering during search or active inputs
+// Composant ThreadCard mémoïsé pour éviter les rendus inutiles lors de la recherche ou de la saisie
 const ThreadCard = React.memo(({
   thread,
   profileData,
@@ -39,7 +39,7 @@ const ThreadCard = React.memo(({
   const repliesCount = thread.reponses ? thread.reponses.length - 1 : 0;
   const badgeVariant = categoryBadges[thread.categorie] || 'default';
 
-  // Target check for user highlight
+  // Vérification du ciblage pour la mise en valeur du membre
   const userPlaysInstrument = (profileData?.instrumentsJoues && profileData.instrumentsJoues.includes(thread.targetTag)) ||
                                (profileData?.instrument === thread.targetTag);
   const userHasTag = profileData?.tags && profileData.tags.includes(thread.targetTag);
@@ -317,7 +317,7 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
   const [selectedThread, setSelectedThread] = useState(null);
   const [movingThreadModal, setMovingThreadModal] = useState(null);
   
-  // Member channel & folder creation state
+  // État de création de salon et sous-dossier par un membre
   const [isCreatingChannel, setIsCreatingChannel] = useState(false);
   const [newChannelName, setNewChannelName] = useState('');
   const [newChannelParentId, setNewChannelParentId] = useState('');
@@ -350,8 +350,8 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
     }
   };
   
-  const [activeTab, setActiveTab] = useState('discussions'); // 'discussions' or 'inbox'
-  const [mobileView, setMobileView] = useState('channels'); // 'channels' (Écran 1) or 'discussion' (Écran 2)
+  const [activeTab, setActiveTab] = useState('discussions'); // 'discussions' ou 'inbox'
+  const [mobileView, setMobileView] = useState('channels'); // 'channels' (Écran 1) ou 'discussion' (Écran 2)
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [privateMessages, setPrivateMessages] = useState([]);
   const [usersMap, setUsersMap] = useState({});
@@ -375,7 +375,7 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
                                profileData.tags.includes('Porte-voix')
                              ));
 
-  // Sync users of the association for name/avatar lookup
+  // Synchronisation des membres de l'association pour la recherche de nom/avatar
   useEffect(() => {
     if (!profileData?.groupId) return;
     const usersRef = collection(db, 'users');
@@ -390,7 +390,7 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
     return () => unsub();
   }, [profileData?.groupId]);
 
-  // Sync private messages in real-time
+  // Synchronisation temps réel des messages privés
   useEffect(() => {
     if (!user?.uid) return;
     const messagesRef = collection(db, 'private_messages');
@@ -405,12 +405,12 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
       });
       setPrivateMessages(fetched);
     }, (error) => {
-      console.error("Forum - Error syncing private messages:", error);
+      console.error("Forum - Erreur de synchronisation des messages privés :", error);
     });
     return () => unsubscribe();
   }, [user?.uid]);
 
-  // Automatically open private chat if redirected from Trombinoscope
+  // Ouverture automatique d'une discussion privée en cas de rédirection depuis le Trombinoscope
   useEffect(() => {
     if (activePrivateChatUserId) {
       setActiveChatUserId(activePrivateChatUserId);
@@ -436,7 +436,7 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
     return resolveEffectiveUserTags(profileData?.tags || [], tagsDisponibles);
   }, [profileData?.tags, tagsDisponibles]);
 
-  // Helper function to check if a user role/tag matches an allowed role/tag list
+  // Fonction utilitaire pour vérifier si les étiquettes/rôles du membre correspondent à la liste autorisée du salon
   const checkUserAccessToList = useCallback((allowedList = ['all'], userRole, userTags = [], tagsAvailable = []) => {
     if (!Array.isArray(allowedList) || allowedList.length === 0) return true;
     if (allowedList.includes('all')) return true;
@@ -444,7 +444,7 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
     const lowerRole = (userRole || '').toLowerCase();
     if (allowedList.some(r => String(r).toLowerCase() === lowerRole)) return true;
 
-    // Check user effective tags against allowed roles/tags
+    // Vérifier les étiquettes effectives du membre par rapport aux rôles/tags autorisés
     return allowedList.some(r => {
       const targetLower = String(r).toLowerCase();
 
@@ -552,7 +552,7 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
     return () => unsubscribe();
   }, [profileData?.groupId, profileData?.role, effectiveUserTags, profileData?.isSystemAdmin, breakGlassActive, tagsDisponibles, checkUserAccessToList]);
 
-  // Sync all threads for the group
+  // Synchronisation de toutes les discussions pour l'association
   useEffect(() => {
     if (!profileData?.groupId) {
       setThreads([]);
@@ -576,7 +576,7 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
         });
       });
 
-      // Sort pinned threads first, then by last modification
+      // Trier d'abord les sujets épinglés, puis par dernière modification
       const sorted = fetchedThreads.sort((a, b) => {
         if (a.isPinned && !b.isPinned) return -1;
         if (!a.isPinned && b.isPinned) return 1;
@@ -610,7 +610,7 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
     Autre: 'kraft'
   }), []);
 
-  // Group messages by conversational partner using useMemo
+  // Grouper les messages par interlocuteur privé avec useMemo
   const conversations = useMemo(() => {
     const conversationsMap = {};
     privateMessages.forEach(msg => {
@@ -643,7 +643,7 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
     return privateMessages.filter(m => m.recipientId === user.uid && !m.read).length;
   }, [privateMessages, user?.uid]);
 
-  // Find the currently selected thread in the sync threads state to get real-time messages
+  // Retrouver la discussion sélectionnée dans l'état synchronisé pour avoir les messages en temps réel
   const activeThread = selectedThread
     ? threads.find(t => t.id === selectedThread.id) || selectedThread
     : null;
@@ -684,7 +684,7 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
     }
   };
 
-  // If a private chat is active, display the full-page chat view
+  // Si une discussion privée est active, afficher la vue de chat en pleine page
   if (activeChatUserId) {
     return (
       <PrivateChatView
@@ -697,7 +697,7 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
     );
   }
 
-  // If a thread is selected, display the full ThreadView page
+  // Si un sujet est sélectionné, afficher la vue complète ThreadView
   if (activeThread) {
     return (
       <ThreadView 

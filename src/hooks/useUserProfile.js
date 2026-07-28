@@ -162,7 +162,7 @@ export function useUserProfile(user, profileData, t) {
     }
   };
 
-  // Sync fieldsConfig for user's association
+  // Synchronisation de la configuration des champs pour l'association du membre
   useEffect(() => {
     if (!profileData?.groupId) {
       setFieldsConfig(DEFAULT_FIELDS_CONFIG);
@@ -206,7 +206,7 @@ export function useUserProfile(user, profileData, t) {
     return () => unsubscribe();
   }, [profileData?.groupId]);
 
-  // Sync instruments list for user's group
+  // Synchronisation de la liste des instruments de l'utilisateur
   useEffect(() => {
     if (!profileData?.groupId || !user?.uid) {
       setMyInstruments([]);
@@ -235,7 +235,7 @@ export function useUserProfile(user, profileData, t) {
     return () => unsubscribe();
   }, [profileData?.groupId, user?.uid]);
 
-  // Auto-subscribe push notifications if permission is already granted
+  // Auto-inscription aux notifications push si l'autorisation a déjà été accordée
   useEffect(() => {
     if (!messaging || !user?.uid) return;
 
@@ -248,7 +248,7 @@ export function useUserProfile(user, profileData, t) {
             try {
               registration = await navigator.serviceWorker.ready;
             } catch (swErr) {
-              console.error("Could not get ready service worker for auto-subscribe:", swErr);
+              console.error("Impossible de récupérer le service worker pour l'auto-inscription :", swErr);
             }
           }
           const token = await getToken(messaging, {
@@ -265,7 +265,7 @@ export function useUserProfile(user, profileData, t) {
             }
           }
         } catch (err) {
-          console.error("Auto-subscribing FCM Token failed:", err);
+          console.error("Échec de l'auto-inscription au jeton FCM :", err);
         }
       }
     };

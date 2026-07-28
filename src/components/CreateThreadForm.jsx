@@ -17,7 +17,7 @@ export default function CreateThreadForm({ groupId, channelId, user, profileData
   const [selectedTarget, setSelectedTarget] = useState('');
   const [saving, setSaving] = useState(false);
 
-  // Poll state
+  // État du sondage
   const [showPollForm, setShowPollForm] = useState(false);
   const [pollQuestion, setPollQuestion] = useState('');
   const [pollOptions, setPollOptions] = useState(['', '']);
@@ -43,7 +43,7 @@ export default function CreateThreadForm({ groupId, channelId, user, profileData
     });
   };
 
-  // Load available tags and instruments from association document in real-time
+  // Chargement en temps réel des étiquettes et instruments disponibles de l'association
   useEffect(() => {
     if (!groupId) return;
     const assocRef = doc(db, 'associations', groupId);
@@ -57,7 +57,7 @@ export default function CreateThreadForm({ groupId, channelId, user, profileData
         setAvailableTargets(combined);
       }
     }, (error) => {
-      console.error("CreateThreadForm - Error fetching association targets:", error);
+      console.error("CreateThreadForm - Erreur chargement cibles association :", error);
     });
     return () => unsubscribe();
   }, [groupId]);

@@ -1,14 +1,14 @@
 /**
- * Role and Tag Migration Utility
- * Ensures that system roles are strictly limited to 'mestre', 'admin', and 'membre'.
- * Function titles like 'Trésorier', 'Logistique', 'Président', 'Secrétaire', etc. are migrated into tags.
+ * Utilitaire de migration des Rôles et des Étiquettes (Tags).
+ * Garantit que les rôles système sont strictement limités à 'mestre', 'admin' et 'membre'.
+ * Les titres de fonction associative comme 'Trésorier', 'Logistique', 'Président', 'Secrétaire', etc. sont basculés dans les étiquettes.
  */
 
 export const VALID_SYSTEM_ROLES = ['mestre', 'admin', 'membre'];
 
 /**
- * Normalizes legacy or non-standard roles to valid system roles and tags.
- * @param {Object} userData - User document object containing role and tags
+ * Normalise les rôles obsolètes ou personnalisés vers des rôles système valides et des étiquettes.
+ * @param {Object} userData - Objet document utilisateur contenant le rôle et les étiquettes
  * @returns {{ newRole: string, newTags: Array<string>, needsMigration: boolean }}
  */
 export function getMigratedRoleAndTags(userData) {
@@ -17,7 +17,7 @@ export function getMigratedRoleAndTags(userData) {
 
   const lowerRole = rawRole.toLowerCase();
 
-  // If already a valid system role
+  // Si c'est déjà un rôle système valide
   if (VALID_SYSTEM_ROLES.includes(lowerRole)) {
     return {
       newRole: lowerRole,
@@ -26,7 +26,7 @@ export function getMigratedRoleAndTags(userData) {
     };
   }
 
-  // Handle legacy 'super-admin' mapping to 'mestre'
+  // Gestion du rôle obsolète 'super-admin' mappé vers 'mestre'
   if (lowerRole === 'super-admin') {
     return {
       newRole: 'mestre',
@@ -35,7 +35,7 @@ export function getMigratedRoleAndTags(userData) {
     };
   }
 
-  // Otherwise, rawRole is a custom function title (e.g. Trésorier, Logistique, etc.)
+  // Sinon, rawRole est un titre de fonction associative (ex: Trésorier, Logistique, etc.)
   let tagToAdd = rawRole;
   if (lowerRole === 'tresorier') tagToAdd = 'Trésorier';
   else if (lowerRole === 'logistique') tagToAdd = 'Logistique';
@@ -43,7 +43,7 @@ export function getMigratedRoleAndTags(userData) {
   else if (lowerRole === 'president' || lowerRole === 'président') tagToAdd = 'Président';
   else if (lowerRole === 'secretaire' || lowerRole === 'secrétaire') tagToAdd = 'Secrétaire';
 
-  // Format tag name nicely
+  // Mettre la première lettre du badge en majuscule
   if (tagToAdd && typeof tagToAdd === 'string') {
     tagToAdd = tagToAdd.charAt(0).toUpperCase() + tagToAdd.slice(1);
   }
@@ -53,7 +53,7 @@ export function getMigratedRoleAndTags(userData) {
     updatedTags.push(tagToAdd);
   }
 
-  // Management and administrative functions map to 'admin' system access
+  // Les fonctions de gestion et d'administration s'associent au droit système 'admin'
   const adminKeywords = ['tresorier', 'trésorier', 'logistique', 'bureau', 'president', 'président', 'secretaire', 'secrétaire', 'ca', 'moderator', 'modérateur', 'admin'];
   const isManagementFunction = adminKeywords.some(k => lowerRole.includes(k));
 

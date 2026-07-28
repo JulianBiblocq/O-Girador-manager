@@ -11,44 +11,66 @@
 }
 
 :root {
-  /* Default is Light Mode (crème paper) */
+  /* Mode Clair par défaut (Thème papier crème Cordel) */
   --cordel-bg: #f4ecd8;
   --cordel-card-bg: #f4ecd8;
   --cordel-text: #1a1a1a;
   --cordel-border: #1a1a1a;
   --cordel-wood: #8b2a1a;
-  --cordel-master-bg: #ffffff; /* White input background for maximum visibility */
+  --cordel-master-bg: #ffffff; /* Fond blanc pour les champs de saisie pour une visibilité optimale */
   --cordel-shadow-color: rgba(26, 26, 26, 0.25);
   --title-text-shadow: none;
   --title-drop-shadow: none;
   --encre-noire: #1a1a1a;
 
-  /* Theme-swappable colors */
+  /* Couleurs de fond et de relief dynamiques */
   --cordel-bg-dark-color: #1a1a1a;
   --cordel-bg-light-color: #f4ecd8;
   --cordel-master-dark-color: #251c1a;
   --cordel-master-light-color: #e7d5c1;
   --cordel-hover-bg: #ece4d0;
+
+  /* Variables Sémantiques Universelles pour la Marque Blanche (SaaS Multi-Associations) */
+  --theme-bg: var(--cordel-bg);
+  --theme-card-bg: var(--cordel-card-bg);
+  --theme-text: var(--cordel-text);
+  --theme-border: var(--cordel-border);
+  --theme-primary: var(--cordel-wood);
+  --theme-secondary: #d99f4d;
+  --theme-accent: #84967a;
+  --theme-input-bg: var(--cordel-master-bg);
+  --theme-hover-bg: var(--cordel-hover-bg);
+  --theme-ink: var(--encre-noire);
 }
 
 [data-theme='dark'], html.dark, body.dark, .dark {
-  --cordel-bg: #1a1a1a;                 /* Deep charcoal main content background */
-  --cordel-card-bg: #2d2d2d;            /* Lighter charcoal for cards relief */
-  --cordel-text: #e5e7eb;               /* Off-white / gray-200 text */
-  --cordel-border: #e5e7eb;             /* Off-white borders */
-  --cordel-wood: #bf5b4a;               /* Terracotta red adjusted for dark mode contrast */
-  --cordel-master-bg: #252525;          /* Inner fields background */
+  --cordel-bg: #1a1a1a;                 /* Fond principal anthracite foncé */
+  --cordel-card-bg: #2d2d2d;            /* Anthracite plus clair pour le relief des cartes */
+  --cordel-text: #e5e7eb;               /* Texte clair / gris-200 */
+  --cordel-border: #e5e7eb;             /* Bordures claires */
+  --cordel-wood: #bf5b4a;               /* Rouge terre cuite ajusté pour le contraste du mode sombre */
+  --cordel-master-bg: #252525;          /* Fond des champs de saisie internes */
   --cordel-shadow-color: rgba(0, 0, 0, 0.65);
   --title-text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.9);
   --title-drop-shadow: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.75));
-  --encre-noire: #e5e7eb;               /* Off-white for ink lines */
+  --encre-noire: #e5e7eb;               /* Couleur d'encre claire */
 
-  /* Theme-swappable colors in dark mode (no longer reversed, keep them dark!) */
-  --cordel-bg-dark-color: #121212;      /* Outer background (deep dark gray/black) */
-  --cordel-bg-light-color: #1a1a1a;     /* Inner board background (charcoal) */
-  --cordel-master-dark-color: #2d2d2d;  /* Dark master color (lighter charcoal) */
-  --cordel-master-light-color: #1a1a1a; /* Light master color (deep charcoal) */
-  --cordel-hover-bg: #3d3d3d;           /* Darker hover background */
+  /* Adaptation des fonds dynamiques en mode sombre */
+  --cordel-bg-dark-color: #121212;      /* Fond extérieur très sombre */
+  --cordel-bg-light-color: #1a1a1a;     /* Fond du panneau intérieur */
+  --cordel-master-dark-color: #2d2d2d;  /* Couleur maître sombre */
+  --cordel-master-light-color: #1a1a1a; /* Couleur maître claire */
+  --cordel-hover-bg: #3d3d3d;           /* Fond au survol en mode sombre */
+
+  /* Adaptation automatique des variables sémantiques SaaS */
+  --theme-bg: var(--cordel-bg);
+  --theme-card-bg: var(--cordel-card-bg);
+  --theme-text: var(--cordel-text);
+  --theme-border: var(--cordel-border);
+  --theme-primary: var(--cordel-wood);
+  --theme-input-bg: var(--cordel-master-bg);
+  --theme-hover-bg: var(--cordel-hover-bg);
+  --theme-ink: var(--encre-noire);
 }
 
 .force-light-theme {
@@ -68,6 +90,15 @@
   --cordel-master-dark-color: #251c1a !important;
   --cordel-master-light-color: #e7d5c1 !important;
   --cordel-hover-bg: #ece4d0 !important;
+
+  --theme-bg: #f4ecd8 !important;
+  --theme-card-bg: #f4ecd8 !important;
+  --theme-text: #1a1a1a !important;
+  --theme-border: #1a1a1a !important;
+  --theme-primary: #8b2a1a !important;
+  --theme-input-bg: #ffffff !important;
+  --theme-hover-bg: #ece4d0 !important;
+  --theme-ink: #1a1a1a !important;
 }
 
 body {
@@ -77,8 +108,8 @@ body {
   min-width: 320px;
   width: 100%;
   min-height: 100vh;
-  background-color: var(--cordel-bg);
-  color: var(--cordel-text);
+  background-color: var(--theme-bg);
+  color: var(--theme-text);
   transition: background-color 0.3s, color 0.3s;
 }
 
@@ -91,7 +122,7 @@ body {
   flex-direction: column;
 }
 
-/* Layout Stability & Zero-CLS Optimizations */
+/* Stabilité de mise en page & Optimisations sans décalage de contenu */
 img {
   max-width: 100%;
   height: auto;
@@ -105,16 +136,28 @@ svg.xilo-icon {
   --font-sans: "Roboto", "Segoe UI", system-ui, -apple-system, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
 
-  /* Official colors (now fully responsive!) */
+  /* Couleurs officielles et réactives */
   --color-cordel-bg-dark: var(--cordel-bg-dark-color);
   --color-cordel-bg-light: var(--cordel-bg-light-color);
-  --color-cordel-wood: #8b2a1a;
+  --color-cordel-wood: var(--cordel-wood);
   --color-cordel-master-dark: var(--cordel-master-dark-color);
   --color-cordel-master-light: var(--cordel-master-light-color);
   --color-encre-noire: var(--encre-noire);
   --color-cordel-hover: var(--cordel-hover-bg);
 
-  /* Agenda Tints */
+  /* Couleurs sémantiques pour la Marque Blanche (SaaS Multi-Associations) */
+  --color-theme-bg: var(--theme-bg);
+  --color-theme-card: var(--theme-card-bg);
+  --color-theme-text: var(--theme-text);
+  --color-theme-border: var(--theme-border);
+  --color-theme-primary: var(--theme-primary);
+  --color-theme-secondary: var(--theme-secondary);
+  --color-theme-accent: var(--theme-accent);
+  --color-theme-input: var(--theme-input-bg);
+  --color-theme-hover: var(--theme-hover-bg);
+  --color-theme-ink: var(--theme-ink);
+
+  /* Teintes pour les modules et l'Agenda */
   --color-cordel-ocre: #d99f4d;   /* Prestations */
   --color-cordel-vert: #84967a;   /* Répétitions */
   --color-cordel-bleu: #758b9c;   /* Stages */
