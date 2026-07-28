@@ -231,6 +231,8 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
       budgetRecettes: event.budgetRecettes || [],
       budgetDepenses: event.budgetDepenses || [],
       dateLimiteInscription: event.dateLimiteInscription || '',
+      dressCodePercussion: event.dressCodePercussion || '',
+      dressCodeDanse: event.dressCodeDanse || '',
       tenueRequise: event.tenueRequise || '',
       volunteerShifts: event.volunteerShifts || [],
       includesPercussion: event.includesPercussion || false,
@@ -314,6 +316,27 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
     return () => unsubscribe();
   }, [event.groupId]);
 
+  const [wardrobeCostumes, setWardrobeCostumes] = useState([]);
+
+  useEffect(() => {
+    if (!event?.groupId) return;
+    const q = query(collection(db, 'wardrobeInventory'), where('groupId', '==', event.groupId));
+    const unsubscribe = onSnapshot(q, (snap) => {
+      const costumesSet = new Map();
+      snap.forEach((docSnap) => {
+        const data = docSnap.data();
+        const typeName = data.type || data.nom || data.name;
+        if (typeName && !costumesSet.has(typeName)) {
+          costumesSet.set(typeName, { id: docSnap.id, name: typeName });
+        }
+      });
+      setWardrobeCostumes(Array.from(costumesSet.values()));
+    }, (err) => {
+      console.warn("EventDetails - Erreur snapshot wardrobeInventory :", err);
+    });
+    return () => unsubscribe();
+  }, [event?.groupId]);
+
   // Enforce absent status if prestation is restricted for beginners
   useEffect(() => {
     if (isPrestationRestricted && status !== 'absent') {
@@ -355,6 +378,17 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
   const effectiveUserTags = React.useMemo(() => {
     return resolveEffectiveUserTags(profileData?.tags || [], tagsDisponibles);
   }, [profileData?.tags, tagsDisponibles]);
+
+  const userDiscipline = React.useMemo(() => {
+    const insts = (profileData?.instrumentsJoues || []).map(i => String(i).toLowerCase());
+    const discipline = (profileData?.discipline || '').toLowerCase();
+    const isDanse = insts.some(i => i.includes('danse')) || discipline === 'danse';
+    const isPercu = insts.some(i => !i.includes('danse')) || discipline === 'percussion';
+
+    if (isDanse && !isPercu) return 'danse';
+    if (isPercu && !isDanse) return 'percussion';
+    return 'both';
+  }, [profileData?.instrumentsJoues, profileData?.discipline]);
 
   const isAuthorized = React.useMemo(() => {
     return canManageEvents(profileData, permissionsMatrice, effectiveUserTags);
@@ -592,7 +626,13 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
         budgetRecettes: editConfig.agendaEnableFinance ? (editForm.budgetRecettes || []) : [],
         budgetDepenses: editConfig.agendaEnableFinance ? (editForm.budgetDepenses || []) : [],
         dateLimiteInscription: editConfig.agendaEnableInscriptions ? editForm.dateLimiteInscription || '' : '',
-        tenueRequise: editForm.tenueRequise || '',
+        dressCodePercussion: editForm.dressCodePercussion || '',
+        dressCodeDanse: editForm.dressCodeDanse || '',
+        tenueRequise: editForm.tenueRequise || (
+          editForm.dressCodePercussion && editForm.dressCodeDanse
+            ? `🥁 Percussion: ${editForm.dressCodePercussion} | 💃 Danse: ${editForm.dressCodeDanse}`
+            : (editForm.dressCodePercussion || editForm.dressCodeDanse || '')
+        ),
         volunteerShifts: editForm.volunteerShifts || [],
         includesPercussion: editForm.includesPercussion || false,
         includesDance: editForm.includesDance || false,
@@ -882,6 +922,7 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
           handleSaveEvent={handleSaveEvent}
           handleDeleteEvent={handleDeleteEvent}
           dressCodes={dressCodes}
+          wardrobeCostumes={wardrobeCostumes}
           editConfig={editConfig}
           rawEditConfig={rawEditConfig}
           associationEventTypes={associationEventTypes}
@@ -1027,10 +1068,43 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
                     {isRegistrationDeadlinePassed && " (Closes)"}
                   </span>
                 )}
-                {event.tenueRequise && (
-                  <span className="flex items-center gap-1.5 text-cordel-wood font-extrabold bg-amber-50/50 dark:bg-black/25 px-2 py-1.5 rounded border border-dashed border-cordel-master-dark/15 select-none mt-1 w-fit">
-                    👕 <strong>Tenue requise :</strong> {event.tenueRequise}
-                  </span>
+                {(event.dressCodePercussion || event.dressCodeDanse || event.tenueRequise) && (
+                  <div className="flex flex-col gap-1.5 mt-1 select-none">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-cordel-wood opacity-80 flex items-center gap-1">
+                      <span>👗 Tenue(s) requise(s) :</span>
+                    </span>
+                    <div className="flex flex-wrap gap-2 items-center">
+                      {/* Tenue Percussion */}
+                      {(event.dressCodePercussion || (userDiscipline !== 'danse' && event.tenueRequise && !event.dressCodeDanse)) && (
+                        <button
+                          type="button"
+                          onClick={() => onNavigateToView && onNavigateToView('vestiaire')}
+                          className="inline-flex items-center gap-1.5 text-xs font-black bg-amber-100/90 dark:bg-amber-950/40 text-amber-900 dark:text-amber-200 px-2.5 py-1.5 rounded-[4px] border border-amber-400 dark:border-amber-700 hover:brightness-110 cursor-pointer shadow-xs transition-all text-left"
+                          title="Cliquez pour ouvrir votre Vestiaire personnel et vérifier vos pièces de costume"
+                        >
+                          <span>🥁 <strong>Percussion :</strong> {event.dressCodePercussion || event.tenueRequise}</span>
+                          <span className="text-[9px] bg-amber-200/90 dark:bg-amber-900 text-amber-900 dark:text-amber-100 px-1.5 py-0.5 rounded font-bold ml-1 border border-amber-300 shrink-0">
+                            🎒 Mon vestiaire →
+                          </span>
+                        </button>
+                      )}
+
+                      {/* Tenue Danse */}
+                      {(event.dressCodeDanse || (userDiscipline !== 'percussion' && event.tenueRequise && !event.dressCodePercussion)) && (
+                        <button
+                          type="button"
+                          onClick={() => onNavigateToView && onNavigateToView('vestiaire')}
+                          className="inline-flex items-center gap-1.5 text-xs font-black bg-pink-100/90 dark:bg-pink-950/40 text-pink-900 dark:text-pink-200 px-2.5 py-1.5 rounded-[4px] border border-pink-400 dark:border-pink-700 hover:brightness-110 cursor-pointer shadow-xs transition-all text-left"
+                          title="Cliquez pour ouvrir votre Vestiaire personnel et vérifier vos pièces de costume"
+                        >
+                          <span>💃 <strong>Danse :</strong> {event.dressCodeDanse || event.tenueRequise}</span>
+                          <span className="text-[9px] bg-pink-200/90 dark:bg-pink-900 text-pink-900 dark:text-pink-100 px-1.5 py-0.5 rounded font-bold ml-1 border border-pink-300 shrink-0">
+                            🎒 Mon vestiaire →
+                          </span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
                 )}
                 {currentConfig.agendaEnableAdresse && event.lieu && (
                   <span>📍 <strong>Lieu :</strong> {event.lieu}</span>

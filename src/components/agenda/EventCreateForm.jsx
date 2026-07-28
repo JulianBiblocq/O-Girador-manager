@@ -34,6 +34,7 @@ export default function EventCreateForm({
   handleCloseForm,
   saving,
   dressCodes,
+  wardrobeCostumes = [],
   createConfig,
   rawCreateConfig,
   associationEventTypes,
@@ -41,6 +42,29 @@ export default function EventCreateForm({
   t
 }) {
   const [isMapModalOpen, setIsMapModalOpen] = useState(false);
+
+  const combinedCostumeOptions = React.useMemo(() => {
+    const list = [];
+    const seen = new Set();
+
+    (wardrobeCostumes || []).forEach(item => {
+      const name = typeof item === 'string' ? item : (item.name || item.type || '');
+      if (name && !seen.has(name)) {
+        seen.add(name);
+        list.push({ id: name, name, category: 'Vestiaire' });
+      }
+    });
+
+    (dressCodes || []).forEach(dc => {
+      const name = typeof dc === 'string' ? dc : (dc.name || dc.type || '');
+      if (name && !seen.has(name)) {
+        seen.add(name);
+        list.push({ id: name, name: dc.included ? `${name} (${dc.included})` : name, category: 'Paramètres' });
+      }
+    });
+
+    return list;
+  }, [wardrobeCostumes, dressCodes]);
 
   const translate = (key, fallback) => {
     const val = t(key);
@@ -240,23 +264,45 @@ export default function EventCreateForm({
                 </div>
               )}
 
-              {/* Tenue requise */}
-              <div className="flex flex-col gap-1">
-                <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                  {translate('widgetAgenda.dressCodeLabel', "Tenue requise / Dress Code (Optionnel)")}
-                </label>
-                <select
-                  name="tenueRequise"
-                  value={formData.tenueRequise}
-                  onChange={handleChange}
-                  disabled={saving}
-                  className="theme-input w-full disabled:opacity-50 font-bold bg-cordel-bg-light"
-                >
-                  <option value="">{translate('widgetAgenda.noDressCode', "-- Aucune tenue spécifiée --")}</option>
-                  {dressCodes.map(dc => (
-                    <option key={dc.id} value={dc.name}>{dc.name} ({dc.included})</option>
-                  ))}
-                </select>
+              {/* Tenues requises (Percussion & Danse) */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {/* Tenue Percussion */}
+                <div className="flex flex-col gap-1">
+                  <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark flex items-center gap-1">
+                    <span>🥁 Tenue requise (Percussion)</span>
+                  </label>
+                  <select
+                    name="dressCodePercussion"
+                    value={formData.dressCodePercussion || ''}
+                    onChange={handleChange}
+                    disabled={saving}
+                    className="theme-input w-full disabled:opacity-50 font-bold bg-cordel-bg-light text-xs"
+                  >
+                    <option value="">-- Aucune tenue spécifiée / Libre --</option>
+                    {combinedCostumeOptions.map(opt => (
+                      <option key={`perc-${opt.id}`} value={opt.name}>{opt.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Tenue Danse */}
+                <div className="flex flex-col gap-1">
+                  <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark flex items-center gap-1">
+                    <span>💃 Tenue requise (Danse)</span>
+                  </label>
+                  <select
+                    name="dressCodeDanse"
+                    value={formData.dressCodeDanse || ''}
+                    onChange={handleChange}
+                    disabled={saving}
+                    className="theme-input w-full disabled:opacity-50 font-bold bg-cordel-bg-light text-xs"
+                  >
+                    <option value="">-- Aucune tenue spécifiée / Libre --</option>
+                    {combinedCostumeOptions.map(opt => (
+                      <option key={`danse-${opt.id}`} value={opt.name}>{opt.name}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
 
               {/* Date Limite Inscription */}

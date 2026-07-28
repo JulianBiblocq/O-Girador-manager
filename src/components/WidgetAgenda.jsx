@@ -100,6 +100,27 @@ export default function WidgetAgenda({
     return () => unsubscribe();
   }, [groupId]);
 
+  const [wardrobeCostumes, setWardrobeCostumes] = useState([]);
+
+  useEffect(() => {
+    if (!groupId) return;
+    const q = query(collection(db, 'wardrobeInventory'), where('groupId', '==', groupId));
+    const unsubscribe = onSnapshot(q, (snap) => {
+      const costumesSet = new Map();
+      snap.forEach((docSnap) => {
+        const data = docSnap.data();
+        const typeName = data.type || data.nom || data.name;
+        if (typeName && !costumesSet.has(typeName)) {
+          costumesSet.set(typeName, { id: docSnap.id, name: typeName });
+        }
+      });
+      setWardrobeCostumes(Array.from(costumesSet.values()));
+    }, (err) => {
+      console.warn("WidgetAgenda - Erreur snapshot wardrobeInventory :", err);
+    });
+    return () => unsubscribe();
+  }, [groupId]);
+
   useEffect(() => {
     const handleResize = () => setWindowWidth(window.innerWidth);
     window.addEventListener('resize', handleResize);
@@ -341,7 +362,13 @@ export default function WidgetAgenda({
           budgetRecettes: activeConfig.agendaEnableFinance ? (formData.budgetRecettes || []) : [],
           budgetDepenses: activeConfig.agendaEnableFinance ? (formData.budgetDepenses || []) : [],
           dateLimiteInscription: activeConfig.agendaEnableInscriptions ? formData.dateLimiteInscription || '' : '',
-          tenueRequise: formData.tenueRequise || '',
+          dressCodePercussion: formData.dressCodePercussion || '',
+          dressCodeDanse: formData.dressCodeDanse || '',
+          tenueRequise: formData.tenueRequise || (
+            formData.dressCodePercussion && formData.dressCodeDanse
+              ? `🥁 Percussion: ${formData.dressCodePercussion} | 💃 Danse: ${formData.dressCodeDanse}`
+              : (formData.dressCodePercussion || formData.dressCodeDanse || '')
+          ),
           volunteerShifts: formData.volunteerShifts || [],
           includesPercussion: formData.includesPercussion || false,
           includesDance: formData.includesDance || false,
@@ -571,6 +598,7 @@ export default function WidgetAgenda({
           handleCloseForm={handleCloseForm}
           saving={saving}
           dressCodes={dressCodes}
+          wardrobeCostumes={wardrobeCostumes}
           createConfig={activeConfig}
           rawCreateConfig={rawConfig}
           associationEventTypes={eventTypes}
