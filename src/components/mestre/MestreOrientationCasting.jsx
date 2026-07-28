@@ -629,9 +629,9 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
                         </div>
                       </td>
 
-                      {/* 2. Instrument Actuel / Validé */}
+                      {/* 2. Instrument Actuel / Validé & Danse (Oui/Non) */}
                       <td className="py-2.5 px-2">
-                        <div className="flex flex-col gap-1">
+                        <div className="flex flex-col gap-1 text-left">
                           <span className="font-bold flex items-center gap-1.5 text-cordel-master-dark">
                             <img
                               src={getInstrumentIconPath(m.instrumentPrincipal || m.instrument)}
@@ -645,8 +645,18 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
                               </span>
                             )}
                           </span>
+
+                          <span className="text-[9.5px] font-bold flex items-center gap-1">
+                            <span>💃 Danse :</span>
+                            {m.pratiqueDanse ? (
+                              <span className="text-amber-800 dark:text-amber-300 font-black">Oui</span>
+                            ) : (
+                              <span className="text-cordel-master-dark/60 font-semibold">Non</span>
+                            )}
+                          </span>
+
                           {m.instrumentSecondaire && (
-                            <span className="text-[10px] text-cordel-wood font-semibold flex items-center gap-1">
+                            <span className="text-[9.5px] text-cordel-wood font-semibold flex items-center gap-1">
                               <span>Sec. :</span>
                               <img
                                 src={getInstrumentIconPath(m.instrumentSecondaire)}
