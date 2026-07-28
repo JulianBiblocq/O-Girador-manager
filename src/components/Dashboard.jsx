@@ -39,6 +39,7 @@ export default function Dashboard({ user, profileData, onNavigateToTrombi, onNav
       case 'documents':
       case 'agenda':
       case 'forum':
+      case 'anniversaires':
         return 'col-span-1 md:col-span-2 lg:col-span-3 w-full max-w-full overflow-hidden';
       default:
         return 'col-span-1 w-full max-w-full overflow-hidden';
@@ -391,6 +392,13 @@ export default function Dashboard({ user, profileData, onNavigateToTrombi, onNav
               widgetContent = (
                 <WidgetAnniversaires 
                   groupId={profileData?.groupId} 
+                  currentUser={user}
+                  profileData={profileData}
+                  onContactUser={(userId, message) => {
+                    if (onNavigateToView) {
+                      onNavigateToView('forum', { userId, message });
+                    }
+                  }}
                 />
               );
               break;

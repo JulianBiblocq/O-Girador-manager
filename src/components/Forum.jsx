@@ -295,7 +295,7 @@ function ChannelTreeItem({
   );
 }
 
-export default function Forum({ user, profileData, onBack, activePrivateChatUserId, onClearActivePrivateChat, onOpenStudioForum, breakGlassActive = false }) {
+export default function Forum({ user, profileData, onBack, activePrivateChatUserId, initialPrivateMessage = '', onClearActivePrivateChat, onOpenStudioForum, breakGlassActive = false }) {
   const { t } = useTranslation();
   const { confirm } = useConfirm();
   const { actionLoading, moveThread, togglePinThread, deleteThread } = useForumModeration(profileData?.groupId);
@@ -691,8 +691,17 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
         user={user}
         profileData={profileData}
         recipientId={activeChatUserId}
+        otherUser={usersMap[activeChatUserId] || { id: activeChatUserId }}
         usersMap={usersMap}
-        onBack={() => setActiveChatUserId(null)}
+        initialText={initialPrivateMessage}
+        onClose={() => {
+          setActiveChatUserId(null);
+          if (onClearActivePrivateChat) onClearActivePrivateChat();
+        }}
+        onBack={() => {
+          setActiveChatUserId(null);
+          if (onClearActivePrivateChat) onClearActivePrivateChat();
+        }}
       />
     );
   }

@@ -5,12 +5,19 @@ import CordelButton from './CordelButton';
 import XiloAvatar from './XiloAvatar';
 import { useTerminologie } from '../hooks/useTerminologie';
 
-export default function PrivateChatView({ user, otherUser, profileData, onClose }) {
+export default function PrivateChatView({ user, otherUser, profileData, initialText = '', onClose }) {
   const { tRole } = useTerminologie();
   const [messages, setMessages] = useState([]);
-  const [inputText, setInputText] = useState('');
+  const [inputText, setInputText] = useState(initialText || '');
   const [sending, setSending] = useState(false);
   const messagesEndRef = useRef(null);
+
+  // Mettre à jour la saisie si un texte initial spécifique (ex: voeu d'anniversaire) est fourni
+  useEffect(() => {
+    if (initialText) {
+      setInputText(initialText);
+    }
+  }, [initialText]);
 
   const otherUserFullName = `${otherUser?.prenom || ''} ${otherUser?.nom || ''}`.trim() || otherUser?.email || "Membre";
 

@@ -39,11 +39,12 @@ export default function LayoutShell({
   unreadPrivateMessagesCount = 0,
   forceLight = false,
   permissionsMatrice,
-  enabledModules,
+  enabledModules = {},
   activerPresenceEnLigne = true,
   breakGlassActive = false,
   onToggleBreakGlass,
   tagsDisponibles = [],
+  isBirthdayMonth = false,
   children 
 }) {
   const finalLogoUrl = logoUrl || '/Pictures/logo-samambaia.png';
@@ -218,7 +219,7 @@ export default function LayoutShell({
     : [];
 
   return (
-    <div className={`min-h-screen lg:h-screen w-full ${forceLight ? 'bg-cordel-bg-light' : 'bg-cordel-bg-dark'} flex lg:items-stretch lg:justify-stretch lg:p-0 p-4 md:p-6`}>
+    <div className={`min-h-screen lg:h-screen w-full ${forceLight ? 'bg-cordel-bg-light' : 'bg-cordel-bg-dark'} ${isBirthdayMonth ? 'theme-birthday-month' : ''} flex lg:items-stretch lg:justify-stretch lg:p-0 p-4 md:p-6`}>
       {/* Responsive board container */}
       <div className="w-full h-screen lg:h-screen lg:max-w-none lg:border-none lg:rounded-none lg:shadow-none overflow-hidden flex flex-col lg:flex-row relative bg-cordel-bg-light text-encre-noire">
         

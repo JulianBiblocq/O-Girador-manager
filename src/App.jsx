@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { doc, onSnapshot, updateDoc, collection, query, where } from 'firebase/firestore';
 import { auth, db } from './firebase';
@@ -192,7 +192,24 @@ export default function App() {
   const [installPromptAvailable, setInstallPromptAvailable] = useState(false);
   const [unreadPrivateMessagesCount, setUnreadPrivateMessagesCount] = useState(0);
   const [activePrivateChatUserId, setActivePrivateChatUserId] = useState(null);
+  const [initialPrivateMessage, setInitialPrivateMessage] = useState('');
   const [dashboardKey, setDashboardKey] = useState(0);
+
+  // Vérifier si l'utilisateur connecté fâte son anniversaire ce mois-ci
+  const isUserBirthdayMonth = useMemo(() => {
+    if (!profileData?.dateNaissance) return false;
+    const currentMonth = new Date().getMonth() + 1; // 1-12
+    const parts = profileData.dateNaissance.split('-');
+    if (parts.length === 3) {
+      const birthMonth = parseInt(parts[1], 10);
+      return birthMonth === currentMonth;
+    }
+    const d = new Date(profileData.dateNaissance);
+    if (!isNaN(d.getTime())) {
+      return (d.getMonth() + 1) === currentMonth;
+    }
+    return false;
+  }, [profileData?.dateNaissance]);
 
   // Load branding in real-time
   useEffect(() => {
@@ -730,7 +747,12 @@ export default function App() {
     }
   };
 
-  const handleNavigateToView = (viewName) => {
+  const handleNavigateToView = (viewName, extraOptions = null) => {
+    if (viewName === 'forum' && extraOptions?.userId) {
+      setActivePrivateChatUserId(extraOptions.userId);
+      setInitialPrivateMessage(extraOptions.message || '');
+    }
+
     switch (viewName) {
       case 'dashboard':
         setCurrentPole('accueil');
@@ -844,6 +866,7 @@ export default function App() {
           breakGlassActive={breakGlassActive}
           onToggleBreakGlass={handleToggleBreakGlass}
           tagsDisponibles={tagsDisponibles}
+          isBirthdayMonth={isUserBirthdayMonth}
         >
           <React.Suspense fallback={
             <div className="flex-1 flex flex-col justify-center items-center py-12">
@@ -910,7 +933,11 @@ export default function App() {
                 profileData={profileData} 
                 onBack={() => handleNavigateToPole('accueil')} 
                 activePrivateChatUserId={activePrivateChatUserId}
-                onClearActivePrivateChat={() => setActivePrivateChatUserId(null)}
+                initialPrivateMessage={initialPrivateMessage}
+                onClearActivePrivateChat={() => {
+                  setActivePrivateChatUserId(null);
+                  setInitialPrivateMessage('');
+                }}
                 onOpenStudioForum={() => setCurrentTab('mestre-forum-channels')}
                 breakGlassActive={breakGlassActive}
               />
