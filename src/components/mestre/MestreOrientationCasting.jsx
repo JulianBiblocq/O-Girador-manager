@@ -258,15 +258,31 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
     return counts;
   }, [activeMembers, displayPupitres]);
 
-  // Sorting logic for members table:
-  // Priority 1: Unassigned members OR members who expressed wishes
-  // Priority 2: Alphabetical by name
+  // Détermine si un membre pratique ou souhaite pratiquer la percussion (exclut les danseurs 100% Danse)
+  const isPercussionistMember = (m) => {
+    if (!m) return false;
+    if (m.pratiquePercussion === false) return false;
+    const inst = (m.instrument || m.instrumentPrincipal || '').toLowerCase().trim();
+    const wishesList = Array.isArray(m.voeuxInstruments) && m.voeuxInstruments.length > 0
+      ? m.voeuxInstruments.filter(Boolean)
+      : [m.voeuPrincipal, m.voeuSecondaire, m.voeuTertiaire].filter(Boolean);
+    
+    if ((inst === 'danse' || !inst) && wishesList.length === 0 && m.pratiqueDanse === true && m.pratiquePercussion !== true) {
+      return false;
+    }
+    return true;
+  };
+
+  // Tri des membres du tableau :
+  // Priorité 1 : Percussionnistes sans instrument ou avec des vœux exprimés
+  // Priorité 2 : Ordre alphabétique par nom
   const sortedMembers = useMemo(() => {
     const list = [...activeMembers];
 
     const needsAttention = (m) => {
-      const hasNoDefinitive = !m.instrument || m.instrument.trim() === '';
-      const hasWishes = Boolean(m.voeuPrincipal || m.voeuSecondaire || m.voeuTertiaire);
+      if (!isPercussionistMember(m)) return false;
+      const hasNoDefinitive = !m.instrument || m.instrument.trim() === '' || m.instrument === 'En attente';
+      const hasWishes = Boolean(m.souhaiteChangerInstrument || (Array.isArray(m.voeuxInstruments) && m.voeuxInstruments.length > 0) || m.voeuPrincipal);
       return hasNoDefinitive || hasWishes;
     };
 
@@ -284,12 +300,13 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
     });
   }, [activeMembers]);
 
-  // Membres filtrés selon la recherche et le filtre de vœux en attente
+  // Membres filtrés selon la recherche et le filtre de vœux en attente (exclusion des danseurs 100% Danse)
   const filteredMembers = useMemo(() => {
     let list = sortedMembers;
 
     if (showPendingOnly) {
       list = list.filter(m => {
+        if (!isPercussionistMember(m)) return false; // Exclusion stricte des danseurs 100% Danse
         const isUnassigned = !m.instrument || m.instrument.trim() === '' || m.instrument === 'En attente';
         const hasPendingWishes = Boolean(m.souhaiteChangerInstrument || (Array.isArray(m.voeuxInstruments) && m.voeuxInstruments.length > 0) || m.voeuPrincipal);
         return isUnassigned || hasPendingWishes;
@@ -467,8 +484,8 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
     );
   }
 
-  const unassignedCount = activeMembers.filter(m => !m.instrument || m.instrument.trim() === '').length;
-  const wishCount = activeMembers.filter(m => m.voeuPrincipal || m.voeuSecondaire || m.voeuTertiaire).length;
+  const unassignedCount = activeMembers.filter(m => isPercussionistMember(m) && (!m.instrument || m.instrument.trim() === '' || m.instrument === 'En attente')).length;
+  const wishCount = activeMembers.filter(m => isPercussionistMember(m) && (m.souhaiteChangerInstrument || (Array.isArray(m.voeuxInstruments) && m.voeuxInstruments.length > 0) || m.voeuPrincipal)).length;
 
   return (
     <div className="flex flex-col gap-5 text-left max-w-5xl mx-auto w-full select-none">

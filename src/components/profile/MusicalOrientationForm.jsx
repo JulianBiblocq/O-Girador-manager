@@ -164,9 +164,11 @@ export default function MusicalOrientationForm({
                   className="theme-input w-full text-xs font-semibold bg-cordel-bg-light"
                 >
                   <option value="">-- Choisir un nouvel instrument principal --</option>
-                  {instrumentsList.map(inst => (
-                    <option key={`ancien-p-${inst}`} value={inst}>{inst}</option>
-                  ))}
+                  {instrumentsList
+                    .filter(inst => inst !== formData.voeuSecondaire)
+                    .map(inst => (
+                      <option key={`ancien-p-${inst}`} value={inst}>{inst}</option>
+                    ))}
                 </select>
               </div>
 
@@ -187,11 +189,11 @@ export default function MusicalOrientationForm({
                   className="theme-input w-full text-xs font-semibold bg-cordel-bg-light"
                 >
                   <option value="">-- Pas de choix secondaire --</option>
-                  {instrumentsList.map(inst => (
-                    <option key={`ancien-s-${inst}`} value={inst} disabled={inst === formData.voeuPrincipal}>
-                      {inst} {inst === formData.voeuPrincipal ? '(Déjà choisi)' : ''}
-                    </option>
-                  ))}
+                  {instrumentsList
+                    .filter(inst => inst !== formData.voeuPrincipal)
+                    .map(inst => (
+                      <option key={`ancien-s-${inst}`} value={inst}>{inst}</option>
+                    ))}
                 </select>
               </div>
 

@@ -271,6 +271,7 @@ export default function OnboardingPublicBlock({
             {formData.souhaiteChangerInstrument && (
               <div className="flex flex-col gap-3 pt-2 border-t border-dashed border-cordel-master-dark/20">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {/* Vœu 1 : Filtre l'instrument déjà choisi en Vœu 2 */}
                   <div className="flex flex-col gap-1">
                     <span className="text-[9px] font-black uppercase text-cordel-master-dark opacity-80">
                       Vœu 1 (Nouveau choix principal)
@@ -289,12 +290,15 @@ export default function OnboardingPublicBlock({
                       className="theme-input w-full text-xs font-semibold bg-cordel-bg-light"
                     >
                       <option value="">-- Choisir --</option>
-                      {filterPublicPercussionInstruments(instrumentsDisponibles || []).map(inst => (
-                        <option key={inst} value={inst}>{inst}</option>
-                      ))}
+                      {filterPublicPercussionInstruments(instrumentsDisponibles || [])
+                        .filter(inst => inst !== (formData.voeuxInstruments || [])[1])
+                        .map(inst => (
+                          <option key={inst} value={inst}>{inst}</option>
+                        ))}
                     </select>
                   </div>
 
+                  {/* Vœu 2 : Filtre l'instrument déjà choisi en Vœu 1 */}
                   <div className="flex flex-col gap-1">
                     <span className="text-[9px] font-black uppercase text-cordel-master-dark opacity-80">
                       Vœu 2 (Nouveau choix secondaire)
@@ -313,9 +317,11 @@ export default function OnboardingPublicBlock({
                       className="theme-input w-full text-xs font-semibold bg-cordel-bg-light"
                     >
                       <option value="">-- Optionnel --</option>
-                      {filterPublicPercussionInstruments(instrumentsDisponibles || []).map(inst => (
-                        <option key={inst} value={inst}>{inst}</option>
-                      ))}
+                      {filterPublicPercussionInstruments(instrumentsDisponibles || [])
+                        .filter(inst => inst !== (formData.voeuxInstruments || [])[0])
+                        .map(inst => (
+                          <option key={inst} value={inst}>{inst}</option>
+                        ))}
                     </select>
                   </div>
                 </div>
