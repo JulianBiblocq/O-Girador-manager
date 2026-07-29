@@ -167,7 +167,13 @@ export default function WidgetAnnonces({ groupId, profileData, role, isSystemAdm
       window.open(trimmed, '_blank', 'noopener,noreferrer');
       return;
     }
-    const cleanRoute = trimmed.startsWith('/') ? trimmed.slice(1) : trimmed;
+    let cleanRoute = trimmed.startsWith('/') ? trimmed.slice(1) : trimmed;
+
+    // Mapping des alias de routes internes
+    if (cleanRoute === 'profile') cleanRoute = 'profil';
+    if (cleanRoute === 'materiel') cleanRoute = 'inventory';
+    if (cleanRoute === 'vestiaire') cleanRoute = 'wardrobe-inventory';
+
     if (onNavigateToView) {
       onNavigateToView(cleanRoute);
     } else {
@@ -359,15 +365,16 @@ export default function WidgetAnnonces({ groupId, profileData, role, isSystemAdm
               />
             </div>
 
-            {/* Call to Action optionnel */}
+            {/* Call to Action optionnel (CTA) */}
             <div className="flex flex-col gap-1.5 pt-2 border-t border-dashed border-cordel-master-dark/15 text-left">
               <label className="text-[8px] uppercase font-bold tracking-wider text-cordel-master-dark flex items-center gap-1">
                 🚀 Bouton d'action / Call to Action (Optionnel)
               </label>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {/* Texte du bouton */}
                 <div className="flex flex-col gap-0.5">
                   <label className="text-[8px] font-semibold text-cordel-wood uppercase">
-                    Texte du bouton
+                    Texte du bouton (ex: Mettre à jour mon profil)
                   </label>
                   <input
                     type="text"
@@ -375,21 +382,31 @@ export default function WidgetAnnonces({ groupId, profileData, role, isSystemAdm
                     onChange={(e) => setActionText(e.target.value)}
                     disabled={saving}
                     placeholder="Ex: Mettre à jour mon profil"
-                    className="theme-input text-xs py-1"
+                    className="theme-input text-xs py-1 font-medium"
                   />
                 </div>
+
+                {/* Page de destination (Select) */}
                 <div className="flex flex-col gap-0.5">
                   <label className="text-[8px] font-semibold text-cordel-wood uppercase">
-                    Lien / Page de redirection
+                    Page de destination
                   </label>
-                  <input
-                    type="text"
+                  <select
                     value={actionLink}
                     onChange={(e) => setActionLink(e.target.value)}
                     disabled={saving}
-                    placeholder="Ex: /profil ou mestre-orientation"
-                    className="theme-input text-xs py-1"
-                  />
+                    className="theme-input text-xs py-1 font-bold bg-cordel-bg-light"
+                  >
+                    <option value="">Sélectionner une page...</option>
+                    <option value="/profil">👤 Mon Profil</option>
+                    <option value="/agenda">📅 Agenda</option>
+                    <option value="/forum">🗣️ Porte-Voix / Forum</option>
+                    <option value="/varal">📜 Varal / Documents</option>
+                    <option value="/treasury">💰 Trésorerie / Cotisations</option>
+                    <option value="/trombinoscope">👥 Trombinoscope</option>
+                    <option value="/materiel">🥁 Matériel</option>
+                    <option value="/vestiaire">👗 Vestiaire</option>
+                  </select>
                 </div>
               </div>
             </div>

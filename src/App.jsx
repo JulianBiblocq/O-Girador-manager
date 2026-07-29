@@ -799,6 +799,7 @@ export default function App() {
         setCurrentTab('dashboard');
         setDashboardKey(prev => prev + 1);
         break;
+      case 'profile':
       case 'profil':
         setCurrentPole('mon-espace');
         setCurrentTab('profil');
@@ -823,9 +824,15 @@ export default function App() {
         setCurrentPole('troupe');
         setCurrentTab('tag-manager');
         break;
+      case 'materiel':
       case 'inventory':
         setCurrentPole('logistique');
         setCurrentTab('inventory');
+        break;
+      case 'vestiaire':
+      case 'wardrobe-inventory':
+        setCurrentPole('vestiaire');
+        setCurrentTab('wardrobe-inventory');
         break;
       case 'orders-manager':
         setCurrentPole('logistique');

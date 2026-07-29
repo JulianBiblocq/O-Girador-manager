@@ -429,7 +429,8 @@ exports.onAnnouncementCreated = onDocumentCreated("announcements/{announcementId
 
   const title = announcement.titre || "Nouvelle annonce";
   const message = announcement.message || "";
-  const targetUrl = "/forum";
+  // Redirection dynamique vers l'actionLink s'il est spécifié, sinon vers le forum
+  const targetUrl = announcement.actionLink || "/forum";
 
   await sendGroupFcmNotification(announcement.groupId, title, message, {
     url: targetUrl,
