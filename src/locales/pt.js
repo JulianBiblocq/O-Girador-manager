@@ -931,6 +931,7 @@ export const pt = {
     tabConfigLogistics: "Logística",
     tabConfigDocuments: "Documentos",
     tabConfigAgenda: "Configuração da agenda",
+    tabConfigLieux: "Locais & Salas",
     tabConfigLayout: "Aparência",
     tabMestreOrientation: "Casting"
   },

@@ -913,6 +913,7 @@ export const fr = {
     tabConfigLogistics: "Logistique",
     tabConfigDocuments: "Documents",
     tabConfigAgenda: "Configuration de l'agenda",
+    tabConfigLieux: "Lieux & Salles",
     tabConfigLayout: "Apparence",
     tabMestreOrientation: "Casting"
   },

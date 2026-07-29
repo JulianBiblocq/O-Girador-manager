@@ -85,6 +85,7 @@ const PERMISSION_POLES = [
       { id: 'config-logistics', label: 'Logistique & Adresses', desc: 'Gestion des adresses et lieux habituels' },
       { id: 'config-documents', label: 'Documents & Modèles', desc: 'Gestion des documents administratifs et modèles' },
       { id: 'config-agenda', label: 'Agenda & Calendrier', desc: 'Paramètres du calendrier et synchronisation' },
+      { id: 'config-lieux', label: 'Lieux & Salles', desc: 'Gestion du répertoire des lieux et salles habituels' },
       { id: 'config-layout', label: 'Apparence & Thème', desc: 'Personnalisation du style visuel et thème Cordel' }
     ]
   }

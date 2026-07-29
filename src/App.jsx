@@ -138,6 +138,7 @@ const POLES_CONFIG = [
       { id: 'config-logistics', label: 'Logistique', labelKey: 'tabConfigLogistics' },
       { id: 'config-documents', label: 'Documents', labelKey: 'tabConfigDocuments' },
       { id: 'config-agenda', label: "Configuration de l'agenda", labelKey: 'tabConfigAgenda' },
+      { id: 'config-lieux', label: "Lieux & Salles", labelKey: 'tabConfigLieux' },
       { id: 'config-layout', label: 'Apparence', labelKey: 'tabConfigLayout' }
     ]
   }
@@ -768,7 +769,7 @@ export default function App() {
   const hasAccessStudio = isMasterKeyActive || checkTabAccess('studio-events', 'studio') || checkTabAccess('studio-social', 'studio') || checkTabAccess('reunion-manager', 'studio') || checkTabAccess('varal-manager', 'studio') || checkTabAccess('activity-reports', 'studio') || checkTabAccess('mestre-forum-channels', 'studio');
   const hasAccessVestiaire = isMasterKeyActive || checkTabAccess('wardrobe-inventory', 'vestiaire') || checkTabAccess('wardrobe-couture', 'vestiaire') || checkTabAccess('wardrobe-sizes', 'vestiaire');
   const hasAccessMestre = isMasterKeyActive || checkTabAccess('mestre-orientation', 'mestre') || checkTabAccess('mestre-events', 'mestre') || checkTabAccess('mestre-stage-layout', 'mestre') || checkTabAccess('mestre-sequenceur', 'mestre') || checkTabAccess('mestre-workshops', 'mestre') || checkTabAccess('mestre-mot-mestre', 'mestre');
-  const hasAccessConfig = isMasterKeyActive || checkTabAccess('config-identity', 'config') || checkTabAccess('config-profile', 'config') || checkTabAccess('config-security', 'config') || checkTabAccess('config-modules', 'config') || checkTabAccess('config-logistics', 'config') || checkTabAccess('config-documents', 'config') || checkTabAccess('config-agenda', 'config') || checkTabAccess('config-layout', 'config');
+  const hasAccessConfig = isMasterKeyActive || checkTabAccess('config-identity', 'config') || checkTabAccess('config-profile', 'config') || checkTabAccess('config-security', 'config') || checkTabAccess('config-modules', 'config') || checkTabAccess('config-logistics', 'config') || checkTabAccess('config-documents', 'config') || checkTabAccess('config-agenda', 'config') || checkTabAccess('config-lieux', 'config') || checkTabAccess('config-layout', 'config');
   const hasAccessForumMod = isMasterKeyActive || userTags.some(t => ['Modérateur', 'Modérateur Forum', 'Gestionnaire Porte-voix', 'Porte-voix'].includes(t));
 
   const handleNavigateToPole = (poleId) => {
@@ -1257,6 +1258,15 @@ export default function App() {
                 isSystemAdmin={profileData?.isSystemAdmin}
                 mode="agenda-only"
                 activeTabProp="agenda"
+                onBack={() => handleNavigateToPole('accueil')} 
+              />
+            ) : (currentTab === 'config-lieux' && checkTabAccess('config-lieux', 'config')) ? (
+              <AssociationSettings 
+                groupId={profileData?.groupId}
+                role={profileData?.role}
+                isSystemAdmin={profileData?.isSystemAdmin}
+                mode="lieux-only"
+                activeTabProp="lieux"
                 onBack={() => handleNavigateToPole('accueil')} 
               />
             ) : (currentTab === 'config-layout' && checkTabAccess('config-layout', 'config')) ? (
