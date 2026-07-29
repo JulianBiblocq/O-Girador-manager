@@ -750,7 +750,7 @@ export default function WidgetAgenda({
                         {event.lieu ? (
                           <span className="inline-flex items-center gap-1 font-semibold text-encre-noire">
                             <span>📍</span>
-                            <span>{formatLocationShort(event.lieu, lieuxImportants)}</span>
+                            <span>{formatLocationShort(event, lieuxImportants)}</span>
                           </span>
                         ) : '-'}
                       </td>
@@ -849,6 +849,12 @@ export default function WidgetAgenda({
                             `${formatDateWithDay(event.date, true)}`
                           )}
                         </span>
+                        {event.lieu && (
+                          <div className="text-[10px] font-bold text-encre-noire flex items-center gap-1 my-0.5 truncate" title={event.lieu}>
+                            <span className="shrink-0">📍</span>
+                            <span className="truncate">{formatLocationShort(event, lieuxImportants)}</span>
+                          </div>
+                        )}
                         <div className="flex justify-between items-center mt-1.5 border-t border-dashed border-encre-noire/10 pt-1.5 gap-2">
                           <div className="flex flex-col items-start gap-1">
                             <div className="flex items-center gap-1.5 flex-wrap">

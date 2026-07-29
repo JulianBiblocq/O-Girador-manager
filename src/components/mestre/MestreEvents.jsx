@@ -194,7 +194,7 @@ export default function MestreEvents({ groupId, onSelectForStage, onOpenDetails 
                       {evt.lieu ? (
                         <span className="inline-flex items-center gap-1 font-semibold">
                           <span>📍</span>
-                          <span>{formatLocationShort(evt.lieu, lieuxImportants)}</span>
+                          <span>{formatLocationShort(evt, lieuxImportants)}</span>
                         </span>
                       ) : '-'}
                     </td>

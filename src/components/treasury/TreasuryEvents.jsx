@@ -67,7 +67,7 @@ export default function TreasuryEvents({
                       <span className="text-[8px] font-bold uppercase text-cordel-wood opacity-75">{evt.type}</span>
                     </div>
                     <div className="col-span-2 text-left truncate" title={evt.lieu}>
-                      {evt.lieu ? `📍 ${formatLocationShort(evt.lieu)}` : '-'}
+                      {evt.lieu ? `📍 ${formatLocationShort(evt, lieuxImportants)}` : '-'}
                     </div>
                     
                     {/* Recette Input */}
