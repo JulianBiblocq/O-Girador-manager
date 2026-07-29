@@ -67,17 +67,35 @@ export function calculateRoadDistance(origin, destination) {
     return Promise.resolve(0);
   }
 
+  // Normalisation sous forme de chaîne de caractères ou coordonnées
+  const parseStr = (val) => {
+    if (typeof val === 'string') return val;
+    if (val?.latitude && val?.longitude) return `${val.latitude},${val.longitude}`;
+    if (val?.lat && val?.lng) return `${val.lat},${val.lng}`;
+    if (val?.formattedAddress) return val.formattedAddress;
+    if (val?.name) return val.name;
+    return String(val || '');
+  };
+
+  const originStr = parseStr(origin);
+  const destStr = parseStr(destination);
+
+  if (!originStr.trim() || !destStr.trim()) {
+    return Promise.resolve(0);
+  }
+
   return loadGoogleMaps().then((maps) => {
     const geocoder = new maps.Geocoder();
 
     const getCoords = async (addr) => {
       const coordinateRegex = /^[-+]?([1-9]?\d(\.\d+)?|90(\.0+)?),\s*[-+]?(180(\.0+)?|((1[0-7]\d)|([1-9]?\d))(\.\d+)?)$/;
-      if (coordinateRegex.test(addr.trim())) {
-        const parts = addr.split(',').map(s => parseFloat(s.trim()));
+      const trimmed = addr.trim();
+      if (coordinateRegex.test(trimmed)) {
+        const parts = trimmed.split(',').map(s => parseFloat(s.trim()));
         return { lat: parts[0], lng: parts[1] };
       }
       return new Promise((resolve, reject) => {
-        geocoder.geocode({ address: addr }, (results, status) => {
+        geocoder.geocode({ address: trimmed }, (results, status) => {
           if (status === 'OK' && results && results[0] && results[0].geometry && results[0].geometry.location) {
             const loc = results[0].geometry.location;
             resolve({
@@ -85,100 +103,31 @@ export function calculateRoadDistance(origin, destination) {
               lng: typeof loc.lng === 'function' ? loc.lng() : loc.lng
             });
           } else {
-            reject(new Error(`Géocodage échoué pour "${addr}" avec le statut : ${status}`));
+            reject(new Error(`Géocodage introuvable pour "${addr}"`));
           }
         });
       });
     };
 
-    const coordinateRegex = /^[-+]?([1-9]?\d(\.\d+)?|90(\.0+)?),\s*[-+]?(180(\.0+)?|((1[0-7]\d)|([1-9]?\d))(\.\d+)?)$/;
-    const parseLocation = (str) => {
-      if (coordinateRegex.test(str.trim())) {
-        const parts = str.split(',').map(s => parseFloat(s.trim()));
-        return new maps.LatLng(parts[0], parts[1]);
-      }
-      return str;
-    };
-
-    const originLoc = parseLocation(origin);
-    const destLoc = parseLocation(destination);
-
-    // Essayer d'abord le service d'itinéraires DirectionsService (le plus fiable)
-    return new Promise((resolve, reject) => {
-      const directionsService = new maps.DirectionsService();
-      directionsService.route(
-        {
-          origin: originLoc,
-          destination: destLoc,
-          travelMode: maps.TravelMode.DRIVING,
-        },
-        (result, status) => {
-          if (status === 'OK' && result && result.routes && result.routes[0]) {
-            const route = result.routes[0];
-            let totalDistanceMeters = 0;
-            for (let i = 0; i < route.legs.length; i++) {
-              totalDistanceMeters += route.legs[i].distance.value;
-            }
-            const distanceKm = totalDistanceMeters / 1000;
-            resolve(distanceKm);
-          } else {
-            reject(new Error(`Service d'itinéraires échoué avec le statut : ${status}`));
-          }
-        }
-      );
-    })
-    .catch((directionsErr) => {
-      console.warn("DirectionsService non disponible ou restreint, tentative avec DistanceMatrixService :", directionsErr.message);
-      // Secours 1 : Essayer la matrice de distance (Distance Matrix)
-      return new Promise((resolve, reject) => {
-        const service = new maps.DistanceMatrixService();
-        service.getDistanceMatrix(
-          {
-            origins: [originLoc],
-            destinations: [destLoc],
-            travelMode: maps.TravelMode.DRIVING,
-            unitSystem: maps.UnitSystem.METRIC,
-          },
-          (response, status) => {
-            if (
-              status === 'OK' &&
-              response &&
-              response.rows &&
-              response.rows[0] &&
-              response.rows[0].elements &&
-              response.rows[0].elements[0] &&
-              response.rows[0].elements[0].status === 'OK'
-            ) {
-              const element = response.rows[0].elements[0];
-              const distanceKm = element.distance.value / 1000;
-              resolve(distanceKm);
-            } else {
-              const errStatus = response?.rows?.[0]?.elements?.[0]?.status || status;
-              reject(new Error(`Distance Matrix a échoué : ${errStatus}`));
-            }
-          }
-        );
+    // Calcul direct par géocodage + Haversine (multiplicateur routier 1.25)
+    return Promise.all([getCoords(originStr), getCoords(destStr)])
+      .then(([coords1, coords2]) => {
+        const R = 6371; // Rayon terrestre en km
+        const dLat = (coords2.lat - coords1.lat) * Math.PI / 180;
+        const dLng = (coords2.lng - coords1.lng) * Math.PI / 180;
+        const a = 
+          Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+          Math.cos(coords1.lat * Math.PI / 180) * Math.cos(coords2.lat * Math.PI / 180) * 
+          Math.sin(dLng / 2) * Math.sin(dLng / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        const haversineDist = R * c;
+        
+        // Estimation de la distance routière en km (arrondie au dixième)
+        return Math.round(haversineDist * 1.25 * 10) / 10;
+      })
+      .catch((err) => {
+        console.warn("Distance par géocodage indisponible :", err.message);
+        return 0;
       });
-    })
-    .catch((matrixErr) => {
-      console.warn("Services d'itinéraires restreints sur la clé API, calcul de secours par géocodage (Haversine * 1.25) :", matrixErr.message);
-      // Secours 2 : Géocoder les deux adresses et calculer la distance à vol d'oiseau (formule de Haversine)
-      return Promise.all([getCoords(origin), getCoords(destination)])
-        .then(([coords1, coords2]) => {
-          const R = 6371; // Rayon de la Terre en km
-          const dLat = (coords2.lat - coords1.lat) * Math.PI / 180;
-          const dLng = (coords2.lng - coords1.lng) * Math.PI / 180;
-          const a = 
-            Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-            Math.cos(coords1.lat * Math.PI / 180) * Math.cos(coords2.lat * Math.PI / 180) * 
-            Math.sin(dLng / 2) * Math.sin(dLng / 2);
-          const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-          const haversineDist = R * c;
-          
-          // Estimation de la distance routière en appliquant un coefficient multiplicateur de 1.25
-          const estimatedRoadDist = haversineDist * 1.25;
-          return estimatedRoadDist;
-        });
-    });
   });
 }
