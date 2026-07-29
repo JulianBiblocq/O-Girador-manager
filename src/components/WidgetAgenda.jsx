@@ -280,6 +280,19 @@ export default function WidgetAgenda({
     return () => unsubscribe();
   }, [groupId]);
 
+  // Ouverture automatique de la fiche événement lorsqu'un eventId est présent dans l'URL (Deep Linking FCM)
+  useEffect(() => {
+    if (events.length === 0) return;
+    const searchParams = new URLSearchParams(window.location.search);
+    const targetEventId = searchParams.get('eventId');
+    if (targetEventId) {
+      const matchedEvent = events.find(e => e.id === targetEventId);
+      if (matchedEvent) {
+        setSelectedEvent(matchedEvent);
+      }
+    }
+  }, [events, setSelectedEvent]);
+
   const handleChange = async (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));

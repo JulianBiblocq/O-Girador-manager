@@ -523,6 +523,35 @@ export default function App() {
     }
   }, [user, profileData]);
 
+  // Gestion du Deep Linking automatique pour la navigation via les notifications Push FCM
+  useEffect(() => {
+    if (!user || !profileData) return;
+
+    const handleDeepLinkNavigation = () => {
+      const searchParams = new URLSearchParams(window.location.search);
+      const pathname = window.location.pathname || '';
+
+      const hasEventId = searchParams.has('eventId');
+      const hasThreadId = searchParams.has('threadId');
+      const isAgendaRoute = pathname.includes('/agenda') || pathname.includes('/events');
+      const isForumRoute = pathname.includes('/forum') || pathname.includes('/threads');
+
+      if (hasEventId || isAgendaRoute) {
+        setCurrentPole('accueil');
+        setCurrentTab('agenda');
+      } else if (hasThreadId || isForumRoute) {
+        setCurrentPole('mon-espace');
+        setCurrentTab('forum');
+      }
+    };
+
+    handleDeepLinkNavigation();
+
+    // Écoute des événements de navigation (ex: clic notification Push quand déjà ouvert)
+    window.addEventListener('popstate', handleDeepLinkNavigation);
+    return () => window.removeEventListener('popstate', handleDeepLinkNavigation);
+  }, [user, profileData]);
+
   // Sync unread private messages count
   useEffect(() => {
     if (!user?.uid) {

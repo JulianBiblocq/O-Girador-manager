@@ -24,3 +24,33 @@ messaging.onBackgroundMessage((payload) => {
 
   self.registration.showNotification(notificationTitle, notificationOptions);
 });
+
+// Écoute des clics sur les notifications push FCM (Deep Linking & Redirection)
+self.addEventListener('notificationclick', (event) => {
+  console.log('[firebase-messaging-sw.js] Clic sur la notification :', event.notification);
+  event.notification.close();
+
+  // Extraction de l'URL de destination transmise dans les données de notification
+  const data = event.notification.data || {};
+  const targetUrl = data.url || data.link || data.click_action || '/';
+
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      // 1. Si l'application est déjà ouverte en arrière-plan, basculer vers la fenêtre active et naviguer
+      for (const client of clientList) {
+        if ('focus' in client) {
+          client.focus();
+          if ('navigate' in client && targetUrl) {
+            return client.navigate(targetUrl);
+          }
+          return;
+        }
+      }
+
+      // 2. Sinon, ouvrir directement l'application sur l'URL cible
+      if (clients.openWindow && targetUrl) {
+        return clients.openWindow(targetUrl);
+      }
+    })
+  );
+});

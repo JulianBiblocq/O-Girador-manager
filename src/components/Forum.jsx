@@ -445,6 +445,22 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
     return () => unsubscribe();
   }, [profileData?.groupId]);
 
+  // Ouverture automatique de la discussion lorsqu'un threadId est présent dans l'URL (Deep Linking FCM)
+  useEffect(() => {
+    if (threads.length === 0) return;
+    const searchParams = new URLSearchParams(window.location.search);
+    const targetThreadId = searchParams.get('threadId');
+    if (targetThreadId) {
+      const matchedThread = threads.find(t => t.id === targetThreadId);
+      if (matchedThread) {
+        setSelectedThread(matchedThread);
+        if (matchedThread.channelId) {
+          setActiveChannelId(matchedThread.channelId);
+        }
+      }
+    }
+  }, [threads]);
+
   const activeChannelThreads = useMemo(() => {
     if (!activeChannelId) return [];
     const activeChan = channels.find(c => c.id === activeChannelId);

@@ -359,20 +359,28 @@ async function sendGroupFcmNotification(groupId, title, body, dataPayload = {}) 
     }
 
     const uniqueTokens = [...new Set(tokens)];
+    const targetUrl = dataPayload.url || dataPayload.link || dataPayload.click_action || "/";
 
     const payload = {
+      tokens: uniqueTokens,
       notification: {
         title: title,
         body: body.length > 100 ? `${body.substring(0, 97)}...` : body
       },
-      data: dataPayload
+      data: {
+        ...dataPayload,
+        url: targetUrl,
+        link: targetUrl,
+        click_action: targetUrl
+      },
+      webpush: {
+        fcmOptions: {
+          link: targetUrl
+        }
+      }
     };
 
-    const response = await admin.messaging().sendEachForMulticast({
-      tokens: uniqueTokens,
-      notification: payload.notification,
-      data: payload.data
-    });
+    const response = await admin.messaging().sendEachForMulticast(payload);
 
     if (response.failureCount > 0) {
       const tokensToRemove = [];
@@ -421,10 +429,13 @@ exports.onAnnouncementCreated = onDocumentCreated("announcements/{announcementId
 
   const title = announcement.titre || "Nouvelle annonce";
   const message = announcement.message || "";
+  const targetUrl = "/forum";
 
   await sendGroupFcmNotification(announcement.groupId, title, message, {
-    announcementId: snapshot.id,
-    click_action: "/forum"
+    url: targetUrl,
+    link: targetUrl,
+    click_action: targetUrl,
+    announcementId: snapshot.id
   });
 });
 
@@ -459,10 +470,13 @@ exports.onEventCreated = onDocumentCreated("events/{eventId}", async (event) => 
 
   const title = "📅 Nouvel événement ajouté !";
   const body = `${eventTitle}${dateFormatted ? ` - le ${dateFormatted}` : ""}`;
+  const targetUrl = `/agenda?eventId=${snapshot.id}`;
 
   await sendGroupFcmNotification(eventData.groupId, title, body, {
-    eventId: snapshot.id,
-    click_action: "/agenda"
+    url: targetUrl,
+    link: targetUrl,
+    click_action: targetUrl,
+    eventId: snapshot.id
   });
 });
 
@@ -480,9 +494,12 @@ exports.onForumThreadCreated = onDocumentCreated("forum/{threadId}", async (even
   const channelName = thread.categorie || "Général";
   const title = "🗣️ Nouveau sujet sur le Porte-Voix !";
   const body = `${threadTitle} (dans le salon ${channelName})`;
+  const targetUrl = `/forum?threadId=${snapshot.id}`;
 
   await sendGroupFcmNotification(thread.groupId, title, body, {
-    threadId: snapshot.id,
-    click_action: "/forum"
+    url: targetUrl,
+    link: targetUrl,
+    click_action: targetUrl,
+    threadId: snapshot.id
   });
 });
