@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { collection, query, where, onSnapshot, doc, addDoc, deleteDoc, updateDoc, setDoc, getDoc, Timestamp } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { db, storage } from '../firebase';
+import { auth, db, storage } from '../firebase';
+import { onAuthStateChanged } from 'firebase/auth';
 
 // Helper local pour le calcul de l'occupation et éligibilité du covoiturage (identique à KilometricReimbursementManager et ReportsExports)
 const calculateCarStatus = (car, associationSettings) => {
@@ -48,12 +49,21 @@ export function useTreasury(groupId) {
   const [savingSettings, setSavingSettings] = useState(false);
   const [savingTx, setSavingTx] = useState(false);
   const [updatingEventId, setUpdatingEventId] = useState(null);
+  const [currentUser, setCurrentUser] = useState(auth.currentUser);
 
   const loading = Object.values(loadingStates).some(state => state === true);
 
+  // Écoute de l'état d'authentification Firebase
+  useEffect(() => {
+    const unsubAuth = onAuthStateChanged(auth, (u) => {
+      setCurrentUser(u);
+    });
+    return () => unsubAuth();
+  }, []);
+
   // Synchronisation des données en temps réel depuis Firestore
   useEffect(() => {
-    if (!groupId) {
+    if (!groupId || !currentUser) {
       setLoadingStates({
         members: false,
         transactions: false,
@@ -151,7 +161,7 @@ export function useTreasury(groupId) {
       setLoadingStates(prev => ({ ...prev, credentials: false }));
     });
 
-  }, [groupId]);
+  }, [groupId, currentUser?.uid]);
 
   // Operations
   const handleAddTx = async (txForm, documentFile = null) => {
