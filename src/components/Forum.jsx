@@ -6,6 +6,7 @@ import CordelButton from './CordelButton';
 import ThreadView from './ThreadView';
 import PrivateChatView from './PrivateChatView';
 import MoveThreadModal from './MoveThreadModal';
+import CreateThreadForm from './CreateThreadForm';
 import { useForumModeration } from '../hooks/useForumModeration';
 import { useTranslation } from './LanguageContext';
 import XiloAvatar from './XiloAvatar';
