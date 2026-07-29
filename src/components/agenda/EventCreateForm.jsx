@@ -338,6 +338,21 @@ export default function EventCreateForm({
                   <span>📝 Demander des inscriptions pour cet événement (Présent / Absent / À confirmer)</span>
                 </label>
               </div>
+
+              {/* Notification Push FCM Toggle */}
+              <div className="flex items-center gap-2 pt-2 border-t border-dashed border-cordel-master-dark/15 text-left select-none">
+                <label className="flex items-center gap-2 text-xs font-bold cursor-pointer text-cordel-wood">
+                  <input
+                    type="checkbox"
+                    name="sendPushNotification"
+                    checked={Boolean(formData.sendPushNotification)}
+                    onChange={(e) => setFormData(prev => ({ ...prev, sendPushNotification: e.target.checked }))}
+                    disabled={saving}
+                    className="w-4 h-4 border border-encre-noire rounded accent-cordel-wood cursor-pointer"
+                  />
+                  <span>📢 Envoyer une notification Push aux membres</span>
+                </label>
+              </div>
             </div>
           </CordelAccordion>
 

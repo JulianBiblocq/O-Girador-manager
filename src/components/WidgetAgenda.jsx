@@ -414,6 +414,7 @@ export default function WidgetAgenda({
           includesDance: formData.includesDance || false,
           enableCarpool: formData.enableCarpool !== false,
           enableInscriptions: formData.enableInscriptions !== false,
+          sendPushNotification: Boolean(formData.sendPushNotification),
           description: formData.description || '',
           latitude: formData.latitude ? Number(formData.latitude) : null,
           longitude: formData.longitude ? Number(formData.longitude) : null

@@ -17,6 +17,9 @@ export default function CreateThreadForm({ groupId, channelId, user, profileData
   const [selectedTarget, setSelectedTarget] = useState('');
   const [saving, setSaving] = useState(false);
 
+  // État de notification Push FCM
+  const [sendPushNotification, setSendPushNotification] = useState(false);
+
   // État du sondage
   const [showPollForm, setShowPollForm] = useState(false);
   const [pollQuestion, setPollQuestion] = useState('');
@@ -103,6 +106,7 @@ export default function CreateThreadForm({ groupId, channelId, user, profileData
         derniereModification: nowIso,
         targetTag: selectedTarget || null,
         isPinned: false,
+        sendPushNotification: sendPushNotification,
         ...(pollPayload ? { poll: pollPayload } : {}),
         reponses: [
           {
@@ -329,6 +333,20 @@ export default function CreateThreadForm({ groupId, channelId, user, profileData
               </label>
             </div>
           )}
+        </div>
+
+        {/* Toggle Notification Push FCM */}
+        <div className="flex items-center gap-2 pt-2 border-t border-dashed border-cordel-master-dark/15 text-left select-none">
+          <label className="flex items-center gap-2 text-xs font-bold cursor-pointer text-cordel-wood">
+            <input
+              type="checkbox"
+              checked={sendPushNotification}
+              onChange={(e) => setSendPushNotification(e.target.checked)}
+              disabled={saving}
+              className="w-4 h-4 border border-encre-noire rounded accent-cordel-wood cursor-pointer"
+            />
+            <span>📢 Alerter les membres par notification Push</span>
+          </label>
         </div>
 
         {/* Action Buttons */}

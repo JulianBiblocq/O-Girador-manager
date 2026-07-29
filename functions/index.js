@@ -323,22 +323,17 @@ exports.onUserCreate = onDocumentCreated("users/{userId}", async (event) => {
   }
 });
 
-// 3. Trigger pour l'envoi des notifications Push via FCM
-exports.onAnnouncementCreated = onDocumentCreated("announcements/{announcementId}", async (event) => {
-  const snapshot = event.data;
-  if (!snapshot) return;
-
-  const announcement = snapshot.data();
-  if (announcement.sendPushNotification !== true) {
-    return;
-  }
-
-  const title = announcement.titre || "Nouvelle annonce";
-  const message = announcement.message || "";
-  const groupId = announcement.groupId;
-
+/**
+ * Helper générique pour l'envoi de notifications Push FCM à un groupe d'utilisateurs.
+ *
+ * @param {string} groupId Identifiant du groupe d'association
+ * @param {string} title Titre de la notification
+ * @param {string} body Corps de la notification
+ * @param {Object} dataPayload Données additionnelles pour le clic
+ */
+async function sendGroupFcmNotification(groupId, title, body, dataPayload = {}) {
   if (!groupId) {
-    console.error("Aucun groupId trouvé sur l'annonce, envoi annulé.");
+    console.error("Aucun groupId fourni, envoi de la notification Push annulé.");
     return;
   }
 
@@ -368,12 +363,9 @@ exports.onAnnouncementCreated = onDocumentCreated("announcements/{announcementId
     const payload = {
       notification: {
         title: title,
-        body: message.length > 100 ? `${message.substring(0, 97)}...` : message
+        body: body.length > 100 ? `${body.substring(0, 97)}...` : body
       },
-      data: {
-        announcementId: snapshot.id,
-        click_action: "/forum"
-      }
+      data: dataPayload
     };
 
     const response = await admin.messaging().sendEachForMulticast({
@@ -415,4 +407,82 @@ exports.onAnnouncementCreated = onDocumentCreated("announcements/{announcementId
   } catch (error) {
     console.error("Erreur lors de l'envoi de la notification Push FCM :", error);
   }
+}
+
+// 3. Trigger pour l'envoi des notifications Push des Annonces (Mégaphone)
+exports.onAnnouncementCreated = onDocumentCreated("announcements/{announcementId}", async (event) => {
+  const snapshot = event.data;
+  if (!snapshot) return;
+
+  const announcement = snapshot.data();
+  if (announcement.sendPushNotification !== true) {
+    return;
+  }
+
+  const title = announcement.titre || "Nouvelle annonce";
+  const message = announcement.message || "";
+
+  await sendGroupFcmNotification(announcement.groupId, title, message, {
+    announcementId: snapshot.id,
+    click_action: "/forum"
+  });
+});
+
+// 4. Trigger pour l'envoi des notifications Push lors de la création d'un événement (Agenda)
+exports.onEventCreated = onDocumentCreated("events/{eventId}", async (event) => {
+  const snapshot = event.data;
+  if (!snapshot) return;
+
+  const eventData = snapshot.data();
+  if (eventData.sendPushNotification !== true) {
+    return;
+  }
+
+  const eventTitle = eventData.titre || "Événement";
+  let dateFormatted = "";
+  if (eventData.date) {
+    try {
+      const d = new Date(eventData.date);
+      if (!isNaN(d.getTime())) {
+        dateFormatted = d.toLocaleDateString("fr-FR", {
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric"
+        });
+      } else {
+        dateFormatted = String(eventData.date);
+      }
+    } catch (e) {
+      dateFormatted = String(eventData.date);
+    }
+  }
+
+  const title = "📅 Nouvel événement ajouté !";
+  const body = `${eventTitle}${dateFormatted ? ` - le ${dateFormatted}` : ""}`;
+
+  await sendGroupFcmNotification(eventData.groupId, title, body, {
+    eventId: snapshot.id,
+    click_action: "/agenda"
+  });
+});
+
+// 5. Trigger pour l'envoi des notifications Push lors de la création d'un sujet sur le Porte-Voix (Forum)
+exports.onForumThreadCreated = onDocumentCreated("forum/{threadId}", async (event) => {
+  const snapshot = event.data;
+  if (!snapshot) return;
+
+  const thread = snapshot.data();
+  if (thread.sendPushNotification !== true) {
+    return;
+  }
+
+  const threadTitle = thread.titre || "Nouveau sujet";
+  const channelName = thread.categorie || "Général";
+  const title = "🗣️ Nouveau sujet sur le Porte-Voix !";
+  const body = `${threadTitle} (dans le salon ${channelName})`;
+
+  await sendGroupFcmNotification(thread.groupId, title, body, {
+    threadId: snapshot.id,
+    click_action: "/forum"
+  });
 });
