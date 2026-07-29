@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { doc, updateDoc, deleteDoc, collection, query, where, onSnapshot } from 'firebase/firestore';
+import { doc, updateDoc, deleteDoc, collection, query, where, onSnapshot, writeBatch, getDocs } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '../firebase';
 import CordelCard from './CordelCard';
@@ -643,6 +643,9 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
 
     setSavingEvent(true);
     try {
+      const updatedLienDocument = editConfig.agendaEnableOrdreDuJour ? editForm.lienDocument || '' : '';
+      const updatedDescription = editForm.description || '';
+
       const eventRef = doc(db, 'events', event.id);
       await updateDoc(eventRef, {
         titre: editForm.titre,
@@ -654,7 +657,7 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
         horaireCovoiturage: editConfig.agendaEnableCarpool ? editForm.horaireCovoiturage || '' : '',
         niveauRequis: (editForm.type === 'prestation' || editForm.type === 'stage' || editForm.type === 'repetition' || editForm.type === 'atelier') ? editForm.niveauRequis || 'tous' : 'tous',
         niveauDanseRequis: (editForm.type === 'prestation' || editForm.type === 'stage' || editForm.type === 'repetition' || editForm.type === 'atelier') ? editForm.niveauDanseRequis || 'aucun' : 'aucun',
-        lienDocument: editConfig.agendaEnableOrdreDuJour ? editForm.lienDocument || '' : '',
+        lienDocument: updatedLienDocument,
         distanceAllerRetourKm: editConfig.agendaEnableCarpool ? (parseFloat(editForm.distanceAllerRetourKm) || 0) : 0,
         lienSocial: editConfig.agendaEnableUrl ? editForm.lienSocial || '' : '',
         imageUrl: editConfig.agendaEnableImage ? editForm.imageUrl || '' : '',
@@ -676,10 +679,33 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
         includesDance: editForm.includesDance || false,
         enableCarpool: editForm.enableCarpool !== false,
         enableInscriptions: editForm.enableInscriptions !== false,
-        description: editForm.description || '',
+        description: updatedDescription,
         latitude: editForm.latitude ? Number(editForm.latitude) : null,
         longitude: editForm.longitude ? Number(editForm.longitude) : null
       });
+
+      // Synchronisation automatique par lot (batch update) si l'événement fait partie d'un sondage (pollGroupId)
+      if (event.pollGroupId) {
+        try {
+          const pollQuery = query(collection(db, 'events'), where('pollGroupId', '==', event.pollGroupId));
+          const pollSnapshot = await getDocs(pollQuery);
+          if (!pollSnapshot.empty) {
+            const batch = writeBatch(db);
+            pollSnapshot.forEach((docSnap) => {
+              if (docSnap.id !== event.id) {
+                batch.update(docSnap.ref, {
+                  lienDocument: updatedLienDocument,
+                  description: updatedDescription
+                });
+              }
+            });
+            await batch.commit();
+          }
+        } catch (batchErr) {
+          console.error("EventDetails - Erreur de synchronisation des événements du sondage :", batchErr);
+        }
+      }
+
       setIsEditingEvent(false);
       alert("Événement mis à jour avec succès !");
     } catch (err) {

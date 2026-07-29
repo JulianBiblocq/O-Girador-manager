@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { doc, updateDoc, collection, addDoc } from 'firebase/firestore';
+import { doc, updateDoc, collection, addDoc, query, where, getDocs, writeBatch } from 'firebase/firestore';
 import { db } from '../../firebase';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 import { useTranslation } from '../LanguageContext';
 import useConfirm from '../../hooks/useConfirm';
+import ImportAgendaModal from '../agenda/ImportAgendaModal';
+import { generateCompteRenduPDF } from '../../utils/pdfGenerator';
 
 export default function EventReportSection({ event, user, profileData }) {
   const { t } = useTranslation();
@@ -21,6 +23,7 @@ export default function EventReportSection({ event, user, profileData }) {
   const [newSuggestionTitle, setNewSuggestionTitle] = useState('');
   const [secretaryResponses, setSecretaryResponses] = useState({});
   const [isSubmittingSuggestion, setIsSubmittingSuggestion] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   
   const recognitionRef = useRef(null);
 
@@ -317,12 +320,57 @@ export default function EventReportSection({ event, user, profileData }) {
         compteRenduVaralId: docRef.id
       });
 
-      alert("Le compte-rendu a été définitivement validé et publié au Varal !");
+      // 6. Generate and save PDF document automatically
+      try {
+        const pdfDoc = generateCompteRenduPDF(event, pointsToPublish, presentsNames);
+        pdfDoc.save(`Compte_Rendu_${event.titre ? event.titre.replace(/[^a-zA-Z0-9]/g, '_') : 'Reunion'}.pdf`);
+      } catch (pdfErr) {
+        console.error("Erreur génération PDF automatique :", pdfErr);
+      }
+
+      alert("Le compte-rendu a été définitivement validé, publié au Varal et le PDF officiel a été généré !");
     } catch (err) {
       console.error("Error publishing report:", err);
       alert("Erreur lors de la publication : " + err.message);
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  // Revert report to draft for modifications
+  const handleRevertToDraft = async () => {
+    const confirmRevert = await confirm({
+      title: "Repasser en brouillon",
+      message: "Voulez-vous repasser ce compte-rendu en brouillon ? Cela réinitialisera les votes d'approbation et vous permettra d'éditer le texte.",
+      confirmText: "Oui, repasser en brouillon",
+      cancelText: "Annuler",
+      variant: "warning"
+    });
+    if (!confirmRevert) return;
+
+    try {
+      const eventRef = doc(db, 'events', event.id);
+      await updateDoc(eventRef, {
+        compteRenduStatus: 'brouillon',
+        compteRenduApprovals: {}
+      });
+      alert("Le compte-rendu a été réinitialisé en brouillon.");
+    } catch (err) {
+      console.error("Erreur lors de la remise en brouillon :", err);
+      alert("Erreur lors de la remise en brouillon.");
+    }
+  };
+
+  // On-demand PDF download
+  const handleDownloadPDF = () => {
+    try {
+      const presents = event.inscriptions?.filter(ins => ins.status === 'present') || [];
+      const presentsNames = presents.map(ins => ins.userName || 'Membre anonyme');
+      const pdfDoc = generateCompteRenduPDF(event, localPoints, presentsNames);
+      pdfDoc.save(`Compte_Rendu_${event.titre ? event.titre.replace(/[^a-zA-Z0-9]/g, '_') : 'Reunion'}.pdf`);
+    } catch (err) {
+      console.error("Erreur génération PDF :", err);
+      alert("Erreur lors du téléchargement du PDF.");
     }
   };
 
@@ -483,7 +531,18 @@ export default function EventReportSection({ event, user, profileData }) {
       {/* 1. Mettre en place l'ordre du jour (Mode brouillon - ADMIN ONLY) */}
       {(reportStatus === '' || reportStatus === 'brouillon') && isAdmin && (
         <CordelCard variant="default" useExtremeBorder={false} className="p-4 bg-cordel-bg-light/45 border-dashed">
-          <h4 className="font-bold text-xs text-cordel-wood mb-2">➕ Ajouter un point à l'Ordre du Jour</h4>
+          <div className="flex justify-between items-center mb-2 flex-wrap gap-2">
+            <h4 className="font-bold text-xs text-cordel-wood">➕ Ajouter un point à l'Ordre du Jour</h4>
+            <CordelButton
+              type="button"
+              variant="vert"
+              useExtremeBorder={true}
+              onClick={() => setIsImportModalOpen(true)}
+              className="text-[9.5px] font-extrabold uppercase px-2.5 py-1 flex items-center gap-1 shadow-sm"
+            >
+              📥 Importer un ordre du jour
+            </CordelButton>
+          </div>
           <form onSubmit={handleAddPoint} className="flex gap-2">
             <input 
               type="text" 
@@ -960,16 +1019,25 @@ export default function EventReportSection({ event, user, profileData }) {
                   </div>
                 )}
 
-                {/* Manual Publish Button (ADMIN ONLY - when status is review) */}
+                {/* Manual Publish & Revert Buttons (ADMIN ONLY - when status is review) */}
                 {isAdmin && (
-                  <div className="flex justify-end border-t border-dashed border-encre-noire/10 pt-3 mt-1">
+                  <div className="flex justify-between items-center border-t border-dashed border-encre-noire/10 pt-3 mt-1 flex-wrap gap-2">
                     <CordelButton 
-                      variant="ocre" 
+                      variant="rouge" 
+                      onClick={handleRevertToDraft}
+                      disabled={isSaving}
+                      className="text-xs py-1.5 px-3 font-bold"
+                    >
+                      ✏️ Repasser en brouillon
+                    </CordelButton>
+                    <CordelButton 
+                      variant="vert" 
+                      useExtremeBorder={true}
                       onClick={() => handlePublishDefinitive(localPoints, approvals)}
                       disabled={isSaving}
-                      className="text-xs py-1.5 px-3 font-extrabold"
+                      className="text-xs py-1.5 px-4 font-extrabold uppercase tracking-wider"
                     >
-                      {isSaving ? "⏳ Publication..." : "⚡ Publier définitivement"}
+                      {isSaving ? "⏳ Validation..." : "⚡ Forcer la validation définitive (Override)"}
                     </CordelButton>
                   </div>
                 )}
@@ -978,16 +1046,66 @@ export default function EventReportSection({ event, user, profileData }) {
             </div>
           )}
 
-          {/* 5. Message Published */}
+          {/* 5. Message Published & PDF Download */}
           {reportStatus === 'publie' && (
-            <div className="p-4 bg-green-50 border border-green-200 rounded text-center text-xs font-bold text-green-800">
-              🎉 Ce compte-rendu a été définitivement approuvé et archivé sous la corde "Comptes-rendus" du Varal.
+            <div className="p-4 bg-green-50 border border-green-300 rounded text-center text-xs font-bold text-green-900 flex flex-col gap-3 items-center">
+              <div>
+                🎉 Ce compte-rendu est <strong>officiellement validé</strong> et archivé dans la catégorie <strong>Administratif / Comptes Rendus</strong> du Varal.
+              </div>
+              <CordelButton
+                variant="vert"
+                useExtremeBorder={true}
+                onClick={handleDownloadPDF}
+                className="text-xs font-extrabold uppercase px-4 py-2 flex items-center gap-1.5 shadow-sm"
+              >
+                📄 Télécharger le PDF officiel du Compte-Rendu
+              </CordelButton>
             </div>
           )}
 
         </div>
       )}
       
+      {/* Modale d'importation de modèles d'ordre du jour */}
+      <ImportAgendaModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        groupId={event.groupId}
+        onSelectTemplate={async (template) => {
+          try {
+            const formattedPoints = (template.points || []).map(p => {
+              if (typeof p === 'object' && p.titre) return p;
+              return { id: Date.now().toString() + Math.random().toString(36).substring(2, 5), titre: String(p), notesCR: '' };
+            });
+
+            const eventRef = doc(db, 'events', event.id);
+            await updateDoc(eventRef, {
+              pointsOrdreDuJour: formattedPoints,
+              ...(reportStatus === '' ? { compteRenduStatus: 'brouillon' } : {})
+            });
+            setLocalPoints(formattedPoints);
+
+            // Synchronisation si événement faisant partie d'un sondage
+            if (event.pollGroupId) {
+              const pollQuery = query(collection(db, 'events'), where('pollGroupId', '==', event.pollGroupId));
+              const pollSnapshot = await getDocs(pollQuery);
+              if (!pollSnapshot.empty) {
+                const batch = writeBatch(db);
+                pollSnapshot.forEach((docSnap) => {
+                  if (docSnap.id !== event.id) {
+                    batch.update(docSnap.ref, { pointsOrdreDuJour: formattedPoints });
+                  }
+                });
+                await batch.commit();
+              }
+            }
+            alert("Ordre du jour importé avec succès !");
+          } catch (err) {
+            console.error("Erreur lors de l'importation de l'ordre du jour :", err);
+            alert("Erreur lors de l'importation de l'ordre du jour.");
+          }
+        }}
+      />
     </div>
   );
 }

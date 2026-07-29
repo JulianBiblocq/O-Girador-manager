@@ -773,7 +773,7 @@ export default function EventCreateForm({
                   {/* Candidate Option Dates */}
                   <div className="flex flex-col gap-2">
                     <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                      Créneaux proposés (2 à 4 dates)
+                      Créneaux proposés (minimum 2 dates)
                     </label>
                     {(formData.pollDates || ['', '']).map((optDate, idx) => (
                       <div key={idx} className="flex items-center gap-2">
@@ -810,20 +810,16 @@ export default function EventCreateForm({
                       </div>
                     ))}
 
-                    {(formData.pollDates || []).length < 4 && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const current = formData.pollDates || ['', ''];
-                          if (current.length < 4) {
-                            setFormData(prev => ({ ...prev, pollDates: [...current, ''] }));
-                          }
-                        }}
-                        className="text-[9px] font-black uppercase text-cordel-wood hover:underline text-left mt-1 cursor-pointer"
-                      >
-                        + Ajouter une 3ème ou 4ème option de date
-                      </button>
-                    )}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const current = formData.pollDates || ['', ''];
+                        setFormData(prev => ({ ...prev, pollDates: [...current, ''] }));
+                      }}
+                      className="text-[9px] font-black uppercase text-cordel-wood hover:underline text-left mt-1 cursor-pointer"
+                    >
+                      + Ajouter une option de date
+                    </button>
                   </div>
                 </div>
               )}

@@ -173,3 +173,120 @@ export const generateMedicalAttestationPDF = (member, associationName) => {
   
   doc.save(`Attestation_Sante_${member.prenom}_${member.nom}.pdf`);
 };
+
+/**
+ * Génère le PDF officiel du compte-rendu de réunion pour le Varal et l'archivage.
+ *
+ * @param {Object} event Événement / Réunion concerné(e)
+ * @param {Array} points Liste des points d'ordre du jour et leurs notes
+ * @param {Array} presents Liste des membres présents
+ * @param {string} associationName Nom de l'association
+ * @returns {jsPDF} Document jsPDF généré
+ */
+export const generateCompteRenduPDF = (event, points = [], presents = [], associationName = "O Girador") => {
+  const doc = new jsPDF();
+  const assocName = (associationName && typeof associationName === 'string' && associationName.trim()) ? associationName.trim() : "O Girador";
+  
+  // Titre du document
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(18);
+  doc.text("COMPTE-RENDU OFFICIEL DE RÉUNION", 105, 25, { align: "center" });
+
+  doc.setFontSize(11);
+  doc.setFont("helvetica", "normal");
+  doc.text(`Association : ${assocName}`, 105, 33, { align: "center" });
+
+  doc.setDrawColor(139, 42, 26);
+  doc.setLineWidth(1);
+  doc.line(20, 38, 190, 38);
+
+  // Méta-informations de l'événement
+  let yPos = 48;
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
+  doc.text("Événement :", 20, yPos);
+  doc.setFont("helvetica", "normal");
+  doc.text(`${event.titre || "Réunion"}`, 55, yPos);
+
+  yPos += 7;
+  doc.setFont("helvetica", "bold");
+  doc.text("Date & Heure :", 20, yPos);
+  doc.setFont("helvetica", "normal");
+  const eventDate = event.date ? new Date(event.date).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : "Non spécifiée";
+  doc.text(`${eventDate}`, 55, yPos);
+
+  yPos += 7;
+  doc.setFont("helvetica", "bold");
+  doc.text("Membres présents :", 20, yPos);
+  doc.setFont("helvetica", "normal");
+  const presentsText = (presents && presents.length > 0)
+    ? (typeof presents[0] === 'string' ? presents.join(', ') : presents.map(p => p.userName || `${p.prenom || ''} ${p.nom || ''}`.trim()).join(', '))
+    : "Aucun présent enregistré";
+  const presentsLines = doc.splitTextToSize(presentsText, 135);
+  doc.text(presentsLines, 55, yPos);
+
+  yPos += (presentsLines.length * 6) + 6;
+  doc.setDrawColor(200, 200, 200);
+  doc.setLineWidth(0.5);
+  doc.line(20, yPos, 190, yPos);
+  yPos += 10;
+
+  // Entête des points
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(12);
+  doc.text("ORDRE DU JOUR & NOTES DE SÉANCE", 20, yPos);
+  yPos += 8;
+
+  if (!points || points.length === 0) {
+    doc.setFont("helvetica", "italic");
+    doc.setFontSize(10);
+    doc.text("Aucun point consigné dans ce compte-rendu.", 20, yPos);
+  } else {
+    points.forEach((pt, idx) => {
+      if (yPos > 260) {
+        doc.addPage();
+        yPos = 20;
+      }
+
+      const pointTitre = typeof pt === 'string' ? pt : (pt.titre || `Point ${idx + 1}`);
+      const pointNotes = typeof pt === 'object' && pt.notesCR ? pt.notesCR : "Aucune note rédigée.";
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(11);
+      doc.text(`${idx + 1}. ${pointTitre}`, 20, yPos);
+      yPos += 6;
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10);
+      const notesLines = doc.splitTextToSize(pointNotes, 165);
+      doc.text(notesLines, 25, yPos);
+      yPos += (notesLines.length * 5) + 6;
+    });
+  }
+
+  // Signature & bas de page
+  if (yPos > 240) {
+    doc.addPage();
+    yPos = 30;
+  }
+
+  doc.setDrawColor(45, 106, 79);
+  doc.setFillColor(240, 248, 244);
+  doc.rect(20, yPos, 170, 25, "FD");
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(9);
+  doc.setTextColor(45, 106, 79);
+  doc.text("STATUT DU COMPTE-RENDU : VALIDÉ & ARCHIVÉ AU VARAL", 25, yPos + 8);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
+  doc.setTextColor(50, 50, 50);
+  doc.text("Document validé par les membres présents et archivé automatiquement sous la catégorie Administratif.", 25, yPos + 16);
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
+  doc.setTextColor(120, 120, 120);
+  doc.text(`Document officiel généré par ${assocName} Manager le ${new Date().toLocaleDateString('fr-FR')}`, 105, 285, { align: "center" });
+
+  return doc;
+};

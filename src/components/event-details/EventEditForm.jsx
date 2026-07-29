@@ -5,6 +5,7 @@ import CordelAccordion, { CordelAccordionGroup } from '../CordelAccordion';
 import EventBudgetEditor from './EventBudgetEditor';
 import { calculateRoadDistance } from '../../utils/googleMaps';
 import ManualMapMarkerModal from '../agenda/ManualMapMarkerModal';
+import ImportAgendaModal from '../agenda/ImportAgendaModal';
 
 import AddressAutocomplete from '../AddressAutocomplete';
 
@@ -48,6 +49,7 @@ export default function EventEditForm({
   t
 }) {
   const [isMapModalOpen, setIsMapModalOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
   const combinedCostumeOptions = React.useMemo(() => {
     const list = [];
@@ -673,17 +675,70 @@ export default function EventEditForm({
 
               {/* Ordre du jour */}
               {editConfig.agendaEnableOrdreDuJour && (
-                <div className="flex flex-col gap-1">
-                  <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                    {translate('widgetAgenda.agendaDocLinkLabel', "Lien du document d'ordre du jour / partition")}
-                  </label>
+                <div className="flex flex-col gap-2 text-left pt-2 border-t border-dashed border-cordel-master-dark/15">
+                  <div className="flex justify-between items-center flex-wrap gap-2">
+                    <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                      {translate('widgetAgenda.agendaDocLinkLabel', "Lien du document d'ordre du jour / partition")}
+                    </label>
+                    <CordelButton
+                      type="button"
+                      variant="vert"
+                      useExtremeBorder={true}
+                      disabled={savingEvent}
+                      onClick={() => setIsImportModalOpen(true)}
+                      className="text-[9px] font-extrabold uppercase px-2.5 py-1 flex items-center gap-1 shadow-sm"
+                    >
+                      📥 Importer un ordre du jour
+                    </CordelButton>
+                  </div>
+
                   <input
                     type="url"
-                    value={editForm.lienDocument}
+                    value={editForm.lienDocument || ''}
                     onChange={(e) => setEditForm(prev => ({ ...prev, lienDocument: e.target.value }))}
                     disabled={savingEvent}
-                    className="theme-input w-full disabled:opacity-50"
+                    placeholder="https://..."
+                    className="theme-input w-full disabled:opacity-50 text-xs"
                   />
+
+                  {/* Preview list of imported agenda points */}
+                  {(editForm.pointsOrdreDuJour || []).length > 0 && (
+                    <div className="mt-2 bg-amber-50/80 dark:bg-amber-950/20 p-3 rounded border border-dashed border-amber-500/40 flex flex-col gap-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[9.5px] uppercase font-black text-cordel-wood flex items-center gap-1">
+                          📋 Points de l'ordre du jour ({editForm.pointsOrdreDuJour.length})
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setEditForm(prev => ({ ...prev, pointsOrdreDuJour: [] }))}
+                          className="text-[9px] text-red-600 font-bold hover:underline cursor-pointer"
+                        >
+                          Vider
+                        </button>
+                      </div>
+                      <div className="flex flex-col gap-1 max-h-36 overflow-y-auto pr-1">
+                        {editForm.pointsOrdreDuJour.map((pt, idx) => {
+                          const title = typeof pt === 'string' ? pt : (pt.titre || '');
+                          return (
+                            <div key={idx} className="flex items-center justify-between text-xs bg-white/70 dark:bg-black/20 p-1.5 rounded border border-encre-noire/10">
+                              <span className="font-semibold text-encre-noire">{idx + 1}. {title}</span>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const updated = editForm.pointsOrdreDuJour.filter((_, i) => i !== idx);
+                                  setEditForm(prev => ({ ...prev, pointsOrdreDuJour: updated }));
+                                }}
+                                className="text-red-600 font-bold hover:text-red-800 px-1 text-[10px] cursor-pointer"
+                                title="Supprimer ce point"
+                              >
+                                ✕
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -760,6 +815,26 @@ export default function EventEditForm({
           </CordelButton>
         </div>
       </CordelCard>
+
+      {/* Modale d'importation d'un ordre du jour */}
+      <ImportAgendaModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        groupId={editForm.groupId}
+        onSelectTemplate={(template) => {
+          setEditForm(prev => {
+            const formattedPoints = (template.points || []).map(p => {
+              if (typeof p === 'object' && p.titre) return p;
+              return { id: Date.now().toString() + Math.random().toString(36).substring(2, 5), titre: String(p), notesCR: '' };
+            });
+            return {
+              ...prev,
+              pointsOrdreDuJour: formattedPoints,
+              description: template.description ? (prev.description ? `${prev.description}\n\n${template.description}` : template.description) : prev.description
+            };
+          });
+        }}
+      />
     </form>
   );
 }
