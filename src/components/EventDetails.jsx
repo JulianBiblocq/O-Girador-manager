@@ -95,6 +95,7 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
 
   const [indemniteKilometrique, setIndemniteKilometrique] = useState(0);
   const [adresseLocal, setAdresseLocal] = useState('');
+  const [lieuxImportants, setLieuxImportants] = useState([]);
   const [instrumentsDisponibles, setInstrumentsDisponibles] = useState(["Alfaia Marcante", "Alfaia Meião", "Alfaia Repique", "Caixa", "Tarol", "Gonguê", "Agbê", "Mineiro", "Timbal", "Chant", "Danse"]);
   const [linkedInstruments, setLinkedInstruments] = useState([]);
   const [enableCarpoolReimbursement, setEnableCarpoolReimbursement] = useState(true);
@@ -277,6 +278,7 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
           setAssociationEventTypes(['prestation', 'repetition', 'stage', 'atelier', 'reunion']);
         }
         setDressCodes(data.dressCodes || []);
+        setLieuxImportants(Array.isArray(data.lieuxImportants) ? data.lieuxImportants : []);
         if (Array.isArray(data.instrumentsDisponibles)) {
           setInstrumentsDisponibles(data.instrumentsDisponibles);
         }
@@ -991,6 +993,7 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
           rawEditConfig={rawEditConfig}
           associationEventTypes={associationEventTypes}
           adresseLocal={adresseLocal}
+          lieuxImportants={lieuxImportants}
           imageMode={imageMode}
           setImageMode={setImageMode}
           uploadingImage={uploadingImage}

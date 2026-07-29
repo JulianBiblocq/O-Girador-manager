@@ -8,6 +8,7 @@ import ManualMapMarkerModal from '../agenda/ManualMapMarkerModal';
 import ImportAgendaModal from '../agenda/ImportAgendaModal';
 
 import AddressAutocomplete from '../AddressAutocomplete';
+import LocationSelector from '../LocationSelector';
 
 /**
  * EventEditForm component handles editing details of an event.
@@ -42,6 +43,7 @@ export default function EventEditForm({
   rawEditConfig,
   associationEventTypes,
   adresseLocal,
+  lieuxImportants = [],
   imageMode,
   setImageMode,
   uploadingImage,
@@ -199,15 +201,20 @@ export default function EventEditForm({
                       ⏳ {translate('widgetAgenda.loadingAddress', "Chargement du champ adresse...")}
                     </div>
                   }>
-                    <AddressAutocomplete
-                      name="lieu"
+                    <LocationSelector
                       value={editForm.lieu}
-                      onChange={(e) => {
-                        setEditForm(prev => ({ ...prev, lieu: e.target.value }));
+                      lieuxImportants={lieuxImportants}
+                      onChange={(val) => {
+                        setEditForm(prev => ({ ...prev, lieu: val }));
                       }}
-                      onSelect={async (placeData) => {
-                        const exactAddress = placeData.address || '';
-                        setEditForm(prev => ({ ...prev, lieu: exactAddress }));
+                      onPlaceSelected={async (placeData) => {
+                        const exactAddress = placeData.formattedAddress || placeData.address || '';
+                        setEditForm(prev => ({ 
+                          ...prev, 
+                          lieu: exactAddress,
+                          latitude: placeData.latitude || prev.latitude,
+                          longitude: placeData.longitude || prev.longitude
+                        }));
                         if (adresseLocal && exactAddress) {
                           try {
                             const distanceKm = await calculateRoadDistance(adresseLocal, exactAddress);
@@ -218,7 +225,6 @@ export default function EventEditForm({
                           }
                         }
                       }}
-                      disabled={savingEvent}
                       placeholder={translate('widgetAgenda.locationPlaceholder', "Ex : Local de l'asso, Place de la Mairie...")}
                       className="theme-input w-full disabled:opacity-50"
                     />

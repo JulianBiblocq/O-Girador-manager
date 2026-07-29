@@ -17,6 +17,8 @@ export default function StudioEventsManager({ groupId, onBack }) {
   const [updatingEventId, setUpdatingEventId] = useState(null);
   const [updatingField, setUpdatingField] = useState(null);
   const [lastNotification, setLastNotification] = useState(null);
+  const [lieuxImportants, setLieuxImportants] = useState([]);
+  const [defaultLocationsByEventType, setDefaultLocationsByEventType] = useState({});
 
   // Real-time listener for events in the group
   useEffect(() => {
@@ -43,7 +45,20 @@ export default function StudioEventsManager({ groupId, onBack }) {
       }
     );
 
-    return () => unsubscribe();
+    // Chargement des lieux importants de l'association
+    const assocRef = doc(db, 'associations', groupId);
+    const unsubscribeAssoc = onSnapshot(assocRef, (docSnap) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        setLieuxImportants(Array.isArray(data.lieuxImportants) ? data.lieuxImportants : []);
+        setDefaultLocationsByEventType(data.defaultLocationsByEventType && typeof data.defaultLocationsByEventType === 'object' ? data.defaultLocationsByEventType : {});
+      }
+    });
+
+    return () => {
+      unsubscribe();
+      unsubscribeAssoc();
+    };
   }, [groupId]);
 
   // Update single field in Firestore dynamically
@@ -274,6 +289,8 @@ export default function StudioEventsManager({ groupId, onBack }) {
           onToggleField={handleToggleField}
           updatingEventId={updatingEventId}
           updatingField={updatingField}
+          lieuxImportants={lieuxImportants}
+          defaultLocationsByEventType={defaultLocationsByEventType}
         />
       )}
     </div>

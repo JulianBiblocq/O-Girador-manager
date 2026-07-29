@@ -83,7 +83,9 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
     eventTypes: ['prestation', 'repetition', 'stage', 'atelier', 'reunion'],
     eventTypeConfigs: {},
     enabledModules: DEFAULT_ENABLED_MODULES,
-    activerPresenceEnLigne: true
+    activerPresenceEnLigne: true,
+    lieuxImportants: [],
+    defaultLocationsByEventType: {}
   });
 
   const [logoFile, setLogoFile] = useState(null);
@@ -207,7 +209,9 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
             : ['prestation', 'repetition', 'stage', 'atelier', 'reunion'],
           eventTypeConfigs: data.eventTypeConfigs || {},
           enabledModules: data.enabledModules ? { ...DEFAULT_ENABLED_MODULES, ...data.enabledModules } : DEFAULT_ENABLED_MODULES,
-          activerPresenceEnLigne: data.activerPresenceEnLigne !== false
+          activerPresenceEnLigne: data.activerPresenceEnLigne !== false,
+          lieuxImportants: Array.isArray(data.lieuxImportants) ? data.lieuxImportants : [],
+          defaultLocationsByEventType: data.defaultLocationsByEventType && typeof data.defaultLocationsByEventType === 'object' ? data.defaultLocationsByEventType : {}
         }));
       }
       setLoading(false);
@@ -304,7 +308,9 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
         eventTypes: formData.eventTypes || [],
         eventTypeConfigs: formData.eventTypeConfigs || {},
         enabledModules: formData.enabledModules || DEFAULT_ENABLED_MODULES,
-        activerPresenceEnLigne: formData.activerPresenceEnLigne !== false
+        activerPresenceEnLigne: formData.activerPresenceEnLigne !== false,
+        lieuxImportants: formData.lieuxImportants || [],
+        defaultLocationsByEventType: formData.defaultLocationsByEventType || {}
       }, { merge: true });
 
       const credentialsRef = doc(db, 'associations', groupId, 'private_settings', 'credentials');

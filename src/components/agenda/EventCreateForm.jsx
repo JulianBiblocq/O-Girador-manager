@@ -7,6 +7,7 @@ import { calculateRoadDistance } from '../../utils/googleMaps';
 import ManualMapMarkerModal from './ManualMapMarkerModal';
 
 import AddressAutocomplete from '../AddressAutocomplete';
+import LocationSelector from '../LocationSelector';
 
 /**
  * EventCreateForm component handles creation details of a new event.
@@ -39,6 +40,8 @@ export default function EventCreateForm({
   rawCreateConfig,
   associationEventTypes,
   adresseLocal,
+  lieuxImportants = [],
+  defaultLocationsByEventType = {},
   t
 }) {
   const [isMapModalOpen, setIsMapModalOpen] = useState(false);
@@ -117,7 +120,23 @@ export default function EventCreateForm({
                 <select
                   name="type"
                   value={formData.type}
-                  onChange={handleChange}
+                  onChange={(e) => {
+                    handleChange(e);
+                    const newType = e.target.value;
+                    const defaultLieuId = defaultLocationsByEventType[newType];
+                    if (defaultLieuId) {
+                      const foundLieu = (lieuxImportants || []).find(l => l.id === defaultLieuId);
+                      if (foundLieu) {
+                        const fullLocationText = foundLieu.nom && foundLieu.adresse ? `${foundLieu.nom} - ${foundLieu.adresse}` : (foundLieu.adresse || foundLieu.nom);
+                        setFormData(prev => ({
+                          ...prev,
+                          lieu: fullLocationText,
+                          latitude: foundLieu.latitude || prev.latitude,
+                          longitude: foundLieu.longitude || prev.longitude
+                        }));
+                      }
+                    }
+                  }}
                   required
                   disabled={saving}
                   className="theme-input w-full disabled:opacity-50 font-bold bg-cordel-bg-light"
@@ -199,15 +218,20 @@ export default function EventCreateForm({
                       ⏳ {translate('widgetAgenda.loadingAddress', "Chargement du champ adresse...")}
                     </div>
                   }>
-                    <AddressAutocomplete
-                      name="lieu"
+                    <LocationSelector
                       value={formData.lieu}
-                      onChange={(e) => {
-                        setFormData(prev => ({ ...prev, lieu: e.target.value }));
+                      lieuxImportants={lieuxImportants}
+                      onChange={(val) => {
+                        setFormData(prev => ({ ...prev, lieu: val }));
                       }}
-                      onSelect={async (placeData) => {
-                        const exactAddress = placeData.address || '';
-                        setFormData(prev => ({ ...prev, lieu: exactAddress }));
+                      onPlaceSelected={async (placeData) => {
+                        const exactAddress = placeData.formattedAddress || placeData.address || '';
+                        setFormData(prev => ({ 
+                          ...prev, 
+                          lieu: exactAddress,
+                          latitude: placeData.latitude || prev.latitude,
+                          longitude: placeData.longitude || prev.longitude
+                        }));
                         if (adresseLocal && exactAddress) {
                           try {
                             const distanceKm = await calculateRoadDistance(adresseLocal, exactAddress);
@@ -218,7 +242,6 @@ export default function EventCreateForm({
                           }
                         }
                       }}
-                      disabled={saving}
                       placeholder={translate('widgetAgenda.locationPlaceholder', "Ex : Local de l'asso, Place de la Mairie...")}
                       className="theme-input w-full disabled:opacity-50"
                     />

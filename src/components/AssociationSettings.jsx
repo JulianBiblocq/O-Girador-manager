@@ -12,6 +12,7 @@ import TabLogistics from './association-settings/TabLogistics';
 import TabFinance from './association-settings/TabFinance';
 import TabAgenda from './association-settings/TabAgenda';
 import TabModules from './association-settings/TabModules';
+import TabLieux from './association-settings/TabLieux';
 
 import { useEffect } from 'react';
 
@@ -140,6 +141,15 @@ export default function AssociationSettings({ groupId, onBack, role, isSystemAdm
             t={t}
           />
         );
+      case 'lieux':
+        return (
+          <TabLieux
+            formData={formData}
+            handleChange={handleChange}
+            saving={saving}
+            t={t}
+          />
+        );
       default:
         return null;
     }
@@ -257,6 +267,17 @@ export default function AssociationSettings({ groupId, onBack, role, isSystemAdm
                 }`}
               >
                 🧩 Modules & Fonctionnalités
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveSettingsTab('lieux')}
+                className={`px-3 py-1.5 text-xs font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer ${
+                  activeSettingsTab === 'lieux'
+                    ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
+                    : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
+                }`}
+              >
+                📍 Lieux & Salles
               </button>
             </div>
           )}

@@ -10,7 +10,9 @@ export default function EventsDataGrid({
   onUpdateField,
   onToggleField,
   updatingEventId = null,
-  updatingField = null
+  updatingField = null,
+  lieuxImportants = [],
+  defaultLocationsByEventType = {}
 }) {
   const [sortConfig, setSortConfig] = useState({ key: 'date', direction: 'desc' });
 
@@ -309,6 +311,8 @@ export default function EventsDataGrid({
                 onToggleField={onToggleField}
                 updatingEventId={updatingEventId}
                 updatingField={updatingField}
+                lieuxImportants={lieuxImportants}
+                defaultLocationsByEventType={defaultLocationsByEventType}
               />
             ))
           )}

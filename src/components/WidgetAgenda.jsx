@@ -68,6 +68,8 @@ export default function WidgetAgenda({
   
   const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1024);
   const [adresseLocal, setAdresseLocal] = useState('');
+  const [lieuxImportants, setLieuxImportants] = useState([]);
+  const [defaultLocationsByEventType, setDefaultLocationsByEventType] = useState({});
   const [eventTypes, setEventTypes] = useState(['prestation', 'repetition', 'stage', 'atelier', 'reunion']);
   const [agendaEnableFinance, setAgendaEnableFinance] = useState(true);
   const [agendaEnableVolunteerShifts, setAgendaEnableVolunteerShifts] = useState(true);
@@ -93,6 +95,8 @@ export default function WidgetAgenda({
         setDressCodes(data.dressCodes || []);
         setPermissionsMatrice(data.permissionsMatrice || null);
         setTagsDisponibles(Array.isArray(data.tagsDisponibles) ? data.tagsDisponibles : []);
+        setLieuxImportants(Array.isArray(data.lieuxImportants) ? data.lieuxImportants : []);
+        setDefaultLocationsByEventType(data.defaultLocationsByEventType && typeof data.defaultLocationsByEventType === 'object' ? data.defaultLocationsByEventType : {});
       }
     }, (err) => {
       console.error("WidgetAgenda - Erreur snapshot assocRef :", err);
@@ -657,6 +661,8 @@ export default function WidgetAgenda({
           rawCreateConfig={rawConfig}
           associationEventTypes={eventTypes}
           adresseLocal={adresseLocal}
+          lieuxImportants={lieuxImportants}
+          defaultLocationsByEventType={defaultLocationsByEventType}
           t={t}
         />
       )}

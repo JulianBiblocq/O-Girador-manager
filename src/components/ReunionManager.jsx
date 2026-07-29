@@ -5,6 +5,7 @@ import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
 import EventReportSection from './event-details/EventReportSection';
 import ImportAgendaModal from './agenda/ImportAgendaModal';
+import LocationSelector from './LocationSelector';
 import { useTranslation } from './LanguageContext';
 import { XiloCalendar } from './XiloIcons';
 
@@ -39,7 +40,9 @@ export default function ReunionManager({ groupId, user, profileData, onBack }) {
   // Ordre du jour de la réunion
   const [pointsOrdreDuJour, setPointsOrdreDuJour] = useState([]);
   const [newPointTitle, setNewPointTitle] = useState('');
-  const [lienDocument, setLienDocument] = useState('');
+  // Lieu de la réunion
+  const [lieu, setLieu] = useState('Salle de réunion / En ligne');
+  const [lieuxImportants, setLieuxImportants] = useState([]);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -71,7 +74,30 @@ export default function ReunionManager({ groupId, user, profileData, onBack }) {
       setLoading(false);
     });
 
-    return () => unsubscribe();
+    // Chargement des lieux importants et lieu par défaut de l'association
+    const assocRef = doc(db, 'associations', groupId);
+    const unsubscribeAssoc = onSnapshot(assocRef, (docSnap) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        const lieux = Array.isArray(data.lieuxImportants) ? data.lieuxImportants : [];
+        setLieuxImportants(lieux);
+
+        // Pré-remplissage automatique du lieu par défaut pour les réunions si configuré
+        const defaultLieuId = data.defaultLocationsByEventType?.reunion;
+        if (defaultLieuId) {
+          const foundLieu = lieux.find(l => l.id === defaultLieuId);
+          if (foundLieu) {
+            const fullLocationText = foundLieu.nom && foundLieu.adresse ? `${foundLieu.nom} - ${foundLieu.adresse}` : (foundLieu.adresse || foundLieu.nom);
+            setLieu(fullLocationText);
+          }
+        }
+      }
+    });
+
+    return () => {
+      unsubscribe();
+      unsubscribeAssoc();
+    };
   }, [groupId]);
 
   // Ajouter un créneau au sondage
@@ -152,7 +178,7 @@ export default function ReunionManager({ groupId, user, profileData, onBack }) {
             compteRenduApprovals: {},
             suggestionsOrdreDuJour: [],
             inscriptions: [],
-            lieu: 'Salle de réunion / En ligne'
+            lieu: lieu.trim() || 'Salle de réunion / En ligne'
           };
           await addDoc(collection(db, 'events'), newEventDoc);
         }
@@ -173,7 +199,7 @@ export default function ReunionManager({ groupId, user, profileData, onBack }) {
           compteRenduApprovals: {},
           suggestionsOrdreDuJour: [],
           inscriptions: [],
-          lieu: 'Salle de réunion / En ligne'
+          lieu: lieu.trim() || 'Salle de réunion / En ligne'
         };
         const docRef = await addDoc(collection(db, 'events'), newEventDoc);
         setSelectedEventId(docRef.id);
@@ -317,6 +343,19 @@ export default function ReunionManager({ groupId, user, profileData, onBack }) {
                       required
                       placeholder="Ex: Assemblée Générale / Réunion de Bureau"
                       className="theme-input bg-white w-full py-1.5 text-xs font-bold"
+                    />
+                  </div>
+
+                  {/* Lieu de la réunion avec sélecteur intelligent */}
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                      Lieu de la réunion
+                    </label>
+                    <LocationSelector
+                      value={lieu}
+                      lieuxImportants={lieuxImportants}
+                      onChange={(val) => setLieu(val)}
+                      placeholder="Ex: Salle de réunion, Local..."
                     />
                   </div>
 

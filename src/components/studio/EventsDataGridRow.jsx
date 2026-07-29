@@ -26,7 +26,9 @@ function EventsDataGridRow({
   onUpdateField,
   onToggleField,
   updatingEventId,
-  updatingField
+  updatingField,
+  lieuxImportants = [],
+  defaultLocationsByEventType = {}
 }) {
   const isUpdatingRow = updatingEventId === event.id;
 
@@ -80,7 +82,16 @@ function EventsDataGridRow({
   };
 
   const handleSelectChange = (field, value, originalValue) => {
-    setLocalData((prev) => ({ ...prev, [field]: value }));
+    let newLieu = localData.lieuSimple;
+    if (field === 'type' && defaultLocationsByEventType[value]) {
+      const defaultLieuId = defaultLocationsByEventType[value];
+      const foundLieu = (lieuxImportants || []).find(l => l.id === defaultLieuId);
+      if (foundLieu) {
+        newLieu = foundLieu.nom && foundLieu.adresse ? `${foundLieu.nom} - ${foundLieu.adresse}` : (foundLieu.adresse || foundLieu.nom);
+        onUpdateField(event.id, 'lieuSimple', newLieu);
+      }
+    }
+    setLocalData((prev) => ({ ...prev, [field]: value, lieuSimple: newLieu }));
     if (value !== originalValue) {
       onUpdateField(event.id, field, value);
     }
@@ -164,16 +175,39 @@ function EventsDataGridRow({
       </td>
 
       {/* 7. Lieu simple */}
-      <td className="p-2 border-r border-[var(--encre-noire)]/10 min-w-[150px]">
-        <input
-          type="text"
-          value={localData.lieuSimple}
-          onChange={(e) => handleChange('lieuSimple', e.target.value)}
-          onBlur={() => handleBlur('lieuSimple', event.lieuSimple || event.lieu || '')}
-          onKeyDown={(e) => handleKeyDown(e, 'lieuSimple', event.lieuSimple || event.lieu || '')}
-          placeholder="Lieu..."
-          className="theme-input w-full py-1 px-2 text-xs"
-        />
+      <td className="p-2 border-r border-[var(--encre-noire)]/10 min-w-[160px]">
+        {lieuxImportants.length > 0 ? (
+          <select
+            value={localData.lieuSimple}
+            onChange={(e) => {
+              const val = e.target.value;
+              handleSelectChange('lieuSimple', val, event.lieuSimple || event.lieu || '');
+            }}
+            className="theme-input w-full py-1 px-1 text-xs font-semibold bg-amber-50/60 border border-amber-300"
+          >
+            <option value={localData.lieuSimple}>{localData.lieuSimple || "📍 Choisir un lieu..."}</option>
+            <optgroup label="📍 Lieux habituels de l'association">
+              {lieuxImportants.map((lieu) => {
+                const label = lieu.nom && lieu.adresse ? `${lieu.nom} - ${lieu.adresse}` : (lieu.adresse || lieu.nom);
+                return (
+                  <option key={lieu.id} value={label}>
+                    📍 {lieu.nom}
+                  </option>
+                );
+              })}
+            </optgroup>
+          </select>
+        ) : (
+          <input
+            type="text"
+            value={localData.lieuSimple}
+            onChange={(e) => handleChange('lieuSimple', e.target.value)}
+            onBlur={() => handleBlur('lieuSimple', event.lieuSimple || event.lieu || '')}
+            onKeyDown={(e) => handleKeyDown(e, 'lieuSimple', event.lieuSimple || event.lieu || '')}
+            placeholder="Lieu..."
+            className="theme-input w-full py-1 px-2 text-xs"
+          />
+        )}
       </td>
 
       {/* 8. Date limite */}
