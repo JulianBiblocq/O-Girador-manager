@@ -128,7 +128,7 @@ export function calculateRoadDistance(origin, destination) {
       );
     })
     .catch((directionsErr) => {
-      console.error("Échec DirectionsService, tentative avec DistanceMatrixService :", directionsErr);
+      console.warn("DirectionsService non disponible ou restreint, tentative avec DistanceMatrixService :", directionsErr.message);
       // Secours 1 : Essayer la matrice de distance (Distance Matrix)
       return new Promise((resolve, reject) => {
         const service = new maps.DistanceMatrixService();
@@ -161,7 +161,7 @@ export function calculateRoadDistance(origin, destination) {
       });
     })
     .catch((matrixErr) => {
-      console.error("Échec des services routiers, calcul de secours en vol d'oiseau (Haversine) :", matrixErr);
+      console.warn("Services d'itinéraires restreints sur la clé API, calcul de secours par géocodage (Haversine * 1.25) :", matrixErr.message);
       // Secours 2 : Géocoder les deux adresses et calculer la distance à vol d'oiseau (formule de Haversine)
       return Promise.all([getCoords(origin), getCoords(destination)])
         .then(([coords1, coords2]) => {
