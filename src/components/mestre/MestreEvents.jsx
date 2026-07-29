@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { collection, query, where, onSnapshot } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, doc } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { useTranslation } from '../LanguageContext';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 import { isPastEvent } from '../../utils/dateUtils';
+import { formatLocationShort } from '../../utils/locationUtils';
 
 const formatDateWithDay = (dateStr, locale, includeYear = true) => {
   const date = new Date(dateStr);
@@ -24,6 +25,7 @@ export default function MestreEvents({ groupId, onSelectForStage, onOpenDetails 
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [timeFilter, setTimeFilter] = useState('upcoming'); // 'upcoming' (default), 'past', 'all'
+  const [lieuxImportants, setLieuxImportants] = useState([]);
 
   useEffect(() => {
     if (!groupId) return;
@@ -46,11 +48,22 @@ export default function MestreEvents({ groupId, onSelectForStage, onOpenDetails 
       setEvents(fetched);
       setLoading(false);
     }, (error) => {
-      console.error("MestreEvents - Erreur query events :", error);
+      console.error("MestreEvents - Erreur snapshot :", error);
       setLoading(false);
     });
 
-    return () => unsubscribe();
+    const assocRef = doc(db, 'associations', groupId);
+    const unsubscribeAssoc = onSnapshot(assocRef, (docSnap) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        setLieuxImportants(Array.isArray(data.lieuxImportants) ? data.lieuxImportants : []);
+      }
+    });
+
+    return () => {
+      unsubscribe();
+      unsubscribeAssoc();
+    };
   }, [groupId]);
 
   const filteredEvents = events.filter(evt => {
@@ -178,7 +191,12 @@ export default function MestreEvents({ groupId, onSelectForStage, onOpenDetails 
                       </span>
                     </td>
                     <td className="p-1.5 md:p-3 border-r border-encre-noire/15 truncate max-w-[150px]" title={evt.lieu}>
-                      {evt.lieu || '-'}
+                      {evt.lieu ? (
+                        <span className="inline-flex items-center gap-1 font-semibold">
+                          <span>📍</span>
+                          <span>{formatLocationShort(evt.lieu, lieuxImportants)}</span>
+                        </span>
+                      ) : '-'}
                     </td>
                     <td className="p-1.5 md:p-3 border-r border-encre-noire/15 text-center font-bold">
                       <span className="text-green-700 dark:text-green-400">{presentCount}</span>

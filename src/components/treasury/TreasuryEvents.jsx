@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import CordelCard from '../CordelCard';
+import { formatLocationShort } from '../../utils/locationUtils';
 
 export default function TreasuryEvents({
   events,
@@ -65,7 +66,9 @@ export default function TreasuryEvents({
                       <div className="font-bold text-encre-noire dark:text-cordel-bg-light truncate" title={evt.titre}>{evt.titre}</div>
                       <span className="text-[8px] font-bold uppercase text-cordel-wood opacity-75">{evt.type}</span>
                     </div>
-                    <div className="col-span-2 text-left truncate" title={evt.lieu}>{evt.lieu || '-'}</div>
+                    <div className="col-span-2 text-left truncate" title={evt.lieu}>
+                      {evt.lieu ? `📍 ${formatLocationShort(evt.lieu)}` : '-'}
+                    </div>
                     
                     {/* Recette Input */}
                     <div className="col-span-2 flex justify-end">

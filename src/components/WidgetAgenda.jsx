@@ -16,6 +16,7 @@ import { splitEventsByTime } from '../utils/dateUtils';
 import { getSocialVideoThumbnail } from '../utils/videoUtils';
 import { canManageEvents } from '../utils/permissionUtils';
 import { resolveEffectiveUserTags } from '../utils/tagUtils';
+import { formatLocationShort } from '../utils/locationUtils';
 
 const formatDateWithDay = (dateStr, includeYear = true) => {
   const date = new Date(dateStr);
@@ -746,7 +747,12 @@ export default function WidgetAgenda({
                         </span>
                       </td>
                       <td className="p-1.5 md:p-2.5 border-r border-encre-noire/15 truncate max-w-[180px]" title={event.lieu}>
-                        {event.lieu || '-'}
+                        {event.lieu ? (
+                          <span className="inline-flex items-center gap-1 font-semibold text-encre-noire">
+                            <span>📍</span>
+                            <span>{formatLocationShort(event.lieu, lieuxImportants)}</span>
+                          </span>
+                        ) : '-'}
                       </td>
                       <td className="p-1.5 md:p-2.5 text-center font-bold whitespace-nowrap">
                         {(() => {
