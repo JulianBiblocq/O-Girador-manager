@@ -40,9 +40,10 @@ export default function ReunionManager({ groupId, user, profileData, onBack }) {
   // Ordre du jour de la réunion
   const [pointsOrdreDuJour, setPointsOrdreDuJour] = useState([]);
   const [newPointTitle, setNewPointTitle] = useState('');
-  // Lieu de la réunion
+  // Lieu et document de la réunion
   const [lieu, setLieu] = useState('Salle de réunion / En ligne');
   const [lieuxImportants, setLieuxImportants] = useState([]);
+  const [lienDocument, setLienDocument] = useState('');
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -173,12 +174,12 @@ export default function ReunionManager({ groupId, user, profileData, onBack }) {
             pollTarget: pollTarget || '',
             groupId: groupId,
             pointsOrdreDuJour: pointsOrdreDuJour,
-            lienDocument: lienDocument.trim(),
+            lienDocument: (lienDocument || '').trim(),
             compteRenduStatus: 'brouillon',
             compteRenduApprovals: {},
             suggestionsOrdreDuJour: [],
             inscriptions: [],
-            lieu: lieu.trim() || 'Salle de réunion / En ligne'
+            lieu: (lieu || '').trim() || 'Salle de réunion / En ligne'
           };
           await addDoc(collection(db, 'events'), newEventDoc);
         }
@@ -194,12 +195,12 @@ export default function ReunionManager({ groupId, user, profileData, onBack }) {
           type: 'reunion',
           groupId: groupId,
           pointsOrdreDuJour: pointsOrdreDuJour,
-          lienDocument: lienDocument.trim(),
+          lienDocument: (lienDocument || '').trim(),
           compteRenduStatus: 'brouillon',
           compteRenduApprovals: {},
           suggestionsOrdreDuJour: [],
           inscriptions: [],
-          lieu: lieu.trim() || 'Salle de réunion / En ligne'
+          lieu: (lieu || '').trim() || 'Salle de réunion / En ligne'
         };
         const docRef = await addDoc(collection(db, 'events'), newEventDoc);
         setSelectedEventId(docRef.id);
