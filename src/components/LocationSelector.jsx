@@ -16,10 +16,13 @@ export default function LocationSelector({
 }) {
   const list = Array.isArray(lieuxImportants) ? lieuxImportants : [];
   
+  // Extraction sécurisée sous forme de chaîne de caractères
+  const safeValue = typeof value === 'string' ? value : (value?.target?.value !== undefined ? String(value.target.value) : (value ? String(value) : ''));
+
   // Trouver si l'adresse actuelle correspond à un lieu enregistré
   const currentLieu = list.find(l => {
-    if (!value) return false;
-    const valLower = value.toLowerCase().trim();
+    if (!safeValue) return false;
+    const valLower = safeValue.toLowerCase().trim();
     const nomLower = (l.nom || '').toLowerCase().trim();
     const adrLower = (l.adresse || '').toLowerCase().trim();
     const fullLower = `${nomLower} - ${adrLower}`;
@@ -83,10 +86,11 @@ export default function LocationSelector({
 
       {/* Champ d'adresse avec Autocomplétion Google Maps */}
       <AddressAutocomplete
-        value={value}
-        onChange={(val) => {
+        value={safeValue}
+        onChange={(e) => {
+          const stringVal = typeof e === 'string' ? e : (e?.target?.value !== undefined ? e.target.value : String(e || ''));
           setSelectedPresetId('custom');
-          if (onChange) onChange(val, null);
+          if (onChange) onChange(stringVal, null);
         }}
         onPlaceSelected={(placeDetails) => {
           if (onPlaceSelected) onPlaceSelected(placeDetails);

@@ -151,8 +151,11 @@ export default function TabLieux({ formData, handleChange, saving, t }) {
                   Adresse physique complète *
                 </label>
                 <AddressAutocomplete
-                  value={adresse}
-                  onChange={(val) => setAdresse(val)}
+                  value={typeof adresse === 'string' ? adresse : (adresse?.target?.value || '')}
+                  onChange={(e) => {
+                    const stringVal = typeof e === 'string' ? e : (e?.target?.value !== undefined ? e.target.value : String(e || ''));
+                    setAdresse(stringVal);
+                  }}
                   onPlaceSelected={(placeDetails) => {
                     if (placeDetails) {
                       setAdresse(placeDetails.formattedAddress || placeDetails.name || adresse);
