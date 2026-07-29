@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 import AddressAutocomplete from '../AddressAutocomplete';
+import ManualMapMarkerModal from '../agenda/ManualMapMarkerModal';
 
 /**
  * Composant d'administration des Lieux Importants de l'association (Configuration).
@@ -19,6 +20,7 @@ export default function TabLieux({ formData, handleChange, saving, t }) {
   const [latitude, setLatitude] = useState(null);
   const [longitude, setLongitude] = useState(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isMapModalOpen, setIsMapModalOpen] = useState(false);
 
   // Ouvrir le formulaire en mode édition
   const handleEdit = (lieu) => {
@@ -169,6 +171,21 @@ export default function TabLieux({ formData, handleChange, saving, t }) {
                   placeholder="Rechercher une adresse sur Google Maps..."
                   className="theme-input text-xs bg-white py-1.5"
                 />
+
+                <div className="flex flex-col items-start gap-1 mt-1 select-none">
+                  <button
+                    type="button"
+                    onClick={() => setIsMapModalOpen(true)}
+                    className="text-[10px] font-extrabold uppercase tracking-wider text-cordel-wood hover:underline flex items-center gap-1 cursor-pointer"
+                  >
+                    📌 Placer ou ajuster le repère sur la carte manuellement
+                  </button>
+                  {latitude && longitude && (
+                    <span className="text-[9px] font-bold text-emerald-800 bg-emerald-50 border border-emerald-300 px-1.5 py-0.5 rounded">
+                      ✅ Coordonnées GPS ajustées : {Number(latitude).toFixed(5)}, {Number(longitude).toFixed(5)}
+                    </span>
+                  )}
+                </div>
               </div>
 
               {/* Lien Google Maps */}
@@ -339,6 +356,21 @@ export default function TabLieux({ formData, handleChange, saving, t }) {
           })}
         </div>
       </CordelCard>
+
+      {/* Modale de positionnement manuel sur la carte */}
+      <ManualMapMarkerModal
+        isOpen={isMapModalOpen}
+        onClose={() => setIsMapModalOpen(false)}
+        initialLat={latitude}
+        initialLng={longitude}
+        addressContext={adresse}
+        onSave={({ latitude: newLat, longitude: newLng }) => {
+          setLatitude(newLat);
+          setLongitude(newLng);
+          setGoogleMapsUrl(`https://maps.google.com/?q=${newLat},${newLng}`);
+          setIsMapModalOpen(false);
+        }}
+      />
     </div>
   );
 }

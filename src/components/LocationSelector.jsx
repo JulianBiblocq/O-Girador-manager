@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import AddressAutocomplete from './AddressAutocomplete';
+import ManualMapMarkerModal from './agenda/ManualMapMarkerModal';
 
 /**
  * Composant de sélection intelligente de lieu pour les formulaires d'événements (Agenda & Studio Réunions).
@@ -30,6 +31,7 @@ export default function LocationSelector({
   });
 
   const [selectedPresetId, setSelectedPresetId] = useState(currentLieu ? currentLieu.id : 'custom');
+  const [isMapModalOpen, setIsMapModalOpen] = useState(false);
 
   // Lors de la sélection dans le menu déroulant
   const handleSelectPreset = (e) => {
@@ -99,12 +101,41 @@ export default function LocationSelector({
         className={className}
       />
 
+      {/* Bouton pour ajuster manuellement le repère sur la carte */}
+      <div className="flex justify-start select-none">
+        <button
+          type="button"
+          onClick={() => setIsMapModalOpen(true)}
+          className="text-[10px] font-extrabold uppercase tracking-wider text-cordel-wood hover:underline flex items-center gap-1 cursor-pointer"
+        >
+          📌 Ajuster le repère sur la carte
+        </button>
+      </div>
+
       {/* Informations d'accès si un lieu enregistré avec des notes est sélectionné */}
       {selectedPresetId !== 'custom' && selectedPlaceNotes && (
         <div className="text-[10px] bg-amber-100/70 text-amber-900 p-2 rounded border border-amber-300 font-medium leading-relaxed">
           🔑 <strong>Instructions d'accès :</strong> {selectedPlaceNotes}
         </div>
       )}
+
+      {/* Modale de positionnement manuel */}
+      <ManualMapMarkerModal
+        isOpen={isMapModalOpen}
+        onClose={() => setIsMapModalOpen(false)}
+        addressContext={safeValue}
+        onSave={({ latitude: newLat, longitude: newLng }) => {
+          if (onPlaceSelected) {
+            onPlaceSelected({
+              formattedAddress: safeValue,
+              latitude: newLat,
+              longitude: newLng,
+              googleMapsUrl: `https://maps.google.com/?q=${newLat},${newLng}`
+            });
+          }
+          setIsMapModalOpen(false);
+        }}
+      />
     </div>
   );
 }
