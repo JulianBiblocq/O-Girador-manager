@@ -109,11 +109,46 @@ export default function EventEditForm({
                 </label>
                 <input
                   type="text"
+                  name="titre"
                   value={editForm.titre}
                   onChange={(e) => setEditForm(prev => ({ ...prev, titre: e.target.value }))}
                   required
                   disabled={savingEvent}
+                  placeholder="Ex : Carnaval ou Répétition"
                   className="theme-input w-full disabled:opacity-50"
+                />
+              </div>
+
+              {/* Visibilité Publique Vitrine */}
+              <div className="flex items-center gap-3 p-3 bg-[#fdfaf2] border border-encre-noire/20 rounded-[4px_6px_3px_5px] select-none">
+                <input
+                  type="checkbox"
+                  id="editIsPublic"
+                  name="isPublic"
+                  checked={editForm.isPublic || false}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, isPublic: e.target.checked }))}
+                  disabled={savingEvent}
+                  className="w-4 h-4 cursor-pointer accent-[var(--color-cordel-vert,#2d6a4f)]"
+                />
+                <label htmlFor="editIsPublic" className="text-xs font-bold uppercase tracking-wider text-encre-noire cursor-pointer flex flex-wrap items-center gap-1.5">
+                  <span>🌍 Rendre cet événement public</span>
+                  <span className="text-[10px] font-normal opacity-75 text-stone-600">(Visible sur le site vitrine public)</span>
+                </label>
+              </div>
+
+              {/* Description Publique */}
+              <div className="flex flex-col gap-1">
+                <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark flex items-center justify-between">
+                  <span>🌐 Description publique</span>
+                  <span className="text-[8px] font-normal text-stone-500">(Visible sur le site web public & réseaux sociaux)</span>
+                </label>
+                <textarea
+                  name="description"
+                  value={editForm.description || ''}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, description: e.target.value }))}
+                  disabled={savingEvent}
+                  placeholder="Décrivez l'événement pour les visiteurs du site public (programme, ambiance, infos pratiques...)"
+                  className="theme-input w-full min-h-[80px] disabled:opacity-50 font-medium py-1.5"
                 />
               </div>
 
@@ -204,8 +239,8 @@ export default function EventEditForm({
                     <LocationSelector
                       value={editForm.lieu}
                       lieuxImportants={lieuxImportants}
-                      onChange={(val) => {
-                        setEditForm(prev => ({ ...prev, lieu: val }));
+                      onChange={(val, foundPreset) => {
+                        setEditForm(prev => ({ ...prev, lieu: val, lieuId: foundPreset ? foundPreset.id : null }));
                       }}
                       onPlaceSelected={async (placeData) => {
                         const exactAddress = placeData.formattedAddress || placeData.address || '';
@@ -326,6 +361,24 @@ export default function EventEditForm({
                   />
                 </div>
               )}
+
+              {/* Lien Dépôt Médias Externe (Framaspace, Drive...) */}
+              <div className="flex flex-col gap-1 border-t border-dashed border-cordel-master-dark/15 pt-3">
+                <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark flex items-center gap-1.5">
+                  📸 Lien de dépôt photos/vidéos (Framaspace, Drive...)
+                </label>
+                <input
+                  type="url"
+                  value={editForm.lienDepotMedias || ''}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, lienDepotMedias: e.target.value }))}
+                  disabled={savingEvent}
+                  placeholder="ex: https://framaspace.org/s/... ou Google Drive"
+                  className="theme-input w-full disabled:opacity-50 text-xs font-semibold bg-cordel-bg-light"
+                />
+                <p className="text-[9px] text-cordel-master-dark/70 font-semibold mt-0.5">
+                  Lien du dossier partagé (Framaspace, Nextcloud, Google Drive...) pour récolter les clichés de l'événement et générer un QR Code sur place.
+                </p>
+              </div>
 
               {/* Enable Inscriptions Toggle */}
               <div className="flex items-center gap-2 pt-1 text-left">

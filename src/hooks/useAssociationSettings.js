@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { doc, onSnapshot, setDoc, getDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import imageCompression from 'browser-image-compression';
 import { db, storage } from '../firebase';
 
 export const DEFAULT_FIELDS_CONFIG = {
@@ -38,6 +39,43 @@ export const DEFAULT_ENABLED_MODULES = {
 
 export const DEFAULT_INSTRUMENTS = ["Alfaia Marcante", "Alfaia Meião", "Alfaia Repique", "Caixa", "Tarol", "Gonguê", "Agbê", "Mineiro", "Timbal", "Chant"];
 
+export const DEFAULT_PUBLIC_THEME = {
+  primaryColor: '#D32F2F',
+  secondaryColor: '#1976D2',
+  backgroundColor: '#FAF8F5',
+  textColor: '#1C1917',
+  buttonBgColor: '#D32F2F',
+  buttonTextColor: '#FFFFFF',
+  headingFont: 'Oswald',
+  bodyFont: 'Roboto',
+  publicHeroImage: '',
+  heroOverlayOpacity: 25,
+  publicCatchphrase: '',
+  heroCatchphrase: '',
+  publicDescription: '',
+  aboutText: '',
+  publicVideoLink: '',
+  videoUrl: '',
+  publicTechnicalSheet: '',
+  publicContactEmail: '',
+  publicContactPhone: '',
+  dossierProPdfUrl: '',
+  // Liens dynamiques vers les réseaux sociaux de l'association
+  socialLinks: {
+    facebook: '',
+    instagram: '',
+    youtube: '',
+    whatsapp: ''
+  },
+  // Formats de prestations personnalisables
+  publicPerformanceFormats: '',
+  // Configuration d'intégration Brevo API
+  brevoApiKey: '',
+  brevoListId: '',
+  // Liste des photos de la galerie de la vitrine publique
+  galleryPhotos: []
+};
+
 export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
   const [formData, setFormData] = useState({
     fieldsConfig: DEFAULT_FIELDS_CONFIG,
@@ -54,6 +92,8 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
         text: '#1a1a1a'
       }
     },
+    // Thème dynamique pour le site vitrine public
+    publicTheme: DEFAULT_PUBLIC_THEME,
     droitImageDocUrl: '',
     aptitudeMedicaleDocUrl: '',
     demanderDroitImage: false,
@@ -85,15 +125,43 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
     enabledModules: DEFAULT_ENABLED_MODULES,
     activerPresenceEnLigne: true,
     lieuxImportants: [],
-    defaultLocationsByEventType: {}
+    defaultLocationsByEventType: {},
+    tagNotificationCommentairesEvenement: '',
+    lienGoogleFormRecoltePhotos: '',
+    lienRecoltePhotosExternes: ''
   });
 
   const [logoFile, setLogoFile] = useState(null);
+  const [heroImageFile, setHeroImageFile] = useState(null);
+  const [dossierProPdfFile, setDossierProPdfFile] = useState(null);
   const [droitImageFile, setDroitImageFile] = useState(null);
   const [aptitudeMedicaleFile, setAptitudeMedicaleFile] = useState(null);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  const [toastMessage, setToastMessage] = useState(null);
+  const toastTimerRef = useRef(null);
+
+  // Nettoyage du timer de notification au démontage
+  useEffect(() => {
+    return () => {
+      if (toastTimerRef.current) {
+        clearTimeout(toastTimerRef.current);
+      }
+    };
+  }, []);
+
+  // Affichage dynamique des notifications toast de succès
+  const showToast = useCallback((msg) => {
+    if (toastTimerRef.current) {
+      clearTimeout(toastTimerRef.current);
+    }
+    setToastMessage(msg);
+    toastTimerRef.current = setTimeout(() => {
+      setToastMessage(null);
+    }, 3500);
+  }, []);
 
   const handleChange = (key, value) => {
     let actualKey = key;
@@ -154,6 +222,7 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
         const data = docSnap.data();
         setFormData(prev => ({
           ...prev,
+          nom: data.nom || '',
           demanderDroitImage: data.demanderDroitImage || false,
           demanderAttestationSante: data.demanderAttestationSante || false,
           fieldsConfig: data.fieldsConfig ? { ...DEFAULT_FIELDS_CONFIG, ...data.fieldsConfig } : DEFAULT_FIELDS_CONFIG,
@@ -179,6 +248,44 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
               background: data.branding?.colors?.background || '#f4ecd8',
               text: data.branding?.colors?.text || '#1a1a1a'
             }
+          },
+          // Configuration du thème visuel et du contenu pour le site vitrine public
+          publicTheme: {
+            ...DEFAULT_PUBLIC_THEME,
+            ...(data.publicTheme || {}),
+            // Liens des réseaux sociaux
+            socialLinks: {
+              ...DEFAULT_PUBLIC_THEME.socialLinks,
+              ...(data.publicTheme?.socialLinks || {})
+            },
+            // Galerie photos
+            galleryPhotos: Array.isArray(data.publicTheme?.galleryPhotos)
+              ? data.publicTheme.galleryPhotos
+              : DEFAULT_PUBLIC_THEME.galleryPhotos,
+            primaryColor: data.publicTheme?.primaryColor || DEFAULT_PUBLIC_THEME.primaryColor,
+            secondaryColor: data.publicTheme?.secondaryColor || DEFAULT_PUBLIC_THEME.secondaryColor,
+            backgroundColor: data.publicTheme?.backgroundColor || DEFAULT_PUBLIC_THEME.backgroundColor,
+            textColor: data.publicTheme?.textColor || DEFAULT_PUBLIC_THEME.textColor,
+            buttonBgColor: data.publicTheme?.buttonBgColor || DEFAULT_PUBLIC_THEME.buttonBgColor,
+            buttonTextColor: data.publicTheme?.buttonTextColor || DEFAULT_PUBLIC_THEME.buttonTextColor,
+            headingFont: data.publicTheme?.headingFont || DEFAULT_PUBLIC_THEME.headingFont,
+            bodyFont: data.publicTheme?.bodyFont || DEFAULT_PUBLIC_THEME.bodyFont,
+            publicHeroImage: data.publicTheme?.publicHeroImage || '',
+            heroOverlayOpacity: data.publicTheme?.heroOverlayOpacity !== undefined ? Number(data.publicTheme.heroOverlayOpacity) : 25,
+            publicCatchphrase: data.publicTheme?.publicCatchphrase || data.publicTheme?.heroCatchphrase || '',
+            heroCatchphrase: data.publicTheme?.heroCatchphrase || data.publicTheme?.publicCatchphrase || '',
+            publicDescription: data.publicTheme?.publicDescription || data.publicTheme?.aboutText || '',
+            aboutText: data.publicTheme?.aboutText || data.publicTheme?.publicDescription || '',
+            publicVideoLink: data.publicTheme?.publicVideoLink || data.publicTheme?.videoUrl || '',
+            videoUrl: data.publicTheme?.videoUrl || data.publicTheme?.publicVideoLink || '',
+            enableOrganizerSection: data.publicTheme?.enableOrganizerSection !== false,
+            publicTechnicalSheet: data.publicTheme?.publicTechnicalSheet || '',
+            publicPerformanceFormats: data.publicTheme?.publicPerformanceFormats || '',
+            brevoApiKey: data.publicTheme?.brevoApiKey || '',
+            brevoListId: data.publicTheme?.brevoListId || '',
+            publicContactEmail: data.publicTheme?.publicContactEmail || '',
+            publicContactPhone: data.publicTheme?.publicContactPhone || '',
+            dossierProPdfUrl: data.publicTheme?.dossierProPdfUrl || ''
           },
           sequenceurUrl: data.sequenceurUrl || '',
           droitImageDocUrl: data.droitImageDocUrl || '',
@@ -211,7 +318,11 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
           enabledModules: data.enabledModules ? { ...DEFAULT_ENABLED_MODULES, ...data.enabledModules } : DEFAULT_ENABLED_MODULES,
           activerPresenceEnLigne: data.activerPresenceEnLigne !== false,
           lieuxImportants: Array.isArray(data.lieuxImportants) ? data.lieuxImportants : [],
-          defaultLocationsByEventType: data.defaultLocationsByEventType && typeof data.defaultLocationsByEventType === 'object' ? data.defaultLocationsByEventType : {}
+          defaultLocationsByEventType: data.defaultLocationsByEventType && typeof data.defaultLocationsByEventType === 'object' ? data.defaultLocationsByEventType : {},
+          tagNotificationCommentairesEvenement: data.tagNotificationCommentairesEvenement || '',
+          lienGoogleFormRecoltePhotos: data.lienRecoltePhotosExternes || data.lienGoogleFormRecoltePhotos || '',
+          lienRecoltePhotosExternes: data.lienRecoltePhotosExternes || data.lienGoogleFormRecoltePhotos || '',
+          lienDepotForum: data.lienDepotForum || ''
         }));
       }
       setLoading(false);
@@ -224,63 +335,98 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
   }, [groupId, isAuthorized]);
 
   const handleSaveHelloAssoKey = async () => {
-    if (!groupId) return;
-    setSaving(true);
+    if (!groupId || !isAuthorized) return;
     try {
       const credentialsRef = doc(db, 'associations', groupId, 'private_settings', 'credentials');
       await setDoc(credentialsRef, {
         helloAssoSignatureKey: formData.helloAssoSignatureKey
       }, { merge: true });
-      alert("Clé secrète HelloAsso sauvegardée avec succès !");
+      showToast("✅ Clé de signature HelloAsso enregistrée !");
     } catch (err) {
-      console.error("Erreur lors de la sauvegarde de la clé HelloAsso :", err);
-      alert("Impossible de sauvegarder la clé : " + (err.message || err));
-    } finally {
-      setSaving(false);
+      console.error("Erreur enregistrement clé HelloAsso :", err);
+      alert("Erreur lors de l'enregistrement de la clé HelloAsso : " + (err.message || err));
     }
   };
 
   const handleSave = async () => {
-    if (!groupId) return;
+    if (!groupId || !isAuthorized) return;
 
     setSaving(true);
-    let finalLogoUrl = formData.branding.logoUrl;
-    let finalDroitImageDocUrl = formData.droitImageDocUrl;
-    let finalAptitudeMedicaleDocUrl = formData.aptitudeMedicaleDocUrl;
-
     try {
+      let finalLogoUrl = formData.branding?.logoUrl || '';
       if (logoFile && logoFile instanceof File) {
-        setUploadingLogo(true);
-        const storageRef = ref(storage, `brandings/${groupId}/logo.png`);
-        const snapshot = await uploadBytes(storageRef, logoFile);
+        let fileToUpload = logoFile;
+        const compressionOptions = { maxSizeMB: 0.3, maxWidthOrHeight: 800, useWebWorker: true };
+        try {
+          fileToUpload = await imageCompression(logoFile, compressionOptions);
+        } catch (compErr) {
+          console.warn("Erreur de compression logo, utilisation du fichier d'origine:", compErr);
+        }
+
+        const logoStorageRef = storageRef(storage, `associations/${groupId}/logo_${Date.now()}`);
+        const snapshot = await uploadBytes(logoStorageRef, fileToUpload);
         finalLogoUrl = await getDownloadURL(snapshot.ref);
         setLogoFile(null);
       }
 
+      let finalPublicHeroImage = formData.publicTheme?.publicHeroImage || '';
+      if (heroImageFile && heroImageFile instanceof File) {
+        let fileToUpload = heroImageFile;
+        const compressionOptions = { maxSizeMB: 1.0, maxWidthOrHeight: 1920, useWebWorker: true };
+        try {
+          fileToUpload = await imageCompression(heroImageFile, compressionOptions);
+        } catch (compErr) {
+          console.warn("Erreur de compression image hero, utilisation du fichier d'origine:", compErr);
+        }
+
+        const heroStorageRef = storageRef(storage, `associations/${groupId}/public_hero_${Date.now()}`);
+        const snapshot = await uploadBytes(heroStorageRef, fileToUpload);
+        finalPublicHeroImage = await getDownloadURL(snapshot.ref);
+        setHeroImageFile(null);
+      }
+
+      let finalDossierProPdfUrl = formData.publicTheme?.dossierProPdfUrl || '';
+      if (dossierProPdfFile && dossierProPdfFile instanceof File) {
+        const pdfStorageRef = storageRef(storage, `associations/${groupId}/vitrine/dossier_pro_${Date.now()}.pdf`);
+        const snapshot = await uploadBytes(pdfStorageRef, dossierProPdfFile);
+        finalDossierProPdfUrl = await getDownloadURL(snapshot.ref);
+        setDossierProPdfFile(null);
+      }
+
+      let finalDroitImageDocUrl = formData.droitImageDocUrl || '';
       if (droitImageFile && droitImageFile instanceof File) {
-        const docRef = ref(storage, `documents/${groupId}/droit_image.pdf`);
-        const snap = await uploadBytes(docRef, droitImageFile);
-        finalDroitImageDocUrl = await getDownloadURL(snap.ref);
+        const docRefStorage = storageRef(storage, `associations/${groupId}/docs/droit_image_${Date.now()}`);
+        const snapshot = await uploadBytes(docRefStorage, droitImageFile);
+        finalDroitImageDocUrl = await getDownloadURL(snapshot.ref);
         setDroitImageFile(null);
       }
 
+      let finalAptitudeMedicaleDocUrl = formData.aptitudeMedicaleDocUrl || '';
       if (aptitudeMedicaleFile && aptitudeMedicaleFile instanceof File) {
-        const docRef = ref(storage, `documents/${groupId}/aptitude_medicale.pdf`);
-        const snap = await uploadBytes(docRef, aptitudeMedicaleFile);
-        finalAptitudeMedicaleDocUrl = await getDownloadURL(snap.ref);
+        const docRefStorage = storageRef(storage, `associations/${groupId}/docs/aptitude_medicale_${Date.now()}`);
+        const snapshot = await uploadBytes(docRefStorage, aptitudeMedicaleFile);
+        finalAptitudeMedicaleDocUrl = await getDownloadURL(snapshot.ref);
         setAptitudeMedicaleFile(null);
       }
 
       const assocRef = doc(db, 'associations', groupId);
       await setDoc(assocRef, {
+        nom: formData.nom || '',
         fieldsConfig: formData.fieldsConfig,
         instrumentsDisponibles: formData.instrumentsDisponibles,
-        linkedInstruments: formData.linkedInstruments,
+        linkedInstruments: formData.linkedInstruments || [],
         varalCategories: formData.varalCategories,
         sequenceurUrl: formData.sequenceurUrl,
+        lienDepotForum: formData.lienDepotForum || '',
         branding: {
           logoUrl: finalLogoUrl,
           colors: formData.branding.colors
+        },
+        // Sauvegarde de l'identité visuelle et du contenu de la vitrine publique
+        publicTheme: {
+          ...(formData.publicTheme || DEFAULT_PUBLIC_THEME),
+          publicHeroImage: finalPublicHeroImage,
+          dossierProPdfUrl: finalDossierProPdfUrl
         },
         droitImageDocUrl: finalDroitImageDocUrl,
         aptitudeMedicaleDocUrl: finalAptitudeMedicaleDocUrl,
@@ -310,7 +456,10 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
         enabledModules: formData.enabledModules || DEFAULT_ENABLED_MODULES,
         activerPresenceEnLigne: formData.activerPresenceEnLigne !== false,
         lieuxImportants: formData.lieuxImportants || [],
-        defaultLocationsByEventType: formData.defaultLocationsByEventType || {}
+        defaultLocationsByEventType: formData.defaultLocationsByEventType || {},
+        tagNotificationCommentairesEvenement: formData.tagNotificationCommentairesEvenement || '',
+        lienGoogleFormRecoltePhotos: formData.lienRecoltePhotosExternes || formData.lienGoogleFormRecoltePhotos || '',
+        lienRecoltePhotosExternes: formData.lienRecoltePhotosExternes || formData.lienGoogleFormRecoltePhotos || ''
       }, { merge: true });
 
       const credentialsRef = doc(db, 'associations', groupId, 'private_settings', 'credentials');
@@ -318,8 +467,8 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
         helloAssoSignatureKey: formData.helloAssoSignatureKey
       }, { merge: true });
 
-      alert(t('associationSettings.successMsg') || "Réglages de l'association enregistrés avec succès !");
-      onBack();
+      // Notification Toast de succès sans redirection pour permettre l'édition en continu
+      showToast(t('associationSettings.successMsg') || "✅ Configuration de la vitrine enregistrée avec succès !");
     } catch (err) {
       console.error("AssociationSettings - Erreur de sauvegarde :", err);
       alert("Erreur lors de la sauvegarde des réglages : " + (err.message || err));
@@ -334,6 +483,10 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
     handleChange,
     logoFile,
     setLogoFile,
+    heroImageFile,
+    setHeroImageFile,
+    dossierProPdfFile,
+    setDossierProPdfFile,
     droitImageFile,
     setDroitImageFile,
     aptitudeMedicaleFile,
@@ -341,6 +494,9 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
     uploadingLogo,
     saving,
     loading,
+    toastMessage,
+    setToastMessage,
+    showToast,
     handleSaveHelloAssoKey,
     handleSave
   };

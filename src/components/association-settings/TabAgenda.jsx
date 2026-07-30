@@ -462,6 +462,41 @@ export default function TabAgenda({
         </div>
       </CordelCard>
 
+      {/* Notifications des Commentaires Événements */}
+      <CordelCard variant="default" useExtremeBorder={true} className="py-4 px-5">
+        <h3 className="text-xs uppercase font-extrabold tracking-wider text-cordel-wood mb-2 flex items-center gap-1.5">
+          🔔 Notifications des Commentaires & Questions Logistiques
+        </h3>
+        <p className="text-[10px] text-cordel-master-dark opacity-80 leading-relaxed mb-3">
+          Lorsqu'un membre pose une question ou publie un commentaire sur un événement, le créateur de l'événement est notifié. Choisissez quelle étiquette (tag) reçoit également ces notifications pour pouvoir y répondre rapidement.
+        </p>
+
+        <div className="flex flex-col gap-1.5 text-left max-w-md">
+          <label htmlFor="tagNotificationCommentairesEvenement" className="text-[9px] uppercase font-bold text-cordel-master-dark">
+            Étiquette (Tag) destinataire des notifications de commentaires
+          </label>
+          <select
+            id="tagNotificationCommentairesEvenement"
+            name="tagNotificationCommentairesEvenement"
+            value={formData.tagNotificationCommentairesEvenement || ''}
+            onChange={(e) => handleChange('tagNotificationCommentairesEvenement', e.target.value)}
+            disabled={saving}
+            className="theme-input text-xs font-bold py-1.5 px-2 bg-cordel-bg-light"
+          >
+            <option value="">-- Aucune étiquette spécifique (Créateur et Mestre uniquement) --</option>
+            {(formData.tagsDisponibles || []).map((tag) => {
+              const tagId = typeof tag === 'string' ? tag : (tag.id || tag.nom);
+              const tagLabel = typeof tag === 'string' ? tag : (tag.nom || tag.id);
+              return (
+                <option key={tagId} value={tagId}>
+                  🏷️ {tagLabel}
+                </option>
+              );
+            })}
+          </select>
+        </div>
+      </CordelCard>
+
     </div>
   );
 }

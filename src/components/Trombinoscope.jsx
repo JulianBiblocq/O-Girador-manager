@@ -52,7 +52,9 @@ const MemberCard = React.memo(({
   getColorForInstrument,
   tagsDisponibles = [],
   majoriteFeminine = false,
-  isDependent = false
+  isDependent = false,
+  isGhost = false,
+  primaryInstrumentName = ''
 }) => {
   const fullName = `${prenom || ''} ${nom || ''}`;
   const hasRoleBadge = role && role !== 'membre';
@@ -127,11 +129,13 @@ const MemberCard = React.memo(({
   const { isPresenceEnabled } = usePresenceContext();
 
   return (
-    <div className="relative flex flex-col items-center">
+    <div className={`relative flex flex-col items-center w-full ${isGhost ? 'opacity-65 hover:opacity-100 transition-all duration-300' : ''}`}>
       <CordelCard 
         variant="default" 
         useExtremeBorder={true} 
-        className="w-full flex flex-col items-center p-4 min-h-[220px] relative overflow-hidden"
+        className={`w-full flex flex-col items-center p-4 min-h-[220px] relative overflow-hidden transition-all duration-300 ${
+          isGhost ? 'grayscale-[0.35] hover:grayscale-0 border-dashed border-cordel-master-dark/50 shadow-none' : ''
+        }`}
         style={cardBgColor ? { backgroundColor: cardBgColor } : undefined}
       >
         {/* Avatar with Xylogravure Filter */}
@@ -168,6 +172,11 @@ const MemberCard = React.memo(({
 
         {/* Member Name */}
         <div className="text-center mt-1 w-full select-none flex flex-col items-center">
+          {isGhost && (
+            <span className="bg-amber-100 text-amber-900 border border-dashed border-amber-600 text-[8px] font-black px-1.5 py-0.5 rounded uppercase mb-1.5 inline-block tracking-wider text-center">
+              👻 Polyvalent • Principal : {primaryInstrumentName || 'Autre'}
+            </span>
+          )}
           {isDependent && (
             <span className="bg-amber-200 text-amber-900 border border-amber-400 text-[8px] font-black px-1.5 py-0.2 rounded uppercase mb-0.5 inline-block">
               👶 Enfant
@@ -297,29 +306,23 @@ const MemberCard = React.memo(({
          prevProps.onEditPhoto === nextProps.onEditPhoto &&
          prevProps.getColorForInstrument === nextProps.getColorForInstrument &&
          prevProps.fieldsConfig?.niveaux?.enabled === nextProps.fieldsConfig?.niveaux?.enabled &&
+         prevProps.isGhost === nextProps.isGhost &&
+         prevProps.primaryInstrumentName === nextProps.primaryInstrumentName &&
          JSON.stringify(prevProps.tags) === JSON.stringify(nextProps.tags) &&
          JSON.stringify(prevProps.instrumentsJoues) === JSON.stringify(nextProps.instrumentsJoues);
 });
 
 const SECTION_ORDER = ['mestre', 'agbe', 'gongue', 'caixa_tarol', 'alfaia', 'chant_danse', 'autres'];
 
-const getMemberSection = (member) => {
-  const userInstruments = member.instrumentsJoues && member.instrumentsJoues.length > 0
-    ? member.instrumentsJoues
-    : [member.instrument].filter(Boolean);
-
-  const insts = userInstruments.map(i => i.toLowerCase().trim());
-
-  if (insts.some(i => i.includes('mestre'))) return 'mestre';
-  if (insts.some(i => i.includes('agbê') || i.includes('agbe'))) return 'agbe';
-  if (insts.some(i => i.includes('gonguê') || i.includes('gongue'))) return 'gongue';
-  if (insts.some(i => i.includes('caixa') || i.includes('tarol'))) return 'caixa_tarol';
-  if (insts.some(i => i.includes('alfaia'))) return 'alfaia';
-  
-  const hasDanse = (member.niveauDanse && member.niveauDanse !== 'aucun') || insts.some(i => i.includes('danse'));
-  const hasChant = insts.some(i => i.includes('chant'));
-  if (hasDanse || hasChant) return 'chant_danse';
-  
+const getSectionForSingleInstrument = (instName, member) => {
+  if (!instName) return 'autres';
+  const name = String(instName).toLowerCase().trim();
+  if (name.includes('mestre') || (member && (member.role === 'mestre' || member.role === 'super-admin') && (member.pratiquePercussion || member.isSystemAdmin))) return 'mestre';
+  if (name.includes('agbê') || name.includes('agbe')) return 'agbe';
+  if (name.includes('gonguê') || name.includes('gongue')) return 'gongue';
+  if (name.includes('caixa') || name.includes('tarol')) return 'caixa_tarol';
+  if (name.includes('alfaia')) return 'alfaia';
+  if (name.includes('danse') || name.includes('chant') || name.includes('voix')) return 'chant_danse';
   return 'autres';
 };
 
@@ -524,17 +527,36 @@ export default function Trombinoscope({ user, profileData, onBack, onContactUser
     }
   };
 
-  // Memoized Filtered Members
+  // Memoized Filtered Members (Filtrage préalable par recherche, instrument et tag)
   const filteredMembers = useMemo(() => {
+    const queryStr = searchQuery.trim().toLowerCase();
     return members.filter((member) => {
       if (member.statutActuel === 'archived') return false;
 
-      const fullName = `${member.prenom || ''} ${member.nom || ''}`.toLowerCase();
-      const matchesSearch = fullName.includes(searchQuery.toLowerCase());
+      // 1. Recherche textuelle (Prénom, Nom, Surnom, Ville)
+      const fullName = `${member.prenom || ''} ${member.nom || ''} ${member.surnom || ''} ${member.adresseVille || ''}`.toLowerCase();
+      const matchesSearch = !queryStr || fullName.includes(queryStr);
 
-      const matchesInstrument = filterInstrument === 'all' || 
-        member.instrument === filterInstrument;
+      // Récupération de tous les instruments du membre
+      const userInstruments = (Array.isArray(member.instrumentsJoues) && member.instrumentsJoues.length > 0)
+        ? member.instrumentsJoues
+        : [member.instrumentPrincipal || member.instrument || member.instrumentSecondaire].filter(Boolean);
 
+      // 2. Filtre par instrument
+      let matchesInstrument = filterInstrument === 'all';
+      if (!matchesInstrument) {
+        if (filterInstrument === 'Autre') {
+          matchesInstrument = userInstruments.some(inst => getSectionForSingleInstrument(inst, member) === 'autres');
+        } else {
+          matchesInstrument = userInstruments.some(inst => {
+            const instLower = String(inst).toLowerCase().trim();
+            const filterLower = String(filterInstrument).toLowerCase().trim();
+            return instLower === filterLower || instLower.includes(filterLower) || filterLower.includes(instLower);
+          });
+        }
+      }
+
+      // 3. Filtre par étiquettes (Tags)
       const matchesTag = filterTag === 'all' || 
         (member.tags && (
           member.tags.includes(filterTag) || 
@@ -545,7 +567,7 @@ export default function Trombinoscope({ user, profileData, onBack, onContactUser
     });
   }, [members, searchQuery, filterInstrument, filterTag]);
 
-  // Group members by section
+  // Distribution des membres dans les pupitres avec support des Cartes Fantômes (Polyvalence)
   const groupedMembers = useMemo(() => {
     const groups = {
       mestre: [],
@@ -557,13 +579,80 @@ export default function Trombinoscope({ user, profileData, onBack, onContactUser
       autres: []
     };
 
-    filteredMembers.forEach(member => {
-      const section = getMemberSection(member);
-      groups[section].push(member);
+    filteredMembers.forEach((member) => {
+      const rawInstruments = (Array.isArray(member.instrumentsJoues) && member.instrumentsJoues.length > 0)
+        ? member.instrumentsJoues
+        : [member.instrumentPrincipal || member.instrument || member.instrumentSecondaire].filter(Boolean);
+
+      const primaryInst = member.instrumentPrincipal || member.instrument || rawInstruments[0] || '';
+      const primarySection = getSectionForSingleInstrument(primaryInst, member);
+
+      // Membre sans instrument spécifié
+      if (rawInstruments.length === 0) {
+        groups.autres.push({
+          ...member,
+          isGhost: false,
+          primaryInstrumentName: primaryInst,
+          cardKey: `${member.id}-autres`
+        });
+        return;
+      }
+
+      // Ensemble des sections déjà attribuées au membre pour éviter les doublons au sein du même pupitre
+      const addedSections = new Set();
+
+      // Si un filtre d'instrument spécifique est actif (ex: "Caixa"), placer uniquement dans le(s) pupitre(s) de l'instrument filtré
+      if (filterInstrument !== 'all') {
+        rawInstruments.forEach((inst) => {
+          const instLower = String(inst).toLowerCase().trim();
+          const filterLower = String(filterInstrument).toLowerCase().trim();
+          const matchesThisInst = filterInstrument === 'Autre'
+            ? getSectionForSingleInstrument(inst, member) === 'autres'
+            : (instLower === filterLower || instLower.includes(filterLower) || filterLower.includes(instLower));
+
+          if (matchesThisInst) {
+            const sec = getSectionForSingleInstrument(inst, member);
+            if (!addedSections.has(sec)) {
+              addedSections.add(sec);
+              const isMainForMember = (sec === primarySection) || (instLower === String(primaryInst).toLowerCase().trim());
+              groups[sec].push({
+                ...member,
+                isGhost: !isMainForMember,
+                primaryInstrumentName: primaryInst,
+                cardKey: `${member.id}-${sec}-${isMainForMember ? 'main' : 'ghost'}`
+              });
+            }
+          }
+        });
+        return;
+      }
+
+      // Mode standard (tous les pupitres) : 1. Carte principale dans le pupitre principal
+      groups[primarySection].push({
+        ...member,
+        isGhost: false,
+        primaryInstrumentName: primaryInst,
+        cardKey: `${member.id}-${primarySection}-main`
+      });
+      addedSections.add(primarySection);
+
+      // 2. Cartes Fantômes dans les pupitres secondaires
+      rawInstruments.forEach((inst) => {
+        const sec = getSectionForSingleInstrument(inst, member);
+        if (!addedSections.has(sec)) {
+          addedSections.add(sec);
+          groups[sec].push({
+            ...member,
+            isGhost: true,
+            primaryInstrumentName: primaryInst || 'Instrument principal',
+            cardKey: `${member.id}-${sec}-ghost`
+          });
+        }
+      });
     });
 
     return groups;
-  }, [filteredMembers]);
+  }, [filteredMembers, filterInstrument]);
 
   // Memoized callback handlers
   const handleContactUser = useCallback((memberId) => {
@@ -745,7 +834,7 @@ export default function Trombinoscope({ user, profileData, onBack, onContactUser
                     >
                       {sectionMembers.map((member) => (
                         <MemberCard
-                          key={member.id}
+                          key={member.cardKey || `${member.id}-${sectionKey}-${member.isGhost ? 'ghost' : 'main'}`}
                           id={member.id}
                           prenom={member.prenom}
                           nom={member.nom}
@@ -783,6 +872,8 @@ export default function Trombinoscope({ user, profileData, onBack, onContactUser
                           tagsDisponibles={tagsDisponibles}
                           majoriteFeminine={majoriteFeminine}
                           isDependent={member.isDependent === true}
+                          isGhost={member.isGhost === true}
+                          primaryInstrumentName={member.primaryInstrumentName}
                         />
                       ))}
                     </div>

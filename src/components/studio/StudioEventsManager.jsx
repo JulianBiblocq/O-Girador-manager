@@ -68,9 +68,12 @@ export default function StudioEventsManager({ groupId, onBack }) {
 
     try {
       const eventRef = doc(db, 'events', eventId);
-      await updateDoc(eventRef, {
-        [fieldName]: newValue
-      });
+      const updates = { [fieldName]: newValue };
+      if (fieldName === 'lieuSimple' || fieldName === 'lieu') {
+        updates.lieu = newValue;
+        updates.lieuSimple = newValue;
+      }
+      await updateDoc(eventRef, updates);
 
       const targetEvent = events.find(e => e.id === eventId);
       setLastNotification({

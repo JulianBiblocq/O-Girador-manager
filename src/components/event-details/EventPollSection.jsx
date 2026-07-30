@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { collection, query, where, onSnapshot, doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, doc, updateDoc, deleteDoc, writeBatch, getDocs } from 'firebase/firestore';
 import { db } from '../../firebase';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
@@ -13,13 +13,15 @@ export default function EventPollSection({ event, user, profileData, onNavigateT
   const [allUsersMap, setAllUsersMap] = useState({});
   const [isProcessing, setIsProcessing] = useState(false);
 
-  const isAdmin = 
+  // Vérification stricte des autorisations pour Super-Admin et Mestre
+  const isSuperAdminOrMestre = 
     profileData?.role === 'mestre' || 
     profileData?.role === 'super-admin' || 
-    profileData?.role === 'secretaire' || 
     profileData?.isSystemAdmin === true;
 
-  // Real-time synchronization of all events in the same pollGroupId
+  const isAdmin = isSuperAdminOrMestre || profileData?.role === 'secretaire';
+
+  // Synchronisation en temps réel de tous les créneaux partageant le même pollGroupId
   useEffect(() => {
     if (!event?.groupId || !event?.pollGroupId) return;
     setLoading(true);
@@ -36,7 +38,7 @@ export default function EventPollSection({ event, user, profileData, onNavigateT
       snapshot.forEach((docSnap) => {
         list.push({ id: docSnap.id, ...docSnap.data() });
       });
-      // Sort by optionIndex or date
+      // Tri par index d'option ou date
       list.sort((a, b) => (a.optionIndex || 0) - (b.optionIndex || 0));
       setPollEvents(list);
       setLoading(false);
@@ -48,7 +50,7 @@ export default function EventPollSection({ event, user, profileData, onNavigateT
     return () => unsubscribe();
   }, [event?.groupId, event?.pollGroupId]);
 
-  // Real-time users map for names and avatars
+  // Carte en temps réel des utilisateurs pour noms et avatars
   useEffect(() => {
     if (!event?.groupId) return;
     const usersRef = collection(db, 'users');
@@ -70,7 +72,7 @@ export default function EventPollSection({ event, user, profileData, onNavigateT
     return () => unsubscribe();
   }, [event?.groupId]);
 
-  // Eligibility calculation based on restriction type and target
+  // Calcul d'éligibilité basé sur le type de restriction du sondage
   const checkEligibility = () => {
     const resType = event.pollRestrictionType;
     const target = event.pollTarget;
@@ -103,15 +105,15 @@ export default function EventPollSection({ event, user, profileData, onNavigateT
 
   const { eligible, message: restrictionMessage } = checkEligibility();
 
-  // Vote handler for a specific option event
+  // Enregistrement ou bascule d'un vote pour une option spécifique
   const handleVote = async (optionEventId, currentVotesObj, choice) => {
     if (!user?.uid || !eligible || isProcessing) return;
 
     const newVotes = { ...(currentVotesObj || {}) };
     if (newVotes[user.uid] === choice) {
-      delete newVotes[user.uid]; // Toggle off
+      delete newVotes[user.uid]; // Annuler le vote
     } else {
-      newVotes[user.uid] = choice; // Set choice ('dispo' | 'indispo')
+      newVotes[user.uid] = choice; // Enregistrer 'dispo' ou 'indispo'
     }
 
     try {
@@ -123,32 +125,40 @@ export default function EventPollSection({ event, user, profileData, onNavigateT
     }
   };
 
-  // Validation handler to confirm winning date option and delete other temporary slots
-  const handleConfirmWinningOption = async (winningOptionEvent) => {
-    if (!isAdmin || isProcessing) return;
+  // Validation définitive du créneau gagnant via une transaction Firestore Batch
+  const handleConfirmWinningOption = async (winningOptionEvent = event) => {
+    if (!isSuperAdminOrMestre || isProcessing) return;
 
     const dateFormatted = formatDate(winningOptionEvent.date);
     const isOk = await confirm({
-      title: "🌟 Valider définitivement ce créneau ?",
-      message: `Êtes-vous sûr de vouloir valider la date du ${dateFormatted} ?\n\n• Cet événement deviendra officiel dans l'agenda.\n• Les membres ayant voté "Disponible" seront inscrits automatiquement.\n• Les autres créneaux de ce sondage seront supprimés.`,
+      title: "🌟 Valider définitivement cette date ?",
+      message: `Voulez-vous valider la date du ${dateFormatted} ?\n\n• Cet événement deviendra une vraie réunion officielle dans l'agenda.\n• Les membres ayant voté "Disponible" seront inscrits automatiquement dans la liste des présents (RSVP).\n• Les autres créneaux de ce sondage seront supprimés de la base de données.`,
       confirmText: "Oui, valider cette date",
       cancelText: "Annuler",
-      variant: "ocre"
+      variant: "vert"
     });
 
     if (!isOk) return;
 
     setIsProcessing(true);
     try {
+      const batch = writeBatch(db);
+
+      // 1. Récupération des votes "Disponible" et transfert automatique vers les inscriptions (RSVP)
       const votes = winningOptionEvent.votes || {};
       const dispoUserIds = Object.keys(votes).filter(uid => votes[uid] === 'dispo');
 
-      // 1. Build initial inscriptions array with dispo voters as present
       const existingInscriptions = winningOptionEvent.inscriptions || [];
       const updatedInscriptions = [...existingInscriptions];
 
       dispoUserIds.forEach((uid) => {
-        if (!updatedInscriptions.some(i => i.userId === uid)) {
+        const existingIdx = updatedInscriptions.findIndex(i => i.userId === uid);
+        if (existingIdx >= 0) {
+          updatedInscriptions[existingIdx] = {
+            ...updatedInscriptions[existingIdx],
+            status: 'present'
+          };
+        } else {
           updatedInscriptions.push({
             userId: uid,
             status: 'present',
@@ -157,21 +167,33 @@ export default function EventPollSection({ event, user, profileData, onNavigateT
         }
       });
 
-      // 2. Update winning option doc to status: 'confirme' and remove sondage fields
+      // 2. Mise à jour de l'événement validé : retrait du statut sondage et conversion en réunion officielle
       const winningRef = doc(db, 'events', winningOptionEvent.id);
-      await updateDoc(winningRef, {
+      batch.update(winningRef, {
         status: 'confirme',
+        isPoll: false,
         inscriptions: updatedInscriptions,
         requiresValidation: false
       });
 
-      // 3. Delete all other temporary option events in the same pollGroupId
-      const otherOptions = pollEvents.filter(e => e.id !== winningOptionEvent.id);
-      for (const otherEv of otherOptions) {
-        await deleteDoc(doc(db, 'events', otherEv.id));
+      // 3. Recherche et suppression de tous les autres créneaux du même pollGroupId
+      if (winningOptionEvent.pollGroupId) {
+        const pollQuery = query(
+          collection(db, 'events'),
+          where('pollGroupId', '==', winningOptionEvent.pollGroupId)
+        );
+        const snapshot = await getDocs(pollQuery);
+        snapshot.forEach((docSnap) => {
+          if (docSnap.id !== winningOptionEvent.id) {
+            batch.delete(docSnap.ref);
+          }
+        });
       }
 
-      alert(`La date du ${dateFormatted} a été validée avec succès !`);
+      // 4. Exécution atomique de la transaction Firestore Batch
+      await batch.commit();
+
+      alert(`La date du ${dateFormatted} a été validée avec succès ! L'agenda a été nettoyé.`);
     } catch (err) {
       console.error("EventPollSection - Erreur confirmation option :", err);
       alert("Erreur lors de la validation du créneau.");
@@ -190,7 +212,7 @@ export default function EventPollSection({ event, user, profileData, onNavigateT
     return `${formatted} à ${hours}h${minutes}`;
   };
 
-  if (!event?.pollGroupId) return null;
+  if (!event?.pollGroupId && !event?.isPoll && event?.status !== 'sondage') return null;
 
   return (
     <CordelCard 
@@ -219,14 +241,38 @@ export default function EventPollSection({ event, user, profileData, onNavigateT
         )}
       </div>
 
-      {/* Restriction Notice if non-eligible user */}
+      {/* Message de restriction si l'utilisateur n'est pas éligible */}
       {restrictionMessage && (
         <div className="p-2.5 bg-amber-200/50 dark:bg-amber-900/40 border border-amber-500/30 rounded text-center text-xs font-bold text-amber-900 dark:text-amber-200">
           {restrictionMessage}
         </div>
       )}
 
-      {/* Options List */}
+      {/* Pavé d'action prioritaire : Grand bouton de validation définitive pour Super-Admin / Mestre */}
+      {isSuperAdminOrMestre && (
+        <div className="p-3.5 bg-emerald-100/90 dark:bg-emerald-950/50 border-2 border-emerald-700/60 rounded-lg flex flex-col sm:flex-row items-center justify-between gap-3 shadow-[2px_2px_0px_0px_#181716] my-1 select-none">
+          <div className="flex flex-col text-left">
+            <span className="text-xs font-black uppercase text-emerald-900 dark:text-emerald-200 flex items-center gap-1.5">
+              <span>🌟</span> Clôture & Validation Officielle
+            </span>
+            <span className="text-[11px] font-semibold text-emerald-900/80 dark:text-emerald-300/80">
+              Validez la date de cette fiche ({formatDate(event.date)}) pour clore le sondage et nettoyer l'agenda.
+            </span>
+          </div>
+          <CordelButton
+            variant="vert"
+            useExtremeBorder={true}
+            onClick={() => handleConfirmWinningOption(event)}
+            disabled={isProcessing}
+            className="text-xs font-black uppercase py-2.5 px-4 whitespace-nowrap w-full sm:w-auto shadow-md"
+            title="Valider définitivement cette date et nettoyer les autres créneaux de la base de données"
+          >
+            {isProcessing ? "Validation en cours..." : "🌟 Valider définitivement cette date"}
+          </CordelButton>
+        </div>
+      )}
+
+      {/* Liste des créneaux du sondage */}
       <div className="flex flex-col gap-2.5 mt-1">
         {loading ? (
           <p className="text-[10px] italic text-center opacity-60">Chargement des créneaux...</p>
@@ -248,7 +294,7 @@ export default function EventPollSection({ event, user, profileData, onNavigateT
                     : 'bg-white/60 dark:bg-black/10 border-encre-noire/20 hover:bg-white'
                 }`}
               >
-                {/* Option Info */}
+                {/* Informations du créneau */}
                 <div className="flex items-center gap-3 min-w-0">
                   <span className={`w-6 h-6 rounded-full border-2 border-encre-noire flex items-center justify-center text-[10px] font-black shrink-0 ${
                     isCurrentPageOption ? 'bg-amber-500 text-white' : 'bg-cordel-bg text-encre-noire'
@@ -268,7 +314,7 @@ export default function EventPollSection({ event, user, profileData, onNavigateT
                       )}
                     </div>
 
-                    {/* Voters list count & avatars */}
+                    {/* Liste des votants et avatars */}
                     <div className="flex items-center gap-3 mt-1 text-[9px] font-bold text-cordel-master-dark">
                       <div className="flex items-center gap-1">
                         <span className="text-emerald-700 font-extrabold">✅ {dispoUserIds.length} dispo</span>
@@ -288,9 +334,9 @@ export default function EventPollSection({ event, user, profileData, onNavigateT
                   </div>
                 </div>
 
-                {/* Actions: Navigation & Voting & Validation */}
+                {/* Actions: Navigation, Vote & Validation */}
                 <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto flex-wrap">
-                  {/* View Navigation Button */}
+                  {/* Bouton de navigation vers la fiche d'une option */}
                   {!isCurrentPageOption && onNavigateToEventId && (
                     <button
                       type="button"
@@ -301,7 +347,7 @@ export default function EventPollSection({ event, user, profileData, onNavigateT
                     </button>
                   )}
 
-                  {/* Vote Buttons */}
+                  {/* Boutons de vote */}
                   {eligible && (
                     <div className="flex gap-1">
                       <button
@@ -330,14 +376,14 @@ export default function EventPollSection({ event, user, profileData, onNavigateT
                     </div>
                   )}
 
-                  {/* Admin Confirmation Button */}
-                  {isAdmin && (
+                  {/* Bouton de confirmation pour une option du tableau */}
+                  {isSuperAdminOrMestre && (
                     <CordelButton
-                      variant="ocre"
+                      variant="vert"
                       onClick={() => handleConfirmWinningOption(optionEv)}
                       disabled={isProcessing}
                       className="text-[9px] font-black uppercase py-1 px-2.5 ml-1"
-                      title="Valider définitivement ce créneau et supprimer les autres options"
+                      title="Valider définitivement cette date et supprimer les autres créneaux"
                     >
                       🌟 Retenir cette date
                     </CordelButton>

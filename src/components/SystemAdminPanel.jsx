@@ -278,6 +278,38 @@ export default function SystemAdminPanel({ profileData, associationName: propAss
     }
   };
 
+  // Validation d'une nouvelle inscription : passe isNew à false dans Firestore
+  const handleValidateNewMember = async (targetUserId) => {
+    if (!targetUserId) return;
+    setSavingId(targetUserId);
+    try {
+      const userRef = doc(db, 'users', targetUserId);
+      await updateDoc(userRef, { isNew: false });
+      alert("Inscription validée avec succès ! Le membre n'est plus marqué comme nouveau.");
+    } catch (error) {
+      console.error("SystemAdminPanel - Erreur lors de la validation du nouveau membre :", error);
+      alert("Erreur lors de la validation : " + (error.message || error));
+    } finally {
+      setSavingId(null);
+    }
+  };
+
+  // Sauvegarde complète du profil d'un membre depuis la modale d'édition avancée
+  const handleSaveFullModalProfile = async (targetUserId, updatedPayload) => {
+    if (!targetUserId || !updatedPayload) return;
+    setSavingId(targetUserId);
+    try {
+      const userRef = doc(db, 'users', targetUserId);
+      await updateDoc(userRef, updatedPayload);
+      alert("Fiche membre mise à jour avec succès.");
+    } catch (error) {
+      console.error("SystemAdminPanel - Erreur lors de la mise à jour complète du membre :", error);
+      alert("Erreur de sauvegarde : " + (error.message || error));
+    } finally {
+      setSavingId(null);
+    }
+  };
+
 
   const handleToggleArchive = async (targetUserId, shouldReactivate) => {
     const actionText = shouldReactivate ? "réactiver" : "archiver";
@@ -431,6 +463,8 @@ export default function SystemAdminPanel({ profileData, associationName: propAss
             handleDanceLevelChange={handleDanceLevelChange}
             handleFieldChange={handleFieldChange}
             handleSavePermissions={handleSavePermissions}
+            handleValidateNewMember={handleValidateNewMember}
+            handleSaveFullModalProfile={handleSaveFullModalProfile}
             handleToggleArchive={handleToggleArchive}
             handleDeleteUser={handleDeleteUser}
           />

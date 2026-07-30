@@ -86,6 +86,7 @@ export default function ReunionManager({ groupId, user, profileData, onBack }) {
         // Pré-remplissage automatique du lieu par défaut pour les réunions si configuré
         const defaultLieuId = data.defaultLocationsByEventType?.reunion;
         if (defaultLieuId) {
+          setLieuId(defaultLieuId);
           const foundLieu = lieux.find(l => l.id === defaultLieuId);
           if (foundLieu) {
             const fullLocationText = foundLieu.nom && foundLieu.adresse ? `${foundLieu.nom} - ${foundLieu.adresse}` : (foundLieu.adresse || foundLieu.nom);
@@ -179,7 +180,9 @@ export default function ReunionManager({ groupId, user, profileData, onBack }) {
             compteRenduApprovals: {},
             suggestionsOrdreDuJour: [],
             inscriptions: [],
-            lieu: (lieu || '').trim() || 'Salle de réunion / En ligne'
+            lieu: (lieu || '').trim() || 'Salle de réunion / En ligne',
+            lieuSimple: (lieu || '').trim() || 'Salle de réunion / En ligne',
+            lieuId: lieuId || null
           };
           await addDoc(collection(db, 'events'), newEventDoc);
         }
@@ -200,7 +203,9 @@ export default function ReunionManager({ groupId, user, profileData, onBack }) {
           compteRenduApprovals: {},
           suggestionsOrdreDuJour: [],
           inscriptions: [],
-          lieu: (lieu || '').trim() || 'Salle de réunion / En ligne'
+          lieu: (lieu || '').trim() || 'Salle de réunion / En ligne',
+          lieuSimple: (lieu || '').trim() || 'Salle de réunion / En ligne',
+          lieuId: lieuId || null
         };
         const docRef = await addDoc(collection(db, 'events'), newEventDoc);
         setSelectedEventId(docRef.id);
@@ -355,7 +360,10 @@ export default function ReunionManager({ groupId, user, profileData, onBack }) {
                     <LocationSelector
                       value={lieu}
                       lieuxImportants={lieuxImportants}
-                      onChange={(val) => setLieu(val)}
+                      onChange={(val, foundPreset) => {
+                        setLieu(val);
+                        setLieuId(foundPreset ? foundPreset.id : null);
+                      }}
                       placeholder="Ex: Salle de réunion, Local..."
                     />
                   </div>

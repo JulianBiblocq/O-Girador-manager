@@ -1,7 +1,7 @@
 {
   "name": "o-girador-manager",
   "private": true,
-  "version": "1.8.0",
+  "version": "1.9.0",
   "license": "MIT",
   "type": "module",
   "scripts": {
@@ -17,9 +17,11 @@
     "@tiptap/extension-text-align": "^3.28.0",
     "@tiptap/react": "^3.28.0",
     "@tiptap/starter-kit": "^3.28.0",
+    "browser-image-compression": "^2.0.2",
     "dompurify": "^3.4.12",
     "firebase": "^12.16.0",
     "jspdf": "^4.2.1",
+    "qrcode.react": "^4.2.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "tailwindcss": "^4.3.2"

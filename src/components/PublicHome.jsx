@@ -1,0 +1,591 @@
+import React from 'react';
+import { usePublicThemeContext } from './PublicThemeProvider';
+import { usePublicEvents } from '../hooks/usePublicEvents';
+import PublicEventCard from './public/PublicEventCard';
+import PublicEventDetails from './public/PublicEventDetails';
+import PublicPhotoGallery from './public/PublicPhotoGallery';
+import PublicNewsletterForm from './public/PublicNewsletterForm';
+
+/**
+ * Convertit une URL YouTube ou Vimeo classique en URL embed sécurisée pour iframe.
+ */
+const getEmbedVideoUrl = (url) => {
+  if (!url || typeof url !== 'string') return null;
+  try {
+    if (url.includes('youtube.com/watch')) {
+      const parsedUrl = new URL(url);
+      const videoId = parsedUrl.searchParams.get('v');
+      return videoId ? `https://www.youtube.com/embed/${videoId}` : null;
+    }
+    if (url.includes('youtu.be/')) {
+      const parts = url.split('youtu.be/');
+      const videoId = parts[1]?.split('?')[0];
+      return videoId ? `https://www.youtube.com/embed/${videoId}` : null;
+    }
+    if (url.includes('youtube.com/embed/')) {
+      return url;
+    }
+    if (url.includes('vimeo.com/')) {
+      const parts = url.split('vimeo.com/');
+      const videoId = parts[1]?.split('?')[0];
+      return videoId ? `https://player.vimeo.com/video/${videoId}` : null;
+    }
+  } catch (err) {
+    console.warn("Format URL vidéo non reconnu :", url);
+  }
+  return null;
+};
+
+/**
+ * Composant de la Page d'Accueil Vitrine Publique (One-Page) dynamique.
+ * Alimenté par les paramètres publicTheme de Firestore et les événements publics réels.
+ */
+export default function PublicHome({ groupId, associationName, branding, onNavigateToApp, onNavigateToLogin }) {
+  const { publicTheme } = usePublicThemeContext();
+  const { events: publicEvents, loading: loadingEvents } = usePublicEvents(groupId);
+  const [selectedEventDetails, setSelectedEventDetails] = React.useState(null);
+
+  const logoSrc = branding?.logoUrl || '/Pictures/logo-samambaia.png';
+  const groupTitle = associationName ? associationName : "Notre Association";
+
+  // Récupération des contenus personnalisés depuis publicTheme
+  // Récupération des contenus personnalisés depuis publicTheme
+  const heroImage = publicTheme?.publicHeroImage || '';
+  const heroOverlayOpacity = publicTheme?.heroOverlayOpacity !== undefined ? Number(publicTheme.heroOverlayOpacity) : 25;
+  const catchphrase = publicTheme?.publicCatchphrase || "Découvrez la puissance du Maracatu, la richesse de nos rythmes traditionnels et la ferveur de nos prestations scéniques.";
+  const descriptionText = publicTheme?.publicDescription || "Notre collectif rassemble des passionnés de percussions et de culture brésilienne. À travers les Alfaias, Agbês, Caixas et Gonguês, nous faisons vibrer l'héritage vivant du Maracatu de Baque Virado.";
+  const embedVideoUrl = getEmbedVideoUrl(publicTheme?.publicVideoLink);
+
+  // Données Espace Organisateur
+  const enableOrganizerSection = publicTheme?.enableOrganizerSection !== false;
+  const technicalSheet = publicTheme?.publicTechnicalSheet || "• Effectif : 10 à 20 musiciens + 1 Mestre\n• Logistique : Loge fermée avec point d'eau & parking convoi\n• Sonorisation : Autonomie totale en défilé de rue, possibilité de reprise micro pour scène.";
+  const performanceFormats = publicTheme?.publicPerformanceFormats || '';
+  const dossierProPdfUrl = publicTheme?.dossierProPdfUrl || '';
+  const contactEmail = publicTheme?.publicContactEmail || '';
+  const contactPhone = publicTheme?.publicContactPhone || '';
+  const socialLinks = publicTheme?.socialLinks || {};
+
+  // Défilement fluide vers une section
+  const scrollToSection = (id) => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
+  return (
+    <div 
+      className="min-h-screen flex flex-col transition-colors duration-300 selection:bg-stone-200"
+      style={{ 
+        fontFamily: 'var(--public-font-body, sans-serif)',
+        backgroundColor: 'var(--public-bg, #FAF8F5)',
+        color: 'var(--public-text, #1C1917)'
+      }}
+    >
+      {/* ==========================================
+          EN-TÊTE / NAVIGATION
+         ========================================== */}
+      <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-stone-200/80 shadow-xs transition-all">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+          {/* Logo & Titre */}
+          <div className="flex items-center gap-3">
+            {logoSrc && (
+              <img 
+                src={logoSrc} 
+                alt={`Logo ${groupTitle}`} 
+                className="w-9 h-9 object-contain select-none"
+              />
+            )}
+            <span 
+              className="text-lg font-bold tracking-tight"
+              style={{ 
+                fontFamily: 'var(--public-font-heading, sans-serif)',
+                color: 'var(--public-primary, #D32F2F)' 
+              }}
+            >
+              {groupTitle}
+            </span>
+          </div>
+
+          {/* Navigation & Espace Membre */}
+          <div className="flex items-center gap-4">
+            <button
+              type="button"
+              onClick={() => scrollToSection('agenda')}
+              className="hidden sm:inline-block text-xs font-semibold uppercase tracking-wider text-stone-600 hover:text-stone-900 transition-colors cursor-pointer"
+            >
+              Agenda
+            </button>
+            {enableOrganizerSection && (
+              <button
+                type="button"
+                onClick={() => scrollToSection('programmer')}
+                className="hidden md:inline-block text-xs font-semibold uppercase tracking-wider text-stone-600 hover:text-stone-900 transition-colors cursor-pointer"
+              >
+                Nous Programmer
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={onNavigateToApp || onNavigateToLogin}
+              className="text-xs font-bold uppercase tracking-wider px-3.5 py-2 rounded-md border border-stone-300 text-stone-700 bg-stone-100 hover:bg-stone-200 transition-all cursor-pointer shadow-xs active:scale-95 flex items-center gap-1.5"
+            >
+              <span>🔒 Espace Membre</span>
+            </button>
+          </div>
+        </div>
+      </header>
+
+      {/* ==========================================
+          BLOC 1 - HERO SECTION (HAUT)
+         ========================================== */}
+      <section 
+        className="relative overflow-hidden py-16 sm:py-24 bg-cover bg-center border-b border-stone-200/60 transition-all duration-300"
+        style={{
+          backgroundImage: heroImage ? `url(${heroImage})` : 'none'
+        }}
+      >
+        {/* Filtre assombrissant (overlay) à opacité dynamique réglable dans l'administration */}
+        {heroImage && (
+          <div 
+            className="absolute inset-0 bg-black pointer-events-none transition-opacity duration-300 z-0"
+            style={{ opacity: (heroOverlayOpacity / 100) }}
+          />
+        )}
+
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 text-center flex flex-col items-center gap-6 relative z-10">
+          {logoSrc && (
+            <img 
+              src={logoSrc} 
+              alt={`Grand Logo ${groupTitle}`} 
+              className="w-28 h-28 sm:w-36 sm:h-36 object-contain mb-2 drop-shadow-xl select-none animate-fade-in"
+            />
+          )}
+
+          <h1 
+            className="text-4xl sm:text-6xl font-extrabold tracking-tight max-w-3xl leading-tight drop-shadow-lg"
+            style={{ 
+              fontFamily: 'var(--public-font-heading, sans-serif)',
+              color: heroImage ? '#FFFFFF' : 'var(--public-primary, #D32F2F)',
+              textShadow: heroImage ? '0 3px 12px rgba(0,0,0,0.85), 0 1px 4px rgba(0,0,0,0.9)' : 'none'
+            }}
+          >
+            {groupTitle}
+          </h1>
+
+          <p 
+            className={heroImage ? "text-base sm:text-xl text-white max-w-2xl leading-relaxed font-semibold drop-shadow-md" : "text-base sm:text-xl text-stone-700 max-w-2xl leading-relaxed font-medium"}
+            style={{ 
+              fontFamily: 'var(--public-font-body, sans-serif)',
+              textShadow: heroImage ? '0 2px 8px rgba(0,0,0,0.85), 0 1px 3px rgba(0,0,0,0.9)' : 'none'
+            }}
+          >
+            {catchphrase}
+          </p>
+
+          <div className="mt-4 flex flex-wrap justify-center gap-4">
+            <button
+              type="button"
+              onClick={() => scrollToSection('agenda')}
+              className="px-6 py-3.5 text-sm font-bold uppercase tracking-wider rounded-lg shadow-xl hover:brightness-110 active:scale-95 transition-all cursor-pointer flex items-center gap-2"
+              style={{
+                backgroundColor: 'var(--public-btn-bg, var(--public-primary, #D32F2F))',
+                color: 'var(--public-btn-text, #FFFFFF)',
+                fontFamily: 'var(--public-font-heading, sans-serif)'
+              }}
+            >
+              📅 Prochaines dates
+            </button>
+            {enableOrganizerSection && (
+              <button
+                type="button"
+                onClick={() => scrollToSection('programmer')}
+                className="px-6 py-3.5 text-sm font-bold uppercase tracking-wider text-white rounded-lg shadow-xl hover:brightness-110 active:scale-95 transition-all cursor-pointer flex items-center gap-2"
+                style={{
+                  backgroundColor: 'var(--public-secondary, #1976D2)',
+                  fontFamily: 'var(--public-font-heading, sans-serif)'
+                }}
+              >
+                🎪 Nous Programmer
+              </button>
+            )}
+          </div>
+        </div>
+      </section>
+
+      {/* ==========================================
+          BLOC 2 - PRÉSENTATION ("QUI SOMMES-NOUS ?")
+         ========================================== */}
+      <section className="py-16 bg-white border-b border-stone-200/60">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 flex flex-col gap-10">
+          <div className="text-center flex flex-col items-center gap-3">
+            <h2 
+              className="text-3xl font-extrabold tracking-tight uppercase"
+              style={{ 
+                fontFamily: 'var(--public-font-heading, sans-serif)',
+                color: 'var(--public-primary, #D32F2F)' 
+              }}
+            >
+              Qui sommes-nous ?
+            </h2>
+            <div 
+              className="w-16 h-1 rounded-full"
+              style={{ backgroundColor: 'var(--public-secondary, #1976D2)' }}
+            ></div>
+          </div>
+
+          {descriptionText && (
+            <div 
+              className="text-base sm:text-lg leading-relaxed text-stone-700 whitespace-pre-line text-justify sm:text-center max-w-4xl w-full mx-auto px-4"
+              style={{ fontFamily: 'var(--public-font-body, sans-serif)' }}
+            >
+              {descriptionText}
+            </div>
+          )}
+
+          {embedVideoUrl ? (
+            <div className="w-full max-w-4xl mx-auto rounded-xl overflow-hidden shadow-xl border border-stone-200 bg-black aspect-video">
+              <iframe
+                src={embedVideoUrl}
+                title="Vidéo de présentation"
+                className="w-full h-full border-0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              />
+            </div>
+          ) : null}
+        </div>
+      </section>
+
+      {/* ==========================================
+          GALERIE PHOTOS & CARROUSEL ("EN IMAGES")
+         ========================================== */}
+      <PublicPhotoGallery photos={publicTheme?.galleryPhotos} />
+
+      {/* ==========================================
+          BLOC 3 - AGENDA PUBLIC
+         ========================================== */}
+      <section id="agenda" className="py-16 bg-stone-50 border-b border-stone-200/60">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 flex flex-col gap-10">
+          <div className="text-center flex flex-col items-center gap-3">
+            <h2 
+              className="text-3xl font-extrabold tracking-tight uppercase"
+              style={{ 
+                fontFamily: 'var(--public-font-heading, sans-serif)',
+                color: 'var(--public-primary, #D32F2F)' 
+              }}
+            >
+              Prochaines Dates & Prestations
+            </h2>
+            <div 
+              className="w-16 h-1 rounded-full"
+              style={{ backgroundColor: 'var(--public-secondary, #1976D2)' }}
+            ></div>
+            <p className="text-sm text-stone-500 max-w-md">
+              Événements ouverts au public. Venez nous rencontrer !
+            </p>
+          </div>
+
+          {loadingEvents ? (
+            <div className="py-12 text-center text-xs uppercase font-bold tracking-widest text-stone-400 animate-pulse">
+              ⏳ Chargement des dates publiques...
+            </div>
+          ) : publicEvents.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {publicEvents.map((evt) => (
+                <PublicEventCard
+                  key={evt.id}
+                  event={evt}
+                  onClickDetails={(selectedEvt) => setSelectedEventDetails(selectedEvt)}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="py-12 px-6 rounded-xl border border-dashed border-stone-300 bg-white text-center flex flex-col items-center gap-3 max-w-md mx-auto">
+              <span className="text-3xl">🎺</span>
+              <p className="text-sm font-semibold text-stone-700">
+                Aucune date publique prévue pour le moment, suivez-nous sur les réseaux !
+              </p>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* ==========================================
+          BLOC 4 - ESPACE ORGANISATEUR & FICHE TECHNIQUE ("NOUS PROGRAMMER")
+         ========================================== */}
+      {enableOrganizerSection && (
+        <section 
+          id="programmer" 
+          className="py-16 border-b border-stone-200/60 relative overflow-hidden"
+          style={{
+            backgroundColor: 'color-mix(in srgb, var(--public-secondary, #1976D2) 6%, white 94%)'
+          }}
+        >
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 flex flex-col gap-12">
+            {/* En-tête de section */}
+            <div className="text-center flex flex-col items-center gap-3">
+              <span 
+                className="text-xs font-bold uppercase tracking-widest px-3 py-1 rounded text-white shadow-xs"
+                style={{ backgroundColor: 'var(--public-secondary, #1976D2)' }}
+              >
+                Espace Organisateur & Programmateurs
+              </span>
+              <h2 
+                className="text-3xl sm:text-4xl font-extrabold tracking-tight uppercase"
+                style={{ 
+                  fontFamily: 'var(--public-font-heading, sans-serif)',
+                  color: 'var(--public-primary, #D32F2F)' 
+                }}
+              >
+                Nous Programmer / Fiche Technique
+              </h2>
+              <div 
+                className="w-16 h-1 rounded-full"
+                style={{ backgroundColor: 'var(--public-primary, #D32F2F)' }}
+              ></div>
+              <p className="text-sm text-stone-600 max-w-xl">
+                Toutes les informations pratiques pour accueillir notre groupe lors de vos festivals, défilés ou événements.
+              </p>
+            </div>
+
+            {/* Grille 3 colonnes sur PC (Formats de Prestations, Besoins Techniques, Infolettre & Actualités) */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {/* Partie Gauche : Nos Formats de Prestations */}
+              <div className="bg-white rounded-xl border border-stone-200 p-6 sm:p-8 shadow-sm flex flex-col gap-5">
+                <h3 
+                  className="text-xl font-bold border-b border-stone-100 pb-3 flex items-center gap-2"
+                  style={{ 
+                    fontFamily: 'var(--public-font-heading, sans-serif)',
+                    color: 'var(--public-primary, #D32F2F)' 
+                  }}
+                >
+                  <span>🥁 Nos Formats de Prestations</span>
+                </h3>
+
+                {performanceFormats ? (
+                  <div 
+                    className="text-xs sm:text-sm text-stone-700 leading-relaxed whitespace-pre-line"
+                    style={{ fontFamily: 'var(--public-font-body, sans-serif)' }}
+                  >
+                    {performanceFormats}
+                  </div>
+                ) : (
+                  <ul className="space-y-4 text-xs sm:text-sm text-stone-700">
+                    <li className="flex items-start gap-3">
+                      <span 
+                        className="w-2 h-2 rounded-full mt-2 shrink-0"
+                        style={{ backgroundColor: 'var(--public-secondary, #1976D2)' }}
+                      ></span>
+                      <div>
+                        <strong className="text-stone-900 block font-bold">Festivals & Fêtes de Ville</strong>
+                        Défilés de rue déambulatoires, ouvertures de carnivals et passages scéniques à haute énergie.
+                      </div>
+                    </li>
+
+                    <li className="flex items-start gap-3">
+                      <span 
+                        className="w-2 h-2 rounded-full mt-2 shrink-0"
+                        style={{ backgroundColor: 'var(--public-secondary, #1976D2)' }}
+                      ></span>
+                      <div>
+                        <strong className="text-stone-900 block font-bold">Animations Culturelles & Associatives</strong>
+                        Parades populaires, inaugurations et moments de fête fédérateurs.
+                      </div>
+                    </li>
+
+                    <li className="flex items-start gap-3">
+                      <span 
+                        className="w-2 h-2 rounded-full mt-2 shrink-0"
+                        style={{ backgroundColor: 'var(--public-secondary, #1976D2)' }}
+                      ></span>
+                      <div>
+                        <strong className="text-stone-900 block font-bold">Événements Privés & Sur-Mesure</strong>
+                        Prestations adaptées à vos besoins logistiques et horaires de passage.
+                      </div>
+                    </li>
+                  </ul>
+                )}
+              </div>
+
+              {/* Partie Droite : Fiche Technique & Besoins Logistiques */}
+              <div className="bg-white rounded-xl border border-stone-200 p-6 sm:p-8 shadow-sm flex flex-col justify-between gap-5">
+                <div className="flex flex-col gap-4">
+                  <h3 
+                    className="text-xl font-bold border-b border-stone-100 pb-3 flex items-center gap-2"
+                    style={{ 
+                      fontFamily: 'var(--public-font-heading, sans-serif)',
+                      color: 'var(--public-primary, #D32F2F)' 
+                    }}
+                  >
+                    <span>📋 Besoins Techniques & Logistiques</span>
+                  </h3>
+
+                  {/* Accordéon Fiche Technique (Masqué par défaut) */}
+                  <details className="group border border-stone-200 rounded-xl bg-stone-50/50 shadow-xs overflow-hidden transition-all">
+                    <summary 
+                      className="cursor-pointer font-bold p-4 text-stone-800 flex justify-between items-center bg-white hover:bg-stone-50 transition-colors select-none text-xs sm:text-sm"
+                      style={{ fontFamily: 'var(--public-font-heading, sans-serif)' }}
+                    >
+                      <span className="flex items-center gap-2" style={{ color: 'var(--public-primary, #D32F2F)' }}>
+                        🛠️ Fiche technique et besoins logistiques (Déplier)
+                      </span>
+                      <span className="text-stone-400 group-open:rotate-180 transition-transform duration-200 text-xs">
+                        ▼
+                      </span>
+                    </summary>
+                    <div className="p-4 sm:p-5 border-t border-stone-200/80 text-xs sm:text-sm text-stone-700 leading-relaxed whitespace-pre-line bg-white">
+                      {technicalSheet}
+                    </div>
+                  </details>
+                </div>
+
+                {/* Bloc de Contact & Appel à l'action */}
+                <div className="border-t border-stone-100 pt-5 flex flex-col gap-3">
+                  {/* Bouton de Téléchargement Fiche Technique / Dossier Pro (PDF) */}
+                  {dossierProPdfUrl && (
+                    <a
+                      href={dossierProPdfUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-full py-3 px-5 text-xs font-bold uppercase tracking-wider rounded-lg border-2 border-stone-800 text-stone-900 bg-stone-100 hover:bg-stone-200 transition-all text-center flex items-center justify-center gap-2 shadow-xs active:scale-95 cursor-pointer"
+                      title="Télécharger la fiche technique complète au format PDF"
+                      style={{ fontFamily: 'var(--public-font-heading, sans-serif)' }}
+                    >
+                      <span>📥</span>
+                      <span>Télécharger la Fiche Technique (PDF)</span>
+                    </a>
+                  )}
+
+                  {contactEmail ? (
+                    <a
+                      href={`mailto:${contactEmail}?subject=Demande%20de%20Programmation%20-%20${encodeURIComponent(groupTitle)}`}
+                      className="w-full py-3.5 px-6 text-sm font-bold uppercase tracking-wider rounded-lg shadow-md hover:brightness-110 active:scale-95 transition-all text-center flex items-center justify-center gap-2 cursor-pointer"
+                      style={{
+                        backgroundColor: 'var(--public-btn-bg, var(--public-primary, #D32F2F))',
+                        color: 'var(--public-btn-text, #FFFFFF)',
+                        fontFamily: 'var(--public-font-heading, sans-serif)'
+                      }}
+                    >
+                      ✉️ Contactez-nous pour programmer
+                    </a>
+                  ) : null}
+
+                  <div className="flex flex-wrap justify-center sm:justify-between items-center gap-2 text-xs text-stone-600 font-medium pt-1">
+                    {contactEmail && (
+                      <span className="truncate">📧 {contactEmail}</span>
+                    )}
+                    {contactPhone && (
+                      <a href={`tel:${contactPhone}`} className="hover:text-stone-900 font-semibold truncate">
+                        📞 {contactPhone}
+                      </a>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Partie Droite (3e Bloc) : Infolettre & Actualités */}
+              <PublicNewsletterForm groupId={groupId} variant="card" />
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ==========================================
+          BLOC 5 - PIED DE PAGE (FOOTER)
+         ========================================== */}
+      <footer className="mt-auto bg-stone-900 text-stone-300 py-12 border-t border-stone-800">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 flex flex-col md:flex-row items-center justify-between gap-8 text-center md:text-left">
+          {/* Identité */}
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center justify-center md:justify-start gap-3">
+              {logoSrc && (
+                <img 
+                  src={logoSrc} 
+                  alt={`Logo ${groupTitle}`} 
+                  className="w-7 h-7 object-contain select-none"
+                />
+              )}
+              <span 
+                className="text-base font-bold tracking-tight text-white"
+                style={{ fontFamily: 'var(--public-font-heading, sans-serif)' }}
+              >
+                {groupTitle}
+              </span>
+            </div>
+          </div>
+
+          {/* Réseaux sociaux dynamiques & Mention */}
+          <div className="flex flex-col items-center md:items-end gap-3">
+            {(socialLinks.facebook || socialLinks.instagram || socialLinks.youtube || socialLinks.whatsapp) ? (
+              <div className="flex flex-wrap items-center justify-center md:justify-end gap-4 text-xs font-semibold text-stone-400">
+                {socialLinks.facebook && (
+                  <a 
+                    href={socialLinks.facebook} 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    className="hover:text-white transition-colors flex items-center gap-1.5"
+                  >
+                    <span>📘 Facebook</span>
+                  </a>
+                )}
+                {socialLinks.instagram && (
+                  <a 
+                    href={socialLinks.instagram} 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    className="hover:text-white transition-colors flex items-center gap-1.5"
+                  >
+                    <span>📸 Instagram</span>
+                  </a>
+                )}
+                {socialLinks.youtube && (
+                  <a 
+                    href={socialLinks.youtube} 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    className="hover:text-white transition-colors flex items-center gap-1.5"
+                  >
+                    <span>🎬 YouTube</span>
+                  </a>
+                )}
+                {socialLinks.whatsapp && (
+                  <a 
+                    href={socialLinks.whatsapp} 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    className="hover:text-white transition-colors flex items-center gap-1.5"
+                  >
+                    <span>💬 WhatsApp</span>
+                  </a>
+                )}
+              </div>
+            ) : null}
+
+            <div className="flex items-center gap-4 text-xs">
+              <span className="text-stone-500">
+                Propulsé par <strong className="text-stone-300 font-semibold">O Girador</strong>
+              </span>
+              
+              <button
+                type="button"
+                onClick={onNavigateToApp || onNavigateToLogin}
+                className="text-[11px] font-bold uppercase tracking-wider px-2.5 py-1 rounded bg-stone-800 hover:bg-stone-700 text-stone-300 border border-stone-700 transition-colors cursor-pointer"
+              >
+                🔒 Accès Membre
+              </button>
+            </div>
+          </div>
+        </div>
+      </footer>
+
+      {/* Modale de Détails Publics de l'Événement */}
+      {selectedEventDetails && (
+        <PublicEventDetails
+          event={selectedEventDetails}
+          onClose={() => setSelectedEventDetails(null)}
+        />
+      )}
+    </div>
+  );
+}

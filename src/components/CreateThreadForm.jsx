@@ -46,7 +46,9 @@ export default function CreateThreadForm({ groupId, channelId, user, profileData
     });
   };
 
-  // Chargement en temps réel des étiquettes et instruments disponibles de l'association
+  const [lienDepotForum, setLienDepotForum] = useState('');
+
+  // Chargement en temps réel des étiquettes, instruments et lienDepotForum de l'association
   useEffect(() => {
     if (!groupId) return;
     const assocRef = doc(db, 'associations', groupId);
@@ -58,6 +60,7 @@ export default function CreateThreadForm({ groupId, channelId, user, profileData
         const instruments = data.instrumentsDisponibles || [];
         const combined = [...new Set([...tagLabels, ...instruments])].filter(Boolean).sort();
         setAvailableTargets(combined);
+        setLienDepotForum(data.lienDepotForum || '');
       }
     }, (error) => {
       console.error("CreateThreadForm - Erreur chargement cibles association :", error);
@@ -242,6 +245,7 @@ export default function CreateThreadForm({ groupId, channelId, user, profileData
             disabled={saving}
             placeholder={t('forum.messagePlaceholder')}
             groupId={groupId}
+            lienDepotForum={lienDepotForum}
             minHeight="140px"
           />
         </div>

@@ -13,6 +13,9 @@ import TabFinance from './association-settings/TabFinance';
 import TabAgenda from './association-settings/TabAgenda';
 import TabModules from './association-settings/TabModules';
 import TabLieux from './association-settings/TabLieux';
+import TabAutomations from './association-settings/TabAutomations';
+import TabPublicTheme from './association-settings/TabPublicTheme';
+import TabPublicContent from './association-settings/TabPublicContent';
 
 import { useEffect } from 'react';
 
@@ -27,6 +30,10 @@ export default function AssociationSettings({ groupId, onBack, role, isSystemAdm
     handleChange,
     logoFile,
     setLogoFile,
+    heroImageFile,
+    setHeroImageFile,
+    dossierProPdfFile,
+    setDossierProPdfFile,
     droitImageFile,
     setDroitImageFile,
     aptitudeMedicaleFile,
@@ -34,11 +41,13 @@ export default function AssociationSettings({ groupId, onBack, role, isSystemAdm
     uploadingLogo,
     saving,
     loading,
+    toastMessage,
     handleSaveHelloAssoKey,
     handleSave
   } = useAssociationSettings(groupId, isAuthorized, onBack, t);
 
   const [activeSettingsTab, setActiveSettingsTab] = useState(activeTabProp || 'identity');
+  const [vitrineSubTab, setVitrineSubTab] = useState('apparence');
 
   useEffect(() => {
     if (activeTabProp) {
@@ -150,6 +159,35 @@ export default function AssociationSettings({ groupId, onBack, role, isSystemAdm
             t={t}
           />
         );
+      case 'automatisations':
+        return (
+          <TabAutomations
+            groupId={groupId}
+            eventTypes={formData.eventTypes || ['prestation', 'repetition', 'stage', 'atelier', 'reunion']}
+            t={t}
+          />
+        );
+      case 'public-theme':
+        return vitrineSubTab === 'contenu' ? (
+          <TabPublicContent
+            formData={formData}
+            handleChange={handleChange}
+            heroImageFile={heroImageFile}
+            setHeroImageFile={setHeroImageFile}
+            dossierProPdfFile={dossierProPdfFile}
+            setDossierProPdfFile={setDossierProPdfFile}
+            groupId={groupId}
+            saving={saving}
+            t={t}
+          />
+        ) : (
+          <TabPublicTheme
+            formData={formData}
+            handleChange={handleChange}
+            saving={saving}
+            t={t}
+          />
+        );
       default:
         return null;
     }
@@ -188,6 +226,45 @@ export default function AssociationSettings({ groupId, onBack, role, isSystemAdm
         </div>
       ) : (
         <div className="flex flex-col gap-3">
+          {/* Menu Horizontal Pôle Vitrine (Apparence / Contenu) */}
+          {(mode === 'public-theme-only' || activeSettingsTab === 'public-theme') && (
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b-2 border-dashed border-cordel-master-dark/30 pb-3 mb-1 select-none">
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setVitrineSubTab('apparence')}
+                  className={`px-4 py-2 text-xs font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer ${
+                    vitrineSubTab === 'apparence'
+                      ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
+                      : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
+                  }`}
+                >
+                  🎨 Apparence
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setVitrineSubTab('contenu')}
+                  className={`px-4 py-2 text-xs font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer ${
+                    vitrineSubTab === 'contenu'
+                      ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
+                      : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
+                  }`}
+                >
+                  📝 Contenu
+                </button>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => window.open('/', '_blank')}
+                className="px-3.5 py-1.5 text-xs font-black uppercase tracking-wider bg-cordel-vert text-white rounded border border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-105 cursor-pointer flex items-center gap-1.5"
+              >
+                <span>👁️ Voir le site public ↗</span>
+              </button>
+            </div>
+          )}
+
           {/* Tab Selector */}
           {!mode && (
             <div className="flex flex-wrap gap-2 border-b border-dashed border-cordel-master-dark/20 pb-3 mb-1 select-none">
@@ -279,6 +356,28 @@ export default function AssociationSettings({ groupId, onBack, role, isSystemAdm
               >
                 📍 Lieux & Salles
               </button>
+              <button
+                type="button"
+                onClick={() => setActiveSettingsTab('automatisations')}
+                className={`px-3 py-1.5 text-xs font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer ${
+                  activeSettingsTab === 'automatisations'
+                    ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
+                    : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
+                }`}
+              >
+                🤖 Automatisations & Relances
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveSettingsTab('public-theme')}
+                className={`px-3 py-1.5 text-xs font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer ${
+                  activeSettingsTab === 'public-theme'
+                    ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
+                    : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
+                }`}
+              >
+                🎨 Identité Visuelle (Vitrine)
+              </button>
             </div>
           )}
 
@@ -303,6 +402,14 @@ export default function AssociationSettings({ groupId, onBack, role, isSystemAdm
               </div>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Notification Toast de confirmation de sauvegarde sans redirection */}
+      {toastMessage && (
+        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-[100] bg-emerald-900 text-white font-black text-xs px-6 py-3 rounded-lg shadow-[3px_3px_0px_0px_#181716] border-2 border-encre-noire flex items-center gap-2.5 select-none animate-fade-in">
+          <span className="text-base">✅</span>
+          <span>{toastMessage}</span>
         </div>
       )}
     </div>

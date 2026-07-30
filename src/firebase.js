@@ -23,7 +23,8 @@ setPersistence(auth, browserLocalPersistence)
 
 export const googleProvider = new GoogleAuthProvider();
 export const db = initializeFirestore(app, {
-  experimentalForceLongPolling: true
+  experimentalForceLongPolling: true,
+  useFetchStreams: false
 });
 export const storage = getStorage(app);
 

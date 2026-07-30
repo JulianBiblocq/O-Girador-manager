@@ -140,9 +140,9 @@ service cloud.firestore {
       allow write: if isAdminOrMestre();
     }
 
-    // Associations: Read if authenticated. Write reserved for admins/mestres.
+    // Associations: Read public (for showcase brand & theme). Write reserved for admins/mestres.
     match /associations/{assocId} {
-      allow read: if isAuthenticated();
+      allow read: true;
       allow write: if isAdminOrMestre();
 
       // Protected credentials only readable/writable by group administrators/mestres
@@ -205,9 +205,9 @@ service cloud.firestore {
       allow write: if isAdminOrMestre();
     }
 
-    // Events: Read if authenticated. Create/Delete for admins/mestres. Update allowed for RSVPs (members) or full update for admins/mestres.
+    // Events: Read if authenticated or if isPublic == true. Create/Delete for admins/mestres. Update allowed for RSVPs (members) or full update for admins/mestres.
     match /events/{event} {
-      allow read: if isAuthenticated();
+      allow read: if isAuthenticated() || (resource != null && resource.data.isPublic == true);
       allow create, delete: if isAdminOrMestre();
       allow update: if isAuthenticated() && (
         isAdminOrMestre() || 
@@ -294,6 +294,12 @@ service cloud.firestore {
     // Pending payments: Only admins and mestres can access directly from client
     match /pending_payments/{email} {
       allow read, write: if isAdminOrMestre();
+    }
+
+    // Newsletter subscribers: Public can subscribe (create), reading/exporting reserved for admins/mestres
+    match /newsletter_subscribers/{subscriberDoc} {
+      allow create: if true;
+      allow read, update, delete: if isAdminOrMestre();
     }
   }
 }

@@ -67,7 +67,9 @@ export const fr = {
     tresorerie: "Trésorerie",
     logistique: "Logistique",
     kilometricReimbursement: "Remboursements Kilométriques",
-    varalManager: "Varal"
+    varalManager: "Varal",
+    poleVitrine: "Vitrine",
+    tabVitrine: "Vitrine"
   },
   login: {
     title: "O Girador",
@@ -915,7 +917,11 @@ export const fr = {
     tabConfigAgenda: "Configuration de l'agenda",
     tabConfigLieux: "Lieux & Salles",
     tabConfigLayout: "Apparence",
-    tabMestreOrientation: "Casting"
+    tabMestreOrientation: "Casting",
+    vitrine: "Vitrine",
+    poleVitrine: "Vitrine",
+    tabVitrine: "Vitrine",
+    tabVitrineEditor: "Vitrine"
   },
   mestre: {
     eventsTitle: "Direction Musicale - Liste des Événements",

@@ -9,6 +9,8 @@ import { TerminologyProvider } from './components/TerminologyContext';
 import { useTranslation } from './components/LanguageContext';
 import ReloadPrompt from './components/ReloadPrompt';
 import ErrorBoundary from './components/ErrorBoundary';
+import PublicHome from './components/PublicHome';
+import PublicThemeProvider from './components/PublicThemeProvider';
 
 import { lazyWithRetry } from './utils/pwaUtils';
 import { resolveEffectiveUserTags } from './utils/tagUtils';
@@ -128,6 +130,14 @@ const POLES_CONFIG = [
     ]
   },
   {
+    id: 'vitrine',
+    label: 'Vitrine',
+    labelKey: 'poleVitrine',
+    tabs: [
+      { id: 'vitrine-editor', label: 'Vitrine', labelKey: 'tabVitrine' }
+    ]
+  },
+  {
     id: 'config',
     label: 'Configuration',
     tabs: [
@@ -174,6 +184,21 @@ export default function App() {
       }
       return nextVal;
     });
+  };
+
+  // Gestion du routage dynamique (/ vitrine public, /app espace membre, /login connexion)
+  const [currentRoute, setCurrentRoute] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return window.location.pathname || '/';
+    }
+    return '/';
+  });
+
+  const navigateToRoute = (route) => {
+    setCurrentRoute(route);
+    if (typeof window !== 'undefined') {
+      window.history.pushState({}, '', route + window.location.search);
+    }
   };
 
   const [currentView, setCurrentView] = useState('dashboard'); // 'dashboard', 'trombinoscope', 'forum', 'profil', 'system-admin', 'layout-editor', 'tag-manager'
@@ -311,9 +336,12 @@ export default function App() {
     document.documentElement.classList.remove('dark');
   }, []);
 
-  // Synchroniser la navigation PWA avec l'historique du navigateur (Bouton retour mobile)
+  // Synchroniser la navigation PWA et du routeur avec l'historique du navigateur
   useEffect(() => {
     const handlePopState = (event) => {
+      if (typeof window !== 'undefined') {
+        setCurrentRoute(window.location.pathname || '/');
+      }
       if (event.state && event.state.currentPole && event.state.currentTab) {
         setCurrentPole(event.state.currentPole);
         setCurrentTab(event.state.currentTab);
@@ -657,7 +685,7 @@ export default function App() {
     // No need to fetch manually, the onSnapshot listener handles it automatically
   };
 
-  // Loading screen (Auth state resolving or Firestore lookup)
+  // 1. Écran de chargement (Authentification ou chargement Firestore)
   if (loading || checkingProfile) {
     const logoSrc = branding?.logoUrl || '/Pictures/logo-samambaia.png';
     return (
@@ -670,7 +698,7 @@ export default function App() {
               className="max-w-xs max-h-36 object-contain w-auto h-auto mb-2 select-none" 
             />
           )}
-          {/* A beautiful double ring spinner utilizing theme variables */}
+          {/* Spinner stylisé */}
           <div className="relative w-16 h-16 select-none animate-spin">
             <div className="absolute inset-0 rounded-full border-4 border-[var(--cordel-border)]/20 animate-pulse"></div>
             <div className="absolute inset-0 rounded-full border-4 border-t-cordel-wood border-r-transparent border-b-transparent border-l-transparent"></div>
@@ -683,17 +711,32 @@ export default function App() {
     );
   }
 
-  // Not authenticated -> Show Login screen
+  // 2. Route Racine '/' -> Vitrine Publique One-Page enveloppée par PublicThemeProvider
+  if (currentRoute === '/' || currentRoute === '' || currentRoute === '/index.html') {
+    return (
+      <PublicThemeProvider groupId={profileData?.groupId}>
+        <PublicHome
+          associationName={associationName}
+          branding={branding}
+          onNavigateToApp={() => navigateToRoute(user ? '/app' : '/login')}
+          onNavigateToLogin={() => navigateToRoute('/login')}
+        />
+        <ReloadPrompt />
+      </PublicThemeProvider>
+    );
+  }
+
+  // 3. Utilisateur non connecté sur une route privée (/app, /login, etc.) -> Affichage de la page Login
   if (!user) {
     return (
       <>
-        <Login branding={branding} />
+        <Login branding={branding} onSuccess={() => navigateToRoute('/app')} />
         <ReloadPrompt />
       </>
     );
   }
 
-  // Authenticated but no profile in Firestore -> Show Onboarding
+  // 4. Utilisateur connecté mais profil Firestore manquant -> Onboarding
   if (!profileExists || !profileData) {
     return (
       <div style={brandingStyle} className="min-h-screen flex flex-col w-full force-light-theme">
@@ -705,7 +748,7 @@ export default function App() {
     );
   }
 
-  // Authenticated and profile exists -> Render based on current view state
+  // 5. Utilisateur connecté avec profil valide -> Rendu de l'Espace Membre Privé (/app)
   const isSystemOrSuperAdminOrMestre = profileData?.isSystemAdmin || profileData?.role === 'super-admin' || profileData?.role === 'mestre';
   const isMasterKeyActive = isSystemOrSuperAdminOrMestre && breakGlassActive;
   const userTags = resolveEffectiveUserTags(profileData?.tags || [], tagsDisponibles);
@@ -744,6 +787,12 @@ export default function App() {
       return true;
     }
 
+    if (tabId === 'vitrine-editor') {
+      if (profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.isSystemAdmin === true) {
+        return true;
+      }
+    }
+
     if (!userTags || userTags.length === 0) return false;
 
     // 1. Direct tab permission check in permissionsMatrice
@@ -769,6 +818,7 @@ export default function App() {
   const hasAccessStudio = isMasterKeyActive || checkTabAccess('studio-events', 'studio') || checkTabAccess('studio-social', 'studio') || checkTabAccess('reunion-manager', 'studio') || checkTabAccess('varal-manager', 'studio') || checkTabAccess('activity-reports', 'studio') || checkTabAccess('mestre-forum-channels', 'studio');
   const hasAccessVestiaire = isMasterKeyActive || checkTabAccess('wardrobe-inventory', 'vestiaire') || checkTabAccess('wardrobe-couture', 'vestiaire') || checkTabAccess('wardrobe-sizes', 'vestiaire');
   const hasAccessMestre = isMasterKeyActive || checkTabAccess('mestre-orientation', 'mestre') || checkTabAccess('mestre-events', 'mestre') || checkTabAccess('mestre-stage-layout', 'mestre') || checkTabAccess('mestre-sequenceur', 'mestre') || checkTabAccess('mestre-workshops', 'mestre') || checkTabAccess('mestre-mot-mestre', 'mestre');
+  const hasAccessVitrine = isMasterKeyActive || checkTabAccess('vitrine-editor', 'vitrine');
   const hasAccessConfig = isMasterKeyActive || checkTabAccess('config-identity', 'config') || checkTabAccess('config-profile', 'config') || checkTabAccess('config-security', 'config') || checkTabAccess('config-modules', 'config') || checkTabAccess('config-logistics', 'config') || checkTabAccess('config-documents', 'config') || checkTabAccess('config-agenda', 'config') || checkTabAccess('config-lieux', 'config') || checkTabAccess('config-layout', 'config');
   const hasAccessForumMod = isMasterKeyActive || userTags.some(t => ['Modérateur', 'Modérateur Forum', 'Gestionnaire Porte-voix', 'Porte-voix'].includes(t));
 
@@ -1267,6 +1317,15 @@ export default function App() {
                 isSystemAdmin={profileData?.isSystemAdmin}
                 mode="lieux-only"
                 activeTabProp="lieux"
+                onBack={() => handleNavigateToPole('accueil')} 
+              />
+            ) : (currentTab === 'vitrine-editor' && checkTabAccess('vitrine-editor', 'vitrine')) ? (
+              <AssociationSettings 
+                groupId={profileData?.groupId}
+                role={profileData?.role}
+                isSystemAdmin={profileData?.isSystemAdmin}
+                mode="public-theme-only"
+                activeTabProp="public-theme"
                 onBack={() => handleNavigateToPole('accueil')} 
               />
             ) : (currentTab === 'config-layout' && checkTabAccess('config-layout', 'config')) ? (

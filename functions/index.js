@@ -1,5 +1,6 @@
 const { onRequest } = require("firebase-functions/v2/https");
 const { onDocumentCreated } = require("firebase-functions/v2/firestore");
+const { onSchedule } = require("firebase-functions/v2/scheduler");
 const admin = require("firebase-admin");
 const crypto = require("crypto");
 
@@ -504,3 +505,199 @@ exports.onForumThreadCreated = onDocumentCreated("forum/{threadId}", async (even
     threadId: snapshot.id
   });
 });
+
+// 6. Cron Job quotidien pour le moteur d'automatisations et de relances
+exports.dailyAutomationReminders = onSchedule("0 8 * * *", async (event) => {
+  console.log("Démarrage du traitement quotidien des relances automatiques...");
+  const todayStr = new Date().toISOString().split("T")[0];
+
+  try {
+    const assocSnapshot = await db.collection("associations").get();
+    for (const assocDoc of assocSnapshot.docs) {
+      const groupId = assocDoc.id;
+
+      // 1. Lire les règles d'automatisation actives de cette association
+      const rulesSnapshot = await db
+        .collection("associations")
+        .doc(groupId)
+        .collection("automation_rules")
+        .where("isActive", "==", true)
+        .get();
+
+      if (rulesSnapshot.empty) continue;
+
+      const rules = rulesSnapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
+
+      // 2. Lire les événements de cette association
+      const eventsSnapshot = await db
+        .collection("events")
+        .where("groupId", "==", groupId)
+        .get();
+
+      if (eventsSnapshot.empty) continue;
+
+      const events = eventsSnapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
+
+      // 3. Lire les membres actifs
+      const usersSnapshot = await db
+        .collection("users")
+        .where("groupId", "==", groupId)
+        .get();
+
+      const activeUsers = usersSnapshot.docs
+        .map((d) => ({ id: d.id, ...d.data() }))
+        .filter((u) => u.statutActuel !== "archived");
+
+      // 4. Évaluation des règles
+      for (const rule of rules) {
+        for (const ev of events) {
+          const matchesType =
+            !rule.typeEvenementCible ||
+            rule.typeEvenementCible === "tous" ||
+            rule.typeEvenementCible === ev.type;
+
+          if (!matchesType) continue;
+
+          // Déterminer la date de référence (registrationDeadline ou eventDate)
+          let referenceDateStr = "";
+          if (rule.pointDeReference === "registrationDeadline") {
+            referenceDateStr = ev.dateLimiteInscription || ev.date;
+          } else {
+            referenceDateStr = ev.date;
+          }
+
+          if (!referenceDateStr) continue;
+
+          const refDate = new Date(referenceDateStr);
+          if (isNaN(refDate.getTime())) continue;
+
+          const triggerDate = new Date(refDate);
+          triggerDate.setDate(triggerDate.getDate() - (parseInt(rule.joursAvant, 10) || 0));
+          const triggerDateStr = triggerDate.toISOString().split("T")[0];
+
+          if (triggerDateStr === todayStr) {
+            const inscriptions = Array.isArray(ev.inscriptions) ? ev.inscriptions : [];
+            const usersPending = activeUsers.filter((u) => {
+              const userResp = inscriptions.find((ins) => ins.userId === u.id);
+              if (!userResp) return true;
+              return userResp.status === "pending" || !userResp.status;
+            });
+
+            const eventName = ev.titre || ev.nom || "Événement";
+            const bodyMessage = (rule.messageNotification || "").replace(/\{\{nomEvenement\}\}/g, eventName);
+
+            for (const targetUser of usersPending) {
+              await db.collection("notifications_queue").add({
+                groupId: groupId,
+                recipientId: targetUser.id,
+                title: rule.titreNotification || "Rappel Événement",
+                body: bodyMessage,
+                eventId: ev.id,
+                createdAt: new Date().toISOString()
+              });
+            }
+          }
+        }
+      }
+    }
+    console.log("Traitement quotidien des relances automatiques achevé avec succès.");
+  } catch (err) {
+    console.error("Erreur lors de l'exécution du Cron Job quotidien de relances :", err);
+  }
+});
+
+/**
+ * 4. Synchronisation automatique des abonnés Newsletter vers l'API Brevo v3
+ * Déclenchée lors de la création d'un document dans newsletter_subscribers/{subscriberId}
+ */
+exports.syncNewsletterSubscriberToBrevo = onDocumentCreated(
+  "newsletter_subscribers/{subscriberId}",
+  async (event) => {
+    const snap = event.data;
+    if (!snap) {
+      console.log("Aucune donnée dans l'événement d'inscription newsletter.");
+      return;
+    }
+
+    const data = snap.data();
+    const email = data.email;
+    const groupId = data.groupId;
+
+    if (!email) {
+      console.warn("Événement d'inscription ignoré : adresse e-mail manquante.");
+      return;
+    }
+
+    try {
+      let brevoApiKey = "";
+      let brevoListId = null;
+
+      // 1. Récupération de la clé API et de l'ID de liste depuis l'association Firestore
+      if (groupId) {
+        const assocDoc = await db.collection("associations").doc(groupId).get();
+        if (assocDoc.exists()) {
+          const assocData = assocDoc.data();
+          const publicTheme = assocData.publicTheme || {};
+          brevoApiKey = publicTheme.brevoApiKey || assocData.brevoApiKey || "";
+          brevoListId = publicTheme.brevoListId || assocData.brevoListId || null;
+        }
+
+        // Vérification dans credentials s'il est configuré séparément
+        if (!brevoApiKey) {
+          const credDoc = await db
+            .collection("associations")
+            .doc(groupId)
+            .collection("private_settings")
+            .doc("credentials")
+            .get();
+
+          if (credDoc.exists()) {
+            const credData = credDoc.data();
+            brevoApiKey = credData.brevoApiKey || brevoApiKey;
+            brevoListId = credData.brevoListId || brevoListId;
+          }
+        }
+      }
+
+      // 2. Si aucune clé API Brevo n'est configurée, enregistrement local conservé sans erreur bloquante
+      if (!brevoApiKey || !brevoApiKey.trim()) {
+        console.log(`Clé API Brevo non renseignée pour le groupe ${groupId || 'global'}. Inscription sauvegardée dans Firestore uniquement.`);
+        return;
+      }
+
+      const listIdsArray = [];
+      if (brevoListId && !isNaN(Number(brevoListId))) {
+        listIdsArray.push(Number(brevoListId));
+      }
+
+      // 3. Appel POST vers l'API v3 Brevo (/v3/contacts)
+      const response = await fetch("https://api.brevo.com/v3/contacts", {
+        method: "POST",
+        headers: {
+          "accept": "application/json",
+          "content-type": "application/json",
+          "api-key": brevoApiKey.trim()
+        },
+        body: JSON.stringify({
+          email: email.trim().toLowerCase(),
+          updateEnabled: true,
+          listIds: listIdsArray.length > 0 ? listIdsArray : undefined,
+          attributes: {
+            SOURCE: data.source || "vitrine"
+          }
+        })
+      });
+
+      if (response.ok) {
+        console.log(`✓ Contact Brevo ${email} synchronisé avec succès ! (Liste ID: ${brevoListId || 'Défaut'})`);
+        await snap.ref.update({ brevoSynced: true, brevoSyncedAt: new Date().toISOString() });
+      } else {
+        const errorText = await response.text();
+        console.error(`❌ Erreur d'API Brevo (${response.status}) pour ${email} :`, errorText);
+        await snap.ref.update({ brevoSynced: false, brevoError: errorText });
+      }
+    } catch (err) {
+      console.error("Erreur globale lors de la synchronisation de l'abonné newsletter vers Brevo :", err);
+    }
+  }
+);

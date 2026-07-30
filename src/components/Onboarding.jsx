@@ -226,6 +226,7 @@ export default function Onboarding({ user, branding, onComplete }) {
         instrumentsJoues: cleanVoeux,
         genre: formData.genre,
         role: "membre",
+        isNew: true,
         statutActuel: "active",
         groupId: groupId,
         tags: [],

@@ -66,7 +66,7 @@ export default function DocumentUploadForm({ groupId, varalCategories = [], onCl
       return;
     }
 
-    const isLinkType = type === 'video' || type === 'web';
+    const isLinkType = type === 'video' || type === 'web' || type === 'dossier_externe' || type === 'drive';
     if (!isLinkType && !file) {
       alert("Veuillez sélectionner un fichier.");
       return;
@@ -162,6 +162,7 @@ export default function DocumentUploadForm({ groupId, varalCategories = [], onCl
             <option value="pdf">{t('documents.typePdf') || "Document PDF"}</option>
             <option value="audio">{t('documents.typeAudio') || "Fichier Audio (max 15 Mo)"}</option>
             <option value="image">{t('documents.typeImage') || "Image / Photo"}</option>
+            <option value="dossier_externe">📁 Dossier Externe / Lien (Google Drive, Dropbox...)</option>
             <option value="video">{t('documents.typeVideo') || "Vidéo (Lien externe)"}</option>
             <option value="web">{t('documents.typeWeb') || "Lien Web (Externe)"}</option>
           </select>
@@ -246,7 +247,7 @@ export default function DocumentUploadForm({ groupId, varalCategories = [], onCl
             /* External URL Input */
             <div className="flex flex-col gap-1">
               <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                {t('documents.externalUrlLabel') || "URL Externe"}
+                {type === 'dossier_externe' ? "URL du dossier externe (Google Drive, Dropbox...)" : (t('documents.externalUrlLabel') || "URL Externe")}
               </label>
               <input
                 type="url"
@@ -254,8 +255,8 @@ export default function DocumentUploadForm({ groupId, varalCategories = [], onCl
                 onChange={(e) => setExternalUrl(e.target.value)}
                 required
                 disabled={isUploading}
-                placeholder={t('documents.externalUrlPlaceholder') || "https://..."}
-                className="theme-input w-full disabled:opacity-50 text-xs"
+                placeholder={type === 'dossier_externe' ? "https://drive.google.com/drive/folders/..." : (t('documents.externalUrlPlaceholder') || "https://...")}
+                className="theme-input w-full disabled:opacity-50 text-xs font-semibold"
               />
             </div>
           )

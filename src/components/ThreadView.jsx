@@ -160,6 +160,7 @@ export default function ThreadView({ threadId, user, profileData, channels = [],
   const [sending, setSending] = useState(false);
   const [availableTargets, setAvailableTargets] = useState([]);
   const [selectedTarget, setSelectedTarget] = useState('');
+  const [lienDepotForum, setLienDepotForum] = useState('');
 
   // Modals state
   const [isMoveThreadOpen, setIsMoveThreadOpen] = useState(false);
@@ -321,6 +322,7 @@ export default function ThreadView({ threadId, user, profileData, channels = [],
         const instruments = data.instrumentsDisponibles || [];
         const combined = [...new Set([...tagLabels, ...instruments])].filter(Boolean).sort();
         setAvailableTargets(combined);
+        setLienDepotForum(data.lienDepotForum || '');
       }
     }, (error) => {
       console.error("ThreadView - Erreur chargement cibles :", error);
@@ -745,6 +747,7 @@ export default function ThreadView({ threadId, user, profileData, channels = [],
                 disabled={sending}
                 placeholder={t('forum.writeReplyPlaceholder')}
                 groupId={profileData?.groupId}
+                lienDepotForum={lienDepotForum}
                 minHeight="90px"
               />
               <div className="flex justify-end">

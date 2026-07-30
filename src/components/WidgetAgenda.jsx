@@ -225,6 +225,7 @@ export default function WidgetAgenda({
     niveauRequis: 'tous',
     niveauDanseRequis: 'aucun',
     lienDocument: '',
+    lienDepotMedias: '',
     distanceAllerRetourKm: '',
     lienSocial: '',
     imageUrl: '',
@@ -402,6 +403,7 @@ export default function WidgetAgenda({
           niveauRequis: formData.type === 'prestation' ? formData.niveauRequis || 'tous' : 'tous',
           niveauDanseRequis: (formData.type === 'prestation' || formData.type === 'stage' || formData.type === 'repetition' || formData.type === 'atelier') ? formData.niveauDanseRequis || 'aucun' : 'aucun',
           lienDocument: activeConfig.agendaEnableOrdreDuJour ? formData.lienDocument || '' : '',
+          lienDepotMedias: formData.lienDepotMedias || '',
           distanceAllerRetourKm: activeConfig.agendaEnableCarpool ? (parseFloat(formData.distanceAllerRetourKm) || 0) : 0,
           status: isPollMode ? 'sondage' : 'confirme',
           ...(isPollMode ? {

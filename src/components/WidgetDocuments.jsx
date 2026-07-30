@@ -217,8 +217,9 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
   const getDocType = (docItem) => {
     if (docItem.type) return docItem.type;
     const url = docItem.fileUrl || '';
+    if (url.includes('drive.google.com/drive/folders') || url.includes('dropbox.com') || url.includes('onedrive')) return 'dossier_externe';
     if (url.includes('.mp3') || url.includes('.wav') || url.includes('.ogg') || url.includes('.m4a')) return 'audio';
-    if (url.includes('.mp4') || url.includes('.webm') || url.includes('youtube.com') || url.includes('youtu.be') || url.includes('vimeo.com') || url.includes('drive.google.com')) return 'video';
+    if (url.includes('.mp4') || url.includes('.webm') || url.includes('youtube.com') || url.includes('youtu.be') || url.includes('vimeo.com')) return 'video';
     if (url.includes('.jpg') || url.includes('.jpeg') || url.includes('.png') || url.includes('.svg') || url.includes('.webp')) return 'image';
     if (url.startsWith('http') && !url.includes('.pdf')) return 'web';
     return 'pdf'; // default fallback
@@ -465,6 +466,8 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
                           image: '📷',
                           video: '🎥',
                           web: '🌐',
+                          dossier_externe: '📂',
+                          drive: '📂',
                           report: '📜'
                         };
                         const typeIcon = typeIcons[docType] || '📄';

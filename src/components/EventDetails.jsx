@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { doc, updateDoc, deleteDoc, collection, query, where, onSnapshot, writeBatch, getDocs } from 'firebase/firestore';
+import { doc, updateDoc, deleteDoc, collection, query, where, onSnapshot, writeBatch, getDocs, getDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '../firebase';
 import CordelCard from './CordelCard';
@@ -32,6 +32,9 @@ import { useEventDetailsController } from '../hooks/useEventDetailsController';
 import EventHeaderCard from './event-details/EventHeaderCard';
 import EventQuickActionsBar from './event-details/EventQuickActionsBar';
 import EventLocationMapBox from './event-details/EventLocationMapBox';
+import EventCommentsSection from './event-details/EventCommentsSection';
+import EventPublicQrCodeModal from './event-details/EventPublicQrCodeModal';
+import EventMediaQrCodeModal from './event-details/EventMediaQrCodeModal';
 
 export default function EventDetails({ event, user, profileData, onNavigateToView, onClose, onPrev, onNext, viewMode, setViewMode, onGoToStageLayoutEditor }) {
   const { t } = useTranslation();
@@ -67,6 +70,7 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
     niveauRequis: event.niveauRequis || 'tous',
     niveauDanseRequis: event.niveauDanseRequis || 'aucun',
     lienDocument: event.lienDocument || '',
+    lienDepotMedias: event.lienDepotMedias || '',
     distanceAllerRetourKm: event.distanceAllerRetourKm || '',
     lienSocial: event.lienSocial || '',
     imageUrl: event.imageUrl || '',
@@ -100,6 +104,9 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
   const [linkedInstruments, setLinkedInstruments] = useState([]);
   const [enableCarpoolReimbursement, setEnableCarpoolReimbursement] = useState(true);
   const [reimbursementRule, setReimbursementRule] = useState('full_cars_only');
+  const [lienGoogleFormRecoltePhotos, setLienGoogleFormRecoltePhotos] = useState('');
+  const [showQrCodeModal, setShowQrCodeModal] = useState(false);
+  const [showMediaQrCodeModal, setShowMediaQrCodeModal] = useState(false);
 
   const {
     morceauxSelectionnes,
@@ -227,6 +234,7 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
       lienSocial: event.lienSocial || '',
       imageUrl: event.imageUrl || '',
       requiresValidation: event.requiresValidation || false,
+      isPublic: event.isPublic || false,
       montantRecette: event.montantRecette !== undefined ? event.montantRecette.toString() : '',
       montantDepense: event.montantDepense !== undefined ? event.montantDepense.toString() : '',
       budgetRecettes: event.budgetRecettes || [],
@@ -261,6 +269,7 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
         setIndemniteKilometrique(data.indemniteKilometrique || 0);
         setAdresseLocal(data.adresseLocal || '');
         setAssocSequenceurUrl(data.sequenceurUrl || '');
+        setLienGoogleFormRecoltePhotos(data.lienGoogleFormRecoltePhotos || '');
         setEnableCarpoolReimbursement(data.enableCarpoolReimbursement !== false);
         setReimbursementRule(data.reimbursementRule || 'full_cars_only');
         setAgendaRequireInstrument(data.agendaRequireInstrument || false);
@@ -648,22 +657,36 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
       const updatedLienDocument = editConfig.agendaEnableOrdreDuJour ? editForm.lienDocument || '' : '';
       const updatedDescription = editForm.description || '';
 
+      const updatedLieu = editConfig.agendaEnableAdresse ? editForm.lieu || '' : '';
+      const updatedLieuId = editForm.lieuId !== undefined ? editForm.lieuId : (event.lieuId || null);
+
       const eventRef = doc(db, 'events', event.id);
+      const docSnap = await getDoc(eventRef);
+      if (!docSnap.exists()) {
+        alert("Cet événement n'existe plus dans l'agenda (il a été supprimé lors de la validation d'une date de sondage).");
+        if (onClose) onClose();
+        return;
+      }
+
       await updateDoc(eventRef, {
         titre: editForm.titre,
         type: editForm.type,
         date: editForm.date,
         dateFin: editForm.dateFin || '',
-        lieu: editConfig.agendaEnableAdresse ? editForm.lieu || '' : '',
+        lieu: updatedLieu,
+        lieuSimple: updatedLieu,
+        lieuId: updatedLieuId,
         horairesPassages: (editForm.type === 'prestation') ? editForm.horairesPassages || '' : '',
         horaireCovoiturage: editConfig.agendaEnableCarpool ? editForm.horaireCovoiturage || '' : '',
         niveauRequis: (editForm.type === 'prestation' || editForm.type === 'stage' || editForm.type === 'repetition' || editForm.type === 'atelier') ? editForm.niveauRequis || 'tous' : 'tous',
         niveauDanseRequis: (editForm.type === 'prestation' || editForm.type === 'stage' || editForm.type === 'repetition' || editForm.type === 'atelier') ? editForm.niveauDanseRequis || 'aucun' : 'aucun',
         lienDocument: updatedLienDocument,
+        lienDepotMedias: editForm.lienDepotMedias || '',
         distanceAllerRetourKm: editConfig.agendaEnableCarpool ? (parseFloat(editForm.distanceAllerRetourKm) || 0) : 0,
         lienSocial: editConfig.agendaEnableUrl ? editForm.lienSocial || '' : '',
         imageUrl: editConfig.agendaEnableImage ? editForm.imageUrl || '' : '',
         requiresValidation: editConfig.agendaEnableInscriptions ? (editForm.requiresValidation || false) : false,
+        isPublic: editForm.isPublic || false,
         montantRecette: editConfig.agendaEnableFinance ? ((editForm.budgetRecettes || []).reduce((sum, item) => sum + (parseFloat(item.montant) || 0), 0)) : 0,
         montantDepense: editConfig.agendaEnableFinance ? ((editForm.budgetDepenses || []).reduce((sum, item) => sum + (parseFloat(item.montant) || 0), 0)) : 0,
         budgetRecettes: editConfig.agendaEnableFinance ? (editForm.budgetRecettes || []) : [],
@@ -696,8 +719,13 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
             pollSnapshot.forEach((docSnap) => {
               if (docSnap.id !== event.id) {
                 batch.update(docSnap.ref, {
+                  lieu: updatedLieu,
+                  lieuSimple: updatedLieu,
+                  lieuId: updatedLieuId,
                   lienDocument: updatedLienDocument,
-                  description: updatedDescription
+                  description: updatedDescription,
+                  latitude: editForm.latitude ? Number(editForm.latitude) : null,
+                  longitude: editForm.longitude ? Number(editForm.longitude) : null
                 });
               }
             });
@@ -938,31 +966,46 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
           <XiloCalendar size={14} /> {t('eventDetails.title')}
         </span>
 
-        {/* Action buttons (Publication, Modify, Delete) */}
-        {isAuthorized && !isEditingEvent && (
+        {/* Action buttons (QR Code Public, Publication, Modify, Delete) */}
+        {!isEditingEvent && (
           <div className="flex gap-2 w-full md:w-auto flex-wrap sm:flex-nowrap justify-end md:justify-start">
-            <button
-              type="button"
-              onClick={handlePreparePublication}
-              className="text-[10px] font-black uppercase bg-cordel-ocre text-black border border-encre-noire px-3 py-1.5 rounded shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-95 cursor-pointer flex items-center gap-1 flex-1 sm:flex-none justify-center"
-            >
-              <XiloMegaphone size={12} /> Préparer la publication
-            </button>
-            <button
-              type="button"
-              onClick={() => setIsEditingEvent(true)}
-              className="text-[10px] font-black uppercase bg-cordel-bg border border-encre-noire px-3 py-1.5 rounded shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-95 cursor-pointer flex-1 sm:flex-none justify-center"
-            >
-              ✏️ Modifier
-            </button>
-            <CordelButton
-              type="button"
-              variant="rouge"
-              onClick={handleDeleteEvent}
-              className="text-[10px] px-3 py-1.5 uppercase font-black flex items-center gap-1 flex-1 sm:flex-none justify-center"
-            >
-              🗑️ Supprimer
-            </CordelButton>
+            {lienGoogleFormRecoltePhotos && (
+              <button
+                type="button"
+                onClick={() => setShowQrCodeModal(true)}
+                className="text-[10px] font-black uppercase bg-amber-600 text-white border border-encre-noire px-3 py-1.5 rounded shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:bg-amber-700 cursor-pointer flex items-center gap-1.5 flex-1 sm:flex-none justify-center transition-colors"
+                title="Afficher le QR Code pour récolter les photos et vidéos des spectateurs"
+              >
+                📷 QR Code Récolte Photos
+              </button>
+            )}
+
+            {isAuthorized && (
+              <>
+                <button
+                  type="button"
+                  onClick={handlePreparePublication}
+                  className="text-[10px] font-black uppercase bg-cordel-ocre text-black border border-encre-noire px-3 py-1.5 rounded shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-95 cursor-pointer flex items-center gap-1 flex-1 sm:flex-none justify-center"
+                >
+                  <XiloMegaphone size={12} /> Préparer la publication
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsEditingEvent(true)}
+                  className="text-[10px] font-black uppercase bg-cordel-bg border border-encre-noire px-3 py-1.5 rounded shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-95 cursor-pointer flex-1 sm:flex-none justify-center"
+                >
+                  ✏️ Modifier
+                </button>
+                <CordelButton
+                  type="button"
+                  variant="rouge"
+                  onClick={handleDeleteEvent}
+                  className="text-[10px] px-3 py-1.5 uppercase font-black flex items-center gap-1 flex-1 sm:flex-none justify-center"
+                >
+                  🗑️ Supprimer
+                </CordelButton>
+              </>
+            )}
           </div>
         )}
 
@@ -1001,7 +1044,22 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
           t={t}
         />
       ) : (
-        <CordelAccordionGroup className="flex flex-col gap-3.5">
+        <>
+          {/* Section de Sondage de dates si l'événement est un sondage */}
+          {(event.isPoll || event.status === 'sondage' || Boolean(event.pollGroupId)) && (
+            <EventPollSection
+              event={event}
+              user={user}
+              profileData={profileData}
+              onNavigateToEventId={(targetId) => {
+                if (onNavigateToView) {
+                  onNavigateToView('agenda', targetId);
+                }
+              }}
+            />
+          )}
+
+          <CordelAccordionGroup className="flex flex-col gap-3.5">
           {/* Admin Status Panel */}
           {isAuthorized && !isEditingEvent && (
             <div className="flex items-center justify-between gap-3 p-3 bg-cordel-bg border-2 border-encre-noire rounded-[4px_6px_3px_5px] shadow-[2px_2px_0px_0px_#181716] mb-1 flex-wrap">
@@ -1220,6 +1278,40 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
                   <span className="truncate text-xs">
                     🔗 <strong>Lien social / Externe :</strong> <a href={event.lienSocial} target="_blank" rel="noopener noreferrer" className="text-cordel-wood hover:underline">{event.lienSocial}</a>
                   </span>
+                )}
+
+                {/* ENCART VISUEL : Dépôt Médias Externe (Framaspace, Drive...) */}
+                {event.lienDepotMedias && (
+                  <div className="mt-3 p-3.5 bg-cordel-bg-light/90 border-2 border-encre-noire rounded-[8px] shadow-[2.5px_2.5px_0px_0px_#181716] flex flex-col gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm">📸</span>
+                      <h4 className="text-xs font-black uppercase tracking-wider text-cordel-wood">
+                        Partagez vos souvenirs de {event.titre || "l'événement"} !
+                      </h4>
+                    </div>
+                    <p className="text-[10.5px] text-cordel-master-dark/85 font-semibold leading-snug">
+                      Déposez vos photos et vidéos directement dans notre dossier partagé ou affichez le QR Code pour le faire scanner sur place.
+                    </p>
+                    <div className="flex flex-wrap gap-2 mt-1">
+                      <button
+                        type="button"
+                        onClick={() => window.open(event.lienDepotMedias, '_blank', 'noopener,noreferrer')}
+                        className="px-3 py-1.5 bg-emerald-800 hover:bg-emerald-900 text-white font-extrabold text-xs uppercase tracking-wider rounded border border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none cursor-pointer flex items-center gap-1.5"
+                      >
+                        <span>📸</span>
+                        <span>Envoyer mes images</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setShowMediaQrCodeModal(true)}
+                        className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white font-extrabold text-xs uppercase tracking-wider rounded border border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none cursor-pointer flex items-center gap-1.5"
+                      >
+                        <span>📱</span>
+                        <span>Afficher le QR Code</span>
+                      </button>
+                    </div>
+                  </div>
                 )}
                 {currentConfig.agendaEnableImage && (event.imageUrl || event.socialThumbnailUrl) && (
                   <div 
@@ -1620,6 +1712,34 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
             </CordelAccordion>
           )}
         </CordelAccordionGroup>
+      </>
+    )}
+
+      {/* SECTION : Discussion & Questions Logistiques */}
+      <div className="mt-6">
+        <EventCommentsSection
+          event={event}
+          user={user}
+          profileData={profileData}
+        />
+      </div>
+
+      {/* MODALE : QR Code Public Récolte Photos */}
+      {showQrCodeModal && lienGoogleFormRecoltePhotos && (
+        <EventPublicQrCodeModal
+          qrUrl={lienGoogleFormRecoltePhotos}
+          eventTitle={event.titre}
+          onClose={() => setShowQrCodeModal(false)}
+        />
+      )}
+
+      {/* MODALE : QR Code Dépôt Médias Événement (Framaspace, Drive...) */}
+      {showMediaQrCodeModal && event.lienDepotMedias && (
+        <EventMediaQrCodeModal
+          qrUrl={event.lienDepotMedias}
+          eventTitle={event.titre}
+          onClose={() => setShowMediaQrCodeModal(false)}
+        />
       )}
     </div>
   );

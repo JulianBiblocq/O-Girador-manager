@@ -36,6 +36,11 @@ export function useEventDetailsController(event, onClose, t) {
       (docSnap) => {
         if (docSnap.exists()) {
           setLiveEventData({ id: docSnap.id, ...docSnap.data() });
+        } else {
+          // L'événement a été supprimé de la base de données (ex: lors de la résolution d'un sondage)
+          if (onClose) {
+            onClose();
+          }
         }
       },
       (err) => {
@@ -43,7 +48,7 @@ export function useEventDetailsController(event, onClose, t) {
       }
     );
     return () => unsubscribe();
-  }, [event?.id]);
+  }, [event?.id, onClose]);
 
   const activeEvent = liveEventData ? { ...event, ...liveEventData } : event;
 

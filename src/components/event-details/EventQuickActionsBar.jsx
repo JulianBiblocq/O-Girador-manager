@@ -11,7 +11,7 @@ import CordelButton from '../CordelButton';
  * @param {Function} props.onDelete Action de suppression de l'événement
  * @param {Function} props.t Fonction de traduction
  */
-export default function EventQuickActionsBar({ event, isAdmin, onToggleEdit, onDelete, t }) {
+export default function EventQuickActionsBar({ event, isAdmin, onToggleEdit, onDelete, lienQrCodePublic, onOpenQrCodeModal, t }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef(null);
 
@@ -72,40 +72,55 @@ export default function EventQuickActionsBar({ event, isAdmin, onToggleEdit, onD
 
   return (
     <div className="flex flex-wrap items-center justify-between gap-2.5 p-3 bg-cordel-bg-light border-2 border-dashed border-cordel-master-dark/20 rounded-[6px] select-none">
-      {/* Menu déroulant d'ajout au calendrier */}
-      <div className="relative" ref={menuRef}>
-        <button
-          type="button"
-          onClick={() => setIsMenuOpen(prev => !prev)}
-          className="p-1.5 px-3 bg-cordel-bg hover:bg-neutral-200 text-encre-noire border border-encre-noire rounded-[4px] shadow-[1px_1px_0px_0px_#181716] font-bold text-xs flex items-center gap-1.5 cursor-pointer active:translate-x-[0.5px] active:translate-y-[0.5px]"
-        >
-          <span>📅</span>
-          <span>Ajouter au calendrier</span>
-          <span className="text-[10px]">▼</span>
-        </button>
+      <div className="flex flex-wrap items-center gap-2">
+        {/* Menu déroulant d'ajout au calendrier */}
+        <div className="relative" ref={menuRef}>
+          <button
+            type="button"
+            onClick={() => setIsMenuOpen(prev => !prev)}
+            className="p-1.5 px-3 bg-cordel-bg hover:bg-neutral-200 text-encre-noire border border-encre-noire rounded-[4px] shadow-[1px_1px_0px_0px_#181716] font-bold text-xs flex items-center gap-1.5 cursor-pointer active:translate-x-[0.5px] active:translate-y-[0.5px]"
+          >
+            <span>📅</span>
+            <span>Ajouter au calendrier</span>
+            <span className="text-[10px]">▼</span>
+          </button>
 
-        {isMenuOpen && (
-          <div className="absolute left-0 mt-1 w-48 bg-white border-2 border-encre-noire rounded-[6px] shadow-[2px_2px_0px_0px_#181716] z-50 overflow-hidden flex flex-col">
-            <a
-              href={getGoogleCalendarUrl()}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={() => setIsMenuOpen(false)}
-              className="p-2.5 px-3 text-xs font-bold text-encre-noire hover:bg-cordel-bg border-b border-dashed border-cordel-master-dark/20 flex items-center gap-2"
-            >
-              <span>🌐</span> Google Calendar
-            </a>
-            <button
-              type="button"
-              onClick={() => {
-                handleDownloadICS();
-                setIsMenuOpen(false);
-              }}
-              className="p-2.5 px-3 text-xs font-bold text-encre-noire hover:bg-cordel-bg flex items-center gap-2 text-left cursor-pointer"
-            >
-              <span>📲</span> Fichier iCal / Outlook (.ics)
-            </button>
-          </div>
+          {isMenuOpen && (
+            <div className="absolute left-0 mt-1 w-48 bg-white border-2 border-encre-noire rounded-[6px] shadow-[2px_2px_0px_0px_#181716] z-50 overflow-hidden flex flex-col">
+              <a
+                href={getGoogleCalendarUrl()}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => setIsMenuOpen(false)}
+                className="p-2.5 px-3 text-xs font-bold text-encre-noire hover:bg-cordel-bg border-b border-dashed border-cordel-master-dark/20 flex items-center gap-2"
+              >
+                <span>🌐</span> Google Calendar
+              </a>
+              <button
+                type="button"
+                onClick={() => {
+                  handleDownloadICS();
+                  setIsMenuOpen(false);
+                }}
+                className="p-2.5 px-3 text-xs font-bold text-encre-noire hover:bg-cordel-bg flex items-center gap-2 text-left cursor-pointer"
+              >
+                <span>📲</span> Fichier iCal / Outlook (.ics)
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Bouton QR Code Public Récolte Photos (si configuré) */}
+        {lienQrCodePublic && (
+          <button
+            type="button"
+            onClick={onOpenQrCodeModal}
+            className="p-1.5 px-3 bg-amber-600 hover:bg-amber-700 text-white border border-encre-noire rounded-[4px] shadow-[1px_1px_0px_0px_#181716] font-black text-xs flex items-center gap-1.5 cursor-pointer active:translate-x-[0.5px] active:translate-y-[0.5px] transition-colors"
+            title="Afficher le QR Code pour faire scanner les spectateurs et récolter leurs photos et vidéos"
+          >
+            <span>📷</span>
+            <span>QR Code Récolte Photos</span>
+          </button>
         )}
       </div>
 

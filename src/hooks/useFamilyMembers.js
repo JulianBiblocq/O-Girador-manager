@@ -68,6 +68,7 @@ export function useFamilyMembers(user, groupId) {
       niveau: dependentData.niveau || 'debutant',
       niveauDanse: dependentData.niveauDanse || 'aucun',
       role: 'membre',
+      isNew: true,
       statutActuel: 'active',
       createdAt: serverTimestamp()
     };

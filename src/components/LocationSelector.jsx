@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import AddressAutocomplete from './AddressAutocomplete';
 import ManualMapMarkerModal from './agenda/ManualMapMarkerModal';
 
@@ -20,18 +20,25 @@ export default function LocationSelector({
   // Extraction sécurisée sous forme de chaîne de caractères
   const safeValue = typeof value === 'string' ? value : (value?.target?.value !== undefined ? String(value.target.value) : (value ? String(value) : ''));
 
-  // Trouver si l'adresse actuelle correspond à un lieu enregistré
-  const currentLieu = list.find(l => {
-    if (!safeValue) return false;
-    const valLower = safeValue.toLowerCase().trim();
-    const nomLower = (l.nom || '').toLowerCase().trim();
-    const adrLower = (l.adresse || '').toLowerCase().trim();
-    const fullLower = `${nomLower} - ${adrLower}`;
-    return valLower === nomLower || valLower === adrLower || valLower === fullLower;
-  });
-
-  const [selectedPresetId, setSelectedPresetId] = useState(currentLieu ? currentLieu.id : 'custom');
+  const [selectedPresetId, setSelectedPresetId] = useState('custom');
   const [isMapModalOpen, setIsMapModalOpen] = useState(false);
+
+  // Mise à jour automatique de la sélection dans la liste déroulante dès que `value` ou la liste évolue
+  useEffect(() => {
+    if (!safeValue) {
+      setSelectedPresetId('custom');
+      return;
+    }
+    const valLower = safeValue.toLowerCase().trim();
+    const found = list.find(l => {
+      if (!l) return false;
+      const nomLower = (l.nom || '').toLowerCase().trim();
+      const adrLower = (l.adresse || '').toLowerCase().trim();
+      const fullLower = `${nomLower} - ${adrLower}`;
+      return valLower === nomLower || valLower === adrLower || valLower === fullLower || (nomLower && valLower.startsWith(`${nomLower} -`));
+    });
+    setSelectedPresetId(found ? found.id : 'custom');
+  }, [safeValue, list]);
 
   // Lors de la sélection dans le menu déroulant
   const handleSelectPreset = (e) => {
@@ -39,7 +46,9 @@ export default function LocationSelector({
     setSelectedPresetId(lieuId);
 
     if (lieuId === 'custom' || !lieuId) {
-      // Saisie libre
+      if (onChange) {
+        onChange(safeValue, null);
+      }
       return;
     }
 

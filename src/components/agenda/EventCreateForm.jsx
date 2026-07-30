@@ -112,6 +112,23 @@ export default function EventCreateForm({
                 />
               </div>
 
+              {/* Visibilité Publique Vitrine */}
+              <div className="flex items-center gap-3 p-3 bg-[#fdfaf2] border border-encre-noire/20 rounded-[4px_6px_3px_5px] select-none">
+                <input
+                  type="checkbox"
+                  id="isPublic"
+                  name="isPublic"
+                  checked={formData.isPublic || false}
+                  onChange={(e) => setFormData(prev => ({ ...prev, isPublic: e.target.checked }))}
+                  disabled={saving}
+                  className="w-4 h-4 cursor-pointer accent-[var(--color-cordel-vert,#2d6a4f)]"
+                />
+                <label htmlFor="isPublic" className="text-xs font-bold uppercase tracking-wider text-encre-noire cursor-pointer flex flex-wrap items-center gap-1.5">
+                  <span>🌍 Rendre cet événement public</span>
+                  <span className="text-[10px] font-normal opacity-75 text-stone-600">(Visible sur le site vitrine public)</span>
+                </label>
+              </div>
+
               {/* Type Dropdown */}
               <div className="flex flex-col gap-1">
                 <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
@@ -131,6 +148,7 @@ export default function EventCreateForm({
                         setFormData(prev => ({
                           ...prev,
                           lieu: fullLocationText,
+                          lieuId: defaultLieuId,
                           latitude: foundLieu.latitude || prev.latitude,
                           longitude: foundLieu.longitude || prev.longitude
                         }));
@@ -154,17 +172,18 @@ export default function EventCreateForm({
                 </select>
               </div>
 
-              {/* Description */}
+              {/* Description Publique */}
               <div className="flex flex-col gap-1">
-                <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                  {translate('common.description', "Description")}
+                <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark flex items-center justify-between">
+                  <span>🌐 Description publique</span>
+                  <span className="text-[8px] font-normal text-stone-500">(Visible sur le site web public & réseaux sociaux)</span>
                 </label>
                 <textarea
                   name="description"
                   value={formData.description}
                   onChange={handleChange}
                   disabled={saving}
-                  placeholder={translate('widgetAgenda.descriptionPlaceholder', "Description détaillée de l'événement...")}
+                  placeholder="Décrivez l'événement pour les visiteurs du site public (programme, ambiance, infos pratiques...)"
                   className="theme-input w-full min-h-[80px] disabled:opacity-50 font-medium py-1.5"
                 />
               </div>
@@ -221,8 +240,8 @@ export default function EventCreateForm({
                     <LocationSelector
                       value={formData.lieu}
                       lieuxImportants={lieuxImportants}
-                      onChange={(val) => {
-                        setFormData(prev => ({ ...prev, lieu: val }));
+                      onChange={(val, foundPreset) => {
+                        setFormData(prev => ({ ...prev, lieu: val, lieuId: foundPreset ? foundPreset.id : null }));
                       }}
                       onPlaceSelected={async (placeData) => {
                         const exactAddress = placeData.formattedAddress || placeData.address || '';
@@ -644,23 +663,24 @@ export default function EventCreateForm({
                 </label>
               </div>
 
-              {/* Ordre du jour / partition */}
-              {createConfig.agendaEnableOrdreDuJour && (
-                <div className="flex flex-col gap-1">
-                  <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                    {translate('widgetAgenda.agendaDocLinkLabel', "Lien du document d'ordre du jour / partition")}
-                  </label>
-                  <input
-                    type="url"
-                    name="lienDocument"
-                    value={formData.lienDocument}
-                    onChange={handleChange}
-                    disabled={saving}
-                    placeholder="https://..."
-                    className="theme-input w-full disabled:opacity-50"
-                  />
-                </div>
-              )}
+              {/* Lien Dépôt Médias Externe (Framaspace, Drive...) */}
+              <div className="flex flex-col gap-1 border-t border-dashed border-cordel-master-dark/15 pt-3">
+                <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark flex items-center gap-1.5">
+                  📸 Lien de dépôt photos/vidéos (Framaspace, Drive...)
+                </label>
+                <input
+                  type="url"
+                  name="lienDepotMedias"
+                  value={formData.lienDepotMedias || ''}
+                  onChange={handleChange}
+                  disabled={saving}
+                  placeholder="ex: https://framaspace.org/s/... ou Google Drive"
+                  className="theme-input w-full disabled:opacity-50 text-xs font-semibold bg-cordel-bg-light"
+                />
+                <p className="text-[9px] text-cordel-master-dark/70 font-semibold mt-0.5">
+                  Lien de dépôt de fichiers (Framaspace, Drive...) pour que les membres et le public envoient leurs photos/vidéos.
+                </p>
+              </div>
 
               {/* Lien externe/social */}
               {createConfig.agendaEnableUrl && (

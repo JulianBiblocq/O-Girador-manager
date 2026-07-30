@@ -24,6 +24,7 @@ import { usePresence } from '../hooks/usePresence';
 import { PresenceProvider } from '../context/PresenceContext';
 import OnlineStatusWidget from './OnlineStatusWidget';
 import { resolveEffectiveUserTags } from '../utils/tagUtils';
+import { usePendingMembersNotification } from '../hooks/usePendingMembersNotification';
 
 export default function LayoutShell({ 
   logoUrl, 
@@ -71,6 +72,7 @@ export default function LayoutShell({
   const isSystemOrSuperAdminOrMestre = profileData?.isSystemAdmin || profileData?.role === 'super-admin' || profileData?.role === 'mestre';
   const isMasterKeyActive = isSystemOrSuperAdminOrMestre && breakGlassActive;
   const userTags = resolveEffectiveUserTags(profileData?.tags || [], tagsDisponibles);
+  const { hasPendingMembers, pendingCount } = usePendingMembersNotification(profileData);
 
   const isModuleEnabled = (tabId, poleId) => {
     if (!enabledModules) return true;
@@ -280,12 +282,18 @@ export default function LayoutShell({
             <button
               type="button"
               onClick={() => setIsDrawerOpen(true)}
-              className="p-2 border-2 border-dashed border-encre-noire/20 hover:border-encre-noire text-encre-noire rounded-md cursor-pointer flex items-center justify-center transition-colors"
+              className="relative p-2 border-2 border-dashed border-encre-noire/20 hover:border-encre-noire text-encre-noire rounded-md cursor-pointer flex items-center justify-center transition-colors"
               title="Ouvrir le menu"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
               </svg>
+              {hasPendingMembers && (
+                <span className="absolute -top-1 -right-1 flex h-3 w-3" title={`${pendingCount} nouveau(x) membre(s) en attente de validation`}>
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-3 w-3 bg-red-600 border border-white"></span>
+                </span>
+              )}
             </button>
           </div>
         </div>
@@ -431,13 +439,23 @@ export default function LayoutShell({
                   if (onNavigateToPole) onNavigateToPole(null);
                   if (onNavigateToTab) onNavigateToTab('system-admin');
                 }}
-                className={`w-full py-1.5 px-2 font-black uppercase tracking-widest text-center text-[8px] border-2 border-encre-noire rounded-[8px_12px_9px_11px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:scale-[1.01] transition-all cursor-pointer flex items-center justify-center gap-1 ${
+                className={`relative w-full py-1.5 px-2 font-black uppercase tracking-widest text-center text-[8px] border-2 border-encre-noire rounded-[8px_12px_9px_11px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:scale-[1.01] transition-all cursor-pointer flex items-center justify-center gap-1 ${
                   currentTab === 'system-admin' 
                     ? 'theme-bg-ocre text-encre-noire' 
+                    : hasPendingMembers
+                    ? 'bg-amber-100 text-encre-noire border-amber-600 animate-pulse'
                     : 'bg-neutral-850 text-encre-noire hover:bg-neutral-100 bg-white'
                 }`}
+                title={hasPendingMembers ? `${pendingCount} nouveau(x) membre(s) à valider` : undefined}
               >
-                <XiloConsole size={10} className="inline mr-1" /> {t('poles.tabSystemAdmin') || "Système"}
+                <XiloConsole size={10} className="inline mr-1" />
+                <span>{t('poles.tabSystemAdmin') || "Système"}</span>
+                {hasPendingMembers && (
+                  <span className="relative flex h-2 w-2 ml-1 shrink-0">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-red-600"></span>
+                  </span>
+                )}
               </button>
             )}
 
@@ -504,7 +522,7 @@ export default function LayoutShell({
             )}
 
             {/* Top Horizontal Subcategories Menu */}
-            {(isSystemOrSuperAdminOrMestre || isAdministrativeUser) && visibleTabs.length > 0 && (
+            {(isSystemOrSuperAdminOrMestre || isAdministrativeUser) && visibleTabs.length > 0 && activePoleObj?.id !== 'vitrine' && currentPole !== 'vitrine' && (
               <div className="flex flex-wrap gap-2 border-b border-dashed border-cordel-master-dark/20 pb-3 mb-1 select-none shrink-0">
                 {visibleTabs.map((tab) => {
                   const isUnlocked = checkTabAccess(tab.id, activePoleObj?.id);
@@ -692,13 +710,22 @@ export default function LayoutShell({
                       if (onNavigateToTab) onNavigateToTab('system-admin');
                       setIsDrawerOpen(false);
                     }}
-                    className={`w-full py-1.5 text-center text-[9px] font-black uppercase tracking-widest border border-encre-noire rounded-[6px_9px_7px_8px] shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                    className={`relative w-full py-1.5 text-center text-[9px] font-black uppercase tracking-widest border border-encre-noire rounded-[6px_9px_7px_8px] shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
                       currentTab === 'system-admin' 
                         ? 'theme-bg-ocre text-encre-noire' 
+                        : hasPendingMembers
+                        ? 'bg-amber-100 text-encre-noire border-amber-600 animate-pulse'
                         : 'bg-neutral-850 text-encre-noire hover:bg-neutral-100 bg-white'
                     }`}
                   >
-                    <XiloConsole size={12} className="inline mr-1" /> {t('poles.tabSystemAdmin') || "Admin Système"}
+                    <XiloConsole size={12} className="inline mr-1" />
+                    <span>{t('poles.tabSystemAdmin') || "Admin Système"}</span>
+                    {hasPendingMembers && (
+                      <span className="relative flex h-2 w-2 ml-1 shrink-0">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-red-600"></span>
+                      </span>
+                    )}
                   </button>
                 )}
 

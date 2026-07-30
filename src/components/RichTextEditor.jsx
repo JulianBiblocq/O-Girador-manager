@@ -4,19 +4,18 @@ import StarterKit from '@tiptap/starter-kit';
 import Link from '@tiptap/extension-link';
 import TextAlign from '@tiptap/extension-text-align';
 import Image from '@tiptap/extension-image';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { storage } from '../firebase';
+import ForumImageInsertModal from './forum/ForumImageInsertModal';
 
 export default function RichTextEditor({ 
   value = '', 
   onChange, 
   placeholder = 'Rédigez votre message...', 
   groupId = '', 
+  lienDepotForum = '',
   disabled = false,
   minHeight = '120px'
 }) {
-  const fileInputRef = useRef(null);
-  const [uploadingImage, setUploadingImage] = useState(false);
+  const [isImageModalOpen, setIsImageModalOpen] = useState(false);
 
   const editor = useEditor({
     extensions: [
@@ -82,37 +81,6 @@ export default function RichTextEditor({
       return;
     }
     editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
-  };
-
-  // Handle Image Upload to Firebase Storage
-  const handleImageFileChange = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (!file.type.startsWith('image/')) {
-      alert("Veuillez sélectionner un fichier image valide.");
-      return;
-    }
-
-    setUploadingImage(true);
-    try {
-      const pathFolder = groupId ? `forum_images/${groupId}` : 'forum_images/global';
-      const fileName = `img_${Date.now()}_${Math.random().toString(36).substr(2, 5)}.jpg`;
-      const storageRef = ref(storage, `${pathFolder}/${fileName}`);
-      
-      const snap = await uploadBytes(storageRef, file);
-      const downloadURL = await getDownloadURL(snap.ref);
-
-      editor.chain().focus().setImage({ src: downloadURL, alt: 'Image forum' }).run();
-    } catch (err) {
-      console.error("RichTextEditor - Error uploading image to Firebase Storage:", err);
-      alert("Erreur lors du téléversement de l'image.");
-    } finally {
-      setUploadingImage(false);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
-    }
   };
 
   return (
@@ -209,22 +177,14 @@ export default function RichTextEditor({
 
         <div className="h-4 w-[1px] bg-encre-noire/20 mx-1"></div>
 
-        {/* Photo Upload Button */}
-        <input
-          type="file"
-          ref={fileInputRef}
-          onChange={handleImageFileChange}
-          accept="image/*"
-          className="hidden"
-        />
+        {/* Photo Insert Button */}
         <button
           type="button"
-          onClick={() => fileInputRef.current?.click()}
-          disabled={uploadingImage}
+          onClick={() => setIsImageModalOpen(true)}
           className="px-2.5 py-1 text-xs font-bold rounded border bg-amber-50 hover:bg-amber-100 border-amber-600/40 text-amber-900 transition-all cursor-pointer flex items-center gap-1 shadow-sm"
-          title="Insérer une image"
+          title="Insérer une image dans la discussion"
         >
-          {uploadingImage ? '⏳' : '📷'} <span className="hidden sm:inline text-[10px] font-black uppercase">Photo</span>
+          📷 <span className="hidden sm:inline text-[10px] font-black uppercase">Photo</span>
         </button>
       </div>
 
@@ -236,6 +196,18 @@ export default function RichTextEditor({
           className="outline-none text-encre-noire dark:text-cordel-bg-light"
         />
       </div>
+
+      {/* Modale d'insertion d'image (Passerelle Framaspace / Drive) */}
+      <ForumImageInsertModal
+        isOpen={isImageModalOpen}
+        onClose={() => setIsImageModalOpen(false)}
+        lienDepotForum={lienDepotForum}
+        onInsertImage={(url) => {
+          if (editor && url) {
+            editor.chain().focus().setImage({ src: url, alt: 'Image forum' }).run();
+          }
+        }}
+      />
     </div>
   );
 }

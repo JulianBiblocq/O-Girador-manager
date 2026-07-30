@@ -3,7 +3,7 @@
   "name": "O Girador Samambaia",
   "short_name": "O Girador Samambaia",
   "description": "Application de gestion pour le groupe O Girador Samambaia",
-  "start_url": "/",
+  "start_url": "/app",
   "scope": "/",
   "display": "standalone",
   "display_override": ["standalone", "window-controls-overlay"],

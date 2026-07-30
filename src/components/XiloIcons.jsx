@@ -989,6 +989,28 @@ export const XiloDocument = ({ size = 16, className = '', ...props }) => (
   </svg>
 );
 
+// 🎨 Palette de couleurs / Thème - Style Xilogravura Cordel
+export const XiloPalette = ({ size = 16, className = '', ...props }) => (
+  <svg 
+    width={size} 
+    height={size} 
+    viewBox="0 0 24 24" 
+    fill="none" 
+    stroke="currentColor" 
+    strokeWidth="2.2" 
+    strokeLinecap="round" 
+    strokeLinejoin="round" 
+    className={`xilo-icon ${className}`} 
+    {...props}
+  >
+    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10c.92 0 1.76-.37 2.38-.97.57-.55.97-1.3.97-2.14 0-1.63 1.33-2.95 2.95-2.95H19c2.76 0 5-2.24 5-5 0-6.08-5.37-10.94-12-10.94Z" />
+    <circle cx="7.5" cy="11.5" r="1.5" fill="currentColor" />
+    <circle cx="10.5" cy="7.5" r="1.5" fill="currentColor" />
+    <circle cx="14.5" cy="7.5" r="1.5" fill="currentColor" />
+    <circle cx="17.5" cy="11.5" r="1.5" fill="currentColor" />
+  </svg>
+);
+
 
 
 
