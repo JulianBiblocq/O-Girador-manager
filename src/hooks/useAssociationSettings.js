@@ -388,7 +388,7 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
         }
 
         const logoStorageRef = storageRef(storage, `associations/${groupId}/logo_${Date.now()}`);
-        const snapshot = await uploadBytes(logoStorageRef, fileToUpload);
+        const snapshot = await uploadBytes(logoStorageRef, fileToUpload, { contentType: fileToUpload.type || 'image/png' });
         finalLogoUrl = await getDownloadURL(snapshot.ref);
         setLogoFile(null);
       }
@@ -404,7 +404,7 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
         }
 
         const heroStorageRef = storageRef(storage, `associations/${groupId}/public_hero_${Date.now()}`);
-        const snapshot = await uploadBytes(heroStorageRef, fileToUpload);
+        const snapshot = await uploadBytes(heroStorageRef, fileToUpload, { contentType: fileToUpload.type || 'image/jpeg' });
         finalPublicHeroImage = await getDownloadURL(snapshot.ref);
         setHeroImageFile(null);
       }
@@ -413,13 +413,13 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
       let finalDossierPresentationUrl = formData.publicTheme?.dossierPresentationUrl || formData.publicTheme?.dossierProPdfUrl || '';
       if (dossierPresentationFile && dossierPresentationFile instanceof File) {
         const docStorageRef = storageRef(storage, `associations/${groupId}/vitrine/pro_docs/dossier_presentation_${Date.now()}`);
-        const snapshot = await uploadBytes(docStorageRef, dossierPresentationFile);
+        const snapshot = await uploadBytes(docStorageRef, dossierPresentationFile, { contentType: dossierPresentationFile.type || 'application/pdf' });
         finalDossierPresentationUrl = await getDownloadURL(snapshot.ref);
         finalDossierProPdfUrl = finalDossierPresentationUrl;
         setDossierPresentationFile(null);
       } else if (dossierProPdfFile && dossierProPdfFile instanceof File) {
         const pdfStorageRef = storageRef(storage, `associations/${groupId}/vitrine/dossier_pro_${Date.now()}.pdf`);
-        const snapshot = await uploadBytes(pdfStorageRef, dossierProPdfFile);
+        const snapshot = await uploadBytes(pdfStorageRef, dossierProPdfFile, { contentType: dossierProPdfFile.type || 'application/pdf' });
         finalDossierProPdfUrl = await getDownloadURL(snapshot.ref);
         finalDossierPresentationUrl = finalDossierProPdfUrl;
         setDossierProPdfFile(null);
@@ -428,7 +428,7 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
       let finalFicheTechniqueUrl = formData.publicTheme?.ficheTechniqueUrl || '';
       if (ficheTechniqueFile && ficheTechniqueFile instanceof File) {
         const docStorageRef = storageRef(storage, `associations/${groupId}/vitrine/pro_docs/fiche_technique_${Date.now()}`);
-        const snapshot = await uploadBytes(docStorageRef, ficheTechniqueFile);
+        const snapshot = await uploadBytes(docStorageRef, ficheTechniqueFile, { contentType: ficheTechniqueFile.type || 'application/pdf' });
         finalFicheTechniqueUrl = await getDownloadURL(snapshot.ref);
         setFicheTechniqueFile(null);
       }
@@ -436,7 +436,7 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
       let finalPlanSceneUrl = formData.publicTheme?.planSceneUrl || '';
       if (planSceneFile && planSceneFile instanceof File) {
         const docStorageRef = storageRef(storage, `associations/${groupId}/vitrine/pro_docs/plan_scene_${Date.now()}`);
-        const snapshot = await uploadBytes(docStorageRef, planSceneFile);
+        const snapshot = await uploadBytes(docStorageRef, planSceneFile, { contentType: planSceneFile.type || 'application/pdf' });
         finalPlanSceneUrl = await getDownloadURL(snapshot.ref);
         setPlanSceneFile(null);
       }
@@ -444,7 +444,7 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
       let finalKitPresseUrl = formData.publicTheme?.kitPresseUrl || '';
       if (kitPresseFile && kitPresseFile instanceof File) {
         const docStorageRef = storageRef(storage, `associations/${groupId}/vitrine/pro_docs/kit_presse_${Date.now()}`);
-        const snapshot = await uploadBytes(docStorageRef, kitPresseFile);
+        const snapshot = await uploadBytes(docStorageRef, kitPresseFile, { contentType: kitPresseFile.type || 'application/zip' });
         finalKitPresseUrl = await getDownloadURL(snapshot.ref);
         setKitPresseFile(null);
       }
@@ -452,7 +452,7 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
       let finalDroitImageDocUrl = formData.droitImageDocUrl || '';
       if (droitImageFile && droitImageFile instanceof File) {
         const docRefStorage = storageRef(storage, `associations/${groupId}/docs/droit_image_${Date.now()}`);
-        const snapshot = await uploadBytes(docRefStorage, droitImageFile);
+        const snapshot = await uploadBytes(docRefStorage, droitImageFile, { contentType: droitImageFile.type || 'application/pdf' });
         finalDroitImageDocUrl = await getDownloadURL(snapshot.ref);
         setDroitImageFile(null);
       }
@@ -460,7 +460,7 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
       let finalAptitudeMedicaleDocUrl = formData.aptitudeMedicaleDocUrl || '';
       if (aptitudeMedicaleFile && aptitudeMedicaleFile instanceof File) {
         const docRefStorage = storageRef(storage, `associations/${groupId}/docs/aptitude_medicale_${Date.now()}`);
-        const snapshot = await uploadBytes(docRefStorage, aptitudeMedicaleFile);
+        const snapshot = await uploadBytes(docRefStorage, aptitudeMedicaleFile, { contentType: aptitudeMedicaleFile.type || 'application/pdf' });
         finalAptitudeMedicaleDocUrl = await getDownloadURL(snapshot.ref);
         setAptitudeMedicaleFile(null);
       }
