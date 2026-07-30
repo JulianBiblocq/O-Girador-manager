@@ -35,6 +35,14 @@ export default function AssociationSettings({ groupId, onBack, role, isSystemAdm
     setHeroImageFile,
     dossierProPdfFile,
     setDossierProPdfFile,
+    dossierPresentationFile,
+    setDossierPresentationFile,
+    ficheTechniqueFile,
+    setFicheTechniqueFile,
+    planSceneFile,
+    setPlanSceneFile,
+    kitPresseFile,
+    setKitPresseFile,
     droitImageFile,
     setDroitImageFile,
     aptitudeMedicaleFile,
@@ -246,87 +254,75 @@ export default function AssociationSettings({ groupId, onBack, role, isSystemAdm
         </div>
       ) : (
         <div className="flex flex-col gap-3">
-          {/* Menu Horizontal Pôle Vitrine (Aplatissement de la hiérarchie des onglets) */}
+          {/* Menu Horizontal Pôle Vitrine (Refonte standardisée alignée à gauche) */}
           {(mode === 'public-theme-only' || activeSettingsTab === 'public-theme') && (
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b-2 border-dashed border-cordel-master-dark/30 pb-3 mb-1 select-none">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-dashed border-cordel-master-dark/20 pb-3 mb-1 select-none">
               <div className="flex flex-wrap items-center gap-2">
                 <button
                   type="button"
                   onClick={() => setVitrineSubTab('apparence')}
-                  className={`px-3.5 py-1.5 text-xs font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer ${
+                  className={`px-3 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer ${
                     vitrineSubTab === 'apparence'
                       ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
                       : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
                   }`}
                 >
-                  🎨 Apparence
+                  Apparence
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setVitrineSubTab('presentation')}
-                  className={`px-3.5 py-1.5 text-xs font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer ${
+                  className={`px-3 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer ${
                     vitrineSubTab === 'presentation'
                       ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
                       : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
                   }`}
                 >
-                  🖼️ Présentation
+                  Présentation
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setVitrineSubTab('organisateur')}
-                  className={`px-3.5 py-1.5 text-xs font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer ${
+                  className={`px-3 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer ${
                     vitrineSubTab === 'organisateur'
                       ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
                       : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
                   }`}
                 >
-                  🎪 Organisateur et technique
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setVitrineSubTab('recrutement')}
-                  className={`px-3.5 py-1.5 text-xs font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer ${
-                    vitrineSubTab === 'recrutement'
-                      ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
-                      : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
-                  }`}
-                >
-                  📣 Recrutement
+                  Organisateur et technique
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setVitrineSubTab('galerie')}
-                  className={`px-3.5 py-1.5 text-xs font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer ${
+                  className={`px-3 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer ${
                     vitrineSubTab === 'galerie'
                       ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
                       : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
                   }`}
                 >
-                  📸 Galerie photo
+                  Galerie photo
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setVitrineSubTab('reseaux')}
-                  className={`px-3.5 py-1.5 text-xs font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer ${
+                  className={`px-3 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer ${
                     vitrineSubTab === 'reseaux'
                       ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
                       : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
                   }`}
                 >
-                  🌐 Réseau et newsletter
+                  Réseau et newsletter
                 </button>
               </div>
 
               <button
                 type="button"
                 onClick={() => window.open('/', '_blank')}
-                className="px-3.5 py-1.5 text-xs font-black uppercase tracking-wider bg-cordel-vert text-white rounded border border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-105 cursor-pointer flex items-center gap-1.5 ml-auto"
+                className="px-3.5 py-1.5 text-[10px] font-black uppercase tracking-wider bg-cordel-vert text-white rounded-[4px_6px_3px_5px] border-2 border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-105 cursor-pointer flex items-center gap-1.5 ml-auto select-none"
               >
                 <span>🌍 Voir le site public ↗</span>
               </button>
