@@ -28,9 +28,9 @@ export function useEventComments(eventId, user, profileData, event) {
 
     setLoading(true);
     const commentsRef = collection(db, 'events', eventId, 'comments');
-    const q = query(commentsRef, orderBy('dateCreation', 'asc'));
-
-    const unsubscribe = onSnapshot(q, (snapshot) => {
+    
+    // Écoute de la sous-collection en temps réel (sans orderBy restrictif pour inclure les pending writes et les documents sans timestamp serveur immédiat)
+    const unsubscribe = onSnapshot(commentsRef, (snapshot) => {
       const fetchedComments = [];
       snapshot.forEach((docSnap) => {
         fetchedComments.push({
@@ -38,6 +38,14 @@ export function useEventComments(eventId, user, profileData, event) {
           ...docSnap.data()
         });
       });
+
+      // Tri côté client résilient : prend en compte dateCreation (Timestamp), dateCreationIso (ISO string) ou 0
+      fetchedComments.sort((a, b) => {
+        const timeA = a.dateCreation?.toDate ? a.dateCreation.toDate().getTime() : (a.dateCreationIso ? new Date(a.dateCreationIso).getTime() : 0);
+        const timeB = b.dateCreation?.toDate ? b.dateCreation.toDate().getTime() : (b.dateCreationIso ? new Date(b.dateCreationIso).getTime() : 0);
+        return timeA - timeB;
+      });
+
       setComments(fetchedComments);
       setLoading(false);
     }, (error) => {
@@ -62,6 +70,7 @@ export function useEventComments(eventId, user, profileData, event) {
       // 1. Écriture du commentaire dans la sous-collection events/{eventId}/comments
       const commentsRef = collection(db, 'events', eventId, 'comments');
       await addDoc(commentsRef, {
+        eventId: eventId,
         auteurId: user.uid,
         auteurNom: authorName,
         auteurPhoto: authorPhoto,

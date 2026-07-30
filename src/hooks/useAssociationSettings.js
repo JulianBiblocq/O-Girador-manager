@@ -42,7 +42,7 @@ export const DEFAULT_INSTRUMENTS = ["Alfaia Marcante", "Alfaia Meião", "Alfaia 
 export const DEFAULT_PUBLIC_THEME = {
   primaryColor: '#D32F2F',
   secondaryColor: '#1976D2',
-  backgroundColor: '#FAF8F5',
+  backgroundColor: '#FAF6EE',
   textColor: '#1C1917',
   buttonBgColor: '#D32F2F',
   buttonTextColor: '#FFFFFF',
@@ -60,6 +60,17 @@ export const DEFAULT_PUBLIC_THEME = {
   publicContactEmail: '',
   publicContactPhone: '',
   dossierProPdfUrl: '',
+  // URLs des 4 documents Espace Pro (Organisateurs / Presse)
+  dossierPresentationUrl: '',
+  ficheTechniqueUrl: '',
+  planSceneUrl: '',
+  kitPresseUrl: '',
+  // Configuration de la section Recrutement Vitrine
+  afficherRecrutement: false,
+  titreRecrutement: 'Rejoignez la troupe !',
+  texteRecrutement: '',
+  lienRecrutement: '',
+  texteBoutonRecrutement: "S'inscrire sur HelloAsso",
   // Liens dynamiques vers les réseaux sociaux de l'association
   socialLinks: {
     facebook: '',
@@ -134,6 +145,10 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
   const [logoFile, setLogoFile] = useState(null);
   const [heroImageFile, setHeroImageFile] = useState(null);
   const [dossierProPdfFile, setDossierProPdfFile] = useState(null);
+  const [dossierPresentationFile, setDossierPresentationFile] = useState(null);
+  const [ficheTechniqueFile, setFicheTechniqueFile] = useState(null);
+  const [planSceneFile, setPlanSceneFile] = useState(null);
+  const [kitPresseFile, setKitPresseFile] = useState(null);
   const [droitImageFile, setDroitImageFile] = useState(null);
   const [aptitudeMedicaleFile, setAptitudeMedicaleFile] = useState(null);
   const [uploadingLogo, setUploadingLogo] = useState(false);
@@ -285,7 +300,16 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
             brevoListId: data.publicTheme?.brevoListId || '',
             publicContactEmail: data.publicTheme?.publicContactEmail || '',
             publicContactPhone: data.publicTheme?.publicContactPhone || '',
-            dossierProPdfUrl: data.publicTheme?.dossierProPdfUrl || ''
+            dossierProPdfUrl: data.publicTheme?.dossierProPdfUrl || data.publicTheme?.dossierPresentationUrl || '',
+            dossierPresentationUrl: data.publicTheme?.dossierPresentationUrl || data.publicTheme?.dossierProPdfUrl || '',
+            ficheTechniqueUrl: data.publicTheme?.ficheTechniqueUrl || '',
+            planSceneUrl: data.publicTheme?.planSceneUrl || '',
+            kitPresseUrl: data.publicTheme?.kitPresseUrl || '',
+            afficherRecrutement: data.publicTheme?.afficherRecrutement || false,
+            titreRecrutement: data.publicTheme?.titreRecrutement || "Rejoignez la troupe !",
+            texteRecrutement: data.publicTheme?.texteRecrutement || '',
+            lienRecrutement: data.publicTheme?.lienRecrutement || '',
+            texteBoutonRecrutement: data.publicTheme?.texteBoutonRecrutement || "S'inscrire sur HelloAsso"
           },
           sequenceurUrl: data.sequenceurUrl || '',
           droitImageDocUrl: data.droitImageDocUrl || '',
@@ -385,12 +409,44 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
         setHeroImageFile(null);
       }
 
-      let finalDossierProPdfUrl = formData.publicTheme?.dossierProPdfUrl || '';
-      if (dossierProPdfFile && dossierProPdfFile instanceof File) {
+      let finalDossierProPdfUrl = formData.publicTheme?.dossierProPdfUrl || formData.publicTheme?.dossierPresentationUrl || '';
+      let finalDossierPresentationUrl = formData.publicTheme?.dossierPresentationUrl || formData.publicTheme?.dossierProPdfUrl || '';
+      if (dossierPresentationFile && dossierPresentationFile instanceof File) {
+        const docStorageRef = storageRef(storage, `associations/${groupId}/vitrine/pro_docs/dossier_presentation_${Date.now()}`);
+        const snapshot = await uploadBytes(docStorageRef, dossierPresentationFile);
+        finalDossierPresentationUrl = await getDownloadURL(snapshot.ref);
+        finalDossierProPdfUrl = finalDossierPresentationUrl;
+        setDossierPresentationFile(null);
+      } else if (dossierProPdfFile && dossierProPdfFile instanceof File) {
         const pdfStorageRef = storageRef(storage, `associations/${groupId}/vitrine/dossier_pro_${Date.now()}.pdf`);
         const snapshot = await uploadBytes(pdfStorageRef, dossierProPdfFile);
         finalDossierProPdfUrl = await getDownloadURL(snapshot.ref);
+        finalDossierPresentationUrl = finalDossierProPdfUrl;
         setDossierProPdfFile(null);
+      }
+
+      let finalFicheTechniqueUrl = formData.publicTheme?.ficheTechniqueUrl || '';
+      if (ficheTechniqueFile && ficheTechniqueFile instanceof File) {
+        const docStorageRef = storageRef(storage, `associations/${groupId}/vitrine/pro_docs/fiche_technique_${Date.now()}`);
+        const snapshot = await uploadBytes(docStorageRef, ficheTechniqueFile);
+        finalFicheTechniqueUrl = await getDownloadURL(snapshot.ref);
+        setFicheTechniqueFile(null);
+      }
+
+      let finalPlanSceneUrl = formData.publicTheme?.planSceneUrl || '';
+      if (planSceneFile && planSceneFile instanceof File) {
+        const docStorageRef = storageRef(storage, `associations/${groupId}/vitrine/pro_docs/plan_scene_${Date.now()}`);
+        const snapshot = await uploadBytes(docStorageRef, planSceneFile);
+        finalPlanSceneUrl = await getDownloadURL(snapshot.ref);
+        setPlanSceneFile(null);
+      }
+
+      let finalKitPresseUrl = formData.publicTheme?.kitPresseUrl || '';
+      if (kitPresseFile && kitPresseFile instanceof File) {
+        const docStorageRef = storageRef(storage, `associations/${groupId}/vitrine/pro_docs/kit_presse_${Date.now()}`);
+        const snapshot = await uploadBytes(docStorageRef, kitPresseFile);
+        finalKitPresseUrl = await getDownloadURL(snapshot.ref);
+        setKitPresseFile(null);
       }
 
       let finalDroitImageDocUrl = formData.droitImageDocUrl || '';
@@ -426,7 +482,11 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
         publicTheme: {
           ...(formData.publicTheme || DEFAULT_PUBLIC_THEME),
           publicHeroImage: finalPublicHeroImage,
-          dossierProPdfUrl: finalDossierProPdfUrl
+          dossierProPdfUrl: finalDossierProPdfUrl,
+          dossierPresentationUrl: finalDossierPresentationUrl,
+          ficheTechniqueUrl: finalFicheTechniqueUrl,
+          planSceneUrl: finalPlanSceneUrl,
+          kitPresseUrl: finalKitPresseUrl
         },
         droitImageDocUrl: finalDroitImageDocUrl,
         aptitudeMedicaleDocUrl: finalAptitudeMedicaleDocUrl,
@@ -487,6 +547,14 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
     setHeroImageFile,
     dossierProPdfFile,
     setDossierProPdfFile,
+    dossierPresentationFile,
+    setDossierPresentationFile,
+    ficheTechniqueFile,
+    setFicheTechniqueFile,
+    planSceneFile,
+    setPlanSceneFile,
+    kitPresseFile,
+    setKitPresseFile,
     droitImageFile,
     setDroitImageFile,
     aptitudeMedicaleFile,

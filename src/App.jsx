@@ -142,6 +142,7 @@ const POLES_CONFIG = [
     label: 'Configuration',
     tabs: [
       { id: 'config-identity', label: 'Identité', labelKey: 'tabConfigIdentity' },
+      { id: 'config-communication', label: 'Communication & Newsletter', labelKey: 'tabConfigCommunication' },
       { id: 'config-profile', label: 'Organisation', labelKey: 'tabConfigProfile' },
       { id: 'config-security', label: 'Sécurité', labelKey: 'tabConfigSecurity' },
       { id: 'config-modules', label: 'Modules & Fonctionnalités', labelKey: 'tabConfigModules' },
@@ -819,7 +820,7 @@ export default function App() {
   const hasAccessVestiaire = isMasterKeyActive || checkTabAccess('wardrobe-inventory', 'vestiaire') || checkTabAccess('wardrobe-couture', 'vestiaire') || checkTabAccess('wardrobe-sizes', 'vestiaire');
   const hasAccessMestre = isMasterKeyActive || checkTabAccess('mestre-orientation', 'mestre') || checkTabAccess('mestre-events', 'mestre') || checkTabAccess('mestre-stage-layout', 'mestre') || checkTabAccess('mestre-sequenceur', 'mestre') || checkTabAccess('mestre-workshops', 'mestre') || checkTabAccess('mestre-mot-mestre', 'mestre');
   const hasAccessVitrine = isMasterKeyActive || checkTabAccess('vitrine-editor', 'vitrine');
-  const hasAccessConfig = isMasterKeyActive || checkTabAccess('config-identity', 'config') || checkTabAccess('config-profile', 'config') || checkTabAccess('config-security', 'config') || checkTabAccess('config-modules', 'config') || checkTabAccess('config-logistics', 'config') || checkTabAccess('config-documents', 'config') || checkTabAccess('config-agenda', 'config') || checkTabAccess('config-lieux', 'config') || checkTabAccess('config-layout', 'config');
+  const hasAccessConfig = isMasterKeyActive || checkTabAccess('config-identity', 'config') || checkTabAccess('config-communication', 'config') || checkTabAccess('config-profile', 'config') || checkTabAccess('config-security', 'config') || checkTabAccess('config-modules', 'config') || checkTabAccess('config-logistics', 'config') || checkTabAccess('config-documents', 'config') || checkTabAccess('config-agenda', 'config') || checkTabAccess('config-lieux', 'config') || checkTabAccess('config-layout', 'config');
   const hasAccessForumMod = isMasterKeyActive || userTags.some(t => ['Modérateur', 'Modérateur Forum', 'Gestionnaire Porte-voix', 'Porte-voix'].includes(t));
 
   const handleNavigateToPole = (poleId) => {
@@ -1254,6 +1255,15 @@ export default function App() {
                 isSystemAdmin={profileData?.isSystemAdmin}
                 activeTabProp="identity"
                 mode="identity-only"
+                onBack={() => handleNavigateToPole('accueil')} 
+              />
+            ) : (currentTab === 'config-communication' && checkTabAccess('config-communication', 'config')) ? (
+              <AssociationSettings 
+                groupId={profileData?.groupId}
+                role={profileData?.role}
+                isSystemAdmin={profileData?.isSystemAdmin}
+                activeTabProp="communication"
+                mode="communication-only"
                 onBack={() => handleNavigateToPole('accueil')} 
               />
             ) : (currentTab === 'config-profile' && checkTabAccess('config-profile', 'config')) ? (

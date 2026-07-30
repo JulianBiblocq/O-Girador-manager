@@ -214,6 +214,17 @@ service cloud.firestore {
         (request.resource.data.diff(resource.data).affectedKeys().hasAll(['inscriptions']) &&
          request.resource.data.diff(resource.data).affectedKeys().size() == 1)
       );
+
+      // Sous-collection des commentaires et questions logistiques de l'événement
+      match /comments/{commentId} {
+        allow read: if isAuthenticated();
+        allow create: if isAuthenticated() && request.resource.data.auteurId == request.auth.uid;
+        allow update, delete: if isAuthenticated() && (
+          resource.data.auteurId == request.auth.uid ||
+          isAdminOrMestre() ||
+          isModerator()
+        );
+      }
     }
 
     // Transactions: Read if authenticated. Write reserved for admins/mestres.

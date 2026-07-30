@@ -63,6 +63,17 @@ export function usePublicTheme(groupId, themeOverride = null) {
               // Integration Brevo API
               brevoApiKey: data.publicTheme?.brevoApiKey || '',
               brevoListId: data.publicTheme?.brevoListId || '',
+              // Documents Espace Pro (Organisateurs / Presse)
+              dossierPresentationUrl: data.publicTheme?.dossierPresentationUrl || data.publicTheme?.dossierProPdfUrl || '',
+              ficheTechniqueUrl: data.publicTheme?.ficheTechniqueUrl || '',
+              planSceneUrl: data.publicTheme?.planSceneUrl || '',
+              kitPresseUrl: data.publicTheme?.kitPresseUrl || '',
+              // Champs de la section Recrutement
+              afficherRecrutement: data.publicTheme?.afficherRecrutement || false,
+              titreRecrutement: data.publicTheme?.titreRecrutement || "Rejoignez la troupe !",
+              texteRecrutement: data.publicTheme?.texteRecrutement || '',
+              lienRecrutement: data.publicTheme?.lienRecrutement || '',
+              texteBoutonRecrutement: data.publicTheme?.texteBoutonRecrutement || "S'inscrire sur HelloAsso",
               primaryColor: data.publicTheme.primaryColor || DEFAULT_PUBLIC_THEME.primaryColor,
               secondaryColor: data.publicTheme.secondaryColor || DEFAULT_PUBLIC_THEME.secondaryColor,
               headingFont: data.publicTheme.headingFont || DEFAULT_PUBLIC_THEME.headingFont,
@@ -124,7 +135,7 @@ export function usePublicTheme(groupId, themeOverride = null) {
       :root, [data-public-theme] {
         --public-primary: ${primaryColor || DEFAULT_PUBLIC_THEME.primaryColor};
         --public-secondary: ${secondaryColor || DEFAULT_PUBLIC_THEME.secondaryColor};
-        --public-bg: ${backgroundColor || '#FAF8F5'};
+        --public-bg: ${backgroundColor || '#FAF6EE'};
         --public-text: ${textColor || '#1C1917'};
         --public-btn-bg: ${buttonBgColor || primaryColor || '#D32F2F'};
         --public-btn-text: ${buttonTextColor || '#FFFFFF'};

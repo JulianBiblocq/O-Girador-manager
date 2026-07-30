@@ -16,6 +16,7 @@ import TabLieux from './association-settings/TabLieux';
 import TabAutomations from './association-settings/TabAutomations';
 import TabPublicTheme from './association-settings/TabPublicTheme';
 import TabPublicContent from './association-settings/TabPublicContent';
+import TabCommunication from './association-settings/TabCommunication';
 
 import { useEffect } from 'react';
 
@@ -168,7 +169,14 @@ export default function AssociationSettings({ groupId, onBack, role, isSystemAdm
           />
         );
       case 'public-theme':
-        return vitrineSubTab === 'contenu' ? (
+        return vitrineSubTab === 'apparence' ? (
+          <TabPublicTheme
+            formData={formData}
+            handleChange={handleChange}
+            saving={saving}
+            t={t}
+          />
+        ) : (
           <TabPublicContent
             formData={formData}
             handleChange={handleChange}
@@ -176,14 +184,26 @@ export default function AssociationSettings({ groupId, onBack, role, isSystemAdm
             setHeroImageFile={setHeroImageFile}
             dossierProPdfFile={dossierProPdfFile}
             setDossierProPdfFile={setDossierProPdfFile}
+            dossierPresentationFile={dossierPresentationFile}
+            setDossierPresentationFile={setDossierPresentationFile}
+            ficheTechniqueFile={ficheTechniqueFile}
+            setFicheTechniqueFile={setFicheTechniqueFile}
+            planSceneFile={planSceneFile}
+            setPlanSceneFile={setPlanSceneFile}
+            kitPresseFile={kitPresseFile}
+            setKitPresseFile={setKitPresseFile}
             groupId={groupId}
             saving={saving}
             t={t}
+            contentSubTab={vitrineSubTab}
           />
-        ) : (
-          <TabPublicTheme
+        );
+      case 'communication':
+        return (
+          <TabCommunication
             formData={formData}
             handleChange={handleChange}
+            groupId={groupId}
             saving={saving}
             t={t}
           />
@@ -226,14 +246,14 @@ export default function AssociationSettings({ groupId, onBack, role, isSystemAdm
         </div>
       ) : (
         <div className="flex flex-col gap-3">
-          {/* Menu Horizontal Pôle Vitrine (Apparence / Contenu) */}
+          {/* Menu Horizontal Pôle Vitrine (Aplatissement de la hiérarchie des onglets) */}
           {(mode === 'public-theme-only' || activeSettingsTab === 'public-theme') && (
             <div className="flex flex-wrap items-center justify-between gap-3 border-b-2 border-dashed border-cordel-master-dark/30 pb-3 mb-1 select-none">
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <button
                   type="button"
                   onClick={() => setVitrineSubTab('apparence')}
-                  className={`px-4 py-2 text-xs font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer ${
+                  className={`px-3.5 py-1.5 text-xs font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer ${
                     vitrineSubTab === 'apparence'
                       ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
                       : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
@@ -244,23 +264,71 @@ export default function AssociationSettings({ groupId, onBack, role, isSystemAdm
 
                 <button
                   type="button"
-                  onClick={() => setVitrineSubTab('contenu')}
-                  className={`px-4 py-2 text-xs font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer ${
-                    vitrineSubTab === 'contenu'
+                  onClick={() => setVitrineSubTab('presentation')}
+                  className={`px-3.5 py-1.5 text-xs font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer ${
+                    vitrineSubTab === 'presentation'
                       ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
                       : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
                   }`}
                 >
-                  📝 Contenu
+                  🖼️ Présentation
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setVitrineSubTab('organisateur')}
+                  className={`px-3.5 py-1.5 text-xs font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer ${
+                    vitrineSubTab === 'organisateur'
+                      ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
+                      : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
+                  }`}
+                >
+                  🎪 Organisateur et technique
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setVitrineSubTab('recrutement')}
+                  className={`px-3.5 py-1.5 text-xs font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer ${
+                    vitrineSubTab === 'recrutement'
+                      ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
+                      : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
+                  }`}
+                >
+                  📣 Recrutement
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setVitrineSubTab('galerie')}
+                  className={`px-3.5 py-1.5 text-xs font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer ${
+                    vitrineSubTab === 'galerie'
+                      ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
+                      : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
+                  }`}
+                >
+                  📸 Galerie photo
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setVitrineSubTab('reseaux')}
+                  className={`px-3.5 py-1.5 text-xs font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer ${
+                    vitrineSubTab === 'reseaux'
+                      ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
+                      : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
+                  }`}
+                >
+                  🌐 Réseau et newsletter
                 </button>
               </div>
 
               <button
                 type="button"
                 onClick={() => window.open('/', '_blank')}
-                className="px-3.5 py-1.5 text-xs font-black uppercase tracking-wider bg-cordel-vert text-white rounded border border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-105 cursor-pointer flex items-center gap-1.5"
+                className="px-3.5 py-1.5 text-xs font-black uppercase tracking-wider bg-cordel-vert text-white rounded border border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-105 cursor-pointer flex items-center gap-1.5 ml-auto"
               >
-                <span>👁️ Voir le site public ↗</span>
+                <span>🌍 Voir le site public ↗</span>
               </button>
             </div>
           )}
@@ -278,6 +346,17 @@ export default function AssociationSettings({ groupId, onBack, role, isSystemAdm
                 }`}
               >
                 🎨 Identité & Liens
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveSettingsTab('communication')}
+                className={`px-3 py-1.5 text-xs font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer ${
+                  activeSettingsTab === 'communication'
+                    ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
+                    : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
+                }`}
+              >
+                📢 Communication & Newsletter
               </button>
               <button
                 type="button"

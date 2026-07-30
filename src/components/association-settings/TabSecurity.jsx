@@ -79,6 +79,7 @@ const PERMISSION_POLES = [
     desc: 'Paramètres généraux de l\'association, identité, sécurité, modules et mise en page',
     tabs: [
       { id: 'config-identity', label: 'Identité', desc: 'Nom, logo, réseaux et slogan de l\'association' },
+      { id: 'config-communication', label: 'Communication & Newsletter', desc: 'Clés Brevo API et export des inscrits newsletter (CSV)' },
       { id: 'config-profile', label: 'Organisation', desc: 'Structure et champs de profil des adhérents' },
       { id: 'config-security', label: 'Sécurité & Badges', desc: 'Matrice des rôles, permissions et déverrouillage' },
       { id: 'config-modules', label: 'Modules & Fonctionnalités', desc: 'Activation/Désactivation des modules' },

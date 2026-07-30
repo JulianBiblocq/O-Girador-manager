@@ -13,15 +13,18 @@ export default function RichTextEditor({
   groupId = '', 
   lienDepotForum = '',
   disabled = false,
-  minHeight = '120px'
+  minHeight = '120px',
+  showLists = true,
+  showImage = true,
+  showAlign = true
 }) {
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
 
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
-        bulletList: false,
-        orderedList: false,
+        bulletList: showLists ? {} : false,
+        orderedList: showLists ? {} : false,
         codeBlock: false,
         blockquote: false,
         heading: false,
@@ -131,61 +134,103 @@ export default function RichTextEditor({
           🔗
         </button>
 
-        <div className="h-4 w-[1px] bg-encre-noire/20 mx-1"></div>
+        {showLists && (
+          <>
+            <div className="h-4 w-[1px] bg-encre-noire/20 mx-1"></div>
 
-        {/* Align Left */}
-        <button
-          type="button"
-          onClick={() => editor.chain().focus().setTextAlign('left').run()}
-          className={`px-2 py-1 text-xs font-bold rounded border transition-all cursor-pointer ${
-            editor.isActive({ textAlign: 'left' })
-              ? 'bg-cordel-wood text-white border-encre-noire'
-              : 'bg-white text-encre-noire border-encre-noire/20 hover:bg-neutral-100'
-          }`}
-          title="Aligner à gauche"
-        >
-          ⬅️
-        </button>
+            {/* Bullet List */}
+            <button
+              type="button"
+              onClick={() => editor.chain().focus().toggleBulletList().run()}
+              className={`px-2 py-1 text-xs font-bold rounded border transition-all cursor-pointer ${
+                editor.isActive('bulletList')
+                  ? 'bg-cordel-wood text-white border-encre-noire'
+                  : 'bg-white text-encre-noire border-encre-noire/20 hover:bg-neutral-100'
+              }`}
+              title="Liste à puces"
+            >
+              • List
+            </button>
 
-        {/* Align Center */}
-        <button
-          type="button"
-          onClick={() => editor.chain().focus().setTextAlign('center').run()}
-          className={`px-2 py-1 text-xs font-bold rounded border transition-all cursor-pointer ${
-            editor.isActive({ textAlign: 'center' })
-              ? 'bg-cordel-wood text-white border-encre-noire'
-              : 'bg-white text-encre-noire border-encre-noire/20 hover:bg-neutral-100'
-          }`}
-          title="Centrer"
-        >
-          ↔️
-        </button>
+            {/* Ordered List */}
+            <button
+              type="button"
+              onClick={() => editor.chain().focus().toggleOrderedList().run()}
+              className={`px-2 py-1 text-xs font-bold rounded border transition-all cursor-pointer ${
+                editor.isActive('orderedList')
+                  ? 'bg-cordel-wood text-white border-encre-noire'
+                  : 'bg-white text-encre-noire border-encre-noire/20 hover:bg-neutral-100'
+              }`}
+              title="Liste numérotée"
+            >
+              1. List
+            </button>
+          </>
+        )}
 
-        {/* Align Right */}
-        <button
-          type="button"
-          onClick={() => editor.chain().focus().setTextAlign('right').run()}
-          className={`px-2 py-1 text-xs font-bold rounded border transition-all cursor-pointer ${
-            editor.isActive({ textAlign: 'right' })
-              ? 'bg-cordel-wood text-white border-encre-noire'
-              : 'bg-white text-encre-noire border-encre-noire/20 hover:bg-neutral-100'
-          }`}
-          title="Aligner à droite"
-        >
-          ➡️
-        </button>
+        {showAlign && (
+          <>
+            <div className="h-4 w-[1px] bg-encre-noire/20 mx-1"></div>
 
-        <div className="h-4 w-[1px] bg-encre-noire/20 mx-1"></div>
+            {/* Align Left */}
+            <button
+              type="button"
+              onClick={() => editor.chain().focus().setTextAlign('left').run()}
+              className={`px-2 py-1 text-xs font-bold rounded border transition-all cursor-pointer ${
+                editor.isActive({ textAlign: 'left' })
+                  ? 'bg-cordel-wood text-white border-encre-noire'
+                  : 'bg-white text-encre-noire border-encre-noire/20 hover:bg-neutral-100'
+              }`}
+              title="Aligner à gauche"
+            >
+              ⬅️
+            </button>
 
-        {/* Photo Insert Button */}
-        <button
-          type="button"
-          onClick={() => setIsImageModalOpen(true)}
-          className="px-2.5 py-1 text-xs font-bold rounded border bg-amber-50 hover:bg-amber-100 border-amber-600/40 text-amber-900 transition-all cursor-pointer flex items-center gap-1 shadow-sm"
-          title="Insérer une image dans la discussion"
-        >
-          📷 <span className="hidden sm:inline text-[10px] font-black uppercase">Photo</span>
-        </button>
+            {/* Align Center */}
+            <button
+              type="button"
+              onClick={() => editor.chain().focus().setTextAlign('center').run()}
+              className={`px-2 py-1 text-xs font-bold rounded border transition-all cursor-pointer ${
+                editor.isActive({ textAlign: 'center' })
+                  ? 'bg-cordel-wood text-white border-encre-noire'
+                  : 'bg-white text-encre-noire border-encre-noire/20 hover:bg-neutral-100'
+              }`}
+              title="Centrer"
+            >
+              ↔️
+            </button>
+
+            {/* Align Right */}
+            <button
+              type="button"
+              onClick={() => editor.chain().focus().setTextAlign('right').run()}
+              className={`px-2 py-1 text-xs font-bold rounded border transition-all cursor-pointer ${
+                editor.isActive({ textAlign: 'right' })
+                  ? 'bg-cordel-wood text-white border-encre-noire'
+                  : 'bg-white text-encre-noire border-encre-noire/20 hover:bg-neutral-100'
+              }`}
+              title="Aligner à droite"
+            >
+              ➡️
+            </button>
+          </>
+        )}
+
+        {showImage && (
+          <>
+            <div className="h-4 w-[1px] bg-encre-noire/20 mx-1"></div>
+
+            {/* Photo Insert Button */}
+            <button
+              type="button"
+              onClick={() => setIsImageModalOpen(true)}
+              className="px-2.5 py-1 text-xs font-bold rounded border bg-amber-50 hover:bg-amber-100 border-amber-600/40 text-amber-900 transition-all cursor-pointer flex items-center gap-1 shadow-sm"
+              title="Insérer une image dans la discussion"
+            >
+              📷 <span className="hidden sm:inline text-[10px] font-black uppercase">Photo</span>
+            </button>
+          </>
+        )}
       </div>
 
       {/* Editor Content Box */}

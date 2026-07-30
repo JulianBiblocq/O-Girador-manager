@@ -5,6 +5,9 @@ import PublicEventCard from './public/PublicEventCard';
 import PublicEventDetails from './public/PublicEventDetails';
 import PublicPhotoGallery from './public/PublicPhotoGallery';
 import PublicNewsletterForm from './public/PublicNewsletterForm';
+import PublicRecruitmentSection from './public/PublicRecruitmentSection';
+import PublicProDocsSection from './public/PublicProDocsSection';
+import PublicRichText from './public/PublicRichText';
 
 /**
  * Convertit une URL YouTube ou Vimeo classique en URL embed sécurisée pour iframe.
@@ -75,17 +78,17 @@ export default function PublicHome({ groupId, associationName, branding, onNavig
 
   return (
     <div 
-      className="min-h-screen flex flex-col transition-colors duration-300 selection:bg-stone-200"
+      className="min-h-screen flex flex-col transition-colors duration-300 selection:bg-stone-200 public-paper-bg"
       style={{ 
         fontFamily: 'var(--public-font-body, sans-serif)',
-        backgroundColor: 'var(--public-bg, #FAF8F5)',
+        backgroundColor: 'var(--public-bg, #FAF6EE)',
         color: 'var(--public-text, #1C1917)'
       }}
     >
       {/* ==========================================
           EN-TÊTE / NAVIGATION
          ========================================== */}
-      <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-stone-200/80 shadow-xs transition-all">
+      <header className="sticky top-0 z-50 bg-[#faf6ee]/90 backdrop-blur-md border-b border-stone-200/80 shadow-xs transition-all">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           {/* Logo & Titre */}
           <div className="flex items-center gap-3">
@@ -109,6 +112,15 @@ export default function PublicHome({ groupId, associationName, branding, onNavig
 
           {/* Navigation & Espace Membre */}
           <div className="flex items-center gap-4">
+            {publicTheme?.afficherRecrutement && (
+              <button
+                type="button"
+                onClick={() => scrollToSection('recrutement')}
+                className="hidden sm:inline-block text-xs font-semibold uppercase tracking-wider text-stone-600 hover:text-stone-900 transition-colors cursor-pointer"
+              >
+                Recrutement
+              </button>
+            )}
             <button
               type="button"
               onClick={() => scrollToSection('agenda')}
@@ -216,11 +228,11 @@ export default function PublicHome({ groupId, associationName, branding, onNavig
       {/* ==========================================
           BLOC 2 - PRÉSENTATION ("QUI SOMMES-NOUS ?")
          ========================================== */}
-      <section className="py-16 bg-white border-b border-stone-200/60">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 flex flex-col gap-10">
+      <section className="py-16 sm:py-20 bg-[#faf6ee]/70 backdrop-blur-xs border-b border-stone-200/60">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 md:px-8 flex flex-col gap-10">
           <div className="text-center flex flex-col items-center gap-3">
             <h2 
-              className="text-3xl font-extrabold tracking-tight uppercase"
+              className="text-3xl sm:text-4xl font-extrabold tracking-tight uppercase"
               style={{ 
                 fontFamily: 'var(--public-font-heading, sans-serif)',
                 color: 'var(--public-primary, #D32F2F)' 
@@ -229,22 +241,21 @@ export default function PublicHome({ groupId, associationName, branding, onNavig
               Qui sommes-nous ?
             </h2>
             <div 
-              className="w-16 h-1 rounded-full"
+              className="w-20 h-1 rounded-full"
               style={{ backgroundColor: 'var(--public-secondary, #1976D2)' }}
             ></div>
           </div>
 
           {descriptionText && (
-            <div 
-              className="text-base sm:text-lg leading-relaxed text-stone-700 whitespace-pre-line text-justify sm:text-center max-w-4xl w-full mx-auto px-4"
+            <PublicRichText 
+              content={descriptionText}
+              className="text-base sm:text-lg lg:text-xl leading-relaxed text-stone-700 text-justify sm:text-center max-w-5xl w-full mx-auto px-2 sm:px-4 font-medium"
               style={{ fontFamily: 'var(--public-font-body, sans-serif)' }}
-            >
-              {descriptionText}
-            </div>
+            />
           )}
 
           {embedVideoUrl ? (
-            <div className="w-full max-w-4xl mx-auto rounded-xl overflow-hidden shadow-xl border border-stone-200 bg-black aspect-video">
+            <div className="w-full max-w-5xl mx-auto rounded-2xl overflow-hidden shadow-2xl border border-stone-200 bg-black aspect-video">
               <iframe
                 src={embedVideoUrl}
                 title="Vidéo de présentation"
@@ -256,6 +267,11 @@ export default function PublicHome({ groupId, associationName, branding, onNavig
           ) : null}
         </div>
       </section>
+
+      {/* ==========================================
+          BLOC RECRUTEMENT DYNAMIQUE
+         ========================================== */}
+      <PublicRecruitmentSection publicTheme={publicTheme} />
 
       {/* ==========================================
           GALERIE PHOTOS & CARROUSEL ("EN IMAGES")
@@ -364,12 +380,11 @@ export default function PublicHome({ groupId, associationName, branding, onNavig
                 </h3>
 
                 {performanceFormats ? (
-                  <div 
-                    className="text-xs sm:text-sm text-stone-700 leading-relaxed whitespace-pre-line"
+                  <PublicRichText 
+                    content={performanceFormats}
+                    className="text-xs sm:text-sm text-stone-700 leading-relaxed"
                     style={{ fontFamily: 'var(--public-font-body, sans-serif)' }}
-                  >
-                    {performanceFormats}
-                  </div>
+                  />
                 ) : (
                   <ul className="space-y-4 text-xs sm:text-sm text-stone-700">
                     <li className="flex items-start gap-3">
@@ -434,9 +449,10 @@ export default function PublicHome({ groupId, associationName, branding, onNavig
                         ▼
                       </span>
                     </summary>
-                    <div className="p-4 sm:p-5 border-t border-stone-200/80 text-xs sm:text-sm text-stone-700 leading-relaxed whitespace-pre-line bg-white">
-                      {technicalSheet}
-                    </div>
+                    <PublicRichText 
+                      content={technicalSheet}
+                      className="p-4 sm:p-5 border-t border-stone-200/80 text-xs sm:text-sm text-stone-700 leading-relaxed bg-white"
+                    />
                   </details>
                 </div>
 
@@ -487,6 +503,9 @@ export default function PublicHome({ groupId, associationName, branding, onNavig
               {/* Partie Droite (3e Bloc) : Infolettre & Actualités */}
               <PublicNewsletterForm groupId={groupId} variant="card" />
             </div>
+
+            {/* Encart Espace Pro & Organisateurs (4 Documents Téléchargeables) */}
+            <PublicProDocsSection publicTheme={publicTheme} />
           </div>
         </section>
       )}

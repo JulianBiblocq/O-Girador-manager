@@ -3,12 +3,34 @@ import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../../firebase';
 import CordelCard from '../CordelCard';
 import TabPublicGallery from './TabPublicGallery';
+import TabPublicRecruitment from './TabPublicRecruitment';
+import TabPublicProDocs from './TabPublicProDocs';
+import RichTextEditor from '../RichTextEditor';
 
 /**
  * Composant d'administration dédié à la gestion des contenus rédactionnels
  * du site vitrine public (Textes, médias, Galerie Photos, Newsletter, Fiche Technique et Contacts).
  */
-export default function TabPublicContent({ formData, handleChange, heroImageFile, setHeroImageFile, dossierProPdfFile, setDossierProPdfFile, groupId, saving, t }) {
+export default function TabPublicContent({
+  formData,
+  handleChange,
+  heroImageFile,
+  setHeroImageFile,
+  dossierProPdfFile,
+  setDossierProPdfFile,
+  dossierPresentationFile,
+  setDossierPresentationFile,
+  ficheTechniqueFile,
+  setFicheTechniqueFile,
+  planSceneFile,
+  setPlanSceneFile,
+  kitPresseFile,
+  setKitPresseFile,
+  groupId,
+  saving,
+  t,
+  contentSubTab = 'presentation'
+}) {
   const publicTheme = formData.publicTheme || {};
   const socialLinks = publicTheme.socialLinks || {};
 
@@ -110,74 +132,8 @@ export default function TabPublicContent({ formData, handleChange, heroImageFile
     handleChange('publicTheme', updatedTheme);
   };
 
-  // État local de sous-navigation pour découper les paramètres de contenu
-  const [contentSubTab, setContentSubTab] = useState('presentation'); // 'presentation', 'organisateur', 'galerie', 'reseaux'
-
   return (
     <div className="flex flex-col gap-6 text-left">
-      {/* En-tête de la section */}
-      <CordelCard variant="default" useExtremeBorder={true} className="p-5 bg-cordel-bg">
-        <div className="flex items-center gap-2 mb-2">
-          <span className="text-lg">📝</span>
-          <h3 className="text-sm font-extrabold uppercase tracking-wider text-cordel-wood">
-            Contenus Rédactionnels & Médias Vitrine
-          </h3>
-        </div>
-        <p className="text-xs opacity-80 leading-relaxed">
-          Gérez l'ensemble des textes, médias de présentation et informations pratiques affichés aux visiteurs et programmateurs.
-        </p>
-      </CordelCard>
-
-      {/* Menu de Sous-Navigation par Onglets */}
-      <div className="flex flex-wrap items-center gap-2 border-b-2 border-dashed border-cordel-master-dark/30 pb-3 select-none">
-        <button
-          type="button"
-          onClick={() => setContentSubTab('presentation')}
-          className={`px-3.5 py-2 text-xs font-bold uppercase tracking-wider rounded-[4px_6px_3px_5px] border transition-all cursor-pointer ${
-            contentSubTab === 'presentation'
-              ? 'bg-cordel-wood text-white border-cordel-wood shadow-xs'
-              : 'bg-white text-stone-700 hover:bg-stone-50 border-encre-noire/30'
-          }`}
-        >
-          🖼️ Présentation
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setContentSubTab('organisateur')}
-          className={`px-3.5 py-2 text-xs font-bold uppercase tracking-wider rounded-[4px_6px_3px_5px] border transition-all cursor-pointer ${
-            contentSubTab === 'organisateur'
-              ? 'bg-cordel-wood text-white border-cordel-wood shadow-xs'
-              : 'bg-white text-stone-700 hover:bg-stone-50 border-encre-noire/30'
-          }`}
-        >
-          🎪 Organisateur & Technique
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setContentSubTab('galerie')}
-          className={`px-3.5 py-2 text-xs font-bold uppercase tracking-wider rounded-[4px_6px_3px_5px] border transition-all cursor-pointer ${
-            contentSubTab === 'galerie'
-              ? 'bg-cordel-wood text-white border-cordel-wood shadow-xs'
-              : 'bg-white text-stone-700 hover:bg-stone-50 border-encre-noire/30'
-          }`}
-        >
-          📸 Galerie Photos
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setContentSubTab('reseaux')}
-          className={`px-3.5 py-2 text-xs font-bold uppercase tracking-wider rounded-[4px_6px_3px_5px] border transition-all cursor-pointer ${
-            contentSubTab === 'reseaux'
-              ? 'bg-cordel-wood text-white border-cordel-wood shadow-xs'
-              : 'bg-white text-stone-700 hover:bg-stone-50 border-encre-noire/30'
-          }`}
-        >
-          🌐 Réseaux & Newsletter
-        </button>
-      </div>
 
       {/* Onglet 1: Textes & Médias Vitrine */}
       {contentSubTab === 'presentation' && (
@@ -287,13 +243,15 @@ export default function TabPublicContent({ formData, handleChange, heroImageFile
           <label className="text-xs font-bold uppercase tracking-wider text-encre-noire/80">
             Présentation "Qui sommes-nous ?"
           </label>
-          <textarea
-            rows={4}
+          <RichTextEditor
             value={publicTheme.publicDescription || publicTheme.aboutText || ''}
-            onChange={(e) => handleThemeChange('publicDescription', e.target.value)}
+            onChange={(val) => handleThemeChange('publicDescription', val)}
             disabled={saving}
             placeholder="Présentez l'histoire de votre association, vos ateliers, votre univers musical..."
-            className="text-xs font-medium px-3 py-2 border border-encre-noire/30 rounded bg-white leading-relaxed"
+            minHeight="140px"
+            showLists={true}
+            showImage={false}
+            showAlign={true}
           />
         </div>
 
@@ -316,6 +274,7 @@ export default function TabPublicContent({ formData, handleChange, heroImageFile
 
       {/* Onglet 2: Espace Organisateur & Fiche Technique */}
       {contentSubTab === 'organisateur' && (
+        <>
         <CordelCard variant="default" className="p-5 flex flex-col gap-5 bg-white border-2 border-cordel-master-dark/30">
         <h4 className="text-xs font-black uppercase tracking-widest text-cordel-wood border-b border-dashed border-cordel-master-dark/20 pb-2 flex items-center justify-between">
           <span>🎪 Espace Organisateur & Fiche Technique</span>
@@ -345,13 +304,15 @@ export default function TabPublicContent({ formData, handleChange, heroImageFile
             <span>🥁 Nos Formats de Prestations</span>
             <span className="text-[10px] text-stone-500 font-normal">Personnalisable pour la 1ère carte</span>
           </label>
-          <textarea
-            rows={4}
+          <RichTextEditor
             value={publicTheme.publicPerformanceFormats || ''}
-            onChange={(e) => handleThemeChange('publicPerformanceFormats', e.target.value)}
+            onChange={(val) => handleThemeChange('publicPerformanceFormats', val)}
             disabled={saving}
-            placeholder={`Ex:\n• Festivals & Fêtes de Ville : Défilés de rue déambulatoires, ouvertures de carnivals et passages scéniques à haute énergie.\n• Animations Culturelles : Parades populaires, inaugurations et moments de fête fédérateurs.\n• Événements Privés & Sur-Mesure : Prestations adaptées à vos besoins logistiques.`}
-            className="text-xs font-medium px-3 py-2 border border-encre-noire/30 rounded bg-white leading-relaxed"
+            placeholder={`Ex: • Festivals & Fêtes de Ville : Défilés de rue déambulatoires, ouvertures de carnivals...\n• Animations Culturelles : Parades populaires...\n• Événements Privés : Prestations sur-mesure.`}
+            minHeight="140px"
+            showLists={true}
+            showImage={false}
+            showAlign={true}
           />
         </div>
 
@@ -360,13 +321,15 @@ export default function TabPublicContent({ formData, handleChange, heroImageFile
           <label className="text-xs font-bold uppercase tracking-wider text-encre-noire/80">
             Fiche Technique & Besoins Logistiques
           </label>
-          <textarea
-            rows={4}
+          <RichTextEditor
             value={publicTheme.publicTechnicalSheet || ''}
-            onChange={(e) => handleThemeChange('publicTechnicalSheet', e.target.value)}
+            onChange={(val) => handleThemeChange('publicTechnicalSheet', val)}
             disabled={saving}
             placeholder="Ex: Effectif : 12 à 20 musiciens + 1 Mestre. Besoins : 1 Loge fermée avec point d'eau, parking convoi, 1 repère scénique..."
-            className="text-xs font-medium px-3 py-2 border border-encre-noire/30 rounded bg-white leading-relaxed"
+            minHeight="140px"
+            showLists={true}
+            showImage={false}
+            showAlign={true}
           />
         </div>
 
@@ -458,6 +421,22 @@ export default function TabPublicContent({ formData, handleChange, heroImageFile
           </div>
         </div>
       </CordelCard>
+
+      {/* Section des 4 Documents Espace Pro (Organisateurs / Presse) */}
+      <TabPublicProDocs
+        formData={formData}
+        handleChange={handleChange}
+        dossierPresentationFile={dossierPresentationFile}
+        setDossierPresentationFile={setDossierPresentationFile}
+        ficheTechniqueFile={ficheTechniqueFile}
+        setFicheTechniqueFile={setFicheTechniqueFile}
+        planSceneFile={planSceneFile}
+        setPlanSceneFile={setPlanSceneFile}
+        kitPresseFile={kitPresseFile}
+        setKitPresseFile={setKitPresseFile}
+        saving={saving}
+      />
+      </>
       )}
 
       {/* Onglet 3: Galerie Photos */}
@@ -466,6 +445,15 @@ export default function TabPublicContent({ formData, handleChange, heroImageFile
           formData={formData}
           handleChange={handleChange}
           groupId={groupId}
+          saving={saving}
+        />
+      )}
+
+      {/* Onglet 4: Recrutement */}
+      {contentSubTab === 'recrutement' && (
+        <TabPublicRecruitment
+          formData={formData}
+          handleChange={handleChange}
           saving={saving}
         />
       )}

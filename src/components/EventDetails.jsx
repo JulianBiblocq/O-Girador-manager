@@ -1718,7 +1718,7 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
       {/* SECTION : Discussion & Questions Logistiques */}
       <div className="mt-6">
         <EventCommentsSection
-          event={event}
+          event={activeEvent || event}
           user={user}
           profileData={profileData}
         />
