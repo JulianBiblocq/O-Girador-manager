@@ -140,9 +140,9 @@ service cloud.firestore {
       allow write: if isAdminOrMestre();
     }
 
-    // Associations: Read public (for showcase brand & theme). Write reserved for admins/mestres.
+    // Associations : Lecture publique (vitrine, marque et thème). Écriture réservée aux administrateurs/mestres.
     match /associations/{assocId} {
-      allow read: true;
+      allow read: if true;
       allow write: if isAdminOrMestre();
 
       // Protected credentials only readable/writable by group administrators/mestres
