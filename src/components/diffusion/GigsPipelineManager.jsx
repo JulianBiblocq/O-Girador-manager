@@ -379,6 +379,7 @@ export default function GigsPipelineManager({ groupId, associationSettings: prop
         isOpen={isDetailsOpen}
         onClose={() => setIsDetailsOpen(false)}
         gig={selectedGig}
+        associationSettings={associationSettings}
         onStatusChange={async (gigId, newStatus) => {
           try {
             await updateGigStatus(gigId, newStatus);

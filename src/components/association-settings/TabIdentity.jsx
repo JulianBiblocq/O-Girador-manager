@@ -326,6 +326,45 @@ export default function TabIdentity({
               />
             </div>
           </div>
+
+          {/* Téléphone de Contact Officiel */}
+          <div className="flex flex-col gap-1">
+            <label htmlFor="telephone" className="text-[9px] uppercase font-extrabold tracking-wider text-cordel-master-dark">
+              Téléphone Officiel de l'Association
+            </label>
+            <input 
+              id="telephone"
+              type="tel"
+              value={formData.telephone || formData.phone || ''}
+              onChange={(e) => {
+                handleChange('telephone', e.target.value);
+                handleChange('phone', e.target.value);
+              }}
+              disabled={saving}
+              placeholder="ex: 06 12 34 56 78"
+              className="theme-input text-xs font-mono font-bold py-1.5 bg-cordel-bg-light w-full"
+            />
+          </div>
+
+          {/* Clause Spécifique / Avertissement Contrat (Textarea Optionnel) */}
+          <div className="flex flex-col gap-1 border-t border-dashed border-cordel-master-dark/15 pt-3">
+            <label htmlFor="clauseSpecifique" className="text-[9px] uppercase font-extrabold tracking-wider text-cordel-master-dark flex items-center justify-between">
+              <span>📋 Clause Spécifique / Avertissement Contrat (Optionnel)</span>
+              <span className="text-[8px] font-normal italic text-cordel-wood">S'imprime en bas des contrats PDF</span>
+            </label>
+            <textarea
+              id="clauseSpecifique"
+              rows={3}
+              value={formData.clauseSpecifique || formData.legalClause || ''}
+              onChange={(e) => {
+                handleChange('clauseSpecifique', e.target.value);
+                handleChange('legalClause', e.target.value);
+              }}
+              disabled={saving}
+              placeholder="ex: Avertissement sonore : Les prestations comportent un volume sonore élevé. L'organisateur s'engage à fournir l'accès à une prise électrique et un point d'eau."
+              className="theme-input text-xs font-bold p-2 bg-cordel-bg-light w-full resize-none"
+            />
+          </div>
         </div>
       </CordelCard>
 

@@ -2,11 +2,13 @@ import React, { useState } from 'react';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 import { GIG_STATUSES } from './GigFormModal';
+import { downloadContractPDF } from '../../utils/contractPdfGenerator';
 
 export default function GigDetailsModal({
   isOpen,
   onClose,
   gig,
+  associationSettings = {},
   onStatusChange,
   onDeleteGig,
   onOpenAgendaOptionModal,
@@ -188,11 +190,12 @@ export default function GigDetailsModal({
 
             <button
               type="button"
-              onClick={() => triggerWorkflowToast('Signature Contrat')}
-              className="px-2.5 py-2 text-[10px] font-extrabold uppercase rounded bg-stone-100 hover:bg-stone-200 text-stone-800 border border-stone-300 shadow-xs flex flex-col items-center gap-1 cursor-pointer transition-all active:scale-95"
+              onClick={() => downloadContractPDF(gig, associationSettings)}
+              className="px-2.5 py-2 text-[10px] font-extrabold uppercase rounded bg-purple-100 hover:bg-purple-200 text-purple-900 border border-purple-300 shadow-xs flex flex-col items-center gap-1 cursor-pointer transition-all active:scale-95"
+              title="Générer et télécharger le contrat de prestation 100% dynamique aux couleurs et infos de l'association"
             >
               <span className="text-base">✍️</span>
-              <span>Envoyer Contrat</span>
+              <span>Contrat PDF</span>
             </button>
 
             <button
