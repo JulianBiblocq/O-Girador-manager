@@ -90,6 +90,7 @@ export default function TreasuryManager({ groupId, onBack, role, isSystemAdmin, 
             events={events}
             updatingEventId={updatingEventId}
             handleUpdateEventFinances={handleUpdateEventFinances}
+            lieuxImportants={associationSettings?.lieuxImportants || []}
           />
         );
       case 'operations-diverses':

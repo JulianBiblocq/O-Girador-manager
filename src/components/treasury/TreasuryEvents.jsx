@@ -5,7 +5,8 @@ import { formatLocationShort } from '../../utils/locationUtils';
 export default function TreasuryEvents({
   events,
   updatingEventId,
-  handleUpdateEventFinances
+  handleUpdateEventFinances,
+  lieuxImportants = []
 }) {
   const [eventInputs, setEventInputs] = useState({});
 
