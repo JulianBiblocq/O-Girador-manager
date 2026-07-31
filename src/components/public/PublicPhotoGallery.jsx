@@ -57,7 +57,7 @@ export default function PublicPhotoGallery({ photos = [], publicTheme = {} }) {
   };
 
   return (
-    <section className="py-16 bg-stone-100/70 border-b border-stone-200/60 overflow-hidden relative select-none">
+    <section id="galerie" className="py-16 bg-stone-100/70 border-b border-stone-200/60 overflow-hidden relative select-none">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 flex flex-col gap-10">
         
         {/* En-tête de section */}

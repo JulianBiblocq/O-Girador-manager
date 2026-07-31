@@ -74,6 +74,15 @@ const PERMISSION_POLES = [
     ]
   },
   {
+    id: 'vitrine',
+    label: '🌐 Vitrine Publique',
+    desc: 'Autorisations de prévisualisation en mode brouillon et d\'administration de la vitrine',
+    tabs: [
+      { id: 'vitrine-preview', label: 'Vitrine — Prévisualisation (Mode Brouillon)', desc: 'Permet d\'accéder à la vitrine lorsque isPublished est à false (mode en construction)' },
+      { id: 'vitrine-edit', label: 'Vitrine — Édition & Configuration', desc: 'Permet d\'accéder au pôle d\'administration de la Vitrine (textes, formules, images, SEO, etc.)' }
+    ]
+  },
+  {
     id: 'config',
     label: '⚙️ Configuration',
     desc: 'Paramètres généraux de l\'association, identité, sécurité, modules et mise en page',
@@ -107,7 +116,8 @@ export default function TabSecurity({
     logistique: false,
     vestiaire: false,
     studio: false,
-    mestre: false
+    mestre: false,
+    vitrine: false
   });
 
   const togglePoleAccordion = (poleId) => {

@@ -134,6 +134,7 @@ export default function LayoutShell({
   const hasAccessStudio = isMasterKeyActive || checkTabAccess('studio-events', 'studio') || checkTabAccess('studio-social', 'studio') || checkTabAccess('reunion-manager', 'studio') || checkTabAccess('varal-manager', 'studio') || checkTabAccess('activity-reports', 'studio') || checkTabAccess('mestre-forum-channels', 'studio') || checkTabAccess('newsletter-manager', 'studio');
   const hasAccessVestiaire = isMasterKeyActive || checkTabAccess('wardrobe-inventory', 'vestiaire') || checkTabAccess('wardrobe-couture', 'vestiaire') || checkTabAccess('wardrobe-sizes', 'vestiaire');
   const hasAccessMestre = isMasterKeyActive || checkTabAccess('mestre-orientation', 'mestre') || checkTabAccess('mestre-events', 'mestre') || checkTabAccess('mestre-stage-layout', 'mestre') || checkTabAccess('mestre-sequenceur', 'mestre') || checkTabAccess('mestre-workshops', 'mestre') || checkTabAccess('mestre-mot-mestre', 'mestre');
+  const hasAccessVitrine = isMasterKeyActive || checkTabAccess('vitrine-edit', 'vitrine') || checkTabAccess('public-theme', 'config') || checkTabAccess('vitrine', 'vitrine');
 
   const isAdministrativeUser = isSystemOrSuperAdminOrMestre || 
                                profileData?.role === 'bureau' || 
@@ -143,7 +144,8 @@ export default function LayoutShell({
                                hasAccessTresorerie || 
                                hasAccessStudio ||
                                hasAccessVestiaire ||
-                               hasAccessMestre;
+                               hasAccessMestre ||
+                               hasAccessVitrine;
 
   const allMemberMenuItems = [
     { id: 'accueil', label: 'Accueil', icon: <XiloHome size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('accueil'); onNavigateToTab && onNavigateToTab('dashboard'); } },

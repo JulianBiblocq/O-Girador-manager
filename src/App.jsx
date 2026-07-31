@@ -731,6 +731,9 @@ export default function App() {
         <PublicHome
           groupId={publicGroupId}
           user={user}
+          profileData={profileData}
+          permissionsMatrice={permissionsMatrice}
+          effectiveUserTags={effectiveUserTags}
           isAdministrativeUser={isAdministrativeUser}
           associationName={associationName}
           branding={branding}
@@ -1349,6 +1352,9 @@ export default function App() {
                 groupId={profileData?.groupId}
                 role={profileData?.role}
                 isSystemAdmin={profileData?.isSystemAdmin}
+                profileData={profileData}
+                permissionsMatrice={permissionsMatrice}
+                effectiveUserTags={effectiveUserTags}
                 mode="public-theme-only"
                 activeTabProp="public-theme"
                 onBack={() => handleNavigateToPole('accueil')} 

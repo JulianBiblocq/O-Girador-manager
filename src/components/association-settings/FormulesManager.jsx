@@ -48,12 +48,17 @@ export default function FormulesManager({ formules = [], onChangeFormules, savin
 
   const [editingIndex, setEditingIndex] = useState(null);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [uploadingModalImage, setUploadingModalImage] = useState(false);
   const [uploadError, setUploadError] = useState(null);
   const [formState, setFormState] = useState({
     titre: '',
     icone: '🥁',
     tarif: '',
     description: '',
+    boutonText: 'En savoir plus',
+    descriptionDetaillee: '',
+    modalImageUrl: '',
+    lienHelloAsso: '',
     avantagesText: '',
     backgroundImageUrl: '',
     imageUrl: ''
@@ -70,6 +75,10 @@ export default function FormulesManager({ formules = [], onChangeFormules, savin
         icone: item.icone || '🥁',
         tarif: item.tarif || '',
         description: item.description || '',
+        boutonText: item.boutonText || 'En savoir plus',
+        descriptionDetaillee: item.descriptionDetaillee || '',
+        modalImageUrl: item.modalImageUrl || '',
+        lienHelloAsso: item.lienHelloAsso || '',
         avantagesText: Array.isArray(item.avantages) ? item.avantages.join('\n') : '',
         backgroundImageUrl: bgUrl,
         imageUrl: bgUrl
@@ -81,6 +90,10 @@ export default function FormulesManager({ formules = [], onChangeFormules, savin
         icone: '🥁',
         tarif: 'Adhésion annuelle',
         description: '',
+        boutonText: 'En savoir plus',
+        descriptionDetaillee: '',
+        modalImageUrl: '',
+        lienHelloAsso: '',
         avantagesText: '',
         backgroundImageUrl: '',
         imageUrl: ''
@@ -95,7 +108,7 @@ export default function FormulesManager({ formules = [], onChangeFormules, savin
     setUploadError(null);
   };
 
-  // Gestion du téléversement d'une image locale vers Firebase Storage
+  // Téléversement de l'image de fond de carte
   const handleImageUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -109,20 +122,13 @@ export default function FormulesManager({ formules = [], onChangeFormules, savin
     setUploadError(null);
 
     try {
-      // Nettoyage du nom de fichier et préparation de l'emplacement Firebase Storage
       const cleanFileName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
       const storagePath = groupId
         ? `associations/${groupId}/formules/${Date.now()}_${cleanFileName}`
         : `formules/${Date.now()}_${cleanFileName}`;
 
       const imgRef = storageRef(storage, storagePath);
-
-      // Envoi du fichier à Firebase Storage
-      const snapshot = await uploadBytes(imgRef, file, {
-        contentType: file.type || 'image/jpeg'
-      });
-
-      // Récupération de l'URL de téléchargement sécurisée
+      const snapshot = await uploadBytes(imgRef, file, { contentType: file.type || 'image/jpeg' });
       const downloadUrl = await getDownloadURL(snapshot.ref);
 
       setFormState(prev => ({
@@ -139,12 +145,56 @@ export default function FormulesManager({ formules = [], onChangeFormules, savin
     }
   };
 
-  // Suppression de l'image d'arrière-plan de la formule en cours
+  // Téléversement de la photo d'illustration HD pour la modale
+  const handleModalImageUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      setUploadError("Le fichier sélectionné doit être une image (JPG, PNG, WebP...).");
+      return;
+    }
+
+    setUploadingModalImage(true);
+    setUploadError(null);
+
+    try {
+      const cleanFileName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+      const storagePath = groupId
+        ? `associations/${groupId}/formules/modal_${Date.now()}_${cleanFileName}`
+        : `formules/modal_${Date.now()}_${cleanFileName}`;
+
+      const imgRef = storageRef(storage, storagePath);
+      const snapshot = await uploadBytes(imgRef, file, { contentType: file.type || 'image/jpeg' });
+      const downloadUrl = await getDownloadURL(snapshot.ref);
+
+      setFormState(prev => ({
+        ...prev,
+        modalImageUrl: downloadUrl
+      }));
+    } catch (err) {
+      console.error("Erreur lors du téléversement vers Firebase Storage :", err);
+      setUploadError("Une erreur est survenue pendant l'envoi de l'image de la modale.");
+    } finally {
+      setUploadingModalImage(false);
+      e.target.value = '';
+    }
+  };
+
+  // Suppression de l'image d'arrière-plan
   const handleRemoveImage = () => {
     setFormState(prev => ({
       ...prev,
       backgroundImageUrl: '',
       imageUrl: ''
+    }));
+  };
+
+  // Suppression de l'image modale
+  const handleRemoveModalImage = () => {
+    setFormState(prev => ({
+      ...prev,
+      modalImageUrl: ''
     }));
   };
 
@@ -166,6 +216,10 @@ export default function FormulesManager({ formules = [], onChangeFormules, savin
       icone: formState.icone.trim() || '🥁',
       tarif: formState.tarif.trim(),
       description: formState.description.trim(),
+      boutonText: formState.boutonText.trim() || 'En savoir plus',
+      descriptionDetaillee: formState.descriptionDetaillee.trim(),
+      modalImageUrl: formState.modalImageUrl.trim(),
+      lienHelloAsso: formState.lienHelloAsso.trim(),
       avantages: avantagesList,
       backgroundImageUrl: bgUrl,
       imageUrl: bgUrl
@@ -287,19 +341,32 @@ export default function FormulesManager({ formules = [], onChangeFormules, savin
             </div>
           </div>
 
-          <div className="flex flex-col gap-1">
-            <label className="text-[10px] font-bold uppercase">Libellé du Tarif / Période</label>
-            <input
-              type="text"
-              value={formState.tarif}
-              onChange={(e) => setFormState({ ...formState, tarif: e.target.value })}
-              placeholder="Adhésion annuelle / Tarif réduit"
-              className="text-xs px-2 py-1.5 border rounded bg-white"
-            />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="flex flex-col gap-1">
+              <label className="text-[10px] font-bold uppercase">Libellé du Tarif / Période</label>
+              <input
+                type="text"
+                value={formState.tarif}
+                onChange={(e) => setFormState({ ...formState, tarif: e.target.value })}
+                placeholder="Adhésion annuelle / Tarif réduit"
+                className="text-xs px-2 py-1.5 border rounded bg-white"
+              />
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <label className="text-[10px] font-bold uppercase">Texte du bouton sur la carte</label>
+              <input
+                type="text"
+                value={formState.boutonText}
+                onChange={(e) => setFormState({ ...formState, boutonText: e.target.value })}
+                placeholder="En savoir plus"
+                className="text-xs px-2 py-1.5 border rounded bg-white font-bold"
+              />
+            </div>
           </div>
 
           <div className="flex flex-col gap-1">
-            <label className="text-[10px] font-bold uppercase">Description courte</label>
+            <label className="text-[10px] font-bold uppercase">Description courte (Sur la carte)</label>
             <textarea
               rows={2}
               value={formState.description}
@@ -309,11 +376,36 @@ export default function FormulesManager({ formules = [], onChangeFormules, savin
             />
           </div>
 
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] font-bold uppercase">Description détaillée (Dans la modale "En savoir plus")</label>
+            <textarea
+              rows={3}
+              value={formState.descriptionDetaillee}
+              onChange={(e) => setFormState({ ...formState, descriptionDetaillee: e.target.value })}
+              placeholder="Précisez le fonctionnement, les lieux, les horaires exacts, la tenue requise, les objectifs d'apprentissage..."
+              className="text-xs px-2 py-1.5 border rounded bg-white resize-y"
+            />
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] font-bold uppercase flex items-center justify-between">
+              <span>💳 Lien d'inscription HelloAsso spécifique (Optionnel)</span>
+              <span className="text-[9px] text-stone-400 font-normal">Surcharge le lien global si rempli</span>
+            </label>
+            <input
+              type="url"
+              value={formState.lienHelloAsso}
+              onChange={(e) => setFormState({ ...formState, lienHelloAsso: e.target.value })}
+              placeholder="https://www.helloasso.com/associations/.../adhesions/..."
+              className="text-xs px-2 py-1.5 border rounded bg-white font-mono"
+            />
+          </div>
+
           {/* Section Upload d'image de fond via Firebase Storage */}
           <div className="flex flex-col gap-2 p-3 bg-[#fdfaf2] border border-encre-noire/20 rounded">
             <label className="text-[10px] font-bold uppercase tracking-wider text-encre-noire flex items-center justify-between">
-              <span>🖼️ Image d'Arrière-Plan de la Carte</span>
-              <span className="text-[9px] text-stone-500 font-normal">Photo locale (danse, percu...)</span>
+              <span>🖼️ Image d'Arrière-Plan de la Carte (Formule)</span>
+              <span className="text-[9px] text-stone-500 font-normal">Photo d'arrière-plan</span>
             </label>
 
             {/* Boutons d'action pour le téléversement d'image */}
@@ -341,16 +433,9 @@ export default function FormulesManager({ formules = [], onChangeFormules, savin
               )}
             </div>
 
-            {/* Message d'erreur d'upload le cas échéant */}
-            {uploadError && (
-              <p className="text-[10px] text-red-700 font-medium">
-                ⚠️ {uploadError}
-              </p>
-            )}
-
             {/* URL manuelle alternative ou d'appoint */}
             <div className="flex flex-col gap-1 mt-1">
-              <span className="text-[9px] text-stone-500 font-medium">Ou coller directement une URL d'image :</span>
+              <span className="text-[9px] text-stone-500 font-medium">Ou URL directe de l'image de carte :</span>
               <input
                 type="url"
                 value={formState.backgroundImageUrl || formState.imageUrl || ''}
@@ -359,6 +444,58 @@ export default function FormulesManager({ formules = [], onChangeFormules, savin
                 className="text-xs px-2 py-1 border rounded bg-white font-mono"
               />
             </div>
+          </div>
+
+          {/* Section Upload de Photo d'Illustration HD pour la Modale */}
+          <div className="flex flex-col gap-2 p-3 bg-amber-50/60 border border-amber-300/80 rounded">
+            <label className="text-[10px] font-bold uppercase tracking-wider text-amber-950 flex items-center justify-between">
+              <span>📸 Photo d'Illustration pour la Modale HD ("En savoir plus")</span>
+              <span className="text-[9px] text-amber-700 font-normal">Grand format</span>
+            </label>
+
+            <div className="flex items-center gap-2 flex-wrap">
+              <label className="inline-flex items-center gap-1.5 text-[11px] font-bold bg-stone-800 text-white px-3 py-1.5 rounded cursor-pointer hover:brightness-110 transition-all shadow-[1.5px_1.5px_0px_0px_#181716] disabled:opacity-50">
+                <span>{uploadingModalImage ? '⏳ Téléversement...' : '📁 Uploader photo HD modale'}</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleModalImageUpload}
+                  disabled={uploadingModalImage || saving}
+                  className="hidden"
+                />
+              </label>
+
+              {formState.modalImageUrl && (
+                <button
+                  type="button"
+                  onClick={handleRemoveModalImage}
+                  disabled={uploadingModalImage || saving}
+                  className="text-[10px] font-bold text-red-700 hover:text-red-900 border border-red-300 bg-red-50 px-2 py-1 rounded cursor-pointer"
+                >
+                  🗑️ Retirer l'image HD
+                </button>
+              )}
+            </div>
+
+            {/* URL directe image modale */}
+            <div className="flex flex-col gap-1 mt-1">
+              <span className="text-[9px] text-stone-500 font-medium">Ou URL de l'image modale HD :</span>
+              <input
+                type="url"
+                value={formState.modalImageUrl || ''}
+                onChange={(e) => setFormState({ ...formState, modalImageUrl: e.target.value })}
+                placeholder="https://exemple.com/photo-hd-activite.jpg"
+                className="text-xs px-2 py-1 border rounded bg-white font-mono"
+              />
+            </div>
+
+            {/* Message d'erreur d'upload */}
+            {uploadError && (
+              <p className="text-[10px] text-red-700 font-medium">
+                ⚠️ {uploadError}
+              </p>
+            )}
+          </div>
 
             {/* Aperçu dynamique de l'image de fond avec la couche d'assombrissement (overlay) */}
             {(formState.backgroundImageUrl || formState.imageUrl) && (
@@ -376,7 +513,6 @@ export default function FormulesManager({ formules = [], onChangeFormules, savin
                 </div>
               </div>
             )}
-          </div>
 
           <div className="flex flex-col gap-1">
             <label className="text-[10px] font-bold uppercase flex items-center justify-between">

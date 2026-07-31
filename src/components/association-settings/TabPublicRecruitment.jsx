@@ -148,6 +148,26 @@ export default function TabPublicRecruitment({ formData, handleChange, saving, g
           </label>
         </div>
 
+        {/* Interrupteur Global d'activation HelloAsso */}
+        <div className="flex items-center gap-3 p-3 bg-emerald-50/80 border border-emerald-300 rounded-[4px_6px_3px_5px]">
+          <input
+            type="checkbox"
+            id="activerHelloAssoRecrutement"
+            checked={publicTheme.activerHelloAssoRecrutement !== false}
+            onChange={(e) => handleThemeChange('activerHelloAssoRecrutement', e.target.checked)}
+            disabled={saving}
+            className="w-4 h-4 cursor-pointer accent-[var(--color-cordel-vert,#2d6a4f)]"
+          />
+          <div className="flex flex-col text-left">
+            <label htmlFor="activerHelloAssoRecrutement" className="text-xs font-bold uppercase tracking-wider text-emerald-950 cursor-pointer flex items-center gap-1.5">
+              <span>💳 Activer le bouton d'inscription HelloAsso dans la section Recrutement</span>
+            </label>
+            <span className="text-[10px] text-emerald-800 font-medium">
+              Si décoché, tous les boutons et liens de redirection externe vers HelloAsso seront masqués sur la vitrine publique.
+            </span>
+          </div>
+        </div>
+
         {/* Formulaire conditionnel d'édition (visible si le toggle est activé) */}
         {publicTheme.afficherRecrutement !== false && (
           <div className="flex flex-col gap-6 pt-2 border-t border-dashed border-cordel-master-dark/20 animate-fade-in">

@@ -130,6 +130,7 @@ export const DEFAULT_PUBLIC_THEME = {
   lienRecrutement: '',
   texteBoutonRecrutement: "S'inscrire sur HelloAsso",
   showRecrutementCtaIcon: true,
+  activerHelloAssoRecrutement: true,
   // Configuration du Bouton d'Action Principal (Hero CTA)
   heroCtaText: 'Prochaines dates',
   heroCtaLink: '#agenda',

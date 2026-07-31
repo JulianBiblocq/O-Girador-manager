@@ -15,6 +15,7 @@ import PublicRichText from './public/PublicRichText';
 import PublicSeoHead from './public/PublicSeoHead';
 import PublicWatermarkLogo from './public/PublicWatermarkLogo';
 import PublicMaintenancePage from './public/PublicMaintenancePage';
+import { canPreviewVitrineDraft } from '../utils/permissionUtils';
 
 /**
  * Convertit une URL YouTube ou Vimeo classique en URL embed sécurisée pour iframe.
@@ -53,6 +54,9 @@ const getEmbedVideoUrl = (url) => {
 export default function PublicHome({ 
   groupId, 
   user, 
+  profileData,
+  permissionsMatrice,
+  effectiveUserTags,
   isAdministrativeUser, 
   associationName, 
   branding, 
@@ -63,12 +67,20 @@ export default function PublicHome({
   const { events: publicEvents, loading: loadingEvents } = usePublicEvents(groupId);
   const [selectedEventDetails, setSelectedEventDetails] = React.useState(null);
   const [publishing, setPublishing] = React.useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
 
   const logoSrc = branding?.logoUrl || publicTheme?.logoUrl || '';
   const groupTitle = associationName || publicTheme?.associationName || "Notre Association";
 
   const isPublished = publicTheme?.isPublished !== false;
-  const isAdminUser = Boolean(user || isAdministrativeUser);
+  
+  // Vérification de la permission dynamique de prévisualisation brouillon
+  const userProfileToTest = profileData || {
+    role: user ? (isAdministrativeUser ? 'admin' : 'membre') : null,
+    isSystemAdmin: Boolean(isAdministrativeUser)
+  };
+  const canPreviewDraft = canPreviewVitrineDraft(userProfileToTest, permissionsMatrice, effectiveUserTags);
+  const isAdminUser = Boolean(user && canPreviewDraft);
 
   // Publication rapide directe depuis la bannière d'avertissement
   const handleQuickPublish = async () => {
@@ -129,7 +141,11 @@ export default function PublicHome({
   const vitrineTexts = publicTheme?.vitrineTexts || {};
   const heroImage = publicTheme?.publicHeroImage || '';
   const heroOverlayOpacity = publicTheme?.heroOverlayOpacity !== undefined ? Number(publicTheme.heroOverlayOpacity) : 25;
-  const catchphrase = vitrineTexts.accrochePresentation || publicTheme?.publicCatchphrase || "Découvrez la puissance du Maracatu, la richesse de nos rythmes traditionnels et la ferveur de nos prestations scéniques.";
+  const catchphrase = publicTheme?.publicCatchphrase 
+    || publicTheme?.heroCatchphrase 
+    || vitrineTexts?.accrocheHero 
+    || vitrineTexts?.accrochePresentation 
+    || "Découvrez la puissance du Maracatu, la richesse de nos rythmes traditionnels et la ferveur de nos prestations scéniques.";
   const descriptionText = publicTheme?.publicDescription || "Notre collectif rassemble des passionnés de percussions et de culture brésilienne. À travers les Alfaias, Agbês, Caixas et Gonguês, nous faisons vibrer l'héritage vivant du Maracatu de Baque Virado.";
   const embedVideoUrl = getEmbedVideoUrl(publicTheme?.publicVideoLink);
 
@@ -208,17 +224,20 @@ export default function PublicHome({
         }}
       >
       {/* ==========================================
-          EN-TÊTE / NAVIGATION
+          EN-TÊTE / NAVIGATION (STICKY BAR)
          ========================================== */}
-      <header className="sticky top-0 z-50 bg-[#faf6ee]/90 backdrop-blur-md border-b border-stone-200/80 shadow-xs transition-all">
+      <header className="sticky top-0 z-50 bg-[#faf6ee]/95 backdrop-blur-md border-b border-stone-200/80 shadow-xs transition-all">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           {/* Logo & Titre */}
-          <div className="flex items-center gap-3">
+          <div 
+            className="flex items-center gap-3 cursor-pointer group select-none"
+            onClick={() => scrollToSection('hero')}
+          >
             {logoSrc && (
               <img 
                 src={logoSrc} 
                 alt={`Logo ${groupTitle}`} 
-                className="w-9 h-9 object-contain select-none"
+                className="w-9 h-9 object-contain select-none transition-transform group-hover:scale-105"
               />
             )}
             <span 
@@ -232,35 +251,57 @@ export default function PublicHome({
             </span>
           </div>
 
-          {/* Navigation & Espace Membre */}
-          <div className="flex items-center gap-4">
+          {/* Navigation Dynamique Ordinateur */}
+          <nav className="hidden md:flex items-center gap-5">
+            {publicTheme?.afficherPresentation !== false && (
+              <button
+                type="button"
+                onClick={() => scrollToSection('presentation')}
+                className="text-xs font-bold uppercase tracking-wider text-stone-600 hover:text-[var(--public-primary,#D32F2F)] transition-colors cursor-pointer"
+              >
+                {titrePresentation}
+              </button>
+            )}
             {publicTheme?.afficherRecrutement !== false && (
               <button
                 type="button"
                 onClick={() => scrollToSection('recrutement')}
-                className="hidden sm:inline-block text-xs font-semibold uppercase tracking-wider text-stone-600 hover:text-stone-900 transition-colors cursor-pointer"
+                className="text-xs font-bold uppercase tracking-wider text-stone-600 hover:text-[var(--public-primary,#D32F2F)] transition-colors cursor-pointer"
               >
-                Recrutement
+                {vitrineTexts.titreRecrutement || publicTheme?.titreRecrutement || "Recrutement"}
+              </button>
+            )}
+            {publicTheme?.afficherGalerie !== false && (
+              <button
+                type="button"
+                onClick={() => scrollToSection('galerie')}
+                className="text-xs font-bold uppercase tracking-wider text-stone-600 hover:text-[var(--public-primary,#D32F2F)] transition-colors cursor-pointer"
+              >
+                {vitrineTexts.titreGalerie || "Galerie"}
               </button>
             )}
             {publicTheme?.afficherAgenda !== false && (
               <button
                 type="button"
                 onClick={() => scrollToSection('agenda')}
-                className="hidden sm:inline-block text-xs font-semibold uppercase tracking-wider text-stone-600 hover:text-stone-900 transition-colors cursor-pointer"
+                className="text-xs font-bold uppercase tracking-wider text-stone-600 hover:text-[var(--public-primary,#D32F2F)] transition-colors cursor-pointer"
               >
-                Agenda
+                {titreAgenda}
               </button>
             )}
             {enableOrganizerSection && (
               <button
                 type="button"
                 onClick={() => scrollToSection('programmer')}
-                className="hidden md:inline-block text-xs font-semibold uppercase tracking-wider text-stone-600 hover:text-stone-900 transition-colors cursor-pointer"
+                className="text-xs font-bold uppercase tracking-wider text-stone-600 hover:text-[var(--public-primary,#D32F2F)] transition-colors cursor-pointer"
               >
-                Nous Programmer
+                {titreProgrammer}
               </button>
             )}
+          </nav>
+
+          {/* Espace Membre & Bouton Menu Mobile */}
+          <div className="flex items-center gap-3">
             <button
               type="button"
               onClick={onNavigateToApp || onNavigateToLogin}
@@ -268,14 +309,75 @@ export default function PublicHome({
             >
               <span>🔒 Espace Membre</span>
             </button>
+
+            <button
+              type="button"
+              onClick={() => setMobileMenuOpen(prev => !prev)}
+              className="md:hidden p-2 rounded-md border border-stone-300 text-stone-700 hover:bg-stone-200 transition-all cursor-pointer flex items-center justify-center w-9 h-9 font-black text-sm"
+              aria-label="Menu de navigation"
+            >
+              {mobileMenuOpen ? '✕' : '☰'}
+            </button>
           </div>
         </div>
+
+        {/* Menu Déroulant Mobile */}
+        {mobileMenuOpen && (
+          <div className="md:hidden border-t border-stone-200 bg-[#faf6ee] p-4 flex flex-col gap-3 shadow-xl animate-fade-in text-left">
+            {publicTheme?.afficherPresentation !== false && (
+              <button
+                type="button"
+                onClick={() => { scrollToSection('presentation'); setMobileMenuOpen(false); }}
+                className="text-xs font-bold uppercase tracking-wider text-stone-700 hover:text-[var(--public-primary,#D32F2F)] text-left py-1.5 border-b border-stone-200/60 cursor-pointer"
+              >
+                👉 {titrePresentation}
+              </button>
+            )}
+            {publicTheme?.afficherRecrutement !== false && (
+              <button
+                type="button"
+                onClick={() => { scrollToSection('recrutement'); setMobileMenuOpen(false); }}
+                className="text-xs font-bold uppercase tracking-wider text-stone-700 hover:text-[var(--public-primary,#D32F2F)] text-left py-1.5 border-b border-stone-200/60 cursor-pointer"
+              >
+                📣 {vitrineTexts.titreRecrutement || publicTheme?.titreRecrutement || "Recrutement"}
+              </button>
+            )}
+            {publicTheme?.afficherGalerie !== false && (
+              <button
+                type="button"
+                onClick={() => { scrollToSection('galerie'); setMobileMenuOpen(false); }}
+                className="text-xs font-bold uppercase tracking-wider text-stone-700 hover:text-[var(--public-primary,#D32F2F)] text-left py-1.5 border-b border-stone-200/60 cursor-pointer"
+              >
+                📸 {vitrineTexts.titreGalerie || "Galerie Photos"}
+              </button>
+            )}
+            {publicTheme?.afficherAgenda !== false && (
+              <button
+                type="button"
+                onClick={() => { scrollToSection('agenda'); setMobileMenuOpen(false); }}
+                className="text-xs font-bold uppercase tracking-wider text-stone-700 hover:text-[var(--public-primary,#D32F2F)] text-left py-1.5 border-b border-stone-200/60 cursor-pointer"
+              >
+                📅 {titreAgenda}
+              </button>
+            )}
+            {enableOrganizerSection && (
+              <button
+                type="button"
+                onClick={() => { scrollToSection('programmer'); setMobileMenuOpen(false); }}
+                className="text-xs font-bold uppercase tracking-wider text-stone-700 hover:text-[var(--public-primary,#D32F2F)] text-left py-1.5 cursor-pointer"
+              >
+                🎪 {titreProgrammer}
+              </button>
+            )}
+          </div>
+        )}
       </header>
 
       {/* ==========================================
           BLOC 1 - HERO SECTION (HAUT)
          ========================================== */}
       <section 
+        id="hero"
         className="relative overflow-hidden min-h-[60vh] sm:min-h-[72vh] py-24 sm:py-36 md:py-44 flex items-center justify-center bg-cover bg-center border-b border-stone-200/60 transition-all duration-300"
         style={{
           backgroundImage: heroImage ? `url(${heroImage})` : 'none'
@@ -368,7 +470,7 @@ export default function PublicHome({
       {/* ==========================================
           BLOC 2 - PRÉSENTATION ("QUI SOMMES-NOUS ?")
          ========================================== */}
-      <section className="py-16 sm:py-20 bg-[#faf6ee]/70 backdrop-blur-xs border-b border-stone-200/60">
+      <section id="presentation" className="py-16 sm:py-20 bg-[#faf6ee]/70 backdrop-blur-xs border-b border-stone-200/60">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 md:px-8 flex flex-col gap-10">
           <div className="text-center flex flex-col items-center gap-3">
             <h2 

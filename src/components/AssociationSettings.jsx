@@ -14,17 +14,32 @@ import TabAgenda from './association-settings/TabAgenda';
 import TabModules from './association-settings/TabModules';
 import TabLieux from './association-settings/TabLieux';
 import TabAutomations from './association-settings/TabAutomations';
-import TabPublicTheme from './association-settings/TabPublicTheme';
 import TabPublicContent from './association-settings/TabPublicContent';
 import TabCommunication from './association-settings/TabCommunication';
+import { canEditVitrine } from '../utils/permissionUtils';
 
 import { useEffect } from 'react';
 
 export { DEFAULT_FIELDS_CONFIG, DEFAULT_VARAL_CATEGORIES, DEFAULT_INSTRUMENTS } from '../hooks/useAssociationSettings';
 
-export default function AssociationSettings({ groupId, onBack, role, isSystemAdmin, mode, activeTabProp }) {
+export default function AssociationSettings({ 
+  groupId, 
+  onBack, 
+  role, 
+  isSystemAdmin, 
+  mode, 
+  activeTabProp,
+  profileData,
+  permissionsMatrice,
+  effectiveUserTags
+}) {
   const { t } = useTranslation();
-  const isAuthorized = role === 'mestre' || role === 'super-admin' || isSystemAdmin === true;
+  const hasVitrinePermission = canEditVitrine(
+    profileData || { role, isSystemAdmin },
+    permissionsMatrice,
+    effectiveUserTags
+  );
+  const isAuthorized = role === 'mestre' || role === 'super-admin' || isSystemAdmin === true || (mode === 'public-theme-only' && hasVitrinePermission);
 
   const {
     formData,

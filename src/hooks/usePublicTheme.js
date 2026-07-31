@@ -49,6 +49,7 @@ const buildThemeData = (data) => {
     lienRecrutement: data.publicTheme?.lienRecrutement || '',
     texteBoutonRecrutement: data.publicTheme?.texteBoutonRecrutement || "S'inscrire sur HelloAsso",
     showRecrutementCtaIcon: data.publicTheme?.showRecrutementCtaIcon !== false,
+    activerHelloAssoRecrutement: data.publicTheme?.activerHelloAssoRecrutement !== false,
     heroCtaText: data.publicTheme?.heroCtaText || "Prochaines dates",
     heroCtaLink: data.publicTheme?.heroCtaLink || "#agenda",
     showHeroCtaIcon: data.publicTheme?.showHeroCtaIcon !== false,

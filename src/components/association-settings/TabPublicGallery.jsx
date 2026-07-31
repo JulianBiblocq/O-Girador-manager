@@ -69,6 +69,17 @@ export default function TabPublicGallery({ formData, handleChange, groupId, savi
     }
   };
 
+  const [draggedIndex, setDraggedIndex] = useState(null);
+
+  // Déplacement d'une photo de fromIndex vers toIndex dans le tableau
+  const handleMovePhoto = (fromIndex, toIndex) => {
+    if (toIndex < 0 || toIndex >= galleryPhotos.length || fromIndex === toIndex) return;
+    const newPhotos = [...galleryPhotos];
+    const [movedItem] = newPhotos.splice(fromIndex, 1);
+    newPhotos.splice(toIndex, 0, movedItem);
+    updateGalleryPhotos(newPhotos);
+  };
+
   // Suppression d'une photo par son index dans le tableau
   const handleDeletePhoto = (indexToDelete) => {
     const filtered = galleryPhotos.filter((_, index) => index !== indexToDelete);
@@ -226,11 +237,18 @@ export default function TabPublicGallery({ formData, handleChange, groupId, savi
         </div>
       </div>
 
-      {/* Grille des photos actuelles avec suppression */}
+      {/* Grille des photos actuelles avec ordonnancement & suppression */}
       <div className="flex flex-col gap-2 pt-3 border-t border-dashed border-cordel-master-dark/20 mt-2">
-        <span className="text-xs font-bold uppercase tracking-wider text-encre-noire/80">
-          🖼️ Photos actuellement enregistrées ({galleryPhotos.length})
-        </span>
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-bold uppercase tracking-wider text-encre-noire/80">
+            🖼️ Photos actuellement enregistrées ({galleryPhotos.length})
+          </span>
+          {galleryPhotos.length > 1 && (
+            <span className="text-[10px] font-bold text-amber-800 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
+              💡 Réorganisez l'ordre par glisser-déposer ou via les flèches ⬅️ ➡️
+            </span>
+          )}
+        </div>
 
         {galleryPhotos.length === 0 ? (
           <div className="p-6 border border-dashed border-stone-300 rounded bg-stone-50 text-center text-xs text-stone-500">
@@ -238,33 +256,94 @@ export default function TabPublicGallery({ formData, handleChange, groupId, savi
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 mt-2">
-            {galleryPhotos.map((photoUrl, index) => (
-              <div 
-                key={`${photoUrl}-${index}`}
-                className="relative group rounded-lg overflow-hidden border border-stone-200 shadow-xs aspect-square bg-stone-900"
-              >
-                <img
-                  src={photoUrl}
-                  alt={`Galerie ${index + 1}`}
-                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                />
-                
-                {/* Bouton de suppression au survol/coin */}
-                <button
-                  type="button"
-                  onClick={() => handleDeletePhoto(index)}
-                  disabled={saving || uploading}
-                  title="Supprimer cette photo"
-                  className="absolute top-1.5 right-1.5 p-1.5 bg-[var(--color-cordel-rouge,#8b2a1a)] text-white text-[10px] font-bold rounded-full shadow-md hover:scale-110 active:scale-95 transition-all cursor-pointer flex items-center justify-center w-6 h-6"
-                >
-                  ✕
-                </button>
+            {galleryPhotos.map((photoUrl, index) => {
+              const isFirst = index === 0;
+              const isLast = index === galleryPhotos.length - 1;
+              const isDragging = draggedIndex === index;
 
-                <div className="absolute bottom-0 inset-x-0 bg-black/60 text-white text-[9px] px-2 py-1 truncate">
-                  Photo {index + 1}
+              return (
+                <div 
+                  key={`${photoUrl}-${index}`}
+                  draggable={!saving && !uploading}
+                  onDragStart={(e) => {
+                    e.dataTransfer.setData('text/plain', String(index));
+                    setDraggedIndex(index);
+                  }}
+                  onDragEnd={() => setDraggedIndex(null)}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    const fromIndex = Number(e.dataTransfer.getData('text/plain'));
+                    if (!isNaN(fromIndex) && fromIndex !== index) {
+                      handleMovePhoto(fromIndex, index);
+                    }
+                    setDraggedIndex(null);
+                  }}
+                  className={`relative group rounded-lg overflow-hidden border-2 shadow-xs aspect-square bg-stone-900 transition-all duration-200 cursor-grab active:cursor-grabbing ${
+                    isDragging ? 'opacity-40 border-dashed border-amber-500 scale-95' : 'border-stone-300 hover:border-amber-500'
+                  }`}
+                >
+                  <img
+                    src={photoUrl}
+                    alt={`Galerie ${index + 1}`}
+                    className="w-full h-full object-cover pointer-events-none"
+                  />
+                  
+                  {/* Badge de position */}
+                  <span className="absolute top-1.5 left-1.5 px-2 py-0.5 bg-black/70 text-white font-mono font-bold text-[10px] rounded backdrop-blur-xs border border-white/20">
+                    #{index + 1}
+                  </span>
+
+                  {/* Bouton de suppression */}
+                  <button
+                    type="button"
+                    onClick={() => handleDeletePhoto(index)}
+                    disabled={saving || uploading}
+                    title="Supprimer cette photo"
+                    className="absolute top-1.5 right-1.5 p-1 bg-[var(--color-cordel-rouge,#8b2a1a)] text-white text-[10px] font-bold rounded-full shadow-md hover:scale-110 active:scale-95 transition-all cursor-pointer flex items-center justify-center w-6 h-6 z-10"
+                  >
+                    ✕
+                  </button>
+
+                  {/* Barre d'action d'ordonnancement (Flèches Gauche / Droite) */}
+                  <div className="absolute bottom-0 inset-x-0 bg-black/80 text-white p-1.5 flex items-center justify-between gap-1 z-10 backdrop-blur-xs">
+                    {/* Flèche Déplacer vers la Gauche / Plus Haut (Rang -1) */}
+                    <button
+                      type="button"
+                      onClick={() => handleMovePhoto(index, index - 1)}
+                      disabled={isFirst || saving || uploading}
+                      title={isFirst ? "Première photo de la liste" : "Déplacer vers la gauche (Avancer le rang)"}
+                      className={`px-2 py-0.5 rounded text-[11px] font-black transition-all flex items-center justify-center ${
+                        isFirst
+                          ? 'opacity-30 text-stone-400 cursor-not-allowed bg-stone-800'
+                          : 'bg-stone-700 hover:bg-amber-500 hover:text-stone-950 text-white cursor-pointer active:scale-90'
+                      }`}
+                    >
+                      ⬅️
+                    </button>
+
+                    <span className="text-[9px] font-mono font-bold text-stone-300 truncate">
+                      Rang {index + 1}
+                    </span>
+
+                    {/* Flèche Déplacer vers la Droite / Plus Bas (Rang +1) */}
+                    <button
+                      type="button"
+                      onClick={() => handleMovePhoto(index, index + 1)}
+                      disabled={isLast || saving || uploading}
+                      title={isLast ? "Dernière photo de la liste" : "Déplacer vers la droite (Reculer le rang)"}
+                      className={`px-2 py-0.5 rounded text-[11px] font-black transition-all flex items-center justify-center ${
+                        isLast
+                          ? 'opacity-30 text-stone-400 cursor-not-allowed bg-stone-800'
+                          : 'bg-stone-700 hover:bg-amber-500 hover:text-stone-950 text-white cursor-pointer active:scale-90'
+                      }`}
+                    >
+                      ➡️
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

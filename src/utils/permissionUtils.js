@@ -59,3 +59,113 @@ export function canManageEvents(profileData, permissionsMatrice = null, effectiv
 
   return false;
 }
+
+/**
+ * Vérifie si l'utilisateur possède les droits de prévisualisation du site vitrine en mode brouillon.
+ * 
+ * @param {Object} profileData Profil de l'utilisateur
+ * @param {Object} permissionsMatrice Matrice des permissions
+ * @param {Array} effectiveUserTags Étiquettes effectives
+ * @returns {boolean} true si l'utilisateur est autorisé à consulter la vitrine non publiée
+ */
+export function canPreviewVitrineDraft(profileData, permissionsMatrice = null, effectiveUserTags = []) {
+  if (!profileData) return false;
+
+  // 1. Rôles système autorisés d'office
+  const systemRole = (profileData.role || '').toLowerCase();
+  if (
+    systemRole === 'mestre' ||
+    systemRole === 'admin' ||
+    systemRole === 'super-admin' ||
+    systemRole === 'bureau' ||
+    systemRole === 'ca' ||
+    profileData.isSystemAdmin === true
+  ) {
+    return true;
+  }
+
+  // 2. Badges de secours/direction
+  const userTagsList = (
+    effectiveUserTags && effectiveUserTags.length > 0
+      ? effectiveUserTags
+      : profileData.tags || []
+  ).map(t => (typeof t === 'string' ? t.toLowerCase() : (t.id || t.nomM || t.nomF || '').toLowerCase()));
+
+  const DEFAULT_ALLOWED_KEYWORDS = ['bureau', 'président', 'présidente', 'présidence', 'admin', 'direction', 'ca'];
+  if (userTagsList.some(ut => DEFAULT_ALLOWED_KEYWORDS.some(kw => ut.includes(kw)))) {
+    return true;
+  }
+
+  // 3. Matrice des permissions (clés : 'vitrine-preview', 'vitrine', 'vitrine-edit', 'public-theme')
+  if (permissionsMatrice && typeof permissionsMatrice === 'object') {
+    const allowedTags = [
+      ...(permissionsMatrice['vitrine-preview'] || []),
+      ...(permissionsMatrice['vitrine'] || []),
+      ...(permissionsMatrice['vitrine-edit'] || []),
+      ...(permissionsMatrice['public-theme'] || [])
+    ].map(t => (typeof t === 'string' ? t.toLowerCase() : (t.id || t.nomF || t.nomM || '').toLowerCase()));
+
+    if (allowedTags.length > 0) {
+      if (userTagsList.some(ut => allowedTags.includes(ut))) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
+/**
+ * Vérifie si l'utilisateur possède les droits d'accès et d'édition du Back-Office Vitrine.
+ * 
+ * @param {Object} profileData Profil de l'utilisateur
+ * @param {Object} permissionsMatrice Matrice des permissions
+ * @param {Array} effectiveUserTags Étiquettes effectives
+ * @returns {boolean} true si l'utilisateur peut configurer et administrer la vitrine
+ */
+export function canEditVitrine(profileData, permissionsMatrice = null, effectiveUserTags = []) {
+  if (!profileData) return false;
+
+  // 1. Rôles système autorisés d'office
+  const systemRole = (profileData.role || '').toLowerCase();
+  if (
+    systemRole === 'mestre' ||
+    systemRole === 'admin' ||
+    systemRole === 'super-admin' ||
+    systemRole === 'bureau' ||
+    systemRole === 'ca' ||
+    profileData.isSystemAdmin === true
+  ) {
+    return true;
+  }
+
+  // 2. Badges de secours/direction
+  const userTagsList = (
+    effectiveUserTags && effectiveUserTags.length > 0
+      ? effectiveUserTags
+      : profileData.tags || []
+  ).map(t => (typeof t === 'string' ? t.toLowerCase() : (t.id || t.nomM || t.nomF || '').toLowerCase()));
+
+  const DEFAULT_ALLOWED_KEYWORDS = ['bureau', 'président', 'présidente', 'présidence', 'admin', 'direction', 'ca'];
+  if (userTagsList.some(ut => DEFAULT_ALLOWED_KEYWORDS.some(kw => ut.includes(kw)))) {
+    return true;
+  }
+
+  // 3. Matrice des permissions (clés : 'vitrine-edit', 'vitrine', 'public-theme')
+  if (permissionsMatrice && typeof permissionsMatrice === 'object') {
+    const allowedTags = [
+      ...(permissionsMatrice['vitrine-edit'] || []),
+      ...(permissionsMatrice['vitrine'] || []),
+      ...(permissionsMatrice['public-theme'] || [])
+    ].map(t => (typeof t === 'string' ? t.toLowerCase() : (t.id || t.nomF || t.nomM || '').toLowerCase()));
+
+    if (allowedTags.length > 0) {
+      if (userTagsList.some(ut => allowedTags.includes(ut))) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
