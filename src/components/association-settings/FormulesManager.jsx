@@ -44,12 +44,14 @@ export default function FormulesManager({ formules = [], onChangeFormules, savin
   const activeFormules = Array.isArray(formules) && formules.length > 0 ? formules : DEFAULT_FORMULES;
 
   const [editingIndex, setEditingIndex] = useState(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [formState, setFormState] = useState({
     titre: '',
     icone: '🥁',
     tarif: '',
     description: '',
-    avantagesText: ''
+    avantagesText: '',
+    imageUrl: ''
   });
 
   // Ouverture du formulaire de création / modification
@@ -61,7 +63,8 @@ export default function FormulesManager({ formules = [], onChangeFormules, savin
         icone: item.icone || '🥁',
         tarif: item.tarif || '',
         description: item.description || '',
-        avantagesText: Array.isArray(item.avantages) ? item.avantages.join('\n') : ''
+        avantagesText: Array.isArray(item.avantages) ? item.avantages.join('\n') : '',
+        imageUrl: item.imageUrl || item.backgroundImageUrl || ''
       });
       setEditingIndex(index);
     } else {
@@ -70,7 +73,8 @@ export default function FormulesManager({ formules = [], onChangeFormules, savin
         icone: '🥁',
         tarif: 'Adhésion annuelle',
         description: '',
-        avantagesText: ''
+        avantagesText: '',
+        imageUrl: ''
       });
       setEditingIndex('new');
     }
@@ -97,7 +101,8 @@ export default function FormulesManager({ formules = [], onChangeFormules, savin
       icone: formState.icone.trim() || '🥁',
       tarif: formState.tarif.trim(),
       description: formState.description.trim(),
-      avantages: avantagesList
+      avantages: avantagesList,
+      imageUrl: formState.imageUrl.trim()
     };
 
     let nextList = [...activeFormules];
@@ -236,6 +241,33 @@ export default function FormulesManager({ formules = [], onChangeFormules, savin
               placeholder="Ateliers hebdomadaires de percussion maracatu..."
               className="text-xs px-2 py-1.5 border rounded bg-white resize-none"
             />
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] font-bold uppercase flex items-center justify-between">
+              <span>🖼️ Image de Fond de la Carte (URL)</span>
+              <span className="text-[9px] text-stone-400 font-normal">Ex: photo de danse ou percussion</span>
+            </label>
+            <input
+              type="url"
+              value={formState.imageUrl}
+              onChange={(e) => setFormState({ ...formState, imageUrl: e.target.value })}
+              placeholder="https://images.unsplash.com/photo-... ou URL de votre image"
+              className="text-xs px-2 py-1.5 border rounded bg-white font-mono"
+            />
+            {formState.imageUrl && (
+              <div className="mt-1 relative h-16 w-full rounded overflow-hidden border border-stone-300 bg-stone-900">
+                <img 
+                  src={formState.imageUrl} 
+                  alt="Aperçu fond" 
+                  className="w-full h-full object-cover opacity-60"
+                  onError={(e) => { e.target.style.display = 'none'; }}
+                />
+                <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white drop-shadow">
+                  Aperçu du fond avec filtre sombre
+                </span>
+              </div>
+            )}
           </div>
 
           <div className="flex flex-col gap-1">

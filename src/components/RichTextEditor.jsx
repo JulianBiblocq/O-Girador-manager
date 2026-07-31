@@ -19,6 +19,7 @@ export default function RichTextEditor({
   showAlign = true
 }) {
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
+  const [, forceUpdate] = useState({});
 
   const editor = useEditor({
     extensions: [
@@ -56,6 +57,12 @@ export default function RichTextEditor({
       if (onChange) {
         onChange(html);
       }
+    },
+    onSelectionUpdate: () => {
+      forceUpdate({});
+    },
+    onTransaction: () => {
+      forceUpdate({});
     }
   });
 

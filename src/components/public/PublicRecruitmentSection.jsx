@@ -104,73 +104,109 @@ export default function PublicRecruitmentSection({ publicTheme }) {
 
         {/* Grille des Cartes des Formules d'Adhésion */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
-          {formules.map((formule, idx) => (
-            <div 
-              key={formule.id || idx}
-              className="bg-white rounded-2xl border-2 border-stone-200 p-6 sm:p-7 shadow-md hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between gap-6 relative overflow-hidden"
-            >
-              <div className="flex flex-col gap-4">
-                {/* Icône & Titre de la formule */}
-                <div className="flex items-center gap-3">
+          {formules.map((formule, idx) => {
+            const hasBgImage = Boolean(formule.imageUrl || formule.backgroundImageUrl);
+            const bgImg = formule.imageUrl || formule.backgroundImageUrl;
+
+            return (
+              <div 
+                key={formule.id || idx}
+                className={`rounded-2xl border-2 p-6 sm:p-7 shadow-md hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between gap-6 relative overflow-hidden ${
+                  hasBgImage
+                    ? 'border-stone-400/30 bg-stone-900 text-white'
+                    : 'bg-white/95 border-stone-200 text-stone-900'
+                }`}
+              >
+                {/* Image de fond avec cover */}
+                {hasBgImage && (
                   <div 
-                    className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl shadow-xs shrink-0"
-                    style={{ backgroundColor: 'color-mix(in srgb, var(--public-primary, #D32F2F) 12%, #FFFFFF 88%)' }}
-                  >
-                    {formule.icone || '🥁'}
-                  </div>
-                  <div className="flex flex-col text-left">
-                    <h3 
-                      className="text-lg font-bold leading-snug"
-                      style={{ 
-                        fontFamily: 'var(--public-font-heading, sans-serif)',
-                        color: 'var(--public-primary, #D32F2F)' 
-                      }}
+                    className="absolute inset-0 bg-cover bg-center transition-transform duration-700 hover:scale-105"
+                    style={{ backgroundImage: `url(${bgImg})` }}
+                  />
+                )}
+
+                {/* Couche d'assombrissement (Overlay) pour lisibilité absolue du texte */}
+                {hasBgImage && (
+                  <div className="absolute inset-0 bg-gradient-to-t from-stone-950/95 via-stone-900/85 to-black/60 backdrop-blur-[1px] pointer-events-none z-0" />
+                )}
+
+                {/* Contenu de la Carte */}
+                <div className="flex flex-col gap-4 relative z-10">
+                  {/* Icône & Titre de la formule */}
+                  <div className="flex items-center gap-3">
+                    <div 
+                      className={`w-12 h-12 rounded-xl flex items-center justify-center text-2xl shadow-xs shrink-0 ${
+                        hasBgImage ? 'bg-white/20 backdrop-blur-md text-white border border-white/30' : 'bg-stone-100 text-stone-800'
+                      }`}
                     >
-                      {formule.titre}
-                    </h3>
-                    {formule.tarif && (
-                      <span className="text-xs font-semibold text-stone-500 uppercase tracking-wider">
-                        {formule.tarif}
-                      </span>
-                    )}
+                      {formule.icone || '🥁'}
+                    </div>
+                    <div className="flex flex-col text-left">
+                      <h3 
+                        className={`text-lg font-bold leading-snug ${hasBgImage ? 'text-white drop-shadow-sm' : ''}`}
+                        style={{ 
+                          fontFamily: 'var(--public-font-heading, sans-serif)',
+                          color: hasBgImage ? '#FFFFFF' : 'var(--public-primary, #D32F2F)' 
+                        }}
+                      >
+                        {formule.titre}
+                      </h3>
+                      {formule.tarif && (
+                        <span className={`text-xs font-bold uppercase tracking-wider ${
+                          hasBgImage ? 'text-amber-300' : 'text-stone-500'
+                        }`}>
+                          {formule.tarif}
+                        </span>
+                      )}
+                    </div>
                   </div>
+
+                  {/* Description de la formule */}
+                  {formule.description && (
+                    <p className={`text-xs sm:text-sm leading-relaxed font-medium text-left border-t border-dashed pt-3 ${
+                      hasBgImage ? 'text-stone-200 border-white/20' : 'text-stone-600 border-stone-200'
+                    }`}>
+                      {formule.description}
+                    </p>
+                  )}
+
+                  {/* Liste des Avantages / Inclus */}
+                  {Array.isArray(formule.avantages) && formule.avantages.length > 0 && (
+                    <ul className="flex flex-col gap-2 text-left pt-2">
+                      {formule.avantages.map((avantage, aIdx) => (
+                        <li key={aIdx} className={`text-xs font-medium flex items-start gap-2 ${
+                          hasBgImage ? 'text-stone-100' : 'text-stone-700'
+                        }`}>
+                          <span className={`font-bold text-sm shrink-0 ${
+                            hasBgImage ? 'text-emerald-400' : 'text-emerald-700'
+                          }`}>✓</span>
+                          <span>{avantage}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </div>
 
-                {/* Description de la formule */}
-                {formule.description && (
-                  <p className="text-xs sm:text-sm text-stone-600 leading-relaxed font-medium text-left border-t border-dashed border-stone-200 pt-3">
-                    {formule.description}
-                  </p>
-                )}
-
-                {/* Liste des Avantages / Inclus */}
-                {Array.isArray(formule.avantages) && formule.avantages.length > 0 && (
-                  <ul className="flex flex-col gap-2 text-left pt-2">
-                    {formule.avantages.map((avantage, aIdx) => (
-                      <li key={aIdx} className="text-xs text-stone-700 font-medium flex items-start gap-2">
-                        <span className="text-emerald-700 font-bold text-sm shrink-0">✓</span>
-                        <span>{avantage}</span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
+                {/* Bouton d'action individuel pour la formule */}
+                <div className={`pt-4 border-t relative z-10 ${hasBgImage ? 'border-white/20' : 'border-stone-100'}`}>
+                  <a
+                    href={linkUrl && linkUrl !== '#' ? linkUrl : '#newsletter-inscription'}
+                    target={linkUrl && linkUrl !== '#' ? "_blank" : "_self"}
+                    rel="noopener noreferrer"
+                    className={`w-full py-2.5 px-4 text-xs font-bold uppercase tracking-wider rounded-lg transition-all duration-200 flex items-center justify-center gap-1.5 shadow-sm ${
+                      hasBgImage
+                        ? 'bg-white text-stone-900 hover:bg-amber-400 hover:text-stone-950 font-extrabold'
+                        : 'bg-stone-100 text-stone-800 hover:bg-[var(--public-primary,#D32F2F)] hover:text-white'
+                    }`}
+                    style={{ fontFamily: 'var(--public-font-heading, sans-serif)' }}
+                  >
+                    <span>Choisir cette formule</span>
+                    <span>→</span>
+                  </a>
+                </div>
               </div>
-
-              {/* Bouton d'action individuel pour la formule si présent */}
-              <div className="pt-4 border-t border-stone-100">
-                <a
-                  href={linkUrl && linkUrl !== '#' ? linkUrl : '#newsletter-inscription'}
-                  target={linkUrl && linkUrl !== '#' ? "_blank" : "_self"}
-                  rel="noopener noreferrer"
-                  className="w-full py-2.5 px-4 text-xs font-bold uppercase tracking-wider text-stone-800 bg-stone-100 rounded-lg hover:bg-[var(--public-primary,#D32F2F)] hover:text-white transition-colors duration-200 flex items-center justify-center gap-1.5"
-                  style={{ fontFamily: 'var(--public-font-heading, sans-serif)' }}
-                >
-                  <span>Choisir cette formule</span>
-                  <span>→</span>
-                </a>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* Gros Bouton d'Action (Call to Action Principal) sous les cartes */}
