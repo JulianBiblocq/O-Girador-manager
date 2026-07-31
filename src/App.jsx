@@ -720,6 +720,7 @@ export default function App() {
     profileData?.role === 'admin'
   );
 
+  const userTags = resolveEffectiveUserTags(profileData?.tags || [], tagsDisponibles);
   const isRootPath = !currentRoute || currentRoute === '/' || currentRoute === '' || currentRoute === '/index.html' || currentRoute.startsWith('/?') || currentRoute.startsWith('/#');
 
   if (isRootPath) {
@@ -733,7 +734,7 @@ export default function App() {
           user={user}
           profileData={profileData}
           permissionsMatrice={permissionsMatrice}
-          effectiveUserTags={effectiveUserTags}
+          effectiveUserTags={userTags}
           isAdministrativeUser={isAdministrativeUser}
           associationName={associationName}
           branding={branding}
@@ -770,7 +771,6 @@ export default function App() {
   // 5. Utilisateur connecté avec profil valide -> Rendu de l'Espace Membre Privé (/app)
   const isSystemOrSuperAdminOrMestre = profileData?.isSystemAdmin || profileData?.role === 'super-admin' || profileData?.role === 'mestre';
   const isMasterKeyActive = isSystemOrSuperAdminOrMestre && breakGlassActive;
-  const userTags = resolveEffectiveUserTags(profileData?.tags || [], tagsDisponibles);
 
   const isModuleEnabled = (tabId, poleId) => {
     if (!enabledModules) return true;
@@ -1354,7 +1354,7 @@ export default function App() {
                 isSystemAdmin={profileData?.isSystemAdmin}
                 profileData={profileData}
                 permissionsMatrice={permissionsMatrice}
-                effectiveUserTags={effectiveUserTags}
+                effectiveUserTags={userTags}
                 mode="public-theme-only"
                 activeTabProp="public-theme"
                 onBack={() => handleNavigateToPole('accueil')} 
