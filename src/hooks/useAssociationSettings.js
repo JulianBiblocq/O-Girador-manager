@@ -108,6 +108,10 @@ export const DEFAULT_PUBLIC_THEME = {
   kitPresseUrl: '',
   // Textes et titres dynamiques des sections
   vitrineTexts: DEFAULT_VITRINE_TEXTS,
+  // Référencement SEO Dynamique
+  seoTitle: '',
+  seoDescription: '',
+  seoKeywords: '',
   // Configuration de la visibilité des sections sur le site public
   afficherVieAssociative: true,
   afficherRecrutement: true,
@@ -364,7 +368,9 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
             afficherRecrutement: data.publicTheme?.afficherRecrutement !== false,
             afficherGalerie: data.publicTheme?.afficherGalerie !== false,
             afficherAgenda: data.publicTheme?.afficherAgenda !== false,
-            afficherNewsletter: data.publicTheme?.afficherNewsletter !== false,
+            seoTitle: data.publicTheme?.seoTitle || '',
+            seoDescription: data.publicTheme?.seoDescription || '',
+            seoKeywords: data.publicTheme?.seoKeywords || '',
             titreRecrutement: data.publicTheme?.titreRecrutement || "Rejoignez la troupe !",
             texteRecrutement: data.publicTheme?.texteRecrutement || '',
             lienRecrutement: data.publicTheme?.lienRecrutement || '',

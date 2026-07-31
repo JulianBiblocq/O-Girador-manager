@@ -1,4 +1,5 @@
 import React from 'react';
+import { HelmetProvider } from 'react-helmet-async';
 import { usePublicThemeContext } from './PublicThemeProvider';
 import { usePublicEvents } from '../hooks/usePublicEvents';
 import PublicEventCard from './public/PublicEventCard';
@@ -9,6 +10,7 @@ import PublicRecruitmentSection from './public/PublicRecruitmentSection';
 import PublicVieAssociativeSection from './public/PublicVieAssociativeSection';
 import PublicProDocsSection from './public/PublicProDocsSection';
 import PublicRichText from './public/PublicRichText';
+import PublicSeoHead from './public/PublicSeoHead';
 
 /**
  * Convertit une URL YouTube ou Vimeo classique en URL embed sécurisée pour iframe.
@@ -88,14 +90,22 @@ export default function PublicHome({ groupId, associationName, branding, onNavig
   };
 
   return (
-    <div 
-      className="min-h-screen flex flex-col transition-colors duration-300 selection:bg-stone-200 public-paper-bg"
-      style={{ 
-        fontFamily: 'var(--public-font-body, sans-serif)',
-        backgroundColor: 'var(--public-bg, #FAF6EE)',
-        color: 'var(--public-text, #1C1917)'
-      }}
-    >
+    <HelmetProvider>
+      {/* Balises SEO & Référencement dynamique avec injection forcée O Girador */}
+      <PublicSeoHead 
+        publicTheme={publicTheme} 
+        associationName={groupTitle} 
+        branding={branding} 
+      />
+
+      <div 
+        className="min-h-screen flex flex-col transition-colors duration-300 selection:bg-stone-200 public-paper-bg"
+        style={{ 
+          fontFamily: 'var(--public-font-body, sans-serif)',
+          backgroundColor: 'var(--public-bg, #FAF6EE)',
+          color: 'var(--public-text, #1C1917)'
+        }}
+      >
       {/* ==========================================
           EN-TÊTE / NAVIGATION
          ========================================== */}
@@ -627,6 +637,7 @@ export default function PublicHome({ groupId, associationName, branding, onNavig
           onClose={() => setSelectedEventDetails(null)}
         />
       )}
-    </div>
+      </div>
+    </HelmetProvider>
   );
 }

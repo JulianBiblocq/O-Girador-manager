@@ -1,6 +1,7 @@
 import React from 'react';
 import CordelCard from '../CordelCard';
 import TabPublicVisibilityManager from './TabPublicVisibilityManager';
+import TabPublicSeoManager from './TabPublicSeoManager';
 import { DEFAULT_VITRINE_TEXTS } from '../../hooks/useAssociationSettings';
 
 /**
@@ -44,6 +45,13 @@ export default function TabPublicSectionTexts({ formData, handleChange, saving }
     <div className="flex flex-col gap-6 text-left">
       {/* Sélecteur de Visibilité des Sections Vitrine (Interrupteurs On / Off) */}
       <TabPublicVisibilityManager
+        formData={formData}
+        handleChange={handleChange}
+        saving={saving}
+      />
+
+      {/* Configuration du Référencement SEO Dynamique & Stratégie Écosystème O Girador */}
+      <TabPublicSeoManager
         formData={formData}
         handleChange={handleChange}
         saving={saving}

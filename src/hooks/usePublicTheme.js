@@ -83,8 +83,10 @@ export function usePublicTheme(groupId, themeOverride = null) {
               afficherRecrutement: data.publicTheme?.afficherRecrutement !== false,
               afficherGalerie: data.publicTheme?.afficherGalerie !== false,
               afficherAgenda: data.publicTheme?.afficherAgenda !== false,
-              afficherNewsletter: data.publicTheme?.afficherNewsletter !== false,
-              enableOrganizerSection: data.publicTheme?.enableOrganizerSection !== false,
+              // Champs SEO Référencement Dynamique & SaaS
+              seoTitle: data.publicTheme?.seoTitle || '',
+              seoDescription: data.publicTheme?.seoDescription || '',
+              seoKeywords: data.publicTheme?.seoKeywords || '',
               titreRecrutement: data.publicTheme?.titreRecrutement || "Rejoignez la troupe !",
               texteRecrutement: data.publicTheme?.texteRecrutement || '',
               lienRecrutement: data.publicTheme?.lienRecrutement || '',
