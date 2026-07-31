@@ -713,6 +713,13 @@ export default function App() {
   }
 
   // 2. Route Racine '/' -> Vitrine Publique One-Page enveloppée par PublicThemeProvider
+  const isAdministrativeUser = Boolean(
+    profileData?.isSystemAdmin || 
+    profileData?.role === 'super-admin' || 
+    profileData?.role === 'mestre' ||
+    profileData?.role === 'admin'
+  );
+
   if (currentRoute === '/' || currentRoute === '' || currentRoute === '/index.html') {
     return (
       <PublicThemeProvider groupId={profileData?.groupId}>
