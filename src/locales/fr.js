@@ -865,6 +865,8 @@ export const fr = {
     accueil: "Accueil",
     'mon-espace': "Espace",
     troupe: "Troupe",
+    diffusion: "Diffusion",
+    tabGigsPipeline: "Suivi des Prestations",
     tresorerie: "Trésorerie",
     logistique: "Logistique",
     vestiaire: "Vestiaire",

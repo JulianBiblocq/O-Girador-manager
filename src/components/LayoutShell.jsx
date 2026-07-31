@@ -129,6 +129,7 @@ export default function LayoutShell({
   };
 
   const hasAccessTroupe = isMasterKeyActive || checkTabAccess('export-annu', 'troupe') || checkTabAccess('tag-manager', 'troupe') || checkTabAccess('instruments', 'troupe');
+  const hasAccessDiffusion = isMasterKeyActive || checkTabAccess('gigs-pipeline', 'diffusion');
   const hasAccessLogistique = isMasterKeyActive || checkTabAccess('inventory', 'logistique') || checkTabAccess('orders-manager', 'logistique');
   const hasAccessTresorerie = isMasterKeyActive || checkTabAccess('dashboard-finance', 'tresorerie') || checkTabAccess('cotisations', 'tresorerie') || checkTabAccess('events-finances', 'tresorerie') || checkTabAccess('operations-diverses', 'tresorerie') || checkTabAccess('frais-km', 'tresorerie') || checkTabAccess('reports-exports', 'tresorerie');
   const hasAccessStudio = isMasterKeyActive || checkTabAccess('studio-events', 'studio') || checkTabAccess('studio-social', 'studio') || checkTabAccess('reunion-manager', 'studio') || checkTabAccess('varal-manager', 'studio') || checkTabAccess('activity-reports', 'studio') || checkTabAccess('mestre-forum-channels', 'studio') || checkTabAccess('newsletter-manager', 'studio');
@@ -140,6 +141,7 @@ export default function LayoutShell({
                                profileData?.role === 'bureau' || 
                                profileData?.role === 'ca' || 
                                hasAccessTroupe || 
+                               hasAccessDiffusion ||
                                hasAccessLogistique || 
                                hasAccessTresorerie || 
                                hasAccessStudio ||
@@ -198,6 +200,8 @@ export default function LayoutShell({
         return <XiloUser size={size} />;
       case 'troupe':
         return <XiloPeople size={size} />;
+      case 'diffusion':
+        return <XiloMegaphone size={size} />;
       case 'tresorerie':
         return <XiloCoin size={size} />;
       case 'logistique':

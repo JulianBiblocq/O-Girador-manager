@@ -881,6 +881,8 @@ export const pt = {
     accueil: "Início",
     'mon-espace': "Espaço",
     troupe: "Elenco",
+    diffusion: "Produção",
+    tabGigsPipeline: "Pipeline de Shows",
     tresorerie: "Tesouraria",
     logistique: "Logística",
     vestiaire: "Guarda-roupa",

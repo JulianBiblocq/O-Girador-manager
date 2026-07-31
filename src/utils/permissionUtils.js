@@ -169,3 +169,57 @@ export function canEditVitrine(profileData, permissionsMatrice = null, effective
   return false;
 }
 
+/**
+ * Vérifie si l'utilisateur possède les droits d'accès au Pôle Diffusion (Suivi des Prestations).
+ * 
+ * @param {Object} profileData Profil de l'utilisateur
+ * @param {Object} permissionsMatrice Matrice des permissions
+ * @param {Array} effectiveUserTags Étiquettes effectives
+ * @returns {boolean} true si l'utilisateur peut accéder au Pôle Diffusion
+ */
+export function canAccessDiffusion(profileData, permissionsMatrice = null, effectiveUserTags = []) {
+  if (!profileData) return false;
+
+  // 1. Rôles système autorisés d'office
+  const systemRole = (profileData.role || '').toLowerCase();
+  if (
+    systemRole === 'mestre' ||
+    systemRole === 'admin' ||
+    systemRole === 'super-admin' ||
+    systemRole === 'bureau' ||
+    systemRole === 'ca' ||
+    profileData.isSystemAdmin === true
+  ) {
+    return true;
+  }
+
+  // 2. Badges de secours/direction, trésorerie et diffusion
+  const userTagsList = (
+    effectiveUserTags && effectiveUserTags.length > 0
+      ? effectiveUserTags
+      : profileData.tags || []
+  ).map(t => (typeof t === 'string' ? t.toLowerCase() : (t.id || t.nomM || t.nomF || '').toLowerCase()));
+
+  const DEFAULT_ALLOWED_KEYWORDS = ['bureau', 'président', 'présidente', 'présidence', 'admin', 'direction', 'ca', 'diffusion', 'booking', 'trésorier', 'secrétaire'];
+  if (userTagsList.some(ut => DEFAULT_ALLOWED_KEYWORDS.some(kw => ut.includes(kw)))) {
+    return true;
+  }
+
+  // 3. Matrice des permissions (clés : 'diffusion', 'gigs-pipeline')
+  if (permissionsMatrice && typeof permissionsMatrice === 'object') {
+    const allowedTags = [
+      ...(permissionsMatrice['diffusion'] || []),
+      ...(permissionsMatrice['gigs-pipeline'] || [])
+    ].map(t => (typeof t === 'string' ? t.toLowerCase() : (t.id || t.nomF || t.nomM || '').toLowerCase()));
+
+    if (allowedTags.length > 0) {
+      if (userTagsList.some(ut => allowedTags.includes(ut))) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
+

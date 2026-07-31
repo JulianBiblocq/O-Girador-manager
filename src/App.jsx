@@ -43,6 +43,7 @@ const MestreStageLayout = lazyWithRetry(() => import('./components/mestre/Mestre
 const ForumChannelsManager = lazyWithRetry(() => import('./components/ForumChannelsManager'));
 const MestreSequenceur = lazyWithRetry(() => import('./components/mestre/MestreSequenceur'));
 const MestreWorkshops = lazyWithRetry(() => import('./components/mestre/MestreWorkshops'));
+const GigsPipelineManager = lazyWithRetry(() => import('./components/diffusion/GigsPipelineManager'));
 const MestreMotMestre = lazyWithRetry(() => import('./components/mestre/MestreMotMestre'));
 const WidgetAgenda = lazyWithRetry(() => import('./components/WidgetAgenda'));
 const WidgetDocuments = lazyWithRetry(() => import('./components/WidgetDocuments'));
@@ -73,6 +74,14 @@ const POLES_CONFIG = [
       { id: 'export-annu', label: 'Annuaire', labelKey: 'tabExportAnnu' },
       { id: 'tag-manager', label: 'Badges', labelKey: 'tabTagManager' },
       { id: 'instruments', label: 'Pupitres', labelKey: 'tabInstruments' }
+    ]
+  },
+  {
+    id: 'diffusion',
+    label: 'Diffusion',
+    labelKey: 'diffusion',
+    tabs: [
+      { id: 'gigs-pipeline', label: 'Suivi des Prestations', labelKey: 'tabGigsPipeline' }
     ]
   },
   {
@@ -832,6 +841,7 @@ export default function App() {
   };
 
   const hasAccessTroupe = isMasterKeyActive || checkTabAccess('export-annu', 'troupe') || checkTabAccess('tag-manager', 'troupe') || checkTabAccess('instruments', 'troupe');
+  const hasAccessDiffusion = isMasterKeyActive || checkTabAccess('gigs-pipeline', 'diffusion');
   const hasAccessLogistique = isMasterKeyActive || checkTabAccess('inventory', 'logistique') || checkTabAccess('orders-manager', 'logistique');
   const hasAccessTresorerie = isMasterKeyActive || checkTabAccess('dashboard-finance', 'tresorerie') || checkTabAccess('cotisations', 'tresorerie') || checkTabAccess('events-finances', 'tresorerie') || checkTabAccess('operations-diverses', 'tresorerie') || checkTabAccess('frais-km', 'tresorerie') || checkTabAccess('reports-exports', 'tresorerie');
   const hasAccessStudio = isMasterKeyActive || checkTabAccess('studio-events', 'studio') || checkTabAccess('studio-social', 'studio') || checkTabAccess('reunion-manager', 'studio') || checkTabAccess('varal-manager', 'studio') || checkTabAccess('activity-reports', 'studio') || checkTabAccess('mestre-forum-channels', 'studio');
@@ -1093,6 +1103,11 @@ export default function App() {
                 isSystemAdmin={profileData?.isSystemAdmin}
                 mode="instruments-only"
                 activeTabProp="organisation"
+                onBack={() => handleNavigateToPole('accueil')}
+              />
+            ) : (currentTab === 'gigs-pipeline' && hasAccessDiffusion) ? (
+              <GigsPipelineManager
+                groupId={profileData?.groupId}
                 onBack={() => handleNavigateToPole('accueil')}
               />
             ) : (currentTab === 'dashboard-finance' && hasAccessTresorerie) ? (
