@@ -721,10 +721,13 @@ export default function App() {
   );
 
   if (currentRoute === '/' || currentRoute === '' || currentRoute === '/index.html') {
+    const urlGroupId = new URLSearchParams(window.location.search).get('groupe') || new URLSearchParams(window.location.search).get('assoc');
+    const publicGroupId = profileData?.groupId || urlGroupId || 'samambaia';
+
     return (
-      <PublicThemeProvider groupId={profileData?.groupId}>
+      <PublicThemeProvider groupId={publicGroupId}>
         <PublicHome
-          groupId={profileData?.groupId}
+          groupId={publicGroupId}
           user={user}
           isAdministrativeUser={isAdministrativeUser}
           associationName={associationName}

@@ -59,13 +59,13 @@ export default function PublicHome({
   onNavigateToApp, 
   onNavigateToLogin 
 }) {
-  const { publicTheme } = usePublicThemeContext();
+  const { publicTheme, loading: loadingTheme } = usePublicThemeContext();
   const { events: publicEvents, loading: loadingEvents } = usePublicEvents(groupId);
   const [selectedEventDetails, setSelectedEventDetails] = React.useState(null);
   const [publishing, setPublishing] = React.useState(false);
 
-  const logoSrc = branding?.logoUrl || '/Pictures/logo-samambaia.png';
-  const groupTitle = associationName ? associationName : "Notre Association";
+  const logoSrc = branding?.logoUrl || publicTheme?.logoUrl || '';
+  const groupTitle = associationName || publicTheme?.associationName || "Notre Association";
 
   const isPublished = publicTheme?.isPublished !== false;
   const isAdminUser = Boolean(user || isAdministrativeUser);
@@ -89,7 +89,31 @@ export default function PublicHome({
     }
   };
 
-  // Si la vitrine est en Mode Brouillon (non publiée) ET que l'utilisateur N'EST PAS connecté / admin :
+  // ==========================================
+  // ÉTAPE 1 : CHARGEMENT (Loading)
+  // Tant que le thème de l'association est en cours de chargement depuis Firestore
+  // ==========================================
+  if (loadingTheme) {
+    return (
+      <div 
+        className="min-h-screen w-full flex flex-col items-center justify-center p-6 text-center select-none"
+        style={{ backgroundColor: 'var(--public-bg, #FAF6EE)', color: 'var(--public-text, #1C1917)' }}
+      >
+        <div className="relative w-14 h-14 animate-spin mb-4">
+          <div className="absolute inset-0 rounded-full border-4 border-amber-300/40 animate-pulse"></div>
+          <div className="absolute inset-0 rounded-full border-4 border-t-amber-800 border-r-transparent border-b-transparent border-l-transparent"></div>
+        </div>
+        <span className="font-black text-xs uppercase tracking-widest text-amber-900 animate-pulse">
+          Chargement de la vitrine...
+        </span>
+      </div>
+    );
+  }
+
+  // ==========================================
+  // ÉTAPE 2 & 3A : VÉRIFICATION & MODE BROUILLON (Public bloqué)
+  // Si isPublished === false ET que l'utilisateur n'est pas Admin -> Page "En construction"
+  // ==========================================
   if (!isPublished && !isAdminUser) {
     return (
       <PublicMaintenancePage
