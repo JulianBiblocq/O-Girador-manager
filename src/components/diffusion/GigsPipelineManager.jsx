@@ -218,7 +218,11 @@ export default function GigsPipelineManager({ groupId, associationSettings: prop
         /* VUE KANBAN (COLONNES PAR ÉTAPE) */
         <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 overflow-x-auto pb-4">
           {GIG_STATUSES.filter(st => filterStatus === 'all' || filterStatus === st.id).map(statusObj => {
-            const statusGigs = gigs.filter(g => g.status === statusObj.id);
+            // Tolérance d'équivalence pour inclure 3_devis et 3_devis_envoye dans la même colonne
+            const statusGigs = gigs.filter(g => 
+              g.status === statusObj.id || 
+              (statusObj.id === '3_devis' && g.status === '3_devis_envoye')
+            );
 
             return (
               <div key={statusObj.id} className="flex flex-col gap-2 bg-stone-100/70 p-3 rounded-lg border border-stone-200 min-w-[240px]">

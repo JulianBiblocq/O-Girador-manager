@@ -3,7 +3,8 @@ import { collection, addDoc, doc, updateDoc, serverTimestamp, query, where, getD
 import { db } from '../../firebase';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
-import { downloadInvoicePDF } from '../../utils/invoicePdfGenerator';
+import { downloadInvoicePDF, generateInvoicePDF } from '../../utils/invoicePdfGenerator';
+import GigSendEmailModal from './GigSendEmailModal';
 
 /**
  * Modale de génération de Devis commercial pour le Pôle Diffusion.
@@ -23,6 +24,11 @@ export default function GigQuoteGeneratorModal({
     adresse: '',
     siret: ''
   });
+
+  const [isSendEmailModalOpen, setIsSendEmailModalOpen] = useState(false);
+  const [generatedPdfBase64, setGeneratedPdfBase64] = useState('');
+  const [generatedPdfFilename, setGeneratedPdfFilename] = useState('');
+  const [preparedInvoicePayload, setPreparedInvoicePayload] = useState(null);
 
   const [devisMeta, setDevisMeta] = useState({
     numero: '',
@@ -182,24 +188,29 @@ export default function GigQuoteGeneratorModal({
 
       await addDoc(collection(db, 'invoices'), newInvoiceDoc);
 
-      // 2. Mise à jour du dossier de prestation (gig) vers le statut '3_devis_envoye'
+      // 2. Mise à jour du dossier de prestation (gig) vers le statut '3_devis' ("Devis transmis")
       const gigRef = doc(db, 'gigs_pipeline', gig.id);
       await updateDoc(gigRef, {
-        status: '3_devis_envoye',
+        status: '3_devis',
         amount: totalTTC,
         updatedAt: serverTimestamp()
       });
 
-      // 3. Téléchargement du PDF
-      downloadInvoicePDF(invoicePayload, associationSettings);
+      // 3. Génération du PDF en mémoire en Base64 pour l'attachement Brevo
+      const pdfDoc = generateInvoicePDF(invoicePayload, associationSettings);
+      const dataUri = pdfDoc.output('datauristring');
+      const base64Data = dataUri.split(',')[1] || '';
+      const filename = `Devis_${devisMeta.numero}_${(clientForm.nom || 'Client').replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
 
-      if (onSuccess) {
-        onSuccess(devisMeta.numero);
-      }
-      onClose();
+      setGeneratedPdfBase64(base64Data);
+      setGeneratedPdfFilename(filename);
+      setPreparedInvoicePayload(invoicePayload);
+
+      // 4. Ouverture de la modale d'envoi d'email Brevo
+      setIsSendEmailModalOpen(true);
     } catch (err) {
       console.error("GigQuoteGeneratorModal - Erreur enregistrement devis :", err);
-      alert("Erreur lors de l'enregistrement du devis.");
+      alert("Erreur lors de la génération du devis.");
     } finally {
       setSaving(false);
     }
@@ -433,9 +444,10 @@ export default function GigQuoteGeneratorModal({
           <button
             type="button"
             onClick={handleDownloadPDF}
-            className="px-3.5 py-2 text-xs font-bold uppercase bg-stone-800 hover:bg-black text-white rounded shadow-sm flex items-center gap-1.5 cursor-pointer"
+            className="text-[11px] font-bold text-stone-600 hover:text-stone-900 underline cursor-pointer flex items-center gap-1"
+            title="Télécharger directement le PDF sans envoyer d'e-mail"
           >
-            <span>📥 Télécharger PDF (Aperçu)</span>
+            <span>📥 Télécharger uniquement le PDF (Secours)</span>
           </button>
 
           <div className="flex items-center gap-2">
@@ -447,13 +459,30 @@ export default function GigQuoteGeneratorModal({
               variant="vert"
               onClick={handleSaveAndRegister}
               disabled={saving}
-              className="text-xs font-extrabold"
+              className="text-xs font-extrabold flex items-center gap-1.5"
             >
-              {saving ? 'Enregistrement...' : '✅ Valider & Émettre le Devis (PDF)'}
+              <span>{saving ? 'Préparation...' : '✉️ Valider & Émettre par E-mail (Brevo)'}</span>
             </CordelButton>
           </div>
         </div>
       </CordelCard>
+
+      {/* Modale d'envoi du devis PDF par email via Brevo */}
+      <GigSendEmailModal
+        isOpen={isSendEmailModalOpen}
+        onClose={() => setIsSendEmailModalOpen(false)}
+        gig={gig}
+        invoicePayload={preparedInvoicePayload}
+        associationSettings={associationSettings}
+        pdfBase64={generatedPdfBase64}
+        pdfFilename={generatedPdfFilename}
+        onSendSuccess={() => {
+          if (onSuccess) {
+            onSuccess(devisMeta.numero);
+          }
+          onClose();
+        }}
+      />
     </div>
   );
 }
