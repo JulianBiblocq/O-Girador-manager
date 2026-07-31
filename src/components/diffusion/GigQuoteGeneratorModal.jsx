@@ -196,10 +196,9 @@ export default function GigQuoteGeneratorModal({
         updatedAt: serverTimestamp()
       });
 
-      // 3. Génération du PDF en mémoire en Base64 pour l'attachement Brevo
+      // 3. Génération du PDF en mémoire en Base64 pure pour l'attachement Brevo
       const pdfDoc = generateInvoicePDF(invoicePayload, associationSettings);
-      const dataUri = pdfDoc.output('datauristring');
-      const base64Data = dataUri.split(',')[1] || '';
+      const base64Data = pdfDoc.output('base64');
       const filename = `Devis_${devisMeta.numero}_${(clientForm.nom || 'Client').replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
 
       setGeneratedPdfBase64(base64Data);
