@@ -1,27 +1,62 @@
 import { useState, useEffect } from 'react';
-import { doc, onSnapshot } from 'firebase/firestore';
+import { doc, onSnapshot, collection, getDocs, limit, query } from 'firebase/firestore';
 import { db } from '../firebase';
 import { DEFAULT_PUBLIC_THEME, DEFAULT_VITRINE_TEXTS } from './useAssociationSettings';
 
 /**
- * Hook personnalisé d'injection dynamique du thème public (vitrine marque blanche).
- * 
- * Il s'abonne aux données Firestore de l'association (via groupId) ou utilise un thème passé en paramètre,
- * puis injecte dynamiquement dans le DOM :
- * 1. Le tag <link> de Google Fonts dans le <head> pour les deux polices sélectionnées.
- * 2. Une balise <style> ainsi que des variables CSS natives sur le root/DOM :
- *    - --public-primary
- *    - --public-secondary
- *    - --public-font-heading
- *    - --public-font-body
- * 
- * @param {string} groupId - L'identifiant Firestore de l'association.
- * @param {Object} [themeOverride] - Surcharge optionnelle du thème pour prévisualisation directe.
- * @returns {{ publicTheme: Object, loading: boolean, error: Error|null }}
+ * Helper d'aide à la construction d'un objet thème public à partir d'un snapshot Firestore
  */
+const buildThemeData = (data) => {
+  if (!data?.publicTheme) return DEFAULT_PUBLIC_THEME;
+  return {
+    ...DEFAULT_PUBLIC_THEME,
+    ...data.publicTheme,
+    associationName: data.name || data.associationName || DEFAULT_PUBLIC_THEME.associationName || '',
+    logoUrl: data.logoUrl || data.branding?.logoUrl || '',
+    vitrineTexts: {
+      ...DEFAULT_VITRINE_TEXTS,
+      ...(data.publicTheme?.vitrineTexts || {})
+    },
+    socialLinks: {
+      ...DEFAULT_PUBLIC_THEME.socialLinks,
+      ...(data.publicTheme?.socialLinks || {})
+    },
+    galleryPhotos: Array.isArray(data.publicTheme?.galleryPhotos) 
+      ? data.publicTheme.galleryPhotos 
+      : DEFAULT_PUBLIC_THEME.galleryPhotos,
+    publicPerformanceFormats: data.publicTheme?.publicPerformanceFormats || '',
+    brevoApiKey: data.publicTheme?.brevoApiKey || '',
+    brevoListId: data.publicTheme?.brevoListId || '',
+    dossierPresentationUrl: data.publicTheme?.dossierPresentationUrl || data.publicTheme?.dossierProPdfUrl || '',
+    ficheTechniqueUrl: data.publicTheme?.ficheTechniqueUrl || '',
+    planSceneUrl: data.publicTheme?.planSceneUrl || '',
+    kitPresseUrl: data.publicTheme?.kitPresseUrl || '',
+    texteVieAssociative: data.publicTheme?.texteVieAssociative || '',
+    formulesRecrutement: Array.isArray(data.publicTheme?.formulesRecrutement)
+      ? data.publicTheme.formulesRecrutement
+      : (data.publicTheme?.formulesRecrutement || []),
+    isPublished: data.publicTheme?.isPublished === true, // Stricte vérification boolean !
+    afficherVieAssociative: data.publicTheme?.afficherVieAssociative !== false,
+    afficherRecrutement: data.publicTheme?.afficherRecrutement !== false,
+    afficherGalerie: data.publicTheme?.afficherGalerie !== false,
+    afficherAgenda: data.publicTheme?.afficherAgenda !== false,
+    seoTitle: data.publicTheme?.seoTitle || '',
+    seoDescription: data.publicTheme?.seoDescription || '',
+    seoKeywords: data.publicTheme?.seoKeywords || '',
+    titreRecrutement: data.publicTheme?.titreRecrutement || "Rejoignez la troupe !",
+    texteRecrutement: data.publicTheme?.texteRecrutement || '',
+    lienRecrutement: data.publicTheme?.lienRecrutement || '',
+    texteBoutonRecrutement: data.publicTheme?.texteBoutonRecrutement || "S'inscrire sur HelloAsso",
+    primaryColor: data.publicTheme.primaryColor || DEFAULT_PUBLIC_THEME.primaryColor,
+    secondaryColor: data.publicTheme.secondaryColor || DEFAULT_PUBLIC_THEME.secondaryColor,
+    headingFont: data.publicTheme.headingFont || DEFAULT_PUBLIC_THEME.headingFont,
+    bodyFont: data.publicTheme.bodyFont || DEFAULT_PUBLIC_THEME.bodyFont
+  };
+};
+
 export function usePublicTheme(groupId, themeOverride = null) {
   const [publicTheme, setPublicTheme] = useState(themeOverride || DEFAULT_PUBLIC_THEME);
-  const [loading, setLoading] = useState(!themeOverride && !!groupId);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   // 1. Écoute en temps réel du document Firestore de l'association si groupId fourni et pas d'override
@@ -32,12 +67,31 @@ export function usePublicTheme(groupId, themeOverride = null) {
       return;
     }
 
+    setLoading(true);
+
+    const tryFetchDefaultAssociation = async () => {
+      try {
+        const q = query(collection(db, 'associations'), limit(1));
+        const querySnap = await getDocs(q);
+        if (!querySnap.empty) {
+          const firstDocData = querySnap.docs[0].data();
+          setPublicTheme(buildThemeData(firstDocData));
+        } else {
+          setPublicTheme(DEFAULT_PUBLIC_THEME);
+        }
+      } catch (err) {
+        console.error("usePublicTheme - Erreur lors de la récupération de l'association par défaut :", err);
+        setPublicTheme(DEFAULT_PUBLIC_THEME);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     if (!groupId) {
-      setLoading(false);
+      tryFetchDefaultAssociation();
       return;
     }
 
-    setLoading(true);
     const assocRef = doc(db, 'associations', groupId);
 
     const unsubscribe = onSnapshot(
@@ -45,71 +99,17 @@ export function usePublicTheme(groupId, themeOverride = null) {
       (docSnap) => {
         if (docSnap.exists()) {
           const data = docSnap.data();
-          if (data.publicTheme) {
-            setPublicTheme({
-              ...DEFAULT_PUBLIC_THEME,
-              ...data.publicTheme,
-              // Textes et titres dynamiques avec fallback
-              vitrineTexts: {
-                ...DEFAULT_VITRINE_TEXTS,
-                ...(data.publicTheme?.vitrineTexts || {})
-              },
-              // Fusion dynamique des liens de réseaux sociaux
-              socialLinks: {
-                ...DEFAULT_PUBLIC_THEME.socialLinks,
-                ...(data.publicTheme?.socialLinks || {})
-              },
-              // Galerie photos de la vitrine sous forme de tableau
-              galleryPhotos: Array.isArray(data.publicTheme?.galleryPhotos) 
-                ? data.publicTheme.galleryPhotos 
-                : DEFAULT_PUBLIC_THEME.galleryPhotos,
-              // Formats de prestations personnalisables
-              publicPerformanceFormats: data.publicTheme?.publicPerformanceFormats || '',
-              // Integration Brevo API
-              brevoApiKey: data.publicTheme?.brevoApiKey || '',
-              brevoListId: data.publicTheme?.brevoListId || '',
-              // Documents Espace Pro (Organisateurs / Presse)
-              dossierPresentationUrl: data.publicTheme?.dossierPresentationUrl || data.publicTheme?.dossierProPdfUrl || '',
-              ficheTechniqueUrl: data.publicTheme?.ficheTechniqueUrl || '',
-              planSceneUrl: data.publicTheme?.planSceneUrl || '',
-              kitPresseUrl: data.publicTheme?.kitPresseUrl || '',
-              // Section Vie Associative & Formules de Recrutement
-              texteVieAssociative: data.publicTheme?.texteVieAssociative || '',
-              formulesRecrutement: Array.isArray(data.publicTheme?.formulesRecrutement)
-                ? data.publicTheme.formulesRecrutement
-                : (data.publicTheme?.formulesRecrutement || []),
-              // Statut de publication globale (Mode Brouillon / En ligne)
-              isPublished: data.publicTheme?.isPublished !== false,
-              // Drapeaux de visibilité des sections publiques (visibilité sélective)
-              afficherVieAssociative: data.publicTheme?.afficherVieAssociative !== false,
-              afficherRecrutement: data.publicTheme?.afficherRecrutement !== false,
-              afficherGalerie: data.publicTheme?.afficherGalerie !== false,
-              afficherAgenda: data.publicTheme?.afficherAgenda !== false,
-              // Champs SEO Référencement Dynamique & SaaS
-              seoTitle: data.publicTheme?.seoTitle || '',
-              seoDescription: data.publicTheme?.seoDescription || '',
-              seoKeywords: data.publicTheme?.seoKeywords || '',
-              titreRecrutement: data.publicTheme?.titreRecrutement || "Rejoignez la troupe !",
-              texteRecrutement: data.publicTheme?.texteRecrutement || '',
-              lienRecrutement: data.publicTheme?.lienRecrutement || '',
-              texteBoutonRecrutement: data.publicTheme?.texteBoutonRecrutement || "S'inscrire sur HelloAsso",
-              primaryColor: data.publicTheme.primaryColor || DEFAULT_PUBLIC_THEME.primaryColor,
-              secondaryColor: data.publicTheme.secondaryColor || DEFAULT_PUBLIC_THEME.secondaryColor,
-              headingFont: data.publicTheme.headingFont || DEFAULT_PUBLIC_THEME.headingFont,
-              bodyFont: data.publicTheme.bodyFont || DEFAULT_PUBLIC_THEME.bodyFont
-            });
-          } else {
-            setPublicTheme(DEFAULT_PUBLIC_THEME);
-          }
+          setPublicTheme(buildThemeData(data));
+          setLoading(false);
         } else {
-          setPublicTheme(DEFAULT_PUBLIC_THEME);
+          // Si l'association spécifiée par groupId n'existe pas, on cherche la première association globale
+          tryFetchDefaultAssociation();
         }
-        setLoading(false);
       },
       (err) => {
         console.error("usePublicTheme - Erreur lors de l'écoute Firestore :", err);
         setError(err);
-        setLoading(false);
+        tryFetchDefaultAssociation();
       }
     );
 

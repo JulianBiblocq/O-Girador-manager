@@ -81,6 +81,7 @@ export const DEFAULT_VITRINE_TEXTS = {
 };
 
 export const DEFAULT_PUBLIC_THEME = {
+  isPublished: false,
   primaryColor: '#D32F2F',
   secondaryColor: '#1976D2',
   backgroundColor: '#FAF6EE',

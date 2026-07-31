@@ -720,7 +720,9 @@ export default function App() {
     profileData?.role === 'admin'
   );
 
-  if (currentRoute === '/' || currentRoute === '' || currentRoute === '/index.html') {
+  const isRootPath = !currentRoute || currentRoute === '/' || currentRoute === '' || currentRoute === '/index.html' || currentRoute.startsWith('/?') || currentRoute.startsWith('/#');
+
+  if (isRootPath) {
     const urlGroupId = new URLSearchParams(window.location.search).get('groupe') || new URLSearchParams(window.location.search).get('assoc');
     const publicGroupId = profileData?.groupId || urlGroupId || 'samambaia';
 
