@@ -785,12 +785,14 @@ export default function App() {
     if (!enabledModules) return true;
 
     // Check Pole-level module toggle
+    if (poleId === 'diffusion' && enabledModules.diffusion === false) return false;
     if (poleId === 'tresorerie' && enabledModules.tresorerie === false) return false;
     if (poleId === 'logistique' && enabledModules.logistique === false && enabledModules.commandes === false) return false;
     if (poleId === 'vestiaire' && enabledModules.vestiaire === false) return false;
     if (poleId === 'mestre' && enabledModules.mestre === false) return false;
 
     // Check Tab-level module toggle
+    if (tabId === 'gigs-pipeline' && enabledModules.diffusion === false) return false;
     if (['dashboard-finance', 'cotisations', 'events-finances', 'operations-diverses', 'frais-km', 'reports-exports'].includes(tabId) && enabledModules.tresorerie === false) return false;
     if (tabId === 'inventory' && enabledModules.logistique === false) return false;
     if (tabId === 'orders-manager' && enabledModules.commandes === false) return false;

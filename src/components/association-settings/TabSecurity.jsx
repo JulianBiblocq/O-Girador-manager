@@ -15,6 +15,14 @@ const PERMISSION_POLES = [
     ]
   },
   {
+    id: 'diffusion',
+    label: '🎷 Diffusion',
+    desc: 'Suivi des prestations, opportunités de concerts et pipeline CRM',
+    tabs: [
+      { id: 'gigs-pipeline', label: 'Suivi des Prestations', desc: 'Gestion de l\'entonnoir des prestations (demandes, devis, options, factures)' }
+    ]
+  },
+  {
     id: 'tresorerie',
     label: '🪙 Trésorerie',
     desc: 'Gestion financière, cotisations et frais kilométriques',

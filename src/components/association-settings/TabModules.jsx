@@ -5,6 +5,12 @@ import { XiloMegaphone } from '../XiloIcons';
 
 const MODULES_CONFIG = [
   {
+    key: 'diffusion',
+    icon: '🎷',
+    title: 'Diffusion & Pipeline Prestations',
+    desc: 'Activer la gestion du pipeline de prestations, démarchage et opportunités de concerts.'
+  },
+  {
     key: 'tresorerie',
     icon: '🪙',
     title: 'Trésorerie & Finances',

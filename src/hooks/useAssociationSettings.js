@@ -26,6 +26,7 @@ export const DEFAULT_VARAL_CATEGORIES = [
 ];
 
 export const DEFAULT_ENABLED_MODULES = {
+  diffusion: true,
   tresorerie: true,
   logistique: true,
   commandes: true,
