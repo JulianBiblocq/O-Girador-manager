@@ -5,8 +5,9 @@ import { useGigsPipeline } from '../../hooks/useGigsPipeline';
 import GigFormModal, { GIG_STATUSES } from './GigFormModal';
 import GigDetailsModal from './GigDetailsModal';
 import GigEventCreateModal from './GigEventCreateModal';
+import GigQuoteGeneratorModal from './GigQuoteGeneratorModal';
 
-export default function GigsPipelineManager({ groupId, onBack }) {
+export default function GigsPipelineManager({ groupId, associationSettings = {}, onBack }) {
   const {
     gigs,
     loading,
@@ -28,6 +29,7 @@ export default function GigsPipelineManager({ groupId, onBack }) {
   const [selectedGig, setSelectedGig] = useState(null);
 
   const [isOptionModalOpen, setIsOptionModalOpen] = useState(false);
+  const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
   const [toastNotification, setToastNotification] = useState(null);
 
   // Filtrage des dossiers
@@ -373,6 +375,10 @@ export default function GigsPipelineManager({ groupId, onBack }) {
           setSelectedGig(gig);
           setIsOptionModalOpen(true);
         }}
+        onOpenQuoteGeneratorModal={(gig) => {
+          setSelectedGig(gig);
+          setIsQuoteModalOpen(true);
+        }}
         saving={saving}
       />
 
@@ -384,6 +390,19 @@ export default function GigsPipelineManager({ groupId, onBack }) {
         groupId={groupId}
         onSuccess={() => {
           setToastNotification("Événement créé avec succès et option posée dans le pipeline Diffusion !");
+          setTimeout(() => setToastNotification(null), 5000);
+        }}
+      />
+
+      {/* Modale de Génération de Devis PDF commercial du Pôle Diffusion */}
+      <GigQuoteGeneratorModal
+        isOpen={isQuoteModalOpen}
+        onClose={() => setIsQuoteModalOpen(false)}
+        gig={selectedGig}
+        groupId={groupId}
+        associationSettings={associationSettings}
+        onSuccess={(devisNum) => {
+          setToastNotification(`Devis ${devisNum} généré et statut du dossier mis à jour (Devis émis) !`);
           setTimeout(() => setToastNotification(null), 5000);
         }}
       />

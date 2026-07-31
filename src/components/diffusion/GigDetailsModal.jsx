@@ -10,6 +10,7 @@ export default function GigDetailsModal({
   onStatusChange,
   onDeleteGig,
   onOpenAgendaOptionModal,
+  onOpenQuoteGeneratorModal,
   saving = false
 }) {
   const [toastMessage, setToastMessage] = useState(null);
@@ -17,6 +18,14 @@ export default function GigDetailsModal({
   if (!isOpen || !gig) return null;
 
   const currentStatusObj = GIG_STATUSES.find(s => s.id === gig.status) || GIG_STATUSES[0];
+
+  // Action automatisée : Ouverture du générateur de Devis
+  const handleOpenQuote = () => {
+    onClose();
+    if (onOpenQuoteGeneratorModal) {
+      onOpenQuoteGeneratorModal(gig);
+    }
+  };
 
   // Affichage d'une notification Toast temporaire
   const triggerWorkflowToast = (actionLabel) => {
@@ -158,8 +167,9 @@ export default function GigDetailsModal({
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             <button
               type="button"
-              onClick={() => triggerWorkflowToast('Génération de Devis')}
-              className="px-2.5 py-2 text-[10px] font-extrabold uppercase rounded bg-stone-100 hover:bg-stone-200 text-stone-800 border border-stone-300 shadow-xs flex flex-col items-center gap-1 cursor-pointer transition-all active:scale-95"
+              onClick={handleOpenQuote}
+              className="px-2.5 py-2 text-[10px] font-extrabold uppercase rounded bg-blue-100 hover:bg-blue-200 text-blue-900 border border-blue-300 shadow-xs flex flex-col items-center gap-1 cursor-pointer transition-all active:scale-95"
+              title="Préparer et émettre un devis PDF croisant les données du dossier et de l'événement"
             >
               <span className="text-base">📜</span>
               <span>Générer Devis</span>

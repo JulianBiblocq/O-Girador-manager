@@ -262,6 +262,29 @@ export function generateInvoicePDF(invoice, associationSettings = {}) {
     doc.text('Paiement à réception de facture. Aucun escompte accordé pour paiement anticipé.', 25, yPos + 19);
   }
 
+  // Zone "Bon pour accord" spécifique aux Devis
+  if (isDevis) {
+    let bonY = yPos + 32;
+    if (bonY + 30 > 275) {
+      doc.addPage();
+      bonY = 20;
+    }
+    doc.setDrawColor(180, 180, 180);
+    doc.setFillColor(255, 255, 255);
+    doc.rect(115, bonY, 75, 28, 'FD');
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8.5);
+    doc.setTextColor(24, 23, 22);
+    doc.text('BON POUR ACCORD', 120, bonY + 6);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.setTextColor(80, 80, 80);
+    doc.text('Date :', 120, bonY + 13);
+    doc.text('Signature & Cachet du client :', 120, bonY + 20);
+  }
+
   // Pied de page
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(8);
