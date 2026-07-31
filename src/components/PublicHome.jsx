@@ -6,6 +6,7 @@ import PublicEventDetails from './public/PublicEventDetails';
 import PublicPhotoGallery from './public/PublicPhotoGallery';
 import PublicNewsletterForm from './public/PublicNewsletterForm';
 import PublicRecruitmentSection from './public/PublicRecruitmentSection';
+import PublicVieAssociativeSection from './public/PublicVieAssociativeSection';
 import PublicProDocsSection from './public/PublicProDocsSection';
 import PublicRichText from './public/PublicRichText';
 
@@ -269,7 +270,12 @@ export default function PublicHome({ groupId, associationName, branding, onNavig
       </section>
 
       {/* ==========================================
-          BLOC RECRUTEMENT DYNAMIQUE
+          BLOC VIE ASSOCIATIVE & QUOTIDIEN
+         ========================================== */}
+      <PublicVieAssociativeSection publicTheme={publicTheme} />
+
+      {/* ==========================================
+          BLOC RECRUTEMENT DYNAMIQUE & FORMULES
          ========================================== */}
       <PublicRecruitmentSection publicTheme={publicTheme} />
 

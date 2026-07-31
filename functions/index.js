@@ -1,4 +1,4 @@
-const { onRequest } = require("firebase-functions/v2/https");
+const { onRequest, onCall, HttpsError } = require("firebase-functions/v2/https");
 const { onDocumentCreated } = require("firebase-functions/v2/firestore");
 const { onSchedule } = require("firebase-functions/v2/scheduler");
 const admin = require("firebase-admin");
@@ -701,3 +701,186 @@ exports.syncNewsletterSubscriberToBrevo = onDocumentCreated(
     }
   }
 );
+
+/**
+ * Cloud Function HTTPS Callable : sendContractEmail
+ * Envoie un email transactionnel (contrat, devis ou confirmation) à un organisateur via l'API Brevo v3.
+ * Sécurisé : Accessible uniquement aux utilisateurs authentifiés.
+ */
+exports.sendContractEmail = onCall({ region: "europe-west1" }, async (request) => {
+  // 1. Contrôle d'authentification (Sécurité)
+  if (!request.auth) {
+    throw new HttpsError(
+      "unauthenticated",
+      "Accès refusé. Vous devez être authentifié pour envoyer un email de contrat."
+    );
+  }
+
+  const data = request.data || {};
+  const {
+    recipientEmail,
+    recipientName = "",
+    eventName = "Prestation",
+    eventDate = "",
+    cachet = "",
+    contractPdfUrl = "",
+    customNotes = "",
+    templateId = null,
+    groupId = ""
+  } = data;
+
+  if (!recipientEmail || !recipientEmail.trim()) {
+    throw new HttpsError("invalid-argument", "L'adresse email du destinataire est obligatoire.");
+  }
+
+  try {
+    let brevoApiKey = process.env.BREVO_API_KEY || "";
+    let senderName = "O Girador";
+    let senderEmail = "contact@o-girador.fr";
+
+    // 2. Récupération dynamique de la configuration de l'association depuis Firestore
+    if (groupId) {
+      const assocDoc = await db.collection("associations").doc(groupId).get();
+      if (assocDoc.exists()) {
+        const assocData = assocDoc.data();
+        const publicTheme = assocData.publicTheme || {};
+        senderName = assocData.nom || senderName;
+        senderEmail = publicTheme.publicContactEmail || senderEmail;
+        brevoApiKey = brevoApiKey || publicTheme.brevoApiKey || assocData.brevoApiKey || "";
+      }
+
+      // Recherche complémentaire dans la sous-collection private_settings/credentials
+      if (!brevoApiKey) {
+        const credDoc = await db
+          .collection("associations")
+          .doc(groupId)
+          .collection("private_settings")
+          .doc("credentials")
+          .get();
+
+        if (credDoc.exists()) {
+          const credData = credDoc.data();
+          brevoApiKey = credData.brevoApiKey || brevoApiKey;
+        }
+      }
+    }
+
+    if (!brevoApiKey || !brevoApiKey.trim()) {
+      throw new HttpsError(
+        "failed-precondition",
+        "Clé API Brevo non configurée. Veuillez renseigner la clé API v3 Brevo dans les paramètres de l'association ou dans la variable d'environnement BREVO_API_KEY."
+      );
+    }
+
+    // 3. Construction du payload de l'email transactionnel Brevo API v3 (/v3/smtp/email)
+    const payload = {
+      sender: {
+        name: senderName,
+        email: senderEmail
+      },
+      to: [
+        {
+          email: recipientEmail.trim().toLowerCase(),
+          name: recipientName.trim() || recipientEmail
+        }
+      ],
+      subject: `📜 Contrat & Confirmation de Prestation - ${eventName}`,
+      params: {
+        ORGANISATEUR: recipientName || recipientEmail,
+        NOM_ORGANISATEUR: recipientName || recipientEmail,
+        EVENEMENT: eventName,
+        NOM_EVENEMENT: eventName,
+        DATE: eventDate,
+        DATE_EVENEMENT: eventDate,
+        CACHET: cachet,
+        LIEN_CONTRAT: contractPdfUrl,
+        NOTES: customNotes
+      }
+    };
+
+    // Si un ID de template Brevo est spécifié
+    if (templateId && !isNaN(Number(templateId))) {
+      payload.templateId = Number(templateId);
+    } else {
+      // Modèle HTML transactionnel par défaut aux couleurs de l'association
+      payload.htmlContent = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <style>
+            body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #FAF6EE; color: #181716; padding: 20px; margin: 0; }
+            .card { background-color: #ffffff; border: 2px solid #181716; border-radius: 8px; max-width: 600px; margin: 0 auto; padding: 24px; box-shadow: 4px 4px 0px #181716; }
+            .header { border-bottom: 2px dashed #181716; padding-bottom: 12px; margin-bottom: 20px; text-align: center; }
+            .title { font-size: 20px; font-weight: bold; color: #8B2A1A; text-transform: uppercase; margin: 0 0 8px 0; }
+            .badge { background-color: #2D6A4F; color: #ffffff; padding: 4px 10px; border-radius: 4px; font-weight: bold; display: inline-block; font-size: 12px; }
+            .content { font-size: 14px; line-height: 1.6; color: #333333; }
+            .details-box { background-color: #FDFAF2; border: 1px solid #181716; border-radius: 6px; padding: 16px; margin: 16px 0; }
+            .btn { display: inline-block; background-color: #2D6A4F; color: #ffffff !important; text-decoration: none; padding: 12px 20px; border-radius: 6px; font-weight: bold; margin-top: 16px; border: 1px solid #181716; }
+            .footer { margin-top: 24px; border-top: 1px dashed #cccccc; padding-top: 12px; font-size: 11px; color: #777777; text-align: center; }
+          </style>
+        </head>
+        <body>
+          <div class="card">
+            <div class="header">
+              <h1 class="title">📜 ${senderName}</h1>
+              <span class="badge">Confirmation & Contrat de Prestation</span>
+            </div>
+            <div class="content">
+              <p>Bonjour <strong>${recipientName || recipientEmail}</strong>,</p>
+              <p>Veuillez trouver ci-dessous les détails de la prestation et les éléments du contrat concernant l'événement <strong>${eventName}</strong>.</p>
+              
+              <div class="details-box">
+                <p style="margin: 4px 0;"><strong>🎭 Événement :</strong> ${eventName}</p>
+                ${eventDate ? `<p style="margin: 4px 0;"><strong>📅 Date :</strong> ${eventDate}</p>` : ''}
+                ${cachet ? `<p style="margin: 4px 0;"><strong>🪙 Montant / Cachet :</strong> ${cachet}</p>` : ''}
+              </div>
+
+              ${customNotes ? `<div style="background:#FFF9E6; border-left:4px solid #C05621; padding:12px; margin:16px 0; font-style:italic;"><strong>Note particulière :</strong><br/>${customNotes.replace(/\n/g, '<br/>')}</div>` : ''}
+
+              ${contractPdfUrl ? `<p style="text-align: center;"><a href="${contractPdfUrl}" class="btn" target="_blank">📄 Accéder au Contrat / Devis (PDF)</a></p>` : ''}
+
+              <p style="margin-top: 24px;">Nous restons à votre entière disposition pour toute question.</p>
+              <p>Cordialement,<br/><strong>${senderName}</strong></p>
+            </div>
+            <div class="footer">
+              Email transactionnel généré via O Girador Manager pour ${senderName}.
+            </div>
+          </div>
+        </body>
+        </html>
+      `;
+    }
+
+    // 4. Envoi HTTP POST vers l'API Brevo Transactionnel
+    const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+      method: "POST",
+      headers: {
+        "accept": "application/json",
+        "content-type": "application/json",
+        "api-key": brevoApiKey.trim()
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`❌ Erreur API Brevo Transactionnel (${response.status}) :`, errorText);
+      throw new HttpsError("internal", `Erreur d'envoi Brevo (${response.status}) : ${errorText}`);
+    }
+
+    const resData = await response.json();
+    console.log(`✓ Email de contrat envoyé avec succès à ${recipientEmail} (MessageId: ${resData.messageId || 'N/A'})`);
+
+    return {
+      success: true,
+      messageId: resData.messageId || null,
+      message: `Contrat envoyé avec succès à ${recipientEmail}`
+    };
+  } catch (err) {
+    console.error("Erreur globale sendContractEmail :", err);
+    if (err instanceof HttpsError) throw err;
+    throw new HttpsError("internal", err.message || "Erreur interne lors de l'envoi de l'email transactionnel.");
+  }
+});
+

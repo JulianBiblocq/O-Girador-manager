@@ -65,7 +65,9 @@ export const DEFAULT_PUBLIC_THEME = {
   ficheTechniqueUrl: '',
   planSceneUrl: '',
   kitPresseUrl: '',
-  // Configuration de la section Recrutement Vitrine
+  // Configuration de la section Recrutement & Vie Associative Vitrine
+  texteVieAssociative: '',
+  formulesRecrutement: [],
   afficherRecrutement: false,
   titreRecrutement: 'Rejoignez la troupe !',
   texteRecrutement: '',

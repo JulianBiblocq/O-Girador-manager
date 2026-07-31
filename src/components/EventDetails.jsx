@@ -33,6 +33,7 @@ import EventHeaderCard from './event-details/EventHeaderCard';
 import EventQuickActionsBar from './event-details/EventQuickActionsBar';
 import EventLocationMapBox from './event-details/EventLocationMapBox';
 import EventCommentsSection from './event-details/EventCommentsSection';
+import SendContractModal from './studio/SendContractModal';
 import EventPublicQrCodeModal from './event-details/EventPublicQrCodeModal';
 import EventMediaQrCodeModal from './event-details/EventMediaQrCodeModal';
 
@@ -107,6 +108,7 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
   const [lienGoogleFormRecoltePhotos, setLienGoogleFormRecoltePhotos] = useState('');
   const [showQrCodeModal, setShowQrCodeModal] = useState(false);
   const [showMediaQrCodeModal, setShowMediaQrCodeModal] = useState(false);
+  const [isSendContractModalOpen, setIsSendContractModalOpen] = useState(false);
 
   const {
     morceauxSelectionnes,
@@ -984,6 +986,14 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
               <>
                 <button
                   type="button"
+                  onClick={() => setIsSendContractModalOpen(true)}
+                  className="text-[10px] font-black uppercase bg-cordel-vert text-white border border-encre-noire px-3 py-1.5 rounded shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-105 cursor-pointer flex items-center gap-1 flex-1 sm:flex-none justify-center transition-colors"
+                  title="Envoyer un contrat ou devis par email via l'API Brevo"
+                >
+                  📝 Envoyer un contrat (Brevo)
+                </button>
+                <button
+                  type="button"
                   onClick={handlePreparePublication}
                   className="text-[10px] font-black uppercase bg-cordel-ocre text-black border border-encre-noire px-3 py-1.5 rounded shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-95 cursor-pointer flex items-center gap-1 flex-1 sm:flex-none justify-center"
                 >
@@ -1741,6 +1751,14 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
           onClose={() => setShowMediaQrCodeModal(false)}
         />
       )}
+
+      {/* MODALE : Envoi de contrat / devis par email via Brevo */}
+      <SendContractModal
+        isOpen={isSendContractModalOpen}
+        onClose={() => setIsSendContractModalOpen(false)}
+        event={activeEvent || event}
+        groupId={event.groupId}
+      />
     </div>
   );
 }

@@ -68,6 +68,11 @@ export function usePublicTheme(groupId, themeOverride = null) {
               ficheTechniqueUrl: data.publicTheme?.ficheTechniqueUrl || '',
               planSceneUrl: data.publicTheme?.planSceneUrl || '',
               kitPresseUrl: data.publicTheme?.kitPresseUrl || '',
+              // Section Vie Associative & Formules de Recrutement
+              texteVieAssociative: data.publicTheme?.texteVieAssociative || '',
+              formulesRecrutement: Array.isArray(data.publicTheme?.formulesRecrutement)
+                ? data.publicTheme.formulesRecrutement
+                : (data.publicTheme?.formulesRecrutement || []),
               // Champs de la section Recrutement
               afficherRecrutement: data.publicTheme?.afficherRecrutement || false,
               titreRecrutement: data.publicTheme?.titreRecrutement || "Rejoignez la troupe !",
