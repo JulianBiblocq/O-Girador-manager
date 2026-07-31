@@ -68,7 +68,7 @@ export default function PublicMaintenancePage({
 
       {/* Corps Principal - Message "En cours de préparation" */}
       <main className="relative z-10 flex-1 flex flex-col items-center justify-center p-6 sm:p-12 text-center my-auto">
-        <div className="max-w-xl w-full bg-white/90 backdrop-blur-md rounded-2xl border-2 border-stone-300 p-8 sm:p-12 shadow-xl flex flex-col items-center gap-6">
+        <div className="max-w-xl w-full bg-white/95 backdrop-blur-md rounded-2xl border-2 border-stone-300 p-8 sm:p-12 shadow-xl flex flex-col items-center gap-6">
           <div className="w-20 h-20 rounded-2xl bg-amber-100 border-2 border-amber-400 flex items-center justify-center text-4xl shadow-inner animate-pulse">
             🚧
           </div>
@@ -92,12 +92,39 @@ export default function PublicMaintenancePage({
           <div className="p-4 bg-[#FAF6EE] border border-dashed border-stone-300 rounded-xl text-xs text-stone-700 leading-normal w-full">
             🎶 Nous peaufinons le programme de nos prochains ateliers, prestations scéniques, défilés et inscriptions.
           </div>
+
+          {/* Bouton discret pour les membres et futurs adhérents */}
+          <div className="pt-4 border-t border-stone-200 w-full flex flex-col items-center gap-2">
+            <p className="text-[11px] text-stone-500 font-medium">
+              Vous êtes déjà membre de l'association ou vous souhaitez vous connecter ?
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                if (onOpenLogin) onOpenLogin();
+                else window.location.href = '/login';
+              }}
+              className="text-xs font-extrabold uppercase tracking-wider px-5 py-2.5 rounded-lg border-2 border-stone-800 bg-stone-900 text-white hover:bg-amber-400 hover:text-stone-950 shadow-md transition-all cursor-pointer flex items-center gap-2"
+            >
+              <span>🔑 Accéder à l'Espace Membre / Connexion</span>
+            </button>
+          </div>
         </div>
       </main>
 
-      {/* Pied de page */}
-      <footer className="relative z-10 w-full py-4 text-center text-xs text-stone-500 font-medium border-t border-stone-300/40 bg-[#FAF6EE]/80">
-        © {new Date().getFullYear()} {associationName} — Propulsé par O Girador
+      {/* Pied de page avec rappel discret */}
+      <footer className="relative z-10 w-full py-4 px-6 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-stone-500 font-medium border-t border-stone-300/40 bg-[#FAF6EE]/80">
+        <span>© {new Date().getFullYear()} {associationName} — Propulsé par O Girador</span>
+        <button
+          type="button"
+          onClick={() => {
+            if (onOpenLogin) onOpenLogin();
+            else window.location.href = '/login';
+          }}
+          className="text-stone-600 hover:text-stone-900 underline font-bold cursor-pointer"
+        >
+          Espace Membre / Connexion →
+        </button>
       </footer>
     </div>
   );
