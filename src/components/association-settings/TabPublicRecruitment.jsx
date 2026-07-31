@@ -206,17 +206,33 @@ export default function TabPublicRecruitment({ formData, handleChange, saving, g
               </div>
             </div>
 
-            {/* Message d'invitation (RichTextEditor) */}
+            {/* Message d'invitation / Description de la section recrutement & formules */}
             <div className="flex flex-col gap-1.5">
               <label className="text-xs font-bold uppercase tracking-wider text-encre-noire/80">
-                💬 Message d'invitation / Présentation du recrutement
+                💬 Description / Phrase sous le titre "Nos formules / Rejoignez la troupe"
               </label>
+              <textarea
+                rows={2}
+                value={vitrineTexts.accrocheRecrutement || publicTheme.texteRecrutement || ''}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  handleTextChange('accrocheRecrutement', val);
+                  handleThemeChange('texteRecrutement', val);
+                }}
+                disabled={saving}
+                placeholder="Rejoignez nos ateliers hebdomadaires et participez à une aventure musicale humaine unique."
+                className="text-xs font-medium px-3 py-2 border border-encre-noire/30 rounded bg-white resize-none mb-1"
+              />
+              <span className="text-[10px] text-stone-500 font-medium">Contenu enrichi optionnel :</span>
               <RichTextEditor
                 value={publicTheme.texteRecrutement || ''}
-                onChange={(val) => handleThemeChange('texteRecrutement', val)}
+                onChange={(val) => {
+                  handleThemeChange('texteRecrutement', val);
+                  handleTextChange('accrocheRecrutement', val);
+                }}
                 disabled={saving}
                 placeholder="Ex: Nous recherchons de nouveaux membres pour la saison ! Que vous soyez débutant ou percussionniste expérimenté, rejoignez nos ateliers..."
-                minHeight="140px"
+                minHeight="120px"
                 showLists={true}
                 showImage={false}
                 showAlign={true}

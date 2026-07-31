@@ -63,16 +63,26 @@ export const DEFAULT_VITRINE_TEXTS = {
   titreProgrammer: "Nous Programmer / Fiche Technique",
   accrocheProgrammer: "Toutes les informations pratiques pour accueillir notre groupe lors de vos festivals, défilés ou événements.",
   titreFormats: "Nos Formats de Prestations",
-  titreFicheTechnique: "Besoins Techniques & Logistiques",
+  titreFicheTechnique: "Fiche technique et besoin logistique",
+  
+  // Section Contact & Réseaux
+  titreContactReseaux: "Contact & Réseaux Sociaux",
+  accrocheContactReseaux: "Une question, un projet d'événement ou une demande de prestation ? Contactez-nous directement ou suivez l'actualité de la troupe sur nos réseaux sociaux !",
+  boutonContactEmail: "Contactez-nous pour programmer",
+  boutonHeroProgrammer: "Nous Programmer",
   
   // Section Espace Pro Documents
   titreProDocs: "Espace Pro & Organisateurs",
   accrocheProDocs: "Téléchargez les documents officiels et éléments de presse pour votre événement.",
+  labelDossierPresentation: "Télécharger le Dossier de Présentation",
+  labelFicheTechnique: "Télécharger la Fiche Technique",
+  labelPlanScene: "Télécharger le Plan de Scène",
+  labelKitPresse: "Télécharger le Kit Presse (Texte & Photos)",
   
   // Section Recrutement
   badgeRecrutement: "Nous Rejoindre",
   titreRecrutement: "Rejoignez la troupe !",
-  accrocheRecrutement: "Rejoignez nos ateliers hebdomadaires et participez à une aventure musicale et humaine unique !",
+  accrocheRecrutement: "Rejoignez nos ateliers hebdomadaires et participez à une aventure musicale humaine unique !",
   
   // Section Newsletter
   badgeNewsletter: "Infolettre & Prestations",
@@ -141,7 +151,11 @@ export const DEFAULT_PUBLIC_THEME = {
     facebook: '',
     instagram: '',
     youtube: '',
-    whatsapp: ''
+    tiktok: '',
+    snapchat: '',
+    whatsapp: '',
+    linkedin: '',
+    spotify: ''
   },
   // Formats de prestations personnalisables
   publicPerformanceFormats: '',

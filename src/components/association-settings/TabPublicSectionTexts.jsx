@@ -416,6 +416,56 @@ export default function TabPublicSectionTexts({ formData, handleChange, saving }
               className="text-xs font-medium px-3 py-2 border border-encre-noire/30 rounded bg-white focus:border-cordel-vert outline-none resize-y"
             />
           </div>
+        {/* 9. Section Contact & Réseaux Sociaux */}
+        <CordelCard variant="default" className="p-5 flex flex-col gap-4 bg-white">
+          <h4 className="text-xs font-black uppercase tracking-widest text-encre-noire border-b border-dashed border-cordel-master-dark/20 pb-2 flex items-center gap-1.5">
+            <span>📞 Section Contact & Réseaux Sociaux</span>
+          </h4>
+
+          {/* Titre Contact & Réseaux */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[11px] font-bold uppercase tracking-wider text-encre-noire/80">
+              Titre de la section Contact & Réseaux
+            </label>
+            <input
+              type="text"
+              value={vitrineTexts.titreContactReseaux || ''}
+              onChange={(e) => handleTextChange('titreContactReseaux', e.target.value)}
+              disabled={saving}
+              placeholder={DEFAULT_VITRINE_TEXTS.titreContactReseaux}
+              className="text-xs font-bold px-3 py-2 border border-encre-noire/30 rounded bg-white focus:border-cordel-vert outline-none"
+            />
+          </div>
+
+          {/* Accroche Contact & Réseaux */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[11px] font-bold uppercase tracking-wider text-encre-noire/80">
+              Phrase d'accroche / Explication
+            </label>
+            <textarea
+              rows={2}
+              value={vitrineTexts.accrocheContactReseaux || ''}
+              onChange={(e) => handleTextChange('accrocheContactReseaux', e.target.value)}
+              disabled={saving}
+              placeholder={DEFAULT_VITRINE_TEXTS.accrocheContactReseaux}
+              className="text-xs font-medium px-3 py-2 border border-encre-noire/30 rounded bg-white focus:border-cordel-vert outline-none resize-y"
+            />
+          </div>
+
+          {/* Libellé du bouton E-mail */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[11px] font-bold uppercase tracking-wider text-encre-noire/80">
+              Libellé du bouton de contact E-mail
+            </label>
+            <input
+              type="text"
+              value={vitrineTexts.boutonContactEmail || ''}
+              onChange={(e) => handleTextChange('boutonContactEmail', e.target.value)}
+              disabled={saving}
+              placeholder={DEFAULT_VITRINE_TEXTS.boutonContactEmail}
+              className="text-xs font-bold px-3 py-2 border border-encre-noire/30 rounded bg-white focus:border-cordel-vert outline-none"
+            />
+          </div>
         </CordelCard>
 
       </div>

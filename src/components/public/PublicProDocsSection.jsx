@@ -28,26 +28,26 @@ export default function PublicProDocsSection({ publicTheme }) {
   const titreProDocs = vitrineTexts.titreProDocs || "Espace Pro & Organisateurs";
   const accrocheProDocs = vitrineTexts.accrocheProDocs || "Téléchargez les documents officiels et éléments de presse pour votre événement.";
 
-  // Configuration des boutons de téléchargement avec libellés exacts demandés
+  // Configuration des boutons de téléchargement avec libellés dynamiques
   const buttonsConfig = [
     {
       url: dossierPresentationUrl,
-      label: '📥 Télécharger le Dossier de Présentation',
+      label: `📥 ${vitrineTexts.labelDossierPresentation || 'Télécharger le Dossier de Présentation'}`,
       title: 'Télécharger le dossier de présentation complet (PDF)'
     },
     {
       url: ficheTechniqueUrl,
-      label: '📥 Télécharger la Fiche Technique',
+      label: `📥 ${vitrineTexts.labelFicheTechnique || 'Télécharger la Fiche Technique'}`,
       title: 'Télécharger la fiche technique (PDF)'
     },
     {
       url: planSceneUrl,
-      label: '📥 Télécharger le Plan de Scène',
+      label: `📥 ${vitrineTexts.labelPlanScene || 'Télécharger le Plan de Scène'}`,
       title: 'Télécharger le plan de scène (PDF/Image)'
     },
     {
       url: kitPresseUrl,
-      label: '📥 Télécharger le Kit Presse (Texte & Photos)',
+      label: `📥 ${vitrineTexts.labelKitPresse || 'Télécharger le Kit Presse (Texte & Photos)'}`,
       title: 'Télécharger le kit presse complet (ZIP/PDF)'
     }
   ];

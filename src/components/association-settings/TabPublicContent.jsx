@@ -485,21 +485,36 @@ export default function TabPublicContent({
           />
         </div>
 
-        {/* Fiche Technique */}
-        <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-bold uppercase tracking-wider text-encre-noire/80">
-            Fiche Technique & Besoins Logistiques
-          </label>
-          <RichTextEditor
-            value={publicTheme.publicTechnicalSheet || ''}
-            onChange={(val) => handleThemeChange('publicTechnicalSheet', val)}
-            disabled={saving}
-            placeholder="Ex: Effectif : 12 à 20 musiciens + 1 Mestre. Besoins : 1 Loge fermée avec point d'eau, parking convoi, 1 repère scénique..."
-            minHeight="140px"
-            showLists={true}
-            showImage={false}
-            showAlign={true}
-          />
+        {/* Fiche Technique (Titre & Contenu) */}
+        <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-bold uppercase tracking-wider text-encre-noire/80">
+              Titre de la section "Fiche Technique"
+            </label>
+            <input
+              type="text"
+              value={vitrineTexts.titreFicheTechnique || ''}
+              onChange={(e) => handleTextChange('titreFicheTechnique', e.target.value)}
+              disabled={saving}
+              placeholder="Fiche technique et besoin logistique"
+              className="text-xs font-bold px-3 py-2 border border-encre-noire/30 rounded bg-white"
+            />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-bold uppercase tracking-wider text-encre-noire/80">
+              Contenu de la Fiche Technique & Besoins Logistiques
+            </label>
+            <RichTextEditor
+              value={publicTheme.publicTechnicalSheet || ''}
+              onChange={(val) => handleThemeChange('publicTechnicalSheet', val)}
+              disabled={saving}
+              placeholder="Ex: Effectif : 12 à 20 musiciens + 1 Mestre. Besoins : 1 Loge fermée avec point d'eau, parking convoi, 1 repère scénique..."
+              minHeight="140px"
+              showLists={true}
+              showImage={false}
+              showAlign={true}
+            />
+          </div>
         </div>
 
         {/* Dossier Pro / Fiche Technique PDF Téléchargeable */}
@@ -684,10 +699,40 @@ export default function TabPublicContent({
                 />
               </div>
 
+              {/* TikTok */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-bold uppercase tracking-wider text-encre-noire/80 flex items-center gap-1.5">
+                  <span>🎵 Compte TikTok</span>
+                </label>
+                <input
+                  type="url"
+                  value={socialLinks.tiktok || ''}
+                  onChange={(e) => handleSocialLinkChange('tiktok', e.target.value)}
+                  disabled={saving}
+                  placeholder="https://tiktok.com/@votre-compte"
+                  className="text-xs px-3 py-2 border border-encre-noire/30 rounded bg-white font-mono"
+                />
+              </div>
+
+              {/* Snapchat */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-bold uppercase tracking-wider text-encre-noire/80 flex items-center gap-1.5">
+                  <span>👻 Compte Snapchat</span>
+                </label>
+                <input
+                  type="url"
+                  value={socialLinks.snapchat || ''}
+                  onChange={(e) => handleSocialLinkChange('snapchat', e.target.value)}
+                  disabled={saving}
+                  placeholder="https://snapchat.com/add/votre-compte"
+                  className="text-xs px-3 py-2 border border-encre-noire/30 rounded bg-white font-mono"
+                />
+              </div>
+
               {/* WhatsApp */}
               <div className="flex flex-col gap-1.5">
                 <label className="text-xs font-bold uppercase tracking-wider text-encre-noire/80 flex items-center gap-1.5">
-                  <span>💬 Boucle ou Lien WhatsApp</span>
+                  <span>💬 Contact / Groupe WhatsApp</span>
                 </label>
                 <input
                   type="url"
@@ -695,6 +740,36 @@ export default function TabPublicContent({
                   onChange={(e) => handleSocialLinkChange('whatsapp', e.target.value)}
                   disabled={saving}
                   placeholder="https://chat.whatsapp.com/... ou https://wa.me/..."
+                  className="text-xs px-3 py-2 border border-encre-noire/30 rounded bg-white font-mono"
+                />
+              </div>
+
+              {/* LinkedIn */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-bold uppercase tracking-wider text-encre-noire/80 flex items-center gap-1.5">
+                  <span>💼 Page LinkedIn</span>
+                </label>
+                <input
+                  type="url"
+                  value={socialLinks.linkedin || ''}
+                  onChange={(e) => handleSocialLinkChange('linkedin', e.target.value)}
+                  disabled={saving}
+                  placeholder="https://linkedin.com/company/votre-asso"
+                  className="text-xs px-3 py-2 border border-encre-noire/30 rounded bg-white font-mono"
+                />
+              </div>
+
+              {/* Spotify / Musique */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-bold uppercase tracking-wider text-encre-noire/80 flex items-center gap-1.5">
+                  <span>🎧 Spotify / Plateforme Musicale</span>
+                </label>
+                <input
+                  type="url"
+                  value={socialLinks.spotify || ''}
+                  onChange={(e) => handleSocialLinkChange('spotify', e.target.value)}
+                  disabled={saving}
+                  placeholder="https://open.spotify.com/artist/..."
                   className="text-xs px-3 py-2 border border-encre-noire/30 rounded bg-white font-mono"
                 />
               </div>

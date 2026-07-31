@@ -157,7 +157,11 @@ export default function PublicHome({
   const titreProgrammer = vitrineTexts.titreProgrammer || "Nous Programmer / Fiche Technique";
   const accrocheProgrammer = vitrineTexts.accrocheProgrammer || "Toutes les informations pratiques pour accueillir notre groupe lors de vos festivals, défilés ou événements.";
   const titreFormats = vitrineTexts.titreFormats || "Nos Formats de Prestations";
-  const titreFicheTechnique = vitrineTexts.titreFicheTechnique || "Besoins Techniques & Logistiques";
+  const titreFicheTechnique = vitrineTexts.titreFicheTechnique || "Fiche technique et besoin logistique";
+  const titreContactReseaux = vitrineTexts.titreContactReseaux || "Contact & Réseaux Sociaux";
+  const accrocheContactReseaux = vitrineTexts.accrocheContactReseaux || "Une question, un projet d'événement ou une demande de prestation ? Contactez-nous directement ou suivez l'actualité de la troupe sur nos réseaux sociaux !";
+  const boutonContactEmail = vitrineTexts.boutonContactEmail || "Contactez-nous pour programmer";
+  const boutonHeroProgrammer = vitrineTexts.boutonHeroProgrammer || "Nous Programmer";
 
   // Données Espace Organisateur
   const enableOrganizerSection = publicTheme?.enableOrganizerSection !== false;
@@ -460,7 +464,7 @@ export default function PublicHome({
                 }}
               >
                 <span>🎪</span>
-                <span>Nous Programmer</span>
+                <span>{boutonHeroProgrammer}</span>
               </button>
             )}
           </div>
@@ -674,8 +678,8 @@ export default function PublicHome({
                 )}
               </div>
 
-              {/* Partie Droite : Fiche Technique & Besoins Logistiques */}
-              <div className="bg-white rounded-xl border border-stone-200 p-6 sm:p-8 shadow-sm flex flex-col justify-between gap-5">
+              {/* Partie Droite : Contact & Réseaux Sociaux */}
+              <div className="bg-white rounded-xl border border-stone-200 p-6 sm:p-8 shadow-sm flex flex-col justify-between gap-6">
                 <div className="flex flex-col gap-4">
                   <h3 
                     className="text-xl font-bold border-b border-stone-100 pb-3 flex items-center gap-2"
@@ -684,46 +688,134 @@ export default function PublicHome({
                       color: 'var(--public-primary, #D32F2F)' 
                     }}
                   >
-                    <span>📋 {titreFicheTechnique}</span>
+                    <span>📞 {titreContactReseaux}</span>
                   </h3>
 
-                  {/* Accordéon Fiche Technique (Masqué par défaut) */}
-                  <details className="group border border-stone-200 rounded-xl bg-stone-50/50 shadow-xs overflow-hidden transition-all">
-                    <summary 
-                      className="cursor-pointer font-bold p-4 text-stone-800 flex justify-between items-center bg-white hover:bg-stone-50 transition-colors select-none text-xs sm:text-sm"
-                      style={{ fontFamily: 'var(--public-font-heading, sans-serif)' }}
-                    >
-                      <span className="flex items-center gap-2" style={{ color: 'var(--public-primary, #D32F2F)' }}>
-                        🛠️ Fiche technique et besoins logistiques (Déplier)
+                  <p 
+                    className="text-xs sm:text-sm text-stone-600 font-medium leading-relaxed"
+                    style={{ fontFamily: 'var(--public-font-body, sans-serif)' }}
+                  >
+                    {accrocheContactReseaux}
+                  </p>
+
+                  {/* Badges / Boutons des Réseaux Sociaux Actifs */}
+                  {Boolean(
+                    socialLinks.facebook || 
+                    socialLinks.instagram || 
+                    socialLinks.youtube || 
+                    socialLinks.tiktok || 
+                    socialLinks.snapchat || 
+                    socialLinks.whatsapp || 
+                    socialLinks.linkedin || 
+                    socialLinks.spotify
+                  ) && (
+                    <div className="flex flex-col gap-2 pt-2">
+                      <span className="text-xs font-bold uppercase tracking-wider text-stone-400">
+                        Nos Réseaux Sociaux
                       </span>
-                      <span className="text-stone-400 group-open:rotate-180 transition-transform duration-200 text-xs">
-                        ▼
-                      </span>
-                    </summary>
-                    <PublicRichText 
-                      content={technicalSheet}
-                      className="p-4 sm:p-5 border-t border-stone-200/80 text-xs sm:text-sm text-stone-700 leading-relaxed bg-white"
-                    />
-                  </details>
+                      <div className="flex flex-wrap gap-2">
+                        {socialLinks.facebook && (
+                          <a
+                            href={socialLinks.facebook}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-3 py-2 rounded-lg text-xs font-bold bg-blue-50 text-blue-800 border border-blue-200 hover:bg-blue-600 hover:text-white transition-all flex items-center gap-1.5 shadow-2xs hover:shadow-sm"
+                          >
+                            <span>📘</span>
+                            <span>Facebook</span>
+                          </a>
+                        )}
+
+                        {socialLinks.instagram && (
+                          <a
+                            href={socialLinks.instagram}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-3 py-2 rounded-lg text-xs font-bold bg-pink-50 text-pink-800 border border-pink-200 hover:bg-pink-600 hover:text-white transition-all flex items-center gap-1.5 shadow-2xs hover:shadow-sm"
+                          >
+                            <span>📸</span>
+                            <span>Instagram</span>
+                          </a>
+                        )}
+
+                        {socialLinks.youtube && (
+                          <a
+                            href={socialLinks.youtube}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-3 py-2 rounded-lg text-xs font-bold bg-red-50 text-red-800 border border-red-200 hover:bg-red-600 hover:text-white transition-all flex items-center gap-1.5 shadow-2xs hover:shadow-sm"
+                          >
+                            <span>🎬</span>
+                            <span>YouTube</span>
+                          </a>
+                        )}
+
+                        {socialLinks.tiktok && (
+                          <a
+                            href={socialLinks.tiktok}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-3 py-2 rounded-lg text-xs font-bold bg-stone-100 text-stone-900 border border-stone-300 hover:bg-stone-900 hover:text-white transition-all flex items-center gap-1.5 shadow-2xs hover:shadow-sm"
+                          >
+                            <span>🎵</span>
+                            <span>TikTok</span>
+                          </a>
+                        )}
+
+                        {socialLinks.snapchat && (
+                          <a
+                            href={socialLinks.snapchat}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-3 py-2 rounded-lg text-xs font-bold bg-yellow-50 text-yellow-900 border border-yellow-300 hover:bg-yellow-400 transition-all flex items-center gap-1.5 shadow-2xs hover:shadow-sm"
+                          >
+                            <span>👻</span>
+                            <span>Snapchat</span>
+                          </a>
+                        )}
+
+                        {socialLinks.whatsapp && (
+                          <a
+                            href={socialLinks.whatsapp}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-3 py-2 rounded-lg text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-600 hover:text-white transition-all flex items-center gap-1.5 shadow-2xs hover:shadow-sm"
+                          >
+                            <span>💬</span>
+                            <span>WhatsApp</span>
+                          </a>
+                        )}
+
+                        {socialLinks.linkedin && (
+                          <a
+                            href={socialLinks.linkedin}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-3 py-2 rounded-lg text-xs font-bold bg-sky-50 text-sky-800 border border-sky-200 hover:bg-sky-700 hover:text-white transition-all flex items-center gap-1.5 shadow-2xs hover:shadow-sm"
+                          >
+                            <span>💼</span>
+                            <span>LinkedIn</span>
+                          </a>
+                        )}
+
+                        {socialLinks.spotify && (
+                          <a
+                            href={socialLinks.spotify}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-3 py-2 rounded-lg text-xs font-bold bg-green-50 text-green-800 border border-green-200 hover:bg-green-600 hover:text-white transition-all flex items-center gap-1.5 shadow-2xs hover:shadow-sm"
+                          >
+                            <span>🎧</span>
+                            <span>Spotify</span>
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
-                {/* Bloc de Contact & Appel à l'action */}
+                {/* Bloc de Contact Direct & Appel à l'action */}
                 <div className="border-t border-stone-100 pt-5 flex flex-col gap-3">
-                  {/* Bouton de Téléchargement Fiche Technique / Dossier Pro (PDF) */}
-                  {dossierProPdfUrl && (
-                    <a
-                      href={dossierProPdfUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="w-full py-3 px-5 text-xs font-bold uppercase tracking-wider rounded-lg border-2 border-stone-800 text-stone-900 bg-stone-100 hover:bg-stone-200 transition-all text-center flex items-center justify-center gap-2 shadow-xs active:scale-95 cursor-pointer"
-                      title="Télécharger la fiche technique complète au format PDF"
-                      style={{ fontFamily: 'var(--public-font-heading, sans-serif)' }}
-                    >
-                      <span>📥</span>
-                      <span>Télécharger la Fiche Technique (PDF)</span>
-                    </a>
-                  )}
-
                   {contactEmail ? (
                     <a
                       href={`mailto:${contactEmail}?subject=Demande%20de%20Programmation%20-%20${encodeURIComponent(groupTitle)}`}
@@ -734,16 +826,18 @@ export default function PublicHome({
                         fontFamily: 'var(--public-font-heading, sans-serif)'
                       }}
                     >
-                      ✉️ Contactez-nous pour programmer
+                      ✉️ {boutonContactEmail}
                     </a>
                   ) : null}
 
                   <div className="flex flex-wrap justify-center sm:justify-between items-center gap-2 text-xs text-stone-600 font-medium pt-1">
                     {contactEmail && (
-                      <span className="truncate">📧 {contactEmail}</span>
+                      <a href={`mailto:${contactEmail}`} className="truncate hover:underline">
+                        📧 {contactEmail}
+                      </a>
                     )}
                     {contactPhone && (
-                      <a href={`tel:${contactPhone}`} className="hover:text-stone-900 font-semibold truncate">
+                      <a href={`tel:${contactPhone}`} className="hover:underline font-semibold">
                         📞 {contactPhone}
                       </a>
                     )}
@@ -787,7 +881,16 @@ export default function PublicHome({
 
           {/* Réseaux sociaux dynamiques & Mention */}
           <div className="flex flex-col items-center md:items-end gap-3">
-            {(socialLinks.facebook || socialLinks.instagram || socialLinks.youtube || socialLinks.whatsapp) ? (
+            {Boolean(
+              socialLinks.facebook || 
+              socialLinks.instagram || 
+              socialLinks.youtube || 
+              socialLinks.tiktok || 
+              socialLinks.snapchat || 
+              socialLinks.whatsapp || 
+              socialLinks.linkedin || 
+              socialLinks.spotify
+            ) ? (
               <div className="flex flex-wrap items-center justify-center md:justify-end gap-4 text-xs font-semibold text-stone-400">
                 {socialLinks.facebook && (
                   <a 
@@ -819,6 +922,26 @@ export default function PublicHome({
                     <span>🎬 YouTube</span>
                   </a>
                 )}
+                {socialLinks.tiktok && (
+                  <a 
+                    href={socialLinks.tiktok} 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    className="hover:text-white transition-colors flex items-center gap-1.5"
+                  >
+                    <span>🎵 TikTok</span>
+                  </a>
+                )}
+                {socialLinks.snapchat && (
+                  <a 
+                    href={socialLinks.snapchat} 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    className="hover:text-white transition-colors flex items-center gap-1.5"
+                  >
+                    <span>👻 Snapchat</span>
+                  </a>
+                )}
                 {socialLinks.whatsapp && (
                   <a 
                     href={socialLinks.whatsapp} 
@@ -827,6 +950,26 @@ export default function PublicHome({
                     className="hover:text-white transition-colors flex items-center gap-1.5"
                   >
                     <span>💬 WhatsApp</span>
+                  </a>
+                )}
+                {socialLinks.linkedin && (
+                  <a 
+                    href={socialLinks.linkedin} 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    className="hover:text-white transition-colors flex items-center gap-1.5"
+                  >
+                    <span>💼 LinkedIn</span>
+                  </a>
+                )}
+                {socialLinks.spotify && (
+                  <a 
+                    href={socialLinks.spotify} 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    className="hover:text-white transition-colors flex items-center gap-1.5"
+                  >
+                    <span>🎧 Spotify</span>
                   </a>
                 )}
               </div>

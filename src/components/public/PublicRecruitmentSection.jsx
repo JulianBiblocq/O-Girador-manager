@@ -49,7 +49,7 @@ export default function PublicRecruitmentSection({ publicTheme }) {
   const vitrineTexts = publicTheme?.vitrineTexts || {};
   const badgeRecrutement = vitrineTexts.badgeRecrutement || "Nous Rejoindre";
   const title = vitrineTexts.titreRecrutement || publicTheme?.titreRecrutement || "Rejoignez la troupe !";
-  const text = vitrineTexts.accrocheRecrutement || publicTheme?.texteRecrutement || "Rejoignez nos ateliers hebdomadaires et participez à une aventure musicale et humaine unique !";
+  const text = vitrineTexts.accrocheRecrutement || publicTheme?.texteRecrutement || "Rejoignez nos ateliers hebdomadaires et participez à une aventure musicale humaine unique.";
   const configuredLink = publicTheme?.lienRecrutement?.trim() || "";
   const contactEmail = publicTheme?.publicContactEmail?.trim() || "";
   const showRecrutementCtaIcon = publicTheme?.showRecrutementCtaIcon !== false;
