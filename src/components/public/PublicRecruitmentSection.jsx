@@ -188,13 +188,16 @@ export default function PublicRecruitmentSection({ publicTheme }) {
                     </div>
                   </div>
 
-                  {/* Description courte */}
+                  {/* Description courte avec rendu riche sécurisé */}
                   {formule.description && (
-                    <p className={`text-xs sm:text-sm leading-relaxed font-medium text-left border-t border-dashed pt-3 ${
+                    <div className={`text-xs sm:text-sm leading-relaxed font-medium text-left border-t border-dashed pt-3 ${
                       hasBgImage ? 'text-stone-200 border-white/20' : 'text-stone-600 border-stone-200'
                     }`}>
-                      {formule.description}
-                    </p>
+                      <PublicRichText 
+                        content={formule.description} 
+                        className={hasBgImage ? '[&_strong]:text-white [&_b]:text-white [&_a]:text-amber-300 [&_li::marker]:text-emerald-400' : ''}
+                      />
+                    </div>
                   )}
 
                   {/* Liste des Avantages */}
@@ -311,9 +314,10 @@ export default function PublicRecruitmentSection({ publicTheme }) {
               {selectedFormuleModal.description && (
                 <div className="flex flex-col gap-1.5">
                   <h4 className="text-xs font-bold uppercase tracking-wider text-stone-500">Présentation générale</h4>
-                  <p className="text-sm sm:text-base font-semibold leading-relaxed text-stone-800">
-                    {selectedFormuleModal.description}
-                  </p>
+                  <PublicRichText 
+                    content={selectedFormuleModal.description}
+                    className="text-sm sm:text-base font-semibold leading-relaxed text-stone-800"
+                  />
                 </div>
               )}
 

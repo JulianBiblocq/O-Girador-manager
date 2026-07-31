@@ -3,6 +3,7 @@ import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage
 import { storage } from '../../firebase';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
+import RichTextEditor from '../RichTextEditor';
 
 // Formules d'adhésion par défaut si la liste est initialement vide
 const DEFAULT_FORMULES = [
@@ -279,7 +280,7 @@ export default function FormulesManager({ formules = [], onChangeFormules, savin
               <h5 className="text-xs font-bold text-cordel-wood truncate">{f.titre}</h5>
               {f.description && (
                 <p className="text-[10px] text-stone-600 line-clamp-2 leading-tight">
-                  {f.description}
+                  {f.description.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()}
                 </p>
               )}
             </div>
@@ -365,25 +366,39 @@ export default function FormulesManager({ formules = [], onChangeFormules, savin
             </div>
           </div>
 
+          {/* Description courte sur la carte */}
           <div className="flex flex-col gap-1">
-            <label className="text-[10px] font-bold uppercase">Description courte (Sur la carte)</label>
-            <textarea
-              rows={2}
-              value={formState.description}
-              onChange={(e) => setFormState({ ...formState, description: e.target.value })}
+            <label className="text-[10px] font-bold uppercase text-encre-noire flex items-center justify-between">
+              <span>Description courte (Affichée sur la carte)</span>
+              <span className="text-[9px] text-stone-500 font-normal">Texte riche (Gras, puces...)</span>
+            </label>
+            <RichTextEditor
+              value={formState.description || ''}
+              onChange={(val) => setFormState(prev => ({ ...prev, description: val }))}
+              disabled={saving}
               placeholder="Ateliers hebdomadaires de percussion maracatu..."
-              className="text-xs px-2 py-1.5 border rounded bg-white resize-none"
+              minHeight="100px"
+              showLists={true}
+              showImage={false}
+              showAlign={false}
             />
           </div>
 
+          {/* Description détaillée dans la modale "En savoir plus" */}
           <div className="flex flex-col gap-1">
-            <label className="text-[10px] font-bold uppercase">Description détaillée (Dans la modale "En savoir plus")</label>
-            <textarea
-              rows={3}
-              value={formState.descriptionDetaillee}
-              onChange={(e) => setFormState({ ...formState, descriptionDetaillee: e.target.value })}
+            <label className="text-[10px] font-bold uppercase text-encre-noire flex items-center justify-between">
+              <span>Description détaillée (Dans la modale "En savoir plus")</span>
+              <span className="text-[9px] text-stone-500 font-normal">Texte riche structuré (Gras, puces, tirets...)</span>
+            </label>
+            <RichTextEditor
+              value={formState.descriptionDetaillee || ''}
+              onChange={(val) => setFormState(prev => ({ ...prev, descriptionDetaillee: val }))}
+              disabled={saving}
               placeholder="Précisez le fonctionnement, les lieux, les horaires exacts, la tenue requise, les objectifs d'apprentissage..."
-              className="text-xs px-2 py-1.5 border rounded bg-white resize-y"
+              minHeight="140px"
+              showLists={true}
+              showImage={false}
+              showAlign={true}
             />
           </div>
 
