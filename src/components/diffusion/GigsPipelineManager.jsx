@@ -401,25 +401,41 @@ export default function GigsPipelineManager({ groupId, associationSettings: prop
       {/* Modale Officielle de Création d'Événement de l'Agenda (Formulaire complet EventCreateForm pré-rempli) */}
       <GigEventCreateModal
         isOpen={isOptionModalOpen}
-        onClose={() => setIsOptionModalOpen(false)}
+        onClose={() => {
+          setIsOptionModalOpen(false);
+          if (selectedGig) {
+            setIsDetailsOpen(true); // Retour fluide vers la fiche du dossier
+          }
+        }}
         gig={selectedGig}
         groupId={groupId}
         onSuccess={() => {
           setToastNotification("Événement créé avec succès et option posée dans le pipeline Diffusion !");
           setTimeout(() => setToastNotification(null), 5000);
+          if (selectedGig) {
+            setIsDetailsOpen(true);
+          }
         }}
       />
 
       {/* Modale de Génération de Devis PDF commercial du Pôle Diffusion */}
       <GigQuoteGeneratorModal
         isOpen={isQuoteModalOpen}
-        onClose={() => setIsQuoteModalOpen(false)}
+        onClose={() => {
+          setIsQuoteModalOpen(false);
+          if (selectedGig) {
+            setIsDetailsOpen(true); // Sécurité : Retour automatique vers la fiche du dossier sans perte de contexte
+          }
+        }}
         gig={selectedGig}
         groupId={groupId}
         associationSettings={associationSettings}
         onSuccess={(devisNum) => {
           setToastNotification(`Devis ${devisNum} généré et statut du dossier mis à jour (Devis émis) !`);
           setTimeout(() => setToastNotification(null), 5000);
+          if (selectedGig) {
+            setIsDetailsOpen(true);
+          }
         }}
       />
     </div>
