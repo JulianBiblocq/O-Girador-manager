@@ -6,6 +6,7 @@ import { useTreasury } from '../hooks/useTreasury';
 import TreasuryDashboard from './treasury/TreasuryDashboard';
 import TreasuryCotisations from './treasury/TreasuryCotisations';
 import TreasuryEvents from './treasury/TreasuryEvents';
+import TreasuryInvoices from './treasury/TreasuryInvoices';
 import TreasuryOperations from './treasury/TreasuryOperations';
 import KilometricReimbursementManager from './KilometricReimbursementManager';
 import ReportsExports from './ReportsExports';
@@ -84,6 +85,13 @@ export default function TreasuryManager({ groupId, onBack, role, isSystemAdmin, 
             groupId={groupId}
           />
         );
+      case 'facturation':
+        return (
+          <TreasuryInvoices
+            groupId={groupId}
+            associationSettings={associationSettings}
+          />
+        );
       case 'events-finances':
         return (
           <TreasuryEvents
@@ -135,7 +143,7 @@ export default function TreasuryManager({ groupId, onBack, role, isSystemAdmin, 
   return (
     <div className="flex flex-col gap-6 text-left select-none max-w-4xl mx-auto w-full">
       {/* Header */}
-      <div className="flex justify-between items-center pb-2 border-b-2 border-dashed border-cordel-master-dark/30">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pb-2 border-b-2 border-dashed border-cordel-master-dark/30">
         <button 
           type="button" 
           onClick={onBack} 
@@ -147,11 +155,99 @@ export default function TreasuryManager({ groupId, onBack, role, isSystemAdmin, 
         <h2 className="text-sm font-extrabold tracking-widest text-cordel-wood uppercase flex items-center">
           {activeTab === 'dashboard-finance' && "🪙 Bilan & Tableau de bord"}
           {activeTab === 'cotisations' && "🏷️ Cotisations & Configuration"}
+          {activeTab === 'facturation' && "📄 Devis & Facturation"}
           {activeTab === 'events-finances' && "🎭 Finances des Événements"}
           {activeTab === 'operations-diverses' && "💼 Opérations Diverses"}
           {activeTab === 'frais-km' && "🚗 Frais Kilométriques"}
           {activeTab === 'reports-exports' && "📊 Rapports & Exports"}
         </h2>
+      </div>
+
+      {/* Barre de navigation rapide des sous-onglets Trésorerie */}
+      <div className="flex flex-wrap gap-1.5 border-b border-dashed border-cordel-master-dark/20 pb-3 select-none">
+        <button
+          type="button"
+          onClick={() => setActiveTab('dashboard-finance')}
+          className={`px-3 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer ${
+            activeTab === 'dashboard-finance'
+              ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
+              : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
+          }`}
+        >
+          🪙 Tableau de bord
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('cotisations')}
+          className={`px-3 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer ${
+            activeTab === 'cotisations'
+              ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
+              : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
+          }`}
+        >
+          🏷️ Cotisations
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('facturation')}
+          className={`px-3 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer ${
+            activeTab === 'facturation'
+              ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
+              : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
+          }`}
+        >
+          📄 Factures & Devis
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('events-finances')}
+          className={`px-3 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer ${
+            activeTab === 'events-finances'
+              ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
+              : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
+          }`}
+        >
+          🎭 Événements
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('operations-diverses')}
+          className={`px-3 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer ${
+            activeTab === 'operations-diverses'
+              ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
+              : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
+          }`}
+        >
+          💼 Opérations
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('frais-km')}
+          className={`px-3 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer ${
+            activeTab === 'frais-km'
+              ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
+              : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
+          }`}
+        >
+          🚗 Frais KM
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('reports-exports')}
+          className={`px-3 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer ${
+            activeTab === 'reports-exports'
+              ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
+              : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
+          }`}
+        >
+          📊 Exports
+        </button>
       </div>
 
       {loading ? (
