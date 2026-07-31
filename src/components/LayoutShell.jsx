@@ -255,6 +255,20 @@ export default function LayoutShell({
               </div>
             </div>
             <div className="flex items-center gap-1">
+              {isSystemOrSuperAdminOrMestre && (
+                <button
+                  type="button"
+                  onClick={onToggleBreakGlass}
+                  className={`p-1 border-2 rounded transition-all cursor-pointer flex items-center justify-center ${
+                    breakGlassActive 
+                      ? 'bg-amber-400 border-encre-noire text-encre-noire animate-pulse shadow-xs' 
+                      : 'border-dashed border-encre-noire/20 text-stone-600 hover:border-encre-noire'
+                  }`}
+                  title={breakGlassActive ? "Mode Intervention Actif (Cliquez pour désactiver)" : "Activer le Mode Intervention (Déverrouiller)"}
+                >
+                  <span className="text-xs">{breakGlassActive ? '🔓' : '🔒'}</span>
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => window.open('/', '_blank')}
@@ -631,6 +645,24 @@ export default function LayoutShell({
                   <span className="font-black text-xs uppercase tracking-wider text-cordel-wood leading-tight text-center break-words max-w-[200px]">
                     {associationName}
                   </span>
+                )}
+
+                {/* Bouton Mode Intervention Mobile dans le Drawer */}
+                {isSystemOrSuperAdminOrMestre && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onToggleBreakGlass();
+                      setIsDrawerOpen(false);
+                    }}
+                    className={`mt-2 w-full py-1.5 px-2 rounded-[6px_9px_5px_8px] text-[9px] font-black uppercase tracking-wider border-2 transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-[1.5px_1.5px_0px_0px_#181716] ${
+                      breakGlassActive
+                        ? 'bg-amber-400 text-encre-noire border-encre-noire animate-pulse'
+                        : 'bg-cordel-bg text-cordel-master-dark/85 border-cordel-master-dark/30 hover:border-encre-noire'
+                    }`}
+                  >
+                    <span>{breakGlassActive ? '🔓 Mode Intervention Actif' : '🔒 Mode Intervention'}</span>
+                  </button>
                 )}
               </div>
 
