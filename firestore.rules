@@ -306,6 +306,20 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // Factures & Devis : Lecture et écriture réservées aux administrateurs / mestres du même groupe
+    match /invoices/{invoice} {
+      allow read, write: if isAuthenticated() && (
+        isAdminOrMestre() || (resource == null || getUserData().groupId == resource.data.groupId)
+      );
+    }
+
+    // Pipeline Prestations (Pôle Diffusion) : Lecture et écriture pour les membres authentifiés du même groupe
+    match /gigs_pipeline/{gig} {
+      allow read, write: if isAuthenticated() && (
+        isAdminOrMestre() || (resource == null || getUserData().groupId == resource.data.groupId)
+      );
+    }
+
     // Pending payments: Réservé aux admins et mestres
     match /pending_payments/{email} {
       allow read, write: if isAdminOrMestre();
