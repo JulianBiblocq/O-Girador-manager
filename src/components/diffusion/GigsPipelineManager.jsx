@@ -4,7 +4,7 @@ import CordelButton from '../CordelButton';
 import { useGigsPipeline } from '../../hooks/useGigsPipeline';
 import GigFormModal, { GIG_STATUSES } from './GigFormModal';
 import GigDetailsModal from './GigDetailsModal';
-import GigAgendaOptionModal from './GigAgendaOptionModal';
+import GigEventCreateModal from './GigEventCreateModal';
 
 export default function GigsPipelineManager({ groupId, onBack }) {
   const {
@@ -376,8 +376,8 @@ export default function GigsPipelineManager({ groupId, onBack }) {
         saving={saving}
       />
 
-      {/* Modale de Création d'Option dans l'Agenda (Formulaire pré-rempli) */}
-      <GigAgendaOptionModal
+      {/* Modale Officielle de Création d'Événement de l'Agenda (Formulaire complet EventCreateForm pré-rempli) */}
+      <GigEventCreateModal
         isOpen={isOptionModalOpen}
         onClose={() => setIsOptionModalOpen(false)}
         gig={selectedGig}
