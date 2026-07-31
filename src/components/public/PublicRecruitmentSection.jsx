@@ -38,22 +38,21 @@ const DEFAULT_FORMULES = [
  * @param {Object} props.publicTheme - Objet de configuration dynamique du thème vitrine.
  */
 export default function PublicRecruitmentSection({ publicTheme }) {
-  // Masquage conditionnel si l'option de recrutement n'est pas activée par l'administrateur
-  if (!publicTheme?.afficherRecrutement) {
+  // Masquage si la section a été désactivée par l'administrateur
+  if (publicTheme?.afficherRecrutement === false) {
     return null;
   }
 
   const vitrineTexts = publicTheme?.vitrineTexts || {};
   const badgeRecrutement = vitrineTexts.badgeRecrutement || "Nous Rejoindre";
   const title = vitrineTexts.titreRecrutement || publicTheme.titreRecrutement || "Rejoignez la troupe !";
-  const text = vitrineTexts.accrocheRecrutement || publicTheme.texteRecrutement || "";
+  const text = vitrineTexts.accrocheRecrutement || publicTheme.texteRecrutement || "Rejoignez nos ateliers hebdomadaires et participez à une aventure musicale et humaine unique !";
   const linkUrl = publicTheme.lienRecrutement || "#";
   const buttonText = publicTheme.texteBoutonRecrutement || "S'inscrire sur HelloAsso";
 
   // Récupération des formules configurées ou des formules par défaut
-  const formules = (Array.isArray(publicTheme.formulesRecrutement) && publicTheme.formulesRecrutement.length > 0)
-    ? publicTheme.formulesRecrutement
-    : DEFAULT_FORMULES;
+  const hasConfiguredFormules = Array.isArray(publicTheme.formulesRecrutement) && publicTheme.formulesRecrutement.length > 0;
+  const formules = hasConfiguredFormules ? publicTheme.formulesRecrutement : DEFAULT_FORMULES;
 
   return (
     <section 

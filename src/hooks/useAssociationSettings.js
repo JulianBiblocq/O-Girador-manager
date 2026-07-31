@@ -108,10 +108,16 @@ export const DEFAULT_PUBLIC_THEME = {
   kitPresseUrl: '',
   // Textes et titres dynamiques des sections
   vitrineTexts: DEFAULT_VITRINE_TEXTS,
-  // Configuration de la section Recrutement & Vie Associative Vitrine
+  // Configuration de la visibilité des sections sur le site public
+  afficherVieAssociative: true,
+  afficherRecrutement: true,
+  afficherGalerie: true,
+  afficherAgenda: true,
+  enableOrganizerSection: true,
+  afficherNewsletter: true,
+  // Configuration du contenu de la section Recrutement & Vie Associative Vitrine
   texteVieAssociative: '',
   formulesRecrutement: [],
-  afficherRecrutement: false,
   titreRecrutement: 'Rejoignez la troupe !',
   texteRecrutement: '',
   lienRecrutement: '',
@@ -354,8 +360,11 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
             dossierPresentationUrl: data.publicTheme?.dossierPresentationUrl || data.publicTheme?.dossierProPdfUrl || '',
             ficheTechniqueUrl: data.publicTheme?.ficheTechniqueUrl || '',
             planSceneUrl: data.publicTheme?.planSceneUrl || '',
-            kitPresseUrl: data.publicTheme?.kitPresseUrl || '',
-            afficherRecrutement: data.publicTheme?.afficherRecrutement || false,
+            afficherVieAssociative: data.publicTheme?.afficherVieAssociative !== false,
+            afficherRecrutement: data.publicTheme?.afficherRecrutement !== false,
+            afficherGalerie: data.publicTheme?.afficherGalerie !== false,
+            afficherAgenda: data.publicTheme?.afficherAgenda !== false,
+            afficherNewsletter: data.publicTheme?.afficherNewsletter !== false,
             titreRecrutement: data.publicTheme?.titreRecrutement || "Rejoignez la troupe !",
             texteRecrutement: data.publicTheme?.texteRecrutement || '',
             lienRecrutement: data.publicTheme?.lienRecrutement || '',

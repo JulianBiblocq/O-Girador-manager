@@ -78,8 +78,13 @@ export function usePublicTheme(groupId, themeOverride = null) {
               formulesRecrutement: Array.isArray(data.publicTheme?.formulesRecrutement)
                 ? data.publicTheme.formulesRecrutement
                 : (data.publicTheme?.formulesRecrutement || []),
-              // Champs de la section Recrutement
-              afficherRecrutement: data.publicTheme?.afficherRecrutement || false,
+              // Drapeaux de visibilité des sections publiques (visibilité sélective)
+              afficherVieAssociative: data.publicTheme?.afficherVieAssociative !== false,
+              afficherRecrutement: data.publicTheme?.afficherRecrutement !== false,
+              afficherGalerie: data.publicTheme?.afficherGalerie !== false,
+              afficherAgenda: data.publicTheme?.afficherAgenda !== false,
+              afficherNewsletter: data.publicTheme?.afficherNewsletter !== false,
+              enableOrganizerSection: data.publicTheme?.enableOrganizerSection !== false,
               titreRecrutement: data.publicTheme?.titreRecrutement || "Rejoignez la troupe !",
               texteRecrutement: data.publicTheme?.texteRecrutement || '',
               lienRecrutement: data.publicTheme?.lienRecrutement || '',

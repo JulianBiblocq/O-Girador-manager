@@ -10,15 +10,16 @@ import PublicRichText from './PublicRichText';
  * @param {Object} props.publicTheme - Configuration dynamique du thème vitrine
  */
 export default function PublicVieAssociativeSection({ publicTheme }) {
-  const content = publicTheme?.texteVieAssociative || '';
+  // Masquage si la section a été désactivée par l'administrateur
+  if (publicTheme?.afficherVieAssociative === false) {
+    return null;
+  }
+
+  const defaultContent = "Notre collectif rassemble des passionnés de percussions et de culture populaire brésilienne. Au fil de la semaine, nous organisons des ateliers de pratique instrumentale, de chant polyphonique et d'expression scénique, ainsi que des sessions de confection et d'entretien du matériel. Rejoignez nos répétitions pour vivre l'aventure de l'intérieur !";
+  const content = publicTheme?.texteVieAssociative?.trim() ? publicTheme.texteVieAssociative : defaultContent;
   const vitrineTexts = publicTheme?.vitrineTexts || {};
   const badgeVieAssociative = vitrineTexts.badgeVieAssociative || "Notre Quotidien";
   const titreVieAssociative = vitrineTexts.titreVieAssociative || "Vie Associative & Organisation";
-
-  // Si aucun contenu n'a été renseigné par l'administrateur, masquage élégant de la section
-  if (!content || !content.trim()) {
-    return null;
-  }
 
   return (
     <section 

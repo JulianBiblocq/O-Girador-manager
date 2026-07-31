@@ -30,8 +30,29 @@ export default function TabPublicRecruitment({ formData, handleChange, saving })
       <CordelCard variant="default" className="p-5 flex flex-col gap-5 bg-white border-2 border-cordel-master-dark/30">
         <h4 className="text-xs font-black uppercase tracking-widest text-cordel-wood border-b border-dashed border-cordel-master-dark/20 pb-2 flex items-center justify-between">
           <span>🌿 Vie Associative & Organisation (Notre Quotidien)</span>
-          <span className="text-[10px] text-stone-500 font-normal">Présentation du groupe sur la vitrine</span>
+          <span className={`text-[10px] font-mono px-2 py-0.5 rounded border ${
+            publicTheme.afficherVieAssociative !== false 
+              ? 'bg-emerald-50 text-emerald-800 border-emerald-300 font-bold' 
+              : 'bg-stone-100 text-stone-600 border-stone-300'
+          }`}>
+            {publicTheme.afficherVieAssociative !== false ? '✓ Section Active' : '⚪ Section Masquée'}
+          </span>
         </h4>
+
+        {/* Interrupteur Bascule d'activation de la section Vie Associative */}
+        <div className="flex items-center gap-3 p-3 bg-[#fdfaf2] border border-encre-noire/20 rounded-[4px_6px_3px_5px]">
+          <input
+            type="checkbox"
+            id="afficherVieAssociative"
+            checked={publicTheme.afficherVieAssociative !== false}
+            onChange={(e) => handleThemeChange('afficherVieAssociative', e.target.checked)}
+            disabled={saving}
+            className="w-4 h-4 cursor-pointer accent-[var(--color-cordel-vert,#2d6a4f)]"
+          />
+          <label htmlFor="afficherVieAssociative" className="text-xs font-bold uppercase tracking-wider text-encre-noire cursor-pointer flex flex-wrap items-center gap-1.5">
+            <span>Afficher la section Vie Associative & Organisation sur le site public</span>
+          </label>
+        </div>
 
         <p className="text-xs text-stone-600 leading-relaxed">
           Décrivez ici le fonctionnement hebdomadaire et le quotidien de votre association (ex: Ateliers de fabrication d'instruments le lundi, Répétition tuteurée le jeudi, chant polyphonique, ateliers de danse...). Ce texte apparaîtra de manière aérée et accueillante sur la page d'accueil.
@@ -59,11 +80,11 @@ export default function TabPublicRecruitment({ formData, handleChange, saving })
         <h4 className="text-xs font-black uppercase tracking-widest text-cordel-wood border-b border-dashed border-cordel-master-dark/20 pb-2 flex items-center justify-between">
           <span>📣 Formules d'Adhésion & Recrutement</span>
           <span className={`text-[10px] font-mono px-2 py-0.5 rounded border ${
-            publicTheme.afficherRecrutement 
+            publicTheme.afficherRecrutement !== false 
               ? 'bg-emerald-50 text-emerald-800 border-emerald-300 font-bold' 
               : 'bg-stone-100 text-stone-600 border-stone-300'
           }`}>
-            {publicTheme.afficherRecrutement ? '✓ Section Active' : '⚪ Section Masquée'}
+            {publicTheme.afficherRecrutement !== false ? '✓ Section Active' : '⚪ Section Masquée'}
           </span>
         </h4>
 
@@ -72,7 +93,7 @@ export default function TabPublicRecruitment({ formData, handleChange, saving })
           <input
             type="checkbox"
             id="afficherRecrutement"
-            checked={publicTheme.afficherRecrutement || false}
+            checked={publicTheme.afficherRecrutement !== false}
             onChange={(e) => handleThemeChange('afficherRecrutement', e.target.checked)}
             disabled={saving}
             className="w-4 h-4 cursor-pointer accent-[var(--color-cordel-vert,#2d6a4f)]"
@@ -83,7 +104,7 @@ export default function TabPublicRecruitment({ formData, handleChange, saving })
         </div>
 
         {/* Formulaire conditionnel d'édition (visible si le toggle est activé) */}
-        {publicTheme.afficherRecrutement && (
+        {publicTheme.afficherRecrutement !== false && (
           <div className="flex flex-col gap-6 pt-2 border-t border-dashed border-cordel-master-dark/20 animate-fade-in">
             
             {/* Titre du recrutement */}

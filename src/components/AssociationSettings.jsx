@@ -308,6 +308,18 @@ export default function AssociationSettings({ groupId, onBack, role, isSystemAdm
 
                 <button
                   type="button"
+                  onClick={() => setVitrineSubTab('recrutement')}
+                  className={`px-3 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer ${
+                    vitrineSubTab === 'recrutement'
+                      ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
+                      : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
+                  }`}
+                >
+                  Recrutement & Vie associative
+                </button>
+
+                <button
+                  type="button"
                   onClick={() => setVitrineSubTab('reseaux')}
                   className={`px-3 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer ${
                     vitrineSubTab === 'reseaux'

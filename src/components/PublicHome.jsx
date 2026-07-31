@@ -123,7 +123,7 @@ export default function PublicHome({ groupId, associationName, branding, onNavig
 
           {/* Navigation & Espace Membre */}
           <div className="flex items-center gap-4">
-            {publicTheme?.afficherRecrutement && (
+            {publicTheme?.afficherRecrutement !== false && (
               <button
                 type="button"
                 onClick={() => scrollToSection('recrutement')}
@@ -132,13 +132,15 @@ export default function PublicHome({ groupId, associationName, branding, onNavig
                 Recrutement
               </button>
             )}
-            <button
-              type="button"
-              onClick={() => scrollToSection('agenda')}
-              className="hidden sm:inline-block text-xs font-semibold uppercase tracking-wider text-stone-600 hover:text-stone-900 transition-colors cursor-pointer"
-            >
-              Agenda
-            </button>
+            {publicTheme?.afficherAgenda !== false && (
+              <button
+                type="button"
+                onClick={() => scrollToSection('agenda')}
+                className="hidden sm:inline-block text-xs font-semibold uppercase tracking-wider text-stone-600 hover:text-stone-900 transition-colors cursor-pointer"
+              >
+                Agenda
+              </button>
+            )}
             {enableOrganizerSection && (
               <button
                 type="button"
@@ -292,56 +294,60 @@ export default function PublicHome({ groupId, associationName, branding, onNavig
       {/* ==========================================
           GALERIE PHOTOS & CARROUSEL ("EN IMAGES")
          ========================================== */}
-      <PublicPhotoGallery photos={publicTheme?.galleryPhotos} publicTheme={publicTheme} />
+      {publicTheme?.afficherGalerie !== false && (
+        <PublicPhotoGallery photos={publicTheme?.galleryPhotos} publicTheme={publicTheme} />
+      )}
 
       {/* ==========================================
           BLOC 3 - AGENDA PUBLIC
          ========================================== */}
-      <section id="agenda" className="py-16 bg-stone-50 border-b border-stone-200/60">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 flex flex-col gap-10">
-          <div className="text-center flex flex-col items-center gap-3">
-            <h2 
-              className="text-3xl font-extrabold tracking-tight uppercase"
-              style={{ 
-                fontFamily: 'var(--public-font-heading, sans-serif)',
-                color: 'var(--public-primary, #D32F2F)' 
-              }}
-            >
-              {titreAgenda}
-            </h2>
-            <div 
-              className="w-16 h-1 rounded-full"
-              style={{ backgroundColor: 'var(--public-secondary, #1976D2)' }}
-            ></div>
-            <p className="text-sm text-stone-500 max-w-md">
-              {accrocheAgenda}
-            </p>
-          </div>
-
-          {loadingEvents ? (
-            <div className="py-12 text-center text-xs uppercase font-bold tracking-widest text-stone-400 animate-pulse">
-              ⏳ Chargement des dates publiques...
-            </div>
-          ) : publicEvents.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {publicEvents.map((evt) => (
-                <PublicEventCard
-                  key={evt.id}
-                  event={evt}
-                  onClickDetails={(selectedEvt) => setSelectedEventDetails(selectedEvt)}
-                />
-              ))}
-            </div>
-          ) : (
-            <div className="py-12 px-6 rounded-xl border border-dashed border-stone-300 bg-white text-center flex flex-col items-center gap-3 max-w-md mx-auto">
-              <span className="text-3xl">🎺</span>
-              <p className="text-sm font-semibold text-stone-700">
-                Aucune date publique prévue pour le moment, suivez-nous sur les réseaux !
+      {publicTheme?.afficherAgenda !== false && (
+        <section id="agenda" className="py-16 bg-stone-50 border-b border-stone-200/60">
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 flex flex-col gap-10">
+            <div className="text-center flex flex-col items-center gap-3">
+              <h2 
+                className="text-3xl font-extrabold tracking-tight uppercase"
+                style={{ 
+                  fontFamily: 'var(--public-font-heading, sans-serif)',
+                  color: 'var(--public-primary, #D32F2F)' 
+                }}
+              >
+                {titreAgenda}
+              </h2>
+              <div 
+                className="w-16 h-1 rounded-full"
+                style={{ backgroundColor: 'var(--public-secondary, #1976D2)' }}
+              ></div>
+              <p className="text-sm text-stone-500 max-w-md">
+                {accrocheAgenda}
               </p>
             </div>
-          )}
-        </div>
-      </section>
+
+            {loadingEvents ? (
+              <div className="py-12 text-center text-xs uppercase font-bold tracking-widest text-stone-400 animate-pulse">
+                ⏳ Chargement des dates publiques...
+              </div>
+            ) : publicEvents.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {publicEvents.map((evt) => (
+                  <PublicEventCard
+                    key={evt.id}
+                    event={evt}
+                    onClickDetails={(selectedEvt) => setSelectedEventDetails(selectedEvt)}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="py-12 px-6 rounded-xl border border-dashed border-stone-300 bg-white text-center flex flex-col items-center gap-3 max-w-md mx-auto">
+                <span className="text-3xl">🎺</span>
+                <p className="text-sm font-semibold text-stone-700">
+                  Aucune date publique prévue pour le moment, suivez-nous sur les réseaux !
+                </p>
+              </div>
+            )}
+          </div>
+        </section>
+      )}
 
       {/* ==========================================
           BLOC 4 - ESPACE ORGANISATEUR & FICHE TECHNIQUE ("NOUS PROGRAMMER")

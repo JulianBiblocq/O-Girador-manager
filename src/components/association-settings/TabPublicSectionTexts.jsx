@@ -1,5 +1,6 @@
 import React from 'react';
 import CordelCard from '../CordelCard';
+import TabPublicVisibilityManager from './TabPublicVisibilityManager';
 import { DEFAULT_VITRINE_TEXTS } from '../../hooks/useAssociationSettings';
 
 /**
@@ -41,6 +42,13 @@ export default function TabPublicSectionTexts({ formData, handleChange, saving }
 
   return (
     <div className="flex flex-col gap-6 text-left">
+      {/* Sélecteur de Visibilité des Sections Vitrine (Interrupteurs On / Off) */}
+      <TabPublicVisibilityManager
+        formData={formData}
+        handleChange={handleChange}
+        saving={saving}
+      />
+
       {/* En-tête explicatif */}
       <CordelCard variant="default" className="p-5 flex flex-col gap-4 bg-white border-2 border-cordel-master-dark/30">
         <div className="flex items-center justify-between border-b border-dashed border-cordel-master-dark/20 pb-3">
