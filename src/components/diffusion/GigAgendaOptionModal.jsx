@@ -21,32 +21,28 @@ export default function GigAgendaOptionModal({
     dateFin: '',
     lieu: '',
     type: 'prestation',
+    amount: '',
     description: '',
     horairesPassages: '',
+    status: 'a_confirmer',
     isPublic: false
   });
   const [saving, setSaving] = useState(false);
 
-  // Pré-remplissage dynamique des champs lors de l'ouverture
+  // Pré-remplissage dynamique sélectif des champs lors de l'ouverture
   useEffect(() => {
     if (gig) {
-      const contactInfo = [gig.contactEmail, gig.contactPhone].filter(Boolean).join(' | ');
-      const descInitial = [
-        `Organisateur : ${gig.organizer || 'Non renseigné'}`,
-        contactInfo ? `Contact : ${contactInfo}` : null,
-        `Budget/Cachet : ${(parseFloat(gig.amount) || 0).toLocaleString('fr-FR')} €`,
-        gig.notes ? `Notes : ${gig.notes}` : null
-      ].filter(Boolean).join('\n');
-
       setFormData({
         titre: `[OPTION] - ${gig.eventName || ''}`,
         date: gig.date || new Date().toISOString().split('T')[0],
         dateFin: '',
         lieu: gig.location || '',
         type: 'prestation',
-        description: descInitial,
+        amount: gig.amount ? String(gig.amount) : '',
+        description: '', // Champ laissé sciemment vide pour saisie manuelle (confidentialité contact)
         horairesPassages: '',
-        isPublic: false
+        status: 'a_confirmer', // Positionné par défaut sur "À confirmer"
+        isPublic: false // Décoché par défaut pour rester interne à la troupe
       });
     }
   }, [gig, isOpen]);
@@ -70,6 +66,8 @@ export default function GigAgendaOptionModal({
 
     setSaving(true);
     try {
+      const budgetAmount = parseFloat(formData.amount) || 0;
+
       // 1. Création de l'événement dans la collection `events`
       const eventDoc = {
         groupId: gig.groupId || groupId,
@@ -78,11 +76,13 @@ export default function GigAgendaOptionModal({
         date: formData.date,
         dateFin: formData.dateFin || '',
         lieu: formData.lieu?.trim() || '',
-        description: formData.description?.trim() || '',
+        description: formData.description?.trim() || '', // Laissé vide ou saisi manuellement
         horairesPassages: formData.horairesPassages?.trim() || '',
         isOption: true,
-        isPublic: Boolean(formData.isPublic),
-        status: 'confirme',
+        isPublic: Boolean(formData.isPublic), // Désactivé par défaut
+        status: formData.status || 'a_confirmer', // Positionné par défaut sur "a_confirmer"
+        montantRecette: budgetAmount,
+        budgetRecettes: budgetAmount > 0 ? [{ id: '1', libelle: 'Cachet prestation', montant: budgetAmount }] : [],
         inscriptions: [],
         createdFromGigId: gig.id,
         createdAt: serverTimestamp(),
@@ -191,52 +191,92 @@ export default function GigAgendaOptionModal({
             </div>
           </div>
 
-          {/* Lieu */}
-          <div className="flex flex-col gap-1">
-            <label className="font-extrabold uppercase text-stone-700 text-[10px]">
-              Lieu ou Adresse
-            </label>
-            <input
-              type="text"
-              name="lieu"
-              value={formData.lieu}
-              onChange={handleChange}
-              placeholder="ex: Place de la Mairie, Brest"
-              className="p-2 border border-stone-300 rounded font-semibold text-stone-900 bg-white"
-            />
+          {/* Lieu & Cachet */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="flex flex-col gap-1">
+              <label className="font-extrabold uppercase text-stone-700 text-[10px]">
+                Lieu ou Adresse
+              </label>
+              <input
+                type="text"
+                name="lieu"
+                value={formData.lieu}
+                onChange={handleChange}
+                placeholder="ex: Place de la Mairie, Brest"
+                className="p-2 border border-stone-300 rounded font-semibold text-stone-900 bg-white"
+              />
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <label className="font-extrabold uppercase text-stone-700 text-[10px]">
+                Cachet / Tarif Estimé (€)
+              </label>
+              <input
+                type="number"
+                step="0.01"
+                name="amount"
+                value={formData.amount}
+                onChange={handleChange}
+                placeholder="ex: 850"
+                className="p-2 border border-stone-300 rounded font-bold font-mono text-cordel-wood bg-amber-50"
+              />
+            </div>
           </div>
 
-          {/* Horaires de passage */}
-          <div className="flex flex-col gap-1">
-            <label className="font-extrabold uppercase text-stone-700 text-[10px]">
-              Horaires de passage / Contraintes logistiques
-            </label>
-            <input
-              type="text"
-              name="horairesPassages"
-              value={formData.horairesPassages}
-              onChange={handleChange}
-              placeholder="ex: Balance 16h, Passage 20h-21h30"
-              className="p-2 border border-stone-300 rounded text-stone-900 bg-white"
-            />
+          {/* Statut de validation & Horaires */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="flex flex-col gap-1">
+              <label className="font-extrabold uppercase text-stone-700 text-[10px]">
+                Statut de validation
+              </label>
+              <select
+                name="status"
+                value={formData.status}
+                onChange={handleChange}
+                className="p-2 border border-amber-300 rounded font-bold text-amber-900 bg-amber-50 cursor-pointer"
+              >
+                <option value="a_confirmer">⏳ À confirmer (Option posée)</option>
+                <option value="confirme">✅ Confirmé</option>
+              </select>
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <label className="font-extrabold uppercase text-stone-700 text-[10px]">
+                Horaires de passage / Logistique
+              </label>
+              <input
+                type="text"
+                name="horairesPassages"
+                value={formData.horairesPassages}
+                onChange={handleChange}
+                placeholder="ex: Balance 16h, Concert 20h"
+                className="p-2 border border-stone-300 rounded text-stone-900 bg-white"
+              />
+            </div>
           </div>
 
-          {/* Description & Infos Organisateur */}
+          {/* Description (Vide par défaut) */}
           <div className="flex flex-col gap-1">
-            <label className="font-extrabold uppercase text-stone-700 text-[10px]">
-              Description & Fiche de Contact Organisateur
-            </label>
+            <div className="flex items-center justify-between">
+              <label className="font-extrabold uppercase text-stone-700 text-[10px]">
+                Description interne de l'événement
+              </label>
+              <span className="text-[9px] text-stone-500 font-medium">
+                (Champ laissé vide par confidentialité)
+              </span>
+            </div>
             <textarea
               name="description"
               value={formData.description}
               onChange={handleChange}
-              rows={4}
-              className="p-2 border border-stone-300 rounded text-stone-900 bg-white leading-relaxed font-mono text-[11px]"
+              rows={3}
+              placeholder="Saisissez des remarques ou consignes internes si nécessaire..."
+              className="p-2 border border-stone-300 rounded text-stone-900 bg-white leading-relaxed text-[11px]"
             />
           </div>
 
-          {/* Options de visibilité */}
-          <div className="flex items-center gap-2 p-2 bg-stone-50 rounded border border-stone-200">
+          {/* Visibilité sur la Vitrine (Décochée par défaut) */}
+          <div className="flex items-center gap-2 p-2.5 bg-stone-50 rounded border border-stone-200">
             <input
               type="checkbox"
               id="isPublic"
@@ -245,8 +285,8 @@ export default function GigAgendaOptionModal({
               onChange={handleChange}
               className="w-4 h-4 text-cordel-wood rounded cursor-pointer"
             />
-            <label htmlFor="isPublic" className="font-bold text-stone-800 cursor-pointer">
-              Afficher cette option sur la Vitrine Publique
+            <label htmlFor="isPublic" className="font-extrabold text-stone-800 text-[11px] cursor-pointer">
+              🔒 Option interne (Décoché par défaut — non visible sur la Vitrine)
             </label>
           </div>
 
