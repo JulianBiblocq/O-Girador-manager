@@ -4,6 +4,7 @@ import CordelButton from '../CordelButton';
 import { useGigsPipeline } from '../../hooks/useGigsPipeline';
 import GigFormModal, { GIG_STATUSES } from './GigFormModal';
 import GigDetailsModal from './GigDetailsModal';
+import GigAgendaOptionModal from './GigAgendaOptionModal';
 
 export default function GigsPipelineManager({ groupId, onBack }) {
   const {
@@ -14,7 +15,6 @@ export default function GigsPipelineManager({ groupId, onBack }) {
     createGig,
     updateGig,
     updateGigStatus,
-    createAgendaOption,
     deleteGig
   } = useGigsPipeline(groupId);
 
@@ -26,6 +26,9 @@ export default function GigsPipelineManager({ groupId, onBack }) {
 
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [selectedGig, setSelectedGig] = useState(null);
+
+  const [isOptionModalOpen, setIsOptionModalOpen] = useState(false);
+  const [toastNotification, setToastNotification] = useState(null);
 
   // Filtrage des dossiers
   const filteredGigs = gigs.filter(gig => {
@@ -341,6 +344,14 @@ export default function GigsPipelineManager({ groupId, onBack }) {
         saving={saving}
       />
 
+      {/* Notification Toast interactive */}
+      {toastNotification && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-emerald-800 text-white text-xs font-extrabold px-5 py-2.5 rounded-full shadow-2xl border border-emerald-300 animate-bounce flex items-center gap-2">
+          <span>✅</span>
+          <span>{toastNotification}</span>
+        </div>
+      )}
+
       {/* Modale de Détails & Actions de Workflow */}
       <GigDetailsModal
         isOpen={isDetailsOpen}
@@ -358,11 +369,23 @@ export default function GigsPipelineManager({ groupId, onBack }) {
           await deleteGig(gigId);
           setIsDetailsOpen(false);
         }}
-        onCreateAgendaOption={async (gig) => {
-          await createAgendaOption(gig);
-          setSelectedGig(prev => prev ? { ...prev, status: '2_option' } : null);
+        onOpenAgendaOptionModal={(gig) => {
+          setSelectedGig(gig);
+          setIsOptionModalOpen(true);
         }}
         saving={saving}
+      />
+
+      {/* Modale de Création d'Option dans l'Agenda (Formulaire pré-rempli) */}
+      <GigAgendaOptionModal
+        isOpen={isOptionModalOpen}
+        onClose={() => setIsOptionModalOpen(false)}
+        gig={selectedGig}
+        groupId={groupId}
+        onSuccess={() => {
+          setToastNotification("Événement créé avec succès et option posée dans le pipeline Diffusion !");
+          setTimeout(() => setToastNotification(null), 5000);
+        }}
       />
     </div>
   );

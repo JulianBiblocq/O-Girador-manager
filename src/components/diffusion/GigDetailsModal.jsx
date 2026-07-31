@@ -9,7 +9,7 @@ export default function GigDetailsModal({
   gig,
   onStatusChange,
   onDeleteGig,
-  onCreateAgendaOption,
+  onOpenAgendaOptionModal,
   saving = false
 }) {
   const [toastMessage, setToastMessage] = useState(null);
@@ -26,16 +26,11 @@ export default function GigDetailsModal({
     }, 4000);
   };
 
-  // Action automatisée : Poser une Option dans l'Agenda principal
-  const handleCreateOption = async () => {
-    try {
-      await onCreateAgendaOption(gig);
-      setToastMessage(`✅ Événement "[OPTION] - ${gig.eventName}" créé dans l'Agenda ! Dossier passé à "Option posée".`);
-      setTimeout(() => {
-        setToastMessage(null);
-      }, 5000);
-    } catch (err) {
-      alert(err.message || "Erreur lors de la création de l'option dans l'Agenda.");
+  // Action automatisée : Ouverture du formulaire d'Option d'Agenda pré-rempli
+  const handleCreateOption = () => {
+    onClose();
+    if (onOpenAgendaOptionModal) {
+      onOpenAgendaOptionModal(gig);
     }
   };
 
