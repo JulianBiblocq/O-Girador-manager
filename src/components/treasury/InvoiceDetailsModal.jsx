@@ -9,6 +9,8 @@ export default function InvoiceDetailsModal({
   invoice,
   associationSettings,
   onMarkAsPaid,
+  onConvertDevisToInvoice,
+  onEdit,
   saving = false
 }) {
   if (!isOpen || !invoice) return null;
@@ -37,6 +39,19 @@ export default function InvoiceDetailsModal({
         onClose();
       } catch (err) {
         alert(err.message || "Erreur lors de l'enregistrement de l'encaissement.");
+      }
+    }
+  };
+
+  const handleConvertDevis = async () => {
+    const confirmText = `Voulez-vous convertir le devis ${invoice.numero} en Facture officielle ?\n\nUn nouveau numéro de facture (FAC-2026-XXX) va lui être attribué.`;
+    if (window.confirm(confirmText)) {
+      try {
+        const newFacNum = await onConvertDevisToInvoice(invoice);
+        alert(`Le devis ${invoice.numero} a été transformé avec succès en Facture N° ${newFacNum} !`);
+        onClose();
+      } catch (err) {
+        alert(err.message || "Erreur lors de la transformation du devis.");
       }
     }
   };
@@ -142,7 +157,28 @@ export default function InvoiceDetailsModal({
             <span>📥 Imprimer / Télécharger en PDF</span>
           </button>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            {!isPaid && onEdit && (
+              <button
+                type="button"
+                onClick={() => { onClose(); onEdit(invoice); }}
+                className="px-3 py-2 text-xs font-bold uppercase bg-amber-800 hover:bg-amber-900 text-white rounded shadow-sm cursor-pointer"
+              >
+                ✏️ Modifier
+              </button>
+            )}
+
+            {isDevis && onConvertDevisToInvoice && (
+              <button
+                type="button"
+                onClick={handleConvertDevis}
+                disabled={saving}
+                className="px-3.5 py-2 text-xs font-extrabold uppercase bg-blue-800 hover:bg-blue-900 text-white rounded shadow-sm cursor-pointer flex items-center gap-1"
+              >
+                📄 Transformer en Facture
+              </button>
+            )}
+
             {!isDevis && !isPaid && (
               <button
                 type="button"

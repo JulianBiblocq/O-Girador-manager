@@ -15,7 +15,8 @@ export default function TreasuryInvoices({ groupId, associationSettings }) {
     createInvoice,
     updateInvoice,
     deleteInvoice,
-    markInvoiceAsPaid
+    markInvoiceAsPaid,
+    convertDevisToInvoice
   } = useInvoices(groupId);
 
   const [filterType, setFilterType] = useState('all'); // 'all', 'facture', 'devis'
@@ -351,6 +352,8 @@ export default function TreasuryInvoices({ groupId, associationSettings }) {
         invoice={selectedInvoice}
         associationSettings={associationSettings}
         onMarkAsPaid={markInvoiceAsPaid}
+        onConvertDevisToInvoice={convertDevisToInvoice}
+        onEdit={handleOpenEdit}
         saving={saving}
       />
     </div>

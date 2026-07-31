@@ -233,6 +233,33 @@ export function useInvoices(groupId) {
     }
   };
 
+  /**
+   * Transformer un Devis validé en Facture officielle
+   */
+  const convertDevisToInvoice = async (devis) => {
+    if (!devis || !devis.id) return;
+    setSaving(true);
+    try {
+      const nextFacNum = getNextNumber('facture');
+      const invoiceRef = doc(db, 'invoices', devis.id);
+
+      await updateDoc(invoiceRef, {
+        type: 'facture',
+        numero: nextFacNum,
+        convertedFromDevisNumero: devis.numero || null,
+        statut: 'en_attente',
+        dateEmission: new Date().toISOString().split('T')[0],
+        updatedAt: serverTimestamp()
+      });
+      return nextFacNum;
+    } catch (err) {
+      console.error("useInvoices - Erreur transformation devis en facture :", err);
+      throw new Error("Erreur lors de la transformation du devis en facture.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return {
     invoices,
     loading,
@@ -242,6 +269,7 @@ export function useInvoices(groupId) {
     createInvoice,
     updateInvoice,
     deleteInvoice,
-    markInvoiceAsPaid
+    markInvoiceAsPaid,
+    convertDevisToInvoice
   };
 }
