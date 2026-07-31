@@ -31,7 +31,7 @@ export default function AssociationSettings({
   activeTabProp,
   profileData,
   permissionsMatrice,
-  effectiveUserTags
+  effectiveUserTags = []
 }) {
   const { t } = useTranslation();
   const hasVitrinePermission = canEditVitrine(

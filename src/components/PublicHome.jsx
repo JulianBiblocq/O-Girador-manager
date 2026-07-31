@@ -56,7 +56,7 @@ export default function PublicHome({
   user, 
   profileData,
   permissionsMatrice,
-  effectiveUserTags,
+  effectiveUserTags = [],
   isAdministrativeUser, 
   associationName, 
   branding, 
