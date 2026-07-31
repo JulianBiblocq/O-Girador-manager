@@ -203,6 +203,111 @@ export default function TabIdentity({
         </div>
       </CordelCard>
 
+      {/* Bloc Informations Légales & Facturation (Imprimées sur Devis/Factures PDF) */}
+      <CordelCard variant="default" useExtremeBorder={true} className="py-4 px-5">
+        <h3 className="text-xs uppercase font-extrabold tracking-wider text-cordel-wood mb-3">
+          📜 Informations Légales & Facturation (Devis & PDF)
+        </h3>
+        <div className="flex flex-col gap-3 text-left">
+          <p className="text-[10px] text-cordel-master-dark/70 font-semibold leading-relaxed">
+            Ces coordonnées administratives s'imprimeront automatiquement sur les en-têtes et pieds de page de tous vos Devis, Factures et documents PDF officiels.
+          </p>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {/* Structure juridique */}
+            <div className="flex flex-col gap-1">
+              <label htmlFor="structureJuridique" className="text-[9px] uppercase font-extrabold tracking-wider text-cordel-master-dark">
+                Structure Juridique
+              </label>
+              <input 
+                id="structureJuridique"
+                type="text"
+                value={formData.structureJuridique || ''}
+                onChange={(e) => handleChange('structureJuridique', e.target.value)}
+                disabled={saving}
+                placeholder="ex: Association Loi 1901"
+                className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light w-full"
+              />
+            </div>
+
+            {/* N° SIRET / RNA */}
+            <div className="flex flex-col gap-1">
+              <label htmlFor="siret" className="text-[9px] uppercase font-extrabold tracking-wider text-cordel-master-dark">
+                Numéro SIRET / N° RNA
+              </label>
+              <input 
+                id="siret"
+                type="text"
+                value={formData.siret || formData.rna || ''}
+                onChange={(e) => {
+                  handleChange('siret', e.target.value);
+                  handleChange('rna', e.target.value);
+                }}
+                disabled={saving}
+                placeholder="ex: 849 123 456 00012 / W291001234"
+                className="theme-input text-xs font-mono font-bold py-1.5 bg-cordel-bg-light w-full"
+              />
+            </div>
+          </div>
+
+          {/* Adresse du Siège Social */}
+          <div className="flex flex-col gap-1">
+            <label htmlFor="adresseSiegeSocial" className="text-[9px] uppercase font-extrabold tracking-wider text-cordel-master-dark">
+              Adresse de Domiciliation / Siège Social
+            </label>
+            <input 
+              id="adresseSiegeSocial"
+              type="text"
+              value={formData.adresseSiegeSocial || formData.adresse || ''}
+              onChange={(e) => {
+                handleChange('adresseSiegeSocial', e.target.value);
+                handleChange('adresse', e.target.value);
+              }}
+              disabled={saving}
+              placeholder="ex: 12 Rue de la Paix, 29200 Brest"
+              className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light w-full"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {/* Mention Exonération TVA */}
+            <div className="flex flex-col gap-1">
+              <label htmlFor="mentionTVA" className="text-[9px] uppercase font-extrabold tracking-wider text-cordel-master-dark">
+                Mention d'Exonération TVA
+              </label>
+              <input 
+                id="mentionTVA"
+                type="text"
+                value={formData.mentionTVA || ''}
+                onChange={(e) => handleChange('mentionTVA', e.target.value)}
+                disabled={saving}
+                placeholder="ex: TVA non applicable, art. 293 B du CGI"
+                className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light w-full"
+              />
+            </div>
+
+            {/* RIB / IBAN */}
+            <div className="flex flex-col gap-1">
+              <label htmlFor="ribIban" className="text-[9px] uppercase font-extrabold tracking-wider text-cordel-master-dark">
+                Coordonnées Bancaires (IBAN / BIC)
+              </label>
+              <input 
+                id="ribIban"
+                type="text"
+                value={formData.ribIban || formData.iban || ''}
+                onChange={(e) => {
+                  handleChange('ribIban', e.target.value);
+                  handleChange('iban', e.target.value);
+                }}
+                disabled={saving}
+                placeholder="ex: FR76 3000 4000 1234 5678 9012 345"
+                className="theme-input text-xs font-mono font-bold py-1.5 bg-cordel-bg-light w-full"
+              />
+            </div>
+          </div>
+        </div>
+      </CordelCard>
+
       {/* Invitation Link Card */}
       <CordelCard variant="default" useExtremeBorder={true} className="py-4 px-5">
         <h3 className="text-xs uppercase font-extrabold tracking-wider text-cordel-wood mb-3">

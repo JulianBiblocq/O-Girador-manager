@@ -38,11 +38,13 @@ export function generateInvoicePDF(invoice, associationSettings = {}) {
   const isDevis = invoice.type === 'devis';
   const docTypeLabel = isDevis ? 'DEVIS' : 'FACTURE';
   const assocName = associationSettings.nom || associationSettings.associationName || 'O GIRADOR';
-  const assocAdresse = associationSettings.adresse || associationSettings.publicContactAddress || '';
+  const assocStructure = associationSettings.structureJuridique || 'Association Loi 1901';
+  const assocAdresse = associationSettings.adresseSiegeSocial || associationSettings.adresse || associationSettings.publicContactAddress || '';
   const assocEmail = associationSettings.email || associationSettings.publicContactEmail || '';
   const assocPhone = associationSettings.telephone || associationSettings.publicContactPhone || '';
   const assocSiret = associationSettings.siret || associationSettings.rna || '';
   const assocRib = associationSettings.ribIban || associationSettings.iban || '';
+  const assocMentionTVA = associationSettings.mentionTVA || 'TVA non applicable, art. 261-7-1° du CGI';
 
   const client = invoice.client || {};
   const lignes = Array.isArray(invoice.lignes) ? invoice.lignes : [];
@@ -55,27 +57,33 @@ export function generateInvoicePDF(invoice, associationSettings = {}) {
   doc.setTextColor(139, 42, 26); // Cordel red / wood
   doc.text(assocName.toUpperCase(), 20, yPos);
 
-  yPos += 6;
+  yPos += 5;
+  doc.setFont('helvetica', 'italic');
+  doc.setFontSize(8.5);
+  doc.setTextColor(100, 100, 100);
+  doc.text(assocStructure, 20, yPos);
+
+  yPos += 5.5;
   doc.setFont('helvetica', 'normal');
-  doc.setFontSize(9);
+  doc.setFontSize(8.5);
   doc.setTextColor(60, 60, 60);
 
   if (assocAdresse) {
     const addrLines = doc.splitTextToSize(assocAdresse, 80);
     doc.text(addrLines, 20, yPos);
-    yPos += addrLines.length * 4.5;
+    yPos += addrLines.length * 4.2;
   }
   if (assocEmail) {
     doc.text(`Email : ${assocEmail}`, 20, yPos);
-    yPos += 4.5;
+    yPos += 4.2;
   }
   if (assocPhone) {
     doc.text(`Tél : ${assocPhone}`, 20, yPos);
-    yPos += 4.5;
+    yPos += 4.2;
   }
   if (assocSiret) {
     doc.text(`SIRET / RNA : ${assocSiret}`, 20, yPos);
-    yPos += 4.5;
+    yPos += 4.2;
   }
 
   // Header Droite : Bloc Destinataire / Client
@@ -230,8 +238,8 @@ export function generateInvoicePDF(invoice, associationSettings = {}) {
   doc.setFont('helvetica', 'italic');
   doc.setFontSize(8);
   doc.setTextColor(100, 100, 100);
-  doc.text('TVA non applicable, art. 261-7-1° du CGI', 20, totalY + 4);
-  doc.text('(Association à but non lucratif)', 20, totalY + 8);
+  doc.text(assocMentionTVA, 20, totalY + 4);
+  doc.text(`(${assocStructure})`, 20, totalY + 8);
 
   yPos = totalY + 20;
 
@@ -290,7 +298,7 @@ export function generateInvoicePDF(invoice, associationSettings = {}) {
   doc.setFontSize(8);
   doc.setTextColor(140, 140, 140);
   doc.text(
-    `Document édité par ${assocName} - Association Loi 1901 - SIRET/RNA : ${assocSiret || 'N/A'}`,
+    `Document édité par ${assocName} - ${assocStructure} - SIRET/RNA : ${assocSiret || 'N/A'}`,
     105,
     285,
     { align: 'center' }
