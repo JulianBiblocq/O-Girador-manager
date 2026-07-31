@@ -78,6 +78,8 @@ export function usePublicTheme(groupId, themeOverride = null) {
               formulesRecrutement: Array.isArray(data.publicTheme?.formulesRecrutement)
                 ? data.publicTheme.formulesRecrutement
                 : (data.publicTheme?.formulesRecrutement || []),
+              // Statut de publication globale (Mode Brouillon / En ligne)
+              isPublished: data.publicTheme?.isPublished !== false,
               // Drapeaux de visibilité des sections publiques (visibilité sélective)
               afficherVieAssociative: data.publicTheme?.afficherVieAssociative !== false,
               afficherRecrutement: data.publicTheme?.afficherRecrutement !== false,
