@@ -269,6 +269,27 @@ export default function TabIdentity({
             />
           </div>
 
+          {/* E-mail Officiel de l'Association (Expéditeur vérifié Brevo & Devis PDF) */}
+          <div className="flex flex-col gap-1">
+            <label htmlFor="emailOfficiel" className="text-[9px] uppercase font-extrabold tracking-wider text-cordel-master-dark flex items-center justify-between">
+              <span>E-mail Officiel de l'Association (Expéditeur vérifié Brevo & PDF)</span>
+              <span className="text-[8px] font-normal italic text-cordel-wood">Renseigné sur les Devis PDF et utilisé par Brevo</span>
+            </label>
+            <input 
+              id="emailOfficiel"
+              type="email"
+              value={formData.email || formData.emailOfficiel || formData.publicContactEmail || ''}
+              onChange={(e) => {
+                handleChange('email', e.target.value);
+                handleChange('emailOfficiel', e.target.value);
+                handleChange('publicContactEmail', e.target.value);
+              }}
+              disabled={saving}
+              placeholder="ex: contact@votre-association.fr"
+              className="theme-input text-xs font-mono font-bold py-1.5 bg-cordel-bg-light w-full"
+            />
+          </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {/* Mention Exonération TVA */}
             <div className="flex flex-col gap-1">
