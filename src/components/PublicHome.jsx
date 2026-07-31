@@ -11,6 +11,7 @@ import PublicVieAssociativeSection from './public/PublicVieAssociativeSection';
 import PublicProDocsSection from './public/PublicProDocsSection';
 import PublicRichText from './public/PublicRichText';
 import PublicSeoHead from './public/PublicSeoHead';
+import PublicWatermarkLogo from './public/PublicWatermarkLogo';
 
 /**
  * Convertit une URL YouTube ou Vimeo classique en URL embed sécurisée pour iframe.
@@ -97,6 +98,9 @@ export default function PublicHome({ groupId, associationName, branding, onNavig
         associationName={groupTitle} 
         branding={branding} 
       />
+
+      {/* Filigrane (Watermark) fixe et centré du logo de l'association */}
+      <PublicWatermarkLogo logoSrc={logoSrc} altText={groupTitle} />
 
       <div 
         className="min-h-screen flex flex-col transition-colors duration-300 selection:bg-stone-200 public-paper-bg"
@@ -189,14 +193,6 @@ export default function PublicHome({ groupId, associationName, branding, onNavig
         )}
 
         <div className="max-w-5xl mx-auto px-4 sm:px-6 text-center flex flex-col items-center gap-6 relative z-10">
-          {logoSrc && (
-            <img 
-              src={logoSrc} 
-              alt={`Grand Logo ${groupTitle}`} 
-              className="w-28 h-28 sm:w-36 sm:h-36 object-contain mb-2 drop-shadow-xl select-none animate-fade-in"
-            />
-          )}
-
           <h1 
             className="text-4xl sm:text-6xl font-extrabold tracking-tight max-w-3xl leading-tight drop-shadow-lg"
             style={{ 
