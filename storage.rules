@@ -2,12 +2,46 @@ rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
-    // Règle d'accès globale au stockage pour l'application O Girador Manager
-    match /{allPaths=**} {
-      // Lecture publique autorisée (photos, logos, documents vitrine, avatars)
+    
+    // 1. Photos de profil / Avatars : Lecture publique (Trombinoscope/Vitrine), écriture par le propriétaire ou un Admin
+    match /avatars/{userId}/{allPaths=**} {
       allow read: if true;
-      // Écriture (upload / suppression) autorisée pour tout membre authentifié
+      allow write: if request.auth != null && (request.auth.uid == userId || request.auth.token.role == 'admin' || request.auth.token.role == 'mestre');
+    }
+
+    // 2. Fichiers Vitrine & Association (Logos, PDFs Dossiers Pro, Images Hero) : Lecture publique, Upload réservé aux membres connectés
+    match /associations/{groupId}/{allPaths=**} {
+      allow read: if true;
       allow write: if request.auth != null;
+    }
+
+    // 3. Documents internes (Varal, Partitions, Comptes-Rendus, Séquenceur) : Accessible uniquement aux membres connectés
+    match /documents/{groupId}/{allPaths=**} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+
+    // 4. Média des Ateliers / Workshops : Accessible aux membres connectés
+    match /workshops_media/{groupId}/{allPaths=**} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+
+    // 5. Média Studio Social & Justificatifs : Membres connectés
+    match /studio_validation/{groupId}/{allPaths=**} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+
+    // 6. Justificatifs de commandes
+    match /orders/{groupId}/{allPaths=**} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+
+    // Règle de sécurité par défaut : Tout autre chemin non explicitement défini est VÉROUILLÉ
+    match /{allPaths=**} {
+      allow read, write: if false;
     }
   }
 }

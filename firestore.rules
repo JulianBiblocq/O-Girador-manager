@@ -87,13 +87,14 @@ service cloud.firestore {
 
     // Collection Rules
 
-    // Users: Read if authenticated. Write if editing own profile (without privilege escalation / status tampering), managing owned dependent child profile, or if admin/mestre.
+    // Users: Lecture pour tout membre connecté. Écriture si propre profil (sans élévation de privilèges ni modification de rôle/statut), gestion de profil enfant dépendant, ou si admin/mestre.
     match /users/{userId} {
       allow read: if isAuthenticated();
       allow create: if isAuthenticated() && (
         isAdminOrMestre() || (
           request.auth.uid == userId && (
             (!request.resource.data.keys().hasAny(['isSystemAdmin']) || request.resource.data.isSystemAdmin == false) &&
+            (!request.resource.data.keys().hasAny(['hasAccessLogistique']) || request.resource.data.hasAccessLogistique == false) &&
             (!request.resource.data.keys().hasAny(['paymentStatus']) || request.resource.data.paymentStatus == 'unpaid') &&
             (!request.resource.data.keys().hasAny(['role']) || request.resource.data.role == 'membre') &&
             (!request.resource.data.keys().hasAny(['statutActuel']) || request.resource.data.statutActuel == 'active') &&
@@ -105,6 +106,7 @@ service cloud.firestore {
           request.resource.data.isDependent == true &&
           request.resource.data.managedBy == request.auth.uid && (
             (!request.resource.data.keys().hasAny(['isSystemAdmin']) || request.resource.data.isSystemAdmin == false) &&
+            (!request.resource.data.keys().hasAny(['hasAccessLogistique']) || request.resource.data.hasAccessLogistique == false) &&
             (!request.resource.data.keys().hasAny(['role']) || request.resource.data.role == 'membre') &&
             (!request.resource.data.keys().hasAny(['statutActuel']) || request.resource.data.statutActuel == 'active') &&
             (!request.resource.data.keys().hasAny(['tags']) || request.resource.data.tags.size() == 0)
@@ -115,14 +117,14 @@ service cloud.firestore {
         isAdminOrMestre() || (
           request.auth.uid == userId && (
             !request.resource.data.diff(resource.data).affectedKeys().hasAny([
-              'paymentStatus', 'role', 'isSystemAdmin', 'adhesionBase', 'selectedOptions', 'tags', 'statutActuel'
+              'paymentStatus', 'role', 'isSystemAdmin', 'hasAccessLogistique', 'groupId', 'adhesionBase', 'selectedOptions', 'tags', 'statutActuel'
             ])
           )
         ) || (
           resource.data.managedBy == request.auth.uid &&
           resource.data.isDependent == true && (
             !request.resource.data.diff(resource.data).affectedKeys().hasAny([
-              'paymentStatus', 'role', 'isSystemAdmin', 'adhesionBase', 'selectedOptions', 'tags', 'statutActuel', 'managedBy', 'isDependent'
+              'paymentStatus', 'role', 'isSystemAdmin', 'hasAccessLogistique', 'groupId', 'adhesionBase', 'selectedOptions', 'tags', 'statutActuel', 'managedBy', 'isDependent'
             ])
           )
         )
@@ -134,78 +136,78 @@ service cloud.firestore {
       );
     }
 
-    // Inventory: Read if authenticated. Write (create, update, delete) reserved for admins/mestres.
+    // Inventory: Lecture si authentifié, Écriture (création, modification, suppression) réservée aux admins/mestres.
     match /inventory/{item} {
       allow read: if isAuthenticated();
       allow write: if isAdminOrMestre();
     }
 
-    // Associations : Lecture publique (vitrine, marque et thème). Écriture réservée aux administrateurs/mestres.
+    // Associations: Lecture publique (vitrine, marque et thème). Écriture réservée aux administrateurs/mestres.
     match /associations/{assocId} {
       allow read: if true;
       allow write: if isAdminOrMestre();
 
-      // Protected credentials only readable/writable by group administrators/mestres
+      // Paramètres secrets (HelloAsso, Brevo) accessibles uniquement aux admins de l'association
       match /private_settings/credentials {
         allow read, write: if isAdminOrMestre() && getUserData().groupId == assocId;
       }
     }
 
-    // Announcements: Read if authenticated. Write reserved for admins/mestres.
+    // Announcements: Lecture si authentifié. Écriture réservée aux admins/mestres.
     match /announcements/{announcement} {
       allow read: if isAuthenticated();
       allow write: if isAdminOrMestre();
     }
 
-    // Documents: Read if authenticated. Write reserved for admins/mestres.
+    // Documents: Lecture si authentifié. Écriture réservée aux admins/mestres.
     match /documents/{document} {
       allow read: if isAuthenticated();
       allow write: if isAdminOrMestre();
     }
 
-    // Wardrobe Inventory: Read if authenticated. Write reserved for admins/mestres.
+    // Wardrobe Inventory: Lecture si authentifié. Écriture réservée aux admins/mestres.
     match /wardrobeInventory/{item} {
       allow read: if isAuthenticated();
       allow write: if isAdminOrMestre();
     }
 
-    // Costumes & Pièces: Read if authenticated. Write reserved for admins/mestres.
+    // Costumes & Pièces: Lecture si authentifié. Écriture réservée aux admins/mestres.
     match /costumes/{costume} {
       allow read: if isAuthenticated();
       allow write: if isAdminOrMestre();
     }
 
-    // Couture Projects: Read if authenticated. Write reserved for admins/mestres.
+    // Couture Projects: Lecture si authentifié. Écriture réservée aux admins/mestres.
     match /coutureProjects/{project} {
       allow read: if isAuthenticated();
       allow write: if isAdminOrMestre();
     }
 
-    // Rhythms: Read if authenticated. Write reserved for admins/mestres.
+    // Rhythms: Lecture si authentifié. Écriture réservée aux admins/mestres.
     match /rhythms/{rhythm} {
       allow read: if isAuthenticated();
       allow write: if isAdminOrMestre();
     }
 
-    // Workshops: Read if authenticated. Write reserved for admins/mestres.
+    // Workshops: Lecture si authentifié. Écriture réservée aux admins/mestres.
     match /workshops/{workshop} {
       allow read: if isAuthenticated();
       allow write: if isAdminOrMestre();
     }
 
-    // Notifications queue: Create if authenticated. Read/Write for admins/mestres.
+    // Notifications queue: Création si authentifié. Lecture/Écriture pour admins/mestres.
     match /notifications_queue/{notif} {
       allow create: if isAuthenticated();
       allow read, update, delete: if isAdminOrMestre();
     }
 
-    // Campaigns: Read if authenticated. Write reserved for admins/mestres.
+    // Campaigns: Lecture si authentifié. Écriture réservée aux admins/mestres.
     match /campaigns/{campaign} {
       allow read: if isAuthenticated();
       allow write: if isAdminOrMestre();
     }
 
-    // Events: Read if authenticated or if isPublic == true. Create/Delete for admins/mestres. Update allowed for RSVPs (members) or full update for admins/mestres.
+    // Events: Lecture si authentifié ou si isPublic == true. Création/Suppression pour admins/mestres. Mise à jour des inscriptions autorisée pour les membres.
     match /events/{event} {
       allow read: if isAuthenticated() || (resource != null && resource.data.isPublic == true);
       allow create, delete: if isAdminOrMestre();
@@ -227,18 +229,14 @@ service cloud.firestore {
       }
     }
 
-    // Transactions: Read if authenticated. Write reserved for admins/mestres.
+    // Transactions (Trésorerie) : Réservées uniquement aux administrateurs / mestres / bureau du même groupe
     match /transactions/{transaction} {
-      allow read: if isAuthenticated() && (
-        isAdminOrMestre() ||
-        (resource == null || getUserData().groupId == resource.data.groupId)
-      );
-      allow write: if isAdminOrMestre() && (
+      allow read, write: if isAdminOrMestre() && (
         resource == null || getUserData().groupId == resource.data.groupId
       );
     }
 
-    // Forum Channels: Read if member has roles/tags/transparent or public, write only by admins (or create by group members)
+    // Forum Channels: Lecture si membre autorisé par rôle/tag/transparence, écriture réservée aux admins/créateurs de groupe
     match /forum_channels/{channelId} {
       allow read: if isAuthenticated() && (
         isAdminOrMestre() ||
@@ -260,7 +258,7 @@ service cloud.firestore {
       allow update, delete: if isAdminOrMestre();
     }
 
-    // Forum Threads: Read and Write allowed for members depending on channel permissions.
+    // Forum Threads: Seul l'auteur du message, un modérateur ou un admin/mestre peut modifier ou supprimer son fil/message
     match /forum/{thread} {
       allow read: if isAuthenticated() && (
         isAdminOrMestre() ||
@@ -271,21 +269,27 @@ service cloud.firestore {
         hasChannelWriteAccess(request.resource.data.channelId)
       );
       allow update: if isAuthenticated() && (
+        isAdminOrMestre() ||
         isModerator() ||
         (
+          resource.data.authorId == request.auth.uid &&
           (hasChannelWriteAccess(resource.data.channelId) || !resource.data.keys().hasAny(['channelId'])) &&
           (!request.resource.data.keys().hasAny(['channelId']) || request.resource.data.channelId == resource.data.channelId)
         )
       );
-      allow delete: if isAdminOrMestre() || isModerator();
+      allow delete: if isAdminOrMestre() || isModerator() || (isAuthenticated() && resource.data.authorId == request.auth.uid);
     }
 
-    // Campaign Requests: Read and Write allowed for all authenticated members.
+    // Campaign Requests (Commandes d'articles) : Création et modification restreintes au demandeur propriétaire ou aux admins
     match /campaignRequests/{req} {
-      allow read, write: if isAuthenticated();
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid || isAdminOrMestre()
+      );
     }
 
-    // Private messages: Read and write restricted to sender or recipient
+    // Messages privés: Restreints à l'expéditeur et au destinataire
     match /private_messages/{messageId} {
       allow read: if isAuthenticated() && (
         resource.data.senderId == request.auth.uid || 
@@ -302,12 +306,12 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    // Pending payments: Only admins and mestres can access directly from client
+    // Pending payments: Réservé aux admins et mestres
     match /pending_payments/{email} {
       allow read, write: if isAdminOrMestre();
     }
 
-    // Newsletter subscribers: Public can subscribe (create), reading/exporting reserved for admins/mestres
+    // Newsletter subscribers: Inscription publique autorisée (create), lecture/export réservés aux admins/mestres
     match /newsletter_subscribers/{subscriberDoc} {
       allow create: if true;
       allow read, update, delete: if isAdminOrMestre();
