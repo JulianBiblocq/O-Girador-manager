@@ -43,8 +43,10 @@ export default function PublicRecruitmentSection({ publicTheme }) {
     return null;
   }
 
-  const title = publicTheme.titreRecrutement || "Rejoignez la troupe !";
-  const text = publicTheme.texteRecrutement || "";
+  const vitrineTexts = publicTheme?.vitrineTexts || {};
+  const badgeRecrutement = vitrineTexts.badgeRecrutement || "Nous Rejoindre";
+  const title = vitrineTexts.titreRecrutement || publicTheme.titreRecrutement || "Rejoignez la troupe !";
+  const text = vitrineTexts.accrocheRecrutement || publicTheme.texteRecrutement || "";
   const linkUrl = publicTheme.lienRecrutement || "#";
   const buttonText = publicTheme.texteBoutonRecrutement || "S'inscrire sur HelloAsso";
 
@@ -73,7 +75,7 @@ export default function PublicRecruitmentSection({ publicTheme }) {
             }}
           >
             <span className="text-sm">📣</span>
-            <span>Nous Rejoindre</span>
+            <span>{badgeRecrutement}</span>
           </span>
 
           <h2 

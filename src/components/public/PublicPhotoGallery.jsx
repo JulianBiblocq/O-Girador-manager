@@ -7,8 +7,13 @@ import React, { useState, useRef } from 'react';
  * 
  * @param {Object} props
  * @param {Array<string>} [props.photos] - Tableau des URL des photos à afficher.
+ * @param {Object} [props.publicTheme] - Configuration dynamique du thème vitrine.
  */
-export default function PublicPhotoGallery({ photos = [] }) {
+export default function PublicPhotoGallery({ photos = [], publicTheme = {} }) {
+  const vitrineTexts = publicTheme?.vitrineTexts || {};
+  const badgeGalerie = vitrineTexts.badgeGalerie || "Photos & Prestations";
+  const titreGalerie = vitrineTexts.titreGalerie || "En Images";
+  const accrocheGalerie = vitrineTexts.accrocheGalerie || "Découvrez la ferveur, l'énergie scénique et les moments forts de notre collectif.";
   const scrollRef = useRef(null);
   const [activeIndex, setActiveIndex] = useState(0);
   const [lightboxIndex, setLightboxIndex] = useState(null);
@@ -61,7 +66,7 @@ export default function PublicPhotoGallery({ photos = [] }) {
             className="text-xs font-bold uppercase tracking-widest px-3 py-1 rounded text-white shadow-xs"
             style={{ backgroundColor: 'var(--public-secondary, #1976D2)' }}
           >
-            Photos & Prestations
+            {badgeGalerie}
           </span>
 
           <h2 
@@ -71,7 +76,7 @@ export default function PublicPhotoGallery({ photos = [] }) {
               color: 'var(--public-primary, #D32F2F)' 
             }}
           >
-            En Images
+            {titreGalerie}
           </h2>
 
           <div 
@@ -80,7 +85,7 @@ export default function PublicPhotoGallery({ photos = [] }) {
           ></div>
           
           <p className="text-sm text-stone-600 max-w-md">
-            Découvrez la ferveur, l'énergie scénique et les moments forts de notre collectif.
+            {accrocheGalerie}
           </p>
         </div>
 

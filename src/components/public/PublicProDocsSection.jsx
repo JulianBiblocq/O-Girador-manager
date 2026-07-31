@@ -24,6 +24,10 @@ export default function PublicProDocsSection({ publicTheme }) {
     return null;
   }
 
+  const vitrineTexts = publicTheme.vitrineTexts || {};
+  const titreProDocs = vitrineTexts.titreProDocs || "Espace Pro & Organisateurs";
+  const accrocheProDocs = vitrineTexts.accrocheProDocs || "Téléchargez les documents officiels et éléments de presse pour votre événement.";
+
   // Configuration des boutons de téléchargement avec libellés exacts demandés
   const buttonsConfig = [
     {
@@ -59,13 +63,13 @@ export default function PublicProDocsSection({ publicTheme }) {
             color: 'var(--public-primary, #D32F2F)'
           }}
         >
-          <span>📂 Espace Pro & Organisateurs</span>
+          <span>📂 {titreProDocs}</span>
         </h4>
         <p 
           className="text-xs sm:text-sm text-stone-600 font-medium"
           style={{ fontFamily: 'var(--public-font-body, sans-serif)' }}
         >
-          Téléchargez les documents officiels et éléments de presse pour votre événement.
+          {accrocheProDocs}
         </p>
       </div>
 

@@ -39,6 +39,47 @@ export const DEFAULT_ENABLED_MODULES = {
 
 export const DEFAULT_INSTRUMENTS = ["Alfaia Marcante", "Alfaia Meião", "Alfaia Repique", "Caixa", "Tarol", "Gonguê", "Agbê", "Mineiro", "Timbal", "Chant"];
 
+// Textes, badges et titres par défaut des sections de la vitrine publique
+export const DEFAULT_VITRINE_TEXTS = {
+  // Section Présentation ("Qui sommes-nous ?")
+  titrePresentation: "Qui sommes-nous ?",
+  accrochePresentation: "Découvrez la puissance du Maracatu, la richesse de nos rythmes traditionnels et la ferveur de nos prestations scéniques.",
+  
+  // Section Vie Associative
+  badgeVieAssociative: "Notre Quotidien",
+  titreVieAssociative: "Vie Associative & Organisation",
+  
+  // Section Galerie Photos
+  badgeGalerie: "Photos & Prestations",
+  titreGalerie: "En Images",
+  accrocheGalerie: "Découvrez la ferveur, l'énergie scénique et les moments forts de notre collectif.",
+  
+  // Section Agenda
+  titreAgenda: "Prochaines Dates & Prestations",
+  accrocheAgenda: "Événements ouverts au public. Venez nous rencontrer !",
+  
+  // Section Espace Organisateur / Nous Programmer
+  badgeProgrammer: "Espace Organisateur & Programmateurs",
+  titreProgrammer: "Nous Programmer / Fiche Technique",
+  accrocheProgrammer: "Toutes les informations pratiques pour accueillir notre groupe lors de vos festivals, défilés ou événements.",
+  titreFormats: "Nos Formats de Prestations",
+  titreFicheTechnique: "Besoins Techniques & Logistiques",
+  
+  // Section Espace Pro Documents
+  titreProDocs: "Espace Pro & Organisateurs",
+  accrocheProDocs: "Téléchargez les documents officiels et éléments de presse pour votre événement.",
+  
+  // Section Recrutement
+  badgeRecrutement: "Nous Rejoindre",
+  titreRecrutement: "Rejoignez la troupe !",
+  accrocheRecrutement: "Rejoignez nos ateliers hebdomadaires et participez à une aventure musicale et humaine unique !",
+  
+  // Section Newsletter
+  badgeNewsletter: "Infolettre & Prestations",
+  titreNewsletter: "Abonnez-vous à notre Newsletter",
+  accrocheNewsletter: "Recevez nos prochaines dates de prestations, défilés et actualités du groupe directement dans votre boîte mail."
+};
+
 export const DEFAULT_PUBLIC_THEME = {
   primaryColor: '#D32F2F',
   secondaryColor: '#1976D2',
@@ -65,6 +106,8 @@ export const DEFAULT_PUBLIC_THEME = {
   ficheTechniqueUrl: '',
   planSceneUrl: '',
   kitPresseUrl: '',
+  // Textes et titres dynamiques des sections
+  vitrineTexts: DEFAULT_VITRINE_TEXTS,
   // Configuration de la section Recrutement & Vie Associative Vitrine
   texteVieAssociative: '',
   formulesRecrutement: [],
@@ -270,6 +313,11 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
           publicTheme: {
             ...DEFAULT_PUBLIC_THEME,
             ...(data.publicTheme || {}),
+            // Textes et titres dynamiques des sections avec fallback par défaut
+            vitrineTexts: {
+              ...DEFAULT_VITRINE_TEXTS,
+              ...(data.publicTheme?.vitrineTexts || {})
+            },
             // Liens des réseaux sociaux
             socialLinks: {
               ...DEFAULT_PUBLIC_THEME.socialLinks,

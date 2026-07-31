@@ -9,12 +9,19 @@ import { db } from '../../firebase';
  * 
  * @param {Object} props
  * @param {string} [props.groupId] - ID de l'association actuelle.
+ * @param {string} [props.variant] - Variant d'affichage ('card' ou autonome).
+ * @param {Object} [props.publicTheme] - Thème et textes dynamiques de la vitrine.
  */
-export default function PublicNewsletterForm({ groupId, variant = 'card' }) {
+export default function PublicNewsletterForm({ groupId, variant = 'card', publicTheme = {} }) {
   const [email, setEmail] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [submittedSuccess, setSubmittedSuccess] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+
+  const vitrineTexts = publicTheme?.vitrineTexts || {};
+  const badgeNewsletter = vitrineTexts.badgeNewsletter || (variant === 'card' ? "Infolettre & Actualités" : "Infolettre & Prestations");
+  const titreNewsletter = vitrineTexts.titreNewsletter || (variant === 'card' ? "Infolettre & Actualités" : "Abonnez-vous à notre Newsletter");
+  const accrocheNewsletter = vitrineTexts.accrocheNewsletter || "Recevez nos prochaines dates de prestations, défilés et actualités du groupe directement dans votre boîte mail.";
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -60,11 +67,11 @@ export default function PublicNewsletterForm({ groupId, variant = 'card' }) {
               color: 'var(--public-primary, #D32F2F)' 
             }}
           >
-            <span>📬 Infolettre & Actualités</span>
+            <span>📬 {titreNewsletter}</span>
           </h3>
 
           <p className="text-xs sm:text-sm text-stone-700 leading-relaxed">
-            Recevez nos prochaines dates de prestations, défilés et actualités du groupe directement dans votre boîte mail.
+            {accrocheNewsletter}
           </p>
 
           {submittedSuccess ? (
@@ -133,18 +140,18 @@ export default function PublicNewsletterForm({ groupId, variant = 'card' }) {
             className="text-xs font-bold uppercase tracking-widest px-3 py-1 rounded text-white shadow-xs"
             style={{ backgroundColor: 'var(--public-secondary, #1976D2)' }}
           >
-            Infolettre & Prestations
+            {badgeNewsletter}
           </span>
 
           <h3 
             className="text-2xl sm:text-3xl font-extrabold tracking-tight uppercase"
             style={{ fontFamily: 'var(--public-font-heading, sans-serif)' }}
           >
-            📬 Abonnez-vous à notre Newsletter
+            📬 {titreNewsletter}
           </h3>
 
           <p className="text-xs sm:text-sm text-stone-300 max-w-lg leading-relaxed">
-            Recevez nos prochaines dates de concerts, l'actualité des ateliers et les évènements de notre groupe directement dans votre boîte mail.
+            {accrocheNewsletter}
           </p>
         </div>
 

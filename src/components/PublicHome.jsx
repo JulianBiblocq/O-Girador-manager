@@ -52,13 +52,23 @@ export default function PublicHome({ groupId, associationName, branding, onNavig
   const logoSrc = branding?.logoUrl || '/Pictures/logo-samambaia.png';
   const groupTitle = associationName ? associationName : "Notre Association";
 
-  // Récupération des contenus personnalisés depuis publicTheme
-  // Récupération des contenus personnalisés depuis publicTheme
+  // Récupération des contenus personnalisés depuis publicTheme et vitrineTexts
+  const vitrineTexts = publicTheme?.vitrineTexts || {};
   const heroImage = publicTheme?.publicHeroImage || '';
   const heroOverlayOpacity = publicTheme?.heroOverlayOpacity !== undefined ? Number(publicTheme.heroOverlayOpacity) : 25;
-  const catchphrase = publicTheme?.publicCatchphrase || "Découvrez la puissance du Maracatu, la richesse de nos rythmes traditionnels et la ferveur de nos prestations scéniques.";
+  const catchphrase = vitrineTexts.accrochePresentation || publicTheme?.publicCatchphrase || "Découvrez la puissance du Maracatu, la richesse de nos rythmes traditionnels et la ferveur de nos prestations scéniques.";
   const descriptionText = publicTheme?.publicDescription || "Notre collectif rassemble des passionnés de percussions et de culture brésilienne. À travers les Alfaias, Agbês, Caixas et Gonguês, nous faisons vibrer l'héritage vivant du Maracatu de Baque Virado.";
   const embedVideoUrl = getEmbedVideoUrl(publicTheme?.publicVideoLink);
+
+  // Titres et accroches dynamiques des sections (avec fallbacks)
+  const titrePresentation = vitrineTexts.titrePresentation || "Qui sommes-nous ?";
+  const titreAgenda = vitrineTexts.titreAgenda || "Prochaines Dates & Prestations";
+  const accrocheAgenda = vitrineTexts.accrocheAgenda || "Événements ouverts au public. Venez nous rencontrer !";
+  const badgeProgrammer = vitrineTexts.badgeProgrammer || "Espace Organisateur & Programmateurs";
+  const titreProgrammer = vitrineTexts.titreProgrammer || "Nous Programmer / Fiche Technique";
+  const accrocheProgrammer = vitrineTexts.accrocheProgrammer || "Toutes les informations pratiques pour accueillir notre groupe lors de vos festivals, défilés ou événements.";
+  const titreFormats = vitrineTexts.titreFormats || "Nos Formats de Prestations";
+  const titreFicheTechnique = vitrineTexts.titreFicheTechnique || "Besoins Techniques & Logistiques";
 
   // Données Espace Organisateur
   const enableOrganizerSection = publicTheme?.enableOrganizerSection !== false;
@@ -239,7 +249,7 @@ export default function PublicHome({ groupId, associationName, branding, onNavig
                 color: 'var(--public-primary, #D32F2F)' 
               }}
             >
-              Qui sommes-nous ?
+              {titrePresentation}
             </h2>
             <div 
               className="w-20 h-1 rounded-full"
@@ -282,7 +292,7 @@ export default function PublicHome({ groupId, associationName, branding, onNavig
       {/* ==========================================
           GALERIE PHOTOS & CARROUSEL ("EN IMAGES")
          ========================================== */}
-      <PublicPhotoGallery photos={publicTheme?.galleryPhotos} />
+      <PublicPhotoGallery photos={publicTheme?.galleryPhotos} publicTheme={publicTheme} />
 
       {/* ==========================================
           BLOC 3 - AGENDA PUBLIC
@@ -297,14 +307,14 @@ export default function PublicHome({ groupId, associationName, branding, onNavig
                 color: 'var(--public-primary, #D32F2F)' 
               }}
             >
-              Prochaines Dates & Prestations
+              {titreAgenda}
             </h2>
             <div 
               className="w-16 h-1 rounded-full"
               style={{ backgroundColor: 'var(--public-secondary, #1976D2)' }}
             ></div>
             <p className="text-sm text-stone-500 max-w-md">
-              Événements ouverts au public. Venez nous rencontrer !
+              {accrocheAgenda}
             </p>
           </div>
 
@@ -351,7 +361,7 @@ export default function PublicHome({ groupId, associationName, branding, onNavig
                 className="text-xs font-bold uppercase tracking-widest px-3 py-1 rounded text-white shadow-xs"
                 style={{ backgroundColor: 'var(--public-secondary, #1976D2)' }}
               >
-                Espace Organisateur & Programmateurs
+                {badgeProgrammer}
               </span>
               <h2 
                 className="text-3xl sm:text-4xl font-extrabold tracking-tight uppercase"
@@ -360,14 +370,14 @@ export default function PublicHome({ groupId, associationName, branding, onNavig
                   color: 'var(--public-primary, #D32F2F)' 
                 }}
               >
-                Nous Programmer / Fiche Technique
+                {titreProgrammer}
               </h2>
               <div 
                 className="w-16 h-1 rounded-full"
                 style={{ backgroundColor: 'var(--public-primary, #D32F2F)' }}
               ></div>
               <p className="text-sm text-stone-600 max-w-xl">
-                Toutes les informations pratiques pour accueillir notre groupe lors de vos festivals, défilés ou événements.
+                {accrocheProgrammer}
               </p>
             </div>
 
@@ -382,7 +392,7 @@ export default function PublicHome({ groupId, associationName, branding, onNavig
                     color: 'var(--public-primary, #D32F2F)' 
                   }}
                 >
-                  <span>🥁 Nos Formats de Prestations</span>
+                  <span>🥁 {titreFormats}</span>
                 </h3>
 
                 {performanceFormats ? (
@@ -439,7 +449,7 @@ export default function PublicHome({ groupId, associationName, branding, onNavig
                       color: 'var(--public-primary, #D32F2F)' 
                     }}
                   >
-                    <span>📋 Besoins Techniques & Logistiques</span>
+                    <span>📋 {titreFicheTechnique}</span>
                   </h3>
 
                   {/* Accordéon Fiche Technique (Masqué par défaut) */}
@@ -507,7 +517,7 @@ export default function PublicHome({ groupId, associationName, branding, onNavig
               </div>
 
               {/* Partie Droite (3e Bloc) : Infolettre & Actualités */}
-              <PublicNewsletterForm groupId={groupId} variant="card" />
+              <PublicNewsletterForm groupId={groupId} variant="card" publicTheme={publicTheme} />
             </div>
 
             {/* Encart Espace Pro & Organisateurs (4 Documents Téléchargeables) */}

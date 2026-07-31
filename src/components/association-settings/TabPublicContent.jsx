@@ -5,6 +5,7 @@ import CordelCard from '../CordelCard';
 import TabPublicGallery from './TabPublicGallery';
 import TabPublicRecruitment from './TabPublicRecruitment';
 import TabPublicProDocs from './TabPublicProDocs';
+import TabPublicSectionTexts from './TabPublicSectionTexts';
 import RichTextEditor from '../RichTextEditor';
 
 /**
@@ -137,6 +138,7 @@ export default function TabPublicContent({
 
       {/* Onglet 1: Textes & Médias Vitrine */}
       {contentSubTab === 'presentation' && (
+        <>
         <CordelCard variant="default" className="p-5 flex flex-col gap-5 bg-white">
           <h4 className="text-xs font-black uppercase tracking-widest text-encre-noire border-b border-dashed border-cordel-master-dark/20 pb-2">
             🖼️ Titre, Bannière & Textes de Présentation
@@ -270,6 +272,14 @@ export default function TabPublicContent({
           />
         </div>
       </CordelCard>
+
+      {/* Personnalisation dynamique des Titres & Accroches des Sections Vitrine */}
+      <TabPublicSectionTexts
+        formData={formData}
+        handleChange={handleChange}
+        saving={saving}
+      />
+      </>
       )}
 
       {/* Onglet 2: Espace Organisateur & Fiche Technique */}

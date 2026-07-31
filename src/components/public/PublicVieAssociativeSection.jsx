@@ -11,6 +11,9 @@ import PublicRichText from './PublicRichText';
  */
 export default function PublicVieAssociativeSection({ publicTheme }) {
   const content = publicTheme?.texteVieAssociative || '';
+  const vitrineTexts = publicTheme?.vitrineTexts || {};
+  const badgeVieAssociative = vitrineTexts.badgeVieAssociative || "Notre Quotidien";
+  const titreVieAssociative = vitrineTexts.titreVieAssociative || "Vie Associative & Organisation";
 
   // Si aucun contenu n'a été renseigné par l'administrateur, masquage élégant de la section
   if (!content || !content.trim()) {
@@ -34,7 +37,7 @@ export default function PublicVieAssociativeSection({ publicTheme }) {
             }}
           >
             <span className="text-sm">🌿</span>
-            <span>Notre Quotidien</span>
+            <span>{badgeVieAssociative}</span>
           </span>
 
           <h2 
@@ -44,7 +47,7 @@ export default function PublicVieAssociativeSection({ publicTheme }) {
               color: 'var(--public-primary, #D32F2F)' 
             }}
           >
-            Vie Associative & Organisation
+            {titreVieAssociative}
           </h2>
 
           <div 

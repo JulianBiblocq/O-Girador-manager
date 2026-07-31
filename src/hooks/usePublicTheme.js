@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase';
-import { DEFAULT_PUBLIC_THEME } from './useAssociationSettings';
+import { DEFAULT_PUBLIC_THEME, DEFAULT_VITRINE_TEXTS } from './useAssociationSettings';
 
 /**
  * Hook personnalisé d'injection dynamique du thème public (vitrine marque blanche).
@@ -49,6 +49,11 @@ export function usePublicTheme(groupId, themeOverride = null) {
             setPublicTheme({
               ...DEFAULT_PUBLIC_THEME,
               ...data.publicTheme,
+              // Textes et titres dynamiques avec fallback
+              vitrineTexts: {
+                ...DEFAULT_VITRINE_TEXTS,
+                ...(data.publicTheme?.vitrineTexts || {})
+              },
               // Fusion dynamique des liens de réseaux sociaux
               socialLinks: {
                 ...DEFAULT_PUBLIC_THEME.socialLinks,
