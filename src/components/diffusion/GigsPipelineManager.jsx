@@ -14,6 +14,7 @@ export default function GigsPipelineManager({ groupId, onBack }) {
     createGig,
     updateGig,
     updateGigStatus,
+    createAgendaOption,
     deleteGig
   } = useGigsPipeline(groupId);
 
@@ -151,7 +152,7 @@ export default function GigsPipelineManager({ groupId, onBack }) {
                 viewMode === 'kanban' ? 'bg-cordel-wood text-white' : 'text-stone-700 hover:bg-stone-50'
               }`}
             >
-              📊 Vue Kanban
+              📊 Vue par étapes
             </button>
             <button
               type="button"
@@ -352,6 +353,14 @@ export default function GigsPipelineManager({ groupId, onBack }) {
           } catch (err) {
             alert(err.message);
           }
+        }}
+        onDeleteGig={async (gigId) => {
+          await deleteGig(gigId);
+          setIsDetailsOpen(false);
+        }}
+        onCreateAgendaOption={async (gig) => {
+          await createAgendaOption(gig);
+          setSelectedGig(prev => prev ? { ...prev, status: '2_option' } : null);
         }}
         saving={saving}
       />

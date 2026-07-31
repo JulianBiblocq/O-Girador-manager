@@ -8,6 +8,8 @@ export default function GigDetailsModal({
   onClose,
   gig,
   onStatusChange,
+  onDeleteGig,
+  onCreateAgendaOption,
   saving = false
 }) {
   const [toastMessage, setToastMessage] = useState(null);
@@ -16,12 +18,37 @@ export default function GigDetailsModal({
 
   const currentStatusObj = GIG_STATUSES.find(s => s.id === gig.status) || GIG_STATUSES[0];
 
-  // Affichage d'un notification Toast temporaire
+  // Affichage d'une notification Toast temporaire
   const triggerWorkflowToast = (actionLabel) => {
     setToastMessage(`Fonctionnalité en cours d'intégration : Pôle Diffusion (${actionLabel})`);
     setTimeout(() => {
       setToastMessage(null);
     }, 4000);
+  };
+
+  // Action automatisée : Poser une Option dans l'Agenda principal
+  const handleCreateOption = async () => {
+    try {
+      await onCreateAgendaOption(gig);
+      setToastMessage(`✅ Événement "[OPTION] - ${gig.eventName}" créé dans l'Agenda ! Dossier passé à "Option posée".`);
+      setTimeout(() => {
+        setToastMessage(null);
+      }, 5000);
+    } catch (err) {
+      alert(err.message || "Erreur lors de la création de l'option dans l'Agenda.");
+    }
+  };
+
+  // Action sécurisée : Supprimer définitivement le dossier
+  const handleDeleteConfirm = async () => {
+    if (window.confirm("Êtes-vous sûr de vouloir supprimer définitivement ce dossier ?")) {
+      try {
+        await onDeleteGig(gig.id, gig.eventName);
+        onClose();
+      } catch (err) {
+        alert(err.message || "Erreur lors de la suppression du dossier.");
+      }
+    }
   };
 
   return (
@@ -145,8 +172,10 @@ export default function GigDetailsModal({
 
             <button
               type="button"
-              onClick={() => triggerWorkflowToast('Option Agenda')}
-              className="px-2.5 py-2 text-[10px] font-extrabold uppercase rounded bg-stone-100 hover:bg-stone-200 text-stone-800 border border-stone-300 shadow-xs flex flex-col items-center gap-1 cursor-pointer transition-all active:scale-95"
+              onClick={handleCreateOption}
+              disabled={saving}
+              className="px-2.5 py-2 text-[10px] font-extrabold uppercase rounded bg-amber-100 hover:bg-amber-200 text-amber-900 border border-amber-300 shadow-xs flex flex-col items-center gap-1 cursor-pointer transition-all active:scale-95 disabled:opacity-50"
+              title="Créer automatiquement l'événement [OPTION] dans l'Agenda principal"
             >
               <span className="text-base">📅</span>
               <span>Poser Option Agenda</span>
@@ -172,8 +201,18 @@ export default function GigDetailsModal({
           </div>
         </div>
 
-        {/* Bouton de Fermeture */}
-        <div className="flex justify-end pt-2">
+        {/* Pied de Modale & Suppression */}
+        <div className="flex items-center justify-between pt-3 border-t border-dashed">
+          <CordelButton
+            type="button"
+            variant="rouge"
+            onClick={handleDeleteConfirm}
+            disabled={saving}
+            className="text-xs font-bold"
+          >
+            🗑️ Supprimer ce dossier
+          </CordelButton>
+
           <CordelButton type="button" variant="default" onClick={onClose} className="text-xs">
             Fermer
           </CordelButton>

@@ -145,6 +145,50 @@ export function useGigsPipeline(groupId) {
   };
 
   /**
+   * Créer automatiquement une Option dans l'Agenda principal (collection `events`)
+   * et passer le dossier de prestation au statut '2_option'.
+   */
+  const createAgendaOption = async (gig) => {
+    if (!gig || !gig.id) return;
+    setSaving(true);
+    try {
+      const eventDate = gig.date || new Date().toISOString().split('T')[0];
+      const eventTitle = `[OPTION] - ${gig.eventName}`;
+
+      const newEventDoc = {
+        groupId: gig.groupId || groupId,
+        titre: eventTitle,
+        type: 'prestation',
+        date: eventDate,
+        lieu: gig.location || '',
+        description: `Option de prestation posée depuis le Pôle Diffusion.\nOrganisateur: ${gig.organizer || 'Non renseigné'}\nContact: ${gig.contactEmail || ''} ${gig.contactPhone || ''}\n${gig.notes || ''}`,
+        isOption: true,
+        isPublic: false,
+        status: 'confirme',
+        inscriptions: [],
+        createdFromGigId: gig.id,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      };
+
+      // 1. Injection de l'événement dans la collection `events`
+      await addDoc(collection(db, 'events'), newEventDoc);
+
+      // 2. Passage automatique du statut du dossier à '2_option'
+      const gigRef = doc(db, 'gigs_pipeline', gig.id);
+      await updateDoc(gigRef, {
+        status: '2_option',
+        updatedAt: serverTimestamp()
+      });
+    } catch (err) {
+      console.error("useGigsPipeline - Erreur création option agenda :", err);
+      throw new Error("Erreur lors de la création de l'option dans l'Agenda.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  /**
    * Supprimer un dossier de prestation
    */
   const deleteGig = async (gigId) => {
@@ -167,6 +211,7 @@ export function useGigsPipeline(groupId) {
     createGig,
     updateGig,
     updateGigStatus,
+    createAgendaOption,
     deleteGig
   };
 }
