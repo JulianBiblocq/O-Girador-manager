@@ -15,6 +15,7 @@ import TabModules from './association-settings/TabModules';
 import TabLieux from './association-settings/TabLieux';
 import TabAutomations from './association-settings/TabAutomations';
 import TabPublicContent from './association-settings/TabPublicContent';
+import TabPublicTheme from './association-settings/TabPublicTheme';
 import TabCommunication from './association-settings/TabCommunication';
 import { canEditVitrine } from '../utils/permissionUtils';
 
