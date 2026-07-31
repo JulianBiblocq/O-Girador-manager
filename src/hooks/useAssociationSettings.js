@@ -112,6 +112,8 @@ export const DEFAULT_PUBLIC_THEME = {
   seoTitle: '',
   seoDescription: '',
   seoKeywords: '',
+  // Statut de publication générale de la vitrine (Mode Brouillon / En ligne)
+  isPublished: true,
   // Configuration de la visibilité des sections sur le site public
   afficherVieAssociative: true,
   afficherRecrutement: true,

@@ -717,6 +717,9 @@ export default function App() {
     return (
       <PublicThemeProvider groupId={profileData?.groupId}>
         <PublicHome
+          groupId={profileData?.groupId}
+          user={user}
+          isAdministrativeUser={isAdministrativeUser}
           associationName={associationName}
           branding={branding}
           onNavigateToApp={() => navigateToRoute(user ? '/app' : '/login')}

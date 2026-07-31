@@ -1,5 +1,7 @@
 import React from 'react';
 import { HelmetProvider } from 'react-helmet-async';
+import { doc, setDoc } from 'firebase/firestore';
+import { db } from '../firebase';
 import { usePublicThemeContext } from './PublicThemeProvider';
 import { usePublicEvents } from '../hooks/usePublicEvents';
 import PublicEventCard from './public/PublicEventCard';
@@ -12,6 +14,7 @@ import PublicProDocsSection from './public/PublicProDocsSection';
 import PublicRichText from './public/PublicRichText';
 import PublicSeoHead from './public/PublicSeoHead';
 import PublicWatermarkLogo from './public/PublicWatermarkLogo';
+import PublicMaintenancePage from './public/PublicMaintenancePage';
 
 /**
  * Convertit une URL YouTube ou Vimeo classique en URL embed sécurisée pour iframe.
@@ -47,13 +50,56 @@ const getEmbedVideoUrl = (url) => {
  * Composant de la Page d'Accueil Vitrine Publique (One-Page) dynamique.
  * Alimenté par les paramètres publicTheme de Firestore et les événements publics réels.
  */
-export default function PublicHome({ groupId, associationName, branding, onNavigateToApp, onNavigateToLogin }) {
+export default function PublicHome({ 
+  groupId, 
+  user, 
+  isAdministrativeUser, 
+  associationName, 
+  branding, 
+  onNavigateToApp, 
+  onNavigateToLogin 
+}) {
   const { publicTheme } = usePublicThemeContext();
   const { events: publicEvents, loading: loadingEvents } = usePublicEvents(groupId);
   const [selectedEventDetails, setSelectedEventDetails] = React.useState(null);
+  const [publishing, setPublishing] = React.useState(false);
 
   const logoSrc = branding?.logoUrl || '/Pictures/logo-samambaia.png';
   const groupTitle = associationName ? associationName : "Notre Association";
+
+  const isPublished = publicTheme?.isPublished !== false;
+  const isAdminUser = Boolean(user || isAdministrativeUser);
+
+  // Publication rapide directe depuis la bannière d'avertissement
+  const handleQuickPublish = async () => {
+    if (!groupId) return;
+    try {
+      setPublishing(true);
+      const assocRef = doc(db, 'associations', groupId);
+      await setDoc(assocRef, {
+        publicTheme: {
+          ...publicTheme,
+          isPublished: true
+        }
+      }, { merge: true });
+    } catch (err) {
+      console.error("Erreur lors de la publication rapide de la vitrine:", err);
+    } finally {
+      setPublishing(false);
+    }
+  };
+
+  // Si la vitrine est en Mode Brouillon (non publiée) ET que l'utilisateur N'EST PAS connecté / admin :
+  if (!isPublished && !isAdminUser) {
+    return (
+      <PublicMaintenancePage
+        associationName={groupTitle}
+        logoUrl={logoSrc}
+        publicTheme={publicTheme}
+        onOpenLogin={onNavigateToLogin}
+      />
+    );
+  }
 
   // Récupération des contenus personnalisés depuis publicTheme et vitrineTexts
   const vitrineTexts = publicTheme?.vitrineTexts || {};
@@ -101,6 +147,26 @@ export default function PublicHome({ groupId, associationName, branding, onNavig
 
       {/* Filigrane (Watermark) fixe et centré du logo de l'association */}
       <PublicWatermarkLogo logoSrc={logoSrc} altText={groupTitle} />
+
+      {/* Bannière Flottante Mode Brouillon (Visible uniquement par l'Admin quand isPublished === false) */}
+      {!isPublished && isAdminUser && (
+        <div className="bg-gradient-to-r from-red-800 via-amber-700 to-red-900 text-white px-4 py-2.5 shadow-lg flex flex-wrap items-center justify-between gap-3 text-xs font-bold sticky top-0 z-[60] select-none border-b-2 border-encre-noire animate-fade-in">
+          <div className="flex items-center gap-2">
+            <span className="text-base animate-pulse">⚠️</span>
+            <span>
+              <strong>Mode Brouillon actif :</strong> La vitrine est actuellement invisible pour le grand public. Seuls les administrateurs connectés peuvent la prévisualiser.
+            </span>
+          </div>
+          <button
+            type="button"
+            disabled={publishing}
+            onClick={handleQuickPublish}
+            className="bg-white text-stone-950 font-black uppercase text-[10px] tracking-wider px-3.5 py-1.5 rounded-md shadow-xs hover:bg-amber-300 active:scale-95 transition-all cursor-pointer shrink-0 border border-encre-noire flex items-center gap-1"
+          >
+            <span>{publishing ? 'Publication...' : '🌍 Publier le site maintenant'}</span>
+          </button>
+        </div>
+      )}
 
       <div 
         className="min-h-screen flex flex-col transition-colors duration-300 selection:bg-stone-200 public-paper-bg"
