@@ -66,8 +66,11 @@ export default function PublicRecruitmentSection({ publicTheme }) {
     effectiveLink = contactEmail ? `mailto:${contactEmail}?subject=Demande%20d'Adhesion` : "";
   }
 
-  const buttonText = publicTheme?.texteBoutonRecrutement?.trim() 
-    || (contactEmail ? "Nous contacter pour s'inscrire" : "Rejoindre l'association");
+  const rawButtonText = publicTheme?.texteBoutonRecrutement?.trim() || "";
+  let buttonText = rawButtonText;
+  if (!buttonText || (!activerHelloAssoRecrutement && buttonText.toLowerCase().includes('helloasso'))) {
+    buttonText = contactEmail ? "Nous contacter pour s'inscrire" : "Rejoindre l'association";
+  }
 
   // Récupération des formules configurées ou des formules par défaut
   const hasConfiguredFormules = Array.isArray(publicTheme.formulesRecrutement) && publicTheme.formulesRecrutement.length > 0;
@@ -357,8 +360,10 @@ export default function PublicRecruitmentSection({ publicTheme }) {
               {(() => {
                 const formulaLink = selectedFormuleModal.lienHelloAsso?.trim() || selectedFormuleModal.lien?.trim() || configuredLink;
                 const formulaIsHelloAsso = formulaLink.toLowerCase().includes('helloasso');
+                const canShowLink = formulaLink && (!formulaIsHelloAsso || activerHelloAssoRecrutement);
 
-                if (activerHelloAssoRecrutement && formulaLink) {
+                if (canShowLink) {
+                  const modalBtnLabel = formulaIsHelloAsso ? "S'inscrire sur HelloAsso" : "S'inscrire en ligne";
                   return (
                     <a
                       href={formulaLink}
@@ -366,7 +371,7 @@ export default function PublicRecruitmentSection({ publicTheme }) {
                       rel={formulaLink.startsWith('http') ? "noopener noreferrer" : undefined}
                       className="px-6 py-3 text-xs sm:text-sm font-bold uppercase tracking-wider text-white bg-emerald-700 hover:bg-emerald-800 rounded-xl shadow-md transition-all flex items-center gap-2 cursor-pointer"
                     >
-                      <span>S'inscrire sur HelloAsso</span>
+                      <span>{modalBtnLabel}</span>
                       <span>↗</span>
                     </a>
                   );

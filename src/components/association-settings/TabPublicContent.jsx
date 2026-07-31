@@ -646,6 +646,58 @@ export default function TabPublicContent({
       {/* Onglet 4: Réseaux Sociaux & Newsletter */}
       {contentSubTab === 'reseaux' && (
         <div className="flex flex-col gap-6">
+          {/* Personnalisation des Textes & Titre de la Section Contact & Réseaux */}
+          <CordelCard variant="default" className="p-5 flex flex-col gap-4 bg-white border-2 border-cordel-master-dark/30">
+            <h4 className="text-xs font-black uppercase tracking-widest text-cordel-wood border-b border-dashed border-cordel-master-dark/20 pb-2 flex items-center justify-between">
+              <span>📞 Textes de la section "Contact & Réseaux Sociaux"</span>
+            </h4>
+
+            {/* Titre de la section Contact & Réseaux */}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-bold uppercase tracking-wider text-encre-noire/80">
+                Titre de la section Contact & Réseaux
+              </label>
+              <input
+                type="text"
+                value={vitrineTexts.titreContactReseaux || ''}
+                onChange={(e) => handleTextChange('titreContactReseaux', e.target.value)}
+                disabled={saving}
+                placeholder="Contact & Réseaux Sociaux"
+                className="text-xs font-bold px-3 py-2 border border-encre-noire/30 rounded bg-white"
+              />
+            </div>
+
+            {/* Phrase d'accroche / Explication */}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-bold uppercase tracking-wider text-encre-noire/80">
+                Phrase d'accroche / Description de la section Contact
+              </label>
+              <textarea
+                rows={2}
+                value={vitrineTexts.accrocheContactReseaux || ''}
+                onChange={(e) => handleTextChange('accrocheContactReseaux', e.target.value)}
+                disabled={saving}
+                placeholder="Une question, un projet d'événement ou une demande de prestation ? Contactez-nous directement ou suivez l'actualité de la troupe sur nos réseaux sociaux !"
+                className="text-xs font-medium px-3 py-2 border border-encre-noire/30 rounded bg-white resize-none"
+              />
+            </div>
+
+            {/* Libellé du bouton E-mail */}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-bold uppercase tracking-wider text-encre-noire/80">
+                Libellé du bouton de contact E-mail
+              </label>
+              <input
+                type="text"
+                value={vitrineTexts.boutonContactEmail || ''}
+                onChange={(e) => handleTextChange('boutonContactEmail', e.target.value)}
+                disabled={saving}
+                placeholder="Contactez-nous pour programmer"
+                className="text-xs font-bold px-3 py-2 border border-encre-noire/30 rounded bg-white"
+              />
+            </div>
+          </CordelCard>
+
           {/* Liens des Réseaux Sociaux (Dynamiques) */}
           <CordelCard variant="default" className="p-5 flex flex-col gap-5 bg-white">
             <h4 className="text-xs font-black uppercase tracking-widest text-encre-noire border-b border-dashed border-cordel-master-dark/20 pb-2 flex items-center justify-between">
