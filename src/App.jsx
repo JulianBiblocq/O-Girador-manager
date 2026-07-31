@@ -1110,7 +1110,6 @@ export default function App() {
             ) : (currentTab === 'gigs-pipeline' && hasAccessDiffusion) ? (
               <GigsPipelineManager
                 groupId={profileData?.groupId}
-                associationSettings={associationSettings}
                 onBack={() => handleNavigateToPole('accueil')}
               />
             ) : (currentTab === 'dashboard-finance' && hasAccessTresorerie) ? (

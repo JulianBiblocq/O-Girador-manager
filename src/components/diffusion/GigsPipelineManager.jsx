@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { doc, onSnapshot } from 'firebase/firestore';
+import { db } from '../../firebase';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 import { useGigsPipeline } from '../../hooks/useGigsPipeline';
@@ -7,7 +9,7 @@ import GigDetailsModal from './GigDetailsModal';
 import GigEventCreateModal from './GigEventCreateModal';
 import GigQuoteGeneratorModal from './GigQuoteGeneratorModal';
 
-export default function GigsPipelineManager({ groupId, associationSettings = {}, onBack }) {
+export default function GigsPipelineManager({ groupId, associationSettings: propAssocSettings = {}, onBack }) {
   const {
     gigs,
     loading,
@@ -18,6 +20,20 @@ export default function GigsPipelineManager({ groupId, associationSettings = {},
     updateGigStatus,
     deleteGig
   } = useGigsPipeline(groupId);
+
+  const [associationSettings, setAssociationSettings] = useState(propAssocSettings);
+
+  // Synchronisation en temps réel des paramètres de l'association (logo, nom, siret, mentions)
+  useEffect(() => {
+    if (!groupId) return;
+    const assocRef = doc(db, 'associations', groupId);
+    const unsub = onSnapshot(assocRef, (docSnap) => {
+      if (docSnap.exists()) {
+        setAssociationSettings(docSnap.data());
+      }
+    });
+    return () => unsub();
+  }, [groupId]);
 
   const [viewMode, setViewMode] = useState('kanban'); // 'kanban' ou 'table'
   const [filterStatus, setFilterStatus] = useState('all');
