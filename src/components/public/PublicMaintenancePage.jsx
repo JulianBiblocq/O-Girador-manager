@@ -16,6 +16,11 @@ export default function PublicMaintenancePage({
   publicTheme = {},
   onOpenLogin
 }) {
+  const handleLoginClick = () => {
+    if (onOpenLogin) onOpenLogin();
+    else window.location.href = '/login';
+  };
+
   return (
     <div 
       className="min-h-screen w-full flex flex-col justify-between relative overflow-hidden select-none"
@@ -36,8 +41,8 @@ export default function PublicMaintenancePage({
         </div>
       )}
 
-      {/* En-tête simple */}
-      <header className="relative z-10 w-full py-6 px-6 sm:px-12 flex items-center justify-between border-b border-stone-300/40 backdrop-blur-xs bg-[#FAF6EE]/80">
+      {/* En-tête avec Logo et Bouton Espace Membre */}
+      <header className="relative z-10 w-full py-5 px-6 sm:px-12 flex items-center justify-between border-b border-stone-300/40 backdrop-blur-xs bg-[#FAF6EE]/80">
         <div className="flex items-center gap-3">
           {logoUrl && (
             <img 
@@ -47,64 +52,50 @@ export default function PublicMaintenancePage({
             />
           )}
           <span 
-            className="text-lg font-bold uppercase tracking-wider text-stone-900"
+            className="text-base sm:text-lg font-bold uppercase tracking-wider text-stone-900"
             style={{ fontFamily: 'var(--public-font-heading, sans-serif)' }}
           >
             {associationName}
           </span>
         </div>
 
-        {/* Bouton d'accès réservé aux membres */}
-        {onOpenLogin && (
-          <button
-            type="button"
-            onClick={onOpenLogin}
-            className="text-xs font-bold uppercase tracking-wider px-3.5 py-1.5 rounded-lg border-2 border-stone-800 bg-stone-900 text-white hover:bg-stone-800 shadow-xs transition-all cursor-pointer flex items-center gap-1.5"
-          >
-            <span>🔐 Espace Membres / Connexion</span>
-          </button>
-        )}
+        {/* Bouton Espace Membre en haut */}
+        <button
+          type="button"
+          onClick={handleLoginClick}
+          className="text-xs font-black uppercase tracking-wider px-3.5 py-2 rounded-lg border-2 border-stone-900 bg-stone-900 text-white hover:bg-amber-400 hover:text-stone-950 shadow-sm transition-all cursor-pointer flex items-center gap-1.5"
+        >
+          <span>🔐 Espace Membre</span>
+        </button>
       </header>
 
-      {/* Corps Principal - Message "En cours de préparation" */}
-      <main className="relative z-10 flex-1 flex flex-col items-center justify-center p-6 sm:p-12 text-center my-auto">
-        <div className="max-w-xl w-full bg-white/95 backdrop-blur-md rounded-2xl border-2 border-stone-300 p-8 sm:p-12 shadow-xl flex flex-col items-center gap-6">
-          <div className="w-20 h-20 rounded-2xl bg-amber-100 border-2 border-amber-400 flex items-center justify-center text-4xl shadow-inner animate-pulse">
+      {/* Panneau Central Épuré : EN CONSTRUCTION */}
+      <main className="relative z-10 flex-1 flex flex-col items-center justify-center p-6 text-center my-auto">
+        <div className="max-w-lg w-full bg-white/95 backdrop-blur-md rounded-2xl border-2 border-stone-300 p-8 sm:p-12 shadow-xl flex flex-col items-center gap-6">
+          
+          {/* Panneau Icône */}
+          <div className="w-20 h-20 rounded-2xl bg-amber-100 border-2 border-amber-500 flex items-center justify-center text-4xl shadow-md animate-bounce">
             🚧
           </div>
 
           <div className="flex flex-col gap-2">
-            <span className="text-xs font-black uppercase tracking-widest text-amber-800 bg-amber-100 px-3 py-1 rounded-full border border-amber-300 self-center">
-              Site en cours de préparation
-            </span>
             <h1 
-              className="text-2xl sm:text-4xl font-extrabold text-stone-900 leading-tight mt-2"
+              className="text-3xl sm:text-5xl font-black uppercase tracking-wider text-stone-900 leading-tight"
               style={{ fontFamily: 'var(--public-font-heading, sans-serif)' }}
             >
-              Revenez très bientôt !
+              EN CONSTRUCTION
             </h1>
-          </div>
-
-          <p className="text-sm sm:text-base text-stone-600 leading-relaxed font-medium">
-            Le site vitrine officiel de l'association <strong className="text-stone-900">{associationName}</strong> est actuellement en cours de préparation par notre équipe.
-          </p>
-
-          <div className="p-4 bg-[#FAF6EE] border border-dashed border-stone-300 rounded-xl text-xs text-stone-700 leading-normal w-full">
-            🎶 Nous peaufinons le programme de nos prochains ateliers, prestations scéniques, défilés et inscriptions.
-          </div>
-
-          {/* Bouton discret pour les membres et futurs adhérents */}
-          <div className="pt-4 border-t border-stone-200 w-full flex flex-col items-center gap-2">
-            <p className="text-[11px] text-stone-500 font-medium">
-              Vous êtes déjà membre de l'association ou vous souhaitez vous connecter ?
+            <p className="text-sm sm:text-base text-stone-600 font-medium leading-relaxed mt-1">
+              Le site web de l'association <strong className="text-stone-900">{associationName}</strong> est actuellement en cours de préparation.
             </p>
+          </div>
+
+          {/* Bouton Central Espace Membre */}
+          <div className="pt-2 w-full flex justify-center">
             <button
               type="button"
-              onClick={() => {
-                if (onOpenLogin) onOpenLogin();
-                else window.location.href = '/login';
-              }}
-              className="text-xs font-extrabold uppercase tracking-wider px-5 py-2.5 rounded-lg border-2 border-stone-800 bg-stone-900 text-white hover:bg-amber-400 hover:text-stone-950 shadow-md transition-all cursor-pointer flex items-center gap-2"
+              onClick={handleLoginClick}
+              className="w-full sm:w-auto text-xs font-black uppercase tracking-wider px-6 py-3 rounded-xl border-2 border-stone-900 bg-stone-900 text-white hover:bg-amber-400 hover:text-stone-950 shadow-md transition-all cursor-pointer flex items-center justify-center gap-2"
             >
               <span>🔑 Accéder à l'Espace Membre / Connexion</span>
             </button>
@@ -112,19 +103,9 @@ export default function PublicMaintenancePage({
         </div>
       </main>
 
-      {/* Pied de page avec rappel discret */}
-      <footer className="relative z-10 w-full py-4 px-6 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-stone-500 font-medium border-t border-stone-300/40 bg-[#FAF6EE]/80">
-        <span>© {new Date().getFullYear()} {associationName} — Propulsé par O Girador</span>
-        <button
-          type="button"
-          onClick={() => {
-            if (onOpenLogin) onOpenLogin();
-            else window.location.href = '/login';
-          }}
-          className="text-stone-600 hover:text-stone-900 underline font-bold cursor-pointer"
-        >
-          Espace Membre / Connexion →
-        </button>
+      {/* Pied de page épuré */}
+      <footer className="relative z-10 w-full py-4 px-6 text-center text-xs text-stone-500 font-medium border-t border-stone-300/40 bg-[#FAF6EE]/80">
+        © {new Date().getFullYear()} {associationName} — Propulsé par O Girador
       </footer>
     </div>
   );
