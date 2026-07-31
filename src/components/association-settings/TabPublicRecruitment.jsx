@@ -12,14 +12,28 @@ import FormulesManager from './FormulesManager';
  * @param {Function} props.handleChange - Handler de mise à jour des champs
  * @param {boolean} props.saving - État de sauvegarde
  */
-export default function TabPublicRecruitment({ formData, handleChange, saving }) {
+export default function TabPublicRecruitment({ formData, handleChange, saving, groupId }) {
   const publicTheme = formData.publicTheme || {};
+  const vitrineTexts = publicTheme.vitrineTexts || {};
 
   // Mise à jour locale des champs du thème public
   const handleThemeChange = (field, value) => {
     handleChange('publicTheme', {
       ...publicTheme,
       [field]: value
+    });
+  };
+
+  // Mise à jour spécifique de vitrineTexts
+  const handleTextChange = (fieldKey, value) => {
+    const updatedTexts = {
+      ...(publicTheme.vitrineTexts || {}),
+      [fieldKey]: value
+    };
+
+    handleChange('publicTheme', {
+      ...publicTheme,
+      vitrineTexts: updatedTexts
     });
   };
 
@@ -57,6 +71,37 @@ export default function TabPublicRecruitment({ formData, handleChange, saving })
         <p className="text-xs text-stone-600 leading-relaxed">
           Décrivez ici le fonctionnement hebdomadaire et le quotidien de votre association (ex: Ateliers de fabrication d'instruments le lundi, Répétition tuteurée le jeudi, chant polyphonique, ateliers de danse...). Ce texte apparaîtra de manière aérée et accueillante sur la page d'accueil.
         </p>
+
+        {/* Titres & Badge Vie Associative */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-bold uppercase tracking-wider text-encre-noire/80">
+              Titre principal Vie Associative
+            </label>
+            <input
+              type="text"
+              value={vitrineTexts.titreVieAssociative || ''}
+              onChange={(e) => handleTextChange('titreVieAssociative', e.target.value)}
+              disabled={saving}
+              placeholder="Notre Quotidien / Vie Associative"
+              className="text-xs font-bold px-3 py-2 border border-encre-noire/30 rounded bg-white"
+            />
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-bold uppercase tracking-wider text-encre-noire/80">
+              Sur-titre / Badge Vie Associative
+            </label>
+            <input
+              type="text"
+              value={vitrineTexts.badgeVieAssociative || ''}
+              onChange={(e) => handleTextChange('badgeVieAssociative', e.target.value)}
+              disabled={saving}
+              placeholder="Notre Quotidien"
+              className="text-xs font-bold px-3 py-2 border border-encre-noire/30 rounded bg-white"
+            />
+          </div>
+        </div>
 
         <div className="flex flex-col gap-1.5 pt-1">
           <label className="text-xs font-bold uppercase tracking-wider text-encre-noire/80">
@@ -107,20 +152,38 @@ export default function TabPublicRecruitment({ formData, handleChange, saving })
         {publicTheme.afficherRecrutement !== false && (
           <div className="flex flex-col gap-6 pt-2 border-t border-dashed border-cordel-master-dark/20 animate-fade-in">
             
-            {/* Titre du recrutement */}
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-bold uppercase tracking-wider text-encre-noire/80 flex items-center justify-between">
-                <span>🏷️ Titre de la section recrutement</span>
-                <span className="text-[10px] text-stone-500 font-normal">Ex: Rejoignez la troupe !</span>
-              </label>
-              <input
-                type="text"
-                value={publicTheme.titreRecrutement || ''}
-                onChange={(e) => handleThemeChange('titreRecrutement', e.target.value)}
-                disabled={saving}
-                placeholder="Rejoignez la troupe !"
-                className="text-xs font-bold px-3 py-2 border border-encre-noire/30 rounded bg-white"
-              />
+            {/* Titre & Badge du recrutement */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-bold uppercase tracking-wider text-encre-noire/80">
+                  Titre de la section recrutement
+                </label>
+                <input
+                  type="text"
+                  value={vitrineTexts.titreRecrutement || publicTheme.titreRecrutement || ''}
+                  onChange={(e) => {
+                    handleThemeChange('titreRecrutement', e.target.value);
+                    handleTextChange('titreRecrutement', e.target.value);
+                  }}
+                  disabled={saving}
+                  placeholder="Rejoignez la troupe !"
+                  className="text-xs font-bold px-3 py-2 border border-encre-noire/30 rounded bg-white"
+                />
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-bold uppercase tracking-wider text-encre-noire/80">
+                  Sur-titre / Badge Recrutement
+                </label>
+                <input
+                  type="text"
+                  value={vitrineTexts.badgeRecrutement || ''}
+                  onChange={(e) => handleTextChange('badgeRecrutement', e.target.value)}
+                  disabled={saving}
+                  placeholder="Nous Rejoindre"
+                  className="text-xs font-bold px-3 py-2 border border-encre-noire/30 rounded bg-white"
+                />
+              </div>
             </div>
 
             {/* Message d'invitation (RichTextEditor) */}
@@ -145,38 +208,56 @@ export default function TabPublicRecruitment({ formData, handleChange, saving })
               formules={publicTheme.formulesRecrutement}
               onChangeFormules={(updatedList) => handleThemeChange('formulesRecrutement', updatedList)}
               saving={saving}
+              groupId={groupId}
             />
 
-            {/* Grille 2 colonnes : Lien & Libellé du bouton */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-dashed border-cordel-master-dark/20">
-              {/* URL du lien (ex: HelloAsso) */}
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-bold uppercase tracking-wider text-encre-noire/80">
-                  🔗 Lien d'adhésion / d'inscription (ex: HelloAsso)
-                </label>
-                <input
-                  type="url"
-                  value={publicTheme.lienRecrutement || ''}
-                  onChange={(e) => handleThemeChange('lienRecrutement', e.target.value)}
-                  disabled={saving}
-                  placeholder="https://www.helloasso.com/associations/..."
-                  className="text-xs font-mono px-3 py-2 border border-encre-noire/30 rounded bg-white"
-                />
+            {/* Grille 2 colonnes : Lien & Libellé du bouton + Toggle Icône */}
+            <div className="flex flex-col gap-3 pt-2 border-t border-dashed border-cordel-master-dark/20">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* URL du lien (ex: HelloAsso, mailto...) */}
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-bold uppercase tracking-wider text-encre-noire/80">
+                    🔗 Lien d'adhésion / d'inscription (ex: HelloAsso, mailto...)
+                  </label>
+                  <input
+                    type="text"
+                    value={publicTheme.lienRecrutement || ''}
+                    onChange={(e) => handleThemeChange('lienRecrutement', e.target.value)}
+                    disabled={saving}
+                    placeholder="https://www.helloasso.com/... ou mailto:contact@asso.com"
+                    className="text-xs font-mono px-3 py-2 border border-encre-noire/30 rounded bg-white"
+                  />
+                </div>
+
+                {/* Texte du bouton CTA */}
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-bold uppercase tracking-wider text-encre-noire/80">
+                    🔘 Libellé du bouton d'action principal
+                  </label>
+                  <input
+                    type="text"
+                    value={publicTheme.texteBoutonRecrutement || ''}
+                    onChange={(e) => handleThemeChange('texteBoutonRecrutement', e.target.value)}
+                    disabled={saving}
+                    placeholder="Ex: Rejoindre l'association, S'inscrire sur HelloAsso"
+                    className="text-xs font-bold px-3 py-2 border border-encre-noire/30 rounded bg-white"
+                  />
+                </div>
               </div>
 
-              {/* Texte du bouton CTA */}
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-bold uppercase tracking-wider text-encre-noire/80">
-                  🔘 Libellé du bouton d'action principal
-                </label>
+              {/* Interrupteur Toggle Icône du bouton de recrutement */}
+              <div className="flex items-center gap-2 pt-1">
                 <input
-                  type="text"
-                  value={publicTheme.texteBoutonRecrutement || ''}
-                  onChange={(e) => handleThemeChange('texteBoutonRecrutement', e.target.value)}
+                  type="checkbox"
+                  id="showRecrutementCtaIcon"
+                  checked={publicTheme.showRecrutementCtaIcon !== false}
+                  onChange={(e) => handleThemeChange('showRecrutementCtaIcon', e.target.checked)}
                   disabled={saving}
-                  placeholder="S'inscrire sur HelloAsso"
-                  className="text-xs font-bold px-3 py-2 border border-encre-noire/30 rounded bg-white"
+                  className="w-4 h-4 cursor-pointer accent-[var(--color-cordel-vert,#2d6a4f)]"
                 />
+                <label htmlFor="showRecrutementCtaIcon" className="text-xs font-bold text-stone-800 cursor-pointer select-none">
+                  Afficher l'icône de redirection sur ce bouton
+                </label>
               </div>
             </div>
           </div>

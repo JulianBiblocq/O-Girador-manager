@@ -129,6 +129,12 @@ export const DEFAULT_PUBLIC_THEME = {
   texteRecrutement: '',
   lienRecrutement: '',
   texteBoutonRecrutement: "S'inscrire sur HelloAsso",
+  showRecrutementCtaIcon: true,
+  // Configuration du Bouton d'Action Principal (Hero CTA)
+  heroCtaText: 'Prochaines dates',
+  heroCtaLink: '#agenda',
+  showHeroCtaIcon: true,
+  heroCtaIcon: '📅',
   // Liens dynamiques vers les réseaux sociaux de l'association
   socialLinks: {
     facebook: '',
@@ -377,7 +383,13 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
             titreRecrutement: data.publicTheme?.titreRecrutement || "Rejoignez la troupe !",
             texteRecrutement: data.publicTheme?.texteRecrutement || '',
             lienRecrutement: data.publicTheme?.lienRecrutement || '',
-            texteBoutonRecrutement: data.publicTheme?.texteBoutonRecrutement || "S'inscrire sur HelloAsso"
+            texteBoutonRecrutement: data.publicTheme?.texteBoutonRecrutement || "S'inscrire sur HelloAsso",
+            showRecrutementCtaIcon: data.publicTheme?.showRecrutementCtaIcon !== false,
+            heroCtaText: data.publicTheme?.heroCtaText || "Prochaines dates",
+            heroCtaLink: data.publicTheme?.heroCtaLink || "#agenda",
+            showHeroCtaIcon: data.publicTheme?.showHeroCtaIcon !== false,
+            heroCtaIcon: data.publicTheme?.heroCtaIcon !== undefined ? data.publicTheme.heroCtaIcon : "📅",
+            afficherNewsletter: data.publicTheme?.afficherNewsletter !== false
           },
           sequenceurUrl: data.sequenceurUrl || '',
           droitImageDocUrl: data.droitImageDocUrl || '',

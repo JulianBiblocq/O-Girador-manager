@@ -82,14 +82,96 @@ export default function TabPublicGallery({ formData, handleChange, groupId, savi
     setNewUrlInput('');
   };
 
+  const vitrineTexts = publicTheme.vitrineTexts || {};
+
+  // Mise à jour d'un texte spécifique dans vitrineTexts
+  const handleTextChange = (fieldKey, value) => {
+    const updatedTexts = {
+      ...(publicTheme.vitrineTexts || {}),
+      [fieldKey]: value
+    };
+
+    handleChange('publicTheme', {
+      ...publicTheme,
+      vitrineTexts: updatedTexts
+    });
+  };
+
   return (
-    <CordelCard variant="default" className="p-5 flex flex-col gap-5 bg-white">
-      <h4 className="text-xs font-black uppercase tracking-widest text-encre-noire border-b border-dashed border-cordel-master-dark/20 pb-2 flex items-center justify-between">
-        <span>📸 Galerie Photos Vitrine ("En images")</span>
-        <span className="text-[10px] text-stone-500 font-normal">
-          {galleryPhotos.length} photo(s) au carrousel
+    <CordelCard variant="default" className="p-5 flex flex-col gap-5 bg-white border-2 border-cordel-master-dark/30">
+      <h4 className="text-xs font-black uppercase tracking-widest text-cordel-wood border-b border-dashed border-cordel-master-dark/20 pb-2 flex items-center justify-between">
+        <span>📸 Section Galerie Photos ("En images")</span>
+        <span className={`text-[10px] font-mono px-2 py-0.5 rounded border ${
+          publicTheme.afficherGalerie !== false 
+            ? 'bg-emerald-50 text-emerald-800 border-emerald-300 font-bold' 
+            : 'bg-stone-100 text-stone-600 border-stone-300'
+        }`}>
+          {publicTheme.afficherGalerie !== false ? '✓ Section Active' : '⚪ Section Masquée'}
         </span>
       </h4>
+
+      {/* Interrupteur Bascule (Toggle) d'activation de la Galerie */}
+      <div className="flex items-center gap-3 p-3 bg-[#fdfaf2] border border-encre-noire/20 rounded-[4px_6px_3px_5px] select-none">
+        <input
+          type="checkbox"
+          id="afficherGalerie"
+          checked={publicTheme.afficherGalerie !== false}
+          onChange={(e) => handleChange('publicTheme', { ...publicTheme, afficherGalerie: e.target.checked })}
+          disabled={saving}
+          className="w-4 h-4 cursor-pointer accent-[var(--color-cordel-vert,#2d6a4f)]"
+        />
+        <label htmlFor="afficherGalerie" className="text-xs font-bold uppercase tracking-wider text-encre-noire cursor-pointer flex flex-wrap items-center gap-1.5">
+          <span>Afficher la section Galerie Photos sur le site vitrine</span>
+        </label>
+      </div>
+
+      {/* Titres & Accroche de la Galerie */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+        {/* Titre Galerie */}
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs font-bold uppercase tracking-wider text-encre-noire/80">
+            Titre de la section Galerie
+          </label>
+          <input
+            type="text"
+            value={vitrineTexts.titreGalerie || ''}
+            onChange={(e) => handleTextChange('titreGalerie', e.target.value)}
+            disabled={saving}
+            placeholder="Galerie Photos / En Images"
+            className="text-xs font-bold px-3 py-2 border border-encre-noire/30 rounded bg-white"
+          />
+        </div>
+
+        {/* Badge Galerie */}
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs font-bold uppercase tracking-wider text-encre-noire/80">
+            Sur-titre / Badge Galerie
+          </label>
+          <input
+            type="text"
+            value={vitrineTexts.badgeGalerie || ''}
+            onChange={(e) => handleTextChange('badgeGalerie', e.target.value)}
+            disabled={saving}
+            placeholder="En Images"
+            className="text-xs font-bold px-3 py-2 border border-encre-noire/30 rounded bg-white"
+          />
+        </div>
+      </div>
+
+      {/* Accroche Galerie */}
+      <div className="flex flex-col gap-1.5">
+        <label className="text-xs font-bold uppercase tracking-wider text-encre-noire/80">
+          Description / Accroche Galerie
+        </label>
+        <textarea
+          rows={2}
+          value={vitrineTexts.accrocheGalerie || ''}
+          onChange={(e) => handleTextChange('accrocheGalerie', e.target.value)}
+          disabled={saving}
+          placeholder="Découvrez nos prestations scéniques, répétitions et sorties en images !"
+          className="text-xs font-medium px-3 py-2 border border-encre-noire/30 rounded bg-white resize-none"
+        />
+      </div>
 
       {/* Zone de téléversement multiple */}
       <div className="flex flex-col gap-3 p-4 bg-[#fdfaf2] border border-dashed border-encre-noire/25 rounded-[4px_6px_3px_5px]">

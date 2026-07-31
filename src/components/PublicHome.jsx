@@ -152,6 +152,13 @@ export default function PublicHome({
   const contactPhone = publicTheme?.publicContactPhone || '';
   const socialLinks = publicTheme?.socialLinks || {};
 
+  // Configuration dynamique des Boutons Hero CTA & Newsletter
+  const heroCtaText = publicTheme?.heroCtaText?.trim() || "Prochaines dates";
+  const heroCtaLink = publicTheme?.heroCtaLink?.trim() || "#agenda";
+  const showHeroCtaIcon = publicTheme?.showHeroCtaIcon !== false;
+  const heroCtaIcon = publicTheme?.heroCtaIcon !== undefined ? publicTheme.heroCtaIcon : "📅";
+  const afficherNewsletter = publicTheme?.afficherNewsletter !== false;
+
   // Défilement fluide vers une section
   const scrollToSection = (id) => {
     const el = document.getElementById(id);
@@ -305,18 +312,41 @@ export default function PublicHome({
           </p>
 
           <div className="mt-4 flex flex-wrap justify-center gap-4">
-            <button
-              type="button"
-              onClick={() => scrollToSection('agenda')}
-              className="px-6 py-3.5 text-sm font-bold uppercase tracking-wider rounded-lg shadow-xl hover:brightness-110 active:scale-95 transition-all cursor-pointer flex items-center gap-2"
-              style={{
-                backgroundColor: 'var(--public-btn-bg, var(--public-primary, #D32F2F))',
-                color: 'var(--public-btn-text, #FFFFFF)',
-                fontFamily: 'var(--public-font-heading, sans-serif)'
-              }}
-            >
-              📅 Prochaines dates
-            </button>
+            {/* Bouton d'Action Principal (Hero CTA) 100% configurable */}
+            {heroCtaLink && (
+              heroCtaLink.startsWith('#') ? (
+                <button
+                  type="button"
+                  onClick={() => scrollToSection(heroCtaLink.substring(1))}
+                  className="px-6 py-3.5 text-sm font-bold uppercase tracking-wider rounded-lg shadow-xl hover:brightness-110 active:scale-95 transition-all cursor-pointer flex items-center gap-2"
+                  style={{
+                    backgroundColor: 'var(--public-btn-bg, var(--public-primary, #D32F2F))',
+                    color: 'var(--public-btn-text, #FFFFFF)',
+                    fontFamily: 'var(--public-font-heading, sans-serif)'
+                  }}
+                >
+                  {showHeroCtaIcon && heroCtaIcon && <span>{heroCtaIcon}</span>}
+                  <span>{heroCtaText}</span>
+                </button>
+              ) : (
+                <a
+                  href={heroCtaLink}
+                  target={heroCtaLink.startsWith('http') ? "_blank" : "_self"}
+                  rel={heroCtaLink.startsWith('http') ? "noopener noreferrer" : undefined}
+                  className="px-6 py-3.5 text-sm font-bold uppercase tracking-wider rounded-lg shadow-xl hover:brightness-110 active:scale-95 transition-all cursor-pointer flex items-center gap-2"
+                  style={{
+                    backgroundColor: 'var(--public-btn-bg, var(--public-primary, #D32F2F))',
+                    color: 'var(--public-btn-text, #FFFFFF)',
+                    fontFamily: 'var(--public-font-heading, sans-serif)'
+                  }}
+                >
+                  {showHeroCtaIcon && heroCtaIcon && <span>{heroCtaIcon}</span>}
+                  <span>{heroCtaText}</span>
+                </a>
+              )
+            )}
+
+            {/* Bouton Secondaire Espace Organisateur (si activé) */}
             {enableOrganizerSection && (
               <button
                 type="button"
@@ -327,7 +357,8 @@ export default function PublicHome({
                   fontFamily: 'var(--public-font-heading, sans-serif)'
                 }}
               >
-                🎪 Nous Programmer
+                <span>🎪</span>
+                <span>Nous Programmer</span>
               </button>
             )}
           </div>
@@ -483,8 +514,8 @@ export default function PublicHome({
               </p>
             </div>
 
-            {/* Grille 3 colonnes sur PC (Formats de Prestations, Besoins Techniques, Infolettre & Actualités) */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {/* Grille dynamique (2 ou 3 colonnes sur PC selon l'activation de la Newsletter) */}
+            <div className={`grid grid-cols-1 md:grid-cols-2 ${afficherNewsletter ? 'lg:grid-cols-3' : 'lg:grid-cols-2'} gap-8`}>
               {/* Partie Gauche : Nos Formats de Prestations */}
               <div className="bg-white rounded-xl border border-stone-200 p-6 sm:p-8 shadow-sm flex flex-col gap-5">
                 <h3 

@@ -45,10 +45,19 @@ export default function PublicRecruitmentSection({ publicTheme }) {
 
   const vitrineTexts = publicTheme?.vitrineTexts || {};
   const badgeRecrutement = vitrineTexts.badgeRecrutement || "Nous Rejoindre";
-  const title = vitrineTexts.titreRecrutement || publicTheme.titreRecrutement || "Rejoignez la troupe !";
-  const text = vitrineTexts.accrocheRecrutement || publicTheme.texteRecrutement || "Rejoignez nos ateliers hebdomadaires et participez à une aventure musicale et humaine unique !";
-  const linkUrl = publicTheme.lienRecrutement || "#";
-  const buttonText = publicTheme.texteBoutonRecrutement || "S'inscrire sur HelloAsso";
+  const title = vitrineTexts.titreRecrutement || publicTheme?.titreRecrutement || "Rejoignez la troupe !";
+  const text = vitrineTexts.accrocheRecrutement || publicTheme?.texteRecrutement || "Rejoignez nos ateliers hebdomadaires et participez à une aventure musicale et humaine unique !";
+  const configuredLink = publicTheme?.lienRecrutement?.trim() || "";
+  const contactEmail = publicTheme?.publicContactEmail?.trim() || "";
+  const showRecrutementCtaIcon = publicTheme?.showRecrutementCtaIcon !== false;
+
+  // Calcul du lien dynamique : priorité au lien configuré, puis au mail de contact
+  const effectiveLink = configuredLink 
+    ? configuredLink 
+    : (contactEmail ? `mailto:${contactEmail}?subject=Demande%20d'Adhesion` : "#recrutement");
+
+  const buttonText = publicTheme?.texteBoutonRecrutement?.trim() 
+    || (contactEmail ? "Nous contacter pour s'inscrire" : "Rejoindre l'association");
 
   // Récupération des formules configurées ou des formules par défaut
   const hasConfiguredFormules = Array.isArray(publicTheme.formulesRecrutement) && publicTheme.formulesRecrutement.length > 0;
@@ -105,8 +114,9 @@ export default function PublicRecruitmentSection({ publicTheme }) {
         {/* Grille des Cartes des Formules d'Adhésion */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
           {formules.map((formule, idx) => {
-            const hasBgImage = Boolean(formule.imageUrl || formule.backgroundImageUrl);
-            const bgImg = formule.imageUrl || formule.backgroundImageUrl;
+            // Prise en compte prioritaire de la propriété backgroundImageUrl (issue de l'upload Firebase Storage)
+            const bgImg = formule.backgroundImageUrl || formule.imageUrl;
+            const hasBgImage = Boolean(bgImg);
 
             return (
               <div 
@@ -117,17 +127,21 @@ export default function PublicRecruitmentSection({ publicTheme }) {
                     : 'bg-white/95 border-stone-200 text-stone-900'
                 }`}
               >
-                {/* Image de fond avec cover */}
+                {/* Image d'arrière-plan avec background-size: cover et background-position: center */}
                 {hasBgImage && (
                   <div 
                     className="absolute inset-0 bg-cover bg-center transition-transform duration-700 hover:scale-105"
-                    style={{ backgroundImage: `url(${bgImg})` }}
+                    style={{
+                      backgroundImage: `url(${bgImg})`,
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center'
+                    }}
                   />
                 )}
 
-                {/* Couche d'assombrissement (Overlay) pour lisibilité absolue du texte */}
+                {/* Couche d'assombrissement (Overlay type bg-black/60) par-dessus l'image pour garantir la lisibilité du texte */}
                 {hasBgImage && (
-                  <div className="absolute inset-0 bg-gradient-to-t from-stone-950/95 via-stone-900/85 to-black/60 backdrop-blur-[1px] pointer-events-none z-0" />
+                  <div className="absolute inset-0 bg-black/60 backdrop-blur-[1px] pointer-events-none z-0" />
                 )}
 
                 {/* Contenu de la Carte */}
@@ -190,9 +204,9 @@ export default function PublicRecruitmentSection({ publicTheme }) {
                 {/* Bouton d'action individuel pour la formule */}
                 <div className={`pt-4 border-t relative z-10 ${hasBgImage ? 'border-white/20' : 'border-stone-100'}`}>
                   <a
-                    href={linkUrl && linkUrl !== '#' ? linkUrl : '#newsletter-inscription'}
-                    target={linkUrl && linkUrl !== '#' ? "_blank" : "_self"}
-                    rel="noopener noreferrer"
+                    href={formule.lien || effectiveLink}
+                    target={(formule.lien || effectiveLink).startsWith('http') ? "_blank" : "_self"}
+                    rel={(formule.lien || effectiveLink).startsWith('http') ? "noopener noreferrer" : undefined}
                     className={`w-full py-2.5 px-4 text-xs font-bold uppercase tracking-wider rounded-lg transition-all duration-200 flex items-center justify-center gap-1.5 shadow-sm ${
                       hasBgImage
                         ? 'bg-white text-stone-900 hover:bg-amber-400 hover:text-stone-950 font-extrabold'
@@ -201,7 +215,7 @@ export default function PublicRecruitmentSection({ publicTheme }) {
                     style={{ fontFamily: 'var(--public-font-heading, sans-serif)' }}
                   >
                     <span>Choisir cette formule</span>
-                    <span>→</span>
+                    {showRecrutementCtaIcon && <span>→</span>}
                   </a>
                 </div>
               </div>
@@ -210,12 +224,12 @@ export default function PublicRecruitmentSection({ publicTheme }) {
         </div>
 
         {/* Gros Bouton d'Action (Call to Action Principal) sous les cartes */}
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
-          {linkUrl && linkUrl !== '#' ? (
+        {effectiveLink && (
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
             <a
-              href={linkUrl}
-              target="_blank"
-              rel="noopener noreferrer"
+              href={effectiveLink}
+              target={effectiveLink.startsWith('http') ? "_blank" : "_self"}
+              rel={effectiveLink.startsWith('http') ? "noopener noreferrer" : undefined}
               className="inline-flex items-center justify-center gap-3 px-8 py-4 text-base font-bold uppercase tracking-wider text-white rounded-xl shadow-xl hover:brightness-110 active:scale-95 transition-all cursor-pointer border border-white/20"
               style={{
                 backgroundColor: 'var(--public-btn-bg, var(--public-primary, #D32F2F))',
@@ -224,23 +238,10 @@ export default function PublicRecruitmentSection({ publicTheme }) {
               }}
             >
               <span>{buttonText}</span>
-              <span className="text-xl leading-none">↗</span>
+              {showRecrutementCtaIcon && <span className="text-xl leading-none">↗</span>}
             </a>
-          ) : (
-            <a
-              href="#newsletter-inscription"
-              className="inline-flex items-center justify-center gap-3 px-8 py-4 text-base font-bold uppercase tracking-wider text-white rounded-xl shadow-xl hover:brightness-110 active:scale-95 transition-all cursor-pointer border border-white/20"
-              style={{
-                backgroundColor: 'var(--public-btn-bg, var(--public-primary, #D32F2F))',
-                color: 'var(--public-btn-text, #FFFFFF)',
-                fontFamily: 'var(--public-font-heading, sans-serif)'
-              }}
-            >
-              <span>💬 Nous contacter pour un essai gratuit</span>
-              <span className="text-xl leading-none">✉️</span>
-            </a>
-          )}
-        </div>
+          </div>
+        )}
 
       </div>
     </section>

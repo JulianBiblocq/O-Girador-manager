@@ -56,7 +56,7 @@ export default function AssociationSettings({ groupId, onBack, role, isSystemAdm
   } = useAssociationSettings(groupId, isAuthorized, onBack, t);
 
   const [activeSettingsTab, setActiveSettingsTab] = useState(activeTabProp || 'identity');
-  const [vitrineSubTab, setVitrineSubTab] = useState('apparence');
+  const [vitrineSubTab, setVitrineSubTab] = useState('general');
 
   useEffect(() => {
     if (activeTabProp) {
@@ -260,14 +260,14 @@ export default function AssociationSettings({ groupId, onBack, role, isSystemAdm
               <div className="flex flex-wrap items-center gap-2">
                 <button
                   type="button"
-                  onClick={() => setVitrineSubTab('apparence')}
+                  onClick={() => setVitrineSubTab('general')}
                   className={`px-3 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer ${
-                    vitrineSubTab === 'apparence'
+                    vitrineSubTab === 'general'
                       ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
                       : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
                   }`}
                 >
-                  Apparence
+                  Général & SEO
                 </button>
 
                 <button
@@ -328,6 +328,18 @@ export default function AssociationSettings({ groupId, onBack, role, isSystemAdm
                   }`}
                 >
                   Réseau et newsletter
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setVitrineSubTab('apparence')}
+                  className={`px-3 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer ${
+                    vitrineSubTab === 'apparence'
+                      ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
+                      : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
+                  }`}
+                >
+                  Apparence
                 </button>
               </div>
 

@@ -13,6 +13,11 @@ import { db } from '../../firebase';
  * @param {Object} [props.publicTheme] - Thème et textes dynamiques de la vitrine.
  */
 export default function PublicNewsletterForm({ groupId, variant = 'card', publicTheme = {} }) {
+  // Masquage complet du bloc si la section Newsletter a été désactivée par l'administrateur
+  if (publicTheme?.afficherNewsletter === false) {
+    return null;
+  }
+
   const [email, setEmail] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [submittedSuccess, setSubmittedSuccess] = useState(false);

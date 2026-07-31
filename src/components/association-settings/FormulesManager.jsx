@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { storage } from '../../firebase';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 
@@ -38,33 +40,39 @@ const DEFAULT_FORMULES = [
  * @param {Array} props.formules - Liste actuelle des formules
  * @param {Function} props.onChangeFormules - Callback pour enregistrer la mise à jour des formules
  * @param {boolean} props.saving - État de sauvegarde
+ * @param {string} props.groupId - Identifiant de l'association pour Firebase Storage
  */
-export default function FormulesManager({ formules = [], onChangeFormules, saving }) {
+export default function FormulesManager({ formules = [], onChangeFormules, saving, groupId }) {
   // Si aucune formule n'est encore enregistrée, initialiser avec les formules par défaut
   const activeFormules = Array.isArray(formules) && formules.length > 0 ? formules : DEFAULT_FORMULES;
 
   const [editingIndex, setEditingIndex] = useState(null);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [uploadError, setUploadError] = useState(null);
   const [formState, setFormState] = useState({
     titre: '',
     icone: '🥁',
     tarif: '',
     description: '',
     avantagesText: '',
+    backgroundImageUrl: '',
     imageUrl: ''
   });
 
   // Ouverture du formulaire de création / modification
   const handleOpenEdit = (index = null) => {
+    setUploadError(null);
     if (index !== null && activeFormules[index]) {
       const item = activeFormules[index];
+      const bgUrl = item.backgroundImageUrl || item.imageUrl || '';
       setFormState({
         titre: item.titre || '',
         icone: item.icone || '🥁',
         tarif: item.tarif || '',
         description: item.description || '',
         avantagesText: Array.isArray(item.avantages) ? item.avantages.join('\n') : '',
-        imageUrl: item.imageUrl || item.backgroundImageUrl || ''
+        backgroundImageUrl: bgUrl,
+        imageUrl: bgUrl
       });
       setEditingIndex(index);
     } else {
@@ -74,6 +82,7 @@ export default function FormulesManager({ formules = [], onChangeFormules, savin
         tarif: 'Adhésion annuelle',
         description: '',
         avantagesText: '',
+        backgroundImageUrl: '',
         imageUrl: ''
       });
       setEditingIndex('new');
@@ -83,6 +92,60 @@ export default function FormulesManager({ formules = [], onChangeFormules, savin
   // Fermeture du formulaire
   const handleCancel = () => {
     setEditingIndex(null);
+    setUploadError(null);
+  };
+
+  // Gestion du téléversement d'une image locale vers Firebase Storage
+  const handleImageUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      setUploadError("Le fichier sélectionné doit être une image (JPG, PNG, WebP...).");
+      return;
+    }
+
+    setUploadingImage(true);
+    setUploadError(null);
+
+    try {
+      // Nettoyage du nom de fichier et préparation de l'emplacement Firebase Storage
+      const cleanFileName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+      const storagePath = groupId
+        ? `associations/${groupId}/formules/${Date.now()}_${cleanFileName}`
+        : `formules/${Date.now()}_${cleanFileName}`;
+
+      const imgRef = storageRef(storage, storagePath);
+
+      // Envoi du fichier à Firebase Storage
+      const snapshot = await uploadBytes(imgRef, file, {
+        contentType: file.type || 'image/jpeg'
+      });
+
+      // Récupération de l'URL de téléchargement sécurisée
+      const downloadUrl = await getDownloadURL(snapshot.ref);
+
+      setFormState(prev => ({
+        ...prev,
+        backgroundImageUrl: downloadUrl,
+        imageUrl: downloadUrl
+      }));
+    } catch (err) {
+      console.error("Erreur lors du téléversement vers Firebase Storage :", err);
+      setUploadError("Une erreur est survenue pendant l'envoi de l'image.");
+    } finally {
+      setUploadingImage(false);
+      e.target.value = '';
+    }
+  };
+
+  // Suppression de l'image d'arrière-plan de la formule en cours
+  const handleRemoveImage = () => {
+    setFormState(prev => ({
+      ...prev,
+      backgroundImageUrl: '',
+      imageUrl: ''
+    }));
   };
 
   // Enregistrement d'une formule dans la liste
@@ -95,6 +158,8 @@ export default function FormulesManager({ formules = [], onChangeFormules, savin
       .map(s => s.trim())
       .filter(Boolean);
 
+    const bgUrl = formState.backgroundImageUrl?.trim() || formState.imageUrl?.trim() || '';
+
     const updatedItem = {
       id: editingIndex === 'new' ? `formule_${Date.now()}` : activeFormules[editingIndex]?.id || `formule_${Date.now()}`,
       titre: formState.titre.trim(),
@@ -102,7 +167,8 @@ export default function FormulesManager({ formules = [], onChangeFormules, savin
       tarif: formState.tarif.trim(),
       description: formState.description.trim(),
       avantages: avantagesList,
-      imageUrl: formState.imageUrl.trim()
+      backgroundImageUrl: bgUrl,
+      imageUrl: bgUrl
     };
 
     let nextList = [...activeFormules];
@@ -243,29 +309,71 @@ export default function FormulesManager({ formules = [], onChangeFormules, savin
             />
           </div>
 
-          <div className="flex flex-col gap-1">
-            <label className="text-[10px] font-bold uppercase flex items-center justify-between">
-              <span>🖼️ Image de Fond de la Carte (URL)</span>
-              <span className="text-[9px] text-stone-400 font-normal">Ex: photo de danse ou percussion</span>
+          {/* Section Upload d'image de fond via Firebase Storage */}
+          <div className="flex flex-col gap-2 p-3 bg-[#fdfaf2] border border-encre-noire/20 rounded">
+            <label className="text-[10px] font-bold uppercase tracking-wider text-encre-noire flex items-center justify-between">
+              <span>🖼️ Image d'Arrière-Plan de la Carte</span>
+              <span className="text-[9px] text-stone-500 font-normal">Photo locale (danse, percu...)</span>
             </label>
-            <input
-              type="url"
-              value={formState.imageUrl}
-              onChange={(e) => setFormState({ ...formState, imageUrl: e.target.value })}
-              placeholder="https://images.unsplash.com/photo-... ou URL de votre image"
-              className="text-xs px-2 py-1.5 border rounded bg-white font-mono"
-            />
-            {formState.imageUrl && (
-              <div className="mt-1 relative h-16 w-full rounded overflow-hidden border border-stone-300 bg-stone-900">
-                <img 
-                  src={formState.imageUrl} 
-                  alt="Aperçu fond" 
-                  className="w-full h-full object-cover opacity-60"
-                  onError={(e) => { e.target.style.display = 'none'; }}
+
+            {/* Boutons d'action pour le téléversement d'image */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <label className="inline-flex items-center gap-1.5 text-[11px] font-bold bg-cordel-vert text-white px-3 py-1.5 rounded cursor-pointer hover:brightness-105 transition-all shadow-[1.5px_1.5px_0px_0px_#181716] disabled:opacity-50">
+                <span>{uploadingImage ? '⏳ Téléversement...' : '📁 Choisir une photo locale'}</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  disabled={uploadingImage || saving}
+                  className="hidden"
                 />
-                <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white drop-shadow">
-                  Aperçu du fond avec filtre sombre
-                </span>
+              </label>
+
+              {(formState.backgroundImageUrl || formState.imageUrl) && (
+                <button
+                  type="button"
+                  onClick={handleRemoveImage}
+                  disabled={uploadingImage || saving}
+                  className="text-[10px] font-bold text-red-700 hover:text-red-900 border border-red-300 bg-red-50 px-2 py-1 rounded cursor-pointer"
+                >
+                  🗑️ Retirer l'image
+                </button>
+              )}
+            </div>
+
+            {/* Message d'erreur d'upload le cas échéant */}
+            {uploadError && (
+              <p className="text-[10px] text-red-700 font-medium">
+                ⚠️ {uploadError}
+              </p>
+            )}
+
+            {/* URL manuelle alternative ou d'appoint */}
+            <div className="flex flex-col gap-1 mt-1">
+              <span className="text-[9px] text-stone-500 font-medium">Ou coller directement une URL d'image :</span>
+              <input
+                type="url"
+                value={formState.backgroundImageUrl || formState.imageUrl || ''}
+                onChange={(e) => setFormState({ ...formState, backgroundImageUrl: e.target.value, imageUrl: e.target.value })}
+                placeholder="https://firebasestorage.googleapis.com/... ou https://..."
+                className="text-xs px-2 py-1 border rounded bg-white font-mono"
+              />
+            </div>
+
+            {/* Aperçu dynamique de l'image de fond avec la couche d'assombrissement (overlay) */}
+            {(formState.backgroundImageUrl || formState.imageUrl) && (
+              <div className="mt-1 relative h-20 w-full rounded overflow-hidden border border-stone-300 bg-stone-900 shadow-inner">
+                <div 
+                  className="absolute inset-0 bg-cover bg-center"
+                  style={{ backgroundImage: `url(${formState.backgroundImageUrl || formState.imageUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
+                />
+                {/* Overlay d'assombrissement bg-black/60 */}
+                <div className="absolute inset-0 bg-black/60 backdrop-blur-[1px] pointer-events-none z-0" />
+                <div className="relative z-10 h-full flex items-center justify-center p-2 text-center">
+                  <span className="text-[11px] font-bold text-white drop-shadow-md">
+                    Aperçu du rendu final avec assombrissement (bg-black/60)
+                  </span>
+                </div>
               </div>
             )}
           </div>

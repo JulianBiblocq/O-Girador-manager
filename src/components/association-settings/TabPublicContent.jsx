@@ -5,7 +5,7 @@ import CordelCard from '../CordelCard';
 import TabPublicGallery from './TabPublicGallery';
 import TabPublicRecruitment from './TabPublicRecruitment';
 import TabPublicProDocs from './TabPublicProDocs';
-import TabPublicSectionTexts from './TabPublicSectionTexts';
+import TabPublicGeneral from './TabPublicGeneral';
 import RichTextEditor from '../RichTextEditor';
 
 /**
@@ -30,10 +30,24 @@ export default function TabPublicContent({
   groupId,
   saving,
   t,
-  contentSubTab = 'presentation'
+  contentSubTab = 'general'
 }) {
   const publicTheme = formData.publicTheme || {};
+  const vitrineTexts = publicTheme.vitrineTexts || {};
   const socialLinks = publicTheme.socialLinks || {};
+
+  // Mise à jour spécifique de vitrineTexts
+  const handleTextChange = (fieldKey, value) => {
+    const updatedTexts = {
+      ...(publicTheme.vitrineTexts || {}),
+      [fieldKey]: value
+    };
+
+    handleChange('publicTheme', {
+      ...publicTheme,
+      vitrineTexts: updatedTexts
+    });
+  };
 
   // État local pour le module d'exportation de la newsletter & Brevo
   const [subscriberCount, setSubscriberCount] = useState(null);
@@ -136,28 +150,53 @@ export default function TabPublicContent({
   return (
     <div className="flex flex-col gap-6 text-left">
 
-      {/* Onglet 1: Textes & Médias Vitrine */}
+      {/* Onglet 1: Général & SEO */}
+      {contentSubTab === 'general' && (
+        <TabPublicGeneral
+          formData={formData}
+          handleChange={handleChange}
+          groupId={groupId}
+          saving={saving}
+        />
+      )}
+
+      {/* Onglet 2: Présentation & Hero */}
       {contentSubTab === 'presentation' && (
         <>
-        <CordelCard variant="default" className="p-5 flex flex-col gap-5 bg-white">
-          <h4 className="text-xs font-black uppercase tracking-widest text-encre-noire border-b border-dashed border-cordel-master-dark/20 pb-2">
-            🖼️ Titre, Bannière & Textes de Présentation
+        <CordelCard variant="default" className="p-5 flex flex-col gap-5 bg-white border-2 border-cordel-master-dark/30">
+          <h4 className="text-xs font-black uppercase tracking-widest text-cordel-wood border-b border-dashed border-cordel-master-dark/20 pb-2">
+            🖼️ Bannière d'Accueil (Hero) & Section Présentation
           </h4>
 
-        {/* Titre Principal du Site / Nom de l'Association */}
-        <div className="flex flex-col gap-1.5 p-3 bg-[#fdfaf2] border border-encre-noire/20 rounded-[4px_6px_3px_5px]">
-          <label className="text-xs font-bold uppercase tracking-wider text-cordel-wood flex items-center gap-1.5">
-            <span>🏷️ Titre Principal du Site / Nom de l'Association</span>
-            <span className="text-[10px] font-normal text-stone-500">(Ex: Samambaia)</span>
-          </label>
-          <input
-            type="text"
-            value={formData.nom || ''}
-            onChange={(e) => handleChange('nom', e.target.value)}
-            disabled={saving}
-            placeholder="Ex: Samambaia"
-            className="text-xs font-bold px-3 py-2 border border-encre-noire/30 rounded bg-white"
-          />
+        {/* Titre Principal du Site & Titre de la Section Présentation */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-3 bg-[#fdfaf2] border border-encre-noire/20 rounded-[4px_6px_3px_5px]">
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-bold uppercase tracking-wider text-cordel-wood flex items-center gap-1.5">
+              <span>🏷️ Titre Principal du Site / Nom de l'Association</span>
+            </label>
+            <input
+              type="text"
+              value={formData.nom || ''}
+              onChange={(e) => handleChange('nom', e.target.value)}
+              disabled={saving}
+              placeholder="Ex: Samambaia"
+              className="text-xs font-bold px-3 py-2 border border-encre-noire/30 rounded bg-white"
+            />
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-bold uppercase tracking-wider text-cordel-wood flex items-center gap-1.5">
+              <span>👋 Titre de la section Présentation</span>
+            </label>
+            <input
+              type="text"
+              value={vitrineTexts.titrePresentation || ''}
+              onChange={(e) => handleTextChange('titrePresentation', e.target.value)}
+              disabled={saving}
+              placeholder="Qui sommes-nous ?"
+              className="text-xs font-bold px-3 py-2 border border-encre-noire/30 rounded bg-white"
+            />
+          </div>
         </div>
 
         {/* Image de Couverture Hero */}
@@ -240,6 +279,75 @@ export default function TabPublicContent({
           />
         </div>
 
+        {/* Configuration du Bouton d'Action Principal (Hero CTA) */}
+        <div className="flex flex-col gap-3 p-3.5 bg-[#fdfaf2] border border-encre-noire/20 rounded-[4px_6px_3px_5px]">
+          <label className="text-xs font-bold uppercase tracking-wider text-cordel-wood flex items-center justify-between border-b border-dashed border-stone-300 pb-1.5">
+            <span>🔘 Bouton d'Action Principal (Hero CTA)</span>
+            <span className="text-[10px] text-stone-500 font-normal">Haut de la page d'accueil</span>
+          </label>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {/* Texte du bouton */}
+            <div className="sm:col-span-2 flex flex-col gap-1">
+              <label className="text-[10px] font-bold uppercase text-stone-700">Texte du bouton CTA</label>
+              <input
+                type="text"
+                value={publicTheme.heroCtaText !== undefined ? publicTheme.heroCtaText : 'Prochaines dates'}
+                onChange={(e) => handleThemeChange('heroCtaText', e.target.value)}
+                disabled={saving}
+                placeholder="Ex: Nous rejoindre, Prochaines dates, Nous contacter..."
+                className="text-xs px-2.5 py-1.5 border border-stone-300 rounded bg-white font-bold"
+              />
+            </div>
+
+            {/* Icône / Émoji */}
+            <div className="flex flex-col gap-1">
+              <label className="text-[10px] font-bold uppercase text-stone-700">Icône / Émoji</label>
+              <input
+                type="text"
+                value={publicTheme.heroCtaIcon !== undefined ? publicTheme.heroCtaIcon : '📅'}
+                onChange={(e) => handleThemeChange('heroCtaIcon', e.target.value)}
+                disabled={saving}
+                placeholder="📅"
+                className="text-xs px-2.5 py-1.5 border border-stone-300 rounded bg-white text-center font-bold"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-center">
+            {/* Lien / Redirection */}
+            <div className="sm:col-span-2 flex flex-col gap-1">
+              <label className="text-[10px] font-bold uppercase text-stone-700 flex items-center justify-between">
+                <span>Lien / Redirection du bouton</span>
+                <span className="text-[9px] text-stone-500 font-normal">Ex: #agenda, mailto:contact@asso.com, /login</span>
+              </label>
+              <input
+                type="text"
+                value={publicTheme.heroCtaLink !== undefined ? publicTheme.heroCtaLink : '#agenda'}
+                onChange={(e) => handleThemeChange('heroCtaLink', e.target.value)}
+                disabled={saving}
+                placeholder="Ex: #agenda, #recrutement, mailto:contact@asso.com"
+                className="text-xs px-2.5 py-1.5 border border-stone-300 rounded bg-white font-mono"
+              />
+            </div>
+
+            {/* Toggle Afficher l'icône */}
+            <div className="flex items-center gap-2 pt-3 sm:pt-4">
+              <input
+                type="checkbox"
+                id="showHeroCtaIcon"
+                checked={publicTheme.showHeroCtaIcon !== false}
+                onChange={(e) => handleThemeChange('showHeroCtaIcon', e.target.checked)}
+                disabled={saving}
+                className="w-4 h-4 cursor-pointer accent-[var(--color-cordel-vert,#2d6a4f)]"
+              />
+              <label htmlFor="showHeroCtaIcon" className="text-xs font-bold text-stone-800 cursor-pointer select-none">
+                Afficher l'icône
+              </label>
+            </div>
+          </div>
+        </div>
+
         {/* Texte "Qui sommes-nous ?" */}
         <div className="flex flex-col gap-1.5">
           <label className="text-xs font-bold uppercase tracking-wider text-encre-noire/80">
@@ -272,24 +380,21 @@ export default function TabPublicContent({
           />
         </div>
       </CordelCard>
-
-      {/* Personnalisation dynamique des Titres & Accroches des Sections Vitrine */}
-      <TabPublicSectionTexts
-        formData={formData}
-        handleChange={handleChange}
-        saving={saving}
-      />
       </>
       )}
 
-      {/* Onglet 2: Espace Organisateur & Fiche Technique */}
+      {/* Onglet 3: Espace Organisateur & Fiche Technique */}
       {contentSubTab === 'organisateur' && (
         <>
         <CordelCard variant="default" className="p-5 flex flex-col gap-5 bg-white border-2 border-cordel-master-dark/30">
         <h4 className="text-xs font-black uppercase tracking-widest text-cordel-wood border-b border-dashed border-cordel-master-dark/20 pb-2 flex items-center justify-between">
           <span>🎪 Espace Organisateur & Fiche Technique</span>
-          <span className="text-[10px] font-mono bg-amber-100 text-amber-800 px-2 py-0.5 rounded border border-amber-300">
-            Dossier de Presse Web
+          <span className={`text-[10px] font-mono px-2 py-0.5 rounded border ${
+            publicTheme.enableOrganizerSection !== false 
+              ? 'bg-emerald-50 text-emerald-800 border-emerald-300 font-bold' 
+              : 'bg-stone-100 text-stone-600 border-stone-300'
+          }`}>
+            {publicTheme.enableOrganizerSection !== false ? '✓ Section Active' : '⚪ Section Masquée'}
           </span>
         </h4>
 
@@ -308,12 +413,66 @@ export default function TabPublicContent({
           </label>
         </div>
 
+        {/* Titres & Badge Espace Organisateur */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-bold uppercase tracking-wider text-encre-noire/80">
+              Titre de la section "Nous Programmer"
+            </label>
+            <input
+              type="text"
+              value={vitrineTexts.titreProgrammer || ''}
+              onChange={(e) => handleTextChange('titreProgrammer', e.target.value)}
+              disabled={saving}
+              placeholder="Nous Programmer / Fiche Technique"
+              className="text-xs font-bold px-3 py-2 border border-encre-noire/30 rounded bg-white"
+            />
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-bold uppercase tracking-wider text-encre-noire/80">
+              Badge / Sur-titre Organisateur
+            </label>
+            <input
+              type="text"
+              value={vitrineTexts.badgeProgrammer || ''}
+              onChange={(e) => handleTextChange('badgeProgrammer', e.target.value)}
+              disabled={saving}
+              placeholder="Espace Organisateur & Programmateurs"
+              className="text-xs font-bold px-3 py-2 border border-encre-noire/30 rounded bg-white"
+            />
+          </div>
+        </div>
+
+        {/* Accroche Organisateur */}
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs font-bold uppercase tracking-wider text-encre-noire/80">
+            Description / Accroche Organisateur
+          </label>
+          <textarea
+            rows={2}
+            value={vitrineTexts.accrocheProgrammer || ''}
+            onChange={(e) => handleTextChange('accrocheProgrammer', e.target.value)}
+            disabled={saving}
+            placeholder="Toutes les informations pratiques pour accueillir notre groupe lors de vos festivals, défilés ou événements."
+            className="text-xs font-medium px-3 py-2 border border-encre-noire/30 rounded bg-white resize-none"
+          />
+        </div>
+
         {/* Formats de Prestations */}
         <div className="flex flex-col gap-1.5">
           <label className="text-xs font-bold uppercase tracking-wider text-encre-noire/80 flex items-center justify-between">
             <span>🥁 Nos Formats de Prestations</span>
-            <span className="text-[10px] text-stone-500 font-normal">Personnalisable pour la 1ère carte</span>
+            <span className="text-[10px] text-stone-500 font-normal">Titre & Contenu</span>
           </label>
+          <input
+            type="text"
+            value={vitrineTexts.titreFormats || ''}
+            onChange={(e) => handleTextChange('titreFormats', e.target.value)}
+            disabled={saving}
+            placeholder="Nos Formats de Prestations"
+            className="text-xs font-bold px-3 py-2 border border-encre-noire/30 rounded bg-white mb-1"
+          />
           <RichTextEditor
             value={publicTheme.publicPerformanceFormats || ''}
             onChange={(val) => handleThemeChange('publicPerformanceFormats', val)}
@@ -464,6 +623,7 @@ export default function TabPublicContent({
         <TabPublicRecruitment
           formData={formData}
           handleChange={handleChange}
+          groupId={groupId}
           saving={saving}
         />
       )}
@@ -541,18 +701,86 @@ export default function TabPublicContent({
             </div>
           </CordelCard>
 
-          {/* Abonnés Newsletter & Export CSV */}
+          {/* Section Newsletter & Infolettre */}
           <CordelCard variant="default" className="p-5 flex flex-col gap-4 bg-white border-2 border-[var(--color-cordel-vert,#2d6a4f)]/30">
             <h4 className="text-xs font-black uppercase tracking-widest text-[var(--color-cordel-vert,#2d6a4f)] border-b border-dashed border-cordel-master-dark/20 pb-2 flex items-center justify-between">
-              <span>📬 Abonnés Newsletter & Export</span>
-              <span className="text-[10px] text-stone-600 font-bold font-mono bg-emerald-50 px-2 py-0.5 rounded border border-emerald-300">
-                {subscriberCount !== null ? `${subscriberCount} abonné(s)` : 'Chargement...'}
+              <span>📬 Section Newsletter & Infolettre</span>
+              <span className={`text-[10px] font-mono px-2 py-0.5 rounded border ${
+                publicTheme.afficherNewsletter !== false 
+                  ? 'bg-emerald-50 text-emerald-800 border-emerald-300 font-bold' 
+                  : 'bg-stone-100 text-stone-600 border-stone-300'
+              }`}>
+                {publicTheme.afficherNewsletter !== false ? '✓ Section Active' : '⚪ Section Masquée'}
               </span>
             </h4>
 
-            <p className="text-xs text-stone-600 leading-relaxed">
-              Les adresses e-mails saisies par vos fans et visiteurs sur la vitrine publique sont enregistrées ici. Vous pouvez exporter la liste complète au format CSV pour l'importer facilement dans votre outil de mailing (Brevo, Mailchimp, SendGrid...).
-            </p>
+            {/* Toggle Afficher / Masquer la Newsletter sur le site */}
+            <div className="flex items-center gap-3 p-3 bg-[#fdfaf2] border border-encre-noire/20 rounded-[4px_6px_3px_5px] select-none">
+              <input
+                type="checkbox"
+                id="afficherNewsletter"
+                checked={publicTheme.afficherNewsletter !== false}
+                onChange={(e) => handleThemeChange('afficherNewsletter', e.target.checked)}
+                disabled={saving}
+                className="w-4 h-4 cursor-pointer accent-[var(--color-cordel-vert,#2d6a4f)]"
+              />
+              <label htmlFor="afficherNewsletter" className="text-xs font-bold uppercase tracking-wider text-encre-noire cursor-pointer flex flex-wrap items-center gap-1.5">
+                <span>Afficher le formulaire d'inscription Newsletter sur la vitrine publique</span>
+              </label>
+            </div>
+
+            {/* Titres & Badge Newsletter */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-bold uppercase tracking-wider text-encre-noire/80">
+                  Titre principal Newsletter
+                </label>
+                <input
+                  type="text"
+                  value={vitrineTexts.titreNewsletter || ''}
+                  onChange={(e) => handleTextChange('titreNewsletter', e.target.value)}
+                  disabled={saving}
+                  placeholder="Restez Informé !"
+                  className="text-xs font-bold px-3 py-2 border border-encre-noire/30 rounded bg-white"
+                />
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-bold uppercase tracking-wider text-encre-noire/80">
+                  Sur-titre / Badge Newsletter
+                </label>
+                <input
+                  type="text"
+                  value={vitrineTexts.badgeNewsletter || ''}
+                  onChange={(e) => handleTextChange('badgeNewsletter', e.target.value)}
+                  disabled={saving}
+                  placeholder="Infolettre & Actus"
+                  className="text-xs font-bold px-3 py-2 border border-encre-noire/30 rounded bg-white"
+                />
+              </div>
+            </div>
+
+            {/* Accroche Newsletter */}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-bold uppercase tracking-wider text-encre-noire/80">
+                Phrase d'accroche / Description Newsletter
+              </label>
+              <textarea
+                rows={2}
+                value={vitrineTexts.accrocheNewsletter || ''}
+                onChange={(e) => handleTextChange('accrocheNewsletter', e.target.value)}
+                disabled={saving}
+                placeholder="Inscrivez-vous pour recevoir nos dates de concerts et actualités directement dans votre boîte e-mail !"
+                className="text-xs font-medium px-3 py-2 border border-encre-noire/30 rounded bg-white resize-none"
+              />
+            </div>
+
+            {/* Abonnés Newsletter & Export CSV */}
+            <div className="flex justify-between items-center pt-2 border-t border-dashed border-stone-200">
+              <span className="text-xs text-stone-600 leading-relaxed font-medium">
+                Abonnés enregistrés : <strong>{subscriberCount !== null ? `${subscriberCount} abonné(s)` : 'Chargement...'}</strong>
+              </span>
+            </div>
 
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pt-2">
               <button
