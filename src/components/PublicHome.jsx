@@ -179,7 +179,7 @@ export default function PublicHome({ groupId, associationName, branding, onNavig
           BLOC 1 - HERO SECTION (HAUT)
          ========================================== */}
       <section 
-        className="relative overflow-hidden py-16 sm:py-24 bg-cover bg-center border-b border-stone-200/60 transition-all duration-300"
+        className="relative overflow-hidden min-h-[60vh] sm:min-h-[72vh] py-24 sm:py-36 md:py-44 flex items-center justify-center bg-cover bg-center border-b border-stone-200/60 transition-all duration-300"
         style={{
           backgroundImage: heroImage ? `url(${heroImage})` : 'none'
         }}
@@ -192,9 +192,9 @@ export default function PublicHome({ groupId, associationName, branding, onNavig
           />
         )}
 
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 text-center flex flex-col items-center gap-6 relative z-10">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 text-center flex flex-col items-center gap-7 relative z-10 w-full">
           <h1 
-            className="text-4xl sm:text-6xl font-extrabold tracking-tight max-w-3xl leading-tight drop-shadow-lg"
+            className="text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-tight max-w-4xl leading-tight drop-shadow-xl"
             style={{ 
               fontFamily: 'var(--public-font-heading, sans-serif)',
               color: heroImage ? '#FFFFFF' : 'var(--public-primary, #D32F2F)',
