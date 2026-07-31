@@ -13,6 +13,7 @@ import {
   XiloConsole, 
   XiloSignOut,
   XiloEQ,
+  XiloGlobe,
   XiloScroll,
   XiloCar,
   XiloCalendar,
@@ -253,17 +254,27 @@ export default function LayoutShell({
                 )}
               </div>
             </div>
-            {sequenceurUrl && (
-              <a 
-                href={sequenceurUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="p-1 border border-dashed border-encre-noire/20 hover:border-[#d99f4d] text-[#d99f4d] hover:bg-[#d99f4d]/10 rounded flex items-center justify-center transition-all cursor-pointer"
-                title="O Girador Séquenceur"
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => window.open('/', '_blank')}
+                className="p-1 border border-dashed border-encre-noire/20 hover:border-emerald-600 text-emerald-700 hover:bg-emerald-50 rounded flex items-center justify-center transition-all cursor-pointer"
+                title="Voir le site public (Vitrine)"
               >
-                <XiloEQ size={14} />
-              </a>
-            )}
+                <XiloGlobe size={14} />
+              </button>
+              {sequenceurUrl && (
+                <a 
+                  href={sequenceurUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="p-1 border border-dashed border-encre-noire/20 hover:border-[#d99f4d] text-[#d99f4d] hover:bg-[#d99f4d]/10 rounded flex items-center justify-center transition-all cursor-pointer"
+                  title="O Girador Séquenceur"
+                >
+                  <XiloEQ size={14} />
+                </a>
+              )}
+            </div>
           </div>
 
           {associationName && (
@@ -324,6 +335,14 @@ export default function LayoutShell({
                 >
                   O Girador
                 </span>
+                <button
+                  type="button"
+                  onClick={() => window.open('/', '_blank')}
+                  className="p-1 border border-dashed border-encre-noire/20 hover:border-emerald-600 text-emerald-700 hover:bg-emerald-50 rounded flex items-center justify-center transition-all cursor-pointer"
+                  title="Voir le site public (Vitrine)"
+                >
+                  <XiloGlobe size={10} />
+                </button>
                 {sequenceurUrl && (
                   <a 
                     href={sequenceurUrl}

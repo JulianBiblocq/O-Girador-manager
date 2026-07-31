@@ -1,4 +1,25 @@
-import React from 'react';
+// 🌍 Globe / Planète Terre Cordel (Vitrine Publique)
+export const XiloGlobe = ({ size = 16, className = '', ...props }) => (
+  <svg 
+    width={size} 
+    height={size} 
+    viewBox="0 0 24 24" 
+    fill="none" 
+    stroke="currentColor" 
+    strokeWidth="2.2" 
+    strokeLinecap="round" 
+    strokeLinejoin="round" 
+    className={`xilo-icon ${className}`} 
+    {...props}
+  >
+    <circle cx="12" cy="12" r="9" />
+    <line x1="3" y1="12" x2="21" y2="12" />
+    <path d="M12,3 C16.5,6.5 16.5,17.5 12,21" />
+    <path d="M12,3 C7.5,6.5 7.5,17.5 12,21" />
+    <path d="M4.5,7.5 L19.5,7.5" />
+    <path d="M4.5,16.5 L19.5,16.5" />
+  </svg>
+);
 
 // 🎛️ Égaliseur (EQ)
 export const XiloEQ = ({ size = 16, className = '', ...props }) => (
