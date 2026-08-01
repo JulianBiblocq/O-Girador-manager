@@ -111,57 +111,57 @@ export default function GigsPipelineManager({ groupId, associationSettings: prop
 
   return (
     <div className="flex flex-col gap-6 text-left select-none max-w-5xl mx-auto w-full">
-      {/* En-tête du Pôle Diffusion */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pb-2 border-b-2 border-dashed border-cordel-master-dark/30">
-        <div className="flex items-center gap-3">
+      {/* En-tête unique du Pôle Diffusion avec Onglets Principaux Tout en Haut à Gauche */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pb-3 border-b-2 border-dashed border-cordel-master-dark/30 select-none">
+        <div className="flex flex-wrap items-center gap-2">
           {onBack && (
             <button 
               type="button" 
               onClick={onBack} 
-              className="text-[10px] font-black uppercase tracking-widest bg-cordel-bg border border-encre-noire px-3 py-1 rounded-[4px_6px_3px_5px] shadow-[2px_2px_0px_0px_#181716] hover:brightness-95 cursor-pointer"
+              className="text-[10px] font-black uppercase tracking-widest bg-cordel-bg border border-encre-noire px-3 py-1.5 rounded-[4px_6px_3px_5px] shadow-[2px_2px_0px_0px_#181716] hover:brightness-95 cursor-pointer mr-1"
             >
               ⬅️ Retour
             </button>
           )}
-          <h2 className="text-sm font-extrabold tracking-widest text-cordel-wood uppercase flex items-center gap-2">
-            <span>🎷 Pôle Diffusion — Suivi des Prestations (Pipeline CRM)</span>
+
+          <h2 className="text-xs font-black uppercase tracking-wider text-cordel-wood flex items-center gap-1.5 mr-1">
+            <span>🎷 Pôle Diffusion :</span>
           </h2>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('pipeline')}
+            className={`px-3.5 py-1.5 text-xs font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer ${
+              activeTab === 'pipeline'
+                ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
+                : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
+            }`}
+          >
+            🚀 Suivi des prestations
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('contacts')}
+            className={`px-3.5 py-1.5 text-xs font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer ${
+              activeTab === 'contacts'
+                ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
+                : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
+            }`}
+          >
+            📇 Carnet de contacts CRM
+          </button>
         </div>
 
-        <button
-          type="button"
-          onClick={handleOpenCreate}
-          className="text-xs font-black uppercase bg-cordel-vert text-white border border-encre-noire px-3.5 py-1.5 rounded shadow-[1.5px_1.5px_0px_0px_#181716] hover:brightness-105 cursor-pointer flex items-center gap-1.5 shrink-0"
-        >
-          <span>➕ Nouveau dossier</span>
-        </button>
-      </div>
-
-      {/* Menu Horizontal Pôle Diffusion (Menu à étage unique aligné à gauche) */}
-      <div className="flex flex-wrap items-center justify-start gap-2 border-b border-dashed border-cordel-master-dark/20 pb-3 mb-1 select-none">
-        <button
-          type="button"
-          onClick={() => setActiveTab('pipeline')}
-          className={`px-3.5 py-1.5 text-xs font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer ${
-            activeTab === 'pipeline'
-              ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
-              : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
-          }`}
-        >
-          🚀 Suivi des prestations
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setActiveTab('contacts')}
-          className={`px-3.5 py-1.5 text-xs font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer ${
-            activeTab === 'contacts'
-              ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
-              : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
-          }`}
-        >
-          📇 Carnet de contacts CRM
-        </button>
+        {activeTab === 'pipeline' && (
+          <button
+            type="button"
+            onClick={handleOpenCreate}
+            className="text-xs font-black uppercase bg-cordel-vert text-white border border-encre-noire px-3.5 py-1.5 rounded shadow-[1.5px_1.5px_0px_0px_#181716] hover:brightness-105 cursor-pointer flex items-center gap-1.5 shrink-0"
+          >
+            <span>➕ Nouveau dossier</span>
+          </button>
+        )}
       </div>
 
       {activeTab === 'contacts' ? (
