@@ -7,6 +7,7 @@ import { GIG_STATUSES } from './GigFormModal';
 import { downloadContractPDF } from '../../utils/contractPdfGenerator';
 import GigSendContractModal from './GigSendContractModal';
 import GigInvoiceGeneratorModal from './GigInvoiceGeneratorModal';
+import GigRelanceEmailModal from './GigRelanceEmailModal';
 
 export default function GigDetailsModal({
   isOpen,
@@ -21,6 +22,7 @@ export default function GigDetailsModal({
 }) {
   const [isSendContractModalOpen, setIsSendContractModalOpen] = useState(false);
   const [isInvoiceGeneratorOpen, setIsInvoiceGeneratorOpen] = useState(false);
+  const [isRelanceModalOpen, setIsRelanceModalOpen] = useState(false);
   const [markingPaid, setMarkingPaid] = useState(false);
   const [toastMessage, setToastMessage] = useState(null);
 
@@ -249,10 +251,47 @@ export default function GigDetailsModal({
             </div>
           )}
 
+          {/* Bloc Suivi & Historique des Échanges */}
+          <div className="flex flex-col gap-2 p-3.5 bg-stone-50 border border-stone-200 rounded-lg">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-extrabold uppercase tracking-wider text-cordel-wood flex items-center gap-1.5">
+                <span>📜</span>
+                <span>Suivi & Historique des Échanges</span>
+              </span>
+
+              <button
+                type="button"
+                onClick={() => setIsRelanceModalOpen(true)}
+                className="px-2.5 py-1 text-[10px] font-extrabold uppercase rounded bg-amber-500 hover:bg-amber-600 text-white shadow-xs flex items-center gap-1 cursor-pointer transition-all active:scale-95"
+                title="Relancer l'organisateur par e-mail direct via Brevo"
+              >
+                <span>🔔</span>
+                <span>Envoyer une relance</span>
+              </button>
+            </div>
+
+            {gig.exchangeHistory && gig.exchangeHistory.length > 0 ? (
+              <div className="flex flex-col gap-1.5 max-h-36 overflow-y-auto pr-1">
+                {gig.exchangeHistory.map((item, idx) => (
+                  <div key={idx} className="p-2 bg-white rounded border border-stone-200 text-xs flex justify-between items-center gap-2">
+                    <span className="font-semibold text-stone-800">{item.description}</span>
+                    <span className="text-[9px] font-mono text-stone-400 shrink-0">
+                      {item.date ? new Date(item.date).toLocaleDateString('fr-FR') : ''}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs text-stone-600 italic">
+                Aucun échange formel (relance/devis/contrat/facture) enregistré pour l'instant.
+              </p>
+            )}
+          </div>
+
           <div className="flex flex-col gap-1 p-3 bg-stone-50 border border-stone-200 rounded">
-            <span className="text-[10px] font-bold uppercase text-stone-500">Historique & Notes du dossier :</span>
+            <span className="text-[10px] font-bold uppercase text-stone-500">Historique & Notes libres du dossier :</span>
             <p className="text-xs text-stone-800 whitespace-pre-wrap leading-relaxed">
-              {gig.notes || 'Aucune note ou historique consigné pour ce dossier.'}
+              {gig.notes || 'Aucune note consignée pour ce dossier.'}
             </p>
           </div>
         </div>
@@ -427,6 +466,17 @@ export default function GigDetailsModal({
         onSuccess={(invoiceNum) => {
           triggerWorkflowToast(`✓ Facture ${invoiceNum} émise et transmise !`);
           if (onStatusChange) onStatusChange(gig.id, '5_facture_emise');
+        }}
+      />
+
+      {/* Modale d'envoi de Relance rapide Brevo */}
+      <GigRelanceEmailModal
+        isOpen={isRelanceModalOpen}
+        onClose={() => setIsRelanceModalOpen(false)}
+        gig={gig}
+        associationSettings={associationSettings}
+        onSuccess={() => {
+          triggerWorkflowToast('✓ Relance expédiée et date de contact mise à jour !');
         }}
       />
     </div>

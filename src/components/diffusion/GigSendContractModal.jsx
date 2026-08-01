@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 import { generateContractPDF, downloadContractPDF } from '../../utils/contractPdfGenerator';
+import { updateContactLastDate } from '../../utils/updateContactLastDate';
 
 /**
  * Modale d'envoi du Contrat de Prestation PDF par E-mail via l'API Brevo v3 (et Firebase Cloud Functions).
@@ -133,6 +134,11 @@ export default function GigSendContractModal({
 
       // Validation stricte du succès HTTP (201 ou 200 avec messageId)
       if ((res.status === 201 || res.status === 200 || res.ok) && resData.messageId) {
+        // Mise à jour automatique de la date de dernier contact CRM
+        if (gig) {
+          updateContactLastDate(gig.groupId || associationSettings.groupId, gig.contactId || recipientEmail);
+        }
+
         setStatusMessage({
           type: 'success',
           title: '✓ Contrat envoyé avec succès !',

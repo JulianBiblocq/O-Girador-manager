@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
+import { updateContactLastDate } from '../../utils/updateContactLastDate';
 import { downloadInvoicePDF } from '../../utils/invoicePdfGenerator';
 
 /**
@@ -131,10 +132,15 @@ export default function GigSendEmailModal({
 
       // Condition stricte : Succès uniquement si HTTP 201 (ou 200) et présence d'un messageId
       if ((res.status === 201 || res.status === 200 || res.ok) && resData.messageId) {
+        // Mise à jour automatique de la date du dernier contact dans le CRM
+        if (gig) {
+          updateContactLastDate(gig.groupId || associationSettings.groupId, gig.contactId || recipientEmail);
+        }
+
         setStatusMessage({
           type: 'success',
           title: '✓ E-mail envoyé avec succès !',
-          text: `Le devis a été transmis à ${recipientEmail}. (Identifiant Brevo: ${resData.messageId})`
+          text: `Le document a été transmis à ${recipientEmail}. (Identifiant Brevo: ${resData.messageId})`
         });
         setTimeout(() => {
           if (onSendSuccess) onSendSuccess();

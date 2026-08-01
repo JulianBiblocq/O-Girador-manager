@@ -8,8 +8,10 @@ import GigFormModal, { GIG_STATUSES } from './GigFormModal';
 import GigDetailsModal from './GigDetailsModal';
 import GigEventCreateModal from './GigEventCreateModal';
 import GigQuoteGeneratorModal from './GigQuoteGeneratorModal';
+import DiffusionContactsManager from './DiffusionContactsManager';
 
 export default function GigsPipelineManager({ groupId, associationSettings: propAssocSettings = {}, onBack }) {
+  const [activeTab, setActiveTab] = useState('pipeline'); // 'pipeline' | 'contacts'
   const {
     gigs,
     loading,
@@ -135,10 +137,41 @@ export default function GigsPipelineManager({ groupId, associationSettings: prop
         </button>
       </div>
 
-      {/* Introduction explicative */}
-      <div className="text-xs text-encre-noire dark:text-cordel-bg-light opacity-85 border border-dashed border-cordel-master-dark/30 p-3.5 rounded-[6px_4px_8px_5px] bg-[#fdfaf2] dark:bg-[#201d1a] leading-relaxed">
-        🤝 <strong>Pôle Diffusion (Produção) :</strong> Centralisez et suivez en équipe les opportunités de concerts et prestations. Visualisez l'avancement de chaque dossier dans l'entonnoir (demande, option, devis, contrat, facturation).
+      {/* Onglets horizontaux du Pôle Diffusion */}
+      <div className="flex items-center gap-2 border-b border-stone-300 pb-1">
+        <button
+          type="button"
+          onClick={() => setActiveTab('pipeline')}
+          className={`px-4 py-2 text-xs font-black uppercase tracking-wider rounded-t border-t border-x cursor-pointer transition-all ${
+            activeTab === 'pipeline'
+              ? 'bg-white border-stone-300 text-cordel-wood shadow-xs border-b-2 border-b-cordel-wood -mb-px'
+              : 'bg-stone-100 border-transparent text-stone-600 hover:bg-stone-200'
+          }`}
+        >
+          📊 Vue Pipeline & Événements
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('contacts')}
+          className={`px-4 py-2 text-xs font-black uppercase tracking-wider rounded-t border-t border-x cursor-pointer transition-all ${
+            activeTab === 'contacts'
+              ? 'bg-white border-stone-300 text-cordel-wood shadow-xs border-b-2 border-b-cordel-wood -mb-px'
+              : 'bg-stone-100 border-transparent text-stone-600 hover:bg-stone-200'
+          }`}
+        >
+          📇 Carnet de Contacts (CRM Global)
+        </button>
       </div>
+
+      {activeTab === 'contacts' ? (
+        <DiffusionContactsManager groupId={groupId} associationSettings={associationSettings} />
+      ) : (
+        <>
+          {/* Introduction explicative */}
+          <div className="text-xs text-encre-noire dark:text-cordel-bg-light opacity-85 border border-dashed border-cordel-master-dark/30 p-3.5 rounded-[6px_4px_8px_5px] bg-[#fdfaf2] dark:bg-[#201d1a] leading-relaxed">
+            🤝 <strong>Pôle Diffusion (Produção) :</strong> Centralisez et suivez en équipe les opportunités de concerts et prestations. Visualisez l'avancement de chaque dossier dans l'entonnoir (demande, option, devis, contrat, facturation).
+          </div>
 
       {/* Synthèse des chiffres clés */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -355,6 +388,8 @@ export default function GigsPipelineManager({ groupId, associationSettings: prop
             </div>
           </div>
         </CordelCard>
+      )}
+      </>
       )}
 
       {/* Modale de Création / Modification */}
