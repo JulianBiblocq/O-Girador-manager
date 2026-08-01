@@ -15,6 +15,7 @@ import PublicThemeProvider from './components/PublicThemeProvider';
 import { lazyWithRetry } from './utils/pwaUtils';
 import { resolveEffectiveUserTags } from './utils/tagUtils';
 import { getMigratedRoleAndTags } from './utils/roleMigration';
+import { canEditVitrine } from './utils/permissionUtils';
 
 const Onboarding = lazyWithRetry(() => import('./components/Onboarding'));
 const Trombinoscope = lazyWithRetry(() => import('./components/Trombinoscope'));
