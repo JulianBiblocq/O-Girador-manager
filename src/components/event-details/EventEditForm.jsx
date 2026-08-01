@@ -246,22 +246,16 @@ export default function EventEditForm({
                           }
                         }
                       }}
+                      onOpenMapModal={() => setIsMapModalOpen(true)}
                       placeholder={translate('widgetAgenda.locationPlaceholder', "Ex : Local de l'asso, Place de la Mairie...")}
                       className="theme-input w-full disabled:opacity-50"
                     />
                   </React.Suspense>
 
-                  <div className="flex flex-col items-start gap-1 mt-1 select-none">
-                    <button
-                      type="button"
-                      onClick={() => setIsMapModalOpen(true)}
-                      className="text-[10px] font-extrabold uppercase tracking-wider text-cordel-wood hover:underline flex items-center gap-1 cursor-pointer"
-                    >
-                      📌 Placer sur la carte manuellement
-                    </button>
-                    {editForm.latitude && editForm.longitude && (
+                  {editForm.latitude && editForm.longitude && (
+                    <div className="flex flex-col items-start gap-1 mt-1 select-none">
                       <div className="flex items-center gap-2 text-[9px] font-bold bg-amber-50 dark:bg-amber-950/20 text-amber-800 dark:text-amber-300 px-2 py-1 rounded border border-amber-300/60">
-                        <span>📌 Coordonnées manuelles actives : {Number(editForm.latitude).toFixed(5)}, {Number(editForm.longitude).toFixed(5)}</span>
+                        <span>📍 Coordonnées manuelles actives : {Number(editForm.latitude).toFixed(5)}, {Number(editForm.longitude).toFixed(5)}</span>
                         <button
                           type="button"
                           onClick={() => setEditForm(prev => ({ ...prev, latitude: null, longitude: null }))}
@@ -271,8 +265,8 @@ export default function EventEditForm({
                           ✕
                         </button>
                       </div>
-                    )}
-                  </div>
+                    </div>
+                  )}
 
                   <ManualMapMarkerModal
                     isOpen={isMapModalOpen}

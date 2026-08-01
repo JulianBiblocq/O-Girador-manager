@@ -12,6 +12,7 @@ export default function LocationSelector({
   onChange,
   lieuxImportants = [],
   onPlaceSelected,
+  onOpenMapModal,
   placeholder = "Rechercher ou saisir l'adresse...",
   className = "theme-input text-xs w-full bg-white py-1.5"
 }) {
@@ -110,14 +111,20 @@ export default function LocationSelector({
         className={className}
       />
 
-      {/* Bouton pour ajuster manuellement le repère sur la carte */}
+      {/* Bouton unique pour ajuster le repère sur la carte */}
       <div className="flex justify-start select-none">
         <button
           type="button"
-          onClick={() => setIsMapModalOpen(true)}
+          onClick={() => {
+            if (onOpenMapModal) {
+              onOpenMapModal();
+            } else {
+              setIsMapModalOpen(true);
+            }
+          }}
           className="text-[10px] font-extrabold uppercase tracking-wider text-cordel-wood hover:underline flex items-center gap-1 cursor-pointer"
         >
-          📌 Ajuster le repère sur la carte
+          📍 Ajuster le repère sur la carte
         </button>
       </div>
 
