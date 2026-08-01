@@ -20,7 +20,6 @@ export default function PublicBookingModal({
   const [date, setDate] = useState('');
   const [location, setLocation] = useState('');
   const [eventType, setEventType] = useState('Festival');
-  const [budget, setBudget] = useState('');
   const [message, setMessage] = useState('');
 
   const [submitting, setSubmitting] = useState(false);
@@ -49,7 +48,7 @@ export default function PublicBookingModal({
         date: date,
         location: location.trim(),
         eventType: eventType,
-        amount: parseFloat(budget) || 0,
+        amount: 0,
         notes: message.trim(),
         status: '1_demande_recue',
         source: 'vitrine_publique',
@@ -82,7 +81,6 @@ export default function PublicBookingModal({
     setDate('');
     setLocation('');
     setEventType('Festival');
-    setBudget('');
     setMessage('');
     onClose();
   };
@@ -236,38 +234,23 @@ export default function PublicBookingModal({
                 </div>
               </div>
 
-              {/* Type d'événement + Budget */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="flex flex-col gap-1">
-                  <label className="text-[10px] font-extrabold uppercase text-stone-800">
-                    Type de Prestation
-                  </label>
-                  <select
-                    value={eventType}
-                    onChange={(e) => setEventType(e.target.value)}
-                    className="text-xs font-bold px-3 py-2 border border-stone-300 rounded bg-white"
-                  >
-                    <option value="Festival">Festival / Scène</option>
-                    <option value="Carnaval">Carnaval / Parade de rue</option>
-                    <option value="Concert">Concert / Événement culturel</option>
-                    <option value="Prive">Événement privé / Mariage / Entreprise</option>
-                    <option value="Atelier">Atelier / Workshop percussion</option>
-                    <option value="Autre">Autre format</option>
-                  </select>
-                </div>
-
-                <div className="flex flex-col gap-1">
-                  <label className="text-[10px] font-extrabold uppercase text-stone-800">
-                    Budget estimé (€) (Optionnel)
-                  </label>
-                  <input
-                    type="number"
-                    value={budget}
-                    onChange={(e) => setBudget(e.target.value)}
-                    placeholder="ex: 1500"
-                    className="text-xs font-bold px-3 py-2 border border-stone-300 rounded bg-white font-mono"
-                  />
-                </div>
+              {/* Type d'événement */}
+              <div className="flex flex-col gap-1">
+                <label className="text-[10px] font-extrabold uppercase text-stone-800">
+                  Type de Prestation
+                </label>
+                <select
+                  value={eventType}
+                  onChange={(e) => setEventType(e.target.value)}
+                  className="text-xs font-bold px-3 py-2 border border-stone-300 rounded bg-white w-full"
+                >
+                  <option value="Festival">Festival / Scène</option>
+                  <option value="Carnaval">Carnaval / Parade de rue</option>
+                  <option value="Concert">Concert / Événement culturel</option>
+                  <option value="Prive">Événement privé / Mariage / Entreprise</option>
+                  <option value="Atelier">Atelier / Workshop percussion</option>
+                  <option value="Autre">Autre format</option>
+                </select>
               </div>
 
               {/* Message libre */}
