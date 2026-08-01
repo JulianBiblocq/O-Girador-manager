@@ -172,19 +172,19 @@ export default function EventCreateForm({
                 </select>
               </div>
 
-              {/* Description Publique */}
+              {/* Description de l'événement (Consolidée) */}
               <div className="flex flex-col gap-1">
                 <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark flex items-center justify-between">
-                  <span>🌐 Description publique</span>
-                  <span className="text-[8px] font-normal text-stone-500">(Visible sur le site web public & réseaux sociaux)</span>
+                  <span>📝 Description de l'événement</span>
+                  <span className="text-[8px] font-normal text-stone-500">(Visible sur la fiche événement des membres & sur le site public si l'événement est public)</span>
                 </label>
                 <textarea
                   name="description"
                   value={formData.description}
                   onChange={handleChange}
                   disabled={saving}
-                  placeholder="Décrivez l'événement pour les visiteurs du site public (programme, ambiance, infos pratiques...)"
-                  className="theme-input w-full min-h-[80px] disabled:opacity-50 font-medium py-1.5"
+                  placeholder="Décrivez l'événement (programme, ambiance, infos pratiques, consignes générales...)"
+                  className="theme-input w-full min-h-[90px] disabled:opacity-50 font-medium py-1.5"
                 />
               </div>
 
