@@ -3,12 +3,12 @@ import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 
 export const GIG_STATUSES = [
-  { id: '1_demande', label: '🟢 Demande reçue', color: 'bg-emerald-100 text-emerald-900 border-emerald-300' },
-  { id: '2_option', label: '🟡 Option posée', color: 'bg-amber-100 text-amber-900 border-amber-300' },
-  { id: '3_devis', label: '📙 Devis transmis', color: 'bg-orange-100 text-orange-900 border-orange-300' },
-  { id: '4_contrat', label: '📘 Contrat en cours', color: 'bg-blue-100 text-blue-900 border-blue-300' },
-  { id: '5_facture', label: '💜 Facturé', color: 'bg-purple-100 text-purple-900 border-purple-300' },
-  { id: '6_valide', label: '✅ Confirmé & Payé', color: 'bg-green-100 text-green-900 border-green-400' },
+  { id: '1_demande', label: '🟢 1. Demande reçue', color: 'bg-emerald-100 text-emerald-900 border-emerald-300' },
+  { id: '3_devis', label: '📙 2. Devis transmis', color: 'bg-orange-100 text-orange-900 border-orange-300' },
+  { id: '2_option', label: '🟡 3. Option posée', color: 'bg-amber-100 text-amber-900 border-amber-300' },
+  { id: '4_contrat', label: '📧 4. Contrat envoyé', color: 'bg-purple-100 text-purple-900 border-purple-300' },
+  { id: '5_facture', label: '🧾 5. Facture émise', color: 'bg-blue-100 text-blue-900 border-blue-300' },
+  { id: '6_paye', label: '✅ 6. Confirmé & Payé', color: 'bg-green-600 text-white border-green-700' },
   { id: '7_annule', label: '❌ Annulé / Refusé', color: 'bg-stone-200 text-stone-700 border-stone-300' }
 ];
 

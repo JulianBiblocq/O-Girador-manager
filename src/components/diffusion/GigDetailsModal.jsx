@@ -257,69 +257,117 @@ export default function GigDetailsModal({
           </div>
         </div>
 
-        {/* Boutons d'Actions du Workflow Entonnoir */}
+        {/* Stepper / Barre de Progression à 5 Étapes Strictes */}
+        <div className="w-full bg-stone-50 p-3 rounded-lg border border-stone-200 flex flex-col gap-2">
+          <span className="text-[9px] font-extrabold uppercase tracking-widest text-cordel-wood">
+            Avancement du Workflow de Diffusion (5 Étapes) :
+          </span>
+          <div className="grid grid-cols-5 gap-1 text-center">
+            {/* Étape 1 : Générer devis */}
+            <div className={`flex flex-col items-center gap-0.5 p-1.5 rounded border text-[9px] font-extrabold ${
+              ['3_devis', '2_option', '4_contrat', '5_facture', '6_paye', '6_valide'].includes(gig.status) || gig.status === '3_devis_envoye'
+                ? 'bg-orange-100 border-orange-400 text-orange-950'
+                : 'bg-white border-stone-300 text-stone-400'
+            }`}>
+              <span>📜 1. Devis</span>
+            </div>
+
+            {/* Étape 2 : Poser option agenda */}
+            <div className={`flex flex-col items-center gap-0.5 p-1.5 rounded border text-[9px] font-extrabold ${
+              ['2_option', '4_contrat', '5_facture', '6_paye', '6_valide'].includes(gig.status) || gig.status === '2_option_posee'
+                ? 'bg-amber-100 border-amber-400 text-amber-950'
+                : 'bg-white border-stone-300 text-stone-400'
+            }`}>
+              <span>📅 2. Option</span>
+            </div>
+
+            {/* Étape 3 : Envoyer contrat */}
+            <div className={`flex flex-col items-center gap-0.5 p-1.5 rounded border text-[9px] font-extrabold ${
+              ['4_contrat', '5_facture', '6_paye', '6_valide'].includes(gig.status) || gig.status === '4_contrat_envoye'
+                ? 'bg-purple-100 border-purple-400 text-purple-950'
+                : 'bg-white border-stone-300 text-stone-400'
+            }`}>
+              <span>📧 3. Contrat</span>
+            </div>
+
+            {/* Étape 4 : Générer facture */}
+            <div className={`flex flex-col items-center gap-0.5 p-1.5 rounded border text-[9px] font-extrabold ${
+              ['5_facture', '6_paye', '6_valide'].includes(gig.status) || gig.status === '5_facture_emise'
+                ? 'bg-blue-100 border-blue-400 text-blue-950'
+                : 'bg-white border-stone-300 text-stone-400'
+            }`}>
+              <span>🧾 4. Facture</span>
+            </div>
+
+            {/* Étape 5 : Marquer payé */}
+            <div className={`flex flex-col items-center gap-0.5 p-1.5 rounded border text-[9px] font-extrabold ${
+              gig.status === '6_valide' || gig.status === '6_paye'
+                ? 'bg-green-600 border-green-700 text-white'
+                : 'bg-white border-stone-300 text-stone-400'
+            }`}>
+              <span>✅ 5. Payé</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Boutons d'Actions du Workflow Entonnoir (5 Étapes Strictes) */}
         <div className="flex flex-col gap-2 pt-2 border-t border-dashed">
           <span className="text-[10px] font-extrabold uppercase text-cordel-wood tracking-wider">
-            ⚡ Workflow de l'entonnoir Diffusion :
+            ⚡ Actions du Workflow :
           </span>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+            {/* Étape 1 : Générer devis */}
             <button
               type="button"
               onClick={handleOpenQuote}
-              className="px-2.5 py-2 text-[10px] font-extrabold uppercase rounded bg-blue-100 hover:bg-blue-200 text-blue-900 border border-blue-300 shadow-xs flex flex-col items-center gap-1 cursor-pointer transition-all active:scale-95"
-              title="Préparer et émettre un devis PDF croisant les données du dossier et de l'événement"
+              className="px-2 py-2.5 text-[10px] font-extrabold uppercase rounded bg-orange-100 hover:bg-orange-200 text-orange-900 border border-orange-300 shadow-xs flex flex-col items-center justify-center gap-1 cursor-pointer transition-all active:scale-95"
+              title="Étape 1 : Préparer et émettre un devis commercial"
             >
               <span className="text-base">📜</span>
-              <span>Générer Devis</span>
+              <span>1. Générer devis</span>
             </button>
 
+            {/* Étape 2 : Poser option agenda */}
             <button
               type="button"
               onClick={handleCreateOption}
               disabled={saving}
-              className="px-2.5 py-2 text-[10px] font-extrabold uppercase rounded bg-amber-100 hover:bg-amber-200 text-amber-900 border border-amber-300 shadow-xs flex flex-col items-center gap-1 cursor-pointer transition-all active:scale-95 disabled:opacity-50"
-              title="Créer automatiquement l'événement [OPTION] dans l'Agenda principal"
+              className="px-2 py-2.5 text-[10px] font-extrabold uppercase rounded bg-amber-100 hover:bg-amber-200 text-amber-900 border border-amber-300 shadow-xs flex flex-col items-center justify-center gap-1 cursor-pointer transition-all active:scale-95 disabled:opacity-50"
+              title="Étape 2 : Créer automatiquement l'événement [OPTION] dans l'Agenda principal"
             >
               <span className="text-base">📅</span>
-              <span>Poser Option Agenda</span>
+              <span>2. Poser option</span>
             </button>
 
+            {/* Étape 3 : Envoyer contrat (Envoi e-mail Brevo & Téléchargement PDF) */}
             <button
               type="button"
               onClick={() => setIsSendContractModalOpen(true)}
-              className="px-2.5 py-2 text-[10px] font-extrabold uppercase rounded bg-purple-600 hover:bg-purple-700 text-white border border-purple-800 shadow-xs flex flex-col items-center gap-1 cursor-pointer transition-all active:scale-95"
-              title="Préparer et transmettre le contrat de prestation signé par e-mail au client via l'API Brevo"
+              className="px-2 py-2.5 text-[10px] font-extrabold uppercase rounded bg-purple-600 hover:bg-purple-700 text-white border border-purple-800 shadow-xs flex flex-col items-center justify-center gap-1 cursor-pointer transition-all active:scale-95"
+              title="Étape 3 : Envoyer contrat par e-mail via Brevo (avec accès au téléchargement PDF)"
             >
               <span className="text-base">📧</span>
-              <span>Envoyer Contrat</span>
+              <span>3. Envoyer contrat</span>
             </button>
 
-            <button
-              type="button"
-              onClick={() => downloadContractPDF(gig, associationSettings)}
-              className="px-2.5 py-2 text-[10px] font-extrabold uppercase rounded bg-purple-100 hover:bg-purple-200 text-purple-900 border border-purple-300 shadow-xs flex flex-col items-center gap-1 cursor-pointer transition-all active:scale-95"
-              title="Générer et télécharger le contrat de prestation 100% dynamique aux couleurs et infos de l'association"
-            >
-              <span className="text-base">📥</span>
-              <span>Contrat PDF</span>
-            </button>
-
+            {/* Étape 4 : Générer facture */}
             <button
               type="button"
               onClick={() => setIsInvoiceGeneratorOpen(true)}
-              className="px-2.5 py-2 text-[10px] font-extrabold uppercase rounded bg-emerald-700 hover:bg-emerald-800 text-white border border-emerald-900 shadow-xs flex flex-col items-center gap-1 cursor-pointer transition-all active:scale-95"
-              title="Émettre la facture officielle FAC-YYYYMM-XXX et la transmettre au client"
+              className="px-2 py-2.5 text-[10px] font-extrabold uppercase rounded bg-emerald-700 hover:bg-emerald-800 text-white border border-emerald-900 shadow-xs flex flex-col items-center justify-center gap-1 cursor-pointer transition-all active:scale-95"
+              title="Étape 4 : Émettre la facture officielle et la transmettre au client"
             >
               <span className="text-base">🧾</span>
-              <span>Générer Facture</span>
+              <span>4. Générer facture</span>
             </button>
 
+            {/* Étape 5 : Marquer payé */}
             <button
               type="button"
               onClick={handleMarkAsPaid}
               disabled={markingPaid || gig.status === '6_paye' || (!gig.invoiceId && !gig.invoiceNumber && gig.status !== '5_facture_emise')}
-              className={`px-2.5 py-2 text-[10px] font-extrabold uppercase rounded border shadow-xs flex flex-col items-center gap-1 transition-all active:scale-95 ${
+              className={`px-2 py-2.5 text-[10px] font-extrabold uppercase rounded border shadow-xs flex flex-col items-center justify-center gap-1 transition-all active:scale-95 ${
                 gig.status === '6_paye'
                   ? 'bg-emerald-100 text-emerald-950 border-emerald-400 opacity-90 cursor-default'
                   : (!gig.invoiceId && !gig.invoiceNumber && gig.status !== '5_facture_emise')
@@ -331,11 +379,11 @@ export default function GigDetailsModal({
                   ? 'Dossier déjà réglé et comptabilisé en Trésorerie'
                   : (!gig.invoiceId && !gig.invoiceNumber && gig.status !== '5_facture_emise')
                   ? 'Veuillez d\'abord générer la facture de l\'événement'
-                  : 'Valider le paiement et inscrire automatiquement la recette en Trésorerie'
+                  : 'Étape 5 : Valider le paiement et inscrire automatiquement la recette en Trésorerie'
               }
             >
               <span className="text-base">{gig.status === '6_paye' ? '🔒' : '✅'}</span>
-              <span>{gig.status === '6_paye' ? 'Payé (Verrouillé)' : 'Marquer Payé'}</span>
+              <span>{gig.status === '6_paye' ? '5. Payé' : '5. Marquer payé'}</span>
             </button>
           </div>
         </div>
