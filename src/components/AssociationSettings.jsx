@@ -63,6 +63,10 @@ export default function AssociationSettings({
     setDroitImageFile,
     aptitudeMedicaleFile,
     setAptitudeMedicaleFile,
+    signaturePresidentFile,
+    setSignaturePresidentFile,
+    signatureTresorierFile,
+    setSignatureTresorierFile,
     uploadingLogo,
     saving,
     loading,
@@ -107,6 +111,10 @@ export default function AssociationSettings({
             handleChange={handleChange}
             logoFile={logoFile}
             setLogoFile={setLogoFile}
+            signaturePresidentFile={signaturePresidentFile}
+            setSignaturePresidentFile={setSignaturePresidentFile}
+            signatureTresorierFile={signatureTresorierFile}
+            setSignatureTresorierFile={setSignatureTresorierFile}
             uploadingLogo={uploadingLogo}
             groupId={groupId}
             saving={saving}

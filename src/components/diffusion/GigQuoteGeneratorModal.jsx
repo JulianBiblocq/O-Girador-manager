@@ -157,9 +157,9 @@ export default function GigQuoteGeneratorModal({
   };
 
   // Téléchargement direct du Devis PDF
-  const handleDownloadPDF = () => {
+  const handleDownloadPDF = async () => {
     const invoicePayload = buildInvoicePayload();
-    downloadInvoicePDF(invoicePayload, associationSettings);
+    await downloadInvoicePDF(invoicePayload, associationSettings);
   };
 
   // Enregistrement dans Firestore (collection `invoices`) et mise à jour du gig vers 3_devis_envoye
@@ -197,7 +197,7 @@ export default function GigQuoteGeneratorModal({
       });
 
       // 3. Génération du PDF en mémoire en Base64 pure pour l'attachement Brevo
-      const pdfDoc = generateInvoicePDF(invoicePayload, associationSettings);
+      const pdfDoc = await generateInvoicePDF(invoicePayload, associationSettings);
       const base64Data = pdfDoc.output('base64');
       const filename = `Devis_${devisMeta.numero}_${(clientForm.nom || 'Client').replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
 

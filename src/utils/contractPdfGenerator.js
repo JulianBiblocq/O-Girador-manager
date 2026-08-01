@@ -26,14 +26,39 @@ const formatDate = (dateStr) => {
 };
 
 /**
- * Génère un Contrat de Prestation Scénique & Artistique 100% Dynamique (SaaS / Marque Blanche).
- * N'utilise aucun texte d'identité en dur et gère les lignes génériques de secours si un champ est vide.
+ * Charge une URL d'image (ex: Firebase Storage) et la convertit en chaîne DataURI Base64 pour jsPDF.
+ *
+ * @param {string} url URL publique de l'image
+ * @returns {Promise<string|null>} Data URI base64 ou null en cas d'erreur
+ */
+export async function loadImageAsBase64(url) {
+  if (!url || typeof url !== 'string') return null;
+  if (url.startsWith('data:image/')) return url;
+
+  try {
+    const res = await fetch(url);
+    const blob = await res.blob();
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result);
+      reader.onerror = () => resolve(null);
+      reader.readAsDataURL(blob);
+    });
+  } catch (err) {
+    console.warn("loadImageAsBase64 - Erreur de chargement d'image :", err);
+    return null;
+  }
+}
+
+/**
+ * Génère un Contrat de Prestation Scénique & Artistique 100% Dynamique (SaaS / Marque Blanche)
+ * avec incrustation automatique de la signature numérisée du représentant légal.
  *
  * @param {Object} gigData Données du dossier de prestation / événement
  * @param {Object} associationSettings Paramètres globaux de l'association
- * @returns {jsPDF} Le document jsPDF généré
+ * @returns {Promise<jsPDF>} Le document jsPDF généré
  */
-export function generateContractPDF(gigData = {}, associationSettings = {}) {
+export async function generateContractPDF(gigData = {}, associationSettings = {}) {
   const doc = new jsPDF();
 
   // Extraction dynamique des données de l'association (avec tirets de secours si vide)
@@ -44,6 +69,14 @@ export function generateContractPDF(gigData = {}, associationSettings = {}) {
   const assocEmail = (associationSettings.email || associationSettings.emailOfficiel || associationSettings.publicContactEmail || '').trim() || '__________________';
   const assocPhone = (associationSettings.telephone || associationSettings.phone || '').trim() || '__________________';
   const clauseSpecifique = (associationSettings.clauseSpecifique || associationSettings.legalClause || '').trim();
+
+  // URLs des signatures numérisées
+  const signaturePresidentUrl = associationSettings.signaturePresidentUrl || '';
+  const signatureTresorierUrl = associationSettings.signatureTresorierUrl || '';
+
+  // Chargement asynchrone des signatures en Base64 pour jsPDF
+  const presidentSigBase64 = signaturePresidentUrl ? await loadImageAsBase64(signaturePresidentUrl) : null;
+  const tresorierSigBase64 = signatureTresorierUrl ? await loadImageAsBase64(signatureTresorierUrl) : null;
 
   // Extraction des données de la prestation et de l'organisateur (client)
   const clientNom = (gigData.organizer || gigData.client?.nom || '').trim() || '__________________';
@@ -205,8 +238,8 @@ export function generateContractPDF(gigData = {}, associationSettings = {}) {
   }
 
   // 7. Zone de Signatures
-  let sigY = Math.max(yPos + 8, 220);
-  if (sigY + 40 > 280) {
+  let sigY = Math.max(yPos + 8, 215);
+  if (sigY + 45 > 280) {
     doc.addPage();
     sigY = 25;
   }
@@ -222,21 +255,33 @@ export function generateContractPDF(gigData = {}, associationSettings = {}) {
   doc.setTextColor(24, 23, 22);
 
   // Cadre Signature Prestataire
-  doc.rect(20, sigY, 80, 32);
+  doc.rect(20, sigY, 80, 36);
   doc.text(`Pour Le Prestataire : ${assocName}`, 23, sigY + 6);
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(8);
-  doc.text('Mention "Lu et approuvé - Bon pour accord"', 23, sigY + 12);
-  doc.text('Signature & Cachet :', 23, sigY + 18);
+  doc.text('Mention "Lu et approuvé - Bon pour accord"', 23, sigY + 11);
+
+  // Incrustation de la signature numérisée du Président ou Trésorier dans le cadre Prestataire
+  const activeSignatureBase64 = presidentSigBase64 || tresorierSigBase64;
+  if (activeSignatureBase64) {
+    try {
+      doc.addImage(activeSignatureBase64, 'PNG', 23, sigY + 14, 38, 18);
+    } catch (e) {
+      console.warn("generateContractPDF - Impossible d'insérer l'image de la signature :", e);
+      doc.text('Signature & Cachet :', 23, sigY + 18);
+    }
+  } else {
+    doc.text('Signature & Cachet :', 23, sigY + 18);
+  }
 
   // Cadre Signature Organisateur
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(9);
-  doc.rect(110, sigY, 80, 32);
+  doc.rect(110, sigY, 80, 36);
   doc.text(`Pour L'Organisateur : ${clientNom}`, 113, sigY + 6);
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(8);
-  doc.text('Mention "Lu et approuvé - Bon pour accord"', 113, sigY + 12);
+  doc.text('Mention "Lu et approuvé - Bon pour accord"', 113, sigY + 11);
   doc.text('Signature & Cachet :', 113, sigY + 18);
 
   // Pied de page
@@ -254,10 +299,10 @@ export function generateContractPDF(gigData = {}, associationSettings = {}) {
 }
 
 /**
- * Déclenche le téléchargement direct du Contrat PDF généré
+ * Déclenche le téléchargement direct du Contrat PDF généré avec signatures numérisées
  */
-export function downloadContractPDF(gigData, associationSettings = {}) {
-  const doc = generateContractPDF(gigData, associationSettings);
+export async function downloadContractPDF(gigData, associationSettings = {}) {
+  const doc = await generateContractPDF(gigData, associationSettings);
   const filename = `Contrat_${(gigData.eventName || 'prestation').replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
   doc.save(filename);
 }

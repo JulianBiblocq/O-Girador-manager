@@ -173,8 +173,8 @@ export default function GigSendEmailModal({
   };
 
   // Option de secours : Téléchargement du PDF en local
-  const handleDownloadBackup = () => {
-    downloadInvoicePDF(invoicePayload, associationSettings);
+  const handleDownloadBackup = async () => {
+    await downloadInvoicePDF(invoicePayload, associationSettings);
   };
 
   return (

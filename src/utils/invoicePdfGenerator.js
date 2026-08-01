@@ -1,4 +1,5 @@
 import { jsPDF } from 'jspdf';
+import { loadImageAsBase64 } from './contractPdfGenerator';
 
 /**
  * Formate un nombre en montant monétaire en Euros (ex: 1 250,00 €)
@@ -12,27 +13,13 @@ const formatMoney = (amount) => {
 };
 
 /**
- * Formate une date au format français DD/MM/YYYY
- */
-const formatDate = (dateStr) => {
-  if (!dateStr) return '';
-  const d = new Date(dateStr);
-  if (isNaN(d.getTime())) return dateStr;
-  return d.toLocaleDateString('fr-FR', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric'
-  });
-};
-
-/**
- * Génère un document PDF officiel de Devis ou Facture pour l'association.
+ * Génère le document PDF (Devis ou Facture) avec incrustation de la signature numérisée.
  *
- * @param {Object} invoice Données du devis ou de la facture
- * @param {Object} associationSettings Paramètres globaux de l'association (nom, logo, adresse, siret, rib)
- * @returns {jsPDF} Le document jsPDF généré
+ * @param {Object} invoice Objet Devis / Facture contenant les lignes et infos clients
+ * @param {Object} associationSettings Paramètres globaux de l'association (Firestore)
+ * @returns {Promise<jsPDF>} Document jsPDF généré
  */
-export function generateInvoicePDF(invoice, associationSettings = {}) {
+export async function generateInvoicePDF(invoice = {}, associationSettings = {}) {
   const doc = new jsPDF();
 
   const isDevis = invoice.type === 'devis';
@@ -45,6 +32,14 @@ export function generateInvoicePDF(invoice, associationSettings = {}) {
   const assocSiret = associationSettings.siret || associationSettings.rna || '';
   const assocRib = associationSettings.ribIban || associationSettings.iban || '';
   const assocMentionTVA = associationSettings.mentionTVA || 'TVA non applicable, art. 261-7-1° du CGI';
+
+  const signatureTresorierUrl = associationSettings.signatureTresorierUrl || '';
+  const signaturePresidentUrl = associationSettings.signaturePresidentUrl || '';
+
+  // Chargement asynchrone de la signature numérisée
+  const tresorierSigBase64 = signatureTresorierUrl ? await loadImageAsBase64(signatureTresorierUrl) : null;
+  const presidentSigBase64 = signaturePresidentUrl ? await loadImageAsBase64(signaturePresidentUrl) : null;
+  const activeSignatureBase64 = tresorierSigBase64 || presidentSigBase64;
 
   const client = invoice.client || {};
   const lignes = Array.isArray(invoice.lignes) ? invoice.lignes : [];
@@ -73,177 +68,154 @@ export function generateInvoicePDF(invoice, associationSettings = {}) {
     doc.text(addrLines, 20, yPos);
     yPos += addrLines.length * 4.2;
   }
-  if (assocEmail) {
-    doc.text(`Email : ${assocEmail}`, 20, yPos);
-    yPos += 4.2;
-  }
-  if (assocPhone) {
-    doc.text(`Tél : ${assocPhone}`, 20, yPos);
-    yPos += 4.2;
-  }
+
   if (assocSiret) {
     doc.text(`SIRET / RNA : ${assocSiret}`, 20, yPos);
     yPos += 4.2;
   }
 
-  // Header Droite : Bloc Destinataire / Client
-  let clientYPos = 20;
-  const clientXPos = 115;
+  if (assocEmail) {
+    doc.text(`Email : ${assocEmail}`, 20, yPos);
+    yPos += 4.2;
+  }
+
+  if (assocPhone) {
+    doc.text(`Tél : ${assocPhone}`, 20, yPos);
+    yPos += 4.2;
+  }
+
+  // Header : Cartouche Document & Numéro (Droite)
+  let headerRightY = 20;
+  const headerRightX = 120;
 
   doc.setFillColor(248, 246, 240);
   doc.setDrawColor(200, 190, 175);
-  doc.rect(clientXPos - 5, clientYPos, 80, 42, 'FD');
+  doc.rect(headerRightX - 5, headerRightY, 75, 26, 'FD');
 
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(10);
-  doc.setTextColor(24, 23, 22);
-  doc.text('DESTINATAIRE :', clientXPos, clientYPos + 8);
-
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(10);
-  doc.text(client.nom || 'Client inconnu', clientXPos, clientYPos + 16);
-
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(9);
-  doc.setTextColor(70, 70, 70);
-
-  let cOffset = 22;
-  if (client.adresse) {
-    const clientAddrLines = doc.splitTextToSize(client.adresse, 70);
-    doc.text(clientAddrLines, clientXPos, clientYPos + cOffset);
-    cOffset += clientAddrLines.length * 4.5;
-  }
-  if (client.siret) {
-    doc.text(`SIRET : ${client.siret}`, clientXPos, clientYPos + cOffset);
-    cOffset += 4.5;
-  }
-  if (client.email) {
-    doc.text(`Email : ${client.email}`, clientXPos, clientYPos + cOffset);
-  }
-
-  // Titre du Document (Devis N°... / Facture N°...)
-  yPos = Math.max(yPos + 10, 70);
-
-  doc.setDrawColor(139, 42, 26);
-  doc.setLineWidth(1);
-  doc.line(20, yPos, 190, yPos);
-
-  yPos += 10;
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(16);
+  doc.setTextColor(139, 42, 26);
+  doc.text(docTypeLabel, headerRightX, headerRightY + 9);
+
+  doc.setFontSize(10);
   doc.setTextColor(24, 23, 22);
-  doc.text(`${docTypeLabel} N° ${invoice.numero || 'BROUILLON'}`, 20, yPos);
+  doc.text(`N° ${invoice.numero || '0001'}`, headerRightX, headerRightY + 16);
 
-  // Méta-données (Date émission, Date échéance, Statut)
-  yPos += 7;
   doc.setFont('helvetica', 'normal');
-  doc.setFontSize(9);
-  doc.setTextColor(100, 100, 100);
+  doc.setFontSize(8.5);
+  doc.setTextColor(80, 80, 80);
+  doc.text(`Date d'émission : ${invoice.dateEmission || new Date().toLocaleDateString('fr-FR')}`, headerRightX, headerRightY + 22);
 
-  const dateEmisionStr = formatDate(invoice.dateEmission);
-  const dateEcheanceStr = formatDate(invoice.dateEcheance);
+  yPos = Math.max(yPos + 5, 58);
 
-  let metaText = `Date d'émission : ${dateEmisionStr}`;
-  if (dateEcheanceStr) {
-    metaText += `   |   Date d'échéance : ${dateEcheanceStr}`;
-  }
-  doc.text(metaText, 20, yPos);
-
-  yPos += 12;
-
-  // Tableau des prestations / Lignes de facturation
-  // Entête du tableau
-  doc.setFillColor(45, 106, 79); // Cordel Green / Vert Validation
-  doc.rect(20, yPos, 170, 8, 'F');
+  // Bloc Client (Destinataire)
+  doc.setFillColor(255, 255, 255);
+  doc.setDrawColor(220, 220, 220);
+  doc.rect(115, yPos, 75, 30, 'F');
+  doc.setDrawColor(139, 42, 26);
+  doc.setLineWidth(0.5);
+  doc.line(115, yPos, 115, yPos + 30);
 
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(9);
-  doc.setTextColor(255, 255, 255);
-  doc.text('DESCRIPTION DE LA PRESTATION', 25, yPos + 5.5);
-  doc.text('QTÉ', 125, yPos + 5.5, { align: 'center' });
-  doc.text('PRIX UNIT. HT', 155, yPos + 5.5, { align: 'right' });
-  doc.text('TOTAL HT', 185, yPos + 5.5, { align: 'right' });
+  doc.setFontSize(8.5);
+  doc.setTextColor(139, 42, 26);
+  doc.text('DESTINATAIRE :', 120, yPos + 6);
 
-  yPos += 8;
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10);
+  doc.setTextColor(24, 23, 22);
+  doc.text(client.nom || 'Client non spécifié', 120, yPos + 12);
 
-  // Contenu des lignes
   doc.setFont('helvetica', 'normal');
-  doc.setFontSize(9);
-  doc.setTextColor(40, 40, 40);
+  doc.setFontSize(8.5);
+  doc.setTextColor(60, 60, 60);
+
+  let cY = yPos + 17;
+  if (client.adresse) {
+    const cAddr = doc.splitTextToSize(client.adresse, 68);
+    doc.text(cAddr, 120, cY);
+    cY += cAddr.length * 3.8;
+  }
+  if (client.email) {
+    doc.text(`Email : ${client.email}`, 120, cY);
+  }
+
+  yPos += 36;
+
+  // Tableau des Lignes de Facturation / Devis
+  doc.setLineWidth(0.2);
+
+  const startTableY = yPos;
+  doc.setFillColor(45, 106, 79); // Vert Cordel
+  doc.rect(20, startTableY, 170, 7, 'F');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8.5);
+  doc.setTextColor(255, 255, 255);
+
+  doc.text('DESCRIPTION / PRESTATION', 23, startTableY + 5);
+  doc.text('QTÉ', 135, startTableY + 5, { align: 'right' });
+  doc.text('P.U. NET', 160, startTableY + 5, { align: 'right' });
+  doc.text('TOTAL', 187, startTableY + 5, { align: 'right' });
+
+  yPos = startTableY + 7;
+
+  let totalTTC = 0;
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8.5);
+  doc.setTextColor(30, 30, 30);
 
   lignes.forEach((item, index) => {
-    // Vérification de changement de page si le tableau est long
     if (yPos > 240) {
       doc.addPage();
       yPos = 20;
-      // Réaffichage entête tableau sur la nouvelle page
-      doc.setFillColor(45, 106, 79);
-      doc.rect(20, yPos, 170, 8, 'F');
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(9);
-      doc.setTextColor(255, 255, 255);
-      doc.text('DESCRIPTION DE LA PRESTATION', 25, yPos + 5.5);
-      doc.text('QTÉ', 125, yPos + 5.5, { align: 'center' });
-      doc.text('PRIX UNIT. HT', 155, yPos + 5.5, { align: 'right' });
-      doc.text('TOTAL HT', 185, yPos + 5.5, { align: 'right' });
-      yPos += 8;
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(9);
-      doc.setTextColor(40, 40, 40);
     }
 
-    // Fond alterné pour lisibilité
+    const qty = parseFloat(item.quantite) || 1;
+    const pu = parseFloat(item.prixUnitaire) || 0;
+    const lineTotal = qty * pu;
+    totalTTC += lineTotal;
+
     if (index % 2 === 1) {
-      doc.setFillColor(248, 248, 247);
-      doc.rect(20, yPos, 170, 8, 'F');
+      doc.setFillColor(248, 248, 246);
+      doc.rect(20, yPos, 170, 7, 'F');
     }
 
-    const descLines = doc.splitTextToSize(item.description || 'Prestation', 95);
-    const lineHeight = descLines.length * 4.5;
-    const rowHeight = Math.max(8, lineHeight + 3);
+    const descLines = doc.splitTextToSize(item.description || 'Prestation', 105);
+    doc.text(descLines, 23, yPos + 5);
 
-    doc.text(descLines, 25, yPos + 5);
-    doc.text((item.quantite || 1).toString(), 125, yPos + 5, { align: 'center' });
-    doc.text(formatMoney(item.prixUnitaire), 155, yPos + 5, { align: 'right' });
-    doc.text(formatMoney((item.quantite || 1) * (item.prixUnitaire || 0)), 185, yPos + 5, { align: 'right' });
+    doc.text(qty.toString(), 135, yPos + 5, { align: 'right' });
+    doc.text(formatMoney(pu), 160, yPos + 5, { align: 'right' });
+    doc.text(formatMoney(lineTotal), 187, yPos + 5, { align: 'right' });
 
-    yPos += rowHeight;
+    yPos += Math.max(7, descLines.length * 4.5);
   });
 
-  // Ligne de fin de tableau
   doc.setDrawColor(200, 200, 200);
   doc.line(20, yPos, 190, yPos);
 
-  yPos += 8;
-
-  // Bloc Totalisation (À droite)
-  const totalY = yPos;
-  const totalX = 120;
-
-  const totalHT = invoice.montantHT || 0;
-  const totalTTC = invoice.montantTTC || totalHT;
-
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(9.5);
-  doc.text('Total HT :', totalX, totalY);
-  doc.text(formatMoney(totalHT), 185, totalY, { align: 'right' });
+  // Bloc Totaux & Net à Payer
+  let totalY = yPos + 6;
+  doc.setFillColor(248, 246, 240);
+  doc.setDrawColor(200, 190, 175);
+  doc.rect(120, totalY, 70, 16, 'FD');
 
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(11);
-  doc.setTextColor(139, 42, 26);
-  doc.text('Net à payer (TTC) :', totalX, totalY + 8);
-  doc.text(formatMoney(totalTTC), 185, totalY + 8, { align: 'right' });
+  doc.setFontSize(10);
+  doc.setTextColor(24, 23, 22);
+  doc.text('TOTAL NET À PAYER :', 123, totalY + 10);
+  doc.setTextColor(45, 106, 79);
+  doc.text(formatMoney(totalTTC), 187, totalY + 10, { align: 'right' });
 
-  // Mention Exonération TVA à gauche
   doc.setFont('helvetica', 'italic');
-  doc.setFontSize(8);
+  doc.setFontSize(7.5);
   doc.setTextColor(100, 100, 100);
   doc.text(assocMentionTVA, 20, totalY + 4);
   doc.text(`(${assocStructure})`, 20, totalY + 8);
 
   yPos = totalY + 20;
 
-  // Notes / Mode de Règlement / RIB
+  // Conditions de Règlement & Coordonnées Bancaires
   doc.setDrawColor(220, 220, 220);
   doc.setFillColor(252, 251, 248);
   doc.rect(20, yPos, 170, 28, 'FD');
@@ -270,27 +242,52 @@ export function generateInvoicePDF(invoice, associationSettings = {}) {
     doc.text('Paiement à réception de facture. Aucun escompte accordé pour paiement anticipé.', 25, yPos + 19);
   }
 
-  // Zone "Bon pour accord" spécifique aux Devis
-  if (isDevis) {
-    let bonY = yPos + 32;
-    if (bonY + 30 > 275) {
-      doc.addPage();
-      bonY = 20;
+  // Signature du Prestataire / Émetteur sur Devis & Facture
+  let sigBoxY = yPos + 32;
+  if (sigBoxY + 30 > 275) {
+    doc.addPage();
+    sigBoxY = 20;
+  }
+
+  // Zone "Pour l'Émetteur" (Gauche) avec Signature Numérisée
+  doc.setDrawColor(180, 180, 180);
+  doc.setFillColor(255, 255, 255);
+  doc.rect(20, sigBoxY, 80, 28, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8.5);
+  doc.setTextColor(24, 23, 22);
+  doc.text(`POUR L'ÉMETTEUR : ${assocName}`, 23, sigBoxY + 6);
+
+  if (activeSignatureBase64) {
+    try {
+      doc.addImage(activeSignatureBase64, 'PNG', 23, sigBoxY + 8, 35, 18);
+    } catch (e) {
+      console.warn("generateInvoicePDF - Erreur insertion signature :", e);
+      doc.setFont('helvetica', 'italic');
+      doc.setFontSize(7.5);
+      doc.text('Signature & Cachet Officiel', 23, sigBoxY + 16);
     }
-    doc.setDrawColor(180, 180, 180);
-    doc.setFillColor(255, 255, 255);
-    doc.rect(115, bonY, 75, 28, 'FD');
+  } else {
+    doc.setFont('helvetica', 'italic');
+    doc.setFontSize(7.5);
+    doc.text('Signature & Cachet Officiel', 23, sigBoxY + 16);
+  }
+
+  // Zone "Bon pour accord" spécifique aux Devis (Droite)
+  if (isDevis) {
+    doc.rect(115, sigBoxY, 75, 28, 'FD');
 
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(8.5);
     doc.setTextColor(24, 23, 22);
-    doc.text('BON POUR ACCORD', 120, bonY + 6);
+    doc.text('BON POUR ACCORD (CLIENT)', 120, sigBoxY + 6);
 
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8);
     doc.setTextColor(80, 80, 80);
-    doc.text('Date :', 120, bonY + 13);
-    doc.text('Signature & Cachet du client :', 120, bonY + 20);
+    doc.text('Date :', 120, sigBoxY + 13);
+    doc.text('Signature & Cachet du client :', 120, sigBoxY + 20);
   }
 
   // Pied de page
@@ -308,10 +305,10 @@ export function generateInvoicePDF(invoice, associationSettings = {}) {
 }
 
 /**
- * Déclenche le téléchargement du PDF généré
+ * Déclenche le téléchargement du PDF Devis / Facture généré avec signature numérisée
  */
-export function downloadInvoicePDF(invoice, associationSettings = {}) {
-  const doc = generateInvoicePDF(invoice, associationSettings);
+export async function downloadInvoicePDF(invoice, associationSettings = {}) {
+  const doc = await generateInvoicePDF(invoice, associationSettings);
   const filename = `${invoice.numero || invoice.type || 'document'}_${(invoice.client?.nom || 'client').replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
   doc.save(filename);
 }

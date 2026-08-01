@@ -231,6 +231,8 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
   const [kitPresseFile, setKitPresseFile] = useState(null);
   const [droitImageFile, setDroitImageFile] = useState(null);
   const [aptitudeMedicaleFile, setAptitudeMedicaleFile] = useState(null);
+  const [signaturePresidentFile, setSignaturePresidentFile] = useState(null);
+  const [signatureTresorierFile, setSignatureTresorierFile] = useState(null);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -561,9 +563,57 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
         setAptitudeMedicaleFile(null);
       }
 
+      let finalSignaturePresidentUrl = formData.signaturePresidentUrl || '';
+      if (signaturePresidentFile && signaturePresidentFile instanceof File) {
+        let compressedFile = signaturePresidentFile;
+        if (signaturePresidentFile.type.startsWith('image/')) {
+          try {
+            compressedFile = await imageCompression(signaturePresidentFile, { maxSizeMB: 0.5, maxWidthOrHeight: 800, useWebWorker: true });
+          } catch (e) {
+            console.warn("AssociationSettings - Erreur compression signature président :", e);
+          }
+        }
+        const sigRef = storageRef(storage, `associations/${groupId}/signatures/signature_president_${Date.now()}`);
+        const snapshot = await uploadBytes(sigRef, compressedFile, { contentType: signaturePresidentFile.type || 'image/png' });
+        finalSignaturePresidentUrl = await getDownloadURL(snapshot.ref);
+        setSignaturePresidentFile(null);
+      }
+
+      let finalSignatureTresorierUrl = formData.signatureTresorierUrl || '';
+      if (signatureTresorierFile && signatureTresorierFile instanceof File) {
+        let compressedFile = signatureTresorierFile;
+        if (signatureTresorierFile.type.startsWith('image/')) {
+          try {
+            compressedFile = await imageCompression(signatureTresorierFile, { maxSizeMB: 0.5, maxWidthOrHeight: 800, useWebWorker: true });
+          } catch (e) {
+            console.warn("AssociationSettings - Erreur compression signature trésorier :", e);
+          }
+        }
+        const sigRef = storageRef(storage, `associations/${groupId}/signatures/signature_tresorier_${Date.now()}`);
+        const snapshot = await uploadBytes(sigRef, compressedFile, { contentType: signatureTresorierFile.type || 'image/png' });
+        finalSignatureTresorierUrl = await getDownloadURL(snapshot.ref);
+        setSignatureTresorierFile(null);
+      }
+
       const assocRef = doc(db, 'associations', groupId);
       await setDoc(assocRef, {
         nom: formData.nom || '',
+        structureJuridique: formData.structureJuridique || '',
+        siret: formData.siret || formData.rna || '',
+        rna: formData.rna || formData.siret || '',
+        adresseSiegeSocial: formData.adresseSiegeSocial || formData.adresse || '',
+        adresse: formData.adresseSiegeSocial || formData.adresse || '',
+        mentionTVA: formData.mentionTVA || '',
+        ribIban: formData.ribIban || formData.iban || '',
+        iban: formData.ribIban || formData.iban || '',
+        email: formData.email || formData.emailOfficiel || formData.publicContactEmail || '',
+        emailOfficiel: formData.email || formData.emailOfficiel || formData.publicContactEmail || '',
+        telephone: formData.telephone || formData.phone || '',
+        phone: formData.telephone || formData.phone || '',
+        clauseSpecifique: formData.clauseSpecifique || formData.legalClause || '',
+        legalClause: formData.clauseSpecifique || formData.legalClause || '',
+        signaturePresidentUrl: finalSignaturePresidentUrl,
+        signatureTresorierUrl: finalSignatureTresorierUrl,
         fieldsConfig: formData.fieldsConfig,
         instrumentsDisponibles: formData.instrumentsDisponibles,
         linkedInstruments: formData.linkedInstruments || [],
@@ -655,6 +705,10 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
     setDroitImageFile,
     aptitudeMedicaleFile,
     setAptitudeMedicaleFile,
+    signaturePresidentFile,
+    setSignaturePresidentFile,
+    signatureTresorierFile,
+    setSignatureTresorierFile,
     uploadingLogo,
     saving,
     loading,

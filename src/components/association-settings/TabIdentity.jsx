@@ -7,6 +7,10 @@ export default function TabIdentity({
   handleChange,
   logoFile,
   setLogoFile,
+  signaturePresidentFile,
+  setSignaturePresidentFile,
+  signatureTresorierFile,
+  setSignatureTresorierFile,
   uploadingLogo,
   groupId,
   saving,
@@ -364,6 +368,78 @@ export default function TabIdentity({
               placeholder="ex: Avertissement sonore : Les prestations comportent un volume sonore élevé. L'organisateur s'engage à fournir l'accès à une prise électrique et un point d'eau."
               className="theme-input text-xs font-bold p-2 bg-cordel-bg-light w-full resize-none"
             />
+          </div>
+
+          {/* Signatures Numérisées du Président et du Trésorier */}
+          <div className="flex flex-col gap-2 border-t border-dashed border-cordel-master-dark/15 pt-3 text-left">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-cordel-wood">
+              ✍️ Signatures Numérisées des Représentants (Imprimées sur Devis & Contrats PDF)
+            </span>
+            <p className="text-[9px] text-cordel-master-dark/70 font-medium">
+              Conseil : Utilisez une image au format PNG avec un fond transparent pour un rendu parfait sur les documents PDF.
+            </p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-1">
+              {/* Signature du Président / Mestre */}
+              <div className="flex flex-col gap-1.5 p-2.5 bg-stone-50 border border-stone-200 rounded">
+                <span className="text-[9px] font-extrabold uppercase text-cordel-master-dark">
+                  Signature du Président / Mestre
+                </span>
+                <div className="flex items-center gap-2">
+                  {formData.signaturePresidentUrl ? (
+                    <img
+                      src={formData.signaturePresidentUrl}
+                      alt="Signature Président"
+                      className="w-16 h-10 object-contain border border-stone-300 rounded bg-white p-1"
+                    />
+                  ) : (
+                    <div className="w-16 h-10 border border-dashed border-stone-300 rounded flex items-center justify-center text-[9px] text-stone-400 font-bold bg-white">
+                      Aucune
+                    </div>
+                  )}
+                  <input
+                    type="file"
+                    accept="image/png, image/jpeg, image/webp"
+                    onChange={(e) => setSignaturePresidentFile && setSignaturePresidentFile(e.target.files?.[0] || null)}
+                    disabled={saving}
+                    className="text-[9px] font-bold text-stone-700 w-full cursor-pointer"
+                  />
+                </div>
+                {signaturePresidentFile && (
+                  <span className="text-[9px] text-green-700 font-bold">✓ Sélectionné : {signaturePresidentFile.name}</span>
+                )}
+              </div>
+
+              {/* Signature du Trésorier */}
+              <div className="flex flex-col gap-1.5 p-2.5 bg-stone-50 border border-stone-200 rounded">
+                <span className="text-[9px] font-extrabold uppercase text-cordel-master-dark">
+                  Signature du Trésorier
+                </span>
+                <div className="flex items-center gap-2">
+                  {formData.signatureTresorierUrl ? (
+                    <img
+                      src={formData.signatureTresorierUrl}
+                      alt="Signature Trésorier"
+                      className="w-16 h-10 object-contain border border-stone-300 rounded bg-white p-1"
+                    />
+                  ) : (
+                    <div className="w-16 h-10 border border-dashed border-stone-300 rounded flex items-center justify-center text-[9px] text-stone-400 font-bold bg-white">
+                      Aucune
+                    </div>
+                  )}
+                  <input
+                    type="file"
+                    accept="image/png, image/jpeg, image/webp"
+                    onChange={(e) => setSignatureTresorierFile && setSignatureTresorierFile(e.target.files?.[0] || null)}
+                    disabled={saving}
+                    className="text-[9px] font-bold text-stone-700 w-full cursor-pointer"
+                  />
+                </div>
+                {signatureTresorierFile && (
+                  <span className="text-[9px] text-green-700 font-bold">✓ Sélectionné : {signatureTresorierFile.name}</span>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </CordelCard>

@@ -20,9 +20,9 @@ export default function InvoiceDetailsModal({
   const client = invoice.client || {};
   const lignes = Array.isArray(invoice.lignes) ? invoice.lignes : [];
 
-  const handleDownloadPDF = () => {
+  const handleDownloadPDF = async () => {
     try {
-      downloadInvoicePDF(invoice, associationSettings);
+      await downloadInvoicePDF(invoice, associationSettings);
     } catch (err) {
       console.error("Erreur lors de la génération du PDF :", err);
       alert("Une erreur s'est produite lors de la génération du fichier PDF.");
