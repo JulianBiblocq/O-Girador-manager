@@ -66,6 +66,7 @@ export default function PublicHome({
   const { publicTheme, loading: loadingTheme } = usePublicThemeContext();
   const { events: publicEvents, loading: loadingEvents } = usePublicEvents(groupId);
   const [selectedEventDetails, setSelectedEventDetails] = React.useState(null);
+  const [isBookingModalOpen, setIsBookingModalOpen] = React.useState(false);
   const [publishing, setPublishing] = React.useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
 
@@ -814,21 +815,21 @@ export default function PublicHome({
                   )}
                 </div>
 
-                {/* Bloc de Contact Direct & Appel à l'action */}
+                {/* Bloc de Contact Direct & Appel à l'action Booking */}
                 <div className="border-t border-stone-100 pt-5 flex flex-col gap-3">
-                  {contactEmail ? (
-                    <a
-                      href={`mailto:${contactEmail}?subject=Demande%20de%20Programmation%20-%20${encodeURIComponent(groupTitle)}`}
-                      className="w-full py-3.5 px-6 text-sm font-bold uppercase tracking-wider rounded-lg shadow-md hover:brightness-110 active:scale-95 transition-all text-center flex items-center justify-center gap-2 cursor-pointer"
-                      style={{
-                        backgroundColor: 'var(--public-btn-bg, var(--public-primary, #D32F2F))',
-                        color: 'var(--public-btn-text, #FFFFFF)',
-                        fontFamily: 'var(--public-font-heading, sans-serif)'
-                      }}
-                    >
-                      ✉️ {boutonContactEmail}
-                    </a>
-                  ) : null}
+                  <button
+                    type="button"
+                    onClick={() => setIsBookingModalOpen(true)}
+                    className="w-full py-3.5 px-6 text-sm font-bold uppercase tracking-wider rounded-lg shadow-md hover:brightness-110 active:scale-95 transition-all text-center flex items-center justify-center gap-2 cursor-pointer"
+                    style={{
+                      backgroundColor: 'var(--public-btn-bg, var(--public-primary, #D32F2F))',
+                      color: 'var(--public-btn-text, #FFFFFF)',
+                      fontFamily: 'var(--public-font-heading, sans-serif)'
+                    }}
+                  >
+                    <span>📅</span>
+                    <span>Demander un Devis / Nous Programmer</span>
+                  </button>
 
                   <div className="flex flex-wrap justify-center sm:justify-between items-center gap-2 text-xs text-stone-600 font-medium pt-1">
                     {contactEmail && (
@@ -999,6 +1000,15 @@ export default function PublicHome({
           onClose={() => setSelectedEventDetails(null)}
         />
       )}
+
+      {/* Modale Publique de Demande de Prestation / Booking */}
+      <PublicBookingModal
+        isOpen={isBookingModalOpen}
+        onClose={() => setIsBookingModalOpen(false)}
+        groupId={groupId}
+        associationName={groupTitle}
+        publicTheme={publicTheme}
+      />
       </div>
     </HelmetProvider>
   );

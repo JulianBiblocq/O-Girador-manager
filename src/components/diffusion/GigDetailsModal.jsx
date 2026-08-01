@@ -145,6 +145,13 @@ export default function GigDetailsModal({
 
         {/* Notes & Prochaine relance */}
         <div className="flex flex-col gap-2">
+          {gig.source === 'vitrine_publique' && (
+            <div className="p-2 bg-blue-50 border border-blue-300 rounded text-xs font-bold text-blue-900 flex items-center gap-2">
+              <span>🌐</span>
+              <span>Demande de booking reçue depuis la Vitrine Publique SaaS</span>
+            </div>
+          )}
+
           {gig.nextRelanceDate && (
             <div className="p-2 bg-amber-50 border border-amber-300 rounded text-xs font-bold text-amber-900 flex items-center gap-2">
               <span>⏰</span>
