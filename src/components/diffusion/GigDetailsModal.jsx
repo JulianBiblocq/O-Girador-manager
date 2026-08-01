@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
+import { runTransaction, doc, collection, query, where, getDocs, Timestamp, serverTimestamp } from 'firebase/firestore';
+import { db } from '../../firebase';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 import { GIG_STATUSES } from './GigFormModal';
 import { downloadContractPDF } from '../../utils/contractPdfGenerator';
 import GigSendContractModal from './GigSendContractModal';
+import GigInvoiceGeneratorModal from './GigInvoiceGeneratorModal';
 
 export default function GigDetailsModal({
   isOpen,
@@ -17,6 +20,8 @@ export default function GigDetailsModal({
   saving = false
 }) {
   const [isSendContractModalOpen, setIsSendContractModalOpen] = useState(false);
+  const [isInvoiceGeneratorOpen, setIsInvoiceGeneratorOpen] = useState(false);
+  const [markingPaid, setMarkingPaid] = useState(false);
   const [toastMessage, setToastMessage] = useState(null);
 
   if (!isOpen || !gig) return null;
@@ -56,6 +61,89 @@ export default function GigDetailsModal({
       } catch (err) {
         alert(err.message || "Erreur lors de la suppression du dossier.");
       }
+    }
+  };
+
+  // Transaction atomique Firestore : Marquer la facture comme payée et inscrire la recette en Trésorerie
+  const handleMarkAsPaid = async () => {
+    if (!gig || !gig.id) return;
+
+    if (gig.status === '6_paye') {
+      alert("Ce dossier est déjà marqué comme payé.");
+      return;
+    }
+
+    const hasInvoice = Boolean(gig.invoiceId || gig.invoiceNumber || gig.status === '5_facture_emise');
+    if (!hasInvoice) {
+      alert("Veuillez d'abord émettre la facture de l'événement avant de valider le paiement.");
+      return;
+    }
+
+    const amount = parseFloat(gig.amount) || 0;
+    const confirmText = `Confirmez-vous la réception du paiement de ${amount.toLocaleString('fr-FR', { minimumFractionDigits: 2 })} € pour "${gig.eventName}" ?\n\nCela va automatiquement inscrire une recette en Trésorerie et verrouiller le dossier.`;
+
+    if (!window.confirm(confirmText)) return;
+
+    setMarkingPaid(true);
+
+    try {
+      await runTransaction(db, async (transaction) => {
+        // 1. Recherche / Lecture de la Facture liée
+        let invoiceRef = null;
+        if (gig.invoiceId) {
+          invoiceRef = doc(db, 'invoices', gig.invoiceId);
+        } else {
+          const invQuery = query(collection(db, 'invoices'), where('gigId', '==', gig.id));
+          const invSnap = await getDocs(invQuery);
+          if (!invSnap.empty) {
+            invoiceRef = invSnap.docs[0].ref;
+          }
+        }
+
+        if (invoiceRef) {
+          const invSnap = await transaction.get(invoiceRef);
+          if (invSnap.exists()) {
+            transaction.update(invoiceRef, {
+              statut: 'paye',
+              datePaiement: new Date().toISOString(),
+              updatedAt: serverTimestamp()
+            });
+          }
+        }
+
+        // 2. Inscription automatique de la recette dans la collection `transactions` (Trésorerie)
+        const newTxRef = doc(collection(db, 'transactions'));
+        transaction.set(newTxRef, {
+          groupId: gig.groupId || associationSettings.groupId || 'default',
+          date: Timestamp.fromDate(new Date()),
+          type: 'recette',
+          montant: amount,
+          categorie: 'Prestations / Factures',
+          libelle: `Facture ${gig.invoiceNumber || 'SOLDE'} - ${gig.eventName} (${gig.organizer || 'Client'})`,
+          source: 'facturation_gig',
+          gigId: gig.id,
+          invoiceId: gig.invoiceId || null,
+          createdAt: serverTimestamp()
+        });
+
+        // 3. Verrouillage du dossier de prestation
+        const targetGroupId = gig.groupId || associationSettings.groupId || 'default';
+        const gigRef = doc(db, 'associations', targetGroupId, 'gigs', gig.id);
+        transaction.update(gigRef, {
+          status: '6_paye',
+          paidTransactionId: newTxRef.id,
+          paidAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        });
+      });
+
+      triggerWorkflowToast(`✅ Paiement validé ! Recette de ${amount} € inscrite en Trésorerie.`);
+      if (onStatusChange) onStatusChange(gig.id, '6_paye');
+    } catch (err) {
+      console.error("GigDetailsModal - Erreur transaction paiement :", err);
+      alert("Erreur lors de la validation du paiement : " + (err.message || err));
+    } finally {
+      setMarkingPaid(false);
     }
   };
 
@@ -219,11 +307,35 @@ export default function GigDetailsModal({
 
             <button
               type="button"
-              onClick={() => triggerWorkflowToast('Facturation Trésorerie')}
-              className="px-2.5 py-2 text-[10px] font-extrabold uppercase rounded bg-stone-100 hover:bg-stone-200 text-stone-800 border border-stone-300 shadow-xs flex flex-col items-center gap-1 cursor-pointer transition-all active:scale-95"
+              onClick={() => setIsInvoiceGeneratorOpen(true)}
+              className="px-2.5 py-2 text-[10px] font-extrabold uppercase rounded bg-emerald-700 hover:bg-emerald-800 text-white border border-emerald-900 shadow-xs flex flex-col items-center gap-1 cursor-pointer transition-all active:scale-95"
+              title="Émettre la facture officielle FAC-YYYYMM-XXX et la transmettre au client"
             >
-              <span className="text-base">💳</span>
-              <span>Facturer</span>
+              <span className="text-base">🧾</span>
+              <span>Générer Facture</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handleMarkAsPaid}
+              disabled={markingPaid || gig.status === '6_paye' || (!gig.invoiceId && !gig.invoiceNumber && gig.status !== '5_facture_emise')}
+              className={`px-2.5 py-2 text-[10px] font-extrabold uppercase rounded border shadow-xs flex flex-col items-center gap-1 transition-all active:scale-95 ${
+                gig.status === '6_paye'
+                  ? 'bg-emerald-100 text-emerald-950 border-emerald-400 opacity-90 cursor-default'
+                  : (!gig.invoiceId && !gig.invoiceNumber && gig.status !== '5_facture_emise')
+                  ? 'bg-stone-100 text-stone-400 border-stone-200 cursor-not-allowed opacity-60'
+                  : 'bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-800 cursor-pointer'
+              }`}
+              title={
+                gig.status === '6_paye'
+                  ? 'Dossier déjà réglé et comptabilisé en Trésorerie'
+                  : (!gig.invoiceId && !gig.invoiceNumber && gig.status !== '5_facture_emise')
+                  ? 'Veuillez d\'abord générer la facture de l\'événement'
+                  : 'Valider le paiement et inscrire automatiquement la recette en Trésorerie'
+              }
+            >
+              <span className="text-base">{gig.status === '6_paye' ? '🔒' : '✅'}</span>
+              <span>{gig.status === '6_paye' ? 'Payé (Verrouillé)' : 'Marquer Payé'}</span>
             </button>
           </div>
         </div>
@@ -255,6 +367,18 @@ export default function GigDetailsModal({
         onSendSuccess={() => {
           triggerWorkflowToast('✓ Contrat envoyé avec succès !');
           if (onStatusChange) onStatusChange(gig.id, '4_contrat_envoye');
+        }}
+      />
+
+      {/* Modale de Génération de Facture Officielle & Brevo */}
+      <GigInvoiceGeneratorModal
+        isOpen={isInvoiceGeneratorOpen}
+        onClose={() => setIsInvoiceGeneratorOpen(false)}
+        gig={gig}
+        associationSettings={associationSettings}
+        onSuccess={(invoiceNum) => {
+          triggerWorkflowToast(`✓ Facture ${invoiceNum} émise et transmise !`);
+          if (onStatusChange) onStatusChange(gig.id, '5_facture_emise');
         }}
       />
     </div>
