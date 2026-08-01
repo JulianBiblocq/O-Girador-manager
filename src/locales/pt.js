@@ -883,6 +883,7 @@ export const pt = {
     troupe: "Elenco",
     diffusion: "Produção",
     tabGigsPipeline: "Pipeline de Shows",
+    tabDiffusionContacts: "Agenda de Contatos CRM",
     tresorerie: "Tesouraria",
     logistique: "Logística",
     vestiaire: "Guarda-roupa",

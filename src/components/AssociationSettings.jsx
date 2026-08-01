@@ -28,6 +28,7 @@ export default function AssociationSettings({
   onBack, 
   role, 
   isSystemAdmin, 
+  mode,
   activeTabProp,
   vitrineSubTabProp,
   profileData,

@@ -570,6 +570,9 @@ export default function LayoutShell({
                   const isActive = currentTab === tab.id;
                   const isRestrictedTitle = t('common.accessRestricted') || "Accès restreint";
 
+                  const translatedLabel = tab.labelKey ? t(`poles.${tab.labelKey}`) : null;
+                  const displayLabel = (translatedLabel && !translatedLabel.startsWith('poles.')) ? translatedLabel : tab.label;
+
                   if (!isUnlocked) {
                     return (
                       <button
@@ -580,7 +583,7 @@ export default function LayoutShell({
                         className="px-3 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all opacity-50 grayscale cursor-not-allowed bg-cordel-bg/50 text-encre-noire/50 border-encre-noire/20 select-none shadow-none flex items-center gap-1.5"
                       >
                         <span className="text-[11px] opacity-75">🔒</span>
-                        <span>{t(`poles.${tab.labelKey}`) || tab.label}</span>
+                        <span>{displayLabel}</span>
                       </button>
                     );
                   }
@@ -596,7 +599,7 @@ export default function LayoutShell({
                           : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
                       }`}
                     >
-                      {t(`poles.${tab.labelKey}`) || tab.label}
+                      {displayLabel}
                     </button>
                   );
                 })}

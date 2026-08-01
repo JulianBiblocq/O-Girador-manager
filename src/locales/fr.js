@@ -867,6 +867,7 @@ export const fr = {
     troupe: "Troupe",
     diffusion: "Diffusion",
     tabGigsPipeline: "Suivi des Prestations",
+    tabDiffusionContacts: "Carnet de Contacts CRM",
     tresorerie: "Trésorerie",
     logistique: "Logistique",
     vestiaire: "Vestiaire",
