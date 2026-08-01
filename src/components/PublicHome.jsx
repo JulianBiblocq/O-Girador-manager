@@ -64,7 +64,7 @@ export default function PublicHome({
   onNavigateToLogin 
 }) {
   const { publicTheme, loading: loadingTheme } = usePublicThemeContext();
-  const { events: publicEvents, loading: loadingEvents } = usePublicEvents(groupId);
+  const { events: publicEvents, upcomingEvents = [], pastEvents = [], loading: loadingEvents } = usePublicEvents(groupId);
   const [selectedEventDetails, setSelectedEventDetails] = React.useState(null);
   const [isBookingModalOpen, setIsBookingModalOpen] = React.useState(false);
   const [publishing, setPublishing] = React.useState(false);
@@ -533,11 +533,11 @@ export default function PublicHome({
       )}
 
       {/* ==========================================
-          BLOC 3 - AGENDA PUBLIC
+          BLOC 3 - AGENDA PUBLIC (PROCHAINES DATES & PRESTATIONS PASSÉES SOUVENIRS)
          ========================================== */}
       {publicTheme?.afficherAgenda !== false && (
         <section id="agenda" className="py-16 bg-stone-50 border-b border-stone-200/60">
-          <div className="max-w-5xl mx-auto px-4 sm:px-6 flex flex-col gap-10">
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 flex flex-col gap-12 text-left">
             <div className="text-center flex flex-col items-center gap-3">
               <h2 
                 className="text-3xl font-extrabold tracking-tight uppercase"
@@ -561,22 +561,59 @@ export default function PublicHome({
               <div className="py-12 text-center text-xs uppercase font-bold tracking-widest text-stone-400 animate-pulse">
                 ⏳ Chargement des dates publiques...
               </div>
-            ) : publicEvents.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {publicEvents.map((evt) => (
-                  <PublicEventCard
-                    key={evt.id}
-                    event={evt}
-                    onClickDetails={(selectedEvt) => setSelectedEventDetails(selectedEvt)}
-                  />
-                ))}
-              </div>
             ) : (
-              <div className="py-12 px-6 rounded-xl border border-dashed border-stone-300 bg-white text-center flex flex-col items-center gap-3 max-w-md mx-auto">
-                <span className="text-3xl">🎺</span>
-                <p className="text-sm font-semibold text-stone-700">
-                  Aucune date publique prévue pour le moment, suivez-nous sur les réseaux !
-                </p>
+              <div className="flex flex-col gap-12">
+                {/* 1. Événements à venir */}
+                <div className="flex flex-col gap-4">
+                  <h3 className="text-sm font-extrabold uppercase tracking-wider text-stone-800 flex items-center gap-2 border-b border-stone-200 pb-2">
+                    <span>🎺 Prochaines Dates</span>
+                  </h3>
+
+                  {upcomingEvents.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {upcomingEvents.map((evt) => (
+                        <PublicEventCard
+                          key={evt.id}
+                          event={evt}
+                          isPast={false}
+                          onClickDetails={(selectedEvt) => setSelectedEventDetails(selectedEvt)}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="py-8 px-6 rounded-xl border border-dashed border-stone-300 bg-white text-center flex flex-col items-center gap-2 max-w-md mx-auto">
+                      <span className="text-2xl">🎺</span>
+                      <p className="text-xs font-bold text-stone-600">
+                        Aucune prochaine date programmée pour le moment.
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {/* 2. Dernières prestations & Souvenirs (Photos / Vidéos) */}
+                {pastEvents.length > 0 && (
+                  <div className="flex flex-col gap-4 pt-4 border-t border-stone-200">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 border-b border-stone-200 pb-2">
+                      <h3 className="text-sm font-extrabold uppercase tracking-wider text-stone-800 flex items-center gap-2">
+                        <span>📸 Dernières Prestations & Souvenirs</span>
+                      </h3>
+                      <span className="text-[11px] font-semibold text-stone-500">
+                        Partagez vos photos et vidéos des événements passés !
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {pastEvents.map((evt) => (
+                        <PublicEventCard
+                          key={evt.id}
+                          event={evt}
+                          isPast={true}
+                          onClickDetails={(selectedEvt) => setSelectedEventDetails(selectedEvt)}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
