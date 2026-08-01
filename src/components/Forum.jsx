@@ -13,7 +13,7 @@ import XiloAvatar from './XiloAvatar';
 import { usePresenceContext } from '../context/PresenceContext';
 import { XiloMegaphone } from './XiloIcons';
 import useConfirm from '../hooks/useConfirm';
-import { resolveEffectiveUserTags } from '../utils/tagUtils';
+import { resolveEffectiveUserTags, getTagId, findTagObject } from '../utils/tagUtils'; // Utilitaires pour la gestion et la résolution des étiquettes
 import { useForumThreads } from '../hooks/useForumThreads';
 import ForumChannelHeader from './forum/ForumChannelHeader';
 import ForumThreadCard from './forum/ForumThreadCard';

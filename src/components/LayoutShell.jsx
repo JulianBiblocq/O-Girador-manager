@@ -26,6 +26,7 @@ import { PresenceProvider } from '../context/PresenceContext';
 import OnlineStatusWidget from './OnlineStatusWidget';
 import { canEditVitrine } from '../utils/permissionUtils';
 import { usePendingMembersNotification } from '../hooks/usePendingMembersNotification';
+import { resolveEffectiveUserTags } from '../utils/tagUtils'; // Utilitaire de résolution des étiquettes effectives
 
 export default function LayoutShell({ 
   logoUrl, 
