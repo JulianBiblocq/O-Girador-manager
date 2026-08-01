@@ -562,8 +562,8 @@ export default function LayoutShell({
               </div>
             )}
 
-            {/* Top Horizontal Subcategories Menu */}
-            {(isSystemOrSuperAdminOrMestre || isAdministrativeUser) && visibleTabs.length > 0 && activePoleObj?.id !== 'vitrine' && currentPole !== 'vitrine' && (
+            {/* Menu d'onglets horizontaux principaux du pôle courant (Rendu unique tout en haut) */}
+            {(isSystemOrSuperAdminOrMestre || isAdministrativeUser) && visibleTabs.length > 0 && (
               <div className="flex flex-wrap gap-2 border-b border-dashed border-cordel-master-dark/20 pb-3 mb-1 select-none shrink-0">
                 {visibleTabs.map((tab) => {
                   const isUnlocked = checkTabAccess(tab.id, activePoleObj?.id);

@@ -81,7 +81,8 @@ const POLES_CONFIG = [
     label: 'Diffusion',
     labelKey: 'diffusion',
     tabs: [
-      { id: 'gigs-pipeline', label: 'Suivi des Prestations', labelKey: 'tabGigsPipeline' }
+      { id: 'gigs-pipeline', label: 'Suivi des Prestations', labelKey: 'tabGigsPipeline' },
+      { id: 'diffusion-contacts', label: 'Carnet de Contacts CRM', labelKey: 'tabDiffusionContacts' }
     ]
   },
   {
@@ -1107,9 +1108,10 @@ export default function App() {
                 activeTabProp="organisation"
                 onBack={() => handleNavigateToPole('accueil')}
               />
-            ) : (currentTab === 'gigs-pipeline' && hasAccessDiffusion) ? (
+            ) : (['gigs-pipeline', 'diffusion-contacts'].includes(currentTab) && hasAccessDiffusion) ? (
               <GigsPipelineManager
                 groupId={profileData?.groupId}
+                initialTab={currentTab === 'diffusion-contacts' ? 'contacts' : 'pipeline'}
                 onBack={() => handleNavigateToPole('accueil')}
               />
             ) : (currentTab === 'dashboard-finance' && hasAccessTresorerie) ? (
@@ -1364,7 +1366,7 @@ export default function App() {
                 activeTabProp="lieux"
                 onBack={() => handleNavigateToPole('accueil')} 
               />
-            ) : (currentTab === 'vitrine-editor' && checkTabAccess('vitrine-editor', 'vitrine')) ? (
+            ) : (['vitrine-editor', 'vitrine-general', 'vitrine-presentation', 'vitrine-organisateur', 'vitrine-galerie', 'vitrine-recrutement', 'vitrine-reseaux', 'vitrine-apparence'].includes(currentTab) && checkTabAccess('vitrine-editor', 'vitrine')) ? (
               <AssociationSettings 
                 groupId={profileData?.groupId}
                 role={profileData?.role}
@@ -1374,6 +1376,7 @@ export default function App() {
                 effectiveUserTags={userTags}
                 mode="public-theme-only"
                 activeTabProp="public-theme"
+                vitrineSubTabProp={currentTab ? currentTab.replace('vitrine-', '') : 'general'}
                 onBack={() => handleNavigateToPole('accueil')} 
               />
             ) : (currentTab === 'config-layout' && checkTabAccess('config-layout', 'config')) ? (

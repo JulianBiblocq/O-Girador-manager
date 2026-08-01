@@ -28,8 +28,8 @@ export default function AssociationSettings({
   onBack, 
   role, 
   isSystemAdmin, 
-  mode, 
   activeTabProp,
+  vitrineSubTabProp,
   profileData,
   permissionsMatrice,
   effectiveUserTags = []
@@ -83,6 +83,12 @@ export default function AssociationSettings({
       setActiveSettingsTab(activeTabProp);
     }
   }, [activeTabProp]);
+
+  useEffect(() => {
+    if (vitrineSubTabProp) {
+      setVitrineSubTab(vitrineSubTabProp);
+    }
+  }, [vitrineSubTabProp]);
 
   if (!isAuthorized) {
     return (
@@ -278,94 +284,7 @@ export default function AssociationSettings({
         </div>
       ) : (
         <div className="flex flex-col gap-3">
-          {/* Menu Horizontal Pôle Vitrine (Alignement à gauche conforme au reste de l'application) */}
-          {(mode === 'public-theme-only' || activeSettingsTab === 'public-theme') && (
-            <div className="flex flex-wrap items-center justify-start gap-2 border-b border-dashed border-cordel-master-dark/20 pb-3 mb-1 select-none">
-              <button
-                type="button"
-                onClick={() => setVitrineSubTab('general')}
-                className={`px-3 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer ${
-                  vitrineSubTab === 'general'
-                    ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
-                    : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
-                }`}
-              >
-                Général & SEO
-              </button>
 
-              <button
-                type="button"
-                onClick={() => setVitrineSubTab('presentation')}
-                className={`px-3 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer ${
-                  vitrineSubTab === 'presentation'
-                    ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
-                    : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
-                }`}
-              >
-                Présentation
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setVitrineSubTab('organisateur')}
-                className={`px-3 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer ${
-                  vitrineSubTab === 'organisateur'
-                    ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
-                    : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
-                }`}
-              >
-                Organisateur et technique
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setVitrineSubTab('galerie')}
-                className={`px-3 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer ${
-                  vitrineSubTab === 'galerie'
-                    ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
-                    : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
-                }`}
-              >
-                Galerie photo
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setVitrineSubTab('recrutement')}
-                className={`px-3 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer ${
-                  vitrineSubTab === 'recrutement'
-                    ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
-                    : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
-                }`}
-              >
-                Recrutement & Vie associative
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setVitrineSubTab('reseaux')}
-                className={`px-3 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer ${
-                  vitrineSubTab === 'reseaux'
-                    ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
-                    : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
-                }`}
-              >
-                Réseau et newsletter
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setVitrineSubTab('apparence')}
-                className={`px-3 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer ${
-                  vitrineSubTab === 'apparence'
-                    ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
-                    : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
-                }`}
-              >
-                Apparence
-              </button>
-            </div>
-          )}
 
           {/* Tab Selector */}
           {!mode && (
