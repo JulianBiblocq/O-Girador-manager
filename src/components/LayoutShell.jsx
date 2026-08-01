@@ -111,7 +111,16 @@ export default function LayoutShell({
       return true;
     }
 
-    if (!userTags || userTags.length === 0) return false;
+    if (tabId === 'vitrine-editor' || tabId.startsWith('vitrine-')) {
+      if (
+        profileData?.role === 'mestre' || 
+        profileData?.role === 'super-admin' || 
+        profileData?.isSystemAdmin === true ||
+        canEditVitrine(profileData, permissionsMatrice, userTags)
+      ) {
+        return true;
+      }
+    }
 
     // 1. Direct tab permission check in permissionsMatrice
     const tabTags = permissionsMatrice?.[tabId];

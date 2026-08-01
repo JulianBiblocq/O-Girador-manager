@@ -15,6 +15,7 @@ import PublicRichText from './public/PublicRichText';
 import PublicSeoHead from './public/PublicSeoHead';
 import PublicWatermarkLogo from './public/PublicWatermarkLogo';
 import PublicMaintenancePage from './public/PublicMaintenancePage';
+import PublicBookingModal from './public/PublicBookingModal';
 import { canPreviewVitrineDraft } from '../utils/permissionUtils';
 
 /**

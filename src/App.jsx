@@ -818,8 +818,13 @@ export default function App() {
       return true;
     }
 
-    if (tabId === 'vitrine-editor') {
-      if (profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.isSystemAdmin === true) {
+    if (tabId === 'vitrine-editor' || tabId.startsWith('vitrine-')) {
+      if (
+        profileData?.role === 'mestre' || 
+        profileData?.role === 'super-admin' || 
+        profileData?.isSystemAdmin === true ||
+        canEditVitrine(profileData, permissionsMatrice, userTags)
+      ) {
         return true;
       }
     }
