@@ -137,30 +137,30 @@ export default function GigsPipelineManager({ groupId, associationSettings: prop
         </button>
       </div>
 
-      {/* Onglets horizontaux du Pôle Diffusion */}
-      <div className="flex items-center gap-2 border-b border-stone-300 pb-1">
+      {/* Menu Horizontal Pôle Diffusion (Menu à étage unique aligné à gauche) */}
+      <div className="flex flex-wrap items-center justify-start gap-2 border-b border-dashed border-cordel-master-dark/20 pb-3 mb-1 select-none">
         <button
           type="button"
           onClick={() => setActiveTab('pipeline')}
-          className={`px-4 py-2 text-xs font-black uppercase tracking-wider rounded-t border-t border-x cursor-pointer transition-all ${
+          className={`px-3.5 py-1.5 text-xs font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer ${
             activeTab === 'pipeline'
-              ? 'bg-white border-stone-300 text-cordel-wood shadow-xs border-b-2 border-b-cordel-wood -mb-px'
-              : 'bg-stone-100 border-transparent text-stone-600 hover:bg-stone-200'
+              ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
+              : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
           }`}
         >
-          📊 Vue Pipeline & Événements
+          🚀 Suivi des prestations
         </button>
 
         <button
           type="button"
           onClick={() => setActiveTab('contacts')}
-          className={`px-4 py-2 text-xs font-black uppercase tracking-wider rounded-t border-t border-x cursor-pointer transition-all ${
+          className={`px-3.5 py-1.5 text-xs font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer ${
             activeTab === 'contacts'
-              ? 'bg-white border-stone-300 text-cordel-wood shadow-xs border-b-2 border-b-cordel-wood -mb-px'
-              : 'bg-stone-100 border-transparent text-stone-600 hover:bg-stone-200'
+              ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
+              : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
           }`}
         >
-          📇 Carnet de Contacts (CRM Global)
+          📇 Carnet de contacts CRM
         </button>
       </div>
 
