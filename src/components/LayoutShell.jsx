@@ -24,7 +24,7 @@ import { useTranslation } from './LanguageContext';
 import { usePresence } from '../hooks/usePresence';
 import { PresenceProvider } from '../context/PresenceContext';
 import OnlineStatusWidget from './OnlineStatusWidget';
-import { resolveEffectiveUserTags } from '../utils/tagUtils';
+import { canEditVitrine } from '../utils/permissionUtils';
 import { usePendingMembersNotification } from '../hooks/usePendingMembersNotification';
 
 export default function LayoutShell({ 

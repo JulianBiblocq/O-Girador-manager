@@ -144,7 +144,13 @@ const POLES_CONFIG = [
     label: 'Vitrine',
     labelKey: 'poleVitrine',
     tabs: [
-      { id: 'vitrine-editor', label: 'Vitrine', labelKey: 'tabVitrine' }
+      { id: 'vitrine-general', label: 'Général & SEO' },
+      { id: 'vitrine-presentation', label: 'Présentation' },
+      { id: 'vitrine-organisateur', label: 'Organisateur & Technique' },
+      { id: 'vitrine-galerie', label: 'Galerie Photo' },
+      { id: 'vitrine-recrutement', label: 'Recrutement & Vie Associative' },
+      { id: 'vitrine-reseaux', label: 'Réseaux & Newsletter' },
+      { id: 'vitrine-apparence', label: 'Apparence' }
     ]
   },
   {
@@ -855,7 +861,7 @@ export default function App() {
   const hasAccessStudio = isMasterKeyActive || checkTabAccess('studio-events', 'studio') || checkTabAccess('studio-social', 'studio') || checkTabAccess('reunion-manager', 'studio') || checkTabAccess('varal-manager', 'studio') || checkTabAccess('activity-reports', 'studio') || checkTabAccess('mestre-forum-channels', 'studio');
   const hasAccessVestiaire = isMasterKeyActive || checkTabAccess('wardrobe-inventory', 'vestiaire') || checkTabAccess('wardrobe-couture', 'vestiaire') || checkTabAccess('wardrobe-sizes', 'vestiaire');
   const hasAccessMestre = isMasterKeyActive || checkTabAccess('mestre-orientation', 'mestre') || checkTabAccess('mestre-events', 'mestre') || checkTabAccess('mestre-stage-layout', 'mestre') || checkTabAccess('mestre-sequenceur', 'mestre') || checkTabAccess('mestre-workshops', 'mestre') || checkTabAccess('mestre-mot-mestre', 'mestre');
-  const hasAccessVitrine = isMasterKeyActive || checkTabAccess('vitrine-editor', 'vitrine');
+  const hasAccessVitrine = isMasterKeyActive || checkTabAccess('vitrine-general', 'vitrine') || checkTabAccess('vitrine-editor', 'vitrine');
   const hasAccessConfig = isMasterKeyActive || checkTabAccess('config-identity', 'config') || checkTabAccess('config-communication', 'config') || checkTabAccess('config-profile', 'config') || checkTabAccess('config-security', 'config') || checkTabAccess('config-modules', 'config') || checkTabAccess('config-logistics', 'config') || checkTabAccess('config-documents', 'config') || checkTabAccess('config-agenda', 'config') || checkTabAccess('config-lieux', 'config') || checkTabAccess('config-layout', 'config');
   const hasAccessForumMod = isMasterKeyActive || userTags.some(t => ['Modérateur', 'Modérateur Forum', 'Gestionnaire Porte-voix', 'Porte-voix'].includes(t));
 
