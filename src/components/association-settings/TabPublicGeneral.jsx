@@ -92,18 +92,29 @@ export default function TabPublicGeneral({ formData, handleChange, groupId, savi
             </p>
           </div>
 
-          <button
-            type="button"
-            disabled={saving || publishing}
-            onClick={handleTogglePublish}
-            className={`px-4 py-2 text-xs font-black uppercase tracking-wider rounded-[6px_8px_5px_7px] border-2 shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none transition-all cursor-pointer shrink-0 flex items-center gap-1.5 ${
-              isVitrinePublished
-                ? 'bg-red-800 text-white border-encre-noire hover:brightness-110'
-                : 'bg-emerald-700 text-white border-encre-noire hover:brightness-110'
-            }`}
-          >
-            <span>{publishing ? 'Patientez...' : (isVitrinePublished ? '🔒 Passer en Mode Brouillon' : '🌍 Publier le Site Maintenant')}</span>
-          </button>
+          <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+            <button
+              type="button"
+              disabled={saving || publishing}
+              onClick={handleTogglePublish}
+              className={`px-4 py-2 text-xs font-black uppercase tracking-wider rounded-[6px_8px_5px_7px] border-2 shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none transition-all cursor-pointer flex items-center gap-1.5 ${
+                isVitrinePublished
+                  ? 'bg-red-800 text-white border-encre-noire hover:brightness-110'
+                  : 'bg-emerald-700 text-white border-encre-noire hover:brightness-110'
+              }`}
+            >
+              <span>{publishing ? 'Patientez...' : (isVitrinePublished ? '🔒 Passer en Mode Brouillon' : '🌍 Publier le Site Maintenant')}</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => window.open('/', '_blank', 'noopener,noreferrer')}
+              className="px-4 py-2 text-xs font-black uppercase tracking-wider bg-cordel-vert text-white rounded-[6px_8px_5px_7px] border-2 border-encre-noire shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-110 cursor-pointer flex items-center gap-1.5 select-none"
+              title="Ouvrir le site public dans un nouvel onglet"
+            >
+              <span>🌍 Voir le site public ↗</span>
+            </button>
+          </div>
         </div>
       </CordelCard>
 
