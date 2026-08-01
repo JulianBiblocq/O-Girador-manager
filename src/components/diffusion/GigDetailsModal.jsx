@@ -3,6 +3,7 @@ import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 import { GIG_STATUSES } from './GigFormModal';
 import { downloadContractPDF } from '../../utils/contractPdfGenerator';
+import GigSendContractModal from './GigSendContractModal';
 
 export default function GigDetailsModal({
   isOpen,
@@ -15,6 +16,7 @@ export default function GigDetailsModal({
   onOpenQuoteGeneratorModal,
   saving = false
 }) {
+  const [isSendContractModalOpen, setIsSendContractModalOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState(null);
 
   if (!isOpen || !gig) return null;
@@ -197,11 +199,21 @@ export default function GigDetailsModal({
 
             <button
               type="button"
+              onClick={() => setIsSendContractModalOpen(true)}
+              className="px-2.5 py-2 text-[10px] font-extrabold uppercase rounded bg-purple-600 hover:bg-purple-700 text-white border border-purple-800 shadow-xs flex flex-col items-center gap-1 cursor-pointer transition-all active:scale-95"
+              title="Préparer et transmettre le contrat de prestation signé par e-mail au client via l'API Brevo"
+            >
+              <span className="text-base">📧</span>
+              <span>Envoyer Contrat</span>
+            </button>
+
+            <button
+              type="button"
               onClick={() => downloadContractPDF(gig, associationSettings)}
               className="px-2.5 py-2 text-[10px] font-extrabold uppercase rounded bg-purple-100 hover:bg-purple-200 text-purple-900 border border-purple-300 shadow-xs flex flex-col items-center gap-1 cursor-pointer transition-all active:scale-95"
               title="Générer et télécharger le contrat de prestation 100% dynamique aux couleurs et infos de l'association"
             >
-              <span className="text-base">✍️</span>
+              <span className="text-base">📥</span>
               <span>Contrat PDF</span>
             </button>
 
@@ -233,6 +245,18 @@ export default function GigDetailsModal({
           </CordelButton>
         </div>
       </CordelCard>
+
+      {/* Modale d'envoi du Contrat PDF par email via Brevo */}
+      <GigSendContractModal
+        isOpen={isSendContractModalOpen}
+        onClose={() => setIsSendContractModalOpen(false)}
+        gig={gig}
+        associationSettings={associationSettings}
+        onSendSuccess={() => {
+          triggerWorkflowToast('✓ Contrat envoyé avec succès !');
+          if (onStatusChange) onStatusChange(gig.id, '4_contrat_envoye');
+        }}
+      />
     </div>
   );
 }
