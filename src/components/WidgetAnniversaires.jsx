@@ -45,7 +45,12 @@ export default function WidgetAnniversaires({ groupId, currentUser, profileData,
 
       snap.forEach((docSnap) => {
         const data = docSnap.data();
-        if (data.statutActuel !== 'inactive' && data.statutActuel !== 'archived' && data.dateNaissance) {
+        // Vérification de la permission de confidentialité pour l'affichage de l'anniversaire
+        const isBirthdateAllowed = data.afficherDateNaissance !== undefined 
+          ? (data.afficherDateNaissance === true) 
+          : (data.publierDateNaissance !== undefined ? (data.publierDateNaissance === true) : false);
+
+        if (data.statutActuel !== 'inactive' && data.statutActuel !== 'archived' && data.dateNaissance && isBirthdateAllowed) {
           const parts = data.dateNaissance.split('-');
           if (parts.length === 3) {
             const birthMonth = parseInt(parts[1], 10);

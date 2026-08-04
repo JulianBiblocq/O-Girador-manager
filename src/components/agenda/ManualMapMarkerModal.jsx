@@ -190,9 +190,14 @@ export default function ManualMapMarkerModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-[2px] z-50 flex items-center justify-center p-4">
-      <CordelCard variant="default" useExtremeBorder={true} className="w-full max-w-2xl flex flex-col gap-3 p-4 select-none relative">
-        <div className="flex justify-between items-center border-b border-dashed border-encre-noire/20 pb-2">
+    <div
+      tabIndex={-1}
+      onKeyDown={(e) => e.key === 'Escape' && onClose()}
+      className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 select-none outline-none animate-fade-in"
+    >
+      <div className="relative w-full max-w-2xl max-h-[90vh] flex flex-col rounded-lg bg-cordel-bg shadow-2xl border-2 border-cordel-master-dark/40 overflow-hidden text-left">
+        {/* 1. Header (Fixe) */}
+        <div className="flex-shrink-0 p-4 border-b-2 border-dashed border-cordel-master-dark/20 flex justify-between items-center bg-cordel-bg">
           <h3 className="font-extrabold text-sm uppercase tracking-wider text-cordel-wood flex items-center gap-1.5">
             📌 Placer le Marqueur sur la Carte
           </h3>
@@ -205,41 +210,44 @@ export default function ManualMapMarkerModal({
           </button>
         </div>
 
-        <p className="text-[11px] font-semibold text-encre-noire opacity-80 text-left leading-relaxed">
-          💡 <strong>Instruction</strong> : Faites glisser le marqueur rouge ou cliquez directement n'importe où sur la carte pour définir l'emplacement exact de l'événement.
-        </p>
+        {/* 2. Body (Défilable verticalement) */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-3">
+          <p className="text-[11px] font-semibold text-encre-noire opacity-80 text-left leading-relaxed">
+            💡 <strong>Instruction</strong> : Faites glisser le marqueur rouge ou cliquez directement n'importe où sur la carte pour définir l'emplacement exact de l'événement.
+          </p>
 
-        {/* Map Container */}
-        <div className="relative w-full h-[360px] rounded-[6px] border-2 border-encre-noire overflow-hidden bg-cordel-master-light/20">
-          {loading && (
-            <div className="absolute inset-0 flex items-center justify-center bg-white/70 dark:bg-black/70 z-10">
-              <span className="text-xs font-black uppercase tracking-wider animate-pulse text-cordel-wood">
-                ⏳ Chargement de la carte interactive...
-              </span>
-            </div>
-          )}
+          {/* Map Container */}
+          <div className="relative w-full h-[320px] sm:h-[360px] rounded-[6px] border-2 border-encre-noire overflow-hidden bg-cordel-master-light/20">
+            {loading && (
+              <div className="absolute inset-0 flex items-center justify-center bg-white/70 dark:bg-black/70 z-10">
+                <span className="text-xs font-black uppercase tracking-wider animate-pulse text-cordel-wood">
+                  ⏳ Chargement de la carte interactive...
+                </span>
+              </div>
+            )}
 
-          {error ? (
-            <div className="absolute inset-0 flex items-center justify-center p-4 text-center text-xs font-bold text-red-600 bg-red-50">
-              ⚠️ {error}
-            </div>
-          ) : (
-            <div ref={mapRef} className="w-full h-full" />
-          )}
+            {error ? (
+              <div className="absolute inset-0 flex items-center justify-center p-4 text-center text-xs font-bold text-red-600 bg-red-50">
+                ⚠️ {error}
+              </div>
+            ) : (
+              <div ref={mapRef} className="w-full h-full" />
+            )}
+          </div>
+
+          {/* Coordinates status */}
+          <div className="flex justify-between items-center text-xs bg-cordel-bg p-2 rounded border border-dashed border-encre-noire/20 font-bold">
+            <span>Coordonnées sélectionnées :</span>
+            <span className="font-mono text-cordel-wood text-xs">
+              {coords.lat !== null && coords.lng !== null 
+                ? `Lat: ${coords.lat.toFixed(5)} | Lng: ${coords.lng.toFixed(5)}`
+                : "Aucune position"}
+            </span>
+          </div>
         </div>
 
-        {/* Coordinates status */}
-        <div className="flex justify-between items-center text-xs bg-cordel-bg p-2 rounded border border-dashed border-encre-noire/20 font-bold">
-          <span>Coordonnées sélectionnées :</span>
-          <span className="font-mono text-cordel-wood text-xs">
-            {coords.lat !== null && coords.lng !== null 
-              ? `Lat: ${coords.lat.toFixed(5)} | Lng: ${coords.lng.toFixed(5)}`
-              : "Aucune position"}
-          </span>
-        </div>
-
-        {/* Modal Actions */}
-        <div className="flex justify-end gap-3 mt-2">
+        {/* 3. Footer (Fixe en bas) */}
+        <div className="flex-shrink-0 p-4 border-t-2 border-dashed border-cordel-master-dark/20 flex justify-end gap-3 bg-cordel-bg">
           <CordelButton variant="default" type="button" onClick={onClose} className="text-xs py-2 px-4">
             Annuler
           </CordelButton>
@@ -247,7 +255,7 @@ export default function ManualMapMarkerModal({
             ✅ Valider cette position
           </CordelButton>
         </div>
-      </CordelCard>
+      </div>
     </div>
   );
 }

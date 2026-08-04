@@ -30,10 +30,14 @@ export default function NewThreadModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm select-none">
+    <div
+      tabIndex={-1}
+      onKeyDown={(e) => e.key === 'Escape' && onClose()}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm select-none outline-none"
+    >
       <div className="bg-cordel-bg border-4 border-encre-noire rounded-[8px_12px_10px_14px] shadow-[6px_6px_0px_0px_#181716] w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
-        {/* En-tête de modale */}
-        <div className="flex items-center justify-between p-3.5 bg-cordel-wood text-white border-b-2 border-encre-noire">
+        {/* 1. En-tête de modale (Fixe) */}
+        <div className="flex-shrink-0 flex items-center justify-between p-3.5 bg-cordel-wood text-white border-b-2 border-encre-noire">
           <h3 className="font-black text-base uppercase tracking-wider">
             ✍️ Lancer une nouvelle discussion
           </h3>
@@ -46,8 +50,8 @@ export default function NewThreadModal({
           </button>
         </div>
 
-        {/* Formulaire de création */}
-        <div className="p-4 overflow-y-auto">
+        {/* Formulaire de création (Body défilable + Footer fixe) */}
+        <div className="flex-1 overflow-hidden flex flex-col">
           <CreateThreadForm
             groupId={groupId}
             user={user}
@@ -59,6 +63,7 @@ export default function NewThreadModal({
               if (onThreadCreated) onThreadCreated();
               onClose();
             }}
+            inModal={true}
           />
         </div>
       </div>

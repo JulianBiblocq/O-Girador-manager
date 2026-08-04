@@ -6,6 +6,7 @@ import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
 import { useTranslation } from './LanguageContext';
 import { XiloCaixa } from './XiloIcons';
+import QrCodeLogin from './auth/QrCodeLogin';
 
 export default function Login({ branding }) {
   const { t, locale } = useTranslation();
@@ -13,6 +14,7 @@ export default function Login({ branding }) {
   const [password, setPassword] = useState('');
   const [isSignUpMode, setIsSignUpMode] = useState(false);
   const [isResetPasswordMode, setIsResetPasswordMode] = useState(false);
+  const [isQrLoginMode, setIsQrLoginMode] = useState(false);
   const [resetSent, setResetSent] = useState(false);
   const [authLoading, setAuthLoading] = useState(false);
 
@@ -183,11 +185,35 @@ export default function Login({ branding }) {
                   </button>
                 </div>
               </div>
+            ) : isQrLoginMode ? (
+              <div className="flex flex-col items-center">
+                <QrCodeLogin />
+                <div className="text-center mt-4">
+                  <button
+                    type="button"
+                    onClick={() => setIsQrLoginMode(false)}
+                    className="text-[10px] font-bold text-cordel-wood hover:underline cursor-pointer"
+                  >
+                    ← {t('login.backToLogin') || "Retour à la connexion classique"}
+                  </button>
+                </div>
+              </div>
             ) : (
               <>
-                <p className="text-sm leading-relaxed mb-8 text-cordel-master-dark/80 px-2">
+                <p className="text-sm leading-relaxed mb-6 text-cordel-master-dark/80 px-2">
                   {t('login.welcomeDesc')}
                 </p>
+
+                {/* Switch Login Method Tab */}
+                <div className="flex justify-center mb-6">
+                  <button
+                    type="button"
+                    onClick={() => setIsQrLoginMode(true)}
+                    className="w-full py-2.5 px-3 bg-cordel-bg-light border-2 border-encre-noire rounded-[6px_9px_5px_8px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:bg-amber-100/60 font-black text-xs uppercase tracking-wider text-cordel-wood flex items-center justify-center gap-2 cursor-pointer transition-all"
+                  >
+                    <span>📱 Se connecter avec QR Code</span>
+                  </button>
+                </div>
 
                 <CordelButton 
                   variant="ocre" 

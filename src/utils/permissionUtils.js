@@ -222,4 +222,117 @@ export function canAccessDiffusion(profileData, permissionsMatrice = null, effec
   return false;
 }
 
+/**
+ * Mots-clés d'étiquettes/badges autorisant les pôles d'administration par défaut.
+ */
+const POLE_ALLOWED_KEYWORDS = {
+  troupe: ['bureau', 'président', 'présidente', 'présidence', 'admin', 'direction', 'ca', 'secrétaire', 'annuaire', 'troupe'],
+  diffusion: ['bureau', 'président', 'présidente', 'présidence', 'admin', 'direction', 'ca', 'diffusion', 'booking', 'trésorier', 'secrétaire', 'communication'],
+  tresorerie: ['bureau', 'président', 'présidente', 'présidence', 'admin', 'direction', 'ca', 'trésorier', 'trésorière', 'trésorerie', 'comptable', 'finance'],
+  logistique: ['bureau', 'président', 'présidente', 'présidence', 'admin', 'direction', 'ca', 'logistique', 'matériel', 'inventaire', 'instruments', 'commandes'],
+  vestiaire: ['bureau', 'président', 'présidente', 'présidence', 'admin', 'direction', 'ca', 'vestiaire', 'costumes', 'couture'],
+  studio: ['bureau', 'président', 'présidente', 'présidence', 'admin', 'direction', 'ca', 'studio', 'communication', 'secrétaire', 'porte-voix', 'newsletter'],
+  mestre: ['mestre', 'mestria', 'chef de pupitre', 'bureau', 'direction', 'admin', 'président', 'présidente'],
+  vitrine: ['bureau', 'président', 'présidente', 'présidence', 'admin', 'direction', 'ca', 'vitrine', 'communication', 'webmaster'],
+  config: ['bureau', 'président', 'présidente', 'présidence', 'admin', 'direction', 'ca', 'config', 'sécurité', 'secrétaire']
+};
+
+/**
+ * Vérifie si l'utilisateur possède les droits d'accès à un Pôle d'Administration spécifié.
+ * 
+ * @param {string} poleId Identifiant du pôle ('tresorerie', 'logistique', 'studio', 'diffusion', 'config', etc.)
+ * @param {Object} profileData Profil de l'utilisateur (role, isSystemAdmin, tags)
+ * @param {Object} permissionsMatrice Matrice des permissions de l'association
+ * @param {Array} effectiveUserTags Étiquettes effectives
+ * @returns {boolean} true si l'accès au pôle est déverrouillé pour ce membre
+ */
+export function canAccessPole(poleId, profileData, permissionsMatrice = null, effectiveUserTags = []) {
+  if (!profileData) return false;
+
+  // Pôles publics Espace Membre : toujours déverrouillés
+  if (poleId === 'accueil' || poleId === 'mon-espace') return true;
+
+  // 1. Rôles système autorisés d'office sur les pôles d'administration
+  const systemRole = (profileData.role || '').toLowerCase();
+  if (
+    systemRole === 'mestre' ||
+    systemRole === 'admin' ||
+    systemRole === 'super-admin' ||
+    systemRole === 'bureau' ||
+    systemRole === 'ca' ||
+    profileData.isSystemAdmin === true
+  ) {
+    return true;
+  }
+
+  // 2. Badges / Étiquettes autorisées par mots-clés par défaut
+  const userTagsList = (
+    effectiveUserTags && effectiveUserTags.length > 0
+      ? effectiveUserTags
+      : profileData.tags || []
+  ).map(t => (typeof t === 'string' ? t.toLowerCase() : (t.id || t.nomM || t.nomF || '').toLowerCase()));
+
+  const allowedKeywords = POLE_ALLOWED_KEYWORDS[poleId] || ['bureau', 'admin', 'direction', 'ca', 'président', 'présidente'];
+  if (userTagsList.some(ut => allowedKeywords.some(kw => ut.includes(kw)))) {
+    return true;
+  }
+
+  // 3. Matrice des permissions Firestore de l'association (clé globale du pôle)
+  if (permissionsMatrice && typeof permissionsMatrice === 'object') {
+    const poleTags = permissionsMatrice[poleId];
+    if (Array.isArray(poleTags) && poleTags.length > 0) {
+      const formattedPoleTags = poleTags.map(t => (typeof t === 'string' ? t.toLowerCase() : (t.id || t.nomF || t.nomM || '').toLowerCase()));
+      if (userTagsList.some(ut => formattedPoleTags.includes(ut))) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
+/**
+ * Vérifie si l'utilisateur possède les droits d'accès à un Onglet / Sous-Menu d'administration spécifique.
+ * 
+ * @param {string} tabId Identifiant de l'onglet (ex: 'gigs-pipeline', 'cotisations', 'inventory', etc.)
+ * @param {string} poleId Identifiant du pôle parent
+ * @param {Object} profileData Profil de l'utilisateur
+ * @param {Object} permissionsMatrice Matrice des permissions
+ * @param {Array} effectiveUserTags Étiquettes effectives
+ * @returns {boolean} true si l'accès à l'onglet est autorisé
+ */
+export function canAccessTabPermission(tabId, poleId, profileData, permissionsMatrice = null, effectiveUserTags = []) {
+  if (!profileData) return false;
+
+  // Onglets publics Espace Membre : toujours autorisés
+  if (['profil', 'agenda', 'materiel', 'vestiaire', 'trombinoscope', 'forum', 'dashboard', 'varal'].includes(tabId)) {
+    return true;
+  }
+
+  // 1. Si l'utilisateur possède les droits d'administration globaux sur le pôle parent, accorder l'accès
+  if (canAccessPole(poleId, profileData, permissionsMatrice, effectiveUserTags)) {
+    return true;
+  }
+
+  // 2. Vérification spécifique par onglet dans la matrice de permissions
+  if (permissionsMatrice && typeof permissionsMatrice === 'object') {
+    const tabTags = permissionsMatrice[tabId];
+    if (Array.isArray(tabTags) && tabTags.length > 0) {
+      const userTagsList = (
+        effectiveUserTags && effectiveUserTags.length > 0
+          ? effectiveUserTags
+          : profileData.tags || []
+      ).map(t => (typeof t === 'string' ? t.toLowerCase() : (t.id || t.nomM || t.nomF || '').toLowerCase()));
+
+      const formattedTabTags = tabTags.map(t => (typeof t === 'string' ? t.toLowerCase() : (t.id || t.nomF || t.nomM || '').toLowerCase()));
+      if (userTagsList.some(ut => formattedTabTags.includes(ut))) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
+
 

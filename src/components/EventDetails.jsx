@@ -23,9 +23,11 @@ import EventSetlistSection from './event-details/EventSetlistSection';
 import EventReportSection from './event-details/EventReportSection';
 import EventStageLayoutSection from './event-details/EventStageLayoutSection';
 import EventVolunteerSection from './event-details/EventVolunteerSection';
+import { DEFAULT_CUSTOM_CATEGORIES, resolveCategory, isUserCategoryMatchingEvent } from '../utils/categoryUtils';
 import { resolveEffectiveUserTags, findTagObject, getTagId } from '../utils/tagUtils';
 import { canManageEvents } from '../utils/permissionUtils';
 import EventBudgetEditor from './event-details/EventBudgetEditor';
+import EventBudgetSection from './event-details/EventBudgetSection';
 import EventEditForm from './event-details/EventEditForm';
 import EventPollSection from './event-details/EventPollSection';
 import { useEventDetailsController } from '../hooks/useEventDetailsController';
@@ -144,8 +146,32 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
   const [eventTypeConfigs, setEventTypeConfigs] = useState({});
   const [associationName, setAssociationName] = useState('');
   const [dressCodes, setDressCodes] = useState([]);
+  const [customCategories, setCustomCategories] = useState(DEFAULT_CUSTOM_CATEGORIES);
 
-  const isPrestationRestricted = event.type === 'prestation' && event.niveauRequis === 'confirme' && profileData?.niveau !== 'confirme';
+  // 1. Vérification du Niveau Musique / Catégorie de pratique
+  const eventRequiredPublic = resolveCategory(event.niveauRequis || event.publicCible, customCategories);
+  
+  let isMusicLevelRestricted = true;
+  if (profileData?.niveauxParInstrument && Object.keys(profileData.niveauxParInstrument).length > 0) {
+    // S'il y a des niveaux granulaires, on vérifie si au moins un instrument a le niveau requis
+    const hasMatchingInst = Object.values(profileData.niveauxParInstrument).some(niv => {
+      const resolvedNiv = resolveCategory(niv, customCategories);
+      return isUserCategoryMatchingEvent(resolvedNiv, eventRequiredPublic, customCategories);
+    });
+    isMusicLevelRestricted = !hasMatchingInst;
+  } else {
+    // Fallback sur le niveau global
+    const userMusicLevel = resolveCategory(profileData?.niveauMusique || profileData?.niveau, customCategories);
+    isMusicLevelRestricted = !isUserCategoryMatchingEvent(userMusicLevel, eventRequiredPublic, customCategories);
+  }
+
+  // 2. Vérification du Niveau Danse
+  const danseNiveauRequis = resolveCategory(event.niveauDanseRequis || event.danseNiveauRequis, customCategories);
+  const userDanceLevel = resolveCategory(profileData?.niveauDanse, customCategories);
+  const isDanceEvent = event.includesDance || ['stage', 'prestation', 'atelier', 'repetition'].includes(event.type);
+  const isDanceLevelRestricted = isDanceEvent && danseNiveauRequis && danseNiveauRequis !== 'tous' && danseNiveauRequis !== 'aucun' && (userDanceLevel !== danseNiveauRequis);
+
+  const isPrestationRestricted = isMusicLevelRestricted;
 
   // useEventRSVP hook
   const {
@@ -185,7 +211,7 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
     handleFamilyMemberStatusChange,
     handleFamilyMemberInstrumentChange,
     handleFamilySave
-  } = useEventRSVP(event, user, profileData, allUsers, isPrestationRestricted, setToastMessage);
+  } = useEventRSVP(event, user, profileData, allUsers, isMusicLevelRestricted, setToastMessage);
 
   // useEventCarpool hook
   const {
@@ -289,6 +315,9 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
           setAssociationEventTypes(['prestation', 'repetition', 'stage', 'atelier', 'reunion']);
         }
         setDressCodes(data.dressCodes || []);
+        if (Array.isArray(data.customCategories) && data.customCategories.length > 0) {
+          setCustomCategories(data.customCategories);
+        }
         setLieuxImportants(Array.isArray(data.lieuxImportants) ? data.lieuxImportants : []);
         if (Array.isArray(data.instrumentsDisponibles)) {
           setInstrumentsDisponibles(data.instrumentsDisponibles);
@@ -506,14 +535,33 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
   };
 
   const getMemberInstrumentOptions = (mInfo) => {
-    const base = mInfo?.instrumentsJoues && mInfo.instrumentsJoues.length > 0
+    // Restreindre la liste des instruments aux seuls instruments déclarés par le membre dans son profil
+    let rawUserInstruments = (mInfo?.instrumentsJoues && mInfo.instrumentsJoues.length > 0)
       ? [...mInfo.instrumentsJoues]
-      : [...instrumentsDisponibles];
-    
-    if (mInfo?.instrumentsJoues && mInfo.instrumentsJoues.length > 1) {
+      : (mInfo?.instrument ? [mInfo.instrument] : []);
+
+    // Filtrer selon le niveau requis de l'événement si défini
+    const eventRequiredPublic = resolveCategory(event.niveauRequis || event.publicCible, customCategories);
+    if (eventRequiredPublic && eventRequiredPublic !== 'tous' && eventRequiredPublic !== 'aucun') {
+      rawUserInstruments = rawUserInstruments.filter(inst => {
+        const instNiveau = mInfo?.niveauxParInstrument?.[inst] || mInfo?.niveauMusique || mInfo?.niveau;
+        const resolvedNiv = resolveCategory(instNiveau, customCategories);
+        return isUserCategoryMatchingEvent(resolvedNiv, eventRequiredPublic, customCategories);
+      });
+    }
+
+    let base = [...rawUserInstruments];
+
+    // Si mInfo a déjà un instrument choisi dans Firestore, le conserver
+    if (mInfo?.instrumentChoisi && !base.includes(mInfo.instrumentChoisi)) {
+      base.push(mInfo.instrumentChoisi);
+    }
+
+    // Combinaisons autorisées pour les polyvalents si le membre possède TOUS les instruments du groupe
+    if (rawUserInstruments.length > 1) {
       linkedInstruments.forEach(link => {
         const instrumentsArray = link.instruments || (Array.isArray(link) ? link : [link.inst1, link.inst2]);
-        const hasAll = instrumentsArray.every(inst => mInfo.instrumentsJoues.includes(inst));
+        const hasAll = instrumentsArray.every(inst => rawUserInstruments.includes(inst));
         if (hasAll) {
           const combined = instrumentsArray.join(' + ');
           if (!base.includes(combined)) {
@@ -522,6 +570,14 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
         }
       });
     }
+
+    // Filtrage du niveau danse si la section danse est restreinte pour cet événement
+    const mDanceLevel = mInfo?.niveauDanse || 'aucun';
+    const mDanceRestricted = isDanceEvent && danseNiveauRequis === 'confirme' && (mDanceLevel === 'debutant' || mDanceLevel === 'aucun');
+    if (mDanceRestricted) {
+      base = base.filter(inst => !inst.toLowerCase().includes('danse'));
+    }
+
     return base;
   };
 
@@ -1382,6 +1438,8 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
                 status={status}
                 saving={saving}
                 isPrestationRestricted={isPrestationRestricted}
+                isMusicLevelRestricted={isMusicLevelRestricted}
+                isDanceLevelRestricted={isDanceLevelRestricted}
                 existingResponse={existingResponse}
                 instrumentChoisi={instrumentChoisi}
                 setInstrumentChoisi={setInstrumentChoisi}
@@ -1448,6 +1506,8 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
                 status={status}
                 saving={saving}
                 isPrestationRestricted={isPrestationRestricted}
+                isMusicLevelRestricted={isMusicLevelRestricted}
+                isDanceLevelRestricted={isDanceLevelRestricted}
                 existingResponse={existingResponse}
                 instrumentChoisi={instrumentChoisi}
                 setInstrumentChoisi={setInstrumentChoisi}
@@ -1496,98 +1556,18 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
           )}
 
           {/* ACCORDION 4: Bilan Financier (Restreint Trésorerie / Bureau / Admins) */}
-          {(isAuthorized || hasFinanceAccess) && agendaEnableFinance && ((event.montantRecette && event.montantRecette > 0) || (event.montantDepense && event.montantDepense > 0) || isAuthorized || hasFinanceAccess) && (
+          {(isAuthorized || hasFinanceAccess) && agendaEnableFinance && (
             <CordelAccordion
               title="Bilan financier de l'événement"
-              subtitle="Synthèse des recettes, dépenses et solde net (Accès habilité)"
+              subtitle="Synthèse des recettes (Devis/Factures) et dépenses hybrides (Accès habilité)"
               icon="💰"
               defaultOpen={false}
             >
-              {((Array.isArray(event.budgetRecettes) && event.budgetRecettes.length > 0) || 
-                (Array.isArray(event.budgetDepenses) && event.budgetDepenses.length > 0)) ? (
-                <div className="flex flex-col gap-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {/* Recettes */}
-                    <div className="flex flex-col gap-1 bg-green-50/50 dark:bg-green-950/10 p-2.5 border border-dashed border-green-700/10 rounded">
-                      <span className="text-[10px] uppercase font-black text-green-800 mb-1">📈 Recettes</span>
-                      <div className="flex flex-col gap-1 text-[11px]">
-                        {(!event.budgetRecettes || event.budgetRecettes.length === 0) ? (
-                          <span className="italic opacity-60">Aucune recette renseignée.</span>
-                        ) : (
-                          event.budgetRecettes.map((item, idx) => (
-                            <div key={item.id || idx} className="flex justify-between py-0.5 border-b border-dashed border-encre-noire/5">
-                              <span className="font-semibold text-neutral-700">{item.intitule || 'Recette'}</span>
-                              <span className="font-bold text-green-700">{(parseFloat(item.montant) || 0).toFixed(2)} €</span>
-                            </div>
-                          ))
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Dépenses */}
-                    <div className="flex flex-col gap-1 bg-red-50/50 dark:bg-red-950/10 p-2.5 border border-dashed border-red-700/10 rounded">
-                      <span className="text-[10px] uppercase font-black text-red-800 mb-1">📉 Dépenses</span>
-                      <div className="flex flex-col gap-1 text-[11px]">
-                        {(!event.budgetDepenses || event.budgetDepenses.length === 0) ? (
-                          <span className="italic opacity-60">Aucune dépense renseignée.</span>
-                        ) : (
-                          event.budgetDepenses.map((item, idx) => (
-                            <div key={item.id || idx} className="flex justify-between py-0.5 border-b border-dashed border-encre-noire/5">
-                              <span className="font-semibold text-neutral-700">{item.intitule || 'Dépense'}</span>
-                              <span className="font-bold text-red-700">{(parseFloat(item.montant) || 0).toFixed(2)} €</span>
-                            </div>
-                          ))
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Synthèse */}
-                  <div className="pt-2.5 border-t border-dashed border-encre-noire/15 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-                    <div className="flex gap-4 text-[11px] font-bold">
-                      <div>
-                        <span className="opacity-70">Total Recettes : </span>
-                        <span className="text-green-700 font-extrabold">{(event.montantRecette || 0).toFixed(2)} €</span>
-                      </div>
-                      <div>
-                        <span className="opacity-70">Total Dépenses : </span>
-                        <span className="text-red-700 font-extrabold">{(event.montantDepense || 0).toFixed(2)} €</span>
-                      </div>
-                    </div>
-                    <div className="text-[11px] font-bold">
-                      <span>Solde Net : </span>
-                      <span className={`font-black px-2 py-0.5 rounded border border-encre-noire/10 ${((event.montantRecette || 0) - (event.montantDepense || 0)) >= 0 ? 'bg-green-100 text-green-800 dark:bg-green-950/30' : 'bg-red-100 text-red-800 dark:bg-red-950/30'}`}>
-                        {((event.montantRecette || 0) - (event.montantDepense || 0)) >= 0 ? '+' : ''}{((event.montantRecette || 0) - (event.montantDepense || 0)).toFixed(2)} €
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <>
-                  <div className="grid grid-cols-2 gap-4 mt-2">
-                    {event.montantRecette > 0 && (
-                      <div className="flex flex-col">
-                        <span className="text-[9px] uppercase font-bold text-cordel-master-dark">Revenus de l'événement</span>
-                        <span className="text-sm font-black text-green-700">{event.montantRecette} €</span>
-                      </div>
-                    )}
-                    {event.montantDepense > 0 && (
-                      <div className="flex flex-col">
-                        <span className="text-[9px] uppercase font-bold text-cordel-master-dark">Coûts de l'événement</span>
-                        <span className="text-sm font-black text-red-700">{event.montantDepense} €</span>
-                      </div>
-                    )}
-                  </div>
-                  {event.montantRecette > 0 && event.montantDepense > 0 && (
-                    <div className="mt-3 pt-2.5 border-t border-dashed border-encre-noire/15 flex items-center justify-between">
-                      <span className="text-[9px] uppercase font-bold text-cordel-master-dark">Bilan net</span>
-                      <span className={`text-xs font-black ${event.montantRecette - event.montantDepense >= 0 ? 'text-green-800' : 'text-red-800'}`}>
-                        {event.montantRecette - event.montantDepense >= 0 ? '+' : ''}{event.montantRecette - event.montantDepense} €
-                      </span>
-                    </div>
-                  )}
-                </>
-              )}
+              <EventBudgetSection
+                event={event}
+                groupId={profileData?.groupId}
+                onCreateQuote={() => onNavigateToView && onNavigateToView('treasury')}
+              />
             </CordelAccordion>
           )}
 

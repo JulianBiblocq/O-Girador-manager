@@ -12,6 +12,8 @@ export default function EventRSVPSection({
   status,
   saving,
   isPrestationRestricted,
+  isMusicLevelRestricted,
+  isDanceLevelRestricted,
   existingResponse,
   instrumentChoisi,
   setInstrumentChoisi,
@@ -250,6 +252,9 @@ export default function EventRSVPSection({
                     const mName = m.isParent ? `${m.prenom} ${m.nom} (Moi)` : `${m.prenom} ${m.nom}`;
                     const isChecked = mResp.selected;
 
+                    const mMusicLevel = m.niveauMusique || m.niveau || 'aucun';
+                    const mIsMusicRestricted = event.niveauRequis === 'confirme' && (mMusicLevel === 'debutant' || mMusicLevel === 'aucun');
+
                     return (
                       <div key={m.id} className="p-2.5 bg-cordel-bg-light border border-encre-noire/20 rounded flex flex-col gap-2 shadow-xs">
                         <div className="flex items-center justify-between gap-2 flex-wrap">
@@ -258,7 +263,7 @@ export default function EventRSVPSection({
                               type="checkbox"
                               checked={isChecked}
                               onChange={() => handleToggleFamilyMemberSelection && handleToggleFamilyMemberSelection(m.id)}
-                              disabled={saving || event.status === 'annule'}
+                              disabled={saving || mIsMusicRestricted || (m.isParent && isPrestationRestricted) || event.status === 'annule'}
                               className="rounded text-cordel-wood focus:ring-0 cursor-pointer w-4 h-4"
                             />
                             <span className="flex items-center gap-1">
@@ -271,22 +276,22 @@ export default function EventRSVPSection({
                           <div className="flex items-center gap-1">
                             <button
                               type="button"
-                              disabled={saving || (m.isParent && isPrestationRestricted) || event.status === 'annule'}
+                              disabled={saving || mIsMusicRestricted || (m.isParent && isPrestationRestricted) || event.status === 'annule'}
                               onClick={() => handleFamilyMemberStatusChange && handleFamilyMemberStatusChange(m.id, 'present')}
                               className={`px-2 py-1 text-[10px] font-bold rounded transition-all select-none cursor-pointer ${
                                 mResp.status === 'present' ? 'theme-bg-vert text-white shadow-sm' : 'bg-black/5 text-encre-noire/70 hover:bg-black/10'
-                              }`}
+                              } ${(mIsMusicRestricted || (m.isParent && isPrestationRestricted) || event.status === 'annule') ? 'opacity-40 cursor-not-allowed' : ''}`}
                             >
                               ✅ Présent
                             </button>
                             {agendaEnableMaybeStatus && (
                               <button
                                 type="button"
-                                disabled={saving || (m.isParent && isPrestationRestricted) || event.status === 'annule'}
+                                disabled={saving || mIsMusicRestricted || (m.isParent && isPrestationRestricted) || event.status === 'annule'}
                                 onClick={() => handleFamilyMemberStatusChange && handleFamilyMemberStatusChange(m.id, 'confirm')}
                                 className={`px-2 py-1 text-[10px] font-bold rounded transition-all select-none cursor-pointer ${
                                   mResp.status === 'confirm' ? 'theme-bg-ocre text-encre-noire shadow-sm' : 'bg-black/5 text-encre-noire/70 hover:bg-black/10'
-                                }`}
+                                } ${(mIsMusicRestricted || (m.isParent && isPrestationRestricted) || event.status === 'annule') ? 'opacity-40 cursor-not-allowed' : ''}`}
                               >
                                 ⏳ À confirmer
                               </button>
@@ -345,14 +350,14 @@ export default function EventRSVPSection({
             <div className={`grid ${agendaEnableMaybeStatus ? 'grid-cols-3' : 'grid-cols-2'} gap-2`}>
               <button
                 type="button"
-                disabled={saving || isPrestationRestricted || event.status === 'annule'}
+                disabled={saving || isMusicLevelRestricted || isPrestationRestricted || event.status === 'annule'}
                 onClick={() => handleStatusChange('present')}
                 className={`
                   theme-btn px-2 py-2.5 text-xs rounded-[4px_6px_3px_5px] transition-all cursor-pointer select-none flex items-center justify-center gap-1.5
                   ${status === 'present' 
                     ? 'theme-btn-status-present-active' 
                     : 'theme-btn-status-inactive'}
-                  ${(isPrestationRestricted || event.status === 'annule') ? 'opacity-40 cursor-not-allowed' : ''}
+                  ${(isMusicLevelRestricted || isPrestationRestricted || event.status === 'annule') ? 'opacity-40 cursor-not-allowed' : ''}
                 `}
               >
                 <span>✅</span> Présent
@@ -376,14 +381,14 @@ export default function EventRSVPSection({
               {agendaEnableMaybeStatus && (
                 <button
                   type="button"
-                  disabled={saving || isPrestationRestricted || event.status === 'annule'}
+                  disabled={saving || isMusicLevelRestricted || isPrestationRestricted || event.status === 'annule'}
                   onClick={() => handleStatusChange('confirm')}
                   className={`
                     theme-btn px-2 py-2.5 text-xs rounded-[4px_6px_3px_5px] transition-all cursor-pointer select-none flex items-center justify-center gap-1.5
                     ${status === 'confirm' 
                       ? 'theme-btn-status-confirm-active' 
                       : 'theme-btn-status-inactive'}
-                    ${(isPrestationRestricted || event.status === 'annule') ? 'opacity-40 cursor-not-allowed' : ''}
+                    ${(isMusicLevelRestricted || isPrestationRestricted || event.status === 'annule') ? 'opacity-40 cursor-not-allowed' : ''}
                   `}
                 >
                   <span>⏳</span> À confirmer
@@ -399,9 +404,16 @@ export default function EventRSVPSection({
             )}
 
             {/* Restriction warning message */}
-            {isPrestationRestricted && (
-              <div className="text-[11px] font-extrabold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/20 p-2.5 rounded border border-dashed border-red-500/30 flex items-center justify-center gap-1.5 mt-1 select-none">
-                🚫 Prestation réservée aux musiciens confirmés.
+            {(isMusicLevelRestricted || isPrestationRestricted) && (
+              <div className="text-[11px] font-extrabold text-amber-900 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/20 p-3 rounded border border-dashed border-amber-600/30 flex items-center justify-center gap-1.5 mt-1 select-none text-center leading-relaxed">
+                🔒 Inscription restreinte. Rendez-vous dans la section 'Discussions et questions logistiques' en bas de page pour échanger avec l'organisation.
+              </div>
+            )}
+
+            {/* Dance restriction warning message */}
+            {isDanceLevelRestricted && (
+              <div className="text-[11px] font-extrabold text-amber-900 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/20 p-3 rounded border border-dashed border-amber-600/30 flex items-center justify-center gap-1.5 mt-1 select-none text-center leading-relaxed">
+                🚫 La section Danse de cet événement est réservée au niveau confirmé.
               </div>
             )}
 

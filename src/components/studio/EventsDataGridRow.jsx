@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import EventToggleSwitch from './EventToggleSwitch';
+import { DEFAULT_CUSTOM_CATEGORIES } from '../../utils/categoryUtils';
 
 const toDateValue = (rawDate) => {
   if (!rawDate) return '';
@@ -28,7 +29,8 @@ function EventsDataGridRow({
   updatingEventId,
   updatingField,
   lieuxImportants = [],
-  defaultLocationsByEventType = {}
+  defaultLocationsByEventType = {},
+  customCategories = DEFAULT_CUSTOM_CATEGORIES
 }) {
   const isUpdatingRow = updatingEventId === event.id;
 
@@ -229,9 +231,10 @@ function EventsDataGridRow({
           className="theme-input w-full text-[11px] py-1 px-2 font-bold cursor-pointer"
         >
           <option value="tous">👥 Tous</option>
-          <option value="debutant">🌱 Débutant</option>
-          <option value="confirme">🏆 Confirmé</option>
           <option value="aucun">Aucun</option>
+          {customCategories.map(cat => (
+            <option key={cat} value={cat}>{cat}</option>
+          ))}
         </select>
       </td>
 
@@ -244,8 +247,9 @@ function EventsDataGridRow({
         >
           <option value="aucun">Aucun</option>
           <option value="tous">👥 Tous</option>
-          <option value="debutant">🌱 Débutant</option>
-          <option value="confirme">🏆 Confirmé</option>
+          {customCategories.map(cat => (
+            <option key={cat} value={cat}>{cat}</option>
+          ))}
         </select>
       </td>
 

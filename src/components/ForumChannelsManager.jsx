@@ -410,23 +410,30 @@ export default function ForumChannelsManager({ groupId, role, isSystemAdmin, onB
 
           {/* Form Modal */}
           {isEditing && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-encre-noire/70 backdrop-blur-sm animate-fade-in select-none">
-              <div className="relative w-full max-w-lg">
-                <CordelCard variant="default" useExtremeBorder={true} className="p-5 flex flex-col gap-4 text-left bg-cordel-bg">
-                  <div className="flex justify-between items-start border-b-2 border-dashed border-cordel-master-dark/25 pb-2">
-                    <h3 className="font-cactus font-black text-base text-encre-noire tracking-wider uppercase">
-                      {editingChannelId ? '✏️ Modifier le salon' : '➕ Nouveau Salon / Sous-dossier'}
-                    </h3>
-                    <button
-                      type="button"
-                      onClick={() => setIsEditing(false)}
-                      className="text-base font-extrabold text-cordel-wood hover:text-red-600 cursor-pointer"
-                    >
-                      ✕
-                    </button>
-                  </div>
+            <div
+              tabIndex={-1}
+              onKeyDown={(e) => e.key === 'Escape' && setIsEditing(false)}
+              className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-encre-noire/70 backdrop-blur-sm animate-fade-in select-none outline-none"
+            >
+              <div className="relative w-full max-w-lg max-h-[90vh] flex flex-col rounded-lg bg-cordel-bg shadow-2xl border-2 border-cordel-master-dark/40 overflow-hidden">
+                {/* 1. Header (Fixe en haut) */}
+                <div className="flex-shrink-0 p-4 border-b-2 border-dashed border-cordel-master-dark/25 flex justify-between items-center bg-cordel-bg">
+                  <h3 className="font-cactus font-black text-base text-encre-noire tracking-wider uppercase">
+                    {editingChannelId ? '✏️ Modifier le salon' : '➕ Nouveau Salon / Sous-dossier'}
+                  </h3>
+                  <button
+                    type="button"
+                    onClick={() => setIsEditing(false)}
+                    className="text-base font-extrabold text-cordel-wood hover:text-red-600 cursor-pointer"
+                  >
+                    ✕
+                  </button>
+                </div>
 
-                  <form onSubmit={handleSave} className="flex flex-col gap-4">
+                {/* Form Wrapper */}
+                <form onSubmit={handleSave} className="flex flex-col flex-1 overflow-hidden">
+                  {/* 2. Body (Défilable verticalement) */}
+                  <div className="flex-1 overflow-y-auto p-4 space-y-4 text-left">
                     {/* Parent Selection */}
                     <div className="flex flex-col gap-1 text-left">
                       <label className="text-[10px] font-black uppercase text-cordel-master-dark">
@@ -531,30 +538,30 @@ export default function ForumChannelsManager({ groupId, role, isSystemAdmin, onB
                         Si cette option est cochée, seuls le Mestre et les Administrateurs pourront créer des sujets ou publier des messages dans ce salon.
                       </p>
                     </div>
+                  </div>
 
-                    {/* Actions */}
-                    <div className="flex justify-end gap-2 pt-3 border-t border-dashed border-cordel-master-dark/20">
-                      <CordelButton
-                        type="button"
-                        variant="default"
-                        onClick={() => setIsEditing(false)}
-                        disabled={saving}
-                        className="py-2 px-4 text-xs font-bold uppercase"
-                      >
-                        Annuler
-                      </CordelButton>
-                      <CordelButton
-                        type="submit"
-                        variant="ocre"
-                        useExtremeBorder={true}
-                        disabled={saving || !name.trim()}
-                        className="py-2 px-4 text-xs font-black uppercase tracking-wider"
-                      >
-                        {saving ? "Enregistrement..." : "Enregistrer le salon"}
-                      </CordelButton>
-                    </div>
-                  </form>
-                </CordelCard>
+                  {/* 3. Footer (Fixe en bas) */}
+                  <div className="flex-shrink-0 p-4 border-t-2 border-dashed border-cordel-master-dark/20 flex justify-end gap-2 bg-cordel-bg">
+                    <CordelButton
+                      type="button"
+                      variant="default"
+                      onClick={() => setIsEditing(false)}
+                      disabled={saving}
+                      className="py-2 px-4 text-xs font-bold uppercase"
+                    >
+                      Annuler
+                    </CordelButton>
+                    <CordelButton
+                      type="submit"
+                      variant="ocre"
+                      useExtremeBorder={true}
+                      disabled={saving || !name.trim()}
+                      className="py-2 px-4 text-xs font-black uppercase tracking-wider"
+                    >
+                      {saving ? "Enregistrement..." : "Enregistrer le salon"}
+                    </CordelButton>
+                  </div>
+                </form>
               </div>
             </div>
           )}

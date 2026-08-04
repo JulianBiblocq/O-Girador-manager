@@ -221,191 +221,205 @@ export default function GigInvoiceGeneratorModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/65 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 select-none overflow-y-auto">
-      <CordelCard
-        variant="default"
-        useExtremeBorder={true}
-        className="w-full max-w-3xl bg-white p-5 sm:p-6 shadow-2xl flex flex-col gap-4 max-h-[92vh] overflow-y-auto text-left relative"
+    <div
+        tabIndex={-1}
+        onKeyDown={(e) => e.key === 'Escape' && !saving && onClose()}
+        className="fixed inset-0 z-50 bg-black/65 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 select-none outline-none animate-fade-in"
       >
-        {/* Entête Modale */}
-        <div className="flex items-center justify-between border-b border-dashed border-cordel-master-dark/20 pb-3">
-          <div className="flex items-center gap-2">
-            <span className="text-2xl">🧾</span>
-            <div>
-              <h3 className="text-base font-extrabold uppercase text-cordel-wood">
-                Génération de Facture Officielle
-              </h3>
-              <p className="text-[10px] text-stone-500 font-bold">
-                Prestation : {gig.eventName} ({gig.date})
-              </p>
+        <div className="relative w-full max-w-3xl max-h-[90vh] flex flex-col rounded-lg bg-white shadow-2xl border-2 border-cordel-master-dark/40 overflow-hidden text-left">
+          {/* 1. Header (Fixe) */}
+          <div className="flex-shrink-0 p-4 border-b border-dashed border-cordel-master-dark/20 flex items-center justify-between bg-white">
+            <div className="flex items-center gap-2">
+              <span className="text-2xl">🧾</span>
+              <div>
+                <h3 className="text-base font-extrabold uppercase text-cordel-wood">
+                  Génération de Facture Officielle
+                </h3>
+                <p className="text-[10px] text-stone-500 font-bold">
+                  Prestation : {gig.eventName} ({gig.date})
+                </p>
+              </div>
             </div>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="text-stone-400 hover:text-stone-800 font-bold text-lg cursor-pointer"
-          >
-            ✕
-          </button>
-        </div>
-
-        {/* Méta-informations de la Facture */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-stone-50 p-3 rounded border border-stone-200">
-          <div className="flex flex-col gap-1">
-            <label className="text-[9px] font-extrabold uppercase text-stone-600">N° de Facture</label>
-            <input
-              type="text"
-              value={invoiceMeta.numero}
-              onChange={(e) => setInvoiceMeta(prev => ({ ...prev, numero: e.target.value }))}
-              className="text-xs font-mono font-extrabold px-2.5 py-1 border border-stone-300 rounded bg-white text-cordel-wood"
-            />
-          </div>
-
-          <div className="flex flex-col gap-1">
-            <label className="text-[9px] font-extrabold uppercase text-stone-600">Date d'Émission</label>
-            <input
-              type="date"
-              value={invoiceMeta.dateEmission}
-              onChange={(e) => setInvoiceMeta(prev => ({ ...prev, dateEmission: e.target.value }))}
-              className="text-xs font-bold px-2.5 py-1 border border-stone-300 rounded bg-white"
-            />
-          </div>
-
-          <div className="flex flex-col gap-1">
-            <label className="text-[9px] font-extrabold uppercase text-stone-600">Date d'Échéance</label>
-            <input
-              type="date"
-              value={invoiceMeta.dateEcheance}
-              onChange={(e) => setInvoiceMeta(prev => ({ ...prev, dateEcheance: e.target.value }))}
-              className="text-xs font-bold px-2.5 py-1 border border-stone-300 rounded bg-white"
-            />
-          </div>
-        </div>
-
-        {/* Informations Client */}
-        <div className="flex flex-col gap-2 bg-emerald-50/50 p-3 rounded border border-emerald-200">
-          <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-900">
-            👤 Coordonnées du Destinataire (Client)
-          </span>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="flex flex-col gap-1">
-              <label className="text-[9px] font-bold text-stone-600">Organisme / Raison Sociale</label>
-              <input
-                type="text"
-                value={clientForm.nom}
-                onChange={(e) => setClientForm(prev => ({ ...prev, nom: e.target.value }))}
-                className="text-xs font-bold px-2.5 py-1 border border-stone-300 rounded bg-white"
-              />
-            </div>
-
-            <div className="flex flex-col gap-1">
-              <label className="text-[9px] font-bold text-stone-600">E-mail de Contact</label>
-              <input
-                type="email"
-                value={clientForm.email}
-                onChange={(e) => setClientForm(prev => ({ ...prev, email: e.target.value }))}
-                className="text-xs font-mono font-bold px-2.5 py-1 border border-stone-300 rounded bg-white"
-              />
-            </div>
-
-            <div className="flex flex-col gap-1 sm:col-span-2">
-              <label className="text-[9px] font-bold text-stone-600">Adresse de Domiciliation</label>
-              <input
-                type="text"
-                value={clientForm.adresse}
-                onChange={(e) => setClientForm(prev => ({ ...prev, adresse: e.target.value }))}
-                className="text-xs font-bold px-2.5 py-1 border border-stone-300 rounded bg-white"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Tableau des Lignes de Facturation */}
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] font-extrabold uppercase tracking-wider text-stone-700">
-              📊 Lignes de Tarification & Prestations
-            </span>
             <button
               type="button"
-              onClick={handleAddLine}
-              className="text-[10px] font-extrabold text-emerald-800 hover:text-emerald-950 underline cursor-pointer"
+              onClick={onClose}
+              className="text-stone-400 hover:text-stone-800 font-bold text-lg cursor-pointer"
+              title="Fermer (Échap)"
             >
-              + Ajouter une ligne
+              ✕
             </button>
           </div>
 
+          {/* 2. Body (Défilable verticalement) */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          {/* Identifiants & Dates Facture */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3 bg-[#fdfaf2] border border-encre-noire/20 rounded">
+            <div className="flex flex-col gap-1">
+              <label className="text-[10px] font-bold uppercase text-stone-700">N° Chronologique Facture</label>
+              <input
+                type="text"
+                required
+                value={invoiceMeta.numero}
+                onChange={(e) => setInvoiceMeta({ ...invoiceMeta, numero: e.target.value })}
+                className="text-xs font-mono font-bold px-3 py-1.5 border border-stone-300 rounded bg-white"
+              />
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <label className="text-[10px] font-bold uppercase text-stone-700">Date d'Émission</label>
+              <input
+                type="date"
+                required
+                value={invoiceMeta.dateEmission}
+                onChange={(e) => setInvoiceMeta({ ...invoiceMeta, dateEmission: e.target.value })}
+                className="text-xs font-medium px-2 py-1.5 border border-stone-300 rounded bg-white"
+              />
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <label className="text-[10px] font-bold uppercase text-stone-700">Date d'Échéance</label>
+              <input
+                type="date"
+                value={invoiceMeta.dateEcheance}
+                onChange={(e) => setInvoiceMeta({ ...invoiceMeta, dateEcheance: e.target.value })}
+                className="text-xs font-medium px-2 py-1.5 border border-stone-300 rounded bg-white"
+              />
+            </div>
+          </div>
+
+          {/* Destinataire Client / Organisateur */}
+          <div className="flex flex-col gap-2 p-3 bg-stone-50 border border-stone-200 rounded">
+            <h4 className="text-[11px] font-extrabold uppercase text-cordel-wood border-b pb-1">
+              🏢 Informations Organisateur / Destinataire
+            </h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="flex flex-col gap-1">
+                <label className="text-[10px] font-bold uppercase text-stone-700">Nom du Client / Organisme *</label>
+                <input
+                  type="text"
+                  required
+                  value={clientForm.nom}
+                  onChange={(e) => setClientForm({ ...clientForm, nom: e.target.value })}
+                  placeholder="Mairie de Lille, Association..."
+                  className="text-xs font-bold px-3 py-1.5 border border-stone-300 rounded bg-white"
+                />
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="text-[10px] font-bold uppercase text-stone-700">E-mail de Facturation</label>
+                <input
+                  type="email"
+                  value={clientForm.email}
+                  onChange={(e) => setClientForm({ ...clientForm, email: e.target.value })}
+                  placeholder="facturation@client.com"
+                  className="text-xs px-3 py-1.5 border border-stone-300 rounded bg-white"
+                />
+              </div>
+
+              <div className="flex flex-col gap-1 sm:col-span-2">
+                <label className="text-[10px] font-bold uppercase text-stone-700">Adresse Postale</label>
+                <input
+                  type="text"
+                  value={clientForm.adresse}
+                  onChange={(e) => setClientForm({ ...clientForm, adresse: e.target.value })}
+                  placeholder="Hôtel de Ville, Place du Théâtre, 59000 Lille"
+                  className="text-xs px-3 py-1.5 border border-stone-300 rounded bg-white"
+                />
+              </div>
+
+              <div className="flex flex-col gap-1 sm:col-span-2">
+                <label className="text-[10px] font-bold uppercase text-stone-700">SIRET Client (Optionnel)</label>
+                <input
+                  type="text"
+                  value={clientForm.siret}
+                  onChange={(e) => setClientForm({ ...clientForm, siret: e.target.value })}
+                  placeholder="123 456 789 00012"
+                  className="text-xs font-mono px-3 py-1.5 border border-stone-300 rounded bg-white"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Lignes de Prestations */}
           <div className="flex flex-col gap-2">
-            {lignes.map((line, idx) => (
-              <div key={line.id} className="grid grid-cols-12 gap-2 items-center bg-stone-50 p-2 rounded border border-stone-200">
-                <div className="col-span-6 flex flex-col gap-0.5">
-                  <label className="text-[8px] font-bold uppercase text-stone-500">Description {idx + 1}</label>
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-extrabold uppercase tracking-wider text-stone-700">
+                📊 Lignes de Tarification & Prestations
+              </span>
+              <button
+                type="button"
+                onClick={handleAddLine}
+                className="text-[10px] font-extrabold text-emerald-800 hover:text-emerald-950 underline cursor-pointer"
+              >
+                + Ajouter une ligne
+              </button>
+            </div>
+
+            <div className="flex flex-col gap-1 border border-stone-200 rounded overflow-hidden">
+              <div className="grid grid-cols-12 gap-1 bg-stone-100 p-2 text-[9px] font-extrabold uppercase text-stone-600 border-b">
+                <div className="col-span-6">Description</div>
+                <div className="col-span-2 text-center">Quantité</div>
+                <div className="col-span-3 text-right">Prix Unit. HT (€)</div>
+                <div className="col-span-1"></div>
+              </div>
+
+              {lignes.map((line) => (
+                <div key={line.id} className="grid grid-cols-12 gap-1 p-1.5 text-xs border-b last:border-0 bg-white items-center">
                   <input
                     type="text"
                     value={line.description}
                     onChange={(e) => handleLineChange(line.id, 'description', e.target.value)}
-                    className="text-xs font-bold px-2 py-1 border border-stone-300 rounded bg-white"
+                    placeholder="Libellé prestation..."
+                    className="col-span-6 p-1 border border-stone-300 rounded text-xs font-semibold"
                   />
-                </div>
-
-                <div className="col-span-2 flex flex-col gap-0.5">
-                  <label className="text-[8px] font-bold uppercase text-stone-500">Qté</label>
                   <input
                     type="number"
                     min="1"
                     value={line.quantite}
                     onChange={(e) => handleLineChange(line.id, 'quantite', e.target.value)}
-                    className="text-xs font-bold text-center px-1 py-1 border border-stone-300 rounded bg-white"
+                    className="col-span-2 p-1 border border-stone-300 rounded text-center text-xs font-bold"
                   />
-                </div>
-
-                <div className="col-span-3 flex flex-col gap-0.5">
-                  <label className="text-[8px] font-bold uppercase text-stone-500">Prix Unitaire Net (€)</label>
                   <input
                     type="number"
                     step="0.01"
                     value={line.prixUnitaire}
                     onChange={(e) => handleLineChange(line.id, 'prixUnitaire', e.target.value)}
-                    className="text-xs font-mono font-bold text-right px-2 py-1 border border-stone-300 rounded bg-white"
+                    className="col-span-3 p-1 border border-stone-300 rounded text-right font-mono text-xs font-bold"
                   />
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveLine(line.id)}
+                    disabled={lignes.length <= 1}
+                    className="col-span-1 text-center text-red-600 hover:text-red-800 disabled:opacity-30 font-bold cursor-pointer"
+                    title="Supprimer la ligne"
+                  >
+                    ✕
+                  </button>
                 </div>
-
-                <div className="col-span-1 flex justify-center pt-3">
-                  {lignes.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveLine(line.id)}
-                      className="text-red-600 hover:text-red-800 font-bold text-xs cursor-pointer"
-                    >
-                      ✕
-                    </button>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Total Net et Notes */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-cordel-bg-light p-3 rounded border border-cordel-master-dark/20">
-          <div className="flex flex-col gap-1 w-full sm:w-2/3">
-            <label className="text-[9px] font-extrabold uppercase text-cordel-wood">
-              Conditions de Règlement & Mentions
-            </label>
-            <input
-              type="text"
-              value={invoiceMeta.notes}
-              onChange={(e) => setInvoiceMeta(prev => ({ ...prev, notes: e.target.value }))}
-              className="text-xs font-bold px-2.5 py-1 border border-stone-300 rounded bg-white w-full"
-            />
+              ))}
+            </div>
           </div>
 
-          <div className="flex flex-col items-end w-full sm:w-1/3">
-            <span className="text-[9px] font-extrabold uppercase text-stone-500">Total Net à Payer</span>
-            <span className="text-xl font-black text-emerald-800 font-mono">
-              {totalTTC.toLocaleString('fr-FR', { minimumFractionDigits: 2 })} €
-            </span>
+          {/* Total Net et Notes */}
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-cordel-bg-light p-3 rounded border border-cordel-master-dark/20">
+            <div className="flex flex-col gap-1 w-full sm:w-2/3">
+              <label className="text-[9px] font-extrabold uppercase text-cordel-wood">
+                Conditions de Règlement & Mentions
+              </label>
+              <input
+                type="text"
+                value={invoiceMeta.notes}
+                onChange={(e) => setInvoiceMeta(prev => ({ ...prev, notes: e.target.value }))}
+                className="text-xs font-bold px-2.5 py-1 border border-stone-300 rounded bg-white w-full"
+              />
+            </div>
+
+            <div className="flex flex-col items-end w-full sm:w-1/3">
+              <span className="text-[9px] font-extrabold uppercase text-stone-500">Total Net à Payer</span>
+              <span className="text-xl font-black text-emerald-800 font-mono">
+                {totalTTC.toLocaleString('fr-FR', { minimumFractionDigits: 2 })} €
+              </span>
+            </div>
           </div>
         </div>
 
@@ -435,24 +449,24 @@ export default function GigInvoiceGeneratorModal({
             </CordelButton>
           </div>
         </div>
-      </CordelCard>
 
-      {/* Modale d'envoi de la Facture PDF par email via Brevo */}
-      <GigSendEmailModal
-        isOpen={isSendEmailModalOpen}
-        onClose={() => setIsSendEmailModalOpen(false)}
-        gig={gig}
-        invoicePayload={preparedInvoicePayload}
-        associationSettings={associationSettings}
-        pdfBase64={generatedPdfBase64}
-        pdfFilename={generatedPdfFilename}
-        onSendSuccess={() => {
-          if (onSuccess) {
-            onSuccess(invoiceMeta.numero);
-          }
-          onClose();
-        }}
-      />
+        {/* Modale d'envoi de la Facture PDF par email via Brevo */}
+        <GigSendEmailModal
+          isOpen={isSendEmailModalOpen}
+          onClose={() => setIsSendEmailModalOpen(false)}
+          gig={gig}
+          invoicePayload={preparedInvoicePayload}
+          associationSettings={associationSettings}
+          pdfBase64={generatedPdfBase64}
+          pdfFilename={generatedPdfFilename}
+          onSendSuccess={() => {
+            if (onSuccess) {
+              onSuccess(invoiceMeta.numero);
+            }
+            onClose();
+          }}
+        />
+      </div>
     </div>
   );
 }

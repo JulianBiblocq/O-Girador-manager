@@ -75,12 +75,6 @@ const sanitizeMemberDanseWishes = (memberData, memberId) => {
       needsUpdate = true;
     }
 
-    if (containsDanseInstrument) {
-      copy.instrument = (copy.instrumentPrincipal && copy.instrumentPrincipal.toLowerCase().trim() !== 'danse') ? copy.instrumentPrincipal : (uniqueCleanWishes[0] || 'En attente');
-      copy.instrumentPrincipal = copy.instrument;
-      needsUpdate = true;
-    }
-
     if (needsUpdate && memberId) {
       try {
         const userRef = doc(db, 'users', memberId);
@@ -89,9 +83,7 @@ const sanitizeMemberDanseWishes = (memberData, memberId) => {
           voeuxInstruments: copy.voeuxInstruments || [],
           voeuPrincipal: copy.voeuPrincipal || '',
           voeuSecondaire: copy.voeuSecondaire || '',
-          voeuTertiaire: copy.voeuTertiaire || '',
-          instrument: copy.instrument || 'En attente',
-          instrumentPrincipal: copy.instrumentPrincipal || 'En attente'
+          voeuTertiaire: copy.voeuTertiaire || ''
         };
 
         // Sécurité supplémentaire : filtrer tout champ resté undefined
@@ -291,8 +283,11 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
       ? m.voeuxInstruments.filter(Boolean)
       : [m.voeuPrincipal, m.voeuSecondaire, m.voeuTertiaire].filter(Boolean);
 
-    const hasAssignedPercussion = inst && inst !== 'danse' && inst !== 'en attente';
-    const hasPercussionWishes = wishesList.length > 0;
+    const hasAssignedPercussion = inst && inst !== 'danse' && inst !== 'chant' && inst !== 'en attente';
+    const hasPercussionWishes = wishesList.some(w => {
+      const wishLower = w.toLowerCase().trim();
+      return wishLower !== 'danse' && wishLower !== 'chant';
+    });
 
     return hasAssignedPercussion || hasPercussionWishes;
   };

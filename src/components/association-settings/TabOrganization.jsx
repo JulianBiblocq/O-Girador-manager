@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
+import TabCustomCategories from './TabCustomCategories';
 
 export default function TabOrganization({
   formData,
@@ -9,7 +10,7 @@ export default function TabOrganization({
   t,
   mode
 }) {
-  const { instrumentsDisponibles = [], linkedInstruments = [], fieldsConfig = {}, pupitresColors = {} } = formData;
+  const { instrumentsDisponibles = [], linkedInstruments = [], fieldsConfig = {}, pupitresColors = {}, customCategories = [] } = formData;
 
   const rawPupitres = [
     'Mestre',
@@ -145,7 +146,13 @@ export default function TabOrganization({
   return (
     <>
       {(!mode || mode === 'instruments-only') && (
-        <CordelCard variant="default" useExtremeBorder={true} className="py-4 px-5">
+        <>
+          <TabCustomCategories
+            customCategories={customCategories}
+            handleChange={handleChange}
+            saving={saving}
+          />
+          <CordelCard variant="default" useExtremeBorder={true} className="py-4 px-5">
           <h3 className="text-xs uppercase font-extrabold tracking-wider text-cordel-wood mb-3">
             🥁 Pupitres & Instruments
           </h3>
@@ -200,6 +207,7 @@ export default function TabOrganization({
           )}
         </div>
         </CordelCard>
+        </>
       )}
 
       {(!mode || mode === 'linked-instruments-only' || mode === 'instruments-only') && (

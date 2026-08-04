@@ -45,65 +45,72 @@ export default function MoveReplyModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-encre-noire/70 backdrop-blur-sm animate-fade-in select-none">
-      <div className="relative w-full max-w-lg">
-        <CordelCard variant="default" useExtremeBorder={true} className="p-5 flex flex-col gap-4 text-left bg-cordel-bg">
-          <div className="flex justify-between items-start border-b-2 border-dashed border-cordel-master-dark/25 pb-2">
-            <div>
-              <span className="text-[8px] font-black uppercase text-cordel-wood tracking-widest block">
-                ➡️ Modération Porte-voix
-              </span>
-              <h3 className="font-cactus font-black text-base text-encre-noire tracking-wider uppercase mt-0.5">
-                Déplacer le message
-              </h3>
+    <div
+      tabIndex={-1}
+      onKeyDown={(e) => e.key === 'Escape' && onClose()}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-encre-noire/70 backdrop-blur-sm animate-fade-in select-none outline-none"
+    >
+      <div className="relative w-full max-w-lg max-h-[90vh] flex flex-col rounded-lg bg-cordel-bg border-2 border-cordel-master-dark/40 shadow-2xl overflow-hidden">
+        {/* 1. Header (Fixe) */}
+        <div className="flex-shrink-0 p-4 border-b-2 border-dashed border-cordel-master-dark/25 flex justify-between items-start bg-cordel-bg">
+          <div>
+            <span className="text-[8px] font-black uppercase text-cordel-wood tracking-widest block">
+              ➡️ Modération Porte-voix
+            </span>
+            <h3 className="font-cactus font-black text-base text-encre-noire tracking-wider uppercase mt-0.5">
+              Déplacer le message
+            </h3>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="text-base font-extrabold text-cordel-wood hover:text-red-600 cursor-pointer"
+          >
+            ✕
+          </button>
+        </div>
+
+        {/* Form Wrapper */}
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
+          {/* 2. Body (Défilable verticalement) */}
+          <div className="flex-1 overflow-y-auto p-4 space-y-4 text-left">
+            {/* Snippet of the message to move */}
+            <div className="text-xs bg-cordel-bg-light p-2.5 rounded border border-cordel-master-dark/15 font-bold">
+              <div className="flex justify-between items-center text-[9px] uppercase font-black opacity-60 mb-1">
+                <span>Auteur : {reply?.auteurNom || 'Inconnu'}</span>
+                <span>Date : {reply?.dateCreation ? new Date(reply.dateCreation).toLocaleDateString() : ''}</span>
+              </div>
+              <p className="text-encre-noire text-[11px] line-clamp-3 italic opacity-90">
+                "{reply?.message?.replace(/<[^>]*>?/gm, '')}"
+              </p>
             </div>
-            <button
-              type="button"
-              onClick={onClose}
-              className="text-base font-extrabold text-cordel-wood hover:text-red-600 cursor-pointer"
-            >
-              ✕
-            </button>
-          </div>
 
-          {/* Snippet of the message to move */}
-          <div className="text-xs bg-cordel-bg-light p-2.5 rounded border border-cordel-master-dark/15 font-bold">
-            <div className="flex justify-between items-center text-[9px] uppercase font-black opacity-60 mb-1">
-              <span>Auteur : {reply?.auteurNom || 'Inconnu'}</span>
-              <span>Date : {reply?.dateCreation ? new Date(reply.dateCreation).toLocaleDateString() : ''}</span>
+            {/* Mode Selector */}
+            <div className="grid grid-cols-2 gap-2 bg-white/40 p-1.5 rounded border border-cordel-master-dark/15">
+              <button
+                type="button"
+                onClick={() => setMode('existing')}
+                className={`py-1.5 px-2 text-[10px] font-black rounded uppercase transition-all cursor-pointer ${
+                  mode === 'existing'
+                    ? 'theme-bg-ocre text-encre-noire border border-encre-noire shadow-sm'
+                    : 'text-cordel-master-dark hover:bg-white/50'
+                }`}
+              >
+                📋 Sujet existant
+              </button>
+              <button
+                type="button"
+                onClick={() => setMode('new')}
+                className={`py-1.5 px-2 text-[10px] font-black rounded uppercase transition-all cursor-pointer ${
+                  mode === 'new'
+                    ? 'theme-bg-ocre text-encre-noire border border-encre-noire shadow-sm'
+                    : 'text-cordel-master-dark hover:bg-white/50'
+                }`}
+              >
+                ✨ Nouveau sujet
+              </button>
             </div>
-            <p className="text-encre-noire text-[11px] line-clamp-3 italic opacity-90">
-              "{reply?.message?.replace(/<[^>]*>?/gm, '')}"
-            </p>
-          </div>
 
-          {/* Mode Selector */}
-          <div className="grid grid-cols-2 gap-2 bg-white/40 p-1.5 rounded border border-cordel-master-dark/15">
-            <button
-              type="button"
-              onClick={() => setMode('existing')}
-              className={`py-1.5 px-2 text-[10px] font-black rounded uppercase transition-all cursor-pointer ${
-                mode === 'existing'
-                  ? 'theme-bg-ocre text-encre-noire border border-encre-noire shadow-sm'
-                  : 'text-cordel-master-dark hover:bg-white/50'
-              }`}
-            >
-              📋 Sujet existant
-            </button>
-            <button
-              type="button"
-              onClick={() => setMode('new')}
-              className={`py-1.5 px-2 text-[10px] font-black rounded uppercase transition-all cursor-pointer ${
-                mode === 'new'
-                  ? 'theme-bg-ocre text-encre-noire border border-encre-noire shadow-sm'
-                  : 'text-cordel-master-dark hover:bg-white/50'
-              }`}
-            >
-              ✨ Nouveau sujet
-            </button>
-          </div>
-
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             {mode === 'existing' ? (
               <div className="flex flex-col gap-1 text-left">
                 <label className="text-[10px] font-black uppercase text-cordel-master-dark">
@@ -182,29 +189,30 @@ export default function MoveReplyModal({
                 </div>
               </>
             )}
+          </div>
 
-            <div className="flex justify-end gap-2 pt-3 border-t border-dashed border-cordel-master-dark/20">
-              <CordelButton
-                type="button"
-                variant="default"
-                onClick={onClose}
-                disabled={isSubmitting}
-                className="py-2 px-4 text-xs font-bold uppercase"
-              >
-                Annuler
-              </CordelButton>
-              <CordelButton
-                type="submit"
-                variant="ocre"
-                useExtremeBorder={true}
-                disabled={isSubmitting || (mode === 'existing' ? !targetThreadId : !newTitle.trim())}
-                className="py-2 px-4 text-xs font-black uppercase tracking-wider"
-              >
-                {isSubmitting ? "Traitement..." : mode === 'existing' ? "Déplacer vers ce sujet" : "Créer le nouveau sujet"}
-              </CordelButton>
-            </div>
-          </form>
-        </CordelCard>
+          {/* 3. Footer (Fixe en bas) */}
+          <div className="flex-shrink-0 p-4 border-t-2 border-dashed border-cordel-master-dark/20 flex justify-end gap-2 bg-cordel-bg">
+            <CordelButton
+              type="button"
+              variant="default"
+              onClick={onClose}
+              disabled={isSubmitting}
+              className="py-2 px-4 text-xs font-bold uppercase"
+            >
+              Annuler
+            </CordelButton>
+            <CordelButton
+              type="submit"
+              variant="ocre"
+              useExtremeBorder={true}
+              disabled={isSubmitting || (mode === 'existing' ? !targetThreadId : !newTitle.trim())}
+              className="py-2 px-4 text-xs font-black uppercase tracking-wider"
+            >
+              {isSubmitting ? "Traitement..." : mode === 'existing' ? "Déplacer vers ce sujet" : "Créer le nouveau sujet"}
+            </CordelButton>
+          </div>
+        </form>
       </div>
     </div>
   );

@@ -9,6 +9,7 @@ import ImportAgendaModal from '../agenda/ImportAgendaModal';
 
 import AddressAutocomplete from '../AddressAutocomplete';
 import LocationSelector from '../LocationSelector';
+import { DEFAULT_CUSTOM_CATEGORIES } from '../../utils/categoryUtils';
 
 /**
  * EventEditForm component handles editing details of an event.
@@ -48,6 +49,7 @@ export default function EventEditForm({
   setImageMode,
   uploadingImage,
   handleImageUpload,
+  customCategories = DEFAULT_CUSTOM_CATEGORIES,
   t
 }) {
   const [isMapModalOpen, setIsMapModalOpen] = useState(false);
@@ -460,8 +462,6 @@ export default function EventEditForm({
                   </h4>
                   
                   <EventBudgetEditor
-                    budgetRecettes={editForm.budgetRecettes}
-                    onChangeRecettes={(updated) => setEditForm(prev => ({ ...prev, budgetRecettes: updated }))}
                     budgetDepenses={editForm.budgetDepenses}
                     onChangeDepenses={(updated) => setEditForm(prev => ({ ...prev, budgetDepenses: updated }))}
                     disabled={savingEvent}
@@ -580,9 +580,10 @@ export default function EventEditForm({
                       className="theme-input w-full disabled:opacity-50 font-bold bg-cordel-bg-light"
                     >
                       <option value="aucun">{translate('widgetAgenda.levelNone', "Pas de musicien")}</option>
-                      <option value="debutant">{translate('widgetAgenda.levelDeb', "Niveau débutant")}</option>
-                      <option value="confirme">{translate('widgetAgenda.levelConfirm', "Niveau confirmé")}</option>
                       <option value="tous">{translate('widgetAgenda.levelAll', "Tout le monde")}</option>
+                      {customCategories.map(cat => (
+                        <option key={cat} value={cat}>{cat}</option>
+                      ))}
                     </select>
                   </div>
 
@@ -597,9 +598,10 @@ export default function EventEditForm({
                       className="theme-input w-full disabled:opacity-50 font-bold bg-cordel-bg-light"
                     >
                       <option value="aucun">{translate('widgetAgenda.danceLevelNone', "Pas de danse")}</option>
-                      <option value="debutant">{translate('widgetAgenda.danceLevelDeb', "Niveau débutant")}</option>
-                      <option value="confirme">{translate('widgetAgenda.danceLevelConfirm', "Niveau confirmé")}</option>
                       <option value="tous">{translate('widgetAgenda.danceLevelAll', "Tout le monde")}</option>
+                      {customCategories.map(cat => (
+                        <option key={cat} value={cat}>{cat}</option>
+                      ))}
                     </select>
                   </div>
                 </div>

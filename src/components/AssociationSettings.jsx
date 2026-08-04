@@ -33,7 +33,8 @@ export default function AssociationSettings({
   vitrineSubTabProp,
   profileData,
   permissionsMatrice,
-  effectiveUserTags = []
+  effectiveUserTags = [],
+  onReopenOnboarding
 }) {
   const { t } = useTranslation();
   const hasVitrinePermission = canEditVitrine(
@@ -126,6 +127,7 @@ export default function AssociationSettings({
             groupId={groupId}
             saving={saving}
             t={t}
+            onReopenOnboarding={onReopenOnboarding}
           />
         );
       case 'organisation':

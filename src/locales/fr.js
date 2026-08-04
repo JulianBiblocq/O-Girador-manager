@@ -68,6 +68,8 @@ export const fr = {
     logistique: "Logistique",
     kilometricReimbursement: "Remboursements Kilométriques",
     varalManager: "Varal",
+    newsletter: "Newsletter",
+    tabNewsletter: "Newsletter",
     poleVitrine: "Vitrine",
     tabVitrine: "Vitrine"
   },

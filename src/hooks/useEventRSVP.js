@@ -4,7 +4,7 @@ import { db } from '../firebase';
 import { useFamilyMembers } from './useFamilyMembers';
 import useConfirm from './useConfirm';
 
-export function useEventRSVP(event, user, profileData, allUsers, isPrestationRestricted, setToastMessage) {
+export function useEventRSVP(event, user, profileData, allUsers, isMusicLevelRestricted, setToastMessage) {
   const { confirm } = useConfirm();
   const existingResponse = (event.inscriptions || []).find(ins => ins.userId === user?.uid);
 
@@ -25,7 +25,7 @@ export function useEventRSVP(event, user, profileData, allUsers, isPrestationRes
     if (existingResponse?.instrumentChoisi) {
       return existingResponse.instrumentChoisi;
     }
-    return profileData?.instrument || 'Autre';
+    return profileData?.instrument || profileData?.instrumentsJoues?.[0] || 'Autre';
   });
 
   const isInstrumentLocked = !!existingResponse?.instrumentImposeParMestre;
@@ -47,10 +47,13 @@ export function useEventRSVP(event, user, profileData, allUsers, isPrestationRes
       nom: profileData?.nom || '',
       isParent: true,
       isDependent: false,
-      instrument: profileData?.instrument || ''
+      instrument: profileData?.instrument || '',
+      instrumentsJoues: profileData?.instrumentsJoues || [],
+      niveauMusique: profileData?.niveauMusique || profileData?.niveau || 'aucun',
+      niveauDanse: profileData?.niveauDanse || 'aucun'
     };
     return [parentMember, ...(dependents || [])];
-  }, [user?.uid, profileData?.prenom, profileData?.nom, profileData?.instrument, dependents]);
+  }, [user?.uid, profileData?.prenom, profileData?.nom, profileData?.instrument, profileData?.instrumentsJoues, profileData?.niveauMusique, profileData?.niveau, profileData?.niveauDanse, dependents]);
 
   // État des réponses d'inscription famille : { [memberId]: { selected, status, instrumentChoisi } }
   const [familyResponses, setFamilyResponses] = useState({});
@@ -83,8 +86,8 @@ export function useEventRSVP(event, user, profileData, allUsers, isPrestationRes
     setTransport(resp ? (resp.transport === 'propose' ? 'propre' : (resp.transport || 'propre')) : 'propre');
     setDemandeRemboursementKm(resp ? resp.demandeRemboursementKm === true : false);
     setBesoinTransportInstrument(resp ? resp.besoinTransportInstrument === true : false);
-    setInstrumentChoisi(resp?.instrumentChoisi || profileData?.instrument || 'Autre');
-  }, [event.id, user?.uid, profileData?.instrument, event.inscriptions]);
+    setInstrumentChoisi(resp?.instrumentChoisi || profileData?.instrument || profileData?.instrumentsJoues?.[0] || 'Autre');
+  }, [event.id, user?.uid, profileData?.instrument, profileData?.instrumentsJoues, event.inscriptions]);
 
   const handleSave = async (e, overrideStatus = null, overrideOptions = {}) => {
     if (e && e.preventDefault) e.preventDefault();
@@ -107,8 +110,8 @@ export function useEventRSVP(event, user, profileData, allUsers, isPrestationRes
 
     const targetStatus = overrideStatus !== null ? overrideStatus : status;
 
-    if (isPrestationRestricted && targetStatus !== 'absent') {
-      alert("Cette prestation est réservée aux musiciens confirmés.");
+    if (isMusicLevelRestricted && targetStatus !== 'absent') {
+      alert("🔒 Inscription restreinte. Rendez-vous dans la section 'Discussions et questions logistiques' en bas de page pour échanger avec l'organisation.");
       setSaving(false);
       return;
     }

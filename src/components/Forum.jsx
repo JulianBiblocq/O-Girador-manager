@@ -360,7 +360,7 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
       } else {
         // Filter client-side: Mestre/Admins see EVERYTHING. Regular members see public + matching tag channels.
         const allowedChannels = fetched.filter(ch => {
-          if (isMestreOrAdmin || breakGlassActive) return true;
+          if (breakGlassActive) return true;
 
           const readList = ch.readRoles || ch.allowedRoles || ch.allowedTags || ['all'];
           if (!readList || readList.length === 0 || readList.includes('all')) return true;
@@ -523,8 +523,7 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
 
   const hasWriteAccess = useCallback((channel) => {
     if (!channel) return true;
-    const isAdminUser = profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.role === 'admin' || profileData?.isSystemAdmin;
-    if (isAdminUser || breakGlassActive) return true;
+    if (breakGlassActive) return true;
 
     // Check if channel is explicitly read-only for regular members
     if (channel.readOnlyForMembers === true) return false;

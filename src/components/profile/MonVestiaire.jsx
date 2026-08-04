@@ -345,27 +345,34 @@ export default function MonVestiaire({ userId, groupId, userChecklist = {}, user
 
       {/* Interactive Piece Action Modal (when clicking a marker on Mannequin) */}
       {actionPiece && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-encre-noire/70 backdrop-blur-sm animate-fade-in select-none">
-          <div className="relative w-full max-w-sm">
-            <CordelCard variant="default" useExtremeBorder={true} className="p-5 flex flex-col gap-4 text-left bg-cordel-bg shadow-2xl">
-              <div className="flex justify-between items-start border-b-2 border-dashed border-cordel-master-dark/25 pb-2">
-                <div>
-                  <span className="theme-stamp-badge theme-stamp-badge-wood text-[8px] uppercase tracking-wider mb-1 inline-block">
-                    📌 Élément de costume
-                  </span>
-                  <h3 className="font-cactus font-black text-base text-encre-noire tracking-wide">
-                    {actionPiece.name}
-                  </h3>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setActionPiece(null)}
-                  className="text-base font-extrabold text-cordel-wood hover:text-red-600 cursor-pointer"
-                >
-                  ✕
-                </button>
+        <div
+          tabIndex={-1}
+          onKeyDown={(e) => e.key === 'Escape' && setActionPiece(null)}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-encre-noire/70 backdrop-blur-xs select-none outline-none animate-fade-in"
+        >
+          <div className="relative w-full max-w-sm max-h-[90vh] flex flex-col rounded-lg bg-cordel-bg border-2 border-cordel-master-dark/40 shadow-2xl overflow-hidden text-left">
+            {/* 1. Header (Fixe) */}
+            <div className="flex-shrink-0 p-4 border-b-2 border-dashed border-cordel-master-dark/25 flex justify-between items-start bg-cordel-bg">
+              <div>
+                <span className="theme-stamp-badge theme-stamp-badge-wood text-[8px] uppercase tracking-wider mb-1 inline-block">
+                  📌 Élément de costume
+                </span>
+                <h3 className="font-cactus font-black text-base text-encre-noire tracking-wide">
+                  {actionPiece.name}
+                </h3>
               </div>
+              <button
+                type="button"
+                onClick={() => setActionPiece(null)}
+                className="text-base font-extrabold text-cordel-wood hover:text-red-600 cursor-pointer"
+                title="Fermer (Échap)"
+              >
+                ✕
+              </button>
+            </div>
 
+            {/* 2. Body (Défilable verticalement) */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-4">
               {/* Status & Location badges */}
               <div className="flex items-center gap-2">
                 <span className="theme-stamp-badge theme-stamp-badge-dark text-[8px] uppercase">
@@ -387,14 +394,16 @@ export default function MonVestiaire({ userId, groupId, userChecklist = {}, user
                   {actionPiece.description || actionPiece.tutorialNotes}
                 </div>
               )}
+            </div>
 
-              {/* Validation Action Button */}
+            {/* 3. Footer / Validation Actions (Fixe en bas) */}
+            <div className="flex-shrink-0 p-4 border-t border-dashed border-cordel-master-dark/20 flex flex-col gap-2 bg-cordel-bg">
               {(() => {
                 const costumeChecklist = userChecklist[actionPiece.costumeId] || {};
                 const isChecked = Boolean(costumeChecklist[actionPiece.id]);
 
                 return (
-                  <div className="flex flex-col gap-3.5 pt-1">
+                  <>
                     <CordelButton
                       type="button"
                       variant={isChecked ? "default" : "ocre"}
@@ -419,10 +428,10 @@ export default function MonVestiaire({ userId, groupId, userChecklist = {}, user
                     >
                       🧵 Tutoriel de fabrication
                     </CordelButton>
-                  </div>
+                  </>
                 );
               })()}
-            </CordelCard>
+            </div>
           </div>
         </div>
       )}

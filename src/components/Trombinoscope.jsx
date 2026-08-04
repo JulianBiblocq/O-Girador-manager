@@ -19,6 +19,7 @@ const MemberCard = React.memo(({
   id,
   prenom,
   nom,
+  surnom,
   photoURL,
   isOnline = false,
   role,
@@ -38,6 +39,7 @@ const MemberCard = React.memo(({
   publierDateNaissance,
   niveau,
   niveauDanse,
+  niveauxParInstrument = {},
   instrumentsJoues = [],
   instrument,
   isCurrentUser,
@@ -60,18 +62,22 @@ const MemberCard = React.memo(({
   const hasRoleBadge = role && role !== 'membre';
   const hasTags = tags && tags.length > 0;
 
+  // Contrôle strict de la confidentialité selon les préférences choisies par le membre
   const isPhoneEnabled = fieldsConfig?.telephone?.enabled !== false;
   const isPhoneAllowed = afficherTelephone !== undefined ? (afficherTelephone === true) : (publierTelephone === true);
-  const showPhone = isPhoneEnabled && telephone && (isPhoneAllowed || (isViewerAdmin && !isCurrentUser));
+  const showPhone = isPhoneEnabled && Boolean(telephone) && isPhoneAllowed;
 
   const isBirthdateEnabled = fieldsConfig?.dateNaissance?.enabled !== false;
   const isBirthdateAllowed = afficherDateNaissance !== undefined ? (afficherDateNaissance === true) : (publierDateNaissance === true);
-  const showBirthdate = isBirthdateEnabled && dateNaissance && (isBirthdateAllowed || (isViewerAdmin && !isCurrentUser));
+  const showBirthdate = isBirthdateEnabled && Boolean(dateNaissance) && isBirthdateAllowed;
 
   const isAddressEnabled = fieldsConfig?.adresse?.enabled !== false;
   const isNiveauxEnabled = fieldsConfig?.niveaux?.enabled !== false;
   const isAddressAllowed = afficherVille !== undefined ? (afficherVille === true) : (visibiliteAdresse !== 'masquee');
-  const showCity = isAddressEnabled && (isAddressAllowed || (isViewerAdmin && !isCurrentUser));
+  const showCity = isAddressEnabled && isAddressAllowed;
+
+  const isSurnomEnabled = fieldsConfig?.surnom?.enabled !== false;
+  const displaySurnom = isSurnomEnabled && surnom && surnom.trim() ? `"${surnom.trim()}"` : null;
 
   const getDisplayCity = (cityVal, cpVal, fullAddr) => {
     if (cityVal && cityVal.trim()) return cityVal.trim();
@@ -183,7 +189,7 @@ const MemberCard = React.memo(({
             </span>
           )}
           <div className="font-bold text-xs truncate leading-snug">
-            {prenom}
+            {prenom} {displaySurnom && <span className="font-extrabold text-cordel-wood font-serif italic text-[11px] ml-0.5">{displaySurnom}</span>}
           </div>
           <div className="font-bold text-xs truncate leading-none uppercase text-[10px] opacity-75 mt-0.5">
             {nom}
@@ -195,14 +201,31 @@ const MemberCard = React.memo(({
           {hasPercussions && (
             <div className="flex flex-col items-center">
               <span className="font-extrabold text-cordel-wood flex items-center justify-center gap-0.5 uppercase text-[8.5px] tracking-wider">
-                <XiloCaixa size={9} /> Percussion {isNiveauxEnabled && niveau ? `(${niveau === 'confirme' ? t('userProfile.levelConfirmSimple') || 'Confirmé' : niveau === 'debutant' ? t('userProfile.levelBeginner') || 'Débutant' : t('common.none') || 'Aucun'})` : ''}
+                <XiloCaixa size={9} /> Percussion
               </span>
-              <span className="font-semibold text-encre-noire text-[9.5px] mt-0.5 leading-snug">
+              <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 mt-1">
                 {percussions.map((inst) => {
                   const pupitreName = getPupitreName(inst);
-                  return pupitreName ? `${inst} (${pupitreName})` : inst;
-                }).join(', ')}
-              </span>
+                  const instName = pupitreName ? `${inst} (${pupitreName})` : inst;
+                  const instNiveau = niveauxParInstrument[inst] || niveau;
+                  const niveauLabel = instNiveau === 'confirme' 
+                    ? (t('userProfile.levelConfirmSimple') || 'Confirmé') 
+                    : instNiveau === 'debutant' 
+                      ? (t('userProfile.levelBeginner') || 'Débutant') 
+                      : (instNiveau || t('common.none') || 'Aucun');
+                  
+                  return (
+                    <span key={inst} className="font-semibold text-encre-noire text-[9.5px] leading-snug flex items-center gap-1 bg-black/5 px-1.5 py-0.5 rounded">
+                      {instName} 
+                      {isNiveauxEnabled && instNiveau && instNiveau !== 'aucun' && (
+                        <span className={`text-[8px] uppercase tracking-wider font-extrabold px-1 py-0.5 rounded ${instNiveau === 'confirme' ? 'bg-[#2d6a4f]/20 text-[#2d6a4f]' : 'bg-cordel-wood/20 text-cordel-wood'}`}>
+                          {niveauLabel}
+                        </span>
+                      )}
+                    </span>
+                  );
+                })}
+              </div>
             </div>
           )}
 
@@ -282,6 +305,7 @@ const MemberCard = React.memo(({
          prevProps.isOnline === nextProps.isOnline &&
          prevProps.prenom === nextProps.prenom &&
          prevProps.nom === nextProps.nom &&
+         prevProps.surnom === nextProps.surnom &&
          prevProps.photoURL === nextProps.photoURL &&
          prevProps.role === nextProps.role &&
          prevProps.genre === nextProps.genre &&
@@ -838,6 +862,7 @@ export default function Trombinoscope({ user, profileData, onBack, onContactUser
                           id={member.id}
                           prenom={member.prenom}
                           nom={member.nom}
+                          surnom={member.surnom}
                           photoURL={member.photoURL}
                           isOnline={member.isOnline === true}
                           role={member.role}
@@ -857,6 +882,7 @@ export default function Trombinoscope({ user, profileData, onBack, onContactUser
                           publierDateNaissance={member.publierDateNaissance}
                           niveau={member.niveau}
                           niveauDanse={member.niveauDanse}
+                          niveauxParInstrument={member.niveauxParInstrument}
                           instrumentsJoues={member.instrumentsJoues}
                           instrument={member.instrument}
                           isCurrentUser={member.id === user.uid}

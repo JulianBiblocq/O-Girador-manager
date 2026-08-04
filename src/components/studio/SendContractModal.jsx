@@ -94,40 +94,43 @@ export default function SendContractModal({ isOpen, onClose, event, groupId }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-fade-in select-none">
-      <div className="w-full max-w-xl max-h-[90vh] overflow-y-auto">
-        <CordelCard variant="default" useExtremeBorder={true} className="p-6 bg-[#fdfaf2] text-left">
-          
-          {/* En-tête de la modale */}
-          <div className="flex items-center justify-between pb-3 mb-4 border-b-2 border-dashed border-cordel-master-dark/30">
-            <h3 className="text-sm font-extrabold tracking-widest text-cordel-wood uppercase flex items-center gap-2">
-              <span>📝 Envoyer un contrat (Brevo)</span>
-            </h3>
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={sending}
-              className="text-xs font-black p-1 text-stone-500 hover:text-stone-800 cursor-pointer"
-            >
-              ✕
-            </button>
-          </div>
+    <div
+      tabIndex={-1}
+      onKeyDown={(e) => e.key === 'Escape' && !sending && onClose()}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs select-none outline-none animate-fade-in"
+    >
+      <div className="relative w-full max-w-xl max-h-[90vh] flex flex-col rounded-lg bg-[#fdfaf2] border-2 border-cordel-master-dark/40 shadow-2xl overflow-hidden text-left">
+        {/* 1. Header (Fixe) */}
+        <div className="flex-shrink-0 p-4 border-b-2 border-dashed border-cordel-master-dark/30 flex items-center justify-between bg-[#fdfaf2]">
+          <h3 className="text-sm font-extrabold tracking-widest text-cordel-wood uppercase flex items-center gap-2">
+            <span>📝 Envoyer un contrat (Brevo)</span>
+          </h3>
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={sending}
+            className="text-xs font-black p-1 text-stone-500 hover:text-stone-800 cursor-pointer"
+          >
+            ✕
+          </button>
+        </div>
 
-          {/* Message de notification d'état */}
-          {statusMessage && (
-            <div className={`p-3 mb-4 rounded border-2 text-xs font-bold flex items-center gap-2 ${
-              statusMessage.type === 'success' 
-                ? 'bg-emerald-50 border-emerald-700 text-emerald-900' 
-                : 'bg-red-50 border-red-700 text-red-900'
-            }`}>
-              <span>{statusMessage.type === 'success' ? '✅' : '🚨'}</span>
-              <span>{statusMessage.text}</span>
-            </div>
-          )}
+        {/* Form Wrapper */}
+        <form onSubmit={handleSubmitSend} className="flex flex-col flex-1 overflow-hidden">
+          {/* 2. Body (Défilable verticalement) */}
+          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            {/* Message de notification d'état */}
+            {statusMessage && (
+              <div className={`p-3 rounded border-2 text-xs font-bold flex items-center gap-2 ${
+                statusMessage.type === 'success' 
+                  ? 'bg-emerald-50 border-emerald-700 text-emerald-900' 
+                  : 'bg-red-50 border-red-700 text-red-900'
+              }`}>
+                <span>{statusMessage.type === 'success' ? '✅' : '🚨'}</span>
+                <span>{statusMessage.text}</span>
+              </div>
+            )}
 
-          {/* Formulaire de saisie des variables transactionnelles Brevo */}
-          <form onSubmit={handleSubmitSend} className="flex flex-col gap-4">
-            
             {/* Destinataire : Email & Nom */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="flex flex-col gap-1.5">
@@ -252,30 +255,30 @@ export default function SendContractModal({ isOpen, onClose, event, groupId }) {
                 className="text-xs px-3 py-2 border border-encre-noire/30 rounded bg-white leading-relaxed resize-none"
               />
             </div>
+          </div>
 
-            {/* Action Buttons */}
-            <div className="flex items-center justify-end gap-3 pt-3 border-t border-dashed border-cordel-master-dark/20 mt-2">
-              <CordelButton
-                type="button"
-                variant="default"
-                onClick={onClose}
-                disabled={sending}
-                className="text-xs px-4 py-2"
-              >
-                Annuler
-              </CordelButton>
+          {/* 3. Footer (Fixe en bas) */}
+          <div className="flex-shrink-0 p-4 border-t-2 border-dashed border-cordel-master-dark/20 flex items-center justify-end gap-3 bg-[#fdfaf2]">
+            <CordelButton
+              type="button"
+              variant="default"
+              onClick={onClose}
+              disabled={sending}
+              className="text-xs px-4 py-2"
+            >
+              Annuler
+            </CordelButton>
 
-              <CordelButton
-                type="submit"
-                variant="vert"
-                disabled={sending}
-                className="text-xs px-5 py-2 font-bold uppercase tracking-wider flex items-center gap-2"
-              >
-                <span>{sending ? "⏳ Envoi en cours..." : "📤 Valider & Envoyer via Brevo"}</span>
-              </CordelButton>
-            </div>
-          </form>
-        </CordelCard>
+            <CordelButton
+              type="submit"
+              variant="vert"
+              disabled={sending}
+              className="text-xs px-5 py-2 font-bold uppercase tracking-wider flex items-center gap-2"
+            >
+              <span>{sending ? "⏳ Envoi en cours..." : "📤 Valider & Envoyer via Brevo"}</span>
+            </CordelButton>
+          </div>
+        </form>
       </div>
     </div>
   );

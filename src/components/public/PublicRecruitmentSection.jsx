@@ -51,7 +51,7 @@ export default function PublicRecruitmentSection({ publicTheme }) {
   const title = vitrineTexts.titreRecrutement || publicTheme?.titreRecrutement || "Rejoignez la troupe !";
   const text = vitrineTexts.accrocheRecrutement || publicTheme?.texteRecrutement || "Rejoignez nos ateliers hebdomadaires et participez à une aventure musicale humaine unique.";
   const configuredLink = publicTheme?.lienRecrutement?.trim() || "";
-  const contactEmail = publicTheme?.publicContactEmail?.trim() || "";
+  const contactEmail = publicTheme?.publicContactEmail?.trim() || publicTheme?.officialEmail?.trim() || "";
   const showRecrutementCtaIcon = publicTheme?.showRecrutementCtaIcon !== false;
   const activerHelloAssoRecrutement = publicTheme?.activerHelloAssoRecrutement !== false;
 

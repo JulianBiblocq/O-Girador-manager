@@ -22,9 +22,11 @@ const formatTimestamp = (ts) => {
   });
 };
 
-export const generateImageCharterPDF = (member, associationName) => {
+export const generateImageCharterPDF = (member, associationInfo) => {
   const doc = new jsPDF();
-  const assocName = (associationName && typeof associationName === 'string' && associationName.trim()) ? associationName.trim() : "O Girador";
+  const isSettingsObj = typeof associationInfo === 'object' && associationInfo !== null;
+  const assocName = (isSettingsObj ? associationInfo.nom : associationInfo) || "O Girador";
+  const assocAdresse = isSettingsObj ? (associationInfo.adresseSiegeSocial || associationInfo.adresse || "") : "";
   
   // Titre du document
   doc.setFont("helvetica", "bold");
@@ -34,30 +36,37 @@ export const generateImageCharterPDF = (member, associationName) => {
   // Sous-titre
   doc.setFontSize(11);
   doc.setFont("helvetica", "normal");
-  doc.text(`Document officiel de l'association : ${assocName}`, 105, 40, { align: "center" });
+  doc.text(`Document officiel de l'association : ${assocName}`, 105, 39, { align: "center" });
+  
+  if (assocAdresse.trim()) {
+    doc.setFontSize(9);
+    doc.setTextColor(100, 100, 100);
+    doc.text(`Siège social : ${assocAdresse.trim()}`, 105, 45, { align: "center" });
+    doc.setTextColor(0, 0, 0);
+  }
   
   // Ligne horizontale de séparation
   doc.setDrawColor(180, 180, 180);
-  doc.line(20, 45, 190, 45);
+  doc.line(20, 48, 190, 48);
   
   // Informations du membre
   doc.setFont("helvetica", "bold");
   doc.setFontSize(11);
-  doc.text("BÉNÉFICIAIRE DU CONSENTEMENT :", 20, 60);
+  doc.text("BÉNÉFICIAIRE DU CONSENTEMENT :", 20, 62);
   
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
-  doc.text(`Nom : ${member.nom || ""}`, 25, 70);
-  doc.text(`Prénom : ${member.prenom || ""}`, 25, 78);
-  doc.text(`Adresse email : ${member.email || ""}`, 25, 86);
+  doc.text(`Nom : ${member.nom || ""}`, 25, 72);
+  doc.text(`Prénom : ${member.prenom || ""}`, 25, 80);
+  doc.text(`Adresse email : ${member.email || ""}`, 25, 88);
   
   // Ligne de séparation
-  doc.line(20, 95, 190, 95);
+  doc.line(20, 97, 190, 97);
   
   // Titre du corps du texte
   doc.setFont("helvetica", "bold");
   doc.setFontSize(11);
-  doc.text("Autorisation d'exploitation de l'image", 20, 108);
+  doc.text("Autorisation d'exploitation de l'image", 20, 110);
   
   // Contenu du texte
   doc.setFont("helvetica", "normal");
@@ -66,7 +75,7 @@ export const generateImageCharterPDF = (member, associationName) => {
     `Je soussigné(e) ${member.prenom || ""} ${member.nom || ""}, membre de l'association "${assocName}", déclare autoriser expressément et à titre gratuit l'association à fixer, reproduire, diffuser et exploiter mon image dans le cadre de ses activités de communication, de promotion et d'archivage (notamment sur son site internet, ses réseaux sociaux, ses newsletters et tout autre support imprimé ou numérique).\n\nCette autorisation est accordée sans contrepartie financière, pour le monde entier et pour toute la durée de mon adhésion à l'association.`,
     170
   );
-  doc.text(textLines, 20, 118);
+  doc.text(textLines, 20, 120);
   
   // Encadré de signature électronique
   const signatureY = 175;
@@ -95,12 +104,14 @@ export const generateImageCharterPDF = (member, associationName) => {
   doc.setTextColor(120, 120, 120);
   doc.text(`Document généré par l'application ${assocName} Manager`, 105, 275, { align: "center" });
   
-  doc.save(`Charte_Image_${member.prenom}_${member.nom}.pdf`);
+  doc.save(`Charte_Image_${member.prenom || 'Membre'}_${member.nom || ''}.pdf`);
 };
 
-export const generateMedicalAttestationPDF = (member, associationName) => {
+export const generateMedicalAttestationPDF = (member, associationInfo) => {
   const doc = new jsPDF();
-  const assocName = (associationName && typeof associationName === 'string' && associationName.trim()) ? associationName.trim() : "O Girador";
+  const isSettingsObj = typeof associationInfo === 'object' && associationInfo !== null;
+  const assocName = (isSettingsObj ? associationInfo.nom : associationInfo) || "O Girador";
+  const assocAdresse = isSettingsObj ? (associationInfo.adresseSiegeSocial || associationInfo.adresse || "") : "";
   
   // Titre du document
   doc.setFont("helvetica", "bold");
@@ -110,30 +121,37 @@ export const generateMedicalAttestationPDF = (member, associationName) => {
   // Sous-titre
   doc.setFontSize(11);
   doc.setFont("helvetica", "normal");
-  doc.text(`Document officiel de l'association : ${assocName}`, 105, 40, { align: "center" });
+  doc.text(`Document officiel de l'association : ${assocName}`, 105, 39, { align: "center" });
+
+  if (assocAdresse.trim()) {
+    doc.setFontSize(9);
+    doc.setTextColor(100, 100, 100);
+    doc.text(`Siège social : ${assocAdresse.trim()}`, 105, 45, { align: "center" });
+    doc.setTextColor(0, 0, 0);
+  }
   
   // Ligne horizontale de séparation
   doc.setDrawColor(180, 180, 180);
-  doc.line(20, 45, 190, 45);
+  doc.line(20, 48, 190, 48);
   
   // Informations du membre
   doc.setFont("helvetica", "bold");
   doc.setFontSize(11);
-  doc.text("DÉCLARANT :", 20, 60);
+  doc.text("DÉCLARANT :", 20, 62);
   
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
-  doc.text(`Nom : ${member.nom || ""}`, 25, 70);
-  doc.text(`Prénom : ${member.prenom || ""}`, 25, 78);
-  doc.text(`Adresse email : ${member.email || ""}`, 25, 86);
+  doc.text(`Nom : ${member.nom || ""}`, 25, 72);
+  doc.text(`Prénom : ${member.prenom || ""}`, 25, 80);
+  doc.text(`Adresse email : ${member.email || ""}`, 25, 88);
   
   // Ligne de séparation
-  doc.line(20, 95, 190, 95);
+  doc.line(20, 97, 190, 97);
   
   // Titre du corps du texte
   doc.setFont("helvetica", "bold");
   doc.setFontSize(11);
-  doc.text("Attestation sur l'honneur d'absence de contre-indication médicale", 20, 108);
+  doc.text("Attestation sur l'honneur d'absence de contre-indication médicale", 20, 110);
   
   // Contenu du texte
   doc.setFont("helvetica", "normal");
@@ -142,7 +160,7 @@ export const generateMedicalAttestationPDF = (member, associationName) => {
     `Je soussigné(e) ${member.prenom || ""} ${member.nom || ""}, membre de l'association "${assocName}", atteste sur l'honneur n'avoir aucune contre-indication médicale à la pratique des activités physiques, artistiques et culturelles proposées par l'association, notamment les percussions (Maracatu) et la danse.\n\nJe m'engage à informer l'association de tout changement concernant mon état de santé qui pourrait impacter ma pratique de ces activités physiques.`,
     170
   );
-  doc.text(textLines, 20, 118);
+  doc.text(textLines, 20, 120);
   
   // Encadré de signature électronique
   const signatureY = 175;
@@ -171,7 +189,7 @@ export const generateMedicalAttestationPDF = (member, associationName) => {
   doc.setTextColor(120, 120, 120);
   doc.text(`Document généré par l'application ${assocName} Manager`, 105, 275, { align: "center" });
   
-  doc.save(`Attestation_Sante_${member.prenom}_${member.nom}.pdf`);
+  doc.save(`Attestation_Sante_${member.prenom || 'Membre'}_${member.nom || ''}.pdf`);
 };
 
 /**
@@ -180,12 +198,17 @@ export const generateMedicalAttestationPDF = (member, associationName) => {
  * @param {Object} event Événement / Réunion concerné(e)
  * @param {Array} points Liste des points d'ordre du jour et leurs notes
  * @param {Array} presents Liste des membres présents
- * @param {string} associationName Nom de l'association
+ * @param {string|Object} associationInfo Nom ou paramètres complets de l'association
  * @returns {jsPDF} Document jsPDF généré
  */
-export const generateCompteRenduPDF = (event, points = [], presents = [], associationName = "O Girador") => {
+export const generateCompteRenduPDF = (event, points = [], presents = [], associationInfo = "O Girador") => {
   const doc = new jsPDF();
-  const assocName = (associationName && typeof associationName === 'string' && associationName.trim()) ? associationName.trim() : "O Girador";
+
+  const isSettingsObj = typeof associationInfo === 'object' && associationInfo !== null;
+  const assocName = (isSettingsObj ? associationInfo.nom : associationInfo) || "O Girador";
+  const bureauMembres = isSettingsObj && Array.isArray(associationInfo.bureauMembres) ? associationInfo.bureauMembres : [];
+  const directionArtistique = isSettingsObj && Array.isArray(associationInfo.directionArtistique) ? associationInfo.directionArtistique : [];
+  const afficherMestriaPV = isSettingsObj ? Boolean(associationInfo.afficherMestriaPV) : false;
   
   // Titre du document
   doc.setFont("helvetica", "bold");
@@ -214,6 +237,36 @@ export const generateCompteRenduPDF = (event, points = [], presents = [], associ
   doc.setFont("helvetica", "normal");
   const eventDate = event.date ? new Date(event.date).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : "Non spécifiée";
   doc.text(`${eventDate}`, 55, yPos);
+
+  // Injections dynamiques : Membres du Bureau Officiel
+  if (bureauMembres.length > 0) {
+    yPos += 7;
+    doc.setFont("helvetica", "bold");
+    doc.text("Bureau Officiel :", 20, yPos);
+    doc.setFont("helvetica", "normal");
+    const bureauText = bureauMembres
+      .filter(m => m.nom || m.role)
+      .map(m => `${m.role ? m.role + ' : ' : ''}${m.nom || ''}`.trim())
+      .join(' | ');
+    const bureauLines = doc.splitTextToSize(bureauText || "Non renseigné", 135);
+    doc.text(bureauLines, 55, yPos);
+    yPos += ((bureauLines.length - 1) * 5);
+  }
+
+  // Injections dynamiques : Direction Artistique (si cochée)
+  if (afficherMestriaPV && directionArtistique.length > 0) {
+    yPos += 7;
+    doc.setFont("helvetica", "bold");
+    doc.text("Direction Artistique :", 20, yPos);
+    doc.setFont("helvetica", "normal");
+    const mestriaText = directionArtistique
+      .filter(m => m.nom || m.role)
+      .map(m => `${m.role ? m.role + ' : ' : ''}${m.nom || ''}`.trim())
+      .join(' | ');
+    const mestriaLines = doc.splitTextToSize(mestriaText || "Non renseignée", 55 ? 135 : 135);
+    doc.text(mestriaLines, 55, yPos);
+    yPos += ((mestriaLines.length - 1) * 5);
+  }
 
   yPos += 7;
   doc.setFont("helvetica", "bold");

@@ -3,6 +3,7 @@ import { doc, onSnapshot, setDoc, getDoc } from 'firebase/firestore';
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 import imageCompression from 'browser-image-compression';
 import { db, storage } from '../firebase';
+import { DEFAULT_CUSTOM_CATEGORIES, batchMigrateUserCategories } from '../utils/categoryUtils';
 
 export const DEFAULT_FIELDS_CONFIG = {
   telephone: { key: "telephone", label: "Téléphone", enabled: true, filledBy: "member", isRequired: false },
@@ -170,6 +171,7 @@ export const DEFAULT_PUBLIC_THEME = {
 export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
   const [formData, setFormData] = useState({
     fieldsConfig: DEFAULT_FIELDS_CONFIG,
+    customCategories: DEFAULT_CUSTOM_CATEGORIES,
     instrumentsDisponibles: [],
     linkedInstruments: [],
     varalCategories: [],
@@ -219,7 +221,24 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
     defaultLocationsByEventType: {},
     tagNotificationCommentairesEvenement: '',
     lienGoogleFormRecoltePhotos: '',
-    lienRecoltePhotosExternes: ''
+    lienRecoltePhotosExternes: '',
+    // Bureau juridique officiel dynamique & Direction Artistique
+    bureauMembres: [],
+    directionArtistique: [],
+    afficherMestriaPV: false,
+    // Configuration Dynamique des E-mails & Expéditeur SaaS
+    emailSenderName: '',
+    emailReplyTo: '',
+    emailDeliveryMode: 'ogirador',
+    emailConnectionType: 'api',
+    emailApiProvider: 'brevo',
+    emailProviderApiKey: '',
+    smtpHost: '',
+    smtpPort: 587,
+    smtpUser: '',
+    smtpPassword: '',
+    smtpSecure: 'tls',
+    customEmailDomain: ''
   });
 
   const [logoFile, setLogoFile] = useState(null);
@@ -307,7 +326,10 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
     const credentialsRef = doc(db, 'associations', groupId, 'private_settings', 'credentials');
     getDoc(credentialsRef).then((docSnap) => {
       if (docSnap.exists()) {
-        handleChange('helloAssoSignatureKey', docSnap.data().helloAssoSignatureKey || '');
+        const creds = docSnap.data();
+        handleChange('helloAssoSignatureKey', creds.helloAssoSignatureKey || '');
+        if (creds.emailProviderApiKey !== undefined) handleChange('emailProviderApiKey', creds.emailProviderApiKey);
+        if (creds.smtpPassword !== undefined) handleChange('smtpPassword', creds.smtpPassword);
       }
     }).catch(err => {
       console.error("AssociationSettings - Erreur de lecture des credentials :", err);
@@ -323,6 +345,7 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
           demanderDroitImage: data.demanderDroitImage || false,
           demanderAttestationSante: data.demanderAttestationSante || false,
           fieldsConfig: data.fieldsConfig ? { ...DEFAULT_FIELDS_CONFIG, ...data.fieldsConfig } : DEFAULT_FIELDS_CONFIG,
+          customCategories: Array.isArray(data.customCategories) && data.customCategories.length > 0 ? data.customCategories : DEFAULT_CUSTOM_CATEGORIES,
           instrumentsDisponibles: Array.isArray(data.instrumentsDisponibles) ? data.instrumentsDisponibles : DEFAULT_INSTRUMENTS,
           linkedInstruments: Array.isArray(data.linkedInstruments) ? data.linkedInstruments.map(link => {
             if (Array.isArray(link)) {
@@ -444,7 +467,22 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
           tagNotificationCommentairesEvenement: data.tagNotificationCommentairesEvenement || '',
           lienGoogleFormRecoltePhotos: data.lienRecoltePhotosExternes || data.lienGoogleFormRecoltePhotos || '',
           lienRecoltePhotosExternes: data.lienRecoltePhotosExternes || data.lienGoogleFormRecoltePhotos || '',
-          lienDepotForum: data.lienDepotForum || ''
+          lienDepotForum: data.lienDepotForum || '',
+          // Bureau dynamique & Direction Artistique (Mestria)
+          bureauMembres: Array.isArray(data.bureauMembres) ? data.bureauMembres : [],
+          directionArtistique: Array.isArray(data.directionArtistique) ? data.directionArtistique : [],
+          afficherMestriaPV: data.afficherMestriaPV || false,
+          // Configuration E-mail SaaS
+          emailSenderName: data.emailSenderName !== undefined ? data.emailSenderName : '',
+          emailReplyTo: data.emailReplyTo !== undefined ? data.emailReplyTo : '',
+          emailDeliveryMode: data.emailDeliveryMode || 'ogirador',
+          emailConnectionType: data.emailConnectionType || 'api',
+          emailApiProvider: data.emailApiProvider || 'brevo',
+          smtpHost: data.smtpHost || '',
+          smtpPort: data.smtpPort || 587,
+          smtpUser: data.smtpUser || '',
+          smtpSecure: data.smtpSecure || 'tls',
+          customEmailDomain: data.customEmailDomain || ''
         }));
       }
       setLoading(false);
@@ -615,6 +653,7 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
         signaturePresidentUrl: finalSignaturePresidentUrl,
         signatureTresorierUrl: finalSignatureTresorierUrl,
         fieldsConfig: formData.fieldsConfig,
+        customCategories: formData.customCategories || DEFAULT_CUSTOM_CATEGORIES,
         instrumentsDisponibles: formData.instrumentsDisponibles,
         linkedInstruments: formData.linkedInstruments || [],
         varalCategories: formData.varalCategories,
@@ -665,13 +704,33 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
         defaultLocationsByEventType: formData.defaultLocationsByEventType || {},
         tagNotificationCommentairesEvenement: formData.tagNotificationCommentairesEvenement || '',
         lienGoogleFormRecoltePhotos: formData.lienRecoltePhotosExternes || formData.lienGoogleFormRecoltePhotos || '',
-        lienRecoltePhotosExternes: formData.lienRecoltePhotosExternes || formData.lienGoogleFormRecoltePhotos || ''
+        lienRecoltePhotosExternes: formData.lienRecoltePhotosExternes || formData.lienGoogleFormRecoltePhotos || '',
+        // Bureau officiel juridique dynamique & Direction Artistique
+        bureauMembres: formData.bureauMembres || [],
+        directionArtistique: formData.directionArtistique || [],
+        afficherMestriaPV: formData.afficherMestriaPV || false,
+        // Configuration E-mail SaaS (Non-sensible)
+        emailSenderName: formData.emailSenderName || '',
+        emailReplyTo: formData.emailReplyTo || '',
+        emailDeliveryMode: formData.emailDeliveryMode || 'ogirador',
+        emailConnectionType: formData.emailConnectionType || 'api',
+        emailApiProvider: formData.emailApiProvider || 'brevo',
+        smtpHost: formData.smtpHost || '',
+        smtpPort: formData.smtpPort || 587,
+        smtpUser: formData.smtpUser || '',
+        smtpSecure: formData.smtpSecure || 'tls',
+        customEmailDomain: formData.customEmailDomain || ''
       }, { merge: true });
 
       const credentialsRef = doc(db, 'associations', groupId, 'private_settings', 'credentials');
       await setDoc(credentialsRef, {
-        helloAssoSignatureKey: formData.helloAssoSignatureKey
+        helloAssoSignatureKey: formData.helloAssoSignatureKey || '',
+        emailProviderApiKey: formData.emailProviderApiKey || '',
+        smtpPassword: formData.smtpPassword || ''
       }, { merge: true });
+
+      // Migration automatique en lot des catégories historiques 'debutant' / 'confirme' des profils membres dans Firestore
+      await batchMigrateUserCategories(db, groupId, formData.customCategories || DEFAULT_CUSTOM_CATEGORIES);
 
       // Notification Toast de succès sans redirection pour permettre l'édition en continu
       showToast(t('associationSettings.successMsg') || "✅ Configuration de la vitrine enregistrée avec succès !");

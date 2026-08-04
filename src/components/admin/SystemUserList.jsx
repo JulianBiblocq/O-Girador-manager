@@ -3,6 +3,7 @@ import CordelCard from '../CordelCard';
 import { generateImageCharterPDF, generateMedicalAttestationPDF } from '../../utils/pdfGenerator';
 import { formatTagGender, getTagId } from '../../utils/tagUtils';
 import { getMigratedRoleAndTags, VALID_SYSTEM_ROLES } from '../../utils/roleMigration';
+import { DEFAULT_CUSTOM_CATEGORIES } from '../../utils/categoryUtils';
 import MemberProfileEditModal from './MemberProfileEditModal';
 
 /**
@@ -20,6 +21,7 @@ export default function SystemUserList({
   draftDanceLevels,
   savingId,
   availableTags,
+  customCategories = DEFAULT_CUSTOM_CATEGORIES,
   fieldsConfig,
   associationName,
   handleRoleChange,
@@ -57,7 +59,7 @@ export default function SystemUserList({
           const migrated = getMigratedRoleAndTags(userItem);
           const currentRole = migrated.newRole;
           const currentTags = userItem.tags || [];
-          const currentLevel = userItem.niveau || 'aucun';
+          const currentLevel = userItem.niveau || userItem.niveauMusique || 'aucun';
           const currentDanceLevel = userItem.niveauDanse || 'aucun';
           
           const draftRole = draftRoles[userItem.id];
@@ -226,8 +228,9 @@ export default function SystemUserList({
                       className="theme-input text-[10px] font-bold py-1 px-1.5 bg-cordel-bg-light"
                     >
                       <option value="aucun">Aucun</option>
-                      <option value="debutant">Débutant</option>
-                      <option value="confirme">Confirmé</option>
+                      {customCategories.map(cat => (
+                        <option key={cat} value={cat}>{cat}</option>
+                      ))}
                     </select>
                   </div>
 
@@ -242,8 +245,9 @@ export default function SystemUserList({
                       className="theme-input text-[10px] font-bold py-1 px-1.5 bg-cordel-bg-light"
                     >
                       <option value="aucun">Aucun</option>
-                      <option value="debutant">Débutant</option>
-                      <option value="confirme">Confirmé</option>
+                      {customCategories.map(cat => (
+                        <option key={cat} value={cat}>{cat}</option>
+                      ))}
                     </select>
                   </div>
                 </div>
@@ -482,6 +486,7 @@ export default function SystemUserList({
         <MemberProfileEditModal
           userItem={modalUser}
           availableTags={availableTags}
+          customCategories={customCategories}
           onClose={handleCloseModal}
           onSave={handleSaveFromModal}
           onValidateNewMember={handleValidateNewMember}

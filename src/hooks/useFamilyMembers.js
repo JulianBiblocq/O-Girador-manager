@@ -67,6 +67,7 @@ export function useFamilyMembers(user, groupId) {
       instrument: primaryInst,
       niveau: dependentData.niveau || 'debutant',
       niveauDanse: dependentData.niveauDanse || 'aucun',
+      niveauxParInstrument: dependentData.niveauxParInstrument || {},
       role: 'membre',
       isNew: true,
       statutActuel: 'active',
@@ -90,7 +91,8 @@ export function useFamilyMembers(user, groupId) {
       instrumentsJoues: insts,
       instrument: primaryInst,
       niveau: dependentData.niveau || 'debutant',
-      niveauDanse: dependentData.niveauDanse || 'aucun'
+      niveauDanse: dependentData.niveauDanse || 'aucun',
+      niveauxParInstrument: dependentData.niveauxParInstrument || {}
     };
 
     if (groupId) {

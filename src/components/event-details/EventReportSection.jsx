@@ -8,7 +8,7 @@ import useConfirm from '../../hooks/useConfirm';
 import ImportAgendaModal from '../agenda/ImportAgendaModal';
 import { generateCompteRenduPDF } from '../../utils/pdfGenerator';
 
-export default function EventReportSection({ event, user, profileData }) {
+export default function EventReportSection({ event, user, profileData, associationSettings }) {
   const { t } = useTranslation();
   const { confirm } = useConfirm();
   const [localPoints, setLocalPoints] = useState([]);
@@ -322,7 +322,7 @@ export default function EventReportSection({ event, user, profileData }) {
 
       // 6. Generate and save PDF document automatically
       try {
-        const pdfDoc = generateCompteRenduPDF(event, pointsToPublish, presentsNames);
+        const pdfDoc = generateCompteRenduPDF(event, pointsToPublish, presentsNames, associationSettings || event.associationSettings || "O Girador");
         pdfDoc.save(`Compte_Rendu_${event.titre ? event.titre.replace(/[^a-zA-Z0-9]/g, '_') : 'Reunion'}.pdf`);
       } catch (pdfErr) {
         console.error("Erreur génération PDF automatique :", pdfErr);
@@ -366,7 +366,7 @@ export default function EventReportSection({ event, user, profileData }) {
     try {
       const presents = event.inscriptions?.filter(ins => ins.status === 'present') || [];
       const presentsNames = presents.map(ins => ins.userName || 'Membre anonyme');
-      const pdfDoc = generateCompteRenduPDF(event, localPoints, presentsNames);
+      const pdfDoc = generateCompteRenduPDF(event, localPoints, presentsNames, associationSettings || event.associationSettings || "O Girador");
       pdfDoc.save(`Compte_Rendu_${event.titre ? event.titre.replace(/[^a-zA-Z0-9]/g, '_') : 'Reunion'}.pdf`);
     } catch (err) {
       console.error("Erreur génération PDF :", err);

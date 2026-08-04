@@ -67,7 +67,9 @@ export const pt = {
     tresorerie: "Tesouraria",
     logistique: "Logística",
     kilometricReimbursement: "Reembolsos Quilométricos",
-    varalManager: "Varal"
+    varalManager: "Varal",
+    newsletter: "Newsletter",
+    tabNewsletter: "Newsletter"
   },
   login: {
     title: "O Girador",

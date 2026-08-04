@@ -200,32 +200,47 @@ export default function GigEventCreateModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 select-none overflow-y-auto">
-      <div className="w-full max-w-3xl max-h-[92vh] overflow-y-auto relative">
-        <button
-          type="button"
-          onClick={onClose}
-          className="absolute top-4 right-4 z-50 bg-stone-200 hover:bg-stone-300 text-stone-800 font-extrabold text-sm w-8 h-8 rounded-full flex items-center justify-center cursor-pointer shadow-md"
-        >
-          ✕
-        </button>
+    <div
+      tabIndex={-1}
+      onKeyDown={(e) => e.key === 'Escape' && !saving && onClose()}
+      className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 select-none outline-none animate-fade-in"
+    >
+      <div className="relative w-full max-w-3xl max-h-[90vh] flex flex-col rounded-lg bg-white shadow-2xl border-2 border-cordel-master-dark/40 overflow-hidden text-left">
+        {/* 1. Header (Fixe) */}
+        <div className="flex-shrink-0 p-4 border-b border-dashed border-cordel-master-dark/20 flex justify-between items-center bg-white">
+          <h3 className="text-sm sm:text-base font-extrabold uppercase text-cordel-wood flex items-center gap-2">
+            <span>📅 Poser une option dans l'Agenda (Événement)</span>
+          </h3>
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={saving}
+            className="text-stone-400 hover:text-stone-800 font-bold text-lg cursor-pointer"
+            title="Fermer (Échap)"
+          >
+            ✕
+          </button>
+        </div>
 
-        <EventCreateForm
-          formData={formData}
-          setFormData={setFormData}
-          handleChange={handleChange}
-          handleSubmit={handleSubmit}
-          handleCloseForm={onClose}
-          saving={saving}
-          dressCodes={dressCodes}
-          createConfig={createConfig}
-          rawCreateConfig={eventTypeConfigs}
-          associationEventTypes={associationEventTypes}
-          adresseLocal={adresseLocal}
-          lieuxImportants={lieuxImportants}
-          defaultLocationsByEventType={defaultLocationsByEventType}
-          t={t}
-        />
+        {/* 2. Body (Défilable verticalement) */}
+        <div className="flex-1 overflow-y-auto p-4">
+          <EventCreateForm
+            formData={formData}
+            setFormData={setFormData}
+            handleChange={handleChange}
+            handleSubmit={handleSubmit}
+            handleCloseForm={onClose}
+            saving={saving}
+            dressCodes={dressCodes}
+            createConfig={createConfig}
+            rawCreateConfig={eventTypeConfigs}
+            associationEventTypes={associationEventTypes}
+            adresseLocal={adresseLocal}
+            lieuxImportants={lieuxImportants}
+            defaultLocationsByEventType={defaultLocationsByEventType}
+            t={t}
+          />
+        </div>
       </div>
     </div>
   );

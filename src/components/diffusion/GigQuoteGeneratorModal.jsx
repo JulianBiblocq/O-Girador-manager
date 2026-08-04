@@ -216,22 +216,22 @@ export default function GigQuoteGeneratorModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 select-none overflow-y-auto">
-      <CordelCard
-        variant="default"
-        useExtremeBorder={true}
-        className="w-full max-w-3xl bg-white p-5 sm:p-6 shadow-2xl flex flex-col gap-4 max-h-[92vh] overflow-y-auto text-left relative"
-      >
-        {/* Header Modale */}
-        <div className="flex items-center justify-between border-b border-dashed border-cordel-master-dark/20 pb-3">
+    <div
+      tabIndex={-1}
+      onKeyDown={(e) => e.key === 'Escape' && !saving && onClose()}
+      className="fixed inset-0 z-50 bg-black/65 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 select-none outline-none animate-fade-in"
+    >
+      <div className="relative w-full max-w-3xl max-h-[90vh] flex flex-col rounded-lg bg-white shadow-2xl border-2 border-cordel-master-dark/40 overflow-hidden text-left">
+        {/* 1. Header (Fixe) */}
+        <div className="flex-shrink-0 p-4 border-b border-dashed border-cordel-master-dark/20 flex items-center justify-between bg-white">
           <div className="flex items-center gap-2">
-            <span className="text-xl">📜</span>
+            <span className="text-2xl">📋</span>
             <div>
-              <h3 className="text-sm sm:text-base font-extrabold uppercase text-cordel-wood">
-                Génération de Devis Commercial — Pôle Diffusion
+              <h3 className="text-base font-extrabold uppercase text-cordel-wood">
+                Génération de Devis Commercial
               </h3>
-              <p className="text-[10px] text-stone-500 font-medium">
-                Dossier : {gig.eventName} {linkedEvent ? `(Lié à l'événement Agenda le ${linkedEvent.date})` : ''}
+              <p className="text-[10px] text-stone-500 font-bold">
+                Dossier : {gig.eventName} ({gig.date || 'Date non fixée'})
               </p>
             </div>
           </div>
@@ -239,214 +239,184 @@ export default function GigQuoteGeneratorModal({
             type="button"
             onClick={onClose}
             className="text-stone-400 hover:text-stone-800 font-bold text-lg cursor-pointer"
+            title="Fermer (Échap)"
           >
             ✕
           </button>
         </div>
 
-        {/* Bloc Informations Client & Métadonnées Devis */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs bg-stone-50 p-3 rounded border border-stone-200">
-          {/* Informations Destinataire / Organisateur */}
-          <div className="flex flex-col gap-2">
-            <span className="text-[10px] font-extrabold uppercase text-cordel-wood">
-              👤 Destinataire (Organisateur / Client) :
-            </span>
-            <div className="flex flex-col gap-1">
-              <input
-                type="text"
-                value={clientForm.nom}
-                onChange={(e) => setClientForm(prev => ({ ...prev, nom: e.target.value }))}
-                placeholder="Raison sociale / Nom du client"
-                className="p-1.5 border border-stone-300 rounded font-bold bg-white"
-              />
-              <input
-                type="text"
-                value={clientForm.adresse}
-                onChange={(e) => setClientForm(prev => ({ ...prev, adresse: e.target.value }))}
-                placeholder="Adresse complète du client"
-                className="p-1.5 border border-stone-300 rounded bg-white text-[11px]"
-              />
-              <div className="grid grid-cols-2 gap-1">
+        {/* 2. Body (Défilable verticalement) */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          {/* Bloc Informations Client & Métadonnées Devis */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs bg-stone-50 p-3 rounded border border-stone-200">
+            {/* Informations Destinataire / Organisateur */}
+            <div className="flex flex-col gap-2">
+              <span className="text-[10px] font-extrabold uppercase text-cordel-wood">
+                👤 Destinataire (Organisateur / Client) :
+              </span>
+              <div className="flex flex-col gap-1">
                 <input
-                  type="email"
-                  value={clientForm.email}
-                  onChange={(e) => setClientForm(prev => ({ ...prev, email: e.target.value }))}
-                  placeholder="Email de contact"
+                  type="text"
+                  value={clientForm.nom}
+                  onChange={(e) => setClientForm(prev => ({ ...prev, nom: e.target.value }))}
+                  placeholder="Raison sociale / Nom du client"
+                  className="p-1.5 border border-stone-300 rounded font-bold bg-white"
+                />
+                <input
+                  type="text"
+                  value={clientForm.adresse}
+                  onChange={(e) => setClientForm(prev => ({ ...prev, adresse: e.target.value }))}
+                  placeholder="Adresse complète du client"
                   className="p-1.5 border border-stone-300 rounded bg-white text-[11px]"
                 />
-                <input
-                  type="text"
-                  value={clientForm.siret}
-                  onChange={(e) => setClientForm(prev => ({ ...prev, siret: e.target.value }))}
-                  placeholder="N° SIRET client"
-                  className="p-1.5 border border-stone-300 rounded bg-white font-mono text-[11px]"
-                />
+                <div className="grid grid-cols-2 gap-1">
+                  <input
+                    type="email"
+                    value={clientForm.email}
+                    onChange={(e) => setClientForm(prev => ({ ...prev, email: e.target.value }))}
+                    placeholder="E-mail de contact"
+                    className="p-1.5 border border-stone-300 rounded bg-white text-[11px]"
+                  />
+                  <input
+                    type="text"
+                    value={clientForm.siret}
+                    onChange={(e) => setClientForm(prev => ({ ...prev, siret: e.target.value }))}
+                    placeholder="N° SIRET (Optionnel)"
+                    className="p-1.5 border border-stone-300 rounded bg-white text-[11px] font-mono"
+                  />
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Numéro et Dates du Devis */}
-          <div className="flex flex-col gap-2">
-            <span className="text-[10px] font-extrabold uppercase text-cordel-wood">
-              📋 Références du Devis :
-            </span>
-            <div className="flex flex-col gap-1">
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] font-bold text-stone-600">N° Devis :</span>
-                <input
-                  type="text"
-                  value={devisMeta.numero}
-                  onChange={(e) => setDevisMeta(prev => ({ ...prev, numero: e.target.value }))}
-                  className="p-1.5 border border-stone-300 rounded font-mono font-bold text-stone-900 bg-amber-50"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-1">
-                <div className="flex flex-col gap-0.5">
-                  <label className="text-[9px] font-bold uppercase text-stone-500">Date émission</label>
+            {/* Méta-informations Devis */}
+            <div className="flex flex-col gap-2 border-t sm:border-t-0 sm:border-l border-stone-200 pt-2 sm:pt-0 sm:pl-3">
+              <span className="text-[10px] font-extrabold uppercase text-cordel-wood">
+                ⚙️ Paramètres du Devis :
+              </span>
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-bold text-stone-600">N° Devis :</span>
+                  <input
+                    type="text"
+                    value={devisMeta.numero}
+                    onChange={(e) => setDevisMeta(prev => ({ ...prev, numero: e.target.value }))}
+                    className="p-1 border border-stone-300 rounded font-mono font-bold w-36 text-right bg-white"
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-bold text-stone-600">Émission :</span>
                   <input
                     type="date"
                     value={devisMeta.dateEmission}
                     onChange={(e) => setDevisMeta(prev => ({ ...prev, dateEmission: e.target.value }))}
-                    className="p-1.5 border border-stone-300 rounded bg-white text-[11px]"
+                    className="p-1 border border-stone-300 rounded text-[11px] w-36 bg-white"
                   />
                 </div>
-                <div className="flex flex-col gap-0.5">
-                  <label className="text-[9px] font-bold uppercase text-stone-500">Date validité</label>
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-bold text-stone-600">Validité jusqu'au :</span>
                   <input
                     type="date"
                     value={devisMeta.dateEcheance}
                     onChange={(e) => setDevisMeta(prev => ({ ...prev, dateEcheance: e.target.value }))}
-                    className="p-1.5 border border-stone-300 rounded bg-white text-[11px]"
+                    className="p-1 border border-stone-300 rounded text-[11px] w-36 bg-white"
                   />
                 </div>
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Tableau dynamique des Lignes Tarifaires */}
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] font-extrabold uppercase text-stone-700">
-              📊 Lignes Tarifaires du Devis :
-            </span>
-            {/* Templates d'ajout rapide */}
-            <div className="flex items-center gap-1.5 flex-wrap">
+          {/* Tableau des Lignes de Prestations */}
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-extrabold uppercase tracking-wider text-stone-700">
+                📊 Lignes de Tarification & Prestations
+              </span>
               <button
                 type="button"
-                onClick={() => handleAddLine('km')}
-                className="px-2 py-0.5 text-[9px] font-bold uppercase bg-stone-100 hover:bg-stone-200 border border-stone-300 rounded cursor-pointer"
+                onClick={handleAddLine}
+                className="text-[10px] font-extrabold text-emerald-800 hover:text-emerald-950 underline cursor-pointer"
               >
-                + Deplacement (Km)
-              </button>
-              <button
-                type="button"
-                onClick={() => handleAddLine('repas')}
-                className="px-2 py-0.5 text-[9px] font-bold uppercase bg-stone-100 hover:bg-stone-200 border border-stone-300 rounded cursor-pointer"
-              >
-                + Repas
-              </button>
-              <button
-                type="button"
-                onClick={() => handleAddLine('hebergement')}
-                className="px-2 py-0.5 text-[9px] font-bold uppercase bg-stone-100 hover:bg-stone-200 border border-stone-300 rounded cursor-pointer"
-              >
-                + Hébergement
-              </button>
-              <button
-                type="button"
-                onClick={() => handleAddLine()}
-                className="px-2 py-0.5 text-[9px] font-extrabold uppercase bg-emerald-800 text-white rounded cursor-pointer"
-              >
-                + Ligne vierge
+                + Ajouter une ligne
               </button>
             </div>
-          </div>
 
-          <div className="flex flex-col gap-1.5 border border-stone-300 rounded overflow-hidden p-2 bg-stone-50">
-            <div className="grid grid-cols-12 gap-2 text-[9px] font-extrabold uppercase text-stone-600 px-1">
-              <div className="col-span-6">Description de la prestation / frais</div>
-              <div className="col-span-2 text-center">Qté</div>
-              <div className="col-span-3 text-right">Prix Unit. HT (€)</div>
-              <div className="col-span-1 text-center">Action</div>
-            </div>
-
-            {lignes.map((line) => (
-              <div key={line.id} className="grid grid-cols-12 gap-2 items-center text-xs">
-                <input
-                  type="text"
-                  value={line.description}
-                  onChange={(e) => handleLineChange(line.id, 'description', e.target.value)}
-                  placeholder="Description..."
-                  className="col-span-6 p-1.5 border border-stone-300 rounded bg-white text-[11px]"
-                />
-                <input
-                  type="number"
-                  min="1"
-                  value={line.quantite}
-                  onChange={(e) => handleLineChange(line.id, 'quantite', e.target.value)}
-                  className="col-span-2 p-1.5 border border-stone-300 rounded bg-white text-center font-bold"
-                />
-                <input
-                  type="number"
-                  step="0.01"
-                  value={line.prixUnitaire}
-                  onChange={(e) => handleLineChange(line.id, 'prixUnitaire', e.target.value)}
-                  className="col-span-3 p-1.5 border border-stone-300 rounded bg-white text-right font-mono font-bold"
-                />
-                <button
-                  type="button"
-                  onClick={() => handleRemoveLine(line.id)}
-                  disabled={lignes.length <= 1}
-                  className="col-span-1 text-center text-red-600 font-bold hover:text-red-900 cursor-pointer disabled:opacity-30"
-                  title="Supprimer la ligne"
-                >
-                  ✕
-                </button>
+            <div className="flex flex-col gap-1 border border-stone-200 rounded overflow-hidden">
+              <div className="grid grid-cols-12 gap-1 bg-stone-100 p-2 text-[9px] font-extrabold uppercase text-stone-600 border-b">
+                <div className="col-span-6">Description</div>
+                <div className="col-span-2 text-center">Quantité</div>
+                <div className="col-span-3 text-right">Prix Unit. HT (€)</div>
+                <div className="col-span-1"></div>
               </div>
-            ))}
+
+              {lignes.map((line) => (
+                <div key={line.id} className="grid grid-cols-12 gap-1 p-1.5 text-xs border-b last:border-0 bg-white items-center">
+                  <input
+                    type="text"
+                    value={line.description}
+                    onChange={(e) => handleLineChange(line.id, 'description', e.target.value)}
+                    placeholder="Libellé prestation..."
+                    className="col-span-6 p-1 border border-stone-300 rounded text-xs font-semibold"
+                  />
+                  <input
+                    type="number"
+                    min="1"
+                    value={line.quantite}
+                    onChange={(e) => handleLineChange(line.id, 'quantite', e.target.value)}
+                    className="col-span-2 p-1 border border-stone-300 rounded text-center text-xs font-bold"
+                  />
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={line.prixUnitaire}
+                    onChange={(e) => handleLineChange(line.id, 'prixUnitaire', e.target.value)}
+                    className="col-span-3 p-1 border border-stone-300 rounded text-right font-mono text-xs font-bold"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveLine(line.id)}
+                    disabled={lignes.length <= 1}
+                    className="col-span-1 text-center text-red-600 hover:text-red-800 disabled:opacity-30 font-bold cursor-pointer"
+                    title="Supprimer la ligne"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            {/* Totalisation TTC */}
+            <div className="flex justify-end items-center gap-3 p-2.5 bg-amber-50 border border-amber-300 rounded font-bold text-xs mt-1">
+              <span>Total Net Estimé du Devis :</span>
+              <span className="text-base font-black text-cordel-wood font-mono">
+                {totalTTC.toLocaleString('fr-FR', { minimumFractionDigits: 2 })} €
+              </span>
+            </div>
+          </div>
+
+          {/* Notes & Conditions Particulières */}
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] font-bold uppercase text-stone-600">
+              Conditions particulières & Mentions légales :
+            </label>
+            <textarea
+              rows={2}
+              value={devisMeta.notes}
+              onChange={(e) => setDevisMeta(prev => ({ ...prev, notes: e.target.value }))}
+              placeholder="Ex: Devis valable 30 jours. Acompte de 30% à la commande. TVA non applicable..."
+              className="p-2 border border-stone-300 rounded text-xs leading-relaxed bg-white resize-none"
+            />
           </div>
         </div>
 
-        {/* Totalisation & Remarques */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3 bg-amber-50 border border-amber-300 rounded">
-          <div className="flex flex-col gap-0.5">
-            <span className="text-[10px] font-bold text-stone-700">Mention légale :</span>
-            <span className="text-[10px] font-semibold text-stone-600 italic">
-              TVA non applicable, art. 261-7-1° du CGI (Exonération association)
-            </span>
-          </div>
-
-          <div className="flex flex-col items-end gap-0.5">
-            <span className="text-[10px] font-bold uppercase text-stone-600">Total Net à Payer (HT/TTC) :</span>
-            <span className="text-xl font-black text-cordel-wood font-mono">
-              {totalTTC.toLocaleString('fr-FR', { minimumFractionDigits: 2 })} €
-            </span>
-          </div>
-        </div>
-
-        {/* Zone Notes / Mentions particulières */}
-        <div className="flex flex-col gap-1">
-          <label className="text-[10px] font-extrabold uppercase text-stone-700">
-            Notes / Mentions particulières sur le devis :
-          </label>
-          <textarea
-            value={devisMeta.notes}
-            onChange={(e) => setDevisMeta(prev => ({ ...prev, notes: e.target.value }))}
-            rows={2}
-            className="p-2 border border-stone-300 rounded text-stone-900 bg-white text-[11px] leading-relaxed"
-          />
-        </div>
-
-        {/* Boutons d'Action */}
-        <div className="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-dashed">
+        {/* 3. Footer (Fixe en bas) */}
+        <div className="flex-shrink-0 p-4 border-t border-dashed border-cordel-master-dark/20 flex flex-wrap items-center justify-between gap-2 bg-stone-50">
           <button
             type="button"
             onClick={handleDownloadPDF}
             className="text-[11px] font-bold text-stone-600 hover:text-stone-900 underline cursor-pointer flex items-center gap-1"
             title="Télécharger directement le PDF sans envoyer d'e-mail"
           >
-            <span>📥 Télécharger uniquement le PDF (Secours)</span>
+            <span>📥 Télécharger PDF</span>
           </button>
 
           <div className="flex items-center gap-2">
@@ -464,7 +434,7 @@ export default function GigQuoteGeneratorModal({
             </CordelButton>
           </div>
         </div>
-      </CordelCard>
+      </div>
 
       {/* Modale d'envoi du devis PDF par email via Brevo */}
       <GigSendEmailModal

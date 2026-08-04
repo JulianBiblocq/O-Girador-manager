@@ -10,55 +10,55 @@ import OnboardingVisibilityBlock from './onboarding/OnboardingVisibilityBlock';
 import OnboardingPrivateBlock from './onboarding/OnboardingPrivateBlock';
 
 const DEFAULT_FIELDS_CONFIG = {
-  telephone: { key: "telephone", label: "Téléphone", enabled: true, filledBy: "member", isRequired: false },
-  adresse: { key: "adresse", label: "Adresse physique", enabled: true, filledBy: "member", isRequired: false },
+  telephone: { key: "telephone", label: "Téléphone", enabled: true, filledBy: "member", isRequired: true },
+  adresse: { key: "adresse", label: "Adresse physique", enabled: true, filledBy: "member", isRequired: true },
   surnom: { key: "surnom", label: "Surnom", enabled: true, filledBy: "member", isRequired: false },
-  tailleTshirt: { key: "tailleTshirt", label: "Taille T-shirt", enabled: true, filledBy: "member", isRequired: false },
-  taillePantalon: { key: "taillePantalon", label: "Taille Pantalon/Bas", enabled: true, filledBy: "member", isRequired: false },
+  tailleTshirt: { key: "tailleTshirt", label: "Taille T-shirt", enabled: true, filledBy: "member", isRequired: true },
+  taillePantalon: { key: "taillePantalon", label: "Taille Pantalon/Bas", enabled: true, filledBy: "member", isRequired: true },
   droitImage: { key: "droitImage", label: "Droit à l'image", enabled: true, filledBy: "member", isRequired: false },
   aptitudeMedicale: { key: "aptitudeMedicale", label: "Aptitude médicale", enabled: true, filledBy: "member", isRequired: false },
   lateralite: { key: "lateralite", label: "Latéralité (Gaucher/Droitier)", enabled: true, filledBy: "member", isRequired: false },
-  dateNaissance: { key: "dateNaissance", label: "Date de naissance", enabled: true, filledBy: "member", isRequired: false },
+  dateNaissance: { key: "dateNaissance", label: "Date de naissance", enabled: true, filledBy: "member", isRequired: true },
   niveaux: { key: "niveaux", label: "Affichage des niveaux dans le trombinoscope", enabled: true, filledBy: "admin", isRequired: false }
 };
 
-export default function Onboarding({ user, branding, onComplete }) {
+export default function Onboarding({ user, branding, onComplete, profileData }) {
   const { t } = useTranslation();
   // Split the Google Auth display name into a first name and a last name
   const nameParts = user.displayName ? user.displayName.split(' ') : [];
-  const initialFirstName = nameParts[0] || '';
-  const initialLastName = nameParts.slice(1).join(' ') || '';
+  const initialFirstName = profileData?.prenom || nameParts[0] || '';
+  const initialLastName = profileData?.nom || nameParts.slice(1).join(' ') || '';
 
   const [formData, setFormData] = useState({
     firstName: initialFirstName,
     lastName: initialLastName,
-    phone: '',
-    adresseRue: '',
-    adresseCP: '',
-    adresseVille: '',
-    surnom: '',
-    tailleTshirt: 'M',
-    taillePantalon: 'M',
-    droitImage: false,
-    aptitudeMedicale: false,
-    lateralite: 'droitier',
-    dateNaissance: '',
-    instrument: '',
-    instrumentSecondaire: '',
-    voeuPrincipal: '',
-    voeuSecondaire: '',
-    instrumentsJoues: [],
-    voeuxInstruments: [],
-    pratiqueDanse: false,
-    estAncienMembre: false,
-    souhaiteChangerInstrument: false,
-    volontaireAncienInstrument: false,
-    genre: 'femme',
-    afficherTelephone: true,
-    afficherDateNaissance: false,
-    visibiliteAdresse: 'ville',
-    publierTelephone: true,
-    publierDateNaissance: false
+    phone: profileData?.telephone || '',
+    adresseRue: profileData?.adresseRue || '',
+    adresseCP: profileData?.adresseCP || '',
+    adresseVille: profileData?.adresseVille || '',
+    surnom: profileData?.surnom || '',
+    tailleTshirt: profileData?.tailleTshirt || 'M',
+    taillePantalon: profileData?.taillePantalon || 'M',
+    droitImage: profileData?.droitImage || false,
+    aptitudeMedicale: profileData?.aptitudeMedicale || false,
+    lateralite: profileData?.lateralite || 'droitier',
+    dateNaissance: profileData?.dateNaissance || '',
+    instrument: profileData?.instrument || '',
+    instrumentSecondaire: profileData?.instrumentSecondaire || '',
+    voeuPrincipal: profileData?.voeuPrincipal || '',
+    voeuSecondaire: profileData?.voeuSecondaire || '',
+    instrumentsJoues: profileData?.instrumentsJoues || [],
+    voeuxInstruments: profileData?.voeuxInstruments || [],
+    pratiqueDanse: profileData?.pratiqueDanse || false,
+    estAncienMembre: profileData?.estAncienMembre || false,
+    souhaiteChangerInstrument: profileData?.souhaiteChangerInstrument || false,
+    volontaireAncienInstrument: profileData?.volontaireAncienInstrument || false,
+    genre: profileData?.genre || 'femme',
+    afficherTelephone: profileData?.afficherTelephone ?? true,
+    afficherDateNaissance: profileData?.afficherDateNaissance ?? false,
+    visibiliteAdresse: profileData?.visibiliteAdresse || 'ville',
+    publierTelephone: profileData?.publierTelephone ?? true,
+    publierDateNaissance: profileData?.publierDateNaissance ?? false
   });
 
   const [fieldsConfig, setFieldsConfig] = useState(null);
@@ -70,9 +70,9 @@ export default function Onboarding({ user, branding, onComplete }) {
   const [demanderDroitImage, setDemanderDroitImage] = useState(false);
   const [demanderAttestationSante, setDemanderAttestationSante] = useState(false);
 
-  // Extract the group ID parameter from the URL if present
+  // Extract the group ID parameter from the URL if present, fallback to profileData or default
   const searchParams = new URLSearchParams(window.location.search);
-  const groupId = searchParams.get('groupe') || null;
+  const groupId = searchParams.get('groupe') || searchParams.get('assoc') || profileData?.groupId || 'samambaia';
 
   // Load custom fields configuration and association details for Onboarding
   useEffect(() => {
@@ -234,11 +234,12 @@ export default function Onboarding({ user, branding, onComplete }) {
         afficherDateNaissance: Boolean(formData.afficherDateNaissance),
         visibiliteAdresse: formData.visibiliteAdresse || 'ville',
         publierTelephone: Boolean(formData.afficherTelephone),
-        publierDateNaissance: Boolean(formData.afficherDateNaissance)
+        publierDateNaissance: Boolean(formData.afficherDateNaissance),
+        onboardingCompleted: true
       };
 
       // Write user document to Firestore using Auth UID as the key
-      await setDoc(doc(db, 'users', user.uid), userDoc);
+      await setDoc(doc(db, 'users', user.uid), userDoc, { merge: true });
 
       // Trigger the parent callback to complete onboarding
       if (onComplete) {

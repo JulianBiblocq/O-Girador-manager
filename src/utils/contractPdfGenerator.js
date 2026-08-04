@@ -66,8 +66,8 @@ export async function generateContractPDF(gigData = {}, associationSettings = {}
   const assocStructure = (associationSettings.structureJuridique || '').trim() || 'Association Loi 1901';
   const assocAdresse = (associationSettings.adresseSiegeSocial || associationSettings.adresse || associationSettings.publicContactAddress || '').trim() || '__________________';
   const assocSiret = (associationSettings.siret || associationSettings.rna || '').trim() || '__________________';
-  const assocEmail = (associationSettings.email || associationSettings.emailOfficiel || associationSettings.publicContactEmail || '').trim() || '__________________';
-  const assocPhone = (associationSettings.telephone || associationSettings.phone || '').trim() || '__________________';
+  const assocEmail = (associationSettings.emailOfficiel || associationSettings.email || associationSettings.publicContactEmail || '').trim() || '__________________';
+  const assocPhone = (associationSettings.telephone || associationSettings.phone || associationSettings.publicContactPhone || '').trim() || '__________________';
   const clauseSpecifique = (associationSettings.clauseSpecifique || associationSettings.legalClause || '').trim();
 
   // URLs des signatures numérisées

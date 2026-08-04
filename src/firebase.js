@@ -2,6 +2,7 @@ import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, setPersistence, browserLocalPersistence } from 'firebase/auth';
 import { initializeFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
+import { getFunctions } from 'firebase/functions';
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -27,7 +28,9 @@ export const db = initializeFirestore(app, {
   useFetchStreams: false
 });
 export const storage = getStorage(app);
+export const functions = getFunctions(app);
 
 // Initialiser le service de messagerie push uniquement côté client
 import { getMessaging } from 'firebase/messaging';
 export const messaging = typeof window !== 'undefined' ? getMessaging(app) : null;
+

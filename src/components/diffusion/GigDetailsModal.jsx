@@ -150,12 +150,12 @@ export default function GigDetailsModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 select-none overflow-y-auto">
-      <CordelCard
-        variant="default"
-        useExtremeBorder={true}
-        className="w-full max-w-2xl bg-white p-5 sm:p-6 shadow-2xl flex flex-col gap-4 max-h-[90vh] overflow-y-auto text-left relative"
-      >
+    <div
+      tabIndex={-1}
+      onKeyDown={(e) => e.key === 'Escape' && onClose()}
+      className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 select-none outline-none animate-fade-in"
+    >
+      <div className="relative w-full max-w-2xl max-h-[90vh] flex flex-col rounded-lg bg-white shadow-2xl border-2 border-cordel-master-dark/40 overflow-hidden text-left">
         {/* Notification Toast interactive */}
         {toastMessage && (
           <div className="absolute top-3 left-1/2 -translate-x-1/2 z-50 bg-cordel-wood text-white text-xs font-bold px-4 py-2 rounded-full shadow-lg border border-amber-300 animate-bounce flex items-center gap-2">
@@ -164,8 +164,8 @@ export default function GigDetailsModal({
           </div>
         )}
 
-        {/* Header Modale */}
-        <div className="flex items-center justify-between border-b border-dashed border-cordel-master-dark/20 pb-3">
+        {/* 1. Header Modale (Fixe) */}
+        <div className="flex-shrink-0 p-4 border-b border-dashed border-cordel-master-dark/20 flex items-center justify-between bg-white">
           <div className="flex items-center gap-2">
             <span className="text-lg">🎷</span>
             <h3 className="text-sm sm:text-base font-extrabold uppercase text-cordel-wood">
@@ -176,66 +176,12 @@ export default function GigDetailsModal({
             type="button"
             onClick={onClose}
             className="text-stone-400 hover:text-stone-800 font-bold text-lg cursor-pointer"
+            title="Fermer (Échap)"
           >
             ✕
           </button>
         </div>
 
-        {/* Badge Étape / Statut */}
-        <div className="flex items-center justify-between bg-stone-50 p-3 rounded border border-stone-200">
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-stone-600">Étape actuelle :</span>
-            <span className={`px-3 py-1 text-xs font-extrabold uppercase rounded border ${currentStatusObj.color}`}>
-              {currentStatusObj.label}
-            </span>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] font-bold uppercase text-stone-500">Changer l'étape :</span>
-            <select
-              value={gig.status}
-              onChange={(e) => onStatusChange(gig.id, e.target.value)}
-              disabled={saving}
-              className="text-xs font-bold px-2 py-1 border border-stone-300 rounded bg-white cursor-pointer"
-            >
-              {GIG_STATUSES.map(st => (
-                <option key={st.id} value={st.id}>{st.label}</option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        {/* Synthèse des Informations */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3.5 bg-[#fdfaf2] border border-encre-noire/15 rounded">
-          <div className="flex flex-col gap-0.5">
-            <span className="text-[10px] font-bold uppercase text-stone-500">Organisateur :</span>
-            <span className="text-xs font-extrabold text-stone-900">{gig.organizer || 'Non renseigné'}</span>
-          </div>
-
-          <div className="flex flex-col gap-0.5">
-            <span className="text-[10px] font-bold uppercase text-stone-500">Date & Lieu :</span>
-            <span className="text-xs font-bold text-stone-900">
-              📅 {gig.date || 'Date non fixée'} — 📍 {gig.location || 'Lieu non défini'}
-            </span>
-          </div>
-
-          <div className="flex flex-col gap-0.5">
-            <span className="text-[10px] font-bold uppercase text-stone-500">Contact Organisateur :</span>
-            <span className="text-xs text-stone-700">
-              {gig.contactEmail ? `✉️ ${gig.contactEmail}` : ''} {gig.contactPhone ? ` | 📞 ${gig.contactPhone}` : ''}
-              {!gig.contactEmail && !gig.contactPhone && 'Aucun contact enregistré'}
-            </span>
-          </div>
-
-          <div className="flex flex-col gap-0.5">
-            <span className="text-[10px] font-bold uppercase text-stone-500">Montant Estimé / Budget :</span>
-            <span className="text-sm font-black text-cordel-wood font-mono">
-              {(parseFloat(gig.amount) || 0).toLocaleString('fr-FR', { minimumFractionDigits: 2 })} €
-            </span>
-          </div>
-        </div>
-
-        {/* Notes & Prochaine relance */}
         <div className="flex flex-col gap-2">
           {gig.source === 'vitrine_publique' && (
             <div className="p-2 bg-blue-50 border border-blue-300 rounded text-xs font-bold text-blue-900 flex items-center gap-2">
@@ -443,7 +389,7 @@ export default function GigDetailsModal({
             Fermer
           </CordelButton>
         </div>
-      </CordelCard>
+      </div>
 
       {/* Modale d'envoi du Contrat PDF par email via Brevo */}
       <GigSendContractModal

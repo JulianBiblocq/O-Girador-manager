@@ -69,7 +69,8 @@ export function useUserProfile(user, profileData, t) {
     publierTelephone: profileData?.afficherTelephone !== undefined ? profileData.afficherTelephone : (profileData?.publierTelephone !== undefined ? profileData.publierTelephone : true),
     publierDateNaissance: profileData?.afficherDateNaissance !== undefined ? profileData.afficherDateNaissance : (profileData?.publierDateNaissance !== undefined ? profileData.publierDateNaissance : false),
     dietaryRestrictions: Array.isArray(profileData?.dietaryRestrictions) ? profileData.dietaryRestrictions : [],
-    allergies: profileData?.allergies || ''
+    allergies: profileData?.allergies || '',
+    niveauxParInstrument: profileData?.niveauxParInstrument || {}
   });
 
   const [saving, setSaving] = useState(false);
@@ -121,7 +122,8 @@ export function useUserProfile(user, profileData, t) {
       publierTelephone: profileData?.afficherTelephone !== undefined ? profileData.afficherTelephone : (profileData?.publierTelephone !== undefined ? profileData.publierTelephone : true),
       publierDateNaissance: profileData?.afficherDateNaissance !== undefined ? profileData.afficherDateNaissance : (profileData?.publierDateNaissance !== undefined ? profileData.publierDateNaissance : false),
       dietaryRestrictions: Array.isArray(profileData?.dietaryRestrictions) ? profileData.dietaryRestrictions : [],
-      allergies: profileData?.allergies || ''
+      allergies: profileData?.allergies || '',
+      niveauxParInstrument: profileData?.niveauxParInstrument || {}
     });
     setIsEditing(true);
   };
@@ -470,7 +472,8 @@ export function useUserProfile(user, profileData, t) {
         publierTelephone: Boolean(formData.afficherTelephone),
         publierDateNaissance: Boolean(formData.afficherDateNaissance),
         dietaryRestrictions: Array.isArray(formData.dietaryRestrictions) ? formData.dietaryRestrictions : [],
-        allergies: formData.allergies ? formData.allergies.trim() : ''
+        allergies: formData.allergies ? formData.allergies.trim() : '',
+        niveauxParInstrument: formData.niveauxParInstrument || {}
       };
 
       if (demanderDroitImage) {

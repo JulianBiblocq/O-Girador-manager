@@ -27,8 +27,8 @@ export async function generateInvoicePDF(invoice = {}, associationSettings = {})
   const assocName = associationSettings.nom || associationSettings.associationName || 'O GIRADOR';
   const assocStructure = associationSettings.structureJuridique || 'Association Loi 1901';
   const assocAdresse = associationSettings.adresseSiegeSocial || associationSettings.adresse || associationSettings.publicContactAddress || '';
-  const assocEmail = associationSettings.email || associationSettings.emailOfficiel || associationSettings.publicContactEmail || '';
-  const assocPhone = associationSettings.telephone || associationSettings.publicContactPhone || '';
+  const assocEmail = associationSettings.emailOfficiel || associationSettings.email || associationSettings.publicContactEmail || '';
+  const assocPhone = associationSettings.telephone || associationSettings.phone || associationSettings.publicContactPhone || '';
   const assocSiret = associationSettings.siret || associationSettings.rna || '';
   const assocRib = associationSettings.ribIban || associationSettings.iban || '';
   const assocMentionTVA = associationSettings.mentionTVA || 'TVA non applicable, art. 261-7-1° du CGI';

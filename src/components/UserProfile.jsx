@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useUserProfile } from '../hooks/useUserProfile';
 import XiloAvatar from './XiloAvatar';
+import { resolveCategory } from '../utils/categoryUtils';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
 import { 
@@ -25,6 +26,7 @@ import ProfileEditForm from './profile/ProfileEditForm';
 import CostumeChecklist from './profile/CostumeChecklist';
 import ImageLightboxModal from './ImageLightboxModal';
 import FamilyMembersManager from './profile/FamilyMembersManager';
+import QRScannerModal from './auth/QRScannerModal';
 const CordelImageEditor = React.lazy(() => import('./CordelImageEditor'));
 
 import { formatTagGender } from '../utils/tagUtils';
@@ -49,6 +51,7 @@ export default function UserProfile({ user, profileData, associationName, onBack
   const { t, locale } = useTranslation();
   const { tRole } = useTerminologie();
   const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [showQrScanner, setShowQrScanner] = useState(false);
 
   const {
     isEditing,
@@ -102,6 +105,8 @@ export default function UserProfile({ user, profileData, associationName, onBack
 
   const missingKeys = getMissingRequiredFields ? getMissingRequiredFields() : [];
   const missingLabels = missingKeys.map(k => FIELD_LABELS[k] || k);
+  
+  const currentNiveau = profileData?.niveauMusique || profileData?.niveau;
 
   return (
     <div className="flex flex-col gap-4 text-left max-w-3xl mx-auto w-full">
@@ -154,10 +159,10 @@ export default function UserProfile({ user, profileData, associationName, onBack
               {tRole(profileData?.role || 'membre', profileData?.genre)}
             </span>
             <span className="theme-stamp-badge theme-stamp-badge-ocre text-[7px] -rotate-6">
-              {profileData?.niveau === 'confirme' ? '🏆 ' + translate('userProfile.levelConfirmSimple', "Confirmé") : profileData?.niveau === 'debutant' ? '🌱 ' + translate('userProfile.levelBeginner', "Débutant") : '🎵 ' + translate('common.none', 'Aucun')}
+              {currentNiveau && currentNiveau !== 'aucun' ? '🎵 ' + resolveCategory(currentNiveau) : '🎵 ' + translate('common.none', 'Aucun')}
             </span>
             <span className="theme-stamp-badge theme-stamp-badge-ocre text-[7px] rotate-3">
-              {profileData?.niveauDanse === 'confirme' ? '💃 ' + translate('userProfile.levelConfirmSimple', "Confirmé") : profileData?.niveauDanse === 'debutant' ? '🌱 ' + translate('userProfile.levelBeginner', "Débutant") : '💃 ' + translate('common.none', 'Aucun')}
+              {profileData?.niveauDanse && profileData?.niveauDanse !== 'aucun' ? '💃 ' + resolveCategory(profileData.niveauDanse) : '💃 ' + translate('common.none', 'Aucun')}
             </span>
           </div>
         </div>
@@ -594,18 +599,34 @@ export default function UserProfile({ user, profileData, associationName, onBack
         t={t}
       />
 
-      {/* Disconnect Button */}
-      <div className="mt-4 pt-4 border-t border-dashed border-cordel-master-dark/20 flex flex-col gap-3 items-center">
+      {/* Disconnect & QR Scanner Buttons */}
+      <div className="mt-4 pt-4 border-t border-dashed border-cordel-master-dark/20 flex flex-col sm:flex-row gap-3 items-center">
+        <CordelButton 
+          type="button"
+          variant="ocre"
+          onClick={() => setShowQrScanner(true)}
+          useExtremeBorder={true}
+          className="w-full sm:flex-1 py-3 border-2 border-encre-noire shadow-[3px_3px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-105 font-black transition-all text-xs uppercase tracking-widest flex items-center justify-center gap-2 select-none"
+        >
+          📸 Connecter un PC
+        </CordelButton>
+
         <CordelButton 
           type="button"
           variant="default"
           onClick={handleDisconnect}
           useExtremeBorder={true}
-          className="w-full py-3 !bg-cordel-wood !text-cordel-bg-light border-2 border-encre-noire shadow-[3px_3px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-110 font-bold transition-all text-sm uppercase tracking-widest flex items-center justify-center gap-2 select-none"
+          className="w-full sm:flex-1 py-3 !bg-cordel-wood !text-cordel-bg-light border-2 border-encre-noire shadow-[3px_3px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-110 font-bold transition-all text-xs uppercase tracking-widest flex items-center justify-center gap-2 select-none"
         >
           🚪 {t('userProfile.disconnectBtn')}
         </CordelButton>
       </div>
+
+      {/* QR Code Scanner Modal */}
+      <QRScannerModal 
+        isOpen={showQrScanner}
+        onClose={() => setShowQrScanner(false)}
+      />
 
       {/* Editor Modal Overlay */}
       {showEditor && (

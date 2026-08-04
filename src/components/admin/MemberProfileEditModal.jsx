@@ -3,6 +3,7 @@ import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 import { formatTagGender, getTagId } from '../../utils/tagUtils';
 import { VALID_SYSTEM_ROLES } from '../../utils/roleMigration';
+import { DEFAULT_CUSTOM_CATEGORIES } from '../../utils/categoryUtils';
 import { XiloUser, XiloLock, XiloShirt, XiloPhone, XiloHome, XiloBirthday, XiloSparkles, XiloShield, XiloTag } from '../XiloIcons';
 
 /**
@@ -15,6 +16,7 @@ import { XiloUser, XiloLock, XiloShirt, XiloPhone, XiloHome, XiloBirthday, XiloS
 export default function MemberProfileEditModal({
   userItem,
   availableTags = [],
+  customCategories = DEFAULT_CUSTOM_CATEGORIES,
   instrumentsDisponibles = ["Alfaia Marcante", "Alfaia Meião", "Alfaia Repique", "Caixa", "Tarol", "Gonguê", "Agbê", "Mineiro", "Timbal", "Chant"],
   onClose,
   onSave,
@@ -40,7 +42,7 @@ export default function MemberProfileEditModal({
     droitImage: userItem.droitImage !== false,
     aptitudeMedicale: userItem.aptitudeMedicale === true,
     role: userItem.role || 'membre',
-    niveau: userItem.niveau || 'aucun',
+    niveau: userItem.niveau || userItem.niveauMusique || 'aucun',
     niveauDanse: userItem.niveauDanse || 'aucun',
     instrument: userItem.instrument || userItem.instrumentPrincipal || '',
     instrumentSecondaire: userItem.instrumentSecondaire || '',
@@ -54,7 +56,9 @@ export default function MemberProfileEditModal({
     accordRenfortAncienInstrument: userItem.accordRenfortAncienInstrument === true,
     dietaryRestrictionsText: Array.isArray(userItem.dietaryRestrictions) ? userItem.dietaryRestrictions.join(', ') : (userItem.dietaryRestrictions || ''),
     allergies: userItem.allergies || '',
-    tags: Array.isArray(userItem.tags) ? [...userItem.tags] : []
+    tags: Array.isArray(userItem.tags) ? [...userItem.tags] : [],
+    instrumentsJoues: Array.isArray(userItem.instrumentsJoues) ? [...userItem.instrumentsJoues] : (userItem.instrument ? [userItem.instrument] : []),
+    niveauxParInstrument: userItem.niveauxParInstrument || {}
   });
 
   const handleChange = (e) => {
@@ -74,6 +78,34 @@ export default function MemberProfileEditModal({
         return { ...prev, tags: currentTags.filter(t => t !== tagId) };
       }
     });
+  };
+
+  const handleInstrumentToggle = (inst, isChecked) => {
+    setFormData(prev => {
+      const currentInsts = prev.instrumentsJoues || [];
+      const currentNiveaux = prev.niveauxParInstrument || {};
+      
+      if (isChecked) {
+        return { ...prev, instrumentsJoues: [...currentInsts, inst] };
+      } else {
+        const { [inst]: removed, ...restNiveaux } = currentNiveaux;
+        return { 
+          ...prev, 
+          instrumentsJoues: currentInsts.filter(i => i !== inst),
+          niveauxParInstrument: restNiveaux
+        };
+      }
+    });
+  };
+
+  const handleNiveauInstrumentChange = (inst, niveau) => {
+    setFormData(prev => ({
+      ...prev,
+      niveauxParInstrument: {
+        ...(prev.niveauxParInstrument || {}),
+        [inst]: niveau
+      }
+    }));
   };
 
   const handleSubmit = (e) => {
@@ -115,17 +147,22 @@ export default function MemberProfileEditModal({
       accordRenfortAncienInstrument: formData.accordRenfortAncienInstrument,
       dietaryRestrictions: cleanRestrictions,
       allergies: formData.allergies.trim(),
-      tags: formData.tags
+      tags: formData.tags,
+      instrumentsJoues: formData.instrumentsJoues,
+      niveauxParInstrument: formData.niveauxParInstrument
     };
 
     onSave(userItem.id, updatedPayload);
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs select-none">
-      <div className="bg-cordel-bg-light border-4 border-encre-noire rounded-lg shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden text-left">
-        
-        {/* En-tête de la modale */}
+    <div
+      tabIndex={-1}
+      onKeyDown={(e) => e.key === 'Escape' && !saving && onClose()}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs select-none outline-none animate-fade-in"
+    >
+      <div className="relative w-full max-w-3xl max-h-[90vh] flex flex-col rounded-lg bg-cordel-bg-light border-4 border-encre-noire shadow-2xl overflow-hidden text-left">
+        {/* 1. En-tête de la modale (Fixe) */}
         <div className="bg-cordel-bg border-b-2 border-dashed border-cordel-master-dark/30 px-6 py-4 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
             {userItem.photoUrl ? (
@@ -161,96 +198,55 @@ export default function MemberProfileEditModal({
               type="button"
               onClick={onClose}
               className="text-xs font-black bg-cordel-bg hover:bg-neutral-200 border border-encre-noire px-2.5 py-1 rounded shadow-[1.5px_1.5px_0px_0px_#181716] cursor-pointer"
+              title="Fermer (Échap)"
             >
               ✕
             </button>
           </div>
         </div>
 
-        {/* Corps du formulaire de la modale */}
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 flex flex-col gap-5 text-xs text-encre-noire">
-          
-          {/* Bloc Sécurité (Intouchable / Verrouillé) */}
-          <div className="bg-neutral-100 dark:bg-neutral-900 border border-dashed border-encre-noire/30 p-3 rounded flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
-              <XiloLock size={18} className="text-cordel-wood shrink-0" />
-              <div className="flex flex-col">
-                <span className="font-extrabold text-[10px] uppercase text-cordel-wood">
-                  Identifiants Firebase Auth (Strictement confidentiels & verrouillés)
-                </span>
-                <span className="text-[10px] opacity-75 font-semibold">
-                  Email : <strong className="font-mono">{userItem.email}</strong> • L'administrateur ne peut ni modifier ni réinitialiser le mot de passe ici.
-                </span>
-              </div>
-            </div>
-            <span className="text-[9px] font-black uppercase px-2 py-0.5 bg-amber-200 text-amber-900 rounded border border-amber-400 shrink-0">
-              🔒 Lecture Seule
-            </span>
-          </div>
-
-          {/* Section 1 : Informations personnelles & Rôles */}
-          <div className="border border-dashed border-cordel-master-dark/20 p-4 rounded bg-white/40 flex flex-col gap-3">
-            <h4 className="font-extrabold uppercase text-cordel-wood text-[11px] flex items-center gap-1.5">
-              <XiloUser size={14} /> 1. Identité, Genre & Rôle Système
-            </h4>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div>
-                <label className="block text-[9px] uppercase font-bold text-cordel-master-dark mb-0.5">Prénom</label>
-                <input
-                  type="text"
-                  name="prenom"
-                  value={formData.prenom}
-                  onChange={handleChange}
-                  className="theme-input text-xs font-bold w-full py-1 px-2"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-[9px] uppercase font-bold text-cordel-master-dark mb-0.5">Nom</label>
-                <input
-                  type="text"
-                  name="nom"
-                  value={formData.nom}
-                  onChange={handleChange}
-                  className="theme-input text-xs font-bold w-full py-1 px-2"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-[9px] uppercase font-bold text-cordel-master-dark mb-0.5">Surnom</label>
-                <input
-                  type="text"
-                  name="surnom"
-                  value={formData.surnom}
-                  onChange={handleChange}
-                  className="theme-input text-xs font-bold w-full py-1 px-2"
-                />
-              </div>
-              <div>
-                <label className="block text-[9px] uppercase font-bold text-cordel-master-dark mb-0.5">Genre (accord linguistique)</label>
-                <select
-                  name="genre"
-                  value={formData.genre}
-                  onChange={handleChange}
-                  className="theme-input text-xs font-bold w-full py-1 px-2 bg-cordel-bg-light"
-                >
-                  <option value="femme">Femme</option>
-                  <option value="homme">Homme</option>
-                  <option value="neutre">Non-binaire / Neutre</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-[9px] uppercase font-bold text-cordel-master-dark mb-0.5">Rôle Système</label>
-                <select
-                  name="role"
-                  value={formData.role}
-                  onChange={handleChange}
-                  className="theme-input text-xs font-bold w-full py-1 px-2 bg-cordel-bg-light"
-                >
-                  <option value="membre">Membre</option>
-                  <option value="admin">Admin</option>
-                  <option value="mestre">Mestre (Super-Admin)</option>
-                </select>
+        {/* Form Wrapper */}
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
+          {/* 2. Body (Défilable verticalement) */}
+          <div className="flex-1 overflow-y-auto p-6 space-y-5 text-xs text-encre-noire">
+            {/* Section 1 : Identité */}
+            <div className="border border-dashed border-cordel-master-dark/20 p-4 rounded bg-white/40 flex flex-col gap-3">
+              <h4 className="font-extrabold uppercase text-cordel-wood text-[11px] flex items-center gap-1.5">
+                <XiloUser size={14} /> 1. Identité, Surnom & Date de Naissance
+              </h4>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-[9px] uppercase font-bold text-cordel-master-dark mb-0.5">Prénom</label>
+                  <input
+                    type="text"
+                    name="prenom"
+                    value={formData.prenom}
+                    onChange={handleChange}
+                    className="theme-input text-xs font-bold w-full py-1 px-2"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-[9px] uppercase font-bold text-cordel-master-dark mb-0.5">Nom</label>
+                  <input
+                    type="text"
+                    name="nom"
+                    value={formData.nom}
+                    onChange={handleChange}
+                    className="theme-input text-xs font-bold w-full py-1 px-2"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-[9px] uppercase font-bold text-cordel-master-dark mb-0.5">Surnom</label>
+                  <input
+                    type="text"
+                    name="surnom"
+                    value={formData.surnom}
+                    onChange={handleChange}
+                    className="theme-input text-xs font-bold w-full py-1 px-2"
+                  />
+                </div>
               </div>
               <div>
                 <label className="block text-[9px] uppercase font-bold text-cordel-master-dark mb-0.5">Date de naissance</label>
@@ -263,7 +259,6 @@ export default function MemberProfileEditModal({
                 />
               </div>
             </div>
-          </div>
 
           {/* Section 2 : Coordonnées */}
           <div className="border border-dashed border-cordel-master-dark/20 p-4 rounded bg-white/40 flex flex-col gap-3">
@@ -396,7 +391,7 @@ export default function MemberProfileEditModal({
             </h4>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
-                <label className="block text-[9px] uppercase font-bold text-cordel-master-dark mb-0.5">Instrument Principal</label>
+                <label className="block text-[9px] uppercase font-bold text-cordel-master-dark mb-0.5">Instrument Principal (Statut/Mestre)</label>
                 <select
                   name="instrument"
                   value={formData.instrument}
@@ -405,7 +400,7 @@ export default function MemberProfileEditModal({
                 >
                   <option value="">-- Non attribué --</option>
                   {instrumentsDisponibles.map(inst => (
-                    <option key={inst} value={inst}>{inst}</option>
+                    <option key={`p-${inst}`} value={inst}>{inst}</option>
                   ))}
                 </select>
               </div>
@@ -419,12 +414,56 @@ export default function MemberProfileEditModal({
                 >
                   <option value="">-- Aucun --</option>
                   {instrumentsDisponibles.map(inst => (
-                    <option key={inst} value={inst}>{inst}</option>
+                    <option key={`s-${inst}`} value={inst}>{inst}</option>
                   ))}
                 </select>
               </div>
+              <div className="sm:col-span-3 mt-1">
+                <label className="block text-[9px] uppercase font-bold text-cordel-master-dark mb-1">
+                  Tous les instruments joués (sélection multiple)
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {instrumentsDisponibles.map((inst) => (
+                    <label key={`check-${inst}`} className="flex items-center gap-1.5 text-xs cursor-pointer select-none bg-cordel-bg-light/60 border border-cordel-master-dark/20 px-2 py-1 rounded">
+                      <input
+                        type="checkbox"
+                        checked={formData.instrumentsJoues.includes(inst)}
+                        onChange={(e) => handleInstrumentToggle(inst, e.target.checked)}
+                        className="rounded text-cordel-wood focus:ring-0"
+                      />
+                      <span>{inst}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+              
+              {formData.instrumentsJoues.length > 0 && (
+                <div className="sm:col-span-3 bg-amber-50 dark:bg-amber-950/30 border border-cordel-wood/30 p-2.5 rounded mt-1">
+                  <label className="block text-[9px] uppercase font-bold text-cordel-master-dark mb-1">
+                    Niveaux par instrument joué
+                  </label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                    {formData.instrumentsJoues.map((inst) => (
+                      <div key={`niv-${inst}`} className="flex flex-col gap-1">
+                        <span className="text-xs font-bold text-cordel-wood">{inst}</span>
+                        <select
+                          value={formData.niveauxParInstrument[inst] || 'debutant'}
+                          onChange={(e) => handleNiveauInstrumentChange(inst, e.target.value)}
+                          className="theme-input text-xs font-bold py-1 px-1.5 bg-white"
+                        >
+                          <option value="debutant">Débutant</option>
+                          {customCategories.filter(cat => cat.toLowerCase() !== 'debutant').map(cat => (
+                            <option key={`cat-${inst}-${cat}`} value={cat}>{cat}</option>
+                          ))}
+                        </select>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
               <div>
-                <label className="block text-[9px] uppercase font-bold text-cordel-master-dark mb-0.5">Niveau Musique</label>
+                <label className="block text-[9px] uppercase font-bold text-cordel-master-dark mb-0.5">Niveau Musique (Global)</label>
                 <select
                   name="niveau"
                   value={formData.niveau}
@@ -432,8 +471,9 @@ export default function MemberProfileEditModal({
                   className="theme-input text-xs font-bold w-full py-1 px-2 bg-cordel-bg-light"
                 >
                   <option value="aucun">Aucun</option>
-                  <option value="debutant">Débutant</option>
-                  <option value="confirme">Confirmé</option>
+                  {customCategories.map(cat => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
                 </select>
               </div>
               <div>
@@ -445,8 +485,9 @@ export default function MemberProfileEditModal({
                   className="theme-input text-xs font-bold w-full py-1 px-2 bg-cordel-bg-light"
                 >
                   <option value="aucun">Aucun</option>
-                  <option value="debutant">Débutant</option>
-                  <option value="confirme">Confirmé</option>
+                  {customCategories.map(cat => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
                 </select>
               </div>
               <div>
@@ -576,9 +617,10 @@ export default function MemberProfileEditModal({
               </div>
             </div>
           )}
+        </div>
 
-          {/* Actions de la modale */}
-          <div className="flex justify-between items-center gap-3 pt-4 border-t border-dashed border-cordel-master-dark/30 shrink-0">
+        {/* 3. Footer / Actions de la modale (Fixe en bas) */}
+          <div className="flex-shrink-0 p-4 border-t border-dashed border-cordel-master-dark/30 flex justify-between items-center bg-cordel-bg-light">
             <CordelButton
               type="button"
               variant="default"

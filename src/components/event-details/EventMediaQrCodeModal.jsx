@@ -28,41 +28,42 @@ export default function EventMediaQrCodeModal({ qrUrl, eventTitle, onClose }) {
 
   return (
     <div 
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-encre-noire/70 backdrop-blur-xs overflow-y-auto animate-fade-in"
+      tabIndex={-1}
+      onKeyDown={(e) => e.key === 'Escape' && onClose()}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-encre-noire/70 backdrop-blur-xs select-none outline-none animate-fade-in"
       onClick={onClose}
     >
-      <div onClick={(e) => e.stopPropagation()} className="w-full max-w-md">
-        <CordelCard 
-          variant="default" 
-          useExtremeBorder={true} 
-          className="p-6 text-center flex flex-col items-center gap-4 bg-cordel-bg shadow-[6px_8px_24px_rgba(24,23,22,0.3)] relative"
-        >
-          {/* Bouton Fermer */}
+      <div 
+        onClick={(e) => e.stopPropagation()} 
+        className="relative w-full max-w-md max-h-[90vh] flex flex-col rounded-lg bg-cordel-bg shadow-2xl border-2 border-cordel-master-dark/40 overflow-hidden text-center"
+      >
+        {/* 1. Header (Fixe) */}
+        <div className="flex-shrink-0 p-4 border-b-2 border-dashed border-cordel-master-dark/20 flex justify-between items-center bg-cordel-bg">
+          <span className="theme-stamp-badge theme-stamp-badge-wood text-[9px] uppercase tracking-widest font-black">
+            📸 Dépôt Médias Événement
+          </span>
           <button
             type="button"
             onClick={onClose}
-            className="absolute top-3 right-3 text-cordel-master-dark hover:text-red-700 font-extrabold text-sm p-1 cursor-pointer select-none"
-            title="Fermer"
+            className="text-cordel-master-dark hover:text-red-700 font-extrabold text-sm p-1 cursor-pointer select-none"
+            title="Fermer (Échap)"
           >
-            ✖
+            ✕
           </button>
+        </div>
 
-          {/* En-tête de la Modale */}
-          <div className="flex flex-col items-center gap-1 mt-1">
-            <span className="theme-stamp-badge theme-stamp-badge-wood text-[9px] uppercase tracking-widest font-black">
-              📸 Dépôt Médias Événement
-            </span>
-            <h3 className="text-sm sm:text-base font-black text-cordel-wood uppercase tracking-wide leading-snug mt-1">
-              {eventTitle ? `Partagez vos souvenirs de "${eventTitle}"` : "Dépôt de photos et vidéos"}
-            </h3>
-          </div>
+        {/* 2. Body (Défilable verticalement) */}
+        <div className="flex-1 overflow-y-auto p-4 flex flex-col items-center gap-3">
+          <h3 className="text-sm sm:text-base font-black text-cordel-wood uppercase tracking-wide leading-snug">
+            {eventTitle ? `Partagez vos souvenirs de "${eventTitle}"` : "Dépôt de photos et vidéos"}
+          </h3>
 
-          {/* QR Code Dynamique généré avec qrcode.react */}
+          {/* QR Code Dynamique */}
           <div className="p-4 bg-white border-2 border-encre-noire rounded-xl shadow-[3px_4px_0px_0px_#181716] my-1 flex items-center justify-center">
             {QRCodeSVG ? (
               <QRCodeSVG 
                 value={qrUrl} 
-                size={260}
+                size={240}
                 bgColor="#FFFFFF"
                 fgColor="#181716"
                 level="H"
@@ -72,40 +73,49 @@ export default function EventMediaQrCodeModal({ qrUrl, eventTitle, onClose }) {
               <img 
                 src={`https://api.qrserver.com/v1/create-qr-code/?size=300x300&margin=10&data=${encodeURIComponent(qrUrl)}`}
                 alt="QR Code Dépôt Médias"
-                className="w-64 h-64 object-contain"
+                className="w-56 h-56 object-contain"
               />
             )}
           </div>
 
-          {/* Texte d'aide explicatif sous le QR Code */}
           <div className="flex flex-col items-center gap-1 px-2">
             <p className="text-xs font-extrabold text-encre-noire leading-relaxed">
               Scannez ce code avec votre téléphone pour envoyer directement vos fichiers dans le dossier de cet événement.
             </p>
           </div>
+        </div>
 
-          {/* Actions : Copier le lien & Ouvrir */}
-          <div className="flex flex-wrap gap-2 w-full justify-center mt-2">
-            <CordelButton
-              type="button"
-              variant="default"
-              onClick={handleCopy}
-              className="text-xs py-1.5 px-3 font-bold"
-            >
-              {copied ? "✅ Lien copié !" : "📋 Copier le lien"}
-            </CordelButton>
+        {/* 3. Footer (Fixe en bas) */}
+        <div className="flex-shrink-0 p-4 border-t-2 border-dashed border-cordel-master-dark/20 flex flex-wrap gap-2 justify-center bg-cordel-bg">
+          <CordelButton
+            type="button"
+            variant="default"
+            onClick={handleCopy}
+            className="text-xs py-1.5 px-3 font-bold"
+          >
+            {copied ? "✅ Lien copié !" : "📋 Copier le lien"}
+          </CordelButton>
 
-            <CordelButton
-              type="button"
-              variant="vert"
-              useExtremeBorder={true}
-              onClick={() => window.open(qrUrl, '_blank', 'noopener,noreferrer')}
-              className="text-xs py-1.5 px-3 font-bold"
-            >
-              🔗 Ouvrir le dossier ↗
-            </CordelButton>
-          </div>
-        </CordelCard>
+          <CordelButton
+            type="button"
+            variant="vert"
+            useExtremeBorder={true}
+            onClick={() => window.open(qrUrl, '_blank', 'noopener,noreferrer')}
+            className="text-xs py-1.5 px-3 font-bold"
+          >
+            🔗 Ouvrir le dossier ↗
+          </CordelButton>
+
+          <CordelButton
+            type="button"
+            variant="ocre"
+            useExtremeBorder={true}
+            onClick={onClose}
+            className="text-xs py-1.5 px-3 font-bold"
+          >
+            Fermer
+          </CordelButton>
+        </div>
       </div>
     </div>
   );

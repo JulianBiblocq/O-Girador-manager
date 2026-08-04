@@ -24,9 +24,10 @@ import { useTranslation } from './LanguageContext';
 import { usePresence } from '../hooks/usePresence';
 import { PresenceProvider } from '../context/PresenceContext';
 import OnlineStatusWidget from './OnlineStatusWidget';
-import { canEditVitrine } from '../utils/permissionUtils';
+import { canEditVitrine, canAccessPole, canAccessTabPermission } from '../utils/permissionUtils';
 import { usePendingMembersNotification } from '../hooks/usePendingMembersNotification';
 import { resolveEffectiveUserTags } from '../utils/tagUtils'; // Utilitaire de résolution des étiquettes effectives
+import InfoPoleBanner, { InfoPoleHelpButton } from './InfoPoleBanner';
 
 export default function LayoutShell({ 
   logoUrl, 
@@ -107,47 +108,17 @@ export default function LayoutShell({
     // Master Key Bypass ONLY if Break-Glass Technical Intervention Mode is ACTIVE
     if (isMasterKeyActive) return true;
 
-    // Public member tabs
-    if (['profil', 'agenda', 'materiel', 'vestiaire', 'trombinoscope', 'forum', 'dashboard', 'varal'].includes(tabId)) {
-      return true;
-    }
-
-    if (tabId === 'vitrine-editor' || tabId.startsWith('vitrine-')) {
-      if (
-        profileData?.role === 'mestre' || 
-        profileData?.role === 'super-admin' || 
-        profileData?.isSystemAdmin === true ||
-        canEditVitrine(profileData, permissionsMatrice, userTags)
-      ) {
-        return true;
-      }
-    }
-
-    // 1. Direct tab permission check in permissionsMatrice
-    const tabTags = permissionsMatrice?.[tabId];
-    if (Array.isArray(tabTags) && tabTags.length > 0) {
-      return userTags.some(t => tabTags.includes(t));
-    }
-
-    // 2. Fallback to Pole-level permission check for backward compatibility
-    if (poleId) {
-      const poleTags = permissionsMatrice?.[poleId];
-      if (Array.isArray(poleTags) && poleTags.length > 0) {
-        return userTags.some(t => poleTags.includes(t));
-      }
-    }
-
-    return false;
+    return canAccessTabPermission(tabId, poleId, profileData, permissionsMatrice, userTags);
   };
 
-  const hasAccessTroupe = isMasterKeyActive || checkTabAccess('export-annu', 'troupe') || checkTabAccess('tag-manager', 'troupe') || checkTabAccess('instruments', 'troupe');
-  const hasAccessDiffusion = isMasterKeyActive || checkTabAccess('gigs-pipeline', 'diffusion');
-  const hasAccessLogistique = isMasterKeyActive || checkTabAccess('inventory', 'logistique') || checkTabAccess('orders-manager', 'logistique');
-  const hasAccessTresorerie = isMasterKeyActive || checkTabAccess('dashboard-finance', 'tresorerie') || checkTabAccess('cotisations', 'tresorerie') || checkTabAccess('events-finances', 'tresorerie') || checkTabAccess('operations-diverses', 'tresorerie') || checkTabAccess('frais-km', 'tresorerie') || checkTabAccess('reports-exports', 'tresorerie');
-  const hasAccessStudio = isMasterKeyActive || checkTabAccess('studio-events', 'studio') || checkTabAccess('studio-social', 'studio') || checkTabAccess('reunion-manager', 'studio') || checkTabAccess('varal-manager', 'studio') || checkTabAccess('activity-reports', 'studio') || checkTabAccess('mestre-forum-channels', 'studio') || checkTabAccess('newsletter-manager', 'studio');
-  const hasAccessVestiaire = isMasterKeyActive || checkTabAccess('wardrobe-inventory', 'vestiaire') || checkTabAccess('wardrobe-couture', 'vestiaire') || checkTabAccess('wardrobe-sizes', 'vestiaire');
-  const hasAccessMestre = isMasterKeyActive || checkTabAccess('mestre-orientation', 'mestre') || checkTabAccess('mestre-events', 'mestre') || checkTabAccess('mestre-stage-layout', 'mestre') || checkTabAccess('mestre-sequenceur', 'mestre') || checkTabAccess('mestre-workshops', 'mestre') || checkTabAccess('mestre-mot-mestre', 'mestre');
-  const hasAccessVitrine = isMasterKeyActive || checkTabAccess('vitrine-edit', 'vitrine') || checkTabAccess('public-theme', 'config') || checkTabAccess('vitrine', 'vitrine');
+  const hasAccessTroupe = isMasterKeyActive || canAccessPole('troupe', profileData, permissionsMatrice, userTags);
+  const hasAccessDiffusion = isMasterKeyActive || canAccessPole('diffusion', profileData, permissionsMatrice, userTags);
+  const hasAccessLogistique = isMasterKeyActive || canAccessPole('logistique', profileData, permissionsMatrice, userTags);
+  const hasAccessTresorerie = isMasterKeyActive || canAccessPole('tresorerie', profileData, permissionsMatrice, userTags);
+  const hasAccessStudio = isMasterKeyActive || canAccessPole('studio', profileData, permissionsMatrice, userTags);
+  const hasAccessVestiaire = isMasterKeyActive || canAccessPole('vestiaire', profileData, permissionsMatrice, userTags);
+  const hasAccessMestre = isMasterKeyActive || canAccessPole('mestre', profileData, permissionsMatrice, userTags);
+  const hasAccessVitrine = isMasterKeyActive || canAccessPole('vitrine', profileData, permissionsMatrice, userTags);
 
   const isAdministrativeUser = isSystemOrSuperAdminOrMestre || 
                                profileData?.role === 'bureau' || 
@@ -187,16 +158,13 @@ export default function LayoutShell({
   };
 
   // Dynamic Cascade Permission Check:
-  // A Pole is UNLOCKED (accessible) if the user has access to at least 1 enabled sub-tab.
-  // It is LOCKED (verrouillé) if 100% of its enabled sub-tabs are inaccessible to the user.
+  // A Pole is UNLOCKED (accessible) if the user has access to at least 1 enabled sub-tab or has the pole admin tag/role.
   const isPoleUnlocked = (poleId) => {
     if (!isPoleEnabled(poleId)) return false;
     if (poleId === 'accueil' || poleId === 'mon-espace') return true;
+    if (isMasterKeyActive) return true;
 
-    const poleObj = polesList.find(p => p.id === poleId);
-    if (!poleObj) return false;
-
-    return poleObj.tabs.some(tab => isModuleEnabled(tab.id, poleId) && checkTabAccess(tab.id, poleId));
+    return canAccessPole(poleId, profileData, permissionsMatrice, userTags);
   };
 
   const hasAccessToTab = (tabId) => {
@@ -574,50 +542,54 @@ export default function LayoutShell({
 
             {/* Menu d'onglets horizontaux principaux du pôle courant (Rendu unique tout en haut) */}
             {(isSystemOrSuperAdminOrMestre || isAdministrativeUser) && visibleTabs.length > 0 && (
-              <div className="flex flex-wrap gap-2 border-b border-dashed border-cordel-master-dark/20 pb-3 mb-1 select-none shrink-0">
-                {visibleTabs.map((tab) => {
-                  const isUnlocked = checkTabAccess(tab.id, activePoleObj?.id);
-                  const isActive = currentTab === tab.id;
-                  const isRestrictedTitle = t('common.accessRestricted') || "Accès restreint";
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-dashed border-cordel-master-dark/20 pb-3 mb-1 select-none shrink-0">
+                <div className="flex flex-wrap gap-2 items-center">
+                  {visibleTabs.map((tab) => {
+                    const isUnlocked = checkTabAccess(tab.id, activePoleObj?.id);
+                    const isActive = currentTab === tab.id;
+                    const isRestrictedTitle = t('common.accessRestricted') || "Accès restreint";
 
-                  const translatedLabel = tab.labelKey ? t(`poles.${tab.labelKey}`) : null;
-                  const displayLabel = (translatedLabel && !translatedLabel.startsWith('poles.')) ? translatedLabel : tab.label;
+                    const translatedLabel = tab.labelKey ? t(`poles.${tab.labelKey}`) : null;
+                    const displayLabel = (translatedLabel && !translatedLabel.startsWith('poles.')) ? translatedLabel : tab.label;
 
-                  if (!isUnlocked) {
+                    if (!isUnlocked) {
+                      return (
+                        <button
+                          key={tab.id}
+                          type="button"
+                          disabled={true}
+                          title={isRestrictedTitle}
+                          className="px-3 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all opacity-50 grayscale cursor-not-allowed bg-cordel-bg/50 text-encre-noire/50 border-encre-noire/20 select-none shadow-none flex items-center gap-1.5"
+                        >
+                          <span className="text-[11px] opacity-75">🔒</span>
+                          <span>{displayLabel}</span>
+                        </button>
+                      );
+                    }
+
                     return (
                       <button
                         key={tab.id}
                         type="button"
-                        disabled={true}
-                        title={isRestrictedTitle}
-                        className="px-3 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all opacity-50 grayscale cursor-not-allowed bg-cordel-bg/50 text-encre-noire/50 border-encre-noire/20 select-none shadow-none flex items-center gap-1.5"
+                        onClick={() => onNavigateToTab && onNavigateToTab(tab.id)}
+                        className={`px-3 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer ${
+                          isActive
+                            ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
+                            : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
+                        }`}
                       >
-                        <span className="text-[11px] opacity-75">🔒</span>
-                        <span>{displayLabel}</span>
+                        {displayLabel}
                       </button>
                     );
-                  }
-
-                  return (
-                    <button
-                      key={tab.id}
-                      type="button"
-                      onClick={() => onNavigateToTab && onNavigateToTab(tab.id)}
-                      className={`px-3 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer ${
-                        isActive
-                          ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
-                          : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
-                      }`}
-                    >
-                      {displayLabel}
-                    </button>
-                  );
-                })}
+                  })}
+                </div>
+                <InfoPoleHelpButton currentPole={activePoleObj?.id || currentPole} currentTab={currentTab} />
               </div>
             )}
 
             <div className="w-full flex-1">
               <PresenceProvider value={{ onlineMembers, onlineCount, onlineUserIds, isPresenceEnabled }}>
+                <InfoPoleBanner currentPole={activePoleObj?.id || currentPole} currentTab={currentTab} />
                 {children}
               </PresenceProvider>
             </div>

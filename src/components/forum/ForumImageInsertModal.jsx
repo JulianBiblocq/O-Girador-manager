@@ -130,30 +130,34 @@ export default function ForumImageInsertModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fade-in select-none">
-      <CordelCard variant="default" useExtremeBorder={true} className="max-w-md w-full p-6 bg-cordel-bg text-left relative flex flex-col gap-5">
-        {/* Bouton de fermeture */}
-        <button
-          type="button"
-          onClick={handleClose}
-          disabled={isUploading}
-          className="absolute top-4 right-4 w-7 h-7 rounded border border-encre-noire/30 bg-white hover:bg-neutral-100 flex items-center justify-center font-bold text-xs text-encre-noire cursor-pointer disabled:opacity-50"
-        >
-          ✕
-        </button>
-
-        {/* En-tête */}
-        <div className="flex flex-col gap-1 border-b border-dashed border-cordel-master-dark/20 pb-3">
-          <h3 className="text-sm font-extrabold uppercase tracking-wider text-cordel-wood flex items-center gap-2">
-            <span>🖼️ Insérer une photo dans le forum</span>
-          </h3>
-          <p className="text-xs text-cordel-master-dark/80 font-medium leading-relaxed">
-            Choisissez d'envoyer un fichier depuis votre appareil ou d'utiliser un lien d'image externe.
-          </p>
+    <div
+      tabIndex={-1}
+      onKeyDown={(e) => e.key === 'Escape' && handleClose()}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fade-in select-none outline-none"
+    >
+      <div className="max-w-md w-full max-h-[90vh] flex flex-col bg-cordel-bg text-left relative rounded-lg border-2 border-cordel-master-dark/40 shadow-2xl overflow-hidden">
+        {/* 1. Header (Fixe en haut) */}
+        <div className="flex-shrink-0 p-4 border-b border-dashed border-cordel-master-dark/20 flex justify-between items-center bg-cordel-bg">
+          <div className="flex flex-col gap-0.5">
+            <h3 className="text-sm font-extrabold uppercase tracking-wider text-cordel-wood flex items-center gap-2">
+              <span>🖼️ Insérer une photo dans le forum</span>
+            </h3>
+            <p className="text-[11px] text-cordel-master-dark/80 font-medium">
+              Choisissez d'envoyer un fichier ou d'utiliser un lien externe.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={handleClose}
+            disabled={isUploading}
+            className="w-7 h-7 rounded border border-encre-noire/30 bg-white hover:bg-neutral-100 flex items-center justify-center font-bold text-xs text-encre-noire cursor-pointer disabled:opacity-50 shrink-0 ml-2"
+          >
+            ✕
+          </button>
         </div>
 
-        {/* Système d'onglets (Upload Local vs Lien Externe) */}
-        <div className="flex items-center gap-2 border-b border-encre-noire/20 pb-2">
+        {/* Onglets d'action (Fixes sous le header) */}
+        <div className="flex-shrink-0 px-4 pt-3 pb-2 border-b border-encre-noire/15 bg-cordel-bg flex items-center gap-2">
           <button
             type="button"
             onClick={() => { if (!isUploading) { setActiveTab('upload'); setErrorMsg(''); } }}
@@ -178,47 +182,50 @@ export default function ForumImageInsertModal({
           </button>
         </div>
 
-        {/* Option 1 : Upload de fichier local vers Firebase Storage */}
+        {/* Option 1 : Upload de fichier local */}
         {activeTab === 'upload' && (
-          <form onSubmit={handleUploadAndInsert} className="flex flex-col gap-4">
-            <div className="flex flex-col gap-2 p-3 bg-white border border-encre-noire/20 rounded-[4px_6px_3px_5px]">
-              <label htmlFor="forumImageFileInput" className="text-xs font-bold uppercase tracking-wider text-cordel-wood">
-                Choisir une image sur votre appareil
-              </label>
-              
-              <input
-                id="forumImageFileInput"
-                type="file"
-                accept="image/*"
-                onChange={handleFileChange}
-                disabled={isUploading}
-                className="block w-full text-xs text-stone-700 file:mr-3 file:py-1.5 file:px-3 file:rounded file:border-2 file:border-encre-noire file:text-xs file:font-bold file:uppercase file:bg-cordel-bg file:text-encre-noire hover:file:bg-amber-100 cursor-pointer"
-              />
+          <form onSubmit={handleUploadAndInsert} className="flex flex-col flex-1 overflow-hidden">
+            {/* 2. Body (Défilable verticalement) */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+              <div className="flex flex-col gap-2 p-3 bg-white border border-encre-noire/20 rounded-[4px_6px_3px_5px]">
+                <label htmlFor="forumImageFileInput" className="text-xs font-bold uppercase tracking-wider text-cordel-wood">
+                  Choisir une image sur votre appareil
+                </label>
+                
+                <input
+                  id="forumImageFileInput"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileChange}
+                  disabled={isUploading}
+                  className="block w-full text-xs text-stone-700 file:mr-3 file:py-1.5 file:px-3 file:rounded file:border-2 file:border-encre-noire file:text-xs file:font-bold file:uppercase file:bg-cordel-bg file:text-encre-noire hover:file:bg-amber-100 cursor-pointer"
+                />
 
-              {/* Aperçu de la photo sélectionnée */}
-              {filePreview && (
-                <div className="mt-2 flex items-center gap-3 p-2 bg-stone-50 border border-stone-200 rounded">
-                  <img 
-                    src={filePreview} 
-                    alt="Aperçu" 
-                    className="w-14 h-14 object-cover rounded border border-encre-noire/30 shadow-xs" 
-                  />
-                  <div className="flex flex-col text-[11px] font-medium text-stone-700 truncate">
-                    <span className="font-bold truncate">{selectedFile?.name}</span>
-                    <span className="text-stone-500">{(selectedFile?.size / 1024).toFixed(1)} Ko</span>
+                {/* Aperçu */}
+                {filePreview && (
+                  <div className="mt-2 flex items-center gap-3 p-2 bg-stone-50 border border-stone-200 rounded">
+                    <img 
+                      src={filePreview} 
+                      alt="Aperçu" 
+                      className="w-14 h-14 object-cover rounded border border-encre-noire/30 shadow-xs" 
+                    />
+                    <div className="flex flex-col text-[11px] font-medium text-stone-700 truncate">
+                      <span className="font-bold truncate">{selectedFile?.name}</span>
+                      <span className="text-stone-500">{(selectedFile?.size / 1024).toFixed(1)} Ko</span>
+                    </div>
                   </div>
-                </div>
+                )}
+              </div>
+
+              {errorMsg && (
+                <span className="text-[11px] font-bold text-red-600 block">
+                  ⚠️ {errorMsg}
+                </span>
               )}
             </div>
 
-            {errorMsg && (
-              <span className="text-[11px] font-bold text-red-600">
-                ⚠️ {errorMsg}
-              </span>
-            )}
-
-            {/* Zone d'actions */}
-            <div className="flex items-center justify-end gap-3 pt-2 border-t border-dashed border-cordel-master-dark/15">
+            {/* 3. Footer (Fixe en bas) */}
+            <div className="flex-shrink-0 p-4 border-t border-dashed border-cordel-master-dark/15 flex justify-end gap-2 bg-cordel-bg">
               <button
                 type="button"
                 onClick={handleClose}
@@ -250,47 +257,50 @@ export default function ForumImageInsertModal({
 
         {/* Option 2 : Lien d'image externe */}
         {activeTab === 'external' && (
-          <form onSubmit={handleExternalInsert} className="flex flex-col gap-4">
-            <div className="flex flex-col gap-2 p-3 bg-white border border-encre-noire/20 rounded-[4px_6px_3px_5px]">
-              <label htmlFor="forumImageLinkInput" className="text-xs font-bold uppercase tracking-wider text-cordel-wood">
-                Coller l'URL d'une image en ligne
-              </label>
-              <input
-                id="forumImageLinkInput"
-                type="url"
-                value={imageUrl}
-                onChange={(e) => setImageUrl(e.target.value)}
-                placeholder="Ex : https://domaine.com/image.jpg"
-                className="theme-input text-xs font-bold py-2 w-full border border-encre-noire/30 rounded px-2"
-              />
-              <p className="text-[10px] text-stone-500 font-medium mt-1">
-                L'image doit être hébergée publiquement sur le Web.
-              </p>
+          <form onSubmit={handleExternalInsert} className="flex flex-col flex-1 overflow-hidden">
+            {/* 2. Body (Défilable verticalement) */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+              <div className="flex flex-col gap-2 p-3 bg-white border border-encre-noire/20 rounded-[4px_6px_3px_5px]">
+                <label htmlFor="forumImageLinkInput" className="text-xs font-bold uppercase tracking-wider text-cordel-wood">
+                  Coller l'URL d'une image en ligne
+                </label>
+                <input
+                  id="forumImageLinkInput"
+                  type="url"
+                  value={imageUrl}
+                  onChange={(e) => setImageUrl(e.target.value)}
+                  placeholder="Ex : https://domaine.com/image.jpg"
+                  className="theme-input text-xs font-bold py-2 w-full border border-encre-noire/30 rounded px-2"
+                />
+                <p className="text-[10px] text-stone-500 font-medium mt-1">
+                  L'image doit être hébergée publiquement sur le Web.
+                </p>
+              </div>
+
+              {targetUploadUrl && (
+                <div className="flex flex-col gap-1.5 p-3 bg-stone-50 border border-stone-200 rounded">
+                  <span className="text-[10px] font-bold uppercase text-stone-600">
+                    Dépôt externe partagé de l'association :
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => window.open(targetUploadUrl, '_blank', 'noopener,noreferrer')}
+                    className="py-1.5 px-3 text-[11px] font-bold bg-white text-encre-noire border border-encre-noire/40 rounded hover:bg-stone-100 transition-all cursor-pointer flex items-center justify-center gap-1"
+                  >
+                    <span>Ouvrir l'espace de stockage externe ↗</span>
+                  </button>
+                </div>
+              )}
+
+              {errorMsg && (
+                <span className="text-[11px] font-bold text-red-600 block">
+                  ⚠️ {errorMsg}
+                </span>
+              )}
             </div>
 
-            {targetUploadUrl && (
-              <div className="flex flex-col gap-1.5 p-3 bg-stone-50 border border-stone-200 rounded">
-                <span className="text-[10px] font-bold uppercase text-stone-600">
-                  Dépôt externe partagé de l'association :
-                </span>
-                <button
-                  type="button"
-                  onClick={() => window.open(targetUploadUrl, '_blank', 'noopener,noreferrer')}
-                  className="py-1.5 px-3 text-[11px] font-bold bg-white text-encre-noire border border-encre-noire/40 rounded hover:bg-stone-100 transition-all cursor-pointer flex items-center justify-center gap-1"
-                >
-                  <span>Ouvrir l'espace de stockage externe ↗</span>
-                </button>
-              </div>
-            )}
-
-            {errorMsg && (
-              <span className="text-[11px] font-bold text-red-600">
-                ⚠️ {errorMsg}
-              </span>
-            )}
-
-            {/* Actions */}
-            <div className="flex items-center justify-end gap-3 pt-2 border-t border-dashed border-cordel-master-dark/15">
+            {/* 3. Footer (Fixe en bas) */}
+            <div className="flex-shrink-0 p-4 border-t border-dashed border-cordel-master-dark/15 flex justify-end gap-2 bg-cordel-bg">
               <button
                 type="button"
                 onClick={handleClose}
@@ -311,7 +321,7 @@ export default function ForumImageInsertModal({
             </div>
           </form>
         )}
-      </CordelCard>
+      </div>
     </div>
   );
 }

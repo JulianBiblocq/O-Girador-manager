@@ -112,14 +112,14 @@ export default function GigAgendaOptionModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 select-none overflow-y-auto">
-      <CordelCard
-        variant="default"
-        useExtremeBorder={true}
-        className="w-full max-w-xl bg-white p-5 sm:p-6 shadow-2xl flex flex-col gap-4 text-left relative"
-      >
-        {/* Header Modale */}
-        <div className="flex items-center justify-between border-b border-dashed border-cordel-master-dark/20 pb-3">
+    <div
+      tabIndex={-1}
+      onKeyDown={(e) => e.key === 'Escape' && !saving && onClose()}
+      className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 select-none outline-none animate-fade-in"
+    >
+      <div className="relative w-full max-w-2xl max-h-[90vh] flex flex-col rounded-lg bg-white shadow-2xl border-2 border-cordel-master-dark/40 overflow-hidden text-left">
+        {/* 1. Header (Fixe) */}
+        <div className="flex-shrink-0 p-4 border-b border-dashed border-cordel-master-dark/20 flex items-center justify-between bg-white">
           <div className="flex items-center gap-2">
             <span className="text-xl">📅</span>
             <div>
@@ -134,165 +134,168 @@ export default function GigAgendaOptionModal({
           <button
             type="button"
             onClick={onClose}
+            disabled={saving}
             className="text-stone-400 hover:text-stone-800 font-bold text-lg cursor-pointer"
+            title="Fermer (Échap)"
           >
             ✕
           </button>
         </div>
 
-        {/* Formulaire pré-rempli */}
-        <form onSubmit={handleSubmit} className="flex flex-col gap-3 text-xs">
-          {/* Titre de l'événement */}
-          <div className="flex flex-col gap-1">
-            <label className="font-extrabold uppercase text-stone-700 text-[10px]">
-              Titre de l'événement (Marqueur Option) *
-            </label>
-            <input
-              type="text"
-              name="titre"
-              value={formData.titre}
-              onChange={handleChange}
-              required
-              className="p-2 border border-stone-300 rounded font-bold text-stone-900 bg-amber-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-cordel-wood"
-            />
-          </div>
-
-          {/* Date & Type */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {/* Form Wrapper */}
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
+          {/* 2. Body (Défilable verticalement) */}
+          <div className="flex-1 overflow-y-auto p-4 space-y-3 text-xs">
+            {/* Titre de l'événement */}
             <div className="flex flex-col gap-1">
               <label className="font-extrabold uppercase text-stone-700 text-[10px]">
-                Date de la prestation *
+                Titre de l'événement (Marqueur Option) *
               </label>
               <input
-                type="date"
-                name="date"
-                value={formData.date}
+                type="text"
+                name="titre"
+                value={formData.titre}
                 onChange={handleChange}
                 required
-                className="p-2 border border-stone-300 rounded font-semibold text-stone-900 bg-white"
+                className="p-2 border border-stone-300 rounded font-bold text-stone-900 bg-amber-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-cordel-wood"
               />
             </div>
 
-            <div className="flex flex-col gap-1">
-              <label className="font-extrabold uppercase text-stone-700 text-[10px]">
-                Type d'événement
-              </label>
-              <select
-                name="type"
-                value={formData.type}
-                onChange={handleChange}
-                className="p-2 border border-stone-300 rounded font-semibold text-stone-900 bg-white cursor-pointer"
-              >
-                <option value="prestation">Prestation (Concert / Roda)</option>
-                <option value="stage">Stage / Ateliers</option>
-                <option value="repetition">Répétition</option>
-                <option value="reunion">Réunion</option>
-              </select>
-            </div>
-          </div>
+            {/* Date & Type */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="flex flex-col gap-1">
+                <label className="font-extrabold uppercase text-stone-700 text-[10px]">
+                  Date de la prestation *
+                </label>
+                <input
+                  type="date"
+                  name="date"
+                  value={formData.date}
+                  onChange={handleChange}
+                  required
+                  className="p-2 border border-stone-300 rounded font-semibold text-stone-900 bg-white"
+                />
+              </div>
 
-          {/* Lieu & Cachet */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="flex flex-col gap-1">
+                <label className="font-extrabold uppercase text-stone-700 text-[10px]">
+                  Type d'événement
+                </label>
+                <select
+                  name="type"
+                  value={formData.type}
+                  onChange={handleChange}
+                  className="p-2 border border-stone-300 rounded font-semibold text-stone-900 bg-white cursor-pointer"
+                >
+                  <option value="prestation">🎭 Prestation artistique</option>
+                  <option value="atelier">🥁 Atelier / Stage</option>
+                  <option value="autre">📌 Autre événement</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Lieu & Montant (Budget Recette) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="flex flex-col gap-1">
+                <label className="font-extrabold uppercase text-stone-700 text-[10px]">
+                  Lieu / Adresse
+                </label>
+                <input
+                  type="text"
+                  name="lieu"
+                  value={formData.lieu}
+                  onChange={handleChange}
+                  placeholder="ex: Lille, Place du Théâtre"
+                  className="p-2 border border-stone-300 rounded text-stone-900 bg-white"
+                />
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="font-extrabold uppercase text-stone-700 text-[10px]">
+                  Montant Recette estimé (€)
+                </label>
+                <input
+                  type="number"
+                  name="amount"
+                  value={formData.amount}
+                  onChange={handleChange}
+                  placeholder="ex: 850"
+                  className="p-2 border border-stone-300 rounded font-bold font-mono text-cordel-wood bg-amber-50"
+                />
+              </div>
+            </div>
+
+            {/* Statut de validation & Horaires */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="flex flex-col gap-1">
+                <label className="font-extrabold uppercase text-stone-700 text-[10px]">
+                  Statut de validation
+                </label>
+                <select
+                  name="status"
+                  value={formData.status}
+                  onChange={handleChange}
+                  className="p-2 border border-amber-300 rounded font-bold text-amber-900 bg-amber-50 cursor-pointer"
+                >
+                  <option value="a_confirmer">⏳ À confirmer (Option posée)</option>
+                  <option value="confirme">✅ Confirmé</option>
+                </select>
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="font-extrabold uppercase text-stone-700 text-[10px]">
+                  Horaires de passage / Logistique
+                </label>
+                <input
+                  type="text"
+                  name="horairesPassages"
+                  value={formData.horairesPassages}
+                  onChange={handleChange}
+                  placeholder="ex: Balance 16h, Concert 20h"
+                  className="p-2 border border-stone-300 rounded text-stone-900 bg-white"
+                />
+              </div>
+            </div>
+
+            {/* Description (Vide par défaut) */}
             <div className="flex flex-col gap-1">
-              <label className="font-extrabold uppercase text-stone-700 text-[10px]">
-                Lieu ou Adresse
-              </label>
+              <div className="flex items-center justify-between">
+                <label className="font-extrabold uppercase text-stone-700 text-[10px]">
+                  Description interne de l'événement
+                </label>
+                <span className="text-[9px] text-stone-500 font-medium">
+                  (Champ laissé vide par confidentialité)
+                </span>
+              </div>
+              <textarea
+                name="description"
+                value={formData.description}
+                onChange={handleChange}
+                rows={3}
+                placeholder="Saisissez des remarques ou consignes internes si nécessaire..."
+                className="p-2 border border-stone-300 rounded text-stone-900 bg-white leading-relaxed text-[11px] resize-none"
+              />
+            </div>
+
+            {/* Visibilité sur la Vitrine (Décochée par défaut) */}
+            <div className="flex items-center gap-2 p-2.5 bg-stone-50 rounded border border-stone-200">
               <input
-                type="text"
-                name="lieu"
-                value={formData.lieu}
+                type="checkbox"
+                id="isPublic"
+                name="isPublic"
+                checked={formData.isPublic}
                 onChange={handleChange}
-                placeholder="ex: Place de la Mairie, Brest"
-                className="p-2 border border-stone-300 rounded font-semibold text-stone-900 bg-white"
+                className="w-4 h-4 text-cordel-wood rounded cursor-pointer"
               />
-            </div>
-
-            <div className="flex flex-col gap-1">
-              <label className="font-extrabold uppercase text-stone-700 text-[10px]">
-                Cachet / Tarif Estimé (€)
+              <label htmlFor="isPublic" className="font-extrabold text-stone-800 text-[11px] cursor-pointer">
+                🔒 Option interne (Décoché par défaut — non visible sur la Vitrine)
               </label>
-              <input
-                type="number"
-                step="0.01"
-                name="amount"
-                value={formData.amount}
-                onChange={handleChange}
-                placeholder="ex: 850"
-                className="p-2 border border-stone-300 rounded font-bold font-mono text-cordel-wood bg-amber-50"
-              />
             </div>
           </div>
 
-          {/* Statut de validation & Horaires */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="flex flex-col gap-1">
-              <label className="font-extrabold uppercase text-stone-700 text-[10px]">
-                Statut de validation
-              </label>
-              <select
-                name="status"
-                value={formData.status}
-                onChange={handleChange}
-                className="p-2 border border-amber-300 rounded font-bold text-amber-900 bg-amber-50 cursor-pointer"
-              >
-                <option value="a_confirmer">⏳ À confirmer (Option posée)</option>
-                <option value="confirme">✅ Confirmé</option>
-              </select>
-            </div>
-
-            <div className="flex flex-col gap-1">
-              <label className="font-extrabold uppercase text-stone-700 text-[10px]">
-                Horaires de passage / Logistique
-              </label>
-              <input
-                type="text"
-                name="horairesPassages"
-                value={formData.horairesPassages}
-                onChange={handleChange}
-                placeholder="ex: Balance 16h, Concert 20h"
-                className="p-2 border border-stone-300 rounded text-stone-900 bg-white"
-              />
-            </div>
-          </div>
-
-          {/* Description (Vide par défaut) */}
-          <div className="flex flex-col gap-1">
-            <div className="flex items-center justify-between">
-              <label className="font-extrabold uppercase text-stone-700 text-[10px]">
-                Description interne de l'événement
-              </label>
-              <span className="text-[9px] text-stone-500 font-medium">
-                (Champ laissé vide par confidentialité)
-              </span>
-            </div>
-            <textarea
-              name="description"
-              value={formData.description}
-              onChange={handleChange}
-              rows={3}
-              placeholder="Saisissez des remarques ou consignes internes si nécessaire..."
-              className="p-2 border border-stone-300 rounded text-stone-900 bg-white leading-relaxed text-[11px]"
-            />
-          </div>
-
-          {/* Visibilité sur la Vitrine (Décochée par défaut) */}
-          <div className="flex items-center gap-2 p-2.5 bg-stone-50 rounded border border-stone-200">
-            <input
-              type="checkbox"
-              id="isPublic"
-              name="isPublic"
-              checked={formData.isPublic}
-              onChange={handleChange}
-              className="w-4 h-4 text-cordel-wood rounded cursor-pointer"
-            />
-            <label htmlFor="isPublic" className="font-extrabold text-stone-800 text-[11px] cursor-pointer">
-              🔒 Option interne (Décoché par défaut — non visible sur la Vitrine)
-            </label>
-          </div>
-
-          {/* Boutons d'Action */}
-          <div className="flex items-center justify-end gap-2 pt-3 border-t border-dashed">
-            <CordelButton type="button" variant="default" onClick={onClose} className="text-xs">
+          {/* 3. Footer (Fixe en bas) */}
+          <div className="flex-shrink-0 p-4 border-t border-dashed border-cordel-master-dark/20 flex items-center justify-end gap-2 bg-stone-50">
+            <CordelButton type="button" variant="default" onClick={onClose} disabled={saving} className="text-xs">
               Annuler
             </CordelButton>
             <CordelButton
@@ -305,7 +308,7 @@ export default function GigAgendaOptionModal({
             </CordelButton>
           </div>
         </form>
-      </CordelCard>
+      </div>
     </div>
   );
 }

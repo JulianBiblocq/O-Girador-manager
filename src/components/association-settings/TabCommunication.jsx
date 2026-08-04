@@ -2,10 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../../firebase';
 import CordelCard from '../CordelCard';
+import EmailConfigSection from './email/EmailConfigSection';
 
 /**
  * Composant d'administration dédié au pôle Studio pour la gestion de la Communication
- * (Export CSV de la liste des abonnés newsletter & Configuration de la synchronisation API Brevo).
+ * (Configuration de l'expéditeur & des e-mails SaaS, Export CSV des abonnés newsletter & Synchronisation Brevo).
  */
 export default function TabCommunication({ formData, handleChange, groupId, saving, t }) {
   const publicTheme = formData.publicTheme || {};
@@ -96,7 +97,14 @@ export default function TabCommunication({ formData, handleChange, groupId, savi
 
   return (
     <div className="flex flex-col gap-6 text-left select-none">
-      {/* En-tête de la section Communication */}
+      {/* Section 1 : Configuration de l'expéditeur et des e-mails SaaS */}
+      <EmailConfigSection
+        formData={formData}
+        handleChange={handleChange}
+        saving={saving}
+      />
+
+      {/* En-tête de la section Communication & Newsletter */}
       <CordelCard variant="default" useExtremeBorder={true} className="p-5 bg-cordel-bg">
         <div className="flex items-center gap-2.5 mb-2">
           <span className="text-xl">📢</span>

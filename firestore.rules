@@ -27,6 +27,37 @@ service cloud.firestore {
         );
     }
 
+    function hasAnyTag(tagList) {
+      return isAuthenticated() &&
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        getUserData().keys().hasAny(['tags']) &&
+        getUserData().tags.hasAny(tagList);
+    }
+
+    function canManageEvents() {
+      return isAdminOrMestre() || hasAnyTag([
+        'Agenda', 'Agenda & Événements', 'Bureau', 'Président', 'Présidente', 'CA', 'Direction', 'Admin'
+      ]);
+    }
+
+    function canManageInventory() {
+      return isAdminOrMestre() || hasAnyTag([
+        'Inventaire', 'Logistique', 'Matériel', 'Instruments', 'Commandes', 'Bureau', 'CA', 'Direction'
+      ]);
+    }
+
+    function canManageTreasury() {
+      return isAdminOrMestre() || hasAnyTag([
+        'Trésorerie', 'Trésorier', 'Trésorière', 'Comptable', 'Finance', 'Bureau', 'CA', 'Direction'
+      ]);
+    }
+
+    function canManageDocs() {
+      return isAdminOrMestre() || hasAnyTag([
+        'Secrétariat', 'Comptes-Rendus', 'Studio', 'Communication', 'Bureau', 'CA', 'Direction'
+      ]);
+    }
+
     function isModerator() {
       return isAuthenticated() &&
         exists(/databases/$(database)/documents/users/$(request.auth.uid)) && (
@@ -87,7 +118,7 @@ service cloud.firestore {
 
     // Collection Rules
 
-    // Users: Lecture pour tout membre connecté. Écriture si propre profil (sans élévation de privilèges ni modification de rôle/statut), gestion de profil enfant dépendant, ou si admin/mestre.
+    // Users: Lecture pour tout membre connecté. Écriture réservée au propre profil (sans altérer 'role', 'tags', 'isNew', etc.) ou aux Admins/Mestres.
     match /users/{userId} {
       allow read: if isAuthenticated();
       allow create: if isAuthenticated() && (
@@ -117,14 +148,14 @@ service cloud.firestore {
         isAdminOrMestre() || (
           request.auth.uid == userId && (
             !request.resource.data.diff(resource.data).affectedKeys().hasAny([
-              'paymentStatus', 'role', 'isSystemAdmin', 'hasAccessLogistique', 'groupId', 'adhesionBase', 'selectedOptions', 'tags', 'statutActuel'
+              'paymentStatus', 'role', 'isSystemAdmin', 'hasAccessLogistique', 'groupId', 'adhesionBase', 'selectedOptions', 'tags', 'statutActuel', 'isNew'
             ])
           )
         ) || (
           resource.data.managedBy == request.auth.uid &&
           resource.data.isDependent == true && (
             !request.resource.data.diff(resource.data).affectedKeys().hasAny([
-              'paymentStatus', 'role', 'isSystemAdmin', 'hasAccessLogistique', 'groupId', 'adhesionBase', 'selectedOptions', 'tags', 'statutActuel', 'managedBy', 'isDependent'
+              'paymentStatus', 'role', 'isSystemAdmin', 'hasAccessLogistique', 'groupId', 'adhesionBase', 'selectedOptions', 'tags', 'statutActuel', 'managedBy', 'isDependent', 'isNew'
             ])
           )
         )
@@ -136,20 +167,25 @@ service cloud.firestore {
       );
     }
 
-    // Inventory: Lecture si authentifié, Écriture (création, modification, suppression) réservée aux admins/mestres.
+    // Inventory: Lecture si authentifié. Écriture réservée aux admins/mestres et membres avec badge Logistique/Inventaire.
     match /inventory/{item} {
       allow read: if isAuthenticated();
-      allow write: if isAdminOrMestre();
+      allow write: if canManageInventory();
     }
 
-    // Associations: Lecture publique (vitrine, marque et thème). Écriture réservée aux administrateurs/mestres.
+    // Associations: Lecture publique (vitrine, marque et thème). Écriture réservée aux administrateurs/mestres ou membres autorisés.
     match /associations/{assocId} {
       allow read: if true;
-      allow write: if isAdminOrMestre();
+      allow write: if isAdminOrMestre() || hasAnyTag(['Vitrine', 'Webmaster', 'Bureau', 'Président', 'Présidente', 'CA']);
 
       // Paramètres secrets (HelloAsso, Brevo) accessibles uniquement aux admins de l'association
       match /private_settings/credentials {
         allow read, write: if isAdminOrMestre() && getUserData().groupId == assocId;
+      }
+
+      // Contacts CRM pour le pôle diffusion
+      match /contacts_diffusion/{contactId} {
+        allow read, write: if isAuthenticated() && getUserData().groupId == assocId;
       }
     }
 
@@ -159,28 +195,34 @@ service cloud.firestore {
       allow write: if isAdminOrMestre();
     }
 
-    // Documents: Lecture si authentifié. Écriture réservée aux admins/mestres.
+    // Documents / Comptes-Rendus : Lecture si authentifié. Écriture réservée aux admins/mestres et membres habilités (badge Secrétariat/Studio).
     match /documents/{document} {
       allow read: if isAuthenticated();
-      allow write: if isAdminOrMestre();
+      allow write: if canManageDocs();
     }
 
-    // Wardrobe Inventory: Lecture si authentifié. Écriture réservée aux admins/mestres.
+    // Reunions (Comptes-rendus) : Lecture si authentifié. Écriture réservée aux admins/mestres et membres habilités.
+    match /reunions/{reunion} {
+      allow read: if isAuthenticated();
+      allow write: if canManageDocs();
+    }
+
+    // Wardrobe Inventory: Lecture si authentifié. Écriture réservée aux admins/mestres et badge Logistique/Costumes.
     match /wardrobeInventory/{item} {
       allow read: if isAuthenticated();
-      allow write: if isAdminOrMestre();
+      allow write: if canManageInventory();
     }
 
-    // Costumes & Pièces: Lecture si authentifié. Écriture réservée aux admins/mestres.
+    // Costumes & Pièces: Lecture si authentifié. Écriture réservée aux admins/mestres et badge Logistique/Costumes.
     match /costumes/{costume} {
       allow read: if isAuthenticated();
-      allow write: if isAdminOrMestre();
+      allow write: if canManageInventory();
     }
 
-    // Couture Projects: Lecture si authentifié. Écriture réservée aux admins/mestres.
+    // Couture Projects: Lecture si authentifié. Écriture réservée aux admins/mestres et badge Logistique/Costumes.
     match /coutureProjects/{project} {
       allow read: if isAuthenticated();
-      allow write: if isAdminOrMestre();
+      allow write: if canManageInventory();
     }
 
     // Rhythms: Lecture si authentifié. Écriture réservée aux admins/mestres.
@@ -207,14 +249,14 @@ service cloud.firestore {
       allow write: if isAdminOrMestre();
     }
 
-    // Events: Lecture si authentifié ou si isPublic == true. Création/Suppression pour admins/mestres. Mise à jour des inscriptions autorisée pour les membres.
+    // Events: Lecture si authentifié ou si isPublic == true. Création/Suppression/Modif globale réservée aux admins/mestres ou badge Agenda.
+    // Seule la mise à jour du tableau inscriptions (RSVP) est autorisée aux membres simples sur leur participation.
     match /events/{event} {
       allow read: if isAuthenticated() || (resource != null && resource.data.isPublic == true);
-      allow create, delete: if isAdminOrMestre();
+      allow create, delete: if canManageEvents();
       allow update: if isAuthenticated() && (
-        isAdminOrMestre() || 
-        (request.resource.data.diff(resource.data).affectedKeys().hasAll(['inscriptions']) &&
-         request.resource.data.diff(resource.data).affectedKeys().size() == 1)
+        canManageEvents() || 
+        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['inscriptions']))
       );
 
       // Sous-collection des commentaires et questions logistiques de l'événement
@@ -223,15 +265,15 @@ service cloud.firestore {
         allow create: if isAuthenticated() && request.resource.data.auteurId == request.auth.uid;
         allow update, delete: if isAuthenticated() && (
           resource.data.auteurId == request.auth.uid ||
-          isAdminOrMestre() ||
+          canManageEvents() ||
           isModerator()
         );
       }
     }
 
-    // Transactions (Trésorerie) : Réservées uniquement aux administrateurs / mestres / bureau du même groupe
+    // Transactions (Trésorerie) : Interdites d'écriture aux membres simples sans badge Trésorerie
     match /transactions/{transaction} {
-      allow read, write: if isAdminOrMestre() && (
+      allow read, write: if (canManageTreasury() || isAdminOrMestre()) && (
         resource == null || getUserData().groupId == resource.data.groupId
       );
     }
@@ -285,7 +327,7 @@ service cloud.firestore {
       allow read: if isAuthenticated();
       allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
       allow update, delete: if isAuthenticated() && (
-        resource.data.userId == request.auth.uid || isAdminOrMestre()
+        resource.data.userId == request.auth.uid || canManageInventory()
       );
     }
 
@@ -300,20 +342,21 @@ service cloud.firestore {
       );
       allow update: if isAuthenticated() && (
         resource.data.recipientId == request.auth.uid &&
-        (request.resource.data.diff(resource.data).affectedKeys().hasAll(['read']) &&
-         request.resource.data.diff(resource.data).affectedKeys().size() == 1)
+        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read']))
       );
       allow delete: if false;
     }
 
-    // Factures & Devis : Lecture et écriture réservées aux membres authentifiés
+    // Factures & Devis : Lecture et écriture réservées aux membres habilités Trésorerie / Admin
     match /invoices/{invoice} {
-      allow read, write: if isAuthenticated();
+      allow read: if isAuthenticated();
+      allow write: if canManageTreasury();
     }
 
-    // Pipeline Prestations (Pôle Diffusion) : Lecture et écriture réservées aux membres authentifiés
+    // Pipeline Prestations (Pôle Diffusion) : Lecture et écriture réservées aux membres habilités Diffusion / Admin
     match /gigs_pipeline/{gig} {
-      allow read, write: if isAuthenticated();
+      allow read: if isAuthenticated();
+      allow write: if isAdminOrMestre() || hasAnyTag(['Diffusion', 'Booking', 'Bureau', 'CA', 'Communication']);
     }
 
     // Pending payments: Réservé aux admins et mestres
@@ -325,6 +368,15 @@ service cloud.firestore {
     match /newsletter_subscribers/{subscriberDoc} {
       allow create: if true;
       allow read, update, delete: if isAdminOrMestre();
+    }
+
+    // QR Code Sessions (WhatsApp Web login) : Création et écoute temps réel autorisées,
+    // mise à jour directe interdite (mise à jour réservée aux Cloud Functions / Admin SDK).
+    match /qr_sessions/{sessionId} {
+      allow create: if true;
+      allow read: if true;
+      allow delete: if isAuthenticated();
+      allow update: if false;
     }
   }
 }

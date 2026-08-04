@@ -15,9 +15,12 @@ import PublicThemeProvider from './components/PublicThemeProvider';
 import { lazyWithRetry } from './utils/pwaUtils';
 import { resolveEffectiveUserTags } from './utils/tagUtils';
 import { getMigratedRoleAndTags } from './utils/roleMigration';
-import { canEditVitrine } from './utils/permissionUtils';
+import { canEditVitrine, canAccessPole, canAccessTabPermission } from './utils/permissionUtils';
+import PendingValidationScreen from './components/auth/PendingValidationScreen';
 
 const Onboarding = lazyWithRetry(() => import('./components/Onboarding'));
+const OnboardingWizard = lazyWithRetry(() => import('./components/onboarding/OnboardingWizard'));
+const HubSetupWizard = lazyWithRetry(() => import('./components/onboarding/HubSetupWizard'));
 const Trombinoscope = lazyWithRetry(() => import('./components/Trombinoscope'));
 const Forum = lazyWithRetry(() => import('./components/Forum'));
 const UserProfile = lazyWithRetry(() => import('./components/UserProfile'));
@@ -33,6 +36,7 @@ const AssociationSettings = lazyWithRetry(() => import('./components/Association
 const TreasuryManager = lazyWithRetry(() => import('./components/TreasuryManager'));
 const StudioSocial = lazyWithRetry(() => import('./components/StudioSocial'));
 const StudioEventsManager = lazyWithRetry(() => import('./components/studio/StudioEventsManager'));
+const NewsletterPage = lazyWithRetry(() => import('./components/studio/NewsletterPage'));
 const AdminExport = lazyWithRetry(() => import('./components/AdminExport'));
 const VaralManager = lazyWithRetry(() => import('./components/VaralManager'));
 const ReunionManager = lazyWithRetry(() => import('./components/ReunionManager'));
@@ -124,6 +128,7 @@ const POLES_CONFIG = [
       { id: 'studio-social', label: 'Studio social', labelKey: 'tabStudioSocial' },
       { id: 'reunion-manager', label: 'Réunions', labelKey: 'tabReunions' },
       { id: 'varal-manager', label: 'Varal', labelKey: 'tabVaral' },
+      { id: 'newsletter', label: 'Newsletter', labelKey: 'tabNewsletter' },
       { id: 'activity-reports', label: "Rapports", labelKey: 'tabActivityReports' },
       { id: 'mestre-forum-channels', label: 'Porte-voix', labelKey: 'tabMestreForumChannels' }
     ]
@@ -255,6 +260,17 @@ export default function App() {
     return false;
   }, [profileData?.dateNaissance]);
 
+  const [associationData, setAssociationData] = useState(null);
+  const [showOnboardingWizard, setShowOnboardingWizard] = useState(false);
+  const [hasTriggeredOnboardingAuto, setHasTriggeredOnboardingAuto] = useState(false);
+
+  const isAdministrativeUser = Boolean(
+    profileData?.isSystemAdmin || 
+    profileData?.role === 'super-admin' || 
+    profileData?.role === 'mestre' ||
+    profileData?.role === 'admin'
+  );
+
   // Load branding in real-time
   useEffect(() => {
     let activeGroupId = profileData?.groupId || null;
@@ -265,6 +281,7 @@ export default function App() {
     }
 
     if (!activeGroupId) {
+      setAssociationData(null);
       setBranding(null);
       setAssociationName('');
       setMajoriteFeminine(false);
@@ -277,6 +294,7 @@ export default function App() {
     const unsubscribe = onSnapshot(assocRef, (docSnap) => {
       if (docSnap.exists()) {
         const data = docSnap.data();
+        setAssociationData(data);
         if (data.branding) {
           setBranding(data.branding);
         } else {
@@ -290,6 +308,7 @@ export default function App() {
         setTagsDisponibles(Array.isArray(data.tagsDisponibles) ? data.tagsDisponibles : []);
         setActiverPresenceEnLigne(data.activerPresenceEnLigne !== false);
       } else {
+        setAssociationData(null);
         setBranding(null);
         setAssociationName('');
         setMajoriteFeminine(false);
@@ -301,6 +320,7 @@ export default function App() {
       }
     }, (error) => {
       console.error("App - Erreur onSnapshot branding :", error);
+      setAssociationData(null);
       setBranding(null);
       setAssociationName('');
       setMajoriteFeminine(false);
@@ -311,6 +331,20 @@ export default function App() {
 
     return () => unsubscribe();
   }, [profileData?.groupId, user]);
+
+  // Déclenchement automatique de l'assistant d'onboarding pour l'administrateur/mestre lors du premier démarrage
+  useEffect(() => {
+    if (
+      user &&
+      isAdministrativeUser &&
+      associationData &&
+      associationData.onboardingCompleted === false &&
+      !hasTriggeredOnboardingAuto
+    ) {
+      setShowOnboardingWizard(true);
+      setHasTriggeredOnboardingAuto(true);
+    }
+  }, [user, isAdministrativeUser, associationData, hasTriggeredOnboardingAuto]);
 
   // Dynamic favicon customization based on association branding
   useEffect(() => {
@@ -698,6 +732,27 @@ export default function App() {
     }
   };
 
+  const userTags = resolveEffectiveUserTags(profileData?.tags || [], tagsDisponibles);
+  const isSystemOrSuperAdminOrMestre = profileData?.isSystemAdmin || profileData?.role === 'super-admin' || profileData?.role === 'mestre';
+  const isMasterKeyActive = isSystemOrSuperAdminOrMestre && breakGlassActive;
+
+  const [accessDeniedToast, setAccessDeniedToast] = useState(false);
+
+  // Interception ProtectedRoutes : si le membre standard tente d'accéder à un pôle ou onglet réservé
+  useEffect(() => {
+    if (!profileData || profileData.isNew) return;
+    if (currentPole && currentPole !== 'accueil' && currentPole !== 'mon-espace') {
+      const isAllowed = canAccessPole(currentPole, profileData, permissionsMatrice, userTags);
+      if (!isAllowed && !isMasterKeyActive) {
+        setCurrentPole('accueil');
+        setCurrentTab('dashboard');
+        setAccessDeniedToast(true);
+        const timer = setTimeout(() => setAccessDeniedToast(false), 4000);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [currentPole, profileData, permissionsMatrice, userTags, isMasterKeyActive]);
+
   // Called after onboarding completes successfully
   const handleOnboardingComplete = () => {
     // No need to fetch manually, the onSnapshot listener handles it automatically
@@ -730,15 +785,23 @@ export default function App() {
   }
 
   // 2. Route Racine '/' -> Vitrine Publique One-Page enveloppée par PublicThemeProvider
-  const isAdministrativeUser = Boolean(
-    profileData?.isSystemAdmin || 
-    profileData?.role === 'super-admin' || 
-    profileData?.role === 'mestre' ||
-    profileData?.role === 'admin'
-  );
 
-  const userTags = resolveEffectiveUserTags(profileData?.tags || [], tagsDisponibles);
   const isRootPath = !currentRoute || currentRoute === '/' || currentRoute === '' || currentRoute === '/index.html' || currentRoute.startsWith('/?') || currentRoute.startsWith('/#');
+  const isSetupPath = currentRoute.startsWith('/setup');
+
+  if (isSetupPath) {
+    return (
+      <React.Suspense fallback={
+        <div style={brandingStyle} className="min-h-screen flex flex-col justify-center items-center py-12 bg-[#f4ecd8]">
+          <div className="animate-spin text-4xl mb-4 select-none">⏳</div>
+          <span className="font-bold text-xs uppercase tracking-widest text-[#8b2a1a]">Chargement de l'assistant...</span>
+        </div>
+      }>
+        <HubSetupWizard brandingStyle={brandingStyle} onComplete={() => navigateToRoute('/app')} />
+        <ReloadPrompt />
+      </React.Suspense>
+    );
+  }
 
   if (isRootPath) {
     const urlGroupId = new URLSearchParams(window.location.search).get('groupe') || new URLSearchParams(window.location.search).get('assoc');
@@ -773,21 +836,35 @@ export default function App() {
     );
   }
 
-  // 4. Utilisateur connecté mais profil Firestore manquant -> Onboarding
-  if (!profileExists || !profileData) {
+  // 4. Utilisateur connecté mais profil Firestore manquant ou incomplet -> Onboarding
+  const isProfileComplete = profileData?.onboardingCompleted === true || (profileData?.telephone && profileData?.adresseRue);
+
+  if (!profileExists || !profileData || !isProfileComplete) {
     return (
       <div style={brandingStyle} className="min-h-screen flex flex-col w-full force-light-theme">
         <React.Suspense fallback={<div className="flex-1 flex justify-center items-center py-12 animate-pulse text-xs font-bold select-none">⏳ Initialisation...</div>}>
-          <Onboarding user={user} branding={branding} onComplete={handleOnboardingComplete} />
+          <Onboarding user={user} branding={branding} onComplete={handleOnboardingComplete} profileData={profileData} />
         </React.Suspense>
         <ReloadPrompt />
       </div>
     );
   }
 
+  // 4b. Sécurisation : Compte nouvellement inscrit en attente de validation par le bureau (isNew === true)
+  if (profileData?.isNew === true && !isSystemOrSuperAdminOrMestre) {
+    return (
+      <div style={brandingStyle} className="min-h-screen flex flex-col w-full force-light-theme">
+        <PendingValidationScreen
+          profileData={profileData}
+          branding={branding}
+          onSignOut={handleSignOut}
+        />
+        <ReloadPrompt />
+      </div>
+    );
+  }
+
   // 5. Utilisateur connecté avec profil valide -> Rendu de l'Espace Membre Privé (/app)
-  const isSystemOrSuperAdminOrMestre = profileData?.isSystemAdmin || profileData?.role === 'super-admin' || profileData?.role === 'mestre';
-  const isMasterKeyActive = isSystemOrSuperAdminOrMestre && breakGlassActive;
 
   const isModuleEnabled = (tabId, poleId) => {
     if (!enabledModules) return true;
@@ -820,39 +897,8 @@ export default function App() {
     // Master Key Bypass ONLY if Break-Glass Technical Intervention Mode is ACTIVE
     if (isMasterKeyActive) return true;
 
-    // Public member tabs
-    if (['profil', 'agenda', 'materiel', 'vestiaire', 'trombinoscope', 'forum', 'dashboard', 'varal'].includes(tabId)) {
-      return true;
-    }
-
-    if (tabId === 'vitrine-editor' || tabId.startsWith('vitrine-')) {
-      if (
-        profileData?.role === 'mestre' || 
-        profileData?.role === 'super-admin' || 
-        profileData?.isSystemAdmin === true ||
-        canEditVitrine(profileData, permissionsMatrice, userTags)
-      ) {
-        return true;
-      }
-    }
-
-    if (!userTags || userTags.length === 0) return false;
-
-    // 1. Direct tab permission check in permissionsMatrice
-    const tabTags = permissionsMatrice?.[tabId];
-    if (Array.isArray(tabTags) && tabTags.length > 0) {
-      return userTags.some(t => tabTags.includes(t));
-    }
-
-    // 2. Fallback to Pole-level permission check for backward compatibility
-    if (poleId) {
-      const poleTags = permissionsMatrice?.[poleId];
-      if (Array.isArray(poleTags) && poleTags.length > 0) {
-        return userTags.some(t => poleTags.includes(t));
-      }
-    }
-
-    return false;
+    // Centralized access rule check by roles and tags
+    return canAccessTabPermission(tabId, poleId, profileData, permissionsMatrice, userTags);
   };
 
   const hasAccessTroupe = isMasterKeyActive || checkTabAccess('export-annu', 'troupe') || checkTabAccess('tag-manager', 'troupe') || checkTabAccess('instruments', 'troupe');
@@ -867,6 +913,14 @@ export default function App() {
   const hasAccessForumMod = isMasterKeyActive || userTags.some(t => ['Modérateur', 'Modérateur Forum', 'Gestionnaire Porte-voix', 'Porte-voix'].includes(t));
 
   const handleNavigateToPole = (poleId) => {
+    if (poleId !== 'accueil' && poleId !== 'mon-espace') {
+      const isAllowed = canAccessPole(poleId, profileData, permissionsMatrice, userTags);
+      if (!isAllowed && !isMasterKeyActive) {
+        setAccessDeniedToast(true);
+        setTimeout(() => setAccessDeniedToast(false), 4000);
+        return;
+      }
+    }
     setCurrentPole(poleId);
     if (poleId === 'accueil') {
       setCurrentTab('dashboard');
@@ -965,6 +1019,10 @@ export default function App() {
         setCurrentPole('studio');
         setCurrentTab('varal-manager');
         break;
+      case 'newsletter':
+        setCurrentPole('studio');
+        setCurrentTab('newsletter');
+        break;
       case 'reunion-manager':
         setCurrentPole('studio');
         setCurrentTab('reunion-manager');
@@ -989,7 +1047,12 @@ export default function App() {
 
   return (
     <TerminologyProvider majoriteFeminine={majoriteFeminine}>
-      <div style={brandingStyle} className="min-h-screen flex flex-col w-full">
+      <div style={brandingStyle} className="min-h-screen flex flex-col w-full relative">
+        {accessDeniedToast && (
+          <div className="fixed top-4 right-4 z-50 bg-amber-900 text-amber-100 font-extrabold text-xs px-4 py-3 rounded-[6px_10px_8px_12px] border-2 border-amber-600 shadow-[3px_3px_0px_0px_#181716] flex items-center gap-2 animate-bounce">
+            <span>🔒</span> Accès restreint : vous n'avez pas les droits nécessaires pour accéder à cet espace.
+          </div>
+        )}
         <LayoutShell 
           logoUrl={branding?.logoUrl} 
           associationName={associationName}
@@ -1246,6 +1309,11 @@ export default function App() {
                  isSystemAdmin={profileData?.isSystemAdmin}
                  onBack={() => handleNavigateToPole('accueil')} 
                />
+            ) : (currentTab === 'newsletter' && hasAccessStudio) ? (
+              <NewsletterPage
+                groupId={profileData?.groupId}
+                onBack={() => handleNavigateToPole('accueil')}
+              />
             ) : (currentTab === 'activity-reports' && hasAccessStudio) ? (
               <ActivityReports 
                 groupId={profileData?.groupId}
@@ -1305,6 +1373,7 @@ export default function App() {
                 activeTabProp="identity"
                 mode="identity-only"
                 onBack={() => handleNavigateToPole('accueil')} 
+                onReopenOnboarding={() => setShowOnboardingWizard(true)}
               />
             ) : (currentTab === 'config-communication' && checkTabAccess('config-communication', 'config')) ? (
               <AssociationSettings 
@@ -1436,6 +1505,17 @@ export default function App() {
               />
             )}
             </ErrorBoundary>
+          </React.Suspense>
+
+          {/* Assistant de Premier Démarrage (Wizard Onboarding Mestre/Bureau) */}
+          <React.Suspense fallback={null}>
+            <OnboardingWizard
+              isOpen={showOnboardingWizard}
+              onClose={() => setShowOnboardingWizard(false)}
+              groupId={profileData?.groupId || (new URLSearchParams(window.location.search).get('groupe'))}
+              associationSettings={associationData || {}}
+              onCompleteSuccess={() => setShowOnboardingWizard(false)}
+            />
           </React.Suspense>
         </LayoutShell>
         <ReloadPrompt />

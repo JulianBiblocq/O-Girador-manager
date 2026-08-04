@@ -8,7 +8,7 @@ import RichTextEditor from './RichTextEditor';
 
 import { getTagId } from '../utils/tagUtils';
 
-export default function CreateThreadForm({ groupId, channelId, user, profileData, onClose }) {
+export default function CreateThreadForm({ groupId, channelId, user, profileData, onClose, inModal = false }) {
   const { t } = useTranslation();
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState('Général');
@@ -147,7 +147,7 @@ export default function CreateThreadForm({ groupId, channelId, user, profileData
         }
       }
 
-      onClose();
+      if (onClose) onClose();
     } catch (error) {
       console.error("CreateThreadForm - Erreur addDoc :", error);
       alert(t('common.saveError'));
@@ -156,13 +156,10 @@ export default function CreateThreadForm({ groupId, channelId, user, profileData
     }
   };
 
-  return (
-    <CordelCard variant="default" useExtremeBorder={true} className="text-left py-6">
-      <h4 className="panel-title text-base font-bold mb-4 text-cordel-wood">
-        {t('forum.newThreadTitle')}
-      </h4>
-
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+  const formContent = (
+    <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
+      {/* 2. Body (Défilable) */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 text-left">
         {/* Title */}
         <div className="flex flex-col gap-1">
           <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
@@ -352,9 +349,11 @@ export default function CreateThreadForm({ groupId, channelId, user, profileData
             <span>📢 Alerter les membres par notification Push</span>
           </label>
         </div>
+      </div>
 
-        {/* Action Buttons */}
-        <div className="flex gap-3 justify-end mt-2">
+      {/* 3. Footer (Fixe en bas) */}
+      <div className="flex-shrink-0 p-4 border-t-2 border-dashed border-cordel-master-dark/20 flex gap-3 justify-end bg-cordel-bg">
+        {onClose && (
           <CordelButton 
             type="button"
             variant="default" 
@@ -364,17 +363,30 @@ export default function CreateThreadForm({ groupId, channelId, user, profileData
           >
             {t('common.cancel')}
           </CordelButton>
-          <CordelButton 
-            type="submit"
-            variant="ocre" 
-            useExtremeBorder={true}
-            disabled={saving}
-            className="text-xs px-4 py-2"
-          >
-            {saving ? t('forum.creatingMsg') : (t('common.confirm') || "Valider")}
-          </CordelButton>
-        </div>
-      </form>
+        )}
+        <CordelButton 
+          type="submit"
+          variant="ocre" 
+          useExtremeBorder={true}
+          disabled={saving}
+          className="text-xs px-4 py-2"
+        >
+          {saving ? t('forum.creatingMsg') : (t('common.confirm') || "Valider")}
+        </CordelButton>
+      </div>
+    </form>
+  );
+
+  if (inModal) {
+    return formContent;
+  }
+
+  return (
+    <CordelCard variant="default" useExtremeBorder={true} className="text-left py-6">
+      <h4 className="panel-title text-base font-bold mb-4 text-cordel-wood">
+        {t('forum.newThreadTitle')}
+      </h4>
+      {formContent}
     </CordelCard>
   );
 }

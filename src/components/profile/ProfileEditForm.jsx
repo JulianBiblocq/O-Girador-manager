@@ -167,6 +167,7 @@ export default function ProfileEditForm({
         {/* Évolution & Souhaits d'Instruments */}
         <MusicalOrientationForm
           formData={formData}
+          setFormData={setFormData}
           handleChange={handleChange}
           saving={saving}
           instrumentsDisponibles={instrumentsDisponibles}

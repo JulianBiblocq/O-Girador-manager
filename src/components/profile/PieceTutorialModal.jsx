@@ -21,39 +21,44 @@ export default function PieceTutorialModal({ piece, workshop, onClose }) {
   const pdfFiles = workshop?.pdfFiles || [];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-encre-noire/70 backdrop-blur-sm animate-fade-in select-none">
-      <div className="relative w-full max-w-2xl max-h-[85vh] overflow-y-auto">
-        <CordelCard variant="default" useExtremeBorder={true} className="p-6 flex flex-col gap-4 text-left bg-cordel-bg shadow-2xl">
-          {/* Header */}
-          <div className="flex justify-between items-start border-b-2 border-dashed border-cordel-master-dark/25 pb-3">
-            <div>
-              <span className="theme-stamp-badge theme-stamp-badge-wood text-[8px] uppercase tracking-wider mb-1 inline-block">
-                🧵 Fiche Livret Atelier Couture
-              </span>
-              <h3 className="font-cactus font-black text-lg text-encre-noire tracking-wide flex items-center gap-2 flex-wrap">
-                {title}
-                {cost > 0 && (
-                  <span className="theme-stamp-badge theme-stamp-badge-wood text-[9px] font-black uppercase">
-                    Coût : {cost} €
-                  </span>
-                )}
-              </h3>
-              {description && (
-                <p className="text-xs text-cordel-master-dark font-medium italic opacity-90 mt-1">
-                  {description}
-                </p>
+    <div
+      tabIndex={-1}
+      onKeyDown={(e) => e.key === 'Escape' && onClose()}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-encre-noire/70 backdrop-blur-xs select-none outline-none animate-fade-in"
+    >
+      <div className="relative w-full max-w-2xl max-h-[90vh] flex flex-col rounded-lg bg-cordel-bg border-2 border-cordel-master-dark/40 shadow-2xl overflow-hidden text-left">
+        {/* 1. Header (Fixe) */}
+        <div className="flex-shrink-0 p-4 border-b-2 border-dashed border-cordel-master-dark/25 flex justify-between items-start bg-cordel-bg">
+          <div>
+            <span className="theme-stamp-badge theme-stamp-badge-wood text-[8px] uppercase tracking-wider mb-1 inline-block">
+              🧵 Fiche Livret Atelier Couture
+            </span>
+            <h3 className="font-cactus font-black text-lg text-encre-noire tracking-wide flex items-center gap-2 flex-wrap">
+              {title}
+              {cost > 0 && (
+                <span className="theme-stamp-badge theme-stamp-badge-wood text-[9px] font-black uppercase">
+                  Coût : {cost} €
+                </span>
               )}
-            </div>
-            <button
-              type="button"
-              onClick={onClose}
-              className="text-base font-extrabold text-cordel-wood hover:text-red-600 cursor-pointer p-1"
-              title="Fermer"
-            >
-              <XiloClose size={20} />
-            </button>
+            </h3>
+            {description && (
+              <p className="text-xs text-cordel-master-dark font-medium italic opacity-90 mt-1">
+                {description}
+              </p>
+            )}
           </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="text-base font-extrabold text-cordel-wood hover:text-red-600 cursor-pointer p-1"
+            title="Fermer (Échap)"
+          >
+            <XiloClose size={20} />
+          </button>
+        </div>
 
+        {/* 2. Body (Défilable verticalement) */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-4">
           {/* Piece Badge & Notes */}
           <div className="flex flex-col gap-2">
             <div className="flex items-center gap-2 flex-wrap">
@@ -97,22 +102,22 @@ export default function PieceTutorialModal({ piece, workshop, onClose }) {
               <h4 className="font-cactus font-black text-xs text-cordel-wood uppercase tracking-wider flex items-center gap-1.5">
                 📜 Étapes de Fabrication pas à pas
               </h4>
-              <div className="bg-white/60 dark:bg-black/30 p-4 rounded border border-dashed border-cordel-master-dark/20 whitespace-pre-wrap leading-relaxed max-h-72 overflow-y-auto">
+              <div className="bg-white/60 dark:bg-black/30 p-4 rounded border border-dashed border-cordel-master-dark/20 whitespace-pre-wrap leading-relaxed">
                 {content}
               </div>
             </div>
           )}
 
-          {/* Section C: Video Embed */}
+          {/* Section C: Lecteur Vidéo */}
           {embedVideo && (
             <div className="flex flex-col gap-2">
               <h4 className="font-cactus font-black text-xs text-cordel-wood uppercase tracking-wider flex items-center gap-1.5">
-                🎬 Tutoriel Vidéo de démonstration
+                🎬 Vidéo de démonstration pas à pas
               </h4>
-              <div className="relative w-full aspect-video rounded-lg overflow-hidden border-2 border-encre-noire shadow-md bg-black">
+              <div className="relative aspect-video w-full rounded border-2 border-encre-noire overflow-hidden bg-black shadow-md">
                 <iframe
                   src={embedVideo}
-                  title={`Vidéo - ${title}`}
+                  title="Vidéo tutoriel"
                   className="w-full h-full border-0"
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                   allowFullScreen
@@ -121,11 +126,11 @@ export default function PieceTutorialModal({ piece, workshop, onClose }) {
             </div>
           )}
 
-          {/* Section D: Patrons et Images */}
+          {/* Section D: Galerie de Schémas & Photos */}
           {images.length > 0 && (
             <div className="flex flex-col gap-2">
               <h4 className="font-cactus font-black text-xs text-cordel-wood uppercase tracking-wider flex items-center gap-1.5">
-                🎨 Patrons & Visuels ({images.length})
+                🖼️ Photos & Schémas de Montage ({images.length})
               </h4>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 {images.map((img, idx) => (
@@ -134,9 +139,9 @@ export default function PieceTutorialModal({ piece, workshop, onClose }) {
                     href={img.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="relative group border-2 border-encre-noire rounded overflow-hidden bg-white aspect-square block shadow-sm"
+                    className="relative group border border-cordel-master-dark/20 rounded overflow-hidden bg-white shadow-xs block"
                   >
-                    <img src={img.url} alt={img.name || 'Patron'} className="w-full h-full object-cover" />
+                    <img src={img.url} alt={img.name || 'Patron'} className="w-full h-24 object-cover group-hover:scale-105 transition-transform" />
                     <div className="absolute inset-0 bg-encre-noire/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-[9px] font-black uppercase">
                       🔍 Voir l'image
                     </div>
@@ -168,20 +173,20 @@ export default function PieceTutorialModal({ piece, workshop, onClose }) {
               </div>
             </div>
           )}
+        </div>
 
-          {/* Footer button */}
-          <div className="flex justify-end pt-2 border-t border-dashed border-cordel-master-dark/15">
-            <CordelButton
-              type="button"
-              variant="ocre"
-              useExtremeBorder={true}
-              onClick={onClose}
-              className="py-1.5 px-4 text-xs font-black uppercase tracking-wider"
-            >
-              Fermer la fiche
-            </CordelButton>
-          </div>
-        </CordelCard>
+        {/* 3. Footer (Fixe en bas) */}
+        <div className="flex-shrink-0 p-4 border-t border-dashed border-cordel-master-dark/15 flex justify-end bg-cordel-bg">
+          <CordelButton
+            type="button"
+            variant="ocre"
+            useExtremeBorder={true}
+            onClick={onClose}
+            className="py-1.5 px-4 text-xs font-black uppercase tracking-wider"
+          >
+            Fermer la fiche
+          </CordelButton>
+        </div>
       </div>
     </div>
   );

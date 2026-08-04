@@ -162,10 +162,14 @@ export default function ImportAgendaModal({ isOpen, onClose, onSelectTemplate, g
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <CordelCard variant="default" useExtremeBorder={true} className="w-full max-w-2xl bg-cordel-bg text-left max-h-[90vh] flex flex-col p-0 overflow-hidden shadow-2xl">
-        {/* Header Modal */}
-        <div className="flex items-center justify-between px-6 py-4 border-b-2 border-dashed border-cordel-master-dark/20 bg-cordel-bg-light">
+    <div
+      tabIndex={-1}
+      onKeyDown={(e) => e.key === 'Escape' && onClose()}
+      className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 select-none outline-none animate-fade-in"
+    >
+      <div className="w-full max-w-2xl max-h-[90vh] flex flex-col bg-cordel-bg text-left rounded-lg overflow-hidden shadow-2xl border-2 border-cordel-master-dark/40">
+        {/* 1. Header Modal (Fixe) */}
+        <div className="flex-shrink-0 flex items-center justify-between px-6 py-4 border-b-2 border-dashed border-cordel-master-dark/20 bg-cordel-bg-light">
           <div className="flex items-center gap-2">
             <span className="text-xl">📥</span>
             <div>
@@ -181,14 +185,14 @@ export default function ImportAgendaModal({ isOpen, onClose, onSelectTemplate, g
             type="button"
             onClick={onClose}
             className="text-cordel-wood hover:text-cordel-rouge transition-colors p-1 rounded cursor-pointer"
-            title="Fermer"
+            title="Fermer (Échap)"
           >
             <XiloClose className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Tabs navigation */}
-        <div className="flex border-b border-cordel-master-dark/15 bg-white/40 px-6 pt-3 gap-2">
+        {/* Tabs navigation (Fixes sous le header) */}
+        <div className="flex-shrink-0 flex border-b border-cordel-master-dark/15 bg-white/40 px-6 pt-3 gap-2">
           <button
             type="button"
             onClick={() => { setActiveTab('studio'); setSelectedTemplateId(null); }}
@@ -213,7 +217,7 @@ export default function ImportAgendaModal({ isOpen, onClose, onSelectTemplate, g
           </button>
         </div>
 
-        {/* Content area: Sidebar list + Preview details */}
+        {/* 2. Body (Défilable verticalement) */}
         <div className="flex-1 overflow-y-auto p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Left column: List of templates */}
           <div className="flex flex-col gap-2 overflow-y-auto max-h-[360px] pr-1">
@@ -297,31 +301,31 @@ export default function ImportAgendaModal({ isOpen, onClose, onSelectTemplate, g
                 Sélectionnez un modèle pour voir son aperçu.
               </div>
             )}
-
-            {/* Bottom Actions */}
-            <div className="pt-4 border-t border-dashed border-cordel-master-dark/20 mt-4 flex justify-end gap-2">
-              <CordelButton
-                type="button"
-                variant="rouge"
-                onClick={onClose}
-                className="px-3 py-1.5 text-xs font-bold"
-              >
-                Annuler
-              </CordelButton>
-              <CordelButton
-                type="button"
-                variant="vert"
-                useExtremeBorder={true}
-                disabled={!activeTemplate}
-                onClick={handleConfirmImport}
-                className="px-4 py-1.5 text-xs font-extrabold uppercase tracking-wider"
-              >
-                📥 Importer cet ordre du jour
-              </CordelButton>
-            </div>
           </div>
         </div>
-      </CordelCard>
+
+        {/* 3. Footer (Fixe en bas) */}
+        <div className="flex-shrink-0 p-4 border-t-2 border-dashed border-cordel-master-dark/20 flex justify-end gap-2 bg-cordel-bg">
+          <CordelButton
+            type="button"
+            variant="rouge"
+            onClick={onClose}
+            className="px-3 py-1.5 text-xs font-bold"
+          >
+            Annuler
+          </CordelButton>
+          <CordelButton
+            type="button"
+            variant="vert"
+            useExtremeBorder={true}
+            disabled={!activeTemplate}
+            onClick={handleConfirmImport}
+            className="px-4 py-1.5 text-xs font-extrabold uppercase tracking-wider"
+          >
+            📥 Importer cet ordre du jour
+          </CordelButton>
+        </div>
+      </div>
     </div>
   );
 }

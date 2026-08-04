@@ -271,23 +271,31 @@ export default function CostumesAdminManager({ groupId }) {
 
       {/* Costume Form Modal */}
       {showCostumeModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-encre-noire/70 backdrop-blur-sm animate-fade-in select-none">
-          <div className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <CordelCard variant="default" useExtremeBorder={true} className="p-5 flex flex-col gap-4 text-left bg-cordel-bg">
-              <div className="flex justify-between items-start border-b-2 border-dashed border-cordel-master-dark/25 pb-2">
-                <h3 className="font-cactus font-black text-base text-encre-noire tracking-wider uppercase">
-                  {editingCostume ? '✏️ Modifier le Costume' : '➕ Créer un nouveau Costume'}
-                </h3>
-                <button
-                  type="button"
-                  onClick={() => setShowCostumeModal(false)}
-                  className="text-base font-extrabold text-cordel-wood hover:text-red-600 cursor-pointer"
-                >
-                  ✕
-                </button>
-              </div>
+        <div
+          tabIndex={-1}
+          onKeyDown={(e) => e.key === 'Escape' && !saving && setShowCostumeModal(false)}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-encre-noire/70 backdrop-blur-xs select-none outline-none animate-fade-in"
+        >
+          <div className="relative w-full max-w-2xl max-h-[90vh] flex flex-col rounded-lg bg-cordel-bg shadow-2xl border-2 border-cordel-master-dark/40 overflow-hidden text-left">
+            {/* 1. Header (Fixe) */}
+            <div className="flex-shrink-0 p-4 border-b-2 border-dashed border-cordel-master-dark/25 flex justify-between items-center bg-cordel-bg">
+              <h3 className="font-cactus font-black text-base text-encre-noire tracking-wider uppercase">
+                {editingCostume ? '✏️ Modifier le Costume' : '➕ Créer un nouveau Costume'}
+              </h3>
+              <button
+                type="button"
+                onClick={() => setShowCostumeModal(false)}
+                className="text-base font-extrabold text-cordel-wood hover:text-red-600 cursor-pointer"
+                title="Fermer (Échap)"
+              >
+                ✕
+              </button>
+            </div>
 
-              <form onSubmit={handleSaveCostume} className="flex flex-col gap-4">
+            {/* Form Wrapper */}
+            <form onSubmit={handleSaveCostume} className="flex flex-col flex-1 overflow-hidden">
+              {/* 2. Body (Défilable verticalement) */}
+              <div className="flex-1 overflow-y-auto p-4 space-y-4">
                 {/* Title */}
                 <div className="flex flex-col gap-1">
                   <label className="text-[10px] uppercase font-bold tracking-wider text-cordel-master-dark">
@@ -333,7 +341,7 @@ export default function CostumesAdminManager({ groupId }) {
                     placeholder="Description du costume, événements associés..."
                     rows={2}
                     disabled={saving}
-                    className="theme-input text-xs w-full"
+                    className="theme-input text-xs w-full resize-none"
                   />
                 </div>
 
@@ -361,8 +369,8 @@ export default function CostumesAdminManager({ groupId }) {
                           </div>
                           <button
                             type="button"
-                            onClick={() => handleRemovePieceFromCostume(piece.id)}
-                            className="text-[9px] font-bold text-red-600 hover:text-red-800 cursor-pointer"
+                            onClick={() => handleRemovePieceFromCostume(index)}
+                            className="text-red-700 hover:text-red-900 font-extrabold text-xs cursor-pointer px-2 py-0.5"
                           >
                             Supprimer
                           </button>
@@ -371,48 +379,45 @@ export default function CostumesAdminManager({ groupId }) {
                     )}
                   </div>
 
-                  {/* Add Piece Form Sub-box */}
-                  <div className="bg-cordel-bg-light p-3 border border-dashed border-cordel-master-dark/25 rounded flex flex-col gap-2.5">
-                    <span className="text-[10px] font-black uppercase text-cordel-master-dark tracking-wider">
-                      + Ajouter une pièce au costume
+                  {/* Form to add a piece */}
+                  <div className="p-3 bg-cordel-master-light/10 border border-cordel-master-dark/20 rounded flex flex-col gap-2 mt-1">
+                    <span className="text-[10px] font-black uppercase text-cordel-wood">
+                      ➕ Ajouter une pièce à ce costume
                     </span>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       <input
                         type="text"
-                        placeholder="Nom de la pièce (ex: Coiffe, Jupe...)"
+                        placeholder="Nom de la pièce (ex: Jupe Roda)..."
                         value={pieceForm.name}
                         onChange={(e) => setPieceForm(prev => ({ ...prev, name: e.target.value }))}
-                        className="theme-input text-xs font-bold sm:col-span-2"
+                        className="theme-input text-xs font-bold"
                       />
-                      <label className="flex items-center gap-2 text-xs font-bold cursor-pointer">
+                      <select
+                        value={pieceForm.emplacement || 'torse'}
+                        onChange={(e) => setPieceForm(prev => ({ ...prev, emplacement: e.target.value }))}
+                        className="theme-input text-xs font-bold bg-cordel-bg-light"
+                      >
+                        <option value="tete">👑 Tête / Accessoire haut</option>
+                        <option value="torse">👕 Torse / Haut</option>
+                        <option value="jambes">👖 Jambes / Bas</option>
+                        <option value="pieds">👟 Pieds / Chaussures</option>
+                        <option value="accessoire">🎒 Accessoire / Portatif</option>
+                      </select>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <label className="flex items-center gap-1.5 text-xs font-bold text-encre-noire cursor-pointer">
                         <input
                           type="checkbox"
-                          checked={pieceForm.isMandatory}
+                          checked={pieceForm.isMandatory !== false}
                           onChange={(e) => setPieceForm(prev => ({ ...prev, isMandatory: e.target.checked }))}
-                          className="accent-cordel-wood"
+                          className="w-4 h-4 cursor-pointer"
                         />
-                        <span>Piece Obligatoire</span>
+                        <span>Pièce obligatoire pour ce costume</span>
                       </label>
                     </div>
 
-                    <div className="flex flex-col gap-1">
-                      <label className="text-[9px] uppercase font-bold text-cordel-master-dark">
-                        Emplacement sur la silhouette / corps
-                      </label>
-                      <select
-                        value={pieceForm.emplacement}
-                        onChange={(e) => setPieceForm(prev => ({ ...prev, emplacement: e.target.value }))}
-                        className="theme-input text-xs font-bold bg-white"
-                      >
-                        <option value="tete">👑 Tête (Chapeau, Coiffe, Masque)</option>
-                        <option value="torse">👕 Torse / Buste (Haut, Chemise, Robe)</option>
-                        <option value="bras">🦾 Bras / Épaules (Mangues, Épaulettes)</option>
-                        <option value="mains">🧤 Mains / Poignets (Bracelets, Gants)</option>
-                        <option value="jambes">👖 Jambes (Pantalon, Jupe, Bas)</option>
-                        <option value="pieds">👟 Pieds (Chaussures, Chevillères)</option>
-                        <option value="accessoire">🧺 Accessoire (Panier, Éventail, Instrument)</option>
-                      </select>
-                    </div>
+
 
                     {/* Short Description / Materials */}
                     <input
@@ -478,8 +483,8 @@ export default function CostumesAdminManager({ groupId }) {
                     {saving ? "Enregistrement..." : "Enregistrer le Costume"}
                   </CordelButton>
                 </div>
-              </form>
-            </CordelCard>
+              </div>
+            </form>
           </div>
         </div>
       )}

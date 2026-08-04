@@ -186,14 +186,14 @@ export default function GigSendContractModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/65 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 select-none overflow-y-auto">
-      <CordelCard
-        variant="default"
-        useExtremeBorder={true}
-        className="w-full max-w-2xl bg-white p-5 sm:p-6 shadow-2xl flex flex-col gap-4 max-h-[92vh] overflow-y-auto text-left relative"
-      >
-        {/* Entête Modale */}
-        <div className="flex items-center justify-between border-b border-dashed border-cordel-master-dark/20 pb-3">
+    <div
+      tabIndex={-1}
+      onKeyDown={(e) => e.key === 'Escape' && !sending && onClose()}
+      className="fixed inset-0 z-50 bg-black/65 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 select-none outline-none animate-fade-in"
+    >
+      <div className="relative w-full max-w-2xl max-h-[90vh] flex flex-col rounded-lg bg-white shadow-2xl border-2 border-cordel-master-dark/40 overflow-hidden text-left">
+        {/* 1. Header (Fixe) */}
+        <div className="flex-shrink-0 p-4 border-b border-dashed border-cordel-master-dark/20 flex items-center justify-between bg-white">
           <div className="flex items-center gap-2">
             <span className="text-xl">✍️</span>
             <div>
@@ -201,7 +201,7 @@ export default function GigSendContractModal({
                 Envoi du Contrat PDF par E-mail (Brevo)
               </h3>
               <p className="text-[10px] text-stone-500 font-bold">
-                Prestation : {gig.eventName} — {gig.organizer}
+                Prestation : {gig?.eventName} — {gig?.organizer}
               </p>
             </div>
           </div>
@@ -210,174 +210,179 @@ export default function GigSendContractModal({
             onClick={onClose}
             disabled={sending}
             className="text-stone-400 hover:text-stone-800 font-bold text-lg cursor-pointer"
+            title="Fermer (Échap)"
           >
             ✕
           </button>
         </div>
 
-        {/* Message d'état et erreurs explicites */}
-        {statusMessage && (
-          <div className={`p-3 rounded border text-xs font-bold flex flex-col gap-1 ${
-            statusMessage.type === 'success' 
-              ? 'bg-emerald-50 border-emerald-400 text-emerald-900' 
-              : 'bg-red-50 border-red-400 text-red-900'
-          }`}>
-            <div className="flex items-center justify-between">
-              <span className="font-extrabold">{statusMessage.title}</span>
-              {statusMessage.rawError && (
-                <button
-                  type="button"
-                  onClick={() => setShowErrorDetails(!showErrorDetails)}
-                  className="text-[9px] underline cursor-pointer text-red-800 font-bold"
-                >
-                  {showErrorDetails ? 'Masquer détails bruts' : '🔍 Voir rapport brut'}
-                </button>
-              )}
-            </div>
-            <p className="text-[11px] font-normal leading-relaxed">{statusMessage.text}</p>
+        {/* Form Wrapper */}
+        <form onSubmit={handleSendContract} className="flex flex-col flex-1 overflow-hidden">
+          {/* 2. Body (Défilable verticalement) */}
+          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            {/* Message d'état et erreurs explicites */}
+            {statusMessage && (
+              <div className={`p-3 rounded border text-xs font-bold flex flex-col gap-1 ${
+                statusMessage.type === 'success' 
+                  ? 'bg-emerald-50 border-emerald-400 text-emerald-900' 
+                  : 'bg-red-50 border-red-400 text-red-900'
+              }`}>
+                <div className="flex items-center justify-between">
+                  <span className="font-extrabold">{statusMessage.title}</span>
+                  {statusMessage.rawError && (
+                    <button
+                      type="button"
+                      onClick={() => setShowErrorDetails(!showErrorDetails)}
+                      className="text-[9px] underline cursor-pointer text-red-800 font-bold"
+                    >
+                      {showErrorDetails ? 'Masquer détails bruts' : '🔍 Voir rapport brut'}
+                    </button>
+                  )}
+                </div>
+                <p className="text-[11px] font-normal leading-relaxed">{statusMessage.text}</p>
 
-            {statusMessage.rawError && showErrorDetails && (
-              <pre className="p-2 mt-2 bg-stone-900 text-green-400 font-mono text-[10px] rounded overflow-x-auto max-h-40">
-                {statusMessage.rawError}
-              </pre>
+                {statusMessage.rawError && showErrorDetails && (
+                  <pre className="p-2 mt-2 bg-stone-900 text-green-400 font-mono text-[10px] rounded overflow-x-auto max-h-40">
+                    {statusMessage.rawError}
+                  </pre>
+                )}
+              </div>
             )}
-          </div>
-        )}
 
-        {/* Pièce jointe Contrat PDF */}
-        <div className="flex items-center justify-between bg-purple-50 border border-purple-300 p-2.5 rounded text-xs">
-          <div className="flex items-center gap-2">
-            <span className="text-base">📜</span>
-            <div className="flex flex-col">
-              <span className="font-extrabold text-purple-950">
-                Contrat_{(gig.eventName || 'prestation').replace(/[^a-zA-Z0-9]/g, '_')}.pdf
-              </span>
-              <span className="text-[9px] font-semibold text-purple-800">
-                Contrat de prestation avec en-tête légal et signature numérisée
-              </span>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={handleDownloadBackup}
-            className="px-2.5 py-1 text-[10px] font-extrabold uppercase bg-purple-800 hover:bg-purple-900 text-white rounded cursor-pointer shadow-xs"
-            title="Télécharger une copie locale"
-          >
-            📥 Copie Locale
-          </button>
-        </div>
-
-        <form onSubmit={handleSendContract} className="flex flex-col gap-3.5">
-          {/* Expéditeur Brevo (Nom & Email) */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-stone-50 p-2.5 rounded border border-stone-200">
-            <div className="flex flex-col gap-1">
-              <label className="text-[9px] font-extrabold uppercase text-cordel-wood">
-                E-mail Expéditeur (Vérifié Brevo) *
-              </label>
-              <input
-                type="email"
-                required
-                value={senderEmail}
-                onChange={(e) => setSenderEmail(e.target.value)}
-                disabled={sending}
-                placeholder="contact@votre-association.fr"
-                className="text-xs font-mono font-bold px-2.5 py-1 border border-stone-300 rounded bg-white"
-              />
+            {/* Pièce jointe Contrat PDF */}
+            <div className="flex items-center justify-between bg-purple-50 border border-purple-300 p-2.5 rounded text-xs">
+              <div className="flex items-center gap-2">
+                <span className="text-base">📜</span>
+                <div className="flex flex-col">
+                  <span className="font-extrabold text-purple-950">
+                    Contrat_{(gig?.eventName || 'prestation').replace(/[^a-zA-Z0-9]/g, '_')}.pdf
+                  </span>
+                  <span className="text-[9px] font-semibold text-purple-800">
+                    Contrat de prestation avec en-tête légal et signature numérisée
+                  </span>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={handleDownloadBackup}
+                className="px-2.5 py-1 text-[10px] font-extrabold uppercase bg-purple-800 hover:bg-purple-900 text-white rounded cursor-pointer shadow-xs"
+                title="Télécharger une copie locale"
+              >
+                📥 Copie Locale
+              </button>
             </div>
 
+            {/* Expéditeur Brevo (Nom & Email) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-stone-50 p-2.5 rounded border border-stone-200">
+              <div className="flex flex-col gap-1">
+                <label className="text-[9px] font-extrabold uppercase text-cordel-wood">
+                  E-mail Expéditeur (Vérifié Brevo) *
+                </label>
+                <input
+                  type="email"
+                  required
+                  value={senderEmail}
+                  onChange={(e) => setSenderEmail(e.target.value)}
+                  disabled={sending}
+                  placeholder="contact@votre-association.fr"
+                  className="text-xs font-mono font-bold px-2.5 py-1 border border-stone-300 rounded bg-white"
+                />
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="text-[9px] font-extrabold uppercase text-cordel-wood">
+                  Nom Expéditeur
+                </label>
+                <input
+                  type="text"
+                  value={senderName}
+                  onChange={(e) => setSenderName(e.target.value)}
+                  disabled={sending}
+                  className="text-xs font-bold px-2.5 py-1 border border-stone-300 rounded bg-white"
+                />
+              </div>
+            </div>
+
+            {/* Destinataire */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="flex flex-col gap-1">
+                <label className="text-[10px] font-extrabold uppercase text-stone-700">
+                  E-mail Destinataire (Client / Organisateur) *
+                </label>
+                <input
+                  type="email"
+                  required
+                  value={recipientEmail}
+                  onChange={(e) => setRecipientEmail(e.target.value)}
+                  disabled={sending}
+                  placeholder="client@organisateur.fr"
+                  className="text-xs font-mono font-bold px-3 py-1.5 border border-stone-300 rounded bg-white"
+                />
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="text-[10px] font-extrabold uppercase text-stone-700">
+                  Nom du Destinataire
+                </label>
+                <input
+                  type="text"
+                  value={recipientName}
+                  onChange={(e) => setRecipientName(e.target.value)}
+                  disabled={sending}
+                  placeholder="Ex: Mairie de Lille"
+                  className="text-xs font-bold px-3 py-1.5 border border-stone-300 rounded bg-white"
+                />
+              </div>
+            </div>
+
+            {/* Objet */}
             <div className="flex flex-col gap-1">
-              <label className="text-[9px] font-extrabold uppercase text-cordel-wood">
-                Nom Expéditeur
+              <label className="text-[10px] font-extrabold uppercase text-stone-700">
+                Objet du Message *
               </label>
               <input
                 type="text"
-                value={senderName}
-                onChange={(e) => setSenderName(e.target.value)}
-                disabled={sending}
-                className="text-xs font-bold px-2.5 py-1 border border-stone-300 rounded bg-white"
-              />
-            </div>
-          </div>
-
-          {/* Destinataire */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="flex flex-col gap-1">
-              <label className="text-[10px] font-extrabold uppercase text-stone-700">
-                E-mail Destinataire (Client / Organisateur) *
-              </label>
-              <input
-                type="email"
                 required
-                value={recipientEmail}
-                onChange={(e) => setRecipientEmail(e.target.value)}
+                value={subject}
+                onChange={(e) => setSubject(e.target.value)}
                 disabled={sending}
-                placeholder="client@organisateur.fr"
-                className="text-xs font-mono font-bold px-3 py-1.5 border border-stone-300 rounded bg-white"
-              />
-            </div>
-
-            <div className="flex flex-col gap-1">
-              <label className="text-[10px] font-extrabold uppercase text-stone-700">
-                Nom du Destinataire
-              </label>
-              <input
-                type="text"
-                value={recipientName}
-                onChange={(e) => setRecipientName(e.target.value)}
-                disabled={sending}
-                placeholder="Ex: Mairie de Lille"
                 className="text-xs font-bold px-3 py-1.5 border border-stone-300 rounded bg-white"
               />
             </div>
+
+            {/* Message d'accompagnement */}
+            <div className="flex flex-col gap-1">
+              <label className="text-[10px] font-extrabold uppercase text-stone-700">
+                Message d'accompagnement E-mail
+              </label>
+              <textarea
+                rows={5}
+                value={messageBody}
+                onChange={(e) => setMessageBody(e.target.value)}
+                disabled={sending}
+                className="text-xs p-3 border border-stone-300 rounded bg-white font-sans leading-relaxed resize-none"
+              />
+            </div>
+
+            {/* Clé API Brevo */}
+            <div className="flex flex-col gap-1 p-2 bg-amber-50 border border-amber-300 rounded">
+              <label className="text-[9px] font-extrabold uppercase text-amber-900 flex items-center justify-between">
+                <span>🔑 Clé API Brevo v3</span>
+                <span className="text-[8px] font-normal italic">Clé API issue de la configuration</span>
+              </label>
+              <input
+                type="password"
+                value={brevoApiKey}
+                onChange={(e) => setBrevoApiKey(e.target.value)}
+                disabled={sending}
+                placeholder="xkeysib-..."
+                className="text-xs font-mono px-2.5 py-1 border border-amber-300 rounded bg-white"
+              />
+            </div>
           </div>
 
-          {/* Objet */}
-          <div className="flex flex-col gap-1">
-            <label className="text-[10px] font-extrabold uppercase text-stone-700">
-              Objet du Message *
-            </label>
-            <input
-              type="text"
-              required
-              value={subject}
-              onChange={(e) => setSubject(e.target.value)}
-              disabled={sending}
-              className="text-xs font-bold px-3 py-1.5 border border-stone-300 rounded bg-white"
-            />
-          </div>
-
-          {/* Message d'accompagnement */}
-          <div className="flex flex-col gap-1">
-            <label className="text-[10px] font-extrabold uppercase text-stone-700">
-              Message d'accompagnement E-mail
-            </label>
-            <textarea
-              rows={5}
-              value={messageBody}
-              onChange={(e) => setMessageBody(e.target.value)}
-              disabled={sending}
-              className="text-xs p-3 border border-stone-300 rounded bg-white font-sans leading-relaxed resize-none"
-            />
-          </div>
-
-          {/* Clé API Brevo */}
-          <div className="flex flex-col gap-1 p-2 bg-amber-50 border border-amber-300 rounded">
-            <label className="text-[9px] font-extrabold uppercase text-amber-900 flex items-center justify-between">
-              <span>🔑 Clé API Brevo v3</span>
-              <span className="text-[8px] font-normal italic">Clé API issue de la configuration</span>
-            </label>
-            <input
-              type="password"
-              value={brevoApiKey}
-              onChange={(e) => setBrevoApiKey(e.target.value)}
-              disabled={sending}
-              placeholder="xkeysib-..."
-              className="text-xs font-mono px-2.5 py-1 border border-amber-300 rounded bg-white"
-            />
-          </div>
-
-          {/* Boutons d'action */}
-          <div className="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-dashed">
+          {/* 3. Footer (Fixe en bas) */}
+          <div className="flex-shrink-0 p-4 border-t border-dashed border-cordel-master-dark/20 flex flex-wrap items-center justify-between gap-2 bg-stone-50">
             <button
               type="button"
               onClick={handleDownloadBackup}
@@ -401,7 +406,7 @@ export default function GigSendContractModal({
             </div>
           </div>
         </form>
-      </CordelCard>
+      </div>
     </div>
   );
 }

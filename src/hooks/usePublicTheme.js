@@ -7,12 +7,21 @@ import { DEFAULT_PUBLIC_THEME, DEFAULT_VITRINE_TEXTS } from './useAssociationSet
  * Helper d'aide à la construction d'un objet thème public à partir d'un snapshot Firestore
  */
 const buildThemeData = (data) => {
-  if (!data?.publicTheme) return DEFAULT_PUBLIC_THEME;
+  const officialEmail = data.emailOfficiel || data.email || '';
+  const officialPhone = data.telephone || data.phone || '';
+
   return {
     ...DEFAULT_PUBLIC_THEME,
     ...data.publicTheme,
-    associationName: data.name || data.associationName || DEFAULT_PUBLIC_THEME.associationName || '',
-    logoUrl: data.logoUrl || data.branding?.logoUrl || '',
+    associationName: data.nom || data.associationName || DEFAULT_PUBLIC_THEME.associationName || '',
+    logoUrl: data.branding?.logoUrl || data.logoUrl || '',
+    bureauMembres: Array.isArray(data.bureauMembres) ? data.bureauMembres : [],
+    directionArtistique: Array.isArray(data.directionArtistique) ? data.directionArtistique : [],
+    afficherMestriaPV: Boolean(data.afficherMestriaPV),
+    officialEmail,
+    officialPhone,
+    publicContactEmail: data.publicTheme?.publicContactEmail?.trim() || officialEmail,
+    publicContactPhone: data.publicTheme?.publicContactPhone?.trim() || officialPhone,
     vitrineTexts: {
       ...DEFAULT_VITRINE_TEXTS,
       ...(data.publicTheme?.vitrineTexts || {})
@@ -54,10 +63,10 @@ const buildThemeData = (data) => {
     heroCtaLink: data.publicTheme?.heroCtaLink || "#agenda",
     showHeroCtaIcon: data.publicTheme?.showHeroCtaIcon !== false,
     heroCtaIcon: data.publicTheme?.heroCtaIcon !== undefined ? data.publicTheme.heroCtaIcon : "📅",
-    primaryColor: data.publicTheme.primaryColor || DEFAULT_PUBLIC_THEME.primaryColor,
-    secondaryColor: data.publicTheme.secondaryColor || DEFAULT_PUBLIC_THEME.secondaryColor,
-    headingFont: data.publicTheme.headingFont || DEFAULT_PUBLIC_THEME.headingFont,
-    bodyFont: data.publicTheme.bodyFont || DEFAULT_PUBLIC_THEME.bodyFont
+    primaryColor: data.publicTheme?.primaryColor || DEFAULT_PUBLIC_THEME.primaryColor,
+    secondaryColor: data.publicTheme?.secondaryColor || DEFAULT_PUBLIC_THEME.secondaryColor,
+    headingFont: data.publicTheme?.headingFont || DEFAULT_PUBLIC_THEME.headingFont,
+    bodyFont: data.publicTheme?.bodyFont || DEFAULT_PUBLIC_THEME.bodyFont
   };
 };
 

@@ -302,125 +302,133 @@ export default function DiffusionContactsManager({ groupId, associationSettings 
 
       {/* Modale de Création / Édition Contact */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/65 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 select-none overflow-y-auto">
-          <CordelCard
-            variant="default"
-            useExtremeBorder={true}
-            className="w-full max-w-lg bg-white p-5 sm:p-6 shadow-2xl flex flex-col gap-4 text-left relative"
-          >
-            <div className="flex items-center justify-between border-b border-dashed border-cordel-master-dark/20 pb-3">
+        <div
+          tabIndex={-1}
+          onKeyDown={(e) => e.key === 'Escape' && !saving && setIsModalOpen(false)}
+          className="fixed inset-0 z-50 bg-black/65 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 select-none outline-none animate-fade-in"
+        >
+          <div className="relative w-full max-w-lg max-h-[90vh] flex flex-col rounded-lg bg-white shadow-2xl border-2 border-cordel-master-dark/40 overflow-hidden text-left">
+            {/* 1. Header (Fixe) */}
+            <div className="flex-shrink-0 p-4 border-b border-dashed border-cordel-master-dark/20 flex items-center justify-between bg-white">
               <h3 className="text-sm sm:text-base font-extrabold uppercase text-cordel-wood">
                 {editingContact ? '✏️ Modifier le Contact' : '➕ Nouveau Contact Prospection'}
               </h3>
               <button
                 type="button"
                 onClick={() => setIsModalOpen(false)}
+                disabled={saving}
                 className="text-stone-400 hover:text-stone-800 text-lg font-bold cursor-pointer"
+                title="Fermer (Échap)"
               >
                 ✕
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="flex flex-col gap-3.5">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {/* Form Wrapper */}
+            <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
+              {/* 2. Body (Défilable verticalement) */}
+              <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] font-extrabold uppercase text-stone-700">Nom Structure *</label>
+                    <input
+                      type="text"
+                      required
+                      value={form.nom_structure}
+                      onChange={(e) => setForm(prev => ({ ...prev, nom_structure: e.target.value }))}
+                      placeholder="ex: Mairie de Brest"
+                      className="text-xs font-bold px-3 py-1.5 border border-stone-300 rounded bg-white"
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] font-extrabold uppercase text-stone-700">Nom du Contact</label>
+                    <input
+                      type="text"
+                      value={form.nom_contact}
+                      onChange={(e) => setForm(prev => ({ ...prev, nom_contact: e.target.value }))}
+                      placeholder="ex: Jean Dupont"
+                      className="text-xs font-bold px-3 py-1.5 border border-stone-300 rounded bg-white"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] font-extrabold uppercase text-stone-700">E-mail</label>
+                    <input
+                      type="email"
+                      value={form.email}
+                      onChange={(e) => setForm(prev => ({ ...prev, email: e.target.value }))}
+                      placeholder="contact@mairie.fr"
+                      className="text-xs font-mono font-bold px-3 py-1.5 border border-stone-300 rounded bg-white"
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] font-extrabold uppercase text-stone-700">Téléphone</label>
+                    <input
+                      type="tel"
+                      value={form.telephone}
+                      onChange={(e) => setForm(prev => ({ ...prev, telephone: e.target.value }))}
+                      placeholder="02 98 00 00 00"
+                      className="text-xs font-mono font-bold px-3 py-1.5 border border-stone-300 rounded bg-white"
+                    />
+                  </div>
+                </div>
+
                 <div className="flex flex-col gap-1">
-                  <label className="text-[10px] font-extrabold uppercase text-stone-700">Nom Structure *</label>
-                  <input
-                    type="text"
-                    required
-                    value={form.nom_structure}
-                    onChange={(e) => setForm(prev => ({ ...prev, nom_structure: e.target.value }))}
-                    placeholder="ex: Mairie de Brest"
+                  <label className="text-[10px] font-extrabold uppercase text-stone-700">Type de Structure</label>
+                  <select
+                    value={form.type}
+                    onChange={(e) => setForm(prev => ({ ...prev, type: e.target.value }))}
                     className="text-xs font-bold px-3 py-1.5 border border-stone-300 rounded bg-white"
-                  />
+                  >
+                    <option value="Festival">Festival</option>
+                    <option value="Carnaval">Carnaval / Parade</option>
+                    <option value="Mairie">Mairie / Collectivité</option>
+                    <option value="Salle">Salle de spectacle</option>
+                    <option value="Prive">Événement privé</option>
+                    <option value="Autre">Autre</option>
+                  </select>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] font-extrabold uppercase text-stone-700">Date Dernier Contact</label>
+                    <input
+                      type="date"
+                      value={form.date_dernier_contact}
+                      onChange={(e) => setForm(prev => ({ ...prev, date_dernier_contact: e.target.value }))}
+                      className="text-xs font-bold px-3 py-1.5 border border-stone-300 rounded bg-white"
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] font-extrabold uppercase text-stone-700">Date Prochaine Relance</label>
+                    <input
+                      type="date"
+                      value={form.date_prochaine_relance}
+                      onChange={(e) => setForm(prev => ({ ...prev, date_prochaine_relance: e.target.value }))}
+                      className="text-xs font-bold px-3 py-1.5 border border-stone-300 rounded bg-white"
+                    />
+                  </div>
                 </div>
 
                 <div className="flex flex-col gap-1">
-                  <label className="text-[10px] font-extrabold uppercase text-stone-700">Nom du Contact</label>
-                  <input
-                    type="text"
-                    value={form.nom_contact}
-                    onChange={(e) => setForm(prev => ({ ...prev, nom_contact: e.target.value }))}
-                    placeholder="ex: Jean Dupont"
-                    className="text-xs font-bold px-3 py-1.5 border border-stone-300 rounded bg-white"
+                  <label className="text-[10px] font-extrabold uppercase text-stone-700">Notes & Historique</label>
+                  <textarea
+                    rows={3}
+                    value={form.notes}
+                    onChange={(e) => setForm(prev => ({ ...prev, notes: e.target.value }))}
+                    placeholder="Compte-rendu d'échange, préférences d'horaires..."
+                    className="text-xs p-2.5 border border-stone-300 rounded bg-white font-sans resize-none"
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="flex flex-col gap-1">
-                  <label className="text-[10px] font-extrabold uppercase text-stone-700">E-mail</label>
-                  <input
-                    type="email"
-                    value={form.email}
-                    onChange={(e) => setForm(prev => ({ ...prev, email: e.target.value }))}
-                    placeholder="contact@mairie.fr"
-                    className="text-xs font-mono font-bold px-3 py-1.5 border border-stone-300 rounded bg-white"
-                  />
-                </div>
-
-                <div className="flex flex-col gap-1">
-                  <label className="text-[10px] font-extrabold uppercase text-stone-700">Téléphone</label>
-                  <input
-                    type="tel"
-                    value={form.telephone}
-                    onChange={(e) => setForm(prev => ({ ...prev, telephone: e.target.value }))}
-                    placeholder="02 98 00 00 00"
-                    className="text-xs font-mono font-bold px-3 py-1.5 border border-stone-300 rounded bg-white"
-                  />
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-1">
-                <label className="text-[10px] font-extrabold uppercase text-stone-700">Type de Structure</label>
-                <select
-                  value={form.type}
-                  onChange={(e) => setForm(prev => ({ ...prev, type: e.target.value }))}
-                  className="text-xs font-bold px-3 py-1.5 border border-stone-300 rounded bg-white"
-                >
-                  <option value="Festival">Festival</option>
-                  <option value="Carnaval">Carnaval / Parade</option>
-                  <option value="Mairie">Mairie / Collectivité</option>
-                  <option value="Salle">Salle de spectacle</option>
-                  <option value="Prive">Événement privé</option>
-                  <option value="Autre">Autre</option>
-                </select>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="flex flex-col gap-1">
-                  <label className="text-[10px] font-extrabold uppercase text-stone-700">Date Dernier Contact</label>
-                  <input
-                    type="date"
-                    value={form.date_dernier_contact}
-                    onChange={(e) => setForm(prev => ({ ...prev, date_dernier_contact: e.target.value }))}
-                    className="text-xs font-bold px-3 py-1.5 border border-stone-300 rounded bg-white"
-                  />
-                </div>
-
-                <div className="flex flex-col gap-1">
-                  <label className="text-[10px] font-extrabold uppercase text-stone-700">Date Prochaine Relance</label>
-                  <input
-                    type="date"
-                    value={form.date_prochaine_relance}
-                    onChange={(e) => setForm(prev => ({ ...prev, date_prochaine_relance: e.target.value }))}
-                    className="text-xs font-bold px-3 py-1.5 border border-stone-300 rounded bg-white"
-                  />
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-1">
-                <label className="text-[10px] font-extrabold uppercase text-stone-700">Notes & Historique</label>
-                <textarea
-                  rows={3}
-                  value={form.notes}
-                  onChange={(e) => setForm(prev => ({ ...prev, notes: e.target.value }))}
-                  placeholder="Compte-rendu d'échange, préférences d'horaires..."
-                  className="text-xs p-2.5 border border-stone-300 rounded bg-white font-sans resize-none"
-                />
-              </div>
-
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-dashed">
+              {/* 3. Footer (Fixe en bas) */}
+              <div className="flex-shrink-0 p-4 border-t border-dashed border-cordel-master-dark/20 flex items-center justify-end gap-2 bg-stone-50">
                 <CordelButton type="button" variant="default" onClick={() => setIsModalOpen(false)} className="text-xs">
                   Annuler
                 </CordelButton>
@@ -429,7 +437,7 @@ export default function DiffusionContactsManager({ groupId, associationSettings 
                 </CordelButton>
               </div>
             </form>
-          </CordelCard>
+          </div>
         </div>
       )}
     </div>

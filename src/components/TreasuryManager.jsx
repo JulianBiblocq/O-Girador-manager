@@ -96,6 +96,7 @@ export default function TreasuryManager({ groupId, onBack, role, isSystemAdmin, 
         return (
           <TreasuryEvents
             events={events}
+            groupId={groupId}
             updatingEventId={updatingEventId}
             handleUpdateEventFinances={handleUpdateEventFinances}
             lieuxImportants={associationSettings?.lieuxImportants || []}

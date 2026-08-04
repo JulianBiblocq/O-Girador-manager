@@ -144,13 +144,14 @@ export default function GigRelanceEmailModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/65 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 select-none overflow-y-auto">
-      <CordelCard
-        variant="default"
-        useExtremeBorder={true}
-        className="w-full max-w-lg bg-white p-5 sm:p-6 shadow-2xl flex flex-col gap-4 text-left relative"
-      >
-        <div className="flex items-center justify-between border-b border-dashed border-cordel-master-dark/20 pb-3">
+    <div
+      tabIndex={-1}
+      onKeyDown={(e) => e.key === 'Escape' && !sending && onClose()}
+      className="fixed inset-0 z-50 bg-black/65 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 select-none outline-none animate-fade-in"
+    >
+      <div className="relative w-full max-w-lg max-h-[90vh] flex flex-col rounded-lg bg-white shadow-2xl border-2 border-cordel-master-dark/40 overflow-hidden text-left">
+        {/* 1. Header (Fixe) */}
+        <div className="flex-shrink-0 p-4 border-b border-dashed border-cordel-master-dark/20 flex items-center justify-between bg-white">
           <div className="flex items-center gap-2">
             <span className="text-xl">🔔</span>
             <h3 className="text-sm sm:text-base font-extrabold uppercase text-cordel-wood">
@@ -162,69 +163,75 @@ export default function GigRelanceEmailModal({
             onClick={onClose}
             disabled={sending}
             className="text-stone-400 hover:text-stone-800 font-bold text-lg cursor-pointer"
+            title="Fermer (Échap)"
           >
             ✕
           </button>
         </div>
 
-        {statusMessage && (
-          <div className={`p-3 rounded border text-xs font-bold ${
-            statusMessage.type === 'success' ? 'bg-emerald-50 border-emerald-400 text-emerald-900' : 'bg-red-50 border-red-400 text-red-900'
-          }`}>
-            <span className="font-extrabold">{statusMessage.title}</span>
-            <p className="text-[11px] font-normal leading-relaxed">{statusMessage.text}</p>
-          </div>
-        )}
+        {/* Form Wrapper */}
+        <form onSubmit={handleSendRelance} className="flex flex-col flex-1 overflow-hidden">
+          {/* 2. Body (Défilable verticalement) */}
+          <div className="flex-1 overflow-y-auto p-4 space-y-3">
+            {statusMessage && (
+              <div className={`p-3 rounded border text-xs font-bold ${
+                statusMessage.type === 'success' ? 'bg-emerald-50 border-emerald-400 text-emerald-900' : 'bg-red-50 border-red-400 text-red-900'
+              }`}>
+                <span className="font-extrabold">{statusMessage.title}</span>
+                <p className="text-[11px] font-normal leading-relaxed">{statusMessage.text}</p>
+              </div>
+            )}
 
-        <form onSubmit={handleSendRelance} className="flex flex-col gap-3">
-          <div className="flex flex-col gap-1">
-            <label className="text-[9px] font-extrabold uppercase text-stone-600">Expéditeur (Vérifié Brevo) *</label>
-            <input
-              type="email"
-              required
-              value={senderEmail}
-              onChange={(e) => setSenderEmail(e.target.value)}
-              disabled={sending}
-              className="text-xs font-mono font-bold px-2.5 py-1 border border-stone-300 rounded bg-white"
-            />
+            <div className="flex flex-col gap-1">
+              <label className="text-[9px] font-extrabold uppercase text-stone-600">Expéditeur (Vérifié Brevo) *</label>
+              <input
+                type="email"
+                required
+                value={senderEmail}
+                onChange={(e) => setSenderEmail(e.target.value)}
+                disabled={sending}
+                className="text-xs font-mono font-bold px-2.5 py-1 border border-stone-300 rounded bg-white"
+              />
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <label className="text-[9px] font-extrabold uppercase text-stone-600">Destinataire *</label>
+              <input
+                type="email"
+                required
+                value={recipientEmail}
+                onChange={(e) => setRecipientEmail(e.target.value)}
+                disabled={sending}
+                className="text-xs font-mono font-bold px-2.5 py-1 border border-stone-300 rounded bg-white"
+              />
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <label className="text-[9px] font-extrabold uppercase text-stone-600">Objet *</label>
+              <input
+                type="text"
+                required
+                value={subject}
+                onChange={(e) => setSubject(e.target.value)}
+                disabled={sending}
+                className="text-xs font-bold px-2.5 py-1 border border-stone-300 rounded bg-white"
+              />
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <label className="text-[9px] font-extrabold uppercase text-stone-600">Message d'accompagnement</label>
+              <textarea
+                rows={5}
+                value={messageBody}
+                onChange={(e) => setMessageBody(e.target.value)}
+                disabled={sending}
+                className="text-xs p-2.5 border border-stone-300 rounded bg-white font-sans leading-relaxed resize-none"
+              />
+            </div>
           </div>
 
-          <div className="flex flex-col gap-1">
-            <label className="text-[9px] font-extrabold uppercase text-stone-600">Destinataire *</label>
-            <input
-              type="email"
-              required
-              value={recipientEmail}
-              onChange={(e) => setRecipientEmail(e.target.value)}
-              disabled={sending}
-              className="text-xs font-mono font-bold px-2.5 py-1 border border-stone-300 rounded bg-white"
-            />
-          </div>
-
-          <div className="flex flex-col gap-1">
-            <label className="text-[9px] font-extrabold uppercase text-stone-600">Objet *</label>
-            <input
-              type="text"
-              required
-              value={subject}
-              onChange={(e) => setSubject(e.target.value)}
-              disabled={sending}
-              className="text-xs font-bold px-2.5 py-1 border border-stone-300 rounded bg-white"
-            />
-          </div>
-
-          <div className="flex flex-col gap-1">
-            <label className="text-[9px] font-extrabold uppercase text-stone-600">Message d'accompagnement</label>
-            <textarea
-              rows={5}
-              value={messageBody}
-              onChange={(e) => setMessageBody(e.target.value)}
-              disabled={sending}
-              className="text-xs p-2.5 border border-stone-300 rounded bg-white font-sans leading-relaxed resize-none"
-            />
-          </div>
-
-          <div className="flex items-center justify-end gap-2 pt-3 border-t border-dashed">
+          {/* 3. Footer (Fixe en bas) */}
+          <div className="flex-shrink-0 p-4 border-t border-dashed border-cordel-master-dark/20 flex items-center justify-end gap-2 bg-stone-50">
             <CordelButton type="button" variant="default" onClick={onClose} disabled={sending} className="text-xs">
               Annuler
             </CordelButton>
@@ -233,7 +240,7 @@ export default function GigRelanceEmailModal({
             </CordelButton>
           </div>
         </form>
-      </CordelCard>
+      </div>
     </div>
   );
 }
