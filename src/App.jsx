@@ -11,6 +11,7 @@ import ReloadPrompt from './components/ReloadPrompt';
 import ErrorBoundary from './components/ErrorBoundary';
 import PublicHome from './components/PublicHome';
 import PublicThemeProvider from './components/PublicThemeProvider';
+import { tracker } from './utils/O-Girador-Tracker';
 
 import { lazyWithRetry } from './utils/pwaUtils';
 import { resolveEffectiveUserTags } from './utils/tagUtils';
@@ -48,11 +49,15 @@ const MestreStageLayout = lazyWithRetry(() => import('./components/mestre/Mestre
 const ForumChannelsManager = lazyWithRetry(() => import('./components/ForumChannelsManager'));
 const MestreSequenceur = lazyWithRetry(() => import('./components/mestre/MestreSequenceur'));
 const MestreWorkshops = lazyWithRetry(() => import('./components/mestre/MestreWorkshops'));
+const MestrePedagogyManager = lazyWithRetry(() => import('./components/mestre/MestrePedagogyManager'));
 const GigsPipelineManager = lazyWithRetry(() => import('./components/diffusion/GigsPipelineManager'));
 const MestreMotMestre = lazyWithRetry(() => import('./components/mestre/MestreMotMestre'));
+const MestrePedagogyDashboard = lazyWithRetry(() => import('./components/mestre/MestrePedagogyDashboard'));
+const MestreAutoEvalConfig = lazyWithRetry(() => import('./components/mestre/MestreAutoEvalConfig'));
 const WidgetAgenda = lazyWithRetry(() => import('./components/WidgetAgenda'));
 const WidgetDocuments = lazyWithRetry(() => import('./components/WidgetDocuments'));
 const AtelierCouture = lazyWithRetry(() => import('./components/profile/AtelierCouture'));
+const MonParcours = lazyWithRetry(() => import('./components/pedagogy/MonParcours'));
 
 const POLES_CONFIG = [
   {
@@ -65,6 +70,7 @@ const POLES_CONFIG = [
     label: 'Espace',
     tabs: [
       { id: 'profil', label: 'Profil', labelKey: 'tabProfil' },
+      { id: 'mon-parcours', label: 'Mon Parcours', labelKey: 'tabParcours' },
       { id: 'agenda', label: 'Agenda', labelKey: 'tabAgenda' },
       { id: 'materiel', label: 'Matériel', labelKey: 'tabMateriel' },
       { id: 'vestiaire', label: 'Vestiaire', labelKey: 'tabVestiaire' },
@@ -72,15 +78,7 @@ const POLES_CONFIG = [
       { id: 'forum', label: 'Porte-voix', labelKey: 'tabForum' }
     ]
   },
-  {
-    id: 'troupe',
-    label: 'Troupe',
-    tabs: [
-      { id: 'export-annu', label: 'Annuaire', labelKey: 'tabExportAnnu' },
-      { id: 'tag-manager', label: 'Badges', labelKey: 'tabTagManager' },
-      { id: 'instruments', label: 'Pupitres', labelKey: 'tabInstruments' }
-    ]
-  },
+
   {
     id: 'diffusion',
     label: 'Diffusion',
@@ -107,30 +105,24 @@ const POLES_CONFIG = [
     label: 'Logistique',
     tabs: [
       { id: 'inventory', label: 'Instruments', labelKey: 'tabInventory' },
-      { id: 'orders-manager', label: 'Commandes', labelKey: 'tabOrders' }
-    ]
-  },
-  {
-    id: 'vestiaire',
-    label: 'Vestiaire',
-    labelKey: 'poleWardrobe',
-    tabs: [
+      { id: 'orders-manager', label: 'Commandes', labelKey: 'tabOrders' },
       { id: 'wardrobe-inventory', label: "Costumes", labelKey: 'tabWardrobeInventory' },
       { id: 'wardrobe-couture', label: 'Atelier Couture', labelKey: 'tabWardrobeCouture' },
       { id: 'wardrobe-sizes', label: 'Mensurations', labelKey: 'tabWardrobeSizes' }
     ]
   },
+
   {
     id: 'studio',
     label: 'Studio',
     tabs: [
-      { id: 'studio-events', label: 'Événements', labelKey: 'tabStudioEvents' },
       { id: 'studio-social', label: 'Studio social', labelKey: 'tabStudioSocial' },
+      { id: 'studio-events', label: 'Événements', labelKey: 'tabStudioEvents' },
       { id: 'reunion-manager', label: 'Réunions', labelKey: 'tabReunions' },
-      { id: 'varal-manager', label: 'Varal', labelKey: 'tabVaral' },
+      { id: 'mestre-forum-channels', label: 'Porte-voix', labelKey: 'tabMestreForumChannels' },
       { id: 'newsletter', label: 'Newsletter', labelKey: 'tabNewsletter' },
-      { id: 'activity-reports', label: "Rapports", labelKey: 'tabActivityReports' },
-      { id: 'mestre-forum-channels', label: 'Porte-voix', labelKey: 'tabMestreForumChannels' }
+      { id: 'export-annu', label: 'Annuaire', labelKey: 'tabExportAnnu' },
+      { id: 'activity-reports', label: "Rapports", labelKey: 'tabActivityReports' }
     ]
   },
   {
@@ -140,9 +132,19 @@ const POLES_CONFIG = [
       { id: 'mestre-orientation', label: 'Casting', labelKey: 'tabMestreOrientation' },
       { id: 'mestre-events', label: 'Événements', labelKey: 'tabMestreEvents' },
       { id: 'mestre-stage-layout', label: 'Plan de Scène', labelKey: 'tabMestreStage' },
-      { id: 'mestre-sequenceur', label: 'Séquenceur', labelKey: 'tabMestreSequenceur' },
-      { id: 'mestre-workshops', label: 'Ateliers', labelKey: 'tabMestreWorkshops' },
-      { id: 'mestre-mot-mestre', label: 'Annonces', labelKey: 'tabMestreMotMestre' }
+      { id: 'mestre-mot-mestre', label: 'Annonces', labelKey: 'tabMestreMotMestre' },
+      { id: 'mestre-sequenceur', label: 'Séquenceur', labelKey: 'tabMestreSequenceur' }
+    ]
+  },
+  {
+    id: 'pedagogie',
+    label: 'Pédagogie',
+    labelKey: 'polePedagogie',
+    tabs: [
+      { id: 'varal-manager', label: 'Varal Pédagogique', labelKey: 'tabVaral' },
+      { id: 'mestre-pedagogy-manager', label: 'Gestion des QCM', labelKey: 'tabMestrePedagogyManager' },
+      { id: 'mestre-auto-eval', label: 'Auto-Évaluation', labelKey: 'tabMestreAutoEval' },
+      { id: 'mestre-sante-troupe', label: 'Analyse & Suivi', labelKey: 'tabMestreSanteTroupe' }
     ]
   },
   {
@@ -166,6 +168,8 @@ const POLES_CONFIG = [
       { id: 'config-identity', label: 'Identité', labelKey: 'tabConfigIdentity' },
       { id: 'config-communication', label: 'Communication & Newsletter', labelKey: 'tabConfigCommunication' },
       { id: 'config-profile', label: 'Organisation', labelKey: 'tabConfigProfile' },
+      { id: 'tag-manager', label: 'Badges', labelKey: 'tabTagManager' },
+      { id: 'instruments', label: 'Pupitres', labelKey: 'tabInstruments' },
       { id: 'config-security', label: 'Sécurité', labelKey: 'tabConfigSecurity' },
       { id: 'config-modules', label: 'Modules & Fonctionnalités', labelKey: 'tabConfigModules' },
       { id: 'config-logistics', label: 'Logistique', labelKey: 'tabConfigLogistics' },
@@ -270,6 +274,14 @@ export default function App() {
     profileData?.role === 'mestre' ||
     profileData?.role === 'admin'
   );
+
+  useEffect(() => {
+    tracker.init({
+      appId: 'manager',
+      groupId: profileData?.groupId || 'public',
+      appVersion: '1.2.0'
+    });
+  }, [profileData?.groupId]);
 
   // Load branding in real-time
   useEffect(() => {
@@ -742,7 +754,16 @@ export default function App() {
   useEffect(() => {
     if (!profileData || profileData.isNew) return;
     if (currentPole && currentPole !== 'accueil' && currentPole !== 'mon-espace') {
-      const isAllowed = canAccessPole(currentPole, profileData, permissionsMatrice, userTags);
+      let isAllowed = canAccessPole(currentPole, profileData, permissionsMatrice, userTags);
+      
+      // Autoriser l'accès au conteneur du pôle si l'utilisateur a accès à au moins un onglet spécifique
+      if (!isAllowed) {
+        const activePoleObj = POLES_CONFIG.find(p => p.id === currentPole);
+        if (activePoleObj && activePoleObj.tabs) {
+          isAllowed = activePoleObj.tabs.some(tab => canAccessTabPermission(tab.id, currentPole, profileData, permissionsMatrice, userTags));
+        }
+      }
+
       if (!isAllowed && !isMasterKeyActive) {
         setCurrentPole('accueil');
         setCurrentTab('dashboard');
@@ -869,23 +890,29 @@ export default function App() {
   const isModuleEnabled = (tabId, poleId) => {
     if (!enabledModules) return true;
 
-    // Check Pole-level module toggle
+    // Check Pôles activation
     if (poleId === 'diffusion' && enabledModules.diffusion === false) return false;
     if (poleId === 'tresorerie' && enabledModules.tresorerie === false) return false;
     if (poleId === 'logistique' && enabledModules.logistique === false && enabledModules.commandes === false) return false;
     if (poleId === 'vestiaire' && enabledModules.vestiaire === false) return false;
     if (poleId === 'mestre' && enabledModules.mestre === false) return false;
+    if (poleId === 'pedagogie' && enabledModules.mestre === false && enabledModules.studioSocial === false) return false;
+
+    // Specific Tabs Checks
+    if (['mestre-sante-troupe', 'mestre-pedagogy-manager', 'mestre-auto-eval', 'mestre-sequenceur'].includes(tabId) && enabledModules.mestre === false) return false;
+    if (tabId === 'varal-manager' && enabledModules.studioSocial === false) return false;
 
     // Check Tab-level module toggle
     if (tabId === 'gigs-pipeline' && enabledModules.diffusion === false) return false;
     if (['dashboard-finance', 'cotisations', 'events-finances', 'operations-diverses', 'frais-km', 'reports-exports'].includes(tabId) && enabledModules.tresorerie === false) return false;
+    if (tabId === 'mon-parcours' && enabledModules.monParcoursGlobal === false) return false;
     if (tabId === 'inventory' && enabledModules.logistique === false) return false;
     if (tabId === 'orders-manager' && enabledModules.commandes === false) return false;
     if (['vestiaire', 'wardrobe-inventory', 'wardrobe-couture', 'wardrobe-sizes'].includes(tabId) && enabledModules.vestiaire === false) return false;
-    if (['studio-social', 'varal-manager'].includes(tabId) && enabledModules.studioSocial === false) return false;
+    if (['studio-social', 'newsletter'].includes(tabId) && enabledModules.studioSocial === false) return false;
     if (tabId === 'reunion-manager' && enabledModules.reunions === false) return false;
     if (['forum', 'mestre-forum-channels'].includes(tabId) && enabledModules.forum === false) return false;
-    if (['mestre-orientation', 'mestre-events', 'mestre-stage-layout', 'mestre-sequenceur', 'mestre-workshops', 'mestre-mot-mestre'].includes(tabId) && enabledModules.mestre === false) return false;
+    if (['mestre-sante-troupe', 'mestre-pedagogy-manager', 'mestre-auto-eval', 'mestre-orientation', 'mestre-events', 'mestre-stage-layout', 'mestre-mot-mestre', 'mestre-sequenceur'].includes(tabId) && enabledModules.mestre === false) return false;
 
     return true;
   };
@@ -901,20 +928,28 @@ export default function App() {
     return canAccessTabPermission(tabId, poleId, profileData, permissionsMatrice, userTags);
   };
 
-  const hasAccessTroupe = isMasterKeyActive || checkTabAccess('export-annu', 'troupe') || checkTabAccess('tag-manager', 'troupe') || checkTabAccess('instruments', 'troupe');
+
   const hasAccessDiffusion = isMasterKeyActive || checkTabAccess('gigs-pipeline', 'diffusion');
-  const hasAccessLogistique = isMasterKeyActive || checkTabAccess('inventory', 'logistique') || checkTabAccess('orders-manager', 'logistique');
+  const hasAccessLogistique = isMasterKeyActive || checkTabAccess('inventory', 'logistique') || checkTabAccess('orders-manager', 'logistique') || checkTabAccess('wardrobe-inventory', 'logistique') || checkTabAccess('wardrobe-couture', 'logistique') || checkTabAccess('wardrobe-sizes', 'logistique');
   const hasAccessTresorerie = isMasterKeyActive || checkTabAccess('dashboard-finance', 'tresorerie') || checkTabAccess('cotisations', 'tresorerie') || checkTabAccess('events-finances', 'tresorerie') || checkTabAccess('operations-diverses', 'tresorerie') || checkTabAccess('frais-km', 'tresorerie') || checkTabAccess('reports-exports', 'tresorerie');
-  const hasAccessStudio = isMasterKeyActive || checkTabAccess('studio-events', 'studio') || checkTabAccess('studio-social', 'studio') || checkTabAccess('reunion-manager', 'studio') || checkTabAccess('varal-manager', 'studio') || checkTabAccess('activity-reports', 'studio') || checkTabAccess('mestre-forum-channels', 'studio');
-  const hasAccessVestiaire = isMasterKeyActive || checkTabAccess('wardrobe-inventory', 'vestiaire') || checkTabAccess('wardrobe-couture', 'vestiaire') || checkTabAccess('wardrobe-sizes', 'vestiaire');
-  const hasAccessMestre = isMasterKeyActive || checkTabAccess('mestre-orientation', 'mestre') || checkTabAccess('mestre-events', 'mestre') || checkTabAccess('mestre-stage-layout', 'mestre') || checkTabAccess('mestre-sequenceur', 'mestre') || checkTabAccess('mestre-workshops', 'mestre') || checkTabAccess('mestre-mot-mestre', 'mestre');
+  const hasAccessStudio = isMasterKeyActive || checkTabAccess('export-annu', 'studio') || checkTabAccess('studio-events', 'studio') || checkTabAccess('studio-social', 'studio') || checkTabAccess('reunion-manager', 'studio') || checkTabAccess('activity-reports', 'studio') || checkTabAccess('mestre-forum-channels', 'studio') || checkTabAccess('newsletter', 'studio');
+  const hasAccessMestre = isMasterKeyActive || checkTabAccess('mestre-orientation', 'mestre') || checkTabAccess('mestre-events', 'mestre') || checkTabAccess('mestre-stage-layout', 'mestre') || checkTabAccess('mestre-mot-mestre', 'mestre') || checkTabAccess('mestre-sequenceur', 'mestre');
+  const hasAccessPedagogie = isMasterKeyActive || checkTabAccess('varal-manager', 'pedagogie') || checkTabAccess('mestre-pedagogy-manager', 'pedagogie') || checkTabAccess('mestre-auto-eval', 'pedagogie') || checkTabAccess('mestre-sante-troupe', 'pedagogie');
   const hasAccessVitrine = isMasterKeyActive || checkTabAccess('vitrine-general', 'vitrine') || checkTabAccess('vitrine-editor', 'vitrine');
-  const hasAccessConfig = isMasterKeyActive || checkTabAccess('config-identity', 'config') || checkTabAccess('config-communication', 'config') || checkTabAccess('config-profile', 'config') || checkTabAccess('config-security', 'config') || checkTabAccess('config-modules', 'config') || checkTabAccess('config-logistics', 'config') || checkTabAccess('config-documents', 'config') || checkTabAccess('config-agenda', 'config') || checkTabAccess('config-lieux', 'config') || checkTabAccess('config-layout', 'config');
+  const hasAccessConfig = isMasterKeyActive || checkTabAccess('config-identity', 'config') || checkTabAccess('config-communication', 'config') || checkTabAccess('config-profile', 'config') || checkTabAccess('tag-manager', 'config') || checkTabAccess('instruments', 'config') || checkTabAccess('config-security', 'config') || checkTabAccess('config-modules', 'config') || checkTabAccess('config-logistics', 'config') || checkTabAccess('config-documents', 'config') || checkTabAccess('config-agenda', 'config') || checkTabAccess('config-lieux', 'config') || checkTabAccess('config-layout', 'config');
   const hasAccessForumMod = isMasterKeyActive || userTags.some(t => ['Modérateur', 'Modérateur Forum', 'Gestionnaire Porte-voix', 'Porte-voix'].includes(t));
 
   const handleNavigateToPole = (poleId) => {
     if (poleId !== 'accueil' && poleId !== 'mon-espace') {
-      const isAllowed = canAccessPole(poleId, profileData, permissionsMatrice, userTags);
+      let isAllowed = canAccessPole(poleId, profileData, permissionsMatrice, userTags);
+      
+      if (!isAllowed) {
+        const activePoleObj = POLES_CONFIG.find(p => p.id === poleId);
+        if (activePoleObj && activePoleObj.tabs) {
+          isAllowed = activePoleObj.tabs.some(tab => canAccessTabPermission(tab.id, poleId, profileData, permissionsMatrice, userTags));
+        }
+      }
+
       if (!isAllowed && !isMasterKeyActive) {
         setAccessDeniedToast(true);
         setTimeout(() => setAccessDeniedToast(false), 4000);
@@ -953,6 +988,10 @@ export default function App() {
         setCurrentPole('mon-espace');
         setCurrentTab('profil');
         break;
+      case 'mon-parcours':
+        setCurrentPole('mon-espace');
+        setCurrentTab('mon-parcours');
+        break;
       case 'trombinoscope':
         setCurrentPole('mon-espace');
         setCurrentTab('trombinoscope');
@@ -962,15 +1001,15 @@ export default function App() {
         setCurrentTab('forum');
         break;
       case 'export-annu':
-        setCurrentPole('troupe');
+        setCurrentPole('studio');
         setCurrentTab('export-annu');
         break;
       case 'system-admin':
-        setCurrentPole('troupe');
+        setCurrentPole('config');
         setCurrentTab('system-admin');
         break;
       case 'tag-manager':
-        setCurrentPole('troupe');
+        setCurrentPole('config');
         setCurrentTab('tag-manager');
         break;
       case 'materiel':
@@ -980,7 +1019,7 @@ export default function App() {
         break;
       case 'vestiaire':
       case 'wardrobe-inventory':
-        setCurrentPole('vestiaire');
+        setCurrentPole('logistique');
         setCurrentTab('wardrobe-inventory');
         break;
       case 'orders-manager':
@@ -1016,7 +1055,7 @@ export default function App() {
         setCurrentTab('studio-social');
         break;
       case 'varal-manager':
-        setCurrentPole('studio');
+        setCurrentPole('pedagogie');
         setCurrentTab('varal-manager');
         break;
       case 'newsletter':
@@ -1072,6 +1111,7 @@ export default function App() {
           onToggleBreakGlass={handleToggleBreakGlass}
           tagsDisponibles={tagsDisponibles}
           isBirthdayMonth={isUserBirthdayMonth}
+          enableIndividualProgression={associationData?.enableIndividualProgression || false}
         >
           <React.Suspense fallback={
             <div className="flex-1 flex flex-col justify-center items-center py-12">
@@ -1097,6 +1137,12 @@ export default function App() {
                 profileData={profileData} 
                 associationName={associationName}
                 onBack={() => handleNavigateToPole('accueil')} 
+              />
+            ) : currentTab === 'mon-parcours' ? (
+              <MonParcours 
+                profileData={profileData}
+                sequenceurUrl={sequenceurUrl}
+                enabledModules={enabledModules}
               />
             ) : currentTab === 'agenda' ? (
               <WidgetAgenda 
@@ -1153,13 +1199,13 @@ export default function App() {
                 onClearActivePiece={() => setActiveTutorialPiece(null)}
                 onBack={() => handleNavigateToPole('accueil')}
               />
-            ) : (currentTab === 'export-annu' && hasAccessTroupe) ? (
+            ) : (currentTab === 'export-annu' && hasAccessStudio) ? (
               <AdminExport 
                 user={user}
                 profileData={profileData}
                 onBack={() => handleNavigateToPole('accueil')} 
               />
-            ) : (currentTab === 'system-admin' && hasAccessTroupe) ? (
+            ) : (currentTab === 'system-admin' && hasAccessConfig) ? (
               <SystemAdminPanel 
                 user={user} 
                 profileData={profileData} 
@@ -1167,14 +1213,14 @@ export default function App() {
                 onBack={() => handleNavigateToPole('accueil')} 
                 onNavigateToView={handleNavigateToView}
               />
-            ) : (currentTab === 'tag-manager' && hasAccessTroupe) ? (
+            ) : (currentTab === 'tag-manager' && hasAccessConfig) ? (
               <TagManager 
                 groupId={profileData?.groupId}
                 role={profileData?.role}
                 isSystemAdmin={profileData?.isSystemAdmin}
                 onBack={() => setCurrentTab('export-annu')} 
               />
-            ) : (currentTab === 'instruments' && hasAccessTroupe) ? (
+            ) : (currentTab === 'instruments' && hasAccessConfig) ? (
               <AssociationSettings 
                 groupId={profileData?.groupId}
                 role={profileData?.role}
@@ -1265,13 +1311,12 @@ export default function App() {
                 hasAccessLogistique={hasAccessLogistique}
                 onBack={() => handleNavigateToPole('accueil')} 
               />
-            ) : (['wardrobe-inventory', 'wardrobe-couture', 'wardrobe-sizes'].includes(currentTab) && hasAccessVestiaire) ? (
-              <WardrobeManager
+            ) : (['wardrobe-inventory', 'wardrobe-couture', 'wardrobe-sizes'].includes(currentTab) && hasAccessLogistique) ? (
+              <WardrobeManager 
                 groupId={profileData?.groupId}
                 role={profileData?.role}
                 isSystemAdmin={profileData?.isSystemAdmin}
-                hasAccessLogistique={hasAccessVestiaire}
-                hasAccessVestiaire={hasAccessVestiaire}
+                hasAccessLogistique={hasAccessLogistique}
                 activeTab={
                   currentTab === 'wardrobe-inventory' ? 'inventory' :
                   currentTab === 'wardrobe-couture' ? 'couture' : 'sizes'
@@ -1302,13 +1347,6 @@ export default function App() {
                 profileData={profileData}
                 onBack={() => handleNavigateToPole('accueil')} 
               />
-            ) : (currentTab === 'varal-manager' && hasAccessStudio) ? (
-               <VaralManager 
-                 groupId={profileData?.groupId}
-                 role={profileData?.role}
-                 isSystemAdmin={profileData?.isSystemAdmin}
-                 onBack={() => handleNavigateToPole('accueil')} 
-               />
             ) : (currentTab === 'newsletter' && hasAccessStudio) ? (
               <NewsletterPage
                 groupId={profileData?.groupId}
@@ -1325,6 +1363,27 @@ export default function App() {
                 role={profileData?.role}
                 isSystemAdmin={profileData?.isSystemAdmin}
                 onBack={() => handleNavigateToPole('accueil')} 
+              />
+            ) : (currentTab === 'varal-manager' && hasAccessPedagogie) ? (
+               <VaralManager 
+                 groupId={profileData?.groupId}
+                 role={profileData?.role}
+                 isSystemAdmin={profileData?.isSystemAdmin}
+                 onBack={() => handleNavigateToPole('accueil')} 
+               />
+            ) : (currentTab === 'mestre-sante-troupe' && hasAccessPedagogie) ? (
+              <MestrePedagogyDashboard 
+                profileData={profileData}
+              />
+            ) : (currentTab === 'mestre-pedagogy-manager' && hasAccessPedagogie) ? (
+              <MestrePedagogyManager 
+                profileData={profileData}
+                sequenceurUrl={sequenceurUrl}
+              />
+            ) : (currentTab === 'mestre-auto-eval' && hasAccessPedagogie) ? (
+              <MestreAutoEvalConfig 
+                profileData={profileData}
+                sequenceurUrl={sequenceurUrl}
               />
             ) : (currentTab === 'mestre-orientation' && hasAccessMestre) ? (
               <MestreOrientationCasting 
@@ -1351,14 +1410,10 @@ export default function App() {
                 selectedEventId={selectedMestreEventId}
                 onSelectEventId={setSelectedMestreEventId}
               />
-            ) : (currentTab === 'mestre-sequenceur' && hasAccessMestre) ? (
+            ) : (currentTab === 'mestre-sequenceur' && hasAccessPedagogie) ? (
               <MestreSequenceur 
                 groupId={profileData?.groupId}
                 sequenceurUrl={sequenceurUrl}
-              />
-            ) : (currentTab === 'mestre-workshops' && hasAccessMestre) ? (
-              <MestreWorkshops 
-                groupId={profileData?.groupId}
               />
             ) : (currentTab === 'mestre-mot-mestre' && hasAccessMestre) ? (
               <MestreMotMestre 

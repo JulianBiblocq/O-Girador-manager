@@ -27,6 +27,7 @@ export default function CordelAccordion({
   onToggle,
   className = '',
   headerClassName = '',
+  restrictedState, // 'hidden' | 'published' | undefined
   children
 }) {
   const [internalIsOpen, setInternalIsOpen] = useState(defaultOpen);
@@ -75,8 +76,14 @@ export default function CordelAccordion({
             </span>
           )}
           <div className="flex flex-col min-w-0">
-            <span className="font-bold text-sm sm:text-base text-[var(--cordel-wood)] truncate leading-tight">
+            <span className="font-bold text-sm sm:text-base text-[var(--cordel-wood)] truncate leading-tight flex items-center gap-1.5">
               {title}
+              {restrictedState === 'hidden' && (
+                <span title="🔒 Masqué aux adhérents" className="text-amber-600 text-sm flex-shrink-0 cursor-help" onClick={(e) => e.stopPropagation()}>🔒</span>
+              )}
+              {restrictedState === 'published' && (
+                <span title="🌐 Visible par la troupe" className="text-emerald-600 text-sm flex-shrink-0 cursor-help" onClick={(e) => e.stopPropagation()}>🌐</span>
+              )}
             </span>
             {subtitle && (
               <span className="text-[11px] font-medium text-[var(--encre-noire)] opacity-75 truncate">

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { doc, setDoc } from 'firebase/firestore';
 import { db } from '../../firebase';
 import CordelCard from '../CordelCard';
+import LegalInfoBlock from './blocks/LegalInfoBlock';
 
 /**
  * Composant d'administration dédié aux paramètres globaux du site vitrine public :
@@ -219,6 +220,18 @@ export default function TabPublicGeneral({ formData, handleChange, groupId, savi
             className="text-xs font-mono px-3 py-2 border border-encre-noire/30 rounded bg-white"
           />
         </div>
+      </CordelCard>
+
+      {/* SECTION 4 : Mentions Légales & Structure */}
+      <CordelCard variant="default" className="p-4 bg-[#fdfaf2] dark:bg-[#201d1a] border-2 border-cordel-master-dark/30">
+        <h4 className="text-xs font-black uppercase tracking-widest text-cordel-wood border-b border-dashed border-cordel-master-dark/20 pb-2 flex items-center gap-2 mb-4">
+          <span>⚖️ Structure Juridique (Mentions Légales)</span>
+        </h4>
+        <LegalInfoBlock 
+          formData={formData} 
+          handleChange={handleChange} 
+          saving={saving} 
+        />
       </CordelCard>
 
     </div>

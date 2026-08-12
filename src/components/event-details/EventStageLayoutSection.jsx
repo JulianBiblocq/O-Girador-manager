@@ -38,6 +38,7 @@ export default function EventStageLayoutSection({
 
   const [selectedMemberId, setSelectedMemberId] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [isPublished, setIsPublished] = useState(event.isStageLayoutPublished || false);
 
   // Sync state with event.stageLayout changes
   useEffect(() => {
@@ -58,7 +59,8 @@ export default function EventStageLayoutSection({
         placements: {}
       });
     }
-  }, [event.id, event.stageLayout]);
+    setIsPublished(event.isStageLayoutPublished || false);
+  }, [event.id, event.stageLayout, event.isStageLayoutPublished]);
 
   // Extract present members and external guests
   const presentMembers = [
@@ -245,6 +247,7 @@ export default function EventStageLayoutSection({
     try {
       const eventRef = doc(db, 'events', event.id);
       await updateDoc(eventRef, {
+        isStageLayoutPublished: isPublished,
         stageLayout: {
           rows: layout.rows,
           cols: layout.cols,
@@ -299,8 +302,23 @@ export default function EventStageLayoutSection({
   }
 
   return (
-    <CordelCard variant="default" useExtremeBorder={true} className="py-4 px-5 select-none">
+    <CordelCard 
+      variant="default" 
+      useExtremeBorder={true} 
+      className={`py-4 px-5 select-none ${isAuthorized && !isPublished ? 'bg-amber-50/40 border-dashed border-2 border-amber-600/50' : ''}`}
+    >
       {/* Header / Toggle Accordion Button */}
+      {isAuthorized && !isPublished && (
+        <div className="mb-3 px-3 py-1.5 bg-amber-100 border border-amber-500 text-amber-900 rounded font-black text-[10px] uppercase tracking-wider flex items-center gap-2 w-fit shadow-[1.5px_1.5px_0px_0px_#181716]">
+          <span>🔒 Brouillon / Masqué aux adhérents</span>
+        </div>
+      )}
+      {isAuthorized && isPublished && (
+        <div className="mb-3 px-3 py-1.5 bg-emerald-100 border border-emerald-500 text-emerald-900 rounded font-black text-[10px] uppercase tracking-wider flex items-center gap-2 w-fit shadow-[1.5px_1.5px_0px_0px_#181716]">
+          <span>🌐 Publié (Visible par la troupe)</span>
+        </div>
+      )}
+      
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
@@ -697,25 +715,37 @@ export default function EventStageLayoutSection({
 
           {/* Action buttons for admin */}
           {isEditingMode && (
-            <div className="flex gap-3 mt-1.5 border-t border-dashed border-cordel-master-dark/15 pt-3">
-              <CordelButton
-                type="button"
-                variant="ocre"
-                useExtremeBorder={true}
-                disabled={saving}
-                onClick={handleSaveLayout}
-                className="text-[10px] uppercase font-black px-4 py-2 flex items-center gap-1 shadow hover:brightness-95"
-              >
-                {saving ? "..." : "💾"} {t('eventDetails.stageLayoutSave') || "Enregistrer le plan"}
-              </CordelButton>
+            <div className="flex flex-col sm:flex-row gap-3 mt-1.5 border-t border-dashed border-cordel-master-dark/15 pt-3 justify-between sm:items-center">
+              <label className="flex items-center gap-2 text-[11px] font-bold text-cordel-wood cursor-pointer bg-white/40 dark:bg-black/20 p-2 rounded border border-dashed border-encre-noire/15">
+                <input 
+                  type="checkbox" 
+                  checked={isPublished}
+                  onChange={(e) => setIsPublished(e.target.checked)}
+                  className="w-4 h-4 cursor-pointer"
+                />
+                Publier le plan de scène dans l'agenda
+              </label>
 
-              <button
-                type="button"
-                onClick={handleResetLayout}
-                className="text-[10px] font-black uppercase bg-neutral-200 border border-encre-noire px-4 py-2 rounded shadow active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:bg-neutral-300 cursor-pointer"
-              >
-                🔄 {t('eventDetails.stageLayoutReset') || "Réinitialiser"}
-              </button>
+              <div className="flex gap-3">
+                <CordelButton
+                  type="button"
+                  variant="ocre"
+                  useExtremeBorder={true}
+                  disabled={saving}
+                  onClick={handleSaveLayout}
+                  className="text-[10px] uppercase font-black px-4 py-2 flex items-center gap-1 shadow hover:brightness-95"
+                >
+                  {saving ? "..." : "💾"} {t('eventDetails.stageLayoutSave') || "Enregistrer le plan"}
+                </CordelButton>
+
+                <button
+                  type="button"
+                  onClick={handleResetLayout}
+                  className="text-[10px] font-black uppercase bg-neutral-200 border border-encre-noire px-4 py-2 rounded shadow active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:bg-neutral-300 cursor-pointer"
+                >
+                  🔄 {t('eventDetails.stageLayoutReset') || "Réinitialiser"}
+                </button>
+              </div>
             </div>
           )}
         </div>

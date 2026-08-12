@@ -208,7 +208,7 @@ svg.xilo-icon {
 }
 
 .font-cactus {
-  font-family: 'Roboto', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  font-family: "Cactus", "Cinzel Decorative", "Courier New", Georgia, serif !important;
 }
 
 /* Custom Web Audio Recorder glow pulse keyframe */
@@ -284,6 +284,37 @@ svg.xilo-icon {
 .no-scrollbar {
   -ms-overflow-style: none;  /* IE and Edge */
   scrollbar-width: none;  /* Firefox */
+}
+
+/* Specific horizontal scrollbar for Varal elements (only visible on PC / non-touch screens) */
+@media (pointer: fine) {
+  .varal-scrollbar::-webkit-scrollbar {
+    height: 8px;
+    display: block;
+  }
+  .varal-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+    margin: 0 16px;
+  }
+  .varal-scrollbar::-webkit-scrollbar-thumb {
+    background: var(--color-cordel-master-dark, #3e332c);
+    border-radius: 4px;
+    border: 1px solid var(--color-cordel-bg-light, #f4ecd8);
+  }
+  .varal-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-cordel-master-dark, #3e332c) transparent;
+  }
+}
+
+@media (pointer: coarse) {
+  .varal-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .varal-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
 }
 
 /* Specific wider scrollbar for the linear sequencer instrument tracks */
@@ -521,10 +552,6 @@ svg.xilo-icon {
 
 /* === PRINT STYLE FOR TABLATURE === */
 @media print {
-  body {
-    background-color: white !important;
-    color: black !important;
-  }
   
   body * {
     visibility: hidden;
@@ -716,10 +743,6 @@ input[type="range"]:not(.vertical-fader) {
 
 /* === PRINT STYLE FOR TABLATURE === */
 @media print {
-  body {
-    background-color: white !important;
-    color: black !important;
-  }
   
   body * {
     visibility: hidden;
@@ -1659,7 +1682,12 @@ gmp-place-autocomplete:focus-within {
   animation: logoTiltBounce 0.75s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-/* Animation de balancement doux (swing) & scintillement (glow) pour le tout dernier document du Varal */
+/* ═══════════════════════════════════════════════════════════════════════════════
+   Animations du Varal — Brise légère & Petit Nouveau
+   Protégées par prefers-reduced-motion pour l'accessibilité.
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* Animation forte du « Petit Nouveau » — balancement large + brillance dorée */
 @keyframes varalSwingGlow {
   0% {
     transform: rotate(3deg);
@@ -1675,10 +1703,67 @@ gmp-place-autocomplete:focus-within {
   }
 }
 
+/* Animation d'ambiance « Brise légère » — oscillation subtile ±1.5° simulant le vent */
+@keyframes gentleBreeze {
+  0% {
+    transform: rotate(-1.5deg);
+  }
+  50% {
+    transform: rotate(1.5deg);
+  }
+  100% {
+    transform: rotate(-1.5deg);
+  }
+}
+
+/* Classe du Petit Nouveau (prioritaire, amplitude large + glow) */
 .animate-varal-newest {
   transform-origin: top center !important;
-  animation: varalSwingGlow 3s ease-in-out infinite !important;
   z-index: 25 !important;
+}
+
+/* Classe de la brise légère pour les documents standards du Varal */
+.animate-varal-breeze {
+  transform-origin: top center;
+  will-change: transform;
+  backface-visibility: hidden;
+}
+
+/* Activation conditionnelle des animations — respect de prefers-reduced-motion */
+@media (prefers-reduced-motion: no-preference) {
+  /* Le Petit Nouveau garde son oscillation forte avec glow */
+  .animate-varal-newest {
+    animation: varalSwingGlow 3s ease-in-out infinite !important;
+  }
+
+  /* Brise légère — animation de base */
+  .animate-varal-breeze {
+    animation: gentleBreeze 3.5s ease-in-out infinite;
+  }
+
+  /* Désynchronisation par parité — les enfants pairs et impairs oscillent
+     à des durées et délais différents pour éviter un mouvement mécanique */
+  .animate-varal-breeze:nth-child(odd) {
+    animation-duration: 3.8s;
+    animation-delay: 0.2s;
+  }
+
+  .animate-varal-breeze:nth-child(even) {
+    animation-duration: 3.2s;
+    animation-delay: 0.6s;
+  }
+
+  /* Raffinement supplémentaire : décalages par multiples de 3 pour
+     briser la symétrie pair/impair et créer un effet plus naturel */
+  .animate-varal-breeze:nth-child(3n) {
+    animation-duration: 4s;
+    animation-delay: 0.4s;
+  }
+
+  .animate-varal-breeze:nth-child(3n+1) {
+    animation-duration: 3.5s;
+    animation-delay: 0s;
+  }
 }
 
 /* Texture Vieux Papier Cordel & Grain Organique (Vitrine Publique) */
@@ -1730,5 +1815,79 @@ gmp-place-autocomplete:focus-within {
   filter: brightness(1.15);
 }
 
+/* === PRINT STYLES FOR SONG SHEETS (FICHES DE CHANT) === */
+@media print {
+  /* When printing a song, we hide the entire app root to avoid layout shifts.
+     The print container will be rendered in a Portal directly under body. */
+  body.printing-song #root {
+    display: none !important;
+  }
+  
+  body.printing-song * {
+    visibility: visible !important;
+  }
+  
+  body.printing-song {
+    background-color: white !important;
+    color: black;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
 
+  /* Remove browser headers and footers (date, URL, page number) */
+  @page {
+    margin: 0;
+  }
 
+  /* Force elements inside print-song-area to break properly */
+  .print-song-page {
+    page-break-after: always;
+    break-after: page;
+    width: 100%;
+    padding: 15mm; /* Add padding back since @page margin is 0 */
+    box-sizing: border-box;
+    margin: 0;
+  }
+  .print-song-page:last-child {
+    page-break-after: auto;
+    break-after: auto;
+  }
+}
+
+/* Print Formats (Applied to body before print) */
+@media print {
+  body.print-format-A5 {
+    font-size: 11px;
+    --print-scale: 0.85;
+  }
+  body.print-format-A5 .max-w-[600px], body.print-format-A5 .max-w-[560px] {
+    max-width: 100% !important;
+  }
+  
+  body.print-format-A4 {
+    font-size: 14px;
+    --print-scale: 1;
+  }
+  
+  body.print-format-A3 {
+    font-size: 18px;
+    --print-scale: 1.3;
+  }
+}
+
+/* Print Black & White */
+body.print-bw {
+  --color-cordel-ocre: #000000 !important;
+  --color-cordel-vert: #000000 !important;
+  --color-cordel-rouge: #000000 !important;
+  --color-cordel-wood: #000000 !important;
+  --encre-noire: #000000 !important;
+  --cordel-master-dark: #000000 !important;
+}
+
+body.print-bw .bg-[#f5f0e6], 
+body.print-bw .dark\:bg-[#2a2622],
+body.print-bw .bg-[#fdfaf2] {
+  background-color: transparent !important;
+  border: 1px solid #000 !important;
+}

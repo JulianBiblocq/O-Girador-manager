@@ -19,11 +19,13 @@ export const DEFAULT_FIELDS_CONFIG = {
 };
 
 export const DEFAULT_VARAL_CATEGORIES = [
-  { id: 'Partitions', nom: 'Partitions', activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false },
-  { id: 'Tutoriels', nom: 'Tutoriels', activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false },
+  { id: 'Toadas', nom: 'Toadas', activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false },
+  { id: 'TutorielsVideo', nom: 'Tutoriels Vidéo', activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false },
+  { id: 'TutosFabrication', nom: 'Tutos Fabrication', activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false },
   { id: 'Culture', nom: 'Culture', activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false },
-  { id: 'Administratif', nom: 'Comptes-rendus', activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: true },
-  { id: 'DocumentsFixes', nom: 'Administratif', activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false }
+  { id: 'PhotosPrestations', nom: 'Photos Prestations', activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false },
+  { id: 'ComptesRendus', nom: 'Comptes-rendus', activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: true },
+  { id: 'Administratif', nom: 'Administratif', activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false }
 ];
 
 export const DEFAULT_ENABLED_MODULES = {
@@ -35,8 +37,13 @@ export const DEFAULT_ENABLED_MODULES = {
   covoiturage: true,
   studioSocial: true,
   reunions: true,
-  forum: true,
-  mestre: true
+  mestre: true,
+  monParcoursGlobal: true,
+  monParcoursPercussion: true,
+  monParcoursDanse: true,
+  monParcoursChant: true,
+  monParcoursAtelier: true,
+  monParcoursCulture: true
 };
 
 export const DEFAULT_INSTRUMENTS = ["Alfaia Marcante", "Alfaia Meião", "Alfaia Repique", "Caixa", "Tarol", "Gonguê", "Agbê", "Mineiro", "Timbal", "Chant"];
@@ -217,6 +224,7 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
     eventTypeConfigs: {},
     enabledModules: DEFAULT_ENABLED_MODULES,
     activerPresenceEnLigne: true,
+    enableIndividualProgression: false,
     lieuxImportants: [],
     defaultLocationsByEventType: {},
     tagNotificationCommentairesEvenement: '',
@@ -462,6 +470,7 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
           eventTypeConfigs: data.eventTypeConfigs || {},
           enabledModules: data.enabledModules ? { ...DEFAULT_ENABLED_MODULES, ...data.enabledModules } : DEFAULT_ENABLED_MODULES,
           activerPresenceEnLigne: data.activerPresenceEnLigne !== false,
+          enableIndividualProgression: data.enableIndividualProgression || false,
           lieuxImportants: Array.isArray(data.lieuxImportants) ? data.lieuxImportants : [],
           defaultLocationsByEventType: data.defaultLocationsByEventType && typeof data.defaultLocationsByEventType === 'object' ? data.defaultLocationsByEventType : {},
           tagNotificationCommentairesEvenement: data.tagNotificationCommentairesEvenement || '',
@@ -700,6 +709,7 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
         eventTypeConfigs: formData.eventTypeConfigs || {},
         enabledModules: formData.enabledModules || DEFAULT_ENABLED_MODULES,
         activerPresenceEnLigne: formData.activerPresenceEnLigne !== false,
+        enableIndividualProgression: formData.enableIndividualProgression || false,
         lieuxImportants: formData.lieuxImportants || [],
         defaultLocationsByEventType: formData.defaultLocationsByEventType || {},
         tagNotificationCommentairesEvenement: formData.tagNotificationCommentairesEvenement || '',

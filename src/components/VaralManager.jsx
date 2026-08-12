@@ -1,20 +1,28 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { collection, query, where, onSnapshot, doc, deleteDoc, updateDoc } from 'firebase/firestore';
 import { ref, deleteObject } from 'firebase/storage';
 import { db, storage } from '../firebase';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
 import DocumentUploadForm from './DocumentUploadForm';
+import SongCard from './SongCard';
+import CultureCard from './CultureCard';
+import PrintConfigModal from './PrintConfigModal';
 import { useTranslation } from './LanguageContext';
 import { XiloChisel } from './XiloIcons';
 import useConfirm from '../hooks/useConfirm';
+import SeloAxeStamp from './SeloAxeStamp';
+import useHardwareBack from '../hooks/useHardwareBack';
 
 const DEFAULT_VARAL_CATEGORIES = [
-  { id: 'Partitions', nom: 'Partitions', activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false },
-  { id: 'Tutoriels', nom: 'Tutoriels', activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false },
+  { id: 'Toadas', nom: 'Toadas', activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false },
+  { id: 'TutorielsVideo', nom: 'Tutoriels Vidéo', activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false },
+  { id: 'TutosFabrication', nom: 'Tutos Fabrication', activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false },
   { id: 'Culture', nom: 'Culture', activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false },
-  { id: 'Administratif', nom: 'Comptes-rendus', activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: true },
-  { id: 'DocumentsFixes', nom: 'Administratif', activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false }
+  { id: 'PhotosPrestations', nom: 'Photos Prestations', activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false },
+  { id: 'ComptesRendus', nom: 'Comptes-rendus', activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: true },
+  { id: 'Administratif', nom: 'Administratif', activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false }
 ];
 
 export default function VaralManager({ groupId, onBack, role, isSystemAdmin }) {
@@ -26,9 +34,60 @@ export default function VaralManager({ groupId, onBack, role, isSystemAdmin }) {
   const [isAdding, setIsAdding] = useState(false);
   const [documentToEdit, setDocumentToEdit] = useState(null);
   const [selectedReport, setSelectedReport] = useState(null);
+  const [selectedToada, setSelectedToada] = useState(null);
+  const [selectedCultureCard, setSelectedCultureCard] = useState(null);
+  const [showArchived, setShowArchived] = useState(false);
   
   // Sorting state per category
   const [sortMethods, setSortMethods] = useState({});
+
+  // Print state
+  const [selectedSongsIds, setSelectedSongsIds] = useState([]);
+  const [showBulkPrintModal, setShowBulkPrintModal] = useState(false);
+  const [isPrinting, setIsPrinting] = useState(false);
+
+  useHardwareBack(isAdding, () => setIsAdding(false));
+  useHardwareBack(!!documentToEdit, () => setDocumentToEdit(null));
+  useHardwareBack(!!selectedReport, () => setSelectedReport(null));
+  useHardwareBack(!!selectedToada, () => setSelectedToada(null));
+  useHardwareBack(!!selectedCultureCard, () => setSelectedCultureCard(null));
+  useHardwareBack(showBulkPrintModal, () => setShowBulkPrintModal(false));
+
+  const toggleSongSelection = (id) => {
+    setSelectedSongsIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  };
+  
+  const handleBulkPrint = ({ format, isBW }) => {
+    setShowBulkPrintModal(false);
+    setIsPrinting(true);
+    
+    // Set classes for print
+    if (isBW) document.body.classList.add('print-bw');
+    document.body.classList.add(`print-format-${format}`);
+    document.body.classList.add('printing-song');
+
+    // Inject @page size dynamically
+    const styleId = 'dynamic-print-style';
+    let styleEl = document.getElementById(styleId);
+    if (!styleEl) {
+      styleEl = document.createElement('style');
+      styleEl.id = styleId;
+      document.head.appendChild(styleEl);
+    }
+    const margins = { 'A5': '10mm', 'A4': '15mm', 'A3': '20mm' };
+    styleEl.innerHTML = `@media print { @page { size: ${format}; margin: ${margins[format] || '15mm'}; } }`;
+    
+    setTimeout(() => {
+      window.print();
+      
+      // Cleanup
+      if (isBW) document.body.classList.remove('print-bw');
+      document.body.classList.remove(`print-format-${format}`);
+      document.body.classList.remove('printing-song');
+      if (styleEl) styleEl.innerHTML = '';
+      setIsPrinting(false);
+    }, 100);
+  };
 
   const [showCategorySettings, setShowCategorySettings] = useState(false);
   const [newCatName, setNewCatName] = useState('');
@@ -38,7 +97,9 @@ export default function VaralManager({ groupId, onBack, role, isSystemAdmin }) {
   const [savingSettings, setSavingSettings] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
 
-  const isAuthorized = role === 'mestre' || role === 'super-admin' || isSystemAdmin === true;
+  useHardwareBack(showCategorySettings, () => setShowCategorySettings(false));
+
+  const isAuthorized = role === 'mestre' || role === 'super-admin' || isSystemAdmin === true || role === 'admin' || role === 'bureau' || role === 'ca';
 
   const handleSaveEditCategory = async (e) => {
     if (e) e.preventDefault();
@@ -146,21 +207,15 @@ export default function VaralManager({ groupId, onBack, role, isSystemAdmin }) {
     const assocRef = doc(db, 'associations', groupId);
     const unsubscribe = onSnapshot(assocRef, (docSnap) => {
       if (docSnap.exists()) {
-        const rawCats = docSnap.data().varalCategories;
-        if (Array.isArray(rawCats)) {
-          const cats = rawCats.map(c => {
-            if (c.id === 'Administratif' && (c.nom === 'Administratif' || !c.nom)) {
-              return { ...c, nom: 'Comptes-rendus' };
-            }
-            return c;
-          });
-          if (!cats.some(c => c.id === 'DocumentsFixes')) {
-            cats.push({ id: 'DocumentsFixes', nom: 'Administratif', activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false });
+        const rawCats = docSnap.data().varalCategories || [];
+        const mergedCats = DEFAULT_VARAL_CATEGORIES.map(defaultCat => {
+          const customCat = rawCats.find(c => c.id === defaultCat.id) || rawCats.find(c => c.nom === defaultCat.nom);
+          if (customCat) {
+            return { ...defaultCat, ...customCat, id: defaultCat.id }; // Force the native ID
           }
-          setVaralCategories(cats);
-        } else {
-          setVaralCategories(DEFAULT_VARAL_CATEGORIES);
-        }
+          return defaultCat;
+        });
+        setVaralCategories(mergedCats);
       } else {
         setVaralCategories(DEFAULT_VARAL_CATEGORIES);
       }
@@ -279,6 +334,7 @@ export default function VaralManager({ groupId, onBack, role, isSystemAdmin }) {
       case 'video': return '🎥 Vidéo';
       case 'image': return '🖼️ Image';
       case 'web': return '🌐 Web / URL';
+      case 'culture_fiche': return '📖 Fiche Culture';
       default: return '📄 PDF / Fichier';
     }
   };
@@ -325,6 +381,7 @@ export default function VaralManager({ groupId, onBack, role, isSystemAdmin }) {
   };
 
   return (
+    <>
     <div className="flex flex-col gap-6 text-left select-none max-w-5xl mx-auto w-full">
       {/* Header */}
       <div className="flex justify-between items-center pb-2 border-b-2 border-dashed border-cordel-master-dark/30">
@@ -357,10 +414,23 @@ export default function VaralManager({ groupId, onBack, role, isSystemAdmin }) {
       ) : (
         <div className="flex flex-col gap-4">
           <div className="flex justify-between items-start md:items-center flex-col md:flex-row gap-4 select-none">
-            <p className="text-xs opacity-75 leading-relaxed max-w-xl">
-              Gérez les fichiers, partitions, tutoriels et enregistrements audios de votre groupe sous forme de tableaux structurés par corde. Les modifications d'ordre personnalisé s'appliquent en direct sur l'accueil.
-            </p>
-            <div className="flex gap-2 shrink-0">
+            <div className="flex flex-col gap-2 max-w-xl">
+              <p className="text-xs opacity-75 leading-relaxed">
+                Gérez les fichiers, partitions, tutoriels et enregistrements audios de votre groupe sous forme de tableaux structurés par corde. Les modifications d'ordre personnalisé s'appliquent en direct sur l'accueil.
+              </p>
+              <label className="flex items-center gap-2 cursor-pointer bg-[#fdfaf2] border border-encre-noire/20 px-3 py-1.5 rounded hover:border-cordel-wood transition-colors self-start">
+                <input 
+                  type="checkbox"
+                  checked={showArchived}
+                  onChange={(e) => setShowArchived(e.target.checked)}
+                  className="accent-cordel-wood w-4 h-4"
+                />
+                <span className="text-[10px] font-black uppercase tracking-wider text-encre-noire">
+                  Inclure les anciens documents/chants (Archivés)
+                </span>
+              </label>
+            </div>
+            <div className="flex gap-2 shrink-0 flex-wrap justify-end">
               {isAuthorized && (
                 <CordelButton
                   variant="default"
@@ -369,6 +439,34 @@ export default function VaralManager({ groupId, onBack, role, isSystemAdmin }) {
                   className="text-xs px-4 py-2 font-bold whitespace-nowrap"
                 >
                   ⚙️ {showCategorySettings ? "Fermer les cordes" : "Gérer les cordes"}
+                </CordelButton>
+              )}
+              
+              <CordelButton
+                variant="default"
+                useExtremeBorder={true}
+                onClick={() => {
+                  const songIds = documents.filter(d => d.type === 'song').map(d => d.id);
+                  if (songIds.length > 0) {
+                    setSelectedSongsIds(songIds);
+                    setShowBulkPrintModal(true);
+                  } else {
+                    alert("Aucun chant n'a été trouvé dans le carnet.");
+                  }
+                }}
+                className="text-xs px-4 py-2 font-bold whitespace-nowrap"
+              >
+                🖨️ Imprimer tout le carnet
+              </CordelButton>
+
+              {selectedSongsIds.length > 0 && (
+                <CordelButton 
+                  variant="default" 
+                  useExtremeBorder={true}
+                  onClick={() => setShowBulkPrintModal(true)}
+                  className="text-xs px-4 py-2 font-bold whitespace-nowrap bg-cordel-vert text-white hover:brightness-110"
+                >
+                  🖨️ Imprimer sélection ({selectedSongsIds.length})
                 </CordelButton>
               )}
               <CordelButton 
@@ -389,73 +487,6 @@ export default function VaralManager({ groupId, onBack, role, isSystemAdmin }) {
                 📋 Gérer les Cordes (Rubriques) du Varal
               </h3>
               
-              <div className="flex flex-col gap-3 pb-3 border-b border-dashed border-cordel-master-dark/15 text-xs text-left">
-                <div className="flex flex-col gap-2">
-                  <div className="flex flex-col gap-1">
-                    <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                      Nom de la catégorie (ex: Partitions, Tutoriels...)
-                    </label>
-                    <input 
-                      type="text"
-                      value={newCatName}
-                      onChange={(e) => setNewCatName(e.target.value)}
-                      placeholder="Saisissez un nom..."
-                      className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light w-full"
-                    />
-                  </div>
-
-                  <div className="flex flex-col gap-2.5 mt-2">
-                    <label className="flex items-center gap-2 cursor-pointer select-none">
-                      <input 
-                        type="checkbox"
-                        checked={newCatUpload}
-                        onChange={(e) => setNewCatUpload(e.target.checked)}
-                        className="w-3.5 h-3.5 cursor-pointer"
-                      />
-                      <span className="font-semibold text-encre-noire">Activer un lien d'upload public pour cette catégorie</span>
-                    </label>
-
-                    {newCatUpload && (
-                      <div className="flex flex-col gap-1 ml-5">
-                        <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                          Lien d'upload (ex: Google Drive, Dropbox...)
-                        </label>
-                        <input 
-                          type="url"
-                          value={newCatUploadUrl}
-                          onChange={(e) => setNewCatUploadUrl(e.target.value)}
-                          placeholder="https://..."
-                          className="theme-input text-xs font-bold py-1 bg-cordel-bg-light w-full"
-                        />
-                      </div>
-                    )}
-
-                    <label className="flex items-center gap-2 cursor-pointer select-none">
-                      <input 
-                        type="checkbox"
-                        checked={newCatArchive}
-                        onChange={(e) => setNewCatArchive(e.target.checked)}
-                        className="w-3.5 h-3.5 cursor-pointer"
-                      />
-                      <span className="font-semibold text-encre-noire">Activer l'opacité sur les documents archivés (ex: Administratif)</span>
-                    </label>
-                  </div>
-                </div>
-
-                <div className="flex justify-end mt-2">
-                  <CordelButton 
-                    type="button"
-                    variant="ocre"
-                    useExtremeBorder={true}
-                    onClick={handleAddCategory}
-                    disabled={savingSettings || !newCatName.trim() || (newCatUpload && !newCatUploadUrl.trim())}
-                    className="py-1.5 text-[10px] px-3 uppercase tracking-widest font-black shrink-0"
-                  >
-                    + Ajouter
-                  </CordelButton>
-                </div>
-              </div>
-
               <div className="flex flex-col gap-2 mt-2 text-left">
                 <span className="text-[10px] font-bold uppercase tracking-wider text-cordel-master-dark mb-1">
                   Cordes configurées
@@ -490,35 +521,9 @@ export default function VaralManager({ groupId, onBack, role, isSystemAdmin }) {
                             onClick={() => setEditingCategory({ ...cat })}
                             disabled={savingSettings}
                             className="text-xs px-1.5 py-0.5 border border-cordel-master-dark/20 rounded bg-white hover:bg-neutral-100 font-extrabold cursor-pointer select-none"
-                            title="Modifier le nom de la corde"
+                            title="Modifier le nom de la corde ou activer des options"
                           >
-                            ✏️
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleMoveCategory(idx, -1)}
-                            disabled={idx === 0 || savingSettings}
-                            className="text-xs p-1 hover:text-cordel-wood disabled:opacity-30 cursor-pointer select-none font-bold"
-                            title="Monter"
-                          >
-                            ▲
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleMoveCategory(idx, 1)}
-                            disabled={idx === varalCategories.length - 1 || savingSettings}
-                            className="text-xs p-1 hover:text-cordel-wood disabled:opacity-30 cursor-pointer select-none font-bold"
-                            title="Descendre"
-                          >
-                            ▼
-                          </button>
-                          <button 
-                            type="button"
-                            onClick={() => handleRemoveCategory(cat.id)}
-                            className="text-xs hover:text-red-500 font-bold px-2 py-1 cursor-pointer select-none"
-                            title="Supprimer"
-                          >
-                            ✕
+                            ⚙️ Configurer
                           </button>
                         </div>
                       </div>
@@ -640,7 +645,9 @@ export default function VaralManager({ groupId, onBack, role, isSystemAdmin }) {
                   const matchObj = (d.categoryId && varalCategories.find(c => c.id === d.categoryId))
                     || (d.categorie && varalCategories.find(c => c.nom === d.categorie))
                     || (d.categorie && varalCategories.find(c => c.id === d.categorie));
-                  return matchObj ? matchObj.id === category.id : false;
+                  if (!matchObj || matchObj.id !== category.id) return false;
+                  if (!showArchived && d.isArchived) return false;
+                  return true;
                 });
                 
                 // Sort docs dynamically
@@ -689,6 +696,7 @@ export default function VaralManager({ groupId, onBack, role, isSystemAdmin }) {
                           <table className="w-full text-xs text-left border-collapse">
                             <thead>
                               <tr className="bg-cordel-bg-light border-b border-encre-noire text-cordel-master-dark uppercase tracking-wider text-[9px] font-black">
+                                <th className="py-1.5 px-2 md:py-2 md:px-2 w-8 text-center"></th>
                                 <th className="py-1.5 px-2 md:py-2 md:px-3">{t('documents.docTitleLabel')}</th>
                                 <th className="py-1.5 px-2 md:py-2 md:px-3">{t('common.type')}</th>
                                 <th className="py-1.5 px-2 md:py-2 md:px-3 text-center">{t('common.moveUp')}/{t('common.moveDown')}</th>
@@ -701,8 +709,25 @@ export default function VaralManager({ groupId, onBack, role, isSystemAdmin }) {
                                   key={docItem.id} 
                                   className="border-b border-dashed border-encre-noire/15 hover:bg-cordel-hover/50 transition-colors"
                                 >
+                                  <td className="py-2 px-2 md:py-2.5 md:px-2 text-center w-8">
+                                    {docItem.type === 'song' && (
+                                      <input 
+                                        type="checkbox" 
+                                        className="w-4 h-4 cursor-pointer accent-cordel-vert"
+                                        checked={selectedSongsIds.includes(docItem.id)}
+                                        onChange={() => toggleSongSelection(docItem.id)}
+                                      />
+                                    )}
+                                  </td>
                                   <td className="py-2 px-2 md:py-2.5 md:px-3 font-bold text-encre-noire dark:text-cordel-bg-light">
                                     <div className="flex items-center gap-1.5 flex-wrap">
+                                      {docItem.type === 'culture_fiche' && (
+                                        <SeloAxeStamp 
+                                          size="xs" 
+                                          iconeStamp={docItem.iconeStamp || docItem.stampKey || 'axe-default'}
+                                          hexSecondary={docItem.hexSecondary || (docItem.couleurs && docItem.couleurs[1]) || (docItem.couleursTheme && docItem.couleursTheme[1]) || '#FFFFFF'}
+                                        />
+                                      )}
                                       <span>{docItem.titre}</span>
                                       {docItem.id === newestDocumentId && (
                                         <span className="theme-stamp-badge theme-stamp-badge-wood text-[7.5px] font-black uppercase tracking-wider px-1.5 py-0.2 bg-[#d99f4d]/30 text-encre-noire border border-encre-noire animate-pulse select-none">
@@ -745,11 +770,15 @@ export default function VaralManager({ groupId, onBack, role, isSystemAdmin }) {
                                   </td>
                                   <td className="py-2 px-2 md:py-2.5 md:px-3 text-right">
                                     <div className="flex items-center justify-end gap-1.5">
-                                      {(docItem.fileUrl || docItem.type === 'report') && (
+                                      {(docItem.fileUrl || docItem.type === 'report' || docItem.type === 'culture_fiche') && (
                                         <button
                                           onClick={() => {
                                             if (docItem.type === 'report') {
                                               setSelectedReport(docItem);
+                                            } else if (docItem.type === 'song') {
+                                              setSelectedToada(docItem);
+                                            } else if (docItem.type === 'culture_fiche') {
+                                              setSelectedCultureCard(docItem);
                                             } else {
                                               window.open(docItem.fileUrl, '_blank');
                                             }
@@ -858,6 +887,68 @@ export default function VaralManager({ groupId, onBack, role, isSystemAdmin }) {
           </CordelCard>
         </div>
       )}
+
+      {/* Modale de lecture d'une Toada (Carnet de Chants) */}
+      {selectedToada && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 sm:p-6 md:p-12 animate-fadeIn overflow-hidden">
+          <div className="relative w-full max-w-[560px] max-h-full flex flex-col items-center">
+            <button
+              type="button"
+              onClick={() => setSelectedToada(null)}
+              className="absolute -top-3 -right-3 z-50 bg-[#8b2a1a] text-white w-8 h-8 rounded-full font-black flex items-center justify-center shadow-lg hover:bg-red-700 transition-colors border-2 border-white cursor-pointer"
+              title="Fermer"
+            >
+              X
+            </button>
+            <div className="w-full h-full overflow-y-auto scrollbar-hide rounded-lg shadow-2xl flex justify-center">
+              <SongCard song={selectedToada} defaultRevisionMode={false} />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modale de lecture d'une Fiche Culture */}
+      {selectedCultureCard && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 sm:p-6 md:p-12 animate-fadeIn overflow-hidden">
+          <div className="relative w-full max-w-[560px] max-h-full flex flex-col items-center">
+            <button
+              type="button"
+              onClick={() => setSelectedCultureCard(null)}
+              className="absolute -top-3 -right-3 z-50 bg-[#8b2a1a] text-white w-8 h-8 rounded-full font-black flex items-center justify-center shadow-lg hover:bg-red-700 transition-colors border-2 border-white cursor-pointer"
+              title="Fermer"
+            >
+              X
+            </button>
+            <div className="w-full h-full overflow-y-auto scrollbar-hide rounded-lg shadow-2xl flex justify-center">
+              <CultureCard culture={selectedCultureCard} />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
+
+    {/* Bulk Print Hidden Container (Portaled to body to escape all parent layouts) */}
+    {isPrinting && createPortal(
+      <div className="print:block bg-white w-full">
+        {documents
+          .filter(d => selectedSongsIds.includes(d.id))
+          .map(song => (
+            <div key={song.id} className="print-song-page">
+              <SongCard song={song} defaultRevisionMode={false} />
+            </div>
+          ))}
+      </div>,
+      document.body
+    )}
+
+    {/* Bulk Print Modal */}
+    {showBulkPrintModal && (
+      <PrintConfigModal
+        title={`Impression du Carnet (${selectedSongsIds.length} chants)`}
+        onClose={() => setShowBulkPrintModal(false)}
+        onConfirm={handleBulkPrint}
+      />
+    )}
+    </>
   );
 }

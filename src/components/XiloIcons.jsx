@@ -6,20 +6,45 @@ export const XiloGlobe = ({ size = 16, className = '', ...props }) => (
     viewBox="0 0 24 24" 
     fill="none" 
     stroke="currentColor" 
-    strokeWidth="2.2" 
+    strokeWidth="2" 
     strokeLinecap="round" 
     strokeLinejoin="round" 
     className={`xilo-icon ${className}`} 
     {...props}
   >
-    <circle cx="12" cy="12" r="9" />
-    <line x1="3" y1="12" x2="21" y2="12" />
-    <path d="M12,3 C16.5,6.5 16.5,17.5 12,21" />
-    <path d="M12,3 C7.5,6.5 7.5,17.5 12,21" />
-    <path d="M4.5,7.5 L19.5,7.5" />
-    <path d="M4.5,16.5 L19.5,16.5" />
+    {/* Contours irréguliers gravure */}
+    <path d="M12 2.5 C17 2 22.5 6 21.5 12 C21 17 17 22.5 12 21.5 C6 21 1.5 17 2.5 12 C3 7 7 2.5 12 2.5 Z" />
+    <path d="M12 2.5 C15.5 6 16.5 18 12 21.5" />
+    <path d="M12 2.5 C8 6 7.5 18 12 21.5" />
+    <path d="M2.5 12 C6 13 18 13 21.5 12" />
+    <path d="M4.5 7 C8 8 16 8 19.5 7" />
+    <path d="M4.5 17 C8 16 16 16 19.5 17" />
+    {/* Petites hachures de gravure (Woodcut shading) */}
+    <path d="M3 14 L5 16 M19 14 L21 16 M8 19 L9 20.5 M15 19 L16 20.5" strokeWidth="1.5" />
   </svg>
 );
+
+// 🧭 Boussole / Chemin Cordel (Mon Parcours)
+export const XiloCompass = ({ size = 16, className = '', ...props }) => (
+  <svg 
+    width={size} 
+    height={size} 
+    viewBox="0 0 24 24" 
+    fill="none" 
+    stroke="currentColor" 
+    strokeWidth="2.5" 
+    strokeLinecap="round" 
+    strokeLinejoin="round"
+    className={`xilo-icon ${className}`} 
+    {...props}
+  >
+    <circle cx="12" cy="12" r="10" strokeWidth="2.5" />
+    <polygon points="12 3 14 10 21 12 14 14 12 21 10 14 3 12 10 10" strokeWidth="2" fill="currentColor" />
+    <circle cx="12" cy="12" r="2" fill="none" strokeWidth="2.5" />
+    <path d="M4 4 L6 6 M20 4 L18 6 M4 20 L6 18 M20 20 L18 18" strokeWidth="2" />
+  </svg>
+);
+
 
 // 🎛️ Égaliseur (EQ)
 export const XiloEQ = ({ size = 16, className = '', ...props }) => (

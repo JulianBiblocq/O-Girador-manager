@@ -7,12 +7,24 @@ import CordelButton from '../CordelButton';
 import CostumeSizesTable from './CostumeSizesTable';
 import CostumesAdminManager from './CostumesAdminManager';
 import useConfirm from '../../hooks/useConfirm';
+import { useAssociationSettings } from '../../hooks/useAssociationSettings';
+import WardrobeBlock from '../association-settings/blocks/WardrobeBlock';
+import useHardwareBack from '../../hooks/useHardwareBack';
 
 export default function WardrobeManager({ groupId, role, isSystemAdmin, hasAccessLogistique, onBack, activeTab = 'inventory' }) {
   const { t } = useTranslation();
   const { confirm } = useConfirm();
   const [allUsers, setAllUsers] = useState([]);
   
+  const isAuthorized = role === 'mestre' || role === 'super-admin' || isSystemAdmin === true || hasAccessLogistique === true;
+  
+  const {
+    formData,
+    handleChange,
+    handleSave,
+    saving: savingSettings
+  } = useAssociationSettings(groupId, isAuthorized, onBack, t);
+
   // Costume Inventory State
   const [costumes, setCostumes] = useState([]);
   const [showCostumeForm, setShowCostumeForm] = useState(false);
@@ -38,14 +50,15 @@ export default function WardrobeManager({ groupId, role, isSystemAdmin, hasAcces
 
   const [saving, setSaving] = useState(false);
 
+  useHardwareBack(showCostumeForm, () => setShowCostumeForm(false));
+  useHardwareBack(showProjectForm, () => setShowProjectForm(false));
+
   const profileData = useMemo(() => ({
     groupId,
     role,
     isSystemAdmin,
     hasAccessLogistique
   }), [groupId, role, isSystemAdmin, hasAccessLogistique]);
-
-  const isAuthorized = role === 'mestre' || role === 'super-admin' || isSystemAdmin === true || hasAccessLogistique === true;
 
   // 1. Fetch Users
   useEffect(() => {
@@ -252,6 +265,21 @@ export default function WardrobeManager({ groupId, role, isSystemAdmin, hasAcces
       {/* TAB 1: COSTUME INVENTORY */}
       {activeTab === 'inventory' && (
         <div className="flex flex-col gap-6">
+          <div className="mb-2">
+            <form onSubmit={(e) => { e.preventDefault(); handleSave(); }} className="flex flex-col gap-2">
+              <WardrobeBlock 
+                formData={formData}
+                handleChange={handleChange}
+                saving={savingSettings}
+              />
+              <div className="flex justify-end">
+                <CordelButton type="submit" variant="ocre" disabled={savingSettings} className="px-6 py-2 uppercase font-black tracking-wider text-xs shadow-[2px_2px_0px_0px_#181716]">
+                  {savingSettings ? "Enregistrement..." : "💾 Enregistrer Configuration"}
+                </CordelButton>
+              </div>
+            </form>
+          </div>
+
           {/* Section 1: Costumes & Pièces Management */}
           <CostumesAdminManager groupId={groupId} />
 

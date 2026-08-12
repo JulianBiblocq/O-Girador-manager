@@ -1,14 +1,26 @@
 import React, { useState, useEffect } from 'react';
 import { ref, uploadBytes, getDownloadURL, listAll, deleteObject } from 'firebase/storage';
-import { storage } from '../../firebase';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { storage, db } from '../../firebase';
 import { useTranslation } from '../LanguageContext';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 import useConfirm from '../../hooks/useConfirm';
+import { useAssociationSettings } from '../../hooks/useAssociationSettings';
+import SequenceurLinkBlock from '../association-settings/blocks/SequenceurLinkBlock';
 
 export default function MestreSequenceur({ groupId, sequenceurUrl }) {
   const { t } = useTranslation();
   const { confirm } = useConfirm();
+  
+  const {
+    formData,
+    handleChange,
+    handleSave,
+    saving: savingSettings
+  } = useAssociationSettings(groupId, true, null, t);
+  const [showConfig, setShowConfig] = useState(false);
+
   const [rhythms, setRhythms] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -17,6 +29,11 @@ export default function MestreSequenceur({ groupId, sequenceurUrl }) {
   const [titre, setTitre] = useState('');
   const [jsonFile, setJsonFile] = useState(null);
   const [fileInputKey, setFileInputKey] = useState(0);
+
+  // Metadata editor states
+  const [editingMetadataRhythm, setEditingMetadataRhythm] = useState(null);
+  const [metadataForm, setMetadataForm] = useState({ baguettes: '', unisonAlfaias: false });
+  const [loadingMetadata, setLoadingMetadata] = useState(false);
 
   // Fetch all rhythms directly from Firebase Storage
   const fetchRhythmsFromStorage = async () => {
@@ -117,6 +134,44 @@ export default function MestreSequenceur({ groupId, sequenceurUrl }) {
       : `${baseUrl}?file=${encodeURIComponent(jsonUrl)}`;
   };
 
+  const openMetadataEditor = async (rhythm) => {
+    setEditingMetadataRhythm(rhythm);
+    setLoadingMetadata(true);
+    try {
+      // rhythm.id is the fileName
+      const docRef = doc(db, 'associations', groupId, 'rhythmMetadata', rhythm.id);
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        setMetadataForm({ 
+          baguettes: data.baguettes || '', 
+          unisonAlfaias: data.unisonAlfaias || false 
+        });
+      } else {
+        setMetadataForm({ baguettes: '', unisonAlfaias: false });
+      }
+    } catch (err) {
+      console.error("Error fetching metadata:", err);
+    } finally {
+      setLoadingMetadata(false);
+    }
+  };
+
+  const handleSaveMetadata = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      const docRef = doc(db, 'associations', groupId, 'rhythmMetadata', editingMetadataRhythm.id);
+      await setDoc(docRef, metadataForm, { merge: true });
+      setEditingMetadataRhythm(null);
+    } catch (err) {
+      console.error("Error saving metadata:", err);
+      alert("Erreur lors de l'enregistrement des métadonnées.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <div className="flex flex-col gap-6 text-left select-none w-full max-w-5xl mx-auto">
       <div className="flex justify-between items-center pb-2 border-b-2 border-dashed border-cordel-master-dark/30">
@@ -124,6 +179,37 @@ export default function MestreSequenceur({ groupId, sequenceurUrl }) {
           🎵 {t('mestre.seqTitle') || "Gestionnaire de Rythmes / Séquences JSON"}
         </h2>
       </div>
+
+      {/* Configuration Section (Accordeon) */}
+      <CordelCard variant="default" useExtremeBorder={true} className="p-4 mb-2">
+        <div className="flex justify-between items-center cursor-pointer select-none" onClick={() => setShowConfig(!showConfig)}>
+          <h3 className="text-xs font-extrabold tracking-wider text-cordel-wood uppercase">
+            ⚙️ Configuration du Lien Séquenceur
+          </h3>
+          <span className="text-xs font-black">{showConfig ? '▲ Masquer' : '▼ Déployer'}</span>
+        </div>
+
+        {showConfig && (
+          <form onSubmit={(e) => { e.preventDefault(); handleSave(); }} className="flex flex-col gap-4 mt-4 pt-4 border-t border-dashed border-cordel-master-dark/20 text-left">
+            <SequenceurLinkBlock 
+              formData={formData}
+              handleChange={handleChange}
+              saving={savingSettings}
+            />
+            <div className="flex justify-end mt-2 pt-3 border-t border-dashed border-cordel-master-dark/15">
+              <CordelButton
+                type="submit"
+                variant="ocre"
+                useExtremeBorder={true}
+                disabled={savingSettings}
+                className="px-6 py-2 uppercase font-black tracking-wider text-xs shadow-[2px_2px_0px_0px_#181716]"
+              >
+                {savingSettings ? "Enregistrement..." : "💾 Enregistrer Configuration"}
+              </CordelButton>
+            </div>
+          </form>
+        )}
+      </CordelCard>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
         
@@ -209,14 +295,23 @@ export default function MestreSequenceur({ groupId, sequenceurUrl }) {
                   </div>
 
                   {rhythm.jsonUrl && (
-                    <a
-                      href={getSequencerPlayUrl(rhythm.jsonUrl)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="theme-btn theme-bg-ocre text-encre-noire px-3 py-2 text-[10px] font-black rounded-[4px_6px_3px_5px] shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,0.15)] flex items-center justify-center gap-1.5 hover:brightness-105 active:translate-x-[0.5px] active:translate-y-[0.5px] w-full text-center mt-1 select-none"
-                    >
-                      🎧 {t('mestre.workRhythmBtn') || "Travailler ce rythme (Séquenceur)"}
-                    </a>
+                    <div className="flex gap-2 mt-1 w-full">
+                      <a
+                        href={getSequencerPlayUrl(rhythm.jsonUrl)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="theme-btn theme-bg-ocre text-encre-noire px-3 py-2 text-[10px] font-black rounded-[4px_6px_3px_5px] shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,0.15)] flex items-center justify-center gap-1.5 hover:brightness-105 active:translate-x-[0.5px] active:translate-y-[0.5px] w-full text-center select-none"
+                      >
+                        🎧 Travailler (Séquenceur)
+                      </a>
+                      <button
+                        type="button"
+                        onClick={() => openMetadataEditor(rhythm)}
+                        className="theme-btn bg-cordel-master-dark text-cordel-bg-light px-3 py-2 text-[10px] font-black rounded-[4px_6px_3px_5px] shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,0.15)] flex items-center justify-center gap-1.5 hover:brightness-105 active:translate-x-[0.5px] active:translate-y-[0.5px] w-full text-center select-none"
+                      >
+                        ✏️ Pédagogie
+                      </button>
+                    </div>
                   )}
                 </CordelCard>
               ))}
@@ -225,6 +320,74 @@ export default function MestreSequenceur({ groupId, sequenceurUrl }) {
         </div>
 
       </div>
+
+      {/* Metadata Editor Modal */}
+      {editingMetadataRhythm && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 select-none">
+          <CordelCard variant="default" useExtremeBorder={true} className="w-full max-w-md bg-cordel-bg p-5 relative">
+            <h3 className="font-extrabold text-sm text-cordel-wood uppercase tracking-wider mb-3 border-b border-dashed border-cordel-master-dark/20 pb-2">
+              ✏️ Métadonnées de Secours (Fallback)
+            </h3>
+            
+            {loadingMetadata ? (
+              <div className="py-8 text-center opacity-60 animate-pulse text-xs font-bold uppercase">Chargement...</div>
+            ) : (
+              <form onSubmit={handleSaveMetadata} className="flex flex-col gap-4 text-left">
+                <p className="text-[10px] italic opacity-80 leading-relaxed text-cordel-master-dark">
+                  Ces informations priment sur le JSON du séquenceur. Si le JSON de {editingMetadataRhythm.titre} ne contient pas ces métadonnées pédagogiques, elles seront utilisées dans l'auto-évaluation de l'élève.
+                </p>
+
+                <div className="flex flex-col gap-1">
+                  <label className="text-[9px] uppercase font-bold tracking-wider text-encre-noire">
+                    Matériel requis (Baguettes / Bacalhau)
+                  </label>
+                  <input
+                    type="text"
+                    value={metadataForm.baguettes}
+                    onChange={(e) => setMetadataForm({ ...metadataForm, baguettes: e.target.value })}
+                    placeholder="Ex: 1 grosse baguette + 1 bacalhau"
+                    disabled={saving}
+                    className="theme-input w-full text-xs font-bold bg-white"
+                  />
+                </div>
+
+                <label className="flex items-center gap-2 cursor-pointer mt-1">
+                  <input
+                    type="checkbox"
+                    checked={metadataForm.unisonAlfaias}
+                    onChange={(e) => setMetadataForm({ ...metadataForm, unisonAlfaias: e.target.checked })}
+                    disabled={saving}
+                    className="w-4 h-4 border border-encre-noire rounded accent-cordel-wood cursor-pointer"
+                  />
+                  <span className="text-xs font-bold text-encre-noire">
+                    Les Alfaias jouent à l'unisson (ex: pendant la toada)
+                  </span>
+                </label>
+
+                <div className="flex justify-end gap-2 mt-4 pt-3 border-t border-dashed border-cordel-master-dark/15">
+                  <CordelButton
+                    type="button"
+                    variant="default"
+                    onClick={() => setEditingMetadataRhythm(null)}
+                    disabled={saving}
+                    className="px-4 py-1.5 text-xs font-bold"
+                  >
+                    Annuler
+                  </CordelButton>
+                  <CordelButton
+                    type="submit"
+                    variant="ocre"
+                    disabled={saving}
+                    className="px-6 py-1.5 text-xs font-black uppercase"
+                  >
+                    {saving ? "Enregistrement..." : "Enregistrer"}
+                  </CordelButton>
+                </div>
+              </form>
+            )}
+          </CordelCard>
+        </div>
+      )}
     </div>
   );
 }

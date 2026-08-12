@@ -70,6 +70,11 @@ export default function InventoryItemCard({ item, usersMap, onEdit, onDelete, on
                 📍 {item.localisationPhysique}
               </span>
             )}
+            {item.etuiFourni && (
+              <span className="bg-cordel-bg-light px-2 py-0.5 rounded border border-cordel-master-dark/15">
+                👜 Étui fourni
+              </span>
+            )}
           </div>
         </div>
       </div>

@@ -137,10 +137,10 @@ export default function Onboarding({ user, branding, onComplete, profileData }) 
     e.preventDefault();
     setValidationError('');
 
-    const cleanVoeux = Array.isArray(formData.voeuxInstruments) ? formData.voeuxInstruments.filter(Boolean) : [];
     const isDanse = Boolean(formData.pratiqueDanse);
     const isPercussion = Boolean(formData.pratiquePercussion);
     const isAncien = Boolean(formData.estAncienMembre);
+    const cleanVoeux = isPercussion ? (Array.isArray(formData.voeuxInstruments) ? formData.voeuxInstruments.filter(Boolean) : []) : [];
 
     // Validation : Au moins une discipline doit être sélectionnée
     if (!isPercussion && !isDanse) {

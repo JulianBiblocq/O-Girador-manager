@@ -320,9 +320,19 @@ export default function EventRSVPSection({
                               className="theme-input text-[10px] py-1 px-2 bg-cordel-bg-light border-encre-noire/20 flex-1 max-w-[220px]"
                             >
                               {getMemberInstrumentOptions
-                                ? getMemberInstrumentOptions(m.isParent ? profileData : m).map((inst) => (
-                                    <option key={inst} value={inst}>{inst}</option>
-                                  ))
+                                ? getMemberInstrumentOptions(m.isParent ? profileData : m).map((inst) => {
+                                    const mInfo = m.isParent ? profileData : m;
+                                    const isPolyvalent = Boolean(mInfo?.pratiqueDanse && mInfo?.pratiquePercussion);
+                                    let label = inst;
+                                    if (isPolyvalent) {
+                                       if (inst.toLowerCase() === 'danse') {
+                                           label = "💃 Danse";
+                                       } else {
+                                           label = `🥁 Percussion : ${label}`;
+                                       }
+                                    }
+                                    return <option key={inst} value={inst}>{label}</option>;
+                                  })
                                 : (instrumentsDisponibles || []).map((inst) => (
                                     <option key={inst} value={inst}>{inst}</option>
                                   ))}
@@ -464,9 +474,18 @@ export default function EventRSVPSection({
                           }
                           return options.map((inst) => {
                             const pupitreName = getPupitreName(inst);
+                            const isPolyvalent = Boolean(profileData?.pratiqueDanse && profileData?.pratiquePercussion);
+                            let label = pupitreName ? `${inst} (${pupitreName})` : inst;
+                            if (isPolyvalent) {
+                               if (inst.toLowerCase() === 'danse') {
+                                   label = "💃 Danse";
+                               } else {
+                                   label = `🥁 Percussion : ${label}`;
+                               }
+                            }
                             return (
                               <option key={inst} value={inst}>
-                                {pupitreName ? `${inst} (${pupitreName})` : inst}
+                                {label}
                               </option>
                             );
                           });

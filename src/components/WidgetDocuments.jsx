@@ -9,6 +9,7 @@ import CordelButton from './CordelButton';
 import DocumentUploadForm from './DocumentUploadForm';
 import SongCard from './SongCard';
 import CultureCard from './CultureCard';
+import FabricationCard from './FabricationCard';
 import SeloAxeStamp from './SeloAxeStamp';
 import PrintConfigModal from './PrintConfigModal';
 import { createPortal } from 'react-dom';
@@ -41,11 +42,11 @@ const getDeterministicColor = (docId) => {
 // Realistic Wooden Clothespin (Pince à linge artisanale en bois)
 // Realistic 3D Wooden Clothespin (Pince à linge artisanale en bois)
 const WoodenClothespin = ({ className = "" }) => (
-  <svg 
-    width="22" 
-    height="42" 
-    viewBox="0 0 22 42" 
-    fill="none" 
+  <svg
+    width="22"
+    height="42"
+    viewBox="0 0 22 42"
+    fill="none"
     className={`select-none drop-shadow-[1px_2px_3px_rgba(24,23,22,0.5)] ${className}`}
   >
     <defs>
@@ -149,10 +150,12 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
   const [loading, setLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
   const [documentToEdit, setDocumentToEdit] = useState(null);
+  const [eventsWithMedia, setEventsWithMedia] = useState([]);
   const [editingCategory, setEditingCategory] = useState(null);
   const [selectedReport, setSelectedReport] = useState(null);
   const [selectedToada, setSelectedToada] = useState(null);
   const [selectedCultureCard, setSelectedCultureCard] = useState(null);
+  const [selectedFabrication, setSelectedFabrication] = useState(null);
   const [showBulkPrintModal, setShowBulkPrintModal] = useState(false);
   const [isPrinting, setIsPrinting] = useState(false);
   const [printCategory, setPrintCategory] = useState(null);
@@ -162,9 +165,9 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
 
   const CULTURE_THEMES = [
     { id: 'all', label: 'Toute la Culture', icon: <span className="text-[12px] md:text-sm pt-0.5">✨</span> },
-    { 
-      id: 'orixás', 
-      label: 'Orixás', 
+    {
+      id: 'orixás',
+      label: 'Orixás',
       icon: (
         <svg viewBox="0 0 100 100" className="w-5 h-5">
           <defs>
@@ -190,9 +193,9 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
         </svg>
       )
     },
-    { 
-      id: 'cuisine', 
-      label: 'Cuisine', 
+    {
+      id: 'cuisine',
+      label: 'Cuisine',
       icon: (
         <svg viewBox="0 0 100 100" className="w-5 h-5">
           <defs>
@@ -207,11 +210,11 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
           </defs>
           <path fill="currentColor" mask="url(#icon-mask-cuisine)" d="M 20 50 L 25 80 C 30 90 70 90 75 80 L 80 50 Z M 15 40 C 15 35 85 35 85 40 L 80 45 L 20 45 Z M 10 40 C 5 40 5 50 10 50 C 15 50 15 40 10 40 Z M 90 40 C 95 40 95 50 90 50 C 85 50 85 40 90 40 Z M 40 30 Q 30 15 40 5 Q 50 15 40 30 M 60 35 Q 50 20 60 10 Q 70 20 60 35" />
         </svg>
-      ) 
+      )
     },
-    { 
-      id: 'histoire', 
-      label: 'Histoire', 
+    {
+      id: 'histoire',
+      label: 'Histoire',
       icon: (
         <svg viewBox="0 0 100 100" className="w-5 h-5">
           <defs>
@@ -232,9 +235,9 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
         </svg>
       )
     },
-    { 
-      id: 'musique', 
-      label: 'Musique', 
+    {
+      id: 'musique',
+      label: 'Musique',
       icon: (
         <svg viewBox="0 0 100 100" className="w-5 h-5">
           <defs>
@@ -251,9 +254,9 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
         </svg>
       )
     },
-    { 
-      id: 'cortège', 
-      label: 'Cortège', 
+    {
+      id: 'cortège',
+      label: 'Cortège',
       icon: (
         <svg viewBox="0 0 100 100" className="w-5 h-5">
           <defs>
@@ -271,9 +274,9 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
         </svg>
       )
     },
-    { 
-      id: 'territoire', 
-      label: 'Territoire', 
+    {
+      id: 'territoire',
+      label: 'Territoire',
       icon: (
         <svg viewBox="0 0 100 100" className="w-5 h-5">
           <defs>
@@ -292,9 +295,9 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
         </svg>
       )
     },
-    { 
-      id: 'folklore', 
-      label: 'Folklore', 
+    {
+      id: 'folklore',
+      label: 'Folklore',
       icon: (
         <svg viewBox="0 0 100 100" className="w-5 h-5">
           <defs>
@@ -317,7 +320,7 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
   const handleBulkPrint = ({ format, isBW }) => {
     setShowBulkPrintModal(false);
     setIsPrinting(true);
-    
+
     // Set classes for print
     if (isBW) document.body.classList.add('print-bw');
     document.body.classList.add(`print-format-${format}`);
@@ -336,7 +339,7 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
 
     setTimeout(() => {
       window.print();
-      
+
       // Cleanup
       if (isBW) document.body.classList.remove('print-bw');
       document.body.classList.remove(`print-format-${format}`);
@@ -472,6 +475,30 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
     return () => unsubscribe();
   }, [groupId]);
 
+  // Synchroniser les événements pour extraire les dépôts médias vers "PhotosPrestations"
+  useEffect(() => {
+    if (!groupId) {
+      setEventsWithMedia([]);
+      return;
+    }
+    const eventsRef = collection(db, 'events');
+    const qEvents = query(eventsRef, where('groupId', '==', groupId));
+    const unsubscribeEvents = onSnapshot(qEvents, (querySnapshot) => {
+      const fetchedEvents = [];
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        if (data.lienDepotMedias) {
+          fetchedEvents.push({ id: doc.id, ...data });
+        }
+      });
+      setEventsWithMedia(fetchedEvents);
+    }, (error) => {
+      console.error("WidgetDocuments - Erreur onSnapshot events :", error);
+    });
+
+    return () => unsubscribeEvents();
+  }, [groupId]);
+
   // Synchroniser varalCategories depuis la configuration de l'association
   useEffect(() => {
     if (!groupId) {
@@ -517,11 +544,11 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
       if (docItem.dateAjout) {
         ts = new Date(docItem.dateAjout).getTime();
       } else if (docItem.createdAt) {
-        ts = typeof docItem.createdAt.toMillis === 'function' 
-          ? docItem.createdAt.toMillis() 
+        ts = typeof docItem.createdAt.toMillis === 'function'
+          ? docItem.createdAt.toMillis()
           : new Date(docItem.createdAt).getTime();
       }
-      
+
       if (!isNaN(ts) && ts > newestTimestamp) {
         newestTimestamp = ts;
         newestId = docItem.id;
@@ -537,14 +564,53 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
     const catObj = (docItem.categoryId && varalCategories.find(c => c.id === docItem.categoryId))
       || (docItem.categorie && varalCategories.find(c => c.nom === docItem.categorie))
       || (docItem.categorie && varalCategories.find(c => c.id === docItem.categorie));
-    const catId = catObj ? catObj.id : 'Autre';
-    
+    let catId = catObj ? catObj.id : 'Autre';
+
+    // MIGRATION FORCÉE FRONT-END : Nettoyage du varal Administratif
+    if (catId === 'Administratif') {
+      const titre = (docItem.titre || '').toLowerCase();
+      const isCoreAdmin = titre.includes('compo ca') || titre.includes('règlement') || titre.includes('reglement') || titre.includes('statut') || titre.includes('rib');
+
+      if (!isCoreAdmin) {
+        // Tous les autres (dont ceux qui commencent par CR) sont basculés sur ComptesRendus
+        catId = 'ComptesRendus';
+      }
+    }
+
     if (!acc[catId]) {
       acc[catId] = [];
     }
     acc[catId].push(docItem);
     return acc;
   }, {});
+
+  // Injection des dépôts médias des événements dans le varal "PhotosPrestations"
+  if (eventsWithMedia.length > 0) {
+    if (!groupedDocs['PhotosPrestations']) {
+      groupedDocs['PhotosPrestations'] = [];
+    }
+    eventsWithMedia.forEach(ev => {
+      groupedDocs['PhotosPrestations'].push({
+        id: `event-media-${ev.id}`,
+        titre: `[Album] ${ev.titre || 'Événement'}`,
+        fileUrl: ev.lienDepotMedias,
+        categorie: 'PhotosPrestations',
+        categoryId: 'PhotosPrestations',
+        type: 'dossier_externe',
+        dateAjout: ev.dateDebut || ev.createdAt || new Date().toISOString(),
+        description: `Dossier partagé pour consulter et déposer des médias liés à l'événement du ${new Date(ev.dateDebut).toLocaleDateString('fr-FR')}.`,
+        isVirtualEventMedia: true,
+        eventId: ev.id,
+      });
+    });
+
+    // Retrier "PhotosPrestations" par date
+    groupedDocs['PhotosPrestations'].sort((a, b) => {
+      const dateA = new Date(a.dateAjout || 0).getTime();
+      const dateB = new Date(b.dateAjout || 0).getTime();
+      return dateB - dateA;
+    });
+  }
 
   const categoryVariants = {
     'Partitions': 'ocre',
@@ -562,9 +628,9 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
           {t('widgetDocuments.title')}
         </h3>
         {!loading && isAuthorized && !isAdding && (
-          <CordelButton 
-            variant="default" 
-            onClick={() => setIsAdding(true)} 
+          <CordelButton
+            variant="default"
+            onClick={() => setIsAdding(true)}
             className="text-[10px] px-2 py-1 uppercase tracking-widest font-black"
           >
             {t('widgetDocuments.uploadBtn')}
@@ -581,14 +647,14 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
 
       {/* Upload/Edit Form view */}
       {!loading && (isAdding || documentToEdit) && (
-        <DocumentUploadForm 
-          groupId={groupId} 
+        <DocumentUploadForm
+          groupId={groupId}
           varalCategories={varalCategories}
           documentToEdit={documentToEdit}
           onClose={() => {
             setIsAdding(false);
             setDocumentToEdit(null);
-          }} 
+          }}
         />
       )}
 
@@ -598,173 +664,174 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
           <CordelCard variant="default" useExtremeBorder={false} className="p-4 text-center">
             <p className="text-xs opacity-75 font-semibold">Aucun document suspendu.</p>
           </CordelCard>
-        ) : (          <div className="flex flex-col gap-4 w-full">
-            {varalCategories.map((category) => {
-              let docList = groupedDocs[category.id] || [];
-              const variant = categoryVariants[category.id] || 'default';
-              const currentYear = new Date().getFullYear();
-              
-              if (category.id === 'Culture' && cultureFilter !== 'all') {
-                docList = docList.filter(d => {
-                  if (d.type !== 'culture_fiche') return false;
-                  const dCat = (d.categorieFiche || '').toLowerCase();
-                  const dTheme = (d.themeCulture || '').toLowerCase();
-                  const filterCat = cultureFilter.toLowerCase();
-                  
-                  if (filterCat === 'all') {
-                    // Do nothing, true for all
-                  } else if (filterCat === 'cuisine') {
-                    if (!dCat.includes('cuisine') && !dTheme.includes('cuisine') && !dCat.includes('recette') && !dTheme.includes('gastronomi')) return false;
-                  } else if (filterCat === 'cortège') {
-                     if (!dCat.includes('cour') && !dCat.includes('personnage') && !dCat.includes('cortège') && !dTheme.includes('cortejo') && !dTheme.includes('cortège')) return false;
-                  } else if (filterCat === 'orixás') {
-                     if (!dCat.includes('orix') && !dCat.includes('spirit') && !dTheme.includes('orixa')) return false;
-                  } else if (filterCat === 'histoire') {
-                     if (!dCat.includes('histoire') && !dCat.includes('origine') && !dTheme.includes('histoire')) return false;
-                  } else if (filterCat === 'musique') {
-                     if (!dCat.includes('musique') && !dTheme.includes('musique')) return false;
-                  } else if (filterCat === 'territoire') {
-                     if (!dCat.includes('territoire') && !dTheme.includes('territoire') && !dCat.includes('géographie') && !dCat.includes('lieu')) return false;
-                  } else if (filterCat === 'folklore') {
-                     if (!dCat.includes('folklore') && !dTheme.includes('folklore')) return false;
-                  } else {
-                     if (dCat !== filterCat && dTheme !== filterCat) return false;
-                  }
-                  return true;
-                });
-              }
+        ) : (<div className="flex flex-col gap-4 w-full">
+          {varalCategories.map((category) => {
+            let docList = groupedDocs[category.id] || [];
+            const variant = categoryVariants[category.id] || 'default';
+            const currentYear = new Date().getFullYear();
 
-              return (
-                <CordelCard key={category.id} variant="default" useExtremeBorder={true} className="pt-3 pb-4 relative overflow-hidden bg-[#FEF9E7] dark:bg-[#1A1712] border-2 border-cordel-master-dark/30 rounded-xl shadow-[4px_6px_16px_rgba(24,23,22,0.12)] w-full my-4 transition-all">
-                  {/* Category Title Stamp & Filters */}
-                  <div className="flex flex-col md:flex-row md:justify-between items-start md:items-center gap-2 mb-2 pl-3 pr-3 select-none relative z-20">
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      <span className={`theme-stamp-badge theme-stamp-badge-${variant === 'ocre' || variant === 'vert' ? 'wood' : 'dark'} text-[8.5px] tracking-wider font-extrabold`}>
-                        {getCategoryLabel(category.nom)}
-                      </span>
-                      
-                      {isAuthorized && (
-                        <button
-                          type="button"
-                          onClick={() => setEditingCategory(category)}
-                          className="p-1 rounded bg-[var(--cordel-bg)] text-[var(--cordel-text)] border border-[var(--cordel-border)] hover:bg-[var(--cordel-master-bg)] cursor-pointer select-none flex items-center justify-center shadow-sm opacity-65 hover:opacity-100 transition-opacity"
-                          title="Modifier la catégorie"
-                        >
-                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                            <path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4z" />
-                          </svg>
-                        </button>
-                      )}
+            if (category.id === 'Culture' && cultureFilter !== 'all') {
+              docList = docList.filter(d => {
+                if (d.type !== 'culture_fiche') return false;
+                const dCat = (d.categorieFiche || '').toLowerCase();
+                const dTheme = (d.themeCulture || '').toLowerCase();
+                const filterCat = cultureFilter.toLowerCase();
 
-                      {/* THEME ICONS (ONLY FOR CULTURE) */}
-                      {category.id === 'Culture' && (
-                        <div className="flex flex-wrap gap-1 items-center bg-[#fdfaf2] border border-encre-noire/20 p-1 rounded-md shadow-sm md:ml-2">
-                          {CULTURE_THEMES.map(theme => (
-                            <button
-                              key={theme.id}
-                              onClick={() => setCultureFilter(theme.id)}
-                              className={`text-[12px] md:text-sm px-1.5 py-1 rounded flex items-center justify-center transition-all ${
-                                cultureFilter === theme.id 
-                                  ? 'bg-cordel-wood text-[#fdfaf2] shadow-[1px_1px_0px_0px_#181716] scale-110 z-10' 
-                                  : 'text-cordel-master-dark hover:bg-neutral-200 opacity-80 hover:opacity-100'
-                              }`}
-                              title={theme.label}
-                            >
-                              {theme.icon}
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                    
-                    {category.activerUploadPublic && category.lienUploadPublic && (
-                      <a 
-                        href={category.lienUploadPublic}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-[9px] font-black uppercase text-blue-700 hover:underline flex items-center gap-1 cursor-pointer mt-1 md:mt-0"
+                if (filterCat === 'all') {
+                  // Do nothing, true for all
+                } else if (filterCat === 'cuisine') {
+                  if (!dCat.includes('cuisine') && !dTheme.includes('cuisine') && !dCat.includes('recette') && !dTheme.includes('gastronomi')) return false;
+                } else if (filterCat === 'cortège') {
+                  if (!dCat.includes('cour') && !dCat.includes('personnage') && !dCat.includes('cortège') && !dTheme.includes('cortejo') && !dTheme.includes('cortège')) return false;
+                } else if (filterCat === 'orixás') {
+                  if (!dCat.includes('orix') && !dCat.includes('spirit') && !dTheme.includes('orixa')) return false;
+                } else if (filterCat === 'histoire') {
+                  if (!dCat.includes('histoire') && !dCat.includes('origine') && !dTheme.includes('histoire')) return false;
+                } else if (filterCat === 'musique') {
+                  if (!dCat.includes('musique') && !dTheme.includes('musique')) return false;
+                } else if (filterCat === 'territoire') {
+                  if (!dCat.includes('territoire') && !dTheme.includes('territoire') && !dCat.includes('géographie') && !dCat.includes('lieu')) return false;
+                } else if (filterCat === 'folklore') {
+                  if (!dCat.includes('folklore') && !dTheme.includes('folklore')) return false;
+                } else {
+                  if (dCat !== filterCat && dTheme !== filterCat) return false;
+                }
+                return true;
+              });
+            }
+
+            return (
+              <CordelCard key={category.id} variant="default" useExtremeBorder={true} className="pt-3 pb-4 relative overflow-hidden bg-[#FEF9E7] dark:bg-[#1A1712] border-2 border-cordel-master-dark/30 rounded-xl shadow-[4px_6px_16px_rgba(24,23,22,0.12)] w-full my-4 transition-all">
+                {/* Category Title Stamp & Filters */}
+                <div className="flex flex-col md:flex-row md:justify-between items-start md:items-center gap-2 mb-2 pl-3 pr-3 select-none relative z-20">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className={`theme-stamp-badge theme-stamp-badge-${variant === 'ocre' || variant === 'vert' ? 'wood' : 'dark'} text-[8.5px] tracking-wider font-extrabold`}>
+                      {getCategoryLabel(category.nom)}
+                    </span>
+
+                    {isAuthorized && (
+                      <button
+                        type="button"
+                        onClick={() => setEditingCategory(category)}
+                        className="p-1 rounded bg-[var(--cordel-bg)] text-[var(--cordel-text)] border border-[var(--cordel-border)] hover:bg-[var(--cordel-master-bg)] cursor-pointer select-none flex items-center justify-center shadow-sm opacity-65 hover:opacity-100 transition-opacity"
+                        title="Modifier la catégorie"
                       >
-                        📤 {translate('documents.publicUploadLink', "Partager vos photos/vidéos")}
-                      </a>
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                          <path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4z" />
+                        </svg>
+                      </button>
+                    )}
+
+                    {/* THEME ICONS (ONLY FOR CULTURE) */}
+                    {category.id === 'Culture' && (
+                      <div className="flex flex-wrap gap-1 items-center bg-[#fdfaf2] border border-encre-noire/20 p-1 rounded-md shadow-sm md:ml-2">
+                        {CULTURE_THEMES.map(theme => (
+                          <button
+                            key={theme.id}
+                            onClick={() => setCultureFilter(theme.id)}
+                            className={`text-[12px] md:text-sm px-1.5 py-1 rounded flex items-center justify-center transition-all ${cultureFilter === theme.id
+                              ? 'bg-cordel-wood text-[#fdfaf2] shadow-[1px_1px_0px_0px_#181716] scale-110 z-10'
+                              : 'text-cordel-master-dark hover:bg-neutral-200 opacity-80 hover:opacity-100'
+                              }`}
+                            title={theme.label}
+                          >
+                            {theme.icon}
+                          </button>
+                        ))}
+                      </div>
                     )}
                   </div>
 
-                  {/* Relative container so the rope shifts down with the cordels if the header grows */}
-                  <div className="relative w-full mt-2">
-                    {/* Realistic 3D Hemp Rope */}
-                    <HangingRopeCurve className="absolute top-[12px] left-0 right-0 h-8 w-full z-0 select-none pointer-events-none overflow-visible" />
+                  {category.activerUploadPublic && category.lienUploadPublic && (
+                    <a
+                      href={category.lienUploadPublic}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[9px] font-black uppercase text-blue-700 hover:underline flex items-center gap-1 cursor-pointer mt-1 md:mt-0"
+                    >
+                      📤 {translate('documents.publicUploadLink', "Partager vos photos/vidéos")}
+                    </a>
+                  )}
+                </div>
 
-                    {/* Hanging Booklets Directly Mounted on Rope Line */}
-                    <div className="flex flex-nowrap overflow-x-auto overflow-y-visible justify-start items-start gap-4 sm:gap-6 pt-6 pb-6 relative z-10 w-full varal-scrollbar px-6 min-h-[210px]">
-                      {docList.length === 0 ? (
-                        <p className="text-[10px] italic opacity-60 self-center py-6 text-cordel-master-dark">{translate('documents.noDocumentsCategory', "Aucun document dans cette rubrique.")}</p>
-                      ) : (
-                        docList.map((docItem, index) => {
-                          const isLatestDoc = docItem.id === newestDocumentId;
+                {/* Relative container so the rope shifts down with the cordels if the header grows */}
+                <div className="relative w-full mt-2">
+                  {/* Realistic 3D Hemp Rope */}
+                  <HangingRopeCurve className="absolute top-[12px] left-0 right-0 h-8 w-full z-0 select-none pointer-events-none overflow-visible" />
 
-                          const isArchived = category.activerOpaciteArchive && docItem.annee && docItem.annee < currentYear;
-                          const opacityClass = isArchived ? 'opacity-60 hover:opacity-100 transition-opacity duration-200' : 'opacity-100';
+                  {/* Hanging Booklets Directly Mounted on Rope Line */}
+                  <div className="flex flex-nowrap overflow-x-auto overflow-y-visible justify-start items-start gap-4 sm:gap-6 pt-[33px] pb-6 relative z-10 w-full varal-scrollbar px-6 min-h-[210px]">
+                    {docList.length === 0 ? (
+                      <p className="text-[10px] italic opacity-60 self-center py-6 text-cordel-master-dark">{translate('documents.noDocumentsCategory', "Aucun document dans cette rubrique.")}</p>
+                    ) : (
+                      docList.map((docItem, index) => {
+                        const isLatestDoc = docItem.id === newestDocumentId;
 
-                          const docType = getDocType(docItem);
-                          
-                          let colorClass = 'default';
-                          if (category.id === 'Administratif' || category.id === 'DocumentsFixes' || category.nom === 'Administratif') {
-                            colorClass = 'bleu-ardoise'; // Slate grey exclusif pour les documents administratifs fixes
-                          } else if (category.id === 'ComptesRendus' || category.nom === 'Comptes-rendus') {
-                            colorClass = 'rouge'; // Rouge distinctif pour les Comptes-rendus
-                          } else {
-                            colorClass = getDeterministicColor(docItem.id);
-                          }
-                            const typeIcons = {
-                              pdf: '📄',
-                              audio: '🎵',
-                              image: '📷',
-                              video: '🎥',
-                              web: '🌐',
-                              dossier_externe: '📂',
-                              drive: '📂',
-                              report: '📜',
-                              culture_fiche: '📖'
-                            };
-                            const typeIcon = typeIcons[docType] || '📄';
+                        const isArchived = category.activerOpaciteArchive && docItem.annee && docItem.annee < currentYear;
+                        const opacityClass = isArchived ? 'opacity-60 hover:opacity-100 transition-opacity duration-200' : 'opacity-100';
 
-                            const isDarkBg = colorClass === 'rouge' || colorClass === 'bleu-ardoise' || colorClass === 'bleu';
-                            const textClass = isDarkBg ? 'text-[#FEF9E7]' : 'text-encre-noire';
-                            const borderDashedClass = isDarkBg ? 'border-[#FEF9E7]/35' : 'border-encre-noire/25';
-                            const yearBadgeClass = isDarkBg ? 'bg-white/25 text-[#FEF9E7]' : 'bg-encre-noire/10 text-encre-noire';
+                        const docType = getDocType(docItem);
 
-                            /* Classe d'animation : le Petit Nouveau garde son swing fort,
-                               les autres reçoivent la brise légère désynchronisée */
-                            const cardAnimationClass = isLatestDoc
-                              ? 'animate-varal-newest'
-                              : 'animate-varal-breeze hover:z-30 hover:scale-105 hover:rotate-0';
+                        let colorClass = 'default';
+                        if (category.id === 'Administratif' || category.id === 'DocumentsFixes' || category.nom === 'Administratif') {
+                          colorClass = 'bleu-ardoise'; // Slate grey exclusif pour les documents administratifs fixes
+                        } else if (category.id === 'ComptesRendus' || category.nom === 'Comptes-rendus') {
+                          colorClass = 'rouge'; // Rouge distinctif pour les Comptes-rendus
+                        } else {
+                          colorClass = getDeterministicColor(docItem.id);
+                        }
+                        const typeIcons = {
+                          pdf: '📄',
+                          audio: '🎵',
+                          image: '📷',
+                          video: '🎥',
+                          web: '🌐',
+                          dossier_externe: '📂',
+                          drive: '📂',
+                          report: '📜',
+                          culture_fiche: '📖'
+                        };
+                        const typeIcon = typeIcons[docType] || '📄';
 
-                            /* Style dynamique : désynchronisation de la brise par index
-                               pour simuler un vent naturel irrégulier.
-                               Le Petit Nouveau ne reçoit aucun style inline (géré 100% par CSS). */
-                            const cardAnimationStyle = isLatestDoc
-                              ? {}
-                              : {
-                                  animationDelay: `${(index * 0.4) % 1.5}s`,
-                                  animationDuration: `${3 + (index % 3) * 0.6}s`,
-                                };
+                        const isDarkBg = colorClass === 'rouge' || colorClass === 'bleu-ardoise' || colorClass === 'bleu';
+                        const textClass = isDarkBg ? 'text-[#FEF9E7]' : 'text-encre-noire';
+                        const borderDashedClass = isDarkBg ? 'border-[#FEF9E7]/35' : 'border-encre-noire/25';
+                        const yearBadgeClass = isDarkBg ? 'bg-white/25 text-[#FEF9E7]' : 'bg-encre-noire/10 text-encre-noire';
 
-                            return (
-                              <div 
-                                key={docItem.id}
-                                onClick={() => {
-                                  if (docType === 'report') {
-                                    setSelectedReport(docItem);
-                                  } else if (docType === 'song') {
-                                    setSelectedToada(docItem);
-                                  } else if (docType === 'culture_fiche') {
-                                    setSelectedCultureCard(docItem);
-                                  } else {
-                                    window.open(docItem.fileUrl, '_blank');
-                                  }
-                                }}
-                                className={`
+                        /* Classe d'animation : le Petit Nouveau garde son swing fort,
+                           les autres reçoivent la brise légère désynchronisée */
+                        const cardAnimationClass = isLatestDoc
+                          ? 'animate-varal-newest'
+                          : 'animate-varal-breeze hover:z-30 hover:scale-105 hover:rotate-0';
+
+                        /* Style dynamique : désynchronisation de la brise par index
+                           pour simuler un vent naturel irrégulier.
+                           Le Petit Nouveau ne reçoit aucun style inline (géré 100% par CSS). */
+                        const cardAnimationStyle = isLatestDoc
+                          ? {}
+                          : {
+                            animationDelay: `${(index * 0.4) % 1.5}s`,
+                            animationDuration: `${3 + (index % 3) * 0.6}s`,
+                          };
+
+                        return (
+                          <div
+                            key={docItem.id}
+                            onClick={() => {
+                              if (docType === 'report') {
+                                setSelectedReport(docItem);
+                              } else if (docType === 'song') {
+                                setSelectedToada(docItem);
+                              } else if (docType === 'culture_fiche') {
+                                setSelectedCultureCard(docItem);
+                              } else if (docType === 'fabrication') {
+                                setSelectedFabrication(docItem);
+                              } else {
+                                window.open(docItem.fileUrl, '_blank');
+                              }
+                            }}
+                            className={`
                               relative flex flex-col items-center group cursor-pointer
                               transition-all duration-300 origin-top shrink-0 flex-none
                               ${cardAnimationClass}
@@ -784,7 +851,7 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
                             <WoodenClothespin className="absolute -top-[16px] z-30 pointer-events-none" />
 
                             {/* Booklet Cover */}
-                            <div 
+                            <div
                               className={`
                                 relative w-36 h-48 border-2 border-encre-noire p-3.5 flex flex-col justify-between text-left
                                 bg-cordel-bg-light shadow-[4px_4px_0px_0px_#181716]
@@ -795,7 +862,7 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
                               `}
                             >
                               {/* Wood Grain Xylogravure Texture Overlay (Les veines et stries du bois gravé) */}
-                              <div 
+                              <div
                                 className="absolute inset-0 pointer-events-none opacity-[0.16] mix-blend-multiply select-none"
                                 style={{
                                   backgroundImage: `url("data:image/svg+xml,%3Csvg width='120' height='120' viewBox='0 0 120 120' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='%23181716' stroke-linecap='round'%3E%3Cpath d='M6 0 V120 M17 0 Q22 40 17 80 T17 120 M31 0 V120 M43 0 Q39 50 43 100 V120 M56 0 V120 M70 0 Q74 30 70 85 V120 M85 0 V120 M98 0 Q94 60 98 110 V120 M110 0 V120' stroke-width='1.1' stroke-dasharray='9 3 18 5'/%3E%3Cpath d='M11 0 V120 M25 0 V120 M49 0 V120 M63 0 V120 M78 0 V120 M92 0 V120 M104 0 V120' stroke-width='0.6' stroke-dasharray='4 7 12 6' opacity='0.7'/%3E%3Cpath d='M42 35 C42 28, 48 24, 55 28 C62 32, 59 41, 51 42 C44 43, 42 37, 42 35 Z' stroke-width='1' opacity='0.6'/%3E%3Cpath d='M45 35 C45 31, 49 28, 54 31 C59 34, 57 39, 51 40 C46 41, 45 37, 45 35 Z' stroke-width='0.6' opacity='0.4'/%3E%3C/g%3E%3C/svg%3E")`,
@@ -804,7 +871,7 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
                               />
                               {/* Aged Cordel Paper Patina Gradient Overlay */}
                               <div className="absolute inset-0 pointer-events-none bg-gradient-to-br from-amber-200/15 via-transparent to-black/20 select-none" />
-                              
+
                               {/* Universal Central Stamp Overlays */}
                               {(() => {
                                 const theme = ((docItem.themeCulture || '') + ' ' + (docItem.stampKey || '') + ' ' + (docItem.categorieFiche || '') + ' ' + (docItem.sousCategorieFiche || '')).toLowerCase();
@@ -815,10 +882,10 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
                                 const isMusique = theme.includes('musique');
                                 const isTerritoire = theme.includes('territoire') || theme.includes('geograph');
                                 const isFolklore = theme.includes('folklore');
-                                
+
                                 const isAdminOrCR = category.id === 'Administratif' || category.nom === 'Administratif' || category.id === 'ComptesRendus' || category.nom === 'Comptes-rendus' || category.id === 'DocumentsFixes';
                                 const isTutoFab = category.id === 'TutosFabrication' || category.nom === 'TutosFabrication' || category.nom === 'Tutos Fabrication';
-                                
+
                                 const renderIcon = (id, paths, maskLines, extraClasses = "w-24 h-24 opacity-60") => (
                                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" className={`absolute inset-0 m-auto z-0 pointer-events-none ${isDarkBg ? 'text-encre-noire' : 'text-white'} ${extraClasses}`}>
                                     <defs>
@@ -843,7 +910,7 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
                                   'admin',
                                   "M 50 10 C 27.9 10 10 27.9 10 50 C 10 72.1 27.9 90 50 90 C 72.1 90 90 72.1 90 50 C 90 27.9 72.1 10 50 10 Z M 50 15 C 69.3 15 85 30.7 85 50 C 85 69.3 69.3 85 50 85 C 30.7 85 15 69.3 15 50 C 15 30.7 30.7 15 50 15 Z M 50 25 C 36.2 25 25 36.2 25 50 C 25 63.8 36.2 75 50 75 C 63.8 75 75 63.8 75 50 C 75 36.2 63.8 25 50 25 Z M 50 33 L 55.3 43.8 L 67 45.5 L 58.5 53.8 L 60.5 65 L 50 59.5 L 39.5 65 L 41.5 53.8 L 33 45.5 L 44.7 43.8 L 50 33 Z",
                                   <>
-                                    <path d="M 15 50 L 30 50 M 70 50 L 85 50 M 50 15 L 50 30 M 50 70 L 50 85" strokeWidth="2" strokeDasharray="3 3"/>
+                                    <path d="M 15 50 L 30 50 M 70 50 L 85 50 M 50 15 L 50 30 M 50 70 L 50 85" strokeWidth="2" strokeDasharray="3 3" />
                                   </>, "w-20 h-20 opacity-30"
                                 );
 
@@ -955,11 +1022,11 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
                                     <path d="M 45 75 Q 50 85 55 75" fill="none" strokeWidth="2" strokeDasharray="2 2" />
                                   </>
                                 );
-                                
+
                                 return null;
                               })()}
                               {/* Edit & Delete & Reorder Action Buttons */}
-                              {isAuthorized && (
+                              {isAuthorized && !docItem.isVirtualEventMedia && (
                                 <div className="absolute top-1.5 right-1.5 flex gap-1 z-40 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                                   {index > 0 && (
                                     <button
@@ -1044,11 +1111,11 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
                       })
                     )}
                   </div>
-                  </div>
-                </CordelCard>
-              );
-            })}
-          </div>
+                </div>
+              </CordelCard>
+            );
+          })}
+        </div>
         )
       )}
 
@@ -1059,13 +1126,13 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
             <h3 className="text-sm font-extrabold tracking-wider text-cordel-wood uppercase mb-4 border-b-2 border-dashed border-cordel-master-dark/20 pb-2">
               ✏️ Modifier la Corde / Catégorie
             </h3>
-            
+
             <div className="flex flex-col gap-4 text-xs">
               <div className="flex flex-col gap-1">
                 <label className="text-[10px] font-bold uppercase tracking-wider text-cordel-master-dark">
                   Nom de la catégorie
                 </label>
-                <input 
+                <input
                   type="text"
                   value={editingCategory.nom}
                   onChange={(e) => setEditingCategory(prev => ({ ...prev, nom: e.target.value }))}
@@ -1074,7 +1141,7 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
               </div>
 
               <label className="flex items-start gap-2 cursor-pointer mt-1">
-                <input 
+                <input
                   type="checkbox"
                   checked={editingCategory.activerUploadPublic}
                   onChange={(e) => setEditingCategory(prev => ({ ...prev, activerUploadPublic: e.target.checked }))}
@@ -1093,7 +1160,7 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
                   <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
                     Lien d'upload (Drive, Dropbox...)
                   </label>
-                  <input 
+                  <input
                     type="url"
                     value={editingCategory.lienUploadPublic || ''}
                     onChange={(e) => setEditingCategory(prev => ({ ...prev, lienUploadPublic: e.target.value }))}
@@ -1104,7 +1171,7 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
               )}
 
               <label className="flex items-start gap-2 cursor-pointer mt-1">
-                <input 
+                <input
                   type="checkbox"
                   checked={editingCategory.activerOpaciteArchive}
                   onChange={(e) => setEditingCategory(prev => ({ ...prev, activerOpaciteArchive: e.target.checked }))}
@@ -1119,16 +1186,16 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
               </label>
 
               <div className="flex justify-end gap-3 mt-4 border-t border-dashed border-cordel-master-dark/20 pt-4">
-                <CordelButton 
-                  type="button" 
+                <CordelButton
+                  type="button"
                   variant="default"
                   onClick={() => setEditingCategory(null)}
                   className="text-[10px] px-3 py-1.5 uppercase font-bold"
                 >
                   Annuler
                 </CordelButton>
-                <CordelButton 
-                  type="button" 
+                <CordelButton
+                  type="button"
                   variant="ocre"
                   onClick={async () => {
                     if (!editingCategory.nom.trim()) {
@@ -1180,7 +1247,7 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
 
             {/* Content */}
             <div className="flex-1 overflow-y-auto pr-1 flex flex-col gap-4 text-xs">
-              
+
               {/* Presents Badge Row */}
               {selectedReport.presents && selectedReport.presents.length > 0 && (
                 <div className="bg-cordel-bg-light/45 p-3 rounded border border-dashed border-encre-noire/15 flex flex-col gap-1.5">
@@ -1217,7 +1284,7 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
                 )}
               </div>
             </div>
-            
+
             {/* Footer */}
             <div className="mt-4 pt-3 border-t border-dashed border-cordel-master-dark/15 text-center text-[9px] font-black text-cordel-wood opacity-55 shrink-0 select-none uppercase tracking-widest">
               O Girador - Document Officiel Archivé
@@ -1239,9 +1306,9 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
               X
             </button>
             <div className="w-full h-full overflow-y-auto scrollbar-hide rounded-lg shadow-2xl flex justify-center">
-              <SongCard 
-                song={selectedToada} 
-                defaultRevisionMode={false} 
+              <SongCard
+                song={selectedToada}
+                defaultRevisionMode={false}
                 allDocsToPrint={groupedDocs['Toadas'] || []}
                 onPrintAll={(config) => {
                   setSelectedToada(null);
@@ -1271,6 +1338,10 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
             </div>
           </div>
         </div>
+      )}
+
+      {selectedFabrication && (
+        <FabricationCard fabrication={selectedFabrication} onClose={() => setSelectedFabrication(null)} />
       )}
 
       {/* Bulk Print Hidden Container (Portaled to body to escape all parent layouts) */}

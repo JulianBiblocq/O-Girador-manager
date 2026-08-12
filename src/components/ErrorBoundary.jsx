@@ -12,8 +12,67 @@ export default class ErrorBoundary extends React.Component {
     return { hasError: true, error };
   }
 
+  sendTelemetry = (errorType, error, errorInfo = null) => {
+    try {
+      const payload = {
+        type: 'crash',
+        errorType,
+        message: error?.message || String(error),
+        stack: error?.stack || null,
+        componentStack: errorInfo?.componentStack || null,
+        context: {
+          pageUrl: window.location.href,
+          appVersion: import.meta.env.VITE_APP_VERSION || 'N/A',
+          userAgent: navigator.userAgent
+        },
+        timestamp: new Date().toISOString()
+      };
+
+      const hubUrl = import.meta.env.VITE_ECOSYSTEM_HUB_URL || 'https://hook.eu2.make.com/placeholder-feedback';
+      
+      if (navigator.sendBeacon) {
+        // Blob is required for sendBeacon to set application/json content type correctly if accepted by server, 
+        // but text/plain is safer for CORS. We'll use fetch with keepalive as primary since it supports headers.
+        fetch(hubUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+          keepalive: true
+        }).catch(() => {});
+      } else {
+        fetch(hubUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        }).catch(() => {});
+      }
+    } catch (e) {
+      // Ignorer silencieusement les erreurs de télémétrie
+    }
+  };
+
+  componentDidMount() {
+    this.handleGlobalError = (event) => {
+      this.sendTelemetry('window.onerror', event.error || event.message);
+    };
+    this.handleGlobalPromiseRejection = (event) => {
+      this.sendTelemetry('unhandledrejection', event.reason);
+    };
+
+    window.addEventListener('error', this.handleGlobalError);
+    window.addEventListener('unhandledrejection', this.handleGlobalPromiseRejection);
+  }
+
+  componentWillUnmount() {
+    window.removeEventListener('error', this.handleGlobalError);
+    window.removeEventListener('unhandledrejection', this.handleGlobalPromiseRejection);
+  }
+
   componentDidCatch(error, errorInfo) {
     console.error(`ErrorBoundary [${this.props.title || 'Global'}] a intercepté une erreur :`, error, errorInfo);
+    
+    // Télémétrie silencieuse
+    this.sendTelemetry('react_error_boundary', error, errorInfo);
     
     // Auto-recover if error is caused by stale lazy-loaded chunk after a new deploy
     const msg = String(error?.message || error || '');

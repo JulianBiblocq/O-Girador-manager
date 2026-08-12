@@ -116,6 +116,19 @@ service cloud.firestore {
       );
     }
 
+    // --- RÈGLES TÉLÉMÉTRIE & BUGS ---
+    match /hub_system_errors/{errorId} {
+      // Écriture ouverte à toutes les apps (Manager, Séquenceur, Vitrine) avec validation des champs
+      allow create: if request.resource.data.keys().hasAll(['appId', 'timestamp', 'errorMessage']);
+      // Lecture et gestion réservées à l'administrateur du Hub
+      allow read, update, delete: if request.auth != null && request.auth.token.admin == true;
+    }
+
+    match /hub_telemetry_daily/{eventId} {
+      allow create: if request.resource.data.keys().hasAll(['appId', 'timestamp', 'eventName']);
+      allow read, update, delete: if request.auth != null && request.auth.token.admin == true;
+    }
+
     // Collection Rules
 
     // Users: Lecture pour tout membre connecté. Écriture réservée au propre profil (sans altérer 'role', 'tags', 'isNew', etc.) ou aux Admins/Mestres.
@@ -186,6 +199,16 @@ service cloud.firestore {
       // Contacts CRM pour le pôle diffusion
       match /contacts_diffusion/{contactId} {
         allow read, write: if isAuthenticated() && getUserData().groupId == assocId;
+      }
+
+      // Notes pédagogiques (Mestre)
+      match /blocNotes/{noteId} {
+        allow read, write: if isAdminOrMestre() && getUserData().groupId == assocId;
+      }
+
+      // Métadonnées du Séquenceur (Mestre)
+      match /rhythmMetadata/{rhythmId} {
+        allow read, write: if isAdminOrMestre() && getUserData().groupId == assocId;
       }
     }
 

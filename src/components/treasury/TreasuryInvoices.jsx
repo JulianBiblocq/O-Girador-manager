@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 import { useInvoices } from '../../hooks/useInvoices';
 import InvoiceFormModal from './InvoiceFormModal';
 import InvoiceDetailsModal from './InvoiceDetailsModal';
+import BankDetailsBlock from '../association-settings/blocks/BankDetailsBlock';
 
-export default function TreasuryInvoices({ groupId, associationSettings }) {
+export default function TreasuryInvoices({ groupId, associationSettings, handleSaveAssociationSettings }) {
   const {
     invoices,
     loading,
@@ -106,8 +107,80 @@ export default function TreasuryInvoices({ groupId, associationSettings }) {
     }
   };
 
+  const [showConfig, setShowConfig] = useState(false);
+  const [formConfig, setFormConfig] = useState({
+    banqueNom: '',
+    banqueTitulaire: '',
+    banqueIBAN: '',
+    banqueBIC: '',
+    tvaIntracom: ''
+  });
+
+  useEffect(() => {
+    if (associationSettings) {
+      setFormConfig({
+        banqueNom: associationSettings.banqueNom || '',
+        banqueTitulaire: associationSettings.banqueTitulaire || '',
+        banqueIBAN: associationSettings.banqueIBAN || '',
+        banqueBIC: associationSettings.banqueBIC || '',
+        tvaIntracom: associationSettings.tvaIntracom || ''
+      });
+    }
+  }, [associationSettings]);
+
+  const handleConfigChange = (key, value) => {
+    setFormConfig(prev => ({ ...prev, [key]: value }));
+  };
+
+  const [savingSettings, setSavingSettings] = useState(false);
+
+  const handleSaveConfig = async (e) => {
+    e.preventDefault();
+    setSavingSettings(true);
+    try {
+      if (handleSaveAssociationSettings) {
+        await handleSaveAssociationSettings(formConfig);
+      }
+    } catch(err) {
+      alert("Erreur: " + err.message);
+    } finally {
+      setSavingSettings(false);
+    }
+  };
+
   return (
     <div className="flex flex-col gap-5 w-full text-left select-none">
+      {/* Configuration Section (Accordeon) */}
+      <CordelCard variant="default" useExtremeBorder={true} className="p-4 mb-2">
+        <div className="flex justify-between items-center cursor-pointer select-none" onClick={() => setShowConfig(!showConfig)}>
+          <h3 className="text-xs font-extrabold tracking-wider text-cordel-wood uppercase">
+            ⚙️ Coordonnées Bancaires & TVA (Pour les factures)
+          </h3>
+          <span className="text-xs font-black">{showConfig ? '▲ Masquer' : '▼ Déployer'}</span>
+        </div>
+
+        {showConfig && (
+          <form onSubmit={handleSaveConfig} className="flex flex-col gap-4 mt-4 pt-4 border-t border-dashed border-cordel-master-dark/20 text-left">
+            <BankDetailsBlock 
+              formData={formConfig}
+              handleChange={handleConfigChange}
+              saving={savingSettings}
+            />
+            <div className="flex justify-end mt-2 pt-3 border-t border-dashed border-cordel-master-dark/15">
+              <CordelButton
+                type="submit"
+                variant="ocre"
+                useExtremeBorder={true}
+                disabled={savingSettings}
+                className="px-6 py-2 uppercase font-black tracking-wider text-xs"
+              >
+                {savingSettings ? "Enregistrement..." : "💾 Enregistrer les Coordonnées Bancaires"}
+              </CordelButton>
+            </div>
+          </form>
+        )}
+      </CordelCard>
+
       {/* Explication du module */}
       <div className="text-xs text-encre-noire dark:text-cordel-bg-light opacity-85 border border-dashed border-cordel-master-dark/30 p-3.5 rounded-[6px_4px_8px_5px] bg-[#fdfaf2] dark:bg-[#201d1a] leading-relaxed flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div>

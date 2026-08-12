@@ -1,11 +1,15 @@
-import React from 'react';
+import React, { useState } from 'react';
 import CordelButton from '../CordelButton';
+import CordelCard from '../CordelCard';
 import NewsletterStepper from './newsletter/NewsletterStepper';
 import Step1MessageAccueil from './newsletter/Step1MessageAccueil';
 import Step2ProchainesDates from './newsletter/Step2ProchainesDates';
 import Step3RetourImages from './newsletter/Step3RetourImages';
 import Step4Recapitulatif from './newsletter/Step4Recapitulatif';
 import { useNewsletterData } from '../../hooks/useNewsletterData';
+import { useAssociationSettings } from '../../hooks/useAssociationSettings';
+import BrevoIntegrationBlock from '../association-settings/blocks/BrevoIntegrationBlock';
+import { useTranslation } from '../LanguageContext';
 
 /**
  * Composant principal de la page Newsletter dans le Studio (Version SaaS / Neutre).
@@ -16,6 +20,17 @@ import { useNewsletterData } from '../../hooks/useNewsletterData';
  * @param {Function} onBack - Callback pour retourner au menu principal du Studio
  */
 export default function NewsletterPage({ groupId, onBack }) {
+  const { t } = useTranslation();
+  
+  const {
+    formData: settingsData,
+    handleChange: handleSettingsChange,
+    handleSave: handleSaveSettings,
+    saving: savingSettings
+  } = useAssociationSettings(groupId, true, null, t);
+
+  const [showConfig, setShowConfig] = useState(false);
+
   const {
     currentStep,
     setCurrentStep,
@@ -87,6 +102,37 @@ export default function NewsletterPage({ groupId, onBack }) {
           {error}
         </div>
       )}
+
+      {/* Configuration Section (Accordeon) */}
+      <CordelCard variant="default" useExtremeBorder={true} className="p-4 mb-2">
+        <div className="flex justify-between items-center cursor-pointer select-none" onClick={() => setShowConfig(!showConfig)}>
+          <h3 className="text-xs font-extrabold tracking-wider text-cordel-wood uppercase">
+            ⚙️ Configuration Newsletter (API Brevo & Opt-in)
+          </h3>
+          <span className="text-xs font-black">{showConfig ? '▲ Masquer' : '▼ Déployer'}</span>
+        </div>
+
+        {showConfig && (
+          <form onSubmit={(e) => { e.preventDefault(); handleSaveSettings(); }} className="flex flex-col gap-4 mt-4 pt-4 border-t border-dashed border-cordel-master-dark/20 text-left">
+            <BrevoIntegrationBlock 
+              formData={settingsData}
+              handleChange={handleSettingsChange}
+              saving={savingSettings}
+            />
+            <div className="flex justify-end mt-2 pt-3 border-t border-dashed border-cordel-master-dark/15">
+              <CordelButton
+                type="submit"
+                variant="ocre"
+                useExtremeBorder={true}
+                disabled={savingSettings}
+                className="px-6 py-2 uppercase font-black tracking-wider text-xs shadow-[2px_2px_0px_0px_#181716]"
+              >
+                {savingSettings ? "Enregistrement..." : "💾 Enregistrer Configuration"}
+              </CordelButton>
+            </div>
+          </form>
+        )}
+      </CordelCard>
 
       {/* Barre de progression Stepper UI */}
       <NewsletterStepper

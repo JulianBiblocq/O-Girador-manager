@@ -38,6 +38,7 @@ import EventCommentsSection from './event-details/EventCommentsSection';
 import SendContractModal from './studio/SendContractModal';
 import EventPublicQrCodeModal from './event-details/EventPublicQrCodeModal';
 import EventMediaQrCodeModal from './event-details/EventMediaQrCodeModal';
+import useHardwareBack from '../hooks/useHardwareBack';
 
 export default function EventDetails({ event, user, profileData, onNavigateToView, onClose, onPrev, onNext, viewMode, setViewMode, onGoToStageLayoutEditor }) {
   const { t } = useTranslation();
@@ -111,6 +112,11 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
   const [showQrCodeModal, setShowQrCodeModal] = useState(false);
   const [showMediaQrCodeModal, setShowMediaQrCodeModal] = useState(false);
   const [isSendContractModalOpen, setIsSendContractModalOpen] = useState(false);
+
+  useHardwareBack(isEditingEvent, () => { if (typeof toggleEditing === 'function') toggleEditing(); else setIsEditingEvent(false); });
+  useHardwareBack(showQrCodeModal, () => setShowQrCodeModal(false));
+  useHardwareBack(showMediaQrCodeModal, () => setShowMediaQrCodeModal(false));
+  useHardwareBack(isSendContractModalOpen, () => setIsSendContractModalOpen(false));
 
   const {
     morceauxSelectionnes,
@@ -470,9 +476,13 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
     return 'both';
   }, [profileData?.instrumentsJoues, profileData?.discipline]);
 
-  const isAuthorized = React.useMemo(() => {
+  const [isMemberViewSimulation, setIsMemberViewSimulation] = useState(false);
+
+  const rawIsAuthorized = React.useMemo(() => {
     return canManageEvents(profileData, permissionsMatrice, effectiveUserTags);
   }, [profileData, permissionsMatrice, effectiveUserTags]);
+
+  const isAuthorized = rawIsAuthorized && !isMemberViewSimulation;
 
   const hasFinanceAccess = React.useMemo(() => {
     if (isAuthorized) return true;
@@ -502,7 +512,7 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
 
     // Keyword fallback check (tresorier, tresorerie, bureau, ca, president, etc.)
     const financeKeywords = ['tresorier', 'tresoriere', 'tresorerie', 'bureau', 'ca', 'president', 'presidente'];
-    return effectiveUserTags.some(t => {
+    const hasTagAccess = effectiveUserTags.some(t => {
       const tagStr = typeof t === 'string' ? t : getTagId(t);
       const lower = tagStr.toLowerCase();
       const tagObj = findTagObject(tagStr, tagsDisponibles);
@@ -510,7 +520,9 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
       const nomFLower = tagObj?.nomF?.toLowerCase() || '';
       return financeKeywords.some(kw => lower.includes(kw) || nomMLower.includes(kw) || nomFLower.includes(kw));
     });
-  }, [isAuthorized, profileData?.role, permissionsMatrice, effectiveUserTags, tagsDisponibles]);
+
+    return hasTagAccess && !isMemberViewSimulation;
+  }, [isAuthorized, profileData?.role, permissionsMatrice, effectiveUserTags, tagsDisponibles, isMemberViewSimulation]);
 
   const getPupitreName = (inst) => {
     if (!inst) return null;
@@ -535,12 +547,24 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
   };
 
   const getMemberInstrumentOptions = (mInfo) => {
-    // Restreindre la liste des instruments aux seuls instruments déclarés par le membre dans son profil
-    let rawUserInstruments = (mInfo?.instrumentsJoues && mInfo.instrumentsJoues.length > 0)
-      ? [...mInfo.instrumentsJoues]
-      : (mInfo?.instrument ? [mInfo.instrument] : []);
+    let rawUserInstruments = [];
+    const isDanse = Boolean(mInfo?.pratiqueDanse);
+    const isPercussion = Boolean(mInfo?.pratiquePercussion);
+    
+    // Si percussion, on prend ses instruments de percussion
+    if (isPercussion) {
+      const percs = (mInfo?.instrumentsJoues && mInfo.instrumentsJoues.length > 0)
+        ? mInfo.instrumentsJoues.filter(i => typeof i === 'string' && !i.toLowerCase().includes('danse'))
+        : (mInfo?.instrument && !mInfo.instrument.toLowerCase().includes('danse') ? [mInfo.instrument] : []);
+      rawUserInstruments = [...percs];
+    } else if (!isDanse) {
+      // Fallback ancien profil (ni l'un ni l'autre cochés, mais a un instrument)
+      rawUserInstruments = (mInfo?.instrumentsJoues && mInfo.instrumentsJoues.length > 0)
+        ? [...mInfo.instrumentsJoues]
+        : (mInfo?.instrument ? [mInfo.instrument] : []);
+    }
 
-    // Filtrer selon le niveau requis de l'événement si défini
+    // Filtrer selon le niveau requis de l'événement si défini (pour la musique)
     const eventRequiredPublic = resolveCategory(event.niveauRequis || event.publicCible, customCategories);
     if (eventRequiredPublic && eventRequiredPublic !== 'tous' && eventRequiredPublic !== 'aucun') {
       rawUserInstruments = rawUserInstruments.filter(inst => {
@@ -552,16 +576,26 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
 
     let base = [...rawUserInstruments];
 
+    // Ajout de la Danse si pratiquée et non restreinte
+    if (isDanse || (mInfo?.instrument && mInfo.instrument.toLowerCase().includes('danse'))) {
+      const mDanceLevel = mInfo?.niveauDanse || 'aucun';
+      const mDanceRestricted = isDanceEvent && danseNiveauRequis === 'confirme' && (mDanceLevel === 'debutant' || mDanceLevel === 'aucun');
+      if (!mDanceRestricted && !base.some(i => i.toLowerCase().includes('danse'))) {
+        base.push('Danse');
+      }
+    }
+
     // Si mInfo a déjà un instrument choisi dans Firestore, le conserver
     if (mInfo?.instrumentChoisi && !base.includes(mInfo.instrumentChoisi)) {
       base.push(mInfo.instrumentChoisi);
     }
 
     // Combinaisons autorisées pour les polyvalents si le membre possède TOUS les instruments du groupe
-    if (rawUserInstruments.length > 1) {
+    const percsOnly = base.filter(i => !i.toLowerCase().includes('danse'));
+    if (percsOnly.length > 1) {
       linkedInstruments.forEach(link => {
         const instrumentsArray = link.instruments || (Array.isArray(link) ? link : [link.inst1, link.inst2]);
-        const hasAll = instrumentsArray.every(inst => rawUserInstruments.includes(inst));
+        const hasAll = instrumentsArray.every(inst => percsOnly.includes(inst));
         if (hasAll) {
           const combined = instrumentsArray.join(' + ');
           if (!base.includes(combined)) {
@@ -571,13 +605,8 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
       });
     }
 
-    // Filtrage du niveau danse si la section danse est restreinte pour cet événement
-    const mDanceLevel = mInfo?.niveauDanse || 'aucun';
-    const mDanceRestricted = isDanceEvent && danseNiveauRequis === 'confirme' && (mDanceLevel === 'debutant' || mDanceLevel === 'aucun');
-    if (mDanceRestricted) {
-      base = base.filter(inst => !inst.toLowerCase().includes('danse'));
-    }
-
+    // S'il n'y a qu'une seule option "Danse" et que le membre ne fait pas de percussion,
+    // on renvoie juste ['Danse'].
     return base;
   };
 
@@ -984,9 +1013,9 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
         </div>
       )}
       {/* Header with back button, modifier button & navigation arrows */}
-      <div className="flex flex-col md:flex-row md:justify-between md:items-center border-b-2 border-dashed border-cordel-master-dark/30 pb-2.5 select-none gap-3">
+      <div className="flex flex-col md:flex-row md:justify-between md:items-start border-b-2 border-dashed border-cordel-master-dark/30 pb-2.5 select-none gap-3">
         {/* Navigation & Back buttons */}
-        <div className="flex items-center justify-between w-full md:w-auto gap-2">
+        <div className="flex items-center justify-between w-full md:w-auto gap-2 pt-1">
           <div className="flex items-center gap-1.5">
             <CordelButton variant="default" onClick={onClose} className="px-3 py-1 text-xs font-black">
               ← {t('common.back')}
@@ -1020,18 +1049,33 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
         </div>
 
         {/* Title on desktop */}
-        <span className="panel-title text-sm font-extrabold tracking-wider text-cordel-wood uppercase hidden md:flex items-center gap-1">
+        <span className="panel-title text-sm font-extrabold tracking-wider text-cordel-wood uppercase hidden md:flex items-center gap-1 pt-1">
           <XiloCalendar size={14} /> {t('eventDetails.title')}
         </span>
 
         {/* Action buttons (QR Code Public, Publication, Modify, Delete) */}
         {!isEditingEvent && (
-          <div className="flex gap-2 w-full md:w-auto flex-wrap sm:flex-nowrap justify-end md:justify-start">
+          <div className="flex gap-2 w-full md:w-auto flex-wrap justify-end md:max-w-[60%] xl:max-w-[50%]">
+            {rawIsAuthorized && (
+              <button
+                type="button"
+                onClick={() => setIsMemberViewSimulation(!isMemberViewSimulation)}
+                className={`text-[10px] font-black uppercase border px-3 py-1.5 rounded shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none cursor-pointer flex items-center gap-1 flex-1 lg:flex-none justify-center transition-colors ${
+                  isMemberViewSimulation 
+                    ? 'bg-amber-600 text-white border-amber-800' 
+                    : 'bg-stone-200 text-stone-800 border-stone-400 hover:bg-stone-300'
+                }`}
+                title="Aperçu Vue Adhérent"
+              >
+                👁️ {isMemberViewSimulation ? 'Quitter la vue adhérent' : 'Aperçu Vue Adhérent'}
+              </button>
+            )}
+
             {lienGoogleFormRecoltePhotos && (
               <button
                 type="button"
                 onClick={() => setShowQrCodeModal(true)}
-                className="text-[10px] font-black uppercase bg-amber-600 text-white border border-encre-noire px-3 py-1.5 rounded shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:bg-amber-700 cursor-pointer flex items-center gap-1.5 flex-1 sm:flex-none justify-center transition-colors"
+                className="text-[10px] font-black uppercase bg-amber-600 text-white border border-encre-noire px-3 py-1.5 rounded shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:bg-amber-700 cursor-pointer flex items-center gap-1.5 flex-1 lg:flex-none justify-center transition-colors"
                 title="Afficher le QR Code pour récolter les photos et vidéos des spectateurs"
               >
                 📷 QR Code Récolte Photos
@@ -1043,7 +1087,7 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
                 <button
                   type="button"
                   onClick={() => setIsSendContractModalOpen(true)}
-                  className="text-[10px] font-black uppercase bg-cordel-vert text-white border border-encre-noire px-3 py-1.5 rounded shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-105 cursor-pointer flex items-center gap-1 flex-1 sm:flex-none justify-center transition-colors"
+                  className="text-[10px] font-black uppercase bg-cordel-vert text-white border border-encre-noire px-3 py-1.5 rounded shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-105 cursor-pointer flex items-center gap-1 flex-1 lg:flex-none justify-center transition-colors"
                   title="Envoyer un contrat ou devis par email via l'API Brevo"
                 >
                   📝 Envoyer un contrat (Brevo)
@@ -1051,14 +1095,14 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
                 <button
                   type="button"
                   onClick={handlePreparePublication}
-                  className="text-[10px] font-black uppercase bg-cordel-ocre text-black border border-encre-noire px-3 py-1.5 rounded shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-95 cursor-pointer flex items-center gap-1 flex-1 sm:flex-none justify-center"
+                  className="text-[10px] font-black uppercase bg-cordel-ocre text-black border border-encre-noire px-3 py-1.5 rounded shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-95 cursor-pointer flex items-center gap-1 flex-1 lg:flex-none justify-center"
                 >
                   <XiloMegaphone size={12} /> Préparer la publication
                 </button>
                 <button
                   type="button"
                   onClick={() => setIsEditingEvent(true)}
-                  className="text-[10px] font-black uppercase bg-cordel-bg border border-encre-noire px-3 py-1.5 rounded shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-95 cursor-pointer flex-1 sm:flex-none justify-center"
+                  className="text-[10px] font-black uppercase bg-cordel-bg border border-encre-noire px-3 py-1.5 rounded shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-95 cursor-pointer flex-1 lg:flex-none justify-center"
                 >
                   ✏️ Modifier
                 </button>
@@ -1066,7 +1110,7 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
                   type="button"
                   variant="rouge"
                   onClick={handleDeleteEvent}
-                  className="text-[10px] px-3 py-1.5 uppercase font-black flex items-center gap-1 flex-1 sm:flex-none justify-center"
+                  className="text-[10px] px-3 py-1.5 uppercase font-black flex items-center gap-1 flex-1 lg:flex-none justify-center"
                 >
                   🗑️ Supprimer
                 </CordelButton>
@@ -1123,6 +1167,21 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
                 }
               }}
             />
+          )}
+
+          {isMemberViewSimulation && (
+            <div className="w-full mb-3 px-3.5 py-2 bg-amber-400 text-encre-noire border-2 border-encre-noire rounded shadow-[2px_2px_0px_0px_#181716] text-[10px] font-black uppercase tracking-wider flex items-center justify-between z-20 select-none animate-fade-in shrink-0">
+              <span className="flex items-center gap-2">
+                ⚠️ Mode Simulation Adhérent Actif
+              </span>
+              <button
+                type="button"
+                onClick={() => setIsMemberViewSimulation(false)}
+                className="bg-encre-noire text-white text-[9px] px-2.5 py-1 rounded font-black uppercase hover:bg-neutral-800 cursor-pointer shadow-xs shrink-0 ml-2"
+              >
+                [ Revenir en mode Admin ]
+              </button>
+            </div>
           )}
 
           <CordelAccordionGroup className="flex flex-col gap-3.5">
@@ -1562,6 +1621,7 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
               subtitle="Synthèse des recettes (Devis/Factures) et dépenses hybrides (Accès habilité)"
               icon="💰"
               defaultOpen={false}
+              restrictedState="hidden"
             >
               <EventBudgetSection
                 event={event}
@@ -1572,12 +1632,13 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
           )}
 
           {/* ACCORDION 5: Plan de scène & Placement (Replié par défaut) */}
-          {currentConfig.agendaEnableStageLayout && (
+          {currentConfig.agendaEnableStageLayout && (event.isStageLayoutPublished || isAuthorized) && (
             <CordelAccordion
               title="Plan de scène & Placement"
               subtitle="Disposition et positionnement des pupitres sur scène"
               icon="🎪"
               defaultOpen={false}
+              restrictedState={!event.isStageLayoutPublished ? 'hidden' : 'published'}
             >
               <EventStageLayoutSection
                 event={event}

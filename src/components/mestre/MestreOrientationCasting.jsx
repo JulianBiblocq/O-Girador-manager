@@ -4,8 +4,8 @@ import { db } from '../../firebase';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 import XiloAvatar from '../XiloAvatar';
-import OrientationAssignmentModal from './OrientationAssignmentModal';
 import { filterPublicPercussionInstruments } from '../../utils/tagUtils';
+import { DEFAULT_CUSTOM_CATEGORIES, resolveCategory } from '../../utils/categoryUtils';
 
 const DEFAULT_INSTRUMENTS = [
   "Alfaia Marcante",
@@ -113,10 +113,9 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
   const [loading, setLoading] = useState(true);
   const [instrumentsDisponibles, setInstrumentsDisponibles] = useState(DEFAULT_INSTRUMENTS);
   const [linkedInstruments, setLinkedInstruments] = useState([]);
+  const [customCategories, setCustomCategories] = useState(DEFAULT_CUSTOM_CATEGORIES);
   const [searchTerm, setSearchTerm] = useState('');
   const [showPendingOnly, setShowPendingOnly] = useState(false);
-  const [selectedMember, setSelectedMember] = useState(null);
-  const [modalOpen, setModalOpen] = useState(false);
   const [saving, setSaving] = useState(false);
 
   const groupId = profileData?.groupId || null;
@@ -173,6 +172,12 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
         } else {
           setLinkedInstruments([]);
         }
+
+        if (Array.isArray(data.customCategories) && data.customCategories.length > 0) {
+          setCustomCategories(data.customCategories);
+        } else {
+          setCustomCategories(DEFAULT_CUSTOM_CATEGORIES);
+        }
       }
     }, (error) => {
       console.error("MestreOrientationCasting - Erreur de chargement des instruments :", error);
@@ -181,7 +186,27 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
     return () => unsubscribeAssoc();
   }, [groupId]);
 
-  // Filtrer les membres actifs (exclure les inactifs)
+  // Détermine si un membre pratique ou souhaite pratiquer la percussion (exclut les danseurs 100% Danse sans percussion)
+  const isPercussionistMember = (m) => {
+    if (!m) return false;
+    if (m.pratiquePercussion === false) return false;
+    if (m.pratiquePercussion === true) return true;
+
+    const inst = (m.instrument || m.instrumentPrincipal || '').toLowerCase().trim();
+    const wishesList = Array.isArray(m.voeuxInstruments) && m.voeuxInstruments.length > 0
+      ? m.voeuxInstruments.filter(Boolean)
+      : [m.voeuPrincipal, m.voeuSecondaire, m.voeuTertiaire].filter(Boolean);
+
+    const hasAssignedPercussion = inst && inst !== 'danse' && inst !== 'chant' && inst !== 'en attente';
+    const hasPercussionWishes = wishesList.some(w => {
+      const wishLower = w.toLowerCase().trim();
+      return wishLower !== 'danse' && wishLower !== 'chant';
+    });
+
+    return hasAssignedPercussion || hasPercussionWishes;
+  };
+
+  // Filtrer les membres actifs (exclure uniquement les inactifs)
   const activeMembers = useMemo(() => {
     return members.filter(m => m.statutActuel !== 'inactive');
   }, [members]);
@@ -272,26 +297,6 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
     return counts;
   }, [activeMembers, displayPupitres]);
 
-  // Détermine si un membre pratique ou souhaite pratiquer la percussion (exclut les danseurs 100% Danse sans percussion)
-  const isPercussionistMember = (m) => {
-    if (!m) return false;
-    if (m.pratiquePercussion === false) return false;
-    if (m.pratiquePercussion === true) return true;
-
-    const inst = (m.instrument || m.instrumentPrincipal || '').toLowerCase().trim();
-    const wishesList = Array.isArray(m.voeuxInstruments) && m.voeuxInstruments.length > 0
-      ? m.voeuxInstruments.filter(Boolean)
-      : [m.voeuPrincipal, m.voeuSecondaire, m.voeuTertiaire].filter(Boolean);
-
-    const hasAssignedPercussion = inst && inst !== 'danse' && inst !== 'chant' && inst !== 'en attente';
-    const hasPercussionWishes = wishesList.some(w => {
-      const wishLower = w.toLowerCase().trim();
-      return wishLower !== 'danse' && wishLower !== 'chant';
-    });
-
-    return hasAssignedPercussion || hasPercussionWishes;
-  };
-
   // Détermine si un membre a un vœu réellement EN ATTENTE de traitement par le Mestre
   const hasPendingWishForMestre = (m) => {
     if (!isPercussionistMember(m)) return false;
@@ -299,9 +304,13 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
     const isUnassigned = !m.instrument || m.instrument.trim() === '' || m.instrument === 'En attente';
     const hasFormulatedWishes = Boolean((Array.isArray(m.voeuxInstruments) && m.voeuxInstruments.length > 0) || m.voeuPrincipal);
     const wantsChange = Boolean(m.souhaiteChangerInstrument);
+    const isLegacyDirectChoice = isUnassigned && !hasFormulatedWishes && m.estAncienMembre !== false;
 
     // Si pas encore d'instrument attribué et des vœux formulés -> en attente
     if (isUnassigned && hasFormulatedWishes) return true;
+    
+    // Ancien profil qui doit être assigné directement
+    if (isLegacyDirectChoice) return true;
 
     // Si instrument déjà attribué, en attente uniquement si demande de réorientation explicite
     if (!isUnassigned && wantsChange && hasFormulatedWishes) return true;
@@ -361,71 +370,226 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
     });
   }, [sortedMembers, searchTerm, showPendingOnly]);
 
-  // Ouverture de la modale d'affectation complète
-  const handleOpenAssignModal = (member) => {
-    setSelectedMember(member);
-    setModalOpen(true);
+  // Fonctions de sauvegarde inline
+  const handleUpdateMainInstrument = async (memberId, newInstrument) => {
+    setSaving(true);
+    try {
+      const userRef = doc(db, 'users', memberId);
+      const updatePayload = {
+        instrument: newInstrument,
+        instrumentPrincipal: newInstrument,
+        souhaiteChangerInstrument: false
+      };
+      
+      const member = members.find(m => m.id === memberId);
+      if (member) {
+         const secInst = member.instrumentSecondaire || '';
+         updatePayload.instrumentsJoues = Array.from(new Set([newInstrument, secInst].filter(Boolean)));
+      }
+
+      await updateDoc(userRef, updatePayload);
+    } catch (err) {
+      console.error(err);
+      alert("Erreur de sauvegarde");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleUpdateMainLevel = async (memberId, newLevel) => {
+    setSaving(true);
+    try {
+      const userRef = doc(db, 'users', memberId);
+      await updateDoc(userRef, { niveauMusique: newLevel, niveau: newLevel });
+    } catch (err) {
+      console.error(err);
+      alert("Erreur de sauvegarde");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleUpdateSecondaryInstrument = async (memberId, newInstrument) => {
+    setSaving(true);
+    try {
+      const member = members.find(m => m.id === memberId);
+      const mainInst = member?.instrumentPrincipal || member?.instrument || '';
+      const saisonInst = member?.instrumentSaison || '';
+      
+      const userRef = doc(db, 'users', memberId);
+      const updatePayload = {
+        instrumentSecondaire: newInstrument,
+        instrumentsJoues: Array.from(new Set([mainInst, newInstrument, saisonInst].filter(Boolean)))
+      };
+
+      // Si c'est un instrument historique, on force le niveau à Confirmé (ou 2ème customCategory)
+      if (newInstrument) {
+         const confirmeCategory = customCategories.length > 1 ? customCategories[1] : (customCategories[0] || 'Confirmé');
+         updatePayload[`niveauxParInstrument.${newInstrument}`] = confirmeCategory;
+      }
+
+      await updateDoc(userRef, updatePayload);
+    } catch (err) {
+      console.error(err);
+      alert("Erreur de sauvegarde");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleUpdateSecondaryLevel = async (memberId, instName, newLevel) => {
+    if (!instName) return;
+    setSaving(true);
+    try {
+      const userRef = doc(db, 'users', memberId);
+      await updateDoc(userRef, {
+        [`niveauxParInstrument.${instName}`]: newLevel
+      });
+    } catch (err) {
+      console.error(err);
+      alert("Erreur de sauvegarde");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleUpdateSaisonInstrument = async (memberId, newInstrument) => {
+    setSaving(true);
+    try {
+      const member = members.find(m => m.id === memberId);
+      const mainInst = member?.instrumentPrincipal || member?.instrument || '';
+      const secInst = member?.instrumentSecondaire || '';
+      
+      const userRef = doc(db, 'users', memberId);
+      await updateDoc(userRef, {
+        instrumentSaison: newInstrument,
+        instrumentsJoues: Array.from(new Set([mainInst, secInst, newInstrument].filter(Boolean)))
+      });
+    } catch (err) {
+      console.error(err);
+      alert("Erreur de sauvegarde");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleUpdateSaisonLevel = async (memberId, instName, newLevel) => {
+    if (!instName) return;
+    setSaving(true);
+    try {
+      const userRef = doc(db, 'users', memberId);
+      await updateDoc(userRef, {
+        [`niveauxParInstrument.${instName}`]: newLevel
+      });
+    } catch (err) {
+      console.error(err);
+      alert("Erreur de sauvegarde");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleToggleSecoursInstrument = async (member, instrumentName) => {
+    if (!instrumentName) return;
+    setSaving(true);
+    try {
+      const currentList = member.dispoSecoursInstruments || [];
+      const mainInst = member.instrumentPrincipal || member.instrument;
+      
+      // Migration douce depuis le vieux flag
+      if (member.disponibleSecours && mainInst && !currentList.includes(mainInst)) {
+        currentList.push(mainInst);
+      }
+
+      const newList = currentList.includes(instrumentName)
+        ? currentList.filter(inst => inst !== instrumentName)
+        : [...currentList, instrumentName];
+        
+      const userRef = doc(db, 'users', member.id);
+      await updateDoc(userRef, { 
+        dispoSecoursInstruments: newList,
+        disponibleSecours: false // désactive le flag legacy
+      });
+    } catch (err) {
+      console.error(err);
+      alert("Erreur de sauvegarde");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleTogglePoursuite = async (member, currentValue) => {
+    setSaving(true);
+    try {
+      const userRef = doc(db, 'users', member.id);
+      const newValue = !currentValue;
+      
+      const payload = { poursuiteInstrumentPrincipal: newValue };
+      
+      if (newValue) {
+        const mainInst = member.instrumentPrincipal || member.instrument;
+        if (mainInst) {
+           payload.instrumentSaison = mainInst;
+           payload.instrumentsJoues = Array.from(new Set([...(member.instrumentsJoues || []), mainInst]));
+           const mainLevel = member.niveauMusique || member.niveau || 'aucun';
+           payload[`niveauxParInstrument.${mainInst}`] = member.niveauxParInstrument?.[mainInst] || mainLevel;
+        }
+      } else {
+        payload.instrumentSaison = '';
+      }
+
+      await updateDoc(userRef, payload);
+    } catch (err) {
+      console.error(err);
+      alert("Erreur de sauvegarde");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleUpdateDanseStatusAndLevel = async (memberId, value) => {
+    setSaving(true);
+    try {
+      const userRef = doc(db, 'users', memberId);
+      let payload = {};
+      if (value === 'aucun' || !value) {
+        payload = { pratiqueDanse: false, niveauDanse: 'aucun' };
+      } else {
+        payload = { pratiqueDanse: true, niveauDanse: value };
+      }
+      await updateDoc(userRef, payload);
+    } catch (err) {
+      console.error(err);
+      alert("Erreur de sauvegarde");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleSendPM = async (member) => {
+    const msg = window.prompt(`Envoyer un message privé à ${member.prenom} :`);
+    if (msg && msg.trim() && user?.uid) {
+      try {
+        await addDoc(collection(db, 'private_messages'), {
+          senderId: user.uid,
+          recipientId: member.id,
+          content: msg.trim(),
+          timestamp: new Date().toISOString(),
+          read: false,
+          groupId: groupId || member.groupId || ''
+        });
+        alert("Message envoyé !");
+      } catch (err) {
+        console.error(err);
+        alert("Erreur lors de l'envoi.");
+      }
+    }
   };
 
   // Validation directe à 1-clic d'un vœu d'instrument par le Mestre
   const handleQuickValidate = async (memberTarget, validatedInstrument) => {
-    if (!memberTarget || !validatedInstrument) return;
-    setSaving(true);
-    try {
-      const userRef = doc(db, 'users', memberTarget.id);
-      const updatePayload = {
-        instrument: validatedInstrument,
-        instrumentPrincipal: validatedInstrument,
-        souhaiteChangerInstrument: false
-      };
-
-      await updateDoc(userRef, updatePayload);
-      alert(`✅ Vœu validé ! ${memberTarget.prenom || 'Le membre'} est à présent affecté(e) à ${validatedInstrument}.`);
-    } catch (err) {
-      console.error("MestreOrientationCasting - Erreur validation 1-clic :", err);
-      alert("Erreur lors de la validation rapide : " + (err.message || err));
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  // Sauvegarde depuis la modale
-  const handleSaveAssignment = async (mainInst, secInst, messageToMember) => {
-    if (!selectedMember || !user?.uid) return;
-
-    setSaving(true);
-    try {
-      const userRef = doc(db, 'users', selectedMember.id);
-      const updatePayload = {
-        instrument: mainInst,
-        instrumentPrincipal: mainInst,
-        instrumentSecondaire: secInst || '',
-        souhaiteChangerInstrument: false,
-        instrumentsJoues: Array.from(new Set([mainInst, secInst].filter(Boolean)))
-      };
-
-      await updateDoc(userRef, updatePayload);
-
-      if (messageToMember && messageToMember.trim()) {
-        await addDoc(collection(db, 'private_messages'), {
-          senderId: user.uid,
-          recipientId: selectedMember.id,
-          content: messageToMember.trim(),
-          timestamp: new Date().toISOString(),
-          read: false,
-          groupId: groupId || selectedMember.groupId || ''
-        });
-      }
-
-      alert(`✅ Instrumentation de ${selectedMember.prenom || 'l\'adhérent'} validée avec succès !${messageToMember.trim() ? ' Message privé envoyé.' : ''}`);
-      setModalOpen(false);
-      setSelectedMember(null);
-    } catch (err) {
-      console.error("MestreOrientationCasting - Erreur mise à jour affectation :", err);
-      alert("Erreur lors de la sauvegarde : " + (err.message || err));
-    } finally {
-      setSaving(false);
-    }
+    await handleUpdateMainInstrument(memberTarget.id, validatedInstrument);
+    alert(`✅ Vœu validé ! ${memberTarget.prenom || 'Le membre'} est à présent affecté(e) à ${validatedInstrument}.`);
   };
 
   // Exporter en CSV les affectations et vœux des membres
@@ -686,9 +850,9 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
             <thead>
               <tr className="border-b-2 border-dashed border-cordel-master-dark/20 text-[9.5px] uppercase tracking-wider font-extrabold text-cordel-wood">
                 <th className="py-2 px-2">Membre</th>
-                <th className="py-2 px-2">Instrument Actuel</th>
-                <th className="py-2 px-2">Vœux Formulés (Validation 1-Clic)</th>
-                <th className="py-2 px-2 text-right">Action</th>
+                <th className="py-2 px-2">Inst. Maîtrisé (Historique)</th>
+                <th className="py-2 px-2">Orientation Saison & Vœux</th>
+                <th className="py-2 px-2 text-right">Danse & Niveau</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-dashed divide-cordel-master-dark/15">
@@ -700,48 +864,43 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
                 </tr>
               ) : (
                 filteredMembers.map((m) => {
-                  const name = `${m.prenom || ''} ${m.nom || ''}`.trim() || 'Sans Nom';
+                   const name = `${m.prenom || ''} ${m.nom || ''}`.trim() || 'Sans Nom';
                   const isPercussionist = isPercussionistMember(m);
                   const isUnassigned = isPercussionist && isUnassignedForMestre(m);
+                  
+                  const mainInst = m.instrumentPrincipal || m.instrument;
+                  const isLegacySecours = m.disponibleSecours && !m.dispoSecoursInstruments;
+                  const isDispoMain = (m.dispoSecoursInstruments || []).includes(mainInst) || isLegacySecours;
                   const isAssigned = isPercussionist && !isUnassigned;
                   const wishesList = Array.isArray(m.voeuxInstruments) && m.voeuxInstruments.length > 0
-                    ? m.voeuxInstruments
-                    : [m.voeuPrincipal, m.voeuSecondaire, m.voeuTertiaire].filter(Boolean);
+                    ? m.voeuxInstruments.filter(w => w && !w.toLowerCase().includes('danse'))
+                    : [m.voeuPrincipal, m.voeuSecondaire, m.voeuTertiaire].filter(w => w && !w.toLowerCase().includes('danse'));
                   const hasWishes = isPercussionist && wishesList.length > 0;
 
                   return (
                     <tr
                       key={`member-row-${m.id}`}
                       className={`hover:bg-cordel-bg-light/80 transition-colors border-b border-dashed border-cordel-master-dark/10 ${
-                        isAssigned
-                          ? 'bg-emerald-50/70 dark:bg-emerald-950/30 border-l-4 border-l-emerald-500'
-                          : isUnassigned
+                        isUnassigned
                           ? 'bg-amber-100/40 dark:bg-amber-950/20 border-l-4 border-l-amber-500'
-                          : 'bg-white/40 dark:bg-black/10 border-l-4 border-l-transparent'
+                          : 'bg-white/40 dark:bg-black/10'
                       }`}
                     >
-                      {/* 1. Nom / Avatar */}
+                      {/* 1. Nom / Avatar & MP */}
                       <td className="py-2.5 px-2">
                         <div className="flex items-center gap-2.5">
                           <XiloAvatar src={m.photoURL} name={name} size={36} />
                           <div className="flex flex-col">
-                            <span className="font-extrabold text-xs text-cordel-master-dark flex items-center gap-1">
+                            <span className="font-extrabold text-xs text-cordel-master-dark flex items-center gap-1 flex-wrap">
                               {name}
-                              {m.pratiqueDanse && (
-                                <span className="text-[9px] font-bold text-amber-800 bg-amber-100 px-1 py-0.2 rounded" title="Pratique la Danse">
-                                  💃 Danse
-                                </span>
-                              )}
-                              {isAssigned && (
-                                <span className="text-[8px] font-black text-emerald-800 bg-emerald-200 dark:bg-emerald-900/70 dark:text-emerald-200 px-1 py-0.2 rounded uppercase flex items-center gap-0.5">
-                                  ✅ Traité
-                                </span>
-                              )}
-                              {isUnassigned && (
-                                <span className="text-[8px] font-black text-amber-700 bg-amber-200 dark:bg-amber-900/60 dark:text-amber-200 px-1 py-0.2 rounded uppercase">
-                                  À attribuer
-                                </span>
-                              )}
+                              <button
+                                type="button"
+                                onClick={() => handleSendPM(m)}
+                                className="text-[10px] font-bold text-amber-900 bg-amber-100 hover:bg-amber-200 px-1 py-0.5 rounded flex items-center gap-0.5 transition-colors cursor-pointer ml-1"
+                                title={`Envoyer un message privé à ${m.prenom}`}
+                              >
+                                ✉️ MP
+                              </button>
                             </span>
                             {m.surnom && (
                               <span className="text-[10px] font-semibold text-cordel-wood italic">
@@ -752,109 +911,217 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
                         </div>
                       </td>
 
-                      {/* 2. Instrument Actuel / Validé & Danse (Oui/Non) */}
+                      {/* 2. Instrument Maîtrisé & Secours */}
                       <td className="py-2.5 px-2">
-                        <div className="flex flex-col gap-1 text-left">
-                          {isPercussionist ? (
-                            <span className="font-bold flex items-center gap-1.5 text-cordel-master-dark">
-                              <img
-                                src={getInstrumentIconPath(m.instrumentPrincipal || m.instrument)}
-                                alt={m.instrumentPrincipal || m.instrument || 'Aucun'}
-                                className="w-3.5 h-3.5 object-contain dark:invert"
-                              />
-                              <span>{m.instrumentPrincipal || m.instrument || <span className="italic text-amber-600 dark:text-amber-400 font-semibold">En attente</span>}</span>
-                              {isAssigned && (
-                                <span className="text-[11px] font-black text-emerald-600 dark:text-emerald-400" title="Instrument attribué et validé par le Mestre">
-                                  ✅
-                                </span>
+                        <div className="flex flex-col gap-1.5 text-left">
+                          <div className="flex flex-col gap-1">
+                            <span className="text-[9px] font-black uppercase text-cordel-master-dark opacity-60">Inst. Principal</span>
+                            <div className="flex items-center gap-1">
+                              <select
+                                value={(m.instrumentPrincipal || m.instrument) && (m.instrumentPrincipal || m.instrument) !== 'En attente' ? (m.instrumentPrincipal || m.instrument) : ''}
+                                onChange={(e) => handleUpdateMainInstrument(m.id, e.target.value)}
+                                disabled={saving}
+                                className="theme-input text-[10px] py-1 bg-white w-[110px] font-bold"
+                              >
+                                <option value="">-- Aucun --</option>
+                                {filterPublicPercussionInstruments(instrumentsDisponibles || []).map(inst => (
+                                  <option key={`main-${inst}`} value={inst}>{inst}</option>
+                                ))}
+                              </select>
+                              
+                              {(m.instrumentPrincipal || m.instrument) && (m.instrumentPrincipal || m.instrument) !== 'En attente' && (
+                                <select
+                                  value={m.niveauMusique || m.niveau || 'aucun'}
+                                  onChange={(e) => handleUpdateMainLevel(m.id, e.target.value)}
+                                  disabled={saving}
+                                  className="theme-input text-[10px] py-1 bg-white max-w-[80px]"
+                                >
+                                  <option value="aucun">- Niv. -</option>
+                                  {customCategories.map(cat => (
+                                    <option key={`cat-${cat}`} value={cat}>{resolveCategory(cat, customCategories)}</option>
+                                  ))}
+                                </select>
                               )}
-                            </span>
+                            </div>
+                            
+                            {/* Secours Main Inst */}
+                            {mainInst && mainInst !== 'En attente' && mainInst.toLowerCase() !== 'danse' && (
+                              <label className="flex items-center gap-1.5 cursor-pointer opacity-80 hover:opacity-100 transition-opacity w-max">
+                                <input
+                                  type="checkbox"
+                                  checked={isDispoMain}
+                                  onChange={() => handleToggleSecoursInstrument(m, mainInst)}
+                                  disabled={saving}
+                                  className="w-2.5 h-2.5 accent-cordel-wood cursor-pointer"
+                                />
+                                <span className="text-[9px] font-semibold text-cordel-master-dark/70 uppercase">
+                                  Dispo en secours
+                                </span>
+                              </label>
+                            )}
+                          </div>
+
+                          <div className="flex flex-col gap-1 pt-1 border-t border-dashed border-cordel-master-dark/10">
+                            <span className="text-[9px] font-black uppercase text-cordel-master-dark opacity-60">2ème Inst. Historique</span>
+                            <div className="flex items-center gap-1">
+                              <select
+                                value={m.instrumentSecondaire && m.instrumentSecondaire !== 'En attente' ? m.instrumentSecondaire : ''}
+                                onChange={(e) => handleUpdateSecondaryInstrument(m.id, e.target.value)}
+                                disabled={saving}
+                                className="theme-input text-[10px] py-1 bg-white w-[110px]"
+                              >
+                                <option value="">-- Aucun --</option>
+                                {filterPublicPercussionInstruments(instrumentsDisponibles || []).map(inst => (
+                                  <option key={`sec-hist-${inst}`} value={inst}>{inst}</option>
+                                ))}
+                              </select>
+                              {m.instrumentSecondaire && m.instrumentSecondaire !== 'En attente' && (
+                                <select
+                                  value={m.niveauxParInstrument?.[m.instrumentSecondaire] || 'aucun'}
+                                  onChange={(e) => handleUpdateSecondaryLevel(m.id, m.instrumentSecondaire, e.target.value)}
+                                  disabled={saving}
+                                  className="theme-input text-[10px] py-1 bg-white max-w-[80px]"
+                                >
+                                  <option value="aucun">- Niv. -</option>
+                                  {customCategories.map(cat => (
+                                    <option key={`cat-sec-${cat}`} value={cat}>{resolveCategory(cat, customCategories)}</option>
+                                  ))}
+                                </select>
+                              )}
+                            </div>
+
+                            {/* Secours 2nd Historic */}
+                            {m.instrumentSecondaire && m.instrumentSecondaire !== 'En attente' && m.instrumentSecondaire.toLowerCase() !== 'danse' && (
+                              <label className="flex items-center gap-1.5 cursor-pointer opacity-80 hover:opacity-100 transition-opacity w-max">
+                                <input
+                                  type="checkbox"
+                                  checked={(m.dispoSecoursInstruments || []).includes(m.instrumentSecondaire)}
+                                  onChange={() => handleToggleSecoursInstrument(m, m.instrumentSecondaire)}
+                                  disabled={saving}
+                                  className="w-2.5 h-2.5 accent-cordel-wood cursor-pointer"
+                                />
+                                <span className="text-[9px] font-semibold text-cordel-master-dark/70 uppercase">
+                                  Dispo en secours
+                                </span>
+                              </label>
+                            )}
+                          </div>
+                        </div>
+                      </td>
+
+                      {/* 3. Vœux & Deuxième Instrument */}
+                      <td className="py-2.5 px-2">
+                        <div className="flex flex-col gap-2 items-start">
+                          {hasWishes || m.souhaiteChangerInstrument ? (
+                            <div className="flex flex-col gap-1">
+                              <span className="text-[9px] font-black uppercase text-cordel-master-dark opacity-60">
+                                Vœux actuels :
+                              </span>
+                              <div className="flex flex-wrap gap-1.5">
+                                {wishesList.map((wish, idx) => (
+                                  <button
+                                    key={`${wish}-${idx}`}
+                                    type="button"
+                                    onClick={() => handleQuickValidate(m, wish)}
+                                    disabled={saving}
+                                    className="text-[10px] font-bold bg-white/70 dark:bg-black/20 border border-cordel-wood/40 hover:bg-cordel-wood hover:text-white transition-all px-1.5 py-0.5 rounded cursor-pointer flex items-center gap-1 shadow-xs"
+                                    title={`Valider et affecter à ${wish}`}
+                                  >
+                                    <span className="text-[8px] font-black opacity-60">V{idx + 1}</span>
+                                    {wish}
+                                  </button>
+                                ))}
+                                {wishesList.length === 0 && m.souhaiteChangerInstrument && (
+                                  <span className="text-[10px] italic text-cordel-master-dark/60 font-semibold">
+                                    Souhaite changer
+                                  </span>
+                                )}
+                              </div>
+                            </div>
                           ) : (
-                            <span className="font-bold flex items-center gap-1.5 text-amber-900 dark:text-amber-200">
-                              <img
-                                src="/icones/danse.svg"
-                                alt="Danse"
-                                className="w-3.5 h-3.5 object-contain dark:invert"
-                              />
-                              <span>Danse (Section libre)</span>
-                            </span>
+                            mainInst && mainInst !== 'En attente' && mainInst.toLowerCase() !== 'danse' ? (
+                              <div className="flex flex-col gap-0.5 mb-1">
+                                <label className="flex items-center gap-1.5 cursor-pointer opacity-90 hover:opacity-100 transition-opacity w-max bg-black/5 dark:bg-white/5 px-2 py-1 rounded border border-cordel-master-dark/10">
+                                  <input
+                                    type="checkbox"
+                                    checked={m.poursuiteInstrumentPrincipal !== false}
+                                    onChange={() => handleTogglePoursuite(m, m.poursuiteInstrumentPrincipal !== false)}
+                                    disabled={saving}
+                                    className="w-3 h-3 accent-cordel-wood cursor-pointer"
+                                  />
+                                  <span className="text-[10px] font-bold text-cordel-master-dark/80">
+                                    🔄 Poursuite ({mainInst})
+                                  </span>
+                                </label>
+                              </div>
+                            ) : null
                           )}
 
-                          <span className="text-[9.5px] font-bold flex items-center gap-1">
-                            <span>💃 Danse :</span>
-                            {m.pratiqueDanse ? (
-                              <span className="text-amber-800 dark:text-amber-300 font-black">Oui</span>
-                            ) : (
-                              <span className="text-cordel-master-dark/60 font-semibold">Non</span>
-                            )}
-                          </span>
+                          {!(m.poursuiteInstrumentPrincipal !== false && mainInst && mainInst !== 'En attente' && mainInst.toLowerCase() !== 'danse' && !hasWishes && !m.souhaiteChangerInstrument) && (
+                            <div className="flex flex-col gap-1 pt-1 border-t border-dashed border-cordel-master-dark/20 w-full max-w-[180px]">
+                              <span className="text-[9px] font-black uppercase text-cordel-master-dark opacity-60">
+                                Apprentissage Saison :
+                              </span>
+                              <select
+                                value={m.instrumentSaison || ''}
+                                onChange={(e) => handleUpdateSaisonInstrument(m.id, e.target.value)}
+                                disabled={saving}
+                                className="theme-input text-[10px] py-1 bg-white w-full"
+                              >
+                                <option value="">-- Aucun --</option>
+                                {filterPublicPercussionInstruments(instrumentsDisponibles || []).map(inst => (
+                                  <option key={`saison-${inst}`} value={inst}>{inst}</option>
+                                ))}
+                              </select>
+                              
+                              {m.instrumentSaison && (
+                                <select
+                                  value={m.niveauxParInstrument?.[m.instrumentSaison] || 'aucun'}
+                                  onChange={(e) => handleUpdateSaisonLevel(m.id, m.instrumentSaison, e.target.value)}
+                                  disabled={saving}
+                                  className="theme-input text-[10px] py-0.5 bg-white w-full text-cordel-master-dark/80"
+                                >
+                                  <option value="aucun">-- Niveau --</option>
+                                  {customCategories.map(cat => (
+                                    <option key={`saison-cat-${cat}`} value={cat}>{resolveCategory(cat, customCategories)}</option>
+                                  ))}
+                                </select>
+                              )}
 
-                          {m.instrumentSecondaire && (
-                            <span className="text-[9.5px] text-cordel-wood font-semibold flex items-center gap-1">
-                              <span>Sec. :</span>
-                              <img
-                                src={getInstrumentIconPath(m.instrumentSecondaire)}
-                                alt={m.instrumentSecondaire}
-                                className="w-3 h-3 object-contain dark:invert"
-                              />
-                              <span>{m.instrumentSecondaire}</span>
-                            </span>
+                              {/* Secours Apprentissage */}
+                              {m.instrumentSaison && m.instrumentSaison.toLowerCase() !== 'danse' && (
+                                <label className="flex items-center gap-1.5 cursor-pointer opacity-80 hover:opacity-100 transition-opacity w-max">
+                                  <input
+                                    type="checkbox"
+                                    checked={(m.dispoSecoursInstruments || []).includes(m.instrumentSaison)}
+                                    onChange={() => handleToggleSecoursInstrument(m, m.instrumentSaison)}
+                                    disabled={saving}
+                                    className="w-2.5 h-2.5 accent-cordel-wood cursor-pointer"
+                                  />
+                                  <span className="text-[9px] font-semibold text-cordel-master-dark/70 uppercase">
+                                    Dispo en secours
+                                  </span>
+                                </label>
+                              )}
+                            </div>
                           )}
                         </div>
                       </td>
 
-                      {/* 3. Vœux Formulés (Boutons 1-Clic) */}
-                      <td className="py-2.5 px-2">
-                        {hasWishes ? (
-                          <div className="flex flex-col gap-1 text-[10px]">
-                            <div className="flex flex-wrap gap-1 items-center">
-                              {wishesList.map((wish, idx) => {
-                                const isCurrentMain = (m.instrumentPrincipal || m.instrument) === wish;
-                                return (
-                                  <div key={idx} className="flex items-center gap-1">
-                                    <span className={`px-1.5 py-0.5 rounded border font-semibold ${isCurrentMain ? 'bg-emerald-100 dark:bg-emerald-950/80 border-emerald-400 text-emerald-900 dark:text-emerald-200 font-black' : 'bg-white/80 dark:bg-black/30 border-cordel-master-dark/20'}`}>
-                                      <strong className="text-cordel-wood">{idx + 1} :</strong> {wish} {isCurrentMain ? '✅' : ''}
-                                    </span>
-                                    {!isCurrentMain && (
-                                      <button
-                                        type="button"
-                                        onClick={() => handleQuickValidate(m, wish)}
-                                        disabled={saving}
-                                        className="bg-emerald-600 hover:bg-emerald-700 text-white text-[9px] font-black px-1.5 py-0.5 rounded shadow-xs cursor-pointer transition-all shrink-0"
-                                        title={`Valider ${wish} en 1 seul clic`}
-                                      >
-                                        ✓ Valider
-                                      </button>
-                                    )}
-                                  </div>
-                                );
-                              })}
-                            </div>
-                            {(m.volontaireAncienInstrument || m.accordRenfortAncienInstrument) && (m.instrumentPrincipal || m.instrument) && (
-                              <span className="bg-amber-100 dark:bg-amber-950/60 text-amber-900 dark:text-amber-200 px-1.5 py-0.5 rounded border border-amber-300 dark:border-amber-800 font-extrabold flex items-center gap-1 w-max">
-                                🤝 Renfort ancien instrument ok
-                              </span>
-                            )}
-                          </div>
-                        ) : (
-                          <div className="flex flex-col gap-1 text-[10px]">
-                            <span className="italic text-cordel-master-dark/50">
-                              Aucun vœu formulé
-                            </span>
-                          </div>
-                        )}
-                      </td>
-
-                      {/* 4. Action */}
+                      {/* 4. Danse & Niveau */}
                       <td className="py-2.5 px-2 text-right">
-                        <CordelButton
-                          variant={isUnassigned ? 'ocre' : 'default'}
-                          useExtremeBorder={true}
-                          onClick={() => handleOpenAssignModal(m)}
-                          className="text-[10px] py-1 px-2.5 font-extrabold uppercase shrink-0"
+                        <select
+                          value={m.pratiqueDanse ? (m.niveauDanse && m.niveauDanse !== 'aucun' ? m.niveauDanse : 'debutant') : 'aucun'}
+                          onChange={(e) => handleUpdateDanseStatusAndLevel(m.id, e.target.value)}
+                          disabled={saving}
+                          className="theme-input text-[10px] py-1 bg-white font-bold text-amber-900 border-amber-300"
                         >
-                          {isUnassigned ? '🎯 Affecter' : '✏️ Modifier'}
-                        </CordelButton>
+                          <option value="aucun">Non inscrit(e)</option>
+                          <option value="debutant">💃 Débutant</option>
+                          {customCategories.filter(cat => cat.toLowerCase().replace(/é/g, 'e') !== 'debutant').map(cat => (
+                            <option key={`danse-${cat}`} value={cat}>💃 {resolveCategory(cat, customCategories)}</option>
+                          ))}
+                        </select>
                       </td>
                     </tr>
                   );
@@ -864,19 +1131,6 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
           </table>
         </div>
       </CordelCard>
-
-      {/* Modale d'Affectation & Messagerie */}
-      <OrientationAssignmentModal
-        isOpen={modalOpen}
-        onClose={() => {
-          setModalOpen(false);
-          setSelectedMember(null);
-        }}
-        member={selectedMember}
-        instrumentsDisponibles={instrumentsDisponibles}
-        onSave={handleSaveAssignment}
-        saving={saving}
-      />
     </div>
   );
 }

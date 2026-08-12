@@ -12,6 +12,7 @@ import { useInstrumentColor } from '../hooks/useInstrumentColor';
 import ImageLightboxModal from './ImageLightboxModal';
 import { formatTagGender, getTagId } from '../utils/tagUtils';
 import { usePresenceContext } from '../context/PresenceContext';
+import useHardwareBack from '../hooks/useHardwareBack';
 const CordelImageEditor = React.lazy(() => import('./CordelImageEditor'));
 
 // Memoized MemberCard subcomponent
@@ -365,6 +366,9 @@ export default function Trombinoscope({ user, profileData, onBack, onContactUser
   const [showEditor, setShowEditor] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null);
   const [lightboxPhoto, setLightboxPhoto] = useState(null);
+
+  useHardwareBack(showEditor, () => setShowEditor(false));
+  useHardwareBack(!!lightboxPhoto, () => setLightboxPhoto(null));
 
   const handleOpenLightbox = useCallback((url, name) => {
     setLightboxPhoto({ url, name });

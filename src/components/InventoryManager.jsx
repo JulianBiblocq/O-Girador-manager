@@ -12,6 +12,9 @@ import { useInventoryData } from '../hooks/useInventoryData';
 import InventoryFilterBar from './inventory/InventoryFilterBar';
 import InventoryItemCard from './inventory/InventoryItemCard';
 import InventoryFormModal from './inventory/InventoryFormModal';
+import { useAssociationSettings } from '../hooks/useAssociationSettings';
+import InstrumentsCatalogBlock from './association-settings/blocks/InstrumentsCatalogBlock';
+import CarpoolBlock from './association-settings/blocks/CarpoolBlock';
 
 const INSTRUMENT_TYPES = ['Alfaia', 'Caixa', 'Agbê', 'Gonguê', 'Mineiro', 'Apito', 'Timbal', 'Autre'];
 const ETAT_OPTIONS = ['Neuf', 'Bon', 'À réparer'];
@@ -47,6 +50,15 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin,
 
   // Contrôle de sécurité : Mestre, Super-Admin, Admin Système ou Accès Logistique
   const isAuthorized = role === 'mestre' || role === 'super-admin' || isSystemAdmin === true || hasAccessLogistique === true;
+
+  const {
+    formData: settingsData,
+    handleChange: handleSettingsChange,
+    handleSave: handleSaveSettings,
+    saving: savingSettings
+  } = useAssociationSettings(groupId, isAuthorized, onBack, t);
+
+  const [showConfig, setShowConfig] = useState(false);
 
   const {
     instruments,
@@ -310,6 +322,42 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin,
           </h2>
         </div>
 
+        {/* Configuration Section (Accordeon) */}
+        <CordelCard variant="default" useExtremeBorder={true} className="p-4 mb-2">
+          <div className="flex justify-between items-center cursor-pointer select-none" onClick={() => setShowConfig(!showConfig)}>
+            <h3 className="text-xs font-extrabold tracking-wider text-cordel-wood uppercase">
+              ⚙️ Paramètres & Configuration Logistique
+            </h3>
+            <span className="text-xs font-black">{showConfig ? '▲ Masquer' : '▼ Déployer'}</span>
+          </div>
+
+          {showConfig && (
+            <form onSubmit={(e) => { e.preventDefault(); handleSaveSettings(); }} className="flex flex-col gap-4 mt-4 pt-4 border-t border-dashed border-cordel-master-dark/20 text-left">
+              <InstrumentsCatalogBlock 
+                formData={settingsData}
+                handleChange={handleSettingsChange}
+                saving={savingSettings}
+              />
+              <CarpoolBlock 
+                formData={settingsData}
+                handleChange={handleSettingsChange}
+                saving={savingSettings}
+              />
+              <div className="flex justify-end mt-2 pt-3 border-t border-dashed border-cordel-master-dark/15">
+                <CordelButton
+                  type="submit"
+                  variant="ocre"
+                  useExtremeBorder={true}
+                  disabled={savingSettings}
+                  className="px-6 py-2 uppercase font-black tracking-wider text-xs shadow-[2px_2px_0px_0px_#181716]"
+                >
+                  {savingSettings ? "Enregistrement..." : "💾 Enregistrer Configuration"}
+                </CordelButton>
+              </div>
+            </form>
+          )}
+        </CordelCard>
+
         {/* Form view */}
         {isFormOpen ? (
           <CordelCard variant="default" useExtremeBorder={true} className="py-5 px-6 relative">
@@ -376,6 +424,22 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin,
                     {ETAT_OPTIONS.map(e => <option key={e} value={e}>{e}</option>)}
                   </select>
                 </div>
+              </div>
+
+              {/* Étui */}
+              <div className="flex items-center gap-2 pt-2 pb-1 border-t border-dashed border-cordel-master-dark/15">
+                <input
+                  type="checkbox"
+                  name="etuiFourni"
+                  checked={formData.etuiFourni || false}
+                  onChange={(e) => setFormData(prev => ({ ...prev, etuiFourni: e.target.checked }))}
+                  disabled={saving}
+                  id="etuiFourniInput"
+                  className="w-4 h-4 text-cordel-wood rounded cursor-pointer"
+                />
+                <label htmlFor="etuiFourniInput" className="text-[10px] font-black uppercase text-encre-noire cursor-pointer select-none">
+                  Étui / Housse fourni(e)
+                </label>
               </div>
 
               {/* Proprietaire */}
@@ -605,6 +669,16 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin,
                         </div>
                       </th>
                       <th 
+                        onClick={() => handleSortHeaderClick('etuiFourni')}
+                        className="p-3 border-r border-encre-noire/15 cursor-pointer hover:bg-black/5 transition-colors sticky top-0 z-20"
+                        title="Cliquer pour trier par Étui"
+                      >
+                        <div className="flex items-center gap-1 justify-center">
+                          <span>Étui</span>
+                          {renderSortChevron('etuiFourni')}
+                        </div>
+                      </th>
+                      <th 
                         onClick={() => handleSortHeaderClick('status')}
                         className="p-3 border-r border-encre-noire/15 cursor-pointer hover:bg-black/5 transition-colors sticky top-0 z-20"
                         title="Cliquer pour trier par Statut / Prêt"
@@ -723,6 +797,17 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin,
                                 <option key={eOpt} value={eOpt}>{getEtatLabel(eOpt)}</option>
                               ))}
                             </select>
+                          </td>
+
+                          {/* Étui (Checkbox) */}
+                          <td className="p-2 border-r border-encre-noire/10 min-w-[70px] text-center">
+                            <input
+                              type="checkbox"
+                              checked={inst.etuiFourni || false}
+                              onChange={(e) => handleInlineFieldChange(inst.id, 'etuiFourni', e.target.checked)}
+                              className="w-4 h-4 cursor-pointer text-cordel-wood"
+                              title="Cocher si un étui est fourni"
+                            />
                           </td>
 
                           {/* Statut / Prêt (Dropdown & Borrower) */}

@@ -17,6 +17,7 @@ import {
   XiloScroll,
   XiloCar,
   XiloCalendar,
+  XiloCompass,
   XiloHanger,
   XiloCaixa
 } from './XiloIcons';
@@ -28,6 +29,7 @@ import { canEditVitrine, canAccessPole, canAccessTabPermission } from '../utils/
 import { usePendingMembersNotification } from '../hooks/usePendingMembersNotification';
 import { resolveEffectiveUserTags } from '../utils/tagUtils'; // Utilitaire de résolution des étiquettes effectives
 import InfoPoleBanner, { InfoPoleHelpButton } from './InfoPoleBanner';
+import FeedbackModal from './FeedbackModal';
 
 export default function LayoutShell({ 
   logoUrl, 
@@ -45,6 +47,7 @@ export default function LayoutShell({
   permissionsMatrice,
   enabledModules = {},
   activerPresenceEnLigne = true,
+  enableIndividualProgression = false,
   breakGlassActive = false,
   onToggleBreakGlass,
   tagsDisponibles = [],
@@ -55,6 +58,7 @@ export default function LayoutShell({
   const { t } = useTranslation();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isLogoTilting, setIsLogoTilting] = useState(false);
+  const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
 
   const handleLogoClick = () => {
     setIsLogoTilting(true);
@@ -96,7 +100,11 @@ export default function LayoutShell({
     if (['studio-social', 'varal-manager'].includes(tabId) && enabledModules.studioSocial === false) return false;
     if (tabId === 'reunion-manager' && enabledModules.reunions === false) return false;
     if (['forum', 'mestre-forum-channels'].includes(tabId) && enabledModules.forum === false) return false;
-    if (['mestre-orientation', 'mestre-events', 'mestre-stage-layout', 'mestre-sequenceur', 'mestre-workshops', 'mestre-mot-mestre'].includes(tabId) && enabledModules.mestre === false) return false;
+    if (['mestre-sante-troupe', 'mestre-pedagogy-manager', 'mestre-orientation', 'mestre-events', 'mestre-stage-layout', 'mestre-sequenceur', 'mestre-workshops', 'mestre-mot-mestre'].includes(tabId) && enabledModules.mestre === false) return false;
+
+    if (tabId === 'mon-parcours') {
+      if (enabledModules.monParcoursGlobal === false) return false;
+    }
 
     return true;
   };
@@ -111,33 +119,36 @@ export default function LayoutShell({
     return canAccessTabPermission(tabId, poleId, profileData, permissionsMatrice, userTags);
   };
 
-  const hasAccessTroupe = isMasterKeyActive || canAccessPole('troupe', profileData, permissionsMatrice, userTags);
+
   const hasAccessDiffusion = isMasterKeyActive || canAccessPole('diffusion', profileData, permissionsMatrice, userTags);
   const hasAccessLogistique = isMasterKeyActive || canAccessPole('logistique', profileData, permissionsMatrice, userTags);
   const hasAccessTresorerie = isMasterKeyActive || canAccessPole('tresorerie', profileData, permissionsMatrice, userTags);
   const hasAccessStudio = isMasterKeyActive || canAccessPole('studio', profileData, permissionsMatrice, userTags);
-  const hasAccessVestiaire = isMasterKeyActive || canAccessPole('vestiaire', profileData, permissionsMatrice, userTags);
+
   const hasAccessMestre = isMasterKeyActive || canAccessPole('mestre', profileData, permissionsMatrice, userTags);
   const hasAccessVitrine = isMasterKeyActive || canAccessPole('vitrine', profileData, permissionsMatrice, userTags);
 
   const isAdministrativeUser = isSystemOrSuperAdminOrMestre || 
                                profileData?.role === 'bureau' || 
                                profileData?.role === 'ca' || 
-                               hasAccessTroupe || 
+
                                hasAccessDiffusion ||
                                hasAccessLogistique || 
                                hasAccessTresorerie || 
                                hasAccessStudio ||
-                               hasAccessVestiaire ||
+
                                hasAccessMestre ||
                                hasAccessVitrine;
+
+  const canSendFeedback = profileData?.role === 'admin' || profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.role === 'bureau' || profileData?.isSystemAdmin;
 
   const allMemberMenuItems = [
     { id: 'accueil', label: 'Accueil', icon: <XiloHome size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('accueil'); onNavigateToTab && onNavigateToTab('dashboard'); } },
     { id: 'profil', label: 'Profil', icon: <XiloUser size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('mon-espace'); onNavigateToTab && onNavigateToTab('profil'); } },
+    { id: 'mon-parcours', label: 'Mon Parcours', icon: <XiloCompass size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('mon-espace'); onNavigateToTab && onNavigateToTab('mon-parcours'); } },
     { id: 'agenda', label: 'Agenda', icon: <XiloCalendar size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('mon-espace'); onNavigateToTab && onNavigateToTab('agenda'); } },
     { id: 'materiel', label: 'Matériel', icon: <XiloCaixa size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('mon-espace'); onNavigateToTab && onNavigateToTab('materiel'); } },
-    { id: 'vestiaire', label: 'Vestiaire', icon: <XiloHanger size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('mon-espace'); onNavigateToTab && onNavigateToTab('vestiaire'); } },
+
     { id: 'trombinoscope', label: 'Trombinoscope', icon: <XiloPeople size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('mon-espace'); onNavigateToTab && onNavigateToTab('trombinoscope'); } },
     { id: 'forum', label: 'Porte-voix', icon: <XiloMegaphone size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('mon-espace'); onNavigateToTab && onNavigateToTab('forum'); } },
     { id: 'varal', label: 'Varal', icon: <XiloScroll size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('accueil'); onNavigateToTab && onNavigateToTab('varal'); } }
@@ -151,20 +162,26 @@ export default function LayoutShell({
 
     if (poleId === 'tresorerie' && enabledModules?.tresorerie === false) return false;
     if (poleId === 'logistique' && enabledModules?.logistique === false && enabledModules?.commandes === false) return false;
-    if (poleId === 'vestiaire' && enabledModules?.vestiaire === false) return false;
+
     if (poleId === 'mestre' && enabledModules?.mestre === false) return false;
+    if (poleId === 'pedagogie' && enabledModules?.mestre === false && enabledModules?.studioSocial === false) return false;
 
     return true;
   };
 
-  // Dynamic Cascade Permission Check:
-  // A Pole is UNLOCKED (accessible) if the user has access to at least 1 enabled sub-tab or has the pole admin tag/role.
   const isPoleUnlocked = (poleId) => {
     if (!isPoleEnabled(poleId)) return false;
     if (poleId === 'accueil' || poleId === 'mon-espace') return true;
     if (isMasterKeyActive) return true;
 
-    return canAccessPole(poleId, profileData, permissionsMatrice, userTags);
+    if (canAccessPole(poleId, profileData, permissionsMatrice, userTags)) return true;
+
+    const activePoleObj = polesList.find(p => p.id === poleId);
+    if (activePoleObj && activePoleObj.tabs) {
+      return activePoleObj.tabs.some(tab => canAccessTabPermission(tab.id, poleId, profileData, permissionsMatrice, userTags));
+    }
+
+    return false;
   };
 
   const hasAccessToTab = (tabId) => {
@@ -178,18 +195,18 @@ export default function LayoutShell({
         return <XiloHome size={size} />;
       case 'mon-espace':
         return <XiloUser size={size} />;
-      case 'troupe':
-        return <XiloPeople size={size} />;
+
       case 'diffusion':
         return <XiloMegaphone size={size} />;
       case 'tresorerie':
         return <XiloCoin size={size} />;
       case 'logistique':
         return <XiloBox size={size} />;
-      case 'vestiaire':
-        return <XiloHanger size={size} />;
+
       case 'studio':
         return <XiloMegaphone size={size} />;
+      case 'pedagogie':
+        return <XiloScroll size={size} />;
       case 'mestre':
         return <XiloDrum size={size} />;
       case 'config':
@@ -240,38 +257,38 @@ export default function LayoutShell({
                 )}
               </div>
             </div>
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-2">
               {isSystemOrSuperAdminOrMestre && (
                 <button
                   type="button"
                   onClick={onToggleBreakGlass}
-                  className={`p-1 border-2 rounded transition-all cursor-pointer flex items-center justify-center ${
+                  className={`p-2 border-2 rounded transition-all cursor-pointer flex items-center justify-center ${
                     breakGlassActive 
                       ? 'bg-amber-400 border-encre-noire text-encre-noire animate-pulse shadow-xs' 
                       : 'border-dashed border-encre-noire/20 text-stone-600 hover:border-encre-noire'
                   }`}
                   title={breakGlassActive ? "Mode Intervention Actif (Cliquez pour désactiver)" : "Activer le Mode Intervention (Déverrouiller)"}
                 >
-                  <span className="text-xs">{breakGlassActive ? '🔓' : '🔒'}</span>
+                  <span className="text-sm">{breakGlassActive ? '🔓' : '🔒'}</span>
                 </button>
               )}
               <button
                 type="button"
                 onClick={() => window.open('/', '_blank')}
-                className="p-1 border border-dashed border-encre-noire/20 hover:border-emerald-600 text-emerald-700 hover:bg-emerald-50 rounded flex items-center justify-center transition-all cursor-pointer"
+                className="p-1.5 border border-dashed border-encre-noire/20 hover:border-emerald-600 text-emerald-700 hover:bg-emerald-50 rounded flex items-center justify-center transition-all cursor-pointer"
                 title="Voir le site public (Vitrine)"
               >
-                <XiloGlobe size={14} />
+                <XiloGlobe size={26} />
               </button>
               {sequenceurUrl && (
                 <a 
                   href={sequenceurUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="p-1 border border-dashed border-encre-noire/20 hover:border-[#d99f4d] text-[#d99f4d] hover:bg-[#d99f4d]/10 rounded flex items-center justify-center transition-all cursor-pointer"
+                  className="p-1.5 border border-dashed border-encre-noire/20 hover:border-[#d99f4d] text-[#d99f4d] hover:bg-[#d99f4d]/10 rounded flex items-center justify-center transition-all cursor-pointer"
                   title="O Girador Séquenceur"
                 >
-                  <XiloEQ size={14} />
+                  <XiloEQ size={26} />
                 </a>
               )}
             </div>
@@ -331,7 +348,7 @@ export default function LayoutShell({
               <div className="flex items-center gap-2 justify-center">
                 <span 
                   onClick={handleLogoClick}
-                  className="font-extrabold text-[9px] uppercase tracking-widest text-cordel-master-dark/50 cursor-pointer hover:opacity-85 transition-opacity"
+                  className="font-extrabold text-[10px] uppercase tracking-widest text-cordel-master-dark/50 cursor-pointer hover:opacity-85 transition-opacity"
                 >
                   O Girador
                 </span>
@@ -341,7 +358,7 @@ export default function LayoutShell({
                   className="p-1 border border-dashed border-encre-noire/20 hover:border-emerald-600 text-emerald-700 hover:bg-emerald-50 rounded flex items-center justify-center transition-all cursor-pointer"
                   title="Voir le site public (Vitrine)"
                 >
-                  <XiloGlobe size={10} />
+                  <XiloGlobe size={16} />
                 </button>
                 {sequenceurUrl && (
                   <a 
@@ -351,7 +368,7 @@ export default function LayoutShell({
                     className="p-1 border border-dashed border-encre-noire/20 hover:border-[#d99f4d] text-[#d99f4d] hover:bg-[#d99f4d]/10 rounded flex items-center justify-center transition-all cursor-pointer"
                     title="O Girador Séquenceur"
                   >
-                    <XiloEQ size={10} />
+                    <XiloEQ size={16} />
                   </a>
                 )}
               </div>
@@ -478,16 +495,7 @@ export default function LayoutShell({
               </button>
             )}
 
-            {sequenceurUrl && (
-              <a 
-                href={sequenceurUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full py-1.5 px-1 font-extrabold flex items-center justify-center gap-1 bg-[#d99f4d] text-[#1a1a1a] border-2 border-encre-noire rounded-[8px_12px_9px_11px] shadow-[2px_2px_0px_0px_#181716] hover:scale-[1.01] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-105 transition-all text-center text-[8px] uppercase tracking-wide cursor-pointer select-none"
-              >
-                <XiloEQ size={10} className="inline mr-1" /> O Girador Séquenceur
-              </a>
-            )}
+
             
             {isSystemOrSuperAdminOrMestre && (
               <button
@@ -511,6 +519,17 @@ export default function LayoutShell({
                 className="w-full py-1.5 text-center text-[8px] font-black uppercase tracking-widest bg-red-800 text-white border-2 border-encre-noire rounded-[8px_12px_9px_11px] shadow-[2px_2px_0px_0px_#181716] hover:brightness-110 active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none transition-all cursor-pointer flex items-center justify-center gap-1"
               >
                 <XiloSignOut size={10} /> {t('common.signOut') || "Déconnexion"}
+              </button>
+            )}
+
+            {canSendFeedback && (
+              <button
+                type="button"
+                onClick={() => setIsFeedbackModalOpen(true)}
+                className="w-full py-1.5 text-center text-[8px] font-black uppercase tracking-widest bg-[#2d6a4f] text-white border-2 border-encre-noire rounded-[8px_12px_9px_11px] shadow-[2px_2px_0px_0px_#181716] hover:brightness-110 active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none transition-all cursor-pointer flex items-center justify-center gap-1 mt-1"
+                title="Signaler un bug ou soumettre une idée"
+              >
+                💡 Feedback
               </button>
             )}
             
@@ -797,6 +816,19 @@ export default function LayoutShell({
                   </button>
                 )}
 
+                {canSendFeedback && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsFeedbackModalOpen(true);
+                      setIsDrawerOpen(false);
+                    }}
+                    className="w-full py-1.5 text-center text-[9px] font-black uppercase tracking-widest bg-[#2d6a4f] text-white border border-encre-noire rounded-[6px_9px_7px_8px] shadow-[1.5px_1.5px_0px_0px_#181716] hover:brightness-110 active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none transition-all cursor-pointer flex items-center justify-center gap-1.5 mt-1"
+                  >
+                    💡 Feedback
+                  </button>
+                )}
+
                 <div className="flex justify-between items-center text-[8px] font-black opacity-30 mt-1">
                   <span>O GIRADOR</span>
                   <span>{import.meta.env.VITE_APP_VERSION || 'v1.0.1'}</span>
@@ -808,6 +840,13 @@ export default function LayoutShell({
         )}
 
       </div>
+      
+      <FeedbackModal 
+        isOpen={isFeedbackModalOpen}
+        onClose={() => setIsFeedbackModalOpen(false)}
+        profileData={profileData}
+        associationName={associationName}
+      />
     </div>
   );
 }

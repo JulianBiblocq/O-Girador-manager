@@ -4,16 +4,7 @@ import PermissionsGuideBox from '../PermissionsGuideBox';
 import { formatTagGender, getTagId } from '../../utils/tagUtils';
 
 const PERMISSION_POLES = [
-  {
-    id: 'troupe',
-    label: '👥 Troupe',
-    desc: 'Accès aux membres, exports et gestion des badges',
-    tabs: [
-      { id: 'export-annu', label: 'Annuaire', desc: 'Accès à la liste des membres et à la génération des exports CSV/Excel' },
-      { id: 'tag-manager', label: 'Badges', desc: 'Gestion de l\'ordre et des intitulés des badges/rôles' },
-      { id: 'instruments', label: 'Pupitres', desc: 'Association des instruments aux pupitres de la troupe' }
-    ]
-  },
+
   {
     id: 'diffusion',
     label: '🎷 Diffusion',
@@ -41,14 +32,7 @@ const PERMISSION_POLES = [
     desc: 'Inventaire du matériel et des commandes',
     tabs: [
       { id: 'inventory', label: 'Instruments', desc: 'Gestion du parc d\'instruments et état du matériel' },
-      { id: 'orders-manager', label: 'Commandes', desc: 'Suivi des achats et commandes de matériel' }
-    ]
-  },
-  {
-    id: 'vestiaire',
-    label: '👗 Vestiaire',
-    desc: 'Gestion des costumes, stock et mensurations',
-    tabs: [
+      { id: 'orders-manager', label: 'Commandes', desc: 'Suivi des achats et commandes de matériel' },
       { id: 'wardrobe-inventory', label: 'Costumes', desc: 'Gestion du catalogue et du stock des costumes' },
       { id: 'wardrobe-couture', label: 'Atelier Couture', desc: 'Suivi de confection, réparations et tutoriels couture' },
       { id: 'wardrobe-sizes', label: 'Mensurations', desc: 'Consultation des tailles et mensurations des membres' }
@@ -59,13 +43,15 @@ const PERMISSION_POLES = [
     label: 'Studio',
     desc: 'Communication, réunions, Varal et comptes-rendus',
     tabs: [
+      { id: 'studio-social', label: 'Studio social', desc: 'Gestion et publication sur les réseaux sociaux' },
       { id: 'agenda', label: '📅 Agenda & Événements', desc: 'Droits de création, modification et suppression des événements' },
       { id: 'studio-events', label: 'Événements', desc: 'Tableau d\'édition rapide et globale des événements' },
-      { id: 'studio-social', label: 'Studio social', desc: 'Gestion et publication sur les réseaux sociaux' },
       { id: 'reunion-manager', label: 'Réunions', desc: 'Ordres du jour et compte-rendus de réunion' },
-      { id: 'varal-manager', label: 'Varal', desc: 'Gestion des dossiers et documents à afficher sur le Varal' },
+      { id: 'mestre-forum-channels', label: 'Porte-voix', desc: 'Modération et configuration des salons du forum' },
+      { id: 'newsletter', label: 'Newsletter', desc: 'Création et envoi de newsletters' },
+      { id: 'export-annu', label: 'Annuaire', desc: 'Accès à la liste des membres et à la génération des exports CSV/Excel' },
       { id: 'activity-reports', label: 'Rapports', desc: 'Rédaction et archivage des bilans d\'activité' },
-      { id: 'mestre-forum-channels', label: 'Porte-voix', desc: 'Modération et configuration des salons du forum' }
+      { id: 'varal-manager', label: 'Varal', desc: 'Gestion des dossiers et documents à afficher sur le Varal' }
     ]
   },
   {
@@ -98,7 +84,9 @@ const PERMISSION_POLES = [
       { id: 'config-identity', label: 'Identité', desc: 'Nom, logo, réseaux et slogan de l\'association' },
       { id: 'config-communication', label: 'Communication & Newsletter', desc: 'Clés Brevo API et export des inscrits newsletter (CSV)' },
       { id: 'config-profile', label: 'Organisation', desc: 'Structure et champs de profil des adhérents' },
-      { id: 'config-security', label: 'Sécurité & Badges', desc: 'Matrice des rôles, permissions et déverrouillage' },
+      { id: 'tag-manager', label: 'Badges', desc: 'Gestion de l\'ordre et des intitulés des badges/rôles' },
+      { id: 'instruments', label: 'Pupitres', desc: 'Association des instruments aux pupitres de la troupe' },
+      { id: 'config-security', label: 'Sécurité', desc: 'Matrice des permissions et journal d\'audit' },
       { id: 'config-modules', label: 'Modules & Fonctionnalités', desc: 'Activation/Désactivation des modules' },
       { id: 'config-logistics', label: 'Logistique & Adresses', desc: 'Gestion des adresses et lieux habituels' },
       { id: 'config-documents', label: 'Documents & Modèles', desc: 'Gestion des documents administratifs et modèles' },

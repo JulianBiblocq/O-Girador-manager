@@ -226,15 +226,14 @@ export function canAccessDiffusion(profileData, permissionsMatrice = null, effec
  * Mots-clés d'étiquettes/badges autorisant les pôles d'administration par défaut.
  */
 const POLE_ALLOWED_KEYWORDS = {
-  troupe: ['bureau', 'président', 'présidente', 'présidence', 'admin', 'direction', 'ca', 'secrétaire', 'annuaire', 'troupe'],
-  diffusion: ['bureau', 'président', 'présidente', 'présidence', 'admin', 'direction', 'ca', 'diffusion', 'booking', 'trésorier', 'secrétaire', 'communication'],
-  tresorerie: ['bureau', 'président', 'présidente', 'présidence', 'admin', 'direction', 'ca', 'trésorier', 'trésorière', 'trésorerie', 'comptable', 'finance'],
-  logistique: ['bureau', 'président', 'présidente', 'présidence', 'admin', 'direction', 'ca', 'logistique', 'matériel', 'inventaire', 'instruments', 'commandes'],
-  vestiaire: ['bureau', 'président', 'présidente', 'présidence', 'admin', 'direction', 'ca', 'vestiaire', 'costumes', 'couture'],
-  studio: ['bureau', 'président', 'présidente', 'présidence', 'admin', 'direction', 'ca', 'studio', 'communication', 'secrétaire', 'porte-voix', 'newsletter'],
-  mestre: ['mestre', 'mestria', 'chef de pupitre', 'bureau', 'direction', 'admin', 'président', 'présidente'],
-  vitrine: ['bureau', 'président', 'présidente', 'présidence', 'admin', 'direction', 'ca', 'vitrine', 'communication', 'webmaster'],
-  config: ['bureau', 'président', 'présidente', 'présidence', 'admin', 'direction', 'ca', 'config', 'sécurité', 'secrétaire']
+  diffusion: ['diffusion', 'booking', 'communication'],
+  tresorerie: ['trésorier', 'trésorière', 'trésorerie', 'comptable', 'finance'],
+  logistique: ['logistique', 'matériel', 'inventaire', 'instruments', 'commandes', 'vestiaire', 'costumes', 'couture'],
+  studio: ['studio', 'communication', 'secrétaire', 'porte-voix', 'newsletter'],
+  mestre: ['mestre', 'mestria', 'chef de pupitre', 'direction'],
+  vitrine: ['vitrine', 'communication', 'webmaster'],
+  pedagogie: ['mestre', 'pédagogie'],
+  config: ['config', 'sécurité', 'secrétaire']
 };
 
 /**
@@ -252,32 +251,15 @@ export function canAccessPole(poleId, profileData, permissionsMatrice = null, ef
   // Pôles publics Espace Membre : toujours déverrouillés
   if (poleId === 'accueil' || poleId === 'mon-espace') return true;
 
-  // 1. Rôles système autorisés d'office sur les pôles d'administration
-  const systemRole = (profileData.role || '').toLowerCase();
-  if (
-    systemRole === 'mestre' ||
-    systemRole === 'admin' ||
-    systemRole === 'super-admin' ||
-    systemRole === 'bureau' ||
-    systemRole === 'ca' ||
-    profileData.isSystemAdmin === true
-  ) {
-    return true;
-  }
 
-  // 2. Badges / Étiquettes autorisées par mots-clés par défaut
+
   const userTagsList = (
     effectiveUserTags && effectiveUserTags.length > 0
       ? effectiveUserTags
       : profileData.tags || []
   ).map(t => (typeof t === 'string' ? t.toLowerCase() : (t.id || t.nomM || t.nomF || '').toLowerCase()));
 
-  const allowedKeywords = POLE_ALLOWED_KEYWORDS[poleId] || ['bureau', 'admin', 'direction', 'ca', 'président', 'présidente'];
-  if (userTagsList.some(ut => allowedKeywords.some(kw => ut.includes(kw)))) {
-    return true;
-  }
-
-  // 3. Matrice des permissions Firestore de l'association (clé globale du pôle)
+  // 2. Matrice des permissions Firestore de l'association (clé globale du pôle)
   if (permissionsMatrice && typeof permissionsMatrice === 'object') {
     const poleTags = permissionsMatrice[poleId];
     if (Array.isArray(poleTags) && poleTags.length > 0) {
@@ -285,7 +267,16 @@ export function canAccessPole(poleId, profileData, permissionsMatrice = null, ef
       if (userTagsList.some(ut => formattedPoleTags.includes(ut))) {
         return true;
       }
+      // Si une configuration explicite est définie pour ce pôle mais que l'utilisateur ne l'a pas,
+      // il ne faut pas qu'il hérite des accès par défaut.
+      return false;
     }
+  }
+
+  // 3. Badges / Étiquettes autorisées par mots-clés par défaut (fallback si aucune matrice)
+  const allowedKeywords = POLE_ALLOWED_KEYWORDS[poleId] || [];
+  if (allowedKeywords.length > 0 && userTagsList.some(ut => allowedKeywords.some(kw => ut.includes(kw)))) {
+    return true;
   }
 
   return false;

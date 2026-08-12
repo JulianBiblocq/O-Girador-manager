@@ -298,8 +298,8 @@ export default function EventReportSection({ event, user, profileData, associati
       // 4. Create document in Varal
       const docRef = await addDoc(collection(db, 'documents'), {
         titre: docTitle,
-        categoryId: 'Administratif',
-        categorie: 'Administratif',
+        categoryId: 'ComptesRendus',
+        categorie: 'ComptesRendus',
         sousCategorie: 'Comptes Rendus',
         annee: eventYear,
         type: 'report',
@@ -1050,7 +1050,7 @@ export default function EventReportSection({ event, user, profileData, associati
           {reportStatus === 'publie' && (
             <div className="p-4 bg-green-50 border border-green-300 rounded text-center text-xs font-bold text-green-900 flex flex-col gap-3 items-center">
               <div>
-                🎉 Ce compte-rendu est <strong>officiellement validé</strong> et archivé dans la catégorie <strong>Administratif / Comptes Rendus</strong> du Varal.
+                🎉 Ce compte-rendu est <strong>officiellement validé</strong> et archivé dans la catégorie <strong>Comptes-rendus</strong> du Varal.
               </div>
               <CordelButton
                 variant="vert"

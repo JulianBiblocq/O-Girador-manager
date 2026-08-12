@@ -17,6 +17,7 @@ import { getSocialVideoThumbnail } from '../utils/videoUtils';
 import { canManageEvents } from '../utils/permissionUtils';
 import { resolveEffectiveUserTags } from '../utils/tagUtils';
 import { formatLocationShort } from '../utils/locationUtils';
+import useHardwareBack from '../hooks/useHardwareBack';
 
 const formatDateWithDay = (dateStr, includeYear = true) => {
   const date = new Date(dateStr);
@@ -62,6 +63,9 @@ export default function WidgetAgenda({
   const setSelectedEvent = propSetSelectedEvent !== undefined ? propSetSelectedEvent : setLocalSelectedEvent;
   const [showAll, setShowAll] = useState(isFullPage);
   const [showPastHistory, setShowPastHistory] = useState(false);
+
+  useHardwareBack(isAdding, () => setIsAdding(false));
+  useHardwareBack(!!selectedEvent, () => setSelectedEvent(null));
   const [viewMode, setViewMode] = useState('cards'); // 'cards' ou 'list' ou 'grid'
   const [disciplineFilter, setDisciplineFilter] = useState('all'); // 'all' | 'percussion' | 'dance'
   const [selectedTypeFilter, setSelectedTypeFilter] = useState('all');

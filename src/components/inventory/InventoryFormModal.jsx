@@ -148,6 +148,21 @@ export default function InventoryFormModal({
               </div>
             </div>
 
+            {/* Étui */}
+            <div className="flex items-center gap-2 pt-1 pb-1">
+              <input
+                type="checkbox"
+                name="etuiFourni"
+                checked={formData.etuiFourni || false}
+                onChange={(e) => setFormData(prev => ({ ...prev, etuiFourni: e.target.checked }))}
+                id="etuiFourniModalInput"
+                className="w-4 h-4 text-cordel-wood rounded cursor-pointer"
+              />
+              <label htmlFor="etuiFourniModalInput" className="text-xs font-black text-encre-noire uppercase cursor-pointer select-none">
+                Étui / Housse fourni(e)
+              </label>
+            </div>
+
             {/* Membres assignés à ce matériel */}
             <div className="flex flex-col gap-1.5 pt-1">
               <label className="text-xs font-black text-encre-noire uppercase">

@@ -25,6 +25,9 @@ export function useEventRSVP(event, user, profileData, allUsers, isMusicLevelRes
     if (existingResponse?.instrumentChoisi) {
       return existingResponse.instrumentChoisi;
     }
+    if (profileData?.pratiqueDanse === true && !profileData?.pratiquePercussion) {
+      return 'Danse';
+    }
     return profileData?.instrument || profileData?.instrumentsJoues?.[0] || 'Autre';
   });
 
@@ -66,7 +69,9 @@ export function useEventRSVP(event, user, profileData, allUsers, isMusicLevelRes
       const mStatus = resp 
         ? (resp.status === 'pending' || resp.status === 'refused' ? 'present' : resp.status) 
         : (m.isParent ? status : 'absent');
-      const mInst = resp?.instrumentChoisi || m.instrument || (m.instrumentsJoues?.[0]) || 'Autre';
+      const isDanseOnly = m.pratiqueDanse === true && !m.pratiquePercussion;
+      const defaultInst = isDanseOnly ? 'Danse' : (m.instrument || (m.instrumentsJoues?.[0]) || 'Autre');
+      const mInst = resp?.instrumentChoisi || defaultInst;
 
       initial[m.id] = {
         selected: isSelected,

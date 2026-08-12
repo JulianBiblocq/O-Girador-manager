@@ -7,6 +7,7 @@ import CordelButton from '../CordelButton';
 import WorkshopEditorModal from '../mestre/WorkshopEditorModal';
 import ImageLightboxModal from '../ImageLightboxModal';
 import useConfirm from '../../hooks/useConfirm';
+import useHardwareBack from '../../hooks/useHardwareBack';
 
 /**
  * Utility helper to convert YouTube and Vimeo URLs into clean responsive embed iframe URLs.
@@ -73,6 +74,9 @@ export default function AtelierCouture({ groupId, activePiece, onClearActivePiec
   // Editor Modal State
   const [showEditorModal, setShowEditorModal] = useState(false);
   const [editingWorkshop, setEditingWorkshop] = useState(null);
+
+  useHardwareBack(showEditorModal, () => setShowEditorModal(false));
+  useHardwareBack(!!lightboxImage, () => setLightboxImage(null));
 
   const isAuthorized = role === 'mestre' || role === 'super-admin' || isSystemAdmin === true || hasAccessLogistique === true;
 

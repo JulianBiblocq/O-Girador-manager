@@ -6,10 +6,12 @@ import { useTranslation } from './LanguageContext';
 import { XiloSettings } from './XiloIcons';
 
 import TabIdentity from './association-settings/TabIdentity';
+import TabApparence from './association-settings/TabApparence';
 import TabOrganization from './association-settings/TabOrganization';
 import TabSecurity from './association-settings/TabSecurity';
 import TabLogistics from './association-settings/TabLogistics';
 import TabFinance from './association-settings/TabFinance';
+import TabDocuments from './association-settings/TabDocuments';
 import TabAgenda from './association-settings/TabAgenda';
 import TabModules from './association-settings/TabModules';
 import TabLieux from './association-settings/TabLieux';
@@ -117,17 +119,25 @@ export default function AssociationSettings({
           <TabIdentity
             formData={formData}
             handleChange={handleChange}
-            logoFile={logoFile}
-            setLogoFile={setLogoFile}
             signaturePresidentFile={signaturePresidentFile}
             setSignaturePresidentFile={setSignaturePresidentFile}
             signatureTresorierFile={signatureTresorierFile}
             setSignatureTresorierFile={setSignatureTresorierFile}
-            uploadingLogo={uploadingLogo}
             groupId={groupId}
             saving={saving}
             t={t}
             onReopenOnboarding={onReopenOnboarding}
+          />
+        );
+      case 'apparence':
+        return (
+          <TabApparence
+            formData={formData}
+            handleChange={handleChange}
+            logoFile={logoFile}
+            setLogoFile={setLogoFile}
+            uploadingLogo={uploadingLogo}
+            saving={saving}
           />
         );
       case 'organisation':
@@ -158,15 +168,24 @@ export default function AssociationSettings({
             t={t}
           />
         );
-      case 'finance':
+      case 'documents':
         return (
-          <TabFinance
+          <TabDocuments
             formData={formData}
             handleChange={handleChange}
             droitImageFile={droitImageFile}
             setDroitImageFile={setDroitImageFile}
             aptitudeMedicaleFile={aptitudeMedicaleFile}
             setAptitudeMedicaleFile={setAptitudeMedicaleFile}
+            saving={saving}
+            t={t}
+          />
+        );
+      case 'finance':
+        return (
+          <TabFinance
+            formData={formData}
+            handleChange={handleChange}
             saving={saving}
             groupId={groupId}
             handleSaveHelloAssoKey={handleSaveHelloAssoKey}
@@ -176,25 +195,26 @@ export default function AssociationSettings({
         );
       case 'agenda':
         return (
-          <TabAgenda
-            formData={formData}
-            handleChange={handleChange}
-            saving={saving}
-            t={t}
-          />
+          <>
+            <TabAgenda
+              formData={formData}
+              handleChange={handleChange}
+              saving={saving}
+              t={t}
+            />
+            <div className="mt-4">
+              <TabLieux
+                formData={formData}
+                handleChange={handleChange}
+                saving={saving}
+                t={t}
+              />
+            </div>
+          </>
         );
       case 'modules':
         return (
           <TabModules
-            formData={formData}
-            handleChange={handleChange}
-            saving={saving}
-            t={t}
-          />
-        );
-      case 'lieux':
-        return (
-          <TabLieux
             formData={formData}
             handleChange={handleChange}
             saving={saving}
@@ -306,6 +326,72 @@ export default function AssociationSettings({
               </button>
               <button
                 type="button"
+                onClick={() => setActiveSettingsTab('apparence')}
+                className={`px-3 py-1.5 text-xs font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer ${
+                  activeSettingsTab === 'apparence'
+                    ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
+                    : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
+                }`}
+              >
+                🖌️ Apparence
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveSettingsTab('organisation')}
+                className={`px-3 py-1.5 text-xs font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer ${
+                  activeSettingsTab === 'organisation'
+                    ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
+                    : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
+                }`}
+              >
+                👥 Inscription & Profils
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveSettingsTab('security')}
+                className={`px-3 py-1.5 text-xs font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer ${
+                  activeSettingsTab === 'security'
+                    ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
+                    : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
+                }`}
+              >
+                🛡️ Badges & Permissions
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveSettingsTab('logistics')}
+                className={`px-3 py-1.5 text-xs font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer ${
+                  activeSettingsTab === 'logistics'
+                    ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
+                    : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
+                }`}
+              >
+                🚗 Logistique & Vestiaire
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveSettingsTab('documents')}
+                className={`px-3 py-1.5 text-xs font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer ${
+                  activeSettingsTab === 'documents'
+                    ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
+                    : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
+                }`}
+              >
+                📋 Documents & Charte
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveSettingsTab('finance')}
+                className={`px-3 py-1.5 text-xs font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer ${
+                  activeSettingsTab === 'finance'
+                    ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
+                    : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
+                }`}
+              >
+                🪙 Trésorerie
+              </button>
+              <button
+                type="button"
                 onClick={() => setActiveSettingsTab('communication')}
                 className={`px-3 py-1.5 text-xs font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer ${
                   activeSettingsTab === 'communication'
@@ -317,50 +403,6 @@ export default function AssociationSettings({
               </button>
               <button
                 type="button"
-                onClick={() => setActiveSettingsTab('organisation')}
-                className={`px-3 py-1.5 text-xs font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer ${
-                  activeSettingsTab === 'organisation'
-                    ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
-                    : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
-                }`}
-              >
-                👥 Organisation & Profil
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveSettingsTab('security')}
-                className={`px-3 py-1.5 text-xs font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer ${
-                  activeSettingsTab === 'security'
-                    ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
-                    : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
-                }`}
-              >
-                🛡️ Sécurité & Droits
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveSettingsTab('logistics')}
-                className={`px-3 py-1.5 text-xs font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer ${
-                  activeSettingsTab === 'logistics'
-                    ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
-                    : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
-                }`}
-              >
-                🚗 Logistique & Covoit
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveSettingsTab('finance')}
-                className={`px-3 py-1.5 text-xs font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer ${
-                  activeSettingsTab === 'finance'
-                    ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
-                    : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
-                }`}
-              >
-                🪙 Cotisations & Docs
-              </button>
-              <button
-                type="button"
                 onClick={() => setActiveSettingsTab('agenda')}
                 className={`px-3 py-1.5 text-xs font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer ${
                   activeSettingsTab === 'agenda'
@@ -368,7 +410,7 @@ export default function AssociationSettings({
                     : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
                 }`}
               >
-                📅 Gestion de l'Agenda
+                📅 Agenda & Lieux
               </button>
               <button
                 type="button"
@@ -380,17 +422,6 @@ export default function AssociationSettings({
                 }`}
               >
                 🧩 Modules & Fonctionnalités
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveSettingsTab('lieux')}
-                className={`px-3 py-1.5 text-xs font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer ${
-                  activeSettingsTab === 'lieux'
-                    ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
-                    : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
-                }`}
-              >
-                📍 Lieux & Salles
               </button>
               <button
                 type="button"

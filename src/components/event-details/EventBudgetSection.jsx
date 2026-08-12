@@ -38,6 +38,11 @@ export default function EventBudgetSection({ event, groupId, onCreateQuote }) {
 
   return (
     <div className="flex flex-col gap-6 text-left w-full">
+      {/* Badge indiquant la restriction de visibilité */}
+      <div className="mb-1 px-3 py-1.5 bg-neutral-100 border border-neutral-400 text-neutral-700 rounded font-black text-[10px] uppercase tracking-wider flex items-center gap-2 w-fit shadow-[1.5px_1.5px_0px_0px_#181716]">
+        <span>🔒 Section confidentielle (Accès restreint Trésorerie / Bureau)</span>
+      </div>
+
       {/* Grille principale : Revenus & Dépenses Hybrides */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         

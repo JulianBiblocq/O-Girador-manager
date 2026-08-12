@@ -334,7 +334,7 @@ export const generateCompteRenduPDF = (event, points = [], presents = [], associ
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
   doc.setTextColor(50, 50, 50);
-  doc.text("Document validé par les membres présents et archivé automatiquement sous la catégorie Administratif.", 25, yPos + 16);
+  doc.text("Document validé par les membres présents et archivé automatiquement sous la catégorie Comptes-rendus.", 25, yPos + 16);
 
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);

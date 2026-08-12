@@ -90,6 +90,7 @@ export default function TreasuryManager({ groupId, onBack, role, isSystemAdmin, 
           <TreasuryInvoices
             groupId={groupId}
             associationSettings={associationSettings}
+            handleSaveAssociationSettings={handleSaveAssociationSettings}
           />
         );
       case 'events-finances':

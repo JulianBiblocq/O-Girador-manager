@@ -1,0 +1,9 @@
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+    # Par défaut, Dependabot propose des PR pour toutes les mises à jour (mineures et majeures)
+    # L'analyse est ciblée sur le fichier package.json à la racine

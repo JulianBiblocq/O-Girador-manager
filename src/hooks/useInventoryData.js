@@ -27,7 +27,8 @@ export function useInventoryData(groupId, isAuthorized, t) {
     localisationPhysique: 'Local',
     assignations: [],
     status: 'En stock',
-    borrowedBy: ''
+    borrowedBy: '',
+    etuiFourni: false
   });
 
   // Synchronisation en temps réel de la liste des membres du groupe
@@ -102,7 +103,8 @@ export function useInventoryData(groupId, isAuthorized, t) {
       localisationPhysique: 'Local',
       assignations: [],
       status: 'En stock',
-      borrowedBy: ''
+      borrowedBy: '',
+      etuiFourni: false
     });
     setEditingId(null);
     setIsFormOpen(true);
@@ -117,7 +119,8 @@ export function useInventoryData(groupId, isAuthorized, t) {
       localisationPhysique: inst.localisationPhysique || 'Local',
       assignations: inst.assignations || [],
       status: inst.status || 'En stock',
-      borrowedBy: inst.borrowedBy || ''
+      borrowedBy: inst.borrowedBy || '',
+      etuiFourni: inst.etuiFourni || false
     });
     setEditingId(inst.id);
     setIsFormOpen(true);
@@ -138,6 +141,7 @@ export function useInventoryData(groupId, isAuthorized, t) {
         assignations: formData.assignations,
         status: formData.status || 'En stock',
         borrowedBy: formData.borrowedBy || null,
+        etuiFourni: formData.etuiFourni || false,
         groupId: groupId
       };
 

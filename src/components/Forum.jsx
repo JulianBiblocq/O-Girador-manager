@@ -18,6 +18,7 @@ import { useForumThreads } from '../hooks/useForumThreads';
 import ForumChannelHeader from './forum/ForumChannelHeader';
 import ForumThreadCard from './forum/ForumThreadCard';
 import NewThreadModal from './forum/NewThreadModal';
+import useHardwareBack from '../hooks/useHardwareBack';
 
 // Utilisation du composant réutilisable ForumThreadCard importé depuis ./forum/ForumThreadCard
 
@@ -175,6 +176,11 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
   const [newChannelName, setNewChannelName] = useState('');
   const [newChannelParentId, setNewChannelParentId] = useState('');
   const [savingChannel, setSavingChannel] = useState(false);
+
+  useHardwareBack(isAdding, () => setIsAdding(false));
+  useHardwareBack(!!selectedThread, () => setSelectedThread(null));
+  useHardwareBack(!!movingThreadModal, () => setMovingThreadModal(null));
+  useHardwareBack(isCreatingChannel, () => setIsCreatingChannel(false));
 
   const handleCreateChannelSubmit = async (e) => {
     e.preventDefault();

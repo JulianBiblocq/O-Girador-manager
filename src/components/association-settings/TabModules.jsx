@@ -181,6 +181,43 @@ export default function TabModules({
         })}
       </div>
 
+      <div className="mt-8 border-t-2 border-dashed border-cordel-master-dark/30 pt-6">
+        <h3 className="text-xs uppercase font-extrabold tracking-wider text-cordel-wood text-left flex items-center gap-2 mb-4">
+          <span>🧠</span> Modules d'Apprentissage (Mon Parcours)
+        </h3>
+        <p className="text-[10px] text-cordel-master-dark/70 font-semibold leading-relaxed mb-4 text-left">
+          L'activation globale affiche le menu "Mon Parcours" pour les élèves. Vous pouvez ensuite choisir d'activer ou désactiver individuellement chaque discipline.
+        </p>
+
+        <div className="flex flex-col gap-3 text-left">
+          {[
+            { key: 'monParcoursGlobal', label: 'Activer le module "Mon Parcours" (Global)', isGlobal: true },
+            { key: 'monParcoursPercussion', label: 'Activer l\'onglet "Percussions"' },
+            { key: 'monParcoursDanse', label: 'Activer l\'onglet "Danse"' },
+            { key: 'monParcoursChant', label: 'Activer l\'onglet "Chant"' },
+            { key: 'monParcoursAtelier', label: 'Activer l\'onglet "Atelier (Fabrication/Entretien)"' },
+            { key: 'monParcoursCulture', label: 'Activer l\'onglet "Culture"' }
+          ].map(mp => (
+            <label key={mp.key} className={`flex items-center gap-3 cursor-pointer p-3 rounded border-2 transition-all ${
+              enabledModules[mp.key] !== false 
+                ? 'border-cordel-wood bg-cordel-wood/10' 
+                : 'border-encre-noire/10 bg-[#fdfaf2] opacity-70 hover:border-cordel-wood/50'
+            } ${mp.isGlobal ? 'mb-2' : 'ml-6 md:ml-12 w-[calc(100%-1.5rem)] md:w-[calc(100%-3rem)]'}`}>
+              <input 
+                type="checkbox"
+                checked={enabledModules[mp.key] !== false}
+                onChange={(e) => handleToggleModule(mp.key, e.target.checked)}
+                className="accent-cordel-wood w-4 h-4 cursor-pointer"
+                disabled={!mp.isGlobal && enabledModules.monParcoursGlobal === false}
+              />
+              <span className={`text-xs font-black uppercase tracking-wider ${enabledModules[mp.key] !== false ? 'text-cordel-wood' : 'text-encre-noire/70'}`}>
+                {mp.label}
+              </span>
+            </label>
+          ))}
+        </div>
+      </div>
+
       {/* Online Presence Status Settings */}
       <div className="mt-6 pt-4 border-t-2 border-dashed border-cordel-master-dark/20 text-left">
         <h4 className="text-xs uppercase font-extrabold tracking-wider text-cordel-wood mb-2.5 flex items-center gap-2">
@@ -205,6 +242,38 @@ export default function TabModules({
               type="checkbox"
               checked={formData.activerPresenceEnLigne !== false}
               onChange={(e) => handleChange('activerPresenceEnLigne', e.target.checked)}
+              disabled={saving}
+              className="sr-only peer"
+            />
+            <div className="w-10 h-5 bg-neutral-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-neutral-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[var(--cordel-wood)]"></div>
+          </label>
+        </div>
+      </div>
+
+      {/* Individual Progression Status Settings */}
+      <div className="mt-6 pt-4 border-t-2 border-dashed border-cordel-master-dark/20 text-left">
+        <h4 className="text-xs uppercase font-extrabold tracking-wider text-cordel-wood mb-2.5 flex items-center gap-2">
+          <span>📈</span> Parcours & Auto-évaluation
+        </h4>
+        <div className={`p-4 border-2 rounded-[6px_10px_6px_8px] flex items-center justify-between transition-all ${
+          formData.enableIndividualProgression
+            ? 'border-encre-noire bg-cordel-bg-light shadow-[2.5px_2.5px_0px_0px_#181716]'
+            : 'border-dashed border-cordel-master-dark/30 bg-neutral-100/50 opacity-60'
+        }`}>
+          <div className="text-left pr-4">
+            <h5 className="text-xs font-black text-encre-noire flex items-center gap-2">
+              Activer la fiche d'auto-évaluation et progression individuelle
+            </h5>
+            <p className="text-[9px] text-cordel-master-dark/70 font-medium mt-0.5 leading-relaxed">
+              Active le nouvel onglet "Mon Parcours" pour les membres, leur permettant de suivre leurs compétences techniques et artistiques. (Si désactivé, l'onglet reste visible uniquement pour les Mestres et Administrateurs pour tests).
+            </p>
+          </div>
+
+          <label className="relative inline-flex items-center cursor-pointer shrink-0 select-none">
+            <input
+              type="checkbox"
+              checked={formData.enableIndividualProgression || false}
+              onChange={(e) => handleChange('enableIndividualProgression', e.target.checked)}
               disabled={saving}
               className="sr-only peer"
             />
