@@ -50,9 +50,18 @@ export default function StudentToadasProgress({ profileData, allSongs = [], allS
         <h2 className="text-2xl md:text-3xl font-cactus uppercase text-cordel-wood tracking-widest">
           Maîtrise de la Nação
         </h2>
-        <p className="text-xs text-cordel-master-dark opacity-80">
+        <p className="text-xs text-cordel-master-dark opacity-80 mb-2">
           Progression globale basée sur vos auto-évaluations ciblées par Toada.
         </p>
+        <div className="bg-cordel-ocre/10 border-l-4 border-cordel-ocre p-3 text-left rounded-r max-w-2xl mx-auto">
+          <p className="text-xs font-bold text-cordel-master-dark flex items-start gap-2">
+            <span className="text-base">💡</span>
+            <span>
+              <strong>Où écouter et lire les toadas ?</strong><br/>
+              Avant de tester tes connaissances, retrouve tous les chants (audios, paroles, traductions) dans le <strong>Varal des Toadas</strong>, situé tout en bas de la page d'accueil !
+            </span>
+          </p>
+        </div>
         
         <div className="w-full max-w-2xl mx-auto flex flex-col gap-2">
           <div className="flex justify-between items-end mb-1">

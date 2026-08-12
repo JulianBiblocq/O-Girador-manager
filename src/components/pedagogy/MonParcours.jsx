@@ -222,6 +222,17 @@ export default function MonParcours({ profileData, sequenceurUrl, enabledModules
         <p className="text-xs md:text-sm text-cordel-master-dark opacity-80 text-center max-w-2xl">
           Auto-évaluation de tes compétences techniques et musicales. Ton évolution est sauvegardée automatiquement.
         </p>
+        {activeTab !== 'autoeval' && (
+          <div className="bg-cordel-ocre/10 border-l-4 border-cordel-ocre p-3 mt-2 text-left rounded-r max-w-2xl w-full">
+            <p className="text-xs font-bold text-cordel-master-dark flex items-start gap-2">
+              <span className="text-base">💡</span>
+              <span>
+                <strong>Où apprendre et réviser ?</strong><br/>
+                Avant de valider tes acquis ici, retrouve tous les détails (fiches complètes, audios, explications) dans les <strong>Varals (cordes à linge)</strong> situés tout en bas de la page d'accueil !
+              </span>
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Onglets (Menu de Catégories) */}

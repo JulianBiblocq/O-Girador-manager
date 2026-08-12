@@ -233,9 +233,18 @@ const startQuiz = (theme, specificToadaId = null) => {
           <h2 className="text-2xl md:text-3xl font-cactus uppercase text-cordel-wood tracking-widest">
             Auto-évaluation
           </h2>
-          <p className="text-sm text-cordel-master-dark opacity-80 max-w-lg mx-auto">
+          <p className="text-sm text-cordel-master-dark opacity-80 max-w-lg mx-auto mb-2">
             Testez vos connaissances sur le répertoire, le vocabulaire et la culture de notre Nação.
           </p>
+          <div className="bg-cordel-ocre/10 border-l-4 border-cordel-ocre p-3 text-left rounded-r max-w-lg mx-auto">
+            <p className="text-xs font-bold text-cordel-master-dark flex items-start gap-2">
+              <span className="text-base">💡</span>
+              <span>
+                <strong>Où réviser avant de se tester ?</strong><br/>
+                Tout le matériel pédagogique (chants, fiches, rythmes) se trouve dans les <strong>Varals (cordes à linge)</strong> situés tout en bas de la page d'accueil !
+              </span>
+            </p>
+          </div>
         </div>
 
         <CordelCard className="p-6 flex flex-col gap-6 items-center text-center bg-[#fdfaf2] border-2 border-dashed border-cordel-wood/30">

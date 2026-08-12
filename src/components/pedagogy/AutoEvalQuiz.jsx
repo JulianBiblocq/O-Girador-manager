@@ -40,11 +40,15 @@ export default function AutoEvalQuiz({ sheetData, allSheetsData, profileData, on
   }, [sheetData, allSheetsData, customQuizData, isSong, songData, allSongsData, qcmGlobalConfig]);
 
   if (questions.length === 0) {
+    const isAdmin = profileData?.isSystemAdmin || profileData?.role === 'super-admin' || profileData?.role === 'mestre' || profileData?.role === 'admin';
+    const adminMsg = isSong ? "Impossible de générer un quiz pour ce chant avec la configuration actuelle." : "Cette fiche ne contient pas assez de mots en gras ou de lexique pour générer un quiz.";
+    const studentMsg = isSong ? "Ce chant n'a pas de quiz associé pour le moment." : "Cette fiche n'a pas de quiz associé pour le moment.";
+
     return (
       <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[60] p-4">
         <CordelCard className="p-6 text-center max-w-sm">
           <p className="text-sm font-bold opacity-75 mb-4">
-            {isSong ? "Impossible de générer un quiz pour ce chant avec la configuration actuelle." : "Cette fiche ne contient pas assez de mots en gras ou de lexique pour générer un quiz."}
+            {isAdmin ? adminMsg : studentMsg}
           </p>
           <CordelButton variant="default" onClick={onClose}>Fermer</CordelButton>
         </CordelCard>
