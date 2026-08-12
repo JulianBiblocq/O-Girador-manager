@@ -7,10 +7,11 @@ const { onRequest, onCall, HttpsError } = require("firebase-functions/v2/https")
 const { defineSecret } = require("firebase-functions/params");
 const fetch = require("node-fetch");
 const admin = require("firebase-admin");
+const { getApps, initializeApp } = require("firebase-admin/app");
 
 // Initialisation de Firebase Admin SDK s'il n'est pas déjà initialisé
-if (!admin.apps.length) {
-  admin.initializeApp();
+if (!getApps().length) {
+  initializeApp();
 }
 
 // Définition du secret Firebase pour la clé API Brevo (v3)
