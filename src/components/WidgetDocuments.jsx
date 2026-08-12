@@ -2,19 +2,28 @@ import React, { useState, useEffect } from 'react';
 import { collection, query, where, onSnapshot, doc, deleteDoc, updateDoc } from 'firebase/firestore';
 import { ref, deleteObject } from 'firebase/storage';
 import { db, storage } from '../firebase';
+import { XiloChisel } from './XiloIcons';
+import { getInstrumentStamp } from './InstrumentStampSVG';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
 import DocumentUploadForm from './DocumentUploadForm';
+import SongCard from './SongCard';
+import CultureCard from './CultureCard';
+import SeloAxeStamp from './SeloAxeStamp';
+import PrintConfigModal from './PrintConfigModal';
+import { createPortal } from 'react-dom';
 
 import { useTranslation } from './LanguageContext';
 import useConfirm from '../hooks/useConfirm';
 
 export const DEFAULT_VARAL_CATEGORIES = [
-  { id: 'Partitions', nom: 'Partitions', activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false },
-  { id: 'Tutoriels', nom: 'Tutoriels', activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false },
+  { id: 'Toadas', nom: 'Toadas', activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false },
+  { id: 'TutorielsVideo', nom: 'Tutoriels Vidéo', activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false },
+  { id: 'TutosFabrication', nom: 'Tutos Fabrication', activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false },
   { id: 'Culture', nom: 'Culture', activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false },
-  { id: 'Administratif', nom: 'Comptes-rendus', activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: true },
-  { id: 'DocumentsFixes', nom: 'Administratif', activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false }
+  { id: 'PhotosPrestations', nom: 'Photos Prestations', activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false },
+  { id: 'ComptesRendus', nom: 'Comptes-rendus', activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: true },
+  { id: 'Administratif', nom: 'Administratif', activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false }
 ];
 
 const getDeterministicColor = (docId) => {
@@ -78,8 +87,8 @@ const WoodenClothespin = ({ className = "" }) => (
 );
 
 // Curved SVG Twisted Hemp Rope (Sagging catenary 3D textured hemp rope)
-const HangingRopeCurve = () => (
-  <div className="absolute top-[44px] left-0 right-0 h-8 w-full z-0 select-none pointer-events-none overflow-visible">
+const HangingRopeCurve = ({ className = "absolute top-[44px] left-0 right-0 h-8 w-full z-0 select-none pointer-events-none overflow-visible" }) => (
+  <div className={className}>
     <svg className="w-full h-full overflow-visible" viewBox="0 0 1000 32" preserveAspectRatio="none">
       <defs>
         <linearGradient id="hempMain" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -142,6 +151,201 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
   const [documentToEdit, setDocumentToEdit] = useState(null);
   const [editingCategory, setEditingCategory] = useState(null);
   const [selectedReport, setSelectedReport] = useState(null);
+  const [selectedToada, setSelectedToada] = useState(null);
+  const [selectedCultureCard, setSelectedCultureCard] = useState(null);
+  const [showBulkPrintModal, setShowBulkPrintModal] = useState(false);
+  const [isPrinting, setIsPrinting] = useState(false);
+  const [printCategory, setPrintCategory] = useState(null);
+
+  // Culture filter state
+  const [cultureFilter, setCultureFilter] = useState('all');
+
+  const CULTURE_THEMES = [
+    { id: 'all', label: 'Toute la Culture', icon: <span className="text-[12px] md:text-sm pt-0.5">✨</span> },
+    { 
+      id: 'orixás', 
+      label: 'Orixás', 
+      icon: (
+        <svg viewBox="0 0 100 100" className="w-5 h-5">
+          <defs>
+            <mask id="icon-mask-orixa">
+              <rect width="100" height="100" fill="white" />
+              <g stroke="black" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="39" y1="36" x2="39" y2="52" strokeDasharray="3 3" />
+                <line x1="44" y1="34" x2="44" y2="57" strokeDasharray="3 3" />
+                <line x1="51" y1="35" x2="51" y2="60" strokeDasharray="3 3" />
+                <line x1="57" y1="34" x2="57" y2="56" strokeDasharray="3 3" />
+                <line x1="62" y1="37" x2="62" y2="51" strokeDasharray="3 3" />
+                <path d="M 22 62 Q 50 78 78 61" fill="none" strokeWidth="2" strokeDasharray="4 2" />
+                <path d="M 18 78 Q 50 95 82 77" fill="none" strokeWidth="3" />
+                <path d="M 50 72 L 50 90" fill="none" strokeWidth="2" strokeDasharray="5 3" />
+                <circle cx="50" cy="15" r="2.5" fill="black" stroke="none" />
+                <circle cx="40" cy="22" r="2" fill="black" stroke="none" />
+                <circle cx="60" cy="22" r="2" fill="black" stroke="none" />
+                <path d="M 45 28 L 55 28" fill="none" strokeWidth="1.5" />
+              </g>
+            </mask>
+          </defs>
+          <path fill="currentColor" mask="url(#icon-mask-orixa)" d="M 50 3 L 44 14 L 36 24 L 38 31 L 31 39 L 34 46 L 24 50 L 19 63 L 12 90 L 88 90 L 83 66 L 74 49 L 66 44 L 69 37 L 62 31 L 64 26 L 57 13 Z" />
+        </svg>
+      )
+    },
+    { 
+      id: 'cuisine', 
+      label: 'Cuisine', 
+      icon: (
+        <svg viewBox="0 0 100 100" className="w-5 h-5">
+          <defs>
+            <mask id="icon-mask-cuisine">
+              <rect width="100" height="100" fill="white" />
+              <g stroke="black" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M 30 75 Q 50 85 70 75" fill="none" strokeWidth="2" strokeDasharray="3 2" />
+                <path d="M 35 65 Q 50 75 65 65" fill="none" strokeWidth="2" strokeDasharray="3 2" />
+                <line x1="25" y1="50" x2="75" y2="50" strokeWidth="1" strokeDasharray="2 2" />
+              </g>
+            </mask>
+          </defs>
+          <path fill="currentColor" mask="url(#icon-mask-cuisine)" d="M 20 50 L 25 80 C 30 90 70 90 75 80 L 80 50 Z M 15 40 C 15 35 85 35 85 40 L 80 45 L 20 45 Z M 10 40 C 5 40 5 50 10 50 C 15 50 15 40 10 40 Z M 90 40 C 95 40 95 50 90 50 C 85 50 85 40 90 40 Z M 40 30 Q 30 15 40 5 Q 50 15 40 30 M 60 35 Q 50 20 60 10 Q 70 20 60 35" />
+        </svg>
+      ) 
+    },
+    { 
+      id: 'histoire', 
+      label: 'Histoire', 
+      icon: (
+        <svg viewBox="0 0 100 100" className="w-5 h-5">
+          <defs>
+            <mask id="icon-mask-histoire">
+              <rect width="100" height="100" fill="white" />
+              <g stroke="black" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="50" y1="32" x2="50" y2="72" strokeWidth="3" />
+                <path d="M 15 30 Q 30 35 45 40" fill="none" strokeWidth="2" strokeDasharray="3 2" />
+                <path d="M 15 45 Q 30 50 45 55" fill="none" strokeWidth="2" strokeDasharray="3 2" />
+                <path d="M 15 60 Q 30 65 45 70" fill="none" strokeWidth="2" strokeDasharray="3 2" />
+                <path d="M 85 30 Q 70 35 55 40" fill="none" strokeWidth="2" strokeDasharray="3 2" />
+                <path d="M 85 45 Q 70 50 55 55" fill="none" strokeWidth="2" strokeDasharray="3 2" />
+                <path d="M 85 60 Q 70 65 55 70" fill="none" strokeWidth="2" strokeDasharray="3 2" />
+              </g>
+            </mask>
+          </defs>
+          <path fill="currentColor" mask="url(#icon-mask-histoire)" d="M 10 20 L 45 30 L 50 32 L 55 30 L 90 20 L 90 80 L 55 70 L 55 90 L 50 85 L 45 90 L 45 70 L 10 80 Z" />
+        </svg>
+      )
+    },
+    { 
+      id: 'musique', 
+      label: 'Musique', 
+      icon: (
+        <svg viewBox="0 0 100 100" className="w-5 h-5">
+          <defs>
+            <mask id="icon-mask-musique">
+              <rect width="100" height="100" fill="white" />
+              <g stroke="black" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="10" y1="50" x2="90" y2="50" strokeWidth="2" strokeDasharray="5 5" />
+                <line x1="10" y1="40" x2="90" y2="40" strokeWidth="2" strokeDasharray="5 5" />
+                <line x1="10" y1="60" x2="90" y2="60" strokeWidth="2" strokeDasharray="5 5" />
+              </g>
+            </mask>
+          </defs>
+          <path fill="currentColor" mask="url(#icon-mask-musique)" d="M 20 80 C 20 65 40 65 40 80 C 40 95 20 95 20 80 Z M 60 70 C 60 55 80 55 80 70 C 80 85 60 85 60 70 Z M 32 75 L 32 20 L 72 10 L 72 65 L 65 65 L 65 22 L 40 28 L 40 75 Z" />
+        </svg>
+      )
+    },
+    { 
+      id: 'cortège', 
+      label: 'Cortège', 
+      icon: (
+        <svg viewBox="0 0 100 100" className="w-5 h-5">
+          <defs>
+            <mask id="icon-mask-cortejo">
+              <rect width="100" height="100" fill="white" />
+              <g stroke="black" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M 25 85 Q 50 75 75 85" fill="none" strokeWidth="3" strokeDasharray="5 3" />
+                <path d="M 32 75 Q 50 65 68 75" fill="none" strokeWidth="2" strokeDasharray="4 2" />
+                <line x1="45" y1="50" x2="40" y2="80" strokeDasharray="2 2" />
+                <line x1="55" y1="50" x2="60" y2="80" strokeDasharray="2 2" />
+              </g>
+            </mask>
+          </defs>
+          <path fill="currentColor" mask="url(#icon-mask-cortejo)" d="M 50 5 A 8 8 0 1 0 50 21 A 8 8 0 1 0 50 5 Z M 48 23 L 30 40 L 25 35 L 20 40 L 35 55 L 43 45 L 35 85 L 15 90 L 20 95 L 80 95 L 85 90 L 65 85 L 57 45 L 65 55 L 80 40 L 75 35 L 70 40 L 52 23 Z" />
+        </svg>
+      )
+    },
+    { 
+      id: 'territoire', 
+      label: 'Territoire', 
+      icon: (
+        <svg viewBox="0 0 100 100" className="w-5 h-5">
+          <defs>
+            <mask id="icon-mask-territoire">
+              <rect width="100" height="100" fill="white" />
+              <g stroke="black" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="35" y1="15" x2="35" y2="75" strokeWidth="2.5" />
+                <line x1="65" y1="25" x2="65" y2="85" strokeWidth="2.5" />
+                <path d="M 25 45 Q 50 30 75 65" fill="none" strokeWidth="2" strokeDasharray="3 3" />
+                <circle cx="75" cy="65" r="4" fill="black" stroke="none" />
+                <circle cx="25" cy="45" r="4" fill="black" stroke="none" />
+              </g>
+            </mask>
+          </defs>
+          <path fill="currentColor" mask="url(#icon-mask-territoire)" d="M 15 25 L 35 15 L 65 25 L 85 15 L 85 75 L 65 85 L 35 75 L 15 85 Z" />
+        </svg>
+      )
+    },
+    { 
+      id: 'folklore', 
+      label: 'Folklore', 
+      icon: (
+        <svg viewBox="0 0 100 100" className="w-5 h-5">
+          <defs>
+            <mask id="icon-mask-folklore">
+              <rect width="100" height="100" fill="white" />
+              <g stroke="black" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="42" cy="55" r="4" fill="black" stroke="none" />
+                <circle cx="58" cy="55" r="4" fill="black" stroke="none" />
+                <path d="M 50 35 L 52 40 L 57 40 L 53 43 L 55 48 L 50 45 L 45 48 L 47 43 L 43 40 L 48 40 Z" fill="black" stroke="none" />
+                <path d="M 45 75 Q 50 85 55 75" fill="none" strokeWidth="2" strokeDasharray="2 2" />
+              </g>
+            </mask>
+          </defs>
+          <path fill="currentColor" mask="url(#icon-mask-folklore)" d="M 30 15 C 20 15 15 25 15 40 C 15 35 25 35 35 45 C 35 60 45 90 50 90 C 55 90 65 60 65 45 C 75 35 85 35 85 40 C 85 25 80 15 70 15 C 60 15 55 30 50 30 C 45 30 40 15 30 15 Z" />
+        </svg>
+      )
+    }
+  ];
+
+  const handleBulkPrint = ({ format, isBW }) => {
+    setShowBulkPrintModal(false);
+    setIsPrinting(true);
+    
+    // Set classes for print
+    if (isBW) document.body.classList.add('print-bw');
+    document.body.classList.add(`print-format-${format}`);
+    document.body.classList.add('printing-song');
+
+    // Inject @page size dynamically
+    const styleId = 'dynamic-print-style';
+    let styleEl = document.getElementById(styleId);
+    if (!styleEl) {
+      styleEl = document.createElement('style');
+      styleEl.id = styleId;
+      document.head.appendChild(styleEl);
+    }
+    const margins = { 'A5': '10mm', 'A4': '15mm', 'A3': '20mm' };
+    styleEl.innerHTML = `@media print { @page { size: ${format}; margin: ${margins[format] || '15mm'}; } }`;
+
+    setTimeout(() => {
+      window.print();
+      
+      // Cleanup
+      if (isBW) document.body.classList.remove('print-bw');
+      document.body.classList.remove(`print-format-${format}`);
+      document.body.classList.remove('printing-song');
+      if (styleEl) styleEl.innerHTML = '';
+      setIsPrinting(false);
+      setPrintCategory(null);
+    }, 100);
+  };
 
   const handleEdit = (docItem) => {
     setDocumentToEdit(docItem);
@@ -280,16 +484,15 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
       if (docSnap.exists()) {
         const data = docSnap.data();
         if (Array.isArray(data.varalCategories)) {
-          const cats = data.varalCategories.map(c => {
-            if (c.id === 'Administratif' && (c.nom === 'Administratif' || !c.nom)) {
-              return { ...c, nom: 'Comptes-rendus' };
+          const rawCats = data.varalCategories;
+          const mergedCats = DEFAULT_VARAL_CATEGORIES.map(defaultCat => {
+            const customCat = rawCats.find(c => c.id === defaultCat.id) || rawCats.find(c => c.nom === defaultCat.nom);
+            if (customCat) {
+              return { ...defaultCat, ...customCat, id: defaultCat.id }; // Force the native ID
             }
-            return c;
+            return defaultCat;
           });
-          if (!cats.some(c => c.id === 'DocumentsFixes')) {
-            cats.push({ id: 'DocumentsFixes', nom: 'Administratif', activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false });
-          }
-          setVaralCategories(cats);
+          setVaralCategories(mergedCats);
           return;
         }
       }
@@ -397,18 +600,49 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
           </CordelCard>
         ) : (          <div className="flex flex-col gap-4 w-full">
             {varalCategories.map((category) => {
-              const docList = groupedDocs[category.id] || [];
+              let docList = groupedDocs[category.id] || [];
               const variant = categoryVariants[category.id] || 'default';
               const currentYear = new Date().getFullYear();
               
+              if (category.id === 'Culture' && cultureFilter !== 'all') {
+                docList = docList.filter(d => {
+                  if (d.type !== 'culture_fiche') return false;
+                  const dCat = (d.categorieFiche || '').toLowerCase();
+                  const dTheme = (d.themeCulture || '').toLowerCase();
+                  const filterCat = cultureFilter.toLowerCase();
+                  
+                  if (filterCat === 'all') {
+                    // Do nothing, true for all
+                  } else if (filterCat === 'cuisine') {
+                    if (!dCat.includes('cuisine') && !dTheme.includes('cuisine') && !dCat.includes('recette') && !dTheme.includes('gastronomi')) return false;
+                  } else if (filterCat === 'cortège') {
+                     if (!dCat.includes('cour') && !dCat.includes('personnage') && !dCat.includes('cortège') && !dTheme.includes('cortejo') && !dTheme.includes('cortège')) return false;
+                  } else if (filterCat === 'orixás') {
+                     if (!dCat.includes('orix') && !dCat.includes('spirit') && !dTheme.includes('orixa')) return false;
+                  } else if (filterCat === 'histoire') {
+                     if (!dCat.includes('histoire') && !dCat.includes('origine') && !dTheme.includes('histoire')) return false;
+                  } else if (filterCat === 'musique') {
+                     if (!dCat.includes('musique') && !dTheme.includes('musique')) return false;
+                  } else if (filterCat === 'territoire') {
+                     if (!dCat.includes('territoire') && !dTheme.includes('territoire') && !dCat.includes('géographie') && !dCat.includes('lieu')) return false;
+                  } else if (filterCat === 'folklore') {
+                     if (!dCat.includes('folklore') && !dTheme.includes('folklore')) return false;
+                  } else {
+                     if (dCat !== filterCat && dTheme !== filterCat) return false;
+                  }
+                  return true;
+                });
+              }
+
               return (
                 <CordelCard key={category.id} variant="default" useExtremeBorder={true} className="pt-3 pb-4 relative overflow-hidden bg-[#FEF9E7] dark:bg-[#1A1712] border-2 border-cordel-master-dark/30 rounded-xl shadow-[4px_6px_16px_rgba(24,23,22,0.12)] w-full my-4 transition-all">
-                  {/* Category Title Stamp */}
-                  <div className="text-left mb-2 pl-3 flex justify-between items-center pr-3 select-none relative z-20">
-                    <div className="flex items-center gap-1.5">
+                  {/* Category Title Stamp & Filters */}
+                  <div className="flex flex-col md:flex-row md:justify-between items-start md:items-center gap-2 mb-2 pl-3 pr-3 select-none relative z-20">
+                    <div className="flex items-center gap-1.5 flex-wrap">
                       <span className={`theme-stamp-badge theme-stamp-badge-${variant === 'ocre' || variant === 'vert' ? 'wood' : 'dark'} text-[8.5px] tracking-wider font-extrabold`}>
                         {getCategoryLabel(category.nom)}
                       </span>
+                      
                       {isAuthorized && (
                         <button
                           type="button"
@@ -422,82 +656,121 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
                           </svg>
                         </button>
                       )}
+
+                      {/* THEME ICONS (ONLY FOR CULTURE) */}
+                      {category.id === 'Culture' && (
+                        <div className="flex flex-wrap gap-1 items-center bg-[#fdfaf2] border border-encre-noire/20 p-1 rounded-md shadow-sm md:ml-2">
+                          {CULTURE_THEMES.map(theme => (
+                            <button
+                              key={theme.id}
+                              onClick={() => setCultureFilter(theme.id)}
+                              className={`text-[12px] md:text-sm px-1.5 py-1 rounded flex items-center justify-center transition-all ${
+                                cultureFilter === theme.id 
+                                  ? 'bg-cordel-wood text-[#fdfaf2] shadow-[1px_1px_0px_0px_#181716] scale-110 z-10' 
+                                  : 'text-cordel-master-dark hover:bg-neutral-200 opacity-80 hover:opacity-100'
+                              }`}
+                              title={theme.label}
+                            >
+                              {theme.icon}
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </div>
+                    
                     {category.activerUploadPublic && category.lienUploadPublic && (
                       <a 
                         href={category.lienUploadPublic}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-[9px] font-black uppercase text-blue-700 hover:underline flex items-center gap-1 cursor-pointer"
+                        className="text-[9px] font-black uppercase text-blue-700 hover:underline flex items-center gap-1 cursor-pointer mt-1 md:mt-0"
                       >
                         📤 {translate('documents.publicUploadLink', "Partager vos photos/vidéos")}
                       </a>
                     )}
                   </div>
 
-                  {/* Realistic 3D Hemp Rope */}
-                  <HangingRopeCurve />
+                  {/* Relative container so the rope shifts down with the cordels if the header grows */}
+                  <div className="relative w-full mt-2">
+                    {/* Realistic 3D Hemp Rope */}
+                    <HangingRopeCurve className="absolute top-[12px] left-0 right-0 h-8 w-full z-0 select-none pointer-events-none overflow-visible" />
 
-                  {/* Hanging Booklets Directly Mounted on Rope Line */}
-                  <div className="flex flex-nowrap overflow-x-auto overflow-y-visible justify-start items-start gap-4 sm:gap-6 pt-6 pb-6 relative z-10 w-full no-scrollbar px-6 min-h-[210px]">
-                    {docList.length === 0 ? (
-                      <p className="text-[10px] italic opacity-60 self-center py-6 text-cordel-master-dark">{translate('documents.noDocumentsCategory', "Aucun document dans cette rubrique.")}</p>
-                    ) : (
-                      docList.map((docItem, index) => {
-                        const rotationDeg = index % 2 === 0 ? (-3 + (index % 3)) : (2.5 - (index % 2));
-                        const isLatestDoc = docItem.id === newestDocumentId;
+                    {/* Hanging Booklets Directly Mounted on Rope Line */}
+                    <div className="flex flex-nowrap overflow-x-auto overflow-y-visible justify-start items-start gap-4 sm:gap-6 pt-6 pb-6 relative z-10 w-full varal-scrollbar px-6 min-h-[210px]">
+                      {docList.length === 0 ? (
+                        <p className="text-[10px] italic opacity-60 self-center py-6 text-cordel-master-dark">{translate('documents.noDocumentsCategory', "Aucun document dans cette rubrique.")}</p>
+                      ) : (
+                        docList.map((docItem, index) => {
+                          const isLatestDoc = docItem.id === newestDocumentId;
 
-                        const isArchived = category.activerOpaciteArchive && docItem.annee && docItem.annee < currentYear;
-                        const opacityClass = isArchived ? 'opacity-60 hover:opacity-100 transition-opacity duration-200' : 'opacity-100';
+                          const isArchived = category.activerOpaciteArchive && docItem.annee && docItem.annee < currentYear;
+                          const opacityClass = isArchived ? 'opacity-60 hover:opacity-100 transition-opacity duration-200' : 'opacity-100';
 
-                        const docType = getDocType(docItem);
-                        
-                        let colorClass = 'default';
-                        if (category.id === 'DocumentsFixes' || category.nom === 'Administratif') {
-                          colorClass = 'bleu-ardoise'; // Slate grey exclusif pour les documents administratifs fixes
-                        } else if (category.id === 'Administratif' || category.nom === 'Comptes-rendus') {
-                          colorClass = 'rouge'; // Rouge distinctif pour les Comptes-rendus
-                        } else {
-                          colorClass = getDeterministicColor(docItem.id);
-                        }
-                        const typeIcons = {
-                          pdf: '📄',
-                          audio: '🎵',
-                          image: '📷',
-                          video: '🎥',
-                          web: '🌐',
-                          dossier_externe: '📂',
-                          drive: '📂',
-                          report: '📜'
-                        };
-                        const typeIcon = typeIcons[docType] || '📄';
+                          const docType = getDocType(docItem);
+                          
+                          let colorClass = 'default';
+                          if (category.id === 'Administratif' || category.id === 'DocumentsFixes' || category.nom === 'Administratif') {
+                            colorClass = 'bleu-ardoise'; // Slate grey exclusif pour les documents administratifs fixes
+                          } else if (category.id === 'ComptesRendus' || category.nom === 'Comptes-rendus') {
+                            colorClass = 'rouge'; // Rouge distinctif pour les Comptes-rendus
+                          } else {
+                            colorClass = getDeterministicColor(docItem.id);
+                          }
+                            const typeIcons = {
+                              pdf: '📄',
+                              audio: '🎵',
+                              image: '📷',
+                              video: '🎥',
+                              web: '🌐',
+                              dossier_externe: '📂',
+                              drive: '📂',
+                              report: '📜',
+                              culture_fiche: '📖'
+                            };
+                            const typeIcon = typeIcons[docType] || '📄';
 
-                        const isDarkBg = colorClass === 'rouge' || colorClass === 'bleu-ardoise' || colorClass === 'bleu';
-                        const textClass = isDarkBg ? 'text-[#FEF9E7]' : 'text-encre-noire';
-                        const borderDashedClass = isDarkBg ? 'border-[#FEF9E7]/35' : 'border-encre-noire/25';
-                        const yearBadgeClass = isDarkBg ? 'bg-white/25 text-[#FEF9E7]' : 'bg-encre-noire/10 text-encre-noire';
+                            const isDarkBg = colorClass === 'rouge' || colorClass === 'bleu-ardoise' || colorClass === 'bleu';
+                            const textClass = isDarkBg ? 'text-[#FEF9E7]' : 'text-encre-noire';
+                            const borderDashedClass = isDarkBg ? 'border-[#FEF9E7]/35' : 'border-encre-noire/25';
+                            const yearBadgeClass = isDarkBg ? 'bg-white/25 text-[#FEF9E7]' : 'bg-encre-noire/10 text-encre-noire';
 
-                        const cardAnimationClass = isLatestDoc
-                          ? 'animate-varal-newest'
-                          : 'hover:z-30 hover:scale-105 hover:rotate-0';
+                            /* Classe d'animation : le Petit Nouveau garde son swing fort,
+                               les autres reçoivent la brise légère désynchronisée */
+                            const cardAnimationClass = isLatestDoc
+                              ? 'animate-varal-newest'
+                              : 'animate-varal-breeze hover:z-30 hover:scale-105 hover:rotate-0';
 
-                        return (
-                          <div 
-                            key={docItem.id}
-                            onClick={() => {
-                              if (docType === 'report') {
-                                setSelectedReport(docItem);
-                              } else {
-                                window.open(docItem.fileUrl, '_blank');
-                              }
-                            }}
-                            className={`
+                            /* Style dynamique : désynchronisation de la brise par index
+                               pour simuler un vent naturel irrégulier.
+                               Le Petit Nouveau ne reçoit aucun style inline (géré 100% par CSS). */
+                            const cardAnimationStyle = isLatestDoc
+                              ? {}
+                              : {
+                                  animationDelay: `${(index * 0.4) % 1.5}s`,
+                                  animationDuration: `${3 + (index % 3) * 0.6}s`,
+                                };
+
+                            return (
+                              <div 
+                                key={docItem.id}
+                                onClick={() => {
+                                  if (docType === 'report') {
+                                    setSelectedReport(docItem);
+                                  } else if (docType === 'song') {
+                                    setSelectedToada(docItem);
+                                  } else if (docType === 'culture_fiche') {
+                                    setSelectedCultureCard(docItem);
+                                  } else {
+                                    window.open(docItem.fileUrl, '_blank');
+                                  }
+                                }}
+                                className={`
                               relative flex flex-col items-center group cursor-pointer
                               transition-all duration-300 origin-top shrink-0 flex-none
                               ${cardAnimationClass}
                               ${opacityClass}
                             `}
-                            style={isLatestDoc ? {} : { transform: `rotate(${rotationDeg}deg)` }}
+                            style={cardAnimationStyle}
                             title={`${translate('common.open', "Ouvrir")} ${docItem.titre} ${isArchived ? '(' + translate('documents.archiveTag', "Archive") + ')' : ''}`}
                           >
                             {/* Badge "✨ Nouveau" exclusif au tout dernier document global */}
@@ -531,6 +804,160 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
                               />
                               {/* Aged Cordel Paper Patina Gradient Overlay */}
                               <div className="absolute inset-0 pointer-events-none bg-gradient-to-br from-amber-200/15 via-transparent to-black/20 select-none" />
+                              
+                              {/* Universal Central Stamp Overlays */}
+                              {(() => {
+                                const theme = ((docItem.themeCulture || '') + ' ' + (docItem.stampKey || '') + ' ' + (docItem.categorieFiche || '') + ' ' + (docItem.sousCategorieFiche || '')).toLowerCase();
+                                const isOrixa = theme.includes('orixa') || theme.includes('spiritualit');
+                                const isCortejo = theme.includes('cortejo') || theme.includes('cortège');
+                                const isCuisine = theme.includes('cuisine') || theme.includes('gastronomi');
+                                const isHistoire = theme.includes('histoire');
+                                const isMusique = theme.includes('musique');
+                                const isTerritoire = theme.includes('territoire') || theme.includes('geograph');
+                                const isFolklore = theme.includes('folklore');
+                                
+                                const isAdminOrCR = category.id === 'Administratif' || category.nom === 'Administratif' || category.id === 'ComptesRendus' || category.nom === 'Comptes-rendus' || category.id === 'DocumentsFixes';
+                                const isTutoFab = category.id === 'TutosFabrication' || category.nom === 'TutosFabrication' || category.nom === 'Tutos Fabrication';
+                                
+                                const renderIcon = (id, paths, maskLines, extraClasses = "w-24 h-24 opacity-60") => (
+                                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" className={`absolute inset-0 m-auto z-0 pointer-events-none ${isDarkBg ? 'text-encre-noire' : 'text-white'} ${extraClasses}`}>
+                                    <defs>
+                                      <mask id={`${id}-${docItem.id}`}>
+                                        <rect width="100" height="100" fill="white" />
+                                        <g stroke="black" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                          {maskLines}
+                                        </g>
+                                      </mask>
+                                    </defs>
+                                    <path fill="currentColor" mask={`url(#${id}-${docItem.id})`} d={paths} />
+                                  </svg>
+                                );
+
+                                if (docType === 'song') return renderIcon(
+                                  'song',
+                                  "M 30 30 C 30 10, 70 10, 70 30 C 70 50, 30 50, 30 30 M 27 32 C 27 5, 73 5, 73 32 C 73 55, 27 55, 27 32 M 35 15 L 65 45 M 45 12 L 70 35 M 30 25 L 55 48 M 65 15 L 35 45 M 55 12 L 30 35 M 70 25 L 45 48 M 30 30 Q 50 35 70 30 M 35 20 Q 50 25 65 20 M 35 50 Q 50 55 65 50 M 33 53 Q 50 58 67 53 M 38 52 L 43 90 C 43 95, 57 95, 57 90 L 62 52 M 35 55 L 40 92 M 65 55 L 60 92 M 50 93 Q 45 105 60 98 Q 75 90 70 75 M 48 93 Q 43 108 62 100 Q 78 92 72 73",
+                                  <></>, "w-16 h-16 opacity-80"
+                                );
+
+                                if (isAdminOrCR) return renderIcon(
+                                  'admin',
+                                  "M 50 10 C 27.9 10 10 27.9 10 50 C 10 72.1 27.9 90 50 90 C 72.1 90 90 72.1 90 50 C 90 27.9 72.1 10 50 10 Z M 50 15 C 69.3 15 85 30.7 85 50 C 85 69.3 69.3 85 50 85 C 30.7 85 15 69.3 15 50 C 15 30.7 30.7 15 50 15 Z M 50 25 C 36.2 25 25 36.2 25 50 C 25 63.8 36.2 75 50 75 C 63.8 75 75 63.8 75 50 C 75 36.2 63.8 25 50 25 Z M 50 33 L 55.3 43.8 L 67 45.5 L 58.5 53.8 L 60.5 65 L 50 59.5 L 39.5 65 L 41.5 53.8 L 33 45.5 L 44.7 43.8 L 50 33 Z",
+                                  <>
+                                    <path d="M 15 50 L 30 50 M 70 50 L 85 50 M 50 15 L 50 30 M 50 70 L 50 85" strokeWidth="2" strokeDasharray="3 3"/>
+                                  </>, "w-20 h-20 opacity-30"
+                                );
+
+                                if (docType === 'video') return renderIcon(
+                                  'video',
+                                  "M 20 30 L 60 30 C 65 30 70 35 70 40 L 70 60 C 70 65 65 70 60 70 L 20 70 C 15 70 10 65 10 60 L 10 40 C 10 35 15 30 20 30 Z M 70 40 L 90 25 L 90 75 L 70 60 Z M 30 50 C 30 44.5 34.5 40 40 40 C 45.5 40 50 44.5 50 50 C 50 55.5 45.5 60 40 60 C 34.5 60 30 55.5 30 50 Z",
+                                  <>
+                                    <circle cx="40" cy="50" r="4" fill="black" />
+                                    <line x1="20" y1="40" x2="60" y2="40" strokeWidth="1" strokeDasharray="2 2" />
+                                  </>, "w-16 h-16 opacity-30"
+                                );
+
+                                if (isTutoFab) {
+                                  const instr = docItem.instrument || docItem.familleInstrument || docItem.categorieFiche || docItem.categorie;
+                                  if (instr) {
+                                    return (
+                                      <div className={`absolute inset-0 m-auto flex items-center justify-center z-0 pointer-events-none opacity-20 ${isDarkBg ? 'text-encre-noire' : 'text-[#523214]'}`}>
+                                        <div className="scale-[1.2] origin-center mix-blend-multiply dark:mix-blend-normal">
+                                          {getInstrumentStamp(instr, "currentColor")}
+                                        </div>
+                                      </div>
+                                    );
+                                  }
+                                }
+
+                                if (isOrixa) return renderIcon(
+                                  'orixa',
+                                  "M 50 3 L 44 14 L 36 24 L 38 31 L 31 39 L 34 46 L 24 50 L 19 63 L 12 90 L 88 90 L 83 66 L 74 49 L 66 44 L 69 37 L 62 31 L 64 26 L 57 13 Z",
+                                  <>
+                                    <line x1="39" y1="36" x2="39" y2="52" strokeDasharray="3 3" />
+                                    <line x1="44" y1="34" x2="44" y2="57" strokeDasharray="3 3" />
+                                    <line x1="51" y1="35" x2="51" y2="60" strokeDasharray="3 3" />
+                                    <line x1="57" y1="34" x2="57" y2="56" strokeDasharray="3 3" />
+                                    <line x1="62" y1="37" x2="62" y2="51" strokeDasharray="3 3" />
+                                    <path d="M 22 62 Q 50 78 78 61" fill="none" strokeWidth="2" strokeDasharray="4 2" />
+                                    <path d="M 18 78 Q 50 95 82 77" fill="none" strokeWidth="3" />
+                                    <path d="M 50 72 L 50 90" fill="none" strokeWidth="2" strokeDasharray="5 3" />
+                                    <circle cx="50" cy="15" r="2.5" fill="black" stroke="none" />
+                                    <circle cx="40" cy="22" r="2" fill="black" stroke="none" />
+                                    <circle cx="60" cy="22" r="2" fill="black" stroke="none" />
+                                    <path d="M 45 28 L 55 28" fill="none" strokeWidth="1.5" />
+                                  </>
+                                );
+
+                                if (isCortejo) return renderIcon(
+                                  'cortejo',
+                                  "M 50 5 A 8 8 0 1 0 50 21 A 8 8 0 1 0 50 5 Z M 48 23 L 30 40 L 25 35 L 20 40 L 35 55 L 43 45 L 35 85 L 15 90 L 20 95 L 80 95 L 85 90 L 65 85 L 57 45 L 65 55 L 80 40 L 75 35 L 70 40 L 52 23 Z",
+                                  <>
+                                    <path d="M 25 85 Q 50 75 75 85" fill="none" strokeWidth="3" strokeDasharray="5 3" />
+                                    <path d="M 32 75 Q 50 65 68 75" fill="none" strokeWidth="2" strokeDasharray="4 2" />
+                                    <line x1="45" y1="50" x2="40" y2="80" strokeDasharray="2 2" />
+                                    <line x1="55" y1="50" x2="60" y2="80" strokeDasharray="2 2" />
+                                  </>
+                                );
+
+                                if (isCuisine) return renderIcon(
+                                  'cuisine',
+                                  "M 20 50 L 25 80 C 30 90 70 90 75 80 L 80 50 Z M 15 40 C 15 35 85 35 85 40 L 80 45 L 20 45 Z M 10 40 C 5 40 5 50 10 50 C 15 50 15 40 10 40 Z M 90 40 C 95 40 95 50 90 50 C 85 50 85 40 90 40 Z M 40 30 Q 30 15 40 5 Q 50 15 40 30 M 60 35 Q 50 20 60 10 Q 70 20 60 35",
+                                  <>
+                                    <path d="M 30 75 Q 50 85 70 75" fill="none" strokeWidth="2" strokeDasharray="3 2" />
+                                    <path d="M 35 65 Q 50 75 65 65" fill="none" strokeWidth="2" strokeDasharray="3 2" />
+                                    <line x1="25" y1="50" x2="75" y2="50" strokeWidth="1" strokeDasharray="2 2" />
+                                  </>
+                                );
+
+                                if (isHistoire) return renderIcon(
+                                  'histoire',
+                                  "M 10 20 L 45 30 L 50 32 L 55 30 L 90 20 L 90 80 L 55 70 L 55 90 L 50 85 L 45 90 L 45 70 L 10 80 Z",
+                                  <>
+                                    <line x1="50" y1="32" x2="50" y2="72" strokeWidth="3" />
+                                    <path d="M 15 30 Q 30 35 45 40" fill="none" strokeWidth="2" strokeDasharray="3 2" />
+                                    <path d="M 15 45 Q 30 50 45 55" fill="none" strokeWidth="2" strokeDasharray="3 2" />
+                                    <path d="M 15 60 Q 30 65 45 70" fill="none" strokeWidth="2" strokeDasharray="3 2" />
+                                    <path d="M 85 30 Q 70 35 55 40" fill="none" strokeWidth="2" strokeDasharray="3 2" />
+                                    <path d="M 85 45 Q 70 50 55 55" fill="none" strokeWidth="2" strokeDasharray="3 2" />
+                                    <path d="M 85 60 Q 70 65 55 70" fill="none" strokeWidth="2" strokeDasharray="3 2" />
+                                  </>
+                                );
+
+                                if (isMusique && docType !== 'song') return renderIcon(
+                                  'musique',
+                                  "M 20 80 C 20 65 40 65 40 80 C 40 95 20 95 20 80 Z M 60 70 C 60 55 80 55 80 70 C 80 85 60 85 60 70 Z M 32 75 L 32 20 L 72 10 L 72 65 L 65 65 L 65 22 L 40 28 L 40 75 Z",
+                                  <>
+                                    <line x1="10" y1="50" x2="90" y2="50" strokeWidth="2" strokeDasharray="5 5" />
+                                    <line x1="10" y1="40" x2="90" y2="40" strokeWidth="2" strokeDasharray="5 5" />
+                                    <line x1="10" y1="60" x2="90" y2="60" strokeWidth="2" strokeDasharray="5 5" />
+                                  </>
+                                );
+
+                                if (isTerritoire) return renderIcon(
+                                  'territoire',
+                                  "M 15 25 L 35 15 L 65 25 L 85 15 L 85 75 L 65 85 L 35 75 L 15 85 Z",
+                                  <>
+                                    <line x1="35" y1="15" x2="35" y2="75" strokeWidth="2.5" />
+                                    <line x1="65" y1="25" x2="65" y2="85" strokeWidth="2.5" />
+                                    <path d="M 25 45 Q 50 30 75 65" fill="none" strokeWidth="2" strokeDasharray="3 3" />
+                                    <circle cx="75" cy="65" r="4" fill="black" stroke="none" />
+                                    <circle cx="25" cy="45" r="4" fill="black" stroke="none" />
+                                  </>
+                                );
+
+                                if (isFolklore) return renderIcon(
+                                  'folklore',
+                                  "M 30 15 C 20 15 15 25 15 40 C 15 35 25 35 35 45 C 35 60 45 90 50 90 C 55 90 65 60 65 45 C 75 35 85 35 85 40 C 85 25 80 15 70 15 C 60 15 55 30 50 30 C 45 30 40 15 30 15 Z",
+                                  <>
+                                    <circle cx="42" cy="55" r="4" fill="black" stroke="none" />
+                                    <circle cx="58" cy="55" r="4" fill="black" stroke="none" />
+                                    <path d="M 50 35 L 52 40 L 57 40 L 53 43 L 55 48 L 50 45 L 45 48 L 47 43 L 43 40 L 48 40 Z" fill="black" stroke="none" />
+                                    <path d="M 45 75 Q 50 85 55 75" fill="none" strokeWidth="2" strokeDasharray="2 2" />
+                                  </>
+                                );
+                                
+                                return null;
+                              })()}
                               {/* Edit & Delete & Reorder Action Buttons */}
                               {isAuthorized && (
                                 <div className="absolute top-1.5 right-1.5 flex gap-1 z-40 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
@@ -589,7 +1016,7 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
                                 </div>
                               )}
                               {/* Booklet Top */}
-                              <div className="flex flex-col min-w-0">
+                              <div className="flex flex-col min-w-0 relative z-10">
                                 <div className={`w-full border-b border-dashed ${borderDashedClass} pb-1 select-none flex justify-between items-center`}>
                                   <span className="text-xs select-none">
                                     {typeIcon}
@@ -616,6 +1043,7 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
                         );
                       })
                     )}
+                  </div>
                   </div>
                 </CordelCard>
               );
@@ -796,6 +1224,76 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
             </div>
           </CordelCard>
         </div>
+      )}
+
+      {/* Modale de lecture d'une Toada (Carnet de Chants) */}
+      {selectedToada && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 sm:p-6 md:p-12 animate-fadeIn overflow-hidden">
+          <div className="relative w-full max-w-[560px] max-h-full flex flex-col items-center">
+            <button
+              type="button"
+              onClick={() => setSelectedToada(null)}
+              className="absolute -top-3 -right-3 z-50 bg-[#8b2a1a] text-white w-8 h-8 rounded-full font-black flex items-center justify-center shadow-lg hover:bg-red-700 transition-colors border-2 border-white cursor-pointer"
+              title="Fermer"
+            >
+              X
+            </button>
+            <div className="w-full h-full overflow-y-auto scrollbar-hide rounded-lg shadow-2xl flex justify-center">
+              <SongCard 
+                song={selectedToada} 
+                defaultRevisionMode={false} 
+                allDocsToPrint={groupedDocs['Toadas'] || []}
+                onPrintAll={(config) => {
+                  setSelectedToada(null);
+                  setPrintCategory('Toadas');
+                  handleBulkPrint(config);
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modale de lecture d'une Fiche Culture */}
+      {selectedCultureCard && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 sm:p-6 md:p-12 animate-fadeIn overflow-hidden">
+          <div className="relative w-full max-w-[560px] max-h-full flex flex-col items-center">
+            <button
+              type="button"
+              onClick={() => setSelectedCultureCard(null)}
+              className="absolute -top-3 -right-3 z-50 bg-[#8b2a1a] text-white w-8 h-8 rounded-full font-black flex items-center justify-center shadow-lg hover:bg-red-700 transition-colors border-2 border-white cursor-pointer"
+              title="Fermer"
+            >
+              X
+            </button>
+            <div className="w-full h-full overflow-y-auto scrollbar-hide rounded-lg shadow-2xl flex justify-center">
+              <CultureCard culture={selectedCultureCard} />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Bulk Print Hidden Container (Portaled to body to escape all parent layouts) */}
+      {isPrinting && printCategory && createPortal(
+        <div className="print:block bg-white w-full">
+          {(groupedDocs[printCategory] || [])
+            .filter(d => d.type === 'song' || !d.type) // Safe fallback for older documents
+            .map(song => (
+              <div key={song.id} className="print-song-page">
+                <SongCard song={song} defaultRevisionMode={false} />
+              </div>
+            ))}
+        </div>,
+        document.body
+      )}
+
+      {/* Bulk Print Modal */}
+      {showBulkPrintModal && printCategory && (
+        <PrintConfigModal
+          title={`Imprimer le Carnet (${(groupedDocs[printCategory] || []).length} chants)`}
+          onClose={() => setShowBulkPrintModal(false)}
+          onConfirm={handleBulkPrint}
+        />
       )}
     </div>
   );
