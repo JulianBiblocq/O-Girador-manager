@@ -34,7 +34,7 @@ export default function MestrePedagogyManager({ profileData, sequenceurUrl }) {
   const fetchData = async () => {
     setLoading(true);
     try {
-      // Fetch Songs and Fiches
+      // Récupérer Songs and Fiches
       const qDocs = query(collection(db, 'documents'), where('groupId', '==', groupId));
       const docsSnap = await getDocs(qDocs);
       const fetchedSongs = [];
@@ -47,7 +47,7 @@ export default function MestrePedagogyManager({ profileData, sequenceurUrl }) {
       setSongs(fetchedSongs);
       setFiches(fetchedFiches);
 
-      // Fetch Global QCM Config
+      // Récupérer Global QCM Config
       const assocRef = doc(db, 'associations', groupId);
       const assocSnap = await getDoc(assocRef);
       if (assocSnap.exists()) {
@@ -143,7 +143,7 @@ export default function MestrePedagogyManager({ profileData, sequenceurUrl }) {
       
       await updateDoc(docRef, { quizOverrides: newOverrides });
       
-      // Update local state
+      // Mettre à jour local state
       if (song) {
         setSongs(prev => prev.map(s => s.id === inspectorSelectedDocId ? { ...s, quizOverrides: newOverrides } : s));
       } else if (fiche) {

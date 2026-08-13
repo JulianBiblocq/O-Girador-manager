@@ -4,7 +4,7 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { auth, db, storage } from '../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 
-// Helper local pour le calcul de l'occupation et éligibilité du covoiturage (identique à KilometricReimbursementManager et ReportsExports)
+// Utilitaire local pour le calcul de l'occupation et éligibilité du covoiturage (identique à KilometricReimbursementManager et ReportsExports)
 const calculateCarStatus = (car, associationSettings) => {
   const passengers = car.passengers || [];
   const totalAlfayas = passengers.reduce((sum, p) => sum + (Number(p.alfayasCount) || 0), 0);
@@ -102,7 +102,7 @@ export function useTreasury(groupId) {
       snap.forEach((docSnap) => {
         fetched.push({ id: docSnap.id, ...docSnap.data() });
       });
-      // Sort chronologically desc
+      // Trier chronologically desc
       fetched.sort((a, b) => {
         const dateA = a.date?.toDate ? a.date.toDate() : new Date(a.date);
         const dateB = b.date?.toDate ? b.date.toDate() : new Date(b.date);
@@ -124,7 +124,7 @@ export function useTreasury(groupId) {
       snap.forEach((docSnap) => {
         fetched.push({ id: docSnap.id, ...docSnap.data() });
       });
-      // Sort chronologically desc
+      // Trier chronologically desc
       fetched.sort((a, b) => new Date(b.date) - new Date(a.date));
       setEvents(fetched);
       setLoadingStates(prev => ({ ...prev, events: false }));

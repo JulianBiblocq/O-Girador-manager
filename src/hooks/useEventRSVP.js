@@ -82,7 +82,7 @@ export function useEventRSVP(event, user, profileData, allUsers, isMusicLevelRes
     setFamilyResponses(initial);
   }, [event.id, event.inscriptions, familyMembers]);
 
-  // Sync state with event/user changes for main parent
+  // Synchroniser state with event/user changes for main parent
   useEffect(() => {
     const resp = (event.inscriptions || []).find(ins => ins.userId === user?.uid);
     setStatus(resp 

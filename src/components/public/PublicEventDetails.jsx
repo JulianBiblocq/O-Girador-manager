@@ -34,7 +34,7 @@ export default function PublicEventDetails({ event, onClose }) {
     const details = encodeURIComponent(event.description || '');
     const location = encodeURIComponent(event.lieu || '');
 
-    return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${startTimeIso}/${endTimeIso}&details=${details}&location=${location}`;
+    return `https://calendar.google.com/calendar/afficher?action=TEMPLATE&text=${title}&dates=${startTimeIso}/${endTimeIso}&details=${details}&location=${location}`;
   };
 
   // URL Google Maps d'itinéraires/carte
@@ -57,7 +57,7 @@ export default function PublicEventDetails({ event, onClose }) {
           ✕
         </button>
 
-        {/* Visuel d'illustration Grand Format */}
+        {/* Visuel d'illustration Grand Formater */}
         {imageUrl && (
           <div className="w-full h-64 sm:h-80 overflow-hidden bg-stone-100 relative">
             <img 

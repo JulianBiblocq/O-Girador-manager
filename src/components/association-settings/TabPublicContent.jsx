@@ -75,7 +75,7 @@ export default function TabPublicContent({
     return () => { isMounted = false; };
   }, [groupId]);
 
-  // Exportation des abonnés newsletter au format CSV (compatible Excel, Sheets)
+  // Exportation des abonnés newsletter au formater CSV (compatible Excel, Sheets)
   const handleExportNewsletterCSV = async () => {
     setExportingNewsletter(true);
     setNewsletterStatusMsg('');
@@ -331,7 +331,7 @@ export default function TabPublicContent({
               />
             </div>
 
-            {/* Toggle Afficher l'icône */}
+            {/* Basculer Afficher l'icône */}
             <div className="flex items-center gap-2 pt-3 sm:pt-4">
               <input
                 type="checkbox"
@@ -398,7 +398,7 @@ export default function TabPublicContent({
           </span>
         </h4>
 
-        {/* Toggle Activer / Désactiver */}
+        {/* Basculer Activer / Désactiver */}
         <div className="flex items-center gap-3 p-3 bg-[#fdfaf2] border border-encre-noire/20 rounded-[4px_6px_3px_5px] select-none">
           <input
             type="checkbox"
@@ -776,7 +776,7 @@ export default function TabPublicContent({
                   value={socialLinks.snapchat || ''}
                   onChange={(e) => handleSocialLinkChange('snapchat', e.target.value)}
                   disabled={saving}
-                  placeholder="https://snapchat.com/add/votre-compte"
+                  placeholder="https://snapchat.com/ajouter/votre-compte"
                   className="text-xs px-3 py-2 border border-encre-noire/30 rounded bg-white font-mono"
                 />
               </div>
@@ -841,7 +841,7 @@ export default function TabPublicContent({
               </span>
             </h4>
 
-            {/* Toggle Afficher / Masquer la Newsletter sur le site */}
+            {/* Basculer Afficher / Masquer la Newsletter sur le site */}
             <div className="flex items-center gap-3 p-3 bg-[#fdfaf2] border border-encre-noire/20 rounded-[4px_6px_3px_5px] select-none">
               <input
                 type="checkbox"

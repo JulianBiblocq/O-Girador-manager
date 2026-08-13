@@ -61,7 +61,7 @@ export default function StudioEventsManager({ groupId, onBack }) {
     };
   }, [groupId]);
 
-  // Update single field in Firestore dynamically
+  // Mettre à jour single field in Firestore dynamically
   const handleUpdateField = async (eventId, fieldName, newValue) => {
     setUpdatingEventId(eventId);
     setUpdatingField(fieldName);
@@ -94,12 +94,12 @@ export default function StudioEventsManager({ groupId, onBack }) {
     }
   };
 
-  // Quick field toggle in Firestore
+  // Quick field basculer in Firestore
   const handleToggleField = async (eventId, fieldName, currentValue) => {
     return handleUpdateField(eventId, fieldName, !currentValue);
   };
 
-  // Filter events by search, type, and temporal state
+  // Filtrer events by search, type, and temporal state
   const filteredEvents = events.filter((ev) => {
     const titleMatch = (ev.titre || '').toLowerCase().includes(searchTerm.toLowerCase());
     const descMatch = (ev.description || '').toLowerCase().includes(searchTerm.toLowerCase());
@@ -191,7 +191,7 @@ export default function StudioEventsManager({ groupId, onBack }) {
           </div>
         )}
 
-        {/* Filter bar */}
+        {/* Filtrer bar */}
         <div className="mt-5 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 pt-4 border-t border-dashed border-cordel-master-dark/15">
           <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
             <div className="w-full sm:w-64">

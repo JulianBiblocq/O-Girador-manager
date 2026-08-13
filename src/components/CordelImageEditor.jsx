@@ -11,7 +11,7 @@ export default function CordelImageEditor({ imageSrc, lang = 'fr', onComplete, o
     const timeout = setTimeout(async () => {
       if (!imageSrc) return;
       try {
-        // Generate preview at size 256 for sharp rendering
+        // Generate preview at size 256 for sharp affichage de
         const preview = await processCordelEffectBase64(imageSrc, options, 256);
         if (active) setPreviewBase64(preview);
       } catch (err) {

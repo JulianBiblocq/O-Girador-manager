@@ -247,7 +247,7 @@ export default function CreateThreadForm({ groupId, channelId, user, profileData
           />
         </div>
 
-        {/* Toggle Poll Form Section */}
+        {/* Basculer Poll Form Section */}
         <div className="flex flex-col gap-2 pt-1 border-t border-dashed border-cordel-master-dark/15 select-none">
           <button
             type="button"
@@ -319,7 +319,7 @@ export default function CreateThreadForm({ groupId, channelId, user, profileData
                 )}
               </div>
 
-              {/* Allow Multiple Choices option */}
+              {/* Autoriser Multiple Choices option */}
               <label className="flex items-center gap-2 cursor-pointer select-none border-t border-dashed border-cordel-master-dark/15 pt-2 mt-1">
                 <input
                   type="checkbox"
@@ -336,7 +336,7 @@ export default function CreateThreadForm({ groupId, channelId, user, profileData
           )}
         </div>
 
-        {/* Toggle Notification Push FCM */}
+        {/* Basculer Notification Push FCM */}
         <div className="flex items-center gap-2 pt-2 border-t border-dashed border-cordel-master-dark/15 text-left select-none">
           <label className="flex items-center gap-2 text-xs font-bold cursor-pointer text-cordel-wood">
             <input

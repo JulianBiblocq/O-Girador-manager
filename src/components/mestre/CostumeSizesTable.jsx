@@ -7,7 +7,7 @@ export default function CostumeSizesTable({ allUsers = [], profileData = {} }) {
   const { t } = useTranslation();
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Access check: only admins, mestres, super-admins, or logistics/wardrobe managers can view sizes
+  // Access vérifier: only admins, mestres, super-admins, or logistics/wardrobe managers can view sizes
   const isAuthorized = 
     profileData?.role === 'mestre' || 
     profileData?.role === 'super-admin' || 
@@ -30,7 +30,7 @@ export default function CostumeSizesTable({ allUsers = [], profileData = {} }) {
     );
   }
 
-  // Filter users belonging to this association
+  // Filtrer users belonging to this association
   const associationUsers = allUsers.filter(u => u.groupId === profileData.groupId);
 
   // Compute summary stats
@@ -53,7 +53,7 @@ export default function CostumeSizesTable({ allUsers = [], profileData = {} }) {
     }
   });
 
-  // Filter list by search term
+  // Filtrer list by search term
   const filteredUsers = associationUsers.filter(u => {
     const term = searchTerm.toLowerCase();
     const fullName = `${u.prenom || ''} ${u.nom || ''}`.toLowerCase();

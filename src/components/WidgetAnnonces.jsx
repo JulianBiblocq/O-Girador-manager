@@ -203,7 +203,7 @@ export default function WidgetAnnonces({ groupId, profileData, role, isSystemAdm
 
       await addDoc(collection(db, 'announcements'), payload);
       
-      // Reset form
+      // Réinitialiser form
       setTitre('');
       setMessage('');
       setActionText('');
@@ -248,7 +248,7 @@ export default function WidgetAnnonces({ groupId, profileData, role, isSystemAdm
     if (!Array.isArray(ann.cibles) || ann.cibles.length === 0) return true;
     if (ann.cibles.includes('Tous')) return true;
 
-    // Check if target is admin and current user is admin
+    // Vérifier if target is admin and current user is admin
     if (ann.cibles.includes('role:admin') && (userRole === 'mestre' || userRole === 'super-admin' || isSystemAdmin === true)) {
       return true;
     }
@@ -309,7 +309,7 @@ export default function WidgetAnnonces({ groupId, profileData, role, isSystemAdm
         </CordelCard>
       )}
 
-      {/* Loading Indicator */}
+      {/* Chargement de Indicator */}
       {loading && (
         <div className="flex justify-center items-center py-6">
           <span className="text-xs uppercase tracking-widest font-black animate-pulse opacity-60">⏳</span>
@@ -530,7 +530,7 @@ export default function WidgetAnnonces({ groupId, profileData, role, isSystemAdm
         </CordelCard>
       )}
 
-      {/* Announcements list view (Visible when not loading and not adding) */}
+      {/* Announcements list view (Visible when not chargement de and not adding) */}
       {!loading && !isAdding && (
         visibleAnnouncements.length === 0 ? (
           <CordelCard variant="default" useExtremeBorder={false} className="p-4 text-center bg-cordel-bg opacity-75 select-none">
@@ -604,7 +604,7 @@ export default function WidgetAnnonces({ groupId, profileData, role, isSystemAdm
                     </div>
                   )}
 
-                  {/* Delete trigger (visible only for admin) */}
+                  {/* Supprimer trigger (visible only for admin) */}
                   {isAdmin && (
                     <button
                       type="button"

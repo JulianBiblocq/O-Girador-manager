@@ -61,7 +61,7 @@ export default function VaralManager({ groupId, onBack, role, isSystemAdmin }) {
     setShowBulkPrintModal(false);
     setIsPrinting(true);
     
-    // Set classes for print
+    // Définir classes for print
     if (isBW) document.body.classList.add('print-bw');
     document.body.classList.add(`print-format-${format}`);
     document.body.classList.add('printing-song');
@@ -240,7 +240,7 @@ export default function VaralManager({ groupId, onBack, role, isSystemAdmin }) {
           ...docSnap.data()
         });
       });
-      // Sort initially by order or date
+      // Trier initially by order or date
       fetched.sort((a, b) => {
         const orderA = typeof a.order === 'number' ? a.order : 0;
         const orderB = typeof b.order === 'number' ? b.order : 0;
@@ -640,7 +640,7 @@ export default function VaralManager({ groupId, onBack, role, isSystemAdmin }) {
               {varalCategories.map((category) => {
                 const sortMethod = sortMethods[category.id] || 'order';
                 
-                // Filter docs by category (matching priority: categoryId first, then name, then id fallback)
+                // Filtrer docs by category (matching priority: categoryId first, then name, then id fallback)
                 let catDocs = documents.filter(d => {
                   const matchObj = (d.categoryId && varalCategories.find(c => c.id === d.categoryId))
                     || (d.categorie && varalCategories.find(c => c.nom === d.categorie))
@@ -650,7 +650,7 @@ export default function VaralManager({ groupId, onBack, role, isSystemAdmin }) {
                   return true;
                 });
                 
-                // Sort docs dynamically
+                // Trier docs dynamically
                 if (sortMethod === 'date') {
                   catDocs = [...catDocs].sort((a, b) => new Date(b.dateAjout || 0) - new Date(a.dateAjout || 0));
                 } else if (sortMethod === 'alpha') {

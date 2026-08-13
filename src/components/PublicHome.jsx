@@ -104,7 +104,7 @@ export default function PublicHome({
   };
 
   // ==========================================
-  // ÉTAPE 1 : CHARGEMENT (Loading)
+  // ÉTAPE 1 : CHARGEMENT (Chargement de)
   // Tant que le thème de l'association est en cours de chargement depuis Firestore
   // ==========================================
   if (loadingTheme) {

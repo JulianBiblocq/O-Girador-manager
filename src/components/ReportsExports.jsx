@@ -59,7 +59,7 @@ const calculateCarStatus = (car, associationSettings) => {
 export default function ReportsExports({ groupId, role, isSystemAdmin, hasAccessTresorerie, profileData, onBack, isEmbedded }) {
   const { t } = useTranslation();
   
-  // Set default dates to school year (Sep 1st of current/previous year to Aug 31st of current/next year)
+  // Définir default dates to school year (Sep 1st of current/previous year to Aug 31st of current/next year)
   const now = new Date();
   const currentYear = now.getFullYear();
   const startYear = now.getMonth() >= 8 ? currentYear : currentYear - 1;
@@ -76,7 +76,7 @@ export default function ReportsExports({ groupId, role, isSystemAdmin, hasAccess
   const [ledgerEntries, setLedgerEntries] = useState([]);
   const [bankAccounts, setBankAccounts] = useState([]);
 
-  // Load association settings for pricing & km refund configurations
+  // Charger association settings for pricing & km refund configurations
   useEffect(() => {
     if (!groupId) return;
     const assocRef = doc(db, 'associations', groupId);
@@ -93,7 +93,7 @@ export default function ReportsExports({ groupId, role, isSystemAdmin, hasAccess
     });
   }, [groupId]);
 
-  // Load & compute live accounting ledger entries
+  // Charger & compute live accounting ledger entries
   const fetchLedgerData = useCallback(async () => {
     if (!groupId || !startDate || !endDate) return;
     setLoadingLedger(true);
@@ -251,7 +251,7 @@ export default function ReportsExports({ groupId, role, isSystemAdmin, hasAccess
         const isWithinRange = campDateStr && campDateStr >= startDate && campDateStr <= endDate;
         if (!isWithinRange) return;
 
-        // Filter ONLY validated or paid requests related to this campaign
+        // Filtrer ONLY validated or paid requests related to this campaign
         const campReqs = requests.filter(r => 
           r.campaignId === camp.id && 
           (r.status === 'validated' || r.status === 'paid' || r.statut === 'valide' || r.statut === 'paye')
@@ -379,7 +379,7 @@ export default function ReportsExports({ groupId, role, isSystemAdmin, hasAccess
         }
       });
 
-      // Sort entries chronologically
+      // Trier entries chronologically
       entries.sort((a, b) => new Date(a.date) - new Date(b.date));
       setLedgerEntries(entries);
 
@@ -394,7 +394,7 @@ export default function ReportsExports({ groupId, role, isSystemAdmin, hasAccess
     fetchLedgerData();
   }, [fetchLedgerData]);
 
-  // Filter ledger entries by search query
+  // Filtrer ledger entries by search query
   const filteredEntries = ledgerEntries.filter(entry => {
     if (!searchQuery.trim()) return true;
     const q = searchQuery.toLowerCase().trim();

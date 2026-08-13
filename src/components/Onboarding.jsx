@@ -74,7 +74,7 @@ export default function Onboarding({ user, branding, onComplete, profileData }) 
   const searchParams = new URLSearchParams(window.location.search);
   const groupId = searchParams.get('groupe') || searchParams.get('assoc') || profileData?.groupId || 'samambaia';
 
-  // Load custom fields configuration and association details for Onboarding
+  // Charger custom fields configuration and association details for Onboarding
   useEffect(() => {
     if (!groupId) {
       setFieldsConfig(DEFAULT_FIELDS_CONFIG);
@@ -117,7 +117,7 @@ export default function Onboarding({ user, branding, onComplete, profileData }) 
   const [validationError, setValidationError] = useState('');
 
   const isFieldVisible = (key) => {
-    if (!fieldsConfig) return true; // show by default while loading
+    if (!fieldsConfig) return true; // show by default while chargement de
     const cfg = fieldsConfig[key];
     return cfg ? (cfg.enabled && cfg.filledBy === 'member') : true;
   };

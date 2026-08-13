@@ -35,7 +35,7 @@ export default function MestreSequenceur({ groupId, sequenceurUrl }) {
   const [metadataForm, setMetadataForm] = useState({ baguettes: '', unisonAlfaias: false });
   const [loadingMetadata, setLoadingMetadata] = useState(false);
 
-  // Fetch all rhythms directly from Firebase Storage
+  // Récupérer all rhythms directly from Firebase Storage
   const fetchRhythmsFromStorage = async () => {
     if (!groupId) {
       setLoading(false);
@@ -50,7 +50,7 @@ export default function MestreSequenceur({ groupId, sequenceurUrl }) {
         res.items.map(async (itemRef) => {
           try {
             const jsonUrl = await getDownloadURL(itemRef);
-            // Format name: e.g. "1719283921_Baque de Luanda.json" -> "Baque de Luanda"
+            // Formater name: e.g. "1719283921_Baque de Luanda.json" -> "Baque de Luanda"
             const rawName = itemRef.name;
             const cleanName = rawName.replace(/^\d+_/ , '').replace(/\.json$/i, '');
             return {
@@ -66,7 +66,7 @@ export default function MestreSequenceur({ groupId, sequenceurUrl }) {
         })
       );
 
-      // Filter out failed promises and sort alphabetically or by prefix date if needed
+      // Filtrer out failed promises and trier alphabetically or by prefix date if needed
       const validRhythms = fetchedRhythms.filter(Boolean);
       validRhythms.sort((a, b) => a.titre.localeCompare(b.titre));
       setRhythms(validRhythms);
@@ -87,7 +87,7 @@ export default function MestreSequenceur({ groupId, sequenceurUrl }) {
 
     setSaving(true);
     try {
-      // Create filename prefixing with timestamp to avoid duplicates
+      // Créer filename prefixing with timestamp to avoid duplicates
       const fileRef = ref(storage, `documents/${groupId}/sequencer/${Date.now()}_${titre.trim()}.json`);
       await uploadBytes(fileRef, jsonFile);
       

@@ -179,15 +179,15 @@ export default function WidgetAgenda({
   const isMobile = windowWidth < 768;
   const limit = isMobile ? 5 : 9;
 
-  // Split and sort events into upcoming (chronological) and past (antichronological)
+  // Split and trier events into upcoming (chronological) and past (antichronological)
   const { upcomingEvents, pastEvents } = splitEventsByTime(events);
 
   const filterFn = (e) => {
-    // Discipline filter (percussion vs dance)
+    // Discipline filtrer (percussion vs dance)
     if (disciplineFilter === 'percussion' && !e.includesPercussion) return false;
     if (disciplineFilter === 'dance' && !e.includesDance) return false;
 
-    // Type filter
+    // Type filtrer
     if (hiddenTypes.includes(e.type)) return false;
     if (selectedTypeFilter !== 'all' && selectedTypeFilter !== 'custom') {
       return e.type === selectedTypeFilter;
@@ -307,7 +307,7 @@ export default function WidgetAgenda({
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
 
-    // Calculate distance automatically if address (lieu) changes
+    // Calculer distance automatically if address (lieu) changes
     if (name === 'lieu') {
       if (adresseLocal && value) {
         try {
@@ -501,7 +501,7 @@ export default function WidgetAgenda({
     }
   };
 
-  // Render Event Details view if a ticket is clicked
+  // Afficher Event Details view if a ticket is clicked
   if (activeEvent) {
     return (
       <React.Suspense fallback={
@@ -564,7 +564,7 @@ export default function WidgetAgenda({
         </h3>
         
         <div className="flex items-center gap-2 flex-wrap">
-          {/* View Mode Toggle */}
+          {/* View Mode Basculer */}
           {!loading && !isAdding && (
             <div className="flex items-center border-2 border-encre-noire rounded-[6px_9px_5px_8px] overflow-hidden bg-cordel-bg shadow-[2px_2px_0px_0px_#181716] select-none text-xs font-extrabold uppercase">
               <button
@@ -621,7 +621,7 @@ export default function WidgetAgenda({
         </div>
       </div>
 
-      {/* Event Filters (Visible when not loading and not adding) */}
+      {/* Event Filters (Visible when not chargement de and not adding) */}
       {!loading && !isAdding && (
         <AgendaFilterBar
           disciplineFilter={disciplineFilter}
@@ -635,7 +635,7 @@ export default function WidgetAgenda({
         />
       )}
 
-      {/* Loading Skeleton Grid with strict min-height */}
+      {/* Chargement de Skeleton Grid with strict min-height */}
       {loading && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 min-h-[420px] animate-pulse select-none my-2">
           {[1, 2, 3, 4, 5, 6].map((n) => (
@@ -653,7 +653,7 @@ export default function WidgetAgenda({
         </div>
       )}
 
-      {/* Create Event Form (Visible when isAdding is true) */}
+      {/* Créer Event Form (Visible when isAdding is true) */}
       {!loading && isAdding && (
         <EventCreateForm
           formData={formData}
@@ -674,7 +674,7 @@ export default function WidgetAgenda({
         />
       )}
 
-      {/* Events List (Visible when not loading and not adding) */}
+      {/* Events List (Visible when not chargement de and not adding) */}
       {!loading && !isAdding && (
         visibleEvents.length === 0 ? (
           <EmptyState
@@ -967,7 +967,7 @@ export default function WidgetAgenda({
               </div>
             )}
 
-            {/* Discrete Past Events History Toggle Button */}
+            {/* Discrete Past Events History Basculer Button */}
             {filteredPast.length > 0 && (
               <div className="flex justify-center mt-4 pt-3 border-t border-dashed border-cordel-master-dark/20">
                 <button

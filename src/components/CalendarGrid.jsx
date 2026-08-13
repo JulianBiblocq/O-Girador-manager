@@ -117,7 +117,7 @@ export default function CalendarGrid({ events = [], onSelectEvent, t }) {
       <div className="grid grid-cols-7 gap-1 sm:gap-1.5 bg-encre-noire/5 p-1 rounded">
         {calendarCells.map((cell, idx) => {
           const dateString = cell.date.toDateString();
-          // Filter events matching this date
+          // Filtrer events matching this date
           const dayEvents = events.filter(e => {
             if (!e.date) return false;
             const eventDate = new Date(e.date);

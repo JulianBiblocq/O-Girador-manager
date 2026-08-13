@@ -35,7 +35,7 @@ export const parseSequencerJson = (jsonData) => {
       if (trackName) {
         // Clean up names like "Alfaia 1", "Caixa 2" -> "Alfaia", "Caixa"
         let cleanName = trackName.replace(/\s+\d+$/, '').trim();
-        // Format to capitalize first letter
+        // Formater to capitalize first letter
         cleanName = cleanName.charAt(0).toUpperCase() + cleanName.slice(1).toLowerCase();
         instrumentsSet.add(cleanName);
       }

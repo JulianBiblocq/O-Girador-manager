@@ -121,7 +121,7 @@ export default function TabPublicGallery({ formData, handleChange, groupId, savi
         </span>
       </h4>
 
-      {/* Interrupteur Bascule (Toggle) d'activation de la Galerie */}
+      {/* Interrupteur Bascule (Basculer) d'activation de la Galerie */}
       <div className="flex items-center gap-3 p-3 bg-[#fdfaf2] border border-encre-noire/20 rounded-[4px_6px_3px_5px] select-none">
         <input
           type="checkbox"

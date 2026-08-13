@@ -4,7 +4,7 @@ import DOMPurify from 'dompurify';
 /**
  * FormattedMessageContent Component
  * - Parses YouTube, Vimeo, Dailymotion video URLs and converts them into responsive embed iframes
- * - Sanitizes raw HTML using DOMPurify to prevent XSS attacks while allowing safe tags (iframe, img, a, formatting)
+ * - Sanitizes raw HTML using DOMPurify to emp�cher XSS attacks while allowing safe tags (iframe, img, a, formatting)
  */
 export default function FormattedMessageContent({ content, className = '' }) {
   const sanitizedContent = useMemo(() => {

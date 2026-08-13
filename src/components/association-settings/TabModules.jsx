@@ -150,7 +150,7 @@ export default function TabModules({
                   </div>
                 </div>
 
-                {/* Toggle Switch */}
+                {/* Basculer Switch */}
                 <label className="relative inline-flex items-center cursor-pointer shrink-0 select-none">
                   <input
                     type="checkbox"

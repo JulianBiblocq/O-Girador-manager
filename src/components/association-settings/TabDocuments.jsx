@@ -64,7 +64,7 @@ export default function TabDocuments({
           📋 Documents de l'Association (RGPD & Médical)
         </h3>
 
-        {/* Image Rights Toggle */}
+        {/* Image Rights Basculer */}
         <div className="flex flex-col gap-1 pb-3 border-b border-dashed border-cordel-master-dark/15 text-left mb-3">
           <label className="flex items-start gap-2.5 cursor-pointer select-none">
             <input 
@@ -114,7 +114,7 @@ export default function TabDocuments({
           </div>
         </div>
 
-        {/* Medical Aptitude Toggle */}
+        {/* Medical Aptitude Basculer */}
         <div className="flex flex-col gap-1 pb-3 border-b border-dashed border-cordel-master-dark/15 text-left mb-3 mt-3">
           <label className="flex items-start gap-2.5 cursor-pointer select-none">
             <input 
@@ -170,7 +170,7 @@ export default function TabDocuments({
           🔗 {t?.('documents.varalSettingsTitle') || "Catégories du Varal (Fils)"}
         </h3>
       
-        {/* Form to add a new category */}
+        {/* Form to ajouter a new category */}
         <div className="flex flex-col gap-3 pb-3 border-b border-dashed border-cordel-master-dark/15 text-xs text-left">
           <div className="flex flex-col gap-2">
             <div className="flex flex-col gap-1">

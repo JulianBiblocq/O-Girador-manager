@@ -31,7 +31,7 @@ export default function TreasuryOperations({
   const [isAddingCategory, setIsAddingCategory] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
 
-  // Sync category default if categories list changes
+  // Synchroniser category default if categories list changes
   useEffect(() => {
     if (categories.length > 0 && !categories.includes(txForm.categorie)) {
       setTxForm(prev => ({ ...prev, categorie: categories[0] }));

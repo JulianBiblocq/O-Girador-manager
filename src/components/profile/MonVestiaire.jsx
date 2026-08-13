@@ -26,7 +26,7 @@ export default function MonVestiaire({ userId, groupId, userChecklist = {}, user
   const [actionPiece, setActionPiece] = useState(null);
   const [updatingPiece, setUpdatingPiece] = useState(null);
 
-  // 1. Fetch costumes from Firestore
+  // 1. Récupérer costumes from Firestore
   useEffect(() => {
     if (!groupId) {
       setLoading(false);
@@ -48,7 +48,7 @@ export default function MonVestiaire({ userId, groupId, userChecklist = {}, user
     return () => unsubscribe();
   }, [groupId]);
 
-  // 2. Fetch workshops (Atelier Couture tutorials)
+  // 2. Récupérer workshops (Atelier Couture tutorials)
   useEffect(() => {
     if (!groupId) return;
     const q = query(collection(db, 'workshops'), where('groupId', '==', groupId));
@@ -64,7 +64,7 @@ export default function MonVestiaire({ userId, groupId, userChecklist = {}, user
     return () => unsubscribe();
   }, [groupId]);
 
-  // Handle piece checkbox toggle
+  // Gérer piece checkbox basculer
   const handleTogglePiece = async (costumeId, pieceId, currentValue) => {
     if (!userId) return;
     const keyPath = `${costumeId}.${pieceId}`;
@@ -83,7 +83,7 @@ export default function MonVestiaire({ userId, groupId, userChecklist = {}, user
     }
   };
 
-  // Handle opening tutorial modal for a piece
+  // Gérer opening tutorial modal for a piece
   const handleOpenTutorial = (piece) => {
     const linkedWorkshop = workshops.find(ws => 
       (piece.tutorialId && ws.id === piece.tutorialId) ||
@@ -93,7 +93,7 @@ export default function MonVestiaire({ userId, groupId, userChecklist = {}, user
     setActiveTutorialWorkshop(linkedWorkshop || null);
   };
 
-  // Filter costumes based on target category
+  // Filtrer costumes based on target category
   const filteredCostumes = costumes.filter(c => {
     if (selectedFilter === 'tous') return true;
     return (c.targetCategory || 'Tous').toLowerCase() === selectedFilter.toLowerCase() || (c.targetCategory || 'Tous') === 'Tous';
@@ -118,7 +118,7 @@ export default function MonVestiaire({ userId, groupId, userChecklist = {}, user
         )}
       </div>
 
-      {/* Filter Tabs & View Toggle */}
+      {/* Filtrer Tabs & View Basculer */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-dashed border-cordel-master-dark/15 pb-2">
         <div className="flex flex-wrap gap-1.5">
           <button
@@ -156,7 +156,7 @@ export default function MonVestiaire({ userId, groupId, userChecklist = {}, user
           </button>
         </div>
 
-        {/* View Mode Toggle: Visual Mannequin vs List */}
+        {/* View Mode Basculer: Visual Mannequin vs List */}
         <div className="flex items-center gap-1 bg-white/40 p-1 rounded border border-cordel-master-dark/20 shrink-0">
           <button
             type="button"

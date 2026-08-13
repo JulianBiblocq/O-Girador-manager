@@ -41,7 +41,7 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
   const [editingTagIdx, setEditingTagIdx] = useState(null);
   const [editingTagValue, setEditingTagValue] = useState('');
 
-  // Fetch social tags from Firestore associations/{groupId}
+  // Récupérer social tags from Firestore associations/{groupId}
   useEffect(() => {
     if (!groupId) return;
     const assocRef = doc(db, 'associations', groupId);
@@ -56,13 +56,13 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
     return () => unsubscribe();
   }, [groupId]);
 
-  // Sync hashtags state when availableSocialTags changes
+  // Synchroniser hashtags state when availableSocialTags changes
   useEffect(() => {
     const defaultTags = ['#OGirador', ...availableSocialTags].join(' ');
     setHashtags(defaultTags);
   }, [availableSocialTags]);
 
-  // 1. Fetch Events
+  // 1. Récupérer Events
   useEffect(() => {
     if (!groupId) return;
     const eventsRef = collection(db, 'events');
@@ -72,7 +72,7 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
       querySnapshot.forEach((doc) => {
         fetchedEvents.push({ id: doc.id, ...doc.data() });
       });
-      // Sort events: upcoming first chronologically, then past descending
+      // Trier events: upcoming first chronologically, then past descending
       const now = new Date();
       const upcoming = fetchedEvents
         .filter(e => new Date(e.date) >= now)
@@ -110,7 +110,7 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
     }
   }, [events]);
 
-  // 2. Fetch Varal Images
+  // 2. Récupérer Varal Images
   useEffect(() => {
     if (!groupId) return;
     const docsRef = collection(db, 'documents');
@@ -127,7 +127,7 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
     return () => unsubscribe();
   }, [groupId]);
 
-  // 3. Handle Event selection change
+  // 3. Gérer Event selection change
   const handleEventChange = (e) => {
     const eventId = e.target.value;
     const ev = events.find(x => x.id === eventId);
@@ -267,7 +267,7 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
     }
   };
 
-  // 4. Handle Background Source Switch
+  // 4. Gérer Background Source Switch
   useEffect(() => {
     if (!selectedEvent) return;
     if (backgroundSource === 'event') {
@@ -279,7 +279,7 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
     }
   }, [backgroundSource, selectedEvent, selectedVaralImage, localImageFile]);
 
-  // Sync selectedEvent with the real-time list of events (bidirectional sync)
+  // Synchroniser selectedEvent with the real-time list of events (bidirectional synchroniser)
   useEffect(() => {
     if (!selectedEvent || events.length === 0) return;
     const freshEvent = events.find(x => x.id === selectedEvent.id);
@@ -293,7 +293,7 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
     }
   }, [events, selectedEvent, backgroundSource]);
 
-  // 5. Handle local upload a la volee (auto-save to Firestore)
+  // 5. Gérer local upload a la volee (auto-enregistrer to Firestore)
   const handleLocalImageSelected = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -330,7 +330,7 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
     }
   };
 
-  // 6. Handle Varal image selection (auto-save to Firestore)
+  // 6. Gérer Varal image selection (auto-enregistrer to Firestore)
   const handleVaralImageChange = async (e) => {
     const url = e.target.value;
     setSelectedVaralImage(url);
@@ -405,7 +405,7 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
     });
   };
 
-  // 9. Text Wrapper helper for Canvas
+  // 9. Text Wrapper utilitaire for Canvas
   const wrapText = (ctx, text, maxWidth) => {
     const words = text.split(' ');
     const lines = [];
@@ -434,7 +434,7 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
     const ctx = canvas.getContext('2d');
     setCanvasError(false);
 
-    // Clear Canvas
+    // Effacer Canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     // 1. Draw Background Image
@@ -725,7 +725,7 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
   };
 
   const handleBack = () => {
-    // Clear eventId from URL parameters
+    // Effacer eventId from URL parameters
     const newUrl = window.location.pathname;
     window.history.replaceState({}, document.title, newUrl);
     if (onBack) onBack();

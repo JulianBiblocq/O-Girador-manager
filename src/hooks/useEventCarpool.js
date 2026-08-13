@@ -378,7 +378,7 @@ export function useEventCarpool({
         let recherchePlace = currentCovoit.recherchePlace || [];
         const voitures = currentCovoit.voitures || [];
 
-        // Remove existing entry to allow updating type
+        // Retirer existing entry to autoriser mise à jour de type
         recherchePlace = recherchePlace.filter(p => p.uid !== user.uid);
 
         const updatedVoitures = voitures.map(voiture => ({
@@ -571,7 +571,7 @@ export function useEventCarpool({
         if (!isInvite) {
           updatedInscriptions = updatedInscriptions.map(ins => {
             if (ins.userId === passengerUid) {
-              return { ...ins, transport: '' }; // reset
+              return { ...ins, transport: '' }; // réinitialiser
             }
             return ins;
           });

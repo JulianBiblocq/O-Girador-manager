@@ -17,7 +17,7 @@ export default function MestreMotMestre({ groupId, profileData }) {
   const [actionText, setActionText] = useState('');
   const [actionLink, setActionLink] = useState('');
 
-  // Load from associations/{groupId} in real-time
+  // Charger from associations/{groupId} in real-time
   useEffect(() => {
     if (!groupId) return;
     setLoading(true);
@@ -79,7 +79,7 @@ export default function MestreMotMestre({ groupId, profileData }) {
       <form onSubmit={handleSave} className="flex flex-col gap-4">
         <CordelCard variant="default" useExtremeBorder={true} className="p-5 flex flex-col gap-4">
           
-          {/* Toggle Publier / Masquer */}
+          {/* Basculer Publier / Masquer */}
           <div className="flex items-center gap-2 pb-3.5 border-b border-dashed border-cordel-master-dark/15 select-none">
             <label className="flex items-center gap-2.5 text-xs font-bold cursor-pointer">
               <input

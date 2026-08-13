@@ -547,7 +547,7 @@ export default function DocumentUploadForm({ groupId, varalCategories = [], onCl
             docData.lexique = lexique;
             docData.videoUrl = videoUrlCulture;
 
-            // Reset conditionnels
+            // Réinitialiser conditionnels
             docData.villeRegion = null;
             docData.climatGeographie = null;
             docData.personnageOrisha = null;
@@ -830,7 +830,7 @@ export default function DocumentUploadForm({ groupId, varalCategories = [], onCl
               />
             </div>
 
-            {/* Type selector (only for ComptesRendus to allow linking instead of PDF) */}
+            {/* Type selector (only for ComptesRendus to autoriser linking instead of PDF) */}
             {category === 'ComptesRendus' && !isEditMode && (
                <div className="flex flex-col gap-1">
                   <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">

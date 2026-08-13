@@ -36,7 +36,7 @@ export default function WidgetForum({ groupId, onOpen }) {
       setThreadCount(fetchedThreads.length);
 
       if (fetchedThreads.length > 0) {
-        // Sort by derniereModification descending (most recent first)
+        // Trier by derniereModification descending (most recent first)
         const sorted = fetchedThreads.sort((a, b) => new Date(b.derniereModification || b.dateCreation) - new Date(a.derniereModification || a.dateCreation));
         setThreads(sorted);
       } else {

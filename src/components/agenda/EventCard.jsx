@@ -27,7 +27,7 @@ function getSocialVideoThumbnail(url) {
  * 
  * Affiche les informations synthétiques d'un événement sous forme de ticket :
  * date, heure, titre, type, disciplines, statut d'inscription, miniature vidéo
- * et localisation court-formatée (Règle 1 : lieu pré-enregistré / Règle 2 : nom de la ville).
+ * et localisation court-formaterée (Règle 1 : lieu pré-enregistré / Règle 2 : nom de la ville).
  */
 export default function EventCard({
   event,

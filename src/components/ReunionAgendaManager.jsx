@@ -15,7 +15,7 @@ export default function ReunionAgendaManager({ event, user, profileData }) {
 
   const isAdmin = profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.isSystemAdmin === true;
 
-  // Add a topic to the sujetsProposes array in Firestore
+  // Ajouter a topic to the sujetsProposes array in Firestore
   const handleAddTopic = async (e) => {
     e.preventDefault();
     if (!newTopic.trim()) return;
@@ -44,7 +44,7 @@ export default function ReunionAgendaManager({ event, user, profileData }) {
     }
   };
 
-  // Moderate topic status (valide / refuse / delete)
+  // Moderate topic status (valide / refuse / supprimer)
   const handleSetTopicStatus = async (topicId, newStatus) => {
     try {
       const currentSujets = event.sujetsProposes || [];
@@ -65,7 +65,7 @@ export default function ReunionAgendaManager({ event, user, profileData }) {
     }
   };
 
-  // Remove a topic entirely (Admin or Author only)
+  // Retirer a topic entirely (Admin or Author only)
   const handleDeleteTopic = async (topicId) => {
     const confirmDelete = await confirm({
       title: "Retirer la proposition",
@@ -106,7 +106,7 @@ export default function ReunionAgendaManager({ event, user, profileData }) {
       const snapshot = await uploadBytes(fileRef, file);
       const downloadUrl = await getDownloadURL(snapshot.ref);
 
-      // Save minutes link on event document
+      // Enregistrer minutes link on event document
       const docRef = doc(db, 'events', event.id);
       await updateDoc(docRef, {
         compteRenduUrl: downloadUrl
@@ -119,7 +119,7 @@ export default function ReunionAgendaManager({ event, user, profileData }) {
     }
   };
 
-  // Delete Minutes PDF link from event
+  // Supprimer Minutes PDF link from event
   const handlePdfDelete = async () => {
     const confirmDelete = await confirm({
       title: "Détacher le compte-rendu",

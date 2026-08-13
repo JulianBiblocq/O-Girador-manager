@@ -201,7 +201,7 @@ export default function SongCard({ song, isPrintVersion = false, defaultRevision
     setShowPrintModal(false);
     setIsPrinting(true);
     
-    // Set classes for print
+    // Définir classes for print
     if (isBW) document.body.classList.add('print-bw');
     document.body.classList.add(`print-format-${format}`);
     document.body.classList.add('printing-song');

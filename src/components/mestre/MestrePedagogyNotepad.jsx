@@ -23,7 +23,7 @@ export default function MestrePedagogyNotepad({ groupId }) {
       snap.forEach(d => {
         fetchedNotes.push({ id: d.id, ...d.data() });
       });
-      // Sort by date (newest first)
+      // Trier by date (newest first)
       fetchedNotes.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
       setNotes(fetchedNotes);
       setLoading(false);
@@ -46,12 +46,12 @@ export default function MestrePedagogyNotepad({ groupId }) {
     if (selectedNotes.size === 0) return;
     setIsModalOpen(true);
     
-    // Fetch future events
+    // Récupérer future events
     const today = new Date().toISOString().split('T')[0];
     const eventsRef = collection(db, 'events');
-    const q = query(eventsRef); // Can't easily complex query without index, so fetch all active for group
-    // Actually we can just fetch all events for the group
-    // Let's just fetch all events and filter client side
+    const q = query(eventsRef); // Can't easily complex query without index, so récupérer all active for group
+    // Actually we can just récupérer all events for the group
+    // Let's just récupérer all events and filtrer client side
     const snap = await getDocs(q);
     const fetchedEvents = [];
     snap.forEach(d => {
@@ -90,7 +90,7 @@ export default function MestrePedagogyNotepad({ groupId }) {
         });
       }
 
-      // Delete the notes from the notepad
+      // Supprimer the notes from the notepad
       for (const noteId of selectedNotes) {
         const noteRef = doc(db, 'associations', groupId, 'blocNotes', noteId);
         await deleteDoc(noteRef);

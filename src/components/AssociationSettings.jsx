@@ -451,7 +451,7 @@ export default function AssociationSettings({
           <div className="flex flex-col gap-3">
             {renderActiveTab()}
 
-            {/* Spacer to prevent content from being hidden behind the fixed footer */}
+            {/* Spacer to emp�cher content from being hidden behind the fixed footer */}
             <div className="h-24"></div>
 
             {/* Validation */}

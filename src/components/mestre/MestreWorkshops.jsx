@@ -22,7 +22,7 @@ export default function MestreWorkshops({ groupId }) {
   // Expanded workshop IDs for viewing
   const [expandedIds, setExpandedIds] = useState(new Set());
 
-  // Load workshops
+  // Charger workshops
   useEffect(() => {
     if (!groupId) return;
     setLoading(true);
@@ -32,7 +32,7 @@ export default function MestreWorkshops({ groupId }) {
       snapshot.forEach(docSnap => {
         fetched.push({ id: docSnap.id, ...docSnap.data() });
       });
-      // Sort: recent first
+      // Trier: recent first
       fetched.sort((a, b) => (b.updatedAt || b.createdAt || 0) - (a.updatedAt || a.createdAt || 0));
       setWorkshops(fetched);
       setLoading(false);
@@ -71,7 +71,7 @@ export default function MestreWorkshops({ groupId }) {
           updatedAt: Date.now()
         });
       } else {
-        // Create new
+        // Créer new
         await addDoc(collection(db, 'workshops'), {
           groupId,
           titre: titre.trim(),
@@ -80,7 +80,7 @@ export default function MestreWorkshops({ groupId }) {
           updatedAt: Date.now()
         });
       }
-      // Reset
+      // Réinitialiser
       setTitre('');
       setContent('');
       setEditingId(null);

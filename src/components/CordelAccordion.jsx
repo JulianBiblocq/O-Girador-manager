@@ -122,7 +122,7 @@ export default function CordelAccordion({
 }
 
 /**
- * Helper container to manage multiple accordions (e.g., expand all / collapse all)
+ * Utilitaire container to manage multiple accordions (e.g., expand all / collapse all)
  */
 export function CordelAccordionGroup({ children, className = '' }) {
   return <div className={`flex flex-col gap-3.5 ${className}`}>{children}</div>;

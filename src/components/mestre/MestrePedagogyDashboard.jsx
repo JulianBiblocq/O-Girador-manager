@@ -25,7 +25,7 @@ export default function MestrePedagogyDashboard({ profileData }) {
     const fetchData = async () => {
       setLoading(true);
       try {
-        // 1. Fetch Users
+        // 1. Récupérer Users
         const qUsers = query(collection(db, 'users'), where('groupId', '==', groupId));
         const usersSnap = await getDocs(qUsers);
         const users = [];
@@ -36,7 +36,7 @@ export default function MestrePedagogyDashboard({ profileData }) {
         });
         setUsersData(users);
 
-        // 2. Fetch all Evaluations for these users
+        // 2. Récupérer all Evaluations for these users
         const evals = {};
         await Promise.all(users.map(async (u) => {
           try {
@@ -54,7 +54,7 @@ export default function MestrePedagogyDashboard({ profileData }) {
         }));
         setEvaluationsMap(evals);
 
-        // 3. Fetch Documents (Songs & Fiches)
+        // 3. Récupérer Documents (Songs & Fiches)
         const qDocs = query(collection(db, 'documents'), where('groupId', '==', groupId));
         const docsSnap = await getDocs(qDocs);
         const fetchedSongs = [];
@@ -67,7 +67,7 @@ export default function MestrePedagogyDashboard({ profileData }) {
         setSongs(fetchedSongs);
         setFiches(fetchedFiches);
 
-        // 4. Fetch Rhythms from Metadata & Evals
+        // 4. Récupérer Rhythms from Metadata & Evals
         const qMeta = collection(db, 'associations', groupId, 'rhythmMetadata');
         const metaSnap = await getDocs(qMeta);
         const fetchedRhythms = [];

@@ -15,7 +15,7 @@ export default function TreasuryCotisations({
 }) {
   const { t } = useTranslation();
 
-  // Search & Filter state
+  // Search & Filtrer state
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
 
@@ -40,7 +40,7 @@ export default function TreasuryCotisations({
   const projectId = import.meta.env.VITE_FIREBASE_PROJECT_ID || 'o-girador-7828c';
   const webhookUrl = `https://us-central1-${projectId}.cloudfunctions.net/helloAssoWebhook?groupId=${groupId}`;
 
-  // Sync settings values to form state when settings load
+  // Synchroniser settings values to form state when settings charger
   useEffect(() => {
     if (associationSettings) {
       setFormConfig({
@@ -74,7 +74,7 @@ export default function TreasuryCotisations({
     ? associationSettings.optionsCotisation 
     : [];
 
-  // Filter members list
+  // Filtrer members list
   const filteredMembers = members.filter((member) => {
     const fullName = `${member.prenom || ''} ${member.nom || ''}`.toLowerCase();
     const matchesSearch = fullName.includes(searchQuery.toLowerCase());

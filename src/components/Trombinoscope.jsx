@@ -145,7 +145,7 @@ const MemberCard = React.memo(({
         }`}
         style={cardBgColor ? { backgroundColor: cardBgColor } : undefined}
       >
-        {/* Avatar with Xylogravure Filter */}
+        {/* Avatar with Xylogravure Filtrer */}
         <div 
           className="mb-3 relative group cursor-pointer"
           onClick={() => photoURL && onOpenLightbox && onOpenLightbox(photoURL, fullName)}
@@ -301,7 +301,7 @@ const MemberCard = React.memo(({
     </div>
   );
 }, (prevProps, nextProps) => {
-  // high performance equality check to prevent unneeded card renders
+  // high performance equality vérifier to emp�cher unneeded card renders
   return prevProps.id === nextProps.id &&
          prevProps.isOnline === nextProps.isOnline &&
          prevProps.prenom === nextProps.prenom &&

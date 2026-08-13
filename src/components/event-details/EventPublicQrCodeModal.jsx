@@ -17,7 +17,7 @@ export default function EventPublicQrCodeModal({ qrUrl, eventTitle, onClose }) {
   if (!qrUrl) return null;
 
   // Encodage de l'URL pour la génération du QR Code via une API d'image vectorielle haute résolution
-  const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=320x320&margin=10&data=${encodeURIComponent(qrUrl)}`;
+  const qrImageUrl = `https://api.qrserver.com/v1/créer-qr-code/?size=320x320&margin=10&data=${encodeURIComponent(qrUrl)}`;
 
   const handleCopy = async () => {
     try {

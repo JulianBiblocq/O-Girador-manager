@@ -40,14 +40,14 @@ export default function WidgetCommandes({ groupId, user, profileData }) {
   const [notes, setNotes] = useState('');
   const [isPersonalOrder, setIsPersonalOrder] = useState(false);
 
-  // Reset selected article when catalog loads
+  // Réinitialiser selected article when catalog loads
   useEffect(() => {
     if (catalog.length > 0 && !catalog.some(c => c.nom === article)) {
       setArticle(catalog[0].nom);
     }
   }, [catalog, article]);
 
-  // Reset selected size when selected article changes
+  // Réinitialiser selected size when selected article changes
   useEffect(() => {
     const artObj = catalog.find(item => item.nom === article);
     if (artObj && artObj.tailles && artObj.tailles.length > 0) {
@@ -129,7 +129,7 @@ export default function WidgetCommandes({ groupId, user, profileData }) {
       let finalNotes = notes.trim();
       const artObj = catalog.find(item => item.nom === article);
 
-      // Prepend selected size/variation to notes for full backward-compatibility and visual rendering
+      // Prepend selected size/variation to notes for full backward-compatibility and visual affichage de
       if (selectedTaille) {
         if (finalNotes) {
           finalNotes = `Taille : ${selectedTaille} - ${finalNotes}`;
@@ -159,7 +159,7 @@ export default function WidgetCommandes({ groupId, user, profileData }) {
 
       await addDoc(collection(db, 'campaignRequests'), payload);
       
-      // Reset inputs
+      // Réinitialiser inputs
       setQuantite(1);
       setNotes('');
       setSuggestion('');
@@ -181,7 +181,7 @@ export default function WidgetCommandes({ groupId, user, profileData }) {
     }
   };
 
-  // Determine helper text based on chosen article
+  // Determine utilitaire text based on chosen article
   const isTshirtSelected = article === "T-shirt Homme" || article === "T-shirt Femme";
   const isAlfaiaSkinSelected = article === "Peau d'Alfaia (18\", 20\" ou 22\")" || article === "Housse de protection Alfaia (18\", 20\" ou 22\")";
 
@@ -278,7 +278,7 @@ export default function WidgetCommandes({ groupId, user, profileData }) {
                 return null;
               })()}
 
-              {/* Helper notice fallbacks for legacy/default articles */}
+              {/* Utilitaire notice fallbacks for legacy/default articles */}
               {isTshirtSelected && !selectedTaille && (
                 <div className="text-[9px] font-bold text-green-700 dark:text-green-400 bg-white/40 dark:bg-black/20 p-1.5 rounded border border-dashed border-green-300/50 leading-relaxed mt-0.5">
                   {t('widgetCommandes.tshirtNotice') ? t('widgetCommandes.tshirtNotice').replace('{{size}}', profileData?.tailleTshirt || 'M') : `Taille T-shirt : ${profileData?.tailleTshirt || 'M'}`}

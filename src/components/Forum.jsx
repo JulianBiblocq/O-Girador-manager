@@ -335,7 +335,7 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
     const userTags = effectiveUserTags;
     const isMestreOrAdmin = profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.role === 'admin' || profileData?.isSystemAdmin;
 
-    // Load all channels for this group
+    // Charger all channels for this group
     const q = query(channelsRef, where('groupId', '==', profileData.groupId));
 
     const unsubscribe = onSnapshot(q, async (snap) => {
@@ -364,7 +364,7 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
           }
         }
       } else {
-        // Filter client-side: Mestre/Admins see EVERYTHING. Regular members see public + matching tag channels.
+        // Filtrer client-side: Mestre/Admins see EVERYTHING. Regular members see public + matching tag channels.
         const allowedChannels = fetched.filter(ch => {
           if (breakGlassActive) return true;
 
@@ -531,7 +531,7 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
     if (!channel) return true;
     if (breakGlassActive) return true;
 
-    // Check if channel is explicitly read-only for regular members
+    // Vérifier if channel is explicitly read-only for regular members
     if (channel.readOnlyForMembers === true) return false;
 
     const userRole = profileData?.role || 'membre';

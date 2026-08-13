@@ -160,14 +160,14 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
   const [isPrinting, setIsPrinting] = useState(false);
   const [printCategory, setPrintCategory] = useState(null);
 
-  // Culture filter state
+  // Culture filtrer state
   const [cultureFilter, setCultureFilter] = useState('all');
 
   const CULTURE_THEMES = [
-    { id: 'all', label: 'Toute la Culture', icon: <span className="text-[12px] md:text-sm pt-0.5">✨</span> },
+    { id: 'all', label: translate('docs.themeAll', 'Toute la Culture'), icon: <span className="text-[12px] md:text-sm pt-0.5">✨</span> },
     {
       id: 'orixás',
-      label: 'Orixás',
+      label: translate('docs.themeOrixas', 'Orixás'),
       icon: (
         <svg viewBox="0 0 100 100" className="w-5 h-5">
           <defs>
@@ -178,12 +178,6 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
                 <line x1="44" y1="34" x2="44" y2="57" strokeDasharray="3 3" />
                 <line x1="51" y1="35" x2="51" y2="60" strokeDasharray="3 3" />
                 <line x1="57" y1="34" x2="57" y2="56" strokeDasharray="3 3" />
-                <line x1="62" y1="37" x2="62" y2="51" strokeDasharray="3 3" />
-                <path d="M 22 62 Q 50 78 78 61" fill="none" strokeWidth="2" strokeDasharray="4 2" />
-                <path d="M 18 78 Q 50 95 82 77" fill="none" strokeWidth="3" />
-                <path d="M 50 72 L 50 90" fill="none" strokeWidth="2" strokeDasharray="5 3" />
-                <circle cx="50" cy="15" r="2.5" fill="black" stroke="none" />
-                <circle cx="40" cy="22" r="2" fill="black" stroke="none" />
                 <circle cx="60" cy="22" r="2" fill="black" stroke="none" />
                 <path d="M 45 28 L 55 28" fill="none" strokeWidth="1.5" />
               </g>
@@ -321,7 +315,7 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
     setShowBulkPrintModal(false);
     setIsPrinting(true);
 
-    // Set classes for print
+    // Définir classes for print
     if (isBW) document.body.classList.add('print-bw');
     document.body.classList.add(`print-format-${format}`);
     document.body.classList.add('printing-song');
@@ -638,7 +632,7 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
         )}
       </div>
 
-      {/* Loading state */}
+      {/* Chargement de state */}
       {loading && (
         <div className="flex justify-center items-center py-6">
           <span className="text-xs uppercase tracking-widest font-black animate-pulse opacity-60">⏳</span>
@@ -1025,7 +1019,7 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
 
                                 return null;
                               })()}
-                              {/* Edit & Delete & Reorder Action Buttons */}
+                              {/* Edit & Supprimer & Reorder Action Buttons */}
                               {isAuthorized && !docItem.isVirtualEventMedia && (
                                 <div className="absolute top-1.5 right-1.5 flex gap-1 z-40 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                                   {index > 0 && (

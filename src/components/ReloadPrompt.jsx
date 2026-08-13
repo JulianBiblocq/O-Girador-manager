@@ -5,7 +5,7 @@ import CordelButton from './CordelButton';
 
 /**
  * ReloadPrompt component using virtual:pwa-register to detect SW updates
- * and prompt the user to force reload and fetch the latest files.
+ * and prompt the user to force reload and récupérer the latest files.
  */
 export default function ReloadPrompt() {
   const { t } = useTranslation();
@@ -15,7 +15,7 @@ export default function ReloadPrompt() {
   } = useRegisterSW({
     onRegistered(r) {
       if (r) {
-        // Periodically check for updates (every hour)
+        // Periodically vérifier for updates (every hour)
         setInterval(() => {
           r.update();
         }, 60 * 60 * 1000);

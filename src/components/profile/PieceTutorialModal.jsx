@@ -6,7 +6,7 @@ import { XiloClose } from '../XiloIcons';
 
 /**
  * PieceTutorialModal Component
- * Displays the full multimedia booklet format when a member opens a costume element tutorial.
+ * Displays the full multimedia booklet formater when a member opens a costume element tutorial.
  */
 export default function PieceTutorialModal({ piece, workshop, onClose }) {
   if (!piece) return null;

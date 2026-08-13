@@ -144,7 +144,7 @@ export default function KilometricReimbursementManager({ groupId, onBack, role, 
           ...docSnap.data()
         });
       });
-      // Sort chronologically desc
+      // Trier chronologically desc
       fetched.sort((a, b) => new Date(b.date) - new Date(a.date));
       setEvents(fetched);
       setLoading(false);
@@ -243,7 +243,7 @@ export default function KilometricReimbursementManager({ groupId, onBack, role, 
           refundAmount
         });
 
-        // Add to memberMap
+        // Ajouter to memberMap
         if (!memberMap.has(driver.id)) {
           memberMap.set(driver.id, {
             id: driver.id,
@@ -281,7 +281,7 @@ export default function KilometricReimbursementManager({ groupId, onBack, role, 
     });
 
     const memberList = Array.from(memberMap.values());
-    // Sort members by refund amount desc
+    // Trier members by refund amount desc
     memberList.sort((a, b) => b.totalRefund - a.totalRefund);
 
     return { memberList, eventList };
@@ -289,7 +289,7 @@ export default function KilometricReimbursementManager({ groupId, onBack, role, 
 
   const { memberList, eventList } = compileReimbursements();
 
-  // Filter members by search query
+  // Filtrer members by search query
   const filteredMemberList = memberList.filter(m => 
     m.nom.toLowerCase().includes(searchQuery.toLowerCase())
   );

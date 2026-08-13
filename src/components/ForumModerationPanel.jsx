@@ -35,7 +35,7 @@ export default function ForumModerationPanel({ groupId, channels = [] }) {
   const [editTitleInput, setEditTitleInput] = useState('');
   const [editCategoryInput, setEditCategoryInput] = useState('Général');
 
-  // Load all threads for this group in real-time
+  // Charger all threads for this group in real-time
   useEffect(() => {
     if (!groupId) return;
     setLoading(true);
@@ -47,7 +47,7 @@ export default function ForumModerationPanel({ groupId, channels = [] }) {
       snap.forEach((docSnap) => {
         fetched.push({ id: docSnap.id, ...docSnap.data() });
       });
-      // Sort pinned first, then by last modification
+      // Trier pinned first, then by last modification
       fetched.sort((a, b) => {
         if (a.isPinned && !b.isPinned) return -1;
         if (!a.isPinned && b.isPinned) return 1;
@@ -122,7 +122,7 @@ export default function ForumModerationPanel({ groupId, channels = [] }) {
 
   return (
     <div className="flex flex-col gap-4 text-left select-none">
-      {/* Search and Channel Filter Bar */}
+      {/* Search and Channel Filtrer Bar */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white/40 p-3 rounded border border-dashed border-cordel-master-dark/20">
         <div className="flex items-center gap-2 w-full sm:w-auto flex-1">
           <span className="text-xs">🔍</span>
@@ -201,7 +201,7 @@ export default function ForumModerationPanel({ groupId, channels = [] }) {
                 {/* Moderation Actions Toolbar */}
                 <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
                   <div className="flex items-center gap-1.5">
-                    {/* Pin/Unpin Toggle */}
+                    {/* Pin/Unpin Basculer */}
                     <button
                       type="button"
                       onClick={() => togglePinThread(thread.id, thread.isPinned)}
@@ -238,7 +238,7 @@ export default function ForumModerationPanel({ groupId, channels = [] }) {
                     </button>
                   </div>
 
-                  {/* Delete Thread */}
+                  {/* Supprimer Thread */}
                   <button
                     type="button"
                     onClick={() => handleDeleteThreadConfirm(thread)}

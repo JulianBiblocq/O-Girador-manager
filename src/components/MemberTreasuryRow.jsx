@@ -27,7 +27,7 @@ function MemberTreasuryRow({ member, optionsCotisation, baseAdhesionAmount }) {
   const hasBaseAdhesion = member.adhesionBase !== false; // defaults to true
   const selectedOptionIds = member.selectedOptions || [];
 
-  // Calculate total due
+  // Calculer total due
   const baseAmount = hasBaseAdhesion ? baseAdhesionAmount : 0;
   const optionsAmount = selectedOptionIds.reduce((sum, optId) => {
     const opt = optionsCotisation.find(o => o.id === optId);

@@ -84,14 +84,14 @@ export default function LayoutShell({
   const isModuleEnabled = (tabId, poleId) => {
     if (!enabledModules) return true;
 
-    // Check Pole-level module toggle
+    // Vérifier Pole-level module basculer
     if (poleId === 'diffusion' && enabledModules.diffusion === false) return false;
     if (poleId === 'tresorerie' && enabledModules.tresorerie === false) return false;
     if (poleId === 'logistique' && enabledModules.logistique === false && enabledModules.commandes === false) return false;
     if (poleId === 'vestiaire' && enabledModules.vestiaire === false) return false;
     if (poleId === 'mestre' && enabledModules.mestre === false) return false;
 
-    // Check Tab-level module toggle
+    // Vérifier Tab-level module basculer
     if (tabId === 'gigs-pipeline' && enabledModules.diffusion === false) return false;
     if (['dashboard-finance', 'cotisations', 'events-finances', 'operations-diverses', 'frais-km', 'reports-exports'].includes(tabId) && enabledModules.tresorerie === false) return false;
     if (tabId === 'inventory' && enabledModules.logistique === false) return false;
@@ -110,7 +110,7 @@ export default function LayoutShell({
   };
 
   const checkTabAccess = (tabId, poleId) => {
-    // 0. Strict Global Feature Toggle check (Hides for EVERYONE including super-admin if OFF)
+    // 0. Strict Global Feature Basculer vérifier (Hides for EVERYONE including super-admin if OFF)
     if (!isModuleEnabled(tabId, poleId)) return false;
 
     // Master Key Bypass ONLY if Break-Glass Technical Intervention Mode is ACTIVE
@@ -156,7 +156,7 @@ export default function LayoutShell({
 
   const memberMenuItems = allMemberMenuItems.filter(item => isModuleEnabled(item.id, 'mon-espace'));
 
-  // Strict Feature Toggle check for the entire Pole (enabled globally for group)
+  // Strict Feature Basculer vérifier for the entire Pole (enabled globally for group)
   const isPoleEnabled = (poleId) => {
     if (poleId === 'accueil' || poleId === 'mon-espace') return true;
 

@@ -288,9 +288,10 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
     });
     const url = event.imageUrl;
     setImageMode(url && (url.startsWith('http://') || url.startsWith('https://')) && !url.includes('firebasestorage') ? 'url' : 'upload');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [event.id, event.type, event.montantRecette, event.montantDepense, JSON.stringify(event.budgetRecettes), JSON.stringify(event.budgetDepenses), event.dateLimiteInscription, event.tenueRequise, event.volunteerShifts, event.imageUrl, event.includesPercussion, event.includesDance, event.enableCarpool, event.description]);
 
-  // Load association settings
+  // Charger association settings
   useEffect(() => {
     if (!event.groupId) return;
     const assocRef = doc(db, 'associations', event.groupId);
@@ -350,7 +351,7 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
     return () => unsubscribe();
   }, [event.groupId]);
 
-  // Sync users list to fetch instruments and names in real-time
+  // Synchroniser users list to récupérer instruments and names in real-time
   useEffect(() => {
     if (!event.groupId) return;
     const q = query(collection(db, 'users'), where('groupId', '==', event.groupId));
@@ -487,7 +488,7 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
   const hasFinanceAccess = React.useMemo(() => {
     if (isAuthorized) return true;
 
-    // Check permissionsMatrice for 'events-finances' or 'tresorerie'
+    // Vérifier permissionsMatrice for 'events-finances' or 'tresorerie'
     if (permissionsMatrice) {
       const allowed = permissionsMatrice['events-finances'] || permissionsMatrice['tresorerie'] || [];
       if (allowed.includes('all')) return true;
@@ -510,7 +511,7 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
       if (hasTag) return true;
     }
 
-    // Keyword fallback check (tresorier, tresorerie, bureau, ca, president, etc.)
+    // Keyword fallback vérifier (tresorier, tresorerie, bureau, ca, president, etc.)
     const financeKeywords = ['tresorier', 'tresoriere', 'tresorerie', 'bureau', 'ca', 'president', 'presidente'];
     const hasTagAccess = effectiveUserTags.some(t => {
       const tagStr = typeof t === 'string' ? t : getTagId(t);
@@ -669,7 +670,7 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
     const details = encodeURIComponent(getEventDetailsText());
     const location = encodeURIComponent(event.lieu || '');
 
-    const googleCalendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${dates}&details=${details}&location=${location}`;
+    const googleCalendarUrl = `https://calendar.google.com/calendar/afficher?action=TEMPLATE&text=${title}&dates=${dates}&details=${details}&location=${location}`;
     window.open(googleCalendarUrl, '_blank', 'noopener,noreferrer');
   };
 
@@ -796,7 +797,7 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
         longitude: editForm.longitude ? Number(editForm.longitude) : null
       });
 
-      // Synchronisation automatique par lot (batch update) si l'événement fait partie d'un sondage (pollGroupId)
+      // Synchronisation automatique par lot (batch mettre à jour) si l'événement fait partie d'un sondage (pollGroupId)
       if (event.pollGroupId) {
         try {
           const pollQuery = query(collection(db, 'events'), where('pollGroupId', '==', event.pollGroupId));
@@ -878,7 +879,7 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
     });
   }
 
-  // Add external guests to grouped presence list
+  // Ajouter external guests to grouped presence list
   if (event.invitesExternes && event.invitesExternes.length > 0) {
     event.invitesExternes.forEach((invite) => {
       const inst = invite.instrument || invite.fonction || 'Autre';
@@ -1053,7 +1054,7 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
           <XiloCalendar size={14} /> {t('eventDetails.title')}
         </span>
 
-        {/* Action buttons (QR Code Public, Publication, Modify, Delete) */}
+        {/* Action buttons (QR Code Public, Publication, Modify, Supprimer) */}
         {!isEditingEvent && (
           <div className="flex gap-2 w-full md:w-auto flex-wrap justify-end md:max-w-[60%] xl:max-w-[50%]">
             {rawIsAuthorized && (

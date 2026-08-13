@@ -100,7 +100,7 @@ export default function EventVolunteerSection({ event, user, allUsers = [], t })
                             name: 'Membre inconnu',
                             photoURL: ''
                           };
-                          // Handle initials for missing photos
+                          // Gérer initials for missing photos
                           const displayName = member.prenom
                             ? `${member.prenom} ${member.nom ? member.nom.charAt(0) + '.' : ''}`
                             : member.name || 'Membre';

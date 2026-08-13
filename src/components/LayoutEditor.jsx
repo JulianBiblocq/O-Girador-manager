@@ -382,7 +382,7 @@ export default function LayoutEditor({ groupId, onBack, role, isSystemAdmin }) {
                         </button>
                       </div>
 
-                      {/* Drag Handle (Desktop drag-and-drop & Mobile touch swipe) */}
+                      {/* Drag Gérer (Desktop drag-and-drop & Mobile touch swipe) */}
                       <div
                         draggable
                         onDragStart={(e) => handleDragStart(e, index)}
@@ -401,7 +401,7 @@ export default function LayoutEditor({ groupId, onBack, role, isSystemAdmin }) {
           </div>
         )}
 
-        {/* Save button */}
+        {/* Enregistrer button */}
         {!loading && (
           <div className="mt-2">
             <CordelButton

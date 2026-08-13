@@ -68,7 +68,7 @@ export const generateTranslationQuiz = (config = {}) => {
     let diffLevel = difficulty?.toLowerCase() || 'medium';
     let selectedDistractors = [];
 
-    // Helper pour puiser dans les viviers de distracteurs par ordre de priorité
+    // Utilitaire pour puiser dans les viviers de distracteurs par ordre de priorité
     const getDistractors = (pools) => {
       const result = [];
       for (const pool of pools) {
@@ -175,7 +175,7 @@ export const generateTranslationQuiz = (config = {}) => {
       prompt: `Traduis : "${prompt}"`,
       correctAnswer: correctAnswer,
       options: options.map(o => o.text), // Retourne juste les textes si l'UI n'a pas besoin de savoir qui est true, mais pour valider on peut garder l'objet complet
-      choices: options, // Format compatible avec AutoEvalQuiz existant
+      choices: options, // Formater compatible avec AutoEvalQuiz existant
       direction: currentDirection,
       category: pair.category
     };

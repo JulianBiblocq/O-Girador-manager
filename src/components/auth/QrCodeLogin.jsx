@@ -15,7 +15,7 @@ import { useTranslation } from '../LanguageContext';
 export default function QrCodeLogin() {
   const { t } = useTranslation();
   const [sessionId, setSessionId] = useState(null);
-  const [status, setStatus] = useState('loading'); // 'loading' | 'pending' | 'approved' | 'expired' | 'error'
+  const [status, setStatus] = useState('loading'); // 'chargement de' | 'pending' | 'approved' | 'expired' | 'error'
   const [timeLeft, setTimeLeft] = useState(120); // 120 secondes (2 minutes)
   const [errorMessage, setErrorMessage] = useState('');
   const unsubscribeRef = useRef(null);
@@ -117,7 +117,7 @@ export default function QrCodeLogin() {
     };
   }, []);
 
-  // Formatage des secondes en format MM:SS
+  // Formatage des secondes en formater MM:SS
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;

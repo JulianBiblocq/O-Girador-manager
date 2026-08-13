@@ -18,14 +18,14 @@ export default function TreasuryManager({ groupId, onBack, role, isSystemAdmin, 
 
   const [activeTab, setActiveTab] = useState(initialTab || 'dashboard-finance');
 
-  // Sync activeTab with initialTab from navigation
+  // Synchroniser activeTab with initialTab from navigation
   useEffect(() => {
     if (initialTab) {
       setActiveTab(initialTab);
     }
   }, [initialTab]);
 
-  // Load all treasury data through custom hook
+  // Charger all treasury data through custom hook
   const {
     members,
     transactions,

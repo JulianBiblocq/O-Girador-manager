@@ -4,7 +4,7 @@ import { db } from '../firebase';
 import { DEFAULT_PUBLIC_THEME, DEFAULT_VITRINE_TEXTS } from './useAssociationSettings';
 
 /**
- * Helper d'aide à la construction d'un objet thème public à partir d'un snapshot Firestore
+ * Utilitaire d'aide à la construction d'un objet thème public à partir d'un snapshot Firestore
  */
 const buildThemeData = (data) => {
   const officialEmail = data.emailOfficiel || data.email || '';

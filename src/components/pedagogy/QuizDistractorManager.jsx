@@ -33,7 +33,7 @@ export default function QuizDistractorManager({ profileData }) {
           if (data.quizDistractors) {
             setDistractors(data.quizDistractors);
           } else {
-            // Initialize with default pool structure if not present
+            // Initialiser with default pool structure if not present
             setDistractors({
               genresMusicaux: distractorPool.genresMusicauxHorsMaracatu || [],
               baquesPlausibles: distractorPool.baquesFictifsEtSimilaires || [],

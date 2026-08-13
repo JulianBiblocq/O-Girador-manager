@@ -71,7 +71,7 @@ export default function EventMediaQrCodeModal({ qrUrl, eventTitle, onClose }) {
               />
             ) : (
               <img 
-                src={`https://api.qrserver.com/v1/create-qr-code/?size=300x300&margin=10&data=${encodeURIComponent(qrUrl)}`}
+                src={`https://api.qrserver.com/v1/créer-qr-code/?size=300x300&margin=10&data=${encodeURIComponent(qrUrl)}`}
                 alt="QR Code Dépôt Médias"
                 className="w-56 h-56 object-contain"
               />

@@ -362,7 +362,7 @@ export default function EventCreateForm({
                 </div>
               )}
 
-              {/* Enable Inscriptions Toggle */}
+              {/* Enable Inscriptions Basculer */}
               <div className="flex items-center gap-2 pt-1 text-left">
                 <label className="flex items-center gap-2 text-xs font-bold cursor-pointer select-none">
                   <input
@@ -377,7 +377,7 @@ export default function EventCreateForm({
                 </label>
               </div>
 
-              {/* Notification Push FCM Toggle */}
+              {/* Notification Push FCM Basculer */}
               <div className="flex items-center gap-2 pt-2 border-t border-dashed border-cordel-master-dark/15 text-left select-none">
                 <label className="flex items-center gap-2 text-xs font-bold cursor-pointer text-cordel-wood">
                   <input
@@ -402,7 +402,7 @@ export default function EventCreateForm({
             defaultOpen={false}
           >
             <div className="flex flex-col gap-4">
-              {/* Covoiturage Toggle */}
+              {/* Covoiturage Basculer */}
               {rawCreateConfig.agendaEnableCarpool !== false && (
                 <div className="flex items-center gap-2 text-left">
                   <label className="flex items-center gap-2 text-xs font-bold cursor-pointer select-none">
@@ -696,7 +696,7 @@ export default function EventCreateForm({
                 </div>
               )}
 
-              {/* Validation Toggle */}
+              {/* Validation Basculer */}
               {createConfig.agendaEnableInscriptions && (
                 <div className="flex items-center gap-2 pt-2 border-t border-dashed border-cordel-master-dark/15 text-left">
                   <label className="flex items-center gap-2 text-xs font-semibold cursor-pointer select-none">
@@ -722,7 +722,7 @@ export default function EventCreateForm({
             icon="📊"
             defaultOpen={false}
           >
-            {/* Multi-Date Poll Toggle Section */}
+            {/* Multi-Date Poll Basculer Section */}
             <div className="p-3 bg-amber-50/80 dark:bg-amber-950/20 border-2 border-dashed border-amber-500/40 rounded-[6px_8px_5px_7px] flex flex-col gap-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">

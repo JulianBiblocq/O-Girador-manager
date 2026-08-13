@@ -12,7 +12,7 @@ const formatMoney = (amount) => {
 };
 
 /**
- * Formate une date au format français DD/MM/YYYY
+ * Formate une date au formater français DD/MM/YYYY
  */
 const formatDate = (dateStr) => {
   if (!dateStr) return '__________________';

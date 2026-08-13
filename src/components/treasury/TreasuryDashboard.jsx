@@ -13,7 +13,7 @@ export default function TreasuryDashboard({
 }) {
   const { t } = useTranslation();
 
-  // Set default dates to school year (Sep 1st to Aug 31st)
+  // Définir default dates to school year (Sep 1st to Aug 31st)
   const now = new Date();
   const currentYear = now.getFullYear();
   const startYear = now.getMonth() >= 8 ? currentYear : currentYear - 1;

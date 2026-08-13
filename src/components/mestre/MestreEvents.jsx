@@ -109,7 +109,7 @@ export default function MestreEvents({ groupId, onSelectForStage, onOpenDetails 
           🎭 {t('mestre.eventsTitle') || "Direction Musicale - Liste des Événements"}
         </h2>
 
-        {/* Temporal Filter Selector */}
+        {/* Temporal Filtrer Selector */}
         <div className="flex items-center gap-1 shrink-0 select-none">
           <span className="text-[10px] font-black uppercase tracking-wider text-cordel-master-dark/60 shrink-0 mr-1">
             {t('agendaTemporal.filterLabel') || "Afficher :"}

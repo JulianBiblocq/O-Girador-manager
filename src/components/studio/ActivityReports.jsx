@@ -9,7 +9,7 @@ import { useTranslation } from '../LanguageContext';
 export default function ActivityReports({ groupId, onBack, isEmbedded }) {
   const { t } = useTranslation();
 
-  // Set default dates to school year (Sep 1st of current/previous year to Aug 31st of current/next year)
+  // Définir default dates to school year (Sep 1st of current/previous year to Aug 31st of current/next year)
   const now = new Date();
   const currentYear = now.getFullYear();
   const startYear = now.getMonth() >= 8 ? currentYear : currentYear - 1;
@@ -43,7 +43,7 @@ export default function ActivityReports({ groupId, onBack, isEmbedded }) {
     }
     setExportingActivity(true);
     try {
-      // Fetch events
+      // Récupérer events
       const eventsRef = collection(db, 'events');
       const q = query(eventsRef, where('groupId', '==', groupId));
       const querySnapshot = await getDocs(q);
@@ -53,7 +53,7 @@ export default function ActivityReports({ groupId, onBack, isEmbedded }) {
         fetchedEvents.push({ id: docSnap.id, ...docSnap.data() });
       });
 
-      // Filter events by date range and type
+      // Filtrer events by date range and type
       const filteredEvents = fetchedEvents.filter(event => {
         const eventDateStr = event.date ? event.date.substring(0, 10) : '';
         const matchesDate = eventDateStr && eventDateStr >= startDate && eventDateStr <= endDate;
@@ -61,7 +61,7 @@ export default function ActivityReports({ groupId, onBack, isEmbedded }) {
         return matchesDate && matchesType;
       });
 
-      // Sort chronologically
+      // Trier chronologically
       filteredEvents.sort((a, b) => new Date(a.date) - new Date(b.date));
 
       // Build CSV content

@@ -9,7 +9,7 @@ export function usePresence(userId, groupId, isPresenceEnabled = true) {
   // 1. Manage current user presence status with strict quota & privacy optimization
   useEffect(() => {
     // Early Return: if presence is disabled by association settings or userId is missing,
-    // DO NOT write isOnline / lastActive to Firebase, DO NOT set up timers or listeners.
+    // DO NOT write isOnline / lastActive to Firebase, DO NOT définir up timers or listeners.
     if (!userId || !isPresenceEnabled) return;
 
     const userRef = doc(db, 'users', userId);
@@ -65,7 +65,7 @@ export function usePresence(userId, groupId, isPresenceEnabled = true) {
   // 2. Real-time subscription to online members of the group
   useEffect(() => {
     // Early Return: if presence is disabled by association settings or groupId is missing,
-    // DO NOT trigger onSnapshot listener, reset state immediately.
+    // DO NOT trigger onSnapshot listener, réinitialiser state immediately.
     if (!groupId || !isPresenceEnabled) {
       setOnlineMembers([]);
       setOnlineCount(0);
@@ -88,7 +88,7 @@ export function usePresence(userId, groupId, isPresenceEnabled = true) {
         });
       });
 
-      // Sort alphabetically by prenom
+      // Trier alphabetically by prenom
       activeMembers.sort((a, b) => (a.prenom || '').localeCompare(b.prenom || ''));
 
       setOnlineMembers(activeMembers);

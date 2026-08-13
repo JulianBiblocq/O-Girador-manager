@@ -38,7 +38,7 @@ export default function CostumesAdminManager({ groupId }) {
     tutorialId: ''
   });
 
-  // Fetch costumes
+  // Récupérer costumes
   useEffect(() => {
     if (!groupId) return;
     const q = query(collection(db, 'costumes'), where('groupId', '==', groupId));
@@ -54,7 +54,7 @@ export default function CostumesAdminManager({ groupId }) {
     return () => unsubscribe();
   }, [groupId]);
 
-  // Fetch workshops for tutorial linking
+  // Récupérer workshops for tutorial linking
   useEffect(() => {
     if (!groupId) return;
     const q = query(collection(db, 'workshops'), where('groupId', '==', groupId));
@@ -379,7 +379,7 @@ export default function CostumesAdminManager({ groupId }) {
                     )}
                   </div>
 
-                  {/* Form to add a piece */}
+                  {/* Form to ajouter a piece */}
                   <div className="p-3 bg-cordel-master-light/10 border border-cordel-master-dark/20 rounded flex flex-col gap-2 mt-1">
                     <span className="text-[10px] font-black uppercase text-cordel-wood">
                       ➕ Ajouter une pièce à ce costume

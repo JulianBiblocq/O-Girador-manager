@@ -60,7 +60,7 @@ export default function WardrobeManager({ groupId, role, isSystemAdmin, hasAcces
     hasAccessLogistique
   }), [groupId, role, isSystemAdmin, hasAccessLogistique]);
 
-  // 1. Fetch Users
+  // 1. Récupérer Users
   useEffect(() => {
     if (!groupId) return;
     const q = query(collection(db, 'users'), where('groupId', '==', groupId));
@@ -77,7 +77,7 @@ export default function WardrobeManager({ groupId, role, isSystemAdmin, hasAcces
     return () => unsubscribe();
   }, [groupId]);
 
-  // 2. Fetch Costume Pieces Inventory
+  // 2. Récupérer Costume Pieces Inventory
   useEffect(() => {
     if (!groupId) return;
     const q = query(collection(db, 'wardrobeInventory'), where('groupId', '==', groupId));
@@ -93,7 +93,7 @@ export default function WardrobeManager({ groupId, role, isSystemAdmin, hasAcces
     return () => unsubscribe();
   }, [groupId]);
 
-  // 3. Fetch Couture Projects
+  // 3. Récupérer Couture Projects
   useEffect(() => {
     if (!groupId) return;
     const q = query(collection(db, 'coutureProjects'), where('groupId', '==', groupId));
@@ -305,7 +305,7 @@ export default function WardrobeManager({ groupId, role, isSystemAdmin, hasAcces
             </button>
           </div>
 
-          {/* Costume Add/Edit Form */}
+          {/* Costume Ajouter/Edit Form */}
           {showCostumeForm && (
             <form onSubmit={handleCostumeSubmit} className="flex flex-col gap-3.5 bg-white/40 dark:bg-black/20 p-4 rounded border border-dashed border-encre-noire/15 text-xs text-left">
               <span className="font-extrabold text-cordel-wood uppercase tracking-wider text-[10px] border-b border-dashed border-encre-noire/10 pb-1">

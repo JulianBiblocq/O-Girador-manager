@@ -35,7 +35,7 @@ export default function TabCommunication({ formData, handleChange, groupId, savi
     return () => { isMounted = false; };
   }, [groupId]);
 
-  // Exportation de la liste des abonnés au format CSV (compatible Excel & Google Sheets)
+  // Exportation de la liste des abonnés au formater CSV (compatible Excel & Google Sheets)
   const handleExportNewsletterCSV = async () => {
     setExportingNewsletter(true);
     setNewsletterStatusMsg('');

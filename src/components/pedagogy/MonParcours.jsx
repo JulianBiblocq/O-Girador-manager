@@ -87,7 +87,7 @@ export default function MonParcours({ profileData, sequenceurUrl, enabledModules
   useEffect(() => {
     if (!groupId || !userId) return;
 
-    // 1. Fetch Evaluations
+    // 1. Récupérer Evaluations
     const parcoursRef = doc(db, 'users', userId, 'parcours', groupId);
     const unsubEval = onSnapshot(parcoursRef, (docSnap) => {
       if (docSnap.exists()) {
@@ -95,7 +95,7 @@ export default function MonParcours({ profileData, sequenceurUrl, enabledModules
       }
     });
 
-    // 2. Fetch Rhythm Fallbacks (Mestre Metadata) & Global QCM Config
+    // 2. Récupérer Rhythm Fallbacks (Mestre Metadata) & Global QCM Config
     const fetchMetadata = async () => {
       const q = collection(db, 'associations', groupId, 'rhythmMetadata');
       const snap = await getDocs(q);
@@ -110,7 +110,7 @@ export default function MonParcours({ profileData, sequenceurUrl, enabledModules
       }
     };
 
-    // 3. Fetch Rhythms from Storage
+    // 3. Récupérer Rhythms from Storage
     const fetchRhythms = async () => {
       try {
         const folderRef = ref(storage, `documents/${groupId}/sequencer`);
@@ -126,7 +126,7 @@ export default function MonParcours({ profileData, sequenceurUrl, enabledModules
         fetchedRhythms.sort((a, b) => a.titre.localeCompare(b.titre));
         setRhythms(fetchedRhythms);
         
-        // Fetch JSON content for parsing
+        // Récupérer JSON content for parsing
         fetchedRhythms.forEach(async (r) => {
           try {
             const resp = await fetch(r.jsonUrl);
@@ -141,7 +141,7 @@ export default function MonParcours({ profileData, sequenceurUrl, enabledModules
       }
     };
 
-    // 4. Fetch Songs from Varal
+    // 4. Récupérer Songs from Varal
     const fetchSongs = async () => {
       try {
         const q = query(collection(db, 'documents'), where('groupId', '==', groupId), where('type', '==', 'song'));
@@ -159,7 +159,7 @@ export default function MonParcours({ profileData, sequenceurUrl, enabledModules
       }
     };
 
-    // 5. Fetch Fiches Pédagogiques
+    // 5. Récupérer Fiches Pédagogiques
     const fetchFiches = async () => {
       try {
         const q = query(collection(db, 'documents'), where('groupId', '==', groupId), where('type', 'in', ['fiche_pedagogique', 'culture_fiche']));

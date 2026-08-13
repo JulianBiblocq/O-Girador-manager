@@ -10,7 +10,7 @@ import useConfirm from '../../hooks/useConfirm';
 import useHardwareBack from '../../hooks/useHardwareBack';
 
 /**
- * Utility helper to convert YouTube and Vimeo URLs into clean responsive embed iframe URLs.
+ * Utility fonction utilitaire pour convert YouTube and Vimeo URLs into clean responsive embed iframe URLs.
  */
 export function getEmbedVideoUrl(url) {
   if (!url) return null;
@@ -80,7 +80,7 @@ export default function AtelierCouture({ groupId, activePiece, onClearActivePiec
 
   const isAuthorized = role === 'mestre' || role === 'super-admin' || isSystemAdmin === true || hasAccessLogistique === true;
 
-  // Load workshops from Firestore
+  // Charger workshops from Firestore
   useEffect(() => {
     if (!groupId) {
       setLoading(false);
@@ -92,7 +92,7 @@ export default function AtelierCouture({ groupId, activePiece, onClearActivePiec
       snapshot.forEach(docSnap => {
         fetched.push({ id: docSnap.id, ...docSnap.data() });
       });
-      // Sort recent first
+      // Trier recent first
       fetched.sort((a, b) => (b.updatedAt || b.createdAt || 0) - (a.updatedAt || a.createdAt || 0));
       setWorkshops(fetched);
       setLoading(false);
@@ -103,7 +103,7 @@ export default function AtelierCouture({ groupId, activePiece, onClearActivePiec
     return () => unsubscribe();
   }, [groupId]);
 
-  // Handle auto-expanding the activePiece redirect
+  // Gérer auto-expanding the activePiece redirect
   useEffect(() => {
     if (activePiece && !loading) {
       const matched = workshops.find(ws => 
@@ -166,7 +166,7 @@ export default function AtelierCouture({ groupId, activePiece, onClearActivePiec
     }
   };
 
-  // Filter visible workshops (non-admins see only published tutorials)
+  // Filtrer visible workshops (non-admins see only published tutorials)
   const visibleWorkshops = workshops.filter(ws => isAuthorized || ws.isPublished !== false);
 
   return (

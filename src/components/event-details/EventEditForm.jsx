@@ -362,7 +362,7 @@ export default function EventEditForm({
                 </p>
               </div>
 
-              {/* Enable Inscriptions Toggle */}
+              {/* Enable Inscriptions Basculer */}
               <div className="flex items-center gap-2 pt-1 text-left">
                 <label className="flex items-center gap-2 text-xs font-bold cursor-pointer select-none">
                   <input
@@ -386,7 +386,7 @@ export default function EventEditForm({
             defaultOpen={false}
           >
             <div className="flex flex-col gap-4">
-              {/* Covoiturage Toggle */}
+              {/* Covoiturage Basculer */}
               {rawEditConfig.agendaEnableCarpool !== false && (
                 <div className="flex items-center gap-2 text-left">
                   <label className="flex items-center gap-2 text-xs font-bold cursor-pointer select-none">
@@ -799,7 +799,7 @@ export default function EventEditForm({
                 </div>
               )}
 
-              {/* Validation Toggle */}
+              {/* Validation Basculer */}
               {editConfig.agendaEnableInscriptions && (
                 <div className="flex items-center gap-2 pt-2 border-t border-dashed border-cordel-master-dark/15 text-left">
                   <label className="flex items-center gap-2 text-xs font-semibold cursor-pointer select-none">
@@ -833,7 +833,7 @@ export default function EventEditForm({
           </CordelAccordion>
         </CordelAccordionGroup>
 
-        {/* Submit & Delete buttons */}
+        {/* Submit & Supprimer buttons */}
         <div className="flex flex-col gap-2 mt-4 pt-3 border-t border-[var(--cordel-border)]">
           <CordelButton
             type="submit"

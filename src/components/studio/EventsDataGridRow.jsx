@@ -34,7 +34,7 @@ function EventsDataGridRow({
 }) {
   const isUpdatingRow = updatingEventId === event.id;
 
-  // Local form state to prevent losing focus during keystrokes
+  // Local form state to emp�cher losing focus during keystrokes
   const [localData, setLocalData] = useState({
     titre: event.titre || '',
     type: event.type || 'prestation',
@@ -49,7 +49,7 @@ function EventsDataGridRow({
     tenueRequise: event.tenueRequise || event.tenue || ''
   });
 
-  // Sync local data when event prop changes externally
+  // Synchroniser local data when event prop changes externally
   useEffect(() => {
     setLocalData({
       titre: event.titre || '',
@@ -266,7 +266,7 @@ function EventsDataGridRow({
         />
       </td>
 
-      {/* 12. Inclut perc (Interactive Toggle) */}
+      {/* 12. Inclut perc (Interactive Basculer) */}
       <td className="p-2 border-r border-[var(--encre-noire)]/10 text-center select-none min-w-[95px]">
         <div className="flex items-center justify-center gap-1.5">
           <EventToggleSwitch
@@ -280,7 +280,7 @@ function EventsDataGridRow({
         </div>
       </td>
 
-      {/* 13. Inclut danse (Interactive Toggle) */}
+      {/* 13. Inclut danse (Interactive Basculer) */}
       <td className="p-2 border-r border-[var(--encre-noire)]/10 text-center select-none min-w-[95px]">
         <div className="flex items-center justify-center gap-1.5">
           <EventToggleSwitch
@@ -294,7 +294,7 @@ function EventsDataGridRow({
         </div>
       </td>
 
-      {/* 14. Soumis à validation (Interactive Toggle) */}
+      {/* 14. Soumis à validation (Interactive Basculer) */}
       <td className="p-2 border-r border-[var(--encre-noire)]/10 text-center select-none min-w-[125px]">
         <div className="flex items-center justify-center gap-1.5">
           <EventToggleSwitch
@@ -308,7 +308,7 @@ function EventsDataGridRow({
         </div>
       </td>
 
-      {/* 15. Inscriptions requises (Interactive Toggle) */}
+      {/* 15. Inscriptions requises (Interactive Basculer) */}
       <td className="p-2 text-center select-none min-w-[125px]">
         <div className="flex items-center justify-center gap-1.5">
           <EventToggleSwitch

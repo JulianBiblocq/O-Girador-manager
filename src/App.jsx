@@ -63,11 +63,13 @@ const POLES_CONFIG = [
   {
     id: 'accueil',
     label: 'Accueil',
+    labelKey: 'poles.accueil',
     tabs: []
   },
   {
     id: 'mon-espace',
     label: 'Espace',
+    labelKey: 'poles.mon-espace',
     tabs: [
       { id: 'profil', label: 'Profil', labelKey: 'tabProfil' },
       { id: 'mon-parcours', label: 'Mon Parcours', labelKey: 'tabParcours' },
@@ -82,7 +84,7 @@ const POLES_CONFIG = [
   {
     id: 'diffusion',
     label: 'Diffusion',
-    labelKey: 'diffusion',
+    labelKey: 'poles.diffusion',
     tabs: [
       { id: 'gigs-pipeline', label: 'Suivi des Prestations', labelKey: 'tabGigsPipeline' },
       { id: 'diffusion-contacts', label: 'Carnet de Contacts CRM', labelKey: 'tabDiffusionContacts' }
@@ -91,6 +93,7 @@ const POLES_CONFIG = [
   {
     id: 'tresorerie',
     label: 'Trésorerie',
+    labelKey: 'poles.tresorerie',
     tabs: [
       { id: 'dashboard-finance', label: 'Synthèse', labelKey: 'tabDashboard' },
       { id: 'cotisations', label: 'Cotisations', labelKey: 'tabCotisations' },
@@ -103,6 +106,7 @@ const POLES_CONFIG = [
   {
     id: 'logistique',
     label: 'Logistique',
+    labelKey: 'poles.logistique',
     tabs: [
       { id: 'inventory', label: 'Instruments', labelKey: 'tabInventory' },
       { id: 'orders-manager', label: 'Commandes', labelKey: 'tabOrders' },
@@ -115,6 +119,7 @@ const POLES_CONFIG = [
   {
     id: 'studio',
     label: 'Studio',
+    labelKey: 'poles.studio',
     tabs: [
       { id: 'studio-social', label: 'Studio social', labelKey: 'tabStudioSocial' },
       { id: 'studio-events', label: 'Événements', labelKey: 'tabStudioEvents' },
@@ -128,6 +133,7 @@ const POLES_CONFIG = [
   {
     id: 'mestre',
     label: 'Mestria',
+    labelKey: 'poles.mestre',
     tabs: [
       { id: 'mestre-orientation', label: 'Casting', labelKey: 'tabMestreOrientation' },
       { id: 'mestre-events', label: 'Événements', labelKey: 'tabMestreEvents' },
@@ -139,7 +145,7 @@ const POLES_CONFIG = [
   {
     id: 'pedagogie',
     label: 'Pédagogie',
-    labelKey: 'polePedagogie',
+    labelKey: 'poles.pedagogie',
     tabs: [
       { id: 'varal-manager', label: 'Varal Pédagogique', labelKey: 'tabVaral' },
       { id: 'mestre-pedagogy-manager', label: 'Gestion des QCM', labelKey: 'tabMestrePedagogyManager' },
@@ -150,7 +156,7 @@ const POLES_CONFIG = [
   {
     id: 'vitrine',
     label: 'Vitrine',
-    labelKey: 'poleVitrine',
+    labelKey: 'poles.vitrine',
     tabs: [
       { id: 'vitrine-general', label: 'Général & SEO' },
       { id: 'vitrine-presentation', label: 'Présentation' },
@@ -164,6 +170,7 @@ const POLES_CONFIG = [
   {
     id: 'config',
     label: 'Configuration',
+    labelKey: 'poles.config',
     tabs: [
       { id: 'config-identity', label: 'Identité', labelKey: 'tabConfigIdentity' },
       { id: 'config-communication', label: 'Communication & Newsletter', labelKey: 'tabConfigCommunication' },
@@ -283,7 +290,7 @@ export default function App() {
     });
   }, [profileData?.groupId]);
 
-  // Load branding in real-time
+  // Charger branding in real-time
   useEffect(() => {
     let activeGroupId = profileData?.groupId || null;
     
@@ -395,7 +402,7 @@ export default function App() {
     '--cordel-vert': branding.colors.secondary
   } : {};
 
-  // Initialize theme: force light theme by default, disable dark mode completely
+  // Initialiser theme: force light theme by default, disable dark mode completely
   useEffect(() => {
     document.documentElement.classList.remove('dark');
   }, []);
@@ -564,7 +571,7 @@ export default function App() {
 
       const iconDataUrl = canvas.toDataURL('image/png');
 
-      // Update favicon and apple-touch-icon with branded canvas icon
+      // Mettre à jour favicon and apple-touch-icon with branded canvas icon
       let faviconElement = document.querySelector('link#favicon') || document.querySelector('link[rel="icon"]');
       if (faviconElement && iconDataUrl) {
         faviconElement.href = iconDataUrl;
@@ -574,7 +581,7 @@ export default function App() {
         appleIconElement.href = iconDataUrl;
       }
 
-      // Update meta theme-color
+      // Mettre à jour meta theme-color
       let themeMeta = document.querySelector('meta[name="theme-color"]');
       if (themeMeta && primaryCol) {
         themeMeta.setAttribute('content', primaryCol);
@@ -645,7 +652,7 @@ export default function App() {
     return () => window.removeEventListener('popstate', handleDeepLinkNavigation);
   }, [user, profileData]);
 
-  // Sync unread private messages count
+  // Synchroniser unread private messages count
   useEffect(() => {
     if (!user?.uid) {
       setUnreadPrivateMessagesCount(0);
@@ -738,7 +745,7 @@ export default function App() {
   const handleSignOut = async () => {
     try {
       await signOut(auth);
-      setCurrentView('dashboard'); // Reset navigation view on sign out
+      setCurrentView('dashboard'); // Réinitialiser navigation view on sign out
     } catch (error) {
       console.error("Erreur lors de la déconnexion :", error);
     }
@@ -776,7 +783,7 @@ export default function App() {
 
   // Called after onboarding completes successfully
   const handleOnboardingComplete = () => {
-    // No need to fetch manually, the onSnapshot listener handles it automatically
+    // No need to récupérer manually, the onSnapshot listener handles it automatically
   };
 
   // 1. Écran de chargement (Authentification ou chargement Firestore)
@@ -890,7 +897,7 @@ export default function App() {
   const isModuleEnabled = (tabId, poleId) => {
     if (!enabledModules) return true;
 
-    // Check Pôles activation
+    // Vérifier Pôles activation
     if (poleId === 'diffusion' && enabledModules.diffusion === false) return false;
     if (poleId === 'tresorerie' && enabledModules.tresorerie === false) return false;
     if (poleId === 'logistique' && enabledModules.logistique === false && enabledModules.commandes === false) return false;
@@ -902,7 +909,7 @@ export default function App() {
     if (['mestre-sante-troupe', 'mestre-pedagogy-manager', 'mestre-auto-eval', 'mestre-sequenceur'].includes(tabId) && enabledModules.mestre === false) return false;
     if (tabId === 'varal-manager' && enabledModules.studioSocial === false) return false;
 
-    // Check Tab-level module toggle
+    // Vérifier Tab-level module basculer
     if (tabId === 'gigs-pipeline' && enabledModules.diffusion === false) return false;
     if (['dashboard-finance', 'cotisations', 'events-finances', 'operations-diverses', 'frais-km', 'reports-exports'].includes(tabId) && enabledModules.tresorerie === false) return false;
     if (tabId === 'mon-parcours' && enabledModules.monParcoursGlobal === false) return false;
@@ -918,13 +925,13 @@ export default function App() {
   };
 
   const checkTabAccess = (tabId, poleId) => {
-    // 0. Strict Global Feature Toggle check (Hides & blocks for EVERYONE including super-admin if OFF)
+    // 0. Strict Global Feature Basculer vérifier (Hides & blocks for EVERYONE including super-admin if OFF)
     if (!isModuleEnabled(tabId, poleId)) return false;
 
     // Master Key Bypass ONLY if Break-Glass Technical Intervention Mode is ACTIVE
     if (isMasterKeyActive) return true;
 
-    // Centralized access rule check by roles and tags
+    // Centralized access rule vérifier by roles and tags
     return canAccessTabPermission(tabId, poleId, profileData, permissionsMatrice, userTags);
   };
 

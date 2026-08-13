@@ -242,7 +242,7 @@ export default function SystemAdminPanel({ profileData, associationName: propAss
       const userRef = doc(db, 'users', targetUserId);
       await updateDoc(userRef, updatePayload);
       
-      // Clear drafts upon success
+      // Effacer drafts upon success
       setDraftRoles((prev) => {
         const copy = { ...prev };
         delete copy[targetUserId];

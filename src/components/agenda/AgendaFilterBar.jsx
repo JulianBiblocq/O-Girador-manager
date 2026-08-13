@@ -3,8 +3,8 @@ import { XiloEye, XiloEyeOff } from '../XiloIcons';
 
 /**
  * AgendaFilterBar provides a 2-tier filtering system for the Agenda:
- * - Tier 1: Discipline filter (Tous, Percussion, Danse)
- * - Tier 2: Event type filter (Prestation, Répétition, Stage, etc.) with hide/show toggles
+ * - Tier 1: Discipline filtrer (Tous, Percussion, Danse)
+ * - Tier 2: Event type filtrer (Prestation, Répétition, Stage, etc.) with hide/show toggles
  */
 export default function AgendaFilterBar({
   disciplineFilter,
@@ -72,7 +72,7 @@ export default function AgendaFilterBar({
           {t ? t('agendaFilter.typeLabel') : 'Type :'}
         </span>
 
-        {/* Type Filter "Tous" */}
+        {/* Type Filtrer "Tous" */}
         <button
           type="button"
           onClick={() => {

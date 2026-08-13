@@ -27,7 +27,7 @@ export default function PollDisplay({ poll, threadId, userId, allUsers = [], isA
   const allowMultiple = poll.allowMultiple === true;
   const totalVotes = poll.options.reduce((sum, opt) => sum + (Array.isArray(opt.votes) ? opt.votes.length : 0), 0);
 
-  // Map user UIDs to names helper
+  // Map user UIDs to names utilitaire
   const getUserName = (uid) => {
     const found = allUsers.find(u => u.id === uid || u.uid === uid);
     if (found) {
@@ -46,7 +46,7 @@ export default function PollDisplay({ poll, threadId, userId, allUsers = [], isA
         const hasVotedThisOpt = currentVotes.includes(userId);
 
         if (allowMultiple) {
-          // Multi-choice mode: toggle this option independently
+          // Multi-choice mode: basculer this option independently
           if (opt.id === optionId) {
             return {
               ...opt,
@@ -55,7 +55,7 @@ export default function PollDisplay({ poll, threadId, userId, allUsers = [], isA
           }
           return opt;
         } else {
-          // Single-choice mode: remove user from all other options
+          // Single-choice mode: retirer user from all other options
           const cleanedVotes = currentVotes.filter(uid => uid !== userId);
           if (opt.id === optionId) {
             return {

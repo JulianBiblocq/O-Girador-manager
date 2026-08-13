@@ -14,7 +14,7 @@ const shuffleArray = (array) => {
   return arr;
 };
 
-// Helper pour appliquer les surcharges manuelles du Mestre
+// Utilitaire pour appliquer les surcharges manuelles du Mestre
 const applyOverrides = (questions, overrides = {}) => {
   if (!overrides || Object.keys(overrides).length === 0) return questions;
   
@@ -27,7 +27,7 @@ const applyOverrides = (questions, overrides = {}) => {
   });
 };
 
-// Helper pour le Lexique Transversal
+// Utilitaire pour le Lexique Transversal
 const getTransversalLexique = (allSheetsData = [], allSongs = []) => {
   const translations = new Set();
   
@@ -73,7 +73,7 @@ export const generateQuizFromSheet = (sheetData, allSheetsData = [], allSongsDat
   allSheetsData = Array.isArray(allSheetsData) ? allSheetsData : [];
   allSongsData = Array.isArray(allSongsData) ? allSongsData : [];
 
-  // Helper pour puiser dans les viviers
+  // Utilitaire pour puiser dans les viviers
   const getDistractors = (pools, needed = 3, currentVal = '') => {
     const result = [];
     for (const pool of pools) {

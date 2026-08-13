@@ -121,7 +121,7 @@ class OGiradorTracker {
 
       if (!awaitResponse && navigator.sendBeacon) {
         // navigator.sendBeacon ne supporte pas facilement les headers personnalisés 
-        // avec application/json (requiert Blob). On utilise fetch keepalive.
+        // avec application/json (requiert Blob). On utilise récupérer keepalive.
         fetch(API_URL, {
           method: 'POST',
           headers,

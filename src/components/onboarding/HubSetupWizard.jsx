@@ -400,7 +400,7 @@ export default function HubSetupWizard({ brandingStyle, onComplete }) {
                       >
                         Sélectionner une image
                       </label>
-                      <p className="text-[10px] text-stone-500 mt-2">Format PNG ou JPG. Poids minime recommandé.</p>
+                      <p className="text-[10px] text-stone-500 mt-2">Formater PNG ou JPG. Poids minime recommandé.</p>
                     </div>
                   </div>
                 </div>

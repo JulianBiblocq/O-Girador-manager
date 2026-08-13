@@ -14,7 +14,7 @@ import CordelCard from '../CordelCard';
 export default function CostumeVisualizer({ costume, checklist = {}, onSelectPiece }) {
   const pieces = costume?.pieces || [];
 
-  // Helper to infer body location if missing from older piece definitions
+  // Fonction utilitaire pour infer body location if missing from older piece definitions
   const getEmplacement = (piece) => {
     if (piece.emplacement) return piece.emplacement.toLowerCase();
     const name = (piece.name || '').toLowerCase();

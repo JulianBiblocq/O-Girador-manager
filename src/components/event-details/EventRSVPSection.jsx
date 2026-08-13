@@ -67,7 +67,7 @@ export default function EventRSVPSection({
   const [addingInvite, setAddingInvite] = useState(false);
   const [isCalendarMenuOpen, setIsCalendarMenuOpen] = useState(false);
 
-  // Initialize guest instrument to first option when list is loaded
+  // Initialiser guest instrument to first option when list is loaded
   React.useEffect(() => {
     if (instrumentsDisponibles && instrumentsDisponibles.length > 0 && !inviteInstrument) {
       setInviteInstrument(instrumentsDisponibles[0]);
@@ -118,7 +118,7 @@ export default function EventRSVPSection({
             </p>
           </CordelCard>
 
-          {/* Calendar Sync Button */}
+          {/* Calendar Synchroniser Button */}
           <div className="relative w-full">
             <button
               type="button"
@@ -187,7 +187,7 @@ export default function EventRSVPSection({
             </div>
           </CordelCard>
 
-          {/* Calendar Sync Button can still be visible */}
+          {/* Calendar Synchroniser Button can still be visible */}
           <div className="relative w-full mt-2">
             <button
               type="button"
@@ -526,7 +526,7 @@ export default function EventRSVPSection({
             )}
           </CordelCard>
 
-          {/* Action Buttons: Validation & Calendar Sync */}
+          {/* Action Buttons: Validation & Calendar Synchroniser */}
           <div className="flex flex-col sm:flex-row gap-2.5 w-full mt-2">
             <CordelButton 
               variant={status === 'present' ? 'vert' : status === 'absent' ? 'rouge' : 'ocre'} 

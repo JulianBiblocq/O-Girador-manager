@@ -31,8 +31,8 @@ export default class ErrorBoundary extends React.Component {
       const hubUrl = import.meta.env.VITE_ECOSYSTEM_HUB_URL || 'https://hook.eu2.make.com/placeholder-feedback';
       
       if (navigator.sendBeacon) {
-        // Blob is required for sendBeacon to set application/json content type correctly if accepted by server, 
-        // but text/plain is safer for CORS. We'll use fetch with keepalive as primary since it supports headers.
+        // Blob is required for sendBeacon to définir application/json content type correctly if accepted by server, 
+        // but text/plain is safer for CORS. We'll use récupérer with keepalive as primary since it supports headers.
         fetch(hubUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

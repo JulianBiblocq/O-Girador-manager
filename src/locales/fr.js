@@ -236,7 +236,11 @@ export const fr = {
     takePhoto: "Prendre une photo",
     familyHeading: "Ma Famille / Comptes rattachés",
     addChildBtn: "Ajouter un enfant",
-    dependentBadge: "Enfant / Dépendant"
+    dependentBadge: "Enfant / Dépendant",
+    relationChild: "Enfant",
+    removeDependentTitle: "Retirer le compte rattaché",
+    removeDependentDesc: "Êtes-vous sûr de vouloir détacher ce compte ?",
+    addDependentTitle: "Rattacher un nouveau compte"
   },
   widgetMotMestre: {
     title: "Le Mot du Mestre",

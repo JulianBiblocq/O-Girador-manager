@@ -38,7 +38,7 @@ export default function PrivateChatView({ user, otherUser, profileData, initialT
       const fetched = [];
       querySnapshot.forEach((docSnap) => {
         const data = docSnap.data();
-        // Filter locally to get messages only between this specific pair
+        // Filtrer locally to obtenir messages only between this specific pair
         const isBetweenUs = (data.senderId === user.uid && data.recipientId === otherUser.id) ||
                             (data.senderId === otherUser.id && data.recipientId === user.uid);
         if (isBetweenUs) {
@@ -49,7 +49,7 @@ export default function PrivateChatView({ user, otherUser, profileData, initialT
         }
       });
 
-      // Sort chronologically
+      // Trier chronologically
       fetched.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
       setMessages(fetched);
 

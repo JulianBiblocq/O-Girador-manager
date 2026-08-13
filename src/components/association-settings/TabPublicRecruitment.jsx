@@ -133,7 +133,7 @@ export default function TabPublicRecruitment({ formData, handleChange, saving, g
           </span>
         </h4>
 
-        {/* Interrupteur Bascule (Toggle) d'activation de la section recrutement */}
+        {/* Interrupteur Bascule (Basculer) d'activation de la section recrutement */}
         <div className="flex items-center gap-3 p-3 bg-[#fdfaf2] border border-encre-noire/20 rounded-[4px_6px_3px_5px]">
           <input
             type="checkbox"
@@ -168,7 +168,7 @@ export default function TabPublicRecruitment({ formData, handleChange, saving, g
           </div>
         </div>
 
-        {/* Formulaire conditionnel d'édition (visible si le toggle est activé) */}
+        {/* Formulaire conditionnel d'édition (visible si le basculer est activé) */}
         {publicTheme.afficherRecrutement !== false && (
           <div className="flex flex-col gap-6 pt-2 border-t border-dashed border-cordel-master-dark/20 animate-fade-in">
             
@@ -247,7 +247,7 @@ export default function TabPublicRecruitment({ formData, handleChange, saving, g
               groupId={groupId}
             />
 
-            {/* Grille 2 colonnes : Lien & Libellé du bouton + Toggle Icône */}
+            {/* Grille 2 colonnes : Lien & Libellé du bouton + Basculer Icône */}
             <div className="flex flex-col gap-3 pt-2 border-t border-dashed border-cordel-master-dark/20">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {/* URL du lien (ex: HelloAsso, mailto...) */}
@@ -281,7 +281,7 @@ export default function TabPublicRecruitment({ formData, handleChange, saving, g
                 </div>
               </div>
 
-              {/* Interrupteur Toggle Icône du bouton de recrutement */}
+              {/* Interrupteur Basculer Icône du bouton de recrutement */}
               <div className="flex items-center gap-2 pt-1">
                 <input
                   type="checkbox"

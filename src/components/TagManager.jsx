@@ -31,7 +31,7 @@ export default function TagManager({ groupId, onBack, role, isSystemAdmin }) {
   const [draggedIndex, setDraggedIndex] = useState(null);
   const [dragOverIndex, setDragOverIndex] = useState(null);
 
-  // Security Check: Mestres, Super-Admins and System Admins only
+  // Security Vérifier: Mestres, Super-Admins and System Admins only
   const isAuthorized = role === 'mestre' || role === 'super-admin' || isSystemAdmin === true;
 
   useEffect(() => {
@@ -139,7 +139,7 @@ export default function TagManager({ groupId, onBack, role, isSystemAdmin }) {
     const cleanF = nomF.trim();
     if (!cleanM || !cleanF || !groupId) return;
 
-    // Check for duplicate IDs or names (case insensitive)
+    // Vérifier for duplicate IDs or names (case insensitive)
     const isDuplicate = tagsList.some(t => 
       t.id.toLowerCase() === cleanM.toLowerCase() ||
       t.nomM.toLowerCase() === cleanM.toLowerCase()
@@ -244,7 +244,7 @@ export default function TagManager({ groupId, onBack, role, isSystemAdmin }) {
     }
   };
 
-  // Render Access Denied card if security fails
+  // Afficher Access Denied card if security fails
   if (!isAuthorized) {
     return (
       <div className="text-center py-12 select-none">
@@ -284,7 +284,7 @@ export default function TagManager({ groupId, onBack, role, isSystemAdmin }) {
       {/* Guide Box */}
       <PermissionsGuideBox defaultOpen={false} />
 
-      {/* Add Tag Form */}
+      {/* Ajouter Tag Form */}
       <CordelCard variant="default" useExtremeBorder={true} className="p-5">
         <h3 className="panel-title text-sm font-bold text-cordel-wood mb-1">
           {t('tags.createLabel') || "Créer une nouvelle étiquette"}

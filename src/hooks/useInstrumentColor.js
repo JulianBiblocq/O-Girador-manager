@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase';
 
-// Helper to convert hex colors to a softer pastel version (for readable backgrounds)
+// Fonction utilitaire pour convert hex colors to a softer pastel version (for readable backgrounds)
 export function getPastelColor(hex, opacity = 0.12) {
   if (!hex || hex === 'transparent') return 'rgba(140, 133, 123, 0.12)';
   

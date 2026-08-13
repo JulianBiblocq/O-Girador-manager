@@ -44,7 +44,7 @@ export default function AutoEvalQuizContainer({
 
   const [customDistractors, setCustomDistractors] = useState({});
 
-  // Load association config
+  // Charger association config
   useEffect(() => {
     const loadConfig = async () => {
       if (!profileData?.groupId) return;

@@ -42,7 +42,7 @@ export default function MestreAutoEvalConfig({ profileData }) {
   const fetchData = async () => {
     setLoading(true);
     try {
-      // Fetch Songs
+      // Récupérer Songs
       const qDocs = query(collection(db, 'documents'), where('groupId', '==', groupId));
       const docsSnap = await getDocs(qDocs);
       const fetchedSongs = [];
@@ -52,7 +52,7 @@ export default function MestreAutoEvalConfig({ profileData }) {
       });
       setSongs(fetchedSongs);
 
-      // Fetch Global QCM Config and enabledModules
+      // Récupérer Global QCM Config and enabledModules
       const assocRef = doc(db, 'associations', groupId);
       const assocSnap = await getDoc(assocRef);
       if (assocSnap.exists()) {
@@ -65,7 +65,7 @@ export default function MestreAutoEvalConfig({ profileData }) {
         }
       }
 
-      // Fetch Rhythms from Storage
+      // Récupérer Rhythms from Storage
       const folderRef = ref(storage, `documents/${groupId}/sequencer`);
       const res = await listAll(folderRef);
       const fetchedRhythms = await Promise.all(
@@ -79,7 +79,7 @@ export default function MestreAutoEvalConfig({ profileData }) {
       fetchedRhythms.sort((a, b) => a.titre.localeCompare(b.titre));
       setRhythms(fetchedRhythms);
 
-      // Fetch Rhythm Metadata for Custom Questions
+      // Récupérer Rhythm Metadata for Custom Questions
       const qMeta = collection(db, 'associations', groupId, 'rhythmMetadata');
       const metaSnap = await getDocs(qMeta);
       const meta = {};
@@ -99,7 +99,7 @@ export default function MestreAutoEvalConfig({ profileData }) {
     }
   }, [groupId, isAuthorized]);
 
-      // Removed setSongs as it's no longer used for per-song config saving here.
+      // Removed setSongs as it's no longer used for per-song config enregistrement de here.
 
   const handleAddRhythmQuestion = async (e) => {
     e.preventDefault();

@@ -66,7 +66,7 @@ export default function RichTextEditor({
     }
   });
 
-  // Sync value prop when changed externally (e.g. form resets)
+  // Synchroniser value prop when changed externally (e.g. form resets)
   useEffect(() => {
     if (editor && value !== editor.getHTML()) {
       if (value === '' || value === '<p></p>') {
@@ -81,7 +81,7 @@ export default function RichTextEditor({
     return null;
   }
 
-  // Handle Link Button
+  // Gérer Link Button
   const handleSetLink = () => {
     const previousUrl = editor.getAttributes('link').href;
     const url = window.prompt('URL du lien :', previousUrl || 'https://');

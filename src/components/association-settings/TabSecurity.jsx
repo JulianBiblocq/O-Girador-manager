@@ -135,7 +135,7 @@ export default function TabSecurity({
     setOpenPoles(allClosed);
   };
 
-  // Toggle badge permission for a specific tab (or legacy pole)
+  // Basculer badge permission for a specific tab (or legacy pole)
   const handleTogglePermission = (targetId, tagId, checked) => {
     const currentTags = permissionsMatrice[targetId] || [];
     const updatedTags = checked
@@ -148,7 +148,7 @@ export default function TabSecurity({
     });
   };
 
-  // Toggle all badges for a specific tab
+  // Basculer all badges for a specific tab
   const handleToggleAllTabBadges = (tabId, selectAll) => {
     const allTagIds = tagsDisponibles.map(t => getTagId(t));
     const updatedTags = selectAll ? allTagIds : [];
@@ -158,7 +158,7 @@ export default function TabSecurity({
     });
   };
 
-  // Helper to render badge checkboxes for a target (tabId or poleId)
+  // Fonction utilitaire pour afficher badge checkboxes for a target (tabId or poleId)
   const renderTagCheckboxes = (targetId) => {
     const assignedTags = permissionsMatrice[targetId] || [];
 
@@ -294,7 +294,7 @@ export default function TabSecurity({
                                 )}
                               </div>
 
-                              {/* Quick check/uncheck tab buttons */}
+                              {/* Quick vérifier/uncheck tab buttons */}
                               <div className="flex gap-1.5 text-[8px] font-extrabold">
                                 <button
                                   type="button"

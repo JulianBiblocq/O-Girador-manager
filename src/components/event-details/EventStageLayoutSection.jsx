@@ -19,7 +19,7 @@ export default function EventStageLayoutSection({
 }) {
   const { confirm } = useConfirm();
   const { getColorForInstrument } = useInstrumentColor(profileData?.groupId);
-  // Check if a layout exists
+  // Vérifier if a layout exists
   const hasLayout = event.stageLayout?.placements && Object.keys(event.stageLayout.placements).length > 0;
 
   const canEditLayout = isAuthorized || profileData?.role === 'prof-danse' || profileData?.role === 'prof_danse';
@@ -40,7 +40,7 @@ export default function EventStageLayoutSection({
   const [saving, setSaving] = useState(false);
   const [isPublished, setIsPublished] = useState(event.isStageLayoutPublished || false);
 
-  // Sync state with event.stageLayout changes
+  // Synchroniser state with event.stageLayout changes
   useEffect(() => {
     if (event.stageLayout) {
       setLayout({
@@ -85,7 +85,7 @@ export default function EventStageLayoutSection({
     }))
   ];
 
-  // Filter out any placements of members who are no longer registered as present
+  // Filtrer out any placements of members who are no longer registered as present
   const presentUserIds = new Set(presentMembers.map((m) => m.id));
   const activePlacements = {};
   Object.entries(layout.placements).forEach(([uid, pos]) => {
@@ -111,7 +111,7 @@ export default function EventStageLayoutSection({
     return 'border-encre-noire/30 text-encre-noire';
   };
 
-  // Helper to format names to fits in grid cells (e.g. "Julien B.")
+  // Fonction utilitaire pour formater names to fits in grid cells (e.g. "Julien B.")
   const formatMemberName = (fullName) => {
     if (!fullName) return '';
     const parts = fullName.split(' ');
@@ -128,7 +128,7 @@ export default function EventStageLayoutSection({
     );
 
     if (selectedMemberId) {
-      // Validate pupitre for Dance row (row < 0)
+      // Valider pupitre for Dance row (row < 0)
       if (row < 0) {
         const selectedMember = presentMembers.find(m => m.id === selectedMemberId);
         const isDancer = selectedMember && (
@@ -147,7 +147,7 @@ export default function EventStageLayoutSection({
       // Place selected member
       const newPlacements = { ...activePlacements };
 
-      // Swap or clear old position if they were already placed
+      // Swap or effacer old position if they were already placed
       newPlacements[selectedMemberId] = { row, col };
 
       // Unplace the previous member who was in this cell
@@ -177,7 +177,7 @@ export default function EventStageLayoutSection({
 
   const handleRowsChange = (e) => {
     const val = Math.max(2, Math.min(10, parseInt(e.target.value) || 5));
-    // Clear out of bounds placements but keep row 0 (Mestre)
+    // Effacer out of bounds placements but keep row 0 (Mestre)
     const filteredPlacements = {};
     Object.entries(activePlacements).forEach(([uid, pos]) => {
       if (pos.row === 0 || pos.row <= val) {
@@ -189,7 +189,7 @@ export default function EventStageLayoutSection({
 
   const handleColsChange = (e) => {
     const val = Math.max(2, Math.min(10, parseInt(e.target.value) || 5));
-    // Clear out of bounds placements but keep col 0 (Mestre)
+    // Effacer out of bounds placements but keep col 0 (Mestre)
     const filteredPlacements = {};
     Object.entries(activePlacements).forEach(([uid, pos]) => {
       if (pos.col === 0 || pos.col <= val) {
@@ -265,7 +265,7 @@ export default function EventStageLayoutSection({
     }
   };
 
-  // Build grid cells to render
+  // Build grid cells to afficher
   const gridCells = [];
   for (let r = 1; r <= layout.rows; r++) {
     for (let c = 1; c <= layout.cols; c++) {
@@ -307,7 +307,7 @@ export default function EventStageLayoutSection({
       useExtremeBorder={true} 
       className={`py-4 px-5 select-none ${isAuthorized && !isPublished ? 'bg-amber-50/40 border-dashed border-2 border-amber-600/50' : ''}`}
     >
-      {/* Header / Toggle Accordion Button */}
+      {/* Header / Basculer Accordion Button */}
       {isAuthorized && !isPublished && (
         <div className="mb-3 px-3 py-1.5 bg-amber-100 border border-amber-500 text-amber-900 rounded font-black text-[10px] uppercase tracking-wider flex items-center gap-2 w-fit shadow-[1.5px_1.5px_0px_0px_#181716]">
           <span>🔒 Brouillon / Masqué aux adhérents</span>
@@ -494,7 +494,7 @@ export default function EventStageLayoutSection({
                                       Danse
                                     </span>
                                     
-                                    {/* Admin remove placement button */}
+                                    {/* Admin retirer placement button */}
                                     {isEditingMode && (
                                       <button
                                         type="button"
@@ -564,7 +564,7 @@ export default function EventStageLayoutSection({
                             {mestreMember.instrument.split(' ')[0]}
                           </span>
                           
-                          {/* Admin remove placement button */}
+                          {/* Admin retirer placement button */}
                           {isEditingMode && (
                             <button
                               type="button"
@@ -637,7 +637,7 @@ export default function EventStageLayoutSection({
                             {member.instrument.split(' ')[0]}
                           </span>
                           
-                          {/* Admin remove placement cross button */}
+                          {/* Admin retirer placement cross button */}
                           {isEditingMode && (
                             <button
                               type="button"

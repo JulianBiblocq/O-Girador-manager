@@ -16,7 +16,7 @@ export default function EventsDataGrid({
 }) {
   const [sortConfig, setSortConfig] = useState({ key: 'date', direction: 'desc' });
 
-  // Handle header click to cycle sorting direction
+  // Gérer header click to cycle sorting direction
   const handleHeaderClick = (key) => {
     setSortConfig((prev) => {
       if (prev.key === key) {
@@ -110,7 +110,7 @@ export default function EventsDataGrid({
     });
   }, [events, sortConfig]);
 
-  // Helper to render sorting chevrons
+  // Fonction utilitaire pour afficher sorting chevrons
   const renderSortChevron = (key) => {
     if (sortConfig.key !== key) {
       return <span className="opacity-30 text-[9px] ml-1 font-bold select-none">↕️</span>;

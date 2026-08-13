@@ -95,7 +95,7 @@ export default function Dashboard({ user, profileData, onNavigateToTrombi, onNav
     return () => unsubscribe();
   }, [profileData?.groupId]);
 
-  // Real-time check for active announcements targeting the user
+  // Real-time vérifier for active announcements targeting the user
   useEffect(() => {
     if (!profileData?.groupId) return;
     const announcementsRef = collection(db, 'announcements');
@@ -125,7 +125,7 @@ export default function Dashboard({ user, profileData, onNavigateToTrombi, onNav
     return () => unsubscribe();
   }, [profileData?.groupId, profileData?.tags, profileData?.role, profileData?.isSystemAdmin]);
 
-  // Real-time check for active campaigns (open orders)
+  // Real-time vérifier for active campaigns (open orders)
   useEffect(() => {
     if (!profileData?.groupId) return;
     const campaignsRef = collection(db, 'campaigns');
@@ -165,7 +165,7 @@ export default function Dashboard({ user, profileData, onNavigateToTrombi, onNav
 
       {/* Header Panel */}
       <div className="flex justify-between items-center py-2 border-b-2 border-dashed border-cordel-master-dark/30 select-none">
-        {/* Toggle Language Button in Header */}
+        {/* Basculer Language Button in Header */}
         <button 
           type="button"
           onClick={toggleLanguage}

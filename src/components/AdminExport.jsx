@@ -17,45 +17,45 @@ export default function AdminExport({ user, profileData, onBack }) {
 
   const columnsConfig = {
     identity: {
-      label: "Identité & Contact",
+      label: t('export.catIdentity', "Identité & Contact"),
       fields: [
-        { key: 'nom', label: 'Nom', defaultSelected: true },
-        { key: 'prenom', label: 'Prénom', defaultSelected: true },
-        { key: 'email', label: 'Email', defaultSelected: true },
-        { key: 'telephone', label: 'Téléphone', defaultSelected: true },
-        { key: 'adresse', label: 'Adresse physique', defaultSelected: false }
+        { key: 'nom', label: t('export.nom', 'Nom'), defaultSelected: true },
+        { key: 'prenom', label: t('export.prenom', 'Prénom'), defaultSelected: true },
+        { key: 'email', label: t('export.email', 'Email'), defaultSelected: true },
+        { key: 'telephone', label: t('export.telephone', 'Téléphone'), defaultSelected: true },
+        { key: 'adresse', label: t('export.adresse', 'Adresse physique'), defaultSelected: false }
       ]
     },
     artistic: {
-      label: "Profil Artistique",
+      label: t('export.catArtistic', "Profil Artistique"),
       fields: [
-        { key: 'instrumentsJoues', label: 'Instruments joués', defaultSelected: true },
-        { key: 'niveau', label: 'Niveaux de percussion', defaultSelected: false },
-        { key: 'niveauDanse', label: 'Niveau de Danse', defaultSelected: false }
+        { key: 'instrumentsJoues', label: t('export.instrumentsJoues', 'Instruments joués'), defaultSelected: true },
+        { key: 'niveau', label: t('export.niveauPercu', 'Niveaux de percussion'), defaultSelected: false },
+        { key: 'niveauDanse', label: t('export.niveauDanse', 'Niveau de Danse'), defaultSelected: false }
       ]
     },
     roles: {
-      label: "Rôles & Statuts",
+      label: t('export.catRoles', "Rôles & Statuts"),
       fields: [
-        { key: 'role', label: 'Rôle', defaultSelected: true },
-        { key: 'tags', label: 'Badges / Étiquettes', defaultSelected: false }
+        { key: 'role', label: t('export.role', 'Rôle'), defaultSelected: true },
+        { key: 'tags', label: t('export.tags', 'Badges / Étiquettes'), defaultSelected: false }
       ]
     },
     treasury: {
-      label: "Trésorerie",
+      label: t('export.catTreasury', "Trésorerie"),
       fields: [
-        { key: 'paymentStatus', label: 'Statut de paiement', defaultSelected: false },
-        { key: 'adhesionBase', label: 'Adhésion de base', defaultSelected: false },
-        { key: 'selectedOptions', label: 'Options cochées', defaultSelected: false },
-        { key: 'montantTotal', label: 'Montant total', defaultSelected: false },
-        { key: 'anneeEnCours', label: 'Année en cours', defaultSelected: false }
+        { key: 'paymentStatus', label: t('export.paymentStatus', 'Statut de paiement'), defaultSelected: false },
+        { key: 'adhesionBase', label: t('export.adhesionBase', 'Adhésion de base'), defaultSelected: false },
+        { key: 'selectedOptions', label: t('export.selectedOptions', 'Options cochées'), defaultSelected: false },
+        { key: 'montantTotal', label: t('export.montantTotal', 'Montant total'), defaultSelected: false },
+        { key: 'anneeEnCours', label: t('export.anneeEnCours', 'Année en cours'), defaultSelected: false }
       ]
     },
     logistics: {
-      label: "Logistique & Santé",
+      label: t('export.catLogistics', "Logistique & Santé"),
       fields: [
-        { key: 'dietaryRestrictions', label: 'Régime / Préférences alimentaires', defaultSelected: false },
-        { key: 'allergies', label: 'Allergies & Précisions', defaultSelected: false }
+        { key: 'dietaryRestrictions', label: t('export.dietaryRestrictions', 'Régime / Préférences alimentaires'), defaultSelected: false },
+        { key: 'allergies', label: t('export.allergies', 'Allergies & Précisions'), defaultSelected: false }
       ]
     }
   };
@@ -70,7 +70,7 @@ export default function AdminExport({ user, profileData, onBack }) {
     return initial;
   });
 
-  // Load association settings (adhesion fee amount, options description, etc.)
+  // Charger association settings (adhesion fee amount, options description, etc.)
   useEffect(() => {
     if (!profileData?.groupId) return;
     const assocRef = doc(db, 'associations', profileData.groupId);
@@ -83,7 +83,7 @@ export default function AdminExport({ user, profileData, onBack }) {
     });
   }, [profileData?.groupId]);
 
-  // Load group members in real-time
+  // Charger group members in real-time
   useEffect(() => {
     if (!profileData?.groupId) {
       setLoading(false);
@@ -109,7 +109,7 @@ export default function AdminExport({ user, profileData, onBack }) {
           });
         }
       });
-      // Sort users by last name
+      // Trier users by last name
       fetchedMembers.sort((a, b) => (a.nom || '').localeCompare(b.nom || ''));
       setMembers(fetchedMembers);
       setLoading(false);
@@ -139,7 +139,7 @@ export default function AdminExport({ user, profileData, onBack }) {
     });
   };
 
-  // Filter members list based on search bar query
+  // Filtrer members list based on search bar query
   const filteredMembers = members.filter(member => {
     const fullName = `${member.prenom || ''} ${member.nom || ''}`.toLowerCase();
     const email = (member.email || '').toLowerCase();
@@ -166,7 +166,7 @@ export default function AdminExport({ user, profileData, onBack }) {
       return;
     }
 
-    // Calculate base price and options mapping
+    // Calculer base price and options mapping
     const baseAdhesionAmount = associationSettings?.montantAdhesion !== undefined 
       ? associationSettings.montantAdhesion 
       : (associationSettings?.montantCotisation || 0);
@@ -246,7 +246,7 @@ export default function AdminExport({ user, profileData, onBack }) {
       });
     });
 
-    // 3. Format CSV string
+    // 3. Formater CSV string
     // MS Excel France requirement: semicolon separator, UTF-8 BOM, double quotes around values
     const csvContent = "\uFEFF" + [activeHeaders, ...rows]
       .map(row => row.map(val => `"${String(val).replace(/"/g, '""')}"`).join(";"))

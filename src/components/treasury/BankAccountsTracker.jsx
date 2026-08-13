@@ -17,7 +17,7 @@ export default function BankAccountsTracker({
   const [accounts, setAccounts] = useState(defaultAccounts);
   const [saving, setSaving] = useState(false);
 
-  // Sync with Firestore settings
+  // Synchroniser with Firestore settings
   useEffect(() => {
     if (!isEditing) {
       if (associationSettings && Array.isArray(associationSettings.bankAccounts)) {
@@ -38,7 +38,7 @@ export default function BankAccountsTracker({
         if (acc.id === id) {
           let parsedValue = value;
           if (field === 'balance' || field === 'threshold') {
-            // Keep empty input or parse to number
+            // Keep empty input or analyser to number
             parsedValue = value === '' ? '' : parseFloat(value) || 0;
           }
           return { ...acc, [field]: parsedValue };
@@ -74,7 +74,7 @@ export default function BankAccountsTracker({
     setSaving(true);
 
     try {
-      // Validate that all accounts have a name
+      // Valider that all accounts have a name
       const hasEmptyName = accounts.some(acc => !acc.name.trim());
       if (hasEmptyName) {
         alert("Veuillez donner un nom à tous les comptes.");
@@ -85,7 +85,7 @@ export default function BankAccountsTracker({
       // Determine original accounts for comparison
       const originalAccounts = associationSettings?.bankAccounts || defaultAccounts;
 
-      // Update updatedAt timestamp only if balance, threshold, or name changed
+      // Mettre à jour updatedAt timestamp only if balance, threshold, or name changed
       const updatedAccounts = accounts.map(acc => {
         const original = originalAccounts.find(o => o.id === acc.id);
         const nameVal = acc.name.trim();
@@ -238,7 +238,7 @@ export default function BankAccountsTracker({
                     />
                   </div>
 
-                  {/* Delete button */}
+                  {/* Supprimer button */}
                   <div className="flex items-end justify-end sm:self-end pt-1">
                     <button
                       type="button"

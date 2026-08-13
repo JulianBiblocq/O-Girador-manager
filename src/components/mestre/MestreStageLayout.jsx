@@ -11,7 +11,7 @@ export default function MestreStageLayout({ groupId, user, profileData, selected
   const [activeEvent, setActiveEvent] = useState(null);
   const [allUsers, setAllUsers] = useState([]);
 
-  // Fetch all musical events for the dropdown list
+  // Récupérer all musical events for the dropdown list
   useEffect(() => {
     if (!groupId) return;
     const q = query(
@@ -26,14 +26,14 @@ export default function MestreStageLayout({ groupId, user, profileData, selected
           fetched.push({ id: docSnap.id, ...data });
         }
       });
-      // Sort: recent/upcoming first
+      // Trier: recent/upcoming first
       fetched.sort((a, b) => new Date(b.date) - new Date(a.date));
       setEvents(fetched);
     });
     return () => unsubscribe();
   }, [groupId]);
 
-  // Sync selected event object in real-time
+  // Synchroniser selected event object in real-time
   useEffect(() => {
     if (!selectedEventId) {
       setActiveEvent(null);
@@ -49,7 +49,7 @@ export default function MestreStageLayout({ groupId, user, profileData, selected
     return () => unsubscribe();
   }, [selectedEventId]);
 
-  // Fetch all users in real-time (needed for stage layout positioning & avatar photo resolution)
+  // Récupérer all users in real-time (needed for stage layout positioning & avatar photo resolution)
   useEffect(() => {
     if (!groupId) return;
     const q = query(collection(db, 'users'), where('groupId', '==', groupId));

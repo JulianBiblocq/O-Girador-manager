@@ -69,7 +69,7 @@ export default function ForumChannelsManager({ groupId, role, isSystemAdmin, onB
     return base;
   }, [tagsDisponibles]);
 
-  // 1. Sync available channels
+  // 1. Synchroniser available channels
   useEffect(() => {
     if (!groupId) return;
     const channelsRef = collection(db, 'forum_channels');
@@ -81,7 +81,7 @@ export default function ForumChannelsManager({ groupId, role, isSystemAdmin, onB
         fetched.push({ id: docSnap.id, ...docSnap.data() });
       });
       
-      // Sort by order field first, then default order, then name
+      // Trier by order field first, then default order, then name
       const defaultOrder = ["Général", "CA", "Bureau"];
       fetched.sort((a, b) => {
         if (a.order !== undefined && b.order !== undefined) return a.order - b.order;
@@ -261,7 +261,7 @@ export default function ForumChannelsManager({ groupId, role, isSystemAdmin, onB
     }
   };
 
-  // Render channel tree row with reordering buttons
+  // Afficher channel tree row with reordering buttons
   const renderChannelRow = (ch, level = 0, indexInSiblings = 0, totalSiblings = 1) => {
     const childChannels = channels.filter(c => c.parentId === ch.id);
 
@@ -344,7 +344,7 @@ export default function ForumChannelsManager({ groupId, role, isSystemAdmin, onB
           </div>
         </CordelCard>
 
-        {/* Render nested children */}
+        {/* Afficher nested children */}
         {childChannels.map((child, idx) => renderChannelRow(child, level + 1, idx, childChannels.length))}
       </React.Fragment>
     );

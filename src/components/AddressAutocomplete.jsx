@@ -5,8 +5,8 @@ import { useTranslation } from './LanguageContext';
 /**
  * AddressAutocomplete component wraps Google Maps Places AutocompleteElement
  * (the modern Places Web Component) with React controlled state integration.
- * It decouples change/select callbacks using React refs to prevent input freezing
- * due to parent re-rendering cycles.
+ * It decouples change/select callbacks using React refs to emp�cher input freezing
+ * due to parent re-affichage de cycles.
  */
 export default function AddressAutocomplete({ 
   value, 
@@ -26,7 +26,7 @@ export default function AddressAutocomplete({
   const [hasError, setHasError] = useState(false);
   const [isValidSelected, setIsValidSelected] = useState(true);
 
-  // Store callbacks in refs to prevent recreating Google Maps elements
+  // Store callbacks in refs to emp�cher recreating Google Maps elements
   // when parent handlers change (e.g., inline functions or un-memoized handlers).
   const onChangeRef = useRef(onChange);
   const onSelectRef = useRef(onSelect);
@@ -39,7 +39,7 @@ export default function AddressAutocomplete({
     onSelectRef.current = onSelect;
   }, [onSelect]);
 
-  // Helper to find the internal input element within the shadow DOM of PlaceAutocompleteElement
+  // Fonction utilitaire pour find the internal input element within the shadow DOM of PlaceAutocompleteElement
   const findInnerInput = (gmpElement) => {
     const el = gmpElement || autocompleteRef.current;
     if (!el) return null;
@@ -84,7 +84,7 @@ export default function AddressAutocomplete({
         if (!active || !containerRef.current) return;
 
         try {
-          // Create the modern PlaceAutocompleteElement web component programmatically
+          // Créer the modern PlaceAutocompleteElement web component programmatically
           const placeAutocomplete = new maps.places.PlaceAutocompleteElement();
           placeAutocomplete.style.width = '100%';
           
@@ -95,7 +95,7 @@ export default function AddressAutocomplete({
           containerRef.current.replaceChildren(placeAutocomplete);
           autocompleteRef.current = placeAutocomplete;
 
-          // Set the initial value and attach raw input event listener
+          // Définir the initial value and attach raw input event listener
           const initInput = (attempts = 0) => {
             if (!active) return;
             const input = findInnerInput(placeAutocomplete);
@@ -149,7 +149,7 @@ export default function AddressAutocomplete({
               }
 
               if (place) {
-                // Fetch the required address fields (including addressComponents)
+                // Récupérer the required address fields (including addressComponents)
                 await place.fetchFields({
                   fields: ['formattedAddress', 'displayName', 'addressComponents']
                 });
@@ -236,7 +236,7 @@ export default function AddressAutocomplete({
     };
   }, [name]); // Removed onChangeRef, onSelectRef, and value from dependencies
 
-  // Sync value from parent state when changed programmatically (e.g. form resets)
+  // Synchroniser value from parent state when changed programmatically (e.g. form resets)
   useEffect(() => {
     if (!autocompleteRef.current) return;
     const input = findInnerInput();

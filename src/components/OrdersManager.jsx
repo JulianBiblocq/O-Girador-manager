@@ -170,7 +170,7 @@ export default function OrdersManager({ groupId, onBack, role, isSystemAdmin, ha
           ...doc.data()
         });
       });
-      // Sort by dateCreation desc
+      // Trier by dateCreation desc
       fetched.sort((a, b) => new Date(b.dateCreation) - new Date(a.dateCreation));
       setCampaigns(fetched);
       setLoading(false);
@@ -182,7 +182,7 @@ export default function OrdersManager({ groupId, onBack, role, isSystemAdmin, ha
     return () => unsubscribe();
   }, [groupId]);
 
-  // Sync requests when a campaign is selected
+  // Synchroniser requests when a campaign is selected
   useEffect(() => {
     if (!selectedCampaign) {
       setRequests([]);
@@ -250,7 +250,7 @@ export default function OrdersManager({ groupId, onBack, role, isSystemAdmin, ha
     try {
       const campaignRef = doc(db, 'campaigns', campaignId);
       await updateDoc(campaignRef, { status: 'closed' });
-      // Update selected campaign reference if open
+      // Mettre à jour selected campaign reference if open
       if (selectedCampaign && selectedCampaign.id === campaignId) {
         setSelectedCampaign(prev => ({ ...prev, status: 'closed' }));
       }
@@ -417,7 +417,7 @@ export default function OrdersManager({ groupId, onBack, role, isSystemAdmin, ha
           </h2>
         </div>
 
-        {/* LOADING */}
+        {/* Chargement de */}
         {loading && (
           <div className="flex justify-center items-center py-12">
             <span className="text-xs uppercase tracking-widest font-black animate-pulse opacity-60">⏳</span>
@@ -427,7 +427,7 @@ export default function OrdersManager({ groupId, onBack, role, isSystemAdmin, ha
         {/* CAMPAIGN LIST VIEW */}
         {!loading && !selectedCampaign && (
           <div className="flex flex-col gap-3">
-            {/* Create Trigger */}
+            {/* Créer Trigger */}
             {!isCreating ? (
               <CordelButton 
                 variant="ocre" 
@@ -614,7 +614,7 @@ export default function OrdersManager({ groupId, onBack, role, isSystemAdmin, ha
                     </div>
                   )}
 
-                  {/* Add/Edit Form */}
+                  {/* Ajouter/Edit Form */}
                   {selectedCampaign.status === 'open' && (
                     <form onSubmit={editingArticleId ? handleSaveEditArticle : handleAddArticle} className="border-t border-dashed border-cordel-master-dark/15 pt-3 flex flex-col gap-2.5">
                       <h5 className="text-[9px] uppercase font-black tracking-widest text-cordel-wood">

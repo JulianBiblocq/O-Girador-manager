@@ -181,7 +181,7 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin,
       ];
     });
 
-    // 3. Format CSV string (semicolon separator, UTF-8 BOM, double quotes around values)
+    // 3. Formater CSV string (semicolon separator, UTF-8 BOM, double quotes around values)
     const csvContent = "\uFEFF" + [headers, ...rows]
       .map(row => row.map(val => `"${String(val).replace(/"/g, '""')}"`).join(";"))
       .join("\n");
@@ -200,7 +200,7 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin,
     document.body.removeChild(link);
   };
 
-  // Filter local state
+  // Filtrer local state
   const filteredInstruments = instruments.filter(inst => {
     if (filter === "association") return inst.proprietaire === "Association";
     if (filter === "personal") return inst.proprietaire !== "Association";
@@ -208,7 +208,7 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin,
     return true;
   });
 
-  // Handle Header Click for column sorting
+  // Gérer Header Click for column sorting
   const handleSortHeaderClick = (key) => {
     setSortConfig((prev) => {
       if (prev.key === key) {
@@ -218,7 +218,7 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin,
     });
   };
 
-  // Dynamic sort of filtered instruments
+  // Dynamic trier of filtered instruments
   const sortedInstruments = React.useMemo(() => {
     const list = [...filteredInstruments];
     if (!sortConfig.key) return list;
@@ -270,7 +270,7 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin,
     });
   }, [filteredInstruments, sortConfig, usersMap]);
 
-  // Helper to render sort indicator chevrons
+  // Fonction utilitaire pour afficher trier indicator chevrons
   const renderSortChevron = (key) => {
     if (sortConfig.key !== key) {
       return <span className="opacity-30 text-[9px] ml-1 font-bold select-none">↕️</span>;
@@ -282,7 +282,7 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin,
     );
   };
 
-  // Render Access Denied card if security fails
+  // Afficher Access Denied card if security fails
   if (!isAuthorized) {
     return (
       <>

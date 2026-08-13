@@ -167,7 +167,7 @@ export default function ThreadView({ threadId, user, profileData, channels = [],
   const [movingReplyData, setMovingReplyData] = useState(null); // { reply, index }
   const [editingReplyData, setEditingReplyData] = useState(null); // { reply, index, text }
 
-  // Add poll modal state
+  // Ajouter poll modal state
   const [isAddPollOpen, setIsAddPollOpen] = useState(false);
   const [newPollQuestion, setNewPollQuestion] = useState('');
   const [newPollOptions, setNewPollOptions] = useState(['', '']);
@@ -626,7 +626,7 @@ export default function ThreadView({ threadId, user, profileData, channels = [],
                     )}
                   </div>
 
-                  {/* Allow Multiple Choices */}
+                  {/* Autoriser Multiple Choices */}
                   <label className="flex items-center gap-2 cursor-pointer select-none border-t border-dashed border-cordel-master-dark/15 pt-2">
                     <input
                       type="checkbox"

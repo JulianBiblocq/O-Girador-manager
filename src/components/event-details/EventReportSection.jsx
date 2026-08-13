@@ -27,7 +27,7 @@ export default function EventReportSection({ event, user, profileData, associati
   
   const recognitionRef = useRef(null);
 
-  // Check roles: Admins or Secrétaires
+  // Vérifier roles: Admins or Secrétaires
   const isAdmin = 
     profileData?.role === 'mestre' || 
     profileData?.role === 'super-admin' || 
@@ -55,7 +55,7 @@ export default function EventReportSection({ event, user, profileData, associati
     };
   }, []);
 
-  // Format date helper: DD/MM/YYYY
+  // Formater date utilitaire: DD/MM/YYYY
   const formatDate = (dateStr) => {
     if (!dateStr) return '';
     const d = new Date(dateStr);
@@ -66,7 +66,7 @@ export default function EventReportSection({ event, user, profileData, associati
     return `${day}/${month}/${year}`;
   };
 
-  // Add a new point to the order of the day
+  // Ajouter a new point to the order of the day
   const handleAddPoint = async (e) => {
     e.preventDefault();
     if (!newPointTitle.trim()) return;
@@ -85,7 +85,7 @@ export default function EventReportSection({ event, user, profileData, associati
       const eventRef = doc(db, 'events', event.id);
       await updateDoc(eventRef, {
         pointsOrdreDuJour: updatedPoints,
-        // Auto set to brouillon if first point is added and status is empty
+        // Auto définir to brouillon if first point is added and status is empty
         ...(reportStatus === '' ? { compteRenduStatus: 'brouillon' } : {})
       });
     } catch (err) {
@@ -114,7 +114,7 @@ export default function EventReportSection({ event, user, profileData, associati
     }
   };
 
-  // Delete a point
+  // Supprimer a point
   const handleDeletePoint = async (pointId) => {
     const confirmDelete = await confirm({
       title: "Supprimer le point",
@@ -157,7 +157,7 @@ export default function EventReportSection({ event, user, profileData, associati
     }
   };
 
-  // Toggle Speech Recognition for a specific point
+  // Basculer Speech Recognition for a specific point
   const handleToggleSpeech = (pointId) => {
     if (activeMicPointId === pointId) {
       if (recognitionRef.current) {
@@ -212,7 +212,7 @@ export default function EventReportSection({ event, user, profileData, associati
               }
               return p;
             });
-            // Auto-save update to firestore when speech adds text
+            // Auto-enregistrer mettre à jour to firestore when speech adds text
             const eventRef = doc(db, 'events', event.id);
             updateDoc(eventRef, { pointsOrdreDuJour: updated }).catch(err => {
               console.error("Speech autosave error:", err);
@@ -227,12 +227,12 @@ export default function EventReportSection({ event, user, profileData, associati
     }
   };
 
-  // Handle local text change in textarea
+  // Gérer local text change in textarea
   const handleNotesChange = (pointId, value) => {
     setLocalPoints(prev => prev.map(p => p.id === pointId ? { ...p, notesCR: value } : p));
   };
 
-  // Explicit draft save
+  // Explicit draft enregistrer
   const handleSaveDraft = async () => {
     setIsSaving(true);
     try {
@@ -267,7 +267,7 @@ export default function EventReportSection({ event, user, profileData, associati
       await updateDoc(eventRef, {
         pointsOrdreDuJour: localPoints,
         compteRenduStatus: 'attente_relecture',
-        compteRenduApprovals: {} // Reset approvals for new review cycle
+        compteRenduApprovals: {} // Réinitialiser approvals for new review cycle
       });
       alert("Le compte-rendu est maintenant en attente de relecture.");
     } catch (err) {
@@ -287,7 +287,7 @@ export default function EventReportSection({ event, user, profileData, associati
         return `### 📌 ${p.titre}\n\n${p.notesCR ? p.notesCR.trim() : "*Aucune note rédigée.*"}`;
       }).join('\n\n---\n\n');
 
-      // 2. Fetch Present users names
+      // 2. Récupérer Present users names
       const presents = event.inscriptions?.filter(ins => ins.status === 'present') || [];
       const presentsNames = presents.map(ins => ins.userName || 'Membre anonyme');
 
@@ -295,7 +295,7 @@ export default function EventReportSection({ event, user, profileData, associati
       const docTitle = `CR du ${formatDate(event.date)}`;
       const eventYear = event.date ? new Date(event.date).getFullYear() : new Date().getFullYear();
 
-      // 4. Create document in Varal
+      // 4. Créer document in Varal
       const docRef = await addDoc(collection(db, 'documents'), {
         titre: docTitle,
         categoryId: 'ComptesRendus',
@@ -313,14 +313,14 @@ export default function EventReportSection({ event, user, profileData, associati
         fileUrl: '' // Dynamic document
       });
 
-      // 5. Update event status to locked/published
+      // 5. Mettre à jour event status to locked/published
       const eventRef = doc(db, 'events', event.id);
       await updateDoc(eventRef, {
         compteRenduStatus: 'publie',
         compteRenduVaralId: docRef.id
       });
 
-      // 6. Generate and save PDF document automatically
+      // 6. Generate and enregistrer PDF document automatically
       try {
         const pdfDoc = generateCompteRenduPDF(event, pointsToPublish, presentsNames, associationSettings || event.associationSettings || "O Girador");
         pdfDoc.save(`Compte_Rendu_${event.titre ? event.titre.replace(/[^a-zA-Z0-9]/g, '_') : 'Reunion'}.pdf`);
@@ -397,7 +397,7 @@ export default function EventReportSection({ event, user, profileData, associati
       setComment('');
       alert(approved ? "Vous avez approuvé ce compte-rendu !" : "Vos demandes de modifications ont été transmises.");
 
-      // Check if 100% of present users approved
+      // Vérifier if 100% of present users approved
       const presents = event.inscriptions?.filter(ins => ins.status === 'present') || [];
       const totalPresents = presents.length;
 
@@ -418,7 +418,7 @@ export default function EventReportSection({ event, user, profileData, associati
     }
   };
 
-  // Add suggestion from member
+  // Ajouter suggestion from member
   const handleAddSuggestion = async (e) => {
     e.preventDefault();
     if (!newSuggestionTitle.trim()) return;
@@ -489,7 +489,7 @@ export default function EventReportSection({ event, user, profileData, associati
     }
   };
 
-  // Calculate vote statistics
+  // Calculer vote statistics
   const presents = event.inscriptions?.filter(ins => ins.status === 'present') || [];
   const totalPresents = presents.length;
   const approvals = event.compteRenduApprovals || {};
@@ -928,7 +928,7 @@ export default function EventReportSection({ event, user, profileData, associati
                       <div className="flex">
                         <button 
                           onClick={() => {
-                            // Reset vote so they can edit it
+                            // Réinitialiser vote so they can edit it
                             const updated = { ...approvals };
                             delete updated[user.uid];
                             const eventRef = doc(db, 'events', event.id);
