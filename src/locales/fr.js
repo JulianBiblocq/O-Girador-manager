@@ -987,6 +987,321 @@ export const fr = {
   helloAsso: {
     successMessage: "Paiement validé par HelloAsso ! La mise à jour de votre profil peut prendre quelques instants.",
     refreshButton: "Rafraîchir mon statut"
+  },
+  dancarino: {
+    "app": {
+      "title": "O Girador Dança",
+      "subtitle": "Module chorégraphique",
+      "loading": "Chargement en cours…"
+    },
+    "nav": {
+      "studio": "Studio",
+      "player": "Lecteur",
+      "builder": "Arrangeur",
+      "catalog": "Catalogue",
+      "settings": "Réglages"
+    },
+    "studio": {
+      "title": "Studio de Captation",
+      "countdown": "Décompte",
+      "recording": "Enregistrement en cours",
+      "ghostMode": "Mode fantôme",
+      "silhouette": "Silhouette",
+      "export": "Exporter",
+      "retake": "Reprendre"
+    },
+    "player": {
+      "title": "Lecteur",
+      "loop": "Boucle A-B",
+      "mirror": "Miroir",
+      "speed": "Vitesse",
+      "fullscreen": "Plein écran"
+    },
+    "beatTracker": {
+      "title": "Pulsation Rythmique",
+      "bpm": "BPM",
+      "metronome": "Métronome",
+      "pattern": "Motif"
+    },
+    "builder": {
+      "title": "Arrangeur Chorégraphique",
+      "addTrack": "Ajouter une piste",
+      "removeTrack": "Supprimer la piste",
+      "addBlock": "Ajouter un bloc",
+      "preview": "Aperçu",
+      "export": "Exporter",
+      "undo": "Annuler",
+      "redo": "Rétablir"
+    },
+    "mestre": {
+      "title": "Signes du Mestre",
+      "stop": "Arrêt",
+      "resume": "Reprise",
+      "formation": "Formation",
+      "callRole": "Appel de rôle",
+      "transition": "Transition",
+      "freeNote": "Note libre"
+    },
+    "catalog": {
+      "title": "Catalogue des Pas",
+      "search": "Rechercher un pas…",
+      "filter": "Filtrer",
+      "discipline": "Discipline",
+      "level": "Niveau",
+      "role": "Rôle",
+      "favorites": "Favoris",
+      "noResults": "Aucun résultat trouvé"
+    },
+    "levels": {
+      "debutant": "Débutant",
+      "intermediaire": "Intermédiaire",
+      "avance": "Avancé",
+      "maitre": "Maître"
+    },
+    "disciplines": {
+      "maracatu": "Maracatu",
+      "samba": "Samba",
+      "capoeira": "Capoeira"
+    },
+    "roles": {
+      "BAIANAS": "Baianas",
+      "REINE": "Reine",
+      "ROI": "Roi",
+      "CABOCLO_LANCA": "Caboclo de Lança",
+      "DAMA_PACO": "Dama do Paço",
+      "PASSISTA": "Passista",
+      "MESTRE_SALA": "Maître de cérémonie",
+      "PORTA_BANDEIRA": "Porte-drapeau",
+      "JOGADOR": "Joueur",
+      "BERIMBAUISTE": "Berimbauiste"
+    },
+    "common": {
+      "save": "Enregistrer",
+      "cancel": "Annuler",
+      "delete": "Supprimer",
+      "confirm": "Confirmer",
+      "close": "Fermer",
+      "error": "Une erreur est survenue",
+      "success": "Opération réussie"
+    }
+  },
+  mestre: {
+    "header": {
+      "title": "O GIRADOR",
+      "subtitle": "Écosystème",
+      "tagline": "Le Hub Central des Percussions Brésiliennes",
+      "universeLabel": "Univers",
+      "changeUniverse": "Changer d'Univers Culturel",
+      "nav": {
+        "home": "Accueil",
+        "triptyque": "Le Triptyque",
+        "tarifs": "Tarifs & Synergie",
+        "tutos": "Tutoriels",
+        "creator": "Créateur",
+        "admin": "Back-Office /admin",
+        "login": "Connexion"
+      }
+    },
+    "hero": {
+      "badge": "Le Hub Central — Univers",
+      "title": "L'Écosystème Numérique de la",
+      "titleHighlight": "Percussion Brésilienne",
+      "subtitle": "Un triptyque d'applications interconnectées pour composer sur le Séquenceur interactif, administrer votre Bloco avec le Manager, et rayonner grâce à votre Vitrine publique.",
+      "exploreTriptyque": "Explorer le Triptyque",
+      "discoverTarifs": "Découvrir les Tarifs",
+      "watchDemos": "Voir les démos vidéo",
+      "metrics": {
+        "sequenceur": "🥁 Séquenceur Roda",
+        "sequenceurSub": "Micro-timing, Tone.js & Toadas",
+        "manager": "📋 Manager Bloco",
+        "managerSub": "Agenda, Trésorerie & Varal",
+        "vitrine": "🌟 Vitrine Publique",
+        "vitrineSub": "Identité Cordel & Recrutement"
+      }
+    },
+    "triptyque": {
+      "badge": "Le Coeur de l'Écosystème",
+      "title": "Le Triptyque O Girador",
+      "subtitle": "Trois piliers complémentaires conçus sur mesure pour les besoins de la percussion et des associations brésiliennes.",
+      "sequenceur": {
+        "badge": "Studio & Rythmes",
+        "title": "O Girador — Séquenceur",
+        "description": "Le séquenceur interactif de rythmes de Maracatu dans votre navigateur. Simulez un bloco complet avec la Roda circulaire.",
+        "feat1": "Roda Circulaire & Baguette rotative : Visualisation en temps réel du cercle de jeu.",
+        "feat2": "Sculpture sonore pas-à-pas : Micro-timing, swing Maracatu et contrôle du decay.",
+        "feat3": "Toadas & Syllabes Karaoké : Suivi dynamique des textes pour Puxador & Coro.",
+        "feat4": "Mode Song & Rampes BPM : Accélérations fluides d'un compasso à l'autre.",
+        "repo": "Dépôt Séquenceur"
+      },
+      "manager": {
+        "badge": "Gestion d'Association",
+        "title": "O Girador — Manager",
+        "description": "La suite administrative dédiée aux responsables de Bloco : gérez les membres, les répétitions et les finances sereinement.",
+        "feat1": "Agenda & Convocations : Gestion des présences aux concerts et répétitions.",
+        "feat2": "Trésorerie & Cotisations : Remboursements kilométriques et suivi des règlements.",
+        "feat3": "Varal d'Annonces & Forum : Espace communautaires et trombinoscope du groupe.",
+        "feat4": "Gestion du Matériel : Parc d'instruments (Alfaias, Caisses, Gonguês) et prêts.",
+        "repo": "Dépôt Manager"
+      },
+      "vitrine": {
+        "badge": "Rayonnement Public",
+        "title": "O Girador — Vitrine",
+        "description": "Le site web public clé en main pour votre association : faites rayonner votre Bloco et attirez de nouveaux adhérents.",
+        "feat1": "Identité Cordel Personnalisée : Affichez l'histoire et les couleurs de votre groupe.",
+        "feat2": "Calendrier des Prestations : Dates de concerts ouvertes au grand public.",
+        "feat3": "Formulaire de Contact & Adhésion : Inscription directe des nouveaux percussionnistes.",
+        "feat4": "Galerie Médias & Toadas : Écoute des extraits sonores et vidéos de concerts.",
+        "note": "Intégration directe Manager"
+      }
+    },
+    "tarifs": {
+      "badge": "Tarifs Transparents & Engagement Assos",
+      "title": "Une Formule Adaptée à chaque Pratique",
+      "subtitle": "Du curieux individuel au grand Bloco de Maracatu, profitez des outils de l'écosystème avec des options de paiement adaptées aux associations.",
+      "annual": "Facturation Annuelle",
+      "monthly": "Facturation Mensuelle",
+      "annualBadge": "2 mois offerts (~20% d'économie)",
+      "monthlyBadge": "Sans engagement",
+      "synergy": {
+        "badge": "La Puissance de la Synergie",
+        "title": "Pourquoi associer le Manager & la Vitrine Publique ?",
+        "description": "Fini la double saisie ! Lorsque vous créez une répétition publique, un concert ou un événement sur l'Agenda du Manager, les informations sont automatiquement publiées et synchronisées sur votre Vitrine Publique.",
+        "feat1Title": "Centralisation Unique",
+        "feat1Text": "Une seule base de données Firebase pour la gestion interne et la visibilité externe.",
+        "feat2Title": "Recrutement & Adhésions",
+        "feat2Text": "Les formulaires d'adhésion de la Vitrine alimentent directement le Trombinoscope du Manager.",
+        "boxTitle": "Duo Gagnant Bloco",
+        "boxText": "Inclus dans les offres Bloco & Association et Écosystème Mestre.",
+        "demoBtn": "Demander une démo Assos"
+      }
+    },
+    "newsletter": {
+      "badge": "Restez Connecté au Baque Virado",
+      "title": "Abonnez-vous à la Newsletter O Girador",
+      "subtitle": "Recevez les nouveaux toadas, les mises à jour du Séquenceur, les fiches conseils pour Bloco et les annonces des prochains univers (Capoeira & Samba).",
+      "placeholder": "votre.email@exemple.com",
+      "button": "S'inscrire",
+      "sending": "Envoi...",
+      "successTitle": "Inscription Validée !",
+      "successText": "Merci ! Votre adresse a été ajoutée à notre liste de diffusion.",
+      "another": "Inscrire une autre adresse"
+    },
+    "creator": {
+      "badge": "Créateur & Concepteur",
+      "name": "Julian Biblocq",
+      "tagline": "Passionné de Maracatu de Baque Virado, Percussionniste & Développeur Web",
+      "back": "Retour au Hub Écosystème",
+      "title": "Projets Personnels & Musicaux",
+      "subtitle": "Une vue d'ensemble des réalisations en cours dans l'univers O Girador et au-delà."
+    },
+    "admin": {
+      "badge": "Back-Office Administrateur Privé",
+      "title": "Gestion des Structures & Droits (Soft Lock)",
+      "subtitle": "Supervision des associations abonnées, matrice d'accès aux cartes UI et statut des échéances.",
+      "newBtn": "Nouveau Bloco / Asso",
+      "tabs": {
+        "list": "📋 Liste des Assos & Abonnements",
+        "matrix": "🎛️ Matrice d'Accès Toggles",
+        "simulator": "🧪 Simulateur Soft Lock",
+        "bugs": "🐞 Bugs & Stabilité",
+        "analytics": "📊 Métriques"
+      }
+    }
+  },
+  baquemix: {
+    "loading": "Chargement des voix...",
+    "mixer": "🎛️ Mixeur",
+    "legend": "Légende",
+    "seqLegendTitle": "⌨️ Commandes & Gestes",
+    "seqDesktopTitle": "Ordinateur :",
+    "seqDesktopKeys": "• Espace / Flèches : Avancer / Naviguer<br>• C / V (ou boutons) : Copier / Coller motif<br>• Suppr / Retour arrière : Vider une case",
+    "seqMobileTitle": "Mobile & Tablette :",
+    "seqMobileKeys": "• Appui court : Ouvre le sélecteur de notes (tapez en dehors pour fermer)<br>• Glisser-déposer : Choisit la note en glissant le doigt<br>• Timeline : Glissez la règle supérieure pour faire défiler; tapez pour déplacer la tête de lecture",
+    "voiceLegendTitle": "Voix / Chœur",
+    "voiceLegend1": "Cliquez en haut de la case (PUX/CORO) pour changer qui chante.",
+    "voiceLegend2": "Puxador (Meneur / Soliste) : Orange (Aigu). Chœur : Cyan (Grave).",
+    "alfaiaCaixa": "🥁 Alfaia & Caixa",
+    "mainDroite": "Main Droite",
+    "mainGauche": "Main Gauche",
+    "legendCaixaRufadaD": "Rufada (Roulement main droite)",
+    "legendCaixaRufadaG": "Rufada (Roulement main gauche)",
+    "legendCaixaCerclage": "Coup sur le cerclage",
+    "legendCaixaFla": "Fla",
+    "legendCaixaBarulho": "Barulho",
+    "legendTarolCerclage": "Coup sur le cerclage",
+    "legendTarolFla": "Fla",
+    "legendTarolClick": "Click (baguettes l'une contre l'autre)",
+    "legendTarolTremer": "Barulho",
+    "legendAlfaiaBarulho": "Barulho",
+    "legendAlfaiaCerclage": "Coup sur le cerclage",
+    "legendAlfaiaIguarassu": "Bacalhau (Coup sur le bois / Iguarassu)",
+    "gongueLegend": "Gonguê",
+    "gongueGrave": "Grave Fort / Faible",
+    "gongueAigu": "Aigu Fort / Faible",
+    "gongueBarulho": "Barulho",
+    "legendGongueBord": "Coup sur le bord",
+    "agbeLegend": "Agbê",
+    "agbeG": "Gauche (Fort / Faible)",
+    "agbeD": "Droite (Fort / Faible)",
+    "legendAgbeBarulho": "Barulho",
+    "legendAgbeSaut": "Salto (Lancer)",
+    "legendAgbeVolta": "Volta (Retour)",
+    "mineiroLegend": "Mineiro",
+    "mineiroP": "Haut (Fort / Faible)",
+    "mineiroT": "Bas (Fort / Faible)",
+    "mineiroL": "Coup sur le côté (lado)",
+    "mineiroB": "Barulho",
+    "apitoLegend": "Apito",
+    "apitoLong": "Souffle long (W)",
+    "apitoShort": "Souffle court (w)",
+    "addInst": "Ajouter",
+    "clear": "Créer une roda",
+    "save": "Sauvegarder",
+    "load": "Charger",
+    "stepsNum": "Pas:",
+    "promptVoice": "Syllabe / Mot (Utilisez ':' pour ajouter la note. Ex : C4:Vou) :",
+    "selectInst": "Choisir un instrument...",
+    "toggleBtn": "Afficher le panneau",
+    "toggleLegendBtn": "Afficher / Masquer légende",
+    "toggleLetrasBtn": "Afficher / Masquer la toada",
+    "tsLabel": "Signature:",
+    "metroBtn": "Métronome",
+    "patterns": "Motifs",
+    "tutorialBtn": "Tutoriel vidéo",
+    "rewindBtn": "Stop et Revenir au début",
+    "confirmResize": "Voulez-vous ajuster automatiquement le nombre de pas de toutes les pistes ?",
+    "letrasTitle": "📝 Toada",
+    "extractBtn": "🔄 Extraire du mixeur",
+    "letrasPlaceholder": "Collez votre Toada ici (Cliquez sur Extraire du mixeur pour le karaokê)...",
+    "limitReached": "Limite maximale d'instruments atteinte (20) !",
+    "invalidFile": "Fichier de rythme invalide !",
+    "swingBtn": "Swing",
+    "creditLabel": "Créé par Julian Biblocq | Art: Toni Braga",
+    "metaInfo": "Informations",
+    "metaToada": "Nom de la Toada",
+    "metaNacao": "Nação / Bloco",
+    "metaCompositor": "Compositeur",
+    "metaRitmo": "Rythme",
+    "saveLocal": "Sauvegarder dans mon catalogue",
+    "catPersonal": "Catalogue personnel",
+    "catDefault": "Catalogue",
+    "promptName": "Nom de votre Toada :",
+    "saveFile": "Sauvegarder fichier (.json)",
+    "loadFile": "Charger fichier (.json)",
+    "wavExportTitle": "🎙️ Enregistrement & Export WAV",
+    "wavExportDesc": "• Cliquez sur le bouton 🔴 REC pour enregistrer le rendu en temps réel.<br>• Cliquez de nouveau pour arrêter et télécharger un fichier <b>.wav</b> (16-bit PCM stéréo sans perte, compatible iPhone et WhatsApp).",
+    "pwaOfflineTitle": "📶 Mode Hors-Ligne (PWA)",
+    "pwaOfflineDesc": "• Cette application fonctionne à 100% hors-ligne pour vos répétitions de rue.<br>• Une fois chargée, les visuels, sons et rythmes restent accessibles sans connexion internet.",
+    "feedbackBtn": "Donner votre avis",
+    "feedbackTitle": "💬 Donner votre avis",
+    "eqTitle": "EQ 3 BANDES",
+    "eqLow": "GRAVES",
+    "eqMid": "MÉDIUMS",
+    "eqHigh": "AIGUS",
+    "compTitle": "COMPRESSEUR",
+    "compThreshold": "SEUIL",
+    "compRatio": "RATIO",
+    "expandSteps": "Déplier les pas",
+    "collapseSteps": "Replier les pas"
   }
 };
-

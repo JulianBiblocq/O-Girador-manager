@@ -1860,7 +1860,7 @@ gmp-place-autocomplete:focus-within {
     font-size: 11px;
     --print-scale: 0.85;
   }
-  body.print-format-A5 .max-w-[600px], body.print-format-A5 .max-w-[560px] {
+  body.print-format-A5 .max-w-\[600px\], body.print-format-A5 .max-w-\[560px\] {
     max-width: 100% !important;
   }
   
@@ -1885,9 +1885,9 @@ body.print-bw {
   --cordel-master-dark: #000000 !important;
 }
 
-body.print-bw .bg-[#f5f0e6], 
-body.print-bw .dark\:bg-[#2a2622],
-body.print-bw .bg-[#fdfaf2] {
+body.print-bw .bg-\[\#f5f0e6\], 
+body.print-bw .dark\:bg-\[\#2a2622\],
+body.print-bw .bg-\[\#fdfaf2\] {
   background-color: transparent !important;
   border: 1px solid #000 !important;
 }

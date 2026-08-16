@@ -279,7 +279,7 @@ service cloud.firestore {
       allow create, delete: if canManageEvents();
       allow update: if isAuthenticated() && (
         canManageEvents() || 
-        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['inscriptions']))
+        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['inscriptions', 'invitesExternes']))
       );
 
       // Sous-collection des commentaires et questions logistiques de l'événement
@@ -340,6 +340,10 @@ service cloud.firestore {
           resource.data.authorId == request.auth.uid &&
           (hasChannelWriteAccess(resource.data.channelId) || !resource.data.keys().hasAny(['channelId'])) &&
           (!request.resource.data.keys().hasAny(['channelId']) || request.resource.data.channelId == resource.data.channelId)
+        ) ||
+        (
+          hasChannelWriteAccess(resource.data.channelId) &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reponses', 'derniereModification', 'poll'])
         )
       );
       allow delete: if isAdminOrMestre() || isModerator() || (isAuthenticated() && resource.data.authorId == request.auth.uid);

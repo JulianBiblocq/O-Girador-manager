@@ -159,23 +159,25 @@ export default function SongCard({ song, isPrintVersion = false, defaultRevision
     
     if (Array.isArray(lyrics)) {
       const arrayContent = (
-        <div className={`flex flex-col ${isRevealedMode ? 'gap-1' : 'gap-4'} w-full`}>
+        <div className={`flex flex-col ${isRevealedMode ? 'gap-1' : 'gap-3'} w-full`}>
           {lyrics.map((block, index) => {
             if (typeof block === 'string') {
               return <div key={index} className="whitespace-pre-wrap text-encre-noire font-medium">{block}</div>;
             }
+            
+            // On vérifie la clé JSON pour distinguer formellement le puxador du coro
             const puxadorText = block?.puxador;
             const coroText = block?.coro || block?.choeur;
 
             return (
               <div key={index} className={`flex flex-col ${isRevealedMode ? 'gap-0' : 'gap-1'} w-full`}>
                 {puxadorText && (
-                  <p className={`font-black text-encre-noire transition-opacity duration-300 ${isRevealedMode ? 'leading-tight' : 'leading-relaxed'} ${activePuxador || isRevealedMode ? 'opacity-100' : 'opacity-0'}`}>
+                  <p className={`font-black text-encre-noire print:text-black transition-opacity duration-300 ${isRevealedMode ? 'leading-tight' : 'leading-relaxed'} ${activePuxador || isRevealedMode ? 'opacity-100' : 'opacity-0'}`}>
                     {puxadorText}
                   </p>
                 )}
                 {coroText && (
-                  <p className={`font-medium text-encre-noire/90 italic transition-opacity duration-300 ${isRevealedMode ? 'leading-tight' : 'leading-relaxed'} ${activeChoeur || isRevealedMode ? 'opacity-100' : 'opacity-0'}`}>
+                  <p className={`font-medium text-encre-noire/90 print:text-black/90 italic pl-3 border-l-2 border-encre-noire/20 print:border-black/30 transition-opacity duration-300 ${isRevealedMode ? 'leading-tight' : 'leading-relaxed'} ${activeChoeur || isRevealedMode ? 'opacity-100' : 'opacity-0'}`}>
                     {coroText}
                   </p>
                 )}
@@ -308,7 +310,7 @@ export default function SongCard({ song, isPrintVersion = false, defaultRevision
           </div>
         )}
 
-        <div className="grid grid-cols-2 gap-3 md:gap-6">
+        <div className="grid grid-cols-2 gap-3 md:gap-6 print:break-inside-avoid">
           {/* Colonne Originale */}
           <div className="flex flex-col">
             <h3 className="bg-[#f5f0e6] dark:bg-[#2a2622] text-encre-noire dark:text-stone-200 text-center py-1 md:py-1.5 px-2 rounded font-cactus tracking-widest text-sm md:text-lg border border-encre-noire/10 mb-2 lowercase capitalize print:text-sm">
@@ -330,57 +332,80 @@ export default function SongCard({ song, isPrintVersion = false, defaultRevision
           </div>
         </div>
 
-        {/* Séparateur pour la suite */}
+        {/* Condition : s'il y a du contenu supplémentaire, on le groupe pour gérer le saut de page */}
         {(song?.traduction || (Array.isArray(song?.notesLexique) ? song.notesLexique.length > 0 : song?.notesLexique) || song?.anecdote) && (
-          <hr className="border-t-4 border-encre-noire/10 my-4 md:my-6 print:my-3" />
-        )}
-
-        {/* Section Traduction */}
-        {song?.traduction && (
-          <div className="mb-4">
-            <h3 className="text-lg md:text-2xl font-cactus tracking-widest text-[var(--color-cordel-ocre,#c05621)] mb-1 lowercase capitalize print:text-lg">
-              Traduction en français
-            </h3>
-            <div className="font-medium text-[11px] md:text-[13px] leading-normal print:leading-snug print:text-[11px] text-encre-noire px-1 md:px-2 italic">
-              {renderFlashcard('traduction', renderHTMLorText(song.traduction))}
+          <div className="print:break-before-page">
+            {/* Clone de l'en-tête (Print-only) comme demandé */}
+            <div className="hidden print:block print:mb-4">
+              <div className="flex flex-col gap-1 md:gap-2 mt-2 md:mt-0">
+                <div className="flex flex-col items-center justify-center relative w-full">
+                  <h1 className="text-2xl md:text-4xl font-cactus tracking-widest text-[var(--color-cordel-ocre,#c05621)] text-center mt-1 print:mt-0 print:text-3xl relative z-20">
+                    {song?.titre || "Titre Inconnu"}
+                  </h1>
+                </div>
+                <div className="flex justify-between items-center mt-1 text-[10px] md:text-sm font-extrabold uppercase tracking-widest text-cordel-master-dark opacity-80">
+                  <div className="text-left font-cactus text-base md:text-xl lowercase tracking-wider capitalize print:text-base">
+                    {song?.nacao ? renderFlashcard('nacao-clone', <span>{song.nacao}</span>) : null}
+                  </div>
+                  <div className="text-right font-cactus text-base md:text-xl lowercase tracking-wider capitalize print:text-base">
+                    {song?.rythme ? renderFlashcard('rythme-clone', <span>{song.rythme}</span>) : null}
+                  </div>
+                </div>
+                <hr className="border-t-4 border-[var(--color-cordel-ocre,#c05621)] mt-2 print:mt-1 mb-1 md:mb-2" />
+              </div>
             </div>
-          </div>
-        )}
 
-        {/* Encart Lexique */}
-        {((Array.isArray(song?.notesLexique) && song.notesLexique.length > 0) || (typeof song?.notesLexique === 'string' && song.notesLexique)) && (
-          <div className="mt-4 bg-[#f5f0e6]/60 dark:bg-[#201d1a] border-l-4 border-[var(--color-cordel-ocre,#c05621)] p-3 md:p-4 rounded-r-md print:mt-2">
-            <h4 className="text-[10px] md:text-xs font-black uppercase tracking-widest text-[var(--color-cordel-ocre,#c05621)] mb-1 flex items-center gap-2 print:text-[10px]">
-              <span>📖</span> Lexique & Notes
-            </h4>
-            <div className="text-[10px] md:text-[11px] print:text-[9px] font-medium text-encre-noire leading-normal print:leading-snug">
-              {Array.isArray(song.notesLexique) ? (
-                <ul className="flex flex-col gap-2">
-                  {song.notesLexique.map((note, index) => (
-                    <li key={index} className="flex w-full">
-                      {renderFlashcard(`lexique-${index}`, 
-                        <div className="w-full"><span className="font-bold mr-1">{note?.mot || note?.mot_cle} :</span>{note?.explication || note?.definition}</div>,
-                        "w-full"
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                renderFlashcard('lexique-all', <div className="whitespace-pre-wrap">{song.notesLexique}</div>)
-              )}
-            </div>
-          </div>
-        )}
+            {/* Séparateur pour la suite, caché à l'impression car on a l'en-tête cloné */}
+            <hr className="border-t-4 border-encre-noire/10 my-4 md:my-6 print:hidden" />
 
-        {/* Section Anecdote */}
-        {song?.anecdote && (
-          <div className="mt-4 bg-[#f5f0e6]/40 dark:bg-[#201d1a]/40 border border-dashed border-encre-noire/20 p-3 md:p-4 rounded-md print:mt-2">
-            <h4 className="text-[10px] md:text-xs font-black uppercase tracking-widest text-cordel-master-dark opacity-75 mb-1 flex items-center gap-2 print:text-[10px]">
-              <span>💡</span> Anecdote
-            </h4>
-            <div className="text-[10px] md:text-[11px] print:text-[9px] font-medium text-encre-noire/90 leading-normal print:leading-snug italic">
-              {renderFlashcard('anecdote', renderHTMLorText(song.anecdote))}
-            </div>
+            {/* Section Traduction */}
+            {song?.traduction && (
+              <div className="mb-4">
+                <h3 className="text-lg md:text-2xl font-cactus tracking-widest text-[var(--color-cordel-ocre,#c05621)] mb-1 lowercase capitalize print:text-lg">
+                  Traduction en français
+                </h3>
+                <div className="font-medium text-[11px] md:text-[13px] leading-normal print:leading-snug print:text-[11px] text-encre-noire px-1 md:px-2 italic">
+                  {renderFlashcard('traduction', renderHTMLorText(song.traduction))}
+                </div>
+              </div>
+            )}
+
+            {/* Encart Lexique */}
+            {((Array.isArray(song?.notesLexique) && song.notesLexique.length > 0) || (typeof song?.notesLexique === 'string' && song.notesLexique)) && (
+              <div className="mt-4 bg-[#f5f0e6]/60 dark:bg-[#201d1a] border-l-4 border-[var(--color-cordel-ocre,#c05621)] p-3 md:p-4 rounded-r-md print:mt-2">
+                <h4 className="text-[10px] md:text-xs font-black uppercase tracking-widest text-[var(--color-cordel-ocre,#c05621)] mb-1 flex items-center gap-2 print:text-[10px]">
+                  <span>📖</span> Lexique & Notes
+                </h4>
+                <div className="text-[10px] md:text-[11px] print:text-[9px] font-medium text-encre-noire leading-normal print:leading-snug">
+                  {Array.isArray(song.notesLexique) ? (
+                    <ul className="flex flex-col gap-2">
+                      {song.notesLexique.map((note, index) => (
+                        <li key={index} className="flex w-full">
+                          {renderFlashcard(`lexique-${index}`, 
+                            <div className="w-full"><span className="font-bold mr-1">{note?.mot || note?.mot_cle} :</span>{note?.explication || note?.definition}</div>,
+                            "w-full"
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    renderFlashcard('lexique-all', <div className="whitespace-pre-wrap">{song.notesLexique}</div>)
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Section Anecdote */}
+            {song?.anecdote && (
+              <div className="mt-4 bg-[#f5f0e6]/40 dark:bg-[#201d1a]/40 border border-dashed border-encre-noire/20 p-3 md:p-4 rounded-md print:mt-2">
+                <h4 className="text-[10px] md:text-xs font-black uppercase tracking-widest text-cordel-master-dark opacity-75 mb-1 flex items-center gap-2 print:text-[10px]">
+                  <span>💡</span> Anecdote
+                </h4>
+                <div className="text-[10px] md:text-[11px] print:text-[9px] font-medium text-encre-noire/90 leading-normal print:leading-snug italic">
+                  {renderFlashcard('anecdote', renderHTMLorText(song.anecdote))}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>

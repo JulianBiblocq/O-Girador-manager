@@ -290,6 +290,36 @@ export default function App() {
     });
   }, [profileData?.groupId]);
 
+  // Tracking du cycle de vie et de session
+  useEffect(() => {
+    if (user && profileData) {
+      // Démarrer la session
+      tracker.startSession(profileData, 'manager', profileData.groupId);
+
+      const handleVisibilityChange = () => {
+        if (document.visibilityState === 'hidden') {
+          tracker.endSession('manager', profileData.groupId);
+        } else if (document.visibilityState === 'visible') {
+          tracker.startSession(profileData, 'manager', profileData.groupId);
+        }
+      };
+
+      const handleBeforeUnload = () => {
+        tracker.endSession('manager', profileData.groupId);
+      };
+
+      document.addEventListener('visibilitychange', handleVisibilityChange);
+      window.addEventListener('beforeunload', handleBeforeUnload);
+
+      // Nettoyage lors du démontage ou changement d'utilisateur
+      return () => {
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
+        window.removeEventListener('beforeunload', handleBeforeUnload);
+        tracker.endSession('manager', profileData.groupId);
+      };
+    }
+  }, [user, profileData]);
+
   // Charger branding in real-time
   useEffect(() => {
     let activeGroupId = profileData?.groupId || null;

@@ -305,11 +305,17 @@ export default function MonParcours({ profileData, sequenceurUrl, enabledModules
                       </div>
                     </div>
 
-                    {rhythmsMetadata[rhythm.id]?.isQuizPublished && rhythmsMetadata[rhythm.id]?.customQuestions?.length > 0 && (
+                    {/* Toujours afficher Lancer le Quiz si le Mestre a publié, ou s'il y a des données auto-générables */}
+                    {(rhythmsMetadata[rhythm.id]?.isQuizPublished || autoParsed.patterns?.length > 0 || educationalSheets.some(s => s.type === 'signe')) && (
                       <div className="flex justify-end pt-2 mt-2 border-t border-dashed border-cordel-master-dark/20">
                         <CordelButton 
                           variant="ocre" 
-                          onClick={() => setLaunchCustomQuiz({ id: rhythm.id, titre: rhythm.titre, questions: rhythmsMetadata[rhythm.id].customQuestions })}
+                          onClick={() => setLaunchCustomQuiz({ 
+                            id: rhythm.id, 
+                            titre: rhythm.titre, 
+                            questions: rhythmsMetadata[rhythm.id]?.customQuestions || [],
+                            parsedJson: autoParsed 
+                          })}
                           className="px-6 py-2 text-[10px] font-black uppercase tracking-widest"
                         >
                           🧠 Lancer le Quiz
@@ -572,6 +578,7 @@ export default function MonParcours({ profileData, sequenceurUrl, enabledModules
           isSong={launchCustomQuiz.isSong}
           rhythms={rhythms}
           sequenceurUrl={sequenceurUrl}
+          parsedSequencerJson={launchCustomQuiz.parsedJson}
           profileData={profileData}
           onClose={() => setLaunchCustomQuiz(null)}
         />

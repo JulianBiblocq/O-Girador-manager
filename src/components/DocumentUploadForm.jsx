@@ -97,6 +97,9 @@ export default function DocumentUploadForm({ groupId, varalCategories = [], onCl
   const [roleCortejo, setRoleCortejo] = useState(documentToEdit ? documentToEdit.roleCortejo || '' : '');
   const [postureDanse, setPostureDanse] = useState(documentToEdit ? documentToEdit.postureDanse || '' : '');
   const [ingredientPrincipal, setIngredientPrincipal] = useState(documentToEdit ? documentToEdit.ingredientPrincipal || '' : '');
+  
+  // Champ optionnel Séquenceur (pour les Signes du Mestre)
+  const [lienSequenceurId, setLienSequenceurId] = useState(documentToEdit ? documentToEdit.lienSequenceurId || '' : '');
 
   const addChapitreCulture = () => {
     setChapitresCulture([...chapitresCulture, { id: Date.now(), sousTitre: '', texte: '' }]);
@@ -397,7 +400,8 @@ export default function DocumentUploadForm({ groupId, varalCategories = [], onCl
             legendeImage: item.legendeImage || '',
             chapitres: Array.isArray(item.chapitres) ? item.chapitres : [],
             lexiqueMotsCles: item.lexiqueMotsCles || '',
-            videoUrl: item.videoUrl || ''
+            videoUrl: item.videoUrl || '',
+            lienSequenceurId: item.lienSequenceurId || ''
           };
           batch.set(newDocRef, newDoc);
           count++;
@@ -510,7 +514,8 @@ export default function DocumentUploadForm({ groupId, varalCategories = [], onCl
           categorie: categoryName,
           annee: parseInt(annee, 10) || new Date().getFullYear(),
           isArchived: isArchived,
-          type: computedType
+          type: computedType,
+          lienSequenceurId: lienSequenceurId
         };
         
         if (isSongType) {
@@ -654,6 +659,7 @@ export default function DocumentUploadForm({ groupId, varalCategories = [], onCl
         dateAjout: new Date().toISOString(),
         order: 0,
         isArchived: isArchived,
+        lienSequenceurId: lienSequenceurId,
       };
 
       if (isSongType) {
@@ -829,6 +835,24 @@ export default function DocumentUploadForm({ groupId, varalCategories = [], onCl
                 className="theme-input w-full disabled:opacity-50"
               />
             </div>
+
+            {/* Champ Séquenceur (Optionnel) pour la catégorie Signes */}
+            {(category.toLowerCase().includes('signe') || category === 'SignesMestre') && (
+              <div className="flex flex-col gap-1 mt-2">
+                <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                  Lien Séquenceur (Optionnel)
+                </label>
+                {/* TODO: Plus tard, ce champ servira à lier l'audio du Gonguê/Alfaia pour le QCM */}
+                <input
+                  type="text"
+                  value={lienSequenceurId}
+                  onChange={(e) => setLienSequenceurId(e.target.value)}
+                  disabled={isUploading}
+                  placeholder="ID ou URL du pattern dans le Séquenceur..."
+                  className="theme-input w-full disabled:opacity-50 text-xs font-semibold"
+                />
+              </div>
+            )}
 
             {/* Type selector (only for ComptesRendus to autoriser linking instead of PDF) */}
             {category === 'ComptesRendus' && !isEditMode && (

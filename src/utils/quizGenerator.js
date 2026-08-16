@@ -801,6 +801,80 @@ export const generateQuizFromSheet = (sheetData, allSheetsData = [], allSongsDat
     });
   }
 
+  // Modèle C : Signes du Mestre (QCM visuel inversé)
+  const isSigne = sheetData.type === 'signe' || (sheetData.categorie && sheetData.categorie.toLowerCase().includes('signe'));
+  if (isSigne && sheetData.fileUrl) {
+    const allOtherSignes = allSheetsData.filter(s => 
+      (s.type === 'signe' || (s.categorie && s.categorie.toLowerCase().includes('signe'))) && 
+      s.id !== sheetData.id &&
+      s.fileUrl
+    );
+    
+    let wrongChoices = allOtherSignes.map(s => s.fileUrl);
+    // Assurer qu'il y a 3 distracteurs, fallback sur de fausses URL ou doublons (rare en prod s'il y a des fiches)
+    while (wrongChoices.length < 3) {
+      wrongChoices.push(`https://via.placeholder.com/400?text=Signe+Leurre+${wrongChoices.length + 1}`);
+    }
+    wrongChoices = shuffleArray(wrongChoices).slice(0, 3);
+    
+    const choices = shuffleArray([
+      { text: sheetData.fileUrl, isCorrect: true, isImage: true },
+      ...wrongChoices.map(w => ({ text: w, isCorrect: false, isImage: true }))
+    ]);
+
+    questions.push({
+      id: `signe_visuel_${sheetData.id}`,
+      type: 'image_options',
+      instruction: "Signes du Mestre (Modèle C)",
+      questionText: `Quel est le signe du Mestre pour annoncer : ${sheetData.titre} ?`,
+      choices: choices,
+      feedback: `Le bon signe pour "${sheetData.titre}" est celui affiché en vert.`
+    });
+  }
+
+  // Modèle D : Pattern Rythmique
+  const isRythme = sheetData.type === 'rythme' || (sheetData.categorie && sheetData.categorie.toLowerCase().includes('rythme'));
+  if (isRythme && sheetData.activeSteps && Array.isArray(sheetData.activeSteps) && sheetData.activeSteps.length > 0) {
+    const formattedPattern = sheetData.activeSteps.map(s => (s === 0 || s === '0' ? '-' : s));
+    
+    // Create distractors
+    const allOtherPatterns = allSheetsData
+      .filter(s => (s.type === 'rythme' || (s.categorie && s.categorie.toLowerCase().includes('rythme'))) && s.id !== sheetData.id && s.activeSteps)
+      .map(s => s.activeSteps.map(st => (st === 0 || st === '0' ? '-' : st)));
+
+    let wrongChoices = [];
+    if (allOtherPatterns.length > 0) {
+      wrongChoices = shuffleArray(allOtherPatterns).slice(0, 3);
+    }
+    
+    // Generate fake patterns if not enough distractors
+    while (wrongChoices.length < 3) {
+      const fakePattern = [...formattedPattern];
+      for (let i = 0; i < Math.min(4, fakePattern.length); i++) {
+        const idx1 = Math.floor(Math.random() * fakePattern.length);
+        const idx2 = Math.floor(Math.random() * fakePattern.length);
+        [fakePattern[idx1], fakePattern[idx2]] = [fakePattern[idx2], fakePattern[idx1]];
+      }
+      if (JSON.stringify(fakePattern) !== JSON.stringify(formattedPattern) && !wrongChoices.some(w => JSON.stringify(w) === JSON.stringify(fakePattern))) {
+        wrongChoices.push(fakePattern);
+      }
+    }
+    
+    const choices = shuffleArray([
+      { text: "Ce pattern", isCorrect: true, visualElement: { type: 'pattern', patternData: formattedPattern } },
+      ...wrongChoices.map(w => ({ text: "Ce pattern", isCorrect: false, visualElement: { type: 'pattern', patternData: w } }))
+    ]);
+
+    questions.push({
+      id: `pattern_rythmique_${sheetData.id}`,
+      type: 'pattern_rythmique',
+      instruction: "Pattern Rythmique",
+      questionText: `Identifiez le pattern rythmique correct pour : ${sheetData.titre}`,
+      choices: choices,
+      feedback: `Le bon pattern pour "${sheetData.titre}" est celui affiché en vert.`
+    });
+  }
+
   let customAddedQuestions = [];
 
   // 5. Intégration des QCM personnalisés de la fiche (questionsQcm)
@@ -999,3 +1073,92 @@ export const generateQuizFromSong = (song, allSongs = [], allSheetsData = [], co
   return applyOverrides(finalQuestions, song.quizOverrides);
 };
 
+export const generateQuizFromSequencerJson = (rhythmTitle, parsedSequencerData, allSheetsData = [], config = {}) => {
+  const questions = [];
+  if (!parsedSequencerData) return questions;
+
+  allSheetsData = Array.isArray(allSheetsData) ? allSheetsData : [];
+
+  // 1. Questions sur les Patterns Rythmiques (Modèle D)
+  if (parsedSequencerData.patterns && parsedSequencerData.patterns.length > 0) {
+    const allOtherPatterns = allSheetsData
+      .filter(s => (s.type === 'rythme' || (s.categorie && s.categorie.toLowerCase().includes('rythme'))) && s.activeSteps)
+      .map(s => s.activeSteps.map(st => (st === 0 || st === '0' ? '-' : st)));
+
+    // On limite à 2 patterns max pour ne pas surcharger
+    const selectedPatterns = shuffleArray([...parsedSequencerData.patterns]).slice(0, 2);
+
+    selectedPatterns.forEach((patternObj, idx) => {
+      const formattedPattern = patternObj.steps.map(s => (s === 0 || s === '0' ? '-' : s));
+      let wrongChoices = [];
+      if (allOtherPatterns.length > 0) {
+        wrongChoices = shuffleArray(allOtherPatterns).filter(p => JSON.stringify(p) !== JSON.stringify(formattedPattern)).slice(0, 3);
+      }
+      
+      while (wrongChoices.length < 3) {
+        const fakePattern = [...formattedPattern];
+        for (let i = 0; i < Math.min(4, fakePattern.length); i++) {
+          const idx1 = Math.floor(Math.random() * fakePattern.length);
+          const idx2 = Math.floor(Math.random() * fakePattern.length);
+          [fakePattern[idx1], fakePattern[idx2]] = [fakePattern[idx2], fakePattern[idx1]];
+        }
+        if (JSON.stringify(fakePattern) !== JSON.stringify(formattedPattern) && !wrongChoices.some(w => JSON.stringify(w) === JSON.stringify(fakePattern))) {
+          wrongChoices.push(fakePattern);
+        }
+      }
+
+      const choices = shuffleArray([
+        { text: "Ce pattern", isCorrect: true, visualElement: { type: 'pattern', patternData: formattedPattern } },
+        ...wrongChoices.map(w => ({ text: "Ce pattern", isCorrect: false, visualElement: { type: 'pattern', patternData: w } }))
+      ]);
+
+      questions.push({
+        id: `seq_pattern_${patternObj.cleanName}_${idx}`,
+        type: 'pattern_rythmique',
+        instruction: "Pattern Rythmique (Séquenceur)",
+        questionText: `Identifiez le pattern rythmique joué par le pupitre "${patternObj.cleanName}" dans : ${rhythmTitle}`,
+        choices: choices,
+        feedback: `Le bon pattern pour "${patternObj.cleanName}" est celui affiché en vert.`
+      });
+    });
+  }
+
+  // 2. Questions sur les Signaux du Mestre (Modèle C)
+  const allSignals = allSheetsData.filter(s => (s.type === 'signe' || (s.categorie && s.categorie.toLowerCase().includes('signe'))) && s.fileUrl);
+
+  if (allSignals.length > 0) {
+    const specificSignal = allSignals.find(s => s.titre && s.titre.toLowerCase() === rhythmTitle.toLowerCase());
+    const signalsToTest = [];
+    if (specificSignal) {
+      signalsToTest.push(specificSignal);
+      const others = allSignals.filter(s => s.id !== specificSignal.id);
+      if (others.length > 0) signalsToTest.push(shuffleArray(others)[0]);
+    } else {
+      signalsToTest.push(...shuffleArray(allSignals).slice(0, 2));
+    }
+
+    signalsToTest.forEach((signal, idx) => {
+      let wrongChoices = allSignals.filter(s => s.id !== signal.id).map(s => s.fileUrl);
+      while (wrongChoices.length < 3) {
+        wrongChoices.push(`https://via.placeholder.com/400?text=Signe+Leurre+${wrongChoices.length + 1}`);
+      }
+      wrongChoices = shuffleArray(wrongChoices).slice(0, 3);
+
+      const choices = shuffleArray([
+        { text: signal.fileUrl, isCorrect: true, isImage: true },
+        ...wrongChoices.map(w => ({ text: w, isCorrect: false, isImage: true }))
+      ]);
+
+      questions.push({
+        id: `seq_signe_visuel_${signal.id}_${idx}`,
+        type: 'image_options',
+        instruction: "Signes du Mestre",
+        questionText: `Quel est le signe du Mestre pour annoncer : ${signal.titre} ?`,
+        choices: choices,
+        feedback: `Le bon signe pour "${signal.titre}" est celui affiché en vert.`
+      });
+    });
+  }
+
+  return shuffleArray(questions);
+};

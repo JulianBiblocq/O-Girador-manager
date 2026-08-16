@@ -2,8 +2,13 @@
  * SDK Lightweight de Télémétrie O Girador
  * Captation globale des erreurs non interceptées (RGPD-compliant, aucune donnée PII).
  */
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { db } from '../firebase';
+
 const API_URL = import.meta.env.VITE_OGIRADOR_HUB_API_URL || 'http://127.0.0.1:5001/o-girador-dev/us-central1/telemetry/submit';
 const API_KEY = import.meta.env.VITE_OGIRADOR_HUB_API_KEY || 'o-girador-telemetry-secret-key-2026';
+
+let sessionStartTime = null;
 
 class OGiradorTracker {
   constructor() {
@@ -82,6 +87,43 @@ class OGiradorTracker {
       this._sendPayload(payload);
     } catch (err) {
       // Silence silencieux pour ne pas impacter l'expérience utilisateur
+    }
+  }
+
+  async startSession(userProfile, appId, groupId) {
+    sessionStartTime = Date.now();
+    try {
+      await addDoc(collection(db, 'hub_telemetry_daily'), {
+        eventName: 'session_start',
+        appId: appId || this.appId,
+        groupId: groupId || this.groupId || 'anonymous',
+        timestamp: serverTimestamp(),
+        demographics: {
+          ageGroup: userProfile?.ageGroup || 'unknown',
+          gender: userProfile?.gender || 'unknown',
+          country: userProfile?.country || 'unknown'
+        }
+      });
+    } catch (err) {
+      console.warn('Échec du démarrage de la session de télémétrie:', err);
+    }
+  }
+
+  async endSession(appId, groupId) {
+    if (!sessionStartTime) return;
+    
+    const durationInSeconds = Math.floor((Date.now() - sessionStartTime) / 1000);
+    try {
+      await addDoc(collection(db, 'hub_telemetry_daily'), {
+        eventName: 'session_end',
+        appId: appId || this.appId,
+        groupId: groupId || this.groupId || 'anonymous',
+        duration: durationInSeconds,
+        timestamp: serverTimestamp()
+      });
+      sessionStartTime = null;
+    } catch (err) {
+      console.warn('Échec de la fin de session de télémétrie:', err);
     }
   }
 

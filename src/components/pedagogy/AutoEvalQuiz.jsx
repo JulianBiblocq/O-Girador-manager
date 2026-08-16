@@ -4,9 +4,10 @@ import { db } from '../../firebase';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 import SeloAxeStamp from '../SeloAxeStamp';
-import { generateQuizFromSheet, generateQuizFromSong } from '../../utils/quizGenerator';
+import { generateQuizFromSheet, generateQuizFromSong, generateQuizFromSequencerJson } from '../../utils/quizGenerator';
+import PatternVisualizer from './PatternVisualizer';
 
-export default function AutoEvalQuiz({ sheetData, allSheetsData, profileData, onClose, customQuizData, customQuizId, customQuizTitle, songData, allSongsData, qcmGlobalConfig, isSong, rhythms, sequenceurUrl }) {
+export default function AutoEvalQuiz({ sheetData, allSheetsData, profileData, onClose, customQuizData, customQuizId, customQuizTitle, songData, allSongsData, qcmGlobalConfig, isSong, rhythms, sequenceurUrl, parsedSequencerJson }) {
   const [questions, setQuestions] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [score, setScore] = useState(0);
@@ -17,19 +18,31 @@ export default function AutoEvalQuiz({ sheetData, allSheetsData, profileData, on
   const [savedSuccess, setSavedSuccess] = useState(false);
 
   useEffect(() => {
-    if (customQuizData) {
-      // Shuffle choices for custom quiz data
-      const processed = customQuizData.map(q => {
-        const choices = [
-          { text: q.bonneReponse, isCorrect: true },
-          ...q.mauvaisesReponses.map(mr => ({ text: mr, isCorrect: false }))
-        ];
-        return {
-          question: q.texte,
-          choices: choices.sort(() => Math.random() - 0.5)
-        };
-      });
-      setQuestions(processed.sort(() => Math.random() - 0.5));
+    if (parsedSequencerJson || customQuizData) {
+      let finalQuestions = [];
+      
+      // 1. Questions personnalisées du Mestre
+      if (customQuizData) {
+        const processed = customQuizData.map(q => {
+          const choices = [
+            { text: q.bonneReponse, isCorrect: true },
+            ...q.mauvaisesReponses.map(mr => ({ text: mr, isCorrect: false }))
+          ];
+          return {
+            questionText: q.texte,
+            choices: choices.sort(() => Math.random() - 0.5)
+          };
+        });
+        finalQuestions = [...finalQuestions, ...processed];
+      }
+      
+      // 2. Questions générées automatiquement depuis le Séquenceur
+      if (parsedSequencerJson) {
+        const autoQ = generateQuizFromSequencerJson(customQuizTitle || sheetData?.titre || '', parsedSequencerJson, allSheetsData, qcmGlobalConfig);
+        finalQuestions = [...finalQuestions, ...autoQ];
+      }
+      
+      setQuestions(finalQuestions.sort(() => Math.random() - 0.5));
     } else if (isSong) {
       const generated = generateQuizFromSong(songData, allSongsData, allSheetsData, qcmGlobalConfig);
       setQuestions(generated);
@@ -37,7 +50,7 @@ export default function AutoEvalQuiz({ sheetData, allSheetsData, profileData, on
       const generated = generateQuizFromSheet(sheetData, allSheetsData, allSongsData, { difficulty: qcmGlobalConfig?.difficulty || 'medium' });
       setQuestions(generated);
     }
-  }, [sheetData, allSheetsData, customQuizData, isSong, songData, allSongsData, qcmGlobalConfig]);
+  }, [sheetData, allSheetsData, customQuizData, parsedSequencerJson, isSong, songData, allSongsData, qcmGlobalConfig, customQuizTitle]);
 
   if (questions.length === 0) {
     const isAdmin = profileData?.isSystemAdmin || profileData?.role === 'super-admin' || profileData?.role === 'mestre' || profileData?.role === 'admin';
@@ -169,9 +182,14 @@ export default function AutoEvalQuiz({ sheetData, allSheetsData, profileData, on
                   />
                 </div>
               )}
+              {currentQuestion.visualElement && currentQuestion.visualElement.type === 'pattern' && (
+                <div className="flex justify-center my-4 animate-fadeIn w-full overflow-hidden">
+                  <PatternVisualizer patternArray={currentQuestion.visualElement.patternData} />
+                </div>
+              )}
             </div>
 
-            <div className="flex flex-col gap-2 mt-2">
+            <div className={`mt-2 ${currentQuestion.type === 'image_options' ? 'grid grid-cols-2 gap-4' : 'flex flex-col gap-2'}`}>
               {currentQuestion.choices.map((choice, idx) => {
                 let btnStyle = "bg-white border-encre-noire/20 text-encre-noire hover:bg-neutral-100";
                 if (showFeedback) {
@@ -182,6 +200,28 @@ export default function AutoEvalQuiz({ sheetData, allSheetsData, profileData, on
                   } else {
                     btnStyle = "bg-white border-encre-noire/10 text-encre-noire/40 opacity-50";
                   }
+                }
+
+                const isImageOption = currentQuestion.type === 'image_options' || (choice.text && choice.text.startsWith('http'));
+
+                if (isImageOption) {
+                  return (
+                    <button
+                      key={idx}
+                      onClick={() => handleChoice(choice)}
+                      disabled={showFeedback}
+                      className={`relative aspect-square overflow-hidden rounded-lg border-4 transition-all transform hover:scale-[1.02] active:scale-95 ${showFeedback ? (choice.isCorrect ? 'border-cordel-vert ring-4 ring-cordel-vert/30 shadow-lg z-10' : (selectedChoice === choice ? 'border-cordel-rouge opacity-70' : 'border-transparent opacity-40 grayscale')) : 'border-encre-noire/10 hover:border-cordel-ocre/50 hover:shadow-md'}`}
+                    >
+                      <img src={choice.text} alt={`Option ${idx + 1}`} className="w-full h-full object-cover" />
+                      {showFeedback && (
+                        <div className={`absolute inset-0 flex items-center justify-center bg-black/20 ${choice.isCorrect ? 'bg-cordel-vert/20' : (selectedChoice === choice ? 'bg-cordel-rouge/20' : '')}`}>
+                          <span className="text-4xl drop-shadow-md">
+                            {choice.isCorrect ? '✅' : (selectedChoice === choice ? '❌' : '')}
+                          </span>
+                        </div>
+                      )}
+                    </button>
+                  );
                 }
 
                 return (
@@ -199,6 +239,11 @@ export default function AutoEvalQuiz({ sheetData, allSheetsData, profileData, on
                           stampKey={choice.visualElement.stampKey} 
                           couleurs={choice.visualElement.couleurs} 
                         />
+                      </div>
+                    )}
+                    {choice.visualElement && choice.visualElement.type === 'pattern' && (
+                      <div className="shrink-0 w-full overflow-hidden scale-75 origin-right">
+                        <PatternVisualizer patternArray={choice.visualElement.patternData} />
                       </div>
                     )}
                   </button>

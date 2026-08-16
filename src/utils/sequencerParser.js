@@ -19,8 +19,9 @@ export const parseSequencerJson = (jsonData) => {
     }
   }
 
-  // 2. Détection automatique du matériel (Bacalhau) et instruments présents
+  // 2. Détection automatique du matériel (Bacalhau), instruments présents et patterns rythmiques
   let instrumentsPresents = [];
+  let patterns = [];
   
   if (Array.isArray(jsonData.tracks)) {
     const instrumentsSet = new Set();
@@ -38,6 +39,15 @@ export const parseSequencerJson = (jsonData) => {
         // Formater to capitalize first letter
         cleanName = cleanName.charAt(0).toUpperCase() + cleanName.slice(1).toLowerCase();
         instrumentsSet.add(cleanName);
+        
+        // Extraire le pattern (les pas) pour ce track s'il existe
+        if (Array.isArray(track.steps) && track.steps.length > 0) {
+          patterns.push({
+            instrumentName: trackName,
+            cleanName: cleanName,
+            steps: track.steps
+          });
+        }
       }
     });
 
@@ -48,5 +58,5 @@ export const parseSequencerJson = (jsonData) => {
     }
   }
 
-  return { baguettes, unisonAlfaias, instrumentsPresents };
+  return { baguettes, unisonAlfaias, instrumentsPresents, patterns };
 };
