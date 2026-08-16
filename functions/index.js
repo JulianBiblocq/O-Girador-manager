@@ -5,7 +5,7 @@
 
 const { onRequest, onCall, HttpsError } = require("firebase-functions/v2/https");
 const { defineSecret } = require("firebase-functions/params");
-const fetch = require("node-fetch");
+
 const admin = require("firebase-admin");
 const { getApps, initializeApp } = require("firebase-admin/app");
 
