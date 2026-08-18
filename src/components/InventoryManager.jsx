@@ -14,7 +14,8 @@ import InventoryItemCard from './inventory/InventoryItemCard';
 import InventoryFormModal from './inventory/InventoryFormModal';
 import { useAssociationSettings } from '../hooks/useAssociationSettings';
 import InstrumentsCatalogBlock from './association-settings/blocks/InstrumentsCatalogBlock';
-import CarpoolBlock from './association-settings/blocks/CarpoolBlock';
+import AccessoriesKitsBlock from './association-settings/blocks/AccessoriesKitsBlock';
+
 
 const INSTRUMENT_TYPES = ['Alfaia', 'Caixa', 'Agbê', 'Gonguê', 'Mineiro', 'Apito', 'Timbal', 'Autre'];
 const ETAT_OPTIONS = ['Neuf', 'Bon', 'À réparer'];
@@ -75,8 +76,12 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin,
     handleOpenEdit,
     handleSave,
     handleDelete,
-    handleToggleBorrowStatus
+    handleToggleBorrowStatus,
+    handleApproveMovement,
+    handleRejectMovement
   } = useInventoryData(groupId, isAuthorized, t);
+
+  const pendingMovements = instruments.filter(inst => inst.pendingMovement);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [filter, setFilter] = useState("all");
@@ -140,6 +145,24 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin,
       console.error("InventoryManager - Error returning instrument:", error);
       alert(t('common.saveError'));
     }
+  };
+
+  const getKitCompletionText = (inst) => {
+    const kit = (settingsData.logisticsKits || []).find(k => k.pupitre === inst.type);
+    if (!kit || !kit.accessories || kit.accessories.length === 0) return "-";
+    const checked = inst.kitChecklist || [];
+    const validChecked = checked.filter(acc => kit.accessories.includes(acc)).length;
+    if (validChecked === kit.accessories.length) return "Complet";
+    if (validChecked === 0) return "Vide";
+    return `${validChecked}/${kit.accessories.length}`;
+  };
+
+  const getKitCompletionRatio = (inst) => {
+    const kit = (settingsData.logisticsKits || []).find(k => k.pupitre === inst.type);
+    if (!kit || !kit.accessories || kit.accessories.length === 0) return -1;
+    const checked = inst.kitChecklist || [];
+    const validChecked = checked.filter(acc => kit.accessories.includes(acc)).length;
+    return validChecked / kit.accessories.length;
   };
 
   // Generate and download CSV export of the complete inventory
@@ -256,6 +279,10 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin,
           valA = (a.assignations || []).length;
           valB = (b.assignations || []).length;
           break;
+        case 'kit':
+          valA = getKitCompletionRatio(a);
+          valB = getKitCompletionRatio(b);
+          break;
         default:
           valA = a[sortConfig.key] || '';
           valB = b[sortConfig.key] || '';
@@ -337,11 +364,13 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin,
                 formData={settingsData}
                 handleChange={handleSettingsChange}
                 saving={savingSettings}
+                t={t}
               />
-              <CarpoolBlock 
+              <AccessoriesKitsBlock 
                 formData={settingsData}
                 handleChange={handleSettingsChange}
                 saving={savingSettings}
+                t={t}
               />
               <div className="flex justify-end mt-2 pt-3 border-t border-dashed border-cordel-master-dark/15">
                 <CordelButton
@@ -357,6 +386,61 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin,
             </form>
           )}
         </CordelCard>
+
+        {/* Mouvements en attente */}
+        {pendingMovements.length > 0 && (
+          <CordelCard variant="default" useExtremeBorder={true} className="p-4 mb-2 bg-cordel-ocre/10 border-cordel-ocre">
+            <h3 className="text-xs font-extrabold tracking-wider text-cordel-wood uppercase mb-3 flex items-center gap-2">
+              ⏳ Mouvements en attente ({pendingMovements.length})
+            </h3>
+            <div className="flex flex-col gap-3">
+              {pendingMovements.map(inst => {
+                const { type, fromUserId, toUserId, date, note } = inst.pendingMovement;
+                const fromName = usersMap[fromUserId] || 'Un membre';
+                const toName = toUserId ? (usersMap[toUserId] || 'un membre') : '';
+                
+                let message = '';
+                if (type === 'return_to_local') {
+                  message = `${fromName} déclare avoir rendu l'instrument au local.`;
+                } else if (type === 'transfer') {
+                  message = `${fromName} déclare avoir transmis l'instrument à ${toName}.`;
+                }
+
+                return (
+                  <div key={inst.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-white/50 border border-dashed border-cordel-master-dark/20 rounded">
+                    <div className="flex flex-col gap-1 text-left">
+                      <div className="text-xs font-bold text-encre-noire flex items-center gap-1.5">
+                        <img src={INSTRUMENT_ICONS[inst.type] || INSTRUMENT_ICONS['Autre']} alt={inst.type} className="w-4 h-4 object-contain opacity-70" />
+                        <span>{inst.nom}</span>
+                      </div>
+                      <div className="text-[10px] text-cordel-master-dark/80">{message}</div>
+                      {note && (
+                        <div className="text-[9px] italic text-cordel-wood bg-cordel-wood/5 p-1.5 rounded mt-1 border-l-2 border-cordel-wood">
+                          "{note}"
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button 
+                        onClick={() => handleRejectMovement(inst)}
+                        className="p-1.5 bg-cordel-rouge/10 text-cordel-rouge rounded hover:bg-cordel-rouge/20 border border-cordel-rouge/30 transition-colors"
+                        title="Refuser"
+                      >
+                        <XiloClose size={12} />
+                      </button>
+                      <button 
+                        onClick={() => handleApproveMovement(inst)}
+                        className="px-3 py-1 bg-cordel-vert text-white rounded text-[10px] font-bold uppercase tracking-wider shadow-[1px_1px_0px_0px_#181716] hover:brightness-110 active:translate-y-[1px] active:shadow-none transition-all"
+                      >
+                        ✅ Valider
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </CordelCard>
+        )}
 
         {/* Form view */}
         {isFormOpen ? (
@@ -426,20 +510,65 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin,
                 </div>
               </div>
 
-              {/* Étui */}
-              <div className="flex items-center gap-2 pt-2 pb-1 border-t border-dashed border-cordel-master-dark/15">
-                <input
-                  type="checkbox"
-                  name="etuiFourni"
-                  checked={formData.etuiFourni || false}
-                  onChange={(e) => setFormData(prev => ({ ...prev, etuiFourni: e.target.checked }))}
-                  disabled={saving}
-                  id="etuiFourniInput"
-                  className="w-4 h-4 text-cordel-wood rounded cursor-pointer"
-                />
-                <label htmlFor="etuiFourniInput" className="text-[10px] font-black uppercase text-encre-noire cursor-pointer select-none">
-                  Étui / Housse fourni(e)
+              {/* Kit Accessoires Dynamique */}
+              <div className="flex flex-col gap-1 pt-1 border-t border-dashed border-cordel-master-dark/15">
+                <label className="text-[8px] uppercase font-bold tracking-wider text-cordel-master-dark mb-1 flex items-center justify-between">
+                  <span>Kit Accessoires</span>
+                  {(() => {
+                    const kit = (settingsData?.logisticsKits || []).find(k => k.pupitre === formData.type);
+                    if (kit && kit.accessories && kit.accessories.length > 0) {
+                      const checked = formData.kitChecklist || [];
+                      const validChecked = checked.filter(acc => kit.accessories.includes(acc)).length;
+                      return (
+                        <span className="text-[9px] bg-cordel-master-dark/10 px-1 rounded text-cordel-master-dark">
+                          {validChecked}/{kit.accessories.length}
+                        </span>
+                      );
+                    }
+                    return null;
+                  })()}
                 </label>
+                <div className="flex flex-col gap-1.5 p-2 bg-cordel-bg-light/50 border border-encre-noire/10 rounded">
+                  {(() => {
+                    const kit = (settingsData?.logisticsKits || []).find(k => k.pupitre === formData.type);
+                    
+                    if (!kit || !kit.accessories || kit.accessories.length === 0) {
+                      return (
+                        <span className="text-[9px] text-stone-500 italic">
+                          Aucun kit configuré pour cet instrument.
+                        </span>
+                      );
+                    }
+
+                    const checkedList = formData.kitChecklist || [];
+
+                    return kit.accessories.map(acc => {
+                      const isChecked = checkedList.includes(acc);
+                      return (
+                        <label
+                          key={acc}
+                          className={`flex items-center gap-2 p-1 rounded text-[10px] font-bold cursor-pointer transition-colors ${
+                            isChecked ? 'bg-cordel-master-light/50 text-cordel-wood' : 'hover:bg-stone-100 text-encre-noire'
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={(e) => {
+                              const newChecked = e.target.checked
+                                ? [...checkedList, acc]
+                                : checkedList.filter(item => item !== acc);
+                              setFormData(prev => ({ ...prev, kitChecklist: newChecked }));
+                            }}
+                            disabled={saving}
+                            className="w-3.5 h-3.5 text-cordel-wood rounded cursor-pointer"
+                          />
+                          <span>{acc}</span>
+                        </label>
+                      );
+                    });
+                  })()}
+                </div>
               </div>
 
               {/* Proprietaire */}
@@ -669,13 +798,13 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin,
                         </div>
                       </th>
                       <th 
-                        onClick={() => handleSortHeaderClick('etuiFourni')}
+                        onClick={() => handleSortHeaderClick('kit')}
                         className="p-3 border-r border-encre-noire/15 cursor-pointer hover:bg-black/5 transition-colors sticky top-0 z-20"
-                        title="Cliquer pour trier par Étui"
+                        title="Cliquer pour trier par Kit"
                       >
                         <div className="flex items-center gap-1 justify-center">
-                          <span>Étui</span>
-                          {renderSortChevron('etuiFourni')}
+                          <span>Kit</span>
+                          {renderSortChevron('kit')}
                         </div>
                       </th>
                       <th 
@@ -799,15 +928,9 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin,
                             </select>
                           </td>
 
-                          {/* Étui (Checkbox) */}
-                          <td className="p-2 border-r border-encre-noire/10 min-w-[70px] text-center">
-                            <input
-                              type="checkbox"
-                              checked={inst.etuiFourni || false}
-                              onChange={(e) => handleInlineFieldChange(inst.id, 'etuiFourni', e.target.checked)}
-                              className="w-4 h-4 cursor-pointer text-cordel-wood"
-                              title="Cocher si un étui est fourni"
-                            />
+                          {/* Kit Accessoires (Texte Résumé) */}
+                          <td className="p-2 border-r border-encre-noire/10 min-w-[70px] text-center text-[10px] font-bold text-encre-noire/80">
+                            {getKitCompletionText(inst)}
                           </td>
 
                           {/* Statut / Prêt (Dropdown & Borrower) */}
@@ -927,6 +1050,7 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin,
                     onEdit={handleOpenEdit}
                     onDelete={handleDelete}
                     onToggleBorrow={handleToggleBorrowStatus}
+                    kitCompletionText={getKitCompletionText(inst)}
                     t={t}
                   />
                 ))}
@@ -944,6 +1068,7 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin,
           saving={saving}
           editingId={editingId}
           usersList={usersList}
+          settingsData={settingsData}
           onSave={handleSave}
           t={t}
         />

@@ -6,16 +6,19 @@ import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 import MestreQuizConfigManager from '../pedagogy/MestreQuizConfigManager';
 import QuizDistractorManager from '../pedagogy/QuizDistractorManager';
+import MestreSignalsManager from '../pedagogy/MestreSignalsManager';
+import CustomQuizConfigPanel from './CustomQuizConfigPanel';
 
-export default function MestreAutoEvalConfig({ profileData }) {
+export default function MestreAutoEvalConfig({ profileData, isEmbedded }) {
   const groupId = profileData?.groupId;
   const isAuthorized = profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.isSystemAdmin;
 
   const [loading, setLoading] = useState(false);
-  const [activeSection, setActiveSection] = useState('visibilite'); // visibilite, qcm_config, percussion, chant, danse, leurres
+  const [activeSection, setActiveSection] = useState('visibilite');
 
   // Data models
   const [songs, setSongs] = useState([]);
+  const [fiches, setFiches] = useState([]);
   const [rhythms, setRhythms] = useState([]);
   const [rhythmsMetadata, setRhythmsMetadata] = useState({});
   const [qcmGlobalConfig, setQcmGlobalConfig] = useState({
@@ -31,13 +34,12 @@ export default function MestreAutoEvalConfig({ profileData }) {
   });
   const [enabledModules, setEnabledModules] = useState({});
 
-  // UI states for Percussion
+  // UI states for selection
   const [selectedRhythm, setSelectedRhythm] = useState(null);
-  const [newQuestionText, setNewQuestionText] = useState('');
-  const [newQuestionCorrect, setNewQuestionCorrect] = useState('');
-  const [newQuestionBad1, setNewQuestionBad1] = useState('');
-  const [newQuestionBad2, setNewQuestionBad2] = useState('');
-  const [newQuestionBad3, setNewQuestionBad3] = useState('');
+  const [selectedDanseRhythm, setSelectedDanseRhythm] = useState(null);
+  const [selectedSong, setSelectedSong] = useState(null);
+  const [selectedAtelierFiche, setSelectedAtelierFiche] = useState(null);
+  const [selectedCultureFiche, setSelectedCultureFiche] = useState(null);
 
   const fetchData = async () => {
     setLoading(true);
@@ -65,19 +67,101 @@ export default function MestreAutoEvalConfig({ profileData }) {
         }
       }
 
-      // Récupérer Rhythms from Storage
+      // Récupérer Educational Sheets (Fiches)
+      const qFiches = query(collection(db, 'documents'), where('groupId', '==', groupId), where('type', 'in', ['fiche_pedagogique', 'culture_fiche']));
+      const fichesSnap = await getDocs(qFiches);
+      const fetchedFiches = [];
+      fichesSnap.forEach(d => fetchedFiches.push({ id: d.id, ...d.data() }));
+      setFiches(fetchedFiches);
+
+      // Récupérer Rhythms from Storage & group medias
       const folderRef = ref(storage, `documents/${groupId}/sequencer`);
       const res = await listAll(folderRef);
-      const fetchedRhythms = await Promise.all(
+      const files = await Promise.all(
         res.items.map(async (itemRef) => {
-          const jsonUrl = await getDownloadURL(itemRef);
-          const rawName = itemRef.name;
-          const cleanName = rawName.replace(/^\d+_/, '').replace(/\.json$/i, '');
-          return { id: rawName, titre: cleanName, jsonUrl, fileName: rawName };
+          const url = await getDownloadURL(itemRef);
+          return {
+            fileName: itemRef.name,
+            url,
+            isAudio: /\.(mp3|wav|ogg|m4a|aac|webm)$/i.test(itemRef.name),
+            isJson: /\.json$/i.test(itemRef.name),
+            cleanName: itemRef.name.replace(/^\d+_/, '').replace(/\.(json|mp3|wav|ogg|m4a|aac|webm)$/i, '')
+          };
         })
       );
-      fetchedRhythms.sort((a, b) => a.titre.localeCompare(b.titre));
-      setRhythms(fetchedRhythms);
+
+      const groupedRhythms = [];
+      const usedFiles = new Set();
+
+      // First pass: JSON files
+      files.filter(f => f.isJson).forEach(f => {
+        groupedRhythms.push({
+          id: f.fileName,
+          titre: f.cleanName,
+          jsonUrl: f.url,
+          media: [{ url: f.url, fileName: f.fileName, isAudio: false, isJson: true }]
+        });
+        usedFiles.add(f.fileName);
+      });
+
+      // Second pass: associate audios to rhythms
+      files.filter(f => !usedFiles.has(f.fileName)).forEach(f => {
+        const matchingRhythm = groupedRhythms.find(r => f.cleanName.toLowerCase().includes(r.titre.toLowerCase()) || f.fileName.toLowerCase().includes(r.titre.toLowerCase()));
+        if (matchingRhythm) {
+          matchingRhythm.media.push({ url: f.url, fileName: f.fileName, isAudio: f.isAudio, isJson: f.isJson });
+        } else {
+          groupedRhythms.push({
+            id: f.fileName,
+            titre: f.cleanName,
+            media: [{ url: f.url, fileName: f.fileName, isAudio: f.isAudio, isJson: f.isJson }]
+          });
+        }
+      });
+
+      // Récupération des patterns et sections depuis Firestore (le séquenceur utilise ownerId/visibility)
+      const qPatterns = query(collection(db, 'patterns'));
+      const qSections = query(collection(db, 'sections'));
+      const [patternsSnap, sectionsSnap] = await Promise.all([getDocs(qPatterns), getDocs(qSections)]);
+      
+      const firestoreMedia = [];
+      const mestreId = profileData?.id || profileData?.uid || '';
+      
+      patternsSnap.forEach(d => {
+        const data = d.data();
+        if (data.ownerId !== mestreId && data.visibility !== 'public') return;
+        const itemName = data.name || data.title;
+        if (itemName) firestoreMedia.push({ id: d.id, data, type: 'pattern', prefix: 'Pattern: ' });
+      });
+      sectionsSnap.forEach(d => {
+        const data = d.data();
+        if (data.ownerId !== mestreId && data.visibility !== 'public') return;
+        const itemName = data.name || data.title;
+        if (itemName) firestoreMedia.push({ id: d.id, data, type: 'section', prefix: 'Section: ' });
+      });
+
+      firestoreMedia.forEach(item => {
+        const cleanName = item.data.name || item.data.title;
+        const matchingRhythm = groupedRhythms.find(r => cleanName.toLowerCase().includes(r.titre.toLowerCase()));
+        const mediaObj = {
+          url: `firestore:${item.type}:${item.id}`,
+          fileName: `${item.prefix}${cleanName}`,
+          isAudio: false,
+          isJson: true,
+          rythme: matchingRhythm ? matchingRhythm.titre : 'Inconnu'
+        };
+        if (matchingRhythm) {
+          matchingRhythm.media.push(mediaObj);
+        } else {
+          groupedRhythms.push({
+            id: `fs_${item.type}_${item.id}`,
+            titre: cleanName,
+            media: [mediaObj]
+          });
+        }
+      });
+
+      groupedRhythms.sort((a, b) => a.titre.localeCompare(b.titre));
+      setRhythms(groupedRhythms);
 
       // Récupérer Rhythm Metadata for Custom Questions
       const qMeta = collection(db, 'associations', groupId, 'rhythmMetadata');
@@ -99,96 +183,38 @@ export default function MestreAutoEvalConfig({ profileData }) {
     }
   }, [groupId, isAuthorized]);
 
-      // Removed setSongs as it's no longer used for per-song config enregistrement de here.
-
-  const handleAddRhythmQuestion = async (e) => {
-    e.preventDefault();
-    if (!selectedRhythm || !newQuestionText.trim() || !newQuestionCorrect.trim() || !newQuestionBad1.trim()) return;
-    
-    try {
-      const metaRef = doc(db, 'associations', groupId, 'rhythmMetadata', selectedRhythm.id);
+  const handleUpdateRhythmMetadata = (itemId, action, payload) => {
+    setRhythmsMetadata(prev => {
+      const existing = prev[itemId] || {};
+      const updated = { ...existing };
       
-      const newQ = { 
-        id: Date.now().toString(), 
-        texte: newQuestionText.trim(),
-        bonneReponse: newQuestionCorrect.trim(),
-        mauvaisesReponses: [newQuestionBad1.trim(), newQuestionBad2.trim(), newQuestionBad3.trim()].filter(Boolean)
-      };
-      
-      await setDoc(metaRef, {
-        customQuestions: arrayUnion(newQ)
-      }, { merge: true });
-      
-      setRhythmsMetadata(prev => {
-        const existing = prev[selectedRhythm.id] || {};
-        return {
-          ...prev,
-          [selectedRhythm.id]: {
-            ...existing,
-            customQuestions: [...(existing.customQuestions || []), newQ]
-          }
-        };
-      });
-      setNewQuestionText('');
-      setNewQuestionCorrect('');
-      setNewQuestionBad1('');
-      setNewQuestionBad2('');
-      setNewQuestionBad3('');
-    } catch (err) {
-      console.error(err);
-    }
+      if (action === 'isQuizPublished') {
+        updated.isQuizPublished = payload;
+      } else if (action === 'addQuestion') {
+        updated.customQuestions = [...(updated.customQuestions || []), payload];
+      } else if (action === 'removeQuestion') {
+        updated.customQuestions = (updated.customQuestions || []).filter(q => q.id !== payload.id);
+      }
+      return { ...prev, [itemId]: updated };
+    });
   };
 
-  const handleTogglePublishQuiz = async (rhythmId, currentVal) => {
-    try {
-      const metaRef = doc(db, 'associations', groupId, 'rhythmMetadata', rhythmId);
-      await setDoc(metaRef, { isQuizPublished: !currentVal }, { merge: true });
-      setRhythmsMetadata(prev => {
-        const existing = prev[rhythmId] || {};
-        return {
-          ...prev,
-          [rhythmId]: {
-            ...existing,
-            isQuizPublished: !currentVal
-          }
-        };
-      });
-    } catch (err) {
-      console.error(err);
-    }
-  };
+  const handleUpdateDocumentMetadata = (itemId, action, payload, listName) => {
+    const updateList = (prev) => prev.map(doc => {
+      if (doc.id !== itemId) return doc;
+      const updated = { ...doc };
+      if (action === 'isQuizPublished') {
+        updated.isQuizPublished = payload;
+      } else if (action === 'addQuestion') {
+        updated.customQuestions = [...(updated.customQuestions || []), payload];
+      } else if (action === 'removeQuestion') {
+        updated.customQuestions = (updated.customQuestions || []).filter(q => q.id !== payload.id);
+      }
+      return updated;
+    });
 
-  const handleRemoveRhythmQuestion = async (rhythmId, question) => {
-    try {
-      const metaRef = doc(db, 'associations', groupId, 'rhythmMetadata', rhythmId);
-      await updateDoc(metaRef, {
-        customQuestions: arrayRemove(question)
-      });
-      
-      setRhythmsMetadata(prev => {
-        const existing = prev[rhythmId];
-        return {
-          ...prev,
-          [rhythmId]: {
-            ...existing,
-            customQuestions: existing.customQuestions.filter(q => q.id !== question.id)
-          }
-        };
-      });
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  const handleSaveChantDifficulties = async () => {
-    try {
-      const assocRef = doc(db, 'associations', groupId);
-      await updateDoc(assocRef, { qcmGlobalConfig });
-      alert("Niveaux de difficulté sauvegardés avec succès !");
-    } catch (e) {
-      console.error(e);
-      alert("Erreur lors de la sauvegarde.");
-    }
+    if (listName === 'songs') setSongs(updateList);
+    if (listName === 'fiches') setFiches(updateList);
   };
 
   const handleToggleModule = async (key, value) => {
@@ -208,23 +234,28 @@ export default function MestreAutoEvalConfig({ profileData }) {
     { id: 'visibilite', label: 'Visibilité des Onglets', icon: '👁️' },
     { id: 'qcm_config', label: 'Configuration Globale QCM', icon: '⚙️' },
     { id: 'percussion', label: 'QCM Percussion', icon: '🥁' },
-    { id: 'chant', label: 'Difficulté Chant', icon: '🎤' },
-    { id: 'leurres', label: 'Banque de Leurres', icon: '🎭' },
-    { id: 'danse', label: 'Évaluation Danse', icon: '💃' }
+    { id: 'danse', label: 'QCM Danse', icon: '💃' },
+    { id: 'chant', label: 'QCM Chant', icon: '🎤' },
+    { id: 'atelier', label: 'QCM Atelier', icon: '🛠️' },
+    { id: 'culture', label: 'QCM Culture', icon: '📚' },
+    { id: 'signaux', label: 'Signaux du Maître', icon: '🚦' },
+    { id: 'leurres', label: 'Banque de Leurres', icon: '🎭' }
   ];
 
   return (
     <div className="flex flex-col gap-6 w-full max-w-6xl mx-auto text-left select-none p-4 md:p-8 force-light-theme relative">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-2">
-        <div>
-          <h1 className="text-3xl md:text-4xl font-cactus tracking-widest text-cordel-wood uppercase">
-            📝 Auto-Évaluation
-          </h1>
-          <p className="text-xs md:text-sm text-cordel-master-dark opacity-80 max-w-2xl mt-2">
-            Paramétrez la difficulté des auto-évaluations, les questions personnalisées par pupitre et la configuration globale.
-          </p>
+      {!isEmbedded && (
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-2">
+          <div>
+            <h1 className="text-3xl md:text-4xl font-cactus tracking-widest text-cordel-wood uppercase">
+              📝 Auto-Évaluation
+            </h1>
+            <p className="text-xs md:text-sm text-cordel-master-dark opacity-80 max-w-2xl mt-2">
+              Paramétrez la difficulté des auto-évaluations, les questions personnalisées par pupitre et la configuration globale.
+            </p>
+          </div>
         </div>
-      </div>
+      )}
 
       <div className="flex flex-col lg:flex-row gap-6 items-start">
         {/* Navigation / Accordéons Menu (Left sidebar style) */}
@@ -298,92 +329,8 @@ export default function MestreAutoEvalConfig({ profileData }) {
                 <QuizDistractorManager profileData={profileData} />
               )}
 
-              {activeSection === 'chant' && (
-                <div className="flex flex-col gap-6">
-                  <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b-2 border-dashed border-cordel-wood/30 pb-4">
-                    <div>
-                      <h3 className="font-black text-sm uppercase tracking-wider text-cordel-wood">
-                        Configuration de la difficulté (Masquage)
-                      </h3>
-                      <p className="text-xs text-encre-noire/70 mt-1">
-                        Définissez les éléments à masquer par défaut pour chaque niveau de révision.
-                      </p>
-                    </div>
-                    <CordelButton variant="primary" onClick={handleSaveChantDifficulties} className="text-[10px] whitespace-nowrap">
-                      💾 Sauvegarder les niveaux
-                    </CordelButton>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    {['debutant', 'moyen', 'expert'].map(level => {
-                      const levelData = qcmGlobalConfig.chantDifficulties?.[level] || {};
-                      const levelLabels = { debutant: '🌱 Débutant', moyen: '🌿 Intermédiaire', expert: '🌳 Expert' };
-                      
-                      const toggleOption = (field, checked) => {
-                        setQcmGlobalConfig(prev => ({
-                          ...prev,
-                          chantDifficulties: {
-                            ...(prev.chantDifficulties || {}),
-                            [level]: {
-                              ...(prev.chantDifficulties?.[level] || {}),
-                              [field]: checked
-                            }
-                          }
-                        }));
-                      };
-
-                      return (
-                        <CordelCard key={level} variant="default" className="p-4 flex flex-col gap-4">
-                          <h4 className="font-black text-sm uppercase tracking-wider text-encre-noire text-center pb-2 border-b border-dashed border-encre-noire/20">
-                            {levelLabels[level]}
-                          </h4>
-                          <div className="flex flex-col gap-2">
-                            {[
-                              { field: 'hideNacao', label: 'Masquer la Nation' },
-                              { field: 'hideRythme', label: 'Masquer le Rythme' },
-                              { field: 'hideOriginales', label: 'Masquer Paroles Originales' },
-                              { field: 'hidePhonetique', label: 'Masquer la Phonétique' },
-                              { field: 'hideTraduction', label: 'Masquer la Traduction' },
-                              { field: 'hideLexique', label: 'Masquer le Lexique' },
-                            ].map(opt => (
-                              <label key={opt.field} className="flex items-center gap-2 cursor-pointer p-2 bg-[#fdfaf2] rounded border border-encre-noire/10 hover:border-cordel-wood transition-colors">
-                                <input 
-                                  type="checkbox" 
-                                  checked={levelData[opt.field] || false}
-                                  onChange={(e) => toggleOption(opt.field, e.target.checked)}
-                                  className="accent-cordel-wood w-3 h-3"
-                                />
-                                <span className="text-[10px] font-bold text-encre-noire">{opt.label}</span>
-                              </label>
-                            ))}
-
-                            <div className="mt-2 pt-2 border-t border-dashed border-encre-noire/20 flex flex-col gap-2">
-                              <span className="text-[9px] font-black uppercase text-cordel-wood mb-1">Rôles par défaut</span>
-                              <label className="flex items-center gap-2 cursor-pointer p-2 bg-[#fdfaf2] rounded border border-encre-noire/10 hover:border-cordel-wood transition-colors">
-                                <input 
-                                  type="checkbox" 
-                                  checked={levelData.hidePuxador || false}
-                                  onChange={(e) => toggleOption('hidePuxador', e.target.checked)}
-                                  className="accent-cordel-wood w-3 h-3"
-                                />
-                                <span className="text-[10px] font-bold text-encre-noire">Masquer Puxador</span>
-                              </label>
-                              <label className="flex items-center gap-2 cursor-pointer p-2 bg-[#fdfaf2] rounded border border-encre-noire/10 hover:border-cordel-wood transition-colors">
-                                <input 
-                                  type="checkbox" 
-                                  checked={levelData.hideChoeur || false}
-                                  onChange={(e) => toggleOption('hideChoeur', e.target.checked)}
-                                  className="accent-cordel-wood w-3 h-3"
-                                />
-                                <span className="text-[10px] font-bold text-encre-noire">Masquer Chœur</span>
-                              </label>
-                            </div>
-                          </div>
-                        </CordelCard>
-                      );
-                    })}
-                  </div>
-                </div>
+              {activeSection === 'signaux' && (
+                <MestreSignalsManager profileData={profileData} />
               )}
 
               {activeSection === 'percussion' && (
@@ -408,123 +355,165 @@ export default function MestreAutoEvalConfig({ profileData }) {
 
                     <div className="w-full md:w-2/3 flex flex-col gap-4">
                       <h3 className="font-black text-xs uppercase tracking-widest text-cordel-wood mb-2 border-b-2 border-dashed border-cordel-wood/30 pb-2">2. Questions Personnalisées</h3>
-                      
-                      {selectedRhythm ? (
-                        <CordelCard variant="default" className="p-5 flex flex-col gap-6">
-                          <div className="flex flex-col gap-3">
-                            <div className="flex justify-between items-center bg-[#fdfaf2] p-3 border-2 border-dashed border-cordel-wood/30 rounded">
-                              <span className="text-[10px] font-black uppercase tracking-widest text-cordel-master-dark/80">
-                                Visibilité Élèves (Mon Parcours)
-                              </span>
-                              <label className="flex items-center gap-2 cursor-pointer">
-                                <input 
-                                  type="checkbox"
-                                  checked={rhythmsMetadata[selectedRhythm.id]?.isQuizPublished || false}
-                                  onChange={() => handleTogglePublishQuiz(selectedRhythm.id, rhythmsMetadata[selectedRhythm.id]?.isQuizPublished)}
-                                  className="accent-cordel-wood w-4 h-4"
-                                />
-                                <span className={`text-xs font-bold ${rhythmsMetadata[selectedRhythm.id]?.isQuizPublished ? 'text-[#2d6a4f]' : 'text-encre-noire'}`}>
-                                  {rhythmsMetadata[selectedRhythm.id]?.isQuizPublished ? '✅ Publié' : 'Brouillon'}
-                                </span>
-                              </label>
-                            </div>
-                            
-                            <span className="text-[10px] font-black uppercase tracking-widest text-cordel-master-dark/60 mt-2">
-                              Questions actives pour : {selectedRhythm.titre}
-                            </span>
-                            
-                            {!(rhythmsMetadata[selectedRhythm.id]?.customQuestions?.length > 0) ? (
-                              <div className="text-center p-6 bg-[#fdfaf2] border border-dashed border-encre-noire/20 rounded">
-                                <p className="text-xs font-medium opacity-60">Aucune question personnalisée pour ce rythme.</p>
-                              </div>
-                            ) : (
-                              <div className="flex flex-col gap-3">
-                                {rhythmsMetadata[selectedRhythm.id].customQuestions.map(q => (
-                                  <div key={q.id} className="flex flex-col p-3 bg-white border-2 border-encre-noire/15 rounded shadow-sm relative">
-                                    <span className="text-xs font-bold text-encre-noire mb-1">{q.texte}</span>
-                                    <span className="text-[10px] text-[#2d6a4f] font-bold">✓ {q.bonneReponse}</span>
-                                    <div className="flex flex-wrap gap-1 mt-1">
-                                      {q.mauvaisesReponses?.map((mr, i) => (
-                                        <span key={i} className="text-[9px] bg-neutral-100 text-encre-noire/60 px-1.5 py-0.5 rounded line-through">
-                                          {mr}
-                                        </span>
-                                      ))}
-                                    </div>
-                                    <button 
-                                      onClick={() => handleRemoveRhythmQuestion(selectedRhythm.id, q)}
-                                      className="absolute top-2 right-2 text-cordel-master-dark/40 hover:text-cordel-rouge font-black px-2"
-                                      title="Supprimer la question"
-                                    >
-                                      ✕
-                                    </button>
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-
-                          <form onSubmit={handleAddRhythmQuestion} className="flex flex-col gap-3 bg-[#fdfaf2] p-4 rounded border-2 border-encre-noire/10">
-                            <span className="text-[10px] font-black uppercase tracking-widest text-cordel-wood mb-1">
-                              + Nouvelle Question
-                            </span>
-                            <input
-                              type="text"
-                              value={newQuestionText}
-                              onChange={(e) => setNewQuestionText(e.target.value)}
-                              placeholder="La question (ex: Quel est le signal d'arrêt ?)"
-                              className="p-2 border-2 border-encre-noire/30 rounded text-xs font-bold"
-                              required
-                            />
-                            <input
-                              type="text"
-                              value={newQuestionCorrect}
-                              onChange={(e) => setNewQuestionCorrect(e.target.value)}
-                              placeholder="La BONNE réponse"
-                              className="p-2 border-2 border-[#2d6a4f]/50 bg-[#2d6a4f]/5 rounded text-xs font-bold text-[#2d6a4f]"
-                              required
-                            />
-                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                              <input
-                                type="text"
-                                value={newQuestionBad1}
-                                onChange={(e) => setNewQuestionBad1(e.target.value)}
-                                placeholder="Fausse réponse 1"
-                                className="p-2 border-2 border-encre-noire/20 rounded text-xs font-medium"
-                                required
-                              />
-                              <input
-                                type="text"
-                                value={newQuestionBad2}
-                                onChange={(e) => setNewQuestionBad2(e.target.value)}
-                                placeholder="Fausse réponse 2 (opt)"
-                                className="p-2 border-2 border-encre-noire/20 rounded text-xs font-medium"
-                              />
-                              <input
-                                type="text"
-                                value={newQuestionBad3}
-                                onChange={(e) => setNewQuestionBad3(e.target.value)}
-                                placeholder="Fausse réponse 3 (opt)"
-                                className="p-2 border-2 border-encre-noire/20 rounded text-xs font-medium"
-                              />
-                            </div>
-                            <CordelButton variant="primary" type="submit" disabled={!newQuestionText.trim() || !newQuestionCorrect.trim() || !newQuestionBad1.trim()} className="text-[10px] self-end mt-2">
-                              Ajouter au Quiz
-                            </CordelButton>
-                          </form>
-                        </CordelCard>
-                      ) : (
-                        <div className="text-center p-8 bg-[#fdfaf2] border-2 border-dashed border-encre-noire/20 rounded opacity-60">
-                          <p className="text-sm font-bold">Sélectionnez un rythme à gauche pour configurer son QCM.</p>
-                        </div>
-                      )}
+                      <CustomQuizConfigPanel
+                        groupId={groupId}
+                        selectedItem={selectedRhythm}
+                        itemType="rhythm"
+                        isQuizPublished={rhythmsMetadata[selectedRhythm?.id]?.isQuizPublished}
+                        customQuestions={rhythmsMetadata[selectedRhythm?.id]?.customQuestions}
+                        availableMedia={selectedRhythm?.media}
+                        onUpdateMetadata={handleUpdateRhythmMetadata}
+                        allItems={rhythms}
+                      />
                     </div>
                   </div>
                 </div>
               )}
 
               {activeSection === 'danse' && (
-                <div className="text-center p-12 opacity-50 bg-[#fdfaf2] border-2 border-dashed border-encre-noire/20 rounded font-black uppercase text-sm mt-8">
-                  💃 Espace Danse en construction
+                <div className="flex flex-col gap-6">
+                  <div className="flex flex-col md:flex-row gap-6">
+                    <div className="w-full md:w-1/3 flex flex-col gap-3">
+                      <h3 className="font-black text-xs uppercase tracking-widest text-cordel-wood mb-2 border-b-2 border-dashed border-cordel-wood/30 pb-2">1. Sélection (Danse)</h3>
+                      {rhythms.map(rhythm => (
+                        <button
+                          key={rhythm.id}
+                          onClick={() => setSelectedDanseRhythm(rhythm)}
+                          className={`text-left p-3 rounded border-2 transition-all text-xs font-bold ${
+                            selectedDanseRhythm?.id === rhythm.id 
+                              ? 'border-cordel-wood bg-cordel-wood/10 text-cordel-wood shadow-[2px_2px_0px_0px_#8b2a1a]'
+                              : 'border-dashed border-encre-noire/20 text-encre-noire/70 hover:border-encre-noire hover:text-encre-noire'
+                          }`}
+                        >
+                          💃 {rhythm.titre}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="w-full md:w-2/3 flex flex-col gap-4">
+                      <h3 className="font-black text-xs uppercase tracking-widest text-cordel-wood mb-2 border-b-2 border-dashed border-cordel-wood/30 pb-2">2. Questions Personnalisées</h3>
+                      <CustomQuizConfigPanel
+                        groupId={groupId}
+                        selectedItem={selectedDanseRhythm}
+                        itemType="rhythm"
+                        isQuizPublished={rhythmsMetadata[selectedDanseRhythm?.id]?.isQuizPublished}
+                        customQuestions={rhythmsMetadata[selectedDanseRhythm?.id]?.customQuestions}
+                        availableMedia={selectedDanseRhythm?.media}
+                        onUpdateMetadata={handleUpdateRhythmMetadata}
+                        allItems={rhythms}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {activeSection === 'chant' && (
+                <div className="flex flex-col gap-6">
+                  <div className="flex flex-col md:flex-row gap-6">
+                    <div className="w-full md:w-1/3 flex flex-col gap-3">
+                      <h3 className="font-black text-xs uppercase tracking-widest text-cordel-wood mb-2 border-b-2 border-dashed border-cordel-wood/30 pb-2">1. Sélection Chant</h3>
+                      {songs.map(song => (
+                        <button
+                          key={song.id}
+                          onClick={() => setSelectedSong(song)}
+                          className={`text-left p-3 rounded border-2 transition-all text-xs font-bold ${
+                            selectedSong?.id === song.id 
+                              ? 'border-cordel-wood bg-cordel-wood/10 text-cordel-wood shadow-[2px_2px_0px_0px_#8b2a1a]'
+                              : 'border-dashed border-encre-noire/20 text-encre-noire/70 hover:border-encre-noire hover:text-encre-noire'
+                          }`}
+                        >
+                          🎤 {song.titre}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="w-full md:w-2/3 flex flex-col gap-4">
+                      <h3 className="font-black text-xs uppercase tracking-widest text-cordel-wood mb-2 border-b-2 border-dashed border-cordel-wood/30 pb-2">2. Questions Personnalisées</h3>
+                      <CustomQuizConfigPanel
+                        groupId={groupId}
+                        selectedItem={selectedSong}
+                        itemType="song"
+                        isQuizPublished={selectedSong?.isQuizPublished}
+                        customQuestions={selectedSong?.customQuestions}
+                        availableMedia={null}
+                        onUpdateMetadata={(id, action, payload) => handleUpdateDocumentMetadata(id, action, payload, 'songs')}
+                        allItems={songs}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {activeSection === 'atelier' && (
+                <div className="flex flex-col gap-6">
+                  <div className="flex flex-col md:flex-row gap-6">
+                    <div className="w-full md:w-1/3 flex flex-col gap-3">
+                      <h3 className="font-black text-xs uppercase tracking-widest text-cordel-wood mb-2 border-b-2 border-dashed border-cordel-wood/30 pb-2">1. Sélection Fiche Atelier</h3>
+                      {fiches.filter(f => {
+                        const cat = f.categorie?.toLowerCase() || '';
+                        return cat.includes('atelier') || cat.includes('lutherie') || cat.includes('fabrication') || cat.includes('entretien');
+                      }).map(fiche => (
+                        <button
+                          key={fiche.id}
+                          onClick={() => setSelectedAtelierFiche(fiche)}
+                          className={`text-left p-3 rounded border-2 transition-all text-xs font-bold ${
+                            selectedAtelierFiche?.id === fiche.id 
+                              ? 'border-cordel-wood bg-cordel-wood/10 text-cordel-wood shadow-[2px_2px_0px_0px_#8b2a1a]'
+                              : 'border-dashed border-encre-noire/20 text-encre-noire/70 hover:border-encre-noire hover:text-encre-noire'
+                          }`}
+                        >
+                          🛠️ {fiche.titre}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="w-full md:w-2/3 flex flex-col gap-4">
+                      <h3 className="font-black text-xs uppercase tracking-widest text-cordel-wood mb-2 border-b-2 border-dashed border-cordel-wood/30 pb-2">2. Questions Personnalisées</h3>
+                      <CustomQuizConfigPanel
+                        groupId={groupId}
+                        selectedItem={selectedAtelierFiche}
+                        itemType="fiche"
+                        isQuizPublished={selectedAtelierFiche?.isQuizPublished}
+                        customQuestions={selectedAtelierFiche?.customQuestions}
+                        availableMedia={null}
+                        onUpdateMetadata={(id, action, payload) => handleUpdateDocumentMetadata(id, action, payload, 'fiches')}
+                        allItems={fiches}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {activeSection === 'culture' && (
+                <div className="flex flex-col gap-6">
+                  <div className="flex flex-col md:flex-row gap-6">
+                    <div className="w-full md:w-1/3 flex flex-col gap-3">
+                      <h3 className="font-black text-xs uppercase tracking-widest text-cordel-wood mb-2 border-b-2 border-dashed border-cordel-wood/30 pb-2">1. Sélection Fiche Culture</h3>
+                      {fiches.filter(f => f.categorie?.toLowerCase() === 'culture' || f.type === 'culture_fiche').map(fiche => (
+                        <button
+                          key={fiche.id}
+                          onClick={() => setSelectedCultureFiche(fiche)}
+                          className={`text-left p-3 rounded border-2 transition-all text-xs font-bold ${
+                            selectedCultureFiche?.id === fiche.id 
+                              ? 'border-cordel-wood bg-cordel-wood/10 text-cordel-wood shadow-[2px_2px_0px_0px_#8b2a1a]'
+                              : 'border-dashed border-encre-noire/20 text-encre-noire/70 hover:border-encre-noire hover:text-encre-noire'
+                          }`}
+                        >
+                          📚 {fiche.titre}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="w-full md:w-2/3 flex flex-col gap-4">
+                      <h3 className="font-black text-xs uppercase tracking-widest text-cordel-wood mb-2 border-b-2 border-dashed border-cordel-wood/30 pb-2">2. Questions Personnalisées</h3>
+                      <CustomQuizConfigPanel
+                        groupId={groupId}
+                        selectedItem={selectedCultureFiche}
+                        itemType="fiche"
+                        isQuizPublished={selectedCultureFiche?.isQuizPublished}
+                        customQuestions={selectedCultureFiche?.customQuestions}
+                        availableMedia={null}
+                        onUpdateMetadata={(id, action, payload) => handleUpdateDocumentMetadata(id, action, payload, 'fiches')}
+                        allItems={fiches}
+                      />
+                    </div>
+                  </div>
                 </div>
               )}
             </>

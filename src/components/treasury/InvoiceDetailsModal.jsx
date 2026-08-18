@@ -2,6 +2,7 @@ import React from 'react';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 import { downloadInvoicePDF } from '../../utils/invoicePdfGenerator';
+import useConfirm from '../../hooks/useConfirm';
 
 export default function InvoiceDetailsModal({
   isOpen,
@@ -13,6 +14,7 @@ export default function InvoiceDetailsModal({
   onEdit,
   saving = false
 }) {
+  const { confirm } = useConfirm();
   if (!isOpen || !invoice) return null;
 
   const isDevis = invoice.type === 'devis';
@@ -32,7 +34,14 @@ export default function InvoiceDetailsModal({
   const handleConfirmPay = async () => {
     if (isPaid) return;
     const confirmText = `Confirmez-vous l'encaissement de la facture ${invoice.numero} (${invoice.montantTTC || invoice.montantHT} €) ?\n\nCela va automatiquement inscrire une recette en Trésorerie.`;
-    if (window.confirm(confirmText)) {
+    const isOk = await confirm({
+      title: "Confirmation d'encaissement",
+      message: confirmText,
+      confirmText: "Oui, encaisser",
+      cancelText: "Annuler",
+      variant: "success"
+    });
+    if (isOk) {
       try {
         await onMarkAsPaid(invoice);
         alert(`Facture ${invoice.numero} marquée comme payée et enregistrée en Trésorerie !`);
@@ -45,7 +54,14 @@ export default function InvoiceDetailsModal({
 
   const handleConvertDevis = async () => {
     const confirmText = `Voulez-vous convertir le devis ${invoice.numero} en Facture officielle ?\n\nUn nouveau numéro de facture (FAC-2026-XXX) va lui être attribué.`;
-    if (window.confirm(confirmText)) {
+    const isOk = await confirm({
+      title: "Conversion de Devis",
+      message: confirmText,
+      confirmText: "Oui, transformer en Facture",
+      cancelText: "Annuler",
+      variant: "info"
+    });
+    if (isOk) {
       try {
         const newFacNum = await onConvertDevisToInvoice(invoice);
         alert(`Le devis ${invoice.numero} a été transformé avec succès en Facture N° ${newFacNum} !`);

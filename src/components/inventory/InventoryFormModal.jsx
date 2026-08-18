@@ -27,6 +27,7 @@ export default function InventoryFormModal({
   saving,
   editingId,
   usersList,
+  settingsData,
   onSave,
   t
 }) {
@@ -148,19 +149,64 @@ export default function InventoryFormModal({
               </div>
             </div>
 
-            {/* Étui */}
-            <div className="flex items-center gap-2 pt-1 pb-1">
-              <input
-                type="checkbox"
-                name="etuiFourni"
-                checked={formData.etuiFourni || false}
-                onChange={(e) => setFormData(prev => ({ ...prev, etuiFourni: e.target.checked }))}
-                id="etuiFourniModalInput"
-                className="w-4 h-4 text-cordel-wood rounded cursor-pointer"
-              />
-              <label htmlFor="etuiFourniModalInput" className="text-xs font-black text-encre-noire uppercase cursor-pointer select-none">
-                Étui / Housse fourni(e)
+            {/* Kit Accessoires Dynamique */}
+            <div className="flex flex-col gap-1.5 pt-1">
+              <label className="text-xs font-black text-encre-noire uppercase flex items-center justify-between">
+                <span>Kit Accessoires</span>
+                {(() => {
+                  const kit = (settingsData?.logisticsKits || []).find(k => k.pupitre === formData.type);
+                  if (kit && kit.accessories && kit.accessories.length > 0) {
+                    const checked = formData.kitChecklist || [];
+                    const validChecked = checked.filter(acc => kit.accessories.includes(acc)).length;
+                    return (
+                      <span className="text-[10px] bg-cordel-master-light/50 px-1.5 py-0.5 rounded text-cordel-wood">
+                        {validChecked}/{kit.accessories.length}
+                      </span>
+                    );
+                  }
+                  return null;
+                })()}
               </label>
+              <div className="p-2 border border-encre-noire rounded-[4px] bg-white flex flex-col gap-1.5">
+                {(() => {
+                  const kit = (settingsData?.logisticsKits || []).find(k => k.pupitre === formData.type);
+                  
+                  if (!kit || !kit.accessories || kit.accessories.length === 0) {
+                    return (
+                      <span className="text-[10px] text-stone-500 italic">
+                        Aucun kit configuré pour ce type d'instrument.
+                      </span>
+                    );
+                  }
+
+                  const checkedList = formData.kitChecklist || [];
+
+                  return kit.accessories.map(acc => {
+                    const isChecked = checkedList.includes(acc);
+                    return (
+                      <label
+                        key={acc}
+                        className={`flex items-center gap-2 p-1 rounded text-xs font-bold cursor-pointer transition-colors ${
+                          isChecked ? 'bg-cordel-master-light/50 text-cordel-wood' : 'hover:bg-stone-100 text-encre-noire'
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={(e) => {
+                            const newChecked = e.target.checked
+                              ? [...checkedList, acc]
+                              : checkedList.filter(item => item !== acc);
+                            setFormData(prev => ({ ...prev, kitChecklist: newChecked }));
+                          }}
+                          className="w-4 h-4 text-cordel-wood rounded cursor-pointer"
+                        />
+                        <span>{acc}</span>
+                      </label>
+                    );
+                  });
+                })()}
+              </div>
             </div>
 
             {/* Membres assignés à ce matériel */}

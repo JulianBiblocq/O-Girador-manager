@@ -901,16 +901,16 @@ export default function PublicHome({
         <div className="max-w-6xl mx-auto px-4 sm:px-6 flex flex-col md:flex-row items-center justify-between gap-8 text-center md:text-left">
           {/* Identité */}
           <div className="flex flex-col gap-2">
-            <div className="flex items-center justify-center md:justify-start gap-3">
+            <div className="flex items-center justify-center md:justify-start gap-4">
               {logoSrc && (
                 <img 
                   src={logoSrc} 
                   alt={`Logo ${groupTitle}`} 
-                  className="w-7 h-7 object-contain select-none"
+                  className="w-16 h-16 object-contain select-none"
                 />
               )}
               <span 
-                className="text-base font-bold tracking-tight text-white"
+                className="text-3xl font-bold tracking-tight text-white"
                 style={{ fontFamily: 'var(--public-font-heading, sans-serif)' }}
               >
                 {groupTitle}
@@ -930,7 +930,7 @@ export default function PublicHome({
               socialLinks.linkedin || 
               socialLinks.spotify
             ) ? (
-              <div className="flex flex-wrap items-center justify-center md:justify-end gap-4 text-xs font-semibold text-stone-400">
+              <div className="flex flex-wrap items-center justify-center md:justify-end gap-6 text-lg font-bold text-stone-300">
                 {socialLinks.facebook && (
                   <a 
                     href={socialLinks.facebook} 

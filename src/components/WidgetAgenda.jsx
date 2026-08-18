@@ -243,7 +243,8 @@ export default function WidgetAgenda({
     enableInscriptions: true,
     description: '',
     latitude: null,
-    longitude: null
+    longitude: null,
+    linkedPatterns: []
   });
 
   const [permissionsMatrice, setPermissionsMatrice] = useState(null);
@@ -345,7 +346,8 @@ export default function WidgetAgenda({
       includesPercussion: false,
       includesDance: false,
       enableCarpool: true,
-      description: ''
+      description: '',
+      linkedPatterns: []
     });
     setIsAdding(true);
   };
@@ -441,7 +443,8 @@ export default function WidgetAgenda({
           sendPushNotification: Boolean(formData.sendPushNotification),
           description: formData.description || '',
           latitude: formData.latitude ? Number(formData.latitude) : null,
-          longitude: formData.longitude ? Number(formData.longitude) : null
+          longitude: formData.longitude ? Number(formData.longitude) : null,
+          linkedPatterns: formData.linkedPatterns || []
         });
       };
 
@@ -671,6 +674,7 @@ export default function WidgetAgenda({
           lieuxImportants={lieuxImportants}
           defaultLocationsByEventType={defaultLocationsByEventType}
           t={t}
+          groupId={groupId}
         />
       )}
 

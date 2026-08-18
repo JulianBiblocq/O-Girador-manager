@@ -9,8 +9,10 @@ import GigDetailsModal from './GigDetailsModal';
 import GigEventCreateModal from './GigEventCreateModal';
 import GigQuoteGeneratorModal from './GigQuoteGeneratorModal';
 import DiffusionContactsManager from './DiffusionContactsManager';
+import useConfirm from '../../hooks/useConfirm';
 
 export default function GigsPipelineManager({ groupId, associationSettings: propAssocSettings = {}, onBack, initialTab = 'pipeline' }) {
+  const { confirm } = useConfirm();
   const [activeTab, setActiveTab] = useState(initialTab); // 'pipeline' | 'contacts'
 
   useEffect(() => {
@@ -106,7 +108,8 @@ export default function GigsPipelineManager({ groupId, associationSettings: prop
   };
 
   const handleDelete = async (gigId, eventName) => {
-    if (window.confirm(`Voulez-vous vraiment supprimer le dossier "${eventName}" ?`)) {
+    const isOk = await confirm(`Voulez-vous vraiment supprimer le dossier "${eventName}" ?`);
+    if (isOk) {
       try {
         await deleteGig(gigId);
       } catch (err) {

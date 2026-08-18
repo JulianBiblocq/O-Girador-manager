@@ -77,6 +77,44 @@ export function useEventSetlist(event) {
     }
   };
 
+  const handleAddDancadorChoreo = async (choreoId) => {
+    if (!choreoId) return;
+    setUpdatingSetlist(true);
+    try {
+      const currentChoreos = event.dancadorChoreoIds || [];
+      if (!currentChoreos.includes(choreoId)) {
+        const updatedChoreos = [...currentChoreos, choreoId];
+        const eventRef = doc(db, 'events', event.id);
+        await updateDoc(eventRef, {
+          dancadorChoreoIds: updatedChoreos
+        });
+      }
+    } catch (err) {
+      console.error("EventDetails - Erreur handleAddDancadorChoreo :", err);
+      alert("Erreur lors de l'ajout de la chorégraphie.");
+    } finally {
+      setUpdatingSetlist(false);
+    }
+  };
+
+  const handleRemoveDancadorChoreo = async (choreoId) => {
+    if (!choreoId) return;
+    setUpdatingSetlist(true);
+    try {
+      const currentChoreos = event.dancadorChoreoIds || [];
+      const updatedChoreos = currentChoreos.filter(id => id !== choreoId);
+      const eventRef = doc(db, 'events', event.id);
+      await updateDoc(eventRef, {
+        dancadorChoreoIds: updatedChoreos
+      });
+    } catch (err) {
+      console.error("EventDetails - Erreur handleRemoveDancadorChoreo :", err);
+      alert("Erreur lors de la suppression de la chorégraphie.");
+    } finally {
+      setUpdatingSetlist(false);
+    }
+  };
+
   return {
     setlist,
     setSetlist,
@@ -92,6 +130,9 @@ export function useEventSetlist(event) {
     setNewMorceauNotes,
     updatingSetlist,
     handleAddMorceau,
-    handleRemoveMorceau
+    handleRemoveMorceau,
+    handleAddDancadorChoreo,
+    handleRemoveDancadorChoreo,
+    dancadorChoreoIds: event.dancadorChoreoIds || []
   };
 }

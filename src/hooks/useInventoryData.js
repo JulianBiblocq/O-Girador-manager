@@ -28,7 +28,8 @@ export function useInventoryData(groupId, isAuthorized, t) {
     assignations: [],
     status: 'En stock',
     borrowedBy: '',
-    etuiFourni: false
+    etuiFourni: false,
+    kit: ''
   });
 
   // Synchronisation en temps réel de la liste des membres du groupe
@@ -104,7 +105,8 @@ export function useInventoryData(groupId, isAuthorized, t) {
       assignations: [],
       status: 'En stock',
       borrowedBy: '',
-      etuiFourni: false
+      etuiFourni: false,
+      kit: ''
     });
     setEditingId(null);
     setIsFormOpen(true);
@@ -120,7 +122,8 @@ export function useInventoryData(groupId, isAuthorized, t) {
       assignations: inst.assignations || [],
       status: inst.status || 'En stock',
       borrowedBy: inst.borrowedBy || '',
-      etuiFourni: inst.etuiFourni || false
+      etuiFourni: inst.etuiFourni || false,
+      kit: inst.kit || ''
     });
     setEditingId(inst.id);
     setIsFormOpen(true);
@@ -142,6 +145,7 @@ export function useInventoryData(groupId, isAuthorized, t) {
         status: formData.status || 'En stock',
         borrowedBy: formData.borrowedBy || null,
         etuiFourni: formData.etuiFourni || false,
+        kit: formData.kit || '',
         groupId: groupId
       };
 
@@ -192,6 +196,45 @@ export function useInventoryData(groupId, isAuthorized, t) {
     }
   }, []);
 
+  const handleApproveMovement = useCallback(async (inst) => {
+    if (!inst.pendingMovement) return;
+    try {
+      const { type, toUserId } = inst.pendingMovement;
+      let payload = {};
+      if (type === 'return_to_local') {
+        payload = {
+          status: 'En stock',
+          borrowedBy: null,
+          localisationPhysique: 'Local',
+          pendingMovement: null
+        };
+      } else if (type === 'transfer' && toUserId) {
+        payload = {
+          status: 'Emprunté',
+          borrowedBy: toUserId,
+          localisationPhysique: toUserId,
+          pendingMovement: null
+        };
+      } else {
+        payload = { pendingMovement: null };
+      }
+      await updateDoc(doc(db, 'inventory', inst.id), payload);
+    } catch (err) {
+      console.error("useInventoryData - Erreur lors de l'approbation du mouvement :", err);
+      alert("Erreur lors de l'approbation du mouvement.");
+    }
+  }, []);
+
+  const handleRejectMovement = useCallback(async (inst) => {
+    if (!inst.pendingMovement) return;
+    try {
+      await updateDoc(doc(db, 'inventory', inst.id), { pendingMovement: null });
+    } catch (err) {
+      console.error("useInventoryData - Erreur lors du rejet du mouvement :", err);
+      alert("Erreur lors du rejet du mouvement.");
+    }
+  }, []);
+
   return {
     instruments,
     usersList,
@@ -207,6 +250,8 @@ export function useInventoryData(groupId, isAuthorized, t) {
     handleOpenEdit,
     handleSave,
     handleDelete,
-    handleToggleBorrowStatus
+    handleToggleBorrowStatus,
+    handleApproveMovement,
+    handleRejectMovement
   };
 }

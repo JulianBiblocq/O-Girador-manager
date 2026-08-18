@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import useConfirm from '../../hooks/useConfirm';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 import AddressAutocomplete from '../AddressAutocomplete';
@@ -9,6 +10,7 @@ import ManualMapMarkerModal from '../agenda/ManualMapMarkerModal';
  * Permet de gérer le répertoire centralisé des salles, locaux et lieux habituels (CRUD).
  */
 export default function TabLieux({ formData, handleChange, saving, t }) {
+  const { confirm } = useConfirm();
   const lieuxImportants = Array.isArray(formData.lieuxImportants) ? formData.lieuxImportants : [];
 
   // État local pour le formulaire d'ajout / édition
@@ -89,8 +91,9 @@ export default function TabLieux({ formData, handleChange, saving, t }) {
   };
 
   // Supprimer un lieu
-  const handleDelete = (id) => {
-    if (window.confirm("Êtes-vous sûr de vouloir supprimer ce lieu de la liste des lieux importants ?")) {
+  const handleDelete = async (id) => {
+    const isOk = await confirm("Êtes-vous sûr de vouloir supprimer ce lieu de la liste des lieux importants ?");
+    if (isOk) {
       const updatedList = lieuxImportants.filter(l => l.id !== id);
       handleChange('lieuxImportants', updatedList);
     }

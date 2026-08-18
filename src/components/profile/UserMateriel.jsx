@@ -1,9 +1,12 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useUserProfile } from '../../hooks/useUserProfile';
 import { useTranslation } from '../LanguageContext';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
-import { XiloCaixa } from '../XiloIcons';
+import { XiloCaixa, XiloClose } from '../XiloIcons';
+import { useAssociationSettings } from '../../hooks/useAssociationSettings';
+import { doc, updateDoc, collection, query, where, getDocs } from 'firebase/firestore';
+import { db } from '../../firebase';
 
 const getInstrumentIconPath = (instName) => {
   if (!instName) return '/favicon.svg';
@@ -42,6 +45,73 @@ export default function UserMateriel({ user, profileData, onBack }) {
     Array.isArray(inst.assignations) && 
     inst.assignations.includes(user?.uid)
   );
+
+  const [movementModalInst, setMovementModalInst] = useState(null);
+  const [movementType, setMovementType] = useState('return_to_local');
+  const [movementToUser, setMovementToUser] = useState('');
+  const [movementNote, setMovementNote] = useState('');
+  const [usersList, setUsersList] = useState([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
+  const [submittingMovement, setSubmittingMovement] = useState(false);
+
+  useEffect(() => {
+    if (movementModalInst && usersList.length === 0 && profileData?.groupId) {
+      const fetchUsers = async () => {
+        setLoadingUsers(true);
+        try {
+          const q = query(collection(db, 'users'), where('groupId', '==', profileData.groupId));
+          const snapshot = await getDocs(q);
+          const users = [];
+          snapshot.forEach(docSnap => {
+            const data = docSnap.data();
+            if (docSnap.id !== user.uid) { // exclude self
+              users.push({ id: docSnap.id, nom: data.nom, prenom: data.prenom });
+            }
+          });
+          users.sort((a, b) => (a.prenom || '').localeCompare(b.prenom || ''));
+          setUsersList(users);
+        } catch (err) {
+          console.error("UserMateriel - Erreur fetch users :", err);
+        } finally {
+          setLoadingUsers(false);
+        }
+      };
+      fetchUsers();
+    }
+  }, [movementModalInst, profileData?.groupId, usersList.length, user.uid]);
+
+  const handleSubmitMovement = async (e) => {
+    e.preventDefault();
+    if (!movementModalInst) return;
+    if (movementType === 'transfer' && !movementToUser) {
+      alert("Veuillez sélectionner un membre pour le transfert.");
+      return;
+    }
+
+    setSubmittingMovement(true);
+    try {
+      const payload = {
+        type: movementType,
+        fromUserId: user.uid,
+        toUserId: movementType === 'transfer' ? movementToUser : null,
+        date: new Date().toISOString(),
+        note: movementNote.trim(),
+        status: 'pending'
+      };
+      await updateDoc(doc(db, 'inventory', movementModalInst.id), {
+        pendingMovement: payload
+      });
+      setMovementModalInst(null);
+      setMovementType('return_to_local');
+      setMovementToUser('');
+      setMovementNote('');
+    } catch (err) {
+      console.error("UserMateriel - Erreur lors de la déclaration :", err);
+      alert("Erreur lors de l'envoi de la déclaration.");
+    } finally {
+      setSubmittingMovement(false);
+    }
+  };
 
   return (
     <div className="flex flex-col gap-4 text-left max-w-3xl mx-auto w-full select-none">
@@ -109,17 +179,40 @@ export default function UserMateriel({ user, profileData, onBack }) {
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-1">
                 {borrowed.map(inst => (
-                  <CordelCard key={inst.id} variant="default" useExtremeBorder={false} className="p-3 bg-white/50 dark:bg-black/20 flex items-center justify-between gap-3 text-left hover:shadow-[2px_2px_0px_0px_#181716] transition-all">
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <img src={getInstrumentIconPath(inst.type)} alt={inst.type} className="w-6 h-6 object-contain shrink-0" />
-                      <div className="flex flex-col min-w-0">
-                        <span className="text-xs font-bold truncate text-encre-noire">{inst.nom}</span>
-                        <span className="text-[9px] opacity-70 text-cordel-master-dark truncate">Stock Association</span>
+                  <CordelCard key={inst.id} variant="default" useExtremeBorder={false} className="p-3 bg-white/50 dark:bg-black/20 flex flex-col gap-3 text-left hover:shadow-[2px_2px_0px_0px_#181716] transition-all">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <img src={getInstrumentIconPath(inst.type)} alt={inst.type} className="w-6 h-6 object-contain shrink-0" />
+                        <div className="flex flex-col min-w-0">
+                          <span className="text-xs font-bold truncate text-encre-noire">{inst.nom}</span>
+                          <span className="text-[9px] opacity-70 text-cordel-master-dark truncate">Stock Association</span>
+                        </div>
                       </div>
+                      <span className={`theme-stamp-badge ${inst.etat === 'À réparer' ? 'border-red-600 text-red-600' : 'theme-stamp-badge-dark'} text-[7px] shrink-0`}>
+                        {inst.etat}
+                      </span>
                     </div>
-                    <span className={`theme-stamp-badge ${inst.etat === 'À réparer' ? 'border-red-600 text-red-600' : 'theme-stamp-badge-dark'} text-[7px] shrink-0`}>
-                      {inst.etat}
-                    </span>
+
+                    {inst.kit && (
+                      <div className="text-[9px] italic text-cordel-wood bg-cordel-wood/5 p-1.5 rounded border-l-2 border-cordel-wood">
+                        <span className="font-bold">Kit :</span> {inst.kit}
+                      </div>
+                    )}
+
+                    <div className="flex justify-end pt-1">
+                      {inst.pendingMovement ? (
+                        <span className="text-[9px] font-bold text-cordel-ocre bg-cordel-ocre/10 px-2 py-1 rounded border border-cordel-ocre/30">
+                          ⏳ En attente de validation logistique
+                        </span>
+                      ) : (
+                        <button
+                          onClick={() => setMovementModalInst(inst)}
+                          className="text-[9px] font-bold uppercase tracking-wider text-cordel-wood border border-cordel-wood/30 hover:bg-cordel-wood/10 px-2 py-1 rounded transition-colors"
+                        >
+                          🔄 Déclarer un mouvement
+                        </button>
+                      )}
+                    </div>
                   </CordelCard>
                 ))}
               </div>
@@ -154,6 +247,96 @@ export default function UserMateriel({ user, profileData, onBack }) {
               </div>
             )}
           </CordelCard>
+
+        </div>
+      )}
+
+      {/* MODAL DE DECLARATION DE MOUVEMENT */}
+      {movementModalInst && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
+            <CordelCard variant="default" useExtremeBorder={true} className="p-5 flex flex-col gap-4 relative">
+              <button 
+                onClick={() => setMovementModalInst(null)}
+                className="absolute top-3 right-3 text-cordel-master-dark hover:text-cordel-wood"
+              >
+                <XiloClose size={14} />
+              </button>
+
+              <h3 className="text-sm font-extrabold text-cordel-wood uppercase tracking-wider flex items-center gap-2 border-b border-dashed border-cordel-wood/20 pb-2">
+                🔄 Déclarer un mouvement
+              </h3>
+
+              <div className="text-xs font-bold text-encre-noire">
+                Instrument : {movementModalInst.nom}
+              </div>
+
+              {movementModalInst.kit && (
+                <div className="bg-cordel-ocre/10 border border-cordel-ocre/30 rounded p-2 text-[10px] text-cordel-wood leading-relaxed">
+                  <span className="font-black">Attention :</span> Vous vous apprêtez à transférer cet instrument avec son kit complet : <span className="font-bold">{movementModalInst.kit}</span>.
+                </div>
+              )}
+
+              <form onSubmit={handleSubmitMovement} className="flex flex-col gap-3 mt-2">
+                <div className="flex flex-col gap-1">
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-cordel-master-dark">
+                    Type de mouvement
+                  </label>
+                  <select 
+                    value={movementType} 
+                    onChange={(e) => setMovementType(e.target.value)}
+                    className="theme-input text-xs font-bold py-1.5"
+                    disabled={submittingMovement}
+                  >
+                    <option value="return_to_local">J'ai rendu cet instrument au local</option>
+                    <option value="transfer">Je l'ai transmis à un autre membre</option>
+                  </select>
+                </div>
+
+                {movementType === 'transfer' && (
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-cordel-master-dark">
+                      Membre cible
+                    </label>
+                    <select 
+                      value={movementToUser} 
+                      onChange={(e) => setMovementToUser(e.target.value)}
+                      className="theme-input text-xs font-bold py-1.5"
+                      required
+                      disabled={submittingMovement || loadingUsers}
+                    >
+                      <option value="">-- Choisir un membre --</option>
+                      {usersList.map(u => (
+                        <option key={u.id} value={u.id}>{u.prenom} {u.nom}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                <div className="flex flex-col gap-1">
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-cordel-master-dark">
+                    Observations (Optionnel)
+                  </label>
+                  <textarea 
+                    value={movementNote} 
+                    onChange={(e) => setMovementNote(e.target.value)}
+                    placeholder="Ex: Il manque une baguette, la fermeture de la housse est coincée..."
+                    className="theme-input text-xs font-bold py-1.5 resize-none h-16"
+                    disabled={submittingMovement}
+                  />
+                </div>
+
+                <div className="flex justify-end gap-2 mt-2 pt-3 border-t border-dashed border-cordel-master-dark/15">
+                  <CordelButton type="button" variant="default" onClick={() => setMovementModalInst(null)} disabled={submittingMovement} className="text-xs px-3 py-1.5">
+                    Annuler
+                  </CordelButton>
+                  <CordelButton type="submit" variant="ocre" disabled={submittingMovement || (movementType === 'transfer' && !movementToUser)} className="text-xs px-4 py-1.5 font-bold">
+                    {submittingMovement ? 'Envoi...' : 'Envoyer la déclaration'}
+                  </CordelButton>
+                </div>
+              </form>
+            </CordelCard>
+          </div>
         </div>
       )}
     </div>

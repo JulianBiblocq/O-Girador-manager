@@ -4,9 +4,12 @@ import { db } from '../../firebase';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 import SeloAxeStamp from '../SeloAxeStamp';
-import { generateQuizFromSong, generateQuizFromSheet } from '../../utils/quizGenerator';
+import FirestoreMediaRenderer from './FirestoreMediaRenderer';
+import { generateQuizFromSong, generateQuizFromSheet, generateQuizFromDancador } from '../../utils/quizGenerator';
 import { generateTranslationQuiz } from '../../utils/translationQuizEngine';
 import StudentToadasProgress from './StudentToadasProgress';
+import { useDancadorSteps } from '../../hooks/useDancadorData';
+import { useTranslation } from '../LanguageContext';
 
 export default function AutoEvalQuizContainer({ 
   profileData, 
@@ -16,11 +19,12 @@ export default function AutoEvalQuizContainer({
   targetedToadaId = null,
   onExit = null
 }) {
+  const { t } = useTranslation();
   const [step, setStep] = useState(initialTheme ? 'QUIZ' : 'HOME'); // 'HOME', 'QUIZ', 'RESULT'
   
   // App-level config
   const [globalConfig, setGlobalConfig] = useState({
-    themes: { toadas: true, traduction: true, culture: true, atelier: true },
+    themes: { toadas: true, traduction: true, culture: true, atelier: true, danse: true },
     difficulty: 'medium',
     questionCount: 10
   });
@@ -43,6 +47,9 @@ export default function AutoEvalQuizContainer({
   const [savingScore, setSavingScore] = useState(false);
 
   const [customDistractors, setCustomDistractors] = useState({});
+
+  // Récupération des pas de danse via le nouveau hook
+  const { steps: dancadorSteps } = useDancadorSteps(profileData?.groupId);
 
   // Charger association config
   useEffect(() => {
@@ -84,6 +91,8 @@ const startQuiz = (theme, specificToadaId = null) => {
   setCurrentIndex(0);
   setWrongAnswers([]);
   
+  const qcmGlobalConfig = { ...globalConfig, difficulty: selectedDifficulty, t };
+
   // Génération dynamique
   let generated = [];
   const targetCount = globalConfig.questionCount;
@@ -94,7 +103,7 @@ const startQuiz = (theme, specificToadaId = null) => {
     if (specificToadaId) {
       const song = allSongs.find(s => s.id === specificToadaId);
       if (song) {
-        generated = generateQuizFromSong(song, allSongs, allSheets, { askRythme: true, askNacao: true, askLexique: true, difficulty: selectedDifficulty, customDistractors });
+        generated = generateQuizFromSong(song, allSongs, allSheets, { askRythme: true, askNacao: true, askLexique: true, difficulty: selectedDifficulty, customDistractors, t: qcmGlobalConfig.t });
         // S'assurer que le toadaId est attaché à la question pour le suivi analytique
         generated = generated.map(q => ({ ...q, toadaId: specificToadaId }));
       }
@@ -102,7 +111,8 @@ const startQuiz = (theme, specificToadaId = null) => {
       const songsCopy = [...allSongs].sort(() => Math.random() - 0.5);
       for (const song of songsCopy) {
         if (generated.length >= targetCount) break;
-        const q = generateQuizFromSong(song, allSongs, allSheets, { askRythme: true, askNacao: true, askLexique: true, difficulty: selectedDifficulty, customDistractors });
+        const { t } = qcmGlobalConfig;
+        const q = generateQuizFromSong(song, allSongs, allSheets, { askRythme: true, askNacao: true, askLexique: true, difficulty: selectedDifficulty, customDistractors, t });
         generated.push(...q.map(item => ({ ...item, toadaId: song.id })));
       }
     }
@@ -114,18 +124,27 @@ const startQuiz = (theme, specificToadaId = null) => {
       const sheetsCopy = [...filteredSheets].sort(() => Math.random() - 0.5);
       for (const sheet of sheetsCopy) {
         if (generated.length >= targetCount) break;
-        const q = generateQuizFromSheet(sheet, allSheets, allSongs, { difficulty: selectedDifficulty, customDistractors });
+        const { t } = qcmGlobalConfig;
+        const q = generateQuizFromSheet(sheet, allSheets, allSongs, { difficulty: selectedDifficulty, customDistractors, t });
         generated.push(...q);
       }
+    } else if (theme === 'danse') {
+      const { t } = qcmGlobalConfig;
+      generated = generateQuizFromDancador(dancadorSteps, { questionCount: targetCount, t });
     } else if (theme === 'MIX') {
       // Générer un lot de chaque catégorie pour s'assurer d'avoir assez de questions pour le mix final
+      if (globalConfig.themes.danse && dancadorSteps?.length > 0) {
+        const { t } = qcmGlobalConfig;
+        generated.push(...generateQuizFromDancador(dancadorSteps, { questionCount: 3, t }));
+      }
       if (globalConfig.themes.traduction) {
         generated.push(...generateTranslationQuiz({ count: targetCount, direction: 'MIXED', difficulty: selectedDifficulty, customDistractors }));
       }
       if (globalConfig.themes.toadas && allSongs.length > 0) {
         const songsCopy = [...allSongs].sort(() => Math.random() - 0.5);
         for (const song of songsCopy.slice(0, 3)) {
-          generated.push(...generateQuizFromSong(song, allSongs, allSheets, { askRythme: true, askNacao: true, askLexique: true, difficulty: selectedDifficulty, customDistractors }));
+          const { t } = qcmGlobalConfig;
+          generated.push(...generateQuizFromSong(song, allSongs, allSheets, { askRythme: true, askNacao: true, askLexique: true, difficulty: selectedDifficulty, customDistractors, t }));
         }
       }
       if (globalConfig.themes.culture || globalConfig.themes.atelier) {
@@ -136,7 +155,8 @@ const startQuiz = (theme, specificToadaId = null) => {
         });
         const sheetsCopy = [...validSheets].sort(() => Math.random() - 0.5);
         for (const sheet of sheetsCopy.slice(0, 3)) {
-          generated.push(...generateQuizFromSheet(sheet, allSheets, allSongs, { difficulty: selectedDifficulty, customDistractors }));
+          const { t } = qcmGlobalConfig;
+          generated.push(...generateQuizFromSheet(sheet, allSheets, allSongs, { difficulty: selectedDifficulty, customDistractors, t }));
         }
       }
     }
@@ -176,7 +196,7 @@ const startQuiz = (theme, specificToadaId = null) => {
       } else {
         finishQuiz();
       }
-    }, 1500); // 1.5s delay to see the result
+    }, choice.isCorrect ? 1500 : 3500); // Wait longer if incorrect to let them read the answer
   };
 
   const finishQuiz = async () => {
@@ -185,16 +205,45 @@ const startQuiz = (theme, specificToadaId = null) => {
     
     setSavingScore(true);
     try {
+      const finalScore = score + (selectedChoice?.isCorrect && !showFeedback ? 1 : 0);
       const docRef = doc(db, 'users', profileData.uid);
       const newHistoryEntry = {
         date: new Date().toISOString(),
         theme: selectedTheme,
         difficulty: selectedDifficulty,
-        score: score + (selectedChoice?.isCorrect && !showFeedback ? 1 : 0),
+        score: finalScore,
         total: questions.length,
         toadaId: targetedToadaId || null
       };
+      
+      // 1. Sauvegarde dans l'historique brut
       await setDoc(docRef, { quizHistory: arrayUnion(newHistoryEntry) }, { merge: true });
+
+      // 2. Synchronisation avec l'état global (evaluations) pour les quiz ciblés
+      if (targetedToadaId && profileData.groupId) {
+        const percentage = finalScore / questions.length;
+        let newLevel = 'decouverte';
+        if (percentage === 1) newLevel = 'referent';
+        else if (percentage >= 0.8) newLevel = 'alaise';
+        else if (percentage >= 0.5) newLevel = 'pratique';
+        
+        const parcoursRef = doc(db, 'users', profileData.uid, 'parcours', profileData.groupId);
+        const parcoursSnap = await getDoc(parcoursRef);
+        const currentData = parcoursSnap.exists() ? parcoursSnap.data() : {};
+        const oldLevel = currentData.evaluations?.[targetedToadaId];
+        
+        const levelValues = { 'decouverte': 1, 'pratique': 2, 'alaise': 3, 'referent': 4 };
+        const oldVal = levelValues[oldLevel] || 0;
+        const newVal = levelValues[newLevel] || 0;
+
+        if (newVal > oldVal) {
+          await setDoc(parcoursRef, {
+            evaluations: {
+              [targetedToadaId]: newLevel
+            }
+          }, { merge: true });
+        }
+      }
     } catch (e) {
       console.error(e);
     } finally {
@@ -298,6 +347,12 @@ const startQuiz = (theme, specificToadaId = null) => {
                 <span className="text-[10px] text-encre-noire/70">Révisions techniques sur la couture et fabrication.</span>
               </button>
             )}
+            {globalConfig.themes.danse && (
+              <button onClick={() => startQuiz('danse')} className="p-4 bg-white border-2 border-encre-noire/20 rounded-lg text-left hover:border-cordel-wood transition-colors group">
+                <span className="block text-sm font-black text-cordel-wood group-hover:text-cordel-rouge uppercase tracking-wider mb-1">💃 Danse (Dançador)</span>
+                <span className="text-[10px] text-encre-noire/70">Reconnaissance visuelle des pas et familles.</span>
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -320,13 +375,13 @@ const startQuiz = (theme, specificToadaId = null) => {
     return (
       <div className="flex flex-col gap-6 w-full max-w-2xl mx-auto p-4 select-none">
         <div className="flex justify-between items-center bg-white p-3 rounded-xl border-2 border-encre-noire/20 shadow-sm">
-          <button onClick={() => onExit ? onExit() : setStep('HOME')} className="text-[10px] font-black uppercase text-encre-noire/50 hover:text-cordel-rouge">
-            ✕ Quitter
-          </button>
+          <CordelButton variant="default" onClick={() => onExit ? onExit() : setStep('HOME')} className="text-[10px] px-3 py-1 font-black uppercase">
+            ✕ Quitter l'entraînement
+          </CordelButton>
           <span className="font-black text-xs text-cordel-wood uppercase tracking-widest">
             Question {currentIndex + 1} / {questions.length}
           </span>
-          <span className="text-xs font-bold text-[#2d6a4f]">
+          <span className="text-xs font-bold text-cordel-vert">
             ⭐ {score}
           </span>
         </div>
@@ -345,6 +400,20 @@ const startQuiz = (theme, specificToadaId = null) => {
               />
             </div>
           )}
+
+          {q.imageUrl && (
+            <div className="flex justify-center my-4 animate-fadeIn w-full max-w-sm rounded-lg overflow-hidden border-4 border-cordel-wood/20 shadow-md">
+              <img src={q.imageUrl} alt="Illustration de la question" className="w-full h-auto object-cover max-h-64" />
+            </div>
+          )}
+
+          {q.audioUrl && q.audioUrl.startsWith('firestore:') ? (
+            <FirestoreMediaRenderer url={q.audioUrl} />
+          ) : q.audioUrl ? (
+            <div className="flex justify-center my-4 animate-fadeIn w-full">
+              <audio controls src={q.audioUrl} className="w-full max-w-sm rounded-full border-2 border-cordel-wood/20 shadow-sm" />
+            </div>
+          ) : null}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 w-full">
             {choices.map((c, i) => {
@@ -382,8 +451,16 @@ const startQuiz = (theme, specificToadaId = null) => {
           </div>
           
           {showFeedback && (
-            <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 bg-white px-4 py-2 rounded-full shadow-md border border-encre-noire/10 text-xs font-black uppercase animate-bounce">
-              {selectedChoice?.isCorrect ? <span className="text-[#2d6a4f]">✅ Bien joué !</span> : <span className="text-cordel-rouge">❌ Aïe...</span>}
+            <div className={`mt-4 p-4 rounded-lg border-2 flex flex-col gap-2 w-full animate-fadeIn text-left ${selectedChoice?.isCorrect ? 'bg-cordel-vert/10 border-cordel-vert' : 'bg-cordel-ocre/10 border-cordel-ocre'}`}>
+              <h4 className={`text-sm font-black uppercase tracking-wider ${selectedChoice?.isCorrect ? 'text-cordel-vert' : 'text-cordel-ocre'}`}>
+                {selectedChoice?.isCorrect ? "✅ Bien joué !" : "🌱 Presque !"}
+              </h4>
+              {!selectedChoice?.isCorrect && (
+                <p className="text-xs font-bold text-encre-noire/80">
+                  La bonne réponse était : <span className="font-black">{q.choices ? q.choices.find(c => c.isCorrect)?.text : q.correctAnswer}</span>
+                  {q.correctAnswerExplanation ? ` - ${q.correctAnswerExplanation}` : ''}
+                </p>
+              )}
             </div>
           )}
         </CordelCard>

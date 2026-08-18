@@ -8,6 +8,7 @@ import { downloadContractPDF } from '../../utils/contractPdfGenerator';
 import GigSendContractModal from './GigSendContractModal';
 import GigInvoiceGeneratorModal from './GigInvoiceGeneratorModal';
 import GigRelanceEmailModal from './GigRelanceEmailModal';
+import useConfirm from '../../hooks/useConfirm';
 
 export default function GigDetailsModal({
   isOpen,
@@ -25,6 +26,7 @@ export default function GigDetailsModal({
   const [isRelanceModalOpen, setIsRelanceModalOpen] = useState(false);
   const [markingPaid, setMarkingPaid] = useState(false);
   const [toastMessage, setToastMessage] = useState(null);
+  const { confirm } = useConfirm();
 
   if (!isOpen || !gig) return null;
 
@@ -56,7 +58,8 @@ export default function GigDetailsModal({
 
   // Action sécurisée : Supprimer définitivement le dossier
   const handleDeleteConfirm = async () => {
-    if (window.confirm("Êtes-vous sûr de vouloir supprimer définitivement ce dossier ?")) {
+    const isOk = await confirm("Êtes-vous sûr de vouloir supprimer définitivement ce dossier ?");
+    if (isOk) {
       try {
         await onDeleteGig(gig.id, gig.eventName);
         onClose();
@@ -84,7 +87,14 @@ export default function GigDetailsModal({
     const amount = parseFloat(gig.amount) || 0;
     const confirmText = `Confirmez-vous la réception du paiement de ${amount.toLocaleString('fr-FR', { minimumFractionDigits: 2 })} € pour "${gig.eventName}" ?\n\nCela va automatiquement inscrire une recette en Trésorerie et verrouiller le dossier.`;
 
-    if (!window.confirm(confirmText)) return;
+    const isOk = await confirm({
+      title: "Confirmation de paiement",
+      message: confirmText,
+      confirmText: "Oui, valider le paiement",
+      cancelText: "Annuler",
+      variant: "success"
+    });
+    if (!isOk) return;
 
     setMarkingPaid(true);
 

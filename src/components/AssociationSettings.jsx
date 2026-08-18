@@ -269,6 +269,15 @@ export default function AssociationSettings({
             t={t}
           />
         );
+      case 'lieux':
+        return (
+          <TabLieux
+            formData={formData}
+            handleChange={handleChange}
+            saving={saving}
+            t={t}
+          />
+        );
       default:
         return null;
     }

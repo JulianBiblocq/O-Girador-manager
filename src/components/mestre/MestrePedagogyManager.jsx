@@ -5,8 +5,10 @@ import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 import { generateQuizFromSheet, generateQuizFromSong } from '../../utils/quizGenerator';
 import useHardwareBack from '../../hooks/useHardwareBack';
+import { useTranslation } from '../LanguageContext';
 
 export default function MestrePedagogyManager({ profileData, sequenceurUrl }) {
+  const { t } = useTranslation();
   const groupId = profileData?.groupId;
   const isAuthorized = profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.isSystemAdmin;
 
@@ -90,11 +92,11 @@ export default function MestrePedagogyManager({ profileData, sequenceurUrl }) {
     let generated = [];
     const song = songs.find(s => s.id === docId);
     if (song) {
-      generated = generateQuizFromSong(song, songs, fiches, qcmGlobalConfig);
+      generated = generateQuizFromSong(song, songs, fiches, { ...qcmGlobalConfig, t });
     } else {
       const fiche = fiches.find(f => f.id === docId);
       if (fiche) {
-        generated = generateQuizFromSheet(fiche, fiches, songs, qcmGlobalConfig);
+        generated = generateQuizFromSheet(fiche, fiches, songs, { ...qcmGlobalConfig, t });
       }
     }
     setInspectorGeneratedQuiz(generated);

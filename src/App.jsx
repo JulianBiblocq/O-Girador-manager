@@ -147,10 +147,9 @@ const POLES_CONFIG = [
     label: 'Pédagogie',
     labelKey: 'poles.pedagogie',
     tabs: [
-      { id: 'varal-manager', label: 'Varal Pédagogique', labelKey: 'tabVaral' },
-      { id: 'mestre-pedagogy-manager', label: 'Gestion des QCM', labelKey: 'tabMestrePedagogyManager' },
-      { id: 'mestre-auto-eval', label: 'Auto-Évaluation', labelKey: 'tabMestreAutoEval' },
-      { id: 'mestre-sante-troupe', label: 'Analyse & Suivi', labelKey: 'tabMestreSanteTroupe' }
+      { id: 'varal-manager', label: 'Le Varal', labelKey: 'tabVaralManager' },
+      { id: 'mestre-pedagogy-qcm', label: 'Configuration', labelKey: 'tabMestrePedagogyQcm' },
+      { id: 'mestre-pedagogy-dashboard', label: 'Suivi et Analyse', labelKey: 'tabMestrePedagogyDashboard' }
     ]
   },
   {
@@ -936,7 +935,7 @@ export default function App() {
     if (poleId === 'pedagogie' && enabledModules.mestre === false && enabledModules.studioSocial === false) return false;
 
     // Specific Tabs Checks
-    if (['mestre-sante-troupe', 'mestre-pedagogy-manager', 'mestre-auto-eval', 'mestre-sequenceur'].includes(tabId) && enabledModules.mestre === false) return false;
+    if (['mestre-sante-troupe', 'mestre-pedagogy-dashboard', 'mestre-sequenceur'].includes(tabId) && enabledModules.mestre === false) return false;
     if (tabId === 'varal-manager' && enabledModules.studioSocial === false) return false;
 
     // Vérifier Tab-level module basculer
@@ -949,7 +948,7 @@ export default function App() {
     if (['studio-social', 'newsletter'].includes(tabId) && enabledModules.studioSocial === false) return false;
     if (tabId === 'reunion-manager' && enabledModules.reunions === false) return false;
     if (['forum', 'mestre-forum-channels'].includes(tabId) && enabledModules.forum === false) return false;
-    if (['mestre-sante-troupe', 'mestre-pedagogy-manager', 'mestre-auto-eval', 'mestre-orientation', 'mestre-events', 'mestre-stage-layout', 'mestre-mot-mestre', 'mestre-sequenceur'].includes(tabId) && enabledModules.mestre === false) return false;
+    if (['mestre-sante-troupe', 'mestre-pedagogy-dashboard', 'varal-manager', 'mestre-pedagogy-qcm', 'mestre-orientation', 'mestre-events', 'mestre-stage-layout', 'mestre-mot-mestre', 'mestre-sequenceur'].includes(tabId) && enabledModules.mestre === false) return false;
 
     return true;
   };
@@ -971,7 +970,7 @@ export default function App() {
   const hasAccessTresorerie = isMasterKeyActive || checkTabAccess('dashboard-finance', 'tresorerie') || checkTabAccess('cotisations', 'tresorerie') || checkTabAccess('events-finances', 'tresorerie') || checkTabAccess('operations-diverses', 'tresorerie') || checkTabAccess('frais-km', 'tresorerie') || checkTabAccess('reports-exports', 'tresorerie');
   const hasAccessStudio = isMasterKeyActive || checkTabAccess('export-annu', 'studio') || checkTabAccess('studio-events', 'studio') || checkTabAccess('studio-social', 'studio') || checkTabAccess('reunion-manager', 'studio') || checkTabAccess('activity-reports', 'studio') || checkTabAccess('mestre-forum-channels', 'studio') || checkTabAccess('newsletter', 'studio');
   const hasAccessMestre = isMasterKeyActive || checkTabAccess('mestre-orientation', 'mestre') || checkTabAccess('mestre-events', 'mestre') || checkTabAccess('mestre-stage-layout', 'mestre') || checkTabAccess('mestre-mot-mestre', 'mestre') || checkTabAccess('mestre-sequenceur', 'mestre');
-  const hasAccessPedagogie = isMasterKeyActive || checkTabAccess('varal-manager', 'pedagogie') || checkTabAccess('mestre-pedagogy-manager', 'pedagogie') || checkTabAccess('mestre-auto-eval', 'pedagogie') || checkTabAccess('mestre-sante-troupe', 'pedagogie');
+  const hasAccessPedagogie = isMasterKeyActive || checkTabAccess('mestre-pedagogy-dashboard', 'pedagogie') || checkTabAccess('varal-manager', 'pedagogie') || checkTabAccess('mestre-pedagogy-qcm', 'pedagogie');
   const hasAccessVitrine = isMasterKeyActive || checkTabAccess('vitrine-general', 'vitrine') || checkTabAccess('vitrine-editor', 'vitrine');
   const hasAccessConfig = isMasterKeyActive || checkTabAccess('config-identity', 'config') || checkTabAccess('config-communication', 'config') || checkTabAccess('config-profile', 'config') || checkTabAccess('tag-manager', 'config') || checkTabAccess('instruments', 'config') || checkTabAccess('config-security', 'config') || checkTabAccess('config-modules', 'config') || checkTabAccess('config-logistics', 'config') || checkTabAccess('config-documents', 'config') || checkTabAccess('config-agenda', 'config') || checkTabAccess('config-lieux', 'config') || checkTabAccess('config-layout', 'config');
   const hasAccessForumMod = isMasterKeyActive || userTags.some(t => ['Modérateur', 'Modérateur Forum', 'Gestionnaire Porte-voix', 'Porte-voix'].includes(t));
@@ -1401,27 +1400,30 @@ export default function App() {
                 isSystemAdmin={profileData?.isSystemAdmin}
                 onBack={() => handleNavigateToPole('accueil')} 
               />
-            ) : (currentTab === 'varal-manager' && hasAccessPedagogie) ? (
-               <VaralManager 
-                 groupId={profileData?.groupId}
-                 role={profileData?.role}
-                 isSystemAdmin={profileData?.isSystemAdmin}
-                 onBack={() => handleNavigateToPole('accueil')} 
-               />
-            ) : (currentTab === 'mestre-sante-troupe' && hasAccessPedagogie) ? (
+            ) : (currentTab === 'mestre-pedagogy-dashboard' && hasAccessPedagogie) ? (
               <MestrePedagogyDashboard 
                 profileData={profileData}
+                sequenceurUrl={sequenceurUrl}
               />
             ) : (currentTab === 'mestre-pedagogy-manager' && hasAccessPedagogie) ? (
               <MestrePedagogyManager 
                 profileData={profileData}
                 sequenceurUrl={sequenceurUrl}
               />
-            ) : (currentTab === 'mestre-auto-eval' && hasAccessPedagogie) ? (
+            ) : (currentTab === 'mestre-pedagogy-qcm' && hasAccessPedagogie) ? (
               <MestreAutoEvalConfig 
                 profileData={profileData}
-                sequenceurUrl={sequenceurUrl}
               />
+            ) : (currentTab === 'varal-manager' && hasAccessPedagogie) ? (
+              <div className="max-w-4xl mx-auto w-full">
+                <VaralManager 
+                  groupId={profileData?.groupId}
+                  role={profileData?.role}
+                  isSystemAdmin={profileData?.isSystemAdmin}
+                  isEmbedded={false}
+                  onBack={() => handleNavigateToPole('accueil')} 
+                />
+              </div>
             ) : (currentTab === 'mestre-orientation' && hasAccessMestre) ? (
               <MestreOrientationCasting 
                 user={user}

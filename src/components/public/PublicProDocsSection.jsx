@@ -9,7 +9,7 @@ import React from 'react';
  * @param {Object} props.publicTheme - Configuration dynamique de la vitrine contenant les URLs de documents.
  */
 export default function PublicProDocsSection({ publicTheme }) {
-  if (!publicTheme) return null;
+  if (!publicTheme || publicTheme.afficherEspacePro === false) return null;
 
   // Récupération des URLs des 4 documents Espace Pro avec rétro-compatibilité
   const dossierPresentationUrl = publicTheme.dossierPresentationUrl || publicTheme.dossierProPdfUrl || '';

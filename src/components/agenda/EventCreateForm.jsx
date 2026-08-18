@@ -9,6 +9,7 @@ import ManualMapMarkerModal from './ManualMapMarkerModal';
 import AddressAutocomplete from '../AddressAutocomplete';
 import LocationSelector from '../LocationSelector';
 import { DEFAULT_CUSTOM_CATEGORIES } from '../../utils/categoryUtils';
+import { useSequencerFirestoreData } from '../../hooks/useSequencerFirestoreData';
 
 /**
  * EventCreateForm component handles creation details of a new event.
@@ -44,9 +45,11 @@ export default function EventCreateForm({
   lieuxImportants = [],
   defaultLocationsByEventType = {},
   customCategories = DEFAULT_CUSTOM_CATEGORIES,
-  t
+  t,
+  groupId
 }) {
   const [isMapModalOpen, setIsMapModalOpen] = useState(false);
+  const { rhythms: sequencerRhythms, loading: loadingRhythms } = useSequencerFirestoreData(groupId);
 
   const combinedCostumeOptions = React.useMemo(() => {
     const list = [];
@@ -657,6 +660,50 @@ export default function EventCreateForm({
                   />
                   <span>💃 {translate('widgetAgenda.includesDanceLabel', "Inclut de la danse")}</span>
                 </label>
+              </div>
+
+              {/* Morceaux à réviser (Séquenceur) */}
+              <div className="flex flex-col gap-2 border-t border-dashed border-cordel-master-dark/15 pt-3">
+                <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark flex items-center gap-1.5">
+                  🎛️ Programme de révision (Séquenceur)
+                </label>
+                {loadingRhythms ? (
+                  <p className="text-xs text-cordel-wood animate-pulse">Chargement des morceaux...</p>
+                ) : sequencerRhythms.length === 0 ? (
+                  <p className="text-xs italic text-encre-noire/60">Aucun morceau trouvé dans le Séquenceur.</p>
+                ) : (
+                  <div className="max-h-48 overflow-y-auto border-2 border-encre-noire/20 rounded bg-[#fdfaf2] p-2 space-y-1 scrollbar-thin">
+                    {sequencerRhythms.map(rhythm => {
+                      const isChecked = (formData.linkedPatterns || []).includes(rhythm.id);
+                      return (
+                        <label key={rhythm.id} className="flex items-center gap-2 p-1.5 hover:bg-black/5 cursor-pointer rounded transition-colors select-none">
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={(e) => {
+                              const currentLinked = formData.linkedPatterns || [];
+                              if (e.target.checked) {
+                                setFormData(prev => ({ ...prev, linkedPatterns: [...currentLinked, rhythm.id] }));
+                              } else {
+                                setFormData(prev => ({ ...prev, linkedPatterns: currentLinked.filter(id => id !== rhythm.id) }));
+                              }
+                            }}
+                            className="w-4 h-4 accent-cordel-wood cursor-pointer"
+                          />
+                          <span className="text-xs font-bold text-encre-noire">
+                            {rhythm.title || rhythm.name || 'Sans titre'}
+                          </span>
+                          <span className="text-[9px] font-black uppercase tracking-wider text-encre-noire/50 px-1 border border-encre-noire/20 rounded ml-auto">
+                            {rhythm._collection === 'sections' ? 'Section' : 'Rythme'}
+                          </span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                )}
+                <p className="text-[9px] text-cordel-master-dark/70 font-semibold mt-0.5">
+                  Sélectionnez les morceaux que les membres devront réviser. Ils apparaîtront sur la fiche de l'événement.
+                </p>
               </div>
 
               {/* Lien Dépôt Médias Externe (Framaspace, Drive...) */}

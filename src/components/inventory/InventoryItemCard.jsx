@@ -22,9 +22,10 @@ const INSTRUMENT_ICONS = {
  * @param {Function} props.onEdit Callback de modification
  * @param {Function} props.onDelete Callback de suppression
  * @param {Function} props.onToggleBorrow Status toggle (En stock / Emprunté)
+ * @param {string} props.kitCompletionText Texte formaté du statut du kit
  * @param {Function} props.t Fonction de traduction
  */
-export default function InventoryItemCard({ item, usersMap, onEdit, onDelete, onToggleBorrow, t }) {
+export default function InventoryItemCard({ item, usersMap, onEdit, onDelete, onToggleBorrow, kitCompletionText, t }) {
   const iconPath = INSTRUMENT_ICONS[item.type] || 'favicon.svg';
 
   const getEtatBadgeClass = (etat) => {
@@ -70,9 +71,9 @@ export default function InventoryItemCard({ item, usersMap, onEdit, onDelete, on
                 📍 {item.localisationPhysique}
               </span>
             )}
-            {item.etuiFourni && (
+            {kitCompletionText && kitCompletionText !== "-" && (
               <span className="bg-cordel-bg-light px-2 py-0.5 rounded border border-cordel-master-dark/15">
-                👜 Étui fourni
+                🎒 Kit: {kitCompletionText}
               </span>
             )}
           </div>

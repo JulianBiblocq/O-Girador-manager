@@ -3,6 +3,7 @@ import { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, serverTimest
 import { db } from '../../firebase';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
+import useConfirm from '../../hooks/useConfirm';
 
 /**
  * Calculateur du badge d'alerte "À relancer" (relance dépassée ou prévue dans les 7 jours)
@@ -21,6 +22,7 @@ export const isToRelance = (dateRelanceStr) => {
  * Composant de gestion du Carnet de Contacts (CRM Global) du Pôle Diffusion.
  */
 export default function DiffusionContactsManager({ groupId, associationSettings = {} }) {
+  const { confirm } = useConfirm();
   const [contacts, setContacts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -136,7 +138,8 @@ export default function DiffusionContactsManager({ groupId, associationSettings 
 
   // Suppression
   const handleDelete = async (contactId) => {
-    if (!window.confirm("Êtes-vous sûr de vouloir supprimer définitivement ce contact du carnet ?")) return;
+    const isOk = await confirm("Êtes-vous sûr de vouloir supprimer définitivement ce contact du carnet ?");
+    if (!isOk) return;
     try {
       await deleteDoc(doc(db, 'associations', groupId, 'contacts_diffusion', contactId));
     } catch (err) {

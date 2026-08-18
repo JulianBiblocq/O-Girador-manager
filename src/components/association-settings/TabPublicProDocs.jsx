@@ -87,6 +87,21 @@ export default function TabPublicProDocs({
         Ajoutez les documents officiels téléchargeables par les organisateurs de spectacles et la presse. Seuls les documents renseignés disposeront d'un bouton de téléchargement actif sur la vitrine publique.
       </p>
 
+      {/* Basculer Activer / Désactiver Espace Pro */}
+      <div className="flex items-center gap-3 p-3 bg-[#fdfaf2] border border-encre-noire/20 rounded-[4px_6px_3px_5px] select-none mt-2">
+        <input
+          type="checkbox"
+          id="afficherEspacePro"
+          checked={publicTheme.afficherEspacePro !== false}
+          onChange={(e) => handleDocUrlChange('afficherEspacePro', e.target.checked)}
+          disabled={saving}
+          className="w-4 h-4 cursor-pointer accent-[var(--color-cordel-vert,#2d6a4f)]"
+        />
+        <label htmlFor="afficherEspacePro" className="text-xs font-bold uppercase tracking-wider text-encre-noire cursor-pointer flex flex-wrap items-center gap-1.5">
+          <span>Afficher le bloc "Espace Pro" (téléchargements) en bas de la vitrine</span>
+        </label>
+      </div>
+
       <div className="flex flex-col gap-6 pt-1">
         {docsConfig.map((doc) => {
           const currentUrl = publicTheme[doc.key] || (doc.key === 'dossierPresentationUrl' ? publicTheme.dossierProPdfUrl : '');

@@ -8,9 +8,11 @@ import CordelButton from '../CordelButton';
 import useConfirm from '../../hooks/useConfirm';
 import { useAssociationSettings } from '../../hooks/useAssociationSettings';
 import SequenceurLinkBlock from '../association-settings/blocks/SequenceurLinkBlock';
+import { useSequencerFirestoreData } from '../../hooks/useSequencerFirestoreData';
 
 export default function MestreSequenceur({ groupId, sequenceurUrl }) {
   const { t } = useTranslation();
+  const translationFn = t || ((key) => key);
   const { confirm } = useConfirm();
   
   const {
@@ -18,12 +20,14 @@ export default function MestreSequenceur({ groupId, sequenceurUrl }) {
     handleChange,
     handleSave,
     saving: savingSettings
-  } = useAssociationSettings(groupId, true, null, t);
+  } = useAssociationSettings(groupId, true, null, translationFn);
   const [showConfig, setShowConfig] = useState(false);
 
-  const [rhythms, setRhythms] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [storageRhythms, setStorageRhythms] = useState([]);
+  const [loadingStorage, setLoadingStorage] = useState(true);
   const [saving, setSaving] = useState(false);
+  
+  const { rhythms: firestoreRhythms, loading: fsLoading } = useSequencerFirestoreData(groupId);
 
   // Form states
   const [titre, setTitre] = useState('');
@@ -35,13 +39,16 @@ export default function MestreSequenceur({ groupId, sequenceurUrl }) {
   const [metadataForm, setMetadataForm] = useState({ baguettes: '', unisonAlfaias: false });
   const [loadingMetadata, setLoadingMetadata] = useState(false);
 
+  // Tabs state
+  const [activeTab, setActiveTab] = useState('solo'); // 'solo', 'pattern', 'sequence'
+
   // Récupérer all rhythms directly from Firebase Storage
   const fetchRhythmsFromStorage = async () => {
     if (!groupId) {
-      setLoading(false);
+      setLoadingStorage(false);
       return;
     }
-    setLoading(true);
+    setLoadingStorage(true);
     try {
       const folderRef = ref(storage, `documents/${groupId}/sequencer`);
       const res = await listAll(folderRef);
@@ -52,12 +59,17 @@ export default function MestreSequenceur({ groupId, sequenceurUrl }) {
             const jsonUrl = await getDownloadURL(itemRef);
             // Formater name: e.g. "1719283921_Baque de Luanda.json" -> "Baque de Luanda"
             const rawName = itemRef.name;
-            const cleanName = rawName.replace(/^\d+_/ , '').replace(/\.json$/i, '');
+            const cleanName = rawName.replace(/^\d+_/ , '').replace(/\.(json|mp3|wav|ogg|m4a|aac)$/i, '');
+            const isAudio = /\.(mp3|wav|ogg|m4a|aac)$/i.test(rawName);
+            const isJson = /\.json$/i.test(rawName);
+
             return {
               id: rawName,
               titre: cleanName,
               jsonUrl: jsonUrl,
-              fileName: rawName
+              fileName: rawName,
+              isAudio,
+              isJson
             };
           } catch (urlError) {
             console.error("Error getting download URL for item:", itemRef.name, urlError);
@@ -68,12 +80,11 @@ export default function MestreSequenceur({ groupId, sequenceurUrl }) {
 
       // Filtrer out failed promises and trier alphabetically or by prefix date if needed
       const validRhythms = fetchedRhythms.filter(Boolean);
-      validRhythms.sort((a, b) => a.titre.localeCompare(b.titre));
-      setRhythms(validRhythms);
+      setStorageRhythms(validRhythms);
     } catch (error) {
       console.error("MestreSequenceur - Error listing Storage rhythms:", error);
     } finally {
-      setLoading(false);
+      setLoadingStorage(false);
     }
   };
 
@@ -81,14 +92,111 @@ export default function MestreSequenceur({ groupId, sequenceurUrl }) {
     fetchRhythmsFromStorage();
   }, [groupId]);
 
+  const allRhythms = React.useMemo(() => {
+    const fsMapped = firestoreRhythms.map(r => {
+      // Si les urls sont stockées dans le doc (ex: jsonUrl, audioUrl, fileUrl)
+      const jUrl = r.jsonUrl || (r.fileUrl && /\.json$/i.test(r.fileUrl) ? r.fileUrl : null);
+      const aUrl = r.audioUrl || (r.fileUrl && /\.(mp3|wav|ogg|m4a|aac)$/i.test(r.fileUrl) ? r.fileUrl : null);
+      const isJson = !!jUrl || !!r.data;
+      const isAudio = !!aUrl;
+      return {
+        id: r.id,
+        titre: r.title || r.name || r.id,
+        jsonUrl: jUrl,
+        audioUrl: aUrl,
+        isAudio,
+        isJson,
+        fileName: r.fileName || r.id,
+        source: 'firestore',
+        original: r,
+        instrumentId: r.instrumentId,
+        collection: r._collection
+      };
+    });
+
+    const storageMapped = storageRhythms.map(r => ({ ...r, source: 'storage' }));
+    
+    // Pour ne pas écraser les audios de storage s'il y a des doublons, on peut simplement les lister tous.
+    return [...storageMapped, ...fsMapped].sort((a, b) => a.titre.localeCompare(b.titre));
+  }, [storageRhythms, firestoreRhythms]);
+
+  const loading = loadingStorage || fsLoading;
+
+  const getCategory = (r) => {
+    if (r.source === 'storage') return 'sequence';
+    if (r.collection === 'sections') return 'sequence';
+    if (r.collection === 'patterns') {
+      if (r.instrumentId && r.instrumentId !== 'all') return 'solo';
+      return 'pattern';
+    }
+    return 'pattern';
+  };
+
+  const soloRhythms = allRhythms.filter(r => getCategory(r) === 'solo');
+  const patternRhythms = allRhythms.filter(r => getCategory(r) === 'pattern');
+  const sequenceRhythms = allRhythms.filter(r => getCategory(r) === 'sequence');
+
+  const groupedSolos = soloRhythms.reduce((acc, r) => {
+    const inst = r.instrumentId || 'Inconnu';
+    if (!acc[inst]) acc[inst] = [];
+    acc[inst].push(r);
+    return acc;
+  }, {});
+
+  const renderRhythmCard = (rhythm) => (
+    <CordelCard key={`${rhythm.source}-${rhythm.id}`} variant="default" useExtremeBorder={false} className="p-4 bg-cordel-bg-light flex flex-col gap-2 relative">
+      <div className="flex justify-between items-start">
+        <span className="font-extrabold text-sm text-encre-noire flex items-center gap-2">
+          {rhythm.source === 'firestore' ? '☁️' : '📁'} {rhythm.isAudio ? '🎧' : '🎹'} {rhythm.titre}
+        </span>
+        {rhythm.source === 'storage' && (
+          <button
+            type="button"
+            onClick={() => handleDeleteRhythm(rhythm.fileName)}
+            className="text-xs hover:text-red-500 font-bold ml-1 cursor-pointer select-none"
+            title="Supprimer"
+          >
+            ✕
+          </button>
+        )}
+      </div>
+
+      {(rhythm.audioUrl || (rhythm.jsonUrl && rhythm.isAudio)) && (
+        <div className="mt-2 w-full">
+          <audio controls src={rhythm.audioUrl || rhythm.jsonUrl} className="w-full h-8" />
+        </div>
+      )}
+
+      <div className="flex gap-2 mt-2 w-full">
+        {rhythm.isJson && (
+          <a
+            href={getSequencerPlayUrl(rhythm)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="theme-btn theme-bg-ocre text-encre-noire px-3 py-2 text-[10px] font-black rounded-[4px_6px_3px_5px] shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,0.15)] flex items-center justify-center gap-1.5 hover:brightness-105 active:translate-x-[0.5px] active:translate-y-[0.5px] w-full text-center select-none"
+          >
+            🎹 Lancer Séquenceur
+          </a>
+        )}
+        <button
+          type="button"
+          onClick={() => openMetadataEditor(rhythm)}
+          className="theme-btn bg-cordel-master-dark text-cordel-bg-light px-3 py-2 text-[10px] font-black rounded-[4px_6px_3px_5px] shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,0.15)] flex items-center justify-center gap-1.5 hover:brightness-105 active:translate-x-[0.5px] active:translate-y-[0.5px] w-full text-center select-none"
+        >
+          ✏️ Pédagogie (QCM)
+        </button>
+      </div>
+    </CordelCard>
+  );
+
   const handleAddRhythm = async (e) => {
     if (e) e.preventDefault();
     if (!titre.trim() || !jsonFile) return;
 
     setSaving(true);
     try {
-      // Créer filename prefixing with timestamp to avoid duplicates
-      const fileRef = ref(storage, `documents/${groupId}/sequencer/${Date.now()}_${titre.trim()}.json`);
+      const ext = jsonFile.name.split('.').pop().toLowerCase();
+      const fileRef = ref(storage, `documents/${groupId}/sequencer/${Date.now()}_${titre.trim()}.${ext}`);
       await uploadBytes(fileRef, jsonFile);
       
       setTitre('');
@@ -105,7 +213,8 @@ export default function MestreSequenceur({ groupId, sequenceurUrl }) {
   };
 
   const handleDeleteRhythm = async (fileName) => {
-    const confirmMsg = t('mestre.rhythmDeleteConfirm') || "Voulez-vous vraiment supprimer ce rythme ?";
+    const rawConfirmMsg = translationFn('mestre.rhythmDeleteConfirm');
+    const confirmMsg = rawConfirmMsg !== 'mestre.rhythmDeleteConfirm' ? rawConfirmMsg : "Voulez-vous vraiment supprimer ce fichier ?";
     const isOk = await confirm({
       title: "Supprimer le rythme",
       message: confirmMsg,
@@ -126,8 +235,14 @@ export default function MestreSequenceur({ groupId, sequenceurUrl }) {
     }
   };
 
-  const getSequencerPlayUrl = (jsonUrl) => {
+  const getSequencerPlayUrl = (rhythm) => {
     const baseUrl = sequenceurUrl || 'https://sequenceur.app';
+    if (rhythm.source === 'firestore' && rhythm.original?.data) {
+      return baseUrl.includes('?') 
+        ? `${baseUrl}&patternId=${encodeURIComponent(rhythm.id)}`
+        : `${baseUrl}?patternId=${encodeURIComponent(rhythm.id)}`;
+    }
+    const jsonUrl = rhythm.jsonUrl;
     if (!jsonUrl) return baseUrl;
     return baseUrl.includes('?') 
       ? `${baseUrl}&file=${encodeURIComponent(jsonUrl)}`
@@ -176,7 +291,7 @@ export default function MestreSequenceur({ groupId, sequenceurUrl }) {
     <div className="flex flex-col gap-6 text-left select-none w-full max-w-5xl mx-auto">
       <div className="flex justify-between items-center pb-2 border-b-2 border-dashed border-cordel-master-dark/30">
         <h2 className="text-sm font-extrabold tracking-widest text-cordel-wood uppercase">
-          🎵 {t('mestre.seqTitle') || "Gestionnaire de Rythmes / Séquences JSON"}
+          🎵 {translationFn('mestre.seqTitle') !== 'mestre.seqTitle' ? translationFn('mestre.seqTitle') : "Gestionnaire de Rythmes & Fichiers Audio"}
         </h2>
       </div>
 
@@ -217,13 +332,13 @@ export default function MestreSequenceur({ groupId, sequenceurUrl }) {
         <div className="col-span-1">
           <CordelCard variant="default" useExtremeBorder={true} className="p-5 flex flex-col gap-4">
             <h3 className="text-xs uppercase font-extrabold tracking-wider text-cordel-wood">
-              ➕ {t('mestre.addRhythmTitle') || "Ajouter un rythme (.json)"}
+              ➕ {translationFn('mestre.addRhythmTitle') !== 'mestre.addRhythmTitle' ? translationFn('mestre.addRhythmTitle') : "Ajouter un fichier (.json ou audio)"}
             </h3>
             
             <form onSubmit={handleAddRhythm} className="flex flex-col gap-3">
               <div className="flex flex-col gap-1 text-xs">
                 <label className="font-bold text-[9px] uppercase tracking-wider text-cordel-master-dark">
-                  {t('mestre.rhythmName') || "Nom du rythme"} *
+                  {translationFn('mestre.rhythmName') !== 'mestre.rhythmName' ? translationFn('mestre.rhythmName') : "Nom de la séquence / Titre"} *
                 </label>
                 <input 
                   type="text"
@@ -238,12 +353,12 @@ export default function MestreSequenceur({ groupId, sequenceurUrl }) {
 
               <div className="flex flex-col gap-1 text-xs">
                 <label className="font-bold text-[9px] uppercase tracking-wider text-cordel-master-dark">
-                  {t('mestre.jsonFileLabel') || "Fichier de configuration (.json)"} *
+                  {translationFn('mestre.jsonFileLabel') !== 'mestre.jsonFileLabel' ? translationFn('mestre.jsonFileLabel') : "Fichier Séquenceur (.json) ou Audio"} *
                 </label>
                 <input 
                   key={fileInputKey}
                   type="file"
-                  accept=".json"
+                  accept=".json,audio/*"
                   required
                   disabled={saving}
                   onChange={(e) => setJsonFile(e.target.files?.[0] || null)}
@@ -258,7 +373,7 @@ export default function MestreSequenceur({ groupId, sequenceurUrl }) {
                 disabled={saving || !titre.trim() || !jsonFile}
                 className="w-full py-2 text-[10px] font-black uppercase tracking-widest mt-2"
               >
-                {saving ? "Téléversement..." : (t('mestre.addRhythmBtn') || "Ajouter le rythme")}
+                {saving ? (translationFn('mestre.uploading') !== 'mestre.uploading' ? translationFn('mestre.uploading') : "Téléversement...") : (translationFn('mestre.addRhythmBtn') !== 'mestre.addRhythmBtn' ? translationFn('mestre.addRhythmBtn') : "Ajouter le fichier")}
               </CordelButton>
             </form>
           </CordelCard>
@@ -267,54 +382,78 @@ export default function MestreSequenceur({ groupId, sequenceurUrl }) {
         {/* List panel */}
         <div className="col-span-1 md:col-span-2 flex flex-col gap-3">
           <h3 className="text-xs uppercase font-extrabold tracking-wider text-cordel-master-dark/80 pl-1">
-            📂 {t('mestre.rhythmListTitle') || "Rythmes & Séquences configurés"}
+            📂 {translationFn('mestre.rhythmListTitle') !== 'mestre.rhythmListTitle' ? translationFn('mestre.rhythmListTitle') : "Rythmes & Fichiers Audio configurés"}
           </h3>
+
+          <div className="flex bg-cordel-master-dark/10 rounded-lg p-1 gap-1 mb-2">
+            <button
+              onClick={() => setActiveTab('solo')}
+              className={`flex-1 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-md transition-all ${activeTab === 'solo' ? 'bg-cordel-master-dark text-cordel-bg-light shadow-sm' : 'text-cordel-wood/70 hover:bg-cordel-master-dark/5'}`}
+            >
+              Instrument solo
+            </button>
+            <button
+              onClick={() => setActiveTab('pattern')}
+              className={`flex-1 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-md transition-all ${activeTab === 'pattern' ? 'bg-cordel-master-dark text-cordel-bg-light shadow-sm' : 'text-cordel-wood/70 hover:bg-cordel-master-dark/5'}`}
+            >
+              Pattern complet
+            </button>
+            <button
+              onClick={() => setActiveTab('sequence')}
+              className={`flex-1 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-md transition-all ${activeTab === 'sequence' ? 'bg-cordel-master-dark text-cordel-bg-light shadow-sm' : 'text-cordel-wood/70 hover:bg-cordel-master-dark/5'}`}
+            >
+              Séquence complète
+            </button>
+          </div>
 
           {loading ? (
             <div className="flex justify-center items-center py-12">
               <span className="text-xs uppercase tracking-widest font-black animate-pulse opacity-60">⏳</span>
             </div>
-          ) : rhythms.length === 0 ? (
+          ) : allRhythms.length === 0 ? (
             <CordelCard variant="default" useExtremeBorder={false} className="p-8 text-center bg-cordel-bg">
-              <p className="text-xs font-bold opacity-60">{t('mestre.noRhythms') || "Aucun rythme trouvé dans votre dossier de stockage."}</p>
+              <p className="text-xs font-bold opacity-60">{translationFn('mestre.noRhythms') !== 'mestre.noRhythms' ? translationFn('mestre.noRhythms') : "Aucun arquivo encontrado na sua pasta de armazenamento."}</p>
             </CordelCard>
           ) : (
             <div className="flex flex-col gap-3.5">
-              {rhythms.map((rhythm) => (
-                <CordelCard key={rhythm.id} variant="default" useExtremeBorder={false} className="p-4 bg-cordel-bg-light flex flex-col gap-2 relative">
-                  <div className="flex justify-between items-start">
-                    <span className="font-extrabold text-sm text-encre-noire">{rhythm.titre}</span>
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteRhythm(rhythm.fileName)}
-                      className="text-xs hover:text-red-500 font-bold ml-1 cursor-pointer select-none"
-                      title="Supprimer"
-                    >
-                      ✕
-                    </button>
+              {activeTab === 'solo' && (
+                Object.keys(groupedSolos).length === 0 ? (
+                  <p className="text-xs font-bold opacity-60 text-center py-4">Aucun instrument solo</p>
+                ) : (
+                  <div className="flex flex-col gap-4">
+                    {Object.entries(groupedSolos).sort(([a], [b]) => a.localeCompare(b)).map(([inst, list]) => (
+                      <div key={inst} className="flex flex-col gap-2 border-l-4 border-[var(--color-cordel-ocre)] pl-3">
+                        <h4 className="text-[11px] font-extrabold uppercase tracking-widest text-cordel-wood opacity-80 mt-1 mb-1 capitalize">
+                          🥁 {inst === 'marcante' ? 'Alfaia (Marcante)' : inst === 'tarol' ? 'Tarol / Caixa' : inst}
+                        </h4>
+                        <div className="flex flex-col gap-3.5">
+                          {list.map(renderRhythmCard)}
+                        </div>
+                      </div>
+                    ))}
                   </div>
+                )
+              )}
 
-                  {rhythm.jsonUrl && (
-                    <div className="flex gap-2 mt-1 w-full">
-                      <a
-                        href={getSequencerPlayUrl(rhythm.jsonUrl)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="theme-btn theme-bg-ocre text-encre-noire px-3 py-2 text-[10px] font-black rounded-[4px_6px_3px_5px] shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,0.15)] flex items-center justify-center gap-1.5 hover:brightness-105 active:translate-x-[0.5px] active:translate-y-[0.5px] w-full text-center select-none"
-                      >
-                        🎧 Travailler (Séquenceur)
-                      </a>
-                      <button
-                        type="button"
-                        onClick={() => openMetadataEditor(rhythm)}
-                        className="theme-btn bg-cordel-master-dark text-cordel-bg-light px-3 py-2 text-[10px] font-black rounded-[4px_6px_3px_5px] shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,0.15)] flex items-center justify-center gap-1.5 hover:brightness-105 active:translate-x-[0.5px] active:translate-y-[0.5px] w-full text-center select-none"
-                      >
-                        ✏️ Pédagogie
-                      </button>
-                    </div>
-                  )}
-                </CordelCard>
-              ))}
+              {activeTab === 'pattern' && (
+                patternRhythms.length === 0 ? (
+                  <p className="text-xs font-bold opacity-60 text-center py-4">Aucun pattern complet</p>
+                ) : (
+                  <div className="flex flex-col gap-3.5">
+                    {patternRhythms.map(renderRhythmCard)}
+                  </div>
+                )
+              )}
+
+              {activeTab === 'sequence' && (
+                sequenceRhythms.length === 0 ? (
+                  <p className="text-xs font-bold opacity-60 text-center py-4">Aucune séquence complète</p>
+                ) : (
+                  <div className="flex flex-col gap-3.5">
+                    {sequenceRhythms.map(renderRhythmCard)}
+                  </div>
+                )
+              )}
             </div>
           )}
         </div>

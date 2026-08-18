@@ -4,12 +4,14 @@ import { db } from '../../firebase';
 import CordelCard from '../CordelCard';
 import MestrePedagogyNotepad from './MestrePedagogyNotepad';
 import MestreToadasAnalytics from '../pedagogy/MestreToadasAnalytics';
+import useConfirm from '../../hooks/useConfirm';
 
 export default function MestrePedagogyDashboard({ profileData }) {
+  const { confirm } = useConfirm();
   const groupId = profileData?.groupId;
   const isAuthorized = profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.isSystemAdmin;
 
-  const [activeTab, setActiveTab] = useState('analytics');
+  const [activeAnalyseTab, setActiveAnalyseTab] = useState('analytics');
   const [loading, setLoading] = useState(true);
   const [usersData, setUsersData] = useState([]);
   const [evaluationsMap, setEvaluationsMap] = useState({}); // { uid: { docId: 'level' } }
@@ -150,7 +152,14 @@ export default function MestrePedagogyDashboard({ profileData }) {
   };
 
   const handleResetAllEvaluations = async () => {
-    if (!window.confirm("⚠️ Êtes-vous sûr de vouloir remettre à zéro TOUTES les évaluations de tous les membres ?\nCette action est irréversible et recommandée uniquement pour démarrer une nouvelle saison (remise à zéro des compteurs).")) return;
+    const isOk = await confirm({
+      title: "Remise à zéro annuelle",
+      message: "⚠️ Êtes-vous sûr de vouloir remettre à zéro TOUTES les évaluations de tous les membres ?\nCette action est irréversible et recommandée uniquement pour démarrer une nouvelle saison (remise à zéro des compteurs).",
+      confirmText: "Oui, réinitialiser les compteurs",
+      cancelText: "Annuler",
+      variant: "danger"
+    });
+    if (!isOk) return;
     
     setLoading(true);
     try {
@@ -184,7 +193,7 @@ export default function MestrePedagogyDashboard({ profileData }) {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-2">
         <div>
           <h1 className="text-3xl md:text-4xl font-cactus tracking-widest text-cordel-wood uppercase">
-            📊 Analyse & Suivi
+            📊 Suivi & Analyse
           </h1>
           <p className="text-xs md:text-sm text-cordel-master-dark opacity-80 max-w-2xl mt-2">
             Analyse globale des résultats (QCM) et de la Santé de la Troupe.
@@ -192,54 +201,73 @@ export default function MestrePedagogyDashboard({ profileData }) {
         </div>
       </div>
 
-      <div className="flex flex-col xl:flex-row gap-6 items-start">
+      <div className="flex flex-col gap-6 items-start">
         {/* Main Content Area */}
         <div className="flex-1 w-full flex flex-col gap-6">
-          {/* Onglets */}
-          <div className="flex border-b-2 border-dashed border-cordel-master-dark/30 mb-2 overflow-x-auto">
-            <button
-              onClick={() => setActiveTab('analytics')}
-              className={`px-6 py-2 text-sm font-extrabold uppercase tracking-widest whitespace-nowrap ${activeTab === 'analytics' ? 'text-cordel-wood border-b-4 border-cordel-wood' : 'text-cordel-master-dark/50'}`}
-            >
-              📊 Analyse QCM
-            </button>
-            <button
-              onClick={() => setActiveTab('percussion')}
-              className={`px-6 py-2 text-sm font-extrabold uppercase tracking-widest whitespace-nowrap ${activeTab === 'percussion' ? 'text-cordel-wood border-b-4 border-cordel-wood' : 'text-cordel-master-dark/50'}`}
-            >
-              🥁 Santé Percussion
-            </button>
-            <button
-              onClick={() => setActiveTab('danse')}
-              className={`px-6 py-2 text-sm font-extrabold uppercase tracking-widest whitespace-nowrap ${activeTab === 'danse' ? 'text-cordel-wood border-b-4 border-cordel-wood' : 'text-cordel-master-dark/50'}`}
-            >
-              💃 Danse
-            </button>
-            <button
-              onClick={() => setActiveTab('culture')}
-              className={`px-6 py-2 text-sm font-extrabold uppercase tracking-widest whitespace-nowrap ${activeTab === 'culture' ? 'text-cordel-wood border-b-4 border-cordel-wood' : 'text-cordel-master-dark/50'}`}
-            >
-              📚 Ateliers & Culture
-            </button>
-            <button
-              onClick={() => setActiveTab('admin')}
-              className={`px-6 py-2 text-sm font-extrabold uppercase tracking-widest whitespace-nowrap ${activeTab === 'admin' ? 'text-cordel-wood border-b-4 border-cordel-wood' : 'text-cordel-master-dark/50'}`}
-            >
-              ⚙️ Administration
-            </button>
-          </div>
+              {/* Accordion Bloc-Notes (replié par défaut) */}
+              <details className="group border-2 border-cordel-wood/30 rounded bg-[#fdfaf2] overflow-hidden w-full mb-2">
+                 <summary className="flex items-center justify-between p-3 cursor-pointer bg-white hover:bg-cordel-wood/5 transition-colors" style={{ listStyle: 'none' }}>
+                    <div className="flex items-center gap-3">
+                      <span className="text-xl">📓</span>
+                      <div className="flex flex-col">
+                        <h3 className="text-sm font-black uppercase tracking-wider text-cordel-wood">
+                          Axes de travail & Notes de révision
+                        </h3>
+                        <span className="text-[10px] text-encre-noire/70 font-medium">
+                          Cliquer pour déplier/replier vos notes et objectifs
+                        </span>
+                      </div>
+                    </div>
+                    <span className="text-cordel-wood font-black text-xs transform group-open:rotate-180 transition-transform">
+                      ▼
+                    </span>
+                 </summary>
+                 <div className="p-4 border-t-2 border-dashed border-cordel-wood/20 bg-[#fdfaf2]">
+                   <MestrePedagogyNotepad groupId={groupId} />
+                 </div>
+                 <style dangerouslySetInnerHTML={{__html: `summary::-webkit-details-marker { display: none; }`}} />
+              </details>
 
-          {loading ? (
-            <div className="text-center p-12 opacity-50 animate-pulse font-black uppercase text-xs">
-              Analyse des parcours en cours...
-            </div>
-          ) : (
-            <div className="flex flex-col gap-6">
-              {activeTab === 'analytics' && (
-                <MestreToadasAnalytics profileData={profileData} allSongs={songs} />
-              )}
+              {/* Sous-Onglets Analyse */}
+              <div className="flex border-b-2 border-dashed border-cordel-master-dark/30 mb-2 overflow-x-auto">
+                <button
+                  onClick={() => setActiveAnalyseTab('analytics')}
+                  className={`px-6 py-2 text-sm font-extrabold uppercase tracking-widest whitespace-nowrap ${activeAnalyseTab === 'analytics' ? 'text-cordel-wood border-b-4 border-cordel-wood' : 'text-cordel-master-dark/50'}`}
+                >
+                  📊 Analyse QCM
+                </button>
+                <button
+                  onClick={() => setActiveAnalyseTab('percussion')}
+                  className={`px-6 py-2 text-sm font-extrabold uppercase tracking-widest whitespace-nowrap ${activeAnalyseTab === 'percussion' ? 'text-cordel-wood border-b-4 border-cordel-wood' : 'text-cordel-master-dark/50'}`}
+                >
+                  🥁 Santé Percussion
+                </button>
+                <button
+                  onClick={() => setActiveAnalyseTab('danse')}
+                  className={`px-6 py-2 text-sm font-extrabold uppercase tracking-widest whitespace-nowrap ${activeAnalyseTab === 'danse' ? 'text-cordel-wood border-b-4 border-cordel-wood' : 'text-cordel-master-dark/50'}`}
+                >
+                  💃 Danse
+                </button>
+                <button
+                  onClick={() => setActiveAnalyseTab('admin')}
+                  className={`px-6 py-2 text-sm font-extrabold uppercase tracking-widest whitespace-nowrap ${activeAnalyseTab === 'admin' ? 'text-cordel-wood border-b-4 border-cordel-wood' : 'text-cordel-master-dark/50'}`}
+                >
+                  ⚙️ Administration
+                </button>
+              </div>
+
+              {loading ? (
+                <div className="text-center p-12 opacity-50 animate-pulse font-black uppercase text-xs">
+                  Analyse des parcours en cours...
+                </div>
+              ) : (
+                <div className="flex flex-col gap-6 w-full">
+                  {/* Main Content: Analytics */}
+                  {activeAnalyseTab === 'analytics' && (
+                    <MestreToadasAnalytics profileData={profileData} allSongs={songs} />
+                  )}
               
-              {activeTab === 'percussion' && (
+              {activeAnalyseTab === 'percussion' && (
                 <div className="flex flex-col gap-6">
                   {pupitres.map(pupitre => {
                     const pupitreUsers = percuUsers.filter(u => (u.instrument || 'Non défini') === pupitre);
@@ -279,7 +307,7 @@ export default function MestrePedagogyDashboard({ profileData }) {
                 </div>
               )}
 
-              {activeTab === 'danse' && (
+              {activeAnalyseTab === 'danse' && (
                 <CordelCard variant="default" className="p-5 flex flex-col gap-4">
                   <h3 className="text-sm font-black uppercase tracking-wider text-encre-noire border-b border-dashed border-cordel-master-dark/20 pb-2">
                     💃 Équipe Danse ({danseUsers.length} membres)
@@ -310,72 +338,8 @@ export default function MestrePedagogyDashboard({ profileData }) {
                   </div>
                 </CordelCard>
               )}
-
-              {activeTab === 'culture' && (
-                <div className="flex flex-col gap-6">
-                  <CordelCard variant="default" className="p-5">
-                    <h3 className="text-sm font-black uppercase tracking-wider text-encre-noire border-b border-dashed border-cordel-master-dark/20 pb-2 mb-4">
-                      🎤 Chants & Toadas
-                    </h3>
-                    <div className="grid grid-cols-1 gap-3">
-                      {songs.map(song => {
-                        const stats = getStatsForItem(song.id, usersData);
-                        if (stats.total === 0) return null;
-                        return (
-                          <div key={song.id} className="flex justify-between items-center p-3 bg-[#fdfaf2] border border-dashed border-encre-noire/15 rounded">
-                            <span className="text-xs font-bold text-encre-noire flex-1">{song.titre}</span>
-                            <div className="flex items-center gap-3">
-                              <span className={`text-[10px] font-black px-2 py-1 rounded ${stats.bg} ${stats.color}`}>
-                                {stats.text}
-                              </span>
-                              {stats.pct < 75 && (
-                                <button
-                                  onClick={() => handlePinNote(song.titre, 'Chant')}
-                                  className="text-[10px] font-black uppercase px-2 py-1 bg-white border border-encre-noire/20 rounded hover:bg-neutral-100 hover:scale-105 transition-transform"
-                                >
-                                  📌 Épingler
-                                </button>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </CordelCard>
-
-                  <CordelCard variant="default" className="p-5">
-                    <h3 className="text-sm font-black uppercase tracking-wider text-encre-noire border-b border-dashed border-cordel-master-dark/20 pb-2 mb-4">
-                      📚 Fiches Interactives (Ateliers & Culture)
-                    </h3>
-                    <div className="grid grid-cols-1 gap-3">
-                      {fiches.map(fiche => {
-                        const stats = getStatsForItem(fiche.id, usersData);
-                        if (stats.total === 0) return null;
-                        return (
-                          <div key={fiche.id} className="flex justify-between items-center p-3 bg-[#fdfaf2] border border-dashed border-encre-noire/15 rounded">
-                            <span className="text-xs font-bold text-encre-noire flex-1">{fiche.titre}</span>
-                            <div className="flex items-center gap-3">
-                              <span className={`text-[10px] font-black px-2 py-1 rounded ${stats.bg} ${stats.color}`}>
-                                {stats.text}
-                              </span>
-                              {stats.pct < 75 && (
-                                <button
-                                  onClick={() => handlePinNote(fiche.titre, 'Culture')}
-                                  className="text-[10px] font-black uppercase px-2 py-1 bg-white border border-encre-noire/20 rounded hover:bg-neutral-100 hover:scale-105 transition-transform"
-                                >
-                                  📌 Épingler
-                                </button>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </CordelCard>
-                </div>
-              )}
               
-              {activeTab === 'admin' && (
+              {activeAnalyseTab === 'admin' && (
                 <CordelCard variant="default" className="p-8 border-cordel-rouge/30 bg-cordel-rouge/5">
                   <h3 className="text-lg font-black uppercase tracking-wider text-cordel-rouge mb-4">
                     ⚠️ Remise à zéro annuelle
@@ -391,13 +355,8 @@ export default function MestrePedagogyDashboard({ profileData }) {
                   </button>
                 </CordelCard>
               )}
-            </div>
-          )}
-        </div>
-
-        {/* Sidebar Bloc-Notes */}
-        <div className="w-full xl:w-1/3 xl:sticky xl:top-4">
-          <MestrePedagogyNotepad groupId={groupId} />
+                </div>
+              )}
         </div>
       </div>
     </div>

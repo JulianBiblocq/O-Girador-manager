@@ -19,7 +19,7 @@ import useConfirm from '../hooks/useConfirm';
 
 import EventRSVPSection from './event-details/EventRSVPSection';
 import EventCarpoolSection from './event-details/EventCarpoolSection';
-import EventSetlistSection from './event-details/EventSetlistSection';
+import EventRevisionProgram from './event-details/EventRevisionProgram';
 import EventReportSection from './event-details/EventReportSection';
 import EventStageLayoutSection from './event-details/EventStageLayoutSection';
 import EventVolunteerSection from './event-details/EventVolunteerSection';
@@ -89,7 +89,8 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
     includesPercussion: event.includesPercussion || false,
     includesDance: event.includesDance || false,
     enableCarpool: event.enableCarpool !== false,
-    description: event.description || ''
+    description: event.description || '',
+    linkedPatterns: event.linkedPatterns || []
   });
 
   const [uploadingImage, setUploadingImage] = useState(false);
@@ -136,7 +137,10 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
     setNewMorceauNotes,
     updatingSetlist,
     handleAddMorceau,
-    handleRemoveMorceau
+    handleRemoveMorceau,
+    handleAddDancadorChoreo,
+    handleRemoveDancadorChoreo,
+    dancadorChoreoIds
   } = useEventSetlist(event);
 
   const [assocSequenceurUrl, setAssocSequenceurUrl] = useState('');
@@ -284,7 +288,8 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
       enableInscriptions: event.enableInscriptions !== false,
       description: event.description || '',
       latitude: event.latitude || null,
-      longitude: event.longitude || null
+      longitude: event.longitude || null,
+      linkedPatterns: event.linkedPatterns || []
     });
     const url = event.imageUrl;
     setImageMode(url && (url.startsWith('http://') || url.startsWith('https://')) && !url.includes('firebasestorage') ? 'url' : 'upload');
@@ -794,7 +799,8 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
         enableInscriptions: editForm.enableInscriptions !== false,
         description: updatedDescription,
         latitude: editForm.latitude ? Number(editForm.latitude) : null,
-        longitude: editForm.longitude ? Number(editForm.longitude) : null
+        longitude: editForm.longitude ? Number(editForm.longitude) : null,
+        linkedPatterns: editForm.linkedPatterns || []
       });
 
       // Synchronisation automatique par lot (batch mettre à jour) si l'événement fait partie d'un sondage (pollGroupId)
@@ -1153,6 +1159,7 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
           uploadingImage={uploadingImage}
           handleImageUpload={handleImageUpload}
           t={t}
+          groupId={event.groupId}
         />
       ) : (
         <>
@@ -1717,11 +1724,11 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
           {event.type !== 'reunion' && event.type !== 'atelier' && currentConfig.agendaEnableRevisionProgram && (
             <CordelAccordion
               title="Programme de révision & Morceaux"
-              subtitle="Setlist et répertoires de la prestation"
+              subtitle="Setlist, percussions et chorégraphies"
               icon="🎵"
               defaultOpen={false}
             >
-              <EventSetlistSection
+              <EventRevisionProgram
                 setlist={setlist}
                 isAuthorized={isAuthorized}
                 updatingSetlist={updatingSetlist}
@@ -1737,6 +1744,10 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
                 newMorceauNotes={newMorceauNotes}
                 setNewMorceauNotes={setNewMorceauNotes}
                 groupId={event?.groupId}
+                dancadorChoreoIds={dancadorChoreoIds}
+                handleAddDancadorChoreo={handleAddDancadorChoreo}
+                handleRemoveDancadorChoreo={handleRemoveDancadorChoreo}
+                linkedPatterns={event.linkedPatterns || []}
               />
             </CordelAccordion>
           )}

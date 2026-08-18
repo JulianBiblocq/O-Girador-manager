@@ -115,8 +115,76 @@ export default function TabOrganization({ formData, handleChange, saving, t, mod
     return found ? found.label : type;
   };
 
+  // Mode « instruments-only » : afficher uniquement le bloc Pupitres / Instruments
+  if (mode === 'instruments-only') {
+    return (
+      <InstrumentsCatalogBlock formData={formData} handleChange={handleChange} saving={saving} t={t} />
+    );
+  }
+
+  // Mode « profile-fields-only » ou pas de mode : afficher les réglages d'organisation
   return (
     <>
+      {/* 1. Nom Court */}
+      <CordelCard variant="default" useExtremeBorder={true} className="py-4 px-5 mb-4">
+        <h3 className="text-xs uppercase font-extrabold tracking-wider text-cordel-wood mb-3">
+          🏢 {translationFn('associationSettings.shortNameLabel') || "Nom court de l'association"}
+        </h3>
+        <div className="flex flex-col gap-1 text-left">
+          <input 
+            type="text"
+            value={formData.shortName || ''}
+            onChange={(e) => handleChange('shortName', e.target.value)}
+            placeholder={translationFn('associationSettings.shortNamePlaceholder') || "Ex: Le Girador"}
+            disabled={saving}
+            className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light w-full"
+          />
+        </div>
+      </CordelCard>
+
+      {/* 2. Règles de fonctionnement */}
+      <CordelCard variant="default" useExtremeBorder={true} className="py-4 px-5 mb-4">
+        <h3 className="text-xs uppercase font-extrabold tracking-wider text-cordel-wood mb-3">
+          ⚖️ {translationFn('associationSettings.associationRulesLabel') || "Règles de fonctionnement"}
+        </h3>
+        <div className="flex flex-col gap-1 text-left">
+          <textarea 
+            value={formData.associationRules || ''}
+            onChange={(e) => handleChange('associationRules', e.target.value)}
+            placeholder={translationFn('associationSettings.associationRulesPlaceholder') || "Saisissez les règles internes de l'association (affichées aux membres)..."}
+            disabled={saving}
+            rows={4}
+            className="theme-input text-xs font-bold py-2 bg-cordel-bg-light w-full resize-y"
+          />
+        </div>
+      </CordelCard>
+
+      {/* 3. Terminologie & Rendu */}
+      <CordelCard variant="default" useExtremeBorder={true} className="py-4 px-5 mb-4">
+        <h3 className="text-xs uppercase font-extrabold tracking-wider text-cordel-wood mb-3">
+          💬 {translationFn('associationSettings.terminologyHeading') || "Terminologie & Rendu"}
+        </h3>
+        <div className="flex flex-col gap-1 text-left">
+          <div className="flex items-start gap-2 pt-1">
+            <input
+              type="checkbox"
+              id="majorityFemale"
+              checked={formData.majorityFemale || false}
+              onChange={(e) => handleChange('majorityFemale', e.target.checked)}
+              disabled={saving}
+              className="mt-1 cursor-pointer w-4 h-4 text-cordel-wood rounded"
+            />
+            <label htmlFor="majorityFemale" className="text-xs font-bold text-encre-noire cursor-pointer select-none leading-tight">
+              {translationFn('associationSettings.majorityFemale') || "Groupe à majorité féminine (Appliquer le féminin sur les textes au pluriel)"}
+              <p className="text-[10px] text-cordel-master-dark/70 font-semibold mt-1 leading-relaxed">
+                {translationFn('associationSettings.majorityFemaleDesc') || "Active le pluriel féminin pour les termes généraux."}
+              </p>
+            </label>
+          </div>
+        </div>
+      </CordelCard>
+
+      {/* 4. Catégories de Pratique */}
       <CordelCard variant="default" useExtremeBorder={true} className="py-4 px-5">
         <h3 className="text-xs uppercase font-extrabold tracking-wider text-cordel-wood mb-3">
           🏷️ {translationFn('associationSettings.practiceCategoriesHeading') || "Catégories de pratique"}
@@ -175,19 +243,19 @@ export default function TabOrganization({ formData, handleChange, saving, t, mod
           <span className="text-[10px] font-bold uppercase tracking-wider text-cordel-master-dark mb-1">
             Catégories configurées
           </span>
-          {customCategories.length === 0 ? (
+          {customCategories.filter(cat => cat && cat.name && cat.name.trim() !== '').length === 0 ? (
             <span className="text-[10px] italic opacity-60">
               Aucune catégorie personnalisée configurée.
             </span>
           ) : (
             <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto pr-1">
-              {customCategories.map((cat) => (
+              {customCategories.filter(cat => cat && cat.name && cat.name.trim() !== '').map((cat) => (
                 <div 
                   key={cat.id}
                   className="flex items-center gap-2 px-2.5 py-1.5 rounded-[4px_6px_3px_5px] border border-cordel-master-dark/30 shadow-sm"
-                  style={{ backgroundColor: `${cat.color}20`, borderColor: cat.color }}
+                  style={{ backgroundColor: `${cat.color || '#cccccc'}20`, borderColor: cat.color || '#cccccc' }}
                 >
-                  <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: cat.color }}></span>
+                  <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: cat.color || '#cccccc' }}></span>
                   <span className="text-[10px] font-bold text-encre-noire">{cat.name}</span>
                   <button 
                     type="button"
@@ -204,9 +272,12 @@ export default function TabOrganization({ formData, handleChange, saving, t, mod
         </div>
       </CordelCard>
 
-      <div className="mt-4">
-        <InstrumentsCatalogBlock formData={formData} handleChange={handleChange} saving={saving} t={t} />
-      </div>
+      {/* Bloc Instruments/Pupitres : affiché uniquement dans le mode global (tous les onglets visibles) */}
+      {!mode && (
+        <div className="mt-4">
+          <InstrumentsCatalogBlock formData={formData} handleChange={handleChange} saving={saving} t={t} />
+        </div>
+      )}
 
       <CordelCard variant="default" useExtremeBorder={true} className="py-4 px-5 mt-4">
         <h3 className="text-xs uppercase font-extrabold tracking-wider text-cordel-wood mb-3">

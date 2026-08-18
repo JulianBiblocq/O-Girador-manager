@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { distractorPool } from '../../data/distractorPool';
+import useConfirm from '../../hooks/useConfirm';
 
 export default function QuizDistractorManager({ profileData }) {
+  const { confirm } = useConfirm();
   const [distractors, setDistractors] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -68,8 +70,9 @@ export default function QuizDistractorManager({ profileData }) {
     }
   };
 
-  const handleResetToDefault = () => {
-    if (window.confirm("Voulez-vous vraiment réinitialiser toutes les catégories aux valeurs par défaut de l'application ? Toutes vos personnalisations seront perdues.")) {
+  const handleResetToDefault = async () => {
+    const isOk = await confirm("Voulez-vous vraiment réinitialiser toutes les catégories aux valeurs par défaut de l'application ? Toutes vos personnalisations seront perdues.");
+    if (isOk) {
       setDistractors({
         genresMusicaux: distractorPool.genresMusicauxHorsMaracatu || [],
         baquesPlausibles: distractorPool.baquesFictifsEtSimilaires || [],

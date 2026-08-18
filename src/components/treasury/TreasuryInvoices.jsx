@@ -5,8 +5,10 @@ import { useInvoices } from '../../hooks/useInvoices';
 import InvoiceFormModal from './InvoiceFormModal';
 import InvoiceDetailsModal from './InvoiceDetailsModal';
 import BankDetailsBlock from '../association-settings/blocks/BankDetailsBlock';
+import useConfirm from '../../hooks/useConfirm';
 
 export default function TreasuryInvoices({ groupId, associationSettings, handleSaveAssociationSettings }) {
+  const { confirm } = useConfirm();
   const {
     invoices,
     loading,
@@ -81,7 +83,8 @@ export default function TreasuryInvoices({ groupId, associationSettings, handleS
   };
 
   const handleDelete = async (invoiceId, numero) => {
-    if (window.confirm(`Voulez-vous vraiment supprimer le document ${numero || ''} ?`)) {
+    const isOk = await confirm(`Voulez-vous vraiment supprimer le document ${numero || ''} ?`);
+    if (isOk) {
       try {
         await deleteInvoice(invoiceId);
       } catch (err) {
@@ -97,7 +100,15 @@ export default function TreasuryInvoices({ groupId, associationSettings, handleS
     const amount = invoice.montantTTC || invoice.montantHT || 0;
     const confirmText = `Confirmez-vous l'encaissement de la facture ${invoice.numero} (${amount} €) ?\n\nUne entrée de recette sera automatiquement créée en Trésorerie.`;
 
-    if (window.confirm(confirmText)) {
+    const isOk = await confirm({
+      title: "Confirmation d'encaissement",
+      message: confirmText,
+      confirmText: "Oui, encaisser",
+      cancelText: "Annuler",
+      variant: "success"
+    });
+    
+    if (isOk) {
       try {
         await markInvoiceAsPaid(invoice);
         alert(`Facture ${invoice.numero} marquée comme payée et enregistrée en Trésorerie !`);

@@ -172,13 +172,13 @@ export default function InstrumentsCatalogBlock({ formData, handleChange, saving
           <div className="flex flex-col gap-2 text-left">
             <div className="flex flex-col gap-1">
               <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                Nom du Pupitre (Optionnel - ex: Alfaias, Sementes...)
+                {translationFn('logistics.optionalSectionName') || "Nom du pupitre (optionnel)"}
               </label>
               <input 
                 type="text"
                 value={newPupitreName}
                 onChange={(e) => setNewPupitreName(e.target.value)}
-                placeholder="Saisissez un nom de pupitre personnalisé..."
+                placeholder={translationFn('associationSettings.pupitreNamePlaceholder') || "Saisissez un nom de pupitre personnalisé..."}
                 className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light w-full"
               />
             </div>

@@ -1,9 +1,12 @@
 /**
- * Firebase Cloud Function (v2 / Node.js) : Envoi d'E-mails Transactionnels Brevo & Export Newsletter.
+ * Firebase Cloud Functions (v2 / Node.js) :
+ * - Envoi d'E-mails Transactionnels Brevo & Export Newsletter.
+ * - Envoi de Notifications Push FCM via Firestore Trigger.
  * Sécurise les clés API via Firebase Secrets.
  */
 
 const { onRequest, onCall, HttpsError } = require("firebase-functions/v2/https");
+const { onDocumentCreated } = require("firebase-functions/v2/firestore");
 const { defineSecret } = require("firebase-functions/params");
 
 const admin = require("firebase-admin");
@@ -13,6 +16,198 @@ const { getApps, initializeApp } = require("firebase-admin/app");
 if (!getApps().length) {
   initializeApp();
 }
+
+/**
+ * Cloud Function Firestore Trigger : onAnnouncementCreated
+ * Se déclenche automatiquement à la création d'un document dans announcements/{announcementId}.
+ * Envoie des notifications push FCM aux membres ciblés du groupe si sendPushNotification === true.
+ *
+ * Flux :
+ * 1. Vérifie le flag sendPushNotification dans le document.
+ * 2. Récupère tous les utilisateurs du groupId concerné.
+ * 3. Filtre par cibles (tags, rôles) si spécifiées.
+ * 4. Collecte les fcmTokens[] valides de chaque utilisateur ciblé.
+ * 5. Envoie par lots de 500 tokens via admin.messaging().sendEachForMulticast().
+ * 6. Nettoie les tokens invalides des profils Firestore.
+ */
+exports.onAnnouncementCreated = onDocumentCreated(
+  "announcements/{announcementId}",
+  async (event) => {
+    const snap = event.data;
+    if (!snap) {
+      console.warn("onAnnouncementCreated - Aucune donnée dans le snapshot.");
+      return null;
+    }
+
+    const announcementData = snap.data();
+    const announcementId = event.params.announcementId;
+
+    // Vérification du flag d'envoi de notification push
+    if (!announcementData.sendPushNotification) {
+      console.log(`onAnnouncementCreated - Annonce "${announcementId}" sans sendPushNotification, envoi push ignoré.`);
+      return null;
+    }
+
+    const groupId = announcementData.groupId;
+    if (!groupId) {
+      console.error(`onAnnouncementCreated - Annonce "${announcementId}" sans groupId, impossible d'envoyer les notifications.`);
+      return null;
+    }
+
+    const titre = announcementData.titre || "Nouvelle annonce";
+    const message = announcementData.message || "";
+    const cibles = Array.isArray(announcementData.cibles) ? announcementData.cibles : ["Tous"];
+
+    console.log(`onAnnouncementCreated - Traitement de l'annonce "${announcementId}" pour le groupe "${groupId}"`, {
+      titre,
+      cibles,
+      sendPushNotification: true
+    });
+
+    try {
+      const db = admin.firestore();
+
+      // Récupération de tous les utilisateurs du groupe
+      const usersSnap = await db.collection("users")
+        .where("groupId", "==", groupId)
+        .get();
+
+      if (usersSnap.empty) {
+        console.warn(`onAnnouncementCreated - Aucun utilisateur trouvé pour le groupe "${groupId}".`);
+        return null;
+      }
+
+      // Filtrage des utilisateurs par cibles et collecte des tokens FCM
+      const allTokens = [];           // Tableau de {token, userId} pour le suivi
+      const cibleTous = cibles.includes("Tous");
+
+      usersSnap.docs.forEach((userDoc) => {
+        const userData = userDoc.data();
+        const userId = userDoc.id;
+        const userTokens = userData.fcmTokens;
+
+        // Vérifier que l'utilisateur possède des tokens FCM valides
+        if (!Array.isArray(userTokens) || userTokens.length === 0) {
+          return;
+        }
+
+        // Filtrage par cibles si nécessaire
+        if (!cibleTous) {
+          const userTags = userData.tags || [];
+          const userRole = userData.role || "membre";
+          const isAdmin = userRole === "mestre" || userRole === "super-admin";
+
+          const matchesCible = cibles.some((c) => {
+            if (c === "role:admin" && isAdmin) return true;
+            return userTags.includes(c);
+          });
+
+          if (!matchesCible) return;
+        }
+
+        // Ajouter chaque token avec son userId pour le nettoyage ultérieur
+        userTokens.forEach((token) => {
+          if (typeof token === "string" && token.trim()) {
+            allTokens.push({ token: token.trim(), userId });
+          }
+        });
+      });
+
+      if (allTokens.length === 0) {
+        console.warn(`onAnnouncementCreated - Aucun token FCM trouvé pour les cibles de l'annonce "${announcementId}".`);
+        return null;
+      }
+
+      console.log(`onAnnouncementCreated - ${allTokens.length} token(s) FCM collecté(s), envoi en cours...`);
+
+      // Construction du payload de notification FCM
+      const truncatedBody = message.length > 200 ? message.substring(0, 197) + "..." : message;
+
+      // Envoi par lots de 500 tokens (limite FCM sendEachForMulticast)
+      const BATCH_SIZE = 500;
+      const tokensToRemove = []; // Tokens invalides à nettoyer
+
+      for (let i = 0; i < allTokens.length; i += BATCH_SIZE) {
+        const batch = allTokens.slice(i, i + BATCH_SIZE);
+        const batchTokenStrings = batch.map((t) => t.token);
+
+        try {
+          const multicastMessage = {
+            notification: {
+              title: titre,
+              body: truncatedBody
+            },
+            data: {
+              announcementId: announcementId,
+              groupId: groupId,
+              url: "/app",
+              click_action: "/app"
+            },
+            tokens: batchTokenStrings
+          };
+
+          const response = await admin.messaging().sendEachForMulticast(multicastMessage);
+
+          console.log(`onAnnouncementCreated - Lot ${Math.floor(i / BATCH_SIZE) + 1} : ${response.successCount} succès, ${response.failureCount} échec(s).`);
+
+          // Identifier les tokens invalides pour nettoyage
+          if (response.failureCount > 0) {
+            response.responses.forEach((resp, idx) => {
+              if (!resp.success) {
+                const errorCode = resp.error?.code || "";
+                console.error(`onAnnouncementCreated - Échec d'envoi au token index ${i + idx} :`, resp.error?.message || "Erreur inconnue");
+
+                // Nettoyer les tokens définitivement invalides
+                if (
+                  errorCode === "messaging/invalid-registration-token" ||
+                  errorCode === "messaging/registration-token-not-registered"
+                ) {
+                  tokensToRemove.push(batch[idx]);
+                }
+              }
+            });
+          }
+        } catch (batchError) {
+          console.error(`onAnnouncementCreated - Erreur critique lors de l'envoi du lot ${Math.floor(i / BATCH_SIZE) + 1} :`, batchError);
+        }
+      }
+
+      // Nettoyage des tokens invalides dans les profils Firestore
+      if (tokensToRemove.length > 0) {
+        console.log(`onAnnouncementCreated - Nettoyage de ${tokensToRemove.length} token(s) invalide(s)...`);
+
+        // Regrouper les tokens invalides par userId pour optimiser les écritures
+        const tokensByUser = {};
+        tokensToRemove.forEach(({ token, userId }) => {
+          if (!tokensByUser[userId]) tokensByUser[userId] = [];
+          tokensByUser[userId].push(token);
+        });
+
+        const { arrayRemove } = require("firebase-admin/firestore").FieldValue
+          ? require("firebase-admin/firestore")
+          : { arrayRemove: admin.firestore.FieldValue.arrayRemove };
+
+        for (const [userId, invalidTokens] of Object.entries(tokensByUser)) {
+          try {
+            await db.collection("users").doc(userId).update({
+              fcmTokens: admin.firestore.FieldValue.arrayRemove(...invalidTokens)
+            });
+            console.log(`onAnnouncementCreated - Tokens invalides supprimés pour l'utilisateur "${userId}".`);
+          } catch (cleanupErr) {
+            console.error(`onAnnouncementCreated - Erreur lors du nettoyage des tokens pour "${userId}" :`, cleanupErr);
+          }
+        }
+      }
+
+      console.log(`onAnnouncementCreated - Envoi terminé pour l'annonce "${announcementId}".`);
+      return null;
+
+    } catch (globalError) {
+      console.error(`onAnnouncementCreated - Erreur globale pour l'annonce "${announcementId}" :`, globalError);
+      return null;
+    }
+  }
+);
 
 // Définition du secret Firebase pour la clé API Brevo (v3)
 const brevoApiKeySecret = defineSecret("BREVO_API_KEY");
@@ -293,3 +488,177 @@ exports.approveQrSession = onCall(async (request) => {
   }
 });
 
+/**
+ * Cloud Function HTTPS : helloAssoWebhook
+ * Reçoit les notifications webhook de HelloAsso (Order / Payment).
+ * Identifie le membre de l'association par son email (payer.email),
+ * met à jour son statut de paiement dans Firestore, et enregistre
+ * un log de la notification pour traçabilité et débogage.
+ *
+ * URL attendue : /helloAssoWebhook?groupId={groupId}
+ */
+exports.helloAssoWebhook = onRequest(
+  { cors: true },
+  async (req, res) => {
+    // Seule la méthode POST est acceptée (notifications HelloAsso)
+    if (req.method !== "POST") {
+      return res.status(405).json({
+        error: "Méthode non autorisée. Ce endpoint n'accepte que les requêtes POST."
+      });
+    }
+
+    const groupId = req.query.groupId;
+    if (!groupId || typeof groupId !== "string") {
+      return res.status(400).json({
+        error: "Le paramètre 'groupId' est requis dans l'URL."
+      });
+    }
+
+    try {
+      const body = req.body;
+
+      // Extraction des données principales du payload HelloAsso
+      const eventType = body.eventType || "Unknown";
+      const data = body.data || {};
+      const payer = data.payer || {};
+      const payerEmail = (payer.email || "").trim().toLowerCase();
+      const payerFirstName = payer.firstName || "";
+      const payerLastName = payer.lastName || "";
+      // Les montants HelloAsso sont en centimes
+      const amountCents = data.amount || 0;
+      const amountEuros = amountCents / 100;
+      const items = data.items || [];
+      const helloAssoOrderId = data.id || data.order?.id || null;
+      const paymentDate = data.date || new Date().toISOString();
+
+      console.log("helloAssoWebhook - Notification reçue :", {
+        groupId,
+        eventType,
+        payerEmail,
+        payerName: `${payerFirstName} ${payerLastName}`,
+        amountEuros,
+        helloAssoOrderId,
+        itemsCount: items.length
+      });
+
+      // Vérification optionnelle de la clé de signature HelloAsso
+      const db = admin.firestore();
+      try {
+        const credsDoc = await db
+          .collection("associations").doc(groupId)
+          .collection("private_settings").doc("credentials")
+          .get();
+
+        if (credsDoc.exists) {
+          const storedKey = credsDoc.data().helloAssoSignatureKey || "";
+          // Si une clé est configurée ET que HelloAsso envoie un header de vérification, on compare
+          const receivedKey = req.headers["x-helloasso-key"] || req.headers["x-helloasso-signature"] || "";
+          if (storedKey && receivedKey && storedKey !== receivedKey) {
+            console.warn("helloAssoWebhook - Clé de signature invalide pour le groupe", groupId);
+            return res.status(403).json({
+              error: "Clé de signature invalide."
+            });
+          }
+        }
+      } catch (credErr) {
+        // En cas d'erreur de lecture des credentials, on continue quand même
+        console.warn("helloAssoWebhook - Impossible de lire les credentials :", credErr.message);
+      }
+
+      // Enregistrement du log de la notification (traçabilité complète)
+      const logEntry = {
+        eventType,
+        payerEmail,
+        payerFirstName,
+        payerLastName,
+        amountCents,
+        amountEuros,
+        helloAssoOrderId,
+        paymentDate,
+        items: items.map(item => ({
+          id: item.id || null,
+          name: item.name || "",
+          amount: (item.amount || 0) / 100,
+          type: item.type || ""
+        })),
+        rawPayload: JSON.stringify(body).substring(0, 5000),
+        receivedAt: admin.firestore.FieldValue.serverTimestamp(),
+        matched: false,
+        matchedUserId: null
+      };
+
+      // Matching du membre par email dans le groupe
+      let matchedUserId = null;
+      let matchedUserName = "";
+
+      if (payerEmail) {
+        const usersSnap = await db
+          .collection("users")
+          .where("groupId", "==", groupId)
+          .where("email", "==", payerEmail)
+          .limit(1)
+          .get();
+
+        if (!usersSnap.empty) {
+          const userDoc = usersSnap.docs[0];
+          matchedUserId = userDoc.id;
+          const userData = userDoc.data();
+          matchedUserName = `${userData.prenom || ""} ${userData.nom || ""}`.trim();
+
+          // Mise à jour du statut de paiement du membre
+          await db.collection("users").doc(matchedUserId).update({
+            paymentStatus: "paid",
+            helloAssoLastPayment: {
+              date: paymentDate,
+              amount: amountEuros,
+              orderId: helloAssoOrderId,
+              eventType: eventType,
+              updatedAt: admin.firestore.FieldValue.serverTimestamp()
+            }
+          });
+
+          logEntry.matched = true;
+          logEntry.matchedUserId = matchedUserId;
+          logEntry.matchedUserName = matchedUserName;
+
+          console.log("helloAssoWebhook - Membre trouvé et mis à jour :", {
+            userId: matchedUserId,
+            userName: matchedUserName,
+            newStatus: "paid",
+            amount: amountEuros
+          });
+        } else {
+          console.warn("helloAssoWebhook - Aucun membre trouvé pour l'email :", payerEmail, "dans le groupe :", groupId);
+        }
+      } else {
+        console.warn("helloAssoWebhook - Aucun email de payeur dans la notification.");
+      }
+
+      // Écriture du log dans Firestore
+      await db
+        .collection("associations").doc(groupId)
+        .collection("helloasso_logs")
+        .add(logEntry);
+
+      // Réponse 200 OK pour éviter que HelloAsso ne retente la notification
+      return res.status(200).json({
+        success: true,
+        matched: !!matchedUserId,
+        matchedUser: matchedUserName || null,
+        message: matchedUserId
+          ? `Membre "${matchedUserName}" mis à jour avec succès (paymentStatus: paid).`
+          : `Notification enregistrée mais aucun membre trouvé pour l'email "${payerEmail}".`
+      });
+
+    } catch (err) {
+      console.error("helloAssoWebhook - Erreur globale :", err);
+      // On retourne quand même 200 pour éviter les retry infinis de HelloAsso
+      // mais on signale l'erreur dans le body
+      return res.status(200).json({
+        success: false,
+        error: "Erreur interne lors du traitement de la notification.",
+        details: err.message || ""
+      });
+    }
+  }
+);

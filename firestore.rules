@@ -210,6 +210,12 @@ service cloud.firestore {
       match /rhythmMetadata/{rhythmId} {
         allow read, write: if isAdminOrMestre() && getUserData().groupId == assocId;
       }
+
+      // Logs des notifications HelloAsso (lecture admin uniquement, écriture via Admin SDK / Cloud Function)
+      match /helloasso_logs/{logId} {
+        allow read: if isAdminOrMestre() && getUserData().groupId == assocId;
+        allow write: if false;
+      }
     }
 
     // Announcements: Lecture si authentifié. Écriture réservée aux admins/mestres.
@@ -250,6 +256,12 @@ service cloud.firestore {
 
     // Rhythms: Lecture si authentifié. Écriture réservée aux admins/mestres.
     match /rhythms/{rhythm} {
+      allow read: if isAuthenticated();
+      allow write: if isAdminOrMestre();
+    }
+
+    // Signaux du Maître: Lecture si authentifié. Écriture réservée aux admins/mestres.
+    match /mestre_signals/{signal} {
       allow read: if isAuthenticated();
       allow write: if isAdminOrMestre();
     }

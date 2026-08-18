@@ -104,7 +104,7 @@ export const generateQuizFromSheet = (sheetData, allSheetsData = [], allSongsDat
     const tempRegex = /<(strong|b)[^>]*>(.*?)<\/\1>/gi;
     while ((tempMatch = tempRegex.exec(fullTextContext)) !== null) {
       const word = tempMatch[2].replace(/<[^>]+>/g, '').trim();
-      if (word.length > 2 && !allStrongWords.includes(word)) {
+      if (word.length > 2 && word.length <= 25 && word.split(/\s+/).length <= 3 && !allStrongWords.includes(word)) {
         allStrongWords.push(word);
       }
     }
@@ -129,7 +129,7 @@ export const generateQuizFromSheet = (sheetData, allSheetsData = [], allSongsDat
           const tRegex = /<(strong|b)[^>]*>(.*?)<\/\1>/gi;
           while ((tMatch = tRegex.exec(sContext)) !== null) {
             const w = tMatch[2].replace(/<[^>]+>/g, '').trim();
-            if (w.length > 2) {
+            if (w.length > 2 && w.length <= 25 && w.split(/\s+/).length <= 3) {
               if (isSameCat) otherWordsSameCategory.push(w);
               else otherWordsDifferentCategory.push(w);
             }
@@ -139,11 +139,13 @@ export const generateQuizFromSheet = (sheetData, allSheetsData = [], allSongsDat
     }
 
     // Deuxième passage : on génère les questions
+    let strongIndex = 0;
     while ((match = strongRegex.exec(fullTextContext)) !== null) {
       const correctWord = match[2].replace(/<[^>]+>/g, '').trim();
-      if (correctWord.length <= 2) continue; // ignore les mots trop courts
+      if (correctWord.length <= 2 || correctWord.length > 25 || correctWord.split(/\s+/).length > 3) continue; // ignore les mots trop courts ou trop longs
 
       const index = match.index;
+      strongIndex++;
       const contextStart = Math.max(0, index - 60);
       const contextEnd = Math.min(fullTextContext.length, index + match[0].length + 60);
       
@@ -177,7 +179,7 @@ export const generateQuizFromSheet = (sheetData, allSheetsData = [], allSongsDat
         }
       } else {
         // Mots textuels (Lieux, Ateliers, Culture)
-        const localPlaces = ['Recife', 'Olinda', 'São José', 'Peixinhos', 'Igarassu', 'Nazareth', 'Pernambouc'];
+        const localPlaces = distractorPool.localPlaces;
         const distantPlaces = (customDistractors.geographieEtVilles?.length > 0) ? customDistractors.geographieEtVilles : distractorPool.villesEtGeographie;
         const fallbackFails = (customDistractors.lutherieEtMateriaux?.length > 0) ? customDistractors.lutherieEtMateriaux : distractorPool.materiauxEtLutherie;
 
@@ -210,10 +212,10 @@ export const generateQuizFromSheet = (sheetData, allSheetsData = [], allSongsDat
       ]);
 
       questions.push({
-        id: `culture_${index}`,
+        id: `qcm_auto_culture_${strongIndex}`,
         type: 'culture',
-        questionText: `Dans ce contexte : "...${phraseTrou}..."`,
-        instruction: "Quel mot manque dans cette phrase ?",
+        questionText: config.t ? config.t("pedagogyQuiz.missingWordQuestion", { phraseTrou }) : `Dans ce contexte : "...${phraseTrou}..."`,
+        instruction: config.t ? config.t("pedagogyQuiz.missingWordInstruction") : "Quel mot manque dans cette phrase ?",
         choices: choices,
         feedback: `Le bon mot était "${correctWord}". Ce terme est important dans l'apprentissage.`
       });
@@ -232,7 +234,7 @@ export const generateQuizFromSheet = (sheetData, allSheetsData = [], allSongsDat
       let wrongChoices = allTranslations.filter(t => t.toLowerCase() !== wordObj.fr.toLowerCase());
       if (wrongChoices.length < 3) {
         // Fallback en dernier recours
-        const fallbackFails = ['Tambour', 'Baguette', 'Danse', 'Couronne', 'Costume traditionnel', 'Instrument de percussion'];
+        const fallbackFails = distractorPool.fallbackFailsTraductions;
         while (wrongChoices.length < 3) {
           const randomF = fallbackFails[Math.floor(Math.random() * fallbackFails.length)];
           if (!wrongChoices.includes(randomF) && randomF.toLowerCase() !== wordObj.fr.toLowerCase()) {
@@ -251,7 +253,7 @@ export const generateQuizFromSheet = (sheetData, allSheetsData = [], allSongsDat
       const isCulture = sheetData.type === 'culture_fiche';
       
       questions.push({
-        id: `lexique_${i}`,
+        id: `qcm_auto_lexique_${i}`,
         type: 'lexique',
         questionText: wordObj.pt,
         instruction: isCulture ? "Que signifie ce terme / Qu'est-ce que c'est ?" : "Que signifie ce mot en portugais ?",
@@ -269,22 +271,21 @@ export const generateQuizFromSheet = (sheetData, allSheetsData = [], allSongsDat
     const hasElement = isOrixa && sheetData.elementNaturel;
     
     // Noms d'autres Orixás pour distracteurs
-    const orixasNames = ['Oxum', 'Iansã', 'Xangô', 'Ogum', 'Oxóssi', 'Iemanjá', 'Nanã', 'Obaluaiê', 'Exu', 'Oxalá'];
     const stampsList = ['orixa', 'cuisine', 'histoire', 'musique', 'cortejo', 'territoire', 'folklore'];
     const colorsList = [['#EAB308'], ['#EF4444', '#FFFFFF'], ['#3B82F6'], ['#22C55E'], ['#A855F7'], ['#F97316']];
 
     // 3.1. Devinette Visuelle (Quel est cet Orixá ?)
     if (isOrixa && sheetData.personnageOrisha && sheetData.stampKey && sheetData.couleursTheme) {
-      let wrongChoices = getDistractors([orixasNames], 3, sheetData.personnageOrisha);
+      let wrongChoices = getDistractors([distractorPool.orixasNames], 3, sheetData.personnageOrisha);
       const choices = shuffleArray([
         { text: sheetData.personnageOrisha, isCorrect: true },
         ...wrongChoices.map(w => ({ text: w, isCorrect: false }))
       ]);
 
       questions.push({
-        id: `visuel_orixa_${sheetData.id}`,
+        id: `qcm_auto_visuel_orixa`,
         type: 'devinette_visuelle',
-        instruction: "Devinette visuelle",
+        instruction: config.t ? config.t("pedagogyQuiz.visualRiddleInstruction") : "Devinette visuelle",
         questionText: "De quel Orixá s'agit-il ?",
         visualElement: { type: 'orixaBadge', stampKey: sheetData.stampKey, couleurs: sheetData.couleursTheme },
         choices: choices,
@@ -303,7 +304,7 @@ export const generateQuizFromSheet = (sheetData, allSheetsData = [], allSongsDat
       }).filter(Boolean);
 
       if (otherTitles.length < 3) {
-        otherTitles = ['Le seigneur du feu et du tonnerre', 'Le guerrier de la paix', 'La reine de la mer', 'L\'enfant divin'];
+        otherTitles = distractorPool.orixasTitles;
       }
 
       let correctTitle = sheetData.titre;
@@ -319,10 +320,10 @@ export const generateQuizFromSheet = (sheetData, allSheetsData = [], allSongsDat
         ]);
 
         questions.push({
-          id: `qui_est_${sheetData.id}`,
+          id: `qcm_auto_qui_est`,
           type: 'culture',
-          instruction: "Identité",
-          questionText: `Qui est ${sheetData.personnageOrisha} ?`,
+          instruction: config.t ? config.t("pedagogyQuiz.identityInstruction") : "Identité",
+          questionText: config.t ? config.t("pedagogyQuiz.identityQuestion", { personnage: sheetData.personnageOrisha }) : `Qui est ${sheetData.personnageOrisha} ?`,
           choices: choices,
           feedback: `${sheetData.personnageOrisha} est : ${correctTitle}.`
         });
@@ -331,7 +332,7 @@ export const generateQuizFromSheet = (sheetData, allSheetsData = [], allSongsDat
 
     // 3.2 Outil / Symbole sacré
     if (isOrixa && sheetData.symbolesSacres) {
-      let wrongChoices = ['Miroir et éventail', 'Arc et flèche', 'Épée de fer', 'Hache double (Oxê)', 'Balai de paille (Íroko)', 'Lance de combat', 'Poignard et bouclier'];
+      let wrongChoices = distractorPool.orixasTools;
       wrongChoices = wrongChoices.filter(w => !w.toLowerCase().includes(sheetData.symbolesSacres.toLowerCase()));
       wrongChoices = shuffleArray(wrongChoices).slice(0, 3);
 
@@ -341,9 +342,9 @@ export const generateQuizFromSheet = (sheetData, allSheetsData = [], allSongsDat
       ]);
 
       questions.push({
-        id: `outil_${sheetData.id}`,
+        id: `qcm_auto_outil`,
         type: 'culture',
-        instruction: "Outil sacré",
+        instruction: config.t ? config.t("pedagogyQuiz.toolInstruction") : "Outil sacré",
         questionText: `Quel est le symbole sacré (outil) associé à ${sheetData.personnageOrisha || 'cette divinité'} ?`,
         choices: choices,
         feedback: `L'outil correct est : ${sheetData.symbolesSacres}.`
@@ -383,9 +384,9 @@ export const generateQuizFromSheet = (sheetData, allSheetsData = [], allSongsDat
       ]);
 
       questions.push({
-        id: `couleurs_blason_${sheetData.id}`,
+        id: `qcm_auto_couleurs_blason`,
         type: 'blason_orixa',
-        instruction: "Couleurs du Blason",
+        instruction: config.t ? config.t("pedagogyQuiz.colorsInstruction") : "Couleurs du Blason",
         questionText: `Identifiez les couleurs sacrées de : ${sheetData.personnageOrisha || sheetData.titre}`,
         choices: visualChoicesColors,
         feedback: `Vous deviez choisir les couleurs sacrées de ${sheetData.personnageOrisha || 'cette divinité'}.`
@@ -416,9 +417,9 @@ export const generateQuizFromSheet = (sheetData, allSheetsData = [], allSongsDat
       ]);
 
       questions.push({
-        id: `tampon_blason_${sheetData.id}`,
+        id: `qcm_auto_tampon_blason`,
         type: 'blason_orixa',
-        instruction: "Symbole (Selo de Axé)",
+        instruction: config.t ? config.t("pedagogyQuiz.stampInstruction") : "Symbole (Selo de Axé)",
         questionText: `Identifiez le symbole de axé (tampon) de : ${sheetData.personnageOrisha || sheetData.titre}`,
         choices: visualChoicesStamp,
         feedback: `Le bon symbole est le Selo de Axé de ${sheetData.personnageOrisha || 'cette divinité'}.`
@@ -429,7 +430,7 @@ export const generateQuizFromSheet = (sheetData, allSheetsData = [], allSongsDat
     if (hasDanse) {
       const correctText = sheetData.danseData.nomDuGeste || sheetData.danseData.descriptionGeste.substring(0, 50) + "...";
       let wrongChoices = getDistractors([
-        ['Giro (Tour)', 'Passo de Índio', 'Balanço', 'Avancée', 'Saut', 'Marche croisée', 'Ondes des bras']
+        distractorPool.danseGestes
       ], 3, correctText);
       
       const choices = shuffleArray([
@@ -438,10 +439,10 @@ export const generateQuizFromSheet = (sheetData, allSheetsData = [], allSongsDat
       ]);
 
       questions.push({
-        id: `geste_${sheetData.id}`,
+        id: `qcm_auto_geste`,
         type: 'danse_geste',
-        instruction: "Danse & Gestuelle",
-        questionText: `Quel geste ou mouvement caractérise cette figure culturelle ?`,
+        instruction: config.t ? config.t("pedagogyQuiz.danceInstruction") : "Danse & Gestuelle",
+        questionText: config.t ? config.t("pedagogyQuiz.danceQuestion") : `Quel geste ou mouvement caractérise cette figure culturelle ?`,
         choices: choices,
         feedback: `Le geste correct est lié à l'énergie de la danse.`
       });
@@ -450,7 +451,7 @@ export const generateQuizFromSheet = (sheetData, allSheetsData = [], allSongsDat
     // 3.4. Du Geste à l'Élément
     if (hasElement) {
       let wrongChoices = getDistractors([
-        ['Feu', 'Terre', 'Eaux douces', 'Océan', 'Air et Tempêtes', 'Forêt', 'Fer / Forge', 'Boue']
+        distractorPool.elementsNaturels
       ], 3, sheetData.elementNaturel);
       
       const choices = shuffleArray([
@@ -459,9 +460,9 @@ export const generateQuizFromSheet = (sheetData, allSheetsData = [], allSongsDat
       ]);
 
       questions.push({
-        id: `element_${sheetData.id}`,
+        id: `qcm_auto_element`,
         type: 'element_naturel',
-        instruction: "Élément Naturel",
+        instruction: config.t ? config.t("pedagogyQuiz.elementInstruction") : "Élément Naturel",
         questionText: `Quel est l'élément naturel associé à ${sheetData.personnageOrisha} ?`,
         choices: choices,
         feedback: `L'élément naturel correct est ${sheetData.elementNaturel}.`
@@ -471,7 +472,7 @@ export const generateQuizFromSheet = (sheetData, allSheetsData = [], allSongsDat
     // 3.5 Questions Cortège : Géographie (Ville & Région)
     if (isCortejo && sheetData.villeRegion) {
       const allOtherPlaces = allSheetsData.map(s => s.villeRegion).filter(Boolean).filter(v => v !== sheetData.villeRegion);
-      let wrongChoices = getDistractors([allOtherPlaces, ['Recife', 'Olinda', 'Nazaré da Mata', 'Salvador', 'Rio de Janeiro', 'Fortaleza']], 3, sheetData.villeRegion);
+      let wrongChoices = getDistractors([allOtherPlaces, distractorPool.villesCortejo], 3, sheetData.villeRegion);
       
       const choices = shuffleArray([
         { text: sheetData.villeRegion, isCorrect: true },
@@ -479,9 +480,9 @@ export const generateQuizFromSheet = (sheetData, allSheetsData = [], allSongsDat
       ]);
 
       questions.push({
-        id: `geo_cortejo_${sheetData.id}`,
+        id: `qcm_auto_geo_cortejo`,
         type: 'culture_geographie',
-        instruction: "Territoire & Région",
+        instruction: config.t ? config.t("pedagogyQuiz.regionInstruction") : "Territoire & Région",
         questionText: `Dans quelle région ou ville trouve-t-on traditionnellement cette figure du Cortège (${sheetData.titre}) ?`,
         choices: choices,
         feedback: `Cette figure est caractéristique de ${sheetData.villeRegion}.`
@@ -496,7 +497,7 @@ export const generateQuizFromSheet = (sheetData, allSheetsData = [], allSongsDat
         .filter(Boolean);
         
       const correctRole = sheetData.sousTitre || sheetData.titre;
-      let wrongChoices = getDistractors([allOtherRoles, ['Le Roi', 'La Reine', 'Le Porte-Étendard', 'Batuqueiro', 'Caboclo de Lança', 'La Dame de Palais', 'Dama do Paço', 'Baiana']], 3, correctRole);
+      let wrongChoices = getDistractors([allOtherRoles, distractorPool.rolesCortejo], 3, correctRole);
 
       const choices = shuffleArray([
         { text: correctRole, isCorrect: true },
@@ -504,10 +505,10 @@ export const generateQuizFromSheet = (sheetData, allSheetsData = [], allSongsDat
       ]);
 
       questions.push({
-        id: `role_cortejo_${sheetData.id}`,
+        id: `qcm_auto_role_cortejo`,
         type: 'culture_role',
-        instruction: "Rôle dans le Cortège",
-        questionText: `Quel est le rôle exact ou le titre de ce personnage dans le cortège ?`,
+        instruction: config.t ? config.t("pedagogyQuiz.roleInstruction") : "Rôle dans le Cortège",
+        questionText: config.t ? config.t("pedagogyQuiz.roleQuestion") : `Quel est le rôle exact ou le titre de ce personnage dans le cortège ?`,
         choices: choices,
         feedback: `Son rôle est : ${correctRole}.`
       });
@@ -519,7 +520,7 @@ export const generateQuizFromSheet = (sheetData, allSheetsData = [], allSongsDat
     // 3.7.1 Cuisine : Origine / Région
     if (isCuisine && sheetData.villeRegion) {
       const allOtherPlaces = allSheetsData.map(s => s.villeRegion).filter(Boolean).filter(v => v !== sheetData.villeRegion);
-      let wrongChoices = getDistractors([allOtherPlaces, ['Bahia', 'Pernambouc', 'Minas Gerais', 'Rio de Janeiro', 'Amazonie', 'São Paulo']], 3, sheetData.villeRegion);
+      let wrongChoices = getDistractors([allOtherPlaces, distractorPool.regionsCuisineStyle], 3, sheetData.villeRegion);
       
       const choices = shuffleArray([
         { text: sheetData.villeRegion, isCorrect: true },
@@ -527,9 +528,9 @@ export const generateQuizFromSheet = (sheetData, allSheetsData = [], allSongsDat
       ]);
 
       questions.push({
-        id: `cuisine_geo_${sheetData.id}`,
+        id: `qcm_auto_cuisine_geo`,
         type: 'cuisine_geographie',
-        instruction: "Origine & Région",
+        instruction: config.t ? config.t("pedagogyQuiz.cuisineOriginInstruction") : "Origine & Région",
         questionText: `De quelle région/ville est originaire la spécialité '${sheetData.titre}' ?`,
         choices: choices,
         feedback: `La spécialité '${sheetData.titre}' est originaire de ${sheetData.villeRegion}.`
@@ -539,7 +540,7 @@ export const generateQuizFromSheet = (sheetData, allSheetsData = [], allSongsDat
     // 3.7.2 Cuisine : Spiritualité / Offrande
     if (isCuisine && sheetData.personnageOrisha) {
       const allOtherOrishas = allSheetsData.map(s => s.personnageOrisha).filter(Boolean).filter(v => v !== sheetData.personnageOrisha);
-      let wrongChoices = getDistractors([allOtherOrishas, ['Oxum', 'Iansã', 'Xangô', 'Ogum', 'Iemanjá', 'Oxalá', 'Exu']], 3, sheetData.personnageOrisha);
+      let wrongChoices = getDistractors([allOtherOrishas, distractorPool.orixasNames], 3, sheetData.personnageOrisha);
       
       const choices = shuffleArray([
         { text: sheetData.personnageOrisha, isCorrect: true },
@@ -547,9 +548,9 @@ export const generateQuizFromSheet = (sheetData, allSheetsData = [], allSongsDat
       ]);
 
       questions.push({
-        id: `cuisine_orixa_${sheetData.id}`,
+        id: `qcm_auto_cuisine_orixa`,
         type: 'cuisine_orixa',
-        instruction: "Spiritualité & Offrande",
+        instruction: config.t ? config.t("pedagogyQuiz.cuisineOrixaInstruction") : "Spiritualité & Offrande",
         questionText: `À quel Orixá (ou concept) est traditionnellement associé le plat '${sheetData.titre}' ?`,
         choices: choices,
         feedback: `Ce plat est traditionnellement associé à ${sheetData.personnageOrisha}.`
@@ -559,7 +560,7 @@ export const generateQuizFromSheet = (sheetData, allSheetsData = [], allSongsDat
     // 3.7.3 Cuisine : Époque
     if (isCuisine && sheetData.epoque) {
       const allOtherEpoques = allSheetsData.map(s => s.epoque).filter(Boolean).filter(v => v !== sheetData.epoque);
-      let wrongChoices = getDistractors([allOtherEpoques, ['Époque coloniale', 'XIXe siècle', 'Période pré-colombienne', 'XXe siècle', 'Antiquité']], 3, sheetData.epoque);
+      let wrongChoices = getDistractors([allOtherEpoques, distractorPool.epoquesCuisine], 3, sheetData.epoque);
       
       const choices = shuffleArray([
         { text: sheetData.epoque, isCorrect: true },
@@ -567,9 +568,9 @@ export const generateQuizFromSheet = (sheetData, allSheetsData = [], allSongsDat
       ]);
 
       questions.push({
-        id: `cuisine_epoque_${sheetData.id}`,
+        id: `qcm_auto_cuisine_epoque`,
         type: 'cuisine_epoque',
-        instruction: "Histoire & Époque",
+        instruction: config.t ? config.t("pedagogyQuiz.cuisineEpoqueInstruction") : "Histoire & Époque",
         questionText: `À quelle époque remonte l'origine de '${sheetData.titre}' ?`,
         choices: choices,
         feedback: `L'origine remonte à : ${sheetData.epoque}.`
@@ -593,7 +594,7 @@ export const generateQuizFromSheet = (sheetData, allSheetsData = [], allSongsDat
           }
         });
         
-        let wrongChoices = getDistractors([allOtherMots, ['Haricots noirs', 'Farine de manioc', 'Huile de palme (Dendê)', 'Lait de coco', 'Maïs', 'Piment']], 3, correctMot);
+        let wrongChoices = getDistractors([allOtherMots, distractorPool.ingredientsCuisine], 3, correctMot);
         
         const choices = shuffleArray([
           { text: correctMot, isCorrect: true },
@@ -601,9 +602,9 @@ export const generateQuizFromSheet = (sheetData, allSheetsData = [], allSongsDat
         ]);
 
         questions.push({
-          id: `cuisine_ingred_${sheetData.id}`,
+          id: `qcm_auto_cuisine_ingred`,
           type: 'cuisine_ingredient',
-          instruction: "Ingrédients & Préparation",
+          instruction: config.t ? config.t("pedagogyQuiz.cuisineIngredientInstruction") : "Ingrédients & Préparation",
           questionText: `Lequel de ces mots/ingrédients est directement lié à la préparation de '${sheetData.titre}' ?`,
           choices: choices,
           feedback: `Le mot lié à cette préparation est bien : ${correctMot}.`
@@ -617,7 +618,7 @@ export const generateQuizFromSheet = (sheetData, allSheetsData = [], allSongsDat
     // 3.8.1 Styles de Musique : Origine / Région
     if (isStyleMusique && sheetData.villeRegion) {
       const allOtherPlaces = allSheetsData.map(s => s.villeRegion).filter(Boolean).filter(v => v !== sheetData.villeRegion);
-      let wrongChoices = getDistractors([allOtherPlaces, ['Bahia', 'Pernambouc', 'Minas Gerais', 'Rio de Janeiro', 'Amazonie', 'São Paulo']], 3, sheetData.villeRegion);
+      let wrongChoices = getDistractors([allOtherPlaces, distractorPool.regionsCuisineStyle], 3, sheetData.villeRegion);
       
       const choices = shuffleArray([
         { text: sheetData.villeRegion, isCorrect: true },
@@ -625,9 +626,9 @@ export const generateQuizFromSheet = (sheetData, allSheetsData = [], allSongsDat
       ]);
 
       questions.push({
-        id: `style_geo_${sheetData.id}`,
+        id: `qcm_auto_style_geo`,
         type: 'style_geographie',
-        instruction: "Origine Géographique",
+        instruction: config.t ? config.t("pedagogyQuiz.styleOriginInstruction") : "Origine Géographique",
         questionText: `Dans quelle région/ville le style '${sheetData.titre}' a-t-il vu le jour ?`,
         choices: choices,
         feedback: `Le style '${sheetData.titre}' est originaire de ${sheetData.villeRegion}.`
@@ -637,7 +638,7 @@ export const generateQuizFromSheet = (sheetData, allSheetsData = [], allSongsDat
     // 3.8.2 Styles de Musique : Figure emblématique
     if (isStyleMusique && sheetData.personnageOrisha) {
       const allOtherFigures = allSheetsData.map(s => s.personnageOrisha).filter(Boolean).filter(v => v !== sheetData.personnageOrisha);
-      let wrongChoices = getDistractors([allOtherFigures, ['Chico Science', 'Lia de Itamaracá', 'Mestre Salustiano', 'Luiz Gonzaga', 'Naná Vasconcelos', 'Pixinguinha']], 3, sheetData.personnageOrisha);
+      let wrongChoices = getDistractors([allOtherFigures, distractorPool.figuresMusique], 3, sheetData.personnageOrisha);
       
       const choices = shuffleArray([
         { text: sheetData.personnageOrisha, isCorrect: true },
@@ -645,9 +646,9 @@ export const generateQuizFromSheet = (sheetData, allSheetsData = [], allSongsDat
       ]);
 
       questions.push({
-        id: `style_figure_${sheetData.id}`,
+        id: `qcm_auto_style_figure`,
         type: 'style_figure',
-        instruction: "Figure Emblématique",
+        instruction: config.t ? config.t("pedagogyQuiz.styleFigureInstruction") : "Figure Emblématique",
         questionText: `À quelle grande figure ou mouvement associe-t-on souvent le '${sheetData.titre}' ?`,
         choices: choices,
         feedback: `Le style est souvent associé à ${sheetData.personnageOrisha}.`
@@ -657,7 +658,7 @@ export const generateQuizFromSheet = (sheetData, allSheetsData = [], allSongsDat
     // 3.8.3 Styles de Musique : Période d'apparition
     if (isStyleMusique && sheetData.epoque) {
       const allOtherEpoques = allSheetsData.map(s => s.epoque).filter(Boolean).filter(v => v !== sheetData.epoque);
-      let wrongChoices = getDistractors([allOtherEpoques, ['Années 1990', 'Début du XXe siècle', 'Époque coloniale', 'Années 1950', 'XIXe siècle']], 3, sheetData.epoque);
+      let wrongChoices = getDistractors([allOtherEpoques, distractorPool.epoquesMusique], 3, sheetData.epoque);
       
       const choices = shuffleArray([
         { text: sheetData.epoque, isCorrect: true },
@@ -665,9 +666,9 @@ export const generateQuizFromSheet = (sheetData, allSheetsData = [], allSongsDat
       ]);
 
       questions.push({
-        id: `style_epoque_${sheetData.id}`,
+        id: `qcm_auto_style_epoque`,
         type: 'style_epoque',
-        instruction: "Période d'apparition",
+        instruction: config.t ? config.t("pedagogyQuiz.styleEpoqueInstruction") : "Période d'apparition",
         questionText: `À quelle époque le style '${sheetData.titre}' s'est-il développé ?`,
         choices: choices,
         feedback: `Le style s'est développé à l'époque suivante : ${sheetData.epoque}.`
@@ -680,7 +681,7 @@ export const generateQuizFromSheet = (sheetData, allSheetsData = [], allSongsDat
     // 3.9.1 Territoire : Géographie/Climat (villeRegion)
     if (isTerritoire && sheetData.villeRegion) {
       const allOtherPlaces = allSheetsData.map(s => s.villeRegion).filter(Boolean).filter(v => v !== sheetData.villeRegion);
-      let wrongChoices = getDistractors([allOtherPlaces, ['Nordeste', 'Sudeste', 'Amazonie', 'Centre-Ouest', 'Sud', 'Pernambouc']], 3, sheetData.villeRegion);
+      let wrongChoices = getDistractors([allOtherPlaces, distractorPool.regionsTerritoire], 3, sheetData.villeRegion);
       
       const choices = shuffleArray([
         { text: sheetData.villeRegion, isCorrect: true },
@@ -688,9 +689,9 @@ export const generateQuizFromSheet = (sheetData, allSheetsData = [], allSongsDat
       ]);
 
       questions.push({
-        id: `territoire_geo_${sheetData.id}`,
+        id: `qcm_auto_territoire_geo`,
         type: 'territoire_geographie',
-        instruction: "Géographie / Région",
+        instruction: config.t ? config.t("pedagogyQuiz.territoryGeoInstruction") : "Géographie / Région",
         questionText: `Dans quelle région du Brésil se situe principalement le territoire décrit dans '${sheetData.titre}' ?`,
         choices: choices,
         feedback: `Ce territoire se situe principalement dans la région / l'état de : ${sheetData.villeRegion}.`
@@ -700,7 +701,7 @@ export const generateQuizFromSheet = (sheetData, allSheetsData = [], allSongsDat
     // 3.9.2 Territoire : Histoire/Économie (epoque)
     if (isTerritoire && sheetData.epoque) {
       const allOtherEpoques = allSheetsData.map(s => s.epoque).filter(Boolean).filter(v => v !== sheetData.epoque);
-      let wrongChoices = getDistractors([allOtherEpoques, ["Cycle de l'or", 'Cycle du sucre', 'Cycle du café', 'Époque contemporaine', 'Période pré-coloniale']], 3, sheetData.epoque);
+      let wrongChoices = getDistractors([allOtherEpoques, distractorPool.epoquesTerritoire], 3, sheetData.epoque);
       
       const choices = shuffleArray([
         { text: sheetData.epoque, isCorrect: true },
@@ -708,9 +709,9 @@ export const generateQuizFromSheet = (sheetData, allSheetsData = [], allSongsDat
       ]);
 
       questions.push({
-        id: `territoire_epoque_${sheetData.id}`,
+        id: `qcm_auto_territoire_epoque`,
         type: 'territoire_epoque',
-        instruction: "Histoire / Économie",
+        instruction: config.t ? config.t("pedagogyQuiz.territoryEpoqueInstruction") : "Histoire / Économie",
         questionText: `À quelle époque ou cycle économique relie-t-on le développement de la région de '${sheetData.titre}' ?`,
         choices: choices,
         feedback: `On relie ce territoire à : ${sheetData.epoque}.`
@@ -720,7 +721,7 @@ export const generateQuizFromSheet = (sheetData, allSheetsData = [], allSongsDat
     // 3.9.3 Territoire : Population/Concept (personnageOrisha)
     if (isTerritoire && sheetData.personnageOrisha) {
       const allOtherConcepts = allSheetsData.map(s => s.personnageOrisha).filter(Boolean).filter(v => v !== sheetData.personnageOrisha);
-      let wrongChoices = getDistractors([allOtherConcepts, ['Sertanejo', 'Cangaceiro', 'Ribeirinho', 'Quilombola', 'Indigène']], 3, sheetData.personnageOrisha);
+      let wrongChoices = getDistractors([allOtherConcepts, distractorPool.populationsTerritoire], 3, sheetData.personnageOrisha);
       
       const choices = shuffleArray([
         { text: sheetData.personnageOrisha, isCorrect: true },
@@ -728,9 +729,9 @@ export const generateQuizFromSheet = (sheetData, allSheetsData = [], allSongsDat
       ]);
 
       questions.push({
-        id: `territoire_population_${sheetData.id}`,
+        id: `qcm_auto_territoire_population`,
         type: 'territoire_population',
-        instruction: "Population / Concept",
+        instruction: config.t ? config.t("pedagogyQuiz.territoryPopulationInstruction") : "Population / Concept",
         questionText: `Quelle figure ou concept culturel est emblématique de '${sheetData.titre}' ?`,
         choices: choices,
         feedback: `La figure emblématique est : ${sheetData.personnageOrisha}.`
@@ -754,7 +755,7 @@ export const generateQuizFromSheet = (sheetData, allSheetsData = [], allSongsDat
           }
         });
         
-        let wrongChoices = getDistractors([allOtherMots, ['Caatinga', 'Sertão', 'Mangrove', 'Agreste', 'Cerrado', 'Forêt Atlantique']], 3, correctMot);
+        let wrongChoices = getDistractors([allOtherMots, distractorPool.biomesTerritoire], 3, correctMot);
         
         const choices = shuffleArray([
           { text: correctMot, isCorrect: true },
@@ -762,9 +763,9 @@ export const generateQuizFromSheet = (sheetData, allSheetsData = [], allSongsDat
         ]);
 
         questions.push({
-          id: `territoire_lexique_${sheetData.id}`,
+          id: `qcm_auto_territoire_lexique`,
           type: 'territoire_lexique',
-          instruction: "Lexique / Biome",
+          instruction: config.t ? config.t("pedagogyQuiz.territoryLexiconInstruction") : "Lexique / Biome",
           questionText: `Lequel de ces mots/biomes est directement lié à '${sheetData.titre}' ?`,
           choices: choices,
           feedback: `Le terme exact est bien : ${correctMot}.`
@@ -782,7 +783,7 @@ export const generateQuizFromSheet = (sheetData, allSheetsData = [], allSongsDat
     
     specialItems.forEach((item, i) => {
       let wrongChoices = allTranslations.filter(t => t.toLowerCase() !== item.fr.toLowerCase());
-      if (wrongChoices.length < 3) wrongChoices = ['Tambour', 'Baguette', 'Danse', 'Couronne'];
+      if (wrongChoices.length < 3) wrongChoices = distractorPool.fallbackFailsTraductions.slice(0, 4);
       wrongChoices = shuffleArray(wrongChoices).slice(0, 3);
       
       const choices = shuffleArray([
@@ -791,10 +792,10 @@ export const generateQuizFromSheet = (sheetData, allSheetsData = [], allSongsDat
       ]);
 
       questions.push({
-        id: `lexique_special_${item.pt.replace(/\s+/g, '_')}_${i}`,
+        id: `qcm_auto_lexique_special_${i}`,
         type: 'lexique_specialise',
         questionText: item.pt,
-        instruction: "Que signifie ce terme (Culture / Maracatu) ?",
+        instruction: config.t ? config.t("pedagogyQuiz.meaningInstruction") : "Que signifie ce terme (Culture / Maracatu) ?",
         choices: choices,
         feedback: `"${item.pt}" signifie bien "${item.fr}".`
       });
@@ -823,10 +824,10 @@ export const generateQuizFromSheet = (sheetData, allSheetsData = [], allSongsDat
     ]);
 
     questions.push({
-      id: `signe_visuel_${sheetData.id}`,
+      id: `qcm_auto_signe_visuel`,
       type: 'image_options',
-      instruction: "Signes du Mestre (Modèle C)",
-      questionText: `Quel est le signe du Mestre pour annoncer : ${sheetData.titre} ?`,
+      instruction: config.t ? config.t("pedagogyQuiz.mestreSignModCInstruction") : "Signes du Mestre (Modèle C)",
+      questionText: config.t ? config.t("pedagogyQuiz.mestreSignQuestion", { titre: sheetData.titre }) : `Quel est le signe du Mestre pour annoncer : ${sheetData.titre} ?`,
       choices: choices,
       feedback: `Le bon signe pour "${sheetData.titre}" est celui affiché en vert.`
     });
@@ -866,10 +867,10 @@ export const generateQuizFromSheet = (sheetData, allSheetsData = [], allSongsDat
     ]);
 
     questions.push({
-      id: `pattern_rythmique_${sheetData.id}`,
+      id: `qcm_auto_pattern_rythmique`,
       type: 'pattern_rythmique',
-      instruction: "Pattern Rythmique",
-      questionText: `Identifiez le pattern rythmique correct pour : ${sheetData.titre}`,
+      instruction: config.t ? config.t("pedagogyQuiz.rhythmPatternInstruction") : "Pattern Rythmique",
+      questionText: config.t ? config.t("pedagogyQuiz.rhythmPatternQuestion", { titre: sheetData.titre }) : `Identifiez le pattern rythmique correct pour : ${sheetData.titre}`,
       choices: choices,
       feedback: `Le bon pattern pour "${sheetData.titre}" est celui affiché en vert.`
     });
@@ -877,7 +878,7 @@ export const generateQuizFromSheet = (sheetData, allSheetsData = [], allSongsDat
 
   let customAddedQuestions = [];
 
-  // 5. Intégration des QCM personnalisés de la fiche (questionsQcm)
+  // 5. Intégration des QCM personnalisés de la fiche (questionsQcm legacy + customQuestions nouveau)
   if (sheetData.questionsQcm && Array.isArray(sheetData.questionsQcm)) {
     sheetData.questionsQcm.forEach((q, i) => {
       if (q.question && q.options && q.options.length > 1) {
@@ -887,12 +888,33 @@ export const generateQuizFromSheet = (sheetData, allSheetsData = [], allSongsDat
         }));
         
         customAddedQuestions.push({
-          id: `custom_qcm_${sheetData.id}_${i}`,
+          id: `qcm_auto_custom_qcm_${i}`,
           type: 'custom_culture',
-          instruction: "Question spécifique",
+          instruction: config.t ? config.t("pedagogyQuiz.customQuestionInstruction") : "Question spécifique",
           questionText: q.question,
           choices: shuffleArray(choices),
           feedback: q.extraitTexte ? `Extrait : ${q.extraitTexte}` : (choices.find(c => c.isCorrect)?.text || '')
+        });
+      }
+    });
+  }
+
+  if (sheetData.customQuestions && Array.isArray(sheetData.customQuestions)) {
+    sheetData.customQuestions.forEach((q, i) => {
+      if (q.texte && q.bonneReponse) {
+        const choices = [
+          { text: q.bonneReponse, isCorrect: true },
+          ...q.mauvaisesReponses.map(mr => ({ text: mr, isCorrect: false }))
+        ];
+        
+        customAddedQuestions.push({
+          id: `qcm_auto_sheet_custom_${q.id || i}`,
+          type: 'custom',
+          instruction: config.t ? config.t("pedagogyQuiz.customQuestionInstruction") : "Question spécifique",
+          questionText: q.texte,
+          choices: shuffleArray(choices),
+          audioUrl: q.audioUrl || null,
+          feedback: `La bonne réponse est : ${q.bonneReponse}`
         });
       }
     });
@@ -960,7 +982,7 @@ export const generateQuizFromSong = (song, allSongs = [], allSheetsData = [], co
     
     // Fallback minimal absolu
     const defaultBaques = distractorPool.baquesFictifsEtSimilaires;
-    const defaultOthers = ['Maracatu Nação', 'Caboclinho', 'Ciranda', 'Coco', 'Afoxé'];
+    const defaultOthers = distractorPool.defaultOthersSongs;
     const customBaques = customDistractors.baquesPlausibles;
     const fallbacks = (field === 'rythme') 
       ? (customBaques?.length > 0 ? customBaques : defaultBaques) 
@@ -982,10 +1004,10 @@ export const generateQuizFromSong = (song, allSongs = [], allSheetsData = [], co
       ...wrongChoices.map(w => ({ text: w, isCorrect: false }))
     ]);
     questions.push({
-      id: `song_rythme_${song.id}`,
+      id: `qcm_auto_song_rythme`,
       type: 'song_rythme',
-      questionText: `Quel est le rythme (baque) de la Toada "${song.titre}" ?`,
-      instruction: "Identifie le rythme de ce chant.",
+      questionText: config.t ? config.t("pedagogyQuiz.songRhythmQuestion", { titre: song.titre }) : `Quel est le rythme (baque) de la Toada "${song.titre}" ?`,
+      instruction: config.t ? config.t("pedagogyQuiz.songRhythmInstruction") : "Identifie le rythme de ce chant.",
       choices: choices,
       feedback: `Le rythme de "${song.titre}" est bien "${song.rythme}".`
     });
@@ -999,10 +1021,10 @@ export const generateQuizFromSong = (song, allSongs = [], allSheetsData = [], co
       ...wrongChoices.map(w => ({ text: w, isCorrect: false }))
     ]);
     questions.push({
-      id: `song_nacao_${song.id}`,
+      id: `qcm_auto_song_nacao`,
       type: 'song_nacao',
       questionText: `De quelle Nação provient la Toada "${song.titre}" ?`,
-      instruction: "Identifie l'origine de ce chant.",
+      instruction: config.t ? config.t("pedagogyQuiz.songNacaoInstruction") : "Identifie l'origine de ce chant.",
       choices: choices,
       feedback: `Cette Toada provient bien de la "${song.nacao}".`
     });
@@ -1019,7 +1041,7 @@ export const generateQuizFromSong = (song, allSongs = [], allSheetsData = [], co
       let wrongChoices = allLexiqueFr.filter(t => t.toLowerCase() !== randomLexique.explication.toLowerCase());
       wrongChoices = shuffleArray(wrongChoices).slice(0, 3);
       
-      const fallbacks = ['Tambour', 'Baguette', 'Danse', 'Couronne'];
+      const fallbacks = distractorPool.fallbackFailsTraductions;
       while (wrongChoices.length < 3) {
         const randomF = fallbacks[Math.floor(Math.random() * fallbacks.length)];
         if (!wrongChoices.includes(randomF) && randomF.toLowerCase() !== randomLexique.explication.toLowerCase()) {
@@ -1033,10 +1055,10 @@ export const generateQuizFromSong = (song, allSongs = [], allSheetsData = [], co
       ]);
 
       questions.push({
-        id: `song_lexique_${song.id}`, // ID déterministe pour permettre la surcharge
+        id: `qcm_auto_song_lexique`, // ID déterministe pour permettre la surcharge
         type: 'song_lexique',
-        questionText: `Dans ce chant, que signifie le mot "${randomLexique.mot}" ?`,
-        instruction: "Trouve la bonne explication ou traduction.",
+        questionText: config.t ? config.t("pedagogyQuiz.songLexiconQuestion", { mot: randomLexique.mot }) : `Dans ce chant, que signifie le mot "${randomLexique.mot}" ?`,
+        instruction: config.t ? config.t("pedagogyQuiz.songLexiconInstruction") : "Trouve la bonne explication ou traduction.",
         choices: choices,
         feedback: `Le mot "${randomLexique.mot}" signifie bien "${randomLexique.explication}".`
       });
@@ -1050,7 +1072,7 @@ export const generateQuizFromSong = (song, allSongs = [], allSheetsData = [], co
     
     specialItems.forEach((item, i) => {
       let wrongChoices = allTranslations.filter(t => t.toLowerCase() !== item.fr.toLowerCase());
-      if (wrongChoices.length < 3) wrongChoices = ['Tambour', 'Baguette', 'Danse', 'Couronne'];
+      if (wrongChoices.length < 3) wrongChoices = distractorPool.fallbackFailsTraductions.slice(0, 4);
       wrongChoices = shuffleArray(wrongChoices).slice(0, 3);
       
       const choices = shuffleArray([
@@ -1059,17 +1081,39 @@ export const generateQuizFromSong = (song, allSongs = [], allSheetsData = [], co
       ]);
 
       questions.push({
-        id: `song_special_${item.pt.replace(/\s+/g, '_')}_${i}`,
+        id: `qcm_auto_song_special_${i}`,
         type: 'lexique_specialise',
         questionText: item.pt,
-        instruction: "Que signifie ce terme (Culture / Maracatu) ?",
+        instruction: config.t ? config.t("pedagogyQuiz.meaningInstruction") : "Que signifie ce terme (Culture / Maracatu) ?",
         choices: choices,
         feedback: `"${item.pt}" signifie bien "${item.fr}".`
       });
     });
   }
 
-  let finalQuestions = shuffleArray(questions).slice(0, 10);
+  let customAddedQuestions = [];
+  if (song.customQuestions && Array.isArray(song.customQuestions)) {
+    song.customQuestions.forEach((q, i) => {
+      if (q.texte && q.bonneReponse) {
+        const choices = [
+          { text: q.bonneReponse, isCorrect: true },
+          ...(q.mauvaisesReponses || []).map(mr => ({ text: mr, isCorrect: false }))
+        ];
+        
+        customAddedQuestions.push({
+          id: `qcm_auto_song_custom_${q.id || i}`,
+          type: 'custom',
+          instruction: config.t ? config.t("pedagogyQuiz.customQuestionInstruction") : "Question spécifique",
+          questionText: q.texte,
+          choices: shuffleArray(choices),
+          audioUrl: q.audioUrl || null,
+          feedback: `La bonne réponse est : ${q.bonneReponse}`
+        });
+      }
+    });
+  }
+
+  let finalQuestions = shuffleArray([...customAddedQuestions, ...questions]).slice(0, 10);
   return applyOverrides(finalQuestions, song.quizOverrides);
 };
 
@@ -1113,9 +1157,9 @@ export const generateQuizFromSequencerJson = (rhythmTitle, parsedSequencerData, 
       ]);
 
       questions.push({
-        id: `seq_pattern_${patternObj.cleanName}_${idx}`,
+        id: `qcm_auto_seq_pattern_${idx}`,
         type: 'pattern_rythmique',
-        instruction: "Pattern Rythmique (Séquenceur)",
+        instruction: config.t ? config.t("pedagogyQuiz.seqPatternInstruction") : "Pattern Rythmique (Séquenceur)",
         questionText: `Identifiez le pattern rythmique joué par le pupitre "${patternObj.cleanName}" dans : ${rhythmTitle}`,
         choices: choices,
         feedback: `Le bon pattern pour "${patternObj.cleanName}" est celui affiché en vert.`
@@ -1123,42 +1167,167 @@ export const generateQuizFromSequencerJson = (rhythmTitle, parsedSequencerData, 
     });
   }
 
-  // 2. Questions sur les Signaux du Mestre (Modèle C)
-  const allSignals = allSheetsData.filter(s => (s.type === 'signe' || (s.categorie && s.categorie.toLowerCase().includes('signe'))) && s.fileUrl);
-
-  if (allSignals.length > 0) {
-    const specificSignal = allSignals.find(s => s.titre && s.titre.toLowerCase() === rhythmTitle.toLowerCase());
-    const signalsToTest = [];
+  // 2. Questions sur les Signaux du Mestre (via config.mestreSignals)
+  const mestreSignals = config.mestreSignals || [];
+  
+  if (mestreSignals.length > 0) {
+    const specificSignal = mestreSignals.find(s => s.name && s.name.toLowerCase() === rhythmTitle.toLowerCase());
+    
     if (specificSignal) {
-      signalsToTest.push(specificSignal);
-      const others = allSignals.filter(s => s.id !== specificSignal.id);
-      if (others.length > 0) signalsToTest.push(shuffleArray(others)[0]);
-    } else {
-      signalsToTest.push(...shuffleArray(allSignals).slice(0, 2));
-    }
-
-    signalsToTest.forEach((signal, idx) => {
-      let wrongChoices = allSignals.filter(s => s.id !== signal.id).map(s => s.fileUrl);
-      while (wrongChoices.length < 3) {
-        wrongChoices.push(`https://via.placeholder.com/400?text=Signe+Leurre+${wrongChoices.length + 1}`);
+      // --- Niveau Visuel (Simple) ---
+      // Question: "Quel rythme ou quelle action le Mestre annonce-t-il avec ce signe ?"
+      let wrongSignalNames = mestreSignals.filter(s => s.id !== specificSignal.id).map(s => s.name);
+      wrongSignalNames = shuffleArray(wrongSignalNames).slice(0, 3);
+      
+      // Fallback si pas assez de signaux
+      while (wrongSignalNames.length < 3) {
+        wrongSignalNames.push(`Action Mystère ${wrongSignalNames.length + 1}`);
       }
-      wrongChoices = shuffleArray(wrongChoices).slice(0, 3);
 
-      const choices = shuffleArray([
-        { text: signal.fileUrl, isCorrect: true, isImage: true },
-        ...wrongChoices.map(w => ({ text: w, isCorrect: false, isImage: true }))
+      const visualChoices = shuffleArray([
+        { text: specificSignal.name, isCorrect: true },
+        ...wrongSignalNames.map(w => ({ text: w, isCorrect: false }))
       ]);
 
       questions.push({
-        id: `seq_signe_visuel_${signal.id}_${idx}`,
-        type: 'image_options',
-        instruction: "Signes du Mestre",
-        questionText: `Quel est le signe du Mestre pour annoncer : ${signal.titre} ?`,
-        choices: choices,
-        feedback: `Le bon signe pour "${signal.titre}" est celui affiché en vert.`
+        id: `qcm_auto_seq_signe_visuel`,
+        type: 'mestre_signal_visuel',
+        instruction: config.t ? config.t("pedagogyQuiz.mestreSignInstruction") : "Signes du Mestre",
+        questionText: "Quel rythme ou quelle action le Mestre annonce-t-il avec ce signe ?",
+        questionImage: specificSignal.imageUrl,
+        choices: visualChoices,
+        feedback: `Ce signe correspond à : ${specificSignal.name}.`
       });
-    });
+
+      // --- Niveau Rythmique (Expert) ---
+      // Uniquement si la difficulté est expert ou mestre, et qu'on a des patterns
+      const diffLevel = config.difficulty?.toLowerCase() || 'medium';
+      if ((diffLevel === 'expert' || diffLevel === 'mestre') && parsedSequencerData.patterns && parsedSequencerData.patterns.length > 0) {
+        
+        // Piocher un instrument (pupitre) aléatoire dans le rythme
+        const randomPatternObj = shuffleArray([...parsedSequencerData.patterns])[0];
+        const instrumentName = randomPatternObj.cleanName || "cet instrument";
+        const formattedPattern = randomPatternObj.steps.map(s => (s === 0 || s === '0' ? '-' : s));
+        
+        let wrongPatterns = [];
+        
+        // 1. Tenter de piocher dans d'autres rythmes (via allSheetsData)
+        const allOtherPatterns = allSheetsData
+          .filter(s => (s.type === 'rythme' || (s.categorie && s.categorie.toLowerCase().includes('rythme'))) && s.activeSteps)
+          .map(s => s.activeSteps.map(st => (st === 0 || st === '0' ? '-' : st)));
+          
+        if (allOtherPatterns.length > 0) {
+          wrongPatterns = shuffleArray(allOtherPatterns)
+            .filter(p => JSON.stringify(p) !== JSON.stringify(formattedPattern))
+            .slice(0, 3);
+        }
+        
+        // 2. Fallback : Mutations légères du pattern original s'il en manque
+        while (wrongPatterns.length < 3) {
+          const fakePattern = [...formattedPattern];
+          // On fait 2 à 3 mutations
+          const numMutations = Math.floor(Math.random() * 2) + 2;
+          for (let i = 0; i < numMutations; i++) {
+            const idx = Math.floor(Math.random() * fakePattern.length);
+            if (fakePattern[idx] === '-') {
+               fakePattern[idx] = '1'; // Ajouter un coup
+            } else {
+               fakePattern[idx] = '-'; // Enlever un coup
+            }
+          }
+          if (JSON.stringify(fakePattern) !== JSON.stringify(formattedPattern) && !wrongPatterns.some(w => JSON.stringify(w) === JSON.stringify(fakePattern))) {
+            wrongPatterns.push(fakePattern);
+          }
+        }
+
+        const rhythmicChoices = shuffleArray([
+          { text: "Ce pattern", isCorrect: true, visualElement: { type: 'pattern', patternData: formattedPattern } },
+          ...wrongPatterns.map(w => ({ text: "Ce pattern", isCorrect: false, visualElement: { type: 'pattern', patternData: w } }))
+        ]);
+
+        questions.push({
+          id: `qcm_auto_seq_signe_rythmique`,
+          type: 'pattern_rythmique',
+          instruction: config.t ? config.t("pedagogyQuiz.mestreSignInstructionExpert") : "Signes du Mestre (Rythmique)",
+          questionText: `Quelle phrase de ${instrumentName} devez-vous jouer lorsque le Mestre fait ce signe ?`,
+          questionImage: specificSignal.imageUrl,
+          choices: rhythmicChoices,
+          feedback: `Le bon pattern pour ${instrumentName} sur le rythme ${specificSignal.name} est celui affiché en vert.`
+        });
+      }
+    }
   }
 
   return shuffleArray(questions);
+};
+
+export const generateQuizFromDancador = (stepsData = [], config = {}) => {
+  const questions = [];
+  if (!stepsData || stepsData.length === 0) return questions;
+
+  const { questionCount = 10 } = config;
+
+  const allStepNames = stepsData.map(s => s.nom).filter(Boolean);
+  const allFamilies = [...new Set(stepsData.map(s => s.famille).filter(Boolean))];
+
+  stepsData.forEach(step => {
+    // Template 1: Reconnaissance Visuelle (si vignetteUrl)
+    if (step.vignetteUrl && step.nom) {
+      let wrongChoices = allStepNames.filter(n => n.toLowerCase() !== step.nom.toLowerCase());
+      wrongChoices = shuffleArray(wrongChoices).slice(0, 3);
+      
+      const fallbacks = distractorPool.fallbacksDanseNoms;
+      while (wrongChoices.length < 3) {
+        const f = fallbacks[Math.floor(Math.random() * fallbacks.length)];
+        if (!wrongChoices.includes(f) && f.toLowerCase() !== step.nom.toLowerCase()) {
+          wrongChoices.push(f);
+        }
+      }
+
+      const choices = shuffleArray([
+        { text: step.nom, isCorrect: true },
+        ...wrongChoices.map(w => ({ text: w, isCorrect: false }))
+      ]);
+
+      questions.push({
+        id: `qcm_auto_danse_visuel_${step.id}`,
+        type: 'danse_reconnaissance',
+        questionText: config.t ? config.t("pedagogyQuiz.danceVisualQuestion") : "Comment s'appelle ce pas de danse ?",
+        instruction: config.t ? config.t("pedagogyQuiz.danceVisualInstruction") : "Reconnaissance Visuelle",
+        imageUrl: step.vignetteUrl,
+        choices: choices,
+        feedback: `Ce pas s'appelle bien "${step.nom}".`
+      });
+    }
+
+    // Template 2: Famille/Catégorie
+    if (step.famille && step.nom) {
+      let wrongChoices = allFamilies.filter(f => f.toLowerCase() !== step.famille.toLowerCase());
+      wrongChoices = shuffleArray(wrongChoices).slice(0, 3);
+      
+      const fallbackFamilies = distractorPool.fallbackDanseFamilles;
+      while (wrongChoices.length < 3) {
+        const fallback = fallbackFamilies[Math.floor(Math.random() * fallbackFamilies.length)];
+        if (!wrongChoices.includes(fallback) && fallback.toLowerCase() !== step.famille.toLowerCase()) {
+          wrongChoices.push(fallback);
+        }
+      }
+
+      const choices = shuffleArray([
+        { text: step.famille, isCorrect: true },
+        ...wrongChoices.map(w => ({ text: w, isCorrect: false }))
+      ]);
+
+      questions.push({
+        id: `qcm_auto_danse_famille_${step.id}`,
+        type: 'danse_famille',
+        questionText: `À quelle famille appartient le pas "${step.nom}" ?`,
+        instruction: config.t ? config.t("pedagogyQuiz.danceFamilyInstruction") : "Famille de pas",
+        choices: choices,
+        feedback: `Le pas "${step.nom}" appartient à la famille "${step.famille}".`
+      });
+    }
+  });
+
+  return shuffleArray(questions).slice(0, questionCount);
 };

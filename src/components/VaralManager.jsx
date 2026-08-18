@@ -25,7 +25,7 @@ const DEFAULT_VARAL_CATEGORIES = [
   { id: 'Administratif', nom: 'Administratif', activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false }
 ];
 
-export default function VaralManager({ groupId, onBack, role, isSystemAdmin }) {
+export default function VaralManager({ groupId, onBack, role, isSystemAdmin, isEmbedded }) {
   const { t } = useTranslation();
   const { confirm } = useConfirm();
   const [documents, setDocuments] = useState([]);
@@ -384,19 +384,21 @@ export default function VaralManager({ groupId, onBack, role, isSystemAdmin }) {
     <>
     <div className="flex flex-col gap-6 text-left select-none max-w-5xl mx-auto w-full">
       {/* Header */}
-      <div className="flex justify-between items-center pb-2 border-b-2 border-dashed border-cordel-master-dark/30">
-        <button 
-          type="button" 
-          onClick={onBack} 
-          className="text-[10px] font-black uppercase tracking-widest bg-cordel-bg border border-encre-noire px-3 py-1 rounded-[4px_6px_3px_5px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-95 cursor-pointer flex items-center justify-center select-none"
-        >
-          ⬅️ {t('common.back')}
-        </button>
-        
-        <h2 className="text-sm font-extrabold tracking-widest text-cordel-wood uppercase flex items-center gap-2">
-          <XiloChisel size={16} /> Gestionnaire de documents (Varal)
-        </h2>
-      </div>
+      {!isEmbedded && (
+        <div className="flex justify-between items-center pb-2 border-b-2 border-dashed border-cordel-master-dark/30">
+          <button 
+            type="button" 
+            onClick={onBack} 
+            className="text-[10px] font-black uppercase tracking-widest bg-cordel-bg border border-encre-noire px-3 py-1 rounded-[4px_6px_3px_5px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-95 cursor-pointer flex items-center justify-center select-none"
+          >
+            ⬅️ {t('common.back')}
+          </button>
+          
+          <h2 className="text-sm font-extrabold tracking-widest text-cordel-wood uppercase flex items-center gap-2">
+            <XiloChisel size={16} /> Gestionnaire de documents (Varal)
+          </h2>
+        </div>
+      )}
 
       {/* Main Workspace */}
       {isAdding || documentToEdit ? (

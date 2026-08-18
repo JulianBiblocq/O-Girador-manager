@@ -246,7 +246,8 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
     smtpUser: '',
     smtpPassword: '',
     smtpSecure: 'tls',
-    customEmailDomain: ''
+    customEmailDomain: '',
+    logisticsKits: []
   });
 
   const [logoFile, setLogoFile] = useState(null);
@@ -367,6 +368,7 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
             }
             return null;
           }).filter(Boolean) : [],
+          logisticsKits: Array.isArray(data.logisticsKits) ? data.logisticsKits : [],
           varalCategories: Array.isArray(data.varalCategories) ? data.varalCategories : DEFAULT_VARAL_CATEGORIES,
           branding: {
             logoUrl: data.branding?.logoUrl || '',
@@ -665,6 +667,7 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
         customCategories: formData.customCategories || DEFAULT_CUSTOM_CATEGORIES,
         instrumentsDisponibles: formData.instrumentsDisponibles,
         linkedInstruments: formData.linkedInstruments || [],
+        logisticsKits: formData.logisticsKits || [],
         varalCategories: formData.varalCategories,
         sequenceurUrl: formData.sequenceurUrl,
         lienDepotForum: formData.lienDepotForum || '',

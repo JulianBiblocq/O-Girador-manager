@@ -6,8 +6,13 @@ import CordelButton from '../CordelButton';
 import SeloAxeStamp from '../SeloAxeStamp';
 import { generateQuizFromSheet, generateQuizFromSong, generateQuizFromSequencerJson } from '../../utils/quizGenerator';
 import PatternVisualizer from './PatternVisualizer';
+import FirestoreMediaRenderer from '../student/FirestoreMediaRenderer';
+import { useTranslation } from '../LanguageContext';
+import useMestreSignals from '../../hooks/useMestreSignals';
 
 export default function AutoEvalQuiz({ sheetData, allSheetsData, profileData, onClose, customQuizData, customQuizId, customQuizTitle, songData, allSongsData, qcmGlobalConfig, isSong, rhythms, sequenceurUrl, parsedSequencerJson }) {
+  const { t } = useTranslation();
+  const { signals: mestreSignals } = useMestreSignals();
   const [questions, setQuestions] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [score, setScore] = useState(0);
@@ -30,7 +35,8 @@ export default function AutoEvalQuiz({ sheetData, allSheetsData, profileData, on
           ];
           return {
             questionText: q.texte,
-            choices: choices.sort(() => Math.random() - 0.5)
+            choices: choices.sort(() => Math.random() - 0.5),
+            audioUrl: q.audioUrl || null
           };
         });
         finalQuestions = [...finalQuestions, ...processed];
@@ -38,19 +44,19 @@ export default function AutoEvalQuiz({ sheetData, allSheetsData, profileData, on
       
       // 2. Questions générées automatiquement depuis le Séquenceur
       if (parsedSequencerJson) {
-        const autoQ = generateQuizFromSequencerJson(customQuizTitle || sheetData?.titre || '', parsedSequencerJson, allSheetsData, qcmGlobalConfig);
+        const autoQ = generateQuizFromSequencerJson(customQuizTitle || sheetData?.titre || '', parsedSequencerJson, allSheetsData, { ...qcmGlobalConfig, t, mestreSignals });
         finalQuestions = [...finalQuestions, ...autoQ];
       }
       
       setQuestions(finalQuestions.sort(() => Math.random() - 0.5));
     } else if (isSong) {
-      const generated = generateQuizFromSong(songData, allSongsData, allSheetsData, qcmGlobalConfig);
+      const generated = generateQuizFromSong(songData, allSongsData, allSheetsData, { ...qcmGlobalConfig, t });
       setQuestions(generated);
     } else {
-      const generated = generateQuizFromSheet(sheetData, allSheetsData, allSongsData, { difficulty: qcmGlobalConfig?.difficulty || 'medium' });
+      const generated = generateQuizFromSheet(sheetData, allSheetsData, allSongsData, { difficulty: qcmGlobalConfig?.difficulty || 'medium', t });
       setQuestions(generated);
     }
-  }, [sheetData, allSheetsData, customQuizData, parsedSequencerJson, isSong, songData, allSongsData, qcmGlobalConfig, customQuizTitle]);
+  }, [sheetData, allSheetsData, customQuizData, parsedSequencerJson, isSong, songData, allSongsData, qcmGlobalConfig, customQuizTitle, mestreSignals]);
 
   if (questions.length === 0) {
     const isAdmin = profileData?.isSystemAdmin || profileData?.role === 'super-admin' || profileData?.role === 'mestre' || profileData?.role === 'admin';
@@ -165,13 +171,29 @@ export default function AutoEvalQuiz({ sheetData, allSheetsData, profileData, on
               </span>
             </div>
 
-            <div className="flex flex-col gap-2">
-              <span className="text-[10px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                {currentQuestion.instruction}
+            <div className="flex flex-col mb-4">
+              <span className="text-[10px] font-black uppercase text-cordel-master-dark opacity-70 tracking-widest mb-1">
+                {currentQuestion.instruction || "Question"}
               </span>
-              <p className="text-base font-bold text-encre-noire leading-relaxed">
+              
+              {currentQuestion.questionImage && (
+                <div className="w-full flex justify-center mb-4 mt-2">
+                  <img src={currentQuestion.questionImage} alt="Illustration de la question" className="max-h-48 rounded-lg shadow-md border-2 border-cordel-master-dark/20 object-contain bg-white/50 p-2" />
+                </div>
+              )}
+
+              {currentQuestion.audioUrl && currentQuestion.audioUrl.startsWith('firestore:') ? (
+                <FirestoreMediaRenderer url={currentQuestion.audioUrl} />
+              ) : currentQuestion.audioUrl ? (
+                <div className="flex justify-center mb-4 w-full animate-fadeIn">
+                  <audio controls src={currentQuestion.audioUrl} className="w-full max-w-sm rounded-full border-2 border-cordel-wood/20 shadow-sm" />
+                </div>
+              ) : null}
+              
+              <h3 className="text-xl font-bold text-encre-noire leading-tight">
                 {currentQuestion.questionText}
-              </p>
+              </h3>
+            </div>
               
               {currentQuestion.visualElement && currentQuestion.visualElement.type === 'orixaBadge' && (
                 <div className="flex justify-center my-4 animate-fadeIn">
@@ -252,13 +274,26 @@ export default function AutoEvalQuiz({ sheetData, allSheetsData, profileData, on
             </div>
 
             {showFeedback && (
-              <div className="mt-2 p-3 bg-cordel-bg-light/50 border border-cordel-master-dark/20 rounded text-xs font-semibold italic text-cordel-wood animate-fadeIn">
-                💡 {currentQuestion.feedback}
+              <div className={`mt-4 p-4 rounded-lg border-2 flex flex-col gap-2 w-full animate-fadeIn text-left ${selectedChoice?.isCorrect ? 'bg-cordel-vert/10 border-cordel-vert' : 'bg-cordel-ocre/10 border-cordel-ocre'}`}>
+                <h4 className={`text-sm font-black uppercase tracking-wider ${selectedChoice?.isCorrect ? 'text-cordel-vert' : 'text-cordel-ocre'}`}>
+                  {selectedChoice?.isCorrect ? "✅ Bien joué !" : "🌱 Presque !"}
+                </h4>
+                {!selectedChoice?.isCorrect && (
+                  <p className="text-xs font-bold text-encre-noire/80">
+                    La bonne réponse était : <span className="font-black">{currentQuestion.choices ? currentQuestion.choices.find(c => c.isCorrect)?.text : currentQuestion.correctAnswer}</span>
+                    {currentQuestion.correctAnswerExplanation ? ` - ${currentQuestion.correctAnswerExplanation}` : ''}
+                  </p>
+                )}
+                {selectedChoice?.isCorrect && currentQuestion.correctAnswerExplanation && (
+                   <p className="text-xs font-bold text-encre-noire/80">
+                     💡 {currentQuestion.correctAnswerExplanation}
+                   </p>
+                )}
               </div>
             )}
 
             <div className="flex justify-between items-center mt-2">
-              <CordelButton variant="default" onClick={onClose} className="text-[10px] px-3 py-1">Quitter</CordelButton>
+              <CordelButton variant="default" onClick={onClose} className="text-[10px] px-3 py-1 font-black uppercase">✕ Quitter l'entraînement</CordelButton>
               {showFeedback && (
                 <CordelButton variant="ocre" onClick={handleNext} className="text-[10px] font-black uppercase px-4 py-1.5 animate-pulse">
                   {currentIndex < questions.length - 1 ? "Question Suivante ➔" : "Voir le Résultat 🏆"}

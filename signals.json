@@ -1,0 +1,72 @@
+[
+  {
+    "id": "VVqFdR8OUk1AZY5nQiMg",
+    "mestreId": "iA0SweEHyOPzAPGIDVZdeKAV2mk1",
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/o-girador-7828c.firebasestorage.app/o/sinais%2FiA0SweEHyOPzAPGIDVZdeKAV2mk1%2FVVqFdR8OUk1AZY5nQiMg?alt=media&token=28720864-cd04-41af-b742-00417fe875a4",
+    "createdAt": "1782408846835",
+    "name": "Partie 1"
+  },
+  {
+    "id": "mqrvw3b5ygdv",
+    "mestreId": "iA0SweEHyOPzAPGIDVZdeKAV2mk1",
+    "createdAt": "1782294103738",
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/o-girador-7828c.firebasestorage.app/o/sinais%2FiA0SweEHyOPzAPGIDVZdeKAV2mk1%2Fmqrvw3b5ygdv?alt=media&token=8640cb32-61aa-480f-a33c-639d7f84ee1a",
+    "name": "Mangue beat 1"
+  },
+  {
+    "id": "mqrw2la7ra2c",
+    "mestreId": "global",
+    "createdAt": "1782294409282",
+    "name": "C 2",
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/o-girador-7828c.firebasestorage.app/o/sinais%2Fglobal%2Fmqrw2la7ra2c?alt=media&token=c84d7180-3070-4a4b-9e76-6efbb12edcac"
+  },
+  {
+    "id": "mqrzvh88cwkn",
+    "mestreId": "iA0SweEHyOPzAPGIDVZdeKAV2mk1",
+    "createdAt": "1782300793773",
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/o-girador-7828c.firebasestorage.app/o/sinais%2FiA0SweEHyOPzAPGIDVZdeKAV2mk1%2Fmqrzvh88cwkn?alt=media&token=02e2bcb7-20ad-404f-bede-bdd57f800b79",
+    "name": "Arrasto"
+  },
+  {
+    "id": "mqrzvpq30k6f",
+    "mestreId": "iA0SweEHyOPzAPGIDVZdeKAV2mk1",
+    "createdAt": "1782300804734",
+    "name": "C 1",
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/o-girador-7828c.firebasestorage.app/o/sinais%2FiA0SweEHyOPzAPGIDVZdeKAV2mk1%2Fmqrzvpq30k6f?alt=media&token=169cca6a-5e17-4238-8415-4305964526a9"
+  },
+  {
+    "id": "mqrzvw261hy6",
+    "mestreId": "iA0SweEHyOPzAPGIDVZdeKAV2mk1",
+    "createdAt": "1782300812655",
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/o-girador-7828c.firebasestorage.app/o/sinais%2FiA0SweEHyOPzAPGIDVZdeKAV2mk1%2Fmqrzvw261hy6?alt=media&token=22ce79d0-335b-4c6e-9463-c259fb9788a3",
+    "name": "Imale"
+  },
+  {
+    "id": "mqrzw56jppw6",
+    "mestreId": "iA0SweEHyOPzAPGIDVZdeKAV2mk1",
+    "createdAt": "1782300824321",
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/o-girador-7828c.firebasestorage.app/o/sinais%2FiA0SweEHyOPzAPGIDVZdeKAV2mk1%2Fmqrzw56jppw6?alt=media&token=b64fbec4-e84f-4a2c-a430-013ffa6a398d",
+    "name": "Luanda"
+  },
+  {
+    "id": "mqrzwead83i0",
+    "createdAt": "1782300836155",
+    "mestreId": "iA0SweEHyOPzAPGIDVZdeKAV2mk1",
+    "name": "Martelo",
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/o-girador-7828c.firebasestorage.app/o/sinais%2FiA0SweEHyOPzAPGIDVZdeKAV2mk1%2Fmqrzwead83i0?alt=media&token=dd5e2949-202a-46e1-8645-70115ead6637"
+  },
+  {
+    "id": "mqrzwkbhvo7z",
+    "createdAt": "1782300843901",
+    "name": "Partie 2",
+    "mestreId": "iA0SweEHyOPzAPGIDVZdeKAV2mk1",
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/o-girador-7828c.firebasestorage.app/o/sinais%2FiA0SweEHyOPzAPGIDVZdeKAV2mk1%2Fmqrzwkbhvo7z?alt=media&token=ac74d736-86fe-46a1-ac75-8c656fcd18a5"
+  },
+  {
+    "id": "mqrzwui3a1zu",
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/o-girador-7828c.firebasestorage.app/o/sinais%2FiA0SweEHyOPzAPGIDVZdeKAV2mk1%2Fmqrzwui3a1zu?alt=media&token=f7e4804b-2423-4672-83d0-3844517d324f",
+    "mestreId": "iA0SweEHyOPzAPGIDVZdeKAV2mk1",
+    "createdAt": "1782300857286",
+    "name": "Xango"
+  }
+]
