@@ -15,14 +15,20 @@ export default function useSubdomainRouter() {
       const isLocal = hostname === 'localhost' || hostname === '127.0.0.1';
       setIsLocalhost(isLocal);
 
-      let currentMode = 'organizador'; // par défaut
+      let currentMode = 'orchestrador'; // par défaut
 
       if (isLocal) {
         if (appParam === 'mostrador') currentMode = 'mostrador';
         else if (appParam === 'organizador') currentMode = 'organizador';
+        else if (appParam === 'orchestrador') currentMode = 'orchestrador';
       } else {
-        if (hostname.includes('mostrador')) currentMode = 'mostrador';
-        else if (hostname.includes('organizador') || hostname.includes('manager')) currentMode = 'organizador';
+        if (hostname === 'o-girador.com' || hostname === 'www.o-girador.com' || hostname === 'o-girador-7828c.web.app') {
+          currentMode = 'orchestrador';
+        } else if (hostname.includes('mostrador')) {
+          currentMode = 'mostrador';
+        } else if (hostname.includes('organizador') || hostname.includes('manager')) {
+          currentMode = 'organizador';
+        }
       }
 
       setAppMode(currentMode);
@@ -41,14 +47,16 @@ export default function useSubdomainRouter() {
       if (isLocal) {
         setUrls({
           mostrador: `/?app=mostrador${extractedGroupId ? `&groupe=${extractedGroupId}` : ''}`,
-          organizador: `/login${extractedGroupId ? `?groupe=${extractedGroupId}` : ''}`
+          organizador: `/login${extractedGroupId ? `?groupe=${extractedGroupId}` : ''}`,
+          orchestrador: `/?app=orchestrador`
         });
       } else {
         const groupPrefix = extractedGroupId ? `${extractedGroupId}.` : '';
         // Utilisation du domaine principal o-girador.com
         setUrls({
           mostrador: `https://${groupPrefix}mostrador.o-girador.com`,
-          organizador: `https://${groupPrefix}organizador.o-girador.com`
+          organizador: `https://${groupPrefix}organizador.o-girador.com`,
+          orchestrador: `https://o-girador.com`
         });
       }
     }
