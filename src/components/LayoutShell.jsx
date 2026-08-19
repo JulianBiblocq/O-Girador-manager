@@ -58,11 +58,26 @@ export default function LayoutShell({
   children 
 }) {
   const { urls } = useTenantContext();
-  const finalLogoUrl = logoUrl || '/favicon.svg';
   const { t } = useTranslation();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isLogoTilting, setIsLogoTilting] = useState(false);
   const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
+  const [combinedLogoUrl, setCombinedLogoUrl] = useState(null);
+
+  React.useEffect(() => {
+    // Vérifie si le logo combiné a déjà été généré par App.jsx
+    const favicon = document.querySelector('link#favicon') || document.querySelector('link[rel="icon"]');
+    if (favicon && favicon.href && favicon.href.startsWith('data:image')) {
+      setCombinedLogoUrl(favicon.href);
+    }
+    
+    // Écoute l'événement pour récupérer le logo fraîchement généré
+    const handleLogoReady = (e) => setCombinedLogoUrl(e.detail);
+    window.addEventListener('combined-logo-ready', handleLogoReady);
+    return () => window.removeEventListener('combined-logo-ready', handleLogoReady);
+  }, []);
+
+  const finalLogoUrl = combinedLogoUrl || logoUrl || '/favicon.svg';
 
   const handleLogoClick = () => {
     setIsLogoTilting(true);
@@ -240,7 +255,7 @@ export default function LayoutShell({
       {
         key: 'vitrine',
         url: getVitrineUrl(urls, associationData),
-        icon: <XiloGlobe size={isMobile ? 24 : 16} />,
+        icon: <XiloGlobe size={isMobile ? 30 : 22} />,
         label: 'Vitrine (Site Public)',
         isSvg: true
       },
@@ -279,7 +294,7 @@ export default function LayoutShell({
                 {app.isSvg ? (
                   <div className="text-cordel-master-dark">{app.icon}</div>
                 ) : (
-                  <img src={app.img} alt={app.label} className={`${isMobile ? 'w-6 h-6' : 'w-4 h-4'} object-contain`} />
+                  <img src={app.img} alt={app.label} className={`${isMobile ? 'w-8 h-8' : 'w-6 h-6'} object-contain`} />
                 )}
               </div>
             );
@@ -297,7 +312,7 @@ export default function LayoutShell({
               {app.isSvg ? (
                 <div>{app.icon}</div>
               ) : (
-                <img src={app.img} alt={app.label} className={`${isMobile ? 'w-6 h-6' : 'w-4 h-4'} object-contain`} />
+                <img src={app.img} alt={app.label} className={`${isMobile ? 'w-8 h-8' : 'w-6 h-6'} object-contain`} />
               )}
             </a>
           );

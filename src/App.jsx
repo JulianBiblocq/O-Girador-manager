@@ -428,13 +428,6 @@ export default function App() {
     }
   }, [user, isAdministrativeUser, associationData, hasTriggeredOnboardingAuto]);
 
-  // Dynamic favicon customization based on association branding
-  useEffect(() => {
-    const faviconElement = document.getElementById("favicon") || document.querySelector("link[rel*='icon']");
-    if (faviconElement) {
-      faviconElement.href = branding?.logoUrl ? branding.logoUrl : "/favicon.svg";
-    }
-  }, [branding?.logoUrl]);
 
   // Personnalisation dynamique du titre du document HTML et de la PWA selon le nom de l'association
   useEffect(() => {
@@ -638,6 +631,9 @@ export default function App() {
       }
 
       const iconDataUrl = canvas.toDataURL('image/png');
+      
+      // Partager ce logo combiné au reste de l'application (ex: LayoutShell)
+      window.dispatchEvent(new CustomEvent('combined-logo-ready', { detail: iconDataUrl }));
 
       // Mettre à jour favicon and apple-touch-icon with branded canvas icon
       let faviconElement = document.querySelector('link#favicon') || document.querySelector('link[rel="icon"]');
