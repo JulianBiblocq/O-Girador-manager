@@ -1,7 +1,4 @@
 User-agent: *
 Allow: /
-Disallow: /api/
-Disallow: /admin/
-Disallow: /*?*
 
-Sitemap: /sitemap.xml
+Sitemap: https://o-girador.com/sitemap.xml
