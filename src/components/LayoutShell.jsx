@@ -255,7 +255,7 @@ export default function LayoutShell({
       {
         key: 'vitrine',
         url: getVitrineUrl(urls, associationData),
-        icon: <XiloGlobe size={isMobile ? 30 : 22} />,
+        icon: <XiloGlobe size={isMobile ? 26 : 22} />,
         label: 'Vitrine (Site Public)',
         isSvg: true
       },
@@ -280,7 +280,7 @@ export default function LayoutShell({
     ];
 
     return (
-      <div className={`flex items-center gap-1.5 justify-center flex-wrap`}>
+      <div className={`flex items-center ${isMobile ? 'gap-1' : 'gap-1.5'} justify-center flex-wrap`}>
         {apps.map(app => {
           const isEnabled = ecosystemAccess[app.key] !== false;
           
@@ -288,13 +288,13 @@ export default function LayoutShell({
             return (
               <div
                 key={app.key}
-                className={`p-1.5 border border-dashed border-encre-noire/20 rounded flex items-center justify-center grayscale opacity-50 cursor-not-allowed`}
+                className={`${isMobile ? 'p-1' : 'p-1.5'} border border-dashed border-encre-noire/20 rounded flex items-center justify-center grayscale opacity-50 cursor-not-allowed`}
                 title="Module non activé. Découvrez-le sur le Hub O Girador !"
               >
                 {app.isSvg ? (
                   <div className="text-cordel-master-dark">{app.icon}</div>
                 ) : (
-                  <img src={app.img} alt={app.label} className={`${isMobile ? 'w-8 h-8' : 'w-6 h-6'} object-contain`} />
+                  <img src={app.img} alt={app.label} className={`${isMobile ? 'w-7 h-7' : 'w-6 h-6'} object-contain`} />
                 )}
               </div>
             );
@@ -306,13 +306,13 @@ export default function LayoutShell({
               href={app.url}
               target="_blank"
               rel="noopener noreferrer"
-              className={`p-1.5 border border-dashed border-encre-noire/20 rounded flex items-center justify-center transition-all cursor-pointer hover:scale-105 hover:bg-encre-noire/5 hover:border-cordel-wood ${app.isSvg ? 'hover:border-emerald-600 text-emerald-700 hover:bg-emerald-50' : ''}`}
+              className={`${isMobile ? 'p-1' : 'p-1.5'} border border-dashed border-encre-noire/20 rounded flex items-center justify-center transition-all cursor-pointer hover:scale-105 hover:bg-encre-noire/5 hover:border-cordel-wood ${app.isSvg ? 'hover:border-emerald-600 text-emerald-700 hover:bg-emerald-50' : ''}`}
               title={app.label}
             >
               {app.isSvg ? (
                 <div>{app.icon}</div>
               ) : (
-                <img src={app.img} alt={app.label} className={`${isMobile ? 'w-8 h-8' : 'w-6 h-6'} object-contain`} />
+                <img src={app.img} alt={app.label} className={`${isMobile ? 'w-7 h-7' : 'w-6 h-6'} object-contain`} />
               )}
             </a>
           );
