@@ -30,11 +30,13 @@ import { usePendingMembersNotification } from '../hooks/usePendingMembersNotific
 import { resolveEffectiveUserTags } from '../utils/tagUtils'; // Utilitaire de résolution des étiquettes effectives
 import InfoPoleBanner, { InfoPoleHelpButton } from './InfoPoleBanner';
 import FeedbackModal from './FeedbackModal';
-import useSubdomainRouter from '../hooks/useSubdomainRouter';
+import { useTenantContext } from '../context/TenantContext';
+import { getVitrineUrl } from '../utils/urlUtils';
 
 export default function LayoutShell({ 
   logoUrl, 
   associationName,
+  associationData,
   sequenceurUrl, 
   currentPole, 
   onNavigateToPole,
@@ -55,8 +57,8 @@ export default function LayoutShell({
   isBirthdayMonth = false,
   children 
 }) {
-  const { urls } = useSubdomainRouter();
-  const finalLogoUrl = logoUrl || '/Pictures/logo-samambaia.png';
+  const { urls } = useTenantContext();
+  const finalLogoUrl = logoUrl || '/favicon.svg';
   const { t } = useTranslation();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isLogoTilting, setIsLogoTilting] = useState(false);
@@ -226,6 +228,84 @@ export default function LayoutShell({
     ? activePoleObj.tabs.filter(tab => isModuleEnabled(tab.id, activePoleObj.id))
     : [];
 
+  const ecosystemAccess = associationData?.ecosystemAccess || {
+    vitrine: true,
+    sequenciador: true,
+    dancador: true,
+    hub: true
+  };
+
+  const renderAppLauncher = (isMobile = false) => {
+    const apps = [
+      {
+        key: 'vitrine',
+        url: getVitrineUrl(urls, associationData),
+        icon: <XiloGlobe size={isMobile ? 24 : 16} />,
+        label: 'Vitrine (Site Public)',
+        isSvg: true
+      },
+      {
+        key: 'sequenciador',
+        url: 'https://sequenciador.o-girador.com',
+        img: '/ecosystem/favicon.svg',
+        label: 'O Girador Séquenceur'
+      },
+      {
+        key: 'dancador',
+        url: 'https://dancador.o-girador.com',
+        img: '/ecosystem/dancador-logo.png',
+        label: 'O Girador Dançador'
+      },
+      {
+        key: 'hub',
+        url: 'https://o-girador.com',
+        img: '/ecosystem/hub-logo.png',
+        label: 'Hub Orchestrador'
+      }
+    ];
+
+    return (
+      <div className={`flex items-center gap-1.5 justify-center flex-wrap`}>
+        {apps.map(app => {
+          const isEnabled = ecosystemAccess[app.key] !== false;
+          
+          if (!isEnabled) {
+            return (
+              <div
+                key={app.key}
+                className={`p-1.5 border border-dashed border-encre-noire/20 rounded flex items-center justify-center grayscale opacity-50 cursor-not-allowed`}
+                title="Module non activé. Découvrez-le sur le Hub O Girador !"
+              >
+                {app.isSvg ? (
+                  <div className="text-cordel-master-dark">{app.icon}</div>
+                ) : (
+                  <img src={app.img} alt={app.label} className={`${isMobile ? 'w-6 h-6' : 'w-4 h-4'} object-contain`} />
+                )}
+              </div>
+            );
+          }
+
+          return (
+            <a
+              key={app.key}
+              href={app.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`p-1.5 border border-dashed border-encre-noire/20 rounded flex items-center justify-center transition-all cursor-pointer hover:scale-105 hover:bg-encre-noire/5 hover:border-cordel-wood ${app.isSvg ? 'hover:border-emerald-600 text-emerald-700 hover:bg-emerald-50' : ''}`}
+              title={app.label}
+            >
+              {app.isSvg ? (
+                <div>{app.icon}</div>
+              ) : (
+                <img src={app.img} alt={app.label} className={`${isMobile ? 'w-6 h-6' : 'w-4 h-4'} object-contain`} />
+              )}
+            </a>
+          );
+        })}
+      </div>
+    );
+  };
+
   return (
     <div className={`min-h-screen lg:h-screen w-full ${forceLight ? 'bg-cordel-bg-light' : 'bg-cordel-bg-dark'} ${isBirthdayMonth ? 'theme-birthday-month' : ''} flex lg:items-stretch lg:justify-stretch lg:p-0 p-4 md:p-6`}>
       {/* Responsive board container */}
@@ -246,7 +326,7 @@ export default function LayoutShell({
                 alt="Logo" 
                 width={40}
                 height={40}
-                className="w-10 h-10 landscape:w-8 landscape:h-8 object-contain rounded-[4px] p-0.5 bg-white border border-encre-noire/25 pointer-events-none" 
+                className="w-10 h-10 landscape:w-8 landscape:h-8 object-cover rounded-full pointer-events-none drop-shadow-sm" 
               />
               <div className="flex flex-col text-left">
                 <span className="font-extrabold text-[8px] uppercase tracking-widest text-cordel-master-dark/50">
@@ -274,25 +354,7 @@ export default function LayoutShell({
                   <span className="text-sm">{breakGlassActive ? '🔓' : '🔒'}</span>
                 </button>
               )}
-              <button
-                type="button"
-                onClick={() => window.open(urls.mostrador, '_blank')}
-                className="p-1.5 border border-dashed border-encre-noire/20 hover:border-emerald-600 text-emerald-700 hover:bg-emerald-50 rounded flex items-center justify-center transition-all cursor-pointer"
-                title="Voir le site public (Vitrine)"
-              >
-                <XiloGlobe size={26} />
-              </button>
-              {sequenceurUrl && (
-                <a 
-                  href={sequenceurUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="p-1.5 border border-dashed border-encre-noire/20 hover:border-[#d99f4d] text-[#d99f4d] hover:bg-[#d99f4d]/10 rounded flex items-center justify-center transition-all cursor-pointer"
-                  title="O Girador Séquenceur"
-                >
-                  <XiloEQ size={26} />
-                </a>
-              )}
+              {renderAppLauncher(true)}
             </div>
           </div>
 
@@ -333,7 +395,7 @@ export default function LayoutShell({
           <div className="flex flex-col items-center gap-3 w-full flex-grow min-h-0">
             <div 
               onClick={handleLogoClick}
-              className={`w-20 h-20 bg-white border-2 border-encre-noire rounded-full flex items-center justify-center p-2 shadow-[2px_2px_0px_0px_#181716] cursor-pointer hover:scale-[1.04] hover:rotate-[-4deg] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none transition-all duration-300 shrink-0 ${
+              className={`w-20 h-20 rounded-full overflow-hidden flex items-center justify-center cursor-pointer hover:scale-[1.04] hover:rotate-[-4deg] active:translate-x-[0.5px] active:translate-y-[0.5px] transition-all duration-300 shrink-0 drop-shadow-md ${
                 isLogoTilting ? 'animate-logo-tilt' : ''
               }`}
               title={t('poles.accueil')}
@@ -343,7 +405,7 @@ export default function LayoutShell({
                 alt="Logo" 
                 width={80}
                 height={80}
-                className="w-full h-full object-contain pointer-events-none" 
+                className="w-full h-full object-cover pointer-events-none" 
               />
             </div>
             <div className="flex flex-col items-center justify-center text-center px-1 shrink-0 mt-1">
@@ -354,25 +416,9 @@ export default function LayoutShell({
                 >
                   O Girador
                 </span>
-                <button
-                  type="button"
-                  onClick={() => window.open(urls.mostrador, '_blank')}
-                  className="p-1 border border-dashed border-encre-noire/20 hover:border-emerald-600 text-emerald-700 hover:bg-emerald-50 rounded flex items-center justify-center transition-all cursor-pointer"
-                  title="Voir le site public (Vitrine)"
-                >
-                  <XiloGlobe size={16} />
-                </button>
-                {sequenceurUrl && (
-                  <a 
-                    href={sequenceurUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="p-1 border border-dashed border-encre-noire/20 hover:border-[#d99f4d] text-[#d99f4d] hover:bg-[#d99f4d]/10 rounded flex items-center justify-center transition-all cursor-pointer"
-                    title="O Girador Séquenceur"
-                  >
-                    <XiloEQ size={16} />
-                  </a>
-                )}
+              </div>
+              <div className="mt-2 mb-1">
+                {renderAppLauncher(false)}
               </div>
               {associationName && (
                 <span className="font-black text-xs uppercase tracking-wider text-cordel-wood mt-0.5 leading-tight text-center break-words max-w-[160px]">
@@ -649,8 +695,8 @@ export default function LayoutShell({
 
               {/* Drawer Header */}
               <div className="flex flex-col items-center gap-2 mt-4 mb-6 pb-4 border-b border-dashed border-cordel-master-dark/20 text-center">
-                <div className="w-16 h-16 bg-white border border-encre-noire rounded-full flex items-center justify-center p-1.5 shadow-[1.5px_1.5px_0px_0px_#181716]">
-                  <img src={finalLogoUrl} alt="Logo" className="w-full h-full object-contain" />
+                <div className="w-16 h-16 rounded-full overflow-hidden flex items-center justify-center drop-shadow-md">
+                  <img src={finalLogoUrl} alt="Logo" className="w-full h-full object-cover" />
                 </div>
                 <span className="font-extrabold text-[9px] uppercase tracking-widest text-cordel-master-dark/50">
                   O Girador

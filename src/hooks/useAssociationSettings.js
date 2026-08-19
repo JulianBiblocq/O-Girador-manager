@@ -46,6 +46,13 @@ export const DEFAULT_ENABLED_MODULES = {
   monParcoursCulture: true
 };
 
+export const DEFAULT_ECOSYSTEM_ACCESS = {
+  vitrine: true,
+  sequenciador: true,
+  dancador: true,
+  hub: true
+};
+
 export const DEFAULT_INSTRUMENTS = ["Alfaia Marcante", "Alfaia Meião", "Alfaia Repique", "Caixa", "Tarol", "Gonguê", "Agbê", "Mineiro", "Timbal", "Chant"];
 
 // Textes, badges et titres par défaut des sections de la vitrine publique
@@ -223,6 +230,7 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
     eventTypes: ['prestation', 'repetition', 'stage', 'atelier', 'reunion'],
     eventTypeConfigs: {},
     enabledModules: DEFAULT_ENABLED_MODULES,
+    ecosystemAccess: DEFAULT_ECOSYSTEM_ACCESS,
     activerPresenceEnLigne: true,
     enableIndividualProgression: false,
     lieuxImportants: [],
@@ -471,6 +479,7 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
             : ['prestation', 'repetition', 'stage', 'atelier', 'reunion'],
           eventTypeConfigs: data.eventTypeConfigs || {},
           enabledModules: data.enabledModules ? { ...DEFAULT_ENABLED_MODULES, ...data.enabledModules } : DEFAULT_ENABLED_MODULES,
+          ecosystemAccess: data.ecosystemAccess ? { ...DEFAULT_ECOSYSTEM_ACCESS, ...data.ecosystemAccess } : DEFAULT_ECOSYSTEM_ACCESS,
           activerPresenceEnLigne: data.activerPresenceEnLigne !== false,
           enableIndividualProgression: data.enableIndividualProgression || false,
           lieuxImportants: Array.isArray(data.lieuxImportants) ? data.lieuxImportants : [],
@@ -479,6 +488,7 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
           lienGoogleFormRecoltePhotos: data.lienRecoltePhotosExternes || data.lienGoogleFormRecoltePhotos || '',
           lienRecoltePhotosExternes: data.lienRecoltePhotosExternes || data.lienGoogleFormRecoltePhotos || '',
           lienDepotForum: data.lienDepotForum || '',
+          customDomains: Array.isArray(data.customDomains) ? data.customDomains : [],
           // Bureau dynamique & Direction Artistique (Mestria)
           bureauMembres: Array.isArray(data.bureauMembres) ? data.bureauMembres : [],
           directionArtistique: Array.isArray(data.directionArtistique) ? data.directionArtistique : [],
@@ -671,6 +681,7 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
         varalCategories: formData.varalCategories,
         sequenceurUrl: formData.sequenceurUrl,
         lienDepotForum: formData.lienDepotForum || '',
+        customDomains: formData.customDomains || [],
         branding: {
           logoUrl: finalLogoUrl,
           colors: formData.branding.colors
@@ -711,6 +722,7 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
         eventTypes: formData.eventTypes || [],
         eventTypeConfigs: formData.eventTypeConfigs || {},
         enabledModules: formData.enabledModules || DEFAULT_ENABLED_MODULES,
+        ecosystemAccess: formData.ecosystemAccess || DEFAULT_ECOSYSTEM_ACCESS,
         activerPresenceEnLigne: formData.activerPresenceEnLigne !== false,
         enableIndividualProgression: formData.enableIndividualProgression || false,
         lieuxImportants: formData.lieuxImportants || [],

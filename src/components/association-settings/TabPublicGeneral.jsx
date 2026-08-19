@@ -3,7 +3,8 @@ import { doc, setDoc } from 'firebase/firestore';
 import { db } from '../../firebase';
 import CordelCard from '../CordelCard';
 import LegalInfoBlock from './blocks/LegalInfoBlock';
-import useSubdomainRouter from '../../hooks/useSubdomainRouter';
+import { useTenantContext } from '../../context/TenantContext';
+import { getVitrineUrl } from '../../utils/urlUtils';
 
 /**
  * Composant d'administration dédié aux paramètres globaux du site vitrine public :
@@ -18,7 +19,7 @@ import useSubdomainRouter from '../../hooks/useSubdomainRouter';
  * @param {boolean} props.saving - État de sauvegarde globale
  */
 export default function TabPublicGeneral({ formData, handleChange, groupId, saving }) {
-  const { urls } = useSubdomainRouter();
+  const { urls } = useTenantContext();
   const publicTheme = formData.publicTheme || {};
   const [publishing, setPublishing] = useState(false);
 
@@ -111,12 +112,65 @@ export default function TabPublicGeneral({ formData, handleChange, groupId, savi
 
             <button
               type="button"
-              onClick={() => window.open(urls.mostrador, '_blank', 'noopener,noreferrer')}
+              onClick={() => window.open(getVitrineUrl(urls, formData), '_blank', 'noopener,noreferrer')}
               className="px-4 py-2 text-xs font-black uppercase tracking-wider bg-cordel-vert text-white rounded-[6px_8px_5px_7px] border-2 border-encre-noire shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-110 cursor-pointer flex items-center gap-1.5 select-none"
               title="Ouvrir le site public dans un nouvel onglet"
             >
               <span>🌍 Voir le site public ↗</span>
             </button>
+          </div>
+        </div>
+      </CordelCard>
+
+      {/* SECTION 1.5 : Domaine Personnalisé */}
+      <CordelCard variant="default" className="p-5 flex flex-col gap-4 bg-white border-2 border-cordel-master-dark/30">
+        <h4 className="text-xs font-black uppercase tracking-widest text-cordel-wood border-b border-dashed border-cordel-master-dark/20 pb-2 flex items-center gap-2">
+          <span>🔗 Nom de domaine personnalisé</span>
+        </h4>
+        
+        <div className="flex flex-col gap-2">
+          <p className="text-xs text-stone-600 leading-relaxed">
+            Si vous possédez votre propre nom de domaine (ex: <strong>www.mon-association.fr</strong>), vous pouvez le renseigner ici. 
+            Il servira d'adresse principale pour votre site vitrine au lieu de l'adresse par défaut.
+          </p>
+            <div className="flex flex-col gap-1.5 mt-2">
+            <label className="text-xs font-bold uppercase tracking-wider text-encre-noire/80">
+              Domaines personnalisés
+            </label>
+            <div className="flex flex-wrap gap-2 mb-1">
+              {(formData.customDomains || []).map((domain, idx) => (
+                <span key={idx} className="flex items-center gap-1.5 bg-stone-100 border border-stone-300 text-stone-700 text-[10px] font-bold px-2 py-1 rounded">
+                  {domain}
+                  <button
+                    type="button"
+                    disabled={saving}
+                    onClick={() => {
+                      handleChange('customDomains', (formData.customDomains || []).filter(d => d !== domain));
+                    }}
+                    className="text-stone-400 hover:text-red-600 font-bold ml-1"
+                  >
+                    ✕
+                  </button>
+                </span>
+              ))}
+            </div>
+            <input
+              type="text"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  const newDomain = e.target.value.trim().replace(/^https?:\/\//, '').toLowerCase();
+                  if (newDomain && !(formData.customDomains || []).includes(newDomain)) {
+                    handleChange('customDomains', [...(formData.customDomains || []), newDomain]);
+                    e.target.value = '';
+                  }
+                }
+              }}
+              disabled={saving}
+              placeholder="Tapez un domaine (ex: www.mon-asso.fr) et appuyez sur Entrée"
+              className="text-xs font-medium px-3 py-2 border border-encre-noire/30 rounded bg-white w-full sm:max-w-md"
+            />
+            <span className="text-[10px] text-stone-500 font-medium">Appuyez sur <kbd className="bg-stone-100 border border-stone-300 rounded px-1">Entrée</kbd> pour ajouter un domaine. Saisissez le domaine sans "http://" ou "https://". Pensez à configurer les DNS de votre nom de domaine pour pointer vers notre serveur.</span>
           </div>
         </div>
       </CordelCard>

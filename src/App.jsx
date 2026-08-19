@@ -18,7 +18,8 @@ import { resolveEffectiveUserTags } from './utils/tagUtils';
 import { getMigratedRoleAndTags } from './utils/roleMigration';
 import { canEditVitrine, canAccessPole, canAccessTabPermission } from './utils/permissionUtils';
 import PendingValidationScreen from './components/auth/PendingValidationScreen';
-import useSubdomainRouter from './hooks/useSubdomainRouter';
+import { useTenantContext } from './context/TenantContext';
+import TenantNotFound from './components/TenantNotFound';
 
 
 const Onboarding = lazyWithRetry(() => import('./components/Onboarding'));
@@ -204,8 +205,23 @@ function OrganizadorRedirector({ user, navigateToRoute, brandingStyle }) {
   );
 }
 
+function OrchestradorRedirector({ brandingStyle }) {
+  useEffect(() => {
+    window.location.href = 'https://o-girador.com';
+  }, []);
+
+  return (
+    <div style={brandingStyle} className="min-h-screen flex flex-col justify-center items-center py-12 bg-[#f4ecd8]">
+      <div className="animate-spin text-4xl mb-4 select-none">⏳</div>
+      <span className="font-bold text-xs uppercase tracking-widest text-[#8b2a1a]">
+        Redirection vers le Hub...
+      </span>
+    </div>
+  );
+}
+
 export default function App() {
-  const { appMode, groupId: urlGroupId, urls, isLocalhost } = useSubdomainRouter();
+  const { appMode, groupId: urlGroupId, urls, isLocalhost, isTenantLoading, tenantError } = useTenantContext();
   const { t } = useTranslation();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -534,6 +550,11 @@ export default function App() {
       const textCol = branding?.colors?.text || '#1a1a1a';
       const logoSrc = branding?.logoUrl;
 
+      // Appliquer un masque circulaire strict pour garantir la transparence extérieure
+      ctx.beginPath();
+      ctx.arc(256, 256, 256, 0, Math.PI * 2);
+      ctx.clip();
+
       // Draw paper background
       ctx.fillStyle = bgCol;
       ctx.fillRect(0, 0, 512, 512);
@@ -835,16 +856,18 @@ export default function App() {
 
   // 1. Écran de chargement (Authentification ou chargement Firestore)
   if (loading || checkingProfile) {
-    const logoSrc = branding?.logoUrl || '/Pictures/logo-samambaia.png';
+    const logoSrc = branding?.logoUrl || '/favicon.svg';
     return (
       <div style={brandingStyle} className="min-h-screen w-full flex flex-col justify-center items-center p-6 bg-[var(--cordel-bg)] text-[var(--cordel-text)] transition-colors duration-300">
         <div className="flex flex-col items-center gap-4 text-center max-w-xs sm:max-w-sm w-full">
           {logoSrc && (
-            <img 
-              src={logoSrc} 
-              alt="Logo Association" 
-              className="max-w-xs max-h-36 object-contain w-auto h-auto mb-2 select-none" 
-            />
+            <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full overflow-hidden flex items-center justify-center mb-2 mx-auto">
+              <img 
+                src={logoSrc} 
+                alt="Logo Association" 
+                className="w-full h-full object-cover select-none" 
+              />
+            </div>
           )}
           {/* Spinner stylisé */}
           <div className="relative w-16 h-16 select-none animate-spin">
@@ -880,12 +903,28 @@ export default function App() {
 
   if (isRootPath) {
 
+    if (isTenantLoading) {
+      return (
+        <div style={brandingStyle} className="min-h-screen flex flex-col justify-center items-center py-12 bg-[#f4ecd8]">
+          <div className="animate-spin text-4xl mb-4 select-none">⏳</div>
+          <span className="font-bold text-xs uppercase tracking-widest text-[#8b2a1a]">Chargement de la plateforme...</span>
+        </div>
+      );
+    }
+
+    if (tenantError) {
+      return <TenantNotFound />;
+    }
+
+    if (appMode === 'orchestrador') {
+      return <OrchestradorRedirector brandingStyle={brandingStyle} />;
+    }
 
     if (appMode === 'organizador') {
       return <OrganizadorRedirector user={user} navigateToRoute={navigateToRoute} brandingStyle={brandingStyle} />;
     }
 
-    const publicGroupId = profileData?.groupId || urlGroupId || 'samambaia';
+    const publicGroupId = urlGroupId || profileData?.groupId || null;
 
     return (
       <PublicThemeProvider groupId={publicGroupId}>
@@ -898,20 +937,8 @@ export default function App() {
           isAdministrativeUser={isAdministrativeUser}
           associationName={associationName}
           branding={branding}
-          onNavigateToApp={() => {
-            if (isLocalhost) {
-              navigateToRoute(user ? '/app' : '/login');
-            } else {
-              window.location.href = urls.organizador;
-            }
-          }}
-          onNavigateToLogin={() => {
-            if (isLocalhost) {
-              navigateToRoute('/login');
-            } else {
-              window.location.href = urls.organizador;
-            }
-          }}
+          onNavigateToApp={() => navigateToRoute(user ? '/app' : '/login')}
+          onNavigateToLogin={() => navigateToRoute('/login')}
         />
         <ReloadPrompt />
       </PublicThemeProvider>
@@ -1166,6 +1193,7 @@ export default function App() {
         <LayoutShell 
           logoUrl={branding?.logoUrl} 
           associationName={associationName}
+          associationData={associationData}
           sequenceurUrl={sequenceurUrl}
           currentPole={currentPole}
           onNavigateToPole={handleNavigateToPole}

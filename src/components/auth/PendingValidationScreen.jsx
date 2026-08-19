@@ -7,7 +7,7 @@ import CordelButton from '../CordelButton';
  * n'a pas encore été validé par un administrateur / le bureau de l'association.
  */
 export default function PendingValidationScreen({ profileData, branding, onSignOut }) {
-  const logoSrc = branding?.logoUrl || '/Pictures/logo-samambaia.png';
+  const logoSrc = branding?.logoUrl || '/favicon.svg';
 
   const handleReload = () => {
     window.location.reload();

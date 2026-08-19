@@ -1,6 +1,6 @@
 import React from 'react';
 import CordelCard from '../CordelCard';
-import { DEFAULT_ENABLED_MODULES } from '../../hooks/useAssociationSettings';
+import { DEFAULT_ENABLED_MODULES, DEFAULT_ECOSYSTEM_ACCESS } from '../../hooks/useAssociationSettings';
 import { XiloMegaphone } from '../XiloIcons';
 
 const MODULES_CONFIG = [
@@ -73,6 +73,15 @@ export default function TabModules({
   t
 }) {
   const enabledModules = formData.enabledModules || DEFAULT_ENABLED_MODULES;
+  const ecosystemAccess = formData.ecosystemAccess || DEFAULT_ECOSYSTEM_ACCESS;
+
+  const handleToggleEcosystem = (key, isChecked) => {
+    const updated = {
+      ...ecosystemAccess,
+      [key]: isChecked
+    };
+    handleChange('ecosystemAccess', updated);
+  };
 
   const handleToggleModule = (moduleKey, isChecked) => {
     const updated = {
@@ -279,6 +288,48 @@ export default function TabModules({
             />
             <div className="w-10 h-5 bg-neutral-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-neutral-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[var(--cordel-wood)]"></div>
           </label>
+        </div>
+      </div>
+      {/* Ecosystem Access Settings */}
+      <div className="mt-8 pt-6 border-t-2 border-dashed border-cordel-master-dark/30 text-left">
+        <h4 className="text-xs uppercase font-extrabold tracking-wider text-cordel-wood mb-2.5 flex items-center gap-2">
+          <span>🌌</span> Écosystème O Girador
+        </h4>
+        <p className="text-[10px] text-cordel-master-dark/70 font-semibold leading-relaxed mb-4 text-left">
+          L'écosystème O Girador regroupe les différentes applications de la galaxie. Vous pouvez activer ou désactiver l'accès à ces applications depuis la barre de navigation. Les modules inactifs apparaîtront grisés pour susciter l'intérêt.
+        </p>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-left">
+          {[
+            { key: 'vitrine', label: 'Vitrine (Site Public)', desc: 'Le site web de présentation de la troupe' },
+            { key: 'sequenciador', label: 'O Girador Séquenceur', desc: 'Séquenceur audio pour le Mestre' },
+            { key: 'dancador', label: 'O Girador Dançador', desc: 'Outil chorégraphique pour les danseurs' },
+            { key: 'hub', label: 'Hub Orchestrador', desc: 'Portail central O Girador' }
+          ].map(eco => (
+            <div 
+              key={eco.key}
+              className={`p-3.5 border-2 rounded-[6px_10px_6px_8px] flex items-center justify-between transition-all ${
+                ecosystemAccess[eco.key] !== false 
+                  ? 'border-encre-noire bg-cordel-bg-light shadow-[2px_2px_0px_0px_#181716]' 
+                  : 'border-dashed border-cordel-master-dark/30 bg-neutral-100/50 opacity-60'
+              }`}
+            >
+              <div className="flex flex-col pr-4">
+                <span className="text-xs font-black text-encre-noire">{eco.label}</span>
+                <span className="text-[9px] text-cordel-master-dark/70 font-medium mt-0.5 leading-tight">{eco.desc}</span>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer shrink-0 select-none">
+                <input
+                  type="checkbox"
+                  checked={ecosystemAccess[eco.key] !== false}
+                  onChange={(e) => handleToggleEcosystem(eco.key, e.target.checked)}
+                  disabled={saving}
+                  className="sr-only peer"
+                />
+                <div className="w-9 h-5 bg-neutral-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-neutral-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[var(--cordel-wood)]"></div>
+              </label>
+            </div>
+          ))}
         </div>
       </div>
     </CordelCard>

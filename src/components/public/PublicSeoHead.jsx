@@ -32,7 +32,7 @@ export default function PublicSeoHead({ publicTheme = {}, associationName = '', 
   const finalKeywords = userKeywords ? `${userKeywords}, ${forcedSaasKeywords}` : forcedSaasKeywords;
 
   // 4. Image de couverture Open Graph (og:image)
-  const ogImage = publicTheme?.publicHeroImage || branding?.logoUrl || '/Pictures/logo-samambaia.png';
+  const ogImage = publicTheme?.publicHeroImage || branding?.logoUrl || '/favicon.svg';
 
   return (
     <Helmet>

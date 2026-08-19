@@ -116,16 +116,17 @@ export function usePublicTheme(groupId, themeOverride = null) {
         if (docSnap.exists()) {
           const data = docSnap.data();
           setPublicTheme(buildThemeData(data));
-          setLoading(false);
+          setError(null);
         } else {
-          // Si l'association spécifiée par groupId n'existe pas, on cherche la première association globale
-          tryFetchDefaultAssociation();
+          // Si l'association spécifiée par groupId n'existe pas, on renvoie une erreur pour afficher 404
+          setError('NOT_FOUND');
         }
+        setLoading(false);
       },
       (err) => {
         console.error("usePublicTheme - Erreur lors de l'écoute Firestore :", err);
         setError(err);
-        tryFetchDefaultAssociation();
+        setLoading(false);
       }
     );
 

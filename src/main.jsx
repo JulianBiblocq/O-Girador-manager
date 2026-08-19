@@ -47,15 +47,18 @@ import App from './App.jsx'
 import { LanguageProvider } from './components/LanguageContext.jsx'
 import ErrorBoundary from './components/ErrorBoundary.jsx'
 import { ConfirmProvider } from './context/ConfirmContext.jsx'
+import { TenantProvider } from './context/TenantContext.jsx'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <LanguageProvider>
-      <ErrorBoundary>
-        <ConfirmProvider>
-          <App />
-        </ConfirmProvider>
-      </ErrorBoundary>
-    </LanguageProvider>
+    <TenantProvider>
+      <LanguageProvider>
+        <ErrorBoundary>
+          <ConfirmProvider>
+            <App />
+          </ConfirmProvider>
+        </ErrorBoundary>
+      </LanguageProvider>
+    </TenantProvider>
   </StrictMode>,
 )

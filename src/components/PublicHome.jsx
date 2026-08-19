@@ -16,6 +16,7 @@ import PublicSeoHead from './public/PublicSeoHead';
 import PublicWatermarkLogo from './public/PublicWatermarkLogo';
 import PublicMaintenancePage from './public/PublicMaintenancePage';
 import PublicBookingModal from './public/PublicBookingModal';
+import TenantNotFound from './TenantNotFound';
 import { canPreviewVitrineDraft } from '../utils/permissionUtils';
 
 /**
@@ -64,7 +65,7 @@ export default function PublicHome({
   onNavigateToApp, 
   onNavigateToLogin 
 }) {
-  const { publicTheme, loading: loadingTheme } = usePublicThemeContext();
+  const { publicTheme, loading: loadingTheme, error: themeError } = usePublicThemeContext();
   const { events: publicEvents, upcomingEvents = [], pastEvents = [], loading: loadingEvents } = usePublicEvents(groupId);
   const [selectedEventDetails, setSelectedEventDetails] = React.useState(null);
   const [isBookingModalOpen, setIsBookingModalOpen] = React.useState(false);
@@ -122,6 +123,11 @@ export default function PublicHome({
         </span>
       </div>
     );
+  }
+
+  // Si le tenant n'existe pas dans Firestore, on affiche la page d'erreur
+  if (themeError === 'NOT_FOUND') {
+    return <TenantNotFound />;
   }
 
   // ==========================================
