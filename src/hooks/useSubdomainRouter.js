@@ -9,15 +9,12 @@ export default function useSubdomainRouter() {
     const appParam = urlParams.get('app');
     const isLocal = hostname === 'localhost' || hostname === '127.0.0.1';
 
-    let currentMode = 'orchestrador';
+    let currentMode = 'organizador';
     if (isLocal) {
       if (appParam === 'mostrador') currentMode = 'mostrador';
       else if (appParam === 'organizador') currentMode = 'organizador';
-      else if (appParam === 'orchestrador') currentMode = 'orchestrador';
     } else {
-      if (hostname === 'o-girador.com' || hostname === 'www.o-girador.com' || hostname === 'o-girador-7828c.web.app') {
-        currentMode = 'orchestrador';
-      } else if (hostname.includes('mostrador')) {
+      if (hostname.includes('mostrador')) {
         currentMode = 'mostrador';
       } else if (hostname.includes('organizador') || hostname.includes('manager')) {
         currentMode = 'organizador';
@@ -40,7 +37,7 @@ export default function useSubdomainRouter() {
   const [appMode, setAppMode] = useState(initialState.mode);
   const [groupId, setGroupId] = useState(initialState.group);
   const [isLocalhost, setIsLocalhost] = useState(initialState.local);
-  const [urls, setUrls] = useState({ mostrador: '', organizador: '', orchestrador: '' });
+  const [urls, setUrls] = useState({ mostrador: '', organizador: '' });
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -50,15 +47,13 @@ export default function useSubdomainRouter() {
       if (isLocal) {
         setUrls({
           mostrador: `/?app=mostrador${extractedGroupId ? `&groupe=${extractedGroupId}` : ''}`,
-          organizador: `/login${extractedGroupId ? `?groupe=${extractedGroupId}` : ''}`,
-          orchestrador: `/?app=orchestrador`
+          organizador: `/login${extractedGroupId ? `?groupe=${extractedGroupId}` : ''}`
         });
       } else {
         const groupPrefix = extractedGroupId ? `${extractedGroupId}.` : '';
         setUrls({
           mostrador: `https://${groupPrefix}mostrador.o-girador.com`,
-          organizador: `https://${groupPrefix}organizador.o-girador.com`,
-          orchestrador: `https://o-girador.com`
+          organizador: `https://${groupPrefix}organizador.o-girador.com`
         });
       }
     }

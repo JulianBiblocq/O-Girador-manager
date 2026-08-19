@@ -19,7 +19,7 @@ import { getMigratedRoleAndTags } from './utils/roleMigration';
 import { canEditVitrine, canAccessPole, canAccessTabPermission } from './utils/permissionUtils';
 import PendingValidationScreen from './components/auth/PendingValidationScreen';
 import useSubdomainRouter from './hooks/useSubdomainRouter';
-import OrchestradorHome from './components/OrchestradorHome';
+
 
 const Onboarding = lazyWithRetry(() => import('./components/Onboarding'));
 const OnboardingWizard = lazyWithRetry(() => import('./components/onboarding/OnboardingWizard'));
@@ -879,9 +879,7 @@ export default function App() {
   }
 
   if (isRootPath) {
-    if (appMode === 'orchestrador') {
-      return <OrchestradorHome brandingStyle={brandingStyle} />;
-    }
+
 
     if (appMode === 'organizador') {
       return <OrganizadorRedirector user={user} navigateToRoute={navigateToRoute} brandingStyle={brandingStyle} />;
