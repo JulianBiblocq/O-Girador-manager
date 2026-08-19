@@ -3,6 +3,7 @@ import { doc, setDoc } from 'firebase/firestore';
 import { db } from '../../firebase';
 import CordelCard from '../CordelCard';
 import LegalInfoBlock from './blocks/LegalInfoBlock';
+import useSubdomainRouter from '../../hooks/useSubdomainRouter';
 
 /**
  * Composant d'administration dédié aux paramètres globaux du site vitrine public :
@@ -17,6 +18,7 @@ import LegalInfoBlock from './blocks/LegalInfoBlock';
  * @param {boolean} props.saving - État de sauvegarde globale
  */
 export default function TabPublicGeneral({ formData, handleChange, groupId, saving }) {
+  const { urls } = useSubdomainRouter();
   const publicTheme = formData.publicTheme || {};
   const [publishing, setPublishing] = useState(false);
 
@@ -109,7 +111,7 @@ export default function TabPublicGeneral({ formData, handleChange, groupId, savi
 
             <button
               type="button"
-              onClick={() => window.open('/', '_blank', 'noopener,noreferrer')}
+              onClick={() => window.open(urls.mostrador, '_blank', 'noopener,noreferrer')}
               className="px-4 py-2 text-xs font-black uppercase tracking-wider bg-cordel-vert text-white rounded-[6px_8px_5px_7px] border-2 border-encre-noire shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-110 cursor-pointer flex items-center gap-1.5 select-none"
               title="Ouvrir le site public dans un nouvel onglet"
             >

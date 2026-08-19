@@ -30,6 +30,7 @@ import { usePendingMembersNotification } from '../hooks/usePendingMembersNotific
 import { resolveEffectiveUserTags } from '../utils/tagUtils'; // Utilitaire de résolution des étiquettes effectives
 import InfoPoleBanner, { InfoPoleHelpButton } from './InfoPoleBanner';
 import FeedbackModal from './FeedbackModal';
+import useSubdomainRouter from '../hooks/useSubdomainRouter';
 
 export default function LayoutShell({ 
   logoUrl, 
@@ -54,6 +55,7 @@ export default function LayoutShell({
   isBirthdayMonth = false,
   children 
 }) {
+  const { urls } = useSubdomainRouter();
   const finalLogoUrl = logoUrl || '/Pictures/logo-samambaia.png';
   const { t } = useTranslation();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -274,7 +276,7 @@ export default function LayoutShell({
               )}
               <button
                 type="button"
-                onClick={() => window.open('/', '_blank')}
+                onClick={() => window.open(urls.mostrador, '_blank')}
                 className="p-1.5 border border-dashed border-encre-noire/20 hover:border-emerald-600 text-emerald-700 hover:bg-emerald-50 rounded flex items-center justify-center transition-all cursor-pointer"
                 title="Voir le site public (Vitrine)"
               >
@@ -354,7 +356,7 @@ export default function LayoutShell({
                 </span>
                 <button
                   type="button"
-                  onClick={() => window.open('/', '_blank')}
+                  onClick={() => window.open(urls.mostrador, '_blank')}
                   className="p-1 border border-dashed border-encre-noire/20 hover:border-emerald-600 text-emerald-700 hover:bg-emerald-50 rounded flex items-center justify-center transition-all cursor-pointer"
                   title="Voir le site public (Vitrine)"
                 >

@@ -9,6 +9,7 @@ import { XiloMegaphone } from './XiloIcons';
 import useConfirm from '../hooks/useConfirm';
 
 import { normalizeTag } from '../utils/tagUtils';
+import { telemetryService } from '../services/telemetryService';
 
 /**
  * Composant ForumChannelsManager
@@ -191,6 +192,7 @@ export default function ForumChannelsManager({ groupId, role, isSystemAdmin, onB
       setEditingChannelId(null);
     } catch (err) {
       console.error("ForumChannelsManager - Save error:", err);
+      telemetryService.logError(err, 'ForumChannelsManager_Save', groupId);
       alert("Une erreur est survenue lors de l'enregistrement.");
     } finally {
       setSaving(false);
@@ -231,6 +233,7 @@ export default function ForumChannelsManager({ groupId, role, isSystemAdmin, onB
       alert(`Le salon "${chName}" a été supprimé.`);
     } catch (err) {
       console.error("ForumChannelsManager - Delete error:", err);
+      telemetryService.logError(err, 'ForumChannelsManager_Delete', groupId);
       alert("Une erreur est survenue lors de la suppression.");
     } finally {
       setSaving(false);
@@ -256,6 +259,7 @@ export default function ForumChannelsManager({ groupId, role, isSystemAdmin, onB
       await batch.commit();
     } catch (err) {
       console.error("Error swapping channel order:", err);
+      telemetryService.logError(err, 'ForumChannelsManager_MoveChannelOrder', groupId);
     } finally {
       setSaving(false);
     }

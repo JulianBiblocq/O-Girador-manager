@@ -18,6 +18,7 @@ import { resolveEffectiveUserTags } from './utils/tagUtils';
 import { getMigratedRoleAndTags } from './utils/roleMigration';
 import { canEditVitrine, canAccessPole, canAccessTabPermission } from './utils/permissionUtils';
 import PendingValidationScreen from './components/auth/PendingValidationScreen';
+import useSubdomainRouter from './hooks/useSubdomainRouter';
 
 const Onboarding = lazyWithRetry(() => import('./components/Onboarding'));
 const OnboardingWizard = lazyWithRetry(() => import('./components/onboarding/OnboardingWizard'));
@@ -187,7 +188,23 @@ const POLES_CONFIG = [
   }
 ];
 
+function OrganizadorRedirector({ user, navigateToRoute, brandingStyle }) {
+  useEffect(() => {
+    navigateToRoute(user ? '/app' : '/login');
+  }, [user, navigateToRoute]);
+
+  return (
+    <div style={brandingStyle} className="min-h-screen flex flex-col justify-center items-center py-12 bg-[#f4ecd8]">
+      <div className="animate-spin text-4xl mb-4 select-none">⏳</div>
+      <span className="font-bold text-xs uppercase tracking-widest text-[#8b2a1a]">
+        Redirection...
+      </span>
+    </div>
+  );
+}
+
 export default function App() {
+  const { appMode, groupId: urlGroupId, urls, isLocalhost } = useSubdomainRouter();
   const { t } = useTranslation();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -861,7 +878,10 @@ export default function App() {
   }
 
   if (isRootPath) {
-    const urlGroupId = new URLSearchParams(window.location.search).get('groupe') || new URLSearchParams(window.location.search).get('assoc');
+    if (appMode === 'organizador') {
+      return <OrganizadorRedirector user={user} navigateToRoute={navigateToRoute} brandingStyle={brandingStyle} />;
+    }
+
     const publicGroupId = profileData?.groupId || urlGroupId || 'samambaia';
 
     return (
@@ -875,8 +895,20 @@ export default function App() {
           isAdministrativeUser={isAdministrativeUser}
           associationName={associationName}
           branding={branding}
-          onNavigateToApp={() => navigateToRoute(user ? '/app' : '/login')}
-          onNavigateToLogin={() => navigateToRoute('/login')}
+          onNavigateToApp={() => {
+            if (isLocalhost) {
+              navigateToRoute(user ? '/app' : '/login');
+            } else {
+              window.location.href = urls.organizador;
+            }
+          }}
+          onNavigateToLogin={() => {
+            if (isLocalhost) {
+              navigateToRoute('/login');
+            } else {
+              window.location.href = urls.organizador;
+            }
+          }}
         />
         <ReloadPrompt />
       </PublicThemeProvider>

@@ -10,6 +10,7 @@ import { XiloSettings, XiloPeople } from './XiloIcons';
 import SystemUserList from './admin/SystemUserList';
 import useConfirm from '../hooks/useConfirm';
 import { getMigratedRoleAndTags, VALID_SYSTEM_ROLES } from '../utils/roleMigration';
+import { telemetryService } from '../services/telemetryService';
 
 const DEFAULT_FIELDS_CONFIG = {
   telephone: { key: "telephone", label: "Téléphone", enabled: true, filledBy: "member", isRequired: false },
@@ -73,7 +74,10 @@ export default function SystemAdminPanel({ profileData, associationName: propAss
           updateDoc(uRef, {
             role: migration.newRole,
             tags: migration.newTags
-          }).catch(err => console.error("SystemAdminPanel - Erreur migration utilisateur :", err));
+          }).catch(err => {
+            console.error("SystemAdminPanel - Erreur migration utilisateur :", err);
+            telemetryService.logError(err, 'SystemAdminPanel_Migration', profileData?.groupId);
+          });
 
           fetchedUsers.push({
             id: docSnap.id,
@@ -272,6 +276,7 @@ export default function SystemAdminPanel({ profileData, associationName: propAss
       alert(t('common.saveSuccess'));
     } catch (error) {
       console.error("SystemAdminPanel - Erreur updateDoc :", error);
+      telemetryService.logError(error, 'SystemAdminPanel_SavePermissions', profileData?.groupId);
       alert(t('common.saveError'));
     } finally {
       setSavingId(null);
@@ -288,6 +293,7 @@ export default function SystemAdminPanel({ profileData, associationName: propAss
       alert("Inscription validée avec succès ! Le membre n'est plus marqué comme nouveau.");
     } catch (error) {
       console.error("SystemAdminPanel - Erreur lors de la validation du nouveau membre :", error);
+      telemetryService.logError(error, 'SystemAdminPanel_ValidateNewMember', profileData?.groupId);
       alert("Erreur lors de la validation : " + (error.message || error));
     } finally {
       setSavingId(null);
@@ -304,6 +310,7 @@ export default function SystemAdminPanel({ profileData, associationName: propAss
       alert("Fiche membre mise à jour avec succès.");
     } catch (error) {
       console.error("SystemAdminPanel - Erreur lors de la mise à jour complète du membre :", error);
+      telemetryService.logError(error, 'SystemAdminPanel_SaveFullModalProfile', profileData?.groupId);
       alert("Erreur de sauvegarde : " + (error.message || error));
     } finally {
       setSavingId(null);
@@ -331,6 +338,7 @@ export default function SystemAdminPanel({ profileData, associationName: propAss
       alert(`Membre ${shouldReactivate ? 'réactivé' : 'archivé'} avec succès.`);
     } catch (error) {
       console.error("SystemAdminPanel - Erreur lors de l'archivage/réactivation :", error);
+      telemetryService.logError(error, 'SystemAdminPanel_ToggleArchive', profileData?.groupId);
       alert("Une erreur est survenue.");
     } finally {
       setSavingId(null);
@@ -355,6 +363,7 @@ export default function SystemAdminPanel({ profileData, associationName: propAss
       alert(`Le membre ${userFullName || ''} a été définitivement supprimé.`);
     } catch (error) {
       console.error("SystemAdminPanel - Erreur lors de la suppression du membre :", error);
+      telemetryService.logError(error, 'SystemAdminPanel_DeleteUser', profileData?.groupId);
       alert("Erreur lors de la suppression : " + (error.message || error));
     } finally {
       setSavingId(null);
