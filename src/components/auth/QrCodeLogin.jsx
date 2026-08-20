@@ -16,7 +16,7 @@ export default function QrCodeLogin() {
   const { t } = useTranslation();
   const [sessionId, setSessionId] = useState(null);
   const [status, setStatus] = useState('loading'); // 'chargement de' | 'pending' | 'approved' | 'expired' | 'error'
-  const [timeLeft, setTimeLeft] = useState(120); // 120 secondes (2 minutes)
+  const [timeLeft, setTimeLeft] = useState(300); // 300 secondes (5 minutes)
   const [errorMessage, setErrorMessage] = useState('');
   const unsubscribeRef = useRef(null);
   const timerRef = useRef(null);
@@ -38,7 +38,7 @@ export default function QrCodeLogin() {
       setErrorMessage('');
       
       const newSessionId = crypto.randomUUID();
-      const expirationTime = Date.now() + 120000; // Expiration dans 2 minutes
+      const expirationTime = Date.now() + 300000; // Expiration dans 5 minutes
 
       // Création du document de session dans Firestore
       await setDoc(doc(db, 'qr_sessions', newSessionId), {
@@ -49,9 +49,9 @@ export default function QrCodeLogin() {
 
       setSessionId(newSessionId);
       setStatus('pending');
-      setTimeLeft(120);
+      setTimeLeft(300);
 
-      // Compte à rebours local de 120 secondes
+      // Compte à rebours local de 300 secondes
       timerRef.current = setInterval(() => {
         setTimeLeft((prev) => {
           if (prev <= 1) {
@@ -130,7 +130,7 @@ export default function QrCodeLogin() {
         {t('qrLogin.title') || "Connexion par QR Code"}
       </h3>
       <p className="text-xs text-cordel-master-dark/80 max-w-xs mb-4 leading-relaxed font-medium">
-        {t('qrLogin.instruction') || "Ouvrez l'application sur votre téléphone > Profil > Connecter un PC, puis scannez ce code."}
+        {t('qrLogin.instruction') || "Ouvrez l'application sur votre téléphone > Profil (tout en bas) > Connecter un PC, puis scannez ce code."}
       </p>
 
       {/* Zone QR Code */}
@@ -210,7 +210,7 @@ export default function QrCodeLogin() {
 
       {/* Note d'aide explicative */}
       <div className="mt-4 text-[10px] font-semibold text-cordel-master-dark/60 max-w-xs">
-        🔒 Le QR Code est à usage unique et sécurisé. Il expire automatiquement au bout de 2 minutes.
+        🔒 Le QR Code est à usage unique et sécurisé. Il expire automatiquement au bout de 5 minutes.
       </div>
     </div>
   );

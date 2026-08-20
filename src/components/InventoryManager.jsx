@@ -11,7 +11,7 @@ import useConfirm from '../hooks/useConfirm';
 import { useInventoryData } from '../hooks/useInventoryData';
 import InventoryFilterBar from './inventory/InventoryFilterBar';
 import InventoryItemCard from './inventory/InventoryItemCard';
-import InventoryFormModal from './inventory/InventoryFormModal';
+
 import { useAssociationSettings } from '../hooks/useAssociationSettings';
 import InstrumentsCatalogBlock from './association-settings/blocks/InstrumentsCatalogBlock';
 import AccessoriesKitsBlock from './association-settings/blocks/AccessoriesKitsBlock';
@@ -1059,19 +1059,7 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin,
           </div>
         )}
 
-        {/* MODALE DE FORMULAIRE REUTILISABLE */}
-        <InventoryFormModal
-          isOpen={isFormOpen}
-          onClose={() => setIsFormOpen(false)}
-          formData={formData}
-          setFormData={setFormData}
-          saving={saving}
-          editingId={editingId}
-          usersList={usersList}
-          settingsData={settingsData}
-          onSave={handleSave}
-          t={t}
-        />
+
       </div>
     </>
   );

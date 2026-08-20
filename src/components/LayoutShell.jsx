@@ -255,9 +255,8 @@ export default function LayoutShell({
       {
         key: 'vitrine',
         url: getVitrineUrl(urls, associationData),
-        icon: <XiloGlobe size={isMobile ? 26 : 22} />,
-        label: 'Vitrine (Site Public)',
-        isSvg: true
+        img: '/ecosystem/logo-mostrador.png',
+        label: 'Vitrine (Site Public)'
       },
       {
         key: 'sequenciador',
@@ -288,7 +287,7 @@ export default function LayoutShell({
             return (
               <div
                 key={app.key}
-                className={`${isMobile ? 'p-1' : 'p-1.5'} border border-dashed border-encre-noire/20 rounded flex items-center justify-center grayscale opacity-50 cursor-not-allowed`}
+                className={`${isMobile ? 'p-1' : 'p-1.5'} border border-transparent rounded flex items-center justify-center grayscale opacity-50 cursor-not-allowed`}
                 title="Module non activé. Découvrez-le sur le Hub O Girador !"
               >
                 {app.isSvg ? (
@@ -306,7 +305,7 @@ export default function LayoutShell({
               href={app.url}
               target="_blank"
               rel="noopener noreferrer"
-              className={`${isMobile ? 'p-1' : 'p-1.5'} border border-dashed border-encre-noire/20 rounded flex items-center justify-center transition-all cursor-pointer hover:scale-105 hover:bg-encre-noire/5 hover:border-cordel-wood ${app.isSvg ? 'hover:border-emerald-600 text-emerald-700 hover:bg-emerald-50' : ''}`}
+              className={`${isMobile ? 'p-1' : 'p-1.5'} border border-transparent rounded flex items-center justify-center transition-all cursor-pointer hover:scale-105 hover:bg-encre-noire/5 hover:border-cordel-wood ${app.isSvg ? 'hover:border-emerald-600 text-emerald-700 hover:bg-emerald-50' : ''}`}
               title={app.label}
             >
               {app.isSvg ? (

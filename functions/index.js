@@ -5,12 +5,15 @@
  * Sécurise les clés API via Firebase Secrets.
  */
 
+const functions = require("firebase-functions");
 const { onRequest, onCall, HttpsError } = require("firebase-functions/v2/https");
 const { onDocumentCreated } = require("firebase-functions/v2/firestore");
 const { defineSecret } = require("firebase-functions/params");
 
-const admin = require("firebase-admin");
 const { getApps, initializeApp } = require("firebase-admin/app");
+const { getFirestore, FieldValue } = require("firebase-admin/firestore");
+const { getMessaging } = require("firebase-admin/messaging");
+const { getAuth } = require("firebase-admin/auth");
 
 // Initialisation de Firebase Admin SDK s'il n'est pas déjà initialisé
 if (!getApps().length) {
@@ -65,7 +68,7 @@ exports.onAnnouncementCreated = onDocumentCreated(
     });
 
     try {
-      const db = admin.firestore();
+      const db = getFirestore();
 
       // Récupération de tous les utilisateurs du groupe
       const usersSnap = await db.collection("users")
@@ -146,7 +149,7 @@ exports.onAnnouncementCreated = onDocumentCreated(
             tokens: batchTokenStrings
           };
 
-          const response = await admin.messaging().sendEachForMulticast(multicastMessage);
+          const response = await getMessaging().sendEachForMulticast(multicastMessage);
 
           console.log(`onAnnouncementCreated - Lot ${Math.floor(i / BATCH_SIZE) + 1} : ${response.successCount} succès, ${response.failureCount} échec(s).`);
 
@@ -183,14 +186,10 @@ exports.onAnnouncementCreated = onDocumentCreated(
           tokensByUser[userId].push(token);
         });
 
-        const { arrayRemove } = require("firebase-admin/firestore").FieldValue
-          ? require("firebase-admin/firestore")
-          : { arrayRemove: admin.firestore.FieldValue.arrayRemove };
-
         for (const [userId, invalidTokens] of Object.entries(tokensByUser)) {
           try {
             await db.collection("users").doc(userId).update({
-              fcmTokens: admin.firestore.FieldValue.arrayRemove(...invalidTokens)
+              fcmTokens: FieldValue.arrayRemove(...invalidTokens)
             });
             console.log(`onAnnouncementCreated - Tokens invalides supprimés pour l'utilisateur "${userId}".`);
           } catch (cleanupErr) {
@@ -288,7 +287,7 @@ exports.sendAssociationEmail = onRequest(
       // Récupération des paramètres Firestore de l'association si groupId fourni
       if (groupId) {
         try {
-          const db = admin.firestore();
+          const db = getFirestore();
           const assocDoc = await db.collection("associations").doc(groupId).get();
           if (assocDoc.exists) {
             const assocData = assocDoc.data();
@@ -442,7 +441,7 @@ exports.approveQrSession = onCall(async (request) => {
     );
   }
 
-  const db = admin.firestore();
+  const db = getFirestore();
   const sessionRef = db.collection("qr_sessions").doc(sessionId);
   const sessionDoc = await sessionRef.get();
 
@@ -465,14 +464,14 @@ exports.approveQrSession = onCall(async (request) => {
 
   // Génération du Token Personnalisé avec Firebase Admin SDK
   try {
-    const customToken = await admin.auth().createCustomToken(authData.uid);
+    const customToken = await getAuth().createCustomToken(authData.uid);
 
     // Mise à jour du document Firestore pour declencher la connexion sur le navigateur PC
     await sessionRef.update({
       status: "approved",
       customToken: customToken,
       approvedBy: authData.uid,
-      approvedAt: admin.firestore.FieldValue.serverTimestamp()
+      approvedAt: FieldValue.serverTimestamp()
     });
 
     return {
@@ -480,10 +479,16 @@ exports.approveQrSession = onCall(async (request) => {
       message: "Session PC approuvée avec succès."
     };
   } catch (err) {
-    console.error("Erreur approveQrSession :", err);
+    const errorMessage = err.message || 'Erreur inconnue';
+    const errorCode = err.code || 'unknown';
+    console.error("Erreur détaillée approveQrSession :", JSON.stringify({
+        message: errorMessage,
+        code: errorCode,
+        stack: err.stack || 'Pas de stack trace'
+    }));
     throw new HttpsError(
       "internal",
-      "Une erreur est survenue lors de la création du token d'authentification."
+      `Erreur création du token d'authentification : [${errorCode}] ${errorMessage}`
     );
   }
 });
@@ -542,7 +547,7 @@ exports.helloAssoWebhook = onRequest(
       });
 
       // Vérification optionnelle de la clé de signature HelloAsso
-      const db = admin.firestore();
+      const db = getFirestore();
       try {
         const credsDoc = await db
           .collection("associations").doc(groupId)
@@ -582,7 +587,7 @@ exports.helloAssoWebhook = onRequest(
           type: item.type || ""
         })),
         rawPayload: JSON.stringify(body).substring(0, 5000),
-        receivedAt: admin.firestore.FieldValue.serverTimestamp(),
+        receivedAt: FieldValue.serverTimestamp(),
         matched: false,
         matchedUserId: null
       };
@@ -613,7 +618,7 @@ exports.helloAssoWebhook = onRequest(
               amount: amountEuros,
               orderId: helloAssoOrderId,
               eventType: eventType,
-              updatedAt: admin.firestore.FieldValue.serverTimestamp()
+              updatedAt: FieldValue.serverTimestamp()
             }
           });
 
@@ -651,14 +656,198 @@ exports.helloAssoWebhook = onRequest(
       });
 
     } catch (err) {
-      console.error("helloAssoWebhook - Erreur globale :", err);
+      const errorMessage = err.message || 'Erreur inconnue';
+      const errorCode = err.code || 'unknown';
+      console.error("helloAssoWebhook - Erreur détaillée :", JSON.stringify({
+          message: errorMessage,
+          code: errorCode,
+          stack: err.stack || 'Pas de stack trace'
+      }));
       // On retourne quand même 200 pour éviter les retry infinis de HelloAsso
       // mais on signale l'erreur dans le body
       return res.status(200).json({
         success: false,
         error: "Erreur interne lors du traitement de la notification.",
-        details: err.message || ""
+        details: errorMessage
       });
     }
+  }
+);
+
+/**
+ * Cloud Function Callable (v2) : provisionNewMestre
+ * Appelé depuis le Hub (Vitrine) lors de la première connexion d'un nouveau Mestre.
+ * Crée son profil utilisateur et son association dans Firestore.
+ */
+exports.provisionNewMestre = onCall(async (request) => {
+    // 1. SÉCURITÉ : Vérifier que l'utilisateur est bien authentifié
+    if (!request.auth) {
+        throw new HttpsError(
+            'unauthenticated',
+            'Vous devez être connecté pour créer un espace.'
+        );
+    }
+
+    const uid = request.auth.uid;
+    const email = request.auth.token.email || '';
+    const db = getFirestore();
+
+    console.log(`provisionNewMestre - Début pour uid=${uid}, email=${email}`);
+
+    try {
+        // 2. Vérification d'existence (idempotence)
+        console.log("provisionNewMestre - Lecture du document utilisateur...");
+        const userDoc = await db.collection('users').doc(uid).get();
+        if (userDoc.exists) {
+            console.log("provisionNewMestre - Utilisateur déjà existant, renvoi du groupId.");
+            return { success: true, groupId: userDoc.data().groupId, message: 'Utilisateur déjà existant.' };
+        }
+
+        // 3. Générer un identifiant unique pour le groupe
+        const groupRef = db.collection('associations').doc();
+        const groupId = groupRef.id;
+        console.log(`provisionNewMestre - Nouveau groupId généré : ${groupId}`);
+
+        // 4. Créer le profil de l'utilisateur (Le Mestre)
+        console.log("provisionNewMestre - Écriture du profil utilisateur...");
+        await db.collection('users').doc(uid).set({
+            uid: uid,
+            email: email,
+            role: 'mestre',
+            groupId: groupId,
+            createdAt: FieldValue.serverTimestamp()
+        });
+        console.log("provisionNewMestre - Profil utilisateur créé avec succès.");
+
+        // 5. Créer l'espace de l'association (Le Groupe)
+        console.log("provisionNewMestre - Écriture du document association...");
+        await groupRef.set({
+            groupId: groupId,
+            ownerUid: uid,
+            unlockedPacks: [],
+            createdAt: FieldValue.serverTimestamp()
+        });
+        console.log(`provisionNewMestre - Mestre ${uid} provisionné dans le groupe ${groupId}`);
+
+        return { success: true, groupId: groupId };
+
+    } catch (error) {
+        // Exposer la vraie erreur pour le diagnostic
+        const errorMessage = error.message || 'Erreur inconnue';
+        const errorCode = error.code || 'unknown';
+        console.error("provisionNewMestre - Erreur détaillée :", JSON.stringify({
+            message: errorMessage,
+            code: errorCode,
+            stack: error.stack || 'Pas de stack trace'
+        }));
+        // On utilise 'failed-precondition' car Firebase masque les messages des erreurs 'internal' et 'unknown'
+        throw new HttpsError(
+            'failed-precondition',
+            `Erreur provisioning : [${errorCode}] ${errorMessage}`
+        );
+    }
+});
+
+// ============================================================================
+// 🛒 PHASE 3 : INTÉGRATION STRIPE CHECKOUT
+// ============================================================================
+
+// Définition du secret Stripe
+const stripeSecretKey = defineSecret("STRIPE_SECRET_KEY");
+
+/**
+ * Cloud Function Callable (v2) : createStripeCheckoutSession
+ * Appelé depuis le panier du Hub.
+ * Crée une session Checkout Stripe dynamique basée sur les articles du panier.
+ */
+exports.createStripeCheckoutSession = onCall(
+  { secrets: [stripeSecretKey] }, 
+  async (request) => {
+    // 1. SÉCURITÉ : Vérifier que l'utilisateur est authentifié
+    const authData = request.auth || (request.context && request.context.auth);
+    if (!authData || !authData.uid) {
+      throw new HttpsError(
+        'unauthenticated',
+        'Vous devez être connecté pour procéder au paiement.'
+      );
+    }
+
+    const data = request.data || request;
+    const { cartItems, origin } = data;
+
+    if (!cartItems || !Array.isArray(cartItems) || cartItems.length === 0) {
+      throw new HttpsError(
+        'invalid-argument',
+        'Le panier est vide ou invalide.'
+      );
+    }
+
+    if (!origin) {
+      throw new HttpsError(
+        'invalid-argument',
+        'L\'URL d\'origine est manquante.'
+      );
+    }
+
+    try {
+      // 2. Initialiser Stripe avec la clé secrète
+      const stripe = require('stripe')(stripeSecretKey.value().trim());
+
+      // 3. Formater les articles pour Stripe (line_items)
+      const lineItems = cartItems.map((item) => {
+        // Stripe attend les montants en centimes (entiers)
+        const unitAmount = Math.round((item.price || 0) * 100);
+        
+        return {
+          price_data: {
+            currency: 'eur',
+            product_data: {
+              name: item.name,
+              description: `Type: ${item.type}`,
+            },
+            unit_amount: unitAmount,
+          },
+          quantity: 1,
+        };
+      });
+
+      // 4. Créer la session Checkout
+      const session = await stripe.checkout.sessions.create({
+        payment_method_types: ['card'],
+        mode: 'payment', // Utiliser 'subscription' si on gérait des abonnements récurrents Stripe
+        line_items: lineItems,
+        success_url: `${origin}/#espace-client?success=true`,
+        cancel_url: `${origin}/#espace-client?canceled=true`,
+        client_reference_id: authData.uid, // Pour identifier l'utilisateur lors du webhook final
+        customer_email: authData.token.email,
+        metadata: {
+          uid: authData.uid
+        }
+      });
+
+      console.log(`createStripeCheckoutSession - Session créée avec succès pour uid=${authData.uid}`);
+
+      // 5. Renvoyer l'URL de la session au client
+      return { url: session.url };
+
+    } catch (error) {
+      console.error("createStripeCheckoutSession - Erreur :", error);
+      throw new HttpsError(
+        'internal',
+        `Erreur lors de la création de la session Stripe : ${error.message}`
+      );
+    }
+  }
+);
+
+/**
+ * Cloud Function HTTP (v2) : stripeWebhook
+ * Reçoit les événements de paiement de Stripe.
+ */
+exports.stripeWebhook = onRequest(
+  async (req, res) => {
+    // Fonction minimale (stub) pour permettre le premier déploiement et obtenir l'URL.
+    // Le vrai code sera ajouté à l'étape suivante.
+    res.status(200).send("Webhook endpoint is ready.");
   }
 );

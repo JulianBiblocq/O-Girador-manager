@@ -116,17 +116,58 @@ service cloud.firestore {
       );
     }
 
-    // --- RÈGLES TÉLÉMÉTRIE & BUGS ---
+    // --- RÈGLES TÉLÉMÉTRIE & BUGS & HUB ---
     match /hub_system_errors/{errorId} {
       // Écriture ouverte à toutes les apps (Manager, Séquenceur, Vitrine) avec validation des champs
-      allow create: if request.resource.data.keys().hasAll(['appId', 'timestamp', 'errorMessage']);
+      allow create: if request.resource.data.keys().hasAll(['appId', 'timestamp']);
       // Lecture et gestion réservées à l'administrateur du Hub
-      allow read, update, delete: if request.auth != null && request.auth.token.admin == true;
+      allow read, update, delete: if isAuthenticated() && (
+        (request.auth.token.admin == true) || 
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && (
+          getUserData().get('isSystemAdmin', false) == true ||
+          getUserData().get('isAdmin', false) == true ||
+          getUserData().get('role', '') == 'super-admin'
+        ))
+      );
     }
 
     match /hub_telemetry_daily/{eventId} {
-      allow create: if request.resource.data.keys().hasAll(['appId', 'timestamp', 'eventName']);
-      allow read, update, delete: if request.auth != null && request.auth.token.admin == true;
+      allow create: if true; // Event logging open from all apps
+      allow read, update, delete: if isAuthenticated() && (
+        (request.auth.token.admin == true) || 
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && (
+          getUserData().get('isSystemAdmin', false) == true ||
+          getUserData().get('isAdmin', false) == true ||
+          getUserData().get('role', '') == 'super-admin'
+        ))
+      );
+    }
+
+    match /hub_tickets/{ticketId} {
+      allow create: if isAuthenticated(); // Users can create tickets
+      allow read, update, delete: if isAuthenticated() && (
+        (request.auth.token.admin == true) || 
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && (
+          getUserData().get('isSystemAdmin', false) == true ||
+          getUserData().get('isAdmin', false) == true ||
+          getUserData().get('role', '') == 'super-admin'
+        )) ||
+        (resource.data.userId == request.auth.uid)
+      );
+    }
+
+    match /hub_reviews/{reviewId} {
+      allow read: if true; // Reviews are public
+      allow create: if isAuthenticated();
+      allow update, delete: if isAuthenticated() && (
+        (request.auth.token.admin == true) || 
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && (
+          getUserData().get('isSystemAdmin', false) == true ||
+          getUserData().get('isAdmin', false) == true ||
+          getUserData().get('role', '') == 'super-admin'
+        )) ||
+        (resource.data.userId == request.auth.uid)
+      );
     }
 
     // Collection Rules
@@ -216,6 +257,18 @@ service cloud.firestore {
         allow read: if isAdminOrMestre() && getUserData().groupId == assocId;
         allow write: if false;
       }
+
+      // Membres de l'association (utilisés par la gestion O Girador)
+      match /members/{memberId} {
+        allow read: if isAuthenticated() && getUserData().groupId == assocId;
+        allow write: if isAdminOrMestre() && getUserData().groupId == assocId;
+      }
+    }
+
+    // Packs (catalogue public)
+    match /premium_packs/{packId} {
+      allow read: if true;
+      allow write: if false;
     }
 
     // Announcements: Lecture si authentifié. Écriture réservée aux admins/mestres.
