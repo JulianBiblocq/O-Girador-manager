@@ -417,6 +417,10 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
 
   const getDocType = (docItem) => {
     if (docItem.type) return docItem.type;
+    const cat = (docItem.categorie || '').toLowerCase();
+    if (cat.includes('toada')) return 'song';
+    if (cat.includes('culture') || cat.includes('fiche')) return 'culture_fiche';
+    
     const url = docItem.fileUrl || '';
     if (url.includes('drive.google.com/drive/folders') || url.includes('dropbox.com') || url.includes('onedrive')) return 'dossier_externe';
     if (url.includes('.mp3') || url.includes('.wav') || url.includes('.ogg') || url.includes('.m4a')) return 'audio';

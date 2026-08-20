@@ -772,14 +772,17 @@ export default function VaralManager({ groupId, onBack, role, isSystemAdmin, isE
                                   </td>
                                   <td className="py-2 px-2 md:py-2.5 md:px-3 text-right">
                                     <div className="flex items-center justify-end gap-1.5">
-                                      {(docItem.fileUrl || docItem.type === 'report' || docItem.type === 'culture_fiche') && (
+                                      {(docItem.fileUrl || docItem.type === 'report' || docItem.type === 'culture_fiche' || docItem.type === 'song' || (docItem.categorie || '').toLowerCase().includes('culture') || (docItem.categorie || '').toLowerCase().includes('toada')) && (
                                         <button
                                           onClick={() => {
-                                            if (docItem.type === 'report') {
+                                            const cat = (docItem.categorie || '').toLowerCase();
+                                            const inferredType = docItem.type || (cat.includes('toada') ? 'song' : (cat.includes('culture') || cat.includes('fiche') ? 'culture_fiche' : 'pdf'));
+                                            
+                                            if (inferredType === 'report') {
                                               setSelectedReport(docItem);
-                                            } else if (docItem.type === 'song') {
+                                            } else if (inferredType === 'song') {
                                               setSelectedToada(docItem);
-                                            } else if (docItem.type === 'culture_fiche') {
+                                            } else if (inferredType === 'culture_fiche') {
                                               setSelectedCultureCard(docItem);
                                             } else {
                                               window.open(docItem.fileUrl, '_blank');
