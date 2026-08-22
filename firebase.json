@@ -9,6 +9,7 @@
     "source": "functions"
   },
   "hosting": {
+    "site": "o-girador-organizador",
     "public": "dist",
     "ignore": [
       "firebase.json",
