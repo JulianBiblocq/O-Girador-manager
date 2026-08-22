@@ -5,9 +5,20 @@ export default function PrintConfigModal({ onClose, onConfirm, title = "Impressi
   const [format, setFormat] = useState('A4');
   const [isBW, setIsBW] = useState(false);
   const [isBulk, setIsBulk] = useState(false);
+  const [printSections, setPrintSections] = useState({
+    originale: true,
+    phonetique: true,
+    traduction: true,
+    lexique: true,
+    anecdote: true
+  });
+
+  const handleSectionToggle = (section) => {
+    setPrintSections(prev => ({ ...prev, [section]: !prev[section] }));
+  };
 
   const handlePrint = () => {
-    onConfirm({ format, isBW, isBulk });
+    onConfirm({ format, isBW, isBulk, printSections });
   };
 
   return (
@@ -45,6 +56,32 @@ export default function PrintConfigModal({ onClose, onConfirm, title = "Impressi
               >
                 📜 A3 Grand
               </button>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <label className="font-black uppercase tracking-wider text-sm">Contenu à imprimer</label>
+            <div className="grid grid-cols-2 gap-2 text-xs font-medium">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" checked={printSections.originale} onChange={() => handleSectionToggle('originale')} className="accent-[var(--color-cordel-vert,#2d6a4f)] w-4 h-4 cursor-pointer" />
+                Version Originale
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" checked={printSections.phonetique} onChange={() => handleSectionToggle('phonetique')} className="accent-[var(--color-cordel-vert,#2d6a4f)] w-4 h-4 cursor-pointer" />
+                Version Phonétique
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" checked={printSections.traduction} onChange={() => handleSectionToggle('traduction')} className="accent-[var(--color-cordel-vert,#2d6a4f)] w-4 h-4 cursor-pointer" />
+                Traduction
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" checked={printSections.lexique} onChange={() => handleSectionToggle('lexique')} className="accent-[var(--color-cordel-vert,#2d6a4f)] w-4 h-4 cursor-pointer" />
+                Lexique & Notes
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" checked={printSections.anecdote} onChange={() => handleSectionToggle('anecdote')} className="accent-[var(--color-cordel-vert,#2d6a4f)] w-4 h-4 cursor-pointer" />
+                Anecdote
+              </label>
             </div>
           </div>
 

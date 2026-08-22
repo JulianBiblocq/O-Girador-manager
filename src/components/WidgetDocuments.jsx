@@ -159,6 +159,7 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
   const [showBulkPrintModal, setShowBulkPrintModal] = useState(false);
   const [isPrinting, setIsPrinting] = useState(false);
   const [printCategory, setPrintCategory] = useState(null);
+  const [printSections, setPrintSections] = useState(null);
 
   // Culture filtrer state
   const [cultureFilter, setCultureFilter] = useState('all');
@@ -311,8 +312,9 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
     }
   ];
 
-  const handleBulkPrint = ({ format, isBW }) => {
+  const handleBulkPrint = ({ format, isBW, printSections }) => {
     setShowBulkPrintModal(false);
+    setPrintSections(printSections);
     setIsPrinting(true);
 
     // Définir classes for print
@@ -1349,7 +1351,7 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
             .filter(d => d.type === 'song' || !d.type) // Safe fallback for older documents
             .map(song => (
               <div key={song.id} className="print-song-page">
-                <SongCard song={song} defaultRevisionMode={false} />
+                <SongCard song={song} defaultRevisionMode={false} isPrintVersion={true} printSections={printSections} />
               </div>
             ))}
         </div>,

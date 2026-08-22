@@ -19,14 +19,21 @@ import { getInstrumentStamp } from './InstrumentStampSVG';
  * }
  */
 
-export default function SongCard({ song, isPrintVersion = false, defaultRevisionMode = true, onPrintAll }) {
+export default function SongCard({ song, isPrintVersion = false, defaultRevisionMode = true, onPrintAll, printSections = null }) {
   const [activePuxador, setActivePuxador] = useState(false);
   const [activeChoeur, setActiveChoeur] = useState(false);
   const [localReveals, setLocalReveals] = useState({});
   const [showPrintModal, setShowPrintModal] = useState(false);
+  const [localPrintSections, setLocalPrintSections] = useState(null);
   
   const isRevealedMode = isPrintVersion || !defaultRevisionMode;
   const [isPrinting, setIsPrinting] = useState(false);
+
+  const getSectionVisibility = (section) => {
+    if (!isPrintVersion) return true;
+    if (!printSections) return true;
+    return !!printSections[section];
+  };
 
   const renderFlashcard = (id, content, extraClass = "") => {
     if (isRevealedMode) {
@@ -75,41 +82,67 @@ export default function SongCard({ song, isPrintVersion = false, defaultRevision
     const isHtml = /<[a-z][\s\S]*>/i.test(htmlString);
     if (!isHtml) return htmlString;
     
-    const cleanHtml = htmlString
+    const div = document.createElement('div');
+    div.innerHTML = htmlString
       .replace(/<\/?(p|div)[^>]*>/gi, (match) => match.startsWith('</') ? '<br/>' : '')
       .replace(/&nbsp;/gi, ' ');
       
-    const lines = cleanHtml.split(/<br\s*\/?>/i);
     const blocks = [];
+    let currentLineText = "";
+    let currentLineHasBold = false;
     let hasAnyPuxador = false;
-    
-    lines.forEach(line => {
-      const tempDiv = document.createElement('div');
-      tempDiv.innerHTML = line;
-      const textContent = tempDiv.textContent.trim();
-      
+
+    const traverse = (node, isBold) => {
+      if (node.nodeType === Node.TEXT_NODE) {
+        const text = node.textContent;
+        if (text) {
+          currentLineText += text;
+          if (isBold && text.trim().length > 0) {
+            currentLineHasBold = true;
+          }
+        }
+      } else if (node.nodeType === Node.ELEMENT_NODE) {
+        if (node.tagName.toLowerCase() === 'br') {
+          commitLine();
+        } else {
+          const tagName = node.tagName.toLowerCase();
+          const isNodeBold = isBold || 
+                             tagName === 'b' || 
+                             tagName === 'strong' ||
+                             (node.style && node.style.fontWeight && (node.style.fontWeight === 'bold' || parseInt(node.style.fontWeight, 10) >= 600)) ||
+                             (node.classList && (node.classList.contains('font-bold') || node.classList.contains('font-black')));
+
+          for (let i = 0; i < node.childNodes.length; i++) {
+            traverse(node.childNodes[i], isNodeBold);
+          }
+        }
+      }
+    };
+
+    const commitLine = () => {
+      const textContent = currentLineText.trim();
       if (!textContent) {
         blocks.push(' ');
-        return;
-      }
-      
-      const boldElements = tempDiv.querySelectorAll('b, strong');
-      let boldText = '';
-      boldElements.forEach(el => boldText += el.textContent.trim());
-      
-      if (boldText.length > 0) {
-        blocks.push({ puxador: textContent });
-        hasAnyPuxador = true;
       } else {
-        blocks.push({ coro: textContent });
+        if (currentLineHasBold) {
+          blocks.push({ puxador: textContent });
+          hasAnyPuxador = true;
+        } else {
+          blocks.push({ coro: textContent });
+        }
       }
-    });
+      currentLineText = "";
+      currentLineHasBold = false;
+    };
+
+    traverse(div, false);
+    commitLine();
     
     if (!hasAnyPuxador) {
       return htmlString; // Fallback to raw string if no bold found
     }
     
-    while (blocks.length > 0 && blocks[blocks.length - 1] === ' ') {
+    while (blocks.length > 0 && (typeof blocks[blocks.length - 1] === 'string' && blocks[blocks.length - 1].trim() === '')) {
       blocks.pop(); // Clean trailing empty spaces
     }
     
@@ -194,13 +227,14 @@ export default function SongCard({ song, isPrintVersion = false, defaultRevision
 
   if (!song) return null;
 
-  const handlePrint = ({ format, isBW, isBulk }) => {
+  const handlePrint = ({ format, isBW, isBulk, printSections }) => {
     if (isBulk && onPrintAll) {
       setShowPrintModal(false);
-      onPrintAll({ format, isBW });
+      onPrintAll({ format, isBW, printSections });
       return;
     }
     setShowPrintModal(false);
+    setLocalPrintSections(printSections);
     setIsPrinting(true);
     
     // Définir classes for print
@@ -310,56 +344,40 @@ export default function SongCard({ song, isPrintVersion = false, defaultRevision
           </div>
         )}
 
-        <div className="grid grid-cols-2 gap-3 md:gap-6 print:break-inside-avoid">
+        <div className={`grid ${getSectionVisibility('originale') && getSectionVisibility('phonetique') ? 'grid-cols-2' : 'grid-cols-1'} gap-3 md:gap-6 print:break-inside-avoid`}>
           {/* Colonne Originale */}
-          <div className="flex flex-col">
-            <h3 className="bg-[#f5f0e6] dark:bg-[#2a2622] text-encre-noire dark:text-stone-200 text-center py-1 md:py-1.5 px-2 rounded font-cactus tracking-widest text-sm md:text-lg border border-encre-noire/10 mb-2 lowercase capitalize print:text-sm">
-              Version Originale
-            </h3>
-            <div className="font-medium text-[11px] md:text-[13px] leading-normal print:leading-snug print:text-[11px] text-encre-noire px-1 md:px-2">
-              {renderLyricsArray(song?.parolesOriginales, 'originales')}
-            </div>
-          </div>
-
-          {/* Colonne Phonétique */}
-          <div className="flex flex-col">
-            <h3 className="bg-[#f5f0e6] dark:bg-[#2a2622] text-encre-noire dark:text-stone-200 text-center py-1 md:py-1.5 px-2 rounded font-cactus tracking-widest text-sm md:text-lg border border-encre-noire/10 mb-2 lowercase capitalize print:text-sm">
-              Version Phonétique
-            </h3>
-            <div className="font-medium text-[11px] md:text-[13px] leading-normal print:leading-snug print:text-[11px] text-encre-noire/80 px-1 md:px-2">
-              {renderLyricsArray(song?.parolesPhonetiques, 'phonetiques')}
-            </div>
-          </div>
-        </div>
-
-        {/* Condition : s'il y a du contenu supplémentaire, on le groupe pour gérer le saut de page */}
-        {(song?.traduction || (Array.isArray(song?.notesLexique) ? song.notesLexique.length > 0 : song?.notesLexique) || song?.anecdote) && (
-          <div className="print:break-before-page">
-            {/* Clone de l'en-tête (Print-only) comme demandé */}
-            <div className="hidden print:block print:mb-4">
-              <div className="flex flex-col gap-1 md:gap-2 mt-2 md:mt-0">
-                <div className="flex flex-col items-center justify-center relative w-full">
-                  <h1 className="text-2xl md:text-4xl font-cactus tracking-widest text-[var(--color-cordel-ocre,#c05621)] text-center mt-1 print:mt-0 print:text-3xl relative z-20">
-                    {song?.titre || "Titre Inconnu"}
-                  </h1>
-                </div>
-                <div className="flex justify-between items-center mt-1 text-[10px] md:text-sm font-extrabold uppercase tracking-widest text-cordel-master-dark opacity-80">
-                  <div className="text-left font-cactus text-base md:text-xl lowercase tracking-wider capitalize print:text-base">
-                    {song?.nacao ? renderFlashcard('nacao-clone', <span>{song.nacao}</span>) : null}
-                  </div>
-                  <div className="text-right font-cactus text-base md:text-xl lowercase tracking-wider capitalize print:text-base">
-                    {song?.rythme ? renderFlashcard('rythme-clone', <span>{song.rythme}</span>) : null}
-                  </div>
-                </div>
-                <hr className="border-t-4 border-[var(--color-cordel-ocre,#c05621)] mt-2 print:mt-1 mb-1 md:mb-2" />
+          {getSectionVisibility('originale') && (
+            <div className="flex flex-col">
+              <h3 className="bg-[#f5f0e6] dark:bg-[#2a2622] text-encre-noire dark:text-stone-200 text-center py-1 md:py-1.5 px-2 rounded font-cactus tracking-widest text-sm md:text-lg border border-encre-noire/10 mb-2 lowercase capitalize print:text-sm">
+                Version Originale
+              </h3>
+              <div className="font-medium text-[11px] md:text-[13px] leading-normal print:leading-snug print:text-[11px] text-encre-noire px-1 md:px-2">
+                {renderLyricsArray(song?.parolesOriginales, 'originales')}
               </div>
             </div>
+          )}
 
-            {/* Séparateur pour la suite, caché à l'impression car on a l'en-tête cloné */}
+          {/* Colonne Phonétique */}
+          {getSectionVisibility('phonetique') && (
+            <div className="flex flex-col">
+              <h3 className="bg-[#f5f0e6] dark:bg-[#2a2622] text-encre-noire dark:text-stone-200 text-center py-1 md:py-1.5 px-2 rounded font-cactus tracking-widest text-sm md:text-lg border border-encre-noire/10 mb-2 lowercase capitalize print:text-sm">
+                Version Phonétique
+              </h3>
+              <div className="font-medium text-[11px] md:text-[13px] leading-normal print:leading-snug print:text-[11px] text-encre-noire/80 px-1 md:px-2">
+                {renderLyricsArray(song?.parolesPhonetiques, 'phonetiques')}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Sections additionnelles */}
+        {(song?.traduction || (Array.isArray(song?.notesLexique) ? song.notesLexique.length > 0 : song?.notesLexique) || song?.anecdote) && (
+          <div>
+            {/* Séparateur pour la suite */}
             <hr className="border-t-4 border-encre-noire/10 my-4 md:my-6 print:hidden" />
 
             {/* Section Traduction */}
-            {song?.traduction && (
+            {song?.traduction && getSectionVisibility('traduction') && (
               <div className="mb-4">
                 <h3 className="text-lg md:text-2xl font-cactus tracking-widest text-[var(--color-cordel-ocre,#c05621)] mb-1 lowercase capitalize print:text-lg">
                   Traduction en français
@@ -371,7 +389,7 @@ export default function SongCard({ song, isPrintVersion = false, defaultRevision
             )}
 
             {/* Encart Lexique */}
-            {((Array.isArray(song?.notesLexique) && song.notesLexique.length > 0) || (typeof song?.notesLexique === 'string' && song.notesLexique)) && (
+            {((Array.isArray(song?.notesLexique) && song.notesLexique.length > 0) || (typeof song?.notesLexique === 'string' && song.notesLexique)) && getSectionVisibility('lexique') && (
               <div className="mt-4 bg-[#f5f0e6]/60 dark:bg-[#201d1a] border-l-4 border-[var(--color-cordel-ocre,#c05621)] p-3 md:p-4 rounded-r-md print:mt-2">
                 <h4 className="text-[10px] md:text-xs font-black uppercase tracking-widest text-[var(--color-cordel-ocre,#c05621)] mb-1 flex items-center gap-2 print:text-[10px]">
                   <span>📖</span> Lexique & Notes
@@ -396,7 +414,7 @@ export default function SongCard({ song, isPrintVersion = false, defaultRevision
             )}
 
             {/* Section Anecdote */}
-            {song?.anecdote && (
+            {song?.anecdote && getSectionVisibility('anecdote') && (
               <div className="mt-4 bg-[#f5f0e6]/40 dark:bg-[#201d1a]/40 border border-dashed border-encre-noire/20 p-3 md:p-4 rounded-md print:mt-2">
                 <h4 className="text-[10px] md:text-xs font-black uppercase tracking-widest text-cordel-master-dark opacity-75 mb-1 flex items-center gap-2 print:text-[10px]">
                   <span>💡</span> Anecdote
@@ -428,7 +446,7 @@ export default function SongCard({ song, isPrintVersion = false, defaultRevision
     {isPrinting && createPortal(
       <div className="print:block bg-white w-full">
         <div className="print-song-page">
-          <SongCard song={song} defaultRevisionMode={false} isPrintVersion={true} />
+          <SongCard song={song} defaultRevisionMode={false} isPrintVersion={true} printSections={localPrintSections} />
         </div>
       </div>,
       document.body

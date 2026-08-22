@@ -6,6 +6,7 @@ import XiloAvatar from '../XiloAvatar';
 
 export default function EventVolunteerSection({ event, user, allUsers = [], t }) {
   const [loading, setLoading] = useState(false);
+  const [customNames, setCustomNames] = useState({});
 
   const volunteerShifts = event.volunteerShifts || [];
   if (volunteerShifts.length === 0) {
@@ -33,6 +34,53 @@ export default function EventVolunteerSection({ event, user, allUsers = [], t })
     } catch (err) {
       console.error("Error updating volunteer shift registrations:", err);
       alert("Erreur lors de l'inscription / désinscription.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAddCustomName = async (shiftId, name) => {
+    if (!event.id || !name || !name.trim() || loading) return;
+    setLoading(true);
+    try {
+      const eventRef = doc(db, 'events', event.id);
+      const updatedShifts = volunteerShifts.map((shift) => {
+        if (shift.id === shiftId) {
+          const inscrits = shift.inscrits || [];
+          if (!inscrits.includes(name.trim())) {
+            return { ...shift, inscrits: [...inscrits, name.trim()] };
+          }
+        }
+        return shift;
+      });
+
+      await updateDoc(eventRef, { volunteerShifts: updatedShifts });
+      setCustomNames(prev => ({ ...prev, [shiftId]: '' }));
+    } catch (err) {
+      console.error("Error adding custom name:", err);
+      alert("Erreur lors de l'ajout.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRemoveName = async (shiftId, nameToRemove) => {
+    if (!event.id || loading) return;
+    setLoading(true);
+    try {
+      const eventRef = doc(db, 'events', event.id);
+      const updatedShifts = volunteerShifts.map((shift) => {
+        if (shift.id === shiftId) {
+          const inscrits = shift.inscrits || [];
+          return { ...shift, inscrits: inscrits.filter(n => n !== nameToRemove) };
+        }
+        return shift;
+      });
+
+      await updateDoc(eventRef, { volunteerShifts: updatedShifts });
+    } catch (err) {
+      console.error("Error removing name:", err);
+      alert("Erreur lors de la suppression.");
     } finally {
       setLoading(false);
     }
@@ -94,33 +142,59 @@ export default function EventVolunteerSection({ event, user, allUsers = [], t })
                       <span className="text-[10px] italic opacity-60">Aucun bénévole inscrit.</span>
                     ) : (
                       <div className="flex flex-wrap gap-1.5 mt-1">
-                        {inscrits.map((uid) => {
-                          const member = allUsers.find((u) => u.id === uid) || {
-                            id: uid,
-                            name: 'Membre inconnu',
-                            photoURL: ''
-                          };
-                          // Gérer initials for missing photos
-                          const displayName = member.prenom
-                            ? `${member.prenom} ${member.nom ? member.nom.charAt(0) + '.' : ''}`
-                            : member.name || 'Membre';
+                        {inscrits.map((uidOrName) => {
+                          const member = allUsers.find((u) => u.id === uidOrName);
+                          const isCustomName = !member;
+                          const displayName = isCustomName 
+                            ? uidOrName 
+                            : (member.prenom ? `${member.prenom} ${member.nom ? member.nom.charAt(0) + '.' : ''}` : member.name || 'Membre');
 
                           return (
                             <div
-                              key={uid}
+                              key={uidOrName}
                               className="inline-flex items-center gap-1.5 bg-cordel-bg-light/35 border border-encre-noire/10 px-1.5 py-0.5 rounded text-[10px] font-semibold"
                             >
                               <XiloAvatar
-                                src={member.photoURL}
-                                name={member.name || displayName}
+                                src={member?.photoURL || ''}
+                                name={displayName}
                                 size={18}
                               />
                               <span className="truncate max-w-[90px]">{displayName}</span>
+                              {isCustomName && (
+                                <button 
+                                  onClick={() => handleRemoveName(shift.id, uidOrName)}
+                                  className="ml-1 text-[var(--color-cordel-rouge,#8b2a1a)] font-bold hover:opacity-75"
+                                  title="Retirer"
+                                >
+                                  ×
+                                </button>
+                              )}
                             </div>
                           );
                         })}
                       </div>
                     )}
+                  </div>
+
+                  {/* Ajouter Externe */}
+                  <div className="flex items-center gap-2 mt-3">
+                    <input 
+                      type="text" 
+                      placeholder="Inscrire par nom..."
+                      value={customNames[shift.id] || ''}
+                      onChange={(e) => setCustomNames(prev => ({ ...prev, [shift.id]: e.target.value }))}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') handleAddCustomName(shift.id, customNames[shift.id]);
+                      }}
+                      className="flex-1 text-[10px] p-1.5 border border-encre-noire/20 rounded focus:border-[var(--color-cordel-vert,#2d6a4f)] outline-none bg-white/50"
+                    />
+                    <button 
+                      onClick={() => handleAddCustomName(shift.id, customNames[shift.id])}
+                      disabled={loading || !customNames[shift.id]?.trim()}
+                      className="text-[10px] font-bold bg-encre-noire/5 hover:bg-encre-noire/10 px-2 py-1.5 rounded disabled:opacity-50 text-encre-noire transition-colors border border-transparent hover:border-encre-noire/20"
+                    >
+                      Ajouter
+                    </button>
                   </div>
                 </div>
               </div>

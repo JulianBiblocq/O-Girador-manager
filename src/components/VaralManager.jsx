@@ -57,8 +57,9 @@ export default function VaralManager({ groupId, onBack, role, isSystemAdmin, isE
     setSelectedSongsIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
   };
   
-  const handleBulkPrint = ({ format, isBW }) => {
+  const handleBulkPrint = ({ format, isBW, printSections }) => {
     setShowBulkPrintModal(false);
+    setPrintSections(printSections);
     setIsPrinting(true);
     
     // Définir classes for print
@@ -939,7 +940,7 @@ export default function VaralManager({ groupId, onBack, role, isSystemAdmin, isE
           .filter(d => selectedSongsIds.includes(d.id))
           .map(song => (
             <div key={song.id} className="print-song-page">
-              <SongCard song={song} defaultRevisionMode={false} />
+              <SongCard song={song} defaultRevisionMode={false} isPrintVersion={true} printSections={printSections} />
             </div>
           ))}
       </div>,
