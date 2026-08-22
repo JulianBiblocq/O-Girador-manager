@@ -18,7 +18,7 @@
     "@tiptap/extension-link": "^3.29.2",
     "@tiptap/extension-text-align": "^3.29.2",
     "@tiptap/react": "^3.30.0",
-    "@tiptap/starter-kit": "^3.30.0",
+    "@tiptap/starter-kit": "^3.30.2",
     "browser-image-compression": "^2.0.2",
     "dompurify": "^3.4.13",
     "firebase": "^12.17.1",
