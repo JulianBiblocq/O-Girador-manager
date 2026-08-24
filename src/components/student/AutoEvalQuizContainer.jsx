@@ -7,6 +7,7 @@ import SeloAxeStamp from '../SeloAxeStamp';
 import FirestoreMediaRenderer from './FirestoreMediaRenderer';
 import { generateQuizFromSong, generateQuizFromSheet, generateQuizFromDancador } from '../../utils/quizGenerator';
 import { generateTranslationQuiz } from '../../utils/translationQuizEngine';
+import { calculateNextReview } from '../../utils/spacedRepetitionEngine';
 import StudentToadasProgress from './StudentToadasProgress';
 import { useDancadorSteps } from '../../hooks/useDancadorData';
 import { useTranslation } from '../LanguageContext';
@@ -17,6 +18,9 @@ export default function AutoEvalQuizContainer({
   allSheets = [],
   initialTheme = null,
   targetedToadaId = null,
+  preGeneratedQuestions = null,
+  isExamMode = false,
+  examConfig = null,
   onExit = null
 }) {
   const { t } = useTranslation();
@@ -41,6 +45,7 @@ export default function AutoEvalQuizContainer({
   const [currentIndex, setCurrentIndex] = useState(0);
   const [score, setScore] = useState(0);
   const [wrongAnswers, setWrongAnswers] = useState([]); // [{ prompt, correct }]
+  const [questionResults, setQuestionResults] = useState([]); // [{ q, isCorrect }]
   
   const [selectedChoice, setSelectedChoice] = useState(null);
   const [showFeedback, setShowFeedback] = useState(false);
@@ -90,14 +95,18 @@ const startQuiz = (theme, specificToadaId = null) => {
   setScore(0);
   setCurrentIndex(0);
   setWrongAnswers([]);
+  setQuestionResults([]);
   
-  const qcmGlobalConfig = { ...globalConfig, difficulty: selectedDifficulty, t };
+  const difficultyToUse = isExamMode && examConfig ? examConfig.difficulty : selectedDifficulty;
+  const qcmGlobalConfig = { ...globalConfig, difficulty: difficultyToUse, t };
 
   // Génération dynamique
   let generated = [];
-  const targetCount = globalConfig.questionCount;
+  const targetCount = isExamMode && examConfig ? examConfig.questionCount : globalConfig.questionCount;
   
-  if (theme === 'traduction') {
+  if (theme === 'daily_revision' && preGeneratedQuestions) {
+    generated = [...preGeneratedQuestions];
+  } else if (theme === 'traduction') {
     generated = generateTranslationQuiz({ count: targetCount, direction: 'MIXED', difficulty: selectedDifficulty, customDistractors });
   } else if (theme === 'toadas') {
     if (specificToadaId) {
@@ -180,6 +189,8 @@ const startQuiz = (theme, specificToadaId = null) => {
     setSelectedChoice(choice);
     setShowFeedback(true);
     
+    setQuestionResults(prev => [...prev, { q: questions[currentIndex], isCorrect: choice.isCorrect }]);
+    
     if (choice.isCorrect) {
       setScore(s => s + 1);
     } else {
@@ -244,6 +255,43 @@ const startQuiz = (theme, specificToadaId = null) => {
           }, { merge: true });
         }
       }
+
+      // 3. Sauvegarde de la répétition espacée par question
+      if (profileData.groupId) {
+        const srRef = doc(db, 'users', profileData.uid, 'spaced_repetition', profileData.groupId);
+        const srSnap = await getDoc(srRef);
+        const srData = srSnap.exists() ? srSnap.data() : {};
+        
+        let srUpdates = { ...srData };
+        let hasUpdates = false;
+
+        questionResults.forEach(res => {
+          if (!res.q.id) return; // Ignorer les questions sans ID
+          const currentStats = srUpdates[res.q.id] || { consecutiveCorrect: 0 };
+          srUpdates[res.q.id] = calculateNextReview(res.isCorrect, currentStats.consecutiveCorrect);
+          hasUpdates = true;
+        });
+
+        // Ajouter la dernière question (car le state `questionResults` n'est pas encore mis à jour dans ce contexte asynchrone)
+        const finalChoiceIsCorrect = selectedChoice?.isCorrect && !showFeedback;
+        if (questions[currentIndex]?.id) {
+          const currentStats = srUpdates[questions[currentIndex].id] || { consecutiveCorrect: 0 };
+          srUpdates[questions[currentIndex].id] = calculateNextReview(finalChoiceIsCorrect, currentStats.consecutiveCorrect);
+          hasUpdates = true;
+        }
+
+        if (hasUpdates) {
+          await setDoc(srRef, srUpdates);
+        }
+      }
+      
+      // 4. Si on a une fonction de retour (particulièrement utile pour les examens)
+      if (onExit) {
+        onExit({
+          score: finalScore,
+          total: questions.length
+        });
+      }
     } catch (e) {
       console.error(e);
     } finally {
@@ -259,10 +307,13 @@ const startQuiz = (theme, specificToadaId = null) => {
     return (
       <div className="w-full relative">
         <button 
-          onClick={() => setShowToadaProgress(false)} 
+          onClick={() => {
+             if (onExit) onExit(null);
+             else setShowToadaProgress(false);
+          }} 
           className="absolute top-4 left-4 z-10 text-[10px] font-black uppercase text-encre-noire/50 hover:text-cordel-rouge"
         >
-          🔙 Retour à l'accueil QCM
+          🔙 Retour
         </button>
         <div className="pt-8">
           <StudentToadasProgress 
@@ -277,7 +328,15 @@ const startQuiz = (theme, specificToadaId = null) => {
 
   if (step === 'HOME') {
     return (
-      <div className="flex flex-col gap-8 w-full max-w-4xl mx-auto p-4 select-none">
+      <div className="flex flex-col gap-8 w-full max-w-4xl mx-auto p-4 select-none relative">
+        {onExit && (
+           <button 
+             onClick={() => onExit(null)} 
+             className="absolute top-0 left-0 z-10 text-[10px] font-black uppercase text-encre-noire/50 hover:text-cordel-rouge"
+           >
+             🔙 Quitter le QCM
+           </button>
+        )}
         <div className="text-center flex flex-col gap-2">
           <h2 className="text-2xl md:text-3xl font-cactus uppercase text-cordel-wood tracking-widest">
             Auto-évaluation

@@ -219,6 +219,33 @@ service cloud.firestore {
         resource.data.managedBy == request.auth.uid &&
         resource.data.isDependent == true
       );
+
+      // Parcours pédagogique : chaque membre gère son propre parcours d'aisance.
+      // Les admins/mestres peuvent lire le parcours de tout le monde (suivi pédagogique).
+      match /parcours/{document=**} {
+        allow read: if isAuthenticated() && (
+          request.auth.uid == userId || isAdminOrMestre()
+        );
+        allow write: if isAuthenticated() && request.auth.uid == userId;
+      }
+
+      // Répétition espacée (historique détaillé des quiz par question)
+      match /spaced_repetition/{document=**} {
+        allow read: if isAuthenticated() && (
+          request.auth.uid == userId || isAdminOrMestre()
+        );
+        allow write: if isAuthenticated() && request.auth.uid == userId;
+      }
+
+      // Certifications / Examens passés
+      match /certifications/{document=**} {
+        allow read: if isAuthenticated() && (
+          request.auth.uid == userId || isAdminOrMestre()
+        );
+        allow write: if isAuthenticated() && (
+          request.auth.uid == userId || isAdminOrMestre()
+        );
+      }
     }
 
     // Inventory: Lecture si authentifié. Écriture réservée aux admins/mestres et membres avec badge Logistique/Inventaire.

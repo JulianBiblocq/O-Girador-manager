@@ -36,7 +36,7 @@ export default function useTenantResolver() {
         if (hostname === 'o-girador.com' || hostname === 'www.o-girador.com') {
           currentMode = 'orchestrador';
           extractedGroupId = null;
-        } else if (hostname.includes('o-girador.com')) {
+        } else if (hostname.includes('o-girador.com') || hostname.includes('web.app') || hostname.includes('firebaseapp.com')) {
           // Sous-domaine standard de notre écosystème
           if (hostname.includes('mostrador')) {
             currentMode = 'mostrador';
@@ -50,7 +50,7 @@ export default function useTenantResolver() {
 
           const parts = hostname.split('.');
           // Si le premier sous-domaine n'est pas le nom de l'app, c'est le groupe
-          if (parts.length > 2 && !['mostrador', 'organizador', 'manager', 'sequenciador', 'dancador', 'www'].includes(parts[0])) {
+          if (parts.length > 2 && !['mostrador', 'organizador', 'manager', 'sequenciador', 'dancador', 'www', 'o-girador-organizador'].includes(parts[0])) {
             extractedGroupId = parts[0];
           }
         } else {

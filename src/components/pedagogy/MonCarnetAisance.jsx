@@ -1,8 +1,14 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import CordelCard from '../CordelCard';
 import SongCard from '../SongCard';
 import { parseSequencerJson } from '../../utils/sequencerParser';
+import { generateQuizFromSheet } from '../../utils/quizGenerator';
+import AutoEvalQuizContainer from '../student/AutoEvalQuizContainer';
+import QcmSequenceurBlindTest from './QcmSequenceurBlindTest';
+import DailyRevisionSession from './DailyRevisionSession';
+import ExamDashboard from './ExamDashboard';
 
+// Icône catégorielle pour les fiches culture (xilo-gravure SVG)
 export const CultureCategoryIcon = ({ docItem }) => {
   const theme = ((docItem.themeCulture || '') + ' ' + (docItem.stampKey || '') + ' ' + (docItem.categorieFiche || '') + ' ' + (docItem.sousCategorieFiche || '')).toLowerCase();
   const isOrixa = theme.includes('orixa') || theme.includes('spiritualit');
@@ -40,6 +46,176 @@ export const CultureCategoryIcon = ({ docItem }) => {
   return <span className="text-[14px]">📚</span>;
 };
 
+// --- Sous-composant : Barre de boutons d'aisance réutilisable ---
+const ComfortBar = ({ itemId, evaluations, handleSetEvaluation, comfortLevels }) => (
+  <div className="flex flex-wrap gap-1 justify-end max-w-[60%] mt-2 sm:mt-0">
+    {comfortLevels.map(lvl => (
+      <button
+        key={lvl.level}
+        type="button"
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          handleSetEvaluation(itemId, lvl.level);
+        }}
+        className={`text-[9px] font-black uppercase px-2 py-1 rounded border border-encre-noire/30 transition-all ${evaluations[itemId] === lvl.level ? 'bg-cordel-wood text-white shadow-[1px_1px_0px_0px_#181716]' : 'bg-white text-encre-noire hover:bg-neutral-100'}`}
+      >
+        {lvl.label}
+      </button>
+    ))}
+  </div>
+);
+
+// --- Sous-composant : Mini QCM inline pour une fiche (Culture / Atelier) ---
+const InlineQuiz = ({ fiche, allSheets, allSongs }) => {
+  const [questions, setQuestions] = useState([]);
+  const [currentIdx, setCurrentIdx] = useState(0);
+  const [selectedChoice, setSelectedChoice] = useState(null);
+  const [showFeedback, setShowFeedback] = useState(false);
+  const [score, setScore] = useState(0);
+  const [isStarted, setIsStarted] = useState(false);
+  const [isFinished, setIsFinished] = useState(false);
+
+  // Génération des questions à la demande via le moteur existant
+  const startQuiz = useCallback(() => {
+    const generated = generateQuizFromSheet(fiche, allSheets, allSongs, { difficulty: 'medium' });
+    if (generated.length === 0) return;
+    // Mélanger et limiter à 5 questions pour un quiz rapide inline
+    const shuffled = [...generated].sort(() => Math.random() - 0.5).slice(0, 5);
+    setQuestions(shuffled);
+    setCurrentIdx(0);
+    setScore(0);
+    setSelectedChoice(null);
+    setShowFeedback(false);
+    setIsFinished(false);
+    setIsStarted(true);
+  }, [fiche, allSheets, allSongs]);
+
+  // Gestion du choix de réponse
+  const handleChoice = (choice) => {
+    if (showFeedback) return;
+    setSelectedChoice(choice);
+    setShowFeedback(true);
+    if (choice.isCorrect) setScore(s => s + 1);
+
+    // Passage automatique à la question suivante après un délai
+    setTimeout(() => {
+      if (currentIdx < questions.length - 1) {
+        setCurrentIdx(i => i + 1);
+        setSelectedChoice(null);
+        setShowFeedback(false);
+      } else {
+        setIsFinished(true);
+      }
+    }, choice.isCorrect ? 1200 : 2500);
+  };
+
+  // État initial : bouton de lancement
+  if (!isStarted) {
+    return (
+      <button
+        type="button"
+        onClick={startQuiz}
+        className="mt-2 text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded border-2 border-dashed border-cordel-wood/40 text-cordel-wood bg-cordel-wood/5 hover:bg-cordel-wood/15 hover:border-cordel-wood/70 transition-all flex items-center gap-1.5"
+      >
+        🎯 Tester mes connaissances
+      </button>
+    );
+  }
+
+  // Quiz terminé : bilan
+  if (isFinished) {
+    const pct = score / questions.length;
+    const emoji = pct >= 0.8 ? '🏆' : pct >= 0.5 ? '🥁' : '🌱';
+    return (
+      <div className="mt-3 p-3 bg-[#fdfaf2] border border-dashed border-cordel-wood/30 rounded-lg flex flex-col gap-2 items-center text-center">
+        <span className="text-2xl">{emoji}</span>
+        <p className="text-sm font-black text-cordel-wood">{score} / {questions.length}</p>
+        <p className="text-[10px] font-bold text-encre-noire/70">
+          {pct >= 0.8 ? 'Excellent ! Tu maîtrises le sujet.' : pct >= 0.5 ? 'Pas mal ! Continue de réviser.' : 'Continue à réviser avec les fiches du Varal !'}
+        </p>
+        <div className="flex gap-2 mt-1">
+          <button type="button" onClick={startQuiz} className="text-[9px] font-bold uppercase px-2 py-1 rounded bg-cordel-wood text-white hover:bg-cordel-wood/80 transition-all">
+            🔄 Rejouer
+          </button>
+          <button type="button" onClick={() => setIsStarted(false)} className="text-[9px] font-bold uppercase px-2 py-1 rounded border border-encre-noire/30 text-encre-noire hover:bg-neutral-100 transition-all">
+            ✕ Fermer
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Quiz en cours : affichage de la question courante
+  const q = questions[currentIdx];
+  const choices = q.choices || [];
+
+  return (
+    <div className="mt-3 p-3 bg-[#fdfaf2] border border-dashed border-cordel-wood/30 rounded-lg flex flex-col gap-3">
+      {/* Barre de progression */}
+      <div className="flex justify-between items-center">
+        <span className="text-[9px] font-black uppercase text-cordel-wood tracking-wider">
+          Q{currentIdx + 1}/{questions.length}
+        </span>
+        <span className="text-[9px] font-bold text-[#2d6a4f]">⭐ {score}</span>
+        <button type="button" onClick={() => setIsStarted(false)} className="text-[9px] font-bold text-encre-noire/40 hover:text-[#8b2a1a] transition-colors">✕</button>
+      </div>
+      {/* Instruction */}
+      {q.instruction && (
+        <p className="text-[9px] font-black uppercase tracking-wider text-cordel-master-dark/60">{q.instruction}</p>
+      )}
+      {/* Texte de la question */}
+      <p className="text-xs font-bold text-encre-noire leading-snug">
+        {q.questionText || q.prompt}
+      </p>
+      {/* Choix de réponses */}
+      <div className="grid grid-cols-1 gap-1.5">
+        {choices.map((c, i) => {
+          let btnCls = "bg-white border-encre-noire/20 text-encre-noire hover:bg-neutral-50";
+          if (showFeedback) {
+            if (c.isCorrect) btnCls = "bg-[#2d6a4f] text-white border-[#1b4332]";
+            else if (selectedChoice?.text === c.text) btnCls = "bg-[#8b2a1a] text-white border-[#5c1c11] opacity-80";
+            else btnCls = "bg-white border-encre-noire/10 text-encre-noire/30 opacity-40";
+          }
+          return (
+            <button
+              key={i}
+              type="button"
+              disabled={showFeedback}
+              onClick={() => handleChoice(c)}
+              className={`p-2 rounded border text-[11px] font-bold transition-all text-left ${btnCls}`}
+            >
+              {c.text}
+            </button>
+          );
+        })}
+      </div>
+      {/* Feedback après réponse */}
+      {showFeedback && (
+        <p className={`text-[10px] font-bold italic ${selectedChoice?.isCorrect ? 'text-[#2d6a4f]' : 'text-[#c05621]'}`}>
+          {selectedChoice?.isCorrect ? '✅ Correct !' : `🌱 ${q.feedback || 'La bonne réponse : ' + (choices.find(c => c.isCorrect)?.text || '')}`}
+        </p>
+      )}
+    </div>
+  );
+};
+
+// --- Utilitaire : détection de la catégorie culturelle pour le groupement ---
+const getCultureCategory = (fiche) => {
+  const theme = ((fiche.themeCulture || '') + ' ' + (fiche.categorieFiche || '') + ' ' + (fiche.sousCategorieFiche || '')).toLowerCase();
+  if (theme.includes('orixa') || theme.includes('spiritualit')) return 'Orixás & Spiritualité';
+  if (theme.includes('cortejo') || theme.includes('cortège')) return 'Cortège Royal';
+  if (theme.includes('cuisine') || theme.includes('gastronomi')) return 'Cuisine & Gastronomie';
+  if (theme.includes('histoire')) return 'Histoire';
+  if (theme.includes('musique') || theme.includes('style')) return 'Musique & Styles';
+  if (theme.includes('territoire') || theme.includes('geograph')) return 'Territoire & Géographie';
+  if (theme.includes('folklore')) return 'Folklore & Légendes';
+  return 'Autres';
+};
+
+// ============================================================
+// COMPOSANT PRINCIPAL — Carnet d'Aisance
+// ============================================================
 export default function MonCarnetAisance({
   evaluations,
   handleSetEvaluation,
@@ -49,8 +225,10 @@ export default function MonCarnetAisance({
   songs,
   educationalSheets,
   sequenceurUrl,
-  enabledModules = {}
+  enabledModules = {},
+  profileData
 }) {
+  // Niveaux de confort (barème à 4 paliers)
   const comfortLevels = [
     { level: 'decouverte', label: '🌱 En découverte' },
     { level: 'pratique', label: '🌿 En pratique' },
@@ -58,64 +236,163 @@ export default function MonCarnetAisance({
     { level: 'referent', label: '👑 Référent' }
   ];
 
+  // Onglets dynamiques selon les modules activés par le Mestre
   const subTabs = useMemo(() => {
     const tabs = [];
-    if (enabledModules?.monParcoursPercussion !== false) {
-      tabs.push({ id: 'rythmes', label: 'Percussion' });
-    }
-    if (enabledModules?.monParcoursDanse !== false) {
-      tabs.push({ id: 'danse', label: 'Danse' });
-    }
-    if (enabledModules?.monParcoursChant !== false) {
-      tabs.push({ id: 'chants', label: 'Chants' });
-    }
-    if (enabledModules?.monParcoursAtelier !== false) {
-      tabs.push({ id: 'atelier', label: 'Atelier (Lutherie)' });
-    }
-    if (enabledModules?.monParcoursCulture !== false) {
-      tabs.push({ id: 'culture', label: 'Culture' });
-    }
+    tabs.push({ id: 'revision', label: '🧠 Révisions' });
+    tabs.push({ id: 'examens', label: '🏅 Examens' });
+    
+    if (enabledModules?.monParcoursPercussion !== false) tabs.push({ id: 'rythmes', label: '🥁 Percussion' });
+    if (enabledModules?.monParcoursDanse !== false) tabs.push({ id: 'danse', label: '💃 Danse' });
+    if (enabledModules?.monParcoursChant !== false) tabs.push({ id: 'chants', label: '🎤 Chants' });
+    if (enabledModules?.monParcoursAtelier !== false) tabs.push({ id: 'atelier', label: '🛠️ Atelier' });
+    if (enabledModules?.monParcoursCulture !== false) tabs.push({ id: 'culture', label: '📚 Culture' });
     return tabs;
   }, [enabledModules]);
 
-  const [activeSubTab, setActiveSubTab] = useState(subTabs.length > 0 ? subTabs[0].id : 'rythmes');
+  const [activeSubTab, setActiveSubTab] = useState(subTabs.length > 0 ? subTabs[0].id : 'revision');
 
+  // Synchronisation si l'onglet actif n'existe plus dans la liste
   useEffect(() => {
     if (subTabs.length > 0 && !subTabs.find(t => t.id === activeSubTab)) {
       setActiveSubTab(subTabs[0].id);
     }
   }, [subTabs, activeSubTab]);
 
+  // État pour le Blind Test inline (onglet Percussion)
+  const [blindTestRhythm, setBlindTestRhythm] = useState(null);
+
+  // État pour le quiz ciblé sur une Toada (onglet Chants)
+  const [quizToadaId, setQuizToadaId] = useState(null);
+
+  // Construction de l'URL du séquenceur avec paramètres
   const getSequencerUrl = (jsonUrl, bpm) => {
     const baseUrl = sequenceurUrl || 'https://sequenceur.app';
     if (!jsonUrl) return baseUrl;
     let url = baseUrl.includes('?') 
       ? `${baseUrl}&file=${encodeURIComponent(jsonUrl)}`
       : `${baseUrl}?file=${encodeURIComponent(jsonUrl)}`;
-    if (bpm) {
-      url += `&bpm=${bpm}`;
-    }
+    if (bpm) url += `&bpm=${bpm}`;
     return url;
   };
 
+  // Groupement des fiches culture par catégorie thématique
+  const cultureGrouped = useMemo(() => {
+    const fiches = educationalSheets.filter(f => f.categorie?.toLowerCase() === 'culture' || f.type === 'culture_fiche');
+    const groups = {};
+    fiches.forEach(f => {
+      const cat = getCultureCategory(f);
+      if (!groups[cat]) groups[cat] = [];
+      groups[cat].push(f);
+    });
+    return groups;
+  }, [educationalSheets]);
+
+  // Fiches atelier filtrées
+  const atelierSheets = useMemo(() => {
+    return educationalSheets.filter(f => {
+      const cat = f.categorie?.toLowerCase() || '';
+      return cat.includes('atelier') || cat.includes('lutherie') || cat.includes('fabrication') || cat.includes('entretien');
+    });
+  }, [educationalSheets]);
+
+  // --- Vue plein écran : quiz ciblé sur une Toada ---
+  if (quizToadaId) {
+    return (
+      <div className="flex flex-col gap-4">
+        <button
+          type="button"
+          onClick={() => setQuizToadaId(null)}
+          className="self-start text-sm font-bold text-cordel-master-dark hover:text-cordel-wood underline underline-offset-4"
+        >
+          ← Retour au Carnet
+        </button>
+        <AutoEvalQuizContainer
+          profileData={profileData}
+          allSongs={songs}
+          allSheets={educationalSheets}
+          initialTheme="toadas"
+          targetedToadaId={quizToadaId}
+          onExit={() => setQuizToadaId(null)}
+        />
+      </div>
+    );
+  }
+
+  // --- Vue plein écran : Blind Test inline ---
+  if (blindTestRhythm) {
+    const rhythm = rhythms.find(r => r.id === blindTestRhythm);
+    let patternData = rhythmsJsonData[blindTestRhythm] || {
+      info: { name: rhythm?.titre || 'Inconnu' },
+      name: rhythm?.titre || 'Inconnu',
+      tracks: [{ name: 'Piste Inconnue', steps: ['-', '-', '-', '-'] }]
+    };
+
+    return (
+      <div className="flex flex-col gap-4">
+        <button
+          type="button"
+          onClick={() => setBlindTestRhythm(null)}
+          className="self-start text-sm font-bold text-cordel-master-dark hover:text-cordel-wood underline underline-offset-4"
+        >
+          ← Retour au Carnet
+        </button>
+        <QcmSequenceurBlindTest
+          patternId={blindTestRhythm}
+          patternData={patternData}
+          audioUrl={rhythm?.url}
+          onComplete={() => setBlindTestRhythm(null)}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex justify-center gap-2 mb-4 border-b border-dashed border-encre-noire/20 pb-4">
+      {/* SOUS-MENU DES ONGLETS DU PARCOURS */}
+      <div className="flex flex-wrap gap-2 mb-6">
         {subTabs.map(tab => (
           <button
             key={tab.id}
+            type="button"
             onClick={() => setActiveSubTab(tab.id)}
-            className={`px-4 py-1.5 text-xs font-bold uppercase tracking-widest rounded-full transition-all border ${
-              activeSubTab === tab.id 
-                ? 'border-cordel-wood bg-cordel-wood/10 text-cordel-wood' 
-                : 'border-transparent text-encre-noire/60 hover:bg-black/5 hover:text-encre-noire'
-            }`}
+            className={`px-4 py-2 rounded-lg font-black uppercase text-xs tracking-wider transition-all border-2 
+              ${activeSubTab === tab.id 
+                ? 'bg-cordel-wood text-[#fdfaf2] border-cordel-wood shadow-[2px_2px_0px_0px_#181716] -translate-y-0.5' 
+                : 'bg-white text-cordel-master-dark border-cordel-wood/20 hover:border-cordel-wood hover:bg-[#fdfaf2]'
+              }`}
           >
             {tab.label}
           </button>
         ))}
       </div>
 
+      {/* ================================================================ */}
+      {/* ONGLET RÉVISIONS                                                 */}
+      {/* ================================================================ */}
+      {activeSubTab === 'revision' && (
+        <DailyRevisionSession 
+          profileData={profileData} 
+          allSongs={songs} 
+          allSheets={educationalSheets} 
+          onExit={() => setActiveSubTab('rythmes')} 
+        />
+      )}
+
+      {/* ================================================================ */}
+      {/* ONGLET EXAMENS                                                   */}
+      {/* ================================================================ */}
+      {activeSubTab === 'examens' && (
+        <ExamDashboard 
+          profileData={profileData} 
+          allSongs={songs} 
+          allSheets={educationalSheets} 
+        />
+      )}
+
+      {/* ================================================================ */}
+      {/* ONGLET PERCUSSION                                                */}
+      {/* ================================================================ */}
       {activeSubTab === 'rythmes' && (
         <div className="flex flex-col gap-4">
           {rhythms.length === 0 ? (
@@ -143,22 +420,12 @@ export default function MonCarnetAisance({
                         </div>
                       )}
                     </div>
-                    {/* Echelle de confort */}
-                    <div className="flex flex-wrap gap-1 justify-end max-w-[60%]">
-                      {comfortLevels.map(lvl => (
-                        <button
-                          key={lvl.level}
-                          onClick={() => handleSetEvaluation(rhythm.id, lvl.level)}
-                          className={`text-[9px] font-black uppercase px-2 py-1 rounded border border-encre-noire/30 ${evaluations[rhythm.id] === lvl.level ? 'bg-cordel-wood text-white shadow-[1px_1px_0px_0px_#181716]' : 'bg-white text-encre-noire hover:bg-neutral-100'}`}
-                        >
-                          {lvl.label}
-                        </button>
-                      ))}
-                    </div>
+                    {/* Échelle de confort */}
+                    <ComfortBar itemId={rhythm.id} evaluations={evaluations} handleSetEvaluation={handleSetEvaluation} comfortLevels={comfortLevels} />
                   </div>
 
-                  {/* Entraînement / Calage */}
-                  <div className="flex items-center gap-2 mt-2 pt-3 border-t border-dashed border-cordel-master-dark/15">
+                  {/* Entraînement : liens Séquenceur + Blind Test */}
+                  <div className="flex flex-wrap items-center gap-2 mt-2 pt-3 border-t border-dashed border-cordel-master-dark/15">
                     <span className="text-[9px] font-black uppercase tracking-wider text-cordel-master-dark mr-2">
                       ⏱️ Entraînement :
                     </span>
@@ -173,6 +440,16 @@ export default function MonCarnetAisance({
                         {bpm} BPM
                       </a>
                     ))}
+                    {/* Bouton Blind Test inline — pont vers le séquenceur */}
+                    {(rhythm.isJson || rhythm.isAudio) && (
+                      <button
+                        type="button"
+                        onClick={() => setBlindTestRhythm(rhythm.id)}
+                        className="text-[9px] font-black uppercase px-2.5 py-1 rounded border border-cordel-wood/50 bg-cordel-wood/10 text-cordel-wood hover:bg-cordel-wood/20 transition-all"
+                      >
+                        🎧 Blind Test
+                      </button>
+                    )}
                   </div>
                 </CordelCard>
               );
@@ -181,11 +458,15 @@ export default function MonCarnetAisance({
         </div>
       )}
 
+      {/* ================================================================ */}
+      {/* ONGLET DANSE                                                     */}
+      {/* ================================================================ */}
       {activeSubTab === 'danse' && (
         <div className="flex flex-col gap-4">
-          <div className="bg-cordel-ocre/10 border-l-4 border-cordel-ocre p-3 mb-2 rounded-r">
+          <div className="bg-[#c05621]/10 border-l-4 border-[#c05621] p-3 mb-2 rounded-r">
             <p className="text-xs font-bold text-cordel-master-dark">
               💃 Évalue ton aisance chorégraphique sur chacun des rythmes (toadas, pas de base, variations).
+              Les pas du Dançador seront bientôt intégrés ici pour t'entraîner visuellement.
             </p>
           </div>
           {rhythms.length === 0 ? (
@@ -194,53 +475,44 @@ export default function MonCarnetAisance({
               <p className="text-sm font-bold text-encre-noire/70">Aucun rythme disponible pour le moment.</p>
             </div>
           ) : (
-            rhythms.map(rhythm => {
-              return (
-                <CordelCard key={rhythm.id} className="p-5 flex flex-col gap-4">
-                  <div className="flex justify-between items-start border-b border-dashed border-cordel-master-dark/20 pb-2">
-                    <div className="flex flex-col gap-1">
-                      <h3 className="text-sm font-black uppercase tracking-wider text-encre-noire">
-                        {rhythm.titre}
-                      </h3>
-                    </div>
-                    {/* Echelle de confort */}
-                    <div className="flex flex-wrap gap-1 justify-end max-w-[60%]">
-                      {comfortLevels.map(lvl => (
-                        <button
-                          key={lvl.level}
-                          onClick={() => handleSetEvaluation(rhythm.id, lvl.level)}
-                          className={`text-[9px] font-black uppercase px-2 py-1 rounded border border-encre-noire/30 ${evaluations[rhythm.id] === lvl.level ? 'bg-cordel-wood text-white shadow-[1px_1px_0px_0px_#181716]' : 'bg-white text-encre-noire hover:bg-neutral-100'}`}
-                        >
-                          {lvl.label}
-                        </button>
-                      ))}
-                    </div>
+            rhythms.map(rhythm => (
+              <CordelCard key={rhythm.id} className="p-5 flex flex-col gap-4">
+                <div className="flex justify-between items-start border-b border-dashed border-cordel-master-dark/20 pb-2">
+                  <div className="flex flex-col gap-1">
+                    <h3 className="text-sm font-black uppercase tracking-wider text-encre-noire">
+                      {rhythm.titre}
+                    </h3>
                   </div>
+                  {/* Évaluation danse = préfixée danse_ pour différencier de la percussion */}
+                  <ComfortBar itemId={`danse_${rhythm.id}`} evaluations={evaluations} handleSetEvaluation={handleSetEvaluation} comfortLevels={comfortLevels} />
+                </div>
 
-                  {/* Entraînement / Calage */}
-                  <div className="flex items-center gap-2 mt-2 pt-3 border-t border-dashed border-cordel-master-dark/15">
-                    <span className="text-[9px] font-black uppercase tracking-wider text-cordel-master-dark mr-2">
-                      ⏱️ Entraînement :
-                    </span>
-                    {[80, 100, 120].map(bpm => (
-                      <a
-                        key={bpm}
-                        href={getSequencerUrl(rhythm.jsonUrl, bpm)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-[9px] font-bold bg-[#f4ecd8] border border-encre-noire/50 px-2.5 py-1 rounded hover:bg-[#ebdcc0] shadow-[1px_1px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none transition-all"
-                      >
-                        {bpm} BPM
-                      </a>
-                    ))}
-                  </div>
-                </CordelCard>
-              );
-            })
+                {/* Entraînement / Calage */}
+                <div className="flex items-center gap-2 mt-2 pt-3 border-t border-dashed border-cordel-master-dark/15">
+                  <span className="text-[9px] font-black uppercase tracking-wider text-cordel-master-dark mr-2">
+                    ⏱️ Entraînement :
+                  </span>
+                  {[80, 100, 120].map(bpm => (
+                    <a
+                      key={bpm}
+                      href={getSequencerUrl(rhythm.jsonUrl, bpm)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[9px] font-bold bg-[#f4ecd8] border border-encre-noire/50 px-2.5 py-1 rounded hover:bg-[#ebdcc0] shadow-[1px_1px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none transition-all"
+                    >
+                      {bpm} BPM
+                    </a>
+                  ))}
+                </div>
+              </CordelCard>
+            ))
           )}
         </div>
       )}
 
+      {/* ================================================================ */}
+      {/* ONGLET CHANTS                                                    */}
+      {/* ================================================================ */}
       {activeSubTab === 'chants' && (
         <div className="flex flex-col gap-6">
           {songs.length === 0 ? (
@@ -252,11 +524,17 @@ export default function MonCarnetAisance({
             songs.map(songDoc => (
               <CordelCard key={songDoc.id} variant="default" className="relative p-5 flex flex-col gap-4">
                 <SongCard song={songDoc} />
+                {/* Barre d'aisance en overlay (émojis uniquement) */}
                 <div className="absolute top-4 right-4 flex gap-1 z-10 bg-white p-1 rounded border border-encre-noire/20 shadow-sm">
                   {comfortLevels.map(lvl => (
                     <button
                       key={lvl.level}
-                      onClick={() => handleSetEvaluation(songDoc.id, lvl.level)}
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleSetEvaluation(songDoc.id, lvl.level);
+                      }}
                       title={lvl.label}
                       className={`text-xs p-1.5 rounded transition-all ${evaluations[songDoc.id] === lvl.level ? 'bg-cordel-wood text-white scale-110 shadow-md' : 'bg-transparent text-encre-noire/50 hover:bg-neutral-100'}`}
                     >
@@ -264,106 +542,103 @@ export default function MonCarnetAisance({
                     </button>
                   ))}
                 </div>
+                {/* Bouton Quiz ciblé sur cette Toada — pont vers AutoEvalQuizContainer */}
+                <div className="flex justify-end mt-1">
+                  <button
+                    type="button"
+                    onClick={() => setQuizToadaId(songDoc.id)}
+                    className="text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded border-2 border-dashed border-cordel-wood/40 text-cordel-wood bg-cordel-wood/5 hover:bg-cordel-wood/15 hover:border-cordel-wood/70 transition-all flex items-center gap-1.5"
+                  >
+                    🎯 Quiz sur cette Toada
+                  </button>
+                </div>
               </CordelCard>
             ))
           )}
         </div>
       )}
 
+      {/* ================================================================ */}
+      {/* ONGLET CULTURE — Groupé par catégorie + QCM inline               */}
+      {/* ================================================================ */}
       {activeSubTab === 'culture' && (
         <div className="flex flex-col gap-6">
-          {educationalSheets.filter(f => f.categorie?.toLowerCase() === 'culture' || f.type === 'culture_fiche').length === 0 ? (
+          {Object.keys(cultureGrouped).length === 0 ? (
             <div className="text-center p-8 bg-[#fdfaf2] border border-dashed border-encre-noire/20 rounded-lg">
               <span className="text-3xl block mb-2">📚</span>
               <p className="text-sm font-bold text-encre-noire/70">Aucune fiche de culture disponible pour le moment.</p>
             </div>
           ) : (
-            educationalSheets
-              .filter(f => f.categorie?.toLowerCase() === 'culture' || f.type === 'culture_fiche')
-              .map(fiche => {
-                return (
-                  <CordelCard key={fiche.id} variant="default" className="p-5 flex flex-col gap-4">
-                    <div className="flex justify-between items-start border-b border-dashed border-cordel-master-dark/20 pb-3">
+            Object.entries(cultureGrouped).map(([catName, fiches]) => (
+              <div key={catName} className="flex flex-col gap-3">
+                {/* En-tête de catégorie thématique */}
+                <div className="flex items-center gap-2 border-b-2 border-dashed border-cordel-wood/30 pb-2">
+                  <CultureCategoryIcon docItem={fiches[0]} />
+                  <h3 className="text-sm font-black uppercase tracking-widest text-cordel-wood">
+                    {catName}
+                  </h3>
+                  <span className="text-[9px] font-bold text-encre-noire/40 ml-auto">{fiches.length} fiche{fiches.length > 1 ? 's' : ''}</span>
+                </div>
+
+                {/* Fiches de cette catégorie avec échelle de confort + QCM inline */}
+                {fiches.map(fiche => (
+                  <CordelCard key={fiche.id} variant="default" className="p-5 flex flex-col gap-3">
+                    <div className="flex justify-between items-start">
                       <div className="flex flex-col gap-1">
-                        <div className="flex items-center gap-2">
-                          <CultureCategoryIcon docItem={fiche} />
-                          <span className="text-[9px] font-black uppercase tracking-wider text-cordel-master-dark opacity-70">
-                            {fiche.categorie || 'Culture'}
-                          </span>
-                        </div>
-                        <h3 className="text-base font-black text-cordel-wood uppercase">
+                        <h4 className="text-base font-black text-cordel-wood uppercase">
                           {fiche.themeCulture === 'orixas' && fiche.personnageOrisha ? fiche.personnageOrisha : fiche.titre}
-                        </h3>
+                        </h4>
+                        {fiche.sousTitre && (
+                          <p className="text-[10px] font-bold text-encre-noire/60 italic">{fiche.sousTitre}</p>
+                        )}
                       </div>
-                      
-                      {/* Echelle de confort pour Culture */}
-                      <div className="flex flex-wrap gap-1 justify-end max-w-[60%] mt-2 sm:mt-0">
-                        {comfortLevels.map(lvl => (
-                          <button
-                            key={lvl.level}
-                            onClick={() => handleSetEvaluation(fiche.id, lvl.level)}
-                            className={`text-[9px] font-black uppercase px-2 py-1 rounded border border-encre-noire/30 ${evaluations[fiche.id] === lvl.level ? 'bg-cordel-wood text-white shadow-[1px_1px_0px_0px_#181716]' : 'bg-white text-encre-noire hover:bg-neutral-100'}`}
-                          >
-                            {lvl.label}
-                          </button>
-                        ))}
-                      </div>
+                      {/* Échelle de confort */}
+                      <ComfortBar itemId={fiche.id} evaluations={evaluations} handleSetEvaluation={handleSetEvaluation} comfortLevels={comfortLevels} />
                     </div>
+
+                    {/* Mini-quiz inline automatisé — pioche dans le moteur generateQuizFromSheet */}
+                    <InlineQuiz fiche={fiche} allSheets={educationalSheets} allSongs={songs} />
                   </CordelCard>
-                );
-              })
+                ))}
+              </div>
+            ))
           )}
         </div>
       )}
 
+      {/* ================================================================ */}
+      {/* ONGLET ATELIER — QCM inline automatisé                           */}
+      {/* ================================================================ */}
       {activeSubTab === 'atelier' && (
         <div className="flex flex-col gap-6">
-          {educationalSheets.filter(f => {
-            const cat = f.categorie?.toLowerCase() || '';
-            return cat.includes('atelier') || cat.includes('lutherie') || cat.includes('fabrication') || cat.includes('entretien');
-          }).length === 0 ? (
+          {atelierSheets.length === 0 ? (
             <div className="text-center p-8 bg-[#fdfaf2] border border-dashed border-encre-noire/20 rounded-lg">
               <span className="text-3xl block mb-2">🛠️</span>
               <p className="text-sm font-bold text-encre-noire/70">Aucune fiche de lutherie/atelier disponible pour le moment.</p>
             </div>
           ) : (
-            educationalSheets
-              .filter(f => {
-                const cat = f.categorie?.toLowerCase() || '';
-                return cat.includes('atelier') || cat.includes('lutherie') || cat.includes('fabrication') || cat.includes('entretien');
-              })
-              .map(fiche => {
-                return (
-                  <CordelCard key={fiche.id} variant="default" className="p-5 flex flex-col gap-4">
-                    <div className="flex justify-between items-start border-b border-dashed border-cordel-master-dark/20 pb-3">
-                      <div className="flex flex-col gap-1">
-                        <div className="flex items-center gap-2">
-                          <span className="text-[14px]">🛠️</span>
-                          <span className="text-[9px] font-black uppercase tracking-wider text-cordel-master-dark opacity-70">
-                            {fiche.categorie || 'Atelier'}
-                          </span>
-                        </div>
-                        <h3 className="text-base font-black text-cordel-wood uppercase">
-                          {fiche.titre}
-                        </h3>
-                      </div>
-                      
-                      {/* Echelle de confort pour Atelier */}
-                      <div className="flex flex-wrap gap-1 justify-end max-w-[60%] mt-2 sm:mt-0">
-                        {comfortLevels.map(lvl => (
-                          <button
-                            key={lvl.level}
-                            onClick={() => handleSetEvaluation(fiche.id, lvl.level)}
-                            className={`text-[9px] font-black uppercase px-2 py-1 rounded border border-encre-noire/30 ${evaluations[fiche.id] === lvl.level ? 'bg-cordel-wood text-white shadow-[1px_1px_0px_0px_#181716]' : 'bg-white text-encre-noire hover:bg-neutral-100'}`}
-                          >
-                            {lvl.label}
-                          </button>
-                        ))}
-                      </div>
+            atelierSheets.map(fiche => (
+              <CordelCard key={fiche.id} variant="default" className="p-5 flex flex-col gap-3">
+                <div className="flex justify-between items-start">
+                  <div className="flex flex-col gap-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[14px]">🛠️</span>
+                      <span className="text-[9px] font-black uppercase tracking-wider text-cordel-master-dark opacity-70">
+                        {fiche.categorie || 'Atelier'}
+                      </span>
                     </div>
-                  </CordelCard>
-                );
-              })
+                    <h4 className="text-base font-black text-cordel-wood uppercase">
+                      {fiche.titre}
+                    </h4>
+                  </div>
+                  {/* Échelle de confort */}
+                  <ComfortBar itemId={fiche.id} evaluations={evaluations} handleSetEvaluation={handleSetEvaluation} comfortLevels={comfortLevels} />
+                </div>
+
+                {/* Mini-quiz inline automatisé */}
+                <InlineQuiz fiche={fiche} allSheets={educationalSheets} allSongs={songs} />
+              </CordelCard>
+            ))
           )}
         </div>
       )}

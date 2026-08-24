@@ -235,7 +235,7 @@ export const generateQuizFromSheet = (sheetData, allSheetsData = [], allSongsDat
       if (wrongChoices.length < 3) {
         // Fallback en dernier recours
         const fallbackFails = distractorPool.fallbackFailsTraductions;
-        while (wrongChoices.length < 3) {
+        for (let attempts = 0; wrongChoices.length < 3 && attempts < 50; attempts++) {
           const randomF = fallbackFails[Math.floor(Math.random() * fallbackFails.length)];
           if (!wrongChoices.includes(randomF) && randomF.toLowerCase() !== wordObj.fr.toLowerCase()) {
             wrongChoices.push(randomF);
@@ -374,7 +374,7 @@ export const generateQuizFromSheet = (sheetData, allSheetsData = [], allSongsDat
         }
         if (wrongColorsChoices.length === 3) break;
       }
-      while (wrongColorsChoices.length < 3) {
+      for (let attempts = 0; wrongColorsChoices.length < 3 && attempts < 50; attempts++) {
          wrongColorsChoices.push({ type: 'orixaBadge', stampKey: correctStamp, couleurs: [['#111111'], ['#999999'], ['#333333']][wrongColorsChoices.length] });
       }
 
@@ -407,7 +407,7 @@ export const generateQuizFromSheet = (sheetData, allSheetsData = [], allSongsDat
         }
         if (wrongStampChoices.length === 3) break;
       }
-      while (wrongStampChoices.length < 3) {
+      for (let attempts = 0; wrongStampChoices.length < 3 && attempts < 50; attempts++) {
          wrongStampChoices.push({ type: 'orixaBadge', stampKey: 'axe-default', couleurs: correctColors });
       }
 
@@ -813,7 +813,7 @@ export const generateQuizFromSheet = (sheetData, allSheetsData = [], allSongsDat
     
     let wrongChoices = allOtherSignes.map(s => s.fileUrl);
     // Assurer qu'il y a 3 distracteurs, fallback sur de fausses URL ou doublons (rare en prod s'il y a des fiches)
-    while (wrongChoices.length < 3) {
+    for (let attempts = 0; wrongChoices.length < 3 && attempts < 50; attempts++) {
       wrongChoices.push(`https://via.placeholder.com/400?text=Signe+Leurre+${wrongChoices.length + 1}`);
     }
     wrongChoices = shuffleArray(wrongChoices).slice(0, 3);
@@ -849,7 +849,7 @@ export const generateQuizFromSheet = (sheetData, allSheetsData = [], allSongsDat
     }
     
     // Generate fake patterns if not enough distractors
-    while (wrongChoices.length < 3) {
+    for (let attempts = 0; wrongChoices.length < 3 && attempts < 50; attempts++) {
       const fakePattern = [...formattedPattern];
       for (let i = 0; i < Math.min(4, fakePattern.length); i++) {
         const idx1 = Math.floor(Math.random() * fakePattern.length);
@@ -987,7 +987,7 @@ export const generateQuizFromSong = (song, allSongs = [], allSheetsData = [], co
     const fallbacks = (field === 'rythme') 
       ? (customBaques?.length > 0 ? customBaques : defaultBaques) 
       : defaultOthers;
-    while (distractors.length < 3) {
+    for (let attempts = 0; distractors.length < 3 && attempts < 50; attempts++) {
       const f = fallbacks[Math.floor(Math.random() * fallbacks.length)];
       if (!distractors.includes(f) && f.toLowerCase() !== currentVal?.toLowerCase()) {
         distractors.push(f);
@@ -1042,7 +1042,7 @@ export const generateQuizFromSong = (song, allSongs = [], allSheetsData = [], co
       wrongChoices = shuffleArray(wrongChoices).slice(0, 3);
       
       const fallbacks = distractorPool.fallbackFailsTraductions;
-      while (wrongChoices.length < 3) {
+      for (let attempts = 0; wrongChoices.length < 3 && attempts < 50; attempts++) {
         const randomF = fallbacks[Math.floor(Math.random() * fallbacks.length)];
         if (!wrongChoices.includes(randomF) && randomF.toLowerCase() !== randomLexique.explication.toLowerCase()) {
           wrongChoices.push(randomF);
@@ -1139,7 +1139,7 @@ export const generateQuizFromSequencerJson = (rhythmTitle, parsedSequencerData, 
         wrongChoices = shuffleArray(allOtherPatterns).filter(p => JSON.stringify(p) !== JSON.stringify(formattedPattern)).slice(0, 3);
       }
       
-      while (wrongChoices.length < 3) {
+      for (let attempts = 0; wrongChoices.length < 3 && attempts < 50; attempts++) {
         const fakePattern = [...formattedPattern];
         for (let i = 0; i < Math.min(4, fakePattern.length); i++) {
           const idx1 = Math.floor(Math.random() * fakePattern.length);
@@ -1180,7 +1180,7 @@ export const generateQuizFromSequencerJson = (rhythmTitle, parsedSequencerData, 
       wrongSignalNames = shuffleArray(wrongSignalNames).slice(0, 3);
       
       // Fallback si pas assez de signaux
-      while (wrongSignalNames.length < 3) {
+      for (let attempts = 0; wrongSignalNames.length < 3 && attempts < 50; attempts++) {
         wrongSignalNames.push(`Action Mystère ${wrongSignalNames.length + 1}`);
       }
 
@@ -1223,7 +1223,7 @@ export const generateQuizFromSequencerJson = (rhythmTitle, parsedSequencerData, 
         }
         
         // 2. Fallback : Mutations légères du pattern original s'il en manque
-        while (wrongPatterns.length < 3) {
+        for (let attempts = 0; wrongPatterns.length < 3 && attempts < 50; attempts++) {
           const fakePattern = [...formattedPattern];
           // On fait 2 à 3 mutations
           const numMutations = Math.floor(Math.random() * 2) + 2;
@@ -1277,7 +1277,7 @@ export const generateQuizFromDancador = (stepsData = [], config = {}) => {
       wrongChoices = shuffleArray(wrongChoices).slice(0, 3);
       
       const fallbacks = distractorPool.fallbacksDanseNoms;
-      while (wrongChoices.length < 3) {
+      for (let attempts = 0; wrongChoices.length < 3 && attempts < 50; attempts++) {
         const f = fallbacks[Math.floor(Math.random() * fallbacks.length)];
         if (!wrongChoices.includes(f) && f.toLowerCase() !== step.nom.toLowerCase()) {
           wrongChoices.push(f);
@@ -1306,7 +1306,7 @@ export const generateQuizFromDancador = (stepsData = [], config = {}) => {
       wrongChoices = shuffleArray(wrongChoices).slice(0, 3);
       
       const fallbackFamilies = distractorPool.fallbackDanseFamilles;
-      while (wrongChoices.length < 3) {
+      for (let attempts = 0; wrongChoices.length < 3 && attempts < 50; attempts++) {
         const fallback = fallbackFamilies[Math.floor(Math.random() * fallbackFamilies.length)];
         if (!wrongChoices.includes(fallback) && fallback.toLowerCase() !== step.famille.toLowerCase()) {
           wrongChoices.push(fallback);

@@ -32,7 +32,7 @@ export default function MonParcours({ profileData, sequenceurUrl, enabledModules
     if (!groupId || !userId) return;
 
     // 1. Récupérer Evaluations
-    const parcoursRef = doc(db, 'users', userId, 'parcours', groupId);
+    const parcoursRef = doc(db, 'users', userId, 'parcours', groupId || 'default');
     const unsubEval = onSnapshot(parcoursRef, (docSnap) => {
       if (docSnap.exists()) {
         setEvaluations(docSnap.data().evaluations || {});
@@ -130,7 +130,7 @@ export default function MonParcours({ profileData, sequenceurUrl, enabledModules
     setSaving(true);
     try {
       const newEvals = { ...evaluations, [itemId]: level };
-      const parcoursRef = doc(db, 'users', userId, 'parcours', groupId);
+      const parcoursRef = doc(db, 'users', userId, 'parcours', groupId || 'default');
       await setDoc(parcoursRef, { evaluations: newEvals }, { merge: true });
     } catch (error) {
       console.error("Error saving evaluation:", error);
