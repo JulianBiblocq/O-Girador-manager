@@ -19,6 +19,19 @@ export function useInventoryData(groupId, isAuthorized, t) {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
 
+  // Nouvel état pour les pièces détachées
+  const [inventoryParts, setInventoryParts] = useState([]);
+  const [isPartFormOpen, setIsPartFormOpen] = useState(false);
+  const [editingPartId, setEditingPartId] = useState(null);
+  
+  const [partFormData, setPartFormData] = useState({
+    nom: '',
+    typePiece: 'Fût',
+    etat: 'Neuf',
+    status: 'En stock',
+    instrumentAssocie_id: null
+  });
+
   const [formData, setFormData] = useState({
     nom: '',
     type: 'Alfaia',
@@ -84,7 +97,29 @@ export function useInventoryData(groupId, isAuthorized, t) {
       }
     );
 
-    return () => unsubscribe();
+    // Synchronisation des pièces détachées
+    const partsRef = collection(db, 'inventory_parts');
+    const qParts = query(partsRef, where('groupId', '==', groupId));
+
+    const unsubscribeParts = onSnapshot(
+      qParts,
+      (querySnapshot) => {
+        const fetchedParts = [];
+        querySnapshot.forEach((docSnap) => {
+          fetchedParts.push({ id: docSnap.id, ...docSnap.data() });
+        });
+        fetchedParts.sort((a, b) => (a.nom || '').localeCompare(b.nom || ''));
+        setInventoryParts(fetchedParts);
+      },
+      (error) => {
+        console.error("useInventoryData - Erreur snapshot inventory_parts :", error);
+      }
+    );
+
+    return () => {
+      unsubscribe();
+      unsubscribeParts();
+    };
   }, [groupId, isAuthorized]);
 
   // Carte de résolution O(1) des noms d'utilisateurs
@@ -106,7 +141,8 @@ export function useInventoryData(groupId, isAuthorized, t) {
       status: 'En stock',
       borrowedBy: '',
       etuiFourni: false,
-      kit: ''
+      kit: '',
+      nomenclature: []
     });
     setEditingId(null);
     setIsFormOpen(true);
@@ -123,7 +159,8 @@ export function useInventoryData(groupId, isAuthorized, t) {
       status: inst.status || 'En stock',
       borrowedBy: inst.borrowedBy || '',
       etuiFourni: inst.etuiFourni || false,
-      kit: inst.kit || ''
+      kit: inst.kit || '',
+      nomenclature: inst.nomenclature || []
     });
     setEditingId(inst.id);
     setIsFormOpen(true);
@@ -146,6 +183,7 @@ export function useInventoryData(groupId, isAuthorized, t) {
         borrowedBy: formData.borrowedBy || null,
         etuiFourni: formData.etuiFourni || false,
         kit: formData.kit || '',
+        nomenclature: formData.nomenclature || [],
         groupId: groupId
       };
 
@@ -163,6 +201,81 @@ export function useInventoryData(groupId, isAuthorized, t) {
       setSaving(false);
     }
   }, [groupId, formData, editingId]);
+
+  // Fonctions pour les pièces détachées
+  const handleOpenPartAdd = useCallback(() => {
+    setPartFormData({
+      nom: '',
+      typePiece: 'Fût',
+      etat: 'Neuf',
+      status: 'En stock',
+      instrumentAssocie_id: null
+    });
+    setEditingPartId(null);
+    setIsPartFormOpen(true);
+  }, []);
+
+  const handleOpenPartEdit = useCallback((part) => {
+    setPartFormData({
+      nom: part.nom || '',
+      typePiece: part.typePiece || 'Fût',
+      etat: part.etat || 'Neuf',
+      status: part.status || 'En stock',
+      instrumentAssocie_id: part.instrumentAssocie_id || null
+    });
+    setEditingPartId(part.id);
+    setIsPartFormOpen(true);
+  }, []);
+
+  const handleSavePart = useCallback(async (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    if (!groupId || !partFormData.nom.trim()) return;
+
+    setSaving(true);
+    try {
+      const payload = {
+        nom: partFormData.nom.trim(),
+        typePiece: partFormData.typePiece,
+        etat: partFormData.etat,
+        status: partFormData.status || 'En stock',
+        instrumentAssocie_id: partFormData.instrumentAssocie_id || null,
+        groupId: groupId
+      };
+
+      if (editingPartId) {
+        await updateDoc(doc(db, 'inventory_parts', editingPartId), payload);
+      } else {
+        await addDoc(collection(db, 'inventory_parts'), payload);
+      }
+
+      setIsPartFormOpen(false);
+    } catch (err) {
+      console.error("useInventoryData - Erreur sauvegarde pièce détachée :", err);
+      alert("Erreur lors de la sauvegarde de la pièce.");
+    } finally {
+      setSaving(false);
+    }
+  }, [groupId, partFormData, editingPartId]);
+
+  const handleDeletePart = useCallback(async (id) => {
+    const ok = await confirm({
+      title: t('common.deleteConfirmTitle') || "Supprimer la pièce",
+      message: t('common.deleteConfirmMessage') || "Êtes-vous sûr de vouloir supprimer cette pièce détachée ?",
+      confirmText: t('common.delete') || "Supprimer",
+      cancelText: t('common.cancel') || "Annuler",
+      variant: "danger"
+    });
+
+    if (!ok) return;
+
+    try {
+      await deleteDoc(doc(db, 'inventory_parts', id));
+      setIsPartFormOpen(false);
+    } catch (err) {
+      console.error("useInventoryData - Erreur suppression pièce :", err);
+      alert("Erreur lors de la suppression de la pièce.");
+    }
+  }, [confirm, t]);
 
   const handleDelete = useCallback(async (id) => {
     const ok = await confirm({
@@ -252,6 +365,18 @@ export function useInventoryData(groupId, isAuthorized, t) {
     handleDelete,
     handleToggleBorrowStatus,
     handleApproveMovement,
-    handleRejectMovement
+    handleRejectMovement,
+
+    // Parts
+    inventoryParts,
+    isPartFormOpen,
+    setIsPartFormOpen,
+    editingPartId,
+    partFormData,
+    setPartFormData,
+    handleOpenPartAdd,
+    handleOpenPartEdit,
+    handleSavePart,
+    handleDeletePart
   };
 }

@@ -22,10 +22,12 @@ const INSTRUMENT_ICONS = {
  * @param {Function} props.onEdit Callback de modification
  * @param {Function} props.onDelete Callback de suppression
  * @param {Function} props.onToggleBorrow Status toggle (En stock / Emprunté)
+ * @param {Function} props.onDiagnose Callback de diagnostic
+ * @param {Array} props.inventoryParts Liste de toutes les pièces détachées
  * @param {string} props.kitCompletionText Texte formaté du statut du kit
  * @param {Function} props.t Fonction de traduction
  */
-export default function InventoryItemCard({ item, usersMap, onEdit, onDelete, onToggleBorrow, kitCompletionText, t }) {
+export default function InventoryItemCard({ item, usersMap, onEdit, onDelete, onToggleBorrow, onDiagnose, inventoryParts, kitCompletionText, t }) {
   const iconPath = INSTRUMENT_ICONS[item.type] || 'favicon.svg';
 
   const getEtatBadgeClass = (etat) => {
@@ -80,6 +82,24 @@ export default function InventoryItemCard({ item, usersMap, onEdit, onDelete, on
         </div>
       </div>
 
+      {/* Nomenclature (Pièces détachées) */}
+      {inventoryParts && item.nomenclature && item.nomenclature.length > 0 && (
+        <div className="flex flex-col gap-1 pt-1.5 border-t border-dashed border-cordel-master-dark/10">
+          <span className="text-[9px] uppercase font-bold tracking-wider text-cordel-wood mb-0.5">Nomenclature (Pièces) :</span>
+          <div className="flex flex-wrap gap-1">
+            {item.nomenclature.map(partId => {
+              const part = inventoryParts.find(p => p.id === partId);
+              if (!part) return null;
+              return (
+                <span key={partId} className="bg-white/60 border border-encre-noire/15 px-1.5 py-0.5 rounded text-[9px] font-semibold flex items-center gap-1">
+                  <span className="opacity-70">{part.typePiece}:</span> {part.nom}
+                </span>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Statut d'emprunt */}
       <div className="pt-2 border-t border-dashed border-cordel-master-dark/20 text-xs flex items-center justify-between gap-2">
         {isBorrowed ? (
@@ -102,6 +122,16 @@ export default function InventoryItemCard({ item, usersMap, onEdit, onDelete, on
           >
             ✏️
           </button>
+          {item.status === 'En réparation' && onDiagnose && (
+            <button
+              type="button"
+              onClick={() => onDiagnose(item)}
+              className="p-1 px-2 text-xs font-bold bg-cordel-rouge/10 hover:bg-cordel-rouge text-cordel-rouge hover:text-white border border-cordel-rouge/40 rounded cursor-pointer transition-colors"
+              title="Diagnostiquer (Réparation)"
+            >
+              🩺
+            </button>
+          )}
           <button
             type="button"
             onClick={() => onDelete(item.id)}

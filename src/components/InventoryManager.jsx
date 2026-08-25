@@ -11,6 +11,8 @@ import useConfirm from '../hooks/useConfirm';
 import { useInventoryData } from '../hooks/useInventoryData';
 import InventoryFilterBar from './inventory/InventoryFilterBar';
 import InventoryItemCard from './inventory/InventoryItemCard';
+import InventoryPartsView from './inventory/InventoryPartsView';
+import RepairDiagnosticModal from './inventory/RepairDiagnosticModal';
 
 import { useAssociationSettings } from '../hooks/useAssociationSettings';
 import InstrumentsCatalogBlock from './association-settings/blocks/InstrumentsCatalogBlock';
@@ -60,6 +62,8 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin,
   } = useAssociationSettings(groupId, isAuthorized, onBack, t);
 
   const [showConfig, setShowConfig] = useState(false);
+  const [activeTab, setActiveTab] = useState('instruments'); // 'instruments' or 'parts'
+  const [diagnosticInstrument, setDiagnosticInstrument] = useState(null);
 
   const {
     instruments,
@@ -78,7 +82,19 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin,
     handleDelete,
     handleToggleBorrowStatus,
     handleApproveMovement,
-    handleRejectMovement
+    handleRejectMovement,
+
+    // Parts
+    inventoryParts,
+    isPartFormOpen,
+    setIsPartFormOpen,
+    editingPartId,
+    partFormData,
+    setPartFormData,
+    handleOpenPartAdd,
+    handleOpenPartEdit,
+    handleSavePart,
+    handleDeletePart
   } = useInventoryData(groupId, isAuthorized, t);
 
   const pendingMovements = instruments.filter(inst => inst.pendingMovement);
@@ -91,6 +107,11 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin,
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handlePartInputChange = (e) => {
+    const { name, value } = e.target;
+    setPartFormData(prev => ({ ...prev, [name]: value }));
   };
 
   const handleAssignationToggle = (userId) => {
@@ -442,7 +463,34 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin,
           </CordelCard>
         )}
 
-        {/* Form view */}
+        {/* Tab Switcher */}
+        <div className="flex gap-2 border-b-2 border-dashed border-cordel-master-dark/30 mb-2 select-none">
+          <button
+            type="button"
+            onClick={() => setActiveTab('instruments')}
+            className={`px-4 py-2 text-xs font-black uppercase tracking-widest transition-colors border-b-2 ${
+              activeTab === 'instruments'
+                ? 'border-cordel-wood text-cordel-wood'
+                : 'border-transparent text-cordel-master-dark/60 hover:text-cordel-master-dark'
+            }`}
+          >
+            🥁 Instruments & Kits
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('parts')}
+            className={`px-4 py-2 text-xs font-black uppercase tracking-widest transition-colors border-b-2 ${
+              activeTab === 'parts'
+                ? 'border-cordel-wood text-cordel-wood'
+                : 'border-transparent text-cordel-master-dark/60 hover:text-cordel-master-dark'
+            }`}
+          >
+            🔩 Pièces Détachées (Stock)
+          </button>
+        </div>
+
+        <div className={activeTab === 'instruments' ? 'block' : 'hidden'}>
+          {/* Form view */}
         {isFormOpen ? (
           <CordelCard variant="default" useExtremeBorder={true} className="py-5 px-6 relative">
             <button
@@ -679,6 +727,52 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin,
                       );
                     })
                   )}
+                </div>
+              </div>
+
+              {/* Nomenclature (Pièces détachées) */}
+              <div className="flex flex-col gap-1 border-t border-dashed border-cordel-master-dark/15 pt-2">
+                <label className="text-[8px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                  Nomenclature (Pièces assignées à l'instrument)
+                </label>
+                <div className="max-h-32 overflow-y-auto border border-dashed border-encre-noire/25 rounded p-2 flex flex-col gap-1.5 bg-[#fdfaf2] dark:bg-[#201d1a]">
+                  {(() => {
+                    const availableParts = inventoryParts.filter(p => p.status === 'En stock' || (formData.nomenclature || []).includes(p.id));
+                    if (availableParts.length === 0) {
+                      return <span className="text-[10px] opacity-60 font-semibold">Aucune pièce disponible en stock.</span>;
+                    }
+                    return availableParts.map(part => {
+                      const isSelected = (formData.nomenclature || []).includes(part.id);
+                      return (
+                        <label
+                          key={part.id}
+                          className={`flex items-center justify-between gap-2 p-1.5 rounded text-[10px] font-bold cursor-pointer transition-colors border ${
+                            isSelected ? 'bg-cordel-wood/10 border-cordel-wood text-cordel-wood' : 'bg-transparent border-transparent hover:bg-black/5 text-encre-noire'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={(e) => {
+                                const nom = formData.nomenclature || [];
+                                const newNom = e.target.checked
+                                  ? [...nom, part.id]
+                                  : nom.filter(id => id !== part.id);
+                                setFormData(prev => ({ ...prev, nomenclature: newNom }));
+                              }}
+                              disabled={saving}
+                              className="w-3.5 h-3.5 text-cordel-wood rounded cursor-pointer"
+                            />
+                            <span>{part.nom}</span>
+                          </div>
+                          <span className="px-1.5 py-0.5 bg-white/50 border border-encre-noire/20 rounded text-[8px] uppercase tracking-wider opacity-80">
+                            {part.typePiece}
+                          </span>
+                        </label>
+                      );
+                    });
+                  })()}
                 </div>
               </div>
 
@@ -1023,6 +1117,16 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin,
                               >
                                 <XiloChisel size={10} />
                               </button>
+                              {inst.status === 'En réparation' && (
+                                <button
+                                  type="button"
+                                  onClick={() => setDiagnosticInstrument(inst)}
+                                  className="p-1.5 border border-cordel-rouge/40 bg-cordel-rouge/10 hover:bg-cordel-rouge text-cordel-rouge hover:text-white rounded shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none cursor-pointer transition-colors text-[10px]"
+                                  title="Diagnostiquer (Réparation)"
+                                >
+                                  🩺
+                                </button>
+                              )}
                               <button
                                 type="button"
                                 onClick={() => handleDelete(inst.id, inst.nom)}
@@ -1050,6 +1154,8 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin,
                     onEdit={handleOpenEdit}
                     onDelete={handleDelete}
                     onToggleBorrow={handleToggleBorrowStatus}
+                    onDiagnose={setDiagnosticInstrument}
+                    inventoryParts={inventoryParts}
                     kitCompletionText={getKitCompletionText(inst)}
                     t={t}
                   />
@@ -1058,7 +1164,33 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin,
             )}
           </div>
         )}
+        </div>
 
+        {activeTab === 'parts' && (
+          <InventoryPartsView
+            inventoryParts={inventoryParts}
+            isPartFormOpen={isPartFormOpen}
+            setIsPartFormOpen={setIsPartFormOpen}
+            editingPartId={editingPartId}
+            partFormData={partFormData}
+            handlePartInputChange={handlePartInputChange}
+            handleOpenPartAdd={handleOpenPartAdd}
+            handleOpenPartEdit={handleOpenPartEdit}
+            handleSavePart={handleSavePart}
+            handleDeletePart={handleDeletePart}
+            saving={saving}
+            t={t}
+          />
+        )}
+
+        {diagnosticInstrument && (
+          <RepairDiagnosticModal
+            instrument={diagnosticInstrument}
+            inventoryParts={inventoryParts}
+            onClose={() => setDiagnosticInstrument(null)}
+            t={t}
+          />
+        )}
 
       </div>
     </>

@@ -212,7 +212,7 @@ export default function EventPollSection({ event, user, profileData, onNavigateT
     return `${formatted} à ${hours}h${minutes}`;
   };
 
-  if (!event?.pollGroupId && !event?.isPoll && event?.status !== 'sondage') return null;
+  if (!event?.isPoll && event?.status !== 'sondage') return null;
 
   return (
     <CordelCard 

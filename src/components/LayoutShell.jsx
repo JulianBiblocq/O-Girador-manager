@@ -279,7 +279,7 @@ export default function LayoutShell({
     ];
 
     return (
-      <div className={`flex items-center ${isMobile ? 'gap-1' : 'gap-1.5'} justify-center flex-wrap`}>
+      <div className={`flex items-center ${isMobile ? 'gap-0.5 sm:gap-1' : 'gap-1.5'} justify-center flex-nowrap`}>
         {apps.map(app => {
           const isEnabled = ecosystemAccess[app.key] !== false;
           
@@ -287,13 +287,13 @@ export default function LayoutShell({
             return (
               <div
                 key={app.key}
-                className={`${isMobile ? 'p-1' : 'p-1.5'} border border-transparent rounded flex items-center justify-center grayscale opacity-50 cursor-not-allowed`}
+                className={`${isMobile ? 'p-0.5 sm:p-1' : 'p-1.5'} border border-transparent rounded flex items-center justify-center grayscale opacity-50 cursor-not-allowed`}
                 title="Module non activé. Découvrez-le sur le Hub O Girador !"
               >
                 {app.isSvg ? (
                   <div className="text-cordel-master-dark">{app.icon}</div>
                 ) : (
-                  <img src={app.img} alt={app.label} className={`${isMobile ? 'w-7 h-7' : 'w-6 h-6'} object-contain`} />
+                  <img src={app.img} alt={app.label} className={`${isMobile ? 'w-5 h-5 sm:w-6 sm:h-6' : 'w-6 h-6'} object-contain shrink-0`} />
                 )}
               </div>
             );
@@ -305,13 +305,13 @@ export default function LayoutShell({
               href={app.url}
               target="_blank"
               rel="noopener noreferrer"
-              className={`${isMobile ? 'p-1' : 'p-1.5'} border border-transparent rounded flex items-center justify-center transition-all cursor-pointer hover:scale-105 hover:bg-encre-noire/5 hover:border-cordel-wood ${app.isSvg ? 'hover:border-emerald-600 text-emerald-700 hover:bg-emerald-50' : ''}`}
+              className={`${isMobile ? 'p-0.5 sm:p-1' : 'p-1.5'} border border-transparent rounded flex items-center justify-center transition-all cursor-pointer hover:scale-105 hover:bg-encre-noire/5 hover:border-cordel-wood ${app.isSvg ? 'hover:border-emerald-600 text-emerald-700 hover:bg-emerald-50' : ''}`}
               title={app.label}
             >
               {app.isSvg ? (
                 <div>{app.icon}</div>
               ) : (
-                <img src={app.img} alt={app.label} className={`${isMobile ? 'w-7 h-7' : 'w-6 h-6'} object-contain`} />
+                <img src={app.img} alt={app.label} className={`${isMobile ? 'w-5 h-5 sm:w-6 sm:h-6' : 'w-6 h-6'} object-contain shrink-0`} />
               )}
             </a>
           );

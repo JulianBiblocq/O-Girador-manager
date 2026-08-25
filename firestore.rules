@@ -371,7 +371,7 @@ service cloud.firestore {
       allow create, delete: if canManageEvents();
       allow update: if isAuthenticated() && (
         canManageEvents() || 
-        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['inscriptions', 'invitesExternes']))
+        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['inscriptions', 'invitesExternes', 'volunteerShifts', 'suggestionsOrdreDuJour', 'compteRenduApprovals', 'votes', 'covoiturage']))
       );
 
       // Sous-collection des commentaires et questions logistiques de l'événement
