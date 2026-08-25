@@ -21,190 +21,239 @@ if (!getApps().length) {
 }
 
 /**
- * Cloud Function Firestore Trigger : onAnnouncementCreated
- * Se déclenche automatiquement à la création d'un document dans announcements/{announcementId}.
- * Envoie des notifications push FCM aux membres ciblés du groupe si sendPushNotification === true.
- *
- * Flux :
- * 1. Vérifie le flag sendPushNotification dans le document.
- * 2. Récupère tous les utilisateurs du groupId concerné.
- * 3. Filtre par cibles (tags, rôles) si spécifiées.
- * 4. Collecte les fcmTokens[] valides de chaque utilisateur ciblé.
- * 5. Envoie par lots de 500 tokens via admin.messaging().sendEachForMulticast().
- * 6. Nettoie les tokens invalides des profils Firestore.
+ * Fonction utilitaire pour envoyer des notifications push FCM.
+ * @param {Object} db - Instance Firestore
+ * @param {Object} params - Paramètres d'envoi
+ */
+async function sendPushToUsers(db, { groupId, recipientId, cibles, title, body, dataPayload }) {
+  if (!groupId && !recipientId) {
+    console.error("sendPushToUsers - groupId ou recipientId manquant.");
+    return false;
+  }
+
+  let usersSnap;
+  if (recipientId) {
+    const userDoc = await db.collection("users").doc(recipientId).get();
+    usersSnap = { docs: userDoc.exists ? [userDoc] : [], empty: !userDoc.exists };
+  } else {
+    usersSnap = await db.collection("users").where("groupId", "==", groupId).get();
+  }
+
+  if (usersSnap.empty) {
+    console.warn("sendPushToUsers - Aucun utilisateur trouvé.");
+    return false;
+  }
+
+  const allTokens = [];
+  const cibleTous = !cibles || cibles.includes("Tous") || cibles.length === 0;
+
+  usersSnap.docs.forEach((userDoc) => {
+    const userData = userDoc.data();
+    const userId = userDoc.id;
+    const userTokens = userData.fcmTokens;
+
+    if (!Array.isArray(userTokens) || userTokens.length === 0) return;
+
+    if (!recipientId && !cibleTous) {
+      const userTags = userData.tags || [];
+      const userRole = userData.role || "membre";
+      const isAdmin = userRole === "mestre" || userRole === "super-admin";
+
+      const matchesCible = cibles.some((c) => {
+        if (c === "role:admin" && isAdmin) return true;
+        return userTags.includes(c);
+      });
+      if (!matchesCible) return;
+    }
+
+    userTokens.forEach((token) => {
+      if (typeof token === "string" && token.trim()) {
+        allTokens.push({ token: token.trim(), userId });
+      }
+    });
+  });
+
+  if (allTokens.length === 0) {
+    console.warn("sendPushToUsers - Aucun token valide trouvé pour les cibles.");
+    return false;
+  }
+
+  const truncatedBody = body && body.length > 200 ? body.substring(0, 197) + "..." : (body || "");
+  const BATCH_SIZE = 500;
+  const tokensToRemove = [];
+
+  for (let i = 0; i < allTokens.length; i += BATCH_SIZE) {
+    const batch = allTokens.slice(i, i + BATCH_SIZE);
+    const batchTokenStrings = batch.map((t) => t.token);
+
+    try {
+      const multicastMessage = {
+        notification: { title: title || "O Girador", body: truncatedBody },
+        data: dataPayload || { url: "/app", click_action: "/app" },
+        tokens: batchTokenStrings
+      };
+
+      const response = await getMessaging().sendEachForMulticast(multicastMessage);
+      console.log(`sendPushToUsers - Lot ${Math.floor(i / BATCH_SIZE) + 1} : ${response.successCount} succès, ${response.failureCount} échecs.`);
+
+      if (response.failureCount > 0) {
+        response.responses.forEach((resp, idx) => {
+          if (!resp.success) {
+            const errorCode = resp.error?.code || "";
+            if (errorCode === "messaging/invalid-registration-token" || errorCode === "messaging/registration-token-not-registered") {
+              tokensToRemove.push(batch[idx]);
+            }
+          }
+        });
+      }
+    } catch (err) {
+      console.error("sendPushToUsers - Erreur lors de l'envoi du lot :", err);
+    }
+  }
+
+  if (tokensToRemove.length > 0) {
+    const tokensByUser = {};
+    tokensToRemove.forEach(({ token, userId }) => {
+      if (!tokensByUser[userId]) tokensByUser[userId] = [];
+      tokensByUser[userId].push(token);
+    });
+
+    for (const [userId, invalidTokens] of Object.entries(tokensByUser)) {
+      try {
+        await db.collection("users").doc(userId).update({
+          fcmTokens: FieldValue.arrayRemove(...invalidTokens)
+        });
+      } catch (err) {
+        console.error(`sendPushToUsers - Erreur nettoyage tokens pour ${userId}:`, err);
+      }
+    }
+  }
+
+  return true;
+}
+
+/**
+ * Trigger : onAnnouncementCreated
  */
 exports.onAnnouncementCreated = onDocumentCreated(
   "announcements/{announcementId}",
   async (event) => {
     const snap = event.data;
-    if (!snap) {
-      console.warn("onAnnouncementCreated - Aucune donnée dans le snapshot.");
-      return null;
-    }
+    if (!snap) return null;
+    const data = snap.data();
+    if (!data.sendPushNotification || !data.groupId) return null;
 
-    const announcementData = snap.data();
-    const announcementId = event.params.announcementId;
+    const db = getFirestore();
+    const cibles = Array.isArray(data.cibles) ? data.cibles : ["Tous"];
+    
+    await sendPushToUsers(db, {
+      groupId: data.groupId,
+      cibles: cibles,
+      title: data.titre || "Nouvelle annonce",
+      body: data.message || "",
+      dataPayload: { url: "/app", click_action: "/app" }
+    });
+    return null;
+  }
+);
 
-    // Vérification du flag d'envoi de notification push
-    if (!announcementData.sendPushNotification) {
-      console.log(`onAnnouncementCreated - Annonce "${announcementId}" sans sendPushNotification, envoi push ignoré.`);
-      return null;
-    }
+/**
+ * Trigger : onEventCreated
+ */
+exports.onEventCreated = onDocumentCreated(
+  "evenements/{eventId}",
+  async (event) => {
+    const snap = event.data;
+    if (!snap) return null;
+    const data = snap.data();
+    
+    // N'envoie que si expressément demandé via la case "sendPushNotification"
+    if (!data.sendPushNotification || !data.groupId) return null;
 
-    const groupId = announcementData.groupId;
-    if (!groupId) {
-      console.error(`onAnnouncementCreated - Annonce "${announcementId}" sans groupId, impossible d'envoyer les notifications.`);
-      return null;
-    }
+    const db = getFirestore();
+    const cibles = Array.isArray(data.cible) ? data.cible : ["Tous"];
+    const eventId = event.params.eventId;
+    
+    await sendPushToUsers(db, {
+      groupId: data.groupId,
+      cibles: cibles,
+      title: `📅 Nouvel événement : ${data.titre || data.nom || "Événement"}`,
+      body: data.description || "Un nouvel événement a été ajouté à l'agenda.",
+      dataPayload: { url: `/app/events/${eventId}`, click_action: `/app/events/${eventId}` }
+    });
+    return null;
+  }
+);
 
-    const titre = announcementData.titre || "Nouvelle annonce";
-    const message = announcementData.message || "";
-    const cibles = Array.isArray(announcementData.cibles) ? announcementData.cibles : ["Tous"];
+/**
+ * Trigger : onForumThreadCreated
+ */
+exports.onForumThreadCreated = onDocumentCreated(
+  "forum/{threadId}",
+  async (event) => {
+    const snap = event.data;
+    if (!snap) return null;
+    const data = snap.data();
+    
+    if (!data.sendPushNotification || !data.groupId) return null;
 
-    console.log(`onAnnouncementCreated - Traitement de l'annonce "${announcementId}" pour le groupe "${groupId}"`, {
-      titre,
-      cibles,
-      sendPushNotification: true
+    const db = getFirestore();
+    const threadId = event.params.threadId;
+    const cibles = data.targetTag ? [data.targetTag] : ["Tous"];
+    
+    await sendPushToUsers(db, {
+      groupId: data.groupId,
+      cibles: cibles,
+      title: `💬 Nouveau sujet : ${data.titre}`,
+      body: `Posté par ${data.auteurNom || "Un membre"}`,
+      dataPayload: { url: `/app/forum/${threadId}`, click_action: `/app/forum/${threadId}` }
+    });
+    return null;
+  }
+);
+
+/**
+ * Trigger : onNotificationQueued
+ * Écoute la file d'attente pour traiter les mentions, commentaires et alertes.
+ */
+exports.onNotificationQueued = onDocumentCreated(
+  "notifications_queue/{notifId}",
+  async (event) => {
+    const snap = event.data;
+    if (!snap) return null;
+    const data = snap.data();
+    
+    if (!data.groupId && !data.recipientId) return null;
+
+    const db = getFirestore();
+    const notifId = event.params.notifId;
+    
+    let targetUrl = "/app";
+    if (data.eventId) targetUrl = `/app/events/${data.eventId}`;
+    else if (data.threadId) targetUrl = `/app/forum/${data.threadId}`;
+    else if (data.url) targetUrl = data.url;
+
+    const cibles = data.targetTag ? [data.targetTag] : ["Tous"];
+    
+    const sent = await sendPushToUsers(db, {
+      groupId: data.groupId,
+      recipientId: data.recipientId,
+      cibles: cibles,
+      title: data.title || "Notification O Girador",
+      body: data.body || "",
+      dataPayload: { url: targetUrl, click_action: targetUrl }
     });
 
-    try {
-      const db = getFirestore();
-
-      // Récupération de tous les utilisateurs du groupe
-      const usersSnap = await db.collection("users")
-        .where("groupId", "==", groupId)
-        .get();
-
-      if (usersSnap.empty) {
-        console.warn(`onAnnouncementCreated - Aucun utilisateur trouvé pour le groupe "${groupId}".`);
-        return null;
+    // Optionnel : on peut supprimer la notification de la queue après l'envoi
+    if (sent) {
+      try {
+        await db.collection("notifications_queue").doc(notifId).delete();
+      } catch (err) {
+        console.error("onNotificationQueued - Erreur lors de la suppression de la queue :", err);
       }
-
-      // Filtrage des utilisateurs par cibles et collecte des tokens FCM
-      const allTokens = [];           // Tableau de {token, userId} pour le suivi
-      const cibleTous = cibles.includes("Tous");
-
-      usersSnap.docs.forEach((userDoc) => {
-        const userData = userDoc.data();
-        const userId = userDoc.id;
-        const userTokens = userData.fcmTokens;
-
-        // Vérifier que l'utilisateur possède des tokens FCM valides
-        if (!Array.isArray(userTokens) || userTokens.length === 0) {
-          return;
-        }
-
-        // Filtrage par cibles si nécessaire
-        if (!cibleTous) {
-          const userTags = userData.tags || [];
-          const userRole = userData.role || "membre";
-          const isAdmin = userRole === "mestre" || userRole === "super-admin";
-
-          const matchesCible = cibles.some((c) => {
-            if (c === "role:admin" && isAdmin) return true;
-            return userTags.includes(c);
-          });
-
-          if (!matchesCible) return;
-        }
-
-        // Ajouter chaque token avec son userId pour le nettoyage ultérieur
-        userTokens.forEach((token) => {
-          if (typeof token === "string" && token.trim()) {
-            allTokens.push({ token: token.trim(), userId });
-          }
-        });
-      });
-
-      if (allTokens.length === 0) {
-        console.warn(`onAnnouncementCreated - Aucun token FCM trouvé pour les cibles de l'annonce "${announcementId}".`);
-        return null;
-      }
-
-      console.log(`onAnnouncementCreated - ${allTokens.length} token(s) FCM collecté(s), envoi en cours...`);
-
-      // Construction du payload de notification FCM
-      const truncatedBody = message.length > 200 ? message.substring(0, 197) + "..." : message;
-
-      // Envoi par lots de 500 tokens (limite FCM sendEachForMulticast)
-      const BATCH_SIZE = 500;
-      const tokensToRemove = []; // Tokens invalides à nettoyer
-
-      for (let i = 0; i < allTokens.length; i += BATCH_SIZE) {
-        const batch = allTokens.slice(i, i + BATCH_SIZE);
-        const batchTokenStrings = batch.map((t) => t.token);
-
-        try {
-          const multicastMessage = {
-            notification: {
-              title: titre,
-              body: truncatedBody
-            },
-            data: {
-              announcementId: announcementId,
-              groupId: groupId,
-              url: "/app",
-              click_action: "/app"
-            },
-            tokens: batchTokenStrings
-          };
-
-          const response = await getMessaging().sendEachForMulticast(multicastMessage);
-
-          console.log(`onAnnouncementCreated - Lot ${Math.floor(i / BATCH_SIZE) + 1} : ${response.successCount} succès, ${response.failureCount} échec(s).`);
-
-          // Identifier les tokens invalides pour nettoyage
-          if (response.failureCount > 0) {
-            response.responses.forEach((resp, idx) => {
-              if (!resp.success) {
-                const errorCode = resp.error?.code || "";
-                console.error(`onAnnouncementCreated - Échec d'envoi au token index ${i + idx} :`, resp.error?.message || "Erreur inconnue");
-
-                // Nettoyer les tokens définitivement invalides
-                if (
-                  errorCode === "messaging/invalid-registration-token" ||
-                  errorCode === "messaging/registration-token-not-registered"
-                ) {
-                  tokensToRemove.push(batch[idx]);
-                }
-              }
-            });
-          }
-        } catch (batchError) {
-          console.error(`onAnnouncementCreated - Erreur critique lors de l'envoi du lot ${Math.floor(i / BATCH_SIZE) + 1} :`, batchError);
-        }
-      }
-
-      // Nettoyage des tokens invalides dans les profils Firestore
-      if (tokensToRemove.length > 0) {
-        console.log(`onAnnouncementCreated - Nettoyage de ${tokensToRemove.length} token(s) invalide(s)...`);
-
-        // Regrouper les tokens invalides par userId pour optimiser les écritures
-        const tokensByUser = {};
-        tokensToRemove.forEach(({ token, userId }) => {
-          if (!tokensByUser[userId]) tokensByUser[userId] = [];
-          tokensByUser[userId].push(token);
-        });
-
-        for (const [userId, invalidTokens] of Object.entries(tokensByUser)) {
-          try {
-            await db.collection("users").doc(userId).update({
-              fcmTokens: FieldValue.arrayRemove(...invalidTokens)
-            });
-            console.log(`onAnnouncementCreated - Tokens invalides supprimés pour l'utilisateur "${userId}".`);
-          } catch (cleanupErr) {
-            console.error(`onAnnouncementCreated - Erreur lors du nettoyage des tokens pour "${userId}" :`, cleanupErr);
-          }
-        }
-      }
-
-      console.log(`onAnnouncementCreated - Envoi terminé pour l'annonce "${announcementId}".`);
-      return null;
-
-    } catch (globalError) {
-      console.error(`onAnnouncementCreated - Erreur globale pour l'annonce "${announcementId}" :`, globalError);
-      return null;
     }
+    
+    return null;
   }
 );
 
