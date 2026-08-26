@@ -462,11 +462,15 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
       await updateDoc(eventRef, updates);
 
       if (isConfirmingNow && event.groupId) {
-        // Run automation in background (no await needed for UI responsiveness, or await it if we want toast)
+        // Run automation and await result to provide accurate feedback
         const result = await triggerEventConfirmedAutomation(event.groupId, { ...event, ...updates });
-        if (result.triggeredCount > 0 && setToastMessage) {
-           setToastMessage(`Événement validé ! ${result.triggeredCount} notification(s) envoyée(s).`);
-           setTimeout(() => setToastMessage(null), 3500);
+        if (setToastMessage) {
+           if (result.triggeredCount > 0) {
+             setToastMessage(`Événement validé ! ${result.triggeredCount} notification(s) envoyée(s).`);
+           } else {
+             setToastMessage("Événement validé ! (0 notification : aucune règle active ou aucun membre concerné)");
+           }
+           setTimeout(() => setToastMessage(null), 4500);
            return;
         }
       }
