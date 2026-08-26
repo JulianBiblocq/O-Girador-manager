@@ -1,5 +1,6 @@
-import { collection, query, where, getDocs, addDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, addDoc, doc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase';
+import { resolveCategory, isUserCategoryMatchingEvent } from './categoryUtils';
 
 /**
  * Utilitaires pour le Moteur d'Automatisations & Relances
@@ -156,8 +157,103 @@ export async function runAutomationEngine(groupId, isSimulation = false) {
       details
     };
 
+}
+
+/**
+ * Déclenche l'envoi des notifications suite à la confirmation d'un événement,
+ * en respectant les règles d'automatisation de type 'eventConfirmed'.
+ * @param {string} groupId ID de l'association
+ * @param {Object} event Objet de l'événement validé
+ */
+export async function triggerEventConfirmedAutomation(groupId, event) {
+  if (!groupId || !event || !event.id) return { triggeredCount: 0, details: [] };
+
+  const details = [];
+  let triggeredCount = 0;
+
+  try {
+    const rulesRef = collection(db, 'associations', groupId, 'automation_rules');
+    const rulesQuery = query(rulesRef, where('isActive', '==', true), where('pointDeReference', '==', 'eventConfirmed'));
+    const rulesSnapshot = await getDocs(rulesQuery);
+
+    const activeRules = [];
+    rulesSnapshot.forEach((docSnap) => {
+      activeRules.push({ id: docSnap.id, ...docSnap.data() });
+    });
+
+    if (activeRules.length === 0) {
+      return { triggeredCount: 0, details: ["Aucune règle d'automatisation 'eventConfirmed' active."] };
+    }
+
+    const assocDoc = await getDoc(doc(db, 'associations', groupId));
+    let customCategories = ['Débutant', 'Confirmé'];
+    if (assocDoc.exists() && assocDoc.data().customCategories) {
+      customCategories = assocDoc.data().customCategories;
+    }
+
+    const usersRef = collection(db, 'users');
+    const usersQuery = query(usersRef, where('groupId', '==', groupId));
+    const usersSnapshot = await getDocs(usersQuery);
+
+    const interestedUsers = [];
+    const eventRequiredPublic = resolveCategory(event.niveauRequis || event.publicCible, customCategories);
+    const danseNiveauRequis = resolveCategory(event.niveauDanseRequis || event.danseNiveauRequis, customCategories);
+    const isDanceEvent = event.includesDance || ['stage', 'prestation', 'atelier', 'repetition'].includes(event.type);
+
+    usersSnapshot.forEach((docSnap) => {
+      const uData = docSnap.data();
+      if (uData.statutActuel === 'archived') return;
+
+      let isMusicLevelRestricted = true;
+      if (uData.niveauxParInstrument && Object.keys(uData.niveauxParInstrument).length > 0) {
+        const hasMatchingInst = Object.values(uData.niveauxParInstrument).some(niv => {
+          const resolvedNiv = resolveCategory(niv, customCategories);
+          return isUserCategoryMatchingEvent(resolvedNiv, eventRequiredPublic, customCategories);
+        });
+        isMusicLevelRestricted = !hasMatchingInst;
+      } else {
+        const userMusicLevel = resolveCategory(uData.niveauMusique || uData.niveau, customCategories);
+        isMusicLevelRestricted = !isUserCategoryMatchingEvent(userMusicLevel, eventRequiredPublic, customCategories);
+      }
+
+      const userDanceLevel = resolveCategory(uData.niveauDanse, customCategories);
+      const isDanceLevelRestricted = isDanceEvent && danseNiveauRequis && danseNiveauRequis !== 'tous' && danseNiveauRequis !== 'aucun' && (userDanceLevel !== danseNiveauRequis);
+
+      if (!isMusicLevelRestricted && !isDanceLevelRestricted) {
+        interestedUsers.push({ id: docSnap.id, ...uData });
+      }
+    });
+
+    for (const rule of activeRules) {
+      const matchesType = !rule.typeEvenementCible || 
+                          rule.typeEvenementCible === 'tous' || 
+                          rule.typeEvenementCible === event.type;
+
+      if (!matchesType) continue;
+
+      const eventName = event.titre || event.nom || 'Événement';
+      const bodyMessage = (rule.messageNotification || '').replace(/\{\{nomEvenement\}\}/g, eventName);
+
+      details.push(`🔔 [Règle "${rule.titre}"] : ${interestedUsers.length} membre(s) notifié(s) de la confirmation pour "${eventName}"`);
+
+      for (const targetUser of interestedUsers) {
+        triggeredCount++;
+        await addDoc(collection(db, 'notifications_queue'), {
+          groupId: groupId,
+          recipientId: targetUser.id,
+          title: rule.titreNotification || 'Événement Confirmé !',
+          body: bodyMessage,
+          eventId: event.id,
+          createdAt: new Date().toISOString()
+        });
+      }
+    }
+
+    return { triggeredCount, details };
+
   } catch (error) {
-    console.error("runAutomationEngine - Erreur d'exécution :", error);
+    console.error("triggerEventConfirmedAutomation - Erreur :", error);
     throw error;
   }
 }
+

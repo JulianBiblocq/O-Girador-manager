@@ -39,6 +39,7 @@ import SendContractModal from './studio/SendContractModal';
 import EventPublicQrCodeModal from './event-details/EventPublicQrCodeModal';
 import EventMediaQrCodeModal from './event-details/EventMediaQrCodeModal';
 import useHardwareBack from '../hooks/useHardwareBack';
+import { triggerEventConfirmedAutomation } from '../utils/automationEngine';
 
 export default function EventDetails({ event, user, profileData, onNavigateToView, onClose, onPrev, onNext, viewMode, setViewMode, onGoToStageLayoutEditor }) {
   const { t } = useTranslation();
@@ -440,7 +441,36 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
     if (!event.id) return;
     try {
       const eventRef = doc(db, 'events', event.id);
-      await updateDoc(eventRef, { status: newStatus });
+      const updates = { status: newStatus };
+
+      let isConfirmingNow = false;
+      if (event.status === 'a_confirmer' && newStatus === 'valide') {
+        const isOk = await confirm({
+          title: "Confirmer l'événement",
+          message: "Attention, en validant cet événement, une notification sera envoyée (selon vos règles d'automatisation) à tous les membres concernés par cet événement. Voulez-vous continuer ?",
+          confirmText: "Oui, valider",
+          cancelText: "Annuler",
+          variant: "danger"
+        });
+        
+        if (!isOk) return; // User cancelled
+        
+        updates.wasConfirmedLater = true;
+        isConfirmingNow = true;
+      }
+
+      await updateDoc(eventRef, updates);
+
+      if (isConfirmingNow && event.groupId) {
+        // Run automation in background (no await needed for UI responsiveness, or await it if we want toast)
+        const result = await triggerEventConfirmedAutomation(event.groupId, { ...event, ...updates });
+        if (result.triggeredCount > 0 && setToastMessage) {
+           setToastMessage(`Événement validé ! ${result.triggeredCount} notification(s) envoyée(s).`);
+           setTimeout(() => setToastMessage(null), 3500);
+           return;
+        }
+      }
+
       if (setToastMessage) {
         setToastMessage("Statut de l'événement mis à jour");
         setTimeout(() => setToastMessage(null), 3000);

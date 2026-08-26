@@ -221,21 +221,23 @@ export default function TabAutomations({ groupId, eventTypes = ['prestation', 'r
               </div>
 
               {/* Jours avant */}
-              <div className="flex flex-col gap-1">
-                <label className="text-[9px] uppercase font-bold text-cordel-master-dark">
-                  Nombre de jours avant déclenchement
-                </label>
-                <input
-                  type="number"
-                  min="0"
-                  max="60"
-                  value={formData.joursAvant}
-                  onChange={(e) => setFormData(prev => ({ ...prev, joursAvant: e.target.value }))}
-                  required
-                  disabled={saving}
-                  className="theme-input text-xs font-bold py-1.5"
-                />
-              </div>
+              {formData.pointDeReference !== 'eventConfirmed' && (
+                <div className="flex flex-col gap-1">
+                  <label className="text-[9px] uppercase font-bold text-cordel-master-dark">
+                    Nombre de jours avant déclenchement
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="60"
+                    value={formData.joursAvant}
+                    onChange={(e) => setFormData(prev => ({ ...prev, joursAvant: e.target.value }))}
+                    required
+                    disabled={saving}
+                    className="theme-input text-xs font-bold py-1.5"
+                  />
+                </div>
+              )}
 
               {/* Point de référence dynamique */}
               <div className="flex flex-col gap-1">
@@ -250,6 +252,7 @@ export default function TabAutomations({ groupId, eventTypes = ['prestation', 'r
                 >
                   <option value="registrationDeadline">📌 Avant la date limite d'inscription</option>
                   <option value="eventDate">📅 Avant la date de l'événement</option>
+                  <option value="eventConfirmed">✅ À la confirmation de l'événement</option>
                 </select>
               </div>
 
@@ -393,7 +396,15 @@ export default function TabAutomations({ groupId, eventTypes = ['prestation', 'r
                   </div>
 
                   <p className="text-[11px] font-bold text-encre-noire/80 mt-0.5">
-                    ⏱️ Déclenchement : <span className="underline decoration-amber-500 font-extrabold">{r.joursAvant} jour(s)</span> {r.pointDeReference === 'registrationDeadline' ? 'avant la date limite d’inscription' : 'avant la date de l’événement'}
+                    ⏱️ Déclenchement : 
+                    {r.pointDeReference === 'eventConfirmed' ? (
+                      <span className="font-extrabold ml-1">Immédiat à la confirmation</span>
+                    ) : (
+                      <>
+                        <span className="underline decoration-amber-500 font-extrabold mx-1">{r.joursAvant} jour(s)</span>
+                        {r.pointDeReference === 'registrationDeadline' ? 'avant la date limite d’inscription' : 'avant la date de l’événement'}
+                      </>
+                    )}
                   </p>
 
                   <p className="text-[10px] font-semibold text-cordel-master-dark opacity-75 italic truncate">
