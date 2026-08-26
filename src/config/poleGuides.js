@@ -138,21 +138,6 @@ export const POLE_GUIDES = {
   // ==========================================
   // 2. PÔLE SECRÉTARIAT / TROUPE
   // ==========================================
-  troupe: {
-    titre: "👥 Pôle Secrétariat & Administration Troupe",
-    title: "👥 Pôle Secrétariat & Administration Troupe",
-    description: "Supervisez le registre officiel des membres, l'attribution des badges et la répartition par pupitres.",
-    etapes: [
-      "Consultez et complétez l'annuaire complet des adhérents.",
-      "Gérez l'attribution des badges de rôle (Bureau, CA, Pupitre).",
-      "Équilibrez les effectifs musiciens par section d'instrument."
-    ],
-    steps: [
-      "Consultez et complétez l'annuaire complet des adhérents.",
-      "Gérez l'attribution des badges de rôle (Bureau, CA, Pupitre).",
-      "Équilibrez les effectifs musiciens par section d'instrument."
-    ]
-  },
   'export-annu': {
     titre: "📄 Annuaire Adhérents & Exports Administratifs",
     title: "📄 Annuaire Adhérents & Exports Administratifs",
@@ -564,21 +549,6 @@ export const POLE_GUIDES = {
       "Utilisez le séquenceur comme support de répétition et d'apprentissage."
     ]
   },
-  'mestre-workshops': {
-    titre: "🥁 Ateliers Pédagogiques & Perfectionnement",
-    title: "🥁 Ateliers Pédagogiques & Perfectionnement",
-    description: "Planification des séances de formation technique et suivi d'évolution des pratiquants.",
-    etapes: [
-      "Définissez le programme des ateliers par niveau ou pupitre.",
-      "Évaluez la maîtrise des frappes et la mémorisation des baques.",
-      "Programmez les exercices de perfectionnement à travailler chez soi."
-    ],
-    steps: [
-      "Définissez le programme des ateliers par niveau ou pupitre.",
-      "Évaluez la maîtrise des frappes et la mémorisation des baques.",
-      "Programmez les exercices de perfectionnement à travailler chez soi."
-    ]
-  },
   'mestre-mot-mestre': {
     titre: "📣 Directives & Annonces de la Mestria",
     title: "📣 Directives & Annonces de la Mestria",
@@ -932,6 +902,54 @@ export const POLE_GUIDES = {
       "Contrôlez les demandes de nouveaux membres en attente de validation.",
       "Supervisez l'état de la base Firestore et des variables d'environnement.",
       "Exécutez les scripts de maintenance ou de migration de données."
+    ]
+  },
+  // ==========================================
+  // PÔLE PÉDAGOGIE
+  // ==========================================
+  pedagogie: {
+    titre: "🎓 Pôle Pédagogie",
+    title: "🎓 Pôle Pédagogie",
+    description: "Pilotez le suivi pédagogique des adhérents, créez des ressources d'apprentissage et suivez leur progression.",
+    etapes: [
+      "Gérez la bibliothèque de ressources et les partitions interactives.",
+      "Créez des QCM et quiz d'évaluation pour valider les acquis.",
+      "Analysez les statistiques d'apprentissage de chaque membre."
+    ],
+    steps: [
+      "Gérez la bibliothèque de ressources et les partitions interactives.",
+      "Créez des QCM et quiz d'évaluation pour valider les acquis.",
+      "Analysez les statistiques d'apprentissage de chaque membre."
+    ]
+  },
+  'mestre-pedagogy-qcm': {
+    titre: "📝 Configuration des QCM & Quiz",
+    title: "📝 Configuration des QCM & Quiz",
+    description: "Créez et organisez les questionnaires d'évaluation théorique et culturelle.",
+    etapes: [
+      "Rédigez les questions et paramétrez les réponses correctes.",
+      "Définissez le niveau de difficulté et l'instrument ciblé.",
+      "Publiez le QCM pour le rendre accessible dans l'espace membre."
+    ],
+    steps: [
+      "Rédigez les questions et paramétrez les réponses correctes.",
+      "Définissez le niveau de difficulté et l'instrument ciblé.",
+      "Publiez le QCM pour le rendre accessible dans l'espace membre."
+    ]
+  },
+  'mestre-pedagogy-dashboard': {
+    titre: "📊 Suivi et Analyse Pédagogique",
+    title: "📊 Suivi et Analyse Pédagogique",
+    description: "Supervisez la progression globale de la troupe et identifiez les notions à revoir en répétition.",
+    etapes: [
+      "Consultez les scores moyens par quiz et par pupitre.",
+      "Identifiez les questions les plus fréquemment ratées.",
+      "Adaptez vos ateliers et répétitions en fonction des résultats."
+    ],
+    steps: [
+      "Consultez les scores moyens par quiz et par pupitre.",
+      "Identifiez les questions les plus fréquemment ratées.",
+      "Adaptez vos ateliers et répétitions en fonction des résultats."
     ]
   }
 };

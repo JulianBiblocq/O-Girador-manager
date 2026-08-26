@@ -40,7 +40,7 @@ export function useForumThreads(groupId, profileData, t) {
     }
 
     setLoading(true);
-    const threadsRef = collection(db, 'forum_threads');
+    const threadsRef = collection(db, 'forum');
     const q = query(threadsRef, where('groupId', '==', groupId));
 
     const unsubscribe = onSnapshot(

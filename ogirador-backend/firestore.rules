@@ -254,17 +254,17 @@ service cloud.firestore {
     }
 
     // Inventory: Lecture si authentifié. Écriture réservée aux admins/mestres et membres avec badge Logistique/Inventaire.
-    // Les membres simples peuvent uniquement mettre à jour l'état (pour signaler une casse).
+    // Les membres simples peuvent uniquement mettre à jour l'état et faire des demandes d'emprunt (pendingMovement).
     match /inventory/{item} {
       allow read: if isAuthenticated();
       allow create, delete: if canManageInventory();
-      allow update: if canManageInventory() || (isAuthenticated() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['etat']));
+      allow update: if canManageInventory() || (isAuthenticated() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['etat', 'pendingMovement']));
     }
 
     match /inventoryParts/{item} {
       allow read: if isAuthenticated();
       allow create, delete: if canManageInventory();
-      allow update: if canManageInventory() || (isAuthenticated() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'notes']));
+      allow update: if canManageInventory() || (isAuthenticated() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'notes', 'pendingMovement']));
     }
 
     match /inventory_projects/{item} {
@@ -341,7 +341,11 @@ service cloud.firestore {
     // Documents / Comptes-Rendus : Lecture si authentifié. Écriture réservée aux admins/mestres et membres habilités (badge Secrétariat/Studio).
     match /documents/{document} {
       allow read: if isAuthenticated();
-      allow write: if canManageDocs();
+      allow update, delete: if canManageDocs();
+      allow create: if canManageDocs() || (
+        isAuthenticated() && 
+        request.resource.data.type == 'report'
+      );
     }
 
     // Reunions (Comptes-rendus) : Lecture si authentifié. Écriture réservée aux admins/mestres et membres habilités.
@@ -433,7 +437,7 @@ service cloud.firestore {
       allow create, delete: if canManageEvents();
       allow update: if isAuthenticated() && (
         canManageEvents() || 
-        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['inscriptions', 'invitesExternes', 'volunteerShifts', 'suggestionsOrdreDuJour', 'compteRenduApprovals', 'votes', 'covoiturage']))
+        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['inscriptions', 'invitesExternes', 'volunteerShifts', 'suggestionsOrdreDuJour', 'compteRenduApprovals', 'votes', 'covoiturage', 'compteRenduStatus', 'compteRenduVaralId']))
       );
 
       // Sous-collection des commentaires et questions logistiques de l'événement
@@ -478,7 +482,7 @@ service cloud.firestore {
     }
 
     // Forum Threads: Seul l'auteur du message, un modérateur ou un admin/mestre peut modifier ou supprimer son fil/message
-    match /forum_threads/{thread} {
+    match /forum/{thread} {
       allow read: if isAuthenticated() && (
         isAdminOrMestre() ||
         isModerator() ||

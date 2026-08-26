@@ -95,9 +95,9 @@ export default function MestreEvents({ groupId, onSelectForStage, onOpenDetails 
 
   const getTranslatedType = (type) => {
     switch (type) {
-      case 'prestation': return t('common.typePrestation') || 'Prestation';
-      case 'repetition': return t('common.typeRepetition') || 'Répétition';
-      case 'atelier': return t('common.typeAtelier') || 'Atelier';
+      case 'prestation': return t('widgetAgenda.typePrestation') || 'Prestation';
+      case 'repetition': return t('widgetAgenda.typeRepetition') || 'Répétition';
+      case 'atelier': return t('widgetAgenda.typeAtelier') || 'Atelier';
       default: return type;
     }
   };

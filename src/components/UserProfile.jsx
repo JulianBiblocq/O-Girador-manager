@@ -26,6 +26,7 @@ import ProfileEditForm from './profile/ProfileEditForm';
 import CostumeChecklist from './profile/CostumeChecklist';
 import ImageLightboxModal from './ImageLightboxModal';
 import FamilyMembersManager from './profile/FamilyMembersManager';
+import NotificationDiagnostic from './profile/NotificationDiagnostic';
 import QRScannerModal from './auth/QRScannerModal';
 const CordelImageEditor = React.lazy(() => import('./CordelImageEditor'));
 
@@ -590,6 +591,13 @@ export default function UserProfile({ user, profileData, associationName, onBack
           t={t}
         />
       )}
+
+      {/* Notification Diagnostic Section */}
+      <NotificationDiagnostic 
+        notificationPermission={notificationPermission}
+        isSubscribingPush={isSubscribingPush}
+        onEnableNotifications={handleEnableNotifications}
+      />
 
       {/* Family / Dependent Members Section */}
       <FamilyMembersManager

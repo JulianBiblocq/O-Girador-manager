@@ -77,7 +77,16 @@ export default function EventHeaderCard({ event, onClose, onPrev, onNext, t }) {
       <div className="flex flex-col gap-1.5 mt-1">
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-[10px] font-black uppercase tracking-widest px-2 py-0.5 bg-cordel-wood text-white rounded-[3px_5px] border border-encre-noire/30 shadow-xs">
-            {t(`common.type.${event.type}`) || event.type}
+            {(() => {
+              switch (event.type) {
+                case 'prestation': return t('widgetAgenda.typePrestation') || 'Prestation';
+                case 'repetition': return t('widgetAgenda.typeRepetition') || 'Répétition';
+                case 'atelier': return t('widgetAgenda.typeAtelier') || 'Atelier';
+                case 'stage': return t('widgetAgenda.typeStage') || 'Stage';
+                case 'reunion': return t('widgetAgenda.typeReunion') || 'Réunion';
+                default: return event.type || '';
+              }
+            })()}
           </span>
           <EventDisciplineBadges includesPercussion={event.includesPercussion} includesDance={event.includesDance} size="normal" />
           {event.niveauRequis === 'confirme' && (

@@ -463,6 +463,23 @@ export default function UserMateriel({ user, profileData, onBack }) {
               Vous vous apprêtez à signaler la casse de la pièce <strong>{reportPartModal.part.nom}</strong> sur l'instrument <strong>{reportPartModal.inst.nom}</strong>.
             </p>
 
+            {(() => {
+              const compatibleParts = allInventoryParts.filter(p => p.status === 'En stock' && p.typePiece === reportPartModal.part.typePiece);
+              if (compatibleParts.length > 0) {
+                return (
+                  <div className="bg-[#2d6a4f]/10 border border-[#2d6a4f]/30 p-2 rounded text-[10px] text-[#2d6a4f]">
+                    <span className="font-black">Bonne nouvelle :</span> L'atelier dispose de {compatibleParts.length} pièce(s) de type "{reportPartModal.part.typePiece || 'similaire'}" en stock pour un remplacement éventuel.
+                  </div>
+                );
+              } else {
+                return (
+                  <div className="bg-[#8b2a1a]/10 border border-[#8b2a1a]/30 p-2 rounded text-[10px] text-[#8b2a1a]">
+                    <span className="font-black">Information :</span> L'atelier n'a actuellement aucune pièce de type "{reportPartModal.part.typePiece || 'similaire'}" en stock. Le responsable logistique sera notifié.
+                  </div>
+                );
+              }
+            })()}
+
             <form onSubmit={handleSubmitReport} className="flex flex-col gap-4 mt-2">
               <div className="flex flex-col gap-1">
                 <label className="text-[10px] font-bold uppercase text-encre-noire">Description du problème</label>

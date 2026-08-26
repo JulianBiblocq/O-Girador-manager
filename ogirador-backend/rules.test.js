@@ -119,7 +119,7 @@ describe('Règles de Sécurité Firestore', () => {
           writeRoles: ['all']
         });
       });
-      await assertSucceeds(db.collection('forum_threads').doc('post1').set({
+      await assertSucceeds(db.collection('forum').doc('post1').set({
         channelId: 'chan1',
         authorId: memberUid,
         content: 'Hello !'
