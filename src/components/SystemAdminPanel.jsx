@@ -41,6 +41,8 @@ export default function SystemAdminPanel({ profileData, associationName: propAss
   const [draftFields, setDraftFields] = useState({}); // { [userId]: { telephone, tshirt, ... } }
   const [draftLevels, setDraftLevels] = useState({}); // { [userId]: 'debutant' | 'confirme' }
   const [draftDanceLevels, setDraftDanceLevels] = useState({}); // { [userId]: 'aucun' | 'debutant' | 'confirme' }
+  const [draftAppRights, setDraftAppRights] = useState({}); // { [userId]: { sequenciador: boolean, dansador: boolean, orchestrador: boolean } }
+  const [quotas, setQuotas] = useState({}); // { sequenciador: number, dansador: number, orchestrador: number }
   const [fieldsConfig, setFieldsConfig] = useState(null);
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState(null);
@@ -126,6 +128,9 @@ export default function SystemAdminPanel({ profileData, associationName: propAss
         } else {
           setFieldsConfig(DEFAULT_FIELDS_CONFIG);
         }
+        if (data.quotas) {
+          setQuotas(data.quotas);
+        }
       }
     }, (error) => {
       console.error("SystemAdminPanel - Erreur onSnapshot associations :", error);
@@ -165,6 +170,16 @@ export default function SystemAdminPanel({ profileData, associationName: propAss
     setDraftDanceLevels((prev) => ({ ...prev, [userId]: value }));
   };
 
+  const handleAppRightToggle = (userId, appName, value) => {
+    setDraftAppRights((prev) => ({
+      ...prev,
+      [userId]: {
+        ...(prev[userId] || {}),
+        [appName]: value
+      }
+    }));
+  };
+
   const handleFieldChange = (userId, fieldKey, value) => {
     setDraftFields((prev) => ({
       ...prev,
@@ -201,6 +216,8 @@ export default function SystemAdminPanel({ profileData, associationName: propAss
     const newLevel = draftLevels[targetUserId] !== undefined ? draftLevels[targetUserId] : currentLevel;
     const newDanceLevel = draftDanceLevels[targetUserId] !== undefined ? draftDanceLevels[targetUserId] : currentDanceLevel;
 
+    const appRights = draftAppRights[targetUserId] || {};
+
     const userDraft = draftFields[targetUserId] || {};
     const isEnabled = (key) => fieldsConfig?.[key]?.enabled === true;
 
@@ -210,6 +227,16 @@ export default function SystemAdminPanel({ profileData, associationName: propAss
       niveau: newLevel,
       niveauDanse: newDanceLevel
     };
+
+    if (appRights.sequenciador !== undefined) {
+      updatePayload.canWriteSequenciador = appRights.sequenciador;
+    }
+    if (appRights.dansador !== undefined) {
+      updatePayload.canWriteDansador = appRights.dansador;
+    }
+    if (appRights.orchestrador !== undefined) {
+      updatePayload.canWriteOrchestrador = appRights.orchestrador;
+    }
 
     if (isEnabled('telephone')) {
       updatePayload.telephone = userDraft.telephone !== undefined ? userDraft.telephone : (currentUserItem.telephone || '');
@@ -263,6 +290,11 @@ export default function SystemAdminPanel({ profileData, associationName: propAss
         return copy;
       });
       setDraftDanceLevels((prev) => {
+        const copy = { ...prev };
+        delete copy[targetUserId];
+        return copy;
+      });
+      setDraftAppRights((prev) => {
         const copy = { ...prev };
         delete copy[targetUserId];
         return copy;
@@ -454,29 +486,62 @@ export default function SystemAdminPanel({ profileData, associationName: propAss
             {t('systemAdmin.usersHeading')}
           </h3>
 
-          {/* User list component */}
-          <SystemUserList
-            usersList={usersList}
-            draftRoles={draftRoles}
-            draftTags={draftTags}
-            draftFields={draftFields}
-            draftLevels={draftLevels}
-            draftDanceLevels={draftDanceLevels}
-            savingId={savingId}
-            availableTags={availableTags}
-            fieldsConfig={fieldsConfig}
-            associationName={associationName}
-            handleRoleChange={handleRoleChange}
-            handleTagToggle={handleTagToggle}
-            handleLevelChange={handleLevelChange}
-            handleDanceLevelChange={handleDanceLevelChange}
-            handleFieldChange={handleFieldChange}
-            handleSavePermissions={handleSavePermissions}
-            handleValidateNewMember={handleValidateNewMember}
-            handleSaveFullModalProfile={handleSaveFullModalProfile}
-            handleToggleArchive={handleToggleArchive}
-            handleDeleteUser={handleDeleteUser}
-          />
+          {(() => {
+            const baseUsage = {
+              sequenciador: usersList.filter(u => u.canWriteSequenciador).length,
+              dansador: usersList.filter(u => u.canWriteDansador).length,
+              orchestrador: usersList.filter(u => u.canWriteOrchestrador).length,
+            };
+
+            const appRightsUsage = { ...baseUsage };
+            Object.keys(draftAppRights).forEach(uid => {
+              const rights = draftAppRights[uid];
+              const user = usersList.find(u => u.id === uid);
+              if (user) {
+                if (rights.sequenciador !== undefined) {
+                  if (rights.sequenciador && !user.canWriteSequenciador) appRightsUsage.sequenciador++;
+                  if (!rights.sequenciador && user.canWriteSequenciador) appRightsUsage.sequenciador--;
+                }
+                if (rights.dansador !== undefined) {
+                  if (rights.dansador && !user.canWriteDansador) appRightsUsage.dansador++;
+                  if (!rights.dansador && user.canWriteDansador) appRightsUsage.dansador--;
+                }
+                if (rights.orchestrador !== undefined) {
+                  if (rights.orchestrador && !user.canWriteOrchestrador) appRightsUsage.orchestrador++;
+                  if (!rights.orchestrador && user.canWriteOrchestrador) appRightsUsage.orchestrador--;
+                }
+              }
+            });
+
+            return (
+              <SystemUserList
+                usersList={usersList}
+                draftRoles={draftRoles}
+                draftTags={draftTags}
+                draftFields={draftFields}
+                draftLevels={draftLevels}
+                draftDanceLevels={draftDanceLevels}
+                draftAppRights={draftAppRights}
+                quotas={quotas}
+                appRightsUsage={appRightsUsage}
+                savingId={savingId}
+                availableTags={availableTags}
+                fieldsConfig={fieldsConfig}
+                associationName={associationName}
+                handleRoleChange={handleRoleChange}
+                handleTagToggle={handleTagToggle}
+                handleLevelChange={handleLevelChange}
+                handleDanceLevelChange={handleDanceLevelChange}
+                handleAppRightToggle={handleAppRightToggle}
+                handleFieldChange={handleFieldChange}
+                handleSavePermissions={handleSavePermissions}
+                handleValidateNewMember={handleValidateNewMember}
+                handleSaveFullModalProfile={handleSaveFullModalProfile}
+                handleToggleArchive={handleToggleArchive}
+                handleDeleteUser={handleDeleteUser}
+              />
+            );
+          })()}
         </div>
       )}
     </div>

@@ -19,6 +19,9 @@ export default function SystemUserList({
   draftFields,
   draftLevels,
   draftDanceLevels,
+  draftAppRights,
+  quotas = {},
+  appRightsUsage = {},
   savingId,
   availableTags,
   customCategories = DEFAULT_CUSTOM_CATEGORIES,
@@ -28,6 +31,7 @@ export default function SystemUserList({
   handleTagToggle,
   handleLevelChange,
   handleDanceLevelChange,
+  handleAppRightToggle,
   handleFieldChange,
   handleSavePermissions,
   handleValidateNewMember,
@@ -61,11 +65,17 @@ export default function SystemUserList({
           const currentTags = userItem.tags || [];
           const currentLevel = userItem.niveau || userItem.niveauMusique || 'aucun';
           const currentDanceLevel = userItem.niveauDanse || 'aucun';
+          const currentAppRights = {
+            sequenciador: userItem.canWriteSequenciador === true,
+            dansador: userItem.canWriteDansador === true,
+            orchestrador: userItem.canWriteOrchestrador === true
+          };
           
           const draftRole = draftRoles[userItem.id];
           const draftTag = draftTags[userItem.id];
           const draftLevel = draftLevels[userItem.id];
           const draftDanceLevel = draftDanceLevels[userItem.id];
+          const draftUserAppRights = draftAppRights?.[userItem.id] || {};
           const userDraft = draftFields[userItem.id] || {};
           
           const activeRole = draftRole !== undefined ? draftRole : currentRole;
@@ -73,15 +83,30 @@ export default function SystemUserList({
           const activeTags = draftTag !== undefined ? draftTag : currentTags;
           const activeLevel = draftLevel !== undefined ? draftLevel : currentLevel;
           const activeDanceLevel = draftDanceLevel !== undefined ? draftDanceLevel : currentDanceLevel;
+          const activeAppRights = {
+            sequenciador: draftUserAppRights.sequenciador !== undefined ? draftUserAppRights.sequenciador : currentAppRights.sequenciador,
+            dansador: draftUserAppRights.dansador !== undefined ? draftUserAppRights.dansador : currentAppRights.dansador,
+            orchestrador: draftUserAppRights.orchestrador !== undefined ? draftUserAppRights.orchestrador : currentAppRights.orchestrador
+          };
 
           const isArchived = userItem.statutActuel === 'archived';
           const isNewMember = userItem.isNew === true;
+
+          const isQuotaReached = (app) => {
+            if (quotas[app] === undefined || quotas[app] === null) return false;
+            return appRightsUsage[app] >= quotas[app];
+          };
+
+          const seqReached = isQuotaReached('sequenciador');
+          const danReached = isQuotaReached('dansador');
+          const orchReached = isQuotaReached('orchestrador');
 
           const hasChanged = 
             draftRole !== undefined || 
             draftTag !== undefined || 
             draftLevel !== undefined || 
             draftDanceLevel !== undefined || 
+            Object.keys(draftUserAppRights).length > 0 ||
             Object.keys(userDraft).length > 0;
 
           return (
@@ -249,6 +274,62 @@ export default function SystemUserList({
                         <option key={cat} value={cat}>{cat}</option>
                       ))}
                     </select>
+                  </div>
+                </div>
+              )}
+
+              {/* External App Rights */}
+              {!isArchived && (
+                <div className="flex flex-col gap-1.5 border-t border-dashed border-cordel-master-dark/10 pt-3">
+                  <label className="text-[8px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                    Accès Autres Applications (Écriture)
+                  </label>
+                  <div className="flex flex-wrap gap-x-4 gap-y-2 mt-0.5">
+                    <label className={`flex items-center gap-1.5 cursor-pointer text-[9px] font-bold select-none hover:opacity-80 ${seqReached && !activeAppRights.sequenciador ? 'opacity-50 grayscale' : ''}`}>
+                      <input
+                        type="checkbox"
+                        checked={activeAppRights.sequenciador}
+                        onChange={(e) => handleAppRightToggle(userItem.id, 'sequenciador', e.target.checked)}
+                        disabled={savingId === userItem.id || (seqReached && !activeAppRights.sequenciador)}
+                        className="w-3 h-3 cursor-pointer"
+                      />
+                      <span>
+                        Séquenciador (Mestre)
+                        {quotas.sequenciador !== undefined && quotas.sequenciador !== null && (
+                          <span className="text-[7px] text-cordel-master-dark ml-1">({appRightsUsage.sequenciador}/{quotas.sequenciador})</span>
+                        )}
+                      </span>
+                    </label>
+                    <label className={`flex items-center gap-1.5 cursor-pointer text-[9px] font-bold select-none hover:opacity-80 ${danReached && !activeAppRights.dansador ? 'opacity-50 grayscale' : ''}`}>
+                      <input
+                        type="checkbox"
+                        checked={activeAppRights.dansador}
+                        onChange={(e) => handleAppRightToggle(userItem.id, 'dansador', e.target.checked)}
+                        disabled={savingId === userItem.id || (danReached && !activeAppRights.dansador)}
+                        className="w-3 h-3 cursor-pointer"
+                      />
+                      <span>
+                        Dançador (Mestre)
+                        {quotas.dansador !== undefined && quotas.dansador !== null && (
+                          <span className="text-[7px] text-cordel-master-dark ml-1">({appRightsUsage.dansador}/{quotas.dansador})</span>
+                        )}
+                      </span>
+                    </label>
+                    <label className={`flex items-center gap-1.5 cursor-pointer text-[9px] font-bold select-none hover:opacity-80 ${orchReached && !activeAppRights.orchestrador ? 'opacity-50 grayscale' : ''}`}>
+                      <input
+                        type="checkbox"
+                        checked={activeAppRights.orchestrador}
+                        onChange={(e) => handleAppRightToggle(userItem.id, 'orchestrador', e.target.checked)}
+                        disabled={savingId === userItem.id || (orchReached && !activeAppRights.orchestrador)}
+                        className="w-3 h-3 cursor-pointer"
+                      />
+                      <span>
+                        Orchestrador (Mestre)
+                        {quotas.orchestrador !== undefined && quotas.orchestrador !== null && (
+                          <span className="text-[7px] text-cordel-master-dark ml-1">({appRightsUsage.orchestrador}/{quotas.orchestrador})</span>
+                        )}
+                      </span>
+                    </label>
                   </div>
                 </div>
               )}

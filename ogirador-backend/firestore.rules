@@ -400,10 +400,14 @@ service cloud.firestore {
       allow write: if canManageEvents();
     }
 
-    // Rhythms: Lecture si authentifié. Écriture réservée aux admins/mestres.
+    // Rhythms: Lecture si authentifié. Écriture réservée aux admins/mestres, ou membres avec accès Séquenciador.
     match /rhythms/{rhythm} {
       allow read: if isAuthenticated();
-      allow write: if isAdminOrMestre();
+      allow write: if isAdminOrMestre() || (
+        isAuthenticated() && 
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+        getUserData().get('canWriteSequenciador', false) == true
+      );
     }
 
     // Signaux du Maître: Lecture si authentifié. Écriture réservée aux admins/mestres.
