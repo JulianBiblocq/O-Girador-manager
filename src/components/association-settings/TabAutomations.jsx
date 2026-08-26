@@ -24,6 +24,7 @@ export default function TabAutomations({ groupId, eventTypes = ['prestation', 'r
   const [formData, setFormData] = useState({
     titre: '',
     typeEvenementCible: 'tous',
+    publicCible: 'tous',
     joursAvant: 2,
     pointDeReference: 'registrationDeadline', // 'registrationDeadline' ou 'eventDate'
     titreNotification: '⏳ Rappel : Réponse attendue',
@@ -35,6 +36,7 @@ export default function TabAutomations({ groupId, eventTypes = ['prestation', 'r
     setFormData({
       titre: '',
       typeEvenementCible: 'tous',
+      publicCible: 'tous',
       joursAvant: 2,
       pointDeReference: 'registrationDeadline',
       titreNotification: '⏳ Rappel : Réponse attendue',
@@ -50,6 +52,7 @@ export default function TabAutomations({ groupId, eventTypes = ['prestation', 'r
     setFormData({
       titre: rule.titre || '',
       typeEvenementCible: rule.typeEvenementCible || 'tous',
+      publicCible: rule.publicCible || 'tous',
       joursAvant: rule.joursAvant !== undefined ? rule.joursAvant : 2,
       pointDeReference: rule.pointDeReference || 'registrationDeadline',
       titreNotification: rule.titreNotification || '',
@@ -217,6 +220,25 @@ export default function TabAutomations({ groupId, eventTypes = ['prestation', 'r
                       🎭 {tType.charAt(0).toUpperCase() + tType.slice(1)}
                     </option>
                   ))}
+                </select>
+              </div>
+
+              {/* Public Ciblé */}
+              <div className="flex flex-col gap-1">
+                <label className="text-[9px] uppercase font-bold text-cordel-master-dark">
+                  Public Ciblé (Destinataires)
+                </label>
+                <select
+                  value={formData.publicCible}
+                  onChange={(e) => setFormData(prev => ({ ...prev, publicCible: e.target.value }))}
+                  disabled={saving || formData.pointDeReference === 'reportValidation'}
+                  className={`theme-input text-xs font-bold py-1.5 ${formData.pointDeReference === 'reportValidation' ? 'opacity-50' : ''}`}
+                >
+                  <option value="tous">🌍 Tout le monde (selon les niveaux de l'événement)</option>
+                  <option value="inscrits">✅ Uniquement les inscrits (Présents, En attente...)</option>
+                  <option value="concernes">🎯 Le public concerné (critères exacts)</option>
+                  <option value="percussion">🥁 Section Percussion uniquement</option>
+                  <option value="danse">💃 Section Danse uniquement</option>
                 </select>
               </div>
 
@@ -393,7 +415,10 @@ export default function TabAutomations({ groupId, eventTypes = ['prestation', 'r
                       {r.isActive ? '🟢 Actif' : '⚪ Inactif'}
                     </span>
                     <span className="bg-amber-100 text-amber-900 border border-amber-300 text-[8.5px] font-bold px-1.5 py-0.2 rounded uppercase">
-                      🎭 {r.typeEvenementCible === 'tous' ? 'Tous les événements' : r.typeEvenementCible}
+                      🎭 {r.typeEvenementCible === 'tous' ? 'Tous événements' : r.typeEvenementCible}
+                    </span>
+                    <span className="bg-sky-100 text-sky-900 border border-sky-300 text-[8.5px] font-bold px-1.5 py-0.2 rounded uppercase">
+                      🎯 {r.publicCible === 'tous' ? 'Tout le monde' : r.publicCible === 'inscrits' ? 'Inscrits' : r.publicCible === 'percussion' ? 'Percussion' : r.publicCible === 'danse' ? 'Danse' : 'Public concerné'}
                     </span>
                   </div>
 

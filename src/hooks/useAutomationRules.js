@@ -60,6 +60,7 @@ export function useAutomationRules(groupId) {
       await addDoc(rulesRef, {
         titre: ruleData.titre || 'Nouvelle Règle',
         typeEvenementCible: ruleData.typeEvenementCible || 'tous',
+        publicCible: ruleData.publicCible || 'tous',
         joursAvant: parseInt(ruleData.joursAvant, 10) || 1,
         pointDeReference: ruleData.pointDeReference || 'registrationDeadline', // 'registrationDeadline' ou 'eventDate'
         titreNotification: ruleData.titreNotification || 'Rappel Événement',
@@ -82,7 +83,8 @@ export function useAutomationRules(groupId) {
       const ruleRef = doc(db, 'associations', groupId, 'automation_rules', ruleId);
       await updateDoc(ruleRef, {
         titre: ruleData.titre,
-        typeEvenementCible: ruleData.typeEvenementCible,
+        typeEvenementCible: ruleData.typeEvenementCible || 'tous',
+        publicCible: ruleData.publicCible || 'tous',
         joursAvant: parseInt(ruleData.joursAvant, 10) || 1,
         pointDeReference: ruleData.pointDeReference,
         titreNotification: ruleData.titreNotification,
