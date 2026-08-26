@@ -164,12 +164,13 @@ export async function runAutomationEngine(groupId, isSimulation = false) {
 }
 
 /**
- * Déclenche l'envoi des notifications suite à la confirmation d'un événement,
- * en respectant les règles d'automatisation de type 'eventConfirmed'.
+ * Déclenche l'envoi des notifications suite à la modification du statut d'un événement,
+ * en respectant les règles d'automatisation (ex: 'eventConfirmed', 'eventCancelled').
  * @param {string} groupId ID de l'association
- * @param {Object} event Objet de l'événement validé
+ * @param {Object} event Objet de l'événement validé ou annulé
+ * @param {string} triggerType Type de déclencheur ('eventConfirmed' ou 'eventCancelled')
  */
-export async function triggerEventConfirmedAutomation(groupId, event) {
+export async function triggerEventStatusAutomation(groupId, event, triggerType) {
   if (!groupId || !event || !event.id) return { triggeredCount: 0, details: [] };
 
   const details = [];
@@ -177,7 +178,7 @@ export async function triggerEventConfirmedAutomation(groupId, event) {
 
   try {
     const rulesRef = collection(db, 'associations', groupId, 'automation_rules');
-    const rulesQuery = query(rulesRef, where('isActive', '==', true), where('pointDeReference', '==', 'eventConfirmed'));
+    const rulesQuery = query(rulesRef, where('isActive', '==', true), where('pointDeReference', '==', triggerType));
     const rulesSnapshot = await getDocs(rulesQuery);
 
     const activeRules = [];
@@ -186,7 +187,7 @@ export async function triggerEventConfirmedAutomation(groupId, event) {
     });
 
     if (activeRules.length === 0) {
-      return { triggeredCount: 0, details: ["Aucune règle d'automatisation 'eventConfirmed' active."] };
+      return { triggeredCount: 0, details: [`Aucune règle d'automatisation '${triggerType}' active.`] };
     }
 
     const assocDoc = await getDoc(doc(db, 'associations', groupId));
@@ -238,14 +239,17 @@ export async function triggerEventConfirmedAutomation(groupId, event) {
       const eventName = event.titre || event.nom || 'Événement';
       const bodyMessage = (rule.messageNotification || '').replace(/\{\{nomEvenement\}\}/g, eventName);
 
-      details.push(`🔔 [Règle "${rule.titre}"] : ${interestedUsers.length} membre(s) notifié(s) de la confirmation pour "${eventName}"`);
+      const defaultTitle = triggerType === 'eventCancelled' ? 'Événement Annulé !' : 'Événement Confirmé !';
+      const actionText = triggerType === 'eventCancelled' ? 'l\'annulation' : 'la confirmation';
+
+      details.push(`🔔 [Règle "${rule.titre}"] : ${interestedUsers.length} membre(s) notifié(s) de ${actionText} pour "${eventName}"`);
 
       for (const targetUser of interestedUsers) {
         triggeredCount++;
         await addDoc(collection(db, 'notifications_queue'), {
           groupId: groupId,
           recipientId: targetUser.id,
-          title: rule.titreNotification || 'Événement Confirmé !',
+          title: rule.titreNotification || defaultTitle,
           body: bodyMessage,
           eventId: event.id,
           createdAt: new Date().toISOString()
@@ -256,7 +260,7 @@ export async function triggerEventConfirmedAutomation(groupId, event) {
     return { triggeredCount, details };
 
   } catch (error) {
-    console.error("triggerEventConfirmedAutomation - Erreur :", error);
+    console.error("triggerEventStatusAutomation - Erreur :", error);
     throw error;
   }
 }

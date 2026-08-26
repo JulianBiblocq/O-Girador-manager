@@ -39,7 +39,8 @@ import SendContractModal from './studio/SendContractModal';
 import EventPublicQrCodeModal from './event-details/EventPublicQrCodeModal';
 import EventMediaQrCodeModal from './event-details/EventMediaQrCodeModal';
 import useHardwareBack from '../hooks/useHardwareBack';
-import { triggerEventConfirmedAutomation } from '../utils/automationEngine';
+import { formatSocialUrl } from '../utils/videoUtils';
+import { triggerEventStatusAutomation } from '../utils/automationEngine';
 
 export default function EventDetails({ event, user, profileData, onNavigateToView, onClose, onPrev, onNext, viewMode, setViewMode, onGoToStageLayoutEditor }) {
   const { t } = useTranslation();
@@ -444,6 +445,8 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
       const updates = { status: newStatus };
 
       let isConfirmingNow = false;
+      let isCancellingNow = false;
+
       if (event.status === 'a_confirmer' && newStatus === 'confirme') {
         const isOk = await confirm({
           title: "Confirmer l'événement",
@@ -457,18 +460,42 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
         
         updates.wasConfirmedLater = true;
         isConfirmingNow = true;
+      } else if (event.status !== 'annule' && newStatus === 'annule') {
+        const isOk = await confirm({
+          title: "Annuler l'événement",
+          message: "Attention, en annulant cet événement, une notification sera envoyée (selon vos règles d'automatisation) à tous les membres concernés par cet événement. Voulez-vous continuer ?",
+          confirmText: "Oui, annuler",
+          cancelText: "Retour",
+          variant: "danger"
+        });
+        
+        if (!isOk) return;
+        isCancellingNow = true;
       }
 
       await updateDoc(eventRef, updates);
 
       if (isConfirmingNow && event.groupId) {
         // Run automation and await result to provide accurate feedback
-        const result = await triggerEventConfirmedAutomation(event.groupId, { ...event, ...updates });
+        const result = await triggerEventStatusAutomation(event.groupId, { ...event, ...updates }, 'eventConfirmed');
         if (setToastMessage) {
            if (result.triggeredCount > 0) {
              setToastMessage(`Événement validé ! ${result.triggeredCount} notification(s) envoyée(s).`);
            } else {
              setToastMessage("Événement validé ! (0 notification : aucune règle active ou aucun membre concerné)");
+           }
+           setTimeout(() => setToastMessage(null), 4500);
+           return;
+        }
+      }
+
+      if (isCancellingNow && event.groupId) {
+        const result = await triggerEventStatusAutomation(event.groupId, { ...event, ...updates }, 'eventCancelled');
+        if (setToastMessage) {
+           if (result.triggeredCount > 0) {
+             setToastMessage(`Événement annulé ! ${result.triggeredCount} notification(s) envoyée(s).`);
+           } else {
+             setToastMessage("Événement annulé ! (0 notification : aucune règle active ou aucun membre concerné)");
            }
            setTimeout(() => setToastMessage(null), 4500);
            return;

@@ -221,7 +221,7 @@ export default function TabAutomations({ groupId, eventTypes = ['prestation', 'r
               </div>
 
               {/* Jours avant */}
-              {formData.pointDeReference !== 'eventConfirmed' && (
+              {!['eventConfirmed', 'eventCancelled'].includes(formData.pointDeReference) && (
                 <div className="flex flex-col gap-1">
                   <label className="text-[9px] uppercase font-bold text-cordel-master-dark">
                     Nombre de jours avant déclenchement
@@ -253,6 +253,7 @@ export default function TabAutomations({ groupId, eventTypes = ['prestation', 'r
                   <option value="registrationDeadline">📌 Avant la date limite d'inscription</option>
                   <option value="eventDate">📅 Avant la date de l'événement</option>
                   <option value="eventConfirmed">✅ À la confirmation de l'événement</option>
+                  <option value="eventCancelled">❌ À l'annulation de l'événement</option>
                 </select>
               </div>
 
