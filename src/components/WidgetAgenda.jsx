@@ -831,6 +831,17 @@ export default function WidgetAgenda({
                         </span>
                       </div>
                     )}
+                    {/* Tampon de validation distinctif (Règle 4: Vert Validation) */}
+                    {event.status === 'confirme' && event.wasConfirmedLater && (
+                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10 select-none">
+                        <span 
+                          style={{ transform: 'rotate(-10deg)', color: 'var(--color-cordel-vert)', borderColor: 'var(--color-cordel-vert)' }}
+                          className="border-[3.5px] px-5 py-1.5 rounded-lg font-black text-[15px] tracking-widest uppercase opacity-80 bg-white/5 dark:bg-black/5"
+                        >
+                          VALIDÉ
+                        </span>
+                      </div>
+                    )}
                     {event.status === 'sondage' && (
                       <div className="absolute top-2 right-2 flex gap-1 select-none z-10">
                         <span className="text-amber-900 bg-amber-100/90 border border-amber-600 font-black uppercase text-[8px] px-2 py-0.5 rounded shadow-sm">
