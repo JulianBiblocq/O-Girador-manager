@@ -30,7 +30,19 @@ export default function EventHeaderCard({ event, onClose, onPrev, onNext, t }) {
   };
 
   return (
-    <div className="flex flex-col gap-3 text-left">
+    <div className="flex flex-col gap-3 text-left relative">
+      {/* Tampon de validation distinctif (Règle 4: Vert Validation) */}
+      {event.status === 'confirme' && event.wasConfirmedLater && (
+        <div className="absolute top-4 right-2 pointer-events-none z-10 select-none">
+          <span 
+            style={{ transform: 'rotate(-10deg)', color: 'var(--color-cordel-vert)', borderColor: 'var(--color-cordel-vert)' }}
+            className="border-[3.5px] px-4 py-1 rounded-lg font-black text-sm tracking-widest uppercase opacity-80 bg-white/5 dark:bg-black/5 shadow-md block"
+          >
+            VALIDÉ
+          </span>
+        </div>
+      )}
+
       {/* Barre supérieure : Retour & Navigation Précédent/Suivant */}
       <div className="flex justify-between items-center border-b border-dashed border-cordel-master-dark/20 pb-2 select-none">
         <CordelButton variant="default" onClick={onClose} className="px-3 py-1 text-xs">

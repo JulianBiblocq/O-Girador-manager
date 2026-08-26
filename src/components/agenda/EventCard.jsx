@@ -103,8 +103,8 @@ export default function EventCard({
       {event.status === 'confirme' && event.wasConfirmedLater && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10 select-none">
           <span 
-            style={{ transform: 'rotate(-10deg)' }}
-            className="text-[var(--color-cordel-vert)] border-[3.5px] border-[var(--color-cordel-vert)] px-5 py-1.5 rounded-lg font-black text-[15px] tracking-widest uppercase opacity-80 bg-white/5 dark:bg-black/5"
+            style={{ transform: 'rotate(-10deg)', color: 'var(--color-cordel-vert)', borderColor: 'var(--color-cordel-vert)' }}
+            className="border-[3.5px] px-5 py-1.5 rounded-lg font-black text-[15px] tracking-widest uppercase opacity-80 bg-white/5 dark:bg-black/5"
           >
             VALIDÉ
           </span>
