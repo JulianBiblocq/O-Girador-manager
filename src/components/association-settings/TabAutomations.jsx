@@ -400,6 +400,8 @@ export default function TabAutomations({ groupId, eventTypes = ['prestation', 'r
                     ⏱️ Déclenchement : 
                     {r.pointDeReference === 'eventConfirmed' ? (
                       <span className="font-extrabold ml-1">Immédiat à la confirmation</span>
+                    ) : r.pointDeReference === 'eventCancelled' ? (
+                      <span className="font-extrabold ml-1">Immédiat à l'annulation</span>
                     ) : (
                       <>
                         <span className="underline decoration-amber-500 font-extrabold mx-1">{r.joursAvant} jour(s)</span>
