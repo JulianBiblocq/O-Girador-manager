@@ -114,6 +114,7 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
   const [showQrCodeModal, setShowQrCodeModal] = useState(false);
   const [showMediaQrCodeModal, setShowMediaQrCodeModal] = useState(false);
   const [isSendContractModalOpen, setIsSendContractModalOpen] = useState(false);
+  const [isHeaderCalendarMenuOpen, setIsHeaderCalendarMenuOpen] = useState(false);
 
   useHardwareBack(isEditingEvent, () => { if (typeof toggleEditing === 'function') toggleEditing(); else setIsEditingEvent(false); });
   useHardwareBack(showQrCodeModal, () => setShowQrCodeModal(false));
@@ -735,7 +736,7 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
     const details = encodeURIComponent(getEventDetailsText());
     const location = encodeURIComponent(event.lieu || '');
 
-    const googleCalendarUrl = `https://calendar.google.com/calendar/afficher?action=TEMPLATE&text=${title}&dates=${dates}&details=${details}&location=${location}`;
+    const googleCalendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${dates}&details=${details}&location=${location}`;
     window.open(googleCalendarUrl, '_blank', 'noopener,noreferrer');
   };
 
@@ -1123,6 +1124,48 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
         {/* Action buttons (QR Code Public, Publication, Modify, Supprimer) */}
         {!isEditingEvent && (
           <div className="flex gap-2 w-full md:w-auto flex-wrap justify-end md:max-w-[60%] xl:max-w-[50%]">
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setIsHeaderCalendarMenuOpen(!isHeaderCalendarMenuOpen)}
+                className="text-[10px] font-black uppercase bg-blue-100 text-blue-900 border border-blue-900 px-3 py-1.5 rounded shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:bg-blue-200 cursor-pointer flex items-center gap-1 flex-1 lg:flex-none justify-center transition-colors"
+                title="Ajouter cet événement à votre agenda personnel"
+              >
+                📅 Ajouter à mon agenda
+              </button>
+              {isHeaderCalendarMenuOpen && (
+                <>
+                  <div 
+                    className="fixed inset-0 z-40" 
+                    onClick={() => setIsHeaderCalendarMenuOpen(false)}
+                  />
+                  <div className="absolute right-0 top-full mt-2 w-full min-w-[180px] bg-cordel-bg-light border-2 border-encre-noire rounded-[6px_10px_8px_12px] shadow-[3px_3px_0px_0px_#181716] py-1.5 z-50 flex flex-col text-left">
+                    <button
+                       type="button"
+                       onClick={() => {
+                         handleAddToGoogleCalendar();
+                         setIsHeaderCalendarMenuOpen(false);
+                       }}
+                       className="w-full px-4 py-2 text-[10px] font-black uppercase tracking-wider text-encre-noire hover:bg-cordel-hover cursor-pointer text-left"
+                    >
+                       🔵 Google Agenda
+                    </button>
+                    <div className="border-t border-dashed border-encre-noire/15 my-0.5" />
+                    <button
+                       type="button"
+                       onClick={() => {
+                         handleDownloadIcs();
+                         setIsHeaderCalendarMenuOpen(false);
+                       }}
+                       className="w-full px-4 py-2 text-[10px] font-black uppercase tracking-wider text-encre-noire hover:bg-cordel-hover cursor-pointer text-left"
+                    >
+                       🍏 Apple / Outlook (.ics)
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+
             {rawIsAuthorized && (
               <button
                 type="button"
@@ -1609,6 +1652,8 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
                 handleFamilyMemberStatusChange={handleFamilyMemberStatusChange}
                 handleFamilyMemberInstrumentChange={handleFamilyMemberInstrumentChange}
                 handleFamilySave={handleFamilySave}
+                handleAddToGoogleCalendar={handleAddToGoogleCalendar}
+                handleDownloadIcs={handleDownloadIcs}
                 mode="rsvp"
               />
             </CordelAccordion>
@@ -1677,6 +1722,8 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
                 handleFamilyMemberStatusChange={handleFamilyMemberStatusChange}
                 handleFamilyMemberInstrumentChange={handleFamilyMemberInstrumentChange}
                 handleFamilySave={handleFamilySave}
+                handleAddToGoogleCalendar={handleAddToGoogleCalendar}
+                handleDownloadIcs={handleDownloadIcs}
                 mode="attendance"
               />
             </CordelAccordion>

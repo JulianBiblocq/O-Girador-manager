@@ -13,6 +13,34 @@ export default function EventVolunteerSection({ event, user, allUsers = [], t })
     return null;
   }
 
+  const handleAddShiftToGoogleCalendar = (shift) => {
+    if (!event.date) {
+      alert("Impossible d'ajouter à l'agenda : date de l'événement inconnue.");
+      return;
+    }
+    const eventDate = new Date(event.date);
+    if (isNaN(eventDate.getTime())) {
+      alert("Impossible d'ajouter à l'agenda : date invalide.");
+      return;
+    }
+    
+    const formatToUTCISO8601 = (date) => {
+        return date.toISOString().replace(/-|:|\.\d\d\d/g, '');
+    };
+    
+    const startStr = formatToUTCISO8601(eventDate);
+    const endDate = new Date(eventDate.getTime() + 2 * 60 * 60 * 1000);
+    const endStr = formatToUTCISO8601(endDate);
+    
+    const title = encodeURIComponent(`Bénévolat : ${shift.nomTache}`);
+    const dates = `${startStr}/${endStr}`;
+    const details = encodeURIComponent(`Événement : ${event.titre || 'Événement Roda'}\nMission : ${shift.nomTache}\nHoraires : ${shift.horaires || 'Non précisés'}\n\nMerci pour ton aide !`);
+    const location = encodeURIComponent(event.lieu || '');
+    
+    const googleCalendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${dates}&details=${details}&location=${location}`;
+    window.open(googleCalendarUrl, '_blank', 'noopener,noreferrer');
+  };
+
   const handleToggleJoin = async (shiftId) => {
     if (!event.id || !user?.uid || loading) return;
     setLoading(true);
@@ -117,19 +145,32 @@ export default function EventVolunteerSection({ event, user, allUsers = [], t })
                       </span>
                     </div>
 
-                    {/* Join/Leave Button */}
-                    <button
-                      type="button"
-                      disabled={loading || !user?.uid}
-                      onClick={() => handleToggleJoin(shift.id)}
-                      className={`text-[9px] font-black uppercase border px-2.5 py-1 rounded transition-all shadow-[1px_1px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-95 cursor-pointer disabled:opacity-50 select-none ${
-                        isUserRegistered
-                          ? 'bg-cordel-ocre text-encre-noire border-encre-noire'
-                          : 'bg-cordel-vert text-encre-noire border-encre-noire'
-                      }`}
-                    >
-                      {isUserRegistered ? "✕ Se désinscrire" : "＋ S'inscrire"}
-                    </button>
+                    {/* Join/Leave Button & Calendar */}
+                    <div className="flex flex-col gap-1 items-end">
+                      <button
+                        type="button"
+                        disabled={loading || !user?.uid}
+                        onClick={() => handleToggleJoin(shift.id)}
+                        className={`text-[9px] font-black uppercase border px-2.5 py-1 rounded transition-all shadow-[1px_1px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-95 cursor-pointer disabled:opacity-50 select-none ${
+                          isUserRegistered
+                            ? 'bg-cordel-ocre text-encre-noire border-encre-noire'
+                            : 'bg-cordel-vert text-encre-noire border-encre-noire'
+                        }`}
+                      >
+                        {isUserRegistered ? "✕ Se désinscrire" : "＋ S'inscrire"}
+                      </button>
+
+                      {isUserRegistered && (
+                        <button
+                           type="button"
+                           onClick={() => handleAddShiftToGoogleCalendar(shift)}
+                           className="text-[9px] font-black uppercase bg-blue-100 text-blue-900 border border-blue-900 px-2 py-0.5 rounded shadow-[1px_1px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:bg-blue-200 cursor-pointer flex items-center gap-1 transition-colors"
+                           title="Ajouter ma mission à Google Agenda"
+                        >
+                           📅 Agenda
+                        </button>
+                      )}
+                    </div>
                   </div>
 
                   {/* Registered Volunteers list */}

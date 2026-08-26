@@ -37,7 +37,7 @@ export default function EventQuickActionsBar({ event, isAdmin, onToggleEdit, onD
     const location = encodeURIComponent(event.lieu || '');
     const title = encodeURIComponent(event.titre || 'Événement');
 
-    return `https://calendar.google.com/calendar/afficher?action=TEMPLATE&text=${title}&dates=${dates}&details=${details}&location=${location}`;
+    return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${dates}&details=${details}&location=${location}`;
   };
 
   // Téléchargement du fichier iCal / ICS

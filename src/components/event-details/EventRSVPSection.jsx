@@ -56,6 +56,8 @@ export default function EventRSVPSection({
   handleFamilyMemberStatusChange,
   handleFamilyMemberInstrumentChange,
   handleFamilySave,
+  handleAddToGoogleCalendar,
+  handleDownloadIcs,
   mode // 'rsvp' | 'attendance' | undefined (both)
 }) {
   const { getColorForInstrument } = useInstrumentColor(profileData?.groupId);
