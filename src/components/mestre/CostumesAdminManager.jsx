@@ -31,6 +31,7 @@ export default function CostumesAdminManager({ groupId }) {
 
   // New Piece Form State inside modal
   const [pieceForm, setPieceForm] = useState({
+    id: null,
     name: '',
     emplacement: 'torse',
     isMandatory: true,
@@ -76,7 +77,7 @@ export default function CostumesAdminManager({ groupId }) {
       description: '',
       pieces: []
     });
-    setPieceForm({ name: '', emplacement: 'torse', isMandatory: true, description: '', tutorialId: '' });
+    setPieceForm({ id: null, name: '', emplacement: 'torse', isMandatory: true, description: '', tutorialId: '' });
     setShowCostumeModal(true);
   };
 
@@ -88,14 +89,14 @@ export default function CostumesAdminManager({ groupId }) {
       description: costume.description || '',
       pieces: costume.pieces || []
     });
-    setPieceForm({ name: '', emplacement: 'torse', isMandatory: true, description: '', tutorialId: '' });
+    setPieceForm({ id: null, name: '', emplacement: 'torse', isMandatory: true, description: '', tutorialId: '' });
     setShowCostumeModal(true);
   };
 
   const handleAddPieceToCostume = () => {
     if (!pieceForm.name.trim()) return;
     const newPiece = {
-      id: 'p_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+      id: pieceForm.id || ('p_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4)),
       name: pieceForm.name.trim(),
       emplacement: pieceForm.emplacement || 'torse',
       isMandatory: pieceForm.isMandatory,
@@ -103,12 +104,32 @@ export default function CostumesAdminManager({ groupId }) {
       tutorialId: pieceForm.tutorialId || ''
     };
 
-    setCostumeForm(prev => ({
-      ...prev,
-      pieces: [...prev.pieces, newPiece]
-    }));
+    setCostumeForm(prev => {
+      if (pieceForm.id) {
+        return {
+          ...prev,
+          pieces: prev.pieces.map(p => p.id === pieceForm.id ? newPiece : p)
+        };
+      } else {
+        return {
+          ...prev,
+          pieces: [...prev.pieces, newPiece]
+        };
+      }
+    });
 
-    setPieceForm({ name: '', emplacement: 'torse', isMandatory: true, description: '', tutorialId: '' });
+    setPieceForm({ id: null, name: '', emplacement: 'torse', isMandatory: true, description: '', tutorialId: '' });
+  };
+
+  const handleEditPiece = (piece) => {
+    setPieceForm({
+      id: piece.id,
+      name: piece.name || '',
+      emplacement: piece.emplacement || 'torse',
+      isMandatory: piece.isMandatory !== false,
+      description: piece.description || '',
+      tutorialId: piece.tutorialId || ''
+    });
   };
 
   const handleRemovePieceFromCostume = (pieceId) => {
@@ -367,13 +388,22 @@ export default function CostumesAdminManager({ groupId }) {
                               {piece.tutorialNotes ? " • Tuto enregistré" : ""}
                             </span>
                           </div>
-                          <button
-                            type="button"
-                            onClick={() => handleRemovePieceFromCostume(index)}
-                            className="text-red-700 hover:text-red-900 font-extrabold text-xs cursor-pointer px-2 py-0.5"
-                          >
-                            Supprimer
-                          </button>
+                          <div className="flex gap-2">
+                            <button
+                              type="button"
+                              onClick={() => handleEditPiece(piece)}
+                              className="text-cordel-wood hover:text-cordel-master-dark font-extrabold text-xs cursor-pointer px-2 py-0.5"
+                            >
+                              Éditer
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleRemovePieceFromCostume(piece.id)}
+                              className="text-red-700 hover:text-red-900 font-extrabold text-xs cursor-pointer px-2 py-0.5"
+                            >
+                              Supprimer
+                            </button>
+                          </div>
                         </div>
                       ))
                     )}
@@ -382,7 +412,7 @@ export default function CostumesAdminManager({ groupId }) {
                   {/* Form to ajouter a piece */}
                   <div className="p-3 bg-cordel-master-light/10 border border-cordel-master-dark/20 rounded flex flex-col gap-2 mt-1">
                     <span className="text-[10px] font-black uppercase text-cordel-wood">
-                      ➕ Ajouter une pièce à ce costume
+                      {pieceForm.id ? "✏️ Modifier la pièce" : "➕ Ajouter une pièce à ce costume"}
                     </span>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       <input

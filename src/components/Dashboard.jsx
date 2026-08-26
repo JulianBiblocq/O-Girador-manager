@@ -7,6 +7,7 @@ const WidgetAgenda = React.lazy(() => import('./WidgetAgenda'));
 import WidgetCommandes from './WidgetCommandes';
 import WidgetForum from './WidgetForum';
 import WidgetAnniversaires from './WidgetAnniversaires';
+import WidgetValidations from './dashboard/WidgetValidations';
 const WidgetDocuments = React.lazy(() => import('./WidgetDocuments'));
 const WidgetTreasury = React.lazy(() => import('./WidgetTreasury'));
 import CordelCard from './CordelCard';
@@ -28,6 +29,11 @@ export default function Dashboard({ user, profileData, onNavigateToTrombi, onNav
 
   const isSystemOrSuperAdminOrMestre = profileData?.isSystemAdmin || profileData?.role === 'super-admin' || profileData?.role === 'mestre';
   const userTags = profileData?.tags || [];
+
+  const handleOpenEvent = (event) => {
+    setAgendaFocusMode(true);
+    setSelectedEventForAgenda(event);
+  };
 
   const hasAccessTroupe = isSystemOrSuperAdminOrMestre || userTags.some(t => permissionsMatrice?.troupe?.includes(t));
   const hasAccessLogistique = isSystemOrSuperAdminOrMestre || userTags.some(t => permissionsMatrice?.logistique?.includes(t));
@@ -303,6 +309,12 @@ export default function Dashboard({ user, profileData, onNavigateToTrombi, onNav
           {t('dashboard.seeTrombi')}
         </CordelButton>
       </div>
+
+      <WidgetValidations 
+        groupId={profileData?.groupId} 
+        user={user} 
+        onOpenEvent={handleOpenEvent} 
+      />
 
       {/* Widgets Grid (Dynamically Ordered) */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full max-w-full p-1 overflow-visible">
