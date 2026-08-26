@@ -444,7 +444,7 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
       const updates = { status: newStatus };
 
       let isConfirmingNow = false;
-      if (event.status === 'a_confirmer' && newStatus === 'valide') {
+      if (event.status === 'a_confirmer' && newStatus === 'confirme') {
         const isOk = await confirm({
           title: "Confirmer l'événement",
           message: "Attention, en validant cet événement, une notification sera envoyée (selon vos règles d'automatisation) à tous les membres concernés par cet événement. Voulez-vous continuer ?",

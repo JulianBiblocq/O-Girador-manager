@@ -100,7 +100,7 @@ export default function EventCard({
         </div>
       )}
       {/* Tampon de validation distinctif (Règle 4: Vert Validation) */}
-      {event.status === 'valide' && event.wasConfirmedLater && (
+      {event.status === 'confirme' && event.wasConfirmedLater && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10 select-none">
           <span 
             style={{ transform: 'rotate(-10deg)' }}
