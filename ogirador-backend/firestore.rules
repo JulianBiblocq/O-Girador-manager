@@ -20,9 +20,8 @@ service cloud.firestore {
           getUserData().role == 'bureau' ||
           getUserData().role == 'ca' ||
           getUserData().isSystemAdmin == true ||
-          (getUserData().keys().hasAny(['hasAccessLogistique']) && getUserData().hasAccessLogistique == true) ||
           (getUserData().keys().hasAny(['tags']) && getUserData().tags.hasAny([
-            'Bureau', 'Président', 'Présidente', 'Présidence', 'CA', 'Direction', 'Admin', 'Modérateur'
+            'Bureau', 'Président', 'Présidente', 'Présidence', 'CA', 'Direction', 'Admin'
           ]))
         );
     }
@@ -132,7 +131,7 @@ service cloud.firestore {
     }
 
     match /hub_telemetry_daily/{eventId} {
-      allow create: if true; // Event logging open from all apps
+      allow create: if request.resource.data.keys().hasAny(['timestamp', 'eventId', 'type']);
       allow read, update, delete: if isAuthenticated() && (
         (request.auth.token.admin == true) || 
         (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && (
@@ -183,7 +182,7 @@ service cloud.firestore {
             (!request.resource.data.keys().hasAny(['paymentStatus']) || request.resource.data.paymentStatus == 'unpaid') &&
             (!request.resource.data.keys().hasAny(['role']) || request.resource.data.role == 'membre') &&
             (!request.resource.data.keys().hasAny(['statutActuel']) || request.resource.data.statutActuel == 'active') &&
-            (!request.resource.data.keys().hasAny(['adhesionBase']) || request.resource.data.adhesionBase == true) &&
+            (!request.resource.data.keys().hasAny(['adhesionBase']) || request.resource.data.adhesionBase == false) &&
             (!request.resource.data.keys().hasAny(['selectedOptions']) || request.resource.data.selectedOptions.size() == 0) &&
             (!request.resource.data.keys().hasAny(['tags']) || request.resource.data.tags.size() == 0)
           )
@@ -248,6 +247,12 @@ service cloud.firestore {
       }
     }
 
+    // Prospects (Inscription publique)
+    match /prospects/{prospectId} {
+      allow create: if true;
+      allow read, update, delete: if isAdminOrMestre();
+    }
+
     // Inventory: Lecture si authentifié. Écriture réservée aux admins/mestres et membres avec badge Logistique/Inventaire.
     // Les membres simples peuvent uniquement mettre à jour l'état (pour signaler une casse).
     match /inventory/{item} {
@@ -256,7 +261,7 @@ service cloud.firestore {
       allow update: if canManageInventory() || (isAuthenticated() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['etat']));
     }
 
-    match /inventory_parts/{item} {
+    match /inventoryParts/{item} {
       allow read: if isAuthenticated();
       allow create, delete: if canManageInventory();
       allow update: if canManageInventory() || (isAuthenticated() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'notes']));
@@ -276,6 +281,11 @@ service cloud.firestore {
     match /associations/{assocId} {
       allow read: if true;
       allow write: if isAdminOrMestre() || hasAnyTag(['Vitrine', 'Webmaster', 'Bureau', 'Président', 'Présidente', 'CA']);
+
+      // Règles d'automatisation
+      match /automation_rules/{ruleId} {
+        allow read, write: if isAdminOrMestre() && getUserData().groupId == assocId;
+      }
 
       // Paramètres secrets (HelloAsso, Brevo) accessibles uniquement aux admins de l'association
       match /private_settings/credentials {
@@ -316,6 +326,12 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // Abonnements (Mestre / Manager)
+    match /subscriptions/{subscriptionId} {
+      allow read: if isAdminOrMestre(); // Seuls les admins peuvent voir l'état de l'abonnement
+      allow write: if false; // Géré uniquement via Firebase Functions / SDK Admin
+    }
+
     // Announcements: Lecture si authentifié. Écriture réservée aux admins/mestres.
     match /announcements/{announcement} {
       allow read: if isAuthenticated();
@@ -350,6 +366,34 @@ service cloud.firestore {
     match /coutureProjects/{project} {
       allow read: if isAuthenticated();
       allow write: if canManageInventory();
+    }
+
+    // Formations et chorégraphies (Danse / Séquenceur)
+    match /choreographies/{choreo} {
+      allow read: if isAuthenticated();
+      allow write: if isAdminOrMestre();
+    }
+    match /formations_catalogue/{formation} {
+      allow read: if isAuthenticated();
+      allow write: if isAdminOrMestre();
+    }
+    match /patterns/{pattern} {
+      allow read: if isAuthenticated();
+      allow write: if isAdminOrMestre();
+    }
+    match /sections/{section} {
+      allow read: if isAuthenticated();
+      allow write: if isAdminOrMestre();
+    }
+    match /steps/{step} {
+      allow read: if isAuthenticated();
+      allow write: if isAdminOrMestre();
+    }
+
+    // Agenda Templates
+    match /agendaTemplates/{tpl} {
+      allow read: if isAuthenticated();
+      allow write: if canManageEvents();
     }
 
     // Rhythms: Lecture si authentifié. Écriture réservée aux admins/mestres.
@@ -434,7 +478,32 @@ service cloud.firestore {
     }
 
     // Forum Threads: Seul l'auteur du message, un modérateur ou un admin/mestre peut modifier ou supprimer son fil/message
-    match /forum/{thread} {
+    match /forum_threads/{thread} {
+      allow read: if isAuthenticated() && (
+        isAdminOrMestre() ||
+        isModerator() ||
+        hasChannelReadAccess(resource.data.channelId)
+      );
+      allow create: if isAuthenticated() && (
+        hasChannelWriteAccess(request.resource.data.channelId)
+      );
+      allow update: if isAuthenticated() && (
+        isAdminOrMestre() ||
+        isModerator() ||
+        (
+          resource.data.authorId == request.auth.uid &&
+          (hasChannelWriteAccess(resource.data.channelId) || !resource.data.keys().hasAny(['channelId'])) &&
+          (!request.resource.data.keys().hasAny(['channelId']) || request.resource.data.channelId == resource.data.channelId)
+        ) ||
+        (
+          hasChannelWriteAccess(resource.data.channelId) &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reponses', 'derniereModification', 'poll'])
+        )
+      );
+      allow delete: if isAdminOrMestre() || isModerator() || (isAuthenticated() && resource.data.authorId == request.auth.uid);
+    }
+
+    match /forum_posts/{post} {
       allow read: if isAuthenticated() && (
         isAdminOrMestre() ||
         isModerator() ||
@@ -503,7 +572,7 @@ service cloud.firestore {
 
     // Newsletter subscribers: Inscription publique autorisée (create), lecture/export réservés aux admins/mestres
     match /newsletter_subscribers/{subscriberDoc} {
-      allow create: if true;
+      allow create: if request.resource.data.keys().hasAll(['email']);
       allow read, update, delete: if isAdminOrMestre();
     }
 
