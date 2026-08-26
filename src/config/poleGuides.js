@@ -768,18 +768,18 @@ export const POLE_GUIDES = {
     ]
   },
   'config-profile': {
-    titre: "⚙️ Organisation & Régie Interne",
-    title: "⚙️ Organisation & Régie Interne",
-    description: "Préférences linguistiques, nom court de l'association et règles de fonctionnement.",
+    titre: "⚙️ Champs du Profil Adhérent",
+    title: "⚙️ Champs du Profil Adhérent",
+    description: "Création et gestion des champs personnalisés pour les profils membres.",
     etapes: [
-      "Réglez le préfixe de numérotation des factures et contrats.",
-      "Sélectionnez les termes personnalisés applicables dans l'outil.",
-      "Enregistrez les règles de gestion interne."
+      "Créez des champs texte, liste déroulante ou cases à cocher.",
+      "Définissez si les champs sont obligatoires à l'inscription.",
+      "Réorganisez l'ordre d'affichage des champs dans le profil."
     ],
     steps: [
-      "Réglez le préfixe de numérotation des factures et contrats.",
-      "Sélectionnez les termes personnalisés applicables dans l'outil.",
-      "Enregistrez les règles de gestion interne."
+      "Créez des champs texte, liste déroulante ou cases à cocher.",
+      "Définissez si les champs sont obligatoires à l'inscription.",
+      "Réorganisez l'ordre d'affichage des champs dans le profil."
     ]
   },
   'config-security': {
@@ -813,33 +813,61 @@ export const POLE_GUIDES = {
     ]
   },
   'config-logistics': {
-    titre: "📦 Paramètres Logistiques & Dépôts",
-    title: "📦 Paramètres Logistiques & Dépôts",
-    description: "Définition des lieux de stockage principaux et catégories d'équipements.",
+    titre: "📦 Covoiturage & Matériel",
+    title: "📦 Covoiturage & Matériel",
+    description: "Paramétrage des règles de covoiturage, des mensurations de costumes et des kits.",
     etapes: [
-      "Enregistrez les adresses de vos locaux de stockage de matériel.",
-      "Créez les catégories d'instruments et fournitures.",
-      "Définissez les seuils d'alerte de stock minimal."
+      "Activez ou désactivez les options de remboursement du covoiturage.",
+      "Gérez les options de vestiaire et de mensurations.",
+      "Configurez les accessoires et pièces détachées pour l'inventaire."
     ],
     steps: [
-      "Enregistrez les adresses de vos locaux de stockage de matériel.",
-      "Créez les catégories d'instruments et fournitures.",
-      "Définissez les seuils d'alerte de stock minimal."
+      "Activez ou désactivez les options de remboursement du covoiturage.",
+      "Gérez les options de vestiaire et de mensurations.",
+      "Configurez les accessoires et pièces détachées pour l'inventaire."
+    ]
+  },
+  'config-automations': {
+    titre: "🤖 Automatisations & Formulaires",
+    title: "🤖 Automatisations & Formulaires",
+    description: "Automatisation de la liaison entre les formulaires d'inscription et les types d'événements.",
+    etapes: [
+      "Sélectionnez un formulaire d'inscription existant (HelloAsso, Google Forms...).",
+      "Associez-le à un type d'événement spécifique (Ateliers, Stages).",
+      "Définissez les messages automatiques à envoyer aux inscrits."
+    ],
+    steps: [
+      "Sélectionnez un formulaire d'inscription existant (HelloAsso, Google Forms...).",
+      "Associez-le à un type d'événement spécifique (Ateliers, Stages).",
+      "Définissez les messages automatiques à envoyer aux inscrits."
     ]
   },
   'config-documents': {
-    titre: "📄 Modèles de Documents & Facturation",
-    title: "📄 Modèles de Documents & Facturation",
-    description: "Mise en page des devis, factures, reçus de don et attestations d'adhésion.",
+    titre: "📋 Chartes, Santé & Fils",
+    title: "📋 Chartes, Santé & Fils",
+    description: "Configuration des documents administratifs obligatoires et des catégories du Varal.",
     etapes: [
-      "Téléchargez l'en-tête graphique officiel de l'association.",
-      "Saisissez les mentions légales obligatoires de bas de page.",
-      "Prévisualisez un exemple de document PDF généré."
+      "Téléversez le modèle de certificat de droit à l'image et d'aptitude médicale.",
+      "Vérifiez l'arbre des catégories du Varal pour organiser vos ressources."
     ],
     steps: [
-      "Téléchargez l'en-tête graphique officiel de l'association.",
-      "Saisissez les mentions légales obligatoires de bas de page.",
-      "Prévisualisez un exemple de document PDF généré."
+      "Téléversez le modèle de certificat de droit à l'image et d'aptitude médicale.",
+      "Vérifiez l'arbre des catégories du Varal pour organiser vos ressources."
+    ]
+  },
+  'config-finance': {
+    titre: "🪙 Configuration Trésorerie & HelloAsso",
+    title: "🪙 Configuration Trésorerie & HelloAsso",
+    description: "Configuration des cotisations, tarifs d'adhésion et des coordonnées bancaires.",
+    etapes: [
+      "Saisissez l'IBAN et les informations bancaires de l'association.",
+      "Définissez le montant des cotisations et adhésions.",
+      "Renseignez votre clé API HelloAsso pour automatiser le suivi."
+    ],
+    steps: [
+      "Saisissez l'IBAN et les informations bancaires de l'association.",
+      "Définissez le montant des cotisations et adhésions.",
+      "Renseignez votre clé API HelloAsso pour automatiser le suivi."
     ]
   },
   'config-agenda': {

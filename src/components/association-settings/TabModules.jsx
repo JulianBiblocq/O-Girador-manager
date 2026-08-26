@@ -301,10 +301,10 @@ export default function TabModules({
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-left">
           {[
-            { key: 'vitrine', label: 'Vitrine (Site Public)', desc: 'Le site web de présentation de la troupe' },
-            { key: 'sequenciador', label: 'O Girador Séquenceur', desc: 'Séquenceur audio pour le Mestre' },
-            { key: 'dancador', label: 'O Girador Dançador', desc: 'Outil chorégraphique pour les danseurs' },
-            { key: 'hub', label: 'Hub Orchestrador', desc: 'Portail central O Girador' }
+            { key: 'vitrine', label: 'Monstrador (Site Public)', desc: 'Le site web de présentation de la troupe' },
+            { key: 'sequenciador', label: 'Sequensador', desc: 'Séquenceur audio pour le Mestre' },
+            { key: 'dancador', label: 'Dansador (Espace membre)', desc: 'Espace membre et outil chorégraphique' },
+            { key: 'hub', label: 'Orquestador (Manager)', desc: 'Portail central Manager / Administrateur' }
           ].map(eco => (
             <div 
               key={eco.key}

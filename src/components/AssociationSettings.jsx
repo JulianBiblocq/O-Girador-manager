@@ -331,7 +331,7 @@ export default function AssociationSettings({
                     : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
                 }`}
               >
-                🎨 Identité & Liens
+                🏢 Identité & Contacts
               </button>
               <button
                 type="button"
@@ -386,7 +386,7 @@ export default function AssociationSettings({
                     : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
                 }`}
               >
-                📋 Documents & Charte
+                📋 Chartes, Santé & Fils
               </button>
               <button
                 type="button"

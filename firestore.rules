@@ -249,7 +249,25 @@ service cloud.firestore {
     }
 
     // Inventory: Lecture si authentifié. Écriture réservée aux admins/mestres et membres avec badge Logistique/Inventaire.
+    // Les membres simples peuvent uniquement mettre à jour l'état (pour signaler une casse).
     match /inventory/{item} {
+      allow read: if isAuthenticated();
+      allow create, delete: if canManageInventory();
+      allow update: if canManageInventory() || (isAuthenticated() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['etat']));
+    }
+
+    match /inventory_parts/{item} {
+      allow read: if isAuthenticated();
+      allow create, delete: if canManageInventory();
+      allow update: if canManageInventory() || (isAuthenticated() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'notes']));
+    }
+
+    match /inventory_projects/{item} {
+      allow read: if isAuthenticated();
+      allow write: if canManageInventory();
+    }
+
+    match /instrument_models/{item} {
       allow read: if isAuthenticated();
       allow write: if canManageInventory();
     }

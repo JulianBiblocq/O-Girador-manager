@@ -12,6 +12,7 @@ import { useInventoryData } from '../hooks/useInventoryData';
 import InventoryFilterBar from './inventory/InventoryFilterBar';
 import InventoryItemCard from './inventory/InventoryItemCard';
 import InventoryPartsView from './inventory/InventoryPartsView';
+import InventoryProjectsView from './inventory/InventoryProjectsView';
 import RepairDiagnosticModal from './inventory/RepairDiagnosticModal';
 
 import { useAssociationSettings } from '../hooks/useAssociationSettings';
@@ -464,11 +465,11 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin,
         )}
 
         {/* Tab Switcher */}
-        <div className="flex gap-2 border-b-2 border-dashed border-cordel-master-dark/30 mb-2 select-none">
+        <div className="flex gap-2 border-b-2 border-dashed border-cordel-master-dark/30 mb-2 select-none overflow-x-auto pb-1">
           <button
             type="button"
             onClick={() => setActiveTab('instruments')}
-            className={`px-4 py-2 text-xs font-black uppercase tracking-widest transition-colors border-b-2 ${
+            className={`px-4 py-2 text-xs font-black uppercase tracking-widest transition-colors border-b-2 whitespace-nowrap ${
               activeTab === 'instruments'
                 ? 'border-cordel-wood text-cordel-wood'
                 : 'border-transparent text-cordel-master-dark/60 hover:text-cordel-master-dark'
@@ -479,13 +480,24 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin,
           <button
             type="button"
             onClick={() => setActiveTab('parts')}
-            className={`px-4 py-2 text-xs font-black uppercase tracking-widest transition-colors border-b-2 ${
+            className={`px-4 py-2 text-xs font-black uppercase tracking-widest transition-colors border-b-2 whitespace-nowrap ${
               activeTab === 'parts'
                 ? 'border-cordel-wood text-cordel-wood'
                 : 'border-transparent text-cordel-master-dark/60 hover:text-cordel-master-dark'
             }`}
           >
-            🔩 Pièces Détachées (Stock)
+            🔩 Pièces Détachées
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('projects')}
+            className={`px-4 py-2 text-xs font-black uppercase tracking-widest transition-colors border-b-2 whitespace-nowrap ${
+              activeTab === 'projects'
+                ? 'border-cordel-wood text-cordel-wood'
+                : 'border-transparent text-cordel-master-dark/60 hover:text-cordel-master-dark'
+            }`}
+          >
+            🛠️ L'Atelier (Assemblage)
           </button>
         </div>
 
@@ -1192,6 +1204,27 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin,
           />
         )}
 
+        {/* Tab Projets d'Atelier */}
+        <div className={activeTab === 'projects' ? 'block' : 'hidden'}>
+          <InventoryProjectsView 
+            groupId={groupId} 
+            isAuthorized={isAuthorized} 
+            t={t} 
+            inventoryParts={inventoryParts}
+            onCreateInstrument={async (instData) => {
+              try {
+                const e = { preventDefault: () => {} };
+                // On utilise setFormData pour injecter les données dans l'état, puis on simule la sauvegarde
+                setFormData(instData);
+                // Wait for state to settle then save
+                setTimeout(() => handleSave(e), 50);
+                return true;
+              } catch(err) {
+                return false;
+              }
+            }}
+          />
+        </div>
       </div>
     </>
   );

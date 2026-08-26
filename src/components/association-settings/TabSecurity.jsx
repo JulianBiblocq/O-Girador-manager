@@ -83,13 +83,15 @@ const PERMISSION_POLES = [
     tabs: [
       { id: 'config-identity', label: 'Identité', desc: 'Nom, logo, réseaux et slogan de l\'association' },
       { id: 'config-communication', label: 'Communication & Newsletter', desc: 'Clés Brevo API et export des inscrits newsletter (CSV)' },
-      { id: 'config-profile', label: 'Organisation', desc: 'Structure et champs de profil des adhérents' },
+      { id: 'config-profile', label: 'Champs du Profil', desc: 'Gestion des champs personnalisés de profil des adhérents' },
       { id: 'tag-manager', label: 'Badges', desc: 'Gestion de l\'ordre et des intitulés des badges/rôles' },
       { id: 'instruments', label: 'Pupitres', desc: 'Association des instruments aux pupitres de la troupe' },
       { id: 'config-security', label: 'Sécurité', desc: 'Matrice des permissions et journal d\'audit' },
       { id: 'config-modules', label: 'Modules & Fonctionnalités', desc: 'Activation/Désactivation des modules' },
-      { id: 'config-logistics', label: 'Logistique & Adresses', desc: 'Gestion des adresses et lieux habituels' },
-      { id: 'config-documents', label: 'Documents & Modèles', desc: 'Gestion des documents administratifs et modèles' },
+      { id: 'config-logistics', label: 'Covoiturage & Matériel', desc: 'Règles de remboursement, options costumes et pièces de rechange' },
+      { id: 'config-automations', label: 'Automatisations', desc: 'Liaison des formulaires avec les types d\'événements' },
+      { id: 'config-documents', label: 'Chartes, Santé & Fils', desc: 'Gestion des documents administratifs et modèles' },
+      { id: 'config-finance', label: 'Trésorerie', desc: 'Configuration de la trésorerie et paiements HelloAsso' },
       { id: 'config-agenda', label: 'Agenda & Calendrier', desc: 'Paramètres du calendrier et synchronisation' },
       { id: 'config-lieux', label: 'Lieux & Salles', desc: 'Gestion du répertoire des lieux et salles habituels' },
       { id: 'config-layout', label: 'Apparence & Thème', desc: 'Personnalisation du style visuel et thème Cordel' }

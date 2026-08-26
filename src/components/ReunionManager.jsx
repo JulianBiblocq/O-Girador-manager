@@ -86,7 +86,6 @@ export default function ReunionManager({ groupId, user, profileData, onBack }) {
         // Pré-remplissage automatique du lieu par défaut pour les réunions si configuré
         const defaultLieuId = data.defaultLocationsByEventType?.reunion;
         if (defaultLieuId) {
-          setLieuId(defaultLieuId);
           const foundLieu = lieux.find(l => l.id === defaultLieuId);
           if (foundLieu) {
             const fullLocationText = foundLieu.nom && foundLieu.adresse ? `${foundLieu.nom} - ${foundLieu.adresse}` : (foundLieu.adresse || foundLieu.nom);

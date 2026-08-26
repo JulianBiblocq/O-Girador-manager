@@ -14,6 +14,7 @@ import { XiloChisel } from './XiloIcons';
 import useConfirm from '../hooks/useConfirm';
 import SeloAxeStamp from './SeloAxeStamp';
 import useHardwareBack from '../hooks/useHardwareBack';
+import InstrumentModelsManager from './varal/InstrumentModelsManager';
 
 const DEFAULT_VARAL_CATEGORIES = [
   { id: 'Toadas', nom: 'Toadas', activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false },
@@ -37,6 +38,7 @@ export default function VaralManager({ groupId, onBack, role, isSystemAdmin, isE
   const [selectedToada, setSelectedToada] = useState(null);
   const [selectedCultureCard, setSelectedCultureCard] = useState(null);
   const [showArchived, setShowArchived] = useState(false);
+  const [activeMainTab, setActiveMainTab] = useState('documents'); // 'documents' | 'models'
   
   // Sorting state per category
   const [sortMethods, setSortMethods] = useState({});
@@ -401,8 +403,36 @@ export default function VaralManager({ groupId, onBack, role, isSystemAdmin, isE
         </div>
       )}
 
+      {/* Main Tab Switcher */}
+      <div className="flex gap-2 border-b-2 border-dashed border-cordel-master-dark/30 select-none">
+        <button
+          type="button"
+          onClick={() => setActiveMainTab('documents')}
+          className={`px-4 py-2 text-xs font-black uppercase tracking-widest transition-colors border-b-2 ${
+            activeMainTab === 'documents'
+              ? 'border-cordel-wood text-cordel-wood'
+              : 'border-transparent text-cordel-master-dark/60 hover:text-cordel-master-dark'
+          }`}
+        >
+          📄 Documents & Partitions
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveMainTab('models')}
+          className={`px-4 py-2 text-xs font-black uppercase tracking-widest transition-colors border-b-2 ${
+            activeMainTab === 'models'
+              ? 'border-cordel-wood text-cordel-wood'
+              : 'border-transparent text-cordel-master-dark/60 hover:text-cordel-master-dark'
+          }`}
+        >
+          🛠️ Modèles d'Instruments & Tutos
+        </button>
+      </div>
+
       {/* Main Workspace */}
-      {isAdding || documentToEdit ? (
+      {activeMainTab === 'models' ? (
+        <InstrumentModelsManager groupId={groupId} isAuthorized={isAuthorized} />
+      ) : isAdding || documentToEdit ? (
         <div className="max-w-xl mx-auto w-full">
           <DocumentUploadForm 
             groupId={groupId}

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import CordelCard from '../../CordelCard';
 import CordelButton from '../../CordelButton';
+import { XiloClose } from '../../XiloIcons';
 
 export default function CotisationsBlock({ formData, handleChange, saving, groupId, handleSaveHelloAssoKey }) {
   const {
@@ -12,6 +13,11 @@ export default function CotisationsBlock({ formData, handleChange, saving, group
   } = formData;
 
   const [copySuccess, setCopySuccess] = useState(false);
+  
+  // États pour le simulateur HelloAsso
+  const [showSimulator, setShowSimulator] = useState(false);
+  const [simEmail, setSimEmail] = useState('');
+  const [simStatus, setSimStatus] = useState('');
 
   const projectId = import.meta.env.VITE_FIREBASE_PROJECT_ID || 'o-girador-7828c';
   const webhookUrl = `https://us-central1-${projectId}.cloudfunctions.net/helloAssoWebhook?groupId=${groupId}`;
@@ -23,6 +29,47 @@ export default function CotisationsBlock({ formData, handleChange, saving, group
     }).catch(err => {
       console.error("Erreur de copie :", err);
     });
+  };
+
+  const handleSimulateWebhook = async (e) => {
+    e.preventDefault();
+    if (!simEmail.trim()) return;
+    
+    setSimStatus('Envoi en cours...');
+    
+    const payload = {
+      eventType: "Order",
+      data: {
+        id: "TEST_SIMULATOR_" + Date.now(),
+        payer: {
+          email: simEmail.trim()
+        },
+        amount: {
+          total: (montantAdhesion || 30) * 100 // En centimes
+        }
+      }
+    };
+
+    try {
+      const headers = { 'Content-Type': 'application/json' };
+      if (helloAssoSignatureKey) {
+        headers['X-HelloAsso-Key'] = helloAssoSignatureKey;
+      }
+
+      const res = await fetch(webhookUrl, {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify(payload)
+      });
+
+      if (res.ok) {
+        setSimStatus('✅ Webhook reçu avec succès par le serveur ! Le statut du membre (s\'il existe) devrait être mis à jour.');
+      } else {
+        setSimStatus(`❌ Erreur serveur : ${res.status}`);
+      }
+    } catch (err) {
+      setSimStatus(`❌ Erreur réseau : ${err.message}`);
+    }
   };
 
   return (
@@ -189,7 +236,72 @@ export default function CotisationsBlock({ formData, handleChange, saving, group
             </div>
           </div>
         </div>
+
+        <div className="mt-4 pt-4 border-t border-dashed border-cordel-master-dark/15 flex justify-center">
+          <CordelButton 
+            variant="default"
+            type="button"
+            onClick={() => setShowSimulator(true)}
+            className="text-[10px] font-bold px-4 py-1.5 border-dashed"
+          >
+            🧪 Tester le Webhook (Simulateur)
+          </CordelButton>
+        </div>
       </div>
+
+      {showSimulator && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <CordelCard variant="default" className="w-full max-w-sm p-5 flex flex-col gap-4 relative bg-cordel-bg shadow-2xl">
+            <button 
+              type="button" 
+              onClick={() => { setShowSimulator(false); setSimStatus(''); }}
+              className="absolute top-3 right-3 p-1 text-cordel-master-dark hover:text-cordel-wood"
+            >
+              <XiloClose size={12} />
+            </button>
+            
+            <h3 className="text-sm font-extrabold text-cordel-wood uppercase tracking-wider leading-tight">
+              🧪 Simulateur HelloAsso
+            </h3>
+            
+            <p className="text-[10px] text-cordel-master-dark opacity-90 leading-relaxed">
+              Cet outil permet d'envoyer une fausse notification de paiement à l'application pour vérifier que tout fonctionne, <strong>sans avoir à payer réellement sur HelloAsso</strong>.
+            </p>
+
+            <form onSubmit={handleSimulateWebhook} className="flex flex-col gap-3 mt-2">
+              <div className="flex flex-col gap-1">
+                <label className="text-[10px] font-bold uppercase text-encre-noire">Email du payeur (Membre)</label>
+                <input
+                  type="email"
+                  value={simEmail}
+                  onChange={e => setSimEmail(e.target.value)}
+                  className="theme-input text-xs py-1.5"
+                  placeholder="Ex: membre@email.com"
+                  required
+                />
+                <span className="text-[8px] italic opacity-60">
+                  Saisissez l'email d'un membre existant dans l'application pour voir son statut passer à "À jour".
+                </span>
+              </div>
+
+              {simStatus && (
+                <div className={`p-2 text-[9px] rounded font-bold ${simStatus.includes('✅') ? 'bg-cordel-vert/20 text-cordel-vert border border-cordel-vert/30' : 'bg-cordel-ocre/20 text-cordel-ocre border border-cordel-ocre/30'}`}>
+                  {simStatus}
+                </div>
+              )}
+
+              <CordelButton 
+                type="submit" 
+                variant="vert" 
+                useExtremeBorder={true}
+                className="w-full text-xs font-bold mt-2"
+              >
+                Envoyer le paiement test
+              </CordelButton>
+            </form>
+          </CordelCard>
+        </div>
+      )}
     </CordelCard>
   );
 }

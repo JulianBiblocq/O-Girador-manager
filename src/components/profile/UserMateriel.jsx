@@ -5,7 +5,7 @@ import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 import { XiloCaixa, XiloClose } from '../XiloIcons';
 import { useAssociationSettings } from '../../hooks/useAssociationSettings';
-import { doc, updateDoc, collection, query, where, getDocs } from 'firebase/firestore';
+import { doc, updateDoc, collection, query, where, getDocs, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../firebase';
 
 const getInstrumentIconPath = (instName) => {
@@ -53,6 +53,32 @@ export default function UserMateriel({ user, profileData, onBack }) {
   const [usersList, setUsersList] = useState([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [submittingMovement, setSubmittingMovement] = useState(false);
+
+  // Nouvel état pour le détail des pièces et le signalement
+  const [allInventoryParts, setAllInventoryParts] = useState([]);
+  const [reportPartModal, setReportPartModal] = useState(null);
+  const [reportDescription, setReportDescription] = useState('');
+  const [submittingReport, setSubmittingReport] = useState(false);
+
+  // Fetch all inventory parts once
+  useEffect(() => {
+    if (profileData?.groupId) {
+      const fetchParts = async () => {
+        try {
+          const q = query(collection(db, 'inventoryParts'), where('groupId', '==', profileData.groupId));
+          const snapshot = await getDocs(q);
+          const parts = [];
+          snapshot.forEach(docSnap => {
+            parts.push({ id: docSnap.id, ...docSnap.data() });
+          });
+          setAllInventoryParts(parts);
+        } catch (err) {
+          console.error("UserMateriel - Erreur fetch parts :", err);
+        }
+      };
+      fetchParts();
+    }
+  }, [profileData?.groupId]);
 
   useEffect(() => {
     if (movementModalInst && usersList.length === 0 && profileData?.groupId) {
@@ -113,6 +139,76 @@ export default function UserMateriel({ user, profileData, onBack }) {
     }
   };
 
+  const handleSubmitReport = async (e) => {
+    e.preventDefault();
+    if (!reportPartModal) return;
+    
+    setSubmittingReport(true);
+    try {
+      const { inst, part } = reportPartModal;
+      
+      // 1. Passer la pièce en 'À réparer'
+      await updateDoc(doc(db, 'inventoryParts', part.id), {
+        status: 'À réparer',
+        notes: (part.notes ? part.notes + '\n' : '') + `[Casse signalée par ${user.nom}] ${reportDescription}`
+      });
+
+      // 2. Passer l'instrument parent en 'À réparer'
+      await updateDoc(doc(db, 'inventory', inst.id), {
+        etat: 'À réparer'
+      });
+
+      // 3. Créer une notification pour l'atelier (déclenchera le push)
+      await addDoc(collection(db, 'notifications_queue'), {
+        groupId: profileData.groupId,
+        type: 'repair_needed',
+        title: 'Signalement de casse',
+        body: `${user.prenom || user.nom} a signalé une casse sur la pièce "${part.nom}" de l'instrument "${inst.nom}".`,
+        link: '/inventory',
+        createdAt: serverTimestamp(),
+        targetRoles: ['mestre', 'admin', 'logisticien'] // Destinataires
+      });
+
+      setReportPartModal(null);
+      setReportDescription('');
+    } catch (err) {
+      console.error("Erreur lors du signalement :", err);
+      alert("Erreur lors du signalement de casse.");
+    } finally {
+      setSubmittingReport(false);
+    }
+  };
+
+  const renderNomenclature = (inst) => {
+    if (!inst.nomenclature || !Array.isArray(inst.nomenclature) || inst.nomenclature.length === 0) return null;
+    
+    // Find the actual parts from allInventoryParts
+    const parts = inst.nomenclature.map(partId => allInventoryParts.find(p => p.id === partId)).filter(Boolean);
+    
+    if (parts.length === 0) return null;
+
+    return (
+      <div className="mt-2 pt-2 border-t border-dashed border-cordel-master-dark/20 flex flex-col gap-1">
+        <span className="text-[9px] font-bold uppercase tracking-wider text-cordel-wood mb-1">Détail des pièces :</span>
+        {parts.map(part => (
+          <div key={part.id} className="flex justify-between items-center bg-white/40 px-2 py-1 rounded text-[9px] border border-cordel-master-dark/10">
+            <span className="font-bold text-encre-noire truncate pr-2">{part.nom}</span>
+            {part.status === 'À réparer' ? (
+              <span className="text-red-600 font-bold shrink-0">En réparation</span>
+            ) : (
+              <button 
+                onClick={() => setReportPartModal({ inst, part })}
+                className="text-red-500 font-bold hover:underline shrink-0"
+              >
+                ⚠️ Signaler casse
+              </button>
+            )}
+          </div>
+        ))}
+      </div>
+    );
+  };
+
   return (
     <div className="flex flex-col gap-4 text-left max-w-3xl mx-auto w-full select-none">
       {/* Header bar */}
@@ -150,9 +246,10 @@ export default function UserMateriel({ user, profileData, onBack }) {
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-1">
                 {personal.map(inst => (
-                  <CordelCard key={inst.id} variant="default" useExtremeBorder={false} className="p-3 bg-white/50 dark:bg-black/20 flex items-center justify-between gap-3 text-left hover:shadow-[2px_2px_0px_0px_#181716] transition-all">
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <img src={getInstrumentIconPath(inst.type)} alt={inst.type} className="w-6 h-6 object-contain shrink-0" />
+                  <CordelCard key={inst.id} variant="default" useExtremeBorder={false} className="p-3 bg-white/50 dark:bg-black/20 flex flex-col gap-3 text-left hover:shadow-[2px_2px_0px_0px_#181716] transition-all">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <img src={getInstrumentIconPath(inst.type)} alt={inst.type} className="w-6 h-6 object-contain shrink-0" />
                       <div className="flex flex-col min-w-0">
                         <span className="text-xs font-bold truncate text-encre-noire">{inst.nom}</span>
                         <span className="text-[9px] opacity-70 text-cordel-master-dark truncate">{inst.type}</span>
@@ -161,7 +258,9 @@ export default function UserMateriel({ user, profileData, onBack }) {
                     <span className={`theme-stamp-badge ${inst.etat === 'À réparer' ? 'border-red-600 text-red-600' : 'theme-stamp-badge-wood'} text-[7px] shrink-0`}>
                       {inst.etat}
                     </span>
-                  </CordelCard>
+                  </div>
+                  {renderNomenclature(inst)}
+                </CordelCard>
                 ))}
               </div>
             )}
@@ -199,6 +298,8 @@ export default function UserMateriel({ user, profileData, onBack }) {
                       </div>
                     )}
 
+                    {renderNomenclature(inst)}
+
                     <div className="flex justify-end pt-1">
                       {inst.pendingMovement ? (
                         <span className="text-[9px] font-bold text-cordel-ocre bg-cordel-ocre/10 px-2 py-1 rounded border border-cordel-ocre/30">
@@ -231,17 +332,20 @@ export default function UserMateriel({ user, profileData, onBack }) {
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-1">
                 {localAssigned.map(inst => (
-                  <CordelCard key={inst.id} variant="default" useExtremeBorder={false} className="p-3 bg-white/50 dark:bg-black/20 flex items-center justify-between gap-3 text-left hover:shadow-[2px_2px_0px_0px_#181716] transition-all">
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <img src={getInstrumentIconPath(inst.type)} alt={inst.type} className="w-6 h-6 object-contain shrink-0" />
-                      <div className="flex flex-col min-w-0">
-                        <span className="text-xs font-bold truncate text-encre-noire">{inst.nom}</span>
-                        <span className="text-[9px] opacity-70 text-cordel-master-dark truncate">Au Local</span>
+                  <CordelCard key={inst.id} variant="default" useExtremeBorder={false} className="p-3 bg-white/50 dark:bg-black/20 flex flex-col gap-3 text-left hover:shadow-[2px_2px_0px_0px_#181716] transition-all">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <img src={getInstrumentIconPath(inst.type)} alt={inst.type} className="w-6 h-6 object-contain shrink-0" />
+                        <div className="flex flex-col min-w-0">
+                          <span className="text-xs font-bold truncate text-encre-noire">{inst.nom}</span>
+                          <span className="text-[9px] opacity-70 text-cordel-master-dark truncate">Au Local</span>
+                        </div>
                       </div>
+                      <span className="theme-stamp-badge theme-stamp-badge-wood text-[7px] shrink-0">
+                        {inst.etat}
+                      </span>
                     </div>
-                    <span className="theme-stamp-badge theme-stamp-badge-wood text-[7px] shrink-0">
-                      {inst.etat}
-                    </span>
+                    {renderNomenclature(inst)}
                   </CordelCard>
                 ))}
               </div>
@@ -337,6 +441,51 @@ export default function UserMateriel({ user, profileData, onBack }) {
               </form>
             </CordelCard>
           </div>
+        </div>
+      )}
+      {/* Report Part Modal */}
+      {reportPartModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <CordelCard variant="default" className="w-full max-w-sm p-5 flex flex-col gap-4 relative bg-cordel-bg shadow-2xl">
+            <button 
+              type="button" 
+              onClick={() => setReportPartModal(null)}
+              className="absolute top-3 right-3 p-1.5 border border-encre-noire bg-cordel-bg hover:bg-neutral-200 text-encre-noire rounded-md shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none cursor-pointer flex items-center justify-center"
+            >
+              <XiloClose size={10} />
+            </button>
+            
+            <h3 className="text-sm font-extrabold text-cordel-wood uppercase tracking-wider pr-8 leading-tight">
+              Signaler une casse
+            </h3>
+            
+            <p className="text-xs text-cordel-master-dark opacity-90">
+              Vous vous apprêtez à signaler la casse de la pièce <strong>{reportPartModal.part.nom}</strong> sur l'instrument <strong>{reportPartModal.inst.nom}</strong>.
+            </p>
+
+            <form onSubmit={handleSubmitReport} className="flex flex-col gap-4 mt-2">
+              <div className="flex flex-col gap-1">
+                <label className="text-[10px] font-bold uppercase text-encre-noire">Description du problème</label>
+                <textarea
+                  value={reportDescription}
+                  onChange={e => setReportDescription(e.target.value)}
+                  className="theme-input text-xs py-2 min-h-[80px]"
+                  placeholder="Expliquez ce qui est cassé ou défectueux..."
+                  required
+                />
+              </div>
+
+              <CordelButton 
+                type="submit" 
+                variant="vert" 
+                useExtremeBorder={true}
+                disabled={submittingReport || !reportDescription.trim()}
+                className="w-full text-xs font-bold"
+              >
+                {submittingReport ? 'Envoi...' : 'Envoyer le signalement'}
+              </CordelButton>
+            </form>
+          </CordelCard>
         </div>
       )}
     </div>

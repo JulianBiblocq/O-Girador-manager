@@ -2,7 +2,6 @@ import React from 'react';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 import LegalInfoBlock from './blocks/LegalInfoBlock';
-import SequenceurLinkBlock from './blocks/SequenceurLinkBlock';
 
 export default function TabIdentity({
   formData,
@@ -107,11 +106,6 @@ export default function TabIdentity({
         signatureTresorierFile={signatureTresorierFile}
         setSignatureTresorierFile={setSignatureTresorierFile}
       />
-
-      <div className="mt-4">
-        {/* Lien Séquenceur */}
-        <SequenceurLinkBlock formData={formData} handleChange={handleChange} saving={saving} />
-      </div>
 
       <CordelCard variant="default" useExtremeBorder={true} className="py-4 px-5 mt-4">
         <h3 className="text-xs uppercase font-extrabold tracking-wider text-cordel-wood mb-3">

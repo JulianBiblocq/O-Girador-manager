@@ -176,13 +176,15 @@ const POLES_CONFIG = [
     tabs: [
       { id: 'config-identity', label: 'Identité', labelKey: 'tabConfigIdentity' },
       { id: 'config-communication', label: 'Communication & Newsletter', labelKey: 'tabConfigCommunication' },
-      { id: 'config-profile', label: 'Organisation', labelKey: 'tabConfigProfile' },
+      { id: 'config-profile', label: 'Champs du Profil', labelKey: 'tabConfigProfile' },
       { id: 'tag-manager', label: 'Badges', labelKey: 'tabTagManager' },
       { id: 'instruments', label: 'Pupitres', labelKey: 'tabInstruments' },
       { id: 'config-security', label: 'Sécurité', labelKey: 'tabConfigSecurity' },
       { id: 'config-modules', label: 'Modules & Fonctionnalités', labelKey: 'tabConfigModules' },
-      { id: 'config-logistics', label: 'Logistique', labelKey: 'tabConfigLogistics' },
-      { id: 'config-documents', label: 'Documents', labelKey: 'tabConfigDocuments' },
+      { id: 'config-logistics', label: 'Covoiturage & Matériel', labelKey: 'tabConfigLogistics' },
+      { id: 'config-automations', label: 'Automatisations', labelKey: 'tabConfigAutomations' },
+      { id: 'config-documents', label: 'Chartes, Santé & Fils', labelKey: 'tabConfigDocuments' },
+      { id: 'config-finance', label: 'Trésorerie', labelKey: 'tabConfigFinance' },
       { id: 'config-agenda', label: "Configuration de l'agenda", labelKey: 'tabConfigAgenda' },
       { id: 'config-lieux', label: "Lieux & Salles", labelKey: 'tabConfigLieux' },
       { id: 'config-layout', label: 'Apparence', labelKey: 'tabConfigLayout' }
@@ -1564,6 +1566,15 @@ export default function App() {
                 mode="modules-only"
                 onBack={() => handleNavigateToPole('accueil')} 
               />
+            ) : (currentTab === 'config-automations' && checkTabAccess('config-automations', 'config')) ? (
+              <AssociationSettings 
+                groupId={profileData?.groupId}
+                role={profileData?.role}
+                isSystemAdmin={profileData?.isSystemAdmin}
+                activeTabProp="automatisations"
+                mode="automations-only"
+                onBack={() => handleNavigateToPole('accueil')} 
+              />
             ) : (currentTab === 'config-logistics' && checkTabAccess('config-logistics', 'config')) ? (
               <AssociationSettings 
                 groupId={profileData?.groupId}
@@ -1579,6 +1590,15 @@ export default function App() {
                 role={profileData?.role}
                 isSystemAdmin={profileData?.isSystemAdmin}
                 mode="documents-only"
+                activeTabProp="documents"
+                onBack={() => handleNavigateToPole('accueil')} 
+              />
+            ) : (currentTab === 'config-finance' && checkTabAccess('config-finance', 'config')) ? (
+              <AssociationSettings 
+                groupId={profileData?.groupId}
+                role={profileData?.role}
+                isSystemAdmin={profileData?.isSystemAdmin}
+                mode="finance-only"
                 activeTabProp="finance"
                 onBack={() => handleNavigateToPole('accueil')} 
               />
