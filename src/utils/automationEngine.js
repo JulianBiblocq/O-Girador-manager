@@ -157,6 +157,10 @@ export async function runAutomationEngine(groupId, isSimulation = false) {
       details
     };
 
+  } catch (error) {
+    console.error("runAutomationEngine - Erreur d'exécution :", error);
+    throw error;
+  }
 }
 
 /**
