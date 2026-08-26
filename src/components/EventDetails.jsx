@@ -39,7 +39,6 @@ import SendContractModal from './studio/SendContractModal';
 import EventPublicQrCodeModal from './event-details/EventPublicQrCodeModal';
 import EventMediaQrCodeModal from './event-details/EventMediaQrCodeModal';
 import useHardwareBack from '../hooks/useHardwareBack';
-import { formatSocialUrl } from '../utils/videoUtils';
 import { triggerEventStatusAutomation } from '../utils/automationEngine';
 
 export default function EventDetails({ event, user, profileData, onNavigateToView, onClose, onPrev, onNext, viewMode, setViewMode, onGoToStageLayoutEditor }) {
