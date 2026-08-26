@@ -23,7 +23,7 @@ export function useAutomationRules(groupId) {
 
     setLoading(true);
     const rulesRef = collection(db, 'associations', groupId, 'automation_rules');
-    const q = query(rulesRef, orderBy('createdAt', 'desc'));
+    const q = query(rulesRef);
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const fetchedRules = [];
@@ -33,6 +33,14 @@ export function useAutomationRules(groupId) {
           ...docSnap.data()
         });
       });
+      
+      // Tri en JavaScript pour éviter que les règles sans createdAt disparaissent à cause de Firestore
+      fetchedRules.sort((a, b) => {
+        const dateA = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
+        const dateB = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
+        return dateB - dateA;
+      });
+      
       setRules(fetchedRules);
       setLoading(false);
     }, (error) => {

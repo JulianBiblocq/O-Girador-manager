@@ -7,6 +7,7 @@ import { useTranslation } from '../LanguageContext';
 import useConfirm from '../../hooks/useConfirm';
 import ImportAgendaModal from '../agenda/ImportAgendaModal';
 import { generateCompteRenduPDF } from '../../utils/pdfGenerator';
+import { triggerEventStatusAutomation } from '../../utils/automationEngine';
 
 export default function EventReportSection({ event, user, profileData, associationSettings }) {
   const { t } = useTranslation();
@@ -269,6 +270,14 @@ export default function EventReportSection({ event, user, profileData, associati
         compteRenduStatus: 'attente_relecture',
         compteRenduApprovals: {} // Réinitialiser approvals for new review cycle
       });
+      
+      // Déclenchement de l'automatisation de notification de relecture
+      try {
+        await triggerEventStatusAutomation(event.groupId, { ...event, id: event.id }, 'reportValidation');
+      } catch (triggerErr) {
+        console.error("Erreur déclenchement notification relecture :", triggerErr);
+      }
+
       alert("Le compte-rendu est maintenant en attente de relecture.");
     } catch (err) {
       console.error("Error submitting for review:", err);

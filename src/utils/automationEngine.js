@@ -209,23 +209,32 @@ export async function triggerEventStatusAutomation(groupId, event, triggerType) 
       const uData = docSnap.data();
       if (uData.statutActuel === 'archived') return;
 
-      let isMusicLevelRestricted = true;
-      if (uData.niveauxParInstrument && Object.keys(uData.niveauxParInstrument).length > 0) {
-        const hasMatchingInst = Object.values(uData.niveauxParInstrument).some(niv => {
-          const resolvedNiv = resolveCategory(niv, customCategories);
-          return isUserCategoryMatchingEvent(resolvedNiv, eventRequiredPublic, customCategories);
-        });
-        isMusicLevelRestricted = !hasMatchingInst;
+      if (triggerType === 'reportValidation') {
+        // Pour la relecture de CR, on cible uniquement les membres marqués comme 'present'
+        const isPresent = event.inscriptions?.some(ins => ins.userId === docSnap.id && ins.status === 'present');
+        if (isPresent) {
+          interestedUsers.push({ id: docSnap.id, ...uData });
+        }
       } else {
-        const userMusicLevel = resolveCategory(uData.niveauMusique || uData.niveau, customCategories);
-        isMusicLevelRestricted = !isUserCategoryMatchingEvent(userMusicLevel, eventRequiredPublic, customCategories);
-      }
+        // Logique habituelle pour les annulations/confirmations basée sur les niveaux
+        let isMusicLevelRestricted = true;
+        if (uData.niveauxParInstrument && Object.keys(uData.niveauxParInstrument).length > 0) {
+          const hasMatchingInst = Object.values(uData.niveauxParInstrument).some(niv => {
+            const resolvedNiv = resolveCategory(niv, customCategories);
+            return isUserCategoryMatchingEvent(resolvedNiv, eventRequiredPublic, customCategories);
+          });
+          isMusicLevelRestricted = !hasMatchingInst;
+        } else {
+          const userMusicLevel = resolveCategory(uData.niveauMusique || uData.niveau, customCategories);
+          isMusicLevelRestricted = !isUserCategoryMatchingEvent(userMusicLevel, eventRequiredPublic, customCategories);
+        }
 
-      const userDanceLevel = resolveCategory(uData.niveauDanse, customCategories);
-      const isDanceLevelRestricted = isDanceEvent && danseNiveauRequis && danseNiveauRequis !== 'tous' && danseNiveauRequis !== 'aucun' && (userDanceLevel !== danseNiveauRequis);
+        const userDanceLevel = resolveCategory(uData.niveauDanse, customCategories);
+        const isDanceLevelRestricted = isDanceEvent && danseNiveauRequis && danseNiveauRequis !== 'tous' && danseNiveauRequis !== 'aucun' && (userDanceLevel !== danseNiveauRequis);
 
-      if (!isMusicLevelRestricted && !isDanceLevelRestricted) {
-        interestedUsers.push({ id: docSnap.id, ...uData });
+        if (!isMusicLevelRestricted && !isDanceLevelRestricted) {
+          interestedUsers.push({ id: docSnap.id, ...uData });
+        }
       }
     });
 
@@ -239,8 +248,12 @@ export async function triggerEventStatusAutomation(groupId, event, triggerType) 
       const eventName = event.titre || event.nom || 'Événement';
       const bodyMessage = (rule.messageNotification || '').replace(/\{\{nomEvenement\}\}/g, eventName);
 
-      const defaultTitle = triggerType === 'eventCancelled' ? 'Événement Annulé !' : 'Événement Confirmé !';
-      const actionText = triggerType === 'eventCancelled' ? 'l\'annulation' : 'la confirmation';
+      const defaultTitle = triggerType === 'eventCancelled' ? 'Événement Annulé !' : 
+                           triggerType === 'reportValidation' ? 'Compte-rendu à valider !' : 
+                           'Événement Confirmé !';
+      const actionText = triggerType === 'eventCancelled' ? 'l\'annulation' : 
+                         triggerType === 'reportValidation' ? 'la mise en relecture du CR' :
+                         'la confirmation';
 
       details.push(`🔔 [Règle "${rule.titre}"] : ${interestedUsers.length} membre(s) notifié(s) de ${actionText} pour "${eventName}"`);
 

@@ -221,7 +221,7 @@ export default function TabAutomations({ groupId, eventTypes = ['prestation', 'r
               </div>
 
               {/* Jours avant */}
-              {!['eventConfirmed', 'eventCancelled'].includes(formData.pointDeReference) && (
+              {!['eventConfirmed', 'eventCancelled', 'reportValidation'].includes(formData.pointDeReference) && (
                 <div className="flex flex-col gap-1">
                   <label className="text-[9px] uppercase font-bold text-cordel-master-dark">
                     Nombre de jours avant déclenchement
@@ -254,6 +254,7 @@ export default function TabAutomations({ groupId, eventTypes = ['prestation', 'r
                   <option value="eventDate">📅 Avant la date de l'événement</option>
                   <option value="eventConfirmed">✅ À la confirmation de l'événement</option>
                   <option value="eventCancelled">❌ À l'annulation de l'événement</option>
+                  <option value="reportValidation">📝 À la soumission du compte-rendu pour validation</option>
                 </select>
               </div>
 
@@ -402,6 +403,8 @@ export default function TabAutomations({ groupId, eventTypes = ['prestation', 'r
                       <span className="font-extrabold ml-1">Immédiat à la confirmation</span>
                     ) : r.pointDeReference === 'eventCancelled' ? (
                       <span className="font-extrabold ml-1">Immédiat à l'annulation</span>
+                    ) : r.pointDeReference === 'reportValidation' ? (
+                      <span className="font-extrabold ml-1">Immédiat à la soumission du compte-rendu</span>
                     ) : (
                       <>
                         <span className="underline decoration-amber-500 font-extrabold mx-1">{r.joursAvant} jour(s)</span>
