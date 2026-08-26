@@ -273,7 +273,10 @@ export default function EventReportSection({ event, user, profileData, associati
       
       // Déclenchement de l'automatisation de notification de relecture
       try {
-        await triggerEventStatusAutomation(event.groupId, { ...event, id: event.id }, 'reportValidation');
+        const targetGroupId = event.groupId || profileData?.groupId || user?.groupId;
+        if (targetGroupId) {
+          await triggerEventStatusAutomation(targetGroupId, { ...event, id: event.id }, 'reportValidation');
+        }
       } catch (triggerErr) {
         console.error("Erreur déclenchement notification relecture :", triggerErr);
       }

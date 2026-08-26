@@ -178,12 +178,16 @@ export async function triggerEventStatusAutomation(groupId, event, triggerType) 
 
   try {
     const rulesRef = collection(db, 'associations', groupId, 'automation_rules');
-    const rulesQuery = query(rulesRef, where('isActive', '==', true), where('pointDeReference', '==', triggerType));
+    const rulesQuery = query(rulesRef, where('isActive', '==', true));
     const rulesSnapshot = await getDocs(rulesQuery);
 
     const activeRules = [];
     rulesSnapshot.forEach((docSnap) => {
-      activeRules.push({ id: docSnap.id, ...docSnap.data() });
+      const data = docSnap.data();
+      // Filtrage en JS pour éviter de nécessiter un index composite (isActive + pointDeReference)
+      if (data.pointDeReference === triggerType) {
+        activeRules.push({ id: docSnap.id, ...data });
+      }
     });
 
     if (activeRules.length === 0) {
