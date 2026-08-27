@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import CordelButton from './CordelButton';
 import { XiloClose, XiloMegaphone } from './XiloIcons';
+import { collection, addDoc } from 'firebase/firestore';
+import { db } from '../firebase';
 
 export default function FeedbackModal({
   isOpen,
@@ -55,19 +57,8 @@ export default function FeedbackModal({
     };
 
     try {
-      const hubUrl = import.meta.env.VITE_ECOSYSTEM_HUB_URL || 'https://hook.eu2.make.com/placeholder-feedback'; // Replace with real webhook if needed
-      
-      const response = await fetch(hubUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(payload)
-      });
-
-      if (!response.ok) {
-        throw new Error("Erreur réseau lors de l'envoi.");
-      }
+      const feedbacksRef = collection(db, 'feedbacks');
+      await addDoc(feedbacksRef, payload);
 
       setSuccess(true);
       setTimeout(() => {
@@ -98,7 +89,7 @@ export default function FeedbackModal({
             </span>
             <div className="flex flex-col">
               <span className="text-[9px] font-black uppercase tracking-widest text-cordel-wood opacity-80">
-                Hub Écosystème
+                Support / Feedback
               </span>
               <h3 className="font-cactus font-bold text-base uppercase tracking-wider text-encre-noire dark:text-cordel-bg">
                 Un problème ? Une idée ?
@@ -216,7 +207,7 @@ export default function FeedbackModal({
                 disabled={isSubmitting}
                 className={`text-xs font-black uppercase tracking-wider px-5 py-2 rounded-[4px_6px_3px_5px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none transition-all border border-encre-noire cursor-pointer bg-[#c05621] hover:brightness-110 text-white disabled:opacity-70 disabled:cursor-wait`}
               >
-                {isSubmitting ? 'Envoi...' : 'Envoyer au Hub'}
+                {isSubmitting ? 'Envoi...' : 'Envoyer'}
               </button>
             </div>
           </form>
