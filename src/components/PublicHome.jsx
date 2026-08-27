@@ -1,6 +1,6 @@
 import React from 'react';
 import { HelmetProvider } from 'react-helmet-async';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, updateDoc, increment } from 'firebase/firestore';
 import { db } from '../firebase';
 import { usePublicThemeContext } from './PublicThemeProvider';
 import { usePublicEvents } from '../hooks/usePublicEvents';
@@ -1057,3 +1057,4 @@ export default function PublicHome({
     </HelmetProvider>
   );
 }
+
