@@ -4,9 +4,11 @@ import { db } from '../../firebase';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 import { updateContactLastDate } from '../../utils/updateContactLastDate';
+import { sendAssociationEmail } from '../../utils/emailService';
 
 /**
- * Modale d'envoi d'e-mail de Relance rapide (Brevo v3) pour le Pôle Diffusion et l'Agenda.
+ * Modale d'envoi d'e-mail de Relance rapide pour le Pôle Diffusion et l'Agenda.
+ * Utilise le service centralisé sendAssociationEmail pour le routage.
  */
 export default function GigRelanceEmailModal({
   isOpen,
@@ -61,39 +63,21 @@ export default function GigRelanceEmailModal({
       return;
     }
 
-    const apiKeyToUse = brevoApiKey?.trim() || configuredApiKey?.trim();
-    if (!apiKeyToUse) {
-      setStatusMessage({ type: 'error', title: 'Clé API absente', text: "Veuillez saisir votre clé API Brevo v3." });
-      return;
-    }
-
     setSending(true);
     setStatusMessage(null);
 
     try {
-      const payload = {
-        sender: {
-          name: assocName,
-          email: senderEmail.trim()
-        },
+      const emailParams = {
+        senderEmail: senderEmail.trim(),
+        senderName: assocName,
         to: [{ email: recipientEmail.trim(), name: gig.organizer || recipientEmail.trim() }],
         subject: subject.trim(),
         htmlContent: messageBody.replace(/\n/g, '<br/>')
       };
 
-      const res = await fetch('https://api.brevo.com/v3/smtp/email', {
-        method: 'POST',
-        headers: {
-          'accept': 'application/json',
-          'content-type': 'application/json',
-          'api-key': apiKeyToUse
-        },
-        body: JSON.stringify(payload)
-      });
+      const result = await sendAssociationEmail(emailParams, associationSettings);
 
-      const resData = await res.json().catch(() => ({}));
-
-      if ((res.status === 201 || res.status === 200 || res.ok) && resData.messageId) {
+      if (result.success) {
         // 1. Mise à jour de la date_dernier_contact dans contacts_diffusion
         await updateContactLastDate(gig.groupId || associationSettings.groupId, gig.contactId || recipientEmail);
 
@@ -123,20 +107,13 @@ export default function GigRelanceEmailModal({
           if (onSuccess) onSuccess();
           onClose();
         }, 1800);
-      } else {
-        const errorMsg = resData.message || resData.code || `Code HTTP ${res.status}`;
-        setStatusMessage({
-          type: 'error',
-          title: `❌ Erreur Brevo (Code ${res.status})`,
-          text: `Erreur d'envoi : ${errorMsg}`
-        });
       }
     } catch (err) {
       console.error("GigRelanceEmailModal - Exception relance :", err);
       setStatusMessage({
         type: 'error',
-        title: "❌ Erreur Réseau",
-        text: `Impossible de contacter Brevo : ${err.message || 'Erreur réseau.'}`
+        title: "❌ Erreur d'envoi",
+        text: `Impossible d'envoyer la relance : ${err.message || 'Erreur réseau.'}`
       });
     } finally {
       setSending(false);

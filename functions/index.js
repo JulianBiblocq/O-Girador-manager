@@ -306,7 +306,7 @@ exports.sendBrevoEmail = onRequest(
       const apiKey = brevoApiKeySecret.value();
 
       const payload = {
-        sender: sender || { name: "O GIRADOR", email: "contact@ogirador.fr" },
+        sender: sender || { name: "O GIRADOR", email: "contact@o-girador.com" },
         to: to,
         subject: subject,
         htmlContent: htmlContent,
@@ -397,7 +397,7 @@ exports.sendAssociationEmail = onRequest(
       const payload = {
         sender: {
           name: emailSenderName,
-          email: (sender && sender.email) ? sender.email : "contact@ogirador.fr"
+          email: (sender && sender.email) ? sender.email : "contact@o-girador.com"
         },
         replyTo: {
           name: emailSenderName,
@@ -862,8 +862,8 @@ exports.sendContractEmail = onCall(
       const db = getFirestore();
       
       let emailSenderName = "O GIRADOR";
-      let emailSenderAddress = "contact@ogirador.fr";
-      let emailReplyTo = "contact@ogirador.fr";
+      let emailSenderAddress = "contact@o-girador.com";
+      let emailReplyTo = "contact@o-girador.com";
       let customApiKey = null;
       let deliveryMode = "ogirador";
 

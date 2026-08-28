@@ -19,7 +19,7 @@ export function formatAssociationEmailPayload(params, associationSettings = {}) 
 
   const replyToEmail = (associationSettings.emailReplyTo && associationSettings.emailReplyTo.trim())
     ? associationSettings.emailReplyTo.trim()
-    : (associationSettings.email || associationSettings.publicContactEmail || 'contact@ogirador.fr');
+    : (associationSettings.email || associationSettings.publicContactEmail || 'contact@o-girador.com');
 
   const deliveryMode = associationSettings.emailDeliveryMode || 'ogirador';
   const connectionType = associationSettings.emailConnectionType || 'api';
@@ -72,8 +72,9 @@ export async function sendAssociationEmail(emailParams, associationSettings = {}
   });
 
   try {
-    // Si la Cloud Function centrale est configurée sur Firebase
-    const functionUrl = import.meta.env.VITE_FIREBASE_FUNCTIONS_URL || 'https://sendassociationemail-cloudfunction-url';
+    // Si la Cloud Function centrale est configurée sur Firebase (utilisation du projet par défaut si l'URL n'est pas définie)
+    const projectId = import.meta.env.VITE_FIREBASE_PROJECT_ID;
+    const functionUrl = import.meta.env.VITE_FIREBASE_FUNCTIONS_URL || `https://us-central1-${projectId}.cloudfunctions.net/sendAssociationEmail`;
 
     const response = await fetch(functionUrl, {
       method: 'POST',

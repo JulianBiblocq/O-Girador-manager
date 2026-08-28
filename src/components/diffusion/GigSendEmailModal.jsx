@@ -3,10 +3,11 @@ import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 import { updateContactLastDate } from '../../utils/updateContactLastDate';
 import { downloadInvoicePDF } from '../../utils/invoicePdfGenerator';
+import { sendAssociationEmail } from '../../utils/emailService';
 
 /**
- * Modale d'envoi d'email transactionnel via l'API Brevo v3 (avec pièce jointe Devis PDF en Base64).
- * Enregistre et affiche rigoureusement tout code et message de retour de l'API Brevo.
+ * Modale d'envoi d'email transactionnel (avec pièce jointe Devis PDF).
+ * Utilise le service centralisé sendAssociationEmail pour le routage.
  */
 export default function GigSendEmailModal({
   isOpen,
@@ -79,22 +80,13 @@ export default function GigSendEmailModal({
       return;
     }
 
-    const apiKeyToUse = brevoApiKey?.trim() || configuredApiKey?.trim();
-    if (!apiKeyToUse) {
-      setStatusMessage({ type: 'error', title: "Clé API absente", text: "Veuillez saisir votre clé API Brevo (v3) pour effectuer l'envoi." });
-      return;
-    }
-
     setSending(true);
     setStatusMessage(null);
 
     try {
-      // Préparation du payload de l'API REST Brevo (v3/smtp/email)
-      const payload = {
-        sender: {
-          name: senderName.trim() || assocName,
-          email: senderEmail.trim()
-        },
+      const emailParams = {
+        senderEmail: senderEmail.trim(),
+        senderName: senderName.trim() || assocName,
         to: [
           {
             email: recipientEmail.trim(),
@@ -111,28 +103,10 @@ export default function GigSendEmailModal({
         ]
       };
 
-      console.log("GigSendEmailModal - Envoi vers API Brevo (https://api.brevo.com/v3/smtp/email)...", {
-        sender: payload.sender,
-        to: payload.to,
-        subject: payload.subject
-      });
+      console.log("GigSendEmailModal - Envoi via sendAssociationEmail...");
+      const result = await sendAssociationEmail(emailParams, associationSettings);
 
-      const res = await fetch('https://api.brevo.com/v3/smtp/email', {
-        method: 'POST',
-        headers: {
-          'accept': 'application/json',
-          'content-type': 'application/json',
-          'api-key': apiKeyToUse
-        },
-        body: JSON.stringify(payload)
-      });
-
-      const resData = await res.json().catch(() => ({}));
-      console.log("GigSendEmailModal - Réponse Brevo API : Code HTTP =", res.status, "Données =", resData);
-
-      // Condition stricte : Succès uniquement si HTTP 201 (ou 200) et présence d'un messageId
-      if ((res.status === 201 || res.status === 200 || res.ok) && resData.messageId) {
-        // Mise à jour automatique de la date du dernier contact dans le CRM
+      if (result.success) {
         if (gig) {
           updateContactLastDate(gig.groupId || associationSettings.groupId, gig.contactId || recipientEmail);
         }
@@ -140,38 +114,19 @@ export default function GigSendEmailModal({
         setStatusMessage({
           type: 'success',
           title: '✓ E-mail envoyé avec succès !',
-          text: `Le document a été transmis à ${recipientEmail}. (Identifiant Brevo: ${resData.messageId})`
+          text: `Le document a été transmis à ${recipientEmail}. (Identifiant: ${result.messageId})`
         });
         setTimeout(() => {
           if (onSendSuccess) onSendSuccess();
           onClose();
         }, 2200);
-      } else {
-        // En cas d'erreur de Brevo, capturer l'erreur exacte sans masquage
-        const errorMsg = resData.message || resData.code || `Code HTTP ${res.status}`;
-        console.error("GigSendEmailModal - ÉCHEC BREVO :", res.status, resData);
-
-        let userHelpMsg = `Erreur renvoyée par Brevo (HTTP ${res.status}) : ${errorMsg}`;
-
-        if (res.status === 401 || resData.code === 'unauthorized') {
-          userHelpMsg = `Clé API Brevo non autorisée (${errorMsg}). Vérifiez la clé API v3 dans la configuration.`;
-        } else if (res.status === 400 && (errorMsg.toLowerCase().includes('sender') || errorMsg.toLowerCase().includes('email'))) {
-          userHelpMsg = `Adresse expéditeur refusée par Brevo (${errorMsg}). L'adresse expéditeur "${senderEmail}" doit impérativement être validée dans votre compte Brevo (Rubrique Expéditeurs & IP).`;
-        }
-
-        setStatusMessage({
-          type: 'error',
-          title: `❌ Échec d'envoi Brevo (Code ${res.status})`,
-          text: userHelpMsg,
-          rawError: JSON.stringify(resData, null, 2)
-        });
       }
     } catch (err) {
       console.error("GigSendEmailModal - Exception d'envoi :", err);
       setStatusMessage({
         type: 'error',
-        title: "❌ Erreur Réseau",
-        text: `Impossible de contacter l'API Brevo : ${err.message || 'Erreur réseau.'}`
+        title: "❌ Erreur d'envoi",
+        text: `Impossible d'envoyer l'e-mail : ${err.message || 'Erreur réseau.'}`
       });
     } finally {
       setSending(false);
@@ -336,21 +291,6 @@ export default function GigSendEmailModal({
               </span>
             </div>
 
-            {/* Clé API Brevo si non configurée */}
-            <div className="flex flex-col gap-1 p-2 bg-amber-50 border border-amber-300 rounded">
-              <label className="text-[9px] font-extrabold uppercase text-amber-900 flex items-center justify-between">
-                <span>🔑 Clé API Brevo v3</span>
-                <span className="text-[8px] font-normal italic">Si vide, utilise la clé de la configuration</span>
-              </label>
-              <input
-                type="password"
-                value={brevoApiKey}
-                onChange={(e) => setBrevoApiKey(e.target.value)}
-                disabled={sending}
-                placeholder="xkeysib-..."
-                className="text-xs font-mono px-2.5 py-1 border border-amber-300 rounded bg-white"
-              />
-            </div>
           </div>
 
           {/* 3. Footer (Fixe en bas) */}
