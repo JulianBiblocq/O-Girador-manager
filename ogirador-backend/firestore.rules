@@ -81,25 +81,7 @@ service cloud.firestore {
       return channelData.get('writeRoles', channelData.get('allowedRoles', channelData.get('allowedTags', ['all'])));
     }
 
-    function hasChannelReadAccess(channelId) {
-      return isAuthenticated() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && (
-        isAdminOrMestre() ||
-        isModerator() ||
-        (
-          channelId != null &&
-          exists(/databases/$(database)/documents/forum_channels/$(channelId)) &&
-          getUserData().groupId == getChannelData(channelId).groupId &&
-          (
-            getChannelData(channelId).get('isTransparent', false) == true ||
-            getChannelReadRoles(getChannelData(channelId)) == null ||
-            getChannelReadRoles(getChannelData(channelId)).size() == 0 ||
-            getChannelReadRoles(getChannelData(channelId)).hasAny(['all']) ||
-            getChannelReadRoles(getChannelData(channelId)).hasAny([getUserData().get('role', '')]) ||
-            (getUserData().keys().hasAny(['tags']) && getUserData().tags.hasAny(getChannelReadRoles(getChannelData(channelId))))
-          )
-        )
-      );
-    }
+
 
     function hasChannelWriteAccess(channelId) {
       return isAuthenticated() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && (
@@ -359,6 +341,17 @@ service cloud.firestore {
     match /reunions/{reunion} {
       allow read: if isAuthenticated();
       allow write: if canManageDocs();
+    }
+
+    // Inventory (Instruments, Equipment): Lecture si authentifié. Écriture réservée aux admins/mestres et badge Logistique.
+    match /inventory/{item} {
+      allow read: if isAuthenticated();
+      allow write: if canManageInventory();
+    }
+
+    match /inventory_parts/{part} {
+      allow read: if isAuthenticated();
+      allow write: if canManageInventory();
     }
 
     // Wardrobe Inventory: Lecture si authentifiÃƒÂ©. Ãƒâ€°criture rÃƒÂ©servÃƒÂ©e aux admins/mestres et badge Logistique/Costumes.

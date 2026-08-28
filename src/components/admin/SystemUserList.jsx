@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import CordelCard from '../CordelCard';
+
 import { generateImageCharterPDF, generateMedicalAttestationPDF } from '../../utils/pdfGenerator';
 import { formatTagGender, getTagId } from '../../utils/tagUtils';
 import { getMigratedRoleAndTags, VALID_SYSTEM_ROLES } from '../../utils/roleMigration';
 import { DEFAULT_CUSTOM_CATEGORIES } from '../../utils/categoryUtils';
 import MemberProfileEditModal from './MemberProfileEditModal';
+import CordelAccordion, { CordelAccordionGroup } from '../CordelAccordion';
 
 /**
  * Composant SystemUserList
@@ -40,6 +41,8 @@ export default function SystemUserList({
   handleDeleteUser
 }) {
   const [modalUser, setModalUser] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [expandedUsers, setExpandedUsers] = useState({});
 
   const handleOpenModal = (userItem) => {
     setModalUser(userItem);
@@ -56,10 +59,56 @@ export default function SystemUserList({
     setModalUser(null);
   };
 
+  const toggleAll = (expand) => {
+    if (expand) {
+      const allIds = {};
+      usersList.forEach(u => allIds[u.id] = true);
+      setExpandedUsers(allIds);
+    } else {
+      setExpandedUsers({});
+    }
+  };
+
+  const filteredUsers = usersList.filter(user => {
+    if (!searchTerm) return true;
+    const term = searchTerm.toLowerCase();
+    const fullName = `${user.prenom || ''} ${user.nom || ''}`.toLowerCase();
+    return fullName.includes(term) || (user.email || '').toLowerCase().includes(term);
+  });
+
   return (
     <>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {usersList.map((userItem) => {
+      <div className="flex flex-col sm:flex-row justify-between items-center gap-3 mb-4 bg-cordel-bg-light p-3 rounded border border-cordel-master-dark/20">
+        <div className="flex-1 w-full relative">
+          <input 
+            type="text" 
+            placeholder="Rechercher un membre par nom ou email..." 
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="theme-input w-full text-sm font-bold py-2 px-3 pl-8"
+          />
+          <span className="absolute left-2.5 top-1/2 -translate-y-1/2 opacity-50">🔍</span>
+        </div>
+        <div className="flex gap-2 shrink-0">
+          <button 
+            type="button" 
+            onClick={() => toggleAll(true)}
+            className="text-[10px] font-black uppercase bg-cordel-bg border border-encre-noire px-3 py-1.5 rounded shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] cursor-pointer hover:bg-neutral-200"
+          >
+            Tout déplier
+          </button>
+          <button 
+            type="button" 
+            onClick={() => toggleAll(false)}
+            className="text-[10px] font-black uppercase bg-cordel-bg border border-encre-noire px-3 py-1.5 rounded shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] cursor-pointer hover:bg-neutral-200"
+          >
+            Tout replier
+          </button>
+        </div>
+      </div>
+
+      <CordelAccordionGroup className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {filteredUsers.map((userItem) => {
           const migrated = getMigratedRoleAndTags(userItem);
           const currentRole = migrated.newRole;
           const currentTags = userItem.tags || [];
@@ -109,47 +158,58 @@ export default function SystemUserList({
             Object.keys(draftUserAppRights).length > 0 ||
             Object.keys(userDraft).length > 0;
 
-          return (
-            <CordelCard 
-              key={userItem.id} 
-              variant={isNewMember ? "ocre" : "default"} 
-              useExtremeBorder={false} 
-              className={`flex flex-col gap-3 relative p-4 text-left select-none ${
-                isNewMember ? 'border-2 border-amber-600 shadow-[3px_3px_0px_0px_#c05621]' : ''
-              }`}
-            >
-              {/* User identity info */}
-              <div className="flex items-center gap-3 pr-16">
-                {userItem.photoUrl ? (
-                  <div className="w-10 h-10 border border-encre-noire rounded-full overflow-hidden bg-white shrink-0">
-                    <img src={userItem.photoUrl} alt={userItem.prenom} className="w-full h-full object-cover" />
-                  </div>
-                ) : (
-                  <div className="w-10 h-10 border border-encre-noire rounded-full bg-cordel-bg-light/60 flex items-center justify-center shrink-0">
-                    <span className="text-xs uppercase font-black text-cordel-wood">
-                      {userItem.prenom?.charAt(0)}{userItem.nom?.charAt(0)}
-                    </span>
-                  </div>
-                )}
-                <div className="flex flex-col min-w-0">
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className="text-sm font-black uppercase text-encre-noire truncate leading-none">
-                      {userItem.prenom} {userItem.nom}
-                    </span>
-                    {isNewMember && (
-                      <span className="text-[8px] font-black uppercase px-2 py-0.5 rounded bg-amber-500 text-white border border-encre-noire animate-pulse shadow-xs">
-                        🆕 Nouveau
-                      </span>
-                    )}
-                  </div>
-                  <span className="text-[9px] font-bold text-cordel-master-dark opacity-60 leading-none break-all mt-1">
-                    {userItem.email}
+          const isUserExpanded = !!expandedUsers[userItem.id];
+
+          const userTitleContent = (
+            <div className="flex items-center gap-3 pr-8">
+              {userItem.photoUrl ? (
+                <div className="w-10 h-10 border border-encre-noire rounded-full overflow-hidden bg-white shrink-0">
+                  <img src={userItem.photoUrl} alt={userItem.prenom} className="w-full h-full object-cover" />
+                </div>
+              ) : (
+                <div className="w-10 h-10 border border-encre-noire rounded-full bg-cordel-bg-light/60 flex items-center justify-center shrink-0">
+                  <span className="text-xs uppercase font-black text-cordel-wood">
+                    {userItem.prenom?.charAt(0)}{userItem.nom?.charAt(0)}
                   </span>
                 </div>
+              )}
+              <div className="flex flex-col min-w-0">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="text-sm font-black uppercase text-encre-noire truncate leading-none">
+                    {userItem.prenom} {userItem.nom}
+                  </span>
+                  {isNewMember && (
+                    <span className="text-[8px] font-black uppercase px-2 py-0.5 rounded bg-amber-500 text-white border border-encre-noire animate-pulse shadow-xs">
+                      🆕 Nouveau
+                    </span>
+                  )}
+                  {isArchived && (
+                    <span className="text-[8px] font-black uppercase px-2 py-0.5 rounded bg-red-600 text-white border border-encre-noire shadow-xs">
+                      Archivé
+                    </span>
+                  )}
+                </div>
+                <span className="text-[9px] font-bold text-cordel-master-dark opacity-60 leading-none break-all mt-1">
+                  {userItem.email}
+                </span>
               </div>
+            </div>
+          );
+
+          return (
+            <CordelAccordion
+              key={userItem.id}
+              title={userTitleContent}
+              isOpen={isUserExpanded}
+              onToggle={(isOpen) => toggleUser(userItem.id, isOpen)}
+              badge={hasChanged ? "Modifié" : null}
+              className={`${isNewMember ? 'border-amber-600 shadow-[3px_3px_0px_0px_#c05621]' : 'shadow-[3px_3px_0px_0px_#181716] border-encre-noire'}`}
+            >
+              <div className="flex flex-col gap-3 relative text-left select-none">
+
 
               {/* Actions panel */}
-              <div className="flex flex-wrap justify-between items-center gap-2 border-t border-dashed border-cordel-master-dark/10 pt-3">
+              <div className="flex flex-wrap justify-between items-center gap-2 pt-1">
                 <span className="text-[10px] font-black uppercase text-cordel-wood">Actions & Validation</span>
                 
                 <div className="flex items-center gap-1.5 flex-wrap">
@@ -541,26 +601,11 @@ export default function SystemUserList({
                 </div>
               )}
 
-              {/* Stamp badge representing current live role and archived status */}
-              <div className="absolute right-4 top-4 select-none flex flex-col items-end gap-1">
-                <span className="theme-stamp-badge theme-stamp-badge-wood text-[7px]">
-                  {currentRole}
-                </span>
-                {isNewMember && (
-                  <span className="theme-stamp-badge theme-stamp-badge-ocre text-[7px] font-extrabold uppercase animate-pulse">
-                    À valider
-                  </span>
-                )}
-                {isArchived && (
-                  <span className="theme-stamp-badge theme-stamp-badge-wood text-[7px] border-red-600 text-red-600 font-extrabold uppercase rotate-[-3deg]">
-                    Archivé
-                  </span>
-                )}
               </div>
-            </CordelCard>
+            </CordelAccordion>
           );
         })}
-      </div>
+      </CordelAccordionGroup>
 
       {/* Modale d'édition complète du profil par l'administrateur */}
       {modalUser && (
