@@ -884,10 +884,16 @@ export default function App() {
     );
   }
 
-  // 2. Route Racine '/' -> Vitrine Publique One-Page enveloppée par PublicThemeProvider
+  // 2. Routage dynamique : Vitrine Publique One-Page, Racine, Setup
 
   const isRootPath = !currentRoute || currentRoute === '/' || currentRoute === '' || currentRoute === '/index.html' || currentRoute.startsWith('/?') || currentRoute.startsWith('/#');
   const isSetupPath = currentRoute.startsWith('/setup');
+  const isAppPath = currentRoute.startsWith('/app');
+  const isLoginPath = currentRoute === '/login' || currentRoute === '/login/';
+  
+  // Toute autre route (ex: /asso-01) est traitée comme une route vitrine
+  const isVitrinePath = !isRootPath && !isSetupPath && !isAppPath && !isLoginPath;
+  const vitrineGroupId = isVitrinePath ? currentRoute.split('/')[1]?.split('?')[0] : null;
 
   if (isSetupPath) {
     return (
@@ -903,7 +909,7 @@ export default function App() {
     );
   }
 
-  if (isRootPath) {
+  if (isRootPath || isVitrinePath) {
 
     if (isTenantLoading) {
       return (
@@ -918,15 +924,15 @@ export default function App() {
       return <TenantNotFound />;
     }
 
-    if (appMode === 'orchestrador') {
+    if (appMode === 'orchestrador' && isRootPath) {
       return <OrchestradorRedirector brandingStyle={brandingStyle} />;
     }
 
-    if (appMode === 'organizador') {
+    if (appMode === 'organizador' && isRootPath) {
       return <OrganizadorRedirector user={user} navigateToRoute={navigateToRoute} brandingStyle={brandingStyle} />;
     }
 
-    const publicGroupId = urlGroupId || profileData?.groupId || null;
+    const publicGroupId = vitrineGroupId || urlGroupId || profileData?.groupId || null;
 
     return (
       <PublicThemeProvider groupId={publicGroupId}>

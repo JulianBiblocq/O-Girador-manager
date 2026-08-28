@@ -27,6 +27,21 @@ const applyOverrides = (questions, overrides = {}) => {
   });
 };
 
+// Utilitaire pour transformer le texte brut en tableau de mots structurés
+const parseLexiqueString = (str) => {
+  if (!str || typeof str !== 'string') return [];
+  const lines = str.split('\n');
+  const results = [];
+  lines.forEach(line => {
+    // Ex: "1* mot : def", "** mot : def", "mot : def"
+    const match = line.match(/^(?:\d*\*+)?\s*(.*?)\s*:\s*(.*)$/);
+    if (match) {
+      results.push({ mot: match[1].trim(), explication: match[2].trim() });
+    }
+  });
+  return results;
+};
+
 // Utilitaire pour le Lexique Transversal
 const getTransversalLexique = (allSheetsData = [], allSongs = []) => {
   const translations = new Set();
@@ -45,8 +60,12 @@ const getTransversalLexique = (allSheetsData = [], allSongs = []) => {
   // Extraire depuis les chants (champ 'notesLexique' : [{mot, explication}])
   if (Array.isArray(allSongs)) {
     allSongs.forEach(song => {
-      if (song.notesLexique && Array.isArray(song.notesLexique)) {
-        song.notesLexique.forEach(n => {
+      let lexiqueArray = song.notesLexique;
+      if (typeof lexiqueArray === 'string') {
+        lexiqueArray = parseLexiqueString(lexiqueArray);
+      }
+      if (lexiqueArray && Array.isArray(lexiqueArray)) {
+        lexiqueArray.forEach(n => {
           if (n.explication) translations.add(n.explication);
         });
       }
@@ -1031,12 +1050,17 @@ export const generateQuizFromSong = (song, allSongs = [], allSheetsData = [], co
   }
 
   // 3. Question sur le Lexique (Lexique Transversal)
-  if (askLexique && song.notesLexique && song.notesLexique.length > 0) {
+  let lexiqueData = song.notesLexique;
+  if (typeof lexiqueData === 'string') {
+    lexiqueData = parseLexiqueString(lexiqueData);
+  }
+
+  if (askLexique && lexiqueData && lexiqueData.length > 0) {
     // Collecter les mots de lexique de TOUTE la base (chants + fiches)
     const allLexiqueFr = getTransversalLexique(allSheetsData, allSongs);
 
     // Prendre un mot au hasard du lexique de la chanson
-    const randomLexique = song.notesLexique[Math.floor(Math.random() * song.notesLexique.length)];
+    const randomLexique = lexiqueData[Math.floor(Math.random() * lexiqueData.length)];
     if (randomLexique.mot && randomLexique.explication) {
       let wrongChoices = allLexiqueFr.filter(t => t.toLowerCase() !== randomLexique.explication.toLowerCase());
       wrongChoices = shuffleArray(wrongChoices).slice(0, 3);

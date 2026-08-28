@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { getFunctions, httpsCallable } from 'firebase/functions';
-import { app } from '../../firebase';
+import { app, functions } from '../../firebase';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 
@@ -57,7 +57,6 @@ export default function SendContractModal({ isOpen, onClose, event, groupId }) {
     setStatusMessage(null);
 
     try {
-      const functions = getFunctions(app, 'europe-west1');
       const sendContractEmailFn = httpsCallable(functions, 'sendContractEmail');
 
       const response = await sendContractEmailFn({

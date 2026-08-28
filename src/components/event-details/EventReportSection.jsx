@@ -25,6 +25,7 @@ export default function EventReportSection({ event, user, profileData, associati
   const [secretaryResponses, setSecretaryResponses] = useState({});
   const [isSubmittingSuggestion, setIsSubmittingSuggestion] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [showVoters, setShowVoters] = useState(false);
   
   const recognitionRef = useRef(null);
 
@@ -509,6 +510,10 @@ export default function EventReportSection({ event, user, profileData, associati
   const approvedCount = presents.filter(ins => approvals[ins.userId]?.approved === true).length;
   const rejectedCount = presents.filter(ins => approvals[ins.userId]?.approved === false).length;
   const pendingCount = totalPresents - approvedCount - rejectedCount;
+
+  const votersApproved = presents.filter(ins => approvals[ins.userId]?.approved === true);
+  const votersRejected = presents.filter(ins => approvals[ins.userId]?.approved === false);
+  const votersPending = presents.filter(ins => !approvals[ins.userId]);
 
   const isUserPresent = presents.some(ins => ins.userId === user.uid);
   const userVote = approvals[user.uid];
@@ -1014,6 +1019,44 @@ export default function EventReportSection({ event, user, profileData, associati
                   <div className="text-red-700">❌ {rejectedCount} Demandes de modifications</div>
                   <div className="text-neutral-500">⏳ {pendingCount} En attente</div>
                 </div>
+
+                <div className="mt-1">
+                  <button 
+                    onClick={() => setShowVoters(!showVoters)}
+                    className="text-[10px] text-[var(--color-cordel-ocre,#c05621)] font-extrabold hover:underline uppercase tracking-wider bg-transparent border-0 cursor-pointer"
+                  >
+                    👥 {showVoters ? "Masquer le détail des votes" : "Voir qui a voté (et qui n'a pas voté)"}
+                  </button>
+                </div>
+
+                {showVoters && (
+                  <div className="mt-1 mb-2 flex flex-col gap-3 p-3 bg-white/40 border border-dashed border-cordel-master-dark/15 rounded text-[10px]">
+                    {votersApproved.length > 0 && (
+                      <div className="flex flex-col gap-1">
+                        <span className="font-extrabold text-[var(--color-cordel-vert,#2d6a4f)]">✅ Ont approuvé :</span>
+                        <div className="flex flex-wrap gap-1">
+                          {votersApproved.map(ins => <span key={ins.userId} className="px-1.5 py-0.5 bg-[#2d6a4f]/10 text-[var(--color-cordel-vert,#2d6a4f)] rounded">{ins.userName}</span>)}
+                        </div>
+                      </div>
+                    )}
+                    {votersRejected.length > 0 && (
+                      <div className="flex flex-col gap-1">
+                        <span className="font-extrabold text-[var(--color-cordel-rouge,#8b2a1a)]">❌ Ont demandé une modification :</span>
+                        <div className="flex flex-wrap gap-1">
+                          {votersRejected.map(ins => <span key={ins.userId} className="px-1.5 py-0.5 bg-[#8b2a1a]/10 text-[var(--color-cordel-rouge,#8b2a1a)] rounded">{ins.userName}</span>)}
+                        </div>
+                      </div>
+                    )}
+                    {votersPending.length > 0 && (
+                      <div className="flex flex-col gap-1">
+                        <span className="font-extrabold text-[var(--color-cordel-ocre,#c05621)]">⏳ N'ont pas encore voté :</span>
+                        <div className="flex flex-wrap gap-1">
+                          {votersPending.map(ins => <span key={ins.userId} className="px-1.5 py-0.5 bg-[#c05621]/10 text-[var(--color-cordel-ocre,#c05621)] rounded">{ins.userName}</span>)}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {/* List of comments/modifs */}
                 {Object.keys(approvals).some(uid => approvals[uid].commentaire) && (

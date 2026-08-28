@@ -821,10 +821,193 @@ exports.provisionNewMestre = onCall(async (request) => {
         // On utilise 'failed-precondition' car Firebase masque les messages des erreurs 'internal' et 'unknown'
         throw new HttpsError(
             'failed-precondition',
-            `Erreur provisioning : [${errorCode}] ${errorMessage}`
         );
     }
 });
+
+/**
+ * Cloud Function Callable (v2) : sendContractEmail
+ * Envoie un contrat de prestation par email transactionnel via Brevo.
+ */
+exports.sendContractEmail = onCall(
+  { secrets: [brevoApiKeySecret], cors: true },
+  async (request) => {
+    // 1. Sécurité : authentification requise
+    const authData = request.auth || (request.context && request.context.auth);
+    if (!authData || !authData.uid) {
+      throw new HttpsError(
+        'unauthenticated',
+        'Vous devez être connecté pour envoyer un contrat.'
+      );
+    }
+
+    const data = request.data || request;
+    const { 
+      recipientEmail, 
+      recipientName, 
+      eventName, 
+      eventDate, 
+      cachet, 
+      contractPdfUrl, 
+      customNotes, 
+      templateId, 
+      groupId 
+    } = data;
+
+    if (!recipientEmail) {
+      throw new HttpsError('invalid-argument', 'L\'e-mail du destinataire est requis.');
+    }
+
+    try {
+      const db = getFirestore();
+      
+      let emailSenderName = "O GIRADOR";
+      let emailSenderAddress = "contact@ogirador.fr";
+      let emailReplyTo = "contact@ogirador.fr";
+      let customApiKey = null;
+      let deliveryMode = "ogirador";
+
+      // Récupération des paramètres de l'association si un groupId est fourni
+      if (groupId) {
+        try {
+          const assocDoc = await db.collection("associations").doc(groupId).get();
+          if (assocDoc.exists) {
+            const assocData = assocDoc.data();
+            emailSenderName = assocData.emailSenderName || assocData.nom || emailSenderName;
+            emailSenderAddress = assocData.emailOfficiel || assocData.email || emailSenderAddress;
+            emailReplyTo = assocData.emailReplyTo || assocData.email || emailReplyTo;
+            deliveryMode = assocData.emailDeliveryMode || deliveryMode;
+          }
+
+          const credsDoc = await db.collection("associations").doc(groupId)
+            .collection("private_settings").doc("credentials").get();
+          
+          if (credsDoc.exists) {
+            const credsData = credsDoc.data();
+            if (credsData.emailProviderApiKey) {
+              customApiKey = credsData.emailProviderApiKey;
+            }
+          }
+        } catch (dbErr) {
+          console.warn("sendContractEmail - Erreur lecture Firestore :", dbErr);
+        }
+      }
+
+      // Sélection de la clé API
+      const centralApiKey = brevoApiKeySecret.value();
+      const apiKeyToUse = (deliveryMode === "custom" && customApiKey) ? customApiKey : centralApiKey;
+
+      // Construction du payload pour Brevo
+      const payload = {
+        sender: {
+          name: emailSenderName,
+          email: emailSenderAddress
+        },
+        replyTo: {
+          name: emailSenderName,
+          email: emailReplyTo
+        },
+        to: [
+          {
+            email: recipientEmail,
+            name: recipientName || recipientEmail
+          }
+        ]
+      };
+
+      if (templateId && templateId.trim() !== '') {
+        // Utilisation d'un template transactionnel Brevo
+        payload.templateId = parseInt(templateId, 10);
+        payload.params = {
+          eventName: eventName || "",
+          eventDate: eventDate || "",
+          cachet: cachet || "",
+          contractPdfUrl: contractPdfUrl || "",
+          customNotes: customNotes || "",
+          recipientName: recipientName || ""
+        };
+      } else {
+        // Utilisation du modèle de texte par défaut
+        payload.subject = `[Contrat] - ${eventName || "Prestation"}`;
+        
+        // Assemblage du message en HTML
+        let htmlBody = `<div style="font-family: sans-serif; color: #333; line-height: 1.6;">`;
+        htmlBody += `<p>Bonjour ${recipientName || 'à vous'},</p>`;
+        
+        let evtString = eventName ? `<strong>${eventName}</strong>` : `votre événement`;
+        if (eventDate) evtString += ` du <strong>${eventDate}</strong>`;
+        
+        htmlBody += `<p>Veuillez trouver ci-joint ou ci-dessous notre contrat de prestation concernant ${evtString}.</p>`;
+        
+        if (cachet) {
+          htmlBody += `<p>Montant convenu : <strong>${cachet}</strong>.</p>`;
+        }
+        
+        if (contractPdfUrl) {
+           htmlBody += `<p style="margin: 20px 0;">
+             <a href="${contractPdfUrl}" style="background-color: #2d6a4f; color: #fff; padding: 12px 20px; text-decoration: none; border-radius: 4px; display: inline-block; font-weight: bold;">
+               📄 Télécharger et Consulter le Contrat
+             </a>
+           </p>`;
+        }
+        
+        if (customNotes) {
+           htmlBody += `<div style="margin-top: 20px; padding: 15px; border-left: 4px solid #c05621; background-color: #fdfaf2;">
+             <p style="margin-top: 0; font-weight: bold; color: #c05621;">Note de notre équipe :</p>
+             <p style="white-space: pre-line; margin-bottom: 0;">${customNotes}</p>
+           </div>`;
+        }
+        
+        htmlBody += `<p style="margin-top: 30px;">Nous vous invitons à le consulter, le parapher et à nous le retourner signé avec la mention "Lu et approuvé - Bon pour accord".<br/>Nous restons à votre entière disposition pour tout échange logistique ou complémentaire.</p>`;
+        htmlBody += `<p>Cordialement,<br/><strong>L'équipe ${emailSenderName}</strong></p>`;
+        htmlBody += `</div>`;
+        
+        payload.htmlContent = htmlBody;
+      }
+
+      console.log("sendContractEmail - Transmission à Brevo...", {
+        groupId,
+        senderEmail: emailSenderAddress,
+        deliveryMode,
+        hasCustomKey: !!customApiKey
+      });
+
+      const brevoRes = await fetch("https://api.brevo.com/v3/smtp/email", {
+        method: "POST",
+        headers: {
+          "accept": "application/json",
+          "content-type": "application/json",
+          "api-key": apiKeyToUse
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const resData = await brevoRes.json();
+
+      if (brevoRes.ok) {
+        return { 
+          success: true, 
+          messageId: resData.messageId,
+          message: "Contrat expédié avec succès !" 
+        };
+      } else {
+        console.error("sendContractEmail - Erreur API Brevo :", brevoRes.status, resData);
+        throw new HttpsError(
+          'internal', 
+          `Erreur lors de l'envoi via Brevo: ${resData.message || resData.code || "Erreur inconnue"}`
+        );
+      }
+
+    } catch (error) {
+      console.error("sendContractEmail - Exception globale :", error);
+      if (error instanceof HttpsError) throw error;
+      throw new HttpsError(
+        'internal',
+        `Erreur serveur interne : ${error.message}`
+      );
+    }
+  }
+);
 
 // ============================================================================
 // 🛒 PHASE 3 : INTÉGRATION STRIPE CHECKOUT
@@ -929,3 +1112,117 @@ exports.stripeWebhook = onRequest(
     res.status(200).send("Webhook endpoint is ready.");
   }
 );
+
+// ============================================================================
+// 🌍 PHASE 4 : SEO & RÉFÉRENCEMENT MULTI-TENANT (MOSTRADOR)
+// ============================================================================
+
+/**
+ * Cloud Function HTTP (v2) : serveDynamicApp
+ * Intercepte les requêtes Firebase Hosting, identifie le tenant (association),
+ * et injecte dynamiquement les balises Meta SEO dans le fichier index.html.
+ */
+exports.serveDynamicApp = onRequest(async (req, res) => {
+  const hostname = req.hostname;
+  const urlPath = req.path;
+  const projectId = process.env.GCLOUD_PROJECT || "o-girador-7828c";
+  
+  // Valeurs O Girador par défaut
+  let seoTitle = "O Girador";
+  let seoDesc = "Application de gestion pour groupes et associations.";
+  let seoImage = `https://${projectId}.web.app/og-image.png`;
+  let seoUrl = `https://${hostname}${urlPath}`;
+
+  try {
+    const db = getFirestore();
+    let groupId = null;
+    
+    // 1. Détection du groupe via le sous-domaine ou domaine personnalisé
+    if (hostname.includes('mostrador.o-girador.com')) {
+      const parts = hostname.split('.');
+      if (parts.length > 3 && parts[0] !== 'mostrador') {
+        groupId = parts[0];
+      }
+    } else if (!hostname.includes('o-girador.com') && !hostname.includes('web.app') && !hostname.includes('localhost')) {
+      const associationsRef = db.collection('associations');
+      const possibleHostnames = [hostname];
+      if (hostname.startsWith('www.')) possibleHostnames.push(hostname.replace(/^www\./, ''));
+      else possibleHostnames.push(`www.${hostname}`);
+      
+      const snapshot = await associationsRef.where('customDomains', 'array-contains-any', possibleHostnames).get();
+      if (!snapshot.empty) {
+        groupId = snapshot.docs[0].id;
+      }
+    }
+
+    // 2. Récupération des infos SEO depuis Firestore
+    if (groupId) {
+      const assocDoc = await db.collection('associations').doc(groupId).get();
+      if (assocDoc.exists) {
+        const data = assocDoc.data();
+        seoTitle = data.nom || seoTitle;
+        seoDesc = data.description || seoDesc;
+        seoImage = data.logoUrl || data.coverUrl || seoImage;
+      }
+    }
+
+    // 3. Récupération du HTML statique de base (bypasse le rewrite car pointe sur le fichier exact)
+    const htmlResponse = await fetch(`https://${projectId}.web.app/index.html`);
+    let htmlContent = await htmlResponse.text();
+
+    // 4. Injection des métadonnées
+    htmlContent = htmlContent.replace(/__SEO_TITLE__/g, seoTitle);
+    htmlContent = htmlContent.replace(/__SEO_DESCRIPTION__/g, seoDesc);
+    htmlContent = htmlContent.replace(/__SEO_IMAGE__/g, seoImage);
+    htmlContent = htmlContent.replace(/__SEO_URL__/g, seoUrl);
+
+    // 5. Mise en cache CDN Firebase (1h Edge, 5min Navigateur)
+    res.set('Cache-Control', 'public, max-age=300, s-maxage=3600');
+    res.status(200).send(htmlContent);
+
+  } catch (error) {
+    console.error("serveDynamicApp - Erreur :", error);
+    // En cas de crash, on renvoie une erreur classique pour éviter de bloquer l'app
+    res.status(500).send("Erreur de génération SEO dynamique.");
+  }
+});
+
+/**
+ * Cloud Function HTTP (v2) : serveSitemap
+ * Génère dynamiquement le sitemap.xml en fonction du domaine (tenant).
+ */
+exports.serveSitemap = onRequest(async (req, res) => {
+  const hostname = req.hostname;
+  
+  // Implémentation basique : on liste l'accueil.
+  // Idéalement, on interrogerait Firestore pour lister les events publics du groupe.
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+   <url>
+      <loc>https://${hostname}/</loc>
+      <lastmod>${new Date().toISOString().split('T')[0]}</lastmod>
+      <changefreq>daily</changefreq>
+      <priority>1.0</priority>
+   </url>
+</urlset>`;
+
+  res.set('Content-Type', 'text/xml');
+  res.set('Cache-Control', 'public, max-age=3600, s-maxage=86400');
+  res.status(200).send(xml);
+});
+
+/**
+ * Cloud Function HTTP (v2) : serveRobotsTxt
+ * Autorise dynamiquement l'indexation.
+ */
+exports.serveRobotsTxt = onRequest(async (req, res) => {
+  const hostname = req.hostname;
+  const txt = `User-agent: *
+Allow: /
+
+Sitemap: https://${hostname}/sitemap.xml`;
+
+  res.set('Content-Type', 'text/plain');
+  res.set('Cache-Control', 'public, max-age=3600, s-maxage=86400');
+  res.status(200).send(txt);
+});

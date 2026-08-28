@@ -528,24 +528,12 @@ service cloud.firestore {
     }
 
     match /forum_posts/{post} {
-      allow read: if isAuthenticated() && resource.data.groupId == getUserData().groupId;
-      allow create: if isAuthenticated() && (
-        hasChannelWriteAccess(request.resource.data.get('channelId', null))
+      // Le forum Terreiro est public pour tous les utilisateurs authentifiés
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && request.resource.data.groupId == getUserData().groupId;
+      allow update, delete: if isAuthenticated() && (
+        isAdminOrMestre() || resource.data.groupId == getUserData().groupId
       );
-      allow update: if isAuthenticated() && (
-        isAdminOrMestre() ||
-        isModerator() ||
-        (
-          resource.data.authorId == request.auth.uid &&
-          (hasChannelWriteAccess(resource.data.get('channelId', null)) || !resource.data.keys().hasAny(['channelId'])) &&
-          (!request.resource.data.keys().hasAny(['channelId']) || request.resource.data.channelId == resource.data.get('channelId', null))
-        ) ||
-        (
-          hasChannelWriteAccess(resource.data.get('channelId', null)) &&
-          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reponses', 'derniereModification', 'poll'])
-        )
-      );
-      allow delete: if isAdminOrMestre() || isModerator() || (isAuthenticated() && resource.data.authorId == request.auth.uid);
     }
 
     // Campaign Requests (Commandes d'articles) : CrÃƒÂ©ation et modification restreintes au demandeur propriÃƒÂ©taire ou aux admins

@@ -5,7 +5,7 @@
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase';
 
-const API_URL = import.meta.env.VITE_OGIRADOR_HUB_API_URL || 'http://127.0.0.1:5001/o-girador-dev/us-central1/telemetry/submit';
+const API_URL = import.meta.env.VITE_OGIRADOR_HUB_API_URL;
 const API_KEY = import.meta.env.VITE_OGIRADOR_HUB_API_KEY || 'o-girador-telemetry-secret-key-2026';
 
 let sessionStartTime = null;
@@ -155,6 +155,7 @@ class OGiradorTracker {
   }
 
   async _sendPayload(payload, awaitResponse = false) {
+    if (!API_URL) return;
     try {
       const headers = {
         'Content-Type': 'application/json',

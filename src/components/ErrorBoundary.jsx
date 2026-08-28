@@ -28,8 +28,9 @@ export default class ErrorBoundary extends React.Component {
         timestamp: new Date().toISOString()
       };
 
-      const hubUrl = import.meta.env.VITE_ECOSYSTEM_HUB_URL || 'https://hook.eu2.make.com/placeholder-feedback';
-      
+      const hubUrl = import.meta.env.VITE_ECOSYSTEM_HUB_URL;
+      if (!hubUrl) return;
+
       if (navigator.sendBeacon) {
         // Blob is required for sendBeacon to définir application/json content type correctly if accepted by server, 
         // but text/plain is safer for CORS. We'll use récupérer with keepalive as primary since it supports headers.

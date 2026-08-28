@@ -69,6 +69,13 @@ export default function SystemUserList({
     }
   };
 
+  const toggleUser = (userId, expand) => {
+    setExpandedUsers(prev => ({
+      ...prev,
+      [userId]: expand
+    }));
+  };
+
   const filteredUsers = usersList.filter(user => {
     if (!searchTerm) return true;
     const term = searchTerm.toLowerCase();

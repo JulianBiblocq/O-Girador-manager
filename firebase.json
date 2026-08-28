@@ -59,8 +59,16 @@
     ],
     "rewrites": [
       {
+        "source": "/sitemap.xml",
+        "function": "serveSitemap"
+      },
+      {
+        "source": "/robots.txt",
+        "function": "serveRobotsTxt"
+      },
+      {
         "source": "**",
-        "destination": "/index.html"
+        "function": "serveDynamicApp"
       }
     ]
   }
