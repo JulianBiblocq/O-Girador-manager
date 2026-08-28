@@ -72,6 +72,21 @@ export default function PublicHome({
   const [publishing, setPublishing] = React.useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
 
+  // Suivi des vues de la vitrine
+  React.useEffect(() => {
+    if (groupId) {
+      const sessionKey = 'visited_vitrine_' + groupId;
+      const hasVisited = sessionStorage.getItem(sessionKey);
+      if (!hasVisited) {
+        sessionStorage.setItem(sessionKey, 'true');
+        const assocRef = doc(db, 'associations', groupId);
+        updateDoc(assocRef, {
+          vitrineViews: increment(1)
+        }).catch(err => console.error("Erreur incrementation vitrineViews:", err));
+      }
+    }
+  }, [groupId]);
+
   const logoSrc = branding?.logoUrl || publicTheme?.logoUrl || '';
   const groupTitle = associationName || publicTheme?.associationName || "Notre Association";
 
@@ -1057,4 +1072,5 @@ export default function PublicHome({
     </HelmetProvider>
   );
 }
+
 

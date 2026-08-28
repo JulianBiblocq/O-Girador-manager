@@ -227,32 +227,85 @@ const startQuiz = (theme, specificToadaId = null) => {
         toadaId: targetedToadaId || null
       };
       
-      // 1. Sauvegarde dans l'historique brut
-      await setDoc(docRef, { quizHistory: arrayUnion(newHistoryEntry) }, { merge: true });
+      // 1. Extraire les stats par toada depuis les résultats du quiz pour alimenter les analyses
+      const historyUpdates = [newHistoryEntry];
+      const toadaStats = {};
+      
+      // On comptabilise les questions passées
+      questionResults.forEach(res => {
+        if (res.q.toadaId && res.q.toadaId !== targetedToadaId) {
+          if (!toadaStats[res.q.toadaId]) toadaStats[res.q.toadaId] = { score: 0, total: 0 };
+          toadaStats[res.q.toadaId].total += 1;
+          if (res.isCorrect) toadaStats[res.q.toadaId].score += 1;
+        }
+      });
+      
+      // Ajouter la dernière question en cours (questionResults n'est pas encore mis à jour dans ce callback)
+      const finalChoiceIsCorrect = selectedChoice?.isCorrect && !showFeedback;
+      const currentQ = questions[currentIndex];
+      if (currentQ?.toadaId && currentQ.toadaId !== targetedToadaId) {
+        const tId = currentQ.toadaId;
+        if (!toadaStats[tId]) toadaStats[tId] = { score: 0, total: 0 };
+        toadaStats[tId].total += 1;
+        if (finalChoiceIsCorrect) toadaStats[tId].score += 1;
+      }
 
-      // 2. Synchronisation avec l'état global (evaluations) pour les quiz ciblés
-      if (targetedToadaId && profileData.groupId) {
-        const percentage = finalScore / questions.length;
-        let newLevel = 'decouverte';
-        if (percentage === 1) newLevel = 'referent';
-        else if (percentage >= 0.8) newLevel = 'alaise';
-        else if (percentage >= 0.5) newLevel = 'pratique';
-        
+      // Créer les sous-sessions pour l'historique
+      Object.keys(toadaStats).forEach(tId => {
+        historyUpdates.push({
+          date: new Date().toISOString(),
+          theme: selectedTheme,
+          difficulty: selectedDifficulty,
+          score: toadaStats[tId].score,
+          total: toadaStats[tId].total,
+          toadaId: tId,
+          isSubSession: true // Indique que c'est une portion d'un quiz plus large
+        });
+      });
+
+      // Sauvegarde dans l'historique brut
+      await setDoc(docRef, { quizHistory: arrayUnion(...historyUpdates) }, { merge: true });
+
+      // 2. Synchronisation avec l'état global (evaluations) pour les quiz ciblés et les sous-sessions
+      if (profileData.groupId) {
         const parcoursRef = doc(db, 'users', profileData.uid, 'parcours', profileData.groupId);
         const parcoursSnap = await getDoc(parcoursRef);
         const currentData = parcoursSnap.exists() ? parcoursSnap.data() : {};
-        const oldLevel = currentData.evaluations?.[targetedToadaId];
+        const oldEvals = currentData.evaluations || {};
         
-        const levelValues = { 'decouverte': 1, 'pratique': 2, 'alaise': 3, 'referent': 4 };
-        const oldVal = levelValues[oldLevel] || 0;
-        const newVal = levelValues[newLevel] || 0;
+        let newEvals = { ...oldEvals };
+        let hasUpdates = false;
 
-        if (newVal > oldVal) {
-          await setDoc(parcoursRef, {
-            evaluations: {
-              [targetedToadaId]: newLevel
-            }
-          }, { merge: true });
+        const levelValues = { 'decouverte': 1, 'pratique': 2, 'alaise': 3, 'referent': 4 };
+
+        const updateLevelIfBetter = (itemId, percentage) => {
+          let newLevel = 'decouverte';
+          if (percentage === 1) newLevel = 'referent';
+          else if (percentage >= 0.8) newLevel = 'alaise';
+          else if (percentage >= 0.5) newLevel = 'pratique';
+          
+          const oldLevel = oldEvals[itemId];
+          const oldVal = levelValues[oldLevel] || 0;
+          const newVal = levelValues[newLevel] || 0;
+
+          if (newVal > oldVal) {
+            newEvals[itemId] = newLevel;
+            hasUpdates = true;
+          }
+        };
+
+        // Mise à jour pour le quiz ciblé
+        if (targetedToadaId) {
+          updateLevelIfBetter(targetedToadaId, finalScore / questions.length);
+        }
+
+        // Mise à jour pour les toadas traitées dans le MIX
+        Object.keys(toadaStats).forEach(tId => {
+          updateLevelIfBetter(tId, toadaStats[tId].score / toadaStats[tId].total);
+        });
+
+        if (hasUpdates) {
+          await setDoc(parcoursRef, { evaluations: newEvals }, { merge: true });
         }
       }
 

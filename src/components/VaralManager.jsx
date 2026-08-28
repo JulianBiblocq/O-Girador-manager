@@ -762,6 +762,11 @@ export default function VaralManager({ groupId, onBack, role, isSystemAdmin, isE
                                         />
                                       )}
                                       <span>{docItem.titre}</span>
+                                      {docItem.isHidden && (
+                                        <span className="theme-stamp-badge text-[7.5px] font-black uppercase tracking-wider px-1.5 py-0.2 bg-cordel-rouge/10 text-cordel-rouge border border-cordel-rouge/50 select-none" title="Masqué sur le Varal public">
+                                          👁️ Masqué
+                                        </span>
+                                      )}
                                       {docItem.id === newestDocumentId && (
                                         <span className="theme-stamp-badge theme-stamp-badge-wood text-[7.5px] font-black uppercase tracking-wider px-1.5 py-0.2 bg-[#d99f4d]/30 text-encre-noire border border-encre-noire animate-pulse select-none">
                                           {t('documents.newestBadge') || "✨ Nouveau"}

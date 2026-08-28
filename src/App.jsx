@@ -150,7 +150,7 @@ const POLES_CONFIG = [
     label: 'Pédagogie',
     labelKey: 'poles.pedagogie',
     tabs: [
-      { id: 'varal-manager', label: 'Le Varal', labelKey: 'tabVaralManager' },
+      { id: 'varal-manager', label: 'Varal', labelKey: 'tabVaralManager' },
       { id: 'mestre-pedagogy-qcm', label: 'Configuration', labelKey: 'tabMestrePedagogyQcm' },
       { id: 'mestre-pedagogy-dashboard', label: 'Suivi et Analyse', labelKey: 'tabMestrePedagogyDashboard' }
     ]
@@ -434,13 +434,17 @@ export default function App() {
   // Personnalisation dynamique du titre du document HTML et de la PWA selon le nom de l'association
   useEffect(() => {
     const fullAppName = associationName ? `O Girador ${associationName}` : "O Girador Samambaia";
-    document.title = fullAppName;
+    
+    // Ne forcer le titre "O Girador..." que sur l'espace d'administration (Organizador)
+    if (currentRoute !== '/') {
+      document.title = fullAppName;
+    }
 
     const appleTitleMeta = document.querySelector('meta[name="apple-mobile-web-app-title"]');
     if (appleTitleMeta) {
       appleTitleMeta.setAttribute('content', fullAppName);
     }
-  }, [associationName]);
+  }, [associationName, currentRoute]);
 
   const brandingStyle = branding?.colors ? {
     '--cordel-bg': branding.colors.background,

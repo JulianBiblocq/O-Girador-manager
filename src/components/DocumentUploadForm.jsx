@@ -25,6 +25,7 @@ export default function DocumentUploadForm({ groupId, varalCategories = [], onCl
   });
   const [annee, setAnnee] = useState(documentToEdit ? documentToEdit.annee : new Date().getFullYear());
   const [isArchived, setIsArchived] = useState(documentToEdit ? (documentToEdit.isArchived || false) : false);
+  const [isHidden, setIsHidden] = useState(documentToEdit ? (documentToEdit.isHidden || false) : false);
 
   // Computed Type logic
   const [pvType, setPvType] = useState(documentToEdit && documentToEdit.type === 'web' ? 'web' : 'pdf');
@@ -266,7 +267,8 @@ export default function DocumentUploadForm({ groupId, varalCategories = [], onCl
           iconeStamp: "axe-default",
           videoUrl: "",
           annee: new Date().getFullYear(),
-          isArchived: false
+          isArchived: false,
+          isHidden: true
         }
       ];
     } else {
@@ -307,7 +309,8 @@ export default function DocumentUploadForm({ groupId, varalCategories = [], onCl
             }
           ],
           annee: new Date().getFullYear(),
-          isArchived: false
+          isArchived: false,
+          isHidden: true
         }
       ];
     }
@@ -375,6 +378,7 @@ export default function DocumentUploadForm({ groupId, varalCategories = [], onCl
             dateAjout: new Date().toISOString(),
             order: 0,
             isArchived: !!item.isArchived,
+            isHidden: !!item.isHidden,
             nacao: item.nacao || '',
             rythme: item.rythme || '',
             parolesOriginales: formatLyrics(item.parolesOriginales),
@@ -514,6 +518,7 @@ export default function DocumentUploadForm({ groupId, varalCategories = [], onCl
           categorie: categoryName,
           annee: parseInt(annee, 10) || new Date().getFullYear(),
           isArchived: isArchived,
+          isHidden: isHidden,
           type: computedType,
           lienSequenceurId: lienSequenceurId
         };
@@ -659,6 +664,7 @@ export default function DocumentUploadForm({ groupId, varalCategories = [], onCl
         dateAjout: new Date().toISOString(),
         order: 0,
         isArchived: isArchived,
+        isHidden: isHidden,
         lienSequenceurId: lienSequenceurId,
       };
 
@@ -1818,20 +1824,37 @@ export default function DocumentUploadForm({ groupId, varalCategories = [], onCl
 
             {/* Archiving Checkbox (Only for Toadas) */}
             {category === 'Toadas' && (
-              <div className="flex items-center gap-2 mt-2 bg-cordel-bg border border-cordel-wood/30 p-3 rounded shadow-xs">
-                <input
-                  type="checkbox"
-                  id="isArchivedCheck"
-                  checked={isArchived}
-                  onChange={(e) => setIsArchived(e.target.checked)}
-                  disabled={isUploading}
-                  className="w-4 h-4 text-cordel-wood rounded focus:ring-cordel-wood"
-                />
-                <label htmlFor="isArchivedCheck" className="text-xs font-bold text-cordel-master-dark cursor-pointer select-none">
-                  📦 Archiver (Ne plus étudier cette saison / Exclure du QCM)
-                </label>
+              <div className="flex flex-col gap-2 mt-2">
+                <div className="flex items-center gap-2 bg-cordel-bg border border-cordel-wood/30 p-3 rounded shadow-xs">
+                  <input
+                    type="checkbox"
+                    id="isArchivedCheck"
+                    checked={isArchived}
+                    onChange={(e) => setIsArchived(e.target.checked)}
+                    disabled={isUploading}
+                    className="w-4 h-4 text-cordel-wood rounded focus:ring-cordel-wood"
+                  />
+                  <label htmlFor="isArchivedCheck" className="text-xs font-bold text-cordel-master-dark cursor-pointer select-none">
+                    📦 Archiver (Ne plus étudier cette saison / Exclure du QCM)
+                  </label>
+                </div>
               </div>
             )}
+            
+            {/* Hidden/Draft Checkbox (All categories) */}
+            <div className="flex items-center gap-2 mt-2 bg-cordel-bg border border-cordel-rouge/30 p-3 rounded shadow-xs">
+              <input
+                type="checkbox"
+                id="isHiddenCheck"
+                checked={isHidden}
+                onChange={(e) => setIsHidden(e.target.checked)}
+                disabled={isUploading}
+                className="w-4 h-4 text-cordel-rouge rounded focus:ring-cordel-rouge"
+              />
+              <label htmlFor="isHiddenCheck" className="text-xs font-bold text-cordel-master-dark cursor-pointer select-none">
+                👁️ Masquer sur le Varal (Brouillon / En préparation)
+              </label>
+            </div>
           </>
         )}
 

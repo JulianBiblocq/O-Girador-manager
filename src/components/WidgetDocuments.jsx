@@ -577,10 +577,12 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
       }
     }
 
-    if (!acc[catId]) {
-      acc[catId] = [];
+    if (!docItem.isHidden) {
+      if (!acc[catId]) {
+        acc[catId] = [];
+      }
+      acc[catId].push(docItem);
     }
-    acc[catId].push(docItem);
     return acc;
   }, {});
 

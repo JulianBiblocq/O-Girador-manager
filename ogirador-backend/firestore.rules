@@ -21,7 +21,7 @@ service cloud.firestore {
           getUserData().role == 'ca' ||
           getUserData().isSystemAdmin == true ||
           (getUserData().keys().hasAny(['tags']) && getUserData().tags.hasAny([
-            'Bureau', 'Président', 'Présidente', 'Présidence', 'CA', 'Direction', 'Admin'
+            'Bureau', 'PrÃƒÂ©sident', 'PrÃƒÂ©sidente', 'PrÃƒÂ©sidence', 'CA', 'Direction', 'Admin'
           ]))
         );
     }
@@ -35,25 +35,25 @@ service cloud.firestore {
 
     function canManageEvents() {
       return isAdminOrMestre() || hasAnyTag([
-        'Agenda', 'Agenda & Événements', 'Bureau', 'Président', 'Présidente', 'CA', 'Direction', 'Admin'
+        'Agenda', 'Agenda & Ãƒâ€°vÃƒÂ©nements', 'Bureau', 'PrÃƒÂ©sident', 'PrÃƒÂ©sidente', 'CA', 'Direction', 'Admin'
       ]);
     }
 
     function canManageInventory() {
       return isAdminOrMestre() || hasAnyTag([
-        'Inventaire', 'Logistique', 'Matériel', 'Instruments', 'Commandes', 'Bureau', 'CA', 'Direction'
+        'Inventaire', 'Logistique', 'MatÃƒÂ©riel', 'Instruments', 'Commandes', 'Bureau', 'CA', 'Direction'
       ]);
     }
 
     function canManageTreasury() {
       return isAdminOrMestre() || hasAnyTag([
-        'Trésorerie', 'Trésorier', 'Trésorière', 'Comptable', 'Finance', 'Bureau', 'CA', 'Direction'
+        'TrÃƒÂ©sorerie', 'TrÃƒÂ©sorier', 'TrÃƒÂ©soriÃƒÂ¨re', 'Comptable', 'Finance', 'Bureau', 'CA', 'Direction'
       ]);
     }
 
     function canManageDocs() {
       return isAdminOrMestre() || hasAnyTag([
-        'Secrétariat', 'Comptes-Rendus', 'Studio', 'Communication', 'Bureau', 'CA', 'Direction'
+        'SecrÃƒÂ©tariat', 'Comptes-Rendus', 'Studio', 'Communication', 'Bureau', 'CA', 'Direction'
       ]);
     }
 
@@ -65,7 +65,7 @@ service cloud.firestore {
           getUserData().isSystemAdmin == true ||
           getUserData().role == 'moderator' ||
           (getUserData().keys().hasAny(['tags']) && 
-           getUserData().tags.hasAny(['Modérateur', 'Modérateur Forum']))
+           getUserData().tags.hasAny(['ModÃƒÂ©rateur', 'ModÃƒÂ©rateur Forum']))
         );
     }
 
@@ -73,8 +73,16 @@ service cloud.firestore {
       return get(/databases/$(database)/documents/forum_channels/$(channelId)).data;
     }
 
+    function getChannelReadRoles(channelData) {
+      return channelData.get('readRoles', channelData.get('allowedRoles', channelData.get('allowedTags', ['all'])));
+    }
+
+    function getChannelWriteRoles(channelData) {
+      return channelData.get('writeRoles', channelData.get('allowedRoles', channelData.get('allowedTags', ['all'])));
+    }
+
     function hasChannelReadAccess(channelId) {
-      return isAuthenticated() && (
+      return isAuthenticated() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && (
         isAdminOrMestre() ||
         isModerator() ||
         (
@@ -82,44 +90,42 @@ service cloud.firestore {
           exists(/databases/$(database)/documents/forum_channels/$(channelId)) &&
           getUserData().groupId == getChannelData(channelId).groupId &&
           (
-            getChannelData(channelId).isTransparent == true ||
-            getChannelData(channelId).readRoles == null ||
-            getChannelData(channelId).readRoles.size() == 0 ||
-            getChannelData(channelId).readRoles.hasAny(['all']) ||
-            (getChannelData(channelId).keys().hasAny(['allowedRoles']) && getChannelData(channelId).allowedRoles.hasAny(['all'])) ||
-            getChannelData(channelId).readRoles.hasAny([getUserData().role]) ||
-            (getUserData().keys().hasAny(['tags']) && getUserData().tags.hasAny(getChannelData(channelId).readRoles))
+            getChannelData(channelId).get('isTransparent', false) == true ||
+            getChannelReadRoles(getChannelData(channelId)) == null ||
+            getChannelReadRoles(getChannelData(channelId)).size() == 0 ||
+            getChannelReadRoles(getChannelData(channelId)).hasAny(['all']) ||
+            getChannelReadRoles(getChannelData(channelId)).hasAny([getUserData().get('role', '')]) ||
+            (getUserData().keys().hasAny(['tags']) && getUserData().tags.hasAny(getChannelReadRoles(getChannelData(channelId))))
           )
         )
       );
     }
 
     function hasChannelWriteAccess(channelId) {
-      return isAuthenticated() && (
+      return isAuthenticated() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && (
         isAdminOrMestre() ||
         isModerator() ||
         (
           channelId != null &&
           exists(/databases/$(database)/documents/forum_channels/$(channelId)) &&
           getUserData().groupId == getChannelData(channelId).groupId &&
-          (!getChannelData(channelId).keys().hasAny(['readOnlyForMembers']) || getChannelData(channelId).readOnlyForMembers != true) &&
+          getChannelData(channelId).get('readOnlyForMembers', false) != true &&
           (
-            getChannelData(channelId).writeRoles == null ||
-            getChannelData(channelId).writeRoles.size() == 0 ||
-            getChannelData(channelId).writeRoles.hasAny(['all']) ||
-            (getChannelData(channelId).keys().hasAny(['allowedRoles']) && getChannelData(channelId).allowedRoles.hasAny(['all'])) ||
-            getChannelData(channelId).writeRoles.hasAny([getUserData().role]) ||
-            (getUserData().keys().hasAny(['tags']) && getUserData().tags.hasAny(getChannelData(channelId).writeRoles))
+            getChannelWriteRoles(getChannelData(channelId)) == null ||
+            getChannelWriteRoles(getChannelData(channelId)).size() == 0 ||
+            getChannelWriteRoles(getChannelData(channelId)).hasAny(['all']) ||
+            getChannelWriteRoles(getChannelData(channelId)).hasAny([getUserData().get('role', '')]) ||
+            (getUserData().keys().hasAny(['tags']) && getUserData().tags.hasAny(getChannelWriteRoles(getChannelData(channelId))))
           )
         )
       );
     }
 
-    // --- RÈGLES TÉLÉMÉTRIE & BUGS & HUB ---
+    // --- RÃƒË†GLES TÃƒâ€°LÃƒâ€°MÃƒâ€°TRIE & BUGS & HUB ---
     match /hub_system_errors/{errorId} {
-      // Écriture ouverte à toutes les apps (Manager, Séquenceur, Vitrine) avec validation des champs
+      // Ãƒâ€°criture ouverte ÃƒÂ  toutes les apps (Manager, SÃƒÂ©quenceur, Vitrine) avec validation des champs
       allow create: if request.resource.data.keys().hasAll(['appId', 'timestamp']);
-      // Lecture et gestion réservées à l'administrateur du Hub
+      // Lecture et gestion rÃƒÂ©servÃƒÂ©es ÃƒÂ  l'administrateur du Hub
       allow read, update, delete: if isAuthenticated() && (
         (request.auth.token.admin == true) || 
         (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && (
@@ -171,7 +177,7 @@ service cloud.firestore {
 
     // Collection Rules
 
-    // Users: Lecture pour tout membre connecté. Écriture réservée au propre profil (sans altérer 'role', 'tags', 'isNew', etc.) ou aux Admins/Mestres.
+    // Users: Lecture pour tout membre connectÃƒÂ©. Ãƒâ€°criture rÃƒÂ©servÃƒÂ©e au propre profil (sans altÃƒÂ©rer 'role', 'tags', 'isNew', etc.) ou aux Admins/Mestres.
     match /users/{userId} {
       allow read: if isAuthenticated();
       allow create: if isAuthenticated() && (
@@ -219,8 +225,8 @@ service cloud.firestore {
         resource.data.isDependent == true
       );
 
-      // Parcours pédagogique : chaque membre gère son propre parcours d'aisance.
-      // Les admins/mestres peuvent lire le parcours de tout le monde (suivi pédagogique).
+      // Parcours pÃƒÂ©dagogique : chaque membre gÃƒÂ¨re son propre parcours d'aisance.
+      // Les admins/mestres peuvent lire le parcours de tout le monde (suivi pÃƒÂ©dagogique).
       match /parcours/{document=**} {
         allow read: if isAuthenticated() && (
           request.auth.uid == userId || isAdminOrMestre()
@@ -228,7 +234,7 @@ service cloud.firestore {
         allow write: if isAuthenticated() && request.auth.uid == userId;
       }
 
-      // Répétition espacée (historique détaillé des quiz par question)
+      // RÃƒÂ©pÃƒÂ©tition espacÃƒÂ©e (historique dÃƒÂ©taillÃƒÂ© des quiz par question)
       match /spaced_repetition/{document=**} {
         allow read: if isAuthenticated() && (
           request.auth.uid == userId || isAdminOrMestre()
@@ -236,7 +242,7 @@ service cloud.firestore {
         allow write: if isAuthenticated() && request.auth.uid == userId;
       }
 
-      // Certifications / Examens passés
+      // Certifications / Examens passÃƒÂ©s
       match /certifications/{document=**} {
         allow read: if isAuthenticated() && (
           request.auth.uid == userId || isAdminOrMestre()
@@ -253,8 +259,8 @@ service cloud.firestore {
       allow read, update, delete: if isAdminOrMestre();
     }
 
-    // Inventory: Lecture si authentifié. Écriture réservée aux admins/mestres et membres avec badge Logistique/Inventaire.
-    // Les membres simples peuvent uniquement mettre à jour l'état et faire des demandes d'emprunt (pendingMovement).
+    // Inventory: Lecture si authentifiÃƒÂ©. Ãƒâ€°criture rÃƒÂ©servÃƒÂ©e aux admins/mestres et membres avec badge Logistique/Inventaire.
+    // Les membres simples peuvent uniquement mettre ÃƒÂ  jour l'ÃƒÂ©tat et faire des demandes d'emprunt (pendingMovement).
     match /inventory/{item} {
       allow read: if isAuthenticated();
       allow create, delete: if canManageInventory();
@@ -277,43 +283,44 @@ service cloud.firestore {
       allow write: if canManageInventory();
     }
 
-    // Associations: Lecture publique (vitrine, marque et thème). Écriture réservée aux administrateurs/mestres ou membres autorisés.
+    // Associations: Lecture publique (vitrine, marque et thÃƒÂ¨me). Ãƒâ€°criture rÃƒÂ©servÃƒÂ©e aux administrateurs/mestres ou membres autorisÃƒÂ©s.
     match /associations/{assocId} {
       allow read: if true;
-      allow write: if isAdminOrMestre() || hasAnyTag(['Vitrine', 'Webmaster', 'Bureau', 'Président', 'Présidente', 'CA']);
+      allow create, delete: if isAdminOrMestre() || hasAnyTag(['Vitrine', 'Webmaster', 'Bureau', 'PrÃ©sident', 'PrÃ©sidente', 'CA']);
+      allow update: if (isAdminOrMestre() || hasAnyTag(['Vitrine', 'Webmaster', 'Bureau', 'PrÃ©sident', 'PrÃ©sidente', 'CA'])) || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['vitrineViews']) && request.resource.data.vitrineViews == resource.data.get('vitrineViews', 0) + 1);
 
-      // Règles d'automatisation
+      // RÃƒÂ¨gles d'automatisation
       match /automation_rules/{ruleId} {
         allow read, write: if isAdminOrMestre() && getUserData().groupId == assocId;
       }
 
-      // Paramètres secrets (HelloAsso, Brevo) accessibles uniquement aux admins de l'association
+      // ParamÃƒÂ¨tres secrets (HelloAsso, Brevo) accessibles uniquement aux admins de l'association
       match /private_settings/credentials {
         allow read, write: if isAdminOrMestre() && getUserData().groupId == assocId;
       }
 
-      // Contacts CRM pour le pôle diffusion
+      // Contacts CRM pour le pÃƒÂ´le diffusion
       match /contacts_diffusion/{contactId} {
         allow read, write: if isAuthenticated() && getUserData().groupId == assocId;
       }
 
-      // Notes pédagogiques (Mestre)
+      // Notes pÃƒÂ©dagogiques (Mestre)
       match /blocNotes/{noteId} {
         allow read, write: if isAdminOrMestre() && getUserData().groupId == assocId;
       }
 
-      // Métadonnées du Séquenceur (Mestre)
+      // MÃƒÂ©tadonnÃƒÂ©es du SÃƒÂ©quenceur (Mestre)
       match /rhythmMetadata/{rhythmId} {
         allow read, write: if isAdminOrMestre() && getUserData().groupId == assocId;
       }
 
-      // Logs des notifications HelloAsso (lecture admin uniquement, écriture via Admin SDK / Cloud Function)
+      // Logs des notifications HelloAsso (lecture admin uniquement, ÃƒÂ©criture via Admin SDK / Cloud Function)
       match /helloasso_logs/{logId} {
         allow read: if isAdminOrMestre() && getUserData().groupId == assocId;
         allow write: if false;
       }
 
-      // Membres de l'association (utilisés par la gestion O Girador)
+      // Membres de l'association (utilisÃƒÂ©s par la gestion O Girador)
       match /members/{memberId} {
         allow read: if isAuthenticated() && getUserData().groupId == assocId;
         allow write: if isAdminOrMestre() && getUserData().groupId == assocId;
@@ -328,17 +335,17 @@ service cloud.firestore {
 
     // Abonnements (Mestre / Manager)
     match /subscriptions/{subscriptionId} {
-      allow read: if isAdminOrMestre(); // Seuls les admins peuvent voir l'état de l'abonnement
-      allow write: if false; // Géré uniquement via Firebase Functions / SDK Admin
+      allow read: if isAdminOrMestre(); // Seuls les admins peuvent voir l'ÃƒÂ©tat de l'abonnement
+      allow write: if false; // GÃƒÂ©rÃƒÂ© uniquement via Firebase Functions / SDK Admin
     }
 
-    // Announcements: Lecture si authentifié. Écriture réservée aux admins/mestres.
+    // Announcements: Lecture si authentifiÃƒÂ©. Ãƒâ€°criture rÃƒÂ©servÃƒÂ©e aux admins/mestres.
     match /announcements/{announcement} {
       allow read: if isAuthenticated();
       allow write: if isAdminOrMestre();
     }
 
-    // Documents / Comptes-Rendus : Lecture si authentifié. Écriture réservée aux admins/mestres et membres habilités (badge Secrétariat/Studio).
+    // Documents / Comptes-Rendus : Lecture si authentifiÃƒÂ©. Ãƒâ€°criture rÃƒÂ©servÃƒÂ©e aux admins/mestres et membres habilitÃƒÂ©s (badge SecrÃƒÂ©tariat/Studio).
     match /documents/{document} {
       allow read: if isAuthenticated();
       allow update, delete: if canManageDocs();
@@ -348,31 +355,35 @@ service cloud.firestore {
       );
     }
 
-    // Reunions (Comptes-rendus) : Lecture si authentifié. Écriture réservée aux admins/mestres et membres habilités.
+    // Reunions (Comptes-rendus) : Lecture si authentifiÃƒÂ©. Ãƒâ€°criture rÃƒÂ©servÃƒÂ©e aux admins/mestres et membres habilitÃƒÂ©s.
     match /reunions/{reunion} {
       allow read: if isAuthenticated();
       allow write: if canManageDocs();
     }
 
-    // Wardrobe Inventory: Lecture si authentifié. Écriture réservée aux admins/mestres et badge Logistique/Costumes.
+    // Wardrobe Inventory: Lecture si authentifiÃƒÂ©. Ãƒâ€°criture rÃƒÂ©servÃƒÂ©e aux admins/mestres et badge Logistique/Costumes.
     match /wardrobeInventory/{item} {
       allow read: if isAuthenticated();
       allow write: if canManageInventory();
     }
 
-    // Costumes & Pièces: Lecture si authentifié. Écriture réservée aux admins/mestres et badge Logistique/Costumes.
+    // Costumes & PiÃƒÂ¨ces: Lecture si authentifiÃƒÂ©. Ãƒâ€°criture rÃƒÂ©servÃƒÂ©e aux admins/mestres et badge Logistique/Costumes.
     match /costumes/{costume} {
       allow read: if isAuthenticated();
       allow write: if canManageInventory();
     }
 
-    // Couture Projects: Lecture si authentifié. Écriture réservée aux admins/mestres et badge Logistique/Costumes.
+    // Couture Projects: Lecture si authentifiÃƒÂ©. Ãƒâ€°criture rÃƒÂ©servÃƒÂ©e aux admins/mestres et badge Logistique/Costumes.
     match /coutureProjects/{project} {
       allow read: if isAuthenticated();
       allow write: if canManageInventory();
     }
 
-    // Formations et chorégraphies (Danse / Séquenceur)
+    // Formations et chorÃƒÂ©graphies (Danse / SÃƒÂ©quenceur)
+    match /audio_masters/{docId} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
     match /choreographies/{choreo} {
       allow read: if isAuthenticated();
       allow write: if isAdminOrMestre();
@@ -389,6 +400,19 @@ service cloud.firestore {
       allow read: if isAuthenticated();
       allow write: if isAdminOrMestre();
     }
+    // Presets (SÃƒÂ©quences complÃƒÂ¨tes / Projets du SÃƒÂ©quenceur)
+    match /presets/{preset} {
+      allow read: if isAuthenticated();
+      allow write: if isAdminOrMestre() || (
+        isAuthenticated() && 
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+        exists(/databases/$(database)/documents/associations/$(getUserData().groupId)) &&
+        (
+          get(/databases/$(database)/documents/associations/$(getUserData().groupId)).data.unlockedPacks.hasAny(['sequenceur', 'createur', 'gestion', 'integrale', 'sequenceur-solo']) ||
+          get(/databases/$(database)/documents/associations/$(getUserData().groupId)).data.appAccess.sequenceur == true
+        )
+      );
+    }
     match /steps/{step} {
       allow read: if isAuthenticated();
       allow write: if isAdminOrMestre();
@@ -400,42 +424,46 @@ service cloud.firestore {
       allow write: if canManageEvents();
     }
 
-    // Rhythms: Lecture si authentifié. Écriture réservée aux admins/mestres, ou membres avec accès Séquenciador.
+    // Rhythms: Lecture si authentifiÃƒÂ©. Ãƒâ€°criture rÃƒÂ©servÃƒÂ©e aux admins/mestres, ou membres avec accÃƒÂ¨s SÃƒÂ©quenciador.
     match /rhythms/{rhythm} {
       allow read: if isAuthenticated();
       allow write: if isAdminOrMestre() || (
         isAuthenticated() && 
         exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
-        getUserData().get('canWriteSequenciador', false) == true
+        exists(/databases/$(database)/documents/associations/$(getUserData().groupId)) &&
+        (
+          get(/databases/$(database)/documents/associations/$(getUserData().groupId)).data.unlockedPacks.hasAny(['sequenceur', 'createur', 'gestion', 'integrale', 'sequenceur-solo']) ||
+          get(/databases/$(database)/documents/associations/$(getUserData().groupId)).data.appAccess.sequenceur == true
+        )
       );
     }
 
-    // Signaux du Maître: Lecture si authentifié. Écriture réservée aux admins/mestres.
+    // Signaux du MaÃƒÂ®tre: Lecture si authentifiÃƒÂ©. Ãƒâ€°criture rÃƒÂ©servÃƒÂ©e aux admins/mestres.
     match /mestre_signals/{signal} {
       allow read: if isAuthenticated();
       allow write: if isAdminOrMestre();
     }
 
-    // Workshops: Lecture si authentifié. Écriture réservée aux admins/mestres.
+    // Workshops: Lecture si authentifiÃƒÂ©. Ãƒâ€°criture rÃƒÂ©servÃƒÂ©e aux admins/mestres.
     match /workshops/{workshop} {
       allow read: if isAuthenticated();
       allow write: if isAdminOrMestre();
     }
 
-    // Notifications queue: Création si authentifié. Lecture/Écriture pour admins/mestres.
+    // Notifications queue: CrÃƒÂ©ation si authentifiÃƒÂ©. Lecture/Ãƒâ€°criture pour admins/mestres.
     match /notifications_queue/{notif} {
       allow create: if isAuthenticated();
       allow read, update, delete: if isAdminOrMestre();
     }
 
-    // Campaigns: Lecture si authentifié. Écriture réservée aux admins/mestres.
+    // Campaigns: Lecture si authentifiÃƒÂ©. Ãƒâ€°criture rÃƒÂ©servÃƒÂ©e aux admins/mestres.
     match /campaigns/{campaign} {
       allow read: if isAuthenticated();
       allow write: if isAdminOrMestre();
     }
 
-    // Events: Lecture si authentifié ou si isPublic == true. Création/Suppression/Modif globale réservée aux admins/mestres ou badge Agenda.
-    // Seule la mise à jour du tableau inscriptions (RSVP) est autorisée aux membres simples sur leur participation.
+    // Events: Lecture si authentifiÃƒÂ© ou si isPublic == true. CrÃƒÂ©ation/Suppression/Modif globale rÃƒÂ©servÃƒÂ©e aux admins/mestres ou badge Agenda.
+    // Seule la mise ÃƒÂ  jour du tableau inscriptions (RSVP) est autorisÃƒÂ©e aux membres simples sur leur participation.
     match /events/{event} {
       allow read: if isAuthenticated() || (resource != null && resource.data.isPublic == true);
       allow create, delete: if canManageEvents();
@@ -444,7 +472,7 @@ service cloud.firestore {
         (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['inscriptions', 'invitesExternes', 'volunteerShifts', 'suggestionsOrdreDuJour', 'compteRenduApprovals', 'votes', 'covoiturage', 'compteRenduStatus', 'compteRenduVaralId']))
       );
 
-      // Sous-collection des commentaires et questions logistiques de l'événement
+      // Sous-collection des commentaires et questions logistiques de l'ÃƒÂ©vÃƒÂ©nement
       match /comments/{commentId} {
         allow read: if isAuthenticated();
         allow create: if isAuthenticated() && request.resource.data.auteurId == request.auth.uid;
@@ -456,28 +484,26 @@ service cloud.firestore {
       }
     }
 
-    // Transactions (Trésorerie) : Interdites d'écriture aux membres simples sans badge Trésorerie
+    // Transactions (TrÃƒÂ©sorerie) : Interdites d'ÃƒÂ©criture aux membres simples sans badge TrÃƒÂ©sorerie
     match /transactions/{transaction} {
       allow read, write: if (canManageTreasury() || isAdminOrMestre()) && (
         resource == null || getUserData().groupId == resource.data.groupId
       );
     }
 
-    // Forum Channels: Lecture si membre autorisé par rôle/tag/transparence, écriture réservée aux admins/créateurs de groupe
+    // Forum Channels: Lecture si membre autorisÃƒÂ© par rÃƒÂ´le/tag/transparence, ÃƒÂ©criture rÃƒÂ©servÃƒÂ©e aux admins/crÃƒÂ©ateurs de groupe
     match /forum_channels/{channelId} {
-      allow read: if isAuthenticated() && (
+      allow read: if isAuthenticated() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && (
         isAdminOrMestre() ||
         (
           getUserData().groupId == resource.data.groupId &&
           (
-            resource.data.isTransparent == true ||
-            resource.data.readRoles == null ||
-            resource.data.readRoles.size() == 0 ||
-            resource.data.readRoles.hasAny(['all']) ||
-            (resource.data.keys().hasAny(['allowedRoles']) && resource.data.allowedRoles.hasAny(['all'])) ||
-            (resource.data.keys().hasAny(['allowedRoles']) && resource.data.allowedRoles.hasAny([getUserData().role])) ||
-            resource.data.readRoles.hasAny([getUserData().role]) ||
-            (getUserData().keys().hasAny(['tags']) && getUserData().tags.hasAny(resource.data.readRoles))
+            resource.data.get('isTransparent', false) == true ||
+            getChannelReadRoles(resource.data) == null ||
+            getChannelReadRoles(resource.data).size() == 0 ||
+            getChannelReadRoles(resource.data).hasAny(['all']) ||
+            getChannelReadRoles(resource.data).hasAny([getUserData().get('role', '')]) ||
+            (getUserData().keys().hasAny(['tags']) && getUserData().tags.hasAny(getChannelReadRoles(resource.data)))
           )
         )
       );
@@ -485,26 +511,23 @@ service cloud.firestore {
       allow update, delete: if isAdminOrMestre();
     }
 
-    // Forum Threads: Seul l'auteur du message, un modérateur ou un admin/mestre peut modifier ou supprimer son fil/message
+    // Forum Threads: La lecture est autorisÃƒÂ©e pour tout le groupe (le filtrage par salon/badge se fait cÃƒÂ´tÃƒÂ© client)
+    // pour ÃƒÂ©viter les limites de quota get() de Firestore lors des requÃƒÂªtes.
     match /forum/{thread} {
-      allow read: if isAuthenticated() && (
-        isAdminOrMestre() ||
-        isModerator() ||
-        hasChannelReadAccess(resource.data.channelId)
-      );
+      allow read: if isAuthenticated() && resource.data.groupId == getUserData().groupId;
       allow create: if isAuthenticated() && (
-        hasChannelWriteAccess(request.resource.data.channelId)
+        hasChannelWriteAccess(request.resource.data.get('channelId', null))
       );
       allow update: if isAuthenticated() && (
         isAdminOrMestre() ||
         isModerator() ||
         (
           resource.data.authorId == request.auth.uid &&
-          (hasChannelWriteAccess(resource.data.channelId) || !resource.data.keys().hasAny(['channelId'])) &&
-          (!request.resource.data.keys().hasAny(['channelId']) || request.resource.data.channelId == resource.data.channelId)
+          (hasChannelWriteAccess(resource.data.get('channelId', null)) || !resource.data.keys().hasAny(['channelId'])) &&
+          (!request.resource.data.keys().hasAny(['channelId']) || request.resource.data.channelId == resource.data.get('channelId', null))
         ) ||
         (
-          hasChannelWriteAccess(resource.data.channelId) &&
+          hasChannelWriteAccess(resource.data.get('channelId', null)) &&
           request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reponses', 'derniereModification', 'poll'])
         )
       );
@@ -512,31 +535,27 @@ service cloud.firestore {
     }
 
     match /forum_posts/{post} {
-      allow read: if isAuthenticated() && (
-        isAdminOrMestre() ||
-        isModerator() ||
-        hasChannelReadAccess(resource.data.channelId)
-      );
+      allow read: if isAuthenticated() && resource.data.groupId == getUserData().groupId;
       allow create: if isAuthenticated() && (
-        hasChannelWriteAccess(request.resource.data.channelId)
+        hasChannelWriteAccess(request.resource.data.get('channelId', null))
       );
       allow update: if isAuthenticated() && (
         isAdminOrMestre() ||
         isModerator() ||
         (
           resource.data.authorId == request.auth.uid &&
-          (hasChannelWriteAccess(resource.data.channelId) || !resource.data.keys().hasAny(['channelId'])) &&
-          (!request.resource.data.keys().hasAny(['channelId']) || request.resource.data.channelId == resource.data.channelId)
+          (hasChannelWriteAccess(resource.data.get('channelId', null)) || !resource.data.keys().hasAny(['channelId'])) &&
+          (!request.resource.data.keys().hasAny(['channelId']) || request.resource.data.channelId == resource.data.get('channelId', null))
         ) ||
         (
-          hasChannelWriteAccess(resource.data.channelId) &&
+          hasChannelWriteAccess(resource.data.get('channelId', null)) &&
           request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reponses', 'derniereModification', 'poll'])
         )
       );
       allow delete: if isAdminOrMestre() || isModerator() || (isAuthenticated() && resource.data.authorId == request.auth.uid);
     }
 
-    // Campaign Requests (Commandes d'articles) : Création et modification restreintes au demandeur propriétaire ou aux admins
+    // Campaign Requests (Commandes d'articles) : CrÃƒÂ©ation et modification restreintes au demandeur propriÃƒÂ©taire ou aux admins
     match /campaignRequests/{req} {
       allow read: if isAuthenticated();
       allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
@@ -545,7 +564,7 @@ service cloud.firestore {
       );
     }
 
-    // Messages privés: Restreints à l'expéditeur et au destinataire
+    // Messages privÃƒÂ©s: Restreints ÃƒÂ  l'expÃƒÂ©diteur et au destinataire
     match /private_messages/{messageId} {
       allow read: if isAuthenticated() && (
         resource.data.senderId == request.auth.uid || 
@@ -561,31 +580,31 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    // Factures & Devis : Lecture et écriture réservées aux membres habilités Trésorerie / Admin
+    // Factures & Devis : Lecture et ÃƒÂ©criture rÃƒÂ©servÃƒÂ©es aux membres habilitÃƒÂ©s TrÃƒÂ©sorerie / Admin
     match /invoices/{invoice} {
       allow read: if isAuthenticated();
       allow write: if canManageTreasury();
     }
 
-    // Pipeline Prestations (Pôle Diffusion) : Lecture et écriture réservées aux membres habilités Diffusion / Admin
+    // Pipeline Prestations (PÃƒÂ´le Diffusion) : Lecture et ÃƒÂ©criture rÃƒÂ©servÃƒÂ©es aux membres habilitÃƒÂ©s Diffusion / Admin
     match /gigs_pipeline/{gig} {
       allow read: if isAuthenticated();
       allow write: if isAdminOrMestre() || hasAnyTag(['Diffusion', 'Booking', 'Bureau', 'CA', 'Communication']);
     }
 
-    // Pending payments: Réservé aux admins et mestres
+    // Pending payments: RÃƒÂ©servÃƒÂ© aux admins et mestres
     match /pending_payments/{email} {
       allow read, write: if isAdminOrMestre();
     }
 
-    // Newsletter subscribers: Inscription publique autorisée (create), lecture/export réservés aux admins/mestres
+    // Newsletter subscribers: Inscription publique autorisÃƒÂ©e (create), lecture/export rÃƒÂ©servÃƒÂ©s aux admins/mestres
     match /newsletter_subscribers/{subscriberDoc} {
       allow create: if request.resource.data.keys().hasAll(['email']);
       allow read, update, delete: if isAdminOrMestre();
     }
 
-    // QR Code Sessions (WhatsApp Web login) : Création et écoute temps réel autorisées,
-    // mise à jour directe interdite (mise à jour réservée aux Cloud Functions / Admin SDK).
+    // QR Code Sessions (WhatsApp Web login) : CrÃƒÂ©ation et ÃƒÂ©coute temps rÃƒÂ©el autorisÃƒÂ©es,
+    // mise ÃƒÂ  jour directe interdite (mise ÃƒÂ  jour rÃƒÂ©servÃƒÂ©e aux Cloud Functions / Admin SDK).
     match /qr_sessions/{sessionId} {
       allow create: if true;
       allow read: if true;
@@ -594,3 +613,4 @@ service cloud.firestore {
     }
   }
 }
+

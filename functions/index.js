@@ -78,6 +78,21 @@ async function sendPushToUsers(db, { groupId, recipientId, cibles, title, body, 
     return false;
   }
 
+  // Récupération du nom de l'association pour l'afficher dans le titre de la notification
+  let assoName = "";
+  if (groupId) {
+    try {
+      const assoDoc = await db.collection("associations").doc(groupId).get();
+      if (assoDoc.exists) {
+        assoName = assoDoc.data().nom || "";
+      }
+    } catch (e) {
+      console.warn("sendPushToUsers - Erreur lors de la récupération de l'association", e);
+    }
+  }
+
+  const baseTitle = title || "O Girador";
+  const finalTitle = assoName ? `${assoName} | ${baseTitle}` : baseTitle;
   const truncatedBody = body && body.length > 200 ? body.substring(0, 197) + "..." : (body || "");
   const BATCH_SIZE = 500;
   const tokensToRemove = [];
@@ -87,8 +102,21 @@ async function sendPushToUsers(db, { groupId, recipientId, cibles, title, body, 
     const batchTokenStrings = batch.map((t) => t.token);
 
     try {
+      const fcmUrl = dataPayload?.url 
+        ? `https://organizador.o-girador.com${dataPayload.url.startsWith('/') ? dataPayload.url : '/' + dataPayload.url}` 
+        : "https://organizador.o-girador.com/app";
+
       const multicastMessage = {
-        notification: { title: title || "O Girador", body: truncatedBody },
+        notification: { title: finalTitle, body: truncatedBody },
+        webpush: {
+          notification: {
+            icon: 'https://organizador.o-girador.com/icon-192.png',
+            badge: 'https://organizador.o-girador.com/favicon.svg'
+          },
+          fcmOptions: {
+            link: fcmUrl
+          }
+        },
         data: dataPayload || { url: "/app", click_action: "/app" },
         tokens: batchTokenStrings
       };
@@ -774,6 +802,7 @@ exports.provisionNewMestre = onCall(async (request) => {
             groupId: groupId,
             ownerUid: uid,
             unlockedPacks: [],
+            contributionPoints: 50,
             createdAt: FieldValue.serverTimestamp()
         });
         console.log(`provisionNewMestre - Mestre ${uid} provisionné dans le groupe ${groupId}`);

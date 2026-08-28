@@ -17,9 +17,8 @@ import { Helmet } from 'react-helmet-async';
  * @param {Object} [props.branding] - Identité visuelle (logo)
  */
 export default function PublicSeoHead({ publicTheme = {}, associationName = '', branding = {} }) {
-  // 1. Titre Google avec suffixe forcé " | O Girador"
-  const rawTitle = publicTheme?.seoTitle?.trim() || associationName || "Notre Association";
-  const displayTitle = rawTitle.includes("O Girador") ? rawTitle : `${rawTitle} | O Girador`;
+  // 1. Titre Google (Uniquement le nom de l'association pour la Vitrine / Mostrador)
+  const displayTitle = publicTheme?.seoTitle?.trim() || associationName || "Notre Association";
 
   // 2. Méta-description
   const displayDescription = publicTheme?.seoDescription?.trim() 
@@ -34,12 +33,24 @@ export default function PublicSeoHead({ publicTheme = {}, associationName = '', 
   // 4. Image de couverture Open Graph (og:image)
   const ogImage = publicTheme?.publicHeroImage || branding?.logoUrl || '/favicon.svg';
 
+  // 5. Favicon de l'association
+  const faviconUrl = branding?.logoUrl;
+
   return (
     <Helmet>
       {/* Balise Title & Description Google */}
       <title>{displayTitle}</title>
       <meta name="description" content={displayDescription} />
       <meta name="keywords" content={finalKeywords} />
+
+      {/* Favicons dynamiques (remplace ceux par défaut du manager) */}
+      {faviconUrl && (
+        <>
+          <link rel="icon" href={faviconUrl} />
+          <link rel="apple-touch-icon" href={faviconUrl} />
+          <link rel="shortcut icon" href={faviconUrl} />
+        </>
+      )}
 
       {/* Balises Non-Éditables Forcées (Contrainte Écosystème O Girador) */}
       <meta name="generator" content="O Girador" />

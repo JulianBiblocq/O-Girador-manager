@@ -14,15 +14,9 @@ const messaging = firebase.messaging();
 
 messaging.onBackgroundMessage((payload) => {
   console.log('[firebase-messaging-sw.js] Received background message ', payload);
-  const notificationTitle = payload.notification?.title || "O Girador";
-  const notificationOptions = {
-    body: payload.notification?.body || "",
-    icon: '/favicon.svg',
-    badge: '/favicon.svg',
-    data: payload.data
-  };
-
-  self.registration.showNotification(notificationTitle, notificationOptions);
+  // On ne fait PAS de self.registration.showNotification() ici
+  // car Firebase s'en occupe déjà automatiquement quand on envoie un objet "notification".
+  // L'appeler ici provoquerait une notification en double !
 });
 
 // Écoute des clics sur les notifications push FCM (Deep Linking & Redirection)

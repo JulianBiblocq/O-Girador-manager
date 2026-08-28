@@ -3,31 +3,31 @@ rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
     
-    // 1. Photos de profil / Avatars : Lecture publique (Trombinoscope/Vitrine), écriture par le propriétaire ou un Admin
+    // 1. Photos de profil / Avatars : Lecture publique (Trombinoscope/Vitrine), Ã©criture par le propriÃ©taire ou un Admin
     match /avatars/{userId}/{allPaths=**} {
       allow read: if true;
       allow write: if request.auth != null && (request.auth.uid == userId || request.auth.token.role == 'admin' || request.auth.token.role == 'mestre');
     }
 
-    // 2. Fichiers Vitrine & Association (Logos, PDFs Dossiers Pro, Images Hero) : Lecture publique, Upload réservé aux membres connectés
+    // 2. Fichiers Vitrine & Association (Logos, PDFs Dossiers Pro, Images Hero) : Lecture publique, Upload rÃ©servÃ© aux membres connectÃ©s
     match /associations/{groupId}/{allPaths=**} {
       allow read: if true;
       allow write: if request.auth != null;
     }
 
-    // 3. Documents internes (Varal, Partitions, Comptes-Rendus, Séquenceur) : Accessible uniquement aux membres connectés
+    // 3. Documents internes (Varal, Partitions, Comptes-Rendus, SÃ©quenceur) : Accessible uniquement aux membres connectÃ©s
     match /documents/{groupId}/{allPaths=**} {
       allow read: if request.auth != null;
       allow write: if request.auth != null;
     }
 
-    // 4. Média des Ateliers / Workshops : Accessible aux membres connectés
+    // 4. MÃ©dia des Ateliers / Workshops : Accessible aux membres connectÃ©s
     match /workshops_media/{groupId}/{allPaths=**} {
       allow read: if request.auth != null;
       allow write: if request.auth != null;
     }
 
-    // 5. Média Studio Social & Justificatifs : Membres connectés
+    // 5. MÃ©dia Studio Social & Justificatifs : Membres connectÃ©s
     match /studio_validation/{groupId}/{allPaths=**} {
       allow read: if request.auth != null;
       allow write: if request.auth != null;
@@ -39,13 +39,13 @@ service firebase.storage {
       allow write: if request.auth != null;
     }
 
-    // 7. Justificatifs de trésorerie (Opérations)
+    // 7. Justificatifs de trÃ©sorerie (OpÃ©rations)
     match /transactions/{groupId}/{allPaths=**} {
       allow read: if request.auth != null;
       allow write: if request.auth != null;
     }
 
-    // Règle de sécurité par défaut : Tout autre chemin non explicitement défini est VÉROUILLÉ
+    // RÃ¨gle de sÃ©curitÃ© par dÃ©faut : Tout autre chemin non explicitement dÃ©fini est VÃ‰ROUILLÃ‰
     match /{allPaths=**} {
       allow read, write: if false;
     }
