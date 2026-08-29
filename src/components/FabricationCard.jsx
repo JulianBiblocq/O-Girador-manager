@@ -183,13 +183,23 @@ export default function FabricationCard({ fabrication, onClose }) {
             )}
 
             {/* Astérisques / Vocabulaire */}
-            {fabrication.notesLexique && (
+            {((Array.isArray(fabrication.notesLexique) && fabrication.notesLexique.length > 0) || (typeof fabrication.notesLexique === 'string' && fabrication.notesLexique)) && (
               <div className="mt-4 p-4 bg-gray-100/50 border-[var(--theme-border-width)] border-[var(--theme-border-style)] border-gray-300 rounded-[var(--theme-border-radius)]">
                 <h4 className="text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-2">
-                  Lexique & Astérisques
+                  Lexique & Vocabulaire
                 </h4>
                 <div className="text-xs font-semibold text-black/70 whitespace-pre-wrap">
-                  {fabrication.notesLexique}
+                  {Array.isArray(fabrication.notesLexique) ? (
+                    <ul className="list-disc pl-4 space-y-1">
+                      {fabrication.notesLexique.map((note, idx) => (
+                        <li key={idx}>
+                          <span className="font-bold">{note.mot}</span> : {note.explication}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    fabrication.notesLexique
+                  )}
                 </div>
               </div>
             )}

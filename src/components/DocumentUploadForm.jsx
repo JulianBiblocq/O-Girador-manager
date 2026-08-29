@@ -54,7 +54,13 @@ export default function DocumentUploadForm({ groupId, varalCategories = [], onCl
   const [parolesOriginales, setParolesOriginales] = useState(documentToEdit ? documentToEdit.parolesOriginales || '' : '');
   const [parolesPhonetiques, setParolesPhonetiques] = useState(documentToEdit ? documentToEdit.parolesPhonetiques || '' : '');
   const [traduction, setTraduction] = useState(documentToEdit ? documentToEdit.traduction || '' : '');
-  const [notesLexique, setNotesLexique] = useState(documentToEdit ? documentToEdit.notesLexique || '' : '');
+  const [notesLexique, setNotesLexique] = useState(() => {
+    if (documentToEdit && documentToEdit.notesLexique) {
+      if (Array.isArray(documentToEdit.notesLexique)) return documentToEdit.notesLexique;
+      return []; // Reset if it was a string
+    }
+    return [];
+  });
   const [anecdote, setAnecdote] = useState(documentToEdit ? documentToEdit.anecdote || '' : '');
   
   // Tuto Fabrication fields
@@ -189,6 +195,22 @@ export default function DocumentUploadForm({ groupId, varalCategories = [], onCl
     setLexique(updated);
   };
   
+  const addNotesLexiqueItem = () => {
+    setNotesLexique([...(Array.isArray(notesLexique) ? notesLexique : []), { mot: '', explication: '' }]);
+  };
+
+  const updateNotesLexiqueItem = (index, field, value) => {
+    const updated = [...(Array.isArray(notesLexique) ? notesLexique : [])];
+    updated[index][field] = value;
+    setNotesLexique(updated);
+  };
+
+  const removeNotesLexiqueItem = (index) => {
+    const updated = [...(Array.isArray(notesLexique) ? notesLexique : [])];
+    updated.splice(index, 1);
+    setNotesLexique(updated);
+  };
+  
   const addQuestion = () => {
     setQuestionsQcm([...questionsQcm, { question: '', options: ['', ''], correctIndex: 0, extraitTexte: '' }]);
   };
@@ -286,7 +308,7 @@ export default function DocumentUploadForm({ groupId, varalCategories = [], onCl
             { "coro": "" }
           ],
           traduction: "",
-          notesLexique: "",
+          notesLexique: [],
           anecdote: "",
           contenuFabrication: "",
           materielRequis: "",
@@ -384,7 +406,7 @@ export default function DocumentUploadForm({ groupId, varalCategories = [], onCl
             parolesOriginales: formatLyrics(item.parolesOriginales),
             parolesPhonetiques: formatLyrics(item.parolesPhonetiques),
             traduction: item.traduction || '',
-            notesLexique: item.notesLexique || '',
+            notesLexique: Array.isArray(item.notesLexique) ? item.notesLexique : [],
             anecdote: item.anecdote || '',
             contenuFabrication: item.contenuFabrication || '',
             materielRequis: item.materielRequis || '',
@@ -1699,17 +1721,76 @@ export default function DocumentUploadForm({ groupId, varalCategories = [], onCl
             {(computedType === 'song' || computedType === 'fabrication' || computedType === 'culture_fiche') && (
               <>
                 {(computedType === 'song' || computedType === 'fabrication') && (
-                  <div className="flex flex-col gap-1 mt-4">
-                    <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                      Astérisques / Vocabulaire
-                    </label>
-                    <textarea
-                      value={notesLexique}
-                      onChange={(e) => setNotesLexique(e.target.value)}
-                      disabled={isUploading}
-                      placeholder="Explications des mots référencés par un astérisque dans le texte..."
-                      className="theme-input w-full disabled:opacity-50 text-xs min-h-[60px] resize-y"
-                    />
+                  <div className="flex flex-col gap-4 mt-4 border-t-2 border-dashed border-cordel-master-dark/20 pt-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="text-[11px] uppercase font-bold tracking-wider text-cordel-wood flex items-center gap-1">
+                        📖 Lexique / Vocabulaire
+                      </label>
+                      <button
+                        type="button"
+                        onClick={addNotesLexiqueItem}
+                        disabled={isUploading}
+                        className="text-[10px] uppercase font-bold px-2 py-1 bg-cordel-wood text-[#fdfaf2] rounded hover:opacity-90 transition-opacity shadow-sm"
+                      >
+                        + Ajouter un mot
+                      </button>
+                    </div>
+
+                    <p className="text-[10px] text-cordel-master-dark/80 italic mb-2 bg-[#fdfaf2] p-2 rounded border border-cordel-wood/20">
+                      💡 <strong>Notice :</strong> Plus besoin de mettre des astérisques dans le texte ! 
+                      Ajoutez simplement ici les mots importants tirés du chant ou du tutoriel et leur définition. 
+                      Ils seront automatiquement récupérés pour générer les QCM.
+                    </p>
+
+                    {(!Array.isArray(notesLexique) || notesLexique.length === 0) ? (
+                      <p className="text-xs text-cordel-master-dark/70 italic text-center py-2">
+                        Aucun mot de vocabulaire défini pour l'instant.
+                      </p>
+                    ) : (
+                      <div className="flex flex-col gap-4">
+                        {notesLexique.map((item, index) => (
+                          <div key={index} className="bg-[#fdfaf2] border border-cordel-wood/30 p-4 rounded-md shadow-sm relative">
+                            <div className="absolute top-2 right-2">
+                              <button
+                                type="button"
+                                onClick={() => removeNotesLexiqueItem(index)}
+                                className="text-xs text-cordel-rouge hover:opacity-80 p-1"
+                                title="Supprimer ce mot"
+                              >
+                                ❌
+                              </button>
+                            </div>
+                            
+                            <div className="flex flex-col gap-3 pr-8">
+                              <div className="flex flex-col gap-1">
+                                <label className="text-[9px] uppercase font-bold text-cordel-master-dark">
+                                  Mot
+                                </label>
+                                <input
+                                  type="text"
+                                  value={item.mot || ''}
+                                  onChange={(e) => updateNotesLexiqueItem(index, 'mot', e.target.value)}
+                                  placeholder="Ex: Dendê"
+                                  className="theme-input w-full text-xs font-bold bg-white"
+                                />
+                              </div>
+                              
+                              <div className="flex flex-col gap-1">
+                                <label className="text-[9px] uppercase font-bold text-cordel-master-dark">
+                                  Définition / Explication
+                                </label>
+                                <textarea
+                                  value={item.explication || ''}
+                                  onChange={(e) => updateNotesLexiqueItem(index, 'explication', e.target.value)}
+                                  placeholder="Huile de palme utilisée dans la cuisine bahianaise et les rituels..."
+                                  className="theme-input w-full text-xs min-h-[60px] bg-white"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
 
