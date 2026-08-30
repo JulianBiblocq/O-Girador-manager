@@ -90,7 +90,7 @@ export default function WidgetForum({ groupId, onOpen }) {
 
           <CordelButton 
             variant="default" 
-            onClick={onOpen}
+            onClick={() => onOpen()}
             className="text-[10px] px-3 py-1 font-bold uppercase tracking-wider flex items-center gap-1 shrink-0"
           >
             {t('widgetForum.openForum') || "💬 Ouvrir le Forum"}
@@ -104,7 +104,7 @@ export default function WidgetForum({ groupId, onOpen }) {
           </div>
         ) : recentThreads.length === 0 ? (
           <div 
-            onClick={onOpen}
+            onClick={() => onOpen()}
             className="p-4 border-2 border-dashed border-cordel-master-dark/20 rounded-[6px_10px_6px_8px] bg-white/40 text-center cursor-pointer hover:bg-white/60 transition-colors"
           >
             <p className="text-xs font-bold text-cordel-master-dark/70">
@@ -123,7 +123,7 @@ export default function WidgetForum({ groupId, onOpen }) {
               return (
                 <div
                   key={thread.id}
-                  onClick={onOpen}
+                  onClick={() => onOpen(thread.id)}
                   className={`p-3 border-2 border-encre-noire rounded-[6px_10px_6px_8px] bg-cordel-bg-light shadow-[2px_2px_0px_0px_#181716] cursor-pointer hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[3.5px_3.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] hover:bg-cordel-hover transition-all flex flex-col justify-between ${
                     index >= 1 ? 'hidden md:flex' : ''
                   } ${index >= 2 ? 'hidden lg:flex' : ''}`}

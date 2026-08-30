@@ -47,6 +47,34 @@ export default function AtelierEntrainement({
     setRhythmMode(null);
   };
 
+  const getRandomRhythm = (mode) => {
+    let validRhythms = [];
+    if (mode === 'BLIND_TEST') {
+      validRhythms = rhythms.filter(r => r.isAudio);
+    } else if (mode === 'ASSOCIATION') {
+      validRhythms = rhythms.filter(r => r.isJson && r.isAudio);
+    }
+    if (validRhythms.length === 0) return null;
+    return validRhythms[Math.floor(Math.random() * validRhythms.length)];
+  };
+
+  const handleStartRhythmMode = (mode) => {
+    setRhythmMode(mode);
+    const randomR = getRandomRhythm(mode);
+    if (randomR) {
+      setSelectedRhythmId(randomR.id);
+    } else {
+      setSelectedRhythmId(null);
+    }
+  };
+
+  const handleNextRhythmQuiz = () => {
+    const randomR = getRandomRhythm(rhythmMode);
+    if (randomR) {
+      setSelectedRhythmId(randomR.id);
+    }
+  };
+
   if (activeQuizType === 'TRADUCTION' || activeQuizType === 'CULTURE') {
     return (
       <div className="relative">
@@ -78,9 +106,9 @@ export default function AtelierEntrainement({
   }
 
   if (activeQuizType === 'RYTHMES') {
-    if (!selectedRhythmId) {
+    if (!rhythmMode) {
       return (
-        <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-6 items-center">
           <button 
             onClick={handleExitQuiz} 
             className="self-start text-sm font-bold text-cordel-master-dark hover:text-cordel-wood underline underline-offset-4"
@@ -88,52 +116,36 @@ export default function AtelierEntrainement({
             ← Retour à l'Atelier
           </button>
           
-          <h2 className="text-2xl font-cactus text-center text-cordel-wood uppercase">
-            Sélecteur de Rythme
-          </h2>
-          <p className="text-center text-sm font-bold text-cordel-master-dark/70">
-            Choisis un rythme à travailler pour lancer les exercices d'écoute.
-          </p>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-            {rhythms.filter(r => r.isAudio || r.isJson).map(rhythm => (
-              <CordelCard key={rhythm.id} className="p-4 flex flex-col gap-3 justify-between hover:scale-[1.02] transition-transform cursor-pointer" onClick={() => setSelectedRhythmId(rhythm.id)}>
-                <h3 className="text-sm font-black uppercase text-encre-noire text-center">{rhythm.titre}</h3>
-                <div className="flex justify-center gap-2">
-                  {rhythm.isAudio && <span className="text-xs px-2 py-1 bg-green-100 text-green-800 rounded font-bold">Audio ✅</span>}
-                  {rhythm.isJson && <span className="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded font-bold">JSON ✅</span>}
-                </div>
-              </CordelCard>
-            ))}
-          </div>
-        </div>
-      );
-    }
-
-    if (!rhythmMode) {
-      return (
-        <div className="flex flex-col gap-6 items-center">
-          <button 
-            onClick={() => setSelectedRhythmId(null)} 
-            className="self-start text-sm font-bold text-cordel-master-dark hover:text-cordel-wood underline underline-offset-4"
-          >
-            ← Retour aux rythmes
-          </button>
-          
           <h2 className="text-2xl font-cactus text-cordel-wood uppercase">Choisis ton mode</h2>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-2xl">
-            <CordelCard className="p-6 flex flex-col items-center gap-4 text-center hover:scale-105 transition-transform cursor-pointer" onClick={() => setRhythmMode('BLIND_TEST')}>
+            <CordelCard className="p-6 flex flex-col items-center gap-4 text-center hover:scale-105 transition-transform cursor-pointer" onClick={() => handleStartRhythmMode('BLIND_TEST')}>
               <span className="text-5xl">🎧</span>
               <h3 className="text-lg font-black uppercase text-encre-noire">Blind Test</h3>
               <p className="text-xs font-bold opacity-70">Identifie le pattern qui est joué à l'oreille.</p>
             </CordelCard>
 
-            <CordelCard className="p-6 flex flex-col items-center gap-4 text-center hover:scale-105 transition-transform cursor-pointer" onClick={() => setRhythmMode('ASSOCIATION')}>
+            <CordelCard className="p-6 flex flex-col items-center gap-4 text-center hover:scale-105 transition-transform cursor-pointer" onClick={() => handleStartRhythmMode('ASSOCIATION')}>
               <span className="text-5xl">🧩</span>
               <h3 className="text-lg font-black uppercase text-encre-noire">Association</h3>
               <p className="text-xs font-bold opacity-70">Associe chaque ligne rythmique à son pupitre.</p>
             </CordelCard>
+          </div>
+        </div>
+      );
+    }
+
+    if (!selectedRhythmId) {
+      return (
+        <div className="flex flex-col gap-6 items-center mt-8">
+          <button 
+            onClick={() => setRhythmMode(null)} 
+            className="self-start text-sm font-bold text-cordel-master-dark hover:text-cordel-wood underline underline-offset-4"
+          >
+            ← Changer de mode
+          </button>
+          <div className="text-center p-4 text-[#8b2a1a] font-bold bg-[#8b2a1a]/10 border-2 border-dashed border-[#8b2a1a]/50 rounded">
+            Aucun rythme disponible pour ce mode (nécessite des fichiers audio{rhythmMode === 'ASSOCIATION' ? ' et des données JSON' : ''}).
           </div>
         </div>
       );
@@ -154,7 +166,10 @@ export default function AtelierEntrainement({
     return (
       <div className="relative mt-8">
         <button 
-          onClick={() => setRhythmMode(null)} 
+          onClick={() => {
+            setRhythmMode(null);
+            setSelectedRhythmId(null);
+          }} 
           className="absolute -top-12 left-0 text-sm font-bold text-cordel-master-dark hover:text-cordel-wood underline underline-offset-4"
         >
           ← Changer de mode
@@ -162,17 +177,19 @@ export default function AtelierEntrainement({
 
         {rhythmMode === 'BLIND_TEST' ? (
           <QcmSequenceurBlindTest 
+            key={`blind_${selectedRhythmId}`}
             patternId={selectedRhythmId}
             patternData={testPatternData}
             audioUrl={rhythm?.url || rhythm?.audioUrl}
-            onComplete={(isCorrect) => console.log(`Blind Test : ${isCorrect ? 'Gagné' : 'Perdu'}`)}
+            onComplete={() => handleNextRhythmQuiz()}
           />
         ) : (
           <QcmSequenceurAssociation 
+            key={`assoc_${selectedRhythmId}`}
             patternId={selectedRhythmId}
             patternData={testPatternData}
             audioUrl={rhythm?.url || rhythm?.audioUrl}
-            onComplete={(isCorrect) => console.log(`Association : ${isCorrect ? 'Gagné' : 'Perdu'}`)}
+            onComplete={() => handleNextRhythmQuiz()}
           />
         )}
       </div>

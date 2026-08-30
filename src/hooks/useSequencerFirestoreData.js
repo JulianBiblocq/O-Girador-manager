@@ -218,15 +218,19 @@ export function useSequencerFirestoreData(groupId) {
               for (const item of res.items) {
                 const baseName = item.name.split('.')[0];
                 if (!currentAudioMasters.some(a => a.id.includes(baseName))) {
-                  const url = await getDownloadURL(item);
-                  currentAudioMasters.push({
-                    id: item.name,
-                    _collection: 'storage',
-                    isJson: false,
-                    isAudio: true,
-                    titre: item.name,
-                    audioUrl: url
-                  });
+                  try {
+                    const url = await getDownloadURL(item);
+                    currentAudioMasters.push({
+                      id: item.name,
+                      _collection: 'storage',
+                      isJson: false,
+                      isAudio: true,
+                      titre: item.name.replace(/\.[^/.]+$/, ''),
+                      audioUrl: url
+                    });
+                  } catch (itemErr) {
+                    console.warn('Skipping item due to error:', item.name, itemErr);
+                  }
                 }
               }
               mergeAndSet();

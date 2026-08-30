@@ -375,7 +375,7 @@ export default function Dashboard({ user, profileData, onNavigateToTrombi, onNav
               widgetContent = (
                 <WidgetForum 
                   groupId={profileData?.groupId} 
-                  onOpen={() => onNavigateToView('forum')} 
+                  onOpen={(threadId) => onNavigateToView('forum', threadId ? { threadId } : null)} 
                 />
               );
               break;

@@ -6,13 +6,26 @@ import PartEditor from './PartEditor';
 
 const INSTRUMENT_TYPES = ['Alfaia', 'Caixa', 'Agbê', 'Gonguê', 'Mineiro', 'Apito', 'Timbal', 'Maintenance', 'Costume', 'Autre'];
 
-export default function InstrumentModelEditor({ model, onSave, onCancel }) {
+export default function InstrumentModelEditor({ model, existingModels, onSave, onCancel }) {
+  const allTypes = useMemo(() => {
+    const types = new Set(INSTRUMENT_TYPES);
+    (existingModels || []).forEach(m => {
+      if (m.type) types.add(m.type);
+    });
+    return Array.from(types).sort();
+  }, [existingModels]);
+
+  const defaultType = model?.type || 'Alfaia';
+  const initialIsCustom = !!model?.type && !allTypes.includes(model.type);
+
   const [formData, setFormData] = useState({
     nom: model?.nom || '',
-    type: model?.type || 'Alfaia',
+    type: defaultType,
     description: model?.description || '',
     parts: model?.parts || []
   });
+
+  const [isCustomType, setIsCustomType] = useState(initialIsCustom);
 
   const [editingPart, setEditingPart] = useState(null);
 
@@ -33,6 +46,17 @@ export default function InstrumentModelEditor({ model, onSave, onCancel }) {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleTypeSelectChange = (e) => {
+    const value = e.target.value;
+    if (value === '---custom---') {
+      setIsCustomType(true);
+      setFormData(prev => ({ ...prev, type: '' }));
+    } else {
+      setIsCustomType(false);
+      setFormData(prev => ({ ...prev, type: value }));
+    }
   };
 
   const handleSavePart = (partData) => {
@@ -101,18 +125,39 @@ export default function InstrumentModelEditor({ model, onSave, onCancel }) {
           </div>
           <div className="flex flex-col gap-1">
             <label className="text-[10px] uppercase font-bold text-cordel-master-dark">Famille / Catégorie</label>
-            <input 
-              type="text" 
-              name="type" 
-              value={formData.type} 
-              onChange={handleChange} 
-              list="modelTypes"
-              className="theme-input text-xs font-bold py-2"
-              placeholder="Ex: Alfaia, Maintenance, Costume..."
-            />
-            <datalist id="modelTypes">
-              {INSTRUMENT_TYPES.map(t => <option key={t} value={t} />)}
-            </datalist>
+            {!isCustomType ? (
+              <select
+                name="type"
+                value={formData.type}
+                onChange={handleTypeSelectChange}
+                className="theme-input text-xs font-bold py-2 bg-white cursor-pointer"
+              >
+                {allTypes.map(t => <option key={t} value={t}>{t}</option>)}
+                <option value="---custom---">+ Nouvelle catégorie...</option>
+              </select>
+            ) : (
+              <div className="flex items-center gap-2">
+                <input 
+                  type="text" 
+                  name="type" 
+                  value={formData.type} 
+                  onChange={handleChange} 
+                  className="theme-input text-xs font-bold py-2 flex-1"
+                  placeholder="Nom de la nouvelle catégorie..."
+                  autoFocus
+                />
+                <button 
+                  type="button" 
+                  onClick={() => {
+                    setIsCustomType(false);
+                    setFormData(prev => ({ ...prev, type: 'Alfaia' }));
+                  }}
+                  className="text-[10px] bg-stone-200 text-stone-700 px-2 py-1 rounded font-bold hover:bg-stone-300"
+                >
+                  Annuler
+                </button>
+              </div>
+            )}
           </div>
         </div>
 

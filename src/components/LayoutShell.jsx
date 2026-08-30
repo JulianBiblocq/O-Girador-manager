@@ -139,42 +139,6 @@ export default function LayoutShell({
   };
 
 
-  const hasAccessDiffusion = isMasterKeyActive || canAccessPole('diffusion', profileData, permissionsMatrice, userTags);
-  const hasAccessLogistique = isMasterKeyActive || canAccessPole('logistique', profileData, permissionsMatrice, userTags);
-  const hasAccessTresorerie = isMasterKeyActive || canAccessPole('tresorerie', profileData, permissionsMatrice, userTags);
-  const hasAccessStudio = isMasterKeyActive || canAccessPole('studio', profileData, permissionsMatrice, userTags);
-
-  const hasAccessMestre = isMasterKeyActive || canAccessPole('mestre', profileData, permissionsMatrice, userTags);
-  const hasAccessVitrine = isMasterKeyActive || canAccessPole('vitrine', profileData, permissionsMatrice, userTags);
-
-  const isAdministrativeUser = isSystemOrSuperAdminOrMestre || 
-                               profileData?.role === 'bureau' || 
-                               profileData?.role === 'ca' || 
-
-                               hasAccessDiffusion ||
-                               hasAccessLogistique || 
-                               hasAccessTresorerie || 
-                               hasAccessStudio ||
-
-                               hasAccessMestre ||
-                               hasAccessVitrine;
-
-  const canSendFeedback = profileData?.role === 'admin' || profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.role === 'bureau' || profileData?.isSystemAdmin;
-
-  const allMemberMenuItems = [
-    { id: 'accueil', label: 'Accueil', icon: <XiloHome size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('accueil'); onNavigateToTab && onNavigateToTab('dashboard'); } },
-    { id: 'profil', label: 'Profil', icon: <XiloUser size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('mon-espace'); onNavigateToTab && onNavigateToTab('profil'); } },
-    { id: 'mon-parcours', label: 'Mon Parcours', icon: <XiloCompass size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('mon-espace'); onNavigateToTab && onNavigateToTab('mon-parcours'); } },
-    { id: 'agenda', label: 'Agenda', icon: <XiloCalendar size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('mon-espace'); onNavigateToTab && onNavigateToTab('agenda'); } },
-    { id: 'materiel', label: 'Matériel', icon: <XiloCaixa size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('mon-espace'); onNavigateToTab && onNavigateToTab('materiel'); } },
-
-    { id: 'trombinoscope', label: 'Trombinoscope', icon: <XiloPeople size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('mon-espace'); onNavigateToTab && onNavigateToTab('trombinoscope'); } },
-    { id: 'forum', label: 'Porte-voix', icon: <XiloMegaphone size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('mon-espace'); onNavigateToTab && onNavigateToTab('forum'); } },
-    { id: 'varal', label: 'Varal', icon: <XiloScroll size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('accueil'); onNavigateToTab && onNavigateToTab('varal'); } }
-  ];
-
-  const memberMenuItems = allMemberMenuItems.filter(item => isModuleEnabled(item.id, 'mon-espace'));
-
   // Strict Feature Basculer vérifier for the entire Pole (enabled globally for group)
   const isPoleEnabled = (poleId) => {
     if (poleId === 'accueil' || poleId === 'mon-espace') return true;
@@ -202,6 +166,27 @@ export default function LayoutShell({
 
     return false;
   };
+
+  const isAdministrativeUser = isSystemOrSuperAdminOrMestre || 
+                               profileData?.role === 'bureau' || 
+                               profileData?.role === 'ca' || 
+                               polesList.some(pole => pole.id !== 'accueil' && pole.id !== 'mon-espace' && isPoleUnlocked(pole.id));
+
+  const canSendFeedback = profileData?.role === 'admin' || profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.role === 'bureau' || profileData?.isSystemAdmin;
+
+  const allMemberMenuItems = [
+    { id: 'accueil', label: 'Accueil', icon: <XiloHome size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('accueil'); onNavigateToTab && onNavigateToTab('dashboard'); } },
+    { id: 'profil', label: 'Profil', icon: <XiloUser size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('mon-espace'); onNavigateToTab && onNavigateToTab('profil'); } },
+    { id: 'mon-parcours', label: 'Mon Parcours', icon: <XiloCompass size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('mon-espace'); onNavigateToTab && onNavigateToTab('mon-parcours'); } },
+    { id: 'agenda', label: 'Agenda', icon: <XiloCalendar size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('mon-espace'); onNavigateToTab && onNavigateToTab('agenda'); } },
+    { id: 'materiel', label: 'Matériel', icon: <XiloCaixa size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('mon-espace'); onNavigateToTab && onNavigateToTab('materiel'); } },
+
+    { id: 'trombinoscope', label: 'Trombinoscope', icon: <XiloPeople size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('mon-espace'); onNavigateToTab && onNavigateToTab('trombinoscope'); } },
+    { id: 'forum', label: 'Porte-voix', icon: <XiloMegaphone size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('mon-espace'); onNavigateToTab && onNavigateToTab('forum'); } },
+    { id: 'varal', label: 'Varal', icon: <XiloScroll size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('accueil'); onNavigateToTab && onNavigateToTab('varal'); } }
+  ];
+
+  const memberMenuItems = allMemberMenuItems.filter(item => isModuleEnabled(item.id, 'mon-espace'));
 
   const hasAccessToTab = (tabId) => {
     const activePole = currentPole || 'accueil';

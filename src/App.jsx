@@ -1083,6 +1083,12 @@ export default function App() {
       setInitialPrivateMessage(extraOptions.message || '');
     }
 
+    if (viewName === 'forum' && extraOptions?.threadId) {
+      const searchParams = new URLSearchParams(window.location.search);
+      searchParams.set('threadId', extraOptions.threadId);
+      window.history.pushState({}, '', window.location.pathname + '?' + searchParams.toString());
+    }
+
     switch (viewName) {
       case 'dashboard':
         setCurrentPole('accueil');

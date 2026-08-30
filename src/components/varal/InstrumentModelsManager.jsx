@@ -44,6 +44,7 @@ export default function InstrumentModelsManager({ groupId, isAuthorized }) {
     return (
       <InstrumentModelEditor 
         model={editingModel.id === 'new' ? null : editingModel}
+        existingModels={models}
         onSave={handleSaveModel}
         onCancel={() => setEditingModel(null)}
       />

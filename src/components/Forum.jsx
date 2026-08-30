@@ -464,6 +464,11 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
         if (matchedThread.channelId) {
           setActiveChannelId(matchedThread.channelId);
         }
+        // Nettoyer l'URL pour éviter de ré-ouvrir la discussion si on navigue ailleurs puis on revient
+        searchParams.delete('threadId');
+        const newSearch = searchParams.toString();
+        const newUrl = window.location.pathname + (newSearch ? '?' + newSearch : '');
+        window.history.replaceState(window.history.state, '', newUrl);
       }
     }
   }, [threads]);
