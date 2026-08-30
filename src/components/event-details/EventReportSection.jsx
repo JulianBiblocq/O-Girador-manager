@@ -29,12 +29,20 @@ export default function EventReportSection({ event, user, profileData, associati
   
   const recognitionRef = useRef(null);
 
-  // Vérifier roles: Admins or Secrétaires
-  const isAdmin = 
+  // Collaborative propositions during review
+  const [newPropositionText, setNewPropositionText] = useState({});
+
+  const presents = event.inscriptions?.filter(ins => ins.status === 'present') || [];
+
+  // Vérifier roles: Admins, Secrétaires ou le Rédacteur désigné
+  const isGlobalAdmin = 
     profileData?.role === 'mestre' || 
     profileData?.role === 'super-admin' || 
     profileData?.role === 'secretaire' || 
     profileData?.isSystemAdmin === true;
+
+  const isRedacteur = event.redacteurId === user.uid;
+  const isAdmin = isGlobalAdmin || isRedacteur;
 
   // Current report status: empty, 'brouillon', 'attente_relecture', 'publie'
   const reportStatus = event.compteRenduStatus || '';
@@ -301,7 +309,7 @@ export default function EventReportSection({ event, user, profileData, associati
       }).join('\n\n---\n\n');
 
       // 2. Récupérer Present users names
-      const presents = event.inscriptions?.filter(ins => ins.status === 'present') || [];
+
       const presentsNames = presents.map(ins => ins.userName || 'Membre anonyme');
 
       // 3. Standard Title: "CR du JJ/MM/AAAA"
@@ -377,7 +385,7 @@ export default function EventReportSection({ event, user, profileData, associati
   // On-demand PDF download
   const handleDownloadPDF = () => {
     try {
-      const presents = event.inscriptions?.filter(ins => ins.status === 'present') || [];
+
       const presentsNames = presents.map(ins => ins.userName || 'Membre anonyme');
       const pdfDoc = generateCompteRenduPDF(event, localPoints, presentsNames, associationSettings || event.associationSettings || "O Girador");
       pdfDoc.save(`Compte_Rendu_${event.titre ? event.titre.replace(/[^a-zA-Z0-9]/g, '_') : 'Reunion'}.pdf`);
@@ -411,7 +419,7 @@ export default function EventReportSection({ event, user, profileData, associati
       alert(approved ? "Vous avez approuvé ce compte-rendu !" : "Vos demandes de modifications ont été transmises.");
 
       // Vérifier if 100% of present users approved
-      const presents = event.inscriptions?.filter(ins => ins.status === 'present') || [];
+
       const totalPresents = presents.length;
 
       if (totalPresents > 0) {
@@ -428,6 +436,50 @@ export default function EventReportSection({ event, user, profileData, associati
     } catch (err) {
       console.error("Error submitting vote:", err);
       alert("Erreur lors du vote.");
+    }
+  };
+
+  // Ajouter une proposition de modification par un membre présent
+  const handleAddProposition = async (pointId) => {
+    const text = newPropositionText[pointId];
+    if (!text || !text.trim()) return;
+
+    try {
+      const newProposition = {
+        id: Date.now().toString(),
+        pointId,
+        userId: user.uid,
+        userName: `${profileData?.prenom || ''} ${profileData?.nom || ''}`.trim() || 'Membre',
+        texte: text.trim(),
+        date: new Date().toISOString(),
+        traitee: false
+      };
+
+      const updatedPropositions = [...(event.propositionsCR || []), newProposition];
+      const eventRef = doc(db, 'events', event.id);
+      await updateDoc(eventRef, { propositionsCR: updatedPropositions });
+      
+      // Clear input
+      setNewPropositionText(prev => ({ ...prev, [pointId]: '' }));
+    } catch (err) {
+      console.error("Error adding proposition:", err);
+      alert("Erreur lors de la soumission de la proposition.");
+    }
+  };
+
+  // Rédacteur : marquer une proposition comme traitée ou non traitée
+  const handleTogglePropositionStatus = async (propositionId, currentStatus) => {
+    try {
+      const updatedPropositions = (event.propositionsCR || []).map(prop => {
+        if (prop.id === propositionId) {
+          return { ...prop, traitee: !currentStatus };
+        }
+        return prop;
+      });
+      const eventRef = doc(db, 'events', event.id);
+      await updateDoc(eventRef, { propositionsCR: updatedPropositions });
+    } catch (err) {
+      console.error("Error toggling proposition status:", err);
     }
   };
 
@@ -503,7 +555,7 @@ export default function EventReportSection({ event, user, profileData, associati
   };
 
   // Calculer vote statistics
-  const presents = event.inscriptions?.filter(ins => ins.status === 'present') || [];
+
   const totalPresents = presents.length;
   const approvals = event.compteRenduApprovals || {};
   
@@ -522,27 +574,65 @@ export default function EventReportSection({ event, user, profileData, associati
     <div className="flex flex-col gap-5 text-left">
       
       {/* 📌 Header de Section */}
-      <div className="flex justify-between items-center border-b-2 border-dashed border-cordel-master-dark/20 pb-2">
-        <h3 className="text-sm font-extrabold tracking-widest text-cordel-wood uppercase">
-          📋 Ordre du jour & Comptes-rendus
-        </h3>
-        
-        {/* Status Badge */}
-        {reportStatus === 'publie' && (
-          <span className="theme-stamp-badge theme-stamp-badge-wood text-[8px] tracking-wider">
-            📜 ARCHIVÉ AU VARAL
-          </span>
-        )}
-        {reportStatus === 'attente_relecture' && (
-          <span className="theme-stamp-badge theme-stamp-badge-dark text-[8px] tracking-wider animate-pulse">
-            ⏳ EN ATTENTE DE RELECTURE ({approvedCount}/{totalPresents} Approbations)
-          </span>
-        )}
-        {(reportStatus === '' || reportStatus === 'brouillon') && localPoints.length > 0 && (
-          <span className="theme-stamp-badge theme-stamp-badge-dark text-[8px] opacity-75 tracking-wider">
-            ✏️ BROUILLON
-          </span>
-        )}
+      <div className="flex flex-col gap-3 pb-2 border-b-2 border-dashed border-cordel-master-dark/20">
+        <div className="flex justify-between items-center">
+          <h3 className="text-sm font-extrabold tracking-widest text-cordel-wood uppercase">
+            📋 Ordre du jour & Comptes-rendus
+          </h3>
+          
+          {/* Status Badge */}
+          {reportStatus === 'publie' && (
+            <span className="theme-stamp-badge theme-stamp-badge-wood text-[8px] tracking-wider">
+              📜 ARCHIVÉ AU VARAL
+            </span>
+          )}
+          {reportStatus === 'attente_relecture' && (
+            <span className="theme-stamp-badge theme-stamp-badge-dark text-[8px] tracking-wider animate-pulse">
+              ⏳ EN ATTENTE DE RELECTURE ({approvedCount}/{totalPresents} Approbations)
+            </span>
+          )}
+          {(reportStatus === '' || reportStatus === 'brouillon') && localPoints.length > 0 && (
+            <span className="theme-stamp-badge theme-stamp-badge-dark text-[8px] opacity-75 tracking-wider">
+              ✏️ BROUILLON
+            </span>
+          )}
+        </div>
+
+        {/* Sélection du rédacteur */}
+        <div className="flex items-center gap-2 text-[10px]">
+          {isGlobalAdmin && (reportStatus === '' || reportStatus === 'brouillon') ? (
+            <div className="flex items-center gap-2 p-1.5 bg-neutral-100 rounded border border-dashed border-neutral-300">
+               <label className="font-bold text-neutral-600 uppercase tracking-wider">Rédacteur de séance :</label>
+               <select 
+                 value={event.redacteurId || ''}
+                 onChange={async (e) => {
+                   const newRedacteurId = e.target.value;
+                   const selectedUser = presents.find(p => p.userId === newRedacteurId);
+                   try {
+                     await updateDoc(doc(db, 'events', event.id), {
+                       redacteurId: newRedacteurId,
+                       redacteurName: selectedUser ? selectedUser.userName : ''
+                     });
+                   } catch (err) {
+                     console.error("Erreur mise à jour rédacteur:", err);
+                   }
+                 }}
+                 className="theme-input py-0.5 px-2 text-xs bg-white border-neutral-300"
+               >
+                 <option value="">-- Choisir un rédacteur parmi les présents --</option>
+                 {presents.map(p => (
+                   <option key={p.userId} value={p.userId}>{p.userName}</option>
+                 ))}
+               </select>
+            </div>
+          ) : event.redacteurName ? (
+            <span className="italic text-neutral-600 font-bold bg-neutral-100 px-2 py-1 rounded">
+              ✍️ Rédacteur de séance : {event.redacteurName}
+            </span>
+          ) : (
+            <span className="italic text-neutral-400">Aucun rédacteur désigné</span>
+          )}
+        </div>
       </div>
 
       {/* 1. Mettre en place l'ordre du jour (Mode brouillon - ADMIN ONLY) */}
@@ -671,6 +761,34 @@ export default function EventReportSection({ event, user, profileData, associati
                       placeholder="Saisissez des notes ou parlez après avoir démarré la dictée vocale..."
                       className="theme-input text-xs w-full min-h-[70px] font-medium leading-relaxed resize-y bg-white/70"
                     />
+
+                    {/* Affichage des propositions pour le rédacteur en mode édition */}
+                    {(() => {
+                      const pointPropositions = (event.propositionsCR || []).filter(p => p.pointId === point.id);
+                      if (pointPropositions.length === 0) return null;
+                      return (
+                        <div className="flex flex-col gap-2 mt-2 pt-2 border-t border-dashed border-cordel-master-dark/20">
+                          <span className="text-[9px] uppercase font-bold tracking-wider text-cordel-wood">
+                            💡 Propositions des membres
+                          </span>
+                          {pointPropositions.map(prop => (
+                            <div key={prop.id} className={`p-2 rounded border text-xs flex justify-between gap-2 ${prop.traitee ? 'bg-green-50/50 border-green-200' : 'bg-amber-50/50 border-amber-200'}`}>
+                              <div className="flex flex-col gap-1 flex-1">
+                                <span className="font-bold text-[10px] text-encre-noire opacity-75">👤 {prop.userName}</span>
+                                <span className="italic">{prop.texte}</span>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => handleTogglePropositionStatus(prop.id, prop.traitee)}
+                                className={`text-[9px] font-bold px-2 py-1 rounded border h-fit whitespace-nowrap cursor-pointer transition-colors ${prop.traitee ? 'bg-green-100 text-green-800 border-green-300' : 'bg-white hover:bg-neutral-50 text-encre-noire border-neutral-300'}`}
+                              >
+                                {prop.traitee ? '✅ Traitée' : '⏳ Marquer traitée'}
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    })()}
                   </div>
                 </div>
               ))
@@ -899,6 +1017,48 @@ export default function EventReportSection({ event, user, profileData, associati
                   <p className="opacity-90 leading-relaxed font-medium whitespace-pre-wrap pl-2 italic">
                     {point.notesCR ? point.notesCR.trim() : "Aucune note."}
                   </p>
+
+                  {/* Propositions System for this point */}
+                  {reportStatus === 'attente_relecture' && (
+                    <div className="mt-2 ml-2 flex flex-col gap-2">
+                      {/* Affichage des propositions existantes */}
+                      {(() => {
+                        const pointPropositions = (event.propositionsCR || []).filter(p => p.pointId === point.id);
+                        if (pointPropositions.length === 0) return null;
+                        return (
+                          <div className="flex flex-col gap-1.5 border-l-2 border-amber-300 pl-2">
+                            {pointPropositions.map(prop => (
+                              <div key={prop.id} className="text-[10px] bg-amber-50/50 p-1.5 rounded border border-amber-100 flex flex-col">
+                                <span className="font-bold text-encre-noire opacity-75">👤 {prop.userName}</span>
+                                <span className="italic">{prop.texte}</span>
+                              </div>
+                            ))}
+                          </div>
+                        );
+                      })()}
+                      
+                      {/* Ajout d'une proposition */}
+                      {isUserPresent && (
+                        <div className="flex gap-2 items-center mt-1">
+                          <input
+                            type="text"
+                            value={newPropositionText[point.id] || ''}
+                            onChange={(e) => setNewPropositionText(prev => ({ ...prev, [point.id]: e.target.value }))}
+                            placeholder="Proposer une modification..."
+                            className="theme-input text-[10px] flex-1 py-1 bg-white/70"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => handleAddProposition(point.id)}
+                            disabled={!newPropositionText[point.id]?.trim()}
+                            className="text-[9px] font-bold uppercase tracking-wider bg-cordel-wood text-white px-2 py-1 rounded shadow-sm disabled:opacity-50 cursor-pointer"
+                          >
+                            💬 Proposer
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
