@@ -21,6 +21,7 @@ export default function MestreAutoEvalConfig({ profileData, isEmbedded }) {
   const [fiches, setFiches] = useState([]);
   const [rhythms, setRhythms] = useState([]);
   const [rhythmsMetadata, setRhythmsMetadata] = useState({});
+  const [mestreSignals, setMestreSignals] = useState([]);
   const [qcmGlobalConfig, setQcmGlobalConfig] = useState({
     askRythme: true,
     askNacao: true,
@@ -170,6 +171,25 @@ export default function MestreAutoEvalConfig({ profileData, isEmbedded }) {
       metaSnap.forEach(d => { meta[d.id] = d.data(); });
       setRhythmsMetadata(meta);
 
+      // Récupérer Mestre Signals depuis Storage
+      try {
+        const signalsRef = ref(storage, 'sinais');
+        const signalsRes = await listAll(signalsRef);
+        const fetchedSignals = await Promise.all(
+          signalsRes.items.map(async (itemRef) => {
+            const url = await getDownloadURL(itemRef);
+            return {
+              id: itemRef.name,
+              name: itemRef.name.replace(/\.[^/.]+$/, "").replace(/_/g, " "),
+              imageUrl: url
+            };
+          })
+        );
+        setMestreSignals(fetchedSignals.filter(s => s.imageUrl && s.name));
+      } catch (err) {
+        console.error("Erreur Mestre Signals:", err);
+      }
+
     } catch (e) {
       console.error(e);
     } finally {
@@ -190,6 +210,8 @@ export default function MestreAutoEvalConfig({ profileData, isEmbedded }) {
       
       if (action === 'isQuizPublished') {
         updated.isQuizPublished = payload;
+      } else if (action === 'associatedSignalId') {
+        updated.associatedSignalId = payload;
       } else if (action === 'addQuestion') {
         updated.customQuestions = [...(updated.customQuestions || []), payload];
       } else if (action === 'removeQuestion') {
@@ -232,6 +254,7 @@ export default function MestreAutoEvalConfig({ profileData, isEmbedded }) {
 
   const sections = [
     { id: 'visibilite', label: 'Visibilité des Onglets', icon: '👁️' },
+    { id: 'inclusions_qcm', label: 'Visibilité des Rythmes', icon: '🎯' },
     { id: 'qcm_config', label: 'Configuration Globale QCM', icon: '⚙️' },
     { id: 'percussion', label: 'QCM Percussion', icon: '🥁' },
     { id: 'danse', label: 'QCM Danse', icon: '💃' },
@@ -316,6 +339,54 @@ export default function MestreAutoEvalConfig({ profileData, isEmbedded }) {
                 </CordelCard>
               )}
 
+              {activeSection === 'inclusions_qcm' && (
+                <CordelCard variant="default" className="p-5 flex flex-col gap-4">
+                  <h3 className="font-black text-base uppercase tracking-wider text-cordel-wood border-b-2 border-dashed border-cordel-wood/30 pb-2">
+                    Visibilité des Rythmes (QCM & Carnet d'Aisance)
+                  </h3>
+                  <p className="text-xs text-encre-noire/70 mb-2">
+                    Décochez les "petites boucles" ou patterns sans valeur pédagogique pour les masquer totalement de l'espace élève (et des QCM générés automatiquement).
+                  </p>
+                  
+                  <div className="flex flex-col gap-2 max-h-[60vh] overflow-y-auto pr-2">
+                    {rhythms.map(rhythm => (
+                      <label key={rhythm.id} className={`flex items-center gap-3 cursor-pointer p-3 rounded border transition-colors ${rhythmsMetadata[rhythm.id]?.isExcludedFromQcm ? 'bg-neutral-100 border-dashed border-encre-noire/20 opacity-70' : 'bg-[#fdfaf2] border-cordel-wood/30 shadow-sm'}`}>
+                        <input 
+                          type="checkbox"
+                          checked={!rhythmsMetadata[rhythm.id]?.isExcludedFromQcm}
+                          onChange={async (e) => {
+                            const isIncluded = e.target.checked;
+                            const isExcluded = !isIncluded;
+                            
+                            // Update Firestore
+                            try {
+                              const docRef = doc(db, 'associations', groupId, 'rhythmMetadata', rhythm.id);
+                              await setDoc(docRef, { isExcludedFromQcm: isExcluded }, { merge: true });
+                              
+                              // Update local state
+                              setRhythmsMetadata(prev => {
+                                const existing = prev[rhythm.id] || {};
+                                return { ...prev, [rhythm.id]: { ...existing, isExcludedFromQcm: isExcluded } };
+                              });
+                            } catch (err) {
+                              console.error("Error updating exclusion status:", err);
+                              alert("Erreur lors de la sauvegarde.");
+                            }
+                          }}
+                          className="accent-cordel-wood w-4 h-4 cursor-pointer"
+                        />
+                        <span className={`text-xs font-bold ${rhythmsMetadata[rhythm.id]?.isExcludedFromQcm ? 'text-encre-noire/60 line-through' : 'text-cordel-wood'}`}>
+                          {rhythm.titre}
+                        </span>
+                        {rhythmsMetadata[rhythm.id]?.isExcludedFromQcm && (
+                          <span className="ml-auto text-[9px] font-black uppercase text-encre-noire/40">Masqué</span>
+                        )}
+                      </label>
+                    ))}
+                  </div>
+                </CordelCard>
+              )}
+
               {activeSection === 'qcm_config' && (
                 <MestreQuizConfigManager 
                   groupId={groupId} 
@@ -360,10 +431,12 @@ export default function MestreAutoEvalConfig({ profileData, isEmbedded }) {
                         selectedItem={selectedRhythm}
                         itemType="rhythm"
                         isQuizPublished={rhythmsMetadata[selectedRhythm?.id]?.isQuizPublished}
+                        associatedSignalId={rhythmsMetadata[selectedRhythm?.id]?.associatedSignalId}
                         customQuestions={rhythmsMetadata[selectedRhythm?.id]?.customQuestions}
                         availableMedia={selectedRhythm?.media}
                         onUpdateMetadata={handleUpdateRhythmMetadata}
                         allItems={rhythms}
+                        mestreSignals={mestreSignals}
                       />
                     </div>
                   </div>
@@ -396,10 +469,12 @@ export default function MestreAutoEvalConfig({ profileData, isEmbedded }) {
                         selectedItem={selectedDanseRhythm}
                         itemType="rhythm"
                         isQuizPublished={rhythmsMetadata[selectedDanseRhythm?.id]?.isQuizPublished}
+                        associatedSignalId={rhythmsMetadata[selectedDanseRhythm?.id]?.associatedSignalId}
                         customQuestions={rhythmsMetadata[selectedDanseRhythm?.id]?.customQuestions}
                         availableMedia={selectedDanseRhythm?.media}
                         onUpdateMetadata={handleUpdateRhythmMetadata}
                         allItems={rhythms}
+                        mestreSignals={mestreSignals}
                       />
                     </div>
                   </div>

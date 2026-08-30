@@ -306,7 +306,10 @@ exports.sendBrevoEmail = onRequest(
       const apiKey = brevoApiKeySecret.value();
 
       const payload = {
-        sender: sender || { name: "O GIRADOR", email: "contact@o-girador.com" },
+        sender: {
+          name: (sender && sender.name) ? sender.name : "O GIRADOR",
+          email: "contact@o-girador.com"
+        },
         to: to,
         subject: subject,
         htmlContent: htmlContent,
@@ -356,10 +359,8 @@ exports.sendAssociationEmail = onRequest(
         return res.status(400).json({ error: "Paramètres 'to', 'subject' et 'htmlContent' requis." });
       }
 
-      let emailSenderName = sender ? sender.name : "Samambaia Maracatu";
-      let emailReplyTo = replyTo ? replyTo.email : "contact@mon-asso.fr";
-      let deliveryMode = "ogirador";
-      let customApiKey = null;
+      let emailSenderName = sender ? sender.name : "O GIRADOR";
+      let emailReplyTo = replyTo ? replyTo.email : "contact@o-girador.com";
 
       // Récupération des paramètres Firestore de l'association si groupId fourni
       if (groupId) {
@@ -371,33 +372,23 @@ exports.sendAssociationEmail = onRequest(
             if (assocData.emailSenderName) emailSenderName = assocData.emailSenderName;
             else if (assocData.nom) emailSenderName = assocData.nom;
 
-            if (assocData.emailReplyTo) emailReplyTo = assocData.emailReplyTo;
-            else if (assocData.email) emailReplyTo = assocData.email;
-
-            if (assocData.emailDeliveryMode) deliveryMode = assocData.emailDeliveryMode;
-          }
-
-          // Lecture sécurisée de la clé API ou des accès SMTP dans le sous-document credentials
-          const credsDoc = await db.collection("associations").doc(groupId)
-            .collection("private_settings").doc("credentials").get();
-          if (credsDoc.exists) {
-            const credsData = credsDoc.data();
-            if (credsData.emailProviderApiKey) customApiKey = credsData.emailProviderApiKey;
+            // On utilise systématiquement l'e-mail officiel de l'association pour les réponses
+            if (assocData.email) emailReplyTo = assocData.email;
           }
         } catch (dbErr) {
           console.warn("sendAssociationEmail - Erreur lecture Firestore association :", dbErr);
         }
       }
 
-      // Clé API centrale de secours O Girador via secret Firebase
-      const centralApiKey = brevoApiKeySecret.value();
-      const apiKeyToUse = (deliveryMode === "custom" && customApiKey) ? customApiKey : centralApiKey;
+      // Utilisation exclusive de la clé API globale O Girador (Modèle SaaS Marque Blanche)
+      const apiKeyToUse = brevoApiKeySecret.value();
 
-      // Construction du payload certifié Brevo / SMTP avec headers Reply-To et nom dynamique
+      // Construction du payload certifié Brevo avec headers Reply-To dynamique
       const payload = {
         sender: {
           name: emailSenderName,
-          email: (sender && sender.email) ? sender.email : "contact@o-girador.com"
+          // L'adresse d'expédition doit correspondre au domaine certifié de l'application
+          email: "contact@o-girador.com"
         },
         replyTo: {
           name: emailSenderName,
@@ -409,12 +400,10 @@ exports.sendAssociationEmail = onRequest(
         attachment: attachment || []
       };
 
-      console.log("sendAssociationEmail Cloud Function - Routage d me-mail :", {
+      console.log("sendAssociationEmail Cloud Function - Routage SaaS :", {
         groupId,
-        deliveryMode,
         emailSenderName,
-        emailReplyTo,
-        useCustomKey: !!customApiKey
+        emailReplyTo
       });
 
       const brevoRes = await fetch("https://api.brevo.com/v3/smtp/email", {

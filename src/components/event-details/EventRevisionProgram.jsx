@@ -148,11 +148,10 @@ export default function EventRevisionProgram({
                   </div>
                 ))}
 
-                {/* SÉQUENCEUR (Morceaux à réviser) */}
                 {linkedSequencerRhythms.map((rhythm) => {
                   let targetUrl = '';
                   const baseUrl = assocSequenceurUrl || 'https://sequenceur.app';
-                  const paramKey = rhythm._collection === 'sections' ? 'sectionId' : 'id';
+                  const paramKey = rhythm._collection === 'sections' ? 'sectionId' : 'loadPreset';
                   targetUrl = baseUrl.includes('?') 
                     ? `${baseUrl}&${paramKey}=${rhythm.id}`
                     : `${baseUrl}?${paramKey}=${rhythm.id}`;
@@ -165,10 +164,10 @@ export default function EventRevisionProgram({
                       <div className="flex justify-between items-start">
                         <div className="flex flex-col">
                           <span className="font-bold text-encre-noire text-sm flex items-center gap-1.5">
-                            🎛️ {rhythm.title || rhythm.name || 'Sans titre'}
+                            🎛️ {rhythm.title || rhythm.titre || rhythm.name || 'Sans titre'}
                           </span>
                           <span className="text-[9px] font-black uppercase tracking-wider text-cordel-master-dark/60">
-                            {rhythm._collection === 'sections' ? 'Section' : 'Rythme Complet'}
+                            {rhythm._collection === 'sections' ? 'Section' : (rhythm._collection === 'presets' ? 'Preset (Arrangement Complet)' : 'Rythme')}
                           </span>
                         </div>
                       </div>

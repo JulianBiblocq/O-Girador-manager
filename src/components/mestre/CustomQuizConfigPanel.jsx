@@ -12,7 +12,9 @@ export default function CustomQuizConfigPanel({
   customQuestions = [],  // Array of questions
   availableMedia = [],   // Array of { url, fileName, isAudio } for this item
   onUpdateMetadata,      // Function to trigger a local state refresh in parent
-  allItems = []          // Array of all items of this type
+  allItems = [],         // Array of all items of this type
+  associatedSignalId,    // String: id of the linked signal
+  mestreSignals = []     // Array of available signals
 }) {
   const [newQuestionText, setNewQuestionText] = useState('');
   const [newQuestionCorrect, setNewQuestionCorrect] = useState('');
@@ -56,6 +58,19 @@ export default function CustomQuizConfigPanel({
         await updateDoc(docRef, { isQuizPublished: !isQuizPublished });
       }
       onUpdateMetadata(selectedItem.id, 'isQuizPublished', !isQuizPublished);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleUpdateSignal = async (e) => {
+    const newSignalId = e.target.value;
+    try {
+      if (itemType === 'rhythm') {
+        const metaRef = doc(db, 'associations', groupId, 'rhythmMetadata', selectedItem.id);
+        await setDoc(metaRef, { associatedSignalId: newSignalId }, { merge: true });
+        onUpdateMetadata(selectedItem.id, 'associatedSignalId', newSignalId);
+      }
     } catch (err) {
       console.error(err);
     }
@@ -140,6 +155,24 @@ export default function CustomQuizConfigPanel({
             </span>
           </label>
         </div>
+
+        {itemType === 'rhythm' && (
+          <div className="flex justify-between items-center bg-[#fdfaf2] p-3 border-2 border-dashed border-[#8b2a1a]/30 rounded mt-1">
+            <span className="text-[10px] font-black uppercase tracking-widest text-[#8b2a1a]">
+              Signal du Maître Associé
+            </span>
+            <select
+              value={associatedSignalId || ''}
+              onChange={handleUpdateSignal}
+              className="p-1 border-2 border-encre-noire/30 rounded text-xs font-bold bg-white text-encre-noire max-w-[200px]"
+            >
+              <option value="">-- Aucun signal --</option>
+              {mestreSignals.map(s => (
+                <option key={s.id} value={s.id}>{s.name}</option>
+              ))}
+            </select>
+          </div>
+        )}
         
         <span className="text-[10px] font-black uppercase tracking-widest text-cordel-master-dark/60 mt-2">
           Questions actives pour : {selectedItem.titre || selectedItem.name || selectedItem.id}

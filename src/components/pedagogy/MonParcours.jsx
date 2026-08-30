@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { collection, query, where, getDocs, doc, onSnapshot, setDoc, getDoc } from 'firebase/firestore';
-import { ref, listAll, getDownloadURL } from 'firebase/storage';
-import { db, storage } from '../../firebase';
+import { db } from '../../firebase';
 import { XiloCompass } from '../XiloIcons';
+import { useSequencerFirestoreData } from '../../hooks/useSequencerFirestoreData';
 
 // New Sub-components
 import MonCarnetAisance from './MonCarnetAisance';
@@ -16,7 +16,7 @@ export default function MonParcours({ profileData, sequenceurUrl, enabledModules
   const [mainView, setMainView] = useState('CARNET'); // 'CARNET' or 'ATELIER'
   
   // Data States
-  const [rhythms, setRhythms] = useState([]);
+  const { rhythms: firestoreRhythms, loading: loadingRhythms } = useSequencerFirestoreData(groupId);
   const [rhythmsMetadata, setRhythmsMetadata] = useState({});
   const [rhythmsJsonData, setRhythmsJsonData] = useState({});
   
@@ -27,6 +27,25 @@ export default function MonParcours({ profileData, sequenceurUrl, enabledModules
   const [saving, setSaving] = useState(false);
   
   const [qcmGlobalConfig, setQcmGlobalConfig] = useState({});
+
+  const visibleRhythms = useMemo(() => {
+    if (!firestoreRhythms) return [];
+    return firestoreRhythms.filter(r => !rhythmsMetadata[r.id]?.isExcludedFromQcm);
+  }, [firestoreRhythms, rhythmsMetadata]);
+
+  useEffect(() => {
+    if (firestoreRhythms && firestoreRhythms.length > 0) {
+      const parsedDataMap = {};
+      firestoreRhythms.forEach(r => {
+        if (r.parsedData) {
+          parsedDataMap[r.id] = r.parsedData;
+        }
+      });
+      setRhythmsJsonData(parsedDataMap);
+    } else {
+      setRhythmsJsonData({});
+    }
+  }, [firestoreRhythms]);
 
   useEffect(() => {
     if (!groupId || !userId) return;
@@ -51,39 +70,6 @@ export default function MonParcours({ profileData, sequenceurUrl, enabledModules
       const assocSnap = await getDoc(assocRef);
       if (assocSnap.exists() && assocSnap.data().qcmGlobalConfig) {
         setQcmGlobalConfig(assocSnap.data().qcmGlobalConfig);
-      }
-    };
-
-    // 3. Récupérer Rhythms from Storage
-    const fetchRhythms = async () => {
-      try {
-        const folderRef = ref(storage, `documents/${groupId}/sequencer`);
-        const res = await listAll(folderRef);
-        const fetchedRhythms = await Promise.all(
-          res.items.map(async (itemRef) => {
-            const fileUrl = await getDownloadURL(itemRef);
-            const rawName = itemRef.name;
-            const isAudio = /\.(mp3|wav|ogg|m4a|aac)$/i.test(rawName);
-            const isJson = /\.json$/i.test(rawName);
-            const cleanName = rawName.replace(/^\d+_/, '').replace(/\.(json|mp3|wav|ogg|m4a|aac)$/i, '');
-            return { id: rawName, titre: cleanName, url: fileUrl, fileName: rawName, isAudio, isJson };
-          })
-        );
-        fetchedRhythms.sort((a, b) => a.titre.localeCompare(b.titre));
-        setRhythms(fetchedRhythms);
-        
-        // Récupérer JSON content for parsing
-        fetchedRhythms.filter(r => r.isJson).forEach(async (r) => {
-          try {
-            const resp = await fetch(r.url);
-            const data = await resp.json();
-            setRhythmsJsonData(prev => ({ ...prev, [r.id]: data }));
-          } catch (e) {
-            console.error("Error fetching json for", r.titre, e);
-          }
-        });
-      } catch (error) {
-        console.error("Error fetching rhythms:", error);
       }
     };
 
@@ -119,7 +105,6 @@ export default function MonParcours({ profileData, sequenceurUrl, enabledModules
     };
 
     fetchMetadata();
-    fetchRhythms();
     fetchSongs();
     fetchFiches();
 
@@ -193,7 +178,7 @@ export default function MonParcours({ profileData, sequenceurUrl, enabledModules
           <MonCarnetAisance 
             evaluations={evaluations}
             handleSetEvaluation={handleSetEvaluation}
-            rhythms={rhythms}
+            rhythms={visibleRhythms}
             rhythmsJsonData={rhythmsJsonData}
             rhythmsMetadata={rhythmsMetadata}
             songs={songs}
@@ -206,8 +191,9 @@ export default function MonParcours({ profileData, sequenceurUrl, enabledModules
             profileData={profileData}
             songs={songs}
             educationalSheets={educationalSheets}
-            rhythms={rhythms}
+            rhythms={visibleRhythms}
             rhythmsJsonData={rhythmsJsonData}
+            rhythmsMetadata={rhythmsMetadata}
             sequenceurUrl={sequenceurUrl}
             qcmGlobalConfig={qcmGlobalConfig}
           />

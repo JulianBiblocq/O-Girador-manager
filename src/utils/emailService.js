@@ -91,36 +91,6 @@ export async function sendAssociationEmail(emailParams, associationSettings = {}
       return { success: true, messageId: resData.messageId || `msg_${Date.now()}` };
     }
 
-    // Fallback direct sur l'API Brevo en mode client si la fonction n'est pas déployée en local
-    const apiKey = associationSettings.emailProviderApiKey 
-      || associationSettings.publicTheme?.brevoApiKey 
-      || associationSettings.brevoApiKey;
-
-    if (apiKey) {
-      const brevoRes = await fetch('https://api.brevo.com/v3/smtp/email', {
-        method: 'POST',
-        headers: {
-          'accept': 'application/json',
-          'content-type': 'application/json',
-          'api-key': apiKey
-        },
-        body: JSON.stringify({
-          sender: payload.sender,
-          replyTo: payload.replyTo,
-          to: payload.to,
-          subject: payload.subject,
-          htmlContent: payload.htmlContent,
-          attachment: payload.attachment
-        })
-      });
-
-      const brevoData = await brevoRes.json().catch(() => ({}));
-      if (brevoRes.ok && brevoData.messageId) {
-        return { success: true, messageId: brevoData.messageId };
-      }
-      throw new Error(brevoData.message || `Erreur d'envoi Brevo (Code HTTP ${brevoRes.status})`);
-    }
-
     throw new Error(resData.error || `Erreur du serveur de messagerie (Code HTTP ${response.status})`);
   } catch (error) {
     console.error("emailService - Échec d'envoi de l'e-mail :", error);

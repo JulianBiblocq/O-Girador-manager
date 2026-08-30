@@ -266,12 +266,22 @@ export default function MonCarnetAisance({
   const [quizToadaId, setQuizToadaId] = useState(null);
 
   // Construction de l'URL du séquenceur avec paramètres
-  const getSequencerUrl = (jsonUrl, bpm) => {
+  const getSequencerUrl = (rhythm, bpm) => {
     const baseUrl = sequenceurUrl || 'https://sequenceur.app';
-    if (!jsonUrl) return baseUrl;
-    let url = baseUrl.includes('?') 
-      ? `${baseUrl}&file=${encodeURIComponent(jsonUrl)}`
-      : `${baseUrl}?file=${encodeURIComponent(jsonUrl)}`;
+    if (!rhythm) return baseUrl;
+    let url = baseUrl;
+    
+    if (rhythm._collection) {
+       const paramKey = rhythm._collection === 'sections' ? 'sectionId' : 'loadPreset';
+       url = baseUrl.includes('?') 
+         ? `${baseUrl}&${paramKey}=${rhythm.id}`
+         : `${baseUrl}?${paramKey}=${rhythm.id}`;
+    } else if (rhythm.jsonUrl) {
+       url = baseUrl.includes('?') 
+         ? `${baseUrl}&file=${encodeURIComponent(rhythm.jsonUrl)}`
+         : `${baseUrl}?file=${encodeURIComponent(rhythm.jsonUrl)}`;
+    }
+    
     if (bpm) url += `&bpm=${bpm}`;
     return url;
   };
@@ -432,7 +442,7 @@ export default function MonCarnetAisance({
                     {[80, 100, 120].map(bpm => (
                       <a
                         key={bpm}
-                        href={getSequencerUrl(rhythm.jsonUrl, bpm)}
+                        href={getSequencerUrl(rhythm, bpm)}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-[9px] font-bold bg-[#f4ecd8] border border-encre-noire/50 px-2.5 py-1 rounded hover:bg-[#ebdcc0] shadow-[1px_1px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none transition-all"
@@ -495,7 +505,7 @@ export default function MonCarnetAisance({
                   {[80, 100, 120].map(bpm => (
                     <a
                       key={bpm}
-                      href={getSequencerUrl(rhythm.jsonUrl, bpm)}
+                      href={getSequencerUrl(rhythm, bpm)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-[9px] font-bold bg-[#f4ecd8] border border-encre-noire/50 px-2.5 py-1 rounded hover:bg-[#ebdcc0] shadow-[1px_1px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none transition-all"

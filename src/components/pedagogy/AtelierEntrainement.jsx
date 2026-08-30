@@ -4,6 +4,7 @@ import CordelButton from '../CordelButton';
 import AutoEvalQuizContainer from '../student/AutoEvalQuizContainer';
 import QcmSequenceurBlindTest from './QcmSequenceurBlindTest';
 import QcmSequenceurAssociation from './QcmSequenceurAssociation';
+import QcmSignaux from './QcmSignaux';
 import { parseSequencerJson } from '../../utils/sequencerParser';
 
 export default function AtelierEntrainement({
@@ -12,9 +13,10 @@ export default function AtelierEntrainement({
   educationalSheets,
   rhythms,
   rhythmsJsonData,
+  rhythmsMetadata,
   sequenceurUrl
 }) {
-  const [activeQuizType, setActiveQuizType] = useState(null); // 'TRADUCTION', 'CULTURE', 'RYTHMES'
+  const [activeQuizType, setActiveQuizType] = useState(null); // 'TRADUCTION', 'CULTURE', 'RYTHMES', 'SIGNAUX'
   const [activeTheme, setActiveTheme] = useState(null); // for AutoEvalQuizContainer (e.g. 'traduction', 'culture')
 
   const [selectedRhythmId, setSelectedRhythmId] = useState(null);
@@ -32,6 +34,10 @@ export default function AtelierEntrainement({
 
   const handleStartRythmes = () => {
     setActiveQuizType('RYTHMES');
+  };
+
+  const handleStartSignaux = () => {
+    setActiveQuizType('SIGNAUX');
   };
 
   const handleExitQuiz = () => {
@@ -58,6 +64,16 @@ export default function AtelierEntrainement({
           onExit={handleExitQuiz}
         />
       </div>
+    );
+  }
+
+  if (activeQuizType === 'SIGNAUX') {
+    return (
+      <QcmSignaux 
+        onExit={handleExitQuiz} 
+        rhythms={rhythms} 
+        rhythmsMetadata={rhythmsMetadata} 
+      />
     );
   }
 
@@ -173,7 +189,7 @@ export default function AtelierEntrainement({
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {/* Traduction & Paroles */}
         <CordelCard className="p-6 flex flex-col items-center text-center gap-4 group">
           <div className="text-6xl group-hover:scale-110 transition-transform">🗣️</div>
@@ -211,6 +227,20 @@ export default function AtelierEntrainement({
           </p>
           <div className="mt-auto pt-4 w-full">
             <CordelButton variant="outline" onClick={handleStartRythmes} className="w-full text-xs py-2 uppercase tracking-widest font-black border-2 border-encre-noire hover:bg-encre-noire hover:text-white">
+              Lancer 🚀
+            </CordelButton>
+          </div>
+        </CordelCard>
+
+        {/* Signaux du Maître */}
+        <CordelCard className="p-6 flex flex-col items-center text-center gap-4 group">
+          <div className="text-6xl group-hover:scale-110 transition-transform">🖐️</div>
+          <h3 className="text-base font-black uppercase text-encre-noire tracking-wider">Signaux du Maître</h3>
+          <p className="text-xs font-bold text-encre-noire/70">
+            Mémorise et reconnais les gestes et signaux sonores utilisés par le mestre dans la roda.
+          </p>
+          <div className="mt-auto pt-4 w-full">
+            <CordelButton variant="outline" onClick={handleStartSignaux} className="w-full text-xs py-2 uppercase tracking-widest font-black border-2 border-encre-noire hover:bg-encre-noire hover:text-white">
               Lancer 🚀
             </CordelButton>
           </div>

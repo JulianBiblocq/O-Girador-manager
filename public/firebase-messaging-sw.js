@@ -25,8 +25,15 @@ self.addEventListener('notificationclick', (event) => {
   event.notification.close();
 
   // Extraction de l'URL de destination transmise dans les données de notification
-  const data = event.notification.data || {};
+  let data = event.notification.data || {};
+  
+  // Firebase SDK imbrique souvent les données dans FCM_MSG lors de la création automatique de la notification
+  if (data.FCM_MSG && data.FCM_MSG.data) {
+    data = Object.assign({}, data, data.FCM_MSG.data);
+  }
+
   const targetUrl = data.url || data.link || data.click_action || '/';
+  console.log('[firebase-messaging-sw.js] Redirection vers :', targetUrl);
 
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
@@ -37,7 +44,7 @@ self.addEventListener('notificationclick', (event) => {
           if ('navigate' in client && targetUrl) {
             return client.navigate(targetUrl);
           }
-          return;
+          return client;
         }
       }
 
