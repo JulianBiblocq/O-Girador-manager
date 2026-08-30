@@ -48,9 +48,13 @@ export function useSequencerFirestoreData(groupId) {
         let currentPatterns = [];
         let currentSections = [];
         let currentPresets = [];
+        let currentAudioMasters = [];
 
         const mergeAndSet = () => {
-          const merged = [...currentPatterns, ...currentSections, ...currentPresets];
+          const allItems = [...currentPatterns, ...currentSections, ...currentPresets, ...currentAudioMasters];
+          const uniqueItemsMap = new Map();
+          allItems.forEach(item => uniqueItemsMap.set(item.id, item));
+          const merged = Array.from(uniqueItemsMap.values());
           
           merged.sort((a, b) => {
             const titleA = (a.title || a.titre || a.name || '').toLowerCase();
@@ -86,6 +90,7 @@ export function useSequencerFirestoreData(groupId) {
             id: doc.id,
             _collection: collectionName,
             isJson: true, // Pour la compatibilité avec l'ancien système de fichiers
+            isAudio: !!data.audioUrl,
             titre: data.name || parsedData.name || data.title || 'Sans titre',
             jsonUrl: doc.id, // Utilisé comme identifiant de repli par certains vieux composants
             audioUrl: data.audioUrl || null,
@@ -148,6 +153,90 @@ export function useSequencerFirestoreData(groupId) {
           });
           unsubPresetsList.push(unsub);
         });
+
+        // --- ECOUTE DES AUDIO MASTERS ---
+        const audioMastersRef = collection(db, 'audio_masters');
+        chunks.forEach((chunk, index) => {
+          const qAM = query(audioMastersRef, where('mestreId', 'in', chunk));
+          const unsub = onSnapshot(qAM, (snapshot) => {
+             const chunkDocs = snapshot.docs.map(doc => {
+               const data = doc.data();
+               return {
+                 id: doc.id,
+                 _collection: 'audio_masters',
+                 isJson: false,
+                 isAudio: true,
+                 titre: data.nom || 'Master Audio',
+                 audioUrl: data.audioUrl || null,
+                 bpm: data.bpm,
+                 ...data
+               };
+             });
+             const newIds = chunkDocs.map(d => d.id);
+             currentAudioMasters = [
+               ...currentAudioMasters.filter(a => !newIds.includes(a.id)),
+               ...chunkDocs
+             ];
+             mergeAndSet();
+          });
+          unsubPresetsList.push(unsub);
+        });
+
+        const qAMTenant = query(audioMastersRef, where('tenantId', '==', groupId));
+        const unsubTenant = onSnapshot(qAMTenant, (snapshot) => {
+           const tenantDocs = snapshot.docs.map(doc => {
+             const data = doc.data();
+             return {
+               id: doc.id,
+               _collection: 'audio_masters',
+               isJson: false,
+               isAudio: true,
+               titre: data.nom || 'Master Audio',
+               audioUrl: data.audioUrl || null,
+               bpm: data.bpm,
+               ...data
+             };
+           });
+           const newIds = tenantDocs.map(d => d.id);
+           currentAudioMasters = [
+             ...currentAudioMasters.filter(a => !newIds.includes(a.id)),
+             ...tenantDocs
+           ];
+           mergeAndSet();
+        });
+        unsubPresetsList.push(unsubTenant);
+
+        // --- DIRECT STORAGE FALLBACK (exports_danse) ---
+        try {
+          const { ref, listAll, getDownloadURL } = await import('firebase/storage');
+          const { storage } = await import('../firebase');
+          const paths = [`exports_danse/tenant_local`, `exports_danse/${groupId}`];
+          for (const path of paths) {
+            try {
+              const folderRef = ref(storage, path);
+              const res = await listAll(folderRef);
+              for (const item of res.items) {
+                const baseName = item.name.split('.')[0];
+                if (!currentAudioMasters.some(a => a.id.includes(baseName))) {
+                  const url = await getDownloadURL(item);
+                  currentAudioMasters.push({
+                    id: item.name,
+                    _collection: 'storage',
+                    isJson: false,
+                    isAudio: true,
+                    titre: item.name,
+                    audioUrl: url
+                  });
+                }
+              }
+              mergeAndSet();
+            } catch (e) {
+               // Ignore folder not found
+            }
+          }
+        } catch (e) {
+          console.warn("Storage direct fetch failed", e);
+        }
 
       } catch (err) {
         console.error("useSequencerFirestoreData - Erreur d'initialisation :", err);

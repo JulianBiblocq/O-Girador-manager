@@ -164,14 +164,14 @@ export default function AtelierEntrainement({
           <QcmSequenceurBlindTest 
             patternId={selectedRhythmId}
             patternData={testPatternData}
-            audioUrl={rhythm?.url}
+            audioUrl={rhythm?.url || rhythm?.audioUrl}
             onComplete={(isCorrect) => console.log(`Blind Test : ${isCorrect ? 'Gagné' : 'Perdu'}`)}
           />
         ) : (
           <QcmSequenceurAssociation 
             patternId={selectedRhythmId}
             patternData={testPatternData}
-            audioUrl={rhythm?.url}
+            audioUrl={rhythm?.url || rhythm?.audioUrl}
             onComplete={(isCorrect) => console.log(`Association : ${isCorrect ? 'Gagné' : 'Perdu'}`)}
           />
         )}

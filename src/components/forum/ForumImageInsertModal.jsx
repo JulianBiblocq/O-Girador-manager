@@ -134,7 +134,7 @@ export default function ForumImageInsertModal({
 
       // Nom de fichier unique et sécurisé
       const cleanFileName = compressedFile.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-      const folderPath = groupId ? `forum_images/${groupId}` : 'forum_images';
+      const folderPath = groupId ? `forum_images/${groupId}` : 'forum_images/public';
       const fileStoragePath = `${folderPath}/${Date.now()}_${cleanFileName}`;
 
       const fileRef = storageRef(storage, fileStoragePath);
