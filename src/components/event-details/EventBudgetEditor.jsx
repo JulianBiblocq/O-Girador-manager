@@ -16,6 +16,9 @@ import CordelButton from '../CordelButton';
 export default function EventBudgetEditor({
   budgetDepenses = [],
   onChangeDepenses,
+  montantRecette = 0,
+  onChangeRecette,
+  hasLinkedInvoice = false,
   covoiturageAmount = 0,
   totalRecettes = 0,
   documentStatusLabel = '',
@@ -58,11 +61,11 @@ export default function EventBudgetEditor({
   return (
     <div className="flex flex-col gap-5 text-left w-full">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Colonne 1 : Revenus (Source unique Devis / Facture - Lecture seule) */}
+        {/* Colonne 1 : Revenus */}
         <div className="flex flex-col gap-2 p-3 bg-[#2d6a4f]/5 border border-dashed border-[#2d6a4f]/30 rounded-[var(--theme-border-radius,6px)]">
           <div className="flex justify-between items-center mb-1">
             <span className="text-[11px] uppercase font-bold text-[#2d6a4f] dark:text-emerald-400">
-              📈 Revenus (Lecture seule)
+              📈 Revenus {hasLinkedInvoice ? '(Lecture seule)' : ''}
             </span>
           </div>
 
@@ -70,12 +73,32 @@ export default function EventBudgetEditor({
             <span className="font-medium text-stone-600 dark:text-stone-400 block">
               {documentStatusLabel || 'Aucun devis / facture rattaché(e)'}
             </span>
-            <span className="text-base font-extrabold text-[#2d6a4f] dark:text-emerald-400 block">
-              {totalRecettes.toFixed(2)} €
-            </span>
-            <p className="text-[10px] text-stone-500 italic mt-1">
-              Les rentrées sont synchronisées depuis le module de facturation pour éviter toute double saisie.
-            </p>
+            {hasLinkedInvoice ? (
+              <>
+                <span className="text-base font-extrabold text-[#2d6a4f] dark:text-emerald-400 block">
+                  {totalRecettes.toFixed(2)} €
+                </span>
+                <p className="text-[10px] text-stone-500 italic mt-1">
+                  Les rentrées sont synchronisées depuis le module de facturation pour éviter toute double saisie.
+                </p>
+              </>
+            ) : (
+              <div className="mt-2 flex flex-col gap-1 text-left">
+                <label className="text-[10px] uppercase font-bold text-stone-600 dark:text-stone-400">
+                  Montant manuel / historique (€)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  step="any"
+                  value={montantRecette || ''}
+                  onChange={(e) => onChangeRecette && onChangeRecette(e.target.value)}
+                  disabled={disabled}
+                  className="theme-input w-full p-2 text-base font-extrabold text-[#2d6a4f] bg-stone-50 dark:bg-stone-900 border border-stone-300 dark:border-stone-600 rounded"
+                  placeholder="0.00"
+                />
+              </div>
+            )}
           </div>
         </div>
 

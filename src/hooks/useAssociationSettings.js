@@ -500,6 +500,7 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
           lienGoogleFormRecoltePhotos: data.lienRecoltePhotosExternes || data.lienGoogleFormRecoltePhotos || '',
           lienRecoltePhotosExternes: data.lienRecoltePhotosExternes || data.lienGoogleFormRecoltePhotos || '',
           lienDepotForum: data.lienDepotForum || '',
+          consignesDepotForum: data.consignesDepotForum || '',
           customDomains: Array.isArray(data.customDomains) ? data.customDomains : [],
           // Bureau dynamique & Direction Artistique (Mestria)
           bureauMembres: Array.isArray(data.bureauMembres) ? data.bureauMembres : [],

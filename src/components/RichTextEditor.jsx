@@ -10,8 +10,9 @@ export default function RichTextEditor({
   value = '', 
   onChange, 
   placeholder = 'Rédigez votre message...', 
-  groupId = '', 
+  groupId = '',
   lienDepotForum = '',
+  consignesDepotForum = '',
   disabled = false,
   minHeight = '120px',
   showLists = true,
@@ -27,7 +28,6 @@ export default function RichTextEditor({
         bulletList: showLists ? {} : false,
         orderedList: showLists ? {} : false,
         codeBlock: false,
-        blockquote: false,
         heading: false,
         horizontalRule: false,
         link: false
@@ -254,6 +254,7 @@ export default function RichTextEditor({
         isOpen={isImageModalOpen}
         onClose={() => setIsImageModalOpen(false)}
         lienDepotForum={lienDepotForum}
+        consignesDepotForum={consignesDepotForum}
         groupId={groupId}
         onInsertImage={(url) => {
           if (editor && url) {

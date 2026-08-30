@@ -152,6 +152,26 @@ export default function TabIdentity({
               Redirige les membres vers votre espace de stockage partagé lors de l'insertion d'une photo dans le Forum.
             </p>
           </div>
+
+          {/* Consignes personnalisées pour le Dépôt des Images */}
+          {formData.lienDepotForum && (
+            <div className="flex flex-col gap-1 text-left animate-fade-in pl-4 border-l-2 border-cordel-wood/30">
+              <label htmlFor="consignesDepotForum" className="text-[9px] uppercase font-extrabold tracking-wider text-cordel-master-dark flex items-center gap-1.5">
+                📝 Consignes personnalisées pour l'upload (Optionnel)
+              </label>
+              <textarea 
+                id="consignesDepotForum"
+                value={formData.consignesDepotForum || ''}
+                onChange={(e) => handleChange('consignesDepotForum', e.target.value)}
+                disabled={saving}
+                placeholder="Ex: Allez dans le dossier 'Photos Publiques', ajoutez votre photo, puis copiez son lien..."
+                className="theme-input text-xs font-bold p-2 bg-cordel-bg-light w-full min-h-[60px]"
+              />
+              <p className="text-[9px] text-cordel-master-dark/70 font-semibold mt-0.5">
+                Texte d'aide qui s'affichera à vos membres pour leur expliquer comment récupérer le lien sur votre espace de stockage externe. S'il est vide, une aide automatique sera affichée.
+              </p>
+            </div>
+          )}
         </div>
       </CordelCard>
 

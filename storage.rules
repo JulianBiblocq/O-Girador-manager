@@ -27,6 +27,12 @@ service firebase.storage {
       allow write: if request.auth != null;
     }
 
+    // 4b. Images du Forum : Accessible aux membres connectés
+    match /forum_images/{groupId}/{allPaths=**} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+
     // 5. MÃ©dia Studio Social & Justificatifs : Membres connectÃ©s
     match /studio_validation/{groupId}/{allPaths=**} {
       allow read: if request.auth != null;

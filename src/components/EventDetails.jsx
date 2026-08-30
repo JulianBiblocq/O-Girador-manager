@@ -841,9 +841,9 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
         imageUrl: editConfig.agendaEnableImage ? editForm.imageUrl || '' : '',
         requiresValidation: editConfig.agendaEnableInscriptions ? (editForm.requiresValidation || false) : false,
         isPublic: editForm.isPublic || false,
-        montantRecette: editConfig.agendaEnableFinance ? ((editForm.budgetRecettes || []).reduce((sum, item) => sum + (parseFloat(item.montant) || 0), 0)) : 0,
+        montantRecette: editConfig.agendaEnableFinance ? (parseFloat(editForm.montantRecette) || 0) : 0,
         montantDepense: editConfig.agendaEnableFinance ? ((editForm.budgetDepenses || []).reduce((sum, item) => sum + (parseFloat(item.montant) || 0), 0)) : 0,
-        budgetRecettes: editConfig.agendaEnableFinance ? (editForm.budgetRecettes || []) : [],
+        budgetRecettes: [], // Obsolète dans le nouveau modèle unifié
         budgetDepenses: editConfig.agendaEnableFinance ? (editForm.budgetDepenses || []) : [],
         dateLimiteInscription: editConfig.agendaEnableInscriptions ? editForm.dateLimiteInscription || '' : '',
         dressCodePercussion: editForm.dressCodePercussion || '',

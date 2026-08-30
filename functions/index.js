@@ -362,10 +362,23 @@ exports.sendAssociationEmail = onRequest(
       let emailSenderName = sender ? sender.name : "O GIRADOR";
       let emailReplyTo = replyTo ? replyTo.email : "contact@o-girador.com";
 
+      // Valeurs par défaut du mode d'envoi
+      let finalDeliveryMode = deliveryConfig?.deliveryMode || 'ogirador';
+      let finalConnectionType = deliveryConfig?.connectionType || 'api';
+      let finalApiProvider = deliveryConfig?.apiProvider || 'brevo';
+      let smtpPassword = '';
+      let emailProviderApiKey = '';
+
+      let smtpHost = deliveryConfig?.smtpHost || '';
+      let smtpPort = deliveryConfig?.smtpPort || 587;
+      let smtpUser = deliveryConfig?.smtpUser || '';
+      let smtpSecure = deliveryConfig?.smtpSecure || 'tls';
+
+      const db = getFirestore();
+
       // Récupération des paramètres Firestore de l'association si groupId fourni
       if (groupId) {
         try {
-          const db = getFirestore();
           const assocDoc = await db.collection("associations").doc(groupId).get();
           if (assocDoc.exists) {
             const assocData = assocDoc.data();
@@ -374,21 +387,113 @@ exports.sendAssociationEmail = onRequest(
 
             // On utilise systématiquement l'e-mail officiel de l'association pour les réponses
             if (assocData.email) emailReplyTo = assocData.email;
+
+            if (assocData.emailDeliveryMode) finalDeliveryMode = assocData.emailDeliveryMode;
+            if (assocData.emailConnectionType) finalConnectionType = assocData.emailConnectionType;
+            if (assocData.emailApiProvider) finalApiProvider = assocData.emailApiProvider;
+            if (assocData.smtpHost) smtpHost = assocData.smtpHost;
+            if (assocData.smtpPort) smtpPort = assocData.smtpPort;
+            if (assocData.smtpUser) smtpUser = assocData.smtpUser;
+            if (assocData.smtpSecure) smtpSecure = assocData.smtpSecure;
+          }
+
+          // Récupération des credentials secrets (mot de passe SMTP et clé API)
+          const credsDoc = await db.collection("associations").doc(groupId).collection("private_settings").doc("credentials").get();
+          if (credsDoc.exists) {
+            const credsData = credsDoc.data();
+            smtpPassword = credsData.smtpPassword || '';
+            emailProviderApiKey = credsData.emailProviderApiKey || '';
           }
         } catch (dbErr) {
           console.warn("sendAssociationEmail - Erreur lecture Firestore association :", dbErr);
         }
       }
 
-      // Utilisation exclusive de la clé API globale O Girador (Modèle SaaS Marque Blanche)
-      const apiKeyToUse = brevoApiKeySecret.value();
+      console.log("sendAssociationEmail Cloud Function - Configuration :", {
+        groupId,
+        emailSenderName,
+        emailReplyTo,
+        finalDeliveryMode,
+        finalConnectionType,
+        finalApiProvider
+      });
 
-      // Construction du payload certifié Brevo avec headers Reply-To dynamique
+      // ==========================================
+      // OPTION B : SERVICE EXTERNE - SERVEUR SMTP
+      // ==========================================
+      if (finalDeliveryMode === 'custom' && finalConnectionType === 'smtp') {
+        if (!smtpHost || !smtpUser || !smtpPassword) {
+          return res.status(400).json({ error: "Configuration SMTP incomplète (hôte, utilisateur ou mot de passe manquant)." });
+        }
+
+        const nodemailer = require("nodemailer");
+        const isSecure = smtpSecure === 'ssl' || smtpPort === 465;
+
+        const transporter = nodemailer.createTransport({
+          host: smtpHost,
+          port: smtpPort,
+          secure: isSecure,
+          auth: {
+            user: smtpUser,
+            pass: smtpPassword,
+          },
+          tls: {
+            rejectUnauthorized: false
+          }
+        });
+
+        const nodemailerAttachments = (attachment || []).map(att => {
+          return {
+            filename: att.name,
+            content: att.content,
+            encoding: 'base64'
+          };
+        });
+
+        const mailOptions = {
+          from: `"${emailSenderName}" <${smtpUser}>`,
+          replyTo: emailReplyTo,
+          to: Array.isArray(to) ? to.map(t => t.email).join(', ') : to,
+          subject: subject,
+          html: htmlContent,
+          attachments: nodemailerAttachments
+        };
+
+        try {
+          const info = await transporter.sendMail(mailOptions);
+          console.log("sendAssociationEmail - E-mail envoyé via SMTP :", info.messageId);
+          return res.status(200).json({
+            success: true,
+            messageId: info.messageId,
+            deliveryMode: 'custom_smtp',
+            senderName: emailSenderName,
+            replyTo: emailReplyTo
+          });
+        } catch (smtpErr) {
+          console.error("sendAssociationEmail - Erreur SMTP :", smtpErr);
+          return res.status(500).json({ error: "Erreur lors de l'envoi via votre serveur SMTP : " + smtpErr.message });
+        }
+      }
+
+      // ==========================================
+      // OPTION B : SERVICE EXTERNE - CLÉ API BREVO (CUSTOM)
+      // ==========================================
+      let apiKeyToUse = brevoApiKeySecret.value();
+      let senderEmail = "contact@o-girador.com";
+
+      if (finalDeliveryMode === 'custom' && finalConnectionType === 'api' && finalApiProvider === 'brevo' && emailProviderApiKey) {
+        apiKeyToUse = emailProviderApiKey;
+        // Si l'asso utilise sa propre clé Brevo, on peut utiliser son e-mail officiel
+        senderEmail = emailReplyTo; 
+      }
+
+      // ==========================================
+      // OPTION A (OU FALLBACK API BREVO O GIRADOR)
+      // ==========================================
       const payload = {
         sender: {
           name: emailSenderName,
-          // L'adresse d'expédition doit correspondre au domaine certifié de l'application
-          email: "contact@o-girador.com"
+          email: senderEmail
         },
         replyTo: {
           name: emailSenderName,
@@ -399,12 +504,6 @@ exports.sendAssociationEmail = onRequest(
         htmlContent: htmlContent,
         attachment: attachment || []
       };
-
-      console.log("sendAssociationEmail Cloud Function - Routage SaaS :", {
-        groupId,
-        emailSenderName,
-        emailReplyTo
-      });
 
       const brevoRes = await fetch("https://api.brevo.com/v3/smtp/email", {
         method: "POST",
@@ -422,7 +521,7 @@ exports.sendAssociationEmail = onRequest(
         return res.status(200).json({
           success: true,
           messageId: resData.messageId,
-          deliveryMode: deliveryMode,
+          deliveryMode: finalDeliveryMode,
           senderName: emailSenderName,
           replyTo: emailReplyTo
         });

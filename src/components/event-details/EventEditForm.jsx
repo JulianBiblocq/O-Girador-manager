@@ -11,6 +11,7 @@ import AddressAutocomplete from '../AddressAutocomplete';
 import LocationSelector from '../LocationSelector';
 import { DEFAULT_CUSTOM_CATEGORIES } from '../../utils/categoryUtils';
 import { useSequencerFirestoreData } from '../../hooks/useSequencerFirestoreData';
+import { useEventFinance } from '../../hooks/useEventFinance';
 
 /**
  * EventEditForm component handles editing details of an event.
@@ -57,6 +58,13 @@ export default function EventEditForm({
   const [isMapModalOpen, setIsMapModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const { rhythms: sequencerRhythms, loading: loadingRhythms } = useSequencerFirestoreData(groupId);
+
+  const {
+    hasLinkedInvoice,
+    totalRecettes,
+    documentStatusLabel,
+    covoiturageAmount
+  } = useEventFinance(editForm, groupId);
 
   const combinedCostumeOptions = React.useMemo(() => {
     const list = [];
@@ -511,6 +519,12 @@ export default function EventEditForm({
                   <EventBudgetEditor
                     budgetDepenses={editForm.budgetDepenses}
                     onChangeDepenses={(updated) => setEditForm(prev => ({ ...prev, budgetDepenses: updated }))}
+                    montantRecette={editForm.montantRecette}
+                    onChangeRecette={(val) => setEditForm(prev => ({ ...prev, montantRecette: val }))}
+                    hasLinkedInvoice={hasLinkedInvoice}
+                    totalRecettes={totalRecettes}
+                    documentStatusLabel={documentStatusLabel}
+                    covoiturageAmount={covoiturageAmount}
                     disabled={savingEvent}
                   />
                 </div>

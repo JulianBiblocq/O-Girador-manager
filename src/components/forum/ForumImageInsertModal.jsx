@@ -21,8 +21,10 @@ export default function ForumImageInsertModal({
   onClose, 
   onInsertImage, 
   lienDepotForum = '', 
+  consignesDepotForum = '',
   groupId = '' 
 }) {
+  const hasExternalLink = Boolean(lienDepotForum);
   const [activeTab, setActiveTab] = useState('upload'); // 'upload' | 'external'
   const [selectedFile, setSelectedFile] = useState(null);
   const [filePreview, setFilePreview] = useState(null);
@@ -67,6 +69,54 @@ export default function ForumImageInsertModal({
     onClose();
   };
 
+  const compressImage = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target.result;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+          const MAX_WIDTH = 1200;
+          const MAX_HEIGHT = 1200;
+          
+          if (width > height) {
+            if (width > MAX_WIDTH) {
+              height *= MAX_WIDTH / width;
+              width = MAX_WIDTH;
+            }
+          } else {
+            if (height > MAX_HEIGHT) {
+              width *= MAX_HEIGHT / height;
+              height = MAX_HEIGHT;
+            }
+          }
+          
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+          
+          canvas.toBlob((blob) => {
+            if (blob) {
+              const originalName = file.name.split('.').slice(0, -1).join('.') || 'image';
+              const ext = blob.type === 'image/webp' ? 'webp' : 'jpg';
+              const newFile = new File([blob], `${originalName}.${ext}`, { type: blob.type });
+              resolve(newFile);
+            } else {
+              resolve(file);
+            }
+          }, 'image/webp', 0.75);
+        };
+        img.onerror = (err) => reject(err);
+      };
+      reader.onerror = (err) => reject(err);
+    });
+  };
+
   // Téléversement direct du fichier vers Firebase Storage dans forum_images/
   const handleUploadAndInsert = async (e) => {
     e.preventDefault();
@@ -79,16 +129,19 @@ export default function ForumImageInsertModal({
       setIsUploading(true);
       setErrorMsg('');
 
+      // Compression de l'image (pour économiser le stockage Firebase)
+      const compressedFile = await compressImage(selectedFile);
+
       // Nom de fichier unique et sécurisé
-      const cleanFileName = selectedFile.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+      const cleanFileName = compressedFile.name.replace(/[^a-zA-Z0-9._-]/g, '_');
       const folderPath = groupId ? `forum_images/${groupId}` : 'forum_images';
       const fileStoragePath = `${folderPath}/${Date.now()}_${cleanFileName}`;
 
       const fileRef = storageRef(storage, fileStoragePath);
 
       // Upload du fichier vers Firebase Storage
-      const snapshot = await uploadBytes(fileRef, selectedFile, {
-        contentType: selectedFile.type || 'image/jpeg'
+      const snapshot = await uploadBytes(fileRef, compressedFile, {
+        contentType: compressedFile.type || 'image/jpeg'
       });
 
       // Récupération de l'URL publique de téléchargement
@@ -158,17 +211,17 @@ export default function ForumImageInsertModal({
 
         {/* Onglets d'action (Fixes sous le header) */}
         <div className="flex-shrink-0 px-4 pt-3 pb-2 border-b border-encre-noire/15 bg-cordel-bg flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => { if (!isUploading) { setActiveTab('upload'); setErrorMsg(''); } }}
-            className={`px-3 py-1.5 text-xs font-bold uppercase tracking-wider rounded transition-all cursor-pointer ${
-              activeTab === 'upload'
-                ? 'bg-cordel-wood text-white border border-encre-noire shadow-xs'
-                : 'bg-white/60 text-encre-noire border border-encre-noire/20 hover:bg-white'
-            }`}
-          >
-            📤 Importer un fichier
-          </button>
+            <button
+              type="button"
+              onClick={() => { if (!isUploading) { setActiveTab('upload'); setErrorMsg(''); } }}
+              className={`px-3 py-1.5 text-xs font-bold uppercase tracking-wider rounded transition-all cursor-pointer ${
+                activeTab === 'upload'
+                  ? 'bg-cordel-wood text-white border border-encre-noire shadow-xs'
+                  : 'bg-white/60 text-encre-noire border border-encre-noire/20 hover:bg-white'
+              }`}
+            >
+              📤 Importer un fichier
+            </button>
           <button
             type="button"
             onClick={() => { if (!isUploading) { setActiveTab('external'); setErrorMsg(''); } }}
@@ -184,7 +237,7 @@ export default function ForumImageInsertModal({
 
         {/* Option 1 : Upload de fichier local */}
         {activeTab === 'upload' && (
-          <form onSubmit={handleUploadAndInsert} className="flex flex-col flex-1 overflow-hidden">
+          <div className="flex flex-col flex-1 overflow-hidden">
             {/* 2. Body (Défilable verticalement) */}
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
               <div className="flex flex-col gap-2 p-3 bg-white border border-encre-noire/20 rounded-[4px_6px_3px_5px]">
@@ -236,7 +289,8 @@ export default function ForumImageInsertModal({
               </button>
 
               <CordelButton
-                type="submit"
+                type="button"
+                onClick={handleUploadAndInsert}
                 variant="vert"
                 useExtremeBorder={true}
                 disabled={isUploading || !selectedFile}
@@ -252,12 +306,12 @@ export default function ForumImageInsertModal({
                 )}
               </CordelButton>
             </div>
-          </form>
+          </div>
         )}
 
         {/* Option 2 : Lien d'image externe */}
         {activeTab === 'external' && (
-          <form onSubmit={handleExternalInsert} className="flex flex-col flex-1 overflow-hidden">
+          <div className="flex flex-col flex-1 overflow-hidden">
             {/* 2. Body (Défilable verticalement) */}
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
               <div className="flex flex-col gap-2 p-3 bg-white border border-encre-noire/20 rounded-[4px_6px_3px_5px]">
@@ -278,14 +332,64 @@ export default function ForumImageInsertModal({
               </div>
 
               {targetUploadUrl && (
-                <div className="flex flex-col gap-1.5 p-3 bg-stone-50 border border-stone-200 rounded">
+                <div className="flex flex-col gap-2 p-3 bg-stone-50 border border-stone-200 rounded">
                   <span className="text-[10px] font-bold uppercase text-stone-600">
                     Dépôt externe partagé de l'association :
                   </span>
+                  
+                  <div className="text-[10px] text-stone-600 mb-1 space-y-1">
+                    <p className="font-bold">Comment faire ?</p>
+                    {consignesDepotForum ? (
+                      <div className="whitespace-pre-wrap leading-relaxed border-l-2 border-stone-300 pl-2 ml-1 text-stone-700 bg-white/50 p-1.5 rounded-r">
+                        {consignesDepotForum}
+                      </div>
+                    ) : (() => {
+                      const lowerUrl = targetUploadUrl.toLowerCase();
+                      if (lowerUrl.includes('framaspace') || lowerUrl.includes('nextcloud')) {
+                        return (
+                          <ol className="list-decimal pl-4 space-y-0.5">
+                            <li>Ouvrez l'espace via le bouton ci-dessous.</li>
+                            <li>Glissez-déposez (ou envoyez) votre photo.</li>
+                            <li>Cliquez sur les <strong className="font-bold">trois points (...)</strong> à côté du fichier ajouté.</li>
+                            <li>Choisissez <strong className="font-bold">"Copier le lien"</strong> (ou "Lien de téléchargement").</li>
+                            <li>Collez ce lien dans le champ au-dessus !</li>
+                          </ol>
+                        );
+                      }
+                      if (lowerUrl.includes('dropbox')) {
+                        return (
+                          <ol className="list-decimal pl-4 space-y-0.5">
+                            <li>Ouvrez le dossier Dropbox via le bouton ci-dessous.</li>
+                            <li>Ajoutez votre photo.</li>
+                            <li>Survolez la photo et cliquez sur le bouton <strong className="font-bold">"Copier le lien"</strong>.</li>
+                            <li>Collez ce lien dans le champ au-dessus.</li>
+                          </ol>
+                        );
+                      }
+                      if (lowerUrl.includes('drive.google')) {
+                        return (
+                          <ol className="list-decimal pl-4 space-y-0.5">
+                            <li>Ouvrez le Google Drive via le bouton ci-dessous.</li>
+                            <li>Déposez votre photo.</li>
+                            <li>Faites un clic droit sur la photo, choisissez <strong className="font-bold">"Obtenir le lien"</strong> (lien public).</li>
+                            <li>Collez ce lien dans le champ au-dessus.</li>
+                          </ol>
+                        );
+                      }
+                      return (
+                        <ol className="list-decimal pl-4 space-y-0.5">
+                          <li>Ouvrez l'espace via le bouton ci-dessous et envoyez votre photo.</li>
+                          <li>Récupérez le <strong className="font-bold">lien direct public</strong> de l'image.</li>
+                          <li>Collez ce lien dans le champ au-dessus !</li>
+                        </ol>
+                      );
+                    })()}
+                  </div>
+
                   <button
                     type="button"
                     onClick={() => window.open(targetUploadUrl, '_blank', 'noopener,noreferrer')}
-                    className="py-1.5 px-3 text-[11px] font-bold bg-white text-encre-noire border border-encre-noire/40 rounded hover:bg-stone-100 transition-all cursor-pointer flex items-center justify-center gap-1"
+                    className="mt-1 py-1.5 px-3 text-[11px] font-bold bg-white text-encre-noire border border-encre-noire/40 rounded hover:bg-stone-100 transition-all cursor-pointer flex items-center justify-center gap-1"
                   >
                     <span>Ouvrir l'espace de stockage externe ↗</span>
                   </button>
@@ -310,7 +414,8 @@ export default function ForumImageInsertModal({
               </button>
 
               <CordelButton
-                type="submit"
+                type="button"
+                onClick={handleExternalInsert}
                 variant="vert"
                 useExtremeBorder={true}
                 disabled={!imageUrl.trim()}
@@ -319,7 +424,7 @@ export default function ForumImageInsertModal({
                 Insérer l'image
               </CordelButton>
             </div>
-          </form>
+          </div>
         )}
       </div>
     </div>

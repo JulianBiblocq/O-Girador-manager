@@ -423,9 +423,9 @@ export default function WidgetAgenda({
           lienSocial: activeConfig.agendaEnableUrl ? formData.lienSocial || '' : '',
           imageUrl: activeConfig.agendaEnableImage ? formData.imageUrl || '' : '',
           requiresValidation: activeConfig.agendaEnableInscriptions ? (formData.requiresValidation || false) : false,
-          montantRecette: activeConfig.agendaEnableFinance ? ((formData.budgetRecettes || []).reduce((sum, item) => sum + (parseFloat(item.montant) || 0), 0)) : 0,
+          montantRecette: activeConfig.agendaEnableFinance ? (parseFloat(formData.montantRecette) || 0) : 0,
           montantDepense: activeConfig.agendaEnableFinance ? ((formData.budgetDepenses || []).reduce((sum, item) => sum + (parseFloat(item.montant) || 0), 0)) : 0,
-          budgetRecettes: activeConfig.agendaEnableFinance ? (formData.budgetRecettes || []) : [],
+          budgetRecettes: [], // Obsolète dans le nouveau modèle unifié
           budgetDepenses: activeConfig.agendaEnableFinance ? (formData.budgetDepenses || []) : [],
           dateLimiteInscription: activeConfig.agendaEnableInscriptions ? formData.dateLimiteInscription || '' : '',
           dressCodePercussion: formData.dressCodePercussion || '',

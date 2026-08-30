@@ -47,6 +47,7 @@ export default function CreateThreadForm({ groupId, channelId, user, profileData
   };
 
   const [lienDepotForum, setLienDepotForum] = useState('');
+  const [consignesDepotForum, setConsignesDepotForum] = useState('');
 
   // Chargement en temps réel des étiquettes, instruments et lienDepotForum de l'association
   useEffect(() => {
@@ -61,6 +62,7 @@ export default function CreateThreadForm({ groupId, channelId, user, profileData
         const combined = [...new Set([...tagLabels, ...instruments])].filter(Boolean).sort();
         setAvailableTargets(combined);
         setLienDepotForum(data.lienDepotForum || '');
+        setConsignesDepotForum(data.consignesDepotForum || '');
       }
     }, (error) => {
       console.error("CreateThreadForm - Erreur chargement cibles association :", error);
@@ -243,6 +245,7 @@ export default function CreateThreadForm({ groupId, channelId, user, profileData
             placeholder={t('forum.messagePlaceholder')}
             groupId={groupId}
             lienDepotForum={lienDepotForum}
+            consignesDepotForum={consignesDepotForum}
             minHeight="140px"
           />
         </div>

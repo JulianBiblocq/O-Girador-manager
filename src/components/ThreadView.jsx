@@ -24,6 +24,7 @@ const ThreadReplyItem = React.memo(({
   onDeleteReply,
   onMoveReply,
   onEditReply,
+  onReplyToMessage,
   t,
   formattedTime
 }) => {
@@ -74,6 +75,14 @@ const ThreadReplyItem = React.memo(({
           ) : <span />}
 
           <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => onReplyToMessage(reply)}
+              className="text-[10px] font-black cursor-pointer leading-none select-none opacity-70 hover:opacity-100 p-0.5"
+              title="Répondre à ce message"
+            >
+              💬
+            </button>
             {(isCurrentUser || isModeratorOrAdmin) && (
               <button
                 type="button"
@@ -134,7 +143,8 @@ const ThreadReplyItem = React.memo(({
          prevProps.formattedTime === nextProps.formattedTime &&
          prevProps.onDeleteReply === nextProps.onDeleteReply &&
          prevProps.onMoveReply === nextProps.onMoveReply &&
-         prevProps.onEditReply === nextProps.onEditReply;
+         prevProps.onEditReply === nextProps.onEditReply &&
+         prevProps.onReplyToMessage === nextProps.onReplyToMessage;
 });
 
 export default function ThreadView({ threadId, user, profileData, channels = [], allThreads = [], allUsers = [], onClose }) {
@@ -161,6 +171,7 @@ export default function ThreadView({ threadId, user, profileData, channels = [],
   const [availableTargets, setAvailableTargets] = useState([]);
   const [selectedTarget, setSelectedTarget] = useState('');
   const [lienDepotForum, setLienDepotForum] = useState('');
+  const [consignesDepotForum, setConsignesDepotForum] = useState('');
 
   // Modals state
   const [isMoveThreadOpen, setIsMoveThreadOpen] = useState(false);
@@ -431,6 +442,18 @@ export default function ThreadView({ threadId, user, profileData, channels = [],
     setEditingReplyData({ index, text: reply.message });
   }, []);
 
+  const handleReplyToMessage = useCallback((reply) => {
+    const textQuote = `<blockquote><strong>@${reply.auteurNom}</strong> a écrit :<br/>${reply.message}</blockquote><p></p>`;
+    setReplyText(prev => {
+      if (!prev || prev === '<p></p>') return textQuote;
+      return prev + textQuote;
+    });
+    // Scroll au bottom pour voir l'éditeur
+    setTimeout(() => {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, 100);
+  }, []);
+
   const handleSaveEditReply = async (e) => {
     e.preventDefault();
     if (!editingReplyData || !editingReplyData.text.trim()) return;
@@ -685,6 +708,7 @@ export default function ThreadView({ threadId, user, profileData, channels = [],
                   onDeleteReply={handleDeleteReply}
                   onMoveReply={handleOpenMoveReply}
                   onEditReply={handleOpenEditReply}
+                  onReplyToMessage={handleReplyToMessage}
                   t={t}
                   formattedTime={formattedTime}
                 />
