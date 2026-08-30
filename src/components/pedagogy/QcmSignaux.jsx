@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { ref, listAll, getDownloadURL } from 'firebase/storage';
-import { storage } from '../../firebase';
+import { collection, getDocs } from 'firebase/firestore';
+import { db } from '../../firebase';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 
@@ -20,25 +20,17 @@ export default function QcmSignaux({ onExit, rhythms = [], rhythmsMetadata = {} 
   useEffect(() => {
     const fetchSignals = async () => {
       try {
-        const folderRef = ref(storage, 'sinais');
-        const res = await listAll(folderRef);
-        const data = await Promise.all(
-          res.items.map(async (itemRef) => {
-            const url = await getDownloadURL(itemRef);
-            return {
-              id: itemRef.name,
-              name: itemRef.name.replace(/\.[^/.]+$/, "").replace(/_/g, " "), // remove extension and underscores
-              imageUrl: url,
-              description: "Signal du Mestre"
-            };
-          })
-        );
+        const querySnapshot = await getDocs(collection(db, 'mestre_signals'));
+        const data = [];
+        querySnapshot.forEach((d) => {
+          data.push({ id: d.id, ...d.data() });
+        });
         
         // Only keep signals that have an image and a name
         const validSignals = data.filter(s => s.imageUrl && s.name);
         setSignals(validSignals);
       } catch (err) {
-        console.error("Erreur lors de la récupération des signaux depuis le Storage :", err);
+        console.error("Erreur lors de la récupération des signaux :", err);
       } finally {
         setLoading(false);
       }

@@ -171,20 +171,13 @@ export default function MestreAutoEvalConfig({ profileData, isEmbedded }) {
       metaSnap.forEach(d => { meta[d.id] = d.data(); });
       setRhythmsMetadata(meta);
 
-      // Récupérer Mestre Signals depuis Storage
+      // Récupérer Mestre Signals depuis Firestore
       try {
-        const signalsRef = ref(storage, 'sinais');
-        const signalsRes = await listAll(signalsRef);
-        const fetchedSignals = await Promise.all(
-          signalsRes.items.map(async (itemRef) => {
-            const url = await getDownloadURL(itemRef);
-            return {
-              id: itemRef.name,
-              name: itemRef.name.replace(/\.[^/.]+$/, "").replace(/_/g, " "),
-              imageUrl: url
-            };
-          })
-        );
+        const querySnapshot = await getDocs(collection(db, 'mestre_signals'));
+        const fetchedSignals = [];
+        querySnapshot.forEach((d) => {
+          fetchedSignals.push({ id: d.id, ...d.data() });
+        });
         setMestreSignals(fetchedSignals.filter(s => s.imageUrl && s.name));
       } catch (err) {
         console.error("Erreur Mestre Signals:", err);
