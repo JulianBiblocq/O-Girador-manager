@@ -185,6 +185,7 @@ export default function MonParcours({ profileData, sequenceurUrl, enabledModules
             educationalSheets={educationalSheets}
             sequenceurUrl={sequenceurUrl}
             enabledModules={enabledModules}
+            profileData={profileData}
           />
         ) : (
           <AtelierEntrainement 

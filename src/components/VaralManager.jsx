@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { collection, query, where, onSnapshot, doc, deleteDoc, updateDoc } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, doc, deleteDoc, updateDoc, addDoc } from 'firebase/firestore';
 import { ref, deleteObject } from 'firebase/storage';
 import { db, storage } from '../firebase';
 import CordelCard from './CordelCard';
@@ -43,6 +43,10 @@ export default function VaralManager({ groupId, onBack, role, isSystemAdmin, isE
   // Sorting state per category
   const [sortMethods, setSortMethods] = useState({});
 
+  // Fiches Culture Packs Export/Import State
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedFichesIds, setSelectedFichesIds] = useState([]);
+
   // Print state
   const [selectedSongsIds, setSelectedSongsIds] = useState([]);
   const [showBulkPrintModal, setShowBulkPrintModal] = useState(false);
@@ -57,6 +61,64 @@ export default function VaralManager({ groupId, onBack, role, isSystemAdmin, isE
 
   const toggleSongSelection = (id) => {
     setSelectedSongsIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  };
+
+  const toggleFicheSelection = (id) => {
+    setSelectedFichesIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  };
+
+  const handleExportPack = () => {
+    const fichesToExport = documents.filter(d => selectedFichesIds.includes(d.id));
+    if (fichesToExport.length === 0) return;
+    
+    const cleanFiches = fichesToExport.map(fiche => {
+      const { id, groupId, ...rest } = fiche;
+      return rest;
+    });
+
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(cleanFiches, null, 2));
+    const downloadAnchorNode = document.createElement('a');
+    downloadAnchorNode.setAttribute("href", dataStr);
+    downloadAnchorNode.setAttribute("download", `pack_fiches_${Date.now()}.json`);
+    document.body.appendChild(downloadAnchorNode);
+    downloadAnchorNode.click();
+    downloadAnchorNode.remove();
+    
+    setSelectionMode(false);
+    setSelectedFichesIds([]);
+  };
+
+  const handleImportPack = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      try {
+        const json = JSON.parse(event.target.result);
+        if (Array.isArray(json)) {
+          let importedCount = 0;
+          for (const fiche of json) {
+            if (fiche.type === 'culture_fiche') {
+              const newFiche = { ...fiche, groupId };
+              newFiche.dateAjout = new Date().toISOString();
+              if (newFiche.createdAt) newFiche.createdAt = new Date().toISOString();
+              
+              await addDoc(collection(db, 'documents'), newFiche);
+              importedCount++;
+            }
+          }
+          alert(`Succès: ${importedCount} fiches importées.`);
+        } else {
+          alert("Le fichier JSON ne contient pas un tableau valide.");
+        }
+      } catch (err) {
+        console.error("Erreur lors de l'import :", err);
+        alert("Fichier invalide ou corrompu.");
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = null; // reset
   };
   
   const handleBulkPrint = ({ format, isBW, printSections }) => {
@@ -431,7 +493,7 @@ export default function VaralManager({ groupId, onBack, role, isSystemAdmin, isE
 
       {/* Main Workspace */}
       {activeMainTab === 'models' ? (
-        <InstrumentModelsManager groupId={groupId} isAuthorized={isAuthorized} />
+        <InstrumentModelsManager groupId={groupId} isAuthorized={isAuthorized} varalCategories={varalCategories} />
       ) : isAdding || documentToEdit ? (
         <div className="max-w-xl mx-auto w-full">
           <DocumentUploadForm 
@@ -502,6 +564,39 @@ export default function VaralManager({ groupId, onBack, role, isSystemAdmin, isE
                   🖨️ Imprimer sélection ({selectedSongsIds.length})
                 </CordelButton>
               )}
+
+              {/* Fiches Culture Export/Import buttons */}
+              {isAuthorized && (
+                <>
+                  <CordelButton
+                    variant="default"
+                    onClick={() => {
+                      if (selectionMode && selectedFichesIds.length > 0) {
+                        handleExportPack();
+                      } else {
+                        setSelectionMode(!selectionMode);
+                        setSelectedFichesIds([]);
+                      }
+                    }}
+                    className={`text-xs px-4 py-2 font-bold whitespace-nowrap ${selectionMode ? 'bg-[#c05621] text-white border-[#c05621] hover:brightness-110' : ''}`}
+                  >
+                    {selectionMode 
+                      ? (selectedFichesIds.length > 0 ? `📦 Exporter Pack (${selectedFichesIds.length})` : 'Annuler Sélection')
+                      : '📦 Créer un Pack'
+                    }
+                  </CordelButton>
+                  <label className="theme-btn theme-btn-default text-xs px-4 py-2 font-bold whitespace-nowrap cursor-pointer flex items-center justify-center m-0 h-[34px]">
+                    <span className="leading-none mt-[2px]">📥 Importer un Pack</span>
+                    <input 
+                      type="file" 
+                      accept=".json" 
+                      onChange={handleImportPack} 
+                      className="hidden" 
+                    />
+                  </label>
+                </>
+              )}
+
               <CordelButton 
                 variant="ocre" 
                 useExtremeBorder={true}
@@ -743,12 +838,20 @@ export default function VaralManager({ groupId, onBack, role, isSystemAdmin, isE
                                   className="border-b border-dashed border-encre-noire/15 hover:bg-cordel-hover/50 transition-colors"
                                 >
                                   <td className="py-2 px-2 md:py-2.5 md:px-2 text-center w-8">
-                                    {docItem.type === 'song' && (
+                                    {docItem.type === 'song' && !selectionMode && (
                                       <input 
                                         type="checkbox" 
                                         className="w-4 h-4 cursor-pointer accent-cordel-vert"
                                         checked={selectedSongsIds.includes(docItem.id)}
                                         onChange={() => toggleSongSelection(docItem.id)}
+                                      />
+                                    )}
+                                    {docItem.type === 'culture_fiche' && selectionMode && (
+                                      <input 
+                                        type="checkbox" 
+                                        className="w-4 h-4 cursor-pointer accent-cordel-ocre"
+                                        checked={selectedFichesIds.includes(docItem.id)}
+                                        onChange={() => toggleFicheSelection(docItem.id)}
                                       />
                                     )}
                                   </td>

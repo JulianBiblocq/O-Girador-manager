@@ -21,6 +21,7 @@ export function useInventoryData(groupId, isAuthorized, t) {
 
   // Nouvel état pour les pièces détachées
   const [inventoryParts, setInventoryParts] = useState([]);
+  const [instrumentModels, setInstrumentModels] = useState([]);
   const [isPartFormOpen, setIsPartFormOpen] = useState(false);
   const [editingPartId, setEditingPartId] = useState(null);
   
@@ -29,7 +30,9 @@ export function useInventoryData(groupId, isAuthorized, t) {
     typePiece: 'Fût',
     etat: 'Neuf',
     status: 'En stock',
-    instrumentAssocie_id: null
+    instrumentAssocie_id: null,
+    modelId: '',
+    partId: ''
   });
 
   const [formData, setFormData] = useState({
@@ -42,7 +45,9 @@ export function useInventoryData(groupId, isAuthorized, t) {
     status: 'En stock',
     borrowedBy: '',
     etuiFourni: false,
-    kit: ''
+    kit: '',
+    modelId: '',
+    brokenParts: []
   });
 
   // Synchronisation en temps réel de la liste des membres du groupe
@@ -116,9 +121,28 @@ export function useInventoryData(groupId, isAuthorized, t) {
       }
     );
 
+    // Synchronisation des Modèles d'instruments
+    const modelsRef = collection(db, 'instrument_models');
+    const qModels = query(modelsRef, where('groupId', '==', groupId));
+    const unsubscribeModels = onSnapshot(
+      qModels,
+      (querySnapshot) => {
+        const fetchedModels = [];
+        querySnapshot.forEach((docSnap) => {
+          fetchedModels.push({ id: docSnap.id, ...docSnap.data() });
+        });
+        fetchedModels.sort((a, b) => (a.nom || '').localeCompare(b.nom || ''));
+        setInstrumentModels(fetchedModels);
+      },
+      (error) => {
+        console.error("useInventoryData - Erreur snapshot models :", error);
+      }
+    );
+
     return () => {
       unsubscribe();
       unsubscribeParts();
+      unsubscribeModels();
     };
   }, [groupId, isAuthorized]);
 
@@ -350,6 +374,7 @@ export function useInventoryData(groupId, isAuthorized, t) {
 
   return {
     instruments,
+    instrumentModels,
     usersList,
     usersMap,
     loading,

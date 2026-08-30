@@ -6,7 +6,7 @@ import PartEditor from './PartEditor';
 
 const INSTRUMENT_TYPES = ['Alfaia', 'Caixa', 'Agbê', 'Gonguê', 'Mineiro', 'Apito', 'Timbal', 'Maintenance', 'Costume', 'Autre'];
 
-export default function InstrumentModelEditor({ model, existingModels, onSave, onCancel }) {
+export default function InstrumentModelEditor({ model, existingModels, varalCategories, onSave, onCancel }) {
   const allTypes = useMemo(() => {
     const types = new Set(INSTRUMENT_TYPES);
     (existingModels || []).forEach(m => {
@@ -21,6 +21,7 @@ export default function InstrumentModelEditor({ model, existingModels, onSave, o
   const [formData, setFormData] = useState({
     nom: model?.nom || '',
     type: defaultType,
+    categoryId: model?.categoryId || 'TutosFabrication',
     description: model?.description || '',
     parts: model?.parts || []
   });
@@ -150,9 +151,9 @@ export default function InstrumentModelEditor({ model, existingModels, onSave, o
                   type="button" 
                   onClick={() => {
                     setIsCustomType(false);
-                    setFormData(prev => ({ ...prev, type: 'Alfaia' }));
+                    setFormData(prev => ({ ...prev, type: allTypes[0] || 'Alfaia' }));
                   }}
-                  className="text-[10px] bg-stone-200 text-stone-700 px-2 py-1 rounded font-bold hover:bg-stone-300"
+                  className="text-[10px] text-cordel-master-dark underline cursor-pointer hover:text-black"
                 >
                   Annuler
                 </button>
@@ -161,15 +162,34 @@ export default function InstrumentModelEditor({ model, existingModels, onSave, o
           </div>
         </div>
 
-        <div className="flex flex-col gap-1">
-          <label className="text-[10px] uppercase font-bold text-cordel-master-dark">Description</label>
-          <textarea 
-            name="description" 
-            value={formData.description} 
-            onChange={handleChange} 
-            className="theme-input text-xs py-2 min-h-[60px]"
-            placeholder="Petite description du modèle..."
-          />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] uppercase font-bold text-cordel-master-dark">Corde à linge (Varal)</label>
+            <select
+              name="categoryId"
+              value={formData.categoryId}
+              onChange={handleChange}
+              className="theme-input text-xs font-bold py-2 bg-white cursor-pointer"
+            >
+              {(varalCategories || []).map(cat => (
+                <option key={cat.id} value={cat.id}>{cat.nom}</option>
+              ))}
+            </select>
+            <span className="text-[9px] text-cordel-master-dark opacity-75">
+              Choisissez sur quelle ligne afficher ce modèle.
+            </span>
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] uppercase font-bold text-cordel-master-dark">Description / Chapeau</label>
+            <textarea 
+              name="description" 
+              value={formData.description} 
+              onChange={handleChange} 
+              className="theme-input text-xs py-2 h-16 resize-none"
+              placeholder="Une courte introduction sur cet instrument..."
+            />
+          </div>
         </div>
 
         {/* Vue compilée du matériel et outils */}

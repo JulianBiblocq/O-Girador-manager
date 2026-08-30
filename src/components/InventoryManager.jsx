@@ -13,6 +13,7 @@ import InventoryFilterBar from './inventory/InventoryFilterBar';
 import InventoryItemCard from './inventory/InventoryItemCard';
 import InventoryPartsView from './inventory/InventoryPartsView';
 import InventoryProjectsView from './inventory/InventoryProjectsView';
+import WorkshopPlanner from './inventory/WorkshopPlanner';
 import RepairDiagnosticModal from './inventory/RepairDiagnosticModal';
 
 import { useAssociationSettings } from '../hooks/useAssociationSettings';
@@ -68,6 +69,7 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin,
 
   const {
     instruments,
+    instrumentModels,
     usersList,
     usersMap,
     loading,
@@ -497,7 +499,18 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin,
                 : 'border-transparent text-cordel-master-dark/60 hover:text-cordel-master-dark'
             }`}
           >
-            🛠️ L'Atelier (Assemblage)
+            🛠️ Assemblage
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('planner')}
+            className={`px-4 py-2 text-xs font-black uppercase tracking-widest transition-colors border-b-2 whitespace-nowrap ${
+              activeTab === 'planner'
+                ? 'border-cordel-wood text-cordel-wood'
+                : 'border-transparent text-cordel-master-dark/60 hover:text-cordel-master-dark'
+            }`}
+          >
+            📋 Planificateur d'Atelier
           </button>
         </div>
 
@@ -536,37 +549,60 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin,
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                {/* Type */}
-                <div className="flex flex-col gap-1">
-                  <label className="text-[8px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                    {t('inventory.instTypeLabel')}
-                  </label>
-                  <select
-                    name="type"
-                    value={formData.type}
-                    onChange={handleInputChange}
-                    disabled={saving}
-                    className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light"
-                  >
-                    {INSTRUMENT_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
-                  </select>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="flex flex-col gap-3">
+                  {/* Type */}
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[8px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                      {t('inventory.instTypeLabel')}
+                    </label>
+                    <select
+                      name="type"
+                      value={formData.type}
+                      onChange={handleInputChange}
+                      disabled={saving}
+                      className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light"
+                    >
+                      {INSTRUMENT_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                    </select>
+                  </div>
+
+                  {/* Modèle (Optionnel) */}
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[8px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                      Modèle d'Instrument (Fabrication)
+                    </label>
+                    <select
+                      name="modelId"
+                      value={formData.modelId || ''}
+                      onChange={handleInputChange}
+                      disabled={saving}
+                      className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light"
+                    >
+                      <option value="">-- Aucun modèle spécifique --</option>
+                      {instrumentModels.map(m => (
+                        <option key={m.id} value={m.id}>{m.nom}</option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
 
-                {/* Etat */}
-                <div className="flex flex-col gap-1">
-                  <label className="text-[8px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                    État
-                  </label>
-                  <select
-                    name="etat"
-                    value={formData.etat}
-                    onChange={handleInputChange}
-                    disabled={saving}
-                    className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light"
-                  >
-                    {ETAT_OPTIONS.map(e => <option key={e} value={e}>{e}</option>)}
-                  </select>
+                <div className="flex flex-col gap-3">
+                  {/* Etat */}
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[8px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                      État
+                    </label>
+                    <select
+                      name="etat"
+                      value={formData.etat}
+                      onChange={handleInputChange}
+                      disabled={saving}
+                      className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light"
+                    >
+                      {ETAT_OPTIONS.map(e => <option key={e} value={e}>{e}</option>)}
+                    </select>
+                  </div>
                 </div>
               </div>
 
@@ -1181,6 +1217,7 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin,
         {activeTab === 'parts' && (
           <InventoryPartsView
             inventoryParts={inventoryParts}
+            instrumentModels={instrumentModels}
             isPartFormOpen={isPartFormOpen}
             setIsPartFormOpen={setIsPartFormOpen}
             editingPartId={editingPartId}
@@ -1199,6 +1236,7 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin,
           <RepairDiagnosticModal
             instrument={diagnosticInstrument}
             inventoryParts={inventoryParts}
+            instrumentModels={instrumentModels}
             onClose={() => setDiagnosticInstrument(null)}
             t={t}
           />
@@ -1225,6 +1263,14 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin,
             }}
           />
         </div>
+
+        {/* Tab Planificateur d'Atelier */}
+        {activeTab === 'planner' && (
+          <WorkshopPlanner 
+            inventoryParts={inventoryParts}
+            instrumentModels={instrumentModels}
+          />
+        )}
       </div>
     </>
   );

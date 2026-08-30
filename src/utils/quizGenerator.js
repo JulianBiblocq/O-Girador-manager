@@ -82,6 +82,99 @@ const getTransversalLexique = (allSheetsData = [], allSongs = []) => {
   return Array.from(translations);
 };
 
+export const generateQuizFromInstrumentModel = (model, allModels = [], config = {}) => {
+  const questions = [];
+  if (!model) return questions;
+
+  const t = config.t || ((key, fallback) => fallback || key);
+
+  // Distracteurs globaux (tirés de tous les modèles de la base)
+  const allMaterials = new Set();
+  const allTools = new Set();
+  const allPartNames = new Set();
+  
+  allModels.forEach(m => {
+    (m.parts || []).forEach(p => {
+      if (p.nom) allPartNames.add(p.nom);
+      (p.materiels || []).forEach(mat => allMaterials.add(mat));
+      (p.outils || []).forEach(out => allTools.add(out));
+    });
+  });
+
+  const mPool = Array.from(allMaterials);
+  const tPool = Array.from(allTools);
+  const pPool = Array.from(allPartNames);
+
+  // Pour chaque pièce du modèle, on essaie de générer une question pertinente
+  (model.parts || []).forEach((part, index) => {
+    // 1. Question sur les pièces
+    if (part.nom && pPool.length > 1) {
+      let wrong = pPool.filter(n => n.toLowerCase() !== part.nom.toLowerCase() && !(model.parts || []).some(mp => mp.nom.toLowerCase() === n.toLowerCase()));
+      wrong = shuffleArray(wrong).slice(0, 3);
+      if (wrong.length > 0) {
+        // Ajouter quelques distracteurs de secours si besoin
+        while (wrong.length < 3) wrong.push(distractorPool.fallbacksGeneral[Math.floor(Math.random() * distractorPool.fallbacksGeneral.length)]);
+        
+        questions.push({
+          id: `qcm_auto_fab_part_${model.id}_${index}`,
+          type: 'fabrication_piece',
+          questionText: `Laquelle de ces pièces fait partie de l'instrument "${model.nom}" ?`,
+          instruction: "Reconnaissance de pièce",
+          choices: shuffleArray([
+            { text: part.nom, isCorrect: true },
+            ...wrong.slice(0,3).map(w => ({ text: w, isCorrect: false }))
+          ]),
+          feedback: `Oui, la pièce "${part.nom}" fait partie de la conception de "${model.nom}".`
+        });
+      }
+    }
+
+    // 2. Question sur le matériel
+    if (part.materiels && part.materiels.length > 0 && mPool.length > 1) {
+      const mat = part.materiels[Math.floor(Math.random() * part.materiels.length)];
+      let wrong = mPool.filter(m => m.toLowerCase() !== mat.toLowerCase() && !part.materiels.some(pm => pm.toLowerCase() === m.toLowerCase()));
+      wrong = shuffleArray(wrong).slice(0, 3);
+      if (wrong.length > 0) {
+        while (wrong.length < 3) wrong.push(distractorPool.fallbacksGeneral[Math.floor(Math.random() * distractorPool.fallbacksGeneral.length)]);
+        questions.push({
+          id: `qcm_auto_fab_mat_${model.id}_${index}`,
+          type: 'fabrication_materiel',
+          questionText: `Quel matériel est nécessaire pour fabriquer la pièce "${part.nom}" ?`,
+          instruction: "Matériaux de fabrication",
+          choices: shuffleArray([
+            { text: mat, isCorrect: true },
+            ...wrong.slice(0,3).map(w => ({ text: w, isCorrect: false }))
+          ]),
+          feedback: `Le matériel exact est "${mat}".`
+        });
+      }
+    }
+
+    // 3. Question sur l'outillage
+    if (part.outils && part.outils.length > 0 && tPool.length > 1) {
+      const outil = part.outils[Math.floor(Math.random() * part.outils.length)];
+      let wrong = tPool.filter(t => t.toLowerCase() !== outil.toLowerCase() && !part.outils.some(pt => pt.toLowerCase() === t.toLowerCase()));
+      wrong = shuffleArray(wrong).slice(0, 3);
+      if (wrong.length > 0) {
+        while (wrong.length < 3) wrong.push(distractorPool.fallbacksGeneral[Math.floor(Math.random() * distractorPool.fallbacksGeneral.length)]);
+        questions.push({
+          id: `qcm_auto_fab_outil_${model.id}_${index}`,
+          type: 'fabrication_outil',
+          questionText: `Quel outil est utilisé pour la fabrication de la pièce "${part.nom}" ?`,
+          instruction: "Outillage",
+          choices: shuffleArray([
+            { text: outil, isCorrect: true },
+            ...wrong.slice(0,3).map(w => ({ text: w, isCorrect: false }))
+          ]),
+          feedback: `L'outil "${outil}" est bien requis.`
+        });
+      }
+    }
+  });
+
+  return shuffleArray(questions).slice(0, config.limit || 10);
+};
+
 export const generateQuizFromSheet = (sheetData, allSheetsData = [], allSongsData = [], config = {}) => {
   const { difficulty = 'medium', customDistractors = {} } = config;
   const diffLevel = difficulty?.toLowerCase() || 'medium';

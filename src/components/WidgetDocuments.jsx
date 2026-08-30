@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { collection, query, where, onSnapshot, doc, deleteDoc, updateDoc } from 'firebase/firestore';
 import { ref, deleteObject } from 'firebase/storage';
 import { db, storage } from '../firebase';
@@ -11,6 +11,7 @@ import SongCard from './SongCard';
 import CultureCard from './CultureCard';
 import FabricationCard from './FabricationCard';
 import SeloAxeStamp from './SeloAxeStamp';
+import InstrumentModelCard from './InstrumentModelCard';
 import PrintConfigModal from './PrintConfigModal';
 import { createPortal } from 'react-dom';
 
@@ -156,7 +157,9 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
   const [selectedToada, setSelectedToada] = useState(null);
   const [selectedCultureCard, setSelectedCultureCard] = useState(null);
   const [selectedFabrication, setSelectedFabrication] = useState(null);
+  const [selectedInstrumentModel, setSelectedInstrumentModel] = useState(null);
   const [showBulkPrintModal, setShowBulkPrintModal] = useState(false);
+  const [instrumentModels, setInstrumentModels] = useState([]);
   const [isPrinting, setIsPrinting] = useState(false);
   const [printCategory, setPrintCategory] = useState(null);
   const [printSections, setPrintSections] = useState(null);
@@ -475,6 +478,33 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
     return () => unsubscribe();
   }, [groupId]);
 
+  // Synchronisation des Modèles d'Instruments
+  useEffect(() => {
+    if (!groupId) {
+      setInstrumentModels([]);
+      return;
+    }
+    const modelsRef = collection(db, 'instrument_models');
+    const qModels = query(modelsRef, where('groupId', '==', groupId));
+    const unsubscribeModels = onSnapshot(qModels, (querySnapshot) => {
+      const fetchedModels = [];
+      querySnapshot.forEach((doc) => {
+        fetchedModels.push({
+          id: doc.id,
+          ...doc.data(),
+          typeDoc: 'instrument_model', // Pour le différencier des documents classiques
+          titre: doc.data().nom, // Mapper nom vers titre pour l'affichage
+          categoryId: doc.data().categoryId || 'TutosFabrication'
+        });
+      });
+      setInstrumentModels(fetchedModels);
+    }, (error) => {
+      console.error("WidgetDocuments - Erreur onSnapshot models :", error);
+    });
+
+    return () => unsubscribeModels();
+  }, [groupId]);
+
   // Synchroniser les événements pour extraire les dépôts médias vers "PhotosPrestations"
   useEffect(() => {
     if (!groupId) {
@@ -559,60 +589,67 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
   }, [documents]);
 
   // Groupement des documents par catégorie en JavaScript
-  const groupedDocs = documents.reduce((acc, docItem) => {
-    // Recherche de la catégorie correspondante par priorité : categoryId d'abord, puis nom, puis id
-    const catObj = (docItem.categoryId && varalCategories.find(c => c.id === docItem.categoryId))
-      || (docItem.categorie && varalCategories.find(c => c.nom === docItem.categorie))
-      || (docItem.categorie && varalCategories.find(c => c.id === docItem.categorie));
-    let catId = catObj ? catObj.id : 'Autre';
+  const groupedDocs = useMemo(() => {
+    const groups = {};
+    const allDocs = [...documents, ...instrumentModels];
 
-    // MIGRATION FORCÉE FRONT-END : Nettoyage du varal Administratif
-    if (catId === 'Administratif') {
-      const titre = (docItem.titre || '').toLowerCase();
-      const isCoreAdmin = titre.includes('compo ca') || titre.includes('règlement') || titre.includes('reglement') || titre.includes('statut') || titre.includes('rib');
+    allDocs.forEach((docItem) => {
+      // Recherche de la catégorie correspondante par priorité : categoryId d'abord, puis nom, puis id
+      const catObj = (docItem.categoryId && varalCategories.find(c => c.id === docItem.categoryId))
+        || (docItem.categorie && varalCategories.find(c => c.nom === docItem.categorie))
+        || (docItem.categorie && varalCategories.find(c => c.id === docItem.categorie));
+      let catId = catObj ? catObj.id : 'Autre';
 
-      if (!isCoreAdmin) {
-        // Tous les autres (dont ceux qui commencent par CR) sont basculés sur ComptesRendus
-        catId = 'ComptesRendus';
+      // MIGRATION FORCÉE FRONT-END : Nettoyage du varal Administratif
+      if (catId === 'Administratif') {
+        const titre = (docItem.titre || '').toLowerCase();
+        const isCoreAdmin = titre.includes('compo ca') || titre.includes('règlement') || titre.includes('reglement') || titre.includes('statut') || titre.includes('rib');
+
+        if (!isCoreAdmin) {
+          // Tous les autres (dont ceux qui commencent par CR) sont basculés sur ComptesRendus
+          catId = 'ComptesRendus';
+        }
       }
-    }
 
-    if (!docItem.isHidden) {
-      if (!acc[catId]) {
-        acc[catId] = [];
+      if (!docItem.isHidden) {
+        if (!groups[catId]) {
+          groups[catId] = [];
+        }
+        groups[catId].push(docItem);
       }
-      acc[catId].push(docItem);
-    }
-    return acc;
-  }, {});
+    });
 
-  // Injection des dépôts médias des événements dans le varal "PhotosPrestations"
-  if (eventsWithMedia.length > 0) {
-    if (!groupedDocs['PhotosPrestations']) {
-      groupedDocs['PhotosPrestations'] = [];
-    }
-    eventsWithMedia.forEach(ev => {
-      groupedDocs['PhotosPrestations'].push({
-        id: `event-media-${ev.id}`,
-        titre: `[Album] ${ev.titre || 'Événement'}`,
-        fileUrl: ev.lienDepotMedias,
-        categorie: 'PhotosPrestations',
-        categoryId: 'PhotosPrestations',
-        type: 'dossier_externe',
-        dateAjout: ev.dateDebut || ev.createdAt || new Date().toISOString(),
-        description: `Dossier partagé pour consulter et déposer des médias liés à l'événement du ${new Date(ev.dateDebut).toLocaleDateString('fr-FR')}.`,
-        isVirtualEventMedia: true,
-        eventId: ev.id,
+    // Injection des dépôts médias des événements dans le varal "PhotosPrestations"
+    if (eventsWithMedia && eventsWithMedia.length > 0) {
+      if (!groups['PhotosPrestations']) {
+        groups['PhotosPrestations'] = [];
+      }
+      eventsWithMedia.forEach(ev => {
+        groups['PhotosPrestations'].push({
+          id: `event-media-${ev.id}`,
+          titre: `[Album] ${ev.titre || 'Événement'}`,
+          fileUrl: ev.lienDepotMedias,
+          categorie: 'PhotosPrestations',
+          categoryId: 'PhotosPrestations',
+          type: 'dossier_externe',
+          dateAjout: ev.dateDebut || ev.createdAt || new Date().toISOString(),
+          description: `Dossier partagé pour consulter et déposer des médias liés à l'événement du ${new Date(ev.dateDebut).toLocaleDateString('fr-FR')}.`,
+          isVirtualEventMedia: true,
+          eventId: ev.id,
+        });
       });
-    });
 
-    // Retrier "PhotosPrestations" par date
-    groupedDocs['PhotosPrestations'].sort((a, b) => {
-      const dateA = new Date(a.dateAjout || 0).getTime();
-      const dateB = new Date(b.dateAjout || 0).getTime();
-      return dateB - dateA;
-    });
-  }
+      // Retrier "PhotosPrestations" par date
+      groups['PhotosPrestations'].sort((a, b) => {
+        const dateA = new Date(a.dateAjout || 0).getTime();
+        const dateB = new Date(b.dateAjout || 0).getTime();
+        return dateB - dateA;
+      });
+    }
+
+    return groups;
+  }, [documents, instrumentModels, varalCategories, eventsWithMedia]);
+
 
   const categoryVariants = {
     'Partitions': 'ocre',
@@ -792,9 +829,10 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
                           dossier_externe: '📂',
                           drive: '📂',
                           report: '📜',
-                          culture_fiche: '📖'
+                          culture_fiche: '📖',
+                          instrument_model: '🛠️'
                         };
-                        const typeIcon = typeIcons[docType] || '📄';
+                        const typeIcon = typeIcons[docType] || (docItem.typeDoc === 'instrument_model' ? '🛠️' : '📄');
 
                         const isDarkBg = colorClass === 'rouge' || colorClass === 'bleu-ardoise' || colorClass === 'bleu';
                         const textClass = isDarkBg ? 'text-[#FEF9E7]' : 'text-encre-noire';
@@ -821,7 +859,9 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
                           <div
                             key={docItem.id}
                             onClick={() => {
-                              if (docType === 'report') {
+                              if (docItem.typeDoc === 'instrument_model') {
+                                setSelectedInstrumentModel(docItem);
+                              } else if (docType === 'report') {
                                 setSelectedReport(docItem);
                               } else if (docType === 'song') {
                                 setSelectedToada(docItem);
@@ -1344,6 +1384,10 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
 
       {selectedFabrication && (
         <FabricationCard fabrication={selectedFabrication} onClose={() => setSelectedFabrication(null)} />
+      )}
+
+      {selectedInstrumentModel && (
+        <InstrumentModelCard model={selectedInstrumentModel} onClose={() => setSelectedInstrumentModel(null)} />
       )}
 
       {/* Bulk Print Hidden Container (Portaled to body to escape all parent layouts) */}

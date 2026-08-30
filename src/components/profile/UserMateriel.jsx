@@ -56,7 +56,9 @@ export default function UserMateriel({ user, profileData, onBack }) {
 
   // Nouvel état pour le détail des pièces et le signalement
   const [allInventoryParts, setAllInventoryParts] = useState([]);
-  const [reportPartModal, setReportPartModal] = useState(null);
+  const [instrumentModels, setInstrumentModels] = useState([]);
+  const [reportInstrumentModal, setReportInstrumentModal] = useState(null);
+  const [reportTargetPartId, setReportTargetPartId] = useState('ALL');
   const [reportDescription, setReportDescription] = useState('');
   const [submittingReport, setSubmittingReport] = useState(false);
 
@@ -72,6 +74,14 @@ export default function UserMateriel({ user, profileData, onBack }) {
             parts.push({ id: docSnap.id, ...docSnap.data() });
           });
           setAllInventoryParts(parts);
+
+          const qModels = query(collection(db, 'instrument_models'), where('groupId', '==', profileData.groupId));
+          const snapModels = await getDocs(qModels);
+          const models = [];
+          snapModels.forEach(docSnap => {
+            models.push({ id: docSnap.id, ...docSnap.data() });
+          });
+          setInstrumentModels(models);
         } catch (err) {
           console.error("UserMateriel - Erreur fetch parts :", err);
         }
@@ -141,21 +151,35 @@ export default function UserMateriel({ user, profileData, onBack }) {
 
   const handleSubmitReport = async (e) => {
     e.preventDefault();
-    if (!reportPartModal) return;
+    if (!reportInstrumentModal) return;
     
     setSubmittingReport(true);
     try {
-      const { inst, part } = reportPartModal;
+      const inst = reportInstrumentModal;
+      let partName = "l'instrument entier";
       
-      // 1. Passer la pièce en 'À réparer'
-      await updateDoc(doc(db, 'inventoryParts', part.id), {
-        status: 'À réparer',
-        notes: (part.notes ? part.notes + '\n' : '') + `[Casse signalée par ${user.nom}] ${reportDescription}`
-      });
+      if (reportTargetPartId !== 'ALL') {
+        const isInventoryPart = allInventoryParts.find(p => p.id === reportTargetPartId);
+        if (isInventoryPart) {
+          partName = `la pièce "${isInventoryPart.nom}"`;
+          // 1. Passer la pièce en 'À réparer'
+          await updateDoc(doc(db, 'inventoryParts', isInventoryPart.id), {
+            status: 'À réparer',
+            notes: (isInventoryPart.notes ? isInventoryPart.notes + '\n' : '') + `[Casse signalée par ${user.nom}] ${reportDescription}`
+          });
+        } else {
+          const model = instrumentModels.find(m => m.id === inst.modelId);
+          const modelPart = model?.parts?.find(p => p.id === reportTargetPartId);
+          if (modelPart) {
+             partName = `la pièce "${modelPart.nom}" (modèle)`;
+          }
+        }
+      }
 
       // 2. Passer l'instrument parent en 'À réparer'
       await updateDoc(doc(db, 'inventory', inst.id), {
-        etat: 'À réparer'
+        etat: 'À réparer',
+        notes: (inst.notes ? inst.notes + '\n' : '') + `[Casse signalée par ${user.nom} - ${partName}] ${reportDescription}`
       });
 
       // 3. Créer une notification pour l'atelier (déclenchera le push)
@@ -163,14 +187,15 @@ export default function UserMateriel({ user, profileData, onBack }) {
         groupId: profileData.groupId,
         type: 'repair_needed',
         title: 'Signalement de casse',
-        body: `${user.prenom || user.nom} a signalé une casse sur la pièce "${part.nom}" de l'instrument "${inst.nom}".`,
+        body: `${user.prenom || user.nom} a signalé une casse sur ${partName} de l'instrument "${inst.nom}".`,
         link: '/inventory',
         createdAt: serverTimestamp(),
         targetRoles: ['mestre', 'admin', 'logisticien'] // Destinataires
       });
 
-      setReportPartModal(null);
+      setReportInstrumentModal(null);
       setReportDescription('');
+      setReportTargetPartId('ALL');
     } catch (err) {
       console.error("Erreur lors du signalement :", err);
       alert("Erreur lors du signalement de casse.");
@@ -189,19 +214,14 @@ export default function UserMateriel({ user, profileData, onBack }) {
 
     return (
       <div className="mt-2 pt-2 border-t border-dashed border-cordel-master-dark/20 flex flex-col gap-1">
-        <span className="text-[9px] font-bold uppercase tracking-wider text-cordel-wood mb-1">Détail des pièces :</span>
+        <span className="text-[9px] font-bold uppercase tracking-wider text-cordel-wood mb-1">Détail des pièces (Nomenclature) :</span>
         {parts.map(part => (
           <div key={part.id} className="flex justify-between items-center bg-white/40 px-2 py-1 rounded text-[9px] border border-cordel-master-dark/10">
             <span className="font-bold text-encre-noire truncate pr-2">{part.nom}</span>
             {part.status === 'À réparer' ? (
               <span className="text-red-600 font-bold shrink-0">En réparation</span>
             ) : (
-              <button 
-                onClick={() => setReportPartModal({ inst, part })}
-                className="text-red-500 font-bold hover:underline shrink-0"
-              >
-                ⚠️ Signaler casse
-              </button>
+              <span className="text-green-700 font-bold shrink-0">OK</span>
             )}
           </div>
         ))}
@@ -300,7 +320,18 @@ export default function UserMateriel({ user, profileData, onBack }) {
 
                     {renderNomenclature(inst)}
 
-                    <div className="flex justify-end pt-1">
+                    <div className="flex justify-end pt-1 gap-2 flex-wrap">
+                      <button
+                        onClick={() => {
+                          setReportInstrumentModal(inst);
+                          setReportTargetPartId('ALL');
+                          setReportDescription('');
+                        }}
+                        className="text-[9px] font-bold uppercase tracking-wider text-red-600 border border-red-600/30 hover:bg-red-600/10 px-2 py-1 rounded transition-colors"
+                      >
+                        ⚠️ Signaler une casse
+                      </button>
+                      
                       {inst.pendingMovement ? (
                         <span className="text-[9px] font-bold text-cordel-ocre bg-cordel-ocre/10 px-2 py-1 rounded border border-cordel-ocre/30">
                           ⏳ En attente de validation logistique
@@ -443,13 +474,17 @@ export default function UserMateriel({ user, profileData, onBack }) {
           </div>
         </div>
       )}
-      {/* Report Part Modal */}
-      {reportPartModal && (
+      {/* Report Instrument Modal */}
+      {reportInstrumentModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
           <CordelCard variant="default" className="w-full max-w-sm p-5 flex flex-col gap-4 relative bg-cordel-bg shadow-2xl">
             <button 
               type="button" 
-              onClick={() => setReportPartModal(null)}
+              onClick={() => {
+                setReportInstrumentModal(null);
+                setReportTargetPartId('ALL');
+                setReportDescription('');
+              }}
               className="absolute top-3 right-3 p-1.5 border border-encre-noire bg-cordel-bg hover:bg-neutral-200 text-encre-noire rounded-md shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none cursor-pointer flex items-center justify-center"
             >
               <XiloClose size={10} />
@@ -460,27 +495,63 @@ export default function UserMateriel({ user, profileData, onBack }) {
             </h3>
             
             <p className="text-xs text-cordel-master-dark opacity-90">
-              Vous vous apprêtez à signaler la casse de la pièce <strong>{reportPartModal.part.nom}</strong> sur l'instrument <strong>{reportPartModal.inst.nom}</strong>.
+              Sur l'instrument <strong>{reportInstrumentModal.nom}</strong>.
             </p>
 
-            {(() => {
-              const compatibleParts = allInventoryParts.filter(p => p.status === 'En stock' && p.typePiece === reportPartModal.part.typePiece);
-              if (compatibleParts.length > 0) {
-                return (
-                  <div className="bg-[#2d6a4f]/10 border border-[#2d6a4f]/30 p-2 rounded text-[10px] text-[#2d6a4f]">
-                    <span className="font-black">Bonne nouvelle :</span> L'atelier dispose de {compatibleParts.length} pièce(s) de type "{reportPartModal.part.typePiece || 'similaire'}" en stock pour un remplacement éventuel.
-                  </div>
-                );
-              } else {
-                return (
-                  <div className="bg-[#8b2a1a]/10 border border-[#8b2a1a]/30 p-2 rounded text-[10px] text-[#8b2a1a]">
-                    <span className="font-black">Information :</span> L'atelier n'a actuellement aucune pièce de type "{reportPartModal.part.typePiece || 'similaire'}" en stock. Le responsable logistique sera notifié.
-                  </div>
-                );
-              }
-            })()}
-
             <form onSubmit={handleSubmitReport} className="flex flex-col gap-4 mt-2">
+              <div className="flex flex-col gap-1">
+                <label className="text-[10px] font-bold uppercase text-encre-noire">Que souhaitez-vous signaler ?</label>
+                <select 
+                  value={reportTargetPartId}
+                  onChange={(e) => setReportTargetPartId(e.target.value)}
+                  className="theme-input text-xs font-bold py-1.5"
+                  disabled={submittingReport}
+                >
+                  <option value="ALL">L'instrument entier / Je ne sais pas</option>
+                  {/* Optionnel: Pièces réelles si l'instrument a une nomenclature */}
+                  {(reportInstrumentModal.nomenclature || []).map(partId => {
+                    const p = allInventoryParts.find(x => x.id === partId);
+                    return p ? <option key={p.id} value={p.id}>{p.nom} (En stock)</option> : null;
+                  })}
+                  {/* Optionnel: Pièces théoriques si modèle mais pas de nomenclature physique */}
+                  {(!reportInstrumentModal.nomenclature || reportInstrumentModal.nomenclature.length === 0) && reportInstrumentModal.modelId && (() => {
+                    const model = instrumentModels.find(m => m.id === reportInstrumentModal.modelId);
+                    return (model?.parts || []).map(p => (
+                      <option key={p.id} value={p.id}>{p.nom} (Modèle)</option>
+                    ));
+                  })()}
+                </select>
+              </div>
+
+              {(() => {
+                if (reportTargetPartId !== 'ALL') {
+                  const isInvPart = allInventoryParts.find(p => p.id === reportTargetPartId);
+                  const typePiece = isInvPart ? isInvPart.typePiece : (() => {
+                    const model = instrumentModels.find(m => m.id === reportInstrumentModal.modelId);
+                    const mp = model?.parts?.find(p => p.id === reportTargetPartId);
+                    return mp?.typePiece;
+                  })();
+                  
+                  if (typePiece) {
+                    const compatibleParts = allInventoryParts.filter(p => p.status === 'En stock' && p.typePiece === typePiece);
+                    if (compatibleParts.length > 0) {
+                      return (
+                        <div className="bg-[#2d6a4f]/10 border border-[#2d6a4f]/30 p-2 rounded text-[10px] text-[#2d6a4f]">
+                          <span className="font-black">Bonne nouvelle :</span> L'atelier dispose de {compatibleParts.length} pièce(s) de type "{typePiece}" en stock pour un remplacement éventuel.
+                        </div>
+                      );
+                    } else {
+                      return (
+                        <div className="bg-[#8b2a1a]/10 border border-[#8b2a1a]/30 p-2 rounded text-[10px] text-[#8b2a1a]">
+                          <span className="font-black">Information :</span> L'atelier n'a actuellement aucune pièce de type "{typePiece}" en stock. Le responsable logistique sera notifié.
+                        </div>
+                      );
+                    }
+                  }
+                }
+                return null;
+              })()}
+
               <div className="flex flex-col gap-1">
                 <label className="text-[10px] font-bold uppercase text-encre-noire">Description du problème</label>
                 <textarea

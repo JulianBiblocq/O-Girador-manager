@@ -2,7 +2,8 @@ import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import CordelCard from '../CordelCard';
 import SongCard from '../SongCard';
 import { parseSequencerJson } from '../../utils/sequencerParser';
-import { generateQuizFromSheet } from '../../utils/quizGenerator';
+import { generateQuizFromSheet, generateQuizFromInstrumentModel } from '../../utils/quizGenerator';
+import { useInstrumentModels } from '../../hooks/useInstrumentModels';
 import AutoEvalQuizContainer from '../student/AutoEvalQuizContainer';
 import QcmSequenceurBlindTest from './QcmSequenceurBlindTest';
 import DailyRevisionSession from './DailyRevisionSession';
@@ -67,7 +68,7 @@ const ComfortBar = ({ itemId, evaluations, handleSetEvaluation, comfortLevels })
 );
 
 // --- Sous-composant : Mini QCM inline pour une fiche (Culture / Atelier) ---
-const InlineQuiz = ({ fiche, allSheets, allSongs }) => {
+const InlineQuiz = ({ fiche, allSheets, allSongs, allModels }) => {
   const [questions, setQuestions] = useState([]);
   const [currentIdx, setCurrentIdx] = useState(0);
   const [selectedChoice, setSelectedChoice] = useState(null);
@@ -78,7 +79,12 @@ const InlineQuiz = ({ fiche, allSheets, allSongs }) => {
 
   // Génération des questions à la demande via le moteur existant
   const startQuiz = useCallback(() => {
-    const generated = generateQuizFromSheet(fiche, allSheets, allSongs, { difficulty: 'medium' });
+    let generated = [];
+    if (fiche.isInstrumentModel) {
+      generated = generateQuizFromInstrumentModel(fiche, allModels || [], { limit: 5 });
+    } else {
+      generated = generateQuizFromSheet(fiche, allSheets, allSongs, { difficulty: 'medium' });
+    }
     if (generated.length === 0) return;
     // Mélanger et limiter à 5 questions pour un quiz rapide inline
     const shuffled = [...generated].sort(() => Math.random() - 0.5).slice(0, 5);
@@ -89,7 +95,7 @@ const InlineQuiz = ({ fiche, allSheets, allSongs }) => {
     setShowFeedback(false);
     setIsFinished(false);
     setIsStarted(true);
-  }, [fiche, allSheets, allSongs]);
+  }, [fiche, allSheets, allSongs, allModels]);
 
   // Gestion du choix de réponse
   const handleChoice = (choice) => {
@@ -298,13 +304,23 @@ export default function MonCarnetAisance({
     return groups;
   }, [educationalSheets]);
 
-  // Fiches atelier filtrées
-  const atelierSheets = useMemo(() => {
-    return educationalSheets.filter(f => {
+  // Fiches atelier filtrées + Modèles d'instruments
+  const { models: instrumentModels = [] } = useInstrumentModels(profileData?.groupId);
+
+  const atelierItems = useMemo(() => {
+    const sheets = educationalSheets.filter(f => {
       const cat = f.categorie?.toLowerCase() || '';
       return cat.includes('atelier') || cat.includes('lutherie') || cat.includes('fabrication') || cat.includes('entretien');
     });
-  }, [educationalSheets]);
+    const modelsMapped = instrumentModels.map(m => ({
+      ...m,
+      id: m.id,
+      titre: m.nom,
+      categorie: 'Modèle',
+      isInstrumentModel: true
+    }));
+    return [...sheets, ...modelsMapped];
+  }, [educationalSheets, instrumentModels]);
 
   // --- Vue plein écran : quiz ciblé sur une Toada ---
   if (quizToadaId) {
@@ -621,13 +637,13 @@ export default function MonCarnetAisance({
       {/* ================================================================ */}
       {activeSubTab === 'atelier' && (
         <div className="flex flex-col gap-6">
-          {atelierSheets.length === 0 ? (
+          {atelierItems.length === 0 ? (
             <div className="text-center p-8 bg-[#fdfaf2] border border-dashed border-encre-noire/20 rounded-lg">
               <span className="text-3xl block mb-2">🛠️</span>
               <p className="text-sm font-bold text-encre-noire/70">Aucune fiche de lutherie/atelier disponible pour le moment.</p>
             </div>
           ) : (
-            atelierSheets.map(fiche => (
+            atelierItems.map(fiche => (
               <CordelCard key={fiche.id} variant="default" className="p-5 flex flex-col gap-3">
                 <div className="flex justify-between items-start">
                   <div className="flex flex-col gap-1">
@@ -646,7 +662,7 @@ export default function MonCarnetAisance({
                 </div>
 
                 {/* Mini-quiz inline automatisé */}
-                <InlineQuiz fiche={fiche} allSheets={educationalSheets} allSongs={songs} />
+                <InlineQuiz fiche={fiche} allSheets={educationalSheets} allSongs={songs} allModels={instrumentModels} />
               </CordelCard>
             ))
           )}

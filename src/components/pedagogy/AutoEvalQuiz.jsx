@@ -4,13 +4,13 @@ import { db } from '../../firebase';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 import SeloAxeStamp from '../SeloAxeStamp';
-import { generateQuizFromSheet, generateQuizFromSong, generateQuizFromSequencerJson } from '../../utils/quizGenerator';
+import { generateQuizFromSheet, generateQuizFromSong, generateQuizFromSequencerJson, generateQuizFromInstrumentModel } from '../../utils/quizGenerator';
 import PatternVisualizer from './PatternVisualizer';
 import FirestoreMediaRenderer from '../student/FirestoreMediaRenderer';
 import { useTranslation } from '../LanguageContext';
 import useMestreSignals from '../../hooks/useMestreSignals';
 
-export default function AutoEvalQuiz({ sheetData, allSheetsData, profileData, onClose, customQuizData, customQuizId, customQuizTitle, songData, allSongsData, qcmGlobalConfig, isSong, rhythms, sequenceurUrl, parsedSequencerJson }) {
+export default function AutoEvalQuiz({ sheetData, allSheetsData, profileData, onClose, customQuizData, customQuizId, customQuizTitle, songData, allSongsData, instrumentModelData, allModelsData, qcmGlobalConfig, isSong, rhythms, sequenceurUrl, parsedSequencerJson }) {
   const { t } = useTranslation();
   const { signals: mestreSignals } = useMestreSignals();
   const [questions, setQuestions] = useState([]);
@@ -52,16 +52,19 @@ export default function AutoEvalQuiz({ sheetData, allSheetsData, profileData, on
     } else if (isSong) {
       const generated = generateQuizFromSong(songData, allSongsData, allSheetsData, { ...qcmGlobalConfig, t });
       setQuestions(generated);
+    } else if (instrumentModelData) {
+      const generated = generateQuizFromInstrumentModel(instrumentModelData, allModelsData, { limit: 10, t });
+      setQuestions(generated);
     } else {
       const generated = generateQuizFromSheet(sheetData, allSheetsData, allSongsData, { difficulty: qcmGlobalConfig?.difficulty || 'medium', t });
       setQuestions(generated);
     }
-  }, [sheetData, allSheetsData, customQuizData, parsedSequencerJson, isSong, songData, allSongsData, qcmGlobalConfig, customQuizTitle, mestreSignals]);
+  }, [sheetData, allSheetsData, customQuizData, parsedSequencerJson, isSong, songData, allSongsData, instrumentModelData, allModelsData, qcmGlobalConfig, customQuizTitle, mestreSignals]);
 
   if (questions.length === 0) {
     const isAdmin = profileData?.isSystemAdmin || profileData?.role === 'super-admin' || profileData?.role === 'mestre' || profileData?.role === 'admin';
-    const adminMsg = isSong ? "Impossible de générer un quiz pour ce chant avec la configuration actuelle." : "Cette fiche ne contient pas assez de mots en gras ou de lexique pour générer un quiz.";
-    const studentMsg = isSong ? "Ce chant n'a pas de quiz associé pour le moment." : "Cette fiche n'a pas de quiz associé pour le moment.";
+    const adminMsg = isSong ? "Impossible de générer un quiz pour ce chant avec la configuration actuelle." : (instrumentModelData ? "Ce modèle ne contient pas assez de pièces/matériels pour générer un quiz." : "Cette fiche ne contient pas assez de mots en gras ou de lexique pour générer un quiz.");
+    const studentMsg = isSong ? "Ce chant n'a pas de quiz associé pour le moment." : (instrumentModelData ? "Ce modèle n'a pas de quiz de fabrication pour le moment." : "Cette fiche n'a pas de quiz associé pour le moment.");
 
     return (
       <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[60] p-4">
@@ -103,7 +106,7 @@ export default function AutoEvalQuiz({ sheetData, allSheetsData, profileData, on
     
     // Si bon score (>= 75%), on sauvegarde
     if (percentage >= 0.75 && profileData?.uid && profileData?.groupId) {
-      const targetId = customQuizId || (isSong ? songData?.id : sheetData?.id);
+      const targetId = customQuizId || (isSong ? songData?.id : (instrumentModelData ? instrumentModelData.id : sheetData?.id));
       if (!targetId) return;
       setIsSaving(true);
       try {
@@ -193,7 +196,6 @@ export default function AutoEvalQuiz({ sheetData, allSheetsData, profileData, on
               <h3 className="text-xl font-bold text-encre-noire leading-tight">
                 {currentQuestion.questionText}
               </h3>
-            </div>
               
               {currentQuestion.visualElement && currentQuestion.visualElement.type === 'orixaBadge' && (
                 <div className="flex justify-center my-4 animate-fadeIn">

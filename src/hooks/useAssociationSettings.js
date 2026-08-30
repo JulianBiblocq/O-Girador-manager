@@ -175,9 +175,6 @@ export const DEFAULT_PUBLIC_THEME = {
   },
   // Formats de prestations personnalisables
   publicPerformanceFormats: '',
-  // Configuration d'intégration Brevo API
-  brevoApiKey: '',
-  brevoListId: '',
   // Liste des photos de la galerie de la vitrine publique
   galleryPhotos: []
 };
@@ -346,6 +343,7 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
         const creds = docSnap.data();
         handleChange('helloAssoSignatureKey', creds.helloAssoSignatureKey || '');
         if (creds.emailProviderApiKey !== undefined) handleChange('emailProviderApiKey', creds.emailProviderApiKey);
+        if (creds.brevoListId !== undefined) handleChange('brevoListId', creds.brevoListId);
         if (creds.smtpPassword !== undefined) handleChange('smtpPassword', creds.smtpPassword);
       }
     }).catch(err => {
@@ -767,6 +765,7 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
       await setDoc(credentialsRef, {
         helloAssoSignatureKey: formData.helloAssoSignatureKey || '',
         emailProviderApiKey: formData.emailProviderApiKey || '',
+        brevoListId: formData.brevoListId || '',
         smtpPassword: formData.smtpPassword || ''
       }, { merge: true });
 

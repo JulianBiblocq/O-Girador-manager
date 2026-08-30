@@ -5,7 +5,7 @@ import { useInstrumentModels } from '../../hooks/useInstrumentModels';
 import InstrumentModelEditor from './InstrumentModelEditor';
 import { XiloChisel } from '../XiloIcons';
 
-export default function InstrumentModelsManager({ groupId, isAuthorized }) {
+export default function InstrumentModelsManager({ groupId, isAuthorized, varalCategories }) {
   const { models, loading, addModel, updateModel, deleteModel } = useInstrumentModels(groupId);
   const [editingModel, setEditingModel] = useState(null);
 
@@ -32,6 +32,44 @@ export default function InstrumentModelsManager({ groupId, isAuthorized }) {
     }
   };
 
+  const handleExportModel = (model) => {
+    const exportData = { ...model };
+    delete exportData.id;
+    delete exportData.groupId;
+    
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportData, null, 2));
+    const downloadAnchorNode = document.createElement('a');
+    downloadAnchorNode.setAttribute("href", dataStr);
+    downloadAnchorNode.setAttribute("download", `pack_${(model.nom || 'modele').replace(/\s+/g, '_').toLowerCase()}.json`);
+    document.body.appendChild(downloadAnchorNode);
+    downloadAnchorNode.click();
+    downloadAnchorNode.remove();
+  };
+
+  const handleImportPack = (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      try {
+        const importedData = JSON.parse(e.target.result);
+        if (!importedData.nom || !importedData.type) {
+          alert("Fichier non valide : ce pack ne semble pas être un Modèle d'instrument.");
+          return;
+        }
+        // Force l'association à ce groupe via le hook useInstrumentModels qui s'en charge
+        await addModel(importedData);
+        alert(`Pack "${importedData.nom}" importé avec succès !`);
+      } catch (err) {
+        alert("Erreur lors de la lecture ou de l'import du fichier JSON.");
+        console.error(err);
+      }
+      event.target.value = null; // Reset input
+    };
+    reader.readAsText(file);
+  };
+
   if (loading) {
     return <div className="p-8 text-center text-xs text-stone-500 font-bold uppercase tracking-wider animate-pulse">Chargement des modèles...</div>;
   }
@@ -45,6 +83,7 @@ export default function InstrumentModelsManager({ groupId, isAuthorized }) {
       <InstrumentModelEditor 
         model={editingModel.id === 'new' ? null : editingModel}
         existingModels={models}
+        varalCategories={varalCategories}
         onSave={handleSaveModel}
         onCancel={() => setEditingModel(null)}
       />
@@ -57,13 +96,19 @@ export default function InstrumentModelsManager({ groupId, isAuthorized }) {
         <h3 className="text-sm font-extrabold tracking-widest text-cordel-wood uppercase flex items-center gap-2">
           <XiloChisel size={16} /> Modèles d'Instruments & Tutos
         </h3>
-        <CordelButton 
-          variant="ocre" 
-          onClick={() => setEditingModel({ id: 'new' })}
-          className="text-xs px-4 py-1.5 shadow-[2px_2px_0px_0px_#181716]"
-        >
-          + Créer un Modèle
-        </CordelButton>
+        <div className="flex gap-2">
+          <label className="cursor-pointer bg-white text-cordel-wood border border-cordel-wood text-xs px-4 py-1.5 shadow-[2px_2px_0px_0px_var(--color-cordel-wood)] rounded font-bold uppercase tracking-widest hover:bg-neutral-100 transition-colors">
+            📥 Importer Pack
+            <input type="file" accept=".json" onChange={handleImportPack} className="hidden" />
+          </label>
+          <CordelButton 
+            variant="ocre" 
+            onClick={() => setEditingModel({ id: 'new' })}
+            className="text-xs px-4 py-1.5 shadow-[2px_2px_0px_0px_#181716]"
+          >
+            + Créer un Modèle
+          </CordelButton>
+        </div>
       </div>
 
       <div className="text-xs text-stone-600 mb-4 leading-relaxed">
@@ -97,10 +142,16 @@ export default function InstrumentModelsManager({ groupId, isAuthorized }) {
 
               <div className="flex justify-end gap-2 mt-2 pt-2 border-t border-dashed border-cordel-master-dark/20">
                 <button 
+                  onClick={() => handleExportModel(model)}
+                  className="text-[10px] font-bold text-cordel-vert hover:underline"
+                >
+                  Exporter Pack
+                </button>
+                <button 
                   onClick={() => setEditingModel(model)}
                   className="text-[10px] font-bold text-cordel-wood hover:underline"
                 >
-                  Ouvrir & Éditer
+                  Éditer
                 </button>
                 <button 
                   onClick={() => handleDeleteModel(model.id, model.nom)}

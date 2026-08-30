@@ -9,6 +9,7 @@ const STATUS_OPTIONS = ['En stock', 'Assemblé'];
 
 export default function InventoryPartsView({
   inventoryParts,
+  instrumentModels = [],
   isPartFormOpen,
   setIsPartFormOpen,
   editingPartId,
@@ -31,6 +32,8 @@ export default function InventoryPartsView({
       (part.typePiece && part.typePiece.toLowerCase().includes(lowerQuery))
     );
   });
+
+  const selectedModel = instrumentModels.find(m => m.id === partFormData.modelId);
 
   return (
     <div className="flex flex-col gap-4 text-left">
@@ -69,7 +72,54 @@ export default function InventoryPartsView({
             <div className="grid grid-cols-2 gap-3">
               <div className="flex flex-col gap-1">
                 <label className="text-[8px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                  Type de pièce
+                  Modèle d'instrument (Ref)
+                </label>
+                <select
+                  name="modelId"
+                  value={partFormData.modelId || ''}
+                  onChange={handlePartInputChange}
+                  disabled={saving}
+                  className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light"
+                >
+                  <option value="">-- Indépendant --</option>
+                  {instrumentModels.map(m => (
+                    <option key={m.id} value={m.id}>{m.nom}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="text-[8px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                  Pièce du modèle
+                </label>
+                <select
+                  name="partId"
+                  value={partFormData.partId || ''}
+                  onChange={(e) => {
+                     handlePartInputChange(e);
+                     // Auto-fill part name and type if empty or generic
+                     const partObj = selectedModel?.parts?.find(p => p.id === e.target.value);
+                     if (partObj) {
+                       if (!partFormData.nom || partFormData.nom.includes("Pièce")) {
+                         handlePartInputChange({ target: { name: 'nom', value: `${partObj.nom} - ${selectedModel.nom}` } });
+                       }
+                     }
+                  }}
+                  disabled={saving || !selectedModel}
+                  className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light"
+                >
+                  <option value="">-- Sélectionnez une pièce --</option>
+                  {selectedModel?.parts?.map(p => (
+                    <option key={p.id} value={p.id}>{p.nom}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="flex flex-col gap-1">
+                <label className="text-[8px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                  Catégorie (Type)
                 </label>
                 <select
                   name="typePiece"
@@ -190,6 +240,11 @@ export default function InventoryPartsView({
                     <tr key={part.id} className="border-b border-dashed border-encre-noire/20 hover:bg-black/5 transition-colors">
                       <td className="p-2 border-r border-encre-noire/10 font-bold sticky left-0 bg-cordel-card-bg z-10 shadow-[1px_0_0_0_rgba(24,23,22,0.1)]">
                         {part.nom}
+                        {part.modelId && (
+                          <div className="text-[9px] text-cordel-master-dark opacity-80 mt-0.5">
+                            Modèle : {instrumentModels.find(m => m.id === part.modelId)?.nom || 'Inconnu'}
+                          </div>
+                        )}
                       </td>
                       <td className="p-2 border-r border-encre-noire/10">
                         {part.typePiece}

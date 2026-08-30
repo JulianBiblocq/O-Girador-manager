@@ -2,18 +2,8 @@ import React, { useState } from 'react';
 import CordelCard from '../../CordelCard';
 
 export default function BrevoIntegrationBlock({ formData, handleChange, saving }) {
-  const publicTheme = formData.publicTheme || {};
   const [showBrevoKey, setShowBrevoKey] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
-
-  // Mise à jour de la configuration Brevo dans publicTheme
-  const handleBrevoFieldChange = (field, value) => {
-    const updatedTheme = {
-      ...publicTheme,
-      [field]: value
-    };
-    handleChange('publicTheme', updatedTheme);
-  };
 
   return (
     <CordelCard variant="default" className="p-5 flex flex-col gap-4 bg-white border-2 border-stone-200 shadow-xs">
@@ -58,8 +48,8 @@ export default function BrevoIntegrationBlock({ formData, handleChange, saving }
                 </label>
                 <input
                   type={showBrevoKey ? 'text' : 'password'}
-                  value={publicTheme.brevoApiKey || ''}
-                  onChange={(e) => handleBrevoFieldChange('brevoApiKey', e.target.value)}
+                  value={formData.emailProviderApiKey || ''}
+                  onChange={(e) => handleChange('emailProviderApiKey', e.target.value)}
                   disabled={saving}
                   placeholder="xkeysib-..."
                   className="text-xs px-3 py-2 border border-stone-300 rounded bg-white font-mono text-stone-800"
@@ -73,8 +63,8 @@ export default function BrevoIntegrationBlock({ formData, handleChange, saving }
                 </label>
                 <input
                   type="text"
-                  value={publicTheme.brevoListId || ''}
-                  onChange={(e) => handleBrevoFieldChange('brevoListId', e.target.value)}
+                  value={formData.brevoListId || ''}
+                  onChange={(e) => handleChange('brevoListId', e.target.value)}
                   disabled={saving}
                   placeholder="Ex: 2 ou 5"
                   className="text-xs px-3 py-2 border border-stone-300 rounded bg-white font-mono text-stone-800"

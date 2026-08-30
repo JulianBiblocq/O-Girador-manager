@@ -8,6 +8,7 @@ import { XiloClose } from '../XiloIcons';
 export default function RepairDiagnosticModal({
   instrument,
   inventoryParts,
+  instrumentModels = [],
   onClose,
   t
 }) {
@@ -105,6 +106,11 @@ export default function RepairDiagnosticModal({
                       <span className="px-1.5 py-0.5 bg-cordel-bg-light border border-encre-noire/30 rounded text-[9px] font-black uppercase text-cordel-master-dark">
                         {part.typePiece}
                       </span>
+                      {part.modelId && (
+                        <span className="px-1.5 py-0.5 bg-blue-100 border border-blue-300 rounded text-[9px] font-black uppercase text-blue-700">
+                          {instrumentModels.find(m => m.id === part.modelId)?.nom || 'Modèle inconnu'}
+                        </span>
+                      )}
                     </div>
                     {!isReplacing && (
                       <button
@@ -132,11 +138,14 @@ export default function RepairDiagnosticModal({
                           className="theme-input text-xs font-bold py-1.5 w-full bg-white"
                         >
                           <option value="">-- Sélectionner une pièce en stock --</option>
-                          {compatibleStock.map(sp => (
-                            <option key={sp.id} value={sp.id}>
-                              {sp.nom} (État : {sp.etat})
-                            </option>
-                          ))}
+                          {compatibleStock.map(sp => {
+                            const modelName = sp.modelId ? (instrumentModels.find(m => m.id === sp.modelId)?.nom || 'Inconnu') : '';
+                            return (
+                              <option key={sp.id} value={sp.id}>
+                                {sp.nom} (État : {sp.etat}) {modelName ? ` - [${modelName}]` : ''}
+                              </option>
+                            );
+                          })}
                         </select>
                       )}
 
