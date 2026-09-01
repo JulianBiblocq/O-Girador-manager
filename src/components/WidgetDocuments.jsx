@@ -685,6 +685,8 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId, user, pr
             typeDoc: 'reunion',
             date: reunion.date,
             isHidden: isHidden,
+            isPast: isPast,
+            isPublished: isPublished,
             isArchived: false,
             order: 0,
             reunionData: reunion // Stocker les données pour la modale
@@ -961,7 +963,7 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId, user, pr
                               `}
                             >
                               {/* Draft / Unvalidated Hatching Pattern */}
-                              {docItem.isHidden && docItem.type === 'reunion' && (
+                              {docItem.type === 'reunion' && !docItem.isPublished && (
                                 <div className="absolute inset-0 pointer-events-none z-[5] opacity-20 mix-blend-multiply" 
                                      style={{ backgroundImage: `repeating-linear-gradient(45deg, transparent, transparent 8px, #181716 8px, #181716 10px)` }}
                                 />
@@ -986,10 +988,10 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId, user, pr
                               )}
 
                               {/* Draft/Waiting Stamp for Reunions */}
-                              {docItem.isHidden && docItem.type === 'reunion' && (
+                              {docItem.type === 'reunion' && !docItem.isPublished && (
                                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10 rotate-[10deg] opacity-90">
-                                  <span className="border-[3px] border-[#c05621] text-[#c05621] px-2 py-1 text-[9px] font-black uppercase tracking-widest shadow-[2px_2px_0px_0px_#181716] bg-cordel-bg-light/95 rotate-[-5deg] text-center leading-tight">
-                                    En attente<br/>de CA
+                                  <span className="border-[3px] border-[#c05621] text-[#c05621] px-2 py-1 text-[9px] font-black uppercase tracking-widest shadow-[2px_2px_0px_0px_#181716] bg-cordel-bg-light/95 rotate-[-5deg] text-center leading-tight whitespace-pre-line">
+                                    {docItem.isPast ? "En attente\nde CA" : "ODJ\nen cours"}
                                   </span>
                                 </div>
                               )}
