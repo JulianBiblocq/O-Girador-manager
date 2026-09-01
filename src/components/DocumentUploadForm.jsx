@@ -942,25 +942,7 @@ export default function DocumentUploadForm({ groupId, varalCategories = [], onCl
                </div>
             )}
 
-            {/* Document Year (Useful for Administratif, ComptesRendus, PhotosPrestations) */}
-            {(category === 'Administratif' || category === 'ComptesRendus' || category === 'PhotosPrestations') && (
-              <div className="flex flex-col gap-1">
-                <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                  {t('documents.yearLabel') || "Année de référence"}
-                </label>
-                <input
-                  type="number"
-                  value={annee}
-                  onChange={(e) => setAnnee(e.target.value)}
-                  required
-                  disabled={isUploading}
-                  min="1900"
-                  max="2100"
-                  placeholder="Ex: 2024"
-                  className="theme-input w-full disabled:opacity-50 text-xs font-bold"
-                />
-              </div>
-            )}
+
 
             {/* External URL Inputs */}
             {(computedType === 'video' || computedType === 'web' || computedType === 'dossier_externe') && (

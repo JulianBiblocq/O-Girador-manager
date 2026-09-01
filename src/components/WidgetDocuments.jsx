@@ -807,8 +807,7 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
                       docList.map((docItem, index) => {
                         const isLatestDoc = docItem.id === newestDocumentId;
 
-                        const isPastYear = category.activerOpaciteArchive && docItem.annee && docItem.annee < currentYear;
-                        const isArchived = isPastYear || (docItem.isArchived === true);
+                        const isArchived = (docItem.isArchived === true);
                         const opacityClass = isArchived ? 'opacity-60 grayscale-[0.3] hover:opacity-100 hover:grayscale-0 transition-all duration-300' : 'opacity-100';
 
                         const docType = getDocType(docItem);
@@ -1220,20 +1219,7 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
                 </div>
               )}
 
-              <label className="flex items-start gap-2 cursor-pointer mt-1">
-                <input
-                  type="checkbox"
-                  checked={editingCategory.activerOpaciteArchive}
-                  onChange={(e) => setEditingCategory(prev => ({ ...prev, activerOpaciteArchive: e.target.checked }))}
-                  className="w-4 h-4 cursor-pointer mt-0.5"
-                />
-                <div className="flex flex-col">
-                  <span className="font-bold text-encre-noire">Archiver visuellement</span>
-                  <span className="text-[9px] text-cordel-master-dark/70 font-semibold leading-relaxed">
-                    Réduit l'opacité des livrets des années antérieures.
-                  </span>
-                </div>
-              </label>
+
 
               <div className="flex justify-end gap-3 mt-4 border-t border-dashed border-cordel-master-dark/20 pt-4">
                 <CordelButton
