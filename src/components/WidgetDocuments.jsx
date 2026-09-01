@@ -17,6 +17,7 @@ import { createPortal } from 'react-dom';
 
 import { useTranslation } from './LanguageContext';
 import useConfirm from '../hooks/useConfirm';
+import ReunionViewModal from './ReunionViewModal';
 
 export const DEFAULT_VARAL_CATEGORIES = [
   { id: 'Toadas', nom: 'Toadas', activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false },
@@ -137,7 +138,7 @@ const HangingRopeCurve = ({ className = "absolute top-[44px] left-0 right-0 h-8 
   </div>
 );
 
-export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
+export default function WidgetDocuments({ role, isSystemAdmin, groupId, user, profileData }) {
   const { t } = useTranslation();
   const { confirm } = useConfirm();
 
@@ -152,12 +153,14 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
   const [isAdding, setIsAdding] = useState(false);
   const [documentToEdit, setDocumentToEdit] = useState(null);
   const [eventsWithMedia, setEventsWithMedia] = useState([]);
+  const [reunions, setReunions] = useState([]);
   const [editingCategory, setEditingCategory] = useState(null);
   const [selectedReport, setSelectedReport] = useState(null);
   const [selectedToada, setSelectedToada] = useState(null);
   const [selectedCultureCard, setSelectedCultureCard] = useState(null);
   const [selectedFabrication, setSelectedFabrication] = useState(null);
   const [selectedInstrumentModel, setSelectedInstrumentModel] = useState(null);
+  const [selectedReunion, setSelectedReunion] = useState(null);
   const [showBulkPrintModal, setShowBulkPrintModal] = useState(false);
   const [instrumentModels, setInstrumentModels] = useState([]);
   const [isPrinting, setIsPrinting] = useState(false);
@@ -505,23 +508,29 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
     return () => unsubscribeModels();
   }, [groupId]);
 
-  // Synchroniser les événements pour extraire les dépôts médias vers "PhotosPrestations"
+  // Synchroniser les événements pour extraire les dépôts médias vers "PhotosPrestations" et récupérer les réunions
   useEffect(() => {
     if (!groupId) {
       setEventsWithMedia([]);
+      setReunions([]);
       return;
     }
     const eventsRef = collection(db, 'events');
     const qEvents = query(eventsRef, where('groupId', '==', groupId));
     const unsubscribeEvents = onSnapshot(qEvents, (querySnapshot) => {
       const fetchedEvents = [];
+      const fetchedReunions = [];
       querySnapshot.forEach((doc) => {
         const data = doc.data();
         if (data.lienDepotMedias) {
           fetchedEvents.push({ id: doc.id, ...data });
         }
+        if (data.type === 'reunion' && data.date) {
+          fetchedReunions.push({ id: doc.id, ...data });
+        }
       });
       setEventsWithMedia(fetchedEvents);
+      setReunions(fetchedReunions);
     }, (error) => {
       console.error("WidgetDocuments - Erreur onSnapshot events :", error);
     });
@@ -611,7 +620,7 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
         }
       }
 
-      if (!docItem.isHidden) {
+      if (!docItem.isHidden || isAuthorized) {
         if (!groups[catId]) {
           groups[catId] = [];
         }
@@ -647,8 +656,42 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
       });
     }
 
+    // Injection des réunions en tant que brouillons ou comptes-rendus dans le varal "ComptesRendus"
+    if (reunions && reunions.length > 0) {
+      if (!groups['ComptesRendus']) {
+        groups['ComptesRendus'] = [];
+      }
+      reunions.forEach(reunion => {
+        const eventDate = new Date(reunion.date);
+        const now = new Date();
+        // Considère la réunion comme passée si la date de fin est dépassée
+        // On se base sur la date du jour (simplification)
+        const isPast = eventDate <= now;
+        const isPublished = (reunion.compteRenduStatus === 'publie');
+        
+        let isHidden = false;
+        if (isPast && !isPublished) {
+          isHidden = true; // Caché aux membres normaux, visible uniquement par CA
+        }
+
+        if (!isHidden || isAuthorized) {
+          groups['ComptesRendus'].push({
+            id: reunion.id,
+            titre: reunion.title || reunion.titre || 'Réunion',
+            type: 'reunion',
+            typeDoc: 'reunion',
+            date: reunion.date,
+            isHidden: isHidden,
+            isArchived: false,
+            order: 0,
+            reunionData: reunion // Stocker les données pour la modale
+          });
+        }
+      });
+    }
+
     return groups;
-  }, [documents, instrumentModels, varalCategories, eventsWithMedia]);
+  }, [documents, instrumentModels, varalCategories, eventsWithMedia, reunions]);
 
 
   const categoryVariants = {
@@ -869,6 +912,8 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
                                 setSelectedCultureCard(docItem);
                               } else if (docType === 'fabrication') {
                                 setSelectedFabrication(docItem);
+                              } else if (docType === 'reunion') {
+                                setSelectedReunion(docItem);
                               } else {
                                 window.open(docItem.fileUrl, '_blank');
                               }
@@ -1404,6 +1449,15 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
           title={`Imprimer le Carnet (${(groupedDocs[printCategory] || []).length} chants)`}
           onClose={() => setShowBulkPrintModal(false)}
           onConfirm={handleBulkPrint}
+        />
+      )}
+
+      {selectedReunion && (
+        <ReunionViewModal
+          event={selectedReunion.reunionData}
+          user={user}
+          profileData={profileData}
+          onClose={() => setSelectedReunion(null)}
         />
       )}
     </div>

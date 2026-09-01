@@ -386,6 +386,8 @@ export default function Dashboard({ user, profileData, onNavigateToTrombi, onNav
                     role={profileData?.role} 
                     isSystemAdmin={profileData?.isSystemAdmin} 
                     groupId={profileData?.groupId} 
+                    user={user}
+                    profileData={profileData}
                   />
                 </React.Suspense>
               );
