@@ -377,6 +377,10 @@ service cloud.firestore {
       allow read: if true;
       allow write: if isAuthenticated();
     }
+    match /programs/{prog} {
+      allow read: if isAuthenticated();
+      allow write: if isAdminOrMestre();
+    }
     match /choreographies/{choreo} {
       allow read: if isAuthenticated();
       allow write: if isAdminOrMestre();

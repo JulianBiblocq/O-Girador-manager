@@ -54,8 +54,26 @@ service firebase.storage {
     // 8. Autorisation spÃ©cifique pour l'export "Danse" du sÃ©quenceur
     match /exports_danse/{allPaths=**} {
       allow read: if true;
-      allow write: if request.resource.size < 20 * 1024 * 1024 
-                   && request.resource.contentType.matches('(audio|video)/.*');
+      allow write: if request.resource != null 
+                   && request.resource.size < 100 * 1024 * 1024 
+                   && request.resource.contentType != null
+                   && request.resource.contentType.matches('^(audio|video)/.*');
+    }
+
+    // 9. Dancador Studio Capture (Vidéos des pas)
+    match /videos/{allPaths=**} {
+      allow read: if true;
+      allow write: if request.auth != null
+                   && request.resource.size < 500 * 1024 * 1024 
+                   && request.resource.contentType.matches('^video/.*');
+    }
+
+    // 10. Dancador Studio Capture (Images / Silhouettes)
+    match /images/{allPaths=**} {
+      allow read: if true;
+      allow write: if request.auth != null
+                   && request.resource.size < 10 * 1024 * 1024 
+                   && request.resource.contentType.matches('^image/.*');
     }
 
     // RÃ¨gle de sÃ©curitÃ© par dÃ©faut : Tout autre chemin non explicitement dÃ©fini est VÃ‰ROUILLÃ‰

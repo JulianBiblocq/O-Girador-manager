@@ -1314,3 +1314,96 @@ Sitemap: https://${hostname}/sitemap.xml`;
   res.set('Cache-Control', 'public, max-age=3600, s-maxage=86400');
   res.status(200).send(txt);
 });
+
+/**
+ * Cloud Function HTTP (v2) : telemetry
+ * Centralise les rapports de bugs et télémétrie.
+ */
+exports.telemetry = onRequest({ cors: true }, async (req, res) => {
+  // Accepter uniquement POST
+  if (req.method !== 'POST' && req.method !== 'OPTIONS') {
+    return res.status(405).json({ error: 'Method Not Allowed' });
+  }
+
+  // Pre-flight CORS (if needed despite {cors: true})
+  if (req.method === 'OPTIONS') {
+    return res.status(204).send('');
+  }
+
+  const API_KEY = process.env.VITE_OGIRADOR_HUB_API_KEY || "o-girador-telemetry-secret-key-2026";
+  const key = req.headers['x-api-key'] || req.query.apiKey;
+  
+  if (!key || key !== API_KEY) {
+    return res.status(401).json({ error: 'Unauthorized: Invalid or missing API Key' });
+  }
+
+  try {
+    const payload = req.body;
+    const { collectionType, data } = payload;
+    
+    if (!collectionType || !data) {
+      return res.status(400).json({ error: 'Missing collectionType or data' });
+    }
+
+    const timestamp = FieldValue.serverTimestamp();
+    const db = getFirestore();
+
+    if (collectionType === 'crash') {
+      const { errorMessage, appId } = data;
+      const errorRef = db.collection('hub_system_errors');
+      
+      const snapshot = await errorRef
+        .where('errorMessage', '==', errorMessage)
+        .where('appId', '==', appId)
+        .limit(1)
+        .get();
+
+      if (!snapshot.empty) {
+        const docId = snapshot.docs[0].id;
+        await errorRef.doc(docId).update({
+          occurrencesCount: FieldValue.increment(1),
+          lastSeenAt: timestamp,
+        });
+        return res.status(200).json({ success: true, message: 'Crash occurrence updated' });
+      } else {
+        await errorRef.add({
+          ...data,
+          occurrencesCount: 1,
+          createdAt: timestamp,
+          lastSeenAt: timestamp,
+          status: 'new'
+        });
+        return res.status(201).json({ success: true, message: 'New crash registered' });
+      }
+    } 
+    else if (collectionType === 'ticket') {
+      await db.collection('hub_tickets').add({
+        ...data,
+        createdAt: timestamp,
+        status: data.status || 'new'
+      });
+      return res.status(201).json({ success: true, message: 'Ticket created' });
+    }
+    else if (collectionType === 'review') {
+      await db.collection('hub_reviews').add({
+        ...data,
+        createdAt: timestamp
+      });
+      return res.status(201).json({ success: true, message: 'Review created' });
+    }
+    else if (collectionType === 'telemetry') {
+      await db.collection('hub_telemetry_daily').add({
+        ...data,
+        timestamp: timestamp
+      });
+      return res.status(201).json({ success: true, message: 'Telemetry logged' });
+    }
+    else {
+      return res.status(400).json({ error: 'Invalid collectionType' });
+    }
+
+  } catch (error) {
+    console.error("Erreur Ingestion Télémétrie:", error);
+    return res.status(500).json({ error: 'Internal Server Error' });
+  }
+});

@@ -311,7 +311,7 @@ export default function LayoutShell({
       <div className="w-full h-screen lg:h-screen lg:max-w-none lg:border-none lg:rounded-none lg:shadow-none overflow-hidden flex flex-col lg:flex-row relative bg-cordel-bg-light text-encre-noire">
         
         {/* Top Header / Navbar for Mobile and Tablet (hidden on Desktop) */}
-        <div className="lg:hidden w-full h-16 landscape:h-12 border-b-4 border-cordel-master-dark bg-cordel-bg-light flex items-center px-4 justify-between select-none shrink-0 z-30">
+        <div className="lg:hidden w-full h-16 landscape:h-12 border-b-4 border-cordel-master-dark bg-cordel-bg-light flex items-center px-4 justify-between select-none shrink-0 z-[90]">
           <div className="flex items-center gap-3">
             <div 
               onClick={handleLogoClick}
@@ -673,7 +673,7 @@ export default function LayoutShell({
 
         {/* Sliding Navigation Drawer (Mobile & Tablet overlay) */}
         {isDrawerOpen && (
-          <div className="lg:hidden fixed inset-0 z-50 flex">
+          <div className="lg:hidden fixed inset-0 z-[100] flex">
             {/* Backdrop overlay */}
             <div 
               className="fixed inset-0 bg-black/40 backdrop-blur-xs transition-opacity duration-300"

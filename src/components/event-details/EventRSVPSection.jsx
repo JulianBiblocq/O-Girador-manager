@@ -828,60 +828,65 @@ export default function EventRSVPSection({
                 {(event.inscriptions || []).filter(i => i.status === 'present').length === 0 && (event.invitesExternes || []).length === 0 && <span className="opacity-60 italic">Aucun</span>}
               </div>
             </div>
-            <div>
-              <strong className="text-red-600 block border-b border-dashed border-red-500/10 pb-0.5 mb-1">
-                ❌ Absents ({(event.inscriptions || []).filter(i => i.status === 'absent').length})
-              </strong>
-              <div className="flex flex-wrap gap-1.5 items-center mt-1">
-                {(event.inscriptions || []).filter(i => i.status === 'absent').map(i => {
-                  const userInfo = allUsers.find(u => u.id === i.userId) || {};
-                  return (
-                    <div key={i.userId} className="inline-flex items-center gap-1.5 bg-white/60 dark:bg-black/20 px-2 py-0.5 rounded border border-dashed border-encre-noire/10 text-xs font-semibold text-encre-noire">
-                      <XiloAvatar src={userInfo.photoURL} name={i.userName} size={18} />
-                      <span>{i.userName}</span>
-                      {isAuthorized && (
-                        <button
-                          type="button"
-                          onClick={() => handleManualUnregister(i.userId)}
-                          className="text-red-600 hover:text-red-800 text-[10px] font-black cursor-pointer ml-1.5 border-l border-encre-noire/15 pl-1.5"
-                          title="Désinscrire ce membre"
-                        >
-                          ✕
-                        </button>
-                      )}
-                    </div>
-                  );
-                })}
-                {(event.inscriptions || []).filter(i => i.status === 'absent').length === 0 && <span className="opacity-60 italic">Aucun</span>}
+            {isAuthorized && (
+              <div>
+                <strong className="text-red-600 block border-b border-dashed border-red-500/10 pb-0.5 mb-1">
+                  ❌ Absents ({(event.inscriptions || []).filter(i => i.status === 'absent').length})
+                </strong>
+                <div className="flex flex-wrap gap-1.5 items-center mt-1">
+                  {(event.inscriptions || []).filter(i => i.status === 'absent').map(i => {
+                    const userInfo = allUsers.find(u => u.id === i.userId) || {};
+                    return (
+                      <div key={i.userId} className="inline-flex items-center gap-1.5 bg-white/60 dark:bg-black/20 px-2 py-0.5 rounded border border-dashed border-encre-noire/10 text-xs font-semibold text-encre-noire">
+                        <XiloAvatar src={userInfo.photoURL} name={i.userName} size={18} />
+                        <span>{i.userName}</span>
+                        {isAuthorized && (
+                          <button
+                            type="button"
+                            onClick={() => handleManualUnregister(i.userId)}
+                            className="text-red-600 hover:text-red-800 text-[10px] font-black cursor-pointer ml-1.5 border-l border-encre-noire/15 pl-1.5"
+                            title="Désinscrire ce membre"
+                          >
+                            ✕
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
+                  {(event.inscriptions || []).filter(i => i.status === 'absent').length === 0 && <span className="opacity-60 italic">Aucun</span>}
+                </div>
               </div>
-            </div>
-            <div>
-              <strong className="text-orange-600 block border-b border-dashed border-orange-500/10 pb-0.5 mb-1">
-                ⏳ À confirmer ({(event.inscriptions || []).filter(i => i.status === 'confirm').length})
-              </strong>
-              <div className="flex flex-wrap gap-1.5 items-center mt-1">
-                {(event.inscriptions || []).filter(i => i.status === 'confirm').map(i => {
-                  const userInfo = allUsers.find(u => u.id === i.userId) || {};
-                  return (
-                    <div key={i.userId} className="inline-flex items-center gap-1.5 bg-white/60 dark:bg-black/20 px-2 py-0.5 rounded border border-dashed border-encre-noire/10 text-xs font-semibold text-encre-noire">
-                      <XiloAvatar src={userInfo.photoURL} name={i.userName} size={18} />
-                      <span>{i.userName}</span>
-                      {isAuthorized && (
-                        <button
-                          type="button"
-                          onClick={() => handleManualUnregister(i.userId)}
-                          className="text-red-600 hover:text-red-800 text-[10px] font-black cursor-pointer ml-1.5 border-l border-encre-noire/15 pl-1.5"
-                          title="Désinscrire ce membre"
-                        >
-                          ✕
-                        </button>
-                      )}
-                    </div>
-                  );
-                })}
-                {(event.inscriptions || []).filter(i => i.status === 'confirm').length === 0 && <span className="opacity-60 italic">Aucun</span>}
+            )}
+            
+            {isAuthorized && (
+              <div>
+                <strong className="text-orange-600 block border-b border-dashed border-orange-500/10 pb-0.5 mb-1">
+                  ⏳ À confirmer ({(event.inscriptions || []).filter(i => i.status === 'confirm').length})
+                </strong>
+                <div className="flex flex-wrap gap-1.5 items-center mt-1">
+                  {(event.inscriptions || []).filter(i => i.status === 'confirm').map(i => {
+                    const userInfo = allUsers.find(u => u.id === i.userId) || {};
+                    return (
+                      <div key={i.userId} className="inline-flex items-center gap-1.5 bg-white/60 dark:bg-black/20 px-2 py-0.5 rounded border border-dashed border-encre-noire/10 text-xs font-semibold text-encre-noire">
+                        <XiloAvatar src={userInfo.photoURL} name={i.userName} size={18} />
+                        <span>{i.userName}</span>
+                        {isAuthorized && (
+                          <button
+                            type="button"
+                            onClick={() => handleManualUnregister(i.userId)}
+                            className="text-red-600 hover:text-red-800 text-[10px] font-black cursor-pointer ml-1.5 border-l border-encre-noire/15 pl-1.5"
+                            title="Désinscrire ce membre"
+                          >
+                            ✕
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
+                  {(event.inscriptions || []).filter(i => i.status === 'confirm').length === 0 && <span className="opacity-60 italic">Aucun</span>}
+                </div>
               </div>
-            </div>
+            )}
           </div>
         )}
 

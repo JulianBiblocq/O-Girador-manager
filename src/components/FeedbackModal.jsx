@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import CordelButton from './CordelButton';
 import { XiloClose, XiloMegaphone } from './XiloIcons';
-import { collection, addDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 
 export default function FeedbackModal({
@@ -43,6 +42,7 @@ export default function FeedbackModal({
       type,
       subject: subject.trim(),
       description: description.trim(),
+      userId: profileData?.uid || 'N/A',
       context: {
         groupId: profileData?.groupId || 'N/A',
         associationName: associationName || 'N/A',
@@ -57,9 +57,32 @@ export default function FeedbackModal({
     };
 
     try {
-      const feedbacksRef = collection(db, 'feedbacks');
-      await addDoc(feedbacksRef, payload);
+      const hubUrl = import.meta.env.VITE_OGIRADOR_HUB_URL;
+      const apiKey = import.meta.env.VITE_OGIRADOR_HUB_API_KEY || '';
+      
+      if (!hubUrl) {
+        throw new Error("L'URL du Hub n'est pas configurée.");
+      }
 
+      const response = await fetch(hubUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey
+        },
+        body: JSON.stringify({
+          collectionType: 'ticket',
+          data: {
+            ...payload,
+            appSource: 'organizador'
+          }
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Hub API request failed');
+      }
+      
       setSuccess(true);
       setTimeout(() => {
         onClose();
