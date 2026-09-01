@@ -81,7 +81,7 @@ export default function MonParcours({ profileData, sequenceurUrl, enabledModules
         const fetchedSongs = [];
         snap.forEach(d => {
           const data = d.data();
-          if (!data.isArchived) {
+          if (!data.isHidden && !data.excludeFromPedagogy) {
             fetchedSongs.push({ id: d.id, ...data });
           }
         });
@@ -97,7 +97,12 @@ export default function MonParcours({ profileData, sequenceurUrl, enabledModules
         const q = query(collection(db, 'documents'), where('groupId', '==', groupId), where('type', 'in', ['fiche_pedagogique', 'culture_fiche']));
         const snap = await getDocs(q);
         const fetchedFiches = [];
-        snap.forEach(d => fetchedFiches.push({ id: d.id, ...d.data() }));
+        snap.forEach(d => {
+          const data = d.data();
+          if (!data.isHidden && !data.excludeFromPedagogy) {
+            fetchedFiches.push({ id: d.id, ...data });
+          }
+        });
         setEducationalSheets(fetchedFiches);
       } catch (error) {
         console.error("Error fetching fiches:", error);

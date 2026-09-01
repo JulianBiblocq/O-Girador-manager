@@ -807,8 +807,9 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
                       docList.map((docItem, index) => {
                         const isLatestDoc = docItem.id === newestDocumentId;
 
-                        const isArchived = category.activerOpaciteArchive && docItem.annee && docItem.annee < currentYear;
-                        const opacityClass = isArchived ? 'opacity-60 hover:opacity-100 transition-opacity duration-200' : 'opacity-100';
+                        const isPastYear = category.activerOpaciteArchive && docItem.annee && docItem.annee < currentYear;
+                        const isArchived = isPastYear || (docItem.isArchived === true);
+                        const opacityClass = isArchived ? 'opacity-60 grayscale-[0.3] hover:opacity-100 hover:grayscale-0 transition-all duration-300' : 'opacity-100';
 
                         const docType = getDocType(docItem);
 
@@ -913,6 +914,13 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId }) {
                               />
                               {/* Aged Cordel Paper Patina Gradient Overlay */}
                               <div className="absolute inset-0 pointer-events-none bg-gradient-to-br from-amber-200/15 via-transparent to-black/20 select-none" />
+
+                              {/* Archive Stamp */}
+                              {isArchived && (
+                                <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10 rotate-[-15deg] opacity-80 mix-blend-multiply">
+                                  <span className="border-4 border-cordel-master-dark text-cordel-master-dark px-2 py-1 text-xs font-black uppercase tracking-widest shadow-[2px_2px_0px_0px_#181716] bg-cordel-bg-light/90 rotate-[-5deg]">Archivé</span>
+                                </div>
+                              )}
 
                               {/* Universal Central Stamp Overlays */}
                               {(() => {

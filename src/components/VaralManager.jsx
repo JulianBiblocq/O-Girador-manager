@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { collection, query, where, onSnapshot, doc, deleteDoc, updateDoc, addDoc } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, doc, deleteDoc, updateDoc, addDoc, getDocs } from 'firebase/firestore';
 import { ref, deleteObject } from 'firebase/storage';
 import { db, storage } from '../firebase';
 import CordelCard from './CordelCard';
@@ -37,7 +37,6 @@ export default function VaralManager({ groupId, onBack, role, isSystemAdmin, isE
   const [selectedReport, setSelectedReport] = useState(null);
   const [selectedToada, setSelectedToada] = useState(null);
   const [selectedCultureCard, setSelectedCultureCard] = useState(null);
-  const [showArchived, setShowArchived] = useState(false);
   const [activeMainTab, setActiveMainTab] = useState('documents'); // 'documents' | 'models'
   
   // Sorting state per category
@@ -445,6 +444,18 @@ export default function VaralManager({ groupId, onBack, role, isSystemAdmin, isE
     await updateDocumentsOrder(newList);
   };
 
+  const handleToggleState = async (docItem, field) => {
+    try {
+      const docRef = doc(db, 'documents', docItem.id);
+      await updateDoc(docRef, {
+        [field]: !docItem[field]
+      });
+    } catch (err) {
+      console.error("Error toggling state:", err);
+      alert("Erreur lors de la modification de l'état.");
+    }
+  };
+
   return (
     <>
     <div className="flex flex-col gap-6 text-left select-none max-w-5xl mx-auto w-full">
@@ -508,23 +519,7 @@ export default function VaralManager({ groupId, onBack, role, isSystemAdmin, isE
         </div>
       ) : (
         <div className="flex flex-col gap-4">
-          <div className="flex justify-between items-start md:items-center flex-col md:flex-row gap-4 select-none">
-            <div className="flex flex-col gap-2 max-w-xl">
-              <p className="text-xs opacity-75 leading-relaxed">
-                Gérez les fichiers, partitions, tutoriels et enregistrements audios de votre groupe sous forme de tableaux structurés par corde. Les modifications d'ordre personnalisé s'appliquent en direct sur l'accueil.
-              </p>
-              <label className="flex items-center gap-2 cursor-pointer bg-[#fdfaf2] border border-encre-noire/20 px-3 py-1.5 rounded hover:border-cordel-wood transition-colors self-start">
-                <input 
-                  type="checkbox"
-                  checked={showArchived}
-                  onChange={(e) => setShowArchived(e.target.checked)}
-                  className="accent-cordel-wood w-4 h-4"
-                />
-                <span className="text-[10px] font-black uppercase tracking-wider text-encre-noire">
-                  Inclure les anciens documents/chants (Archivés)
-                </span>
-              </label>
-            </div>
+          <div className="flex justify-end items-center gap-4 select-none">
             <div className="flex gap-2 shrink-0 flex-wrap justify-end">
               {isAuthorized && (
                 <CordelButton
@@ -774,7 +769,6 @@ export default function VaralManager({ groupId, onBack, role, isSystemAdmin, isE
                     || (d.categorie && varalCategories.find(c => c.nom === d.categorie))
                     || (d.categorie && varalCategories.find(c => c.id === d.categorie));
                   if (!matchObj || matchObj.id !== category.id) return false;
-                  if (!showArchived && d.isArchived) return false;
                   return true;
                 });
                 
@@ -826,6 +820,7 @@ export default function VaralManager({ groupId, onBack, role, isSystemAdmin, isE
                               <tr className="bg-cordel-bg-light border-b border-encre-noire text-cordel-master-dark uppercase tracking-wider text-[9px] font-black">
                                 <th className="py-1.5 px-2 md:py-2 md:px-2 w-8 text-center"></th>
                                 <th className="py-1.5 px-2 md:py-2 md:px-3">{t('documents.docTitleLabel')}</th>
+                                <th className="py-1.5 px-2 md:py-2 md:px-3 text-center">États</th>
                                 <th className="py-1.5 px-2 md:py-2 md:px-3">{t('common.type')}</th>
                                 <th className="py-1.5 px-2 md:py-2 md:px-3 text-center">{t('common.moveUp')}/{t('common.moveDown')}</th>
                                 <th className="py-1.5 px-2 md:py-2 md:px-3 text-right">{t('common.actions')}</th>
@@ -865,11 +860,6 @@ export default function VaralManager({ groupId, onBack, role, isSystemAdmin, isE
                                         />
                                       )}
                                       <span>{docItem.titre}</span>
-                                      {docItem.isHidden && (
-                                        <span className="theme-stamp-badge text-[7.5px] font-black uppercase tracking-wider px-1.5 py-0.2 bg-cordel-rouge/10 text-cordel-rouge border border-cordel-rouge/50 select-none" title="Masqué sur le Varal public">
-                                          👁️ Masqué
-                                        </span>
-                                      )}
                                       {docItem.id === newestDocumentId && (
                                         <span className="theme-stamp-badge theme-stamp-badge-wood text-[7.5px] font-black uppercase tracking-wider px-1.5 py-0.2 bg-[#d99f4d]/30 text-encre-noire border border-encre-noire animate-pulse select-none">
                                           {t('documents.newestBadge') || "✨ Nouveau"}
@@ -881,6 +871,37 @@ export default function VaralManager({ groupId, onBack, role, isSystemAdmin, isE
                                         📁 {docItem.sousCategorie} ({docItem.annee})
                                       </span>
                                     )}
+                                  </td>
+                                  <td className="py-2 px-2 md:py-2.5 md:px-3 text-center">
+                                    <div className="flex justify-center gap-1.5 select-none">
+                                      <button 
+                                        type="button"
+                                        onClick={() => handleToggleState(docItem, 'isHidden')}
+                                        className={`relative w-7 h-7 flex items-center justify-center rounded border ${!docItem.isHidden ? 'bg-cordel-vert/10 border-cordel-vert shadow-[1px_1px_0px_0px_var(--color-cordel-vert)] opacity-100' : 'bg-white border-encre-noire/20 opacity-40 grayscale hover:opacity-100 hover:grayscale-0 shadow-sm'} transition-all cursor-pointer`}
+                                        title={docItem.isHidden ? "Masqué du Varal. Cliquer pour rendre visible." : "Visible sur le Varal. Cliquer pour masquer."}
+                                      >
+                                        <span className="text-sm pointer-events-none">{docItem.isHidden ? '🙈' : '👁️'}</span>
+                                        {docItem.isHidden && <div className="absolute inset-0 m-auto w-[18px] h-[2.5px] bg-cordel-rouge -rotate-45 rounded-full pointer-events-none"></div>}
+                                      </button>
+                                      { (docItem.categorie === 'Toadas' || docItem.categorie === 'Culture' || (category.nom || '').toLowerCase().includes('toadas') || (category.nom || '').toLowerCase().includes('culture')) && (
+                                        <button 
+                                          type="button"
+                                          onClick={() => handleToggleState(docItem, 'excludeFromPedagogy')}
+                                          className={`relative w-7 h-7 flex items-center justify-center rounded border ${!docItem.excludeFromPedagogy ? 'bg-cordel-ocre/10 border-cordel-ocre shadow-[1px_1px_0px_0px_var(--color-cordel-ocre)] opacity-100' : 'bg-white border-encre-noire/20 opacity-40 grayscale hover:opacity-100 hover:grayscale-0 shadow-sm'} transition-all cursor-pointer`}
+                                          title={docItem.excludeFromPedagogy ? "Exclu du QCM/Carnet. Cliquer pour inclure." : "Inclus dans QCM/Carnet. Cliquer pour exclure."}
+                                        >
+                                          <span className="text-sm pointer-events-none">{docItem.excludeFromPedagogy ? '📕' : '📖'}</span>
+                                        </button>
+                                      )}
+                                      <button 
+                                        type="button"
+                                        onClick={() => handleToggleState(docItem, 'isArchived')}
+                                        className={`relative w-7 h-7 flex items-center justify-center rounded border ${docItem.isArchived ? 'bg-cordel-wood/10 border-cordel-wood shadow-[1px_1px_0px_0px_var(--color-cordel-wood)] opacity-100' : 'bg-white border-encre-noire/20 opacity-40 grayscale hover:opacity-100 hover:grayscale-0 shadow-sm'} transition-all cursor-pointer`}
+                                        title={docItem.isArchived ? "Archivé (Carton fermé). Cliquer pour remettre sur le varal." : "Sur le Varal (Carton ouvert). Cliquer pour archiver."}
+                                      >
+                                        <span className="text-sm pointer-events-none">{docItem.isArchived ? '📦' : '📤'}</span>
+                                      </button>
+                                    </div>
                                   </td>
                                   <td className="py-2 px-2 md:py-2.5 md:px-3 font-semibold text-[10px]">
                                     {getDocTypeBadge(docItem.type || 'pdf')}

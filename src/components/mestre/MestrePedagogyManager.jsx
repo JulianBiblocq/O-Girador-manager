@@ -43,8 +43,10 @@ export default function MestrePedagogyManager({ profileData, sequenceurUrl }) {
       const fetchedFiches = [];
       docsSnap.forEach(d => {
         const data = d.data();
-        if (data.type === 'song') fetchedSongs.push({ id: d.id, ...data });
-        if (data.type === 'fiche_pedagogique' || data.type === 'culture_fiche') fetchedFiches.push({ id: d.id, ...data });
+        if (!data.isHidden && !data.excludeFromPedagogy) {
+          if (data.type === 'song') fetchedSongs.push({ id: d.id, ...data });
+          if (data.type === 'fiche_pedagogique' || data.type === 'culture_fiche') fetchedFiches.push({ id: d.id, ...data });
+        }
       });
       setSongs(fetchedSongs);
       setFiches(fetchedFiches);

@@ -26,6 +26,7 @@ export default function DocumentUploadForm({ groupId, varalCategories = [], onCl
   const [annee, setAnnee] = useState(documentToEdit ? documentToEdit.annee : new Date().getFullYear());
   const [isArchived, setIsArchived] = useState(documentToEdit ? (documentToEdit.isArchived || false) : false);
   const [isHidden, setIsHidden] = useState(documentToEdit ? (documentToEdit.isHidden || false) : false);
+  const [excludeFromPedagogy, setExcludeFromPedagogy] = useState(documentToEdit ? (documentToEdit.excludeFromPedagogy || false) : false);
 
   // Computed Type logic
   const [pvType, setPvType] = useState(documentToEdit && documentToEdit.type === 'web' ? 'web' : 'pdf');
@@ -290,7 +291,8 @@ export default function DocumentUploadForm({ groupId, varalCategories = [], onCl
           videoUrl: "",
           annee: new Date().getFullYear(),
           isArchived: false,
-          isHidden: true
+          isHidden: true,
+          excludeFromPedagogy: false
         }
       ];
     } else {
@@ -332,7 +334,8 @@ export default function DocumentUploadForm({ groupId, varalCategories = [], onCl
           ],
           annee: new Date().getFullYear(),
           isArchived: false,
-          isHidden: true
+          isHidden: true,
+          excludeFromPedagogy: false
         }
       ];
     }
@@ -401,6 +404,7 @@ export default function DocumentUploadForm({ groupId, varalCategories = [], onCl
             order: 0,
             isArchived: !!item.isArchived,
             isHidden: !!item.isHidden,
+            excludeFromPedagogy: !!item.excludeFromPedagogy,
             nacao: item.nacao || '',
             rythme: item.rythme || '',
             parolesOriginales: formatLyrics(item.parolesOriginales),
@@ -541,6 +545,7 @@ export default function DocumentUploadForm({ groupId, varalCategories = [], onCl
           annee: parseInt(annee, 10) || new Date().getFullYear(),
           isArchived: isArchived,
           isHidden: isHidden,
+          excludeFromPedagogy: excludeFromPedagogy,
           type: computedType,
           lienSequenceurId: lienSequenceurId
         };
@@ -687,6 +692,7 @@ export default function DocumentUploadForm({ groupId, varalCategories = [], onCl
         order: 0,
         isArchived: isArchived,
         isHidden: isHidden,
+        excludeFromPedagogy: excludeFromPedagogy,
         lienSequenceurId: lienSequenceurId,
       };
 
@@ -1903,24 +1909,41 @@ export default function DocumentUploadForm({ groupId, varalCategories = [], onCl
               </>
             )}
 
-            {/* Archiving Checkbox (Only for Toadas) */}
-            {category === 'Toadas' && (
+            {/* Pedagogy Checkbox (Toadas/Culture) */}
+            {(category === 'Toadas' || category === 'Culture') && (
               <div className="flex flex-col gap-2 mt-2">
-                <div className="flex items-center gap-2 bg-cordel-bg border border-cordel-wood/30 p-3 rounded shadow-xs">
+                <div className="flex items-center gap-2 bg-cordel-bg border border-cordel-ocre/50 p-3 rounded shadow-xs">
                   <input
                     type="checkbox"
-                    id="isArchivedCheck"
-                    checked={isArchived}
-                    onChange={(e) => setIsArchived(e.target.checked)}
+                    id="excludeFromPedagogyCheck"
+                    checked={excludeFromPedagogy}
+                    onChange={(e) => setExcludeFromPedagogy(e.target.checked)}
                     disabled={isUploading}
-                    className="w-4 h-4 text-cordel-wood rounded focus:ring-cordel-wood"
+                    className="w-4 h-4 text-cordel-ocre rounded focus:ring-cordel-ocre"
                   />
-                  <label htmlFor="isArchivedCheck" className="text-xs font-bold text-cordel-master-dark cursor-pointer select-none">
-                    📦 Archiver (Ne plus étudier cette saison / Exclure du QCM)
+                  <label htmlFor="excludeFromPedagogyCheck" className="text-xs font-bold text-cordel-master-dark cursor-pointer select-none">
+                    📙 Exclure du parcours (Ne pas utiliser pour les QCM ni le Carnet d'Aisance)
                   </label>
                 </div>
               </div>
             )}
+
+            {/* Archiving Checkbox (Pour tous les documents) */}
+            <div className="flex flex-col gap-2 mt-2">
+              <div className="flex items-center gap-2 bg-cordel-bg border border-cordel-wood/30 p-3 rounded shadow-xs">
+                <input
+                  type="checkbox"
+                  id="isArchivedCheck"
+                  checked={isArchived}
+                  onChange={(e) => setIsArchived(e.target.checked)}
+                  disabled={isUploading}
+                  className="w-4 h-4 text-cordel-wood rounded focus:ring-cordel-wood"
+                />
+                <label htmlFor="isArchivedCheck" className="text-xs font-bold text-cordel-master-dark cursor-pointer select-none">
+                  📦 Archiver (Griser sur la page principale et marquer comme ancienne année)
+                </label>
+              </div>
+            </div>
             
             {/* Hidden/Draft Checkbox (All categories) */}
             <div className="flex items-center gap-2 mt-2 bg-cordel-bg border border-cordel-rouge/30 p-3 rounded shadow-xs">

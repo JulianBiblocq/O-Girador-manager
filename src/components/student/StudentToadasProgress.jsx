@@ -35,8 +35,8 @@ export default function StudentToadasProgress({ profileData, allSongs = [], allS
     );
   }
 
-  // Filtrer les chansons actives (non archivées)
-  const activeSongs = allSongs.filter(s => !s.isArchived);
+  // Les chansons ont déjà été filtrées par excludeFromPedagogy dans MonParcours
+  const activeSongs = allSongs;
   
   // Calcul global
   const globalScore = calculateGlobalNacaoScore(activeSongs, quizHistory);
