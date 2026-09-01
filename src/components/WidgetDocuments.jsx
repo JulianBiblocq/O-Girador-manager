@@ -674,10 +674,13 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId, user, pr
           isHidden = true; // Caché aux membres normaux, visible uniquement par CA
         }
 
+        const pad = (n) => n.toString().padStart(2, '0');
+        const formattedDate = `${pad(eventDate.getDate())}-${pad(eventDate.getMonth() + 1)}-${eventDate.getFullYear()}`;
+
         if (!isHidden || isAuthorized) {
           groups['ComptesRendus'].push({
             id: reunion.id,
-            titre: reunion.title || reunion.titre || 'Réunion',
+            titre: `CR du ${formattedDate}`,
             type: 'reunion',
             typeDoc: 'reunion',
             date: reunion.date,
@@ -687,6 +690,15 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId, user, pr
             reunionData: reunion // Stocker les données pour la modale
           });
         }
+      });
+    }
+
+    // Trier "ComptesRendus" par date décroissante (les plus récents / futurs en premier)
+    if (groups['ComptesRendus']) {
+      groups['ComptesRendus'].sort((a, b) => {
+        const dateA = a.date ? new Date(a.date).getTime() : new Date(a.createdAt || 0).getTime();
+        const dateB = b.date ? new Date(b.date).getTime() : new Date(b.createdAt || 0).getTime();
+        return dateB - dateA;
       });
     }
 
@@ -948,6 +960,13 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId, user, pr
                                 overflow-hidden
                               `}
                             >
+                              {/* Draft / Unvalidated Hatching Pattern */}
+                              {docItem.isHidden && docItem.type === 'reunion' && (
+                                <div className="absolute inset-0 pointer-events-none z-[5] opacity-20 mix-blend-multiply" 
+                                     style={{ backgroundImage: `repeating-linear-gradient(45deg, transparent, transparent 8px, #181716 8px, #181716 10px)` }}
+                                />
+                              )}
+
                               {/* Wood Grain Xylogravure Texture Overlay (Les veines et stries du bois gravé) */}
                               <div
                                 className="absolute inset-0 pointer-events-none opacity-[0.16] mix-blend-multiply select-none"
@@ -963,6 +982,15 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId, user, pr
                               {isArchived && (
                                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10 rotate-[-15deg] opacity-80 mix-blend-multiply">
                                   <span className="border-4 border-cordel-master-dark text-cordel-master-dark px-2 py-1 text-xs font-black uppercase tracking-widest shadow-[2px_2px_0px_0px_#181716] bg-cordel-bg-light/90 rotate-[-5deg]">Archivé</span>
+                                </div>
+                              )}
+
+                              {/* Draft/Waiting Stamp for Reunions */}
+                              {docItem.isHidden && docItem.type === 'reunion' && (
+                                <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10 rotate-[10deg] opacity-90">
+                                  <span className="border-[3px] border-[#c05621] text-[#c05621] px-2 py-1 text-[9px] font-black uppercase tracking-widest shadow-[2px_2px_0px_0px_#181716] bg-cordel-bg-light/95 rotate-[-5deg] text-center leading-tight">
+                                    En attente<br/>de CA
+                                  </span>
                                 </div>
                               )}
 
