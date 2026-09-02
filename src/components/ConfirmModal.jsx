@@ -46,10 +46,10 @@ export default function ConfirmModal({
       />
 
       {/* Modal card */}
-      <div className="relative z-10 bg-[#fcf8f2] dark:bg-[#1a1918] border-2 border-dashed border-cordel-master-dark/40 shadow-2xl rounded-lg p-5 max-w-md w-full text-left overflow-hidden flex flex-col gap-3.5">
+      <div className="relative z-10 bg-[#fcf8f2] dark:bg-[#1a1918] border-2 border-dashed border-cordel-master-dark/40 shadow-2xl rounded-lg p-5 max-w-md w-full text-left overflow-hidden flex flex-col gap-3.5 max-h-[90vh]">
         
         {/* Header with Xilo Icon */}
-        <div className="flex items-start justify-between gap-3 border-b border-dashed border-cordel-master-dark/20 pb-3">
+        <div className="flex items-start justify-between gap-3 border-b border-dashed border-cordel-master-dark/20 pb-3 shrink-0">
           <div className="flex items-center gap-2.5">
             <span className={`p-2 rounded border shadow-xs shrink-0 ${
               isSuccess
@@ -83,14 +83,14 @@ export default function ConfirmModal({
         </div>
 
         {/* Body Message */}
-        <div className="bg-white/60 dark:bg-black/30 p-3 rounded border border-cordel-master-dark/15">
+        <div className="bg-white/60 dark:bg-black/30 p-3 rounded border border-cordel-master-dark/15 flex-1 overflow-y-auto">
           <p className="text-xs font-semibold text-encre-noire dark:text-cordel-bg leading-relaxed whitespace-pre-line">
             {message}
           </p>
         </div>
 
         {/* Action Buttons */}
-        <div className="flex items-center justify-end gap-2.5 pt-1 mt-1">
+        <div className="flex items-center justify-end gap-2.5 pt-1 mt-1 shrink-0">
           {showCancel && (
             <CordelButton
               variant="default"

@@ -22,9 +22,9 @@ export default function PrintConfigModal({ onClose, onConfirm, title = "Impressi
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 print:hidden backdrop-blur-sm">
-      <div className="bg-[#fdfaf2] dark:bg-[#1a1816] rounded-xl shadow-2xl max-w-md w-full border-2 border-encre-noire overflow-hidden">
-        <div className="bg-[#f5f0e6] dark:bg-[#2a2622] p-4 border-b-2 border-encre-noire flex justify-between items-center">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-2 sm:p-4 print:hidden backdrop-blur-sm">
+      <div className="bg-[#fdfaf2] dark:bg-[#1a1816] rounded-xl shadow-2xl max-w-md w-full border-2 border-encre-noire overflow-hidden flex flex-col max-h-[95vh]">
+        <div className="bg-[#f5f0e6] dark:bg-[#2a2622] p-4 border-b-2 border-encre-noire flex justify-between items-center shrink-0">
           <h2 className="font-cactus tracking-widest text-xl text-encre-noire dark:text-stone-200">
             🖨️ {title}
           </h2>
@@ -33,9 +33,9 @@ export default function PrintConfigModal({ onClose, onConfirm, title = "Impressi
           </button>
         </div>
         
-        <div className="p-6 flex flex-col gap-6 text-encre-noire dark:text-stone-200">
+        <div className="p-4 sm:p-6 flex flex-col gap-6 text-encre-noire dark:text-stone-200 flex-1 overflow-y-auto">
           
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-2 shrink-0">
             <label className="font-black uppercase tracking-wider text-sm">Format de Papier</label>
             <div className="flex flex-col sm:flex-row gap-2">
               <button 
@@ -129,7 +129,7 @@ export default function PrintConfigModal({ onClose, onConfirm, title = "Impressi
               </ul>
             </div>
 
-          <div className="flex justify-end gap-3 mt-2">
+          <div className="flex justify-end gap-3 mt-2 shrink-0 pt-2 border-t border-encre-noire/10">
             <CordelButton variant="secondary" onClick={onClose}>
               Annuler
             </CordelButton>

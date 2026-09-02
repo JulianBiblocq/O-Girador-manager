@@ -73,8 +73,8 @@ export default function WidgetForum({ groupId, onOpen }) {
 
       <div className="flex flex-col gap-3 text-left w-full">
         {/* Barre d'en-tête */}
-        <div className="flex justify-between items-center w-full pb-2 border-b border-dashed border-cordel-master-dark/20">
-          <div className="flex items-center gap-2">
+        <div className="flex flex-wrap justify-between items-center w-full pb-2 border-b border-dashed border-cordel-master-dark/20 gap-2">
+          <div className="flex items-center gap-2 min-w-[200px] flex-1">
             <div className="w-8 h-8 bg-cordel-master-dark text-cordel-bg-light border border-encre-noire flex items-center justify-center rounded-[6px_4px_8px_5px] shrink-0 select-none shadow-[1px_1px_0px_0px_#181716]">
               <XiloChat size={16} className="text-cordel-bg-light" />
             </div>
