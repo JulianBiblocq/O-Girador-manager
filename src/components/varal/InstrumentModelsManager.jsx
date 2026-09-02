@@ -4,6 +4,8 @@ import CordelButton from '../CordelButton';
 import { useInstrumentModels } from '../../hooks/useInstrumentModels';
 import InstrumentModelEditor from './InstrumentModelEditor';
 import { XiloChisel } from '../XiloIcons';
+import { doc, getDoc, updateDoc, increment } from 'firebase/firestore';
+import { db } from '../../firebase';
 
 export default function InstrumentModelsManager({ groupId, isAuthorized, varalCategories }) {
   const { models, loading, addModel, updateModel, deleteModel } = useInstrumentModels(groupId);
@@ -29,6 +31,39 @@ export default function InstrumentModelsManager({ groupId, isAuthorized, varalCa
       } catch (err) {
         alert("Erreur lors de la suppression.");
       }
+    }
+  };
+
+  const handleTogglePublic = async (model) => {
+    try {
+      const isCurrentlyPublic = model.isPublic === true;
+      let updates = {
+        isPublic: !isCurrentlyPublic
+      };
+
+      if (!isCurrentlyPublic) {
+        updates.authorGroupId = groupId;
+        
+        const assocRef = doc(db, 'associations', groupId);
+        const assocSnap = await getDoc(assocRef);
+        if (assocSnap.exists()) {
+          const assocData = assocSnap.data();
+          updates.authorName = assocData.name || assocData.nom || 'Association';
+        }
+
+        if (!model.rewardClaimed) {
+          updates.rewardClaimed = true;
+          await updateDoc(assocRef, {
+            contributionPoints: increment(25)
+          });
+          alert("🎉 Félicitations ! Votre partage a rapporté 25 Points d'Axé à votre association.");
+        }
+      }
+
+      await updateModel(model.id, updates);
+    } catch (err) {
+      console.error("Error toggling public state:", err);
+      alert("Erreur lors de la modification de l'état public.");
     }
   };
 
@@ -141,6 +176,12 @@ export default function InstrumentModelsManager({ groupId, isAuthorized, varalCa
               </div>
 
               <div className="flex justify-end gap-2 mt-2 pt-2 border-t border-dashed border-cordel-master-dark/20">
+                <button 
+                  onClick={() => handleTogglePublic(model)}
+                  className={`text-[10px] font-bold ${model.isPublic ? 'text-cordel-vert' : 'text-cordel-ocre'} hover:underline`}
+                >
+                  {model.isPublic ? '🔓 Dépublier' : '🔒 Publier Terreiro'}
+                </button>
                 <button 
                   onClick={() => handleExportModel(model)}
                   className="text-[10px] font-bold text-cordel-vert hover:underline"

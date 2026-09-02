@@ -24,34 +24,49 @@ self.addEventListener('notificationclick', (event) => {
   console.log('[firebase-messaging-sw.js] Clic sur la notification :', event.notification);
   event.notification.close();
 
-  // Extraction de l'URL de destination transmise dans les données de notification
+  // Extraction de l'URL de destination depuis les données de notification
+  // Les données peuvent être à différents niveaux selon comment Firebase SDK structure le message :
+  // 1. Directement dans event.notification.data (webpush.notification.data côté backend)
+  // 2. Imbriquées dans FCM_MSG.data (structure interne Firebase SDK)
+  // 3. Imbriquées dans FCM_MSG.notification.data
   let data = event.notification.data || {};
-  
+
   // Firebase SDK imbrique souvent les données dans FCM_MSG lors de la création automatique de la notification
-  if (data.FCM_MSG && data.FCM_MSG.data) {
-    data = Object.assign({}, data, data.FCM_MSG.data);
+  if (data.FCM_MSG) {
+    // Fusionner les données du payload FCM avec les données de notification
+    const fcmData = data.FCM_MSG.data || {};
+    const fcmNotifData = (data.FCM_MSG.notification && data.FCM_MSG.notification.data) || {};
+    data = Object.assign({}, data, fcmData, fcmNotifData);
   }
 
-  const targetUrl = data.url || data.link || data.click_action || '/';
+  // Construction de l'URL cible complète à partir du chemin relatif
+  const targetPath = data.url || data.link || data.click_action || '/app';
+  const baseOrigin = self.location.origin;
+  const targetUrl = targetPath.startsWith('http') ? targetPath : baseOrigin + targetPath;
   console.log('[firebase-messaging-sw.js] Redirection vers :', targetUrl);
 
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
       // 1. Si l'application est déjà ouverte en arrière-plan, basculer vers la fenêtre active et naviguer
       for (const client of clientList) {
-        if ('focus' in client) {
-          client.focus();
-          if ('navigate' in client && targetUrl) {
-            return client.navigate(targetUrl);
-          }
-          return client;
+        // Vérifier que le client appartient bien à la même origine
+        if (new URL(client.url).origin === baseOrigin) {
+          return client.focus().then((focusedClient) => {
+            // Envoyer un message au client pour déclencher la navigation interne React
+            // (plus fiable que client.navigate qui peut recharger entièrement la page)
+            if (focusedClient) {
+              focusedClient.postMessage({
+                type: 'NOTIFICATION_CLICK',
+                url: targetPath
+              });
+            }
+            return focusedClient;
+          });
         }
       }
 
       // 2. Sinon, ouvrir directement l'application sur l'URL cible
-      if (clients.openWindow && targetUrl) {
-        return clients.openWindow(targetUrl);
-      }
+      return clients.openWindow(targetUrl);
     })
   );
 });

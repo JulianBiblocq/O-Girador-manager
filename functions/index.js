@@ -102,22 +102,23 @@ async function sendPushToUsers(db, { groupId, recipientId, cibles, title, body, 
     const batchTokenStrings = batch.map((t) => t.token);
 
     try {
-      const fcmUrl = dataPayload?.url 
-        ? `https://organizador.o-girador.com${dataPayload.url.startsWith('/') ? dataPayload.url : '/' + dataPayload.url}` 
-        : "https://organizador.o-girador.com/app";
+      // Données de navigation transmises au service worker pour le deep linking
+      const resolvedData = dataPayload || { url: "/app", click_action: "/app" };
 
       const multicastMessage = {
         notification: { title: finalTitle, body: truncatedBody },
         webpush: {
           notification: {
             icon: 'https://organizador.o-girador.com/icon-192.png',
-            badge: 'https://organizador.o-girador.com/favicon.svg'
-          },
-          fcmOptions: {
-            link: fcmUrl
+            badge: 'https://organizador.o-girador.com/favicon.svg',
+            // Données injectées dans l'objet notification pour le handler notificationclick du SW
+            data: resolvedData
           }
+          // IMPORTANT : PAS de fcmOptions.link ici !
+          // fcmOptions.link court-circuite le listener notificationclick custom du SW,
+          // ce qui empêche l'ouverture de l'app au clic sur la notification mobile.
         },
-        data: dataPayload || { url: "/app", click_action: "/app" },
+        data: resolvedData,
         tokens: batchTokenStrings
       };
 

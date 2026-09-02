@@ -620,7 +620,7 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId, user, pr
         }
       }
 
-      if (!docItem.isHidden || isAuthorized) {
+      if (!docItem.isHidden) {
         if (!groups[catId]) {
           groups[catId] = [];
         }

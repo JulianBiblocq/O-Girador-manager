@@ -697,9 +697,10 @@ export default function App() {
   useEffect(() => {
     if (!user || !profileData) return;
 
-    const handleDeepLinkNavigation = () => {
+    // Fonction de navigation interne déclenchée par un deep link (notification push)
+    const handleDeepLinkNavigation = (overridePath) => {
+      const pathname = overridePath || window.location.pathname || '';
       const searchParams = new URLSearchParams(window.location.search);
-      const pathname = window.location.pathname || '';
 
       const hasEventId = searchParams.has('eventId');
       const hasThreadId = searchParams.has('threadId');
@@ -713,13 +714,33 @@ export default function App() {
         setCurrentPole('mon-espace');
         setCurrentTab('forum');
       }
+
+      // Mettre à jour la route interne si un chemin explicite est fourni
+      if (overridePath) {
+        setCurrentRoute(overridePath);
+        window.history.pushState({}, '', overridePath);
+      }
     };
 
     handleDeepLinkNavigation();
 
-    // Écoute des événements de navigation (ex: clic notification Push quand déjà ouvert)
-    window.addEventListener('popstate', handleDeepLinkNavigation);
-    return () => window.removeEventListener('popstate', handleDeepLinkNavigation);
+    // Écoute des événements de navigation (ex: retour arrière navigateur)
+    window.addEventListener('popstate', () => handleDeepLinkNavigation());
+
+    // Écoute des messages du service worker (clic notification quand l'app est déjà ouverte)
+    // Le SW envoie un postMessage au lieu de client.navigate pour éviter un rechargement complet
+    const handleSWMessage = (event) => {
+      if (event.data && event.data.type === 'NOTIFICATION_CLICK' && event.data.url) {
+        console.log('[App] Navigation via notification push :', event.data.url);
+        handleDeepLinkNavigation(event.data.url);
+      }
+    };
+    navigator.serviceWorker?.addEventListener('message', handleSWMessage);
+
+    return () => {
+      window.removeEventListener('popstate', () => handleDeepLinkNavigation());
+      navigator.serviceWorker?.removeEventListener('message', handleSWMessage);
+    };
   }, [user, profileData]);
 
   // Synchroniser unread private messages count

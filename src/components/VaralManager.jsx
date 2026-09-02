@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { collection, query, where, onSnapshot, doc, deleteDoc, updateDoc, addDoc, getDocs } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, doc, deleteDoc, updateDoc, addDoc, getDocs, getDoc, increment } from 'firebase/firestore';
 import { ref, deleteObject } from 'firebase/storage';
 import { db, storage } from '../firebase';
 import CordelCard from './CordelCard';
@@ -456,6 +456,42 @@ export default function VaralManager({ groupId, onBack, role, isSystemAdmin, isE
     }
   };
 
+  const handleTogglePublic = async (docItem) => {
+    try {
+      const docRef = doc(db, 'documents', docItem.id);
+      const isCurrentlyPublic = docItem.isPublic === true;
+      const assocRef = doc(db, 'associations', groupId);
+
+      let updates = {
+        isPublic: !isCurrentlyPublic
+      };
+
+      if (!isCurrentlyPublic) {
+        // Devenir public
+        updates.authorGroupId = groupId;
+        
+        const assocSnap = await getDoc(assocRef);
+        if (assocSnap.exists()) {
+          const assocData = assocSnap.data();
+          updates.authorName = assocData.name || assocData.nom || 'Association';
+        }
+
+        if (!docItem.rewardClaimed) {
+          updates.rewardClaimed = true;
+          await updateDoc(assocRef, {
+            contributionPoints: increment(25)
+          });
+          alert("🎉 Félicitations ! Votre partage a rapporté 25 Points d'Axé à votre association.");
+        }
+      }
+
+      await updateDoc(docRef, updates);
+    } catch (err) {
+      console.error("Error toggling public state:", err);
+      alert("Erreur lors de la modification de l'état public.");
+    }
+  };
+
   return (
     <>
     <div className="flex flex-col gap-6 text-left select-none max-w-5xl mx-auto w-full">
@@ -901,6 +937,16 @@ export default function VaralManager({ groupId, onBack, role, isSystemAdmin, isE
                                       >
                                         <span className="text-sm pointer-events-none">{docItem.isArchived ? '📦' : '📤'}</span>
                                       </button>
+                                      {isAuthorized && (
+                                        <button 
+                                          type="button"
+                                          onClick={() => handleTogglePublic(docItem)}
+                                          className={`relative w-7 h-7 flex items-center justify-center rounded border ${docItem.isPublic ? 'bg-cordel-vert/10 border-cordel-vert shadow-[1px_1px_0px_0px_var(--color-cordel-vert)] opacity-100' : 'bg-cordel-ocre/10 border-cordel-ocre shadow-[1px_1px_0px_0px_var(--color-cordel-ocre)] opacity-100'} transition-all cursor-pointer`}
+                                          title={docItem.isPublic ? "Public dans le Terreiro. Cliquer pour dépublier." : "Privé. Cliquer pour publier dans le Terreiro."}
+                                        >
+                                          <span className="text-sm pointer-events-none">{docItem.isPublic ? '🔓' : '🔒'}</span>
+                                        </button>
+                                      )}
                                     </div>
                                   </td>
                                   <td className="py-2 px-2 md:py-2.5 md:px-3 font-semibold text-[10px]">

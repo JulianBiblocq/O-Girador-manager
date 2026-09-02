@@ -447,10 +447,26 @@ service cloud.firestore {
       allow write: if isAdminOrMestre();
     }
 
-    // Notifications queue: CrÃƒÂ©ation si authentifiÃƒÂ©. Lecture/Ãƒâ€°criture pour admins/mestres.
+    // Notifications queue: CrÃƒÂ©ation si authentifiÃƒÂ©. Lecture/ÃƒÂ©criture pour admins/mestres.
     match /notifications_queue/{notif} {
       allow create: if isAuthenticated();
       allow read, update, delete: if isAdminOrMestre();
+    }
+
+    match /hub_telemetry_daily/{docId} {
+      allow read: if isAdminOrMestre();
+      allow create: if true;
+      allow update, delete: if isAdminOrMestre();
+    }
+
+    match /hub_reviews/{docId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    match /premium_packs/{docId} {
+      allow read: if request.auth != null;
+      allow write: if isAdminOrMestre();
     }
 
     // Campaigns: Lecture si authentifiÃƒÂ©. Ãƒâ€°criture rÃƒÂ©servÃƒÂ©e aux admins/mestres.
