@@ -1,11 +1,11 @@
 import { useEffect, useRef } from 'react';
 
 const modalStack = [];
-let ignoreNextPop = false;
+let ignorePopCount = 0;
 
 const globalPopStateHandler = (e) => {
-  if (ignoreNextPop) {
-    ignoreNextPop = false;
+  if (ignorePopCount > 0) {
+    ignorePopCount--;
     return;
   }
   if (modalStack.length > 0) {
@@ -54,9 +54,12 @@ export default function useHardwareBack(isOpen, onClose) {
           modalStack.splice(idx, 1);
         }
         
-        // If modal was closed via UI, we need to clean up the history stack
-        if (!modalObj.current.popped && window.history.state?.modalLockId === lockId) {
-          ignoreNextPop = true;
+        // If modal was closed via UI (unmounted or isOpen became false)
+        // We MUST call history.back() to remove the fake state we pushed.
+        // It doesn't matter if we're not the topmost state; the history stack 
+        // length needs to be decreased to stay in sync with our modals.
+        if (!modalObj.current.popped) {
+          ignorePopCount++;
           window.history.back();
         }
 

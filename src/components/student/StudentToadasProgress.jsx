@@ -5,6 +5,7 @@ import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 import AutoEvalQuizContainer from './AutoEvalQuizContainer';
 import { calculateToadaScore, calculateGlobalNacaoScore, getProgressColor } from '../../utils/toadaProgressEngine';
+import useHardwareBack from '../../hooks/useHardwareBack';
 
 export default function StudentToadasProgress({ profileData, allSongs = [], allSheets = [] }) {
   const [quizHistory, setQuizHistory] = useState([]);
@@ -20,6 +21,8 @@ export default function StudentToadasProgress({ profileData, allSongs = [], allS
     });
     return () => unsub();
   }, [profileData?.uid]);
+
+  useHardwareBack(!!activeToadaId, () => setActiveToadaId(null));
 
   // Si on a sélectionné un chant pour révision ciblée
   if (activeToadaId) {

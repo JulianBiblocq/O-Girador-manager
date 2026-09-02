@@ -5,6 +5,7 @@ import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 import { XiloCaixa, XiloClose } from '../XiloIcons';
 import { useAssociationSettings } from '../../hooks/useAssociationSettings';
+import useHardwareBack from '../../hooks/useHardwareBack';
 import { doc, updateDoc, collection, query, where, getDocs, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../firebase';
 
@@ -61,6 +62,9 @@ export default function UserMateriel({ user, profileData, onBack }) {
   const [reportTargetPartId, setReportTargetPartId] = useState('ALL');
   const [reportDescription, setReportDescription] = useState('');
   const [submittingReport, setSubmittingReport] = useState(false);
+
+  useHardwareBack(!!movementModalInst, () => setMovementModalInst(null));
+  useHardwareBack(!!reportInstrumentModal, () => setReportInstrumentModal(null));
 
   // Fetch all inventory parts once
   useEffect(() => {
