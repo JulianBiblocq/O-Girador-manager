@@ -83,7 +83,7 @@ const ThreadReplyItem = React.memo(({
             >
               💬
             </button>
-            {(isCurrentUser || isModeratorOrAdmin) && (
+            {isCurrentUser && (
               <button
                 type="button"
                 onClick={() => onEditReply(index, reply)}
@@ -94,24 +94,24 @@ const ThreadReplyItem = React.memo(({
               </button>
             )}
             {isModeratorOrAdmin && (
-              <>
-                <button
-                  type="button"
-                  onClick={() => onMoveReply(index, reply)}
-                  className="text-[10px] font-black cursor-pointer leading-none select-none opacity-70 hover:opacity-100 p-0.5"
-                  title="Déplacer ce message vers un autre sujet"
-                >
-                  ➡️
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onDeleteReply(index)}
-                  className="text-red-600 hover:text-red-800 text-[10px] font-black cursor-pointer leading-none select-none p-0.5 ml-0.5"
-                  title={t('common.delete') || "Supprimer"}
-                >
-                  🗑️
-                </button>
-              </>
+              <button
+                type="button"
+                onClick={() => onMoveReply(index, reply)}
+                className="text-[10px] font-black cursor-pointer leading-none select-none opacity-70 hover:opacity-100 p-0.5"
+                title="Déplacer ce message vers un autre sujet"
+              >
+                ➡️
+              </button>
+            )}
+            {(isCurrentUser || isModeratorOrAdmin) && (
+              <button
+                type="button"
+                onClick={() => onDeleteReply(index)}
+                className="text-red-600 hover:text-red-800 text-[10px] font-black cursor-pointer leading-none select-none p-0.5 ml-0.5"
+                title={t('common.delete') || "Supprimer"}
+              >
+                🗑️
+              </button>
             )}
           </div>
         </div>
@@ -297,22 +297,37 @@ export default function ThreadView({ threadId, user, profileData, channels = [],
     const threadRef = doc(db, 'forum', threadId);
     const unsubscribe = onSnapshot(threadRef, (docSnap) => {
       if (docSnap.exists()) {
-        const data = docSnap.data();
         setThread({
           id: docSnap.id,
-          ...data
+          ...docSnap.data()
         });
       } else {
         setThread(null);
       }
       setLoading(false);
     }, (error) => {
-      console.error("ThreadView - Erreur onSnapshot :", error);
+      console.error("Erreur onSnapshot ThreadView:", error);
       setLoading(false);
     });
 
     return () => unsubscribe();
   }, [threadId]);
+
+  // Marquer le sujet comme lu
+  useEffect(() => {
+    if (thread && user?.uid && thread.derniereModification) {
+      const threadLastMod = new Date(thread.derniereModification).getTime();
+      const userLastReadStr = profileData?.readThreads?.[thread.id];
+      const userLastRead = userLastReadStr ? new Date(userLastReadStr).getTime() : 0;
+      
+      if (threadLastMod > userLastRead) {
+        const userRef = doc(db, 'users', user.uid);
+        updateDoc(userRef, {
+          [`readThreads.${thread.id}`]: thread.derniereModification
+        }).catch(err => console.error("Erreur mise à jour lecture:", err));
+      }
+    }
+  }, [thread?.id, thread?.derniereModification, user?.uid, profileData?.readThreads]);
 
   // Fait défiler vers le bas lors de la mise à jour des messages
   useEffect(() => {
@@ -520,31 +535,35 @@ export default function ThreadView({ threadId, user, profileData, channels = [],
             </p>
 
             {/* Moderator Toolbar Overlay */}
-            {isModeratorOrAdmin && (
+            {(isModeratorOrAdmin || thread?.auteurId === user?.uid) && (
               <div className="absolute top-3 right-3 flex items-center gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => togglePinThread(thread.id, thread.isPinned)}
-                  disabled={actionLoading}
-                  className={`text-[9px] font-black cursor-pointer border rounded px-1.5 py-0.5 shadow-xs ${
-                    thread.isPinned
-                      ? 'bg-amber-100 text-amber-900 border-amber-300'
-                      : 'bg-white text-encre-noire border-cordel-master-dark/30 hover:bg-amber-50'
-                  }`}
-                  title={thread.isPinned ? "Désépingler" : "Épingler le sujet"}
-                >
-                  📌 {thread.isPinned ? 'Désépingler' : 'Épingler'}
-                </button>
+                {isModeratorOrAdmin && (
+                  <button
+                    type="button"
+                    onClick={() => togglePinThread(thread.id, thread.isPinned)}
+                    disabled={actionLoading}
+                    className={`text-[9px] font-black cursor-pointer border rounded px-1.5 py-0.5 shadow-xs ${
+                      thread.isPinned
+                        ? 'bg-amber-100 text-amber-900 border-amber-300'
+                        : 'bg-white text-encre-noire border-cordel-master-dark/30 hover:bg-amber-50'
+                    }`}
+                    title={thread.isPinned ? "Désépingler" : "Épingler le sujet"}
+                  >
+                    📌 {thread.isPinned ? 'Désépingler' : 'Épingler'}
+                  </button>
+                )}
 
-                <button
-                  type="button"
-                  onClick={() => setIsMoveThreadOpen(true)}
-                  disabled={actionLoading}
-                  className="bg-white hover:bg-cordel-bg text-encre-noire border border-cordel-master-dark/30 text-[9px] font-black cursor-pointer rounded px-1.5 py-0.5 shadow-xs"
-                  title="Déplacer vers un autre salon"
-                >
-                  🚚 Déplacer
-                </button>
+                {isModeratorOrAdmin && (
+                  <button
+                    type="button"
+                    onClick={() => setIsMoveThreadOpen(true)}
+                    disabled={actionLoading}
+                    className="bg-white hover:bg-cordel-bg text-encre-noire border border-cordel-master-dark/30 text-[9px] font-black cursor-pointer rounded px-1.5 py-0.5 shadow-xs"
+                    title="Déplacer vers un autre salon"
+                  >
+                    🚚 Déplacer
+                  </button>
+                )}
 
                 <button
                   type="button"

@@ -115,6 +115,11 @@ function ChannelTreeItem({
           {channelThreads.map(thread => {
             const isThreadActive = selectedThreadId === thread.id;
             const repliesCount = thread.reponses ? thread.reponses.length - 1 : 0;
+            const threadLastMod = new Date(thread.derniereModification || thread.dateCreation).getTime();
+            const userLastReadStr = profileData?.readThreads?.[thread.id];
+            const userLastRead = userLastReadStr ? new Date(userLastReadStr).getTime() : 0;
+            const isUnread = !isThreadActive && threadLastMod > userLastRead;
+
             return (
               <button
                 key={thread.id}
@@ -123,20 +128,25 @@ function ChannelTreeItem({
                   onSelectChannel(channel.id);
                   if (onSelectThread) onSelectThread(thread);
                 }}
-                className={`w-full text-left py-1 px-2 text-[11px] font-semibold rounded transition-all cursor-pointer flex items-center justify-between gap-1 min-w-0 border ${
+                className={`w-full text-left py-1 px-2 text-[11px] rounded transition-all cursor-pointer flex items-center justify-between gap-1 min-w-0 border ${
                   isThreadActive
                     ? 'theme-bg-ocre text-encre-noire border-encre-noire font-extrabold shadow-none'
-                    : 'bg-transparent text-cordel-master-dark hover:bg-white/60 border-transparent'
+                    : isUnread
+                      ? 'bg-transparent text-encre-noire font-black hover:bg-white/60 border-transparent'
+                      : 'bg-transparent text-cordel-master-dark font-semibold hover:bg-white/60 border-transparent'
                 }`}
                 style={{ paddingLeft: `${Math.max(10, (level + 1) * 8 + 6)}px` }}
                 title={thread.titre}
               >
                 <span className="flex items-center gap-1.5 min-w-0 overflow-hidden flex-1 pr-1">
-                  <span className="shrink-0 text-[10px]">{thread.isPinned ? '📌' : '💬'}</span>
-                  <span className="truncate">{thread.titre}</span>
+                  <span className="shrink-0 text-[10px] relative">
+                    {thread.isPinned ? '📌' : '💬'}
+                    {isUnread && <span className="absolute -top-1 -right-1 w-1.5 h-1.5 bg-red-600 rounded-full animate-pulse"></span>}
+                  </span>
+                  <span className={`truncate ${isUnread ? 'font-black' : ''}`}>{thread.titre}</span>
                 </span>
                 {repliesCount > 0 && (
-                  <span className="text-[8.5px] opacity-60 shrink-0 font-bold">
+                  <span className={`text-[8.5px] opacity-60 shrink-0 font-bold ${isUnread ? 'text-red-600 opacity-100' : ''}`}>
                     {repliesCount}
                   </span>
                 )}
