@@ -178,7 +178,6 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
   const [savingChannel, setSavingChannel] = useState(false);
 
   useHardwareBack(isAdding, () => setIsAdding(false));
-  useHardwareBack(!!selectedThread, () => setSelectedThread(null));
   useHardwareBack(!!movingThreadModal, () => setMovingThreadModal(null));
   useHardwareBack(isCreatingChannel, () => setIsCreatingChannel(false));
 
@@ -452,25 +451,32 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
     return () => unsubscribe();
   }, [profileData?.groupId]);
 
-  // Ouverture automatique de la discussion lorsqu'un threadId est présent dans l'URL (Deep Linking FCM)
+  // Synchronisation de l'URL et de l'historique pour le routage des discussions
   useEffect(() => {
-    if (threads.length === 0) return;
-    const searchParams = new URLSearchParams(window.location.search);
-    const targetThreadId = searchParams.get('threadId');
-    if (targetThreadId) {
-      const matchedThread = threads.find(t => t.id === targetThreadId);
-      if (matchedThread) {
-        setSelectedThread(matchedThread);
-        if (matchedThread.channelId) {
-          setActiveChannelId(matchedThread.channelId);
+    const handlePopState = (event) => {
+      const searchParams = new URLSearchParams(window.location.search);
+      const targetThreadId = searchParams.get('threadId');
+      
+      if (targetThreadId && threads.length > 0) {
+        const matchedThread = threads.find(t => t.id === targetThreadId);
+        if (matchedThread) {
+          setSelectedThread(matchedThread);
+          if (matchedThread.channelId) {
+            setActiveChannelId(matchedThread.channelId);
+          }
         }
-        // Nettoyer l'URL pour éviter de ré-ouvrir la discussion si on navigue ailleurs puis on revient
-        searchParams.delete('threadId');
-        const newSearch = searchParams.toString();
-        const newUrl = window.location.pathname + (newSearch ? '?' + newSearch : '');
-        window.history.replaceState(window.history.state, '', newUrl);
+      } else {
+        setSelectedThread(null);
       }
-    }
+    };
+
+    // Écouter les retours navigateur/téléphone
+    window.addEventListener('popstate', handlePopState);
+    
+    // Gérer le deep linking initial
+    handlePopState();
+
+    return () => window.removeEventListener('popstate', handlePopState);
   }, [threads]);
 
   const activeChannelThreads = useMemo(() => {
@@ -530,6 +536,14 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
 
   const handleSelectThread = useCallback((thread) => {
     setSelectedThread(thread);
+    const newUrl = new URL(window.location);
+    newUrl.searchParams.set('threadId', thread.id);
+    
+    window.history.pushState(
+      { ...window.history.state, threadId: thread.id },
+      '',
+      newUrl.toString()
+    );
   }, []);
 
   const hasWriteAccess = useCallback((channel) => {
@@ -585,7 +599,6 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
     );
   }
 
-  // Si un sujet est sélectionné, afficher la vue complète ThreadView
   if (activeThread) {
     return (
       <ThreadView 
@@ -595,7 +608,18 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
         channels={channels}
         allThreads={threads}
         allUsers={Object.values(usersMap)}
-        onClose={() => setSelectedThread(null)} 
+        onClose={() => {
+          // Navigation relative : on dépile l'état de l'historique
+          if (window.history.state && window.history.state.threadId) {
+            window.history.back();
+          } else {
+            // Fallback si ouvert via deep link
+            const newUrl = new URL(window.location);
+            newUrl.searchParams.delete('threadId');
+            window.history.replaceState({ ...window.history.state, threadId: null }, '', newUrl.toString());
+            setSelectedThread(null);
+          }
+        }} 
       />
     );
   }

@@ -65,7 +65,6 @@ export default function WidgetAgenda({
   const [showPastHistory, setShowPastHistory] = useState(false);
 
   useHardwareBack(isAdding, () => setIsAdding(false));
-  useHardwareBack(!!selectedEvent, () => setSelectedEvent(null));
   const [viewMode, setViewMode] = useState('cards'); // 'cards' ou 'list' ou 'grid'
   const [disciplineFilter, setDisciplineFilter] = useState('all'); // 'all' | 'percussion' | 'dance'
   const [selectedTypeFilter, setSelectedTypeFilter] = useState('all');
@@ -291,18 +290,36 @@ export default function WidgetAgenda({
     return () => unsubscribe();
   }, [groupId]);
 
-  // Ouverture automatique de la fiche événement lorsqu'un eventId est présent dans l'URL (Deep Linking FCM)
+  // Synchronisation de l'URL et de l'historique pour le routage des événements
   useEffect(() => {
-    if (events.length === 0) return;
-    const searchParams = new URLSearchParams(window.location.search);
-    const targetEventId = searchParams.get('eventId');
-    if (targetEventId) {
-      const matchedEvent = events.find(e => e.id === targetEventId);
-      if (matchedEvent) {
-        setSelectedEvent(matchedEvent);
+    const handlePopState = () => {
+      const searchParams = new URLSearchParams(window.location.search);
+      const targetEventId = searchParams.get('eventId');
+      
+      if (targetEventId && events.length > 0) {
+        const matchedEvent = events.find(e => e.id === targetEventId);
+        if (matchedEvent) {
+          setSelectedEvent(matchedEvent);
+          if (onFocusModeChange) {
+            onFocusModeChange(true);
+          }
+        }
+      } else {
+        setSelectedEvent(null);
+        if (onFocusModeChange) {
+          onFocusModeChange(false);
+        }
       }
-    }
-  }, [events, setSelectedEvent]);
+    };
+
+    // Écouter les retours navigateur/téléphone
+    window.addEventListener('popstate', handlePopState);
+    
+    // Gérer le deep linking initial
+    handlePopState();
+
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [events, setSelectedEvent, onFocusModeChange]);
 
   const handleChange = async (e) => {
     const { name, value } = e.target;
@@ -502,6 +519,15 @@ export default function WidgetAgenda({
     if (onFocusModeChange) {
       onFocusModeChange(true);
     }
+    
+    const newUrl = new URL(window.location);
+    newUrl.searchParams.set('eventId', event.id);
+    
+    window.history.pushState(
+      { ...window.history.state, eventId: event.id },
+      '',
+      newUrl.toString()
+    );
   };
 
   // Afficher Event Details view if a ticket is clicked
@@ -529,9 +555,16 @@ export default function WidgetAgenda({
             }
           }}
           onClose={() => {
-            setSelectedEvent(null);
-            if (onFocusModeChange) {
-              onFocusModeChange(false);
+            if (window.history.state && window.history.state.eventId) {
+              window.history.back();
+            } else {
+              const newUrl = new URL(window.location);
+              newUrl.searchParams.delete('eventId');
+              window.history.replaceState({ ...window.history.state, eventId: null }, '', newUrl.toString());
+              setSelectedEvent(null);
+              if (onFocusModeChange) {
+                onFocusModeChange(false);
+              }
             }
           }}
           onPrev={hasPrev ? handlePrevEvent : null}
