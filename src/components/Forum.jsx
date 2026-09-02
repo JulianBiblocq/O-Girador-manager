@@ -30,7 +30,8 @@ function ChannelTreeItem({
   onSelectChannel, 
   onSelectThread,
   selectedThreadId,
-  hasWriteAccess, 
+  hasWriteAccess,
+  profileData,
   level = 0 
 }) {
   const children = channels.filter(c => c.parentId === channel.id);
@@ -107,6 +108,7 @@ function ChannelTreeItem({
               onSelectThread={onSelectThread}
               selectedThreadId={selectedThreadId}
               hasWriteAccess={hasWriteAccess}
+              profileData={profileData}
               level={level + 1}
             />
           ))}
@@ -788,6 +790,7 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
                     onSelectThread={handleSelectThread}
                     selectedThreadId={selectedThread?.id}
                     hasWriteAccess={hasWriteAccess}
+                    profileData={profileData}
                     level={0}
                   />
                 ))}
