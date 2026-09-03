@@ -147,7 +147,7 @@ const ThreadReplyItem = React.memo(({
          prevProps.onReplyToMessage === nextProps.onReplyToMessage;
 });
 
-export default function ThreadView({ threadId, user, profileData, channels = [], allThreads = [], allUsers = [], onClose }) {
+export default function ThreadView({ threadId, user, profileData, channels = [], allThreads = [], allUsers = [], onClose, breakGlassActive = false }) {
   const { t } = useTranslation();
   const { confirm } = useConfirm();
   const {
@@ -260,8 +260,7 @@ export default function ThreadView({ threadId, user, profileData, channels = [],
                              ));
 
   const isReadOnly = (() => {
-    const isMestreOrAdmin = profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.role === 'admin' || profileData?.isSystemAdmin;
-    if (isMestreOrAdmin) return false;
+    if (breakGlassActive) return false;
     if (!thread) return true;
 
     // Vérifier si le salon est explicitement en lecture seule pour les membres simples

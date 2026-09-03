@@ -1,26 +1,12 @@
-importScripts('https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js');
-importScripts('https://www.gstatic.com/firebasejs/10.8.0/firebase-messaging-compat.js');
-
-firebase.initializeApp({
-  apiKey: "AIzaSyCTvRPj2p3zdIfEjftXoSvRJ43Uy0EfPMY",
-  authDomain: "o-girador-7828c.firebaseapp.com",
-  projectId: "o-girador-7828c",
-  storageBucket: "o-girador-7828c.firebasestorage.app",
-  messagingSenderId: "488703864701",
-  appId: "1:488703864701:web:50b8cbcd1ca4038e15e614"
-});
-
-const messaging = firebase.messaging();
-
-messaging.onBackgroundMessage((payload) => {
-  console.log('[firebase-messaging-sw.js] Received background message ', payload);
-  // On ne fait PAS de self.registration.showNotification() ici
-  // car Firebase s'en occupe déjà automatiquement quand on envoie un objet "notification".
-  // L'appeler ici provoquerait une notification en double !
-});
-
-// Écoute des clics sur les notifications push FCM (Deep Linking & Redirection)
+// -----------------------------------------------------------------------------
+// IMPORTANT : Écouteur de clic personnalisé DOIT être déclaré AVANT l'initialisation de Firebase
+// Sinon, Firebase SDK intercepte l'événement, appelle event.stopImmediatePropagation()
+// et notre gestionnaire n'est jamais exécuté !
+// -----------------------------------------------------------------------------
 self.addEventListener('notificationclick', (event) => {
+  // On arrête la propagation pour être sûr que Firebase ne prendra pas le dessus si jamais il l'interceptait
+  event.stopImmediatePropagation();
+  
   console.log('[firebase-messaging-sw.js] Clic sur la notification :', event.notification);
   event.notification.close();
 
@@ -53,7 +39,6 @@ self.addEventListener('notificationclick', (event) => {
         if (new URL(client.url).origin === baseOrigin) {
           return client.focus().then((focusedClient) => {
             // Envoyer un message au client pour déclencher la navigation interne React
-            // (plus fiable que client.navigate qui peut recharger entièrement la page)
             if (focusedClient) {
               focusedClient.postMessage({
                 type: 'NOTIFICATION_CLICK',
@@ -70,3 +55,25 @@ self.addEventListener('notificationclick', (event) => {
     })
   );
 });
+
+importScripts('https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js');
+importScripts('https://www.gstatic.com/firebasejs/10.8.0/firebase-messaging-compat.js');
+
+firebase.initializeApp({
+  apiKey: "AIzaSyCTvRPj2p3zdIfEjftXoSvRJ43Uy0EfPMY",
+  authDomain: "o-girador-7828c.firebaseapp.com",
+  projectId: "o-girador-7828c",
+  storageBucket: "o-girador-7828c.firebasestorage.app",
+  messagingSenderId: "488703864701",
+  appId: "1:488703864701:web:50b8cbcd1ca4038e15e614"
+});
+
+const messaging = firebase.messaging();
+
+messaging.onBackgroundMessage((payload) => {
+  console.log('[firebase-messaging-sw.js] Received background message ', payload);
+  // On ne fait PAS de self.registration.showNotification() ici
+  // car Firebase s'en occupe déjà automatiquement quand on envoie un objet "notification".
+  // L'appeler ici provoquerait une notification en double !
+});
+

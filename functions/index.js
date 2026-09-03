@@ -1226,10 +1226,12 @@ exports.serveDynamicApp = onRequest(async (req, res) => {
     const db = getFirestore();
     let groupId = null;
     
-    // 1. Détection du groupe via le sous-domaine ou domaine personnalisé
-    if (hostname.includes('mostrador.o-girador.com')) {
+    // 1. Détection du groupe via paramètres d'URL, sous-domaine ou domaine personnalisé
+    if (req.query && (req.query.groupe || req.query.tenant)) {
+      groupId = req.query.groupe || req.query.tenant;
+    } else if (hostname.includes('mostrador.o-girador.com') || hostname.includes('organizador.o-girador.com')) {
       const parts = hostname.split('.');
-      if (parts.length > 3 && parts[0] !== 'mostrador') {
+      if (parts.length > 3 && parts[0] !== 'mostrador' && parts[0] !== 'organizador') {
         groupId = parts[0];
       }
     } else if (!hostname.includes('o-girador.com') && !hostname.includes('web.app') && !hostname.includes('localhost')) {
@@ -1249,8 +1251,8 @@ exports.serveDynamicApp = onRequest(async (req, res) => {
       const assocDoc = await db.collection('associations').doc(groupId).get();
       if (assocDoc.exists) {
         const data = assocDoc.data();
-        seoTitle = data.nom || seoTitle;
-        seoDesc = data.description || seoDesc;
+        seoTitle = data.nom ? `O Girador | ${data.nom}` : seoTitle;
+        seoDesc = data.description ? data.description.substring(0, 180) : `Rejoignez notre association sur O Girador : agenda, répétitions, vestiaire et matériel.`;
         seoImage = data.logoUrl || data.coverUrl || seoImage;
       }
     }
@@ -1260,10 +1262,18 @@ exports.serveDynamicApp = onRequest(async (req, res) => {
     let htmlContent = await htmlResponse.text();
 
     // 4. Injection des métadonnées
-    htmlContent = htmlContent.replace(/__SEO_TITLE__/g, seoTitle);
-    htmlContent = htmlContent.replace(/__SEO_DESCRIPTION__/g, seoDesc);
-    htmlContent = htmlContent.replace(/__SEO_IMAGE__/g, seoImage);
-    htmlContent = htmlContent.replace(/__SEO_URL__/g, seoUrl);
+    htmlContent = htmlContent
+      .replace(/<title>.*?<\/title>/gi, `<title>${seoTitle}</title>`)
+      .replace(/<meta name="title" content=".*?" \/>/gi, `<meta name="title" content="${seoTitle}" />`)
+      .replace(/<meta name="description" content=".*?" \/>/gi, `<meta name="description" content="${seoDesc}" />`)
+      .replace(/<meta property="og:title" content=".*?" \/>/gi, `<meta property="og:title" content="${seoTitle}" />`)
+      .replace(/<meta property="og:description" content=".*?" \/>/gi, `<meta property="og:description" content="${seoDesc}" />`)
+      .replace(/<meta property="og:image" content=".*?" \/>/gi, `<meta property="og:image" content="${seoImage}" />`)
+      .replace(/<meta property="og:image:secure_url" content=".*?" \/>/gi, `<meta property="og:image:secure_url" content="${seoImage}" />`)
+      .replace(/<meta property="og:url" content=".*?" \/>/gi, `<meta property="og:url" content="${seoUrl}" />`)
+      .replace(/<meta name="twitter:title" content=".*?" \/>/gi, `<meta name="twitter:title" content="${seoTitle}" />`)
+      .replace(/<meta name="twitter:description" content=".*?" \/>/gi, `<meta name="twitter:description" content="${seoDesc}" />`)
+      .replace(/<meta name="twitter:image" content=".*?" \/>/gi, `<meta name="twitter:image" content="${seoImage}" />`);
 
     // 5. Mise en cache CDN Firebase (1h Edge, 5min Navigateur)
     res.set('Cache-Control', 'public, max-age=300, s-maxage=3600');

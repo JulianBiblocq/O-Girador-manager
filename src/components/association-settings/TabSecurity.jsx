@@ -32,6 +32,7 @@ const PERMISSION_POLES = [
     desc: 'Inventaire du matériel et des commandes',
     tabs: [
       { id: 'inventory', label: 'Instruments', desc: 'Gestion du parc d\'instruments et état du matériel' },
+      { id: 'canValidateWorkshopSteps', label: 'Maître d\'atelier', desc: 'Contrôle & Validation des étapes de fabrication' },
       { id: 'orders-manager', label: 'Commandes', desc: 'Suivi des achats et commandes de matériel' },
       { id: 'wardrobe-inventory', label: 'Costumes', desc: 'Gestion du catalogue et du stock des costumes' },
       { id: 'wardrobe-couture', label: 'Atelier Couture', desc: 'Suivi de confection, réparations et tutoriels couture' },

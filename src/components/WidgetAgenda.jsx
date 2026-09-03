@@ -296,12 +296,24 @@ export default function WidgetAgenda({
       const searchParams = new URLSearchParams(window.location.search);
       const targetEventId = searchParams.get('eventId');
       
-      if (targetEventId && events.length > 0) {
-        const matchedEvent = events.find(e => e.id === targetEventId);
-        if (matchedEvent) {
-          setSelectedEvent(matchedEvent);
+      if (targetEventId) {
+        if (events.length > 0) {
+          const matchedEvent = events.find(e => e.id === targetEventId);
+          if (matchedEvent) {
+            setSelectedEvent(matchedEvent);
+            if (onFocusModeChange) {
+              onFocusModeChange(true);
+            }
+          } else {
+            setSelectedEvent(null);
+            if (onFocusModeChange) {
+              onFocusModeChange(false);
+            }
+          }
+        } else if (!loading) {
+          setSelectedEvent(null);
           if (onFocusModeChange) {
-            onFocusModeChange(true);
+            onFocusModeChange(false);
           }
         }
       } else {
@@ -319,7 +331,7 @@ export default function WidgetAgenda({
     handlePopState();
 
     return () => window.removeEventListener('popstate', handlePopState);
-  }, [events, setSelectedEvent, onFocusModeChange]);
+  }, [events, loading, setSelectedEvent, onFocusModeChange]);
 
   const handleChange = async (e) => {
     const { name, value } = e.target;
@@ -555,16 +567,12 @@ export default function WidgetAgenda({
             }
           }}
           onClose={() => {
-            if (window.history.state && window.history.state.eventId) {
-              window.history.back();
-            } else {
-              const newUrl = new URL(window.location);
-              newUrl.searchParams.delete('eventId');
-              window.history.replaceState({ ...window.history.state, eventId: null }, '', newUrl.toString());
-              setSelectedEvent(null);
-              if (onFocusModeChange) {
-                onFocusModeChange(false);
-              }
+            const newUrl = new URL(window.location);
+            newUrl.searchParams.delete('eventId');
+            window.history.replaceState({ ...window.history.state, eventId: null }, '', newUrl.toString());
+            setSelectedEvent(null);
+            if (onFocusModeChange) {
+              onFocusModeChange(false);
             }
           }}
           onPrev={hasPrev ? handlePrevEvent : null}

@@ -376,7 +376,9 @@ export default function TabIdentity({
             variant="ocre"
             useExtremeBorder={true}
             onClick={async () => {
-              const invitationUrl = `${window.location.origin}/?groupe=${groupId}`;
+              const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+              const baseUrl = isLocal ? window.location.origin : 'https://organizador.o-girador.com';
+              const invitationUrl = `${baseUrl}/?groupe=${groupId}`;
               const shareText = `Rejoins notre groupe sur ${formData.nom || 'notre association'} : ${invitationUrl}`;
               try {
                 await navigator.clipboard.writeText(shareText);

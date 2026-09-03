@@ -375,7 +375,8 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
           }
         }
       } else {
-        // Filtrer client-side: Mestre/Admins see EVERYTHING. Regular members see public + matching tag channels.
+        // Filtrer client-side : Le mode intervention (breakGlassActive) donne accès à tout.
+        // En mode standard, chaque utilisateur (y compris admin/CA) n'accède qu'aux salons autorisés par ses badges/rôles.
         const allowedChannels = fetched.filter(ch => {
           if (breakGlassActive) return true;
 
@@ -620,6 +621,7 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
         channels={channels}
         allThreads={threads}
         allUsers={Object.values(usersMap)}
+        breakGlassActive={breakGlassActive}
         onClose={() => {
           // Navigation relative : on dépile l'état de l'historique
           if (window.history.state && window.history.state.threadId) {

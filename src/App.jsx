@@ -1085,6 +1085,13 @@ export default function App() {
     }
     setCurrentPole(poleId);
     if (poleId === 'accueil') {
+      const searchParams = new URLSearchParams(window.location.search);
+      if (searchParams.has('eventId') || searchParams.has('threadId')) {
+        searchParams.delete('eventId');
+        searchParams.delete('threadId');
+        const cleanUrl = window.location.pathname + (searchParams.toString() ? '?' + searchParams.toString() : '');
+        window.history.replaceState({ ...window.history.state, eventId: null, threadId: null }, '', cleanUrl);
+      }
       setCurrentTab('dashboard');
       setDashboardKey(prev => prev + 1);
       return;
@@ -1111,11 +1118,19 @@ export default function App() {
     }
 
     switch (viewName) {
-      case 'dashboard':
+      case 'dashboard': {
+        const searchParams = new URLSearchParams(window.location.search);
+        if (searchParams.has('eventId') || searchParams.has('threadId')) {
+          searchParams.delete('eventId');
+          searchParams.delete('threadId');
+          const cleanUrl = window.location.pathname + (searchParams.toString() ? '?' + searchParams.toString() : '');
+          window.history.replaceState({ ...window.history.state, eventId: null, threadId: null }, '', cleanUrl);
+        }
         setCurrentPole('accueil');
         setCurrentTab('dashboard');
         setDashboardKey(prev => prev + 1);
         break;
+      }
       case 'profile':
       case 'profil':
         setCurrentPole('mon-espace');
@@ -1435,6 +1450,7 @@ export default function App() {
                 role={profileData?.role}
                 isSystemAdmin={profileData?.isSystemAdmin}
                 hasAccessLogistique={hasAccessLogistique}
+                profileData={profileData}
                 onBack={() => handleNavigateToPole('accueil')} 
               />
             ) : (currentTab === 'orders-manager' && hasAccessLogistique) ? (

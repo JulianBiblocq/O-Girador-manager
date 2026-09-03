@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import CordelButton from './CordelButton';
 import { XiloClose } from './XiloIcons';
@@ -58,6 +58,24 @@ export default function FabricationCard({ fabrication, onClose }) {
 
   const hasEtapes = fabrication.etapesFabrication && fabrication.etapesFabrication.length > 0;
   
+  const normalizeTags = (val) => {
+    if (!val) return [];
+    if (Array.isArray(val)) return val.filter(Boolean);
+    if (typeof val === 'string') {
+      return val.split(/[\n,]+/).map(s => s.trim()).filter(Boolean);
+    }
+    return [];
+  };
+
+  const allMateriels = useMemo(() => normalizeTags(fabrication.materielRequis), [fabrication.materielRequis]);
+  const allOutils = useMemo(() => normalizeTags(fabrication.outilsNecessaires), [fabrication.outilsNecessaires]);
+
+  const [selectedEtapeId, setSelectedEtapeId] = useState(null);
+  const activeEtape = (fabrication.etapesFabrication || []).find((e, idx) => {
+    const etapeId = e.id || idx;
+    return etapeId === selectedEtapeId;
+  });
+  
   // Modale principale
   const cardContent = (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/80 backdrop-blur-sm animate-fade-in outline-none"
@@ -112,25 +130,63 @@ export default function FabricationCard({ fabrication, onClose }) {
             )}
 
             {/* Matériel & Outils */}
-            {(fabrication.materielRequis || fabrication.outilsNecessaires) && (
+            {(allMateriels.length > 0 || allOutils.length > 0) && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {fabrication.materielRequis && (
+                {allMateriels.length > 0 && (
                   <div className="bg-[#fdfaf2] border-[var(--theme-border-width)] border-[var(--theme-border-style)] border-black p-4 shadow-[2px_2px_0px_0px_#181716] rounded-sm transform -rotate-[0.5deg]">
-                    <h4 className="font-cactus font-black text-lg text-[var(--color-cordel-wood)] mb-2 border-b-[var(--theme-border-width)] border-dashed border-[var(--color-cordel-wood)] pb-1 opacity-80">
+                    <h4 className="font-cactus font-black text-lg text-[var(--color-cordel-wood)] mb-2 border-b-[var(--theme-border-width)] border-dashed border-[var(--color-cordel-wood)] pb-1 opacity-80 flex items-center justify-between">
                       Matériel Requis
+                      {selectedEtapeId !== null && <span className="text-[9px] font-sans uppercase font-bold tracking-widest text-black/50 bg-black/5 px-2 py-1 rounded">Étape Filtrée</span>}
                     </h4>
-                    <div className="whitespace-pre-wrap text-sm font-semibold text-black/90">
-                      {fabrication.materielRequis}
+                    <div className="flex flex-wrap gap-2">
+                      {allMateriels.map(mat => {
+                        const isSelected = activeEtape?.materiaux?.includes(mat);
+                        const isNeutral = selectedEtapeId === null;
+                        
+                        let badgeClass = "text-xs font-semibold px-2 py-1 rounded border transition-all ";
+                        if (isNeutral) {
+                          badgeClass += "bg-[#fdfaf2] text-black/90 border-black/20 shadow-sm opacity-100";
+                        } else if (isSelected) {
+                          badgeClass += "bg-[var(--color-cordel-wood)] text-white border-[var(--color-cordel-wood)] shadow-md font-bold scale-105";
+                        } else {
+                          badgeClass += "opacity-30 bg-black/5 text-black/40 border-black/10 scale-95";
+                        }
+                        
+                        return (
+                          <span key={mat} className={badgeClass}>
+                            {mat}
+                          </span>
+                        );
+                      })}
                     </div>
                   </div>
                 )}
-                {fabrication.outilsNecessaires && (
+                {allOutils.length > 0 && (
                   <div className="bg-[#fdfaf2] border-[var(--theme-border-width)] border-[var(--theme-border-style)] border-black p-4 shadow-[2px_2px_0px_0px_#181716] rounded-sm transform rotate-[0.5deg]">
-                    <h4 className="font-cactus font-black text-lg text-[var(--color-cordel-wood)] mb-2 border-b-[var(--theme-border-width)] border-dashed border-[var(--color-cordel-wood)] pb-1 opacity-80">
+                    <h4 className="font-cactus font-black text-lg text-[var(--color-cordel-wood)] mb-2 border-b-[var(--theme-border-width)] border-dashed border-[var(--color-cordel-wood)] pb-1 opacity-80 flex items-center justify-between">
                       Outils Nécessaires
+                      {selectedEtapeId !== null && <span className="text-[9px] font-sans uppercase font-bold tracking-widest text-black/50 bg-black/5 px-2 py-1 rounded">Étape Filtrée</span>}
                     </h4>
-                    <div className="whitespace-pre-wrap text-sm font-semibold text-black/90">
-                      {fabrication.outilsNecessaires}
+                    <div className="flex flex-wrap gap-2">
+                      {allOutils.map(outil => {
+                        const isSelected = activeEtape?.outils?.includes(outil);
+                        const isNeutral = selectedEtapeId === null;
+                        
+                        let badgeClass = "text-xs font-semibold px-2 py-1 rounded border transition-all ";
+                        if (isNeutral) {
+                          badgeClass += "bg-[#fdfaf2] text-black/90 border-black/20 shadow-sm opacity-100";
+                        } else if (isSelected) {
+                          badgeClass += "bg-[var(--color-cordel-wood)] text-white border-[var(--color-cordel-wood)] shadow-md font-bold scale-105";
+                        } else {
+                          badgeClass += "opacity-30 bg-black/5 text-black/40 border-black/10 scale-95";
+                        }
+                        
+                        return (
+                          <span key={outil} className={badgeClass}>
+                            {outil}
+                          </span>
+                        );
+                      })}
                     </div>
                   </div>
                 )}
@@ -154,30 +210,66 @@ export default function FabricationCard({ fabrication, onClose }) {
                 </h3>
                 
                 <div className="flex flex-col gap-8 relative before:absolute before:inset-y-0 before:left-[15px] sm:before:left-[27px] before:w-1 before:bg-[var(--color-cordel-wood)] before:opacity-20 before:rounded">
-                  {fabrication.etapesFabrication.map((etape, idx) => (
-                    <div key={idx} className="relative pl-12 sm:pl-16 w-full flex flex-col md:flex-row gap-4 items-start">
-                      {/* Numéro de l'étape */}
-                      <div className="absolute left-0 top-0 w-8 h-8 sm:w-14 sm:h-14 bg-[var(--color-cordel-vert)] border-[var(--theme-border-width)] border-[var(--theme-border-style)] border-black shadow-[2px_2px_0px_0px_#181716] rounded-full flex items-center justify-center z-10 text-white font-cactus font-black text-lg sm:text-2xl transform -rotate-6">
-                        {idx + 1}
-                      </div>
-                      
-                      <div className="flex-1 bg-[#fdfaf2] p-4 border-[var(--theme-border-width)] border-[var(--theme-border-style)] border-black shadow-[2px_2px_0px_0px_#181716] rounded-sm w-full">
-                        <h4 className="font-black text-base text-black mb-2 border-b-[var(--theme-border-width)] border-dashed border-gray-300 pb-1">
-                          {etape.sousTitre}
-                        </h4>
-                        <div className="whitespace-pre-wrap text-xs sm:text-sm text-black/80 font-medium">
-                          {etape.description}
+                  {fabrication.etapesFabrication.map((etape, idx) => {
+                    const etapeId = etape.id || idx;
+                    const isSelected = selectedEtapeId === etapeId;
+                    
+                    return (
+                      <div 
+                        key={etapeId} 
+                        className={`relative pl-12 sm:pl-16 w-full flex flex-col md:flex-row gap-4 items-start cursor-pointer group transition-all ${isSelected ? 'scale-[1.01]' : ''}`}
+                        onClick={() => setSelectedEtapeId(prev => prev === etapeId ? null : etapeId)}
+                      >
+                        {/* Numéro de l'étape */}
+                        <div className={`absolute left-0 top-0 w-8 h-8 sm:w-14 sm:h-14 border-[var(--theme-border-width)] border-[var(--theme-border-style)] rounded-full flex items-center justify-center z-10 text-white font-cactus font-black text-lg sm:text-2xl transform -rotate-6 transition-all ${
+                          isSelected ? 'bg-[var(--color-cordel-wood)] border-black shadow-[3px_3px_0px_0px_var(--color-cordel-wood)] scale-110' : 'bg-[var(--color-cordel-vert)] border-black shadow-[2px_2px_0px_0px_#181716] group-hover:scale-105'
+                        }`}>
+                          {idx + 1}
                         </div>
-                      </div>
+                        
+                        <div className={`flex-1 p-4 border-[var(--theme-border-width)] border-[var(--theme-border-style)] rounded-sm w-full transition-all ${
+                          isSelected ? 'bg-[#fffaf5] border-[var(--color-cordel-wood)] shadow-[4px_4px_0px_0px_var(--color-cordel-wood)] ring-2 ring-[var(--color-cordel-wood)]/20' : 'bg-[#fdfaf2] border-black shadow-[2px_2px_0px_0px_#181716] group-hover:shadow-[3px_3px_0px_0px_#181716]'
+                        }`}>
+                          <div className="flex items-center justify-between mb-2 border-b-[var(--theme-border-width)] border-dashed border-gray-300 pb-1">
+                            <h4 className={`font-black text-base transition-colors ${isSelected ? 'text-[var(--color-cordel-wood)]' : 'text-black'}`}>
+                              {etape.sousTitre}
+                            </h4>
+                            {isSelected && (
+                              <span className="text-[9px] uppercase font-bold text-white bg-[var(--color-cordel-wood)] px-2 py-0.5 rounded shadow-sm">
+                                ✓ Étape Active
+                              </span>
+                            )}
+                          </div>
+                          <div className="whitespace-pre-wrap text-xs sm:text-sm text-black/80 font-medium">
+                            {etape.description}
+                          </div>
+                          
+                          {/* Pastilles locales à l'étape */}
+                          {((etape.materiaux && etape.materiaux.length > 0) || (etape.outils && etape.outils.length > 0)) && (
+                            <div className="mt-3 flex flex-wrap gap-2">
+                              {(etape.materiaux || []).map(mat => (
+                                <span key={mat} className="text-[9px] font-bold text-[var(--color-cordel-wood)] bg-[var(--color-cordel-wood)]/10 px-2 py-1 rounded border border-[var(--color-cordel-wood)]/30">
+                                  {mat}
+                                </span>
+                              ))}
+                              {(etape.outils || []).map(outil => (
+                                <span key={outil} className="text-[9px] font-bold text-[var(--color-cordel-wood)] bg-[var(--color-cordel-wood)]/10 px-2 py-1 rounded border border-[var(--color-cordel-wood)]/30">
+                                  🛠 {outil}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
 
-                      {/* Visuel de l'étape (Optionnel) */}
-                      {etape.imageUrl && (
-                        <div className="w-full md:w-[40%] flex-shrink-0 mt-2 md:mt-0">
-                          {renderMedia(etape.imageUrl)}
-                        </div>
-                      )}
-                    </div>
-                  ))}
+                        {/* Visuel de l'étape (Optionnel) */}
+                        {etape.imageUrl && (
+                          <div className="w-full md:w-[40%] flex-shrink-0 mt-2 md:mt-0">
+                            {renderMedia(etape.imageUrl)}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}

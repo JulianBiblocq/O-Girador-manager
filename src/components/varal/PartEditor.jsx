@@ -7,6 +7,7 @@ export default function PartEditor({ part, onSave, onCancel }) {
   const [formData, setFormData] = useState({
     id: part?.id || `part_${Date.now()}`,
     nom: part?.nom || '',
+    quantiteRequise: part?.quantiteRequise || 1,
     materiels: part?.materiels || [],
     outils: part?.outils || [],
     chapitres: part?.chapitres || []
@@ -44,8 +45,32 @@ export default function PartEditor({ part, onSave, onCancel }) {
   const addChapitre = () => {
     setFormData(prev => ({
       ...prev,
-      chapitres: [...prev.chapitres, { id: `chap_${Date.now()}`, titre: '', texte: '', photoUrl: '' }]
+      chapitres: [...prev.chapitres, { id: `chap_${Date.now()}`, titre: '', texte: '', photoUrl: '', materiaux: [], outils: [] }]
     }));
+  };
+  
+  const toggleChapitreMat = (chapIdx, mat) => {
+    const newChaps = [...formData.chapitres];
+    const chap = newChaps[chapIdx];
+    const mats = chap.materiaux || [];
+    if (mats.includes(mat)) {
+      chap.materiaux = mats.filter(m => m !== mat);
+    } else {
+      chap.materiaux = [...mats, mat];
+    }
+    setFormData(prev => ({ ...prev, chapitres: newChaps }));
+  };
+
+  const toggleChapitreOutil = (chapIdx, outil) => {
+    const newChaps = [...formData.chapitres];
+    const chap = newChaps[chapIdx];
+    const outs = chap.outils || [];
+    if (outs.includes(outil)) {
+      chap.outils = outs.filter(o => o !== outil);
+    } else {
+      chap.outils = [...outs, outil];
+    }
+    setFormData(prev => ({ ...prev, chapitres: newChaps }));
   };
   const updateChapitre = (index, field, value) => {
     const newChaps = [...formData.chapitres];
@@ -77,17 +102,30 @@ export default function PartEditor({ part, onSave, onCancel }) {
       </h4>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        <div className="flex flex-col gap-1">
-          <label className="text-[10px] uppercase font-bold text-cordel-master-dark">Nom de la pièce</label>
-          <input 
-            type="text" 
-            name="nom" 
-            value={formData.nom} 
-            onChange={handleChange} 
-            className="theme-input text-xs py-1.5"
-            placeholder="Ex: Cerclage 18 pouces"
-            required
-          />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] uppercase font-bold text-cordel-master-dark">Nom de la pièce</label>
+            <input 
+              type="text" 
+              name="nom" 
+              value={formData.nom} 
+              onChange={handleChange} 
+              className="theme-input text-xs py-1.5"
+              placeholder="Ex: Cerclage 18 pouces"
+              required
+            />
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] uppercase font-bold text-cordel-master-dark">Quantité requise (Nomenclature)</label>
+            <input 
+              type="number"
+              name="quantiteRequise"
+              min="1"
+              value={formData.quantiteRequise}
+              onChange={handleChange}
+              className="theme-input text-xs py-1.5"
+            />
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -173,6 +211,49 @@ export default function PartEditor({ part, onSave, onCancel }) {
                 className="theme-input text-[9px] py-1 text-blue-600"
                 placeholder="URL d'une image (optionnel)"
               />
+              
+              {/* Assignation Outils/Matériaux */}
+              {(formData.materiels.length > 0 || formData.outils.length > 0) && (
+                <div className="flex flex-col gap-1 mt-2 p-2 bg-black/5 rounded">
+                  <span className="text-[9px] uppercase font-bold text-cordel-master-dark mb-1">Assigner Outils & Matériaux à cette étape</span>
+                  <div className="flex flex-wrap gap-1">
+                    {formData.materiels.map(mat => {
+                      const isSelected = (chap.materiaux || []).includes(mat);
+                      return (
+                        <button
+                          key={mat}
+                          type="button"
+                          onClick={() => toggleChapitreMat(idx, mat)}
+                          className={`text-[9px] px-2 py-0.5 rounded border transition-colors ${
+                            isSelected 
+                              ? 'bg-cordel-wood text-white border-cordel-wood font-bold' 
+                              : 'bg-white text-encre-noire border-encre-noire/20'
+                          }`}
+                        >
+                          {mat}
+                        </button>
+                      );
+                    })}
+                    {formData.outils.map(outil => {
+                      const isSelected = (chap.outils || []).includes(outil);
+                      return (
+                        <button
+                          key={outil}
+                          type="button"
+                          onClick={() => toggleChapitreOutil(idx, outil)}
+                          className={`text-[9px] px-2 py-0.5 rounded border transition-colors ${
+                            isSelected 
+                              ? 'bg-cordel-wood text-white border-cordel-wood font-bold' 
+                              : 'bg-white text-encre-noire border-encre-noire/20'
+                          }`}
+                        >
+                          🛠 {outil}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
           ))}
         </div>

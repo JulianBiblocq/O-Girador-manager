@@ -13,7 +13,7 @@ import InventoryFilterBar from './inventory/InventoryFilterBar';
 import InventoryItemCard from './inventory/InventoryItemCard';
 import InventoryPartsView from './inventory/InventoryPartsView';
 import InventoryProjectsView from './inventory/InventoryProjectsView';
-import WorkshopPlanner from './inventory/WorkshopPlanner';
+
 import RepairDiagnosticModal from './inventory/RepairDiagnosticModal';
 
 import { useAssociationSettings } from '../hooks/useAssociationSettings';
@@ -35,7 +35,7 @@ const INSTRUMENT_ICONS = {
   Autre: 'favicon.svg'
 };
 
-export default function InventoryManager({ groupId, onBack, role, isSystemAdmin, hasAccessLogistique }) {
+export default function InventoryManager({ groupId, onBack, role, isSystemAdmin, hasAccessLogistique, profileData }) {
   const { t } = useTranslation();
   const { confirm } = useConfirm();
 
@@ -501,17 +501,7 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin,
           >
             🛠️ Assemblage
           </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('planner')}
-            className={`px-4 py-2 text-xs font-black uppercase tracking-widest transition-colors border-b-2 whitespace-nowrap ${
-              activeTab === 'planner'
-                ? 'border-cordel-wood text-cordel-wood'
-                : 'border-transparent text-cordel-master-dark/60 hover:text-cordel-master-dark'
-            }`}
-          >
-            📋 Planificateur d'Atelier
-          </button>
+
         </div>
 
         <div className={activeTab === 'instruments' ? 'block' : 'hidden'}>
@@ -1247,6 +1237,7 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin,
           <InventoryProjectsView 
             groupId={groupId} 
             isAuthorized={isAuthorized} 
+            profileData={profileData}
             t={t} 
             inventoryParts={inventoryParts}
             onCreateInstrument={async (instData) => {
@@ -1264,13 +1255,7 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin,
           />
         </div>
 
-        {/* Tab Planificateur d'Atelier */}
-        {activeTab === 'planner' && (
-          <WorkshopPlanner 
-            inventoryParts={inventoryParts}
-            instrumentModels={instrumentModels}
-          />
-        )}
+
       </div>
     </>
   );

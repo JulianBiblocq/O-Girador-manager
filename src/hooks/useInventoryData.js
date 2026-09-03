@@ -32,7 +32,12 @@ export function useInventoryData(groupId, isAuthorized, t) {
     status: 'En stock',
     instrumentAssocie_id: null,
     modelId: '',
-    partId: ''
+    partId: '',
+    notesAtelier: '',
+    currentStepIndex: 0,
+    quantite: 1,
+    statutEtape: 'en_cours',
+    historiqueControles: []
   });
 
   const [formData, setFormData] = useState({
@@ -233,7 +238,14 @@ export function useInventoryData(groupId, isAuthorized, t) {
       typePiece: 'Fût',
       etat: 'Neuf',
       status: 'En stock',
-      instrumentAssocie_id: null
+      instrumentAssocie_id: null,
+      modelId: '',
+      partId: '',
+      notesAtelier: '',
+      currentStepIndex: 0,
+      quantite: 1,
+      statutEtape: 'en_cours',
+      historiqueControles: []
     });
     setEditingPartId(null);
     setIsPartFormOpen(true);
@@ -245,7 +257,14 @@ export function useInventoryData(groupId, isAuthorized, t) {
       typePiece: part.typePiece || 'Fût',
       etat: part.etat || 'Neuf',
       status: part.status || 'En stock',
-      instrumentAssocie_id: part.instrumentAssocie_id || null
+      instrumentAssocie_id: part.instrumentAssocie_id || null,
+      modelId: part.modelId || '',
+      partId: part.partId || '',
+      notesAtelier: part.notesAtelier || '',
+      currentStepIndex: part.currentStepIndex || 0,
+      quantite: part.quantite || 1,
+      statutEtape: part.statutEtape || 'en_cours',
+      historiqueControles: part.historiqueControles || []
     });
     setEditingPartId(part.id);
     setIsPartFormOpen(true);
@@ -263,7 +282,14 @@ export function useInventoryData(groupId, isAuthorized, t) {
         etat: partFormData.etat,
         status: partFormData.status || 'En stock',
         instrumentAssocie_id: partFormData.instrumentAssocie_id || null,
-        groupId: groupId
+        groupId: groupId,
+        modelId: partFormData.modelId || null,
+        partId: partFormData.partId || null,
+        notesAtelier: partFormData.notesAtelier || '',
+        currentStepIndex: partFormData.currentStepIndex || 0,
+        quantite: partFormData.quantite || 1,
+        statutEtape: partFormData.statutEtape || 'en_cours',
+        historiqueControles: partFormData.historiqueControles || []
       };
 
       if (editingPartId) {
@@ -300,6 +326,15 @@ export function useInventoryData(groupId, isAuthorized, t) {
       alert("Erreur lors de la suppression de la pièce.");
     }
   }, [confirm, t]);
+
+  const updatePartWorkflow = useCallback(async (partId, updates) => {
+    try {
+      await updateDoc(doc(db, 'inventory_parts', partId), updates);
+    } catch (err) {
+      console.error("useInventoryData - Erreur updatePartWorkflow :", err);
+      throw err;
+    }
+  }, []);
 
   const handleDelete = useCallback(async (id) => {
     const ok = await confirm({
@@ -402,6 +437,7 @@ export function useInventoryData(groupId, isAuthorized, t) {
     handleOpenPartAdd,
     handleOpenPartEdit,
     handleSavePart,
-    handleDeletePart
+    handleDeletePart,
+    updatePartWorkflow
   };
 }

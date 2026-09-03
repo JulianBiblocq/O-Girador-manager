@@ -504,30 +504,24 @@ service cloud.firestore {
       );
     }
 
-    // Forum Channels: Lecture si membre autorisÃƒÂ© par rÃƒÂ´le/tag/transparence, ÃƒÂ©criture rÃƒÂ©servÃƒÂ©e aux admins/crÃƒÂ©ateurs de groupe
+    // Forum Channels: Lecture autorisée pour tout membre authentifié du même groupe
+    // (le filtrage fin par salon/badge se fait côté client dans Forum.jsx)
     match /forum_channels/{channelId} {
-      allow read: if isAuthenticated() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && (
+      allow read: if isAuthenticated() && (
         isAdminOrMestre() ||
-        (
-          getUserData().groupId == resource.data.groupId &&
-          (
-            resource.data.get('isTransparent', false) == true ||
-            getChannelReadRoles(resource.data) == null ||
-            getChannelReadRoles(resource.data).size() == 0 ||
-            getChannelReadRoles(resource.data).hasAny(['all']) ||
-            getChannelReadRoles(resource.data).hasAny([getUserData().get('role', '')]) ||
-            (getUserData().keys().hasAny(['tags']) && getUserData().tags.hasAny(getChannelReadRoles(resource.data)))
-          )
-        )
+        getUserData().groupId == resource.data.groupId
       );
       allow create: if isAuthenticated() && request.resource.data.groupId == getUserData().groupId;
       allow update, delete: if isAdminOrMestre();
     }
 
-    // Forum Threads: La lecture est autorisÃƒÂ©e pour tout le groupe (le filtrage par salon/badge se fait cÃƒÂ´tÃƒÂ© client)
-    // pour ÃƒÂ©viter les limites de quota get() de Firestore lors des requÃƒÂªtes.
+    // Forum Threads: Lecture autorisée pour tout membre authentifié du même groupe
+    // (le filtrage par salon/badge se fait côté client)
     match /forum/{thread} {
-      allow read: if isAuthenticated() && resource.data.groupId == getUserData().groupId;
+      allow read: if isAuthenticated() && (
+        isAdminOrMestre() ||
+        resource.data.groupId == getUserData().groupId
+      );
       allow create: if isAuthenticated() && (
         hasChannelWriteAccess(request.resource.data.get('channelId', null))
       );

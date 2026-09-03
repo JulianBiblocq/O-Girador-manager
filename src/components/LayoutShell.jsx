@@ -29,6 +29,7 @@ import { canEditVitrine, canAccessPole, canAccessTabPermission } from '../utils/
 import { usePendingMembersNotification } from '../hooks/usePendingMembersNotification';
 import { resolveEffectiveUserTags } from '../utils/tagUtils'; // Utilitaire de résolution des étiquettes effectives
 import InfoPoleBanner, { InfoPoleHelpButton } from './InfoPoleBanner';
+import PageAccessBadgeIndicator from './common/PageAccessBadgeIndicator';
 import FeedbackModal from './FeedbackModal';
 import { useTenantContext } from '../context/TenantContext';
 import { getVitrineUrl } from '../utils/urlUtils';
@@ -84,6 +85,14 @@ export default function LayoutShell({
     setTimeout(() => {
       setIsLogoTilting(false);
     }, 750);
+
+    const searchParams = new URLSearchParams(window.location.search);
+    if (searchParams.has('eventId') || searchParams.has('threadId')) {
+      searchParams.delete('eventId');
+      searchParams.delete('threadId');
+      const cleanUrl = window.location.pathname + (searchParams.toString() ? '?' + searchParams.toString() : '');
+      window.history.replaceState({ ...window.history.state, eventId: null, threadId: null }, '', cleanUrl);
+    }
 
     if (onNavigateToPole) onNavigateToPole('accueil');
     if (onNavigateToTab) onNavigateToTab('dashboard');
@@ -656,6 +665,14 @@ export default function LayoutShell({
             <div className="w-full flex-1">
               <PresenceProvider value={{ onlineMembers, onlineCount, onlineUserIds, isPresenceEnabled }}>
                 <InfoPoleBanner currentPole={activePoleObj?.id || currentPole} currentTab={currentTab} />
+                <PageAccessBadgeIndicator 
+                  currentTab={currentTab}
+                  currentPole={activePoleObj?.id || currentPole}
+                  permissionsMatrice={permissionsMatrice}
+                  userTags={userTags}
+                  isSystemAdminOrMestre={isSystemOrSuperAdminOrMestre}
+                  tagsDisponibles={tagsDisponibles}
+                />
                 {children}
               </PresenceProvider>
             </div>

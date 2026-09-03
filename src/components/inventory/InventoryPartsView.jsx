@@ -148,6 +148,52 @@ export default function InventoryPartsView({
               </div>
             </div>
 
+            <div className="grid grid-cols-2 gap-3">
+              <div className="flex flex-col gap-1">
+                <label className="text-[8px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                  Quantité
+                </label>
+                <input
+                  type="number"
+                  name="quantite"
+                  min="1"
+                  value={partFormData.quantite || 1}
+                  onChange={handlePartInputChange}
+                  disabled={saving}
+                  className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light"
+                />
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="text-[8px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                  Étape courante (Index)
+                </label>
+                <input
+                  type="number"
+                  name="currentStepIndex"
+                  min="0"
+                  value={partFormData.currentStepIndex || 0}
+                  onChange={handlePartInputChange}
+                  disabled={saving}
+                  className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light"
+                />
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <label className="text-[8px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                Notes Atelier
+              </label>
+              <textarea
+                name="notesAtelier"
+                value={partFormData.notesAtelier || ''}
+                onChange={handlePartInputChange}
+                disabled={saving}
+                placeholder="Particularités, cotes, essence de bois..."
+                className="theme-input text-xs py-1.5 bg-cordel-bg-light min-h-[50px]"
+              />
+            </div>
+
             <div className="flex flex-col gap-1">
               <label className="text-[8px] uppercase font-bold tracking-wider text-cordel-master-dark">
                 Statut

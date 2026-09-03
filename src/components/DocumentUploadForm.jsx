@@ -8,6 +8,15 @@ import CordelButton from './CordelButton';
 import { useTranslation } from './LanguageContext';
 import RichTextEditor from './RichTextEditor';
 
+const parseTagsList = (val) => {
+  if (!val) return [];
+  if (Array.isArray(val)) return val.filter(Boolean);
+  if (typeof val === 'string') {
+    return val.split(/[\n,]+/).map(s => s.trim()).filter(Boolean);
+  }
+  return [];
+};
+
 export default function DocumentUploadForm({ groupId, varalCategories = [], onClose, documentToEdit }) {
   const { t } = useTranslation();
   const isEditMode = !!documentToEdit;
@@ -66,8 +75,10 @@ export default function DocumentUploadForm({ groupId, varalCategories = [], onCl
   
   // Tuto Fabrication fields
   const [contenuFabrication, setContenuFabrication] = useState(documentToEdit ? documentToEdit.contenuFabrication || '' : '');
-  const [materielRequis, setMaterielRequis] = useState(documentToEdit ? documentToEdit.materielRequis || '' : '');
-  const [outilsNecessaires, setOutilsNecessaires] = useState(documentToEdit ? documentToEdit.outilsNecessaires || '' : '');
+  const [materielRequisList, setMaterielRequisList] = useState(() => parseTagsList(documentToEdit?.materielRequis));
+  const [outilsNecessairesList, setOutilsNecessairesList] = useState(() => parseTagsList(documentToEdit?.outilsNecessaires));
+  const [newMaterielInput, setNewMaterielInput] = useState('');
+  const [newOutilInput, setNewOutilInput] = useState('');
   const [instrumentConcerne, setInstrumentConcerne] = useState(documentToEdit ? documentToEdit.instrumentConcerne || '' : '');
   const [etapesFabrication, setEtapesFabrication] = useState(documentToEdit ? documentToEdit.etapesFabrication || [] : []);
   const [visuelAnimeType, setVisuelAnimeType] = useState(documentToEdit && documentToEdit.visuelAnimeUrl ? 'url' : 'file');
@@ -135,6 +146,60 @@ export default function DocumentUploadForm({ groupId, varalCategories = [], onCl
     setChapitresCulture(newChapitres);
   };
 
+  const handleAddMateriel = (e) => {
+    e?.preventDefault();
+    if (!newMaterielInput.trim()) return;
+    const items = newMaterielInput.split(/[\n,]+/).map(s => s.trim()).filter(Boolean);
+    setMaterielRequisList(prev => [...new Set([...prev, ...items])]);
+    setNewMaterielInput('');
+  };
+
+  const removeMateriel = (mat) => {
+    setMaterielRequisList(prev => prev.filter(m => m !== mat));
+    setEtapesFabrication(prev => prev.map(etape => ({
+      ...etape,
+      materiaux: (etape.materiaux || []).filter(m => m !== mat)
+    })));
+  };
+
+  const handleAddOutil = (e) => {
+    e?.preventDefault();
+    if (!newOutilInput.trim()) return;
+    const items = newOutilInput.split(/[\n,]+/).map(s => s.trim()).filter(Boolean);
+    setOutilsNecessairesList(prev => [...new Set([...prev, ...items])]);
+    setNewOutilInput('');
+  };
+
+  const removeOutil = (outil) => {
+    setOutilsNecessairesList(prev => prev.filter(o => o !== outil));
+    setEtapesFabrication(prev => prev.map(etape => ({
+      ...etape,
+      outils: (etape.outils || []).filter(o => o !== outil)
+    })));
+  };
+
+  const toggleEtapeMateriel = (etapeId, mat) => {
+    setEtapesFabrication(prev => prev.map(etape => {
+      if (etape.id !== etapeId) return etape;
+      const materiaux = etape.materiaux || [];
+      return {
+        ...etape,
+        materiaux: materiaux.includes(mat) ? materiaux.filter(m => m !== mat) : [...materiaux, mat]
+      };
+    }));
+  };
+
+  const toggleEtapeOutil = (etapeId, outil) => {
+    setEtapesFabrication(prev => prev.map(etape => {
+      if (etape.id !== etapeId) return etape;
+      const outils = etape.outils || [];
+      return {
+        ...etape,
+        outils: outils.includes(outil) ? outils.filter(o => o !== outil) : [...outils, outil]
+      };
+    }));
+  };
+
   const addEtape = () => {
     setEtapesFabrication([...etapesFabrication, {
       id: Date.now(),
@@ -142,7 +207,9 @@ export default function DocumentUploadForm({ groupId, varalCategories = [], onCl
       description: '',
       imageUploadType: 'url',
       imageUrl: '',
-      imageFile: null
+      imageFile: null,
+      materiaux: [],
+      outils: []
     }]);
   };
 
@@ -313,8 +380,8 @@ export default function DocumentUploadForm({ groupId, varalCategories = [], onCl
           notesLexique: [],
           anecdote: "",
           contenuFabrication: "",
-          materielRequis: "",
-          outilsNecessaires: "",
+          materielRequis: [],
+          outilsNecessaires: [],
           instrumentConcerne: "",
           visuelAnimeUrl: "",
           etapesFabrication: [
@@ -413,8 +480,8 @@ export default function DocumentUploadForm({ groupId, varalCategories = [], onCl
             notesLexique: Array.isArray(item.notesLexique) ? item.notesLexique : [],
             anecdote: item.anecdote || '',
             contenuFabrication: item.contenuFabrication || '',
-            materielRequis: item.materielRequis || '',
-            outilsNecessaires: item.outilsNecessaires || '',
+            materielRequis: parseTagsList(item.materielRequis),
+            outilsNecessaires: parseTagsList(item.outilsNecessaires),
             instrumentConcerne: item.instrumentConcerne || '',
             visuelAnimeUrl: item.visuelAnimeUrl || '',
             etapesFabrication: Array.isArray(item.etapesFabrication) ? item.etapesFabrication : [],
@@ -561,8 +628,8 @@ export default function DocumentUploadForm({ groupId, varalCategories = [], onCl
 
         if (computedType === 'fabrication') {
           updateData.contenuFabrication = contenuFabrication;
-          updateData.materielRequis = materielRequis;
-          updateData.outilsNecessaires = outilsNecessaires;
+          updateData.materielRequis = materielRequisList;
+          updateData.outilsNecessaires = outilsNecessairesList;
           updateData.instrumentConcerne = instrumentConcerne;
           updateData.visuelAnimeUrl = finalVisuelAnimeUrl;
           updateData.etapesFabrication = await processEtapesImages(etapesFabrication);
@@ -707,8 +774,8 @@ export default function DocumentUploadForm({ groupId, varalCategories = [], onCl
 
       if (computedType === 'fabrication') {
         newDoc.contenuFabrication = contenuFabrication;
-        newDoc.materielRequis = materielRequis;
-        newDoc.outilsNecessaires = outilsNecessaires;
+        newDoc.materielRequis = materielRequisList;
+        newDoc.outilsNecessaires = outilsNecessairesList;
         newDoc.instrumentConcerne = instrumentConcerne;
         newDoc.visuelAnimeUrl = finalVisuelAnimeUrl;
         newDoc.etapesFabrication = await processEtapesImages(etapesFabrication);
@@ -1553,25 +1620,52 @@ export default function DocumentUploadForm({ groupId, varalCategories = [], onCl
                     <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
                       Matériel Requis
                     </label>
-                    <textarea
-                      value={materielRequis}
-                      onChange={(e) => setMaterielRequis(e.target.value)}
-                      disabled={isUploading}
-                      placeholder="Ex: Fût en bois, Peau animale, Corde..."
-                      className="theme-input w-full disabled:opacity-50 text-xs min-h-[60px]"
-                    />
+                    <div className="flex flex-wrap gap-2 mb-2">
+                      {materielRequisList.map(mat => (
+                        <span key={mat} className="text-[10px] flex items-center gap-1 bg-[#fdfaf2] text-encre-noire border border-encre-noire/20 px-2 py-1 rounded shadow-sm">
+                          {mat}
+                          <button type="button" onClick={() => removeMateriel(mat)} className="text-cordel-rouge font-bold hover:opacity-80 ml-1">✕</button>
+                        </span>
+                      ))}
+                    </div>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={newMaterielInput}
+                        onChange={(e) => setNewMaterielInput(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && handleAddMateriel(e)}
+                        disabled={isUploading}
+                        placeholder="Ex: Fût, Peau..."
+                        className="theme-input flex-1 disabled:opacity-50 text-xs"
+                      />
+                      <button type="button" onClick={handleAddMateriel} disabled={!newMaterielInput.trim() || isUploading} className="bg-cordel-wood text-[#fdfaf2] px-3 py-1 rounded text-xs font-bold disabled:opacity-50">+</button>
+                    </div>
                   </div>
+
                   <div className="flex flex-col gap-1">
                     <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
                       Outils Nécessaires
                     </label>
-                    <textarea
-                      value={outilsNecessaires}
-                      onChange={(e) => setOutilsNecessaires(e.target.value)}
-                      disabled={isUploading}
-                      placeholder="Ex: Perceuse, Mètre, Ciseaux..."
-                      className="theme-input w-full disabled:opacity-50 text-xs min-h-[60px]"
-                    />
+                    <div className="flex flex-wrap gap-2 mb-2">
+                      {outilsNecessairesList.map(outil => (
+                        <span key={outil} className="text-[10px] flex items-center gap-1 bg-[#fdfaf2] text-encre-noire border border-encre-noire/20 px-2 py-1 rounded shadow-sm">
+                          {outil}
+                          <button type="button" onClick={() => removeOutil(outil)} className="text-cordel-rouge font-bold hover:opacity-80 ml-1">✕</button>
+                        </span>
+                      ))}
+                    </div>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={newOutilInput}
+                        onChange={(e) => setNewOutilInput(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && handleAddOutil(e)}
+                        disabled={isUploading}
+                        placeholder="Ex: Perceuse..."
+                        className="theme-input flex-1 disabled:opacity-50 text-xs"
+                      />
+                      <button type="button" onClick={handleAddOutil} disabled={!newOutilInput.trim() || isUploading} className="bg-cordel-wood text-[#fdfaf2] px-3 py-1 rounded text-xs font-bold disabled:opacity-50">+</button>
+                    </div>
                   </div>
                 </div>
 
@@ -1652,6 +1746,64 @@ export default function DocumentUploadForm({ groupId, varalCategories = [], onCl
                                 className="theme-input w-full text-xs min-h-[60px]"
                               />
                             </div>
+
+                            {(materielRequisList.length > 0 || outilsNecessairesList.length > 0) && (
+                              <div className="flex flex-col gap-2 mt-2 bg-[#fdfaf2]/50 p-3 rounded border border-cordel-wood/10">
+                                <label className="text-[10px] uppercase font-bold text-cordel-master-dark mb-1">
+                                  Matériaux & Outils pour cette étape :
+                                </label>
+                                
+                                {materielRequisList.length > 0 && (
+                                  <div className="flex flex-col gap-1">
+                                    <span className="text-[9px] text-cordel-master-dark/70 italic">Matériaux :</span>
+                                    <div className="flex flex-wrap gap-2">
+                                      {materielRequisList.map(mat => {
+                                        const isSelected = (etape.materiaux || []).includes(mat);
+                                        return (
+                                          <button
+                                            key={mat}
+                                            type="button"
+                                            onClick={() => toggleEtapeMateriel(etape.id, mat)}
+                                            className={`text-[9px] px-2 py-1 rounded border transition-all ${
+                                              isSelected 
+                                                ? 'bg-[var(--color-cordel-wood)] text-white border-[var(--color-cordel-wood)] shadow-sm font-bold scale-105'
+                                                : 'bg-white/80 text-black/70 border-dashed border-black/30 hover:bg-black/5 hover:border-black/50'
+                                            }`}
+                                          >
+                                            {mat}
+                                          </button>
+                                        );
+                                      })}
+                                    </div>
+                                  </div>
+                                )}
+
+                                {outilsNecessairesList.length > 0 && (
+                                  <div className="flex flex-col gap-1 mt-1">
+                                    <span className="text-[9px] text-cordel-master-dark/70 italic">Outils :</span>
+                                    <div className="flex flex-wrap gap-2">
+                                      {outilsNecessairesList.map(outil => {
+                                        const isSelected = (etape.outils || []).includes(outil);
+                                        return (
+                                          <button
+                                            key={outil}
+                                            type="button"
+                                            onClick={() => toggleEtapeOutil(etape.id, outil)}
+                                            className={`text-[9px] px-2 py-1 rounded border transition-all ${
+                                              isSelected 
+                                                ? 'bg-[var(--color-cordel-wood)] text-white border-[var(--color-cordel-wood)] shadow-sm font-bold scale-105'
+                                                : 'bg-white/80 text-black/70 border-dashed border-black/30 hover:bg-black/5 hover:border-black/50'
+                                            }`}
+                                          >
+                                            {outil}
+                                          </button>
+                                        );
+                                      })}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            )}
 
                             <div className="flex flex-col gap-1">
                               <label className="text-[9px] uppercase font-bold text-cordel-master-dark">

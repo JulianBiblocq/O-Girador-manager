@@ -4,14 +4,39 @@ import CordelButton from '../CordelButton';
 import { XiloClose, XiloChisel } from '../XiloIcons';
 import { useInventoryProjects } from '../../hooks/useInventoryProjects';
 import { useInstrumentModels } from '../../hooks/useInstrumentModels';
+import { useInventoryData } from '../../hooks/useInventoryData';
+import { useAssociationSettings } from '../../hooks/useAssociationSettings';
+import PartWorkflowModal from './PartWorkflowModal';
 
-export default function InventoryProjectsView({ groupId, isAuthorized, t, inventoryParts, onCreateInstrument }) {
+export default function InventoryProjectsView({ groupId, isAuthorized, profileData, t, inventoryParts, onCreateInstrument }) {
   const { projects, loading: pLoading, addProject, updateProject, deleteProject } = useInventoryProjects(groupId);
   const { models, loading: mLoading } = useInstrumentModels(groupId);
+  const { updatePartWorkflow } = useInventoryData(groupId);
+  const { formData: settingsData } = useAssociationSettings(groupId);
   
   const [isAdding, setIsAdding] = useState(false);
   const [editingProject, setEditingProject] = useState(null);
   const [newProjectData, setNewProjectData] = useState({ nom: '', modelId: '' });
+  const [selectedSessionSlots, setSelectedSessionSlots] = useState([]);
+  const [selectedWorkflowSlot, setSelectedWorkflowSlot] = useState(null);
+
+  const isWorkshopValidator = useMemo(() => {
+    if (!profileData) return false;
+    if (profileData.isSystemAdmin) return true;
+    if (profileData.role === 'mestre' || profileData.role === 'super-admin') return true;
+    
+    const permissionsMatrice = settingsData?.permissionsMatrice || {};
+    const validatorTags = permissionsMatrice.canValidateWorkshopSteps || [];
+    const userTags = profileData.tags || [];
+    
+    return validatorTags.some(tagId => userTags.includes(tagId));
+  }, [profileData, settingsData]);
+
+  const toggleSessionSlot = (slotId) => {
+    setSelectedSessionSlots(prev => 
+      prev.includes(slotId) ? prev.filter(id => id !== slotId) : [...prev, slotId]
+    );
+  };
 
   const availableStock = useMemo(() => {
     return inventoryParts.filter(p => p.status === 'En stock');
@@ -104,22 +129,50 @@ export default function InventoryProjectsView({ groupId, isAuthorized, t, invent
       );
     }
 
+    const allSlots = (model.parts || []).flatMap(p => {
+      const qty = parseInt(p.quantiteRequise, 10) || 1;
+      return Array.from({length: qty}, (_, i) => ({
+        ...p,
+        slotId: qty > 1 ? `${p.id}_${i}` : p.id,
+        slotLabel: qty > 1 ? `${p.nom} (${i + 1}/${qty})` : p.nom,
+        originalPartId: p.id
+      }));
+    });
+
     const assignedMap = (project.piecesAssignees || []).reduce((acc, curr) => {
       acc[curr.modelPartId] = curr.inventoryPartId;
       return acc;
     }, {});
 
-    const missingParts = model.parts.filter(p => !assignedMap[p.id]);
+    const missingSlots = allSlots.filter(s => !assignedMap[s.slotId]);
     
     // Compilation liste courses / outils pour les pièces MANQUANTES uniquement
     const missingMats = new Set();
     const missingOutils = new Set();
-    missingParts.forEach(p => {
-      (p.materiels || []).forEach(m => missingMats.add(m));
-      (p.outils || []).forEach(o => missingOutils.add(o));
+    missingSlots.forEach(s => {
+      (s.materiels || []).forEach(m => missingMats.add(m));
+      (s.outils || []).forEach(o => missingOutils.add(o));
     });
 
-    const isComplete = missingParts.length === 0;
+    const isComplete = missingSlots.length === 0;
+
+    // Calcul de la Mallette
+    const sessionOutils = new Set();
+    const sessionMateriaux = new Set();
+    
+    selectedSessionSlots.forEach(slotId => {
+      const slot = allSlots.find(s => s.slotId === slotId);
+      if (!slot) return;
+      const assignedInvId = assignedMap[slotId];
+      const invPart = inventoryParts.find(p => p.id === assignedInvId);
+      const currentStep = invPart?.currentStepIndex || 0;
+      
+      const stepData = slot.chapitres?.[currentStep];
+      if (stepData) {
+        (stepData.outils || []).forEach(o => sessionOutils.add(o));
+        (stepData.materiaux || []).forEach(m => sessionMateriaux.add(m));
+      }
+    });
 
     return (
       <div className="flex flex-col gap-4">
@@ -139,35 +192,84 @@ export default function InventoryProjectsView({ groupId, isAuthorized, t, invent
             <CordelCard variant="default" useExtremeBorder={true} className="p-4 bg-white/50">
               <h4 className="text-xs font-bold text-encre-noire uppercase mb-3 flex justify-between">
                 <span>Pièces requises pour l'assemblage</span>
-                <span className="text-[10px] bg-cordel-wood text-white px-2 rounded-full">{model.parts.length - missingParts.length} / {model.parts.length}</span>
+                <span className="text-[10px] bg-cordel-wood text-white px-2 rounded-full">{allSlots.length - missingSlots.length} / {allSlots.length}</span>
               </h4>
               
               <div className="flex flex-col gap-2">
-                {model.parts.map(part => {
-                  const assignedInvId = assignedMap[part.id];
+                {allSlots.map(slot => {
+                  const assignedInvId = assignedMap[slot.slotId];
+                  const invPart = inventoryParts.find(p => p.id === assignedInvId);
                   const isAssigned = !!assignedInvId;
                   
+                  // Calcul de l'état Terminé (Vert) ou En cours (Ocre)
+                  const totalSteps = slot.chapitres?.length || 0;
+                  const currentStep = invPart?.currentStepIndex || 0;
+                  const statutEtape = invPart?.statutEtape || 'en_cours';
+                  
+                  const isCompleted = isAssigned && (statutEtape === 'terminee' || (totalSteps === 0));
+                  const isWaitingControl = isAssigned && statutEtape === 'en_attente_controle';
+                  
+                  let cardClass = "bg-[#faf8f5] border-dashed border-cordel-master-dark/30 hover:bg-stone-100"; // Gris/Vide
+                  let icon = '⏳';
+                  
+                  if (isAssigned) {
+                    if (isCompleted) {
+                      cardClass = "bg-cordel-vert/10 border-cordel-vert hover:bg-cordel-vert/20";
+                      icon = '✅';
+                    } else if (isWaitingControl) {
+                      cardClass = "bg-amber-100 border-amber-400 animate-[pulse_2s_ease-in-out_infinite]";
+                      icon = '⏳';
+                    } else {
+                      cardClass = "bg-cordel-ocre/10 border-cordel-ocre hover:bg-cordel-ocre/20";
+                      icon = '🛠️';
+                    }
+                  }
+                  const isSessionSelected = selectedSessionSlots.includes(slot.slotId);
+                  if (isSessionSelected) {
+                    cardClass += " ring-2 ring-cordel-wood shadow-md scale-[1.01]";
+                  }
+                  
                   return (
-                    <div key={part.id} className={`flex flex-col sm:flex-row justify-between sm:items-center p-2 rounded border ${isAssigned ? 'bg-cordel-vert/10 border-cordel-vert' : 'bg-[#faf8f5] border-dashed border-cordel-master-dark/30'}`}>
-                      <div className="flex flex-col">
-                        <span className="text-xs font-bold text-encre-noire flex items-center gap-2">
-                          {isAssigned ? '✅' : '⏳'} {part.nom}
-                        </span>
-                        {!isAssigned && part.chapitres?.length > 0 && (
-                          <span className="text-[9px] text-cordel-wood italic mt-0.5">
-                            Voir le tuto ({part.chapitres.length} étapes) dans le Varal
+                    <div 
+                      key={slot.slotId} 
+                      className={`flex flex-col sm:flex-row justify-between sm:items-start p-2 rounded border transition-all cursor-pointer ${cardClass}`}
+                      onClick={() => {
+                        if (isAssigned) {
+                          setSelectedWorkflowSlot({ slot, invPart });
+                        }
+                      }}
+                    >
+                      <div className="flex flex-col flex-1">
+                        <div className="flex items-center gap-2">
+                          <div onClick={(e) => { e.stopPropagation(); toggleSessionSlot(slot.slotId); }} className="cursor-pointer p-1">
+                            <input type="checkbox" checked={isSessionSelected} readOnly className="accent-cordel-wood pointer-events-none" />
+                          </div>
+                          <span className="text-xs font-bold text-encre-noire flex items-center gap-2">
+                            {icon} {slot.slotLabel}
+                          </span>
+                        </div>
+                        
+                        {!isAssigned && slot.chapitres?.length > 0 && (
+                          <span className="text-[9px] text-cordel-wood italic mt-0.5 ml-8">
+                            Voir le tuto ({slot.chapitres.length} étapes) dans le Varal
+                          </span>
+                        )}
+                        
+                        {isAssigned && !isCompleted && slot.chapitres?.length > 0 && (
+                          <span className={`text-[10px] font-bold mt-1 ml-8 ${isWaitingControl ? 'text-amber-600' : 'text-cordel-ocre'}`}>
+                            {isWaitingControl ? 'À CONTRÔLER' : (currentStep < totalSteps ? `En cours : Étape ${currentStep + 1} - ${slot.chapitres[currentStep]?.titre || 'Perçage'}` : 'En cours...')}
                           </span>
                         )}
                       </div>
 
-                      <div className="mt-2 sm:mt-0">
+                      <div className="mt-2 sm:mt-0 self-center sm:self-start flex flex-col sm:items-end gap-1" onClick={e => e.stopPropagation()}>
                         {isAssigned ? (
                           <div className="flex items-center gap-2">
-                            <span className="text-[10px] text-stone-600 bg-white px-2 py-0.5 rounded border border-stone-200">
-                              Assigné: {inventoryParts.find(p => p.id === assignedInvId)?.nom || 'Pièce inconnue'}
+                            <span className={`text-[10px] px-2 py-0.5 rounded border font-bold ${isCompleted ? 'text-cordel-vert bg-white border-cordel-vert/30' : 'text-cordel-ocre bg-white border-cordel-ocre/30'}`}>
+                              Assigné: {invPart?.nom || 'Pièce inconnue'}
                             </span>
                             <button 
-                              onClick={() => handleAssignPart(project.id, part.id, null)}
+                              onClick={() => handleAssignPart(project.id, slot.slotId, null)}
                               className="text-[9px] text-red-500 hover:underline font-bold"
                             >
                               Retirer
@@ -175,11 +277,11 @@ export default function InventoryProjectsView({ groupId, isAuthorized, t, invent
                           </div>
                         ) : (
                           <select
-                            onChange={(e) => handleAssignPart(project.id, part.id, e.target.value)}
+                            onChange={(e) => handleAssignPart(project.id, slot.slotId, e.target.value)}
                             value=""
                             className="theme-input text-[10px] py-1 bg-white max-w-[200px]"
                           >
-                            <option value="">-- Pieuiser dans le stock --</option>
+                            <option value="">-- Piocher dans le stock --</option>
                             {availableStock.map(sp => (
                               // On ne disable pas strictement car les noms peuvent différer, on fait confiance au luthier
                               <option key={sp.id} value={sp.id}>
@@ -210,14 +312,42 @@ export default function InventoryProjectsView({ groupId, isAuthorized, t, invent
             </CordelCard>
           </div>
 
-          {/* Colonne droite : Feuille de route */}
+          {/* Colonne droite : Feuille de route & Mallette */}
           <div className="flex flex-col gap-3">
+            {/* Mallette de la Session */}
+            {selectedSessionSlots.length > 0 && (
+              <CordelCard variant="ocre" className="p-4 bg-cordel-wood text-cordel-bg-light">
+                <h4 className="text-xs font-black uppercase mb-3 flex items-center gap-2 border-b border-cordel-bg-light/30 pb-2">
+                  🧰 Mallette de la séance
+                </h4>
+                
+                <div className="flex flex-col gap-3">
+                  <div>
+                    <strong className="text-[10px] opacity-80 uppercase">Outils nécessaires :</strong>
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {sessionOutils.size > 0 ? Array.from(sessionOutils).map(o => (
+                        <span key={o} className="text-[9px] bg-white text-cordel-wood px-2 py-0.5 rounded font-bold shadow-sm">{o}</span>
+                      )) : <span className="text-[9px] opacity-50 italic">Aucun outil spécifique</span>}
+                    </div>
+                  </div>
+                  <div>
+                    <strong className="text-[10px] opacity-80 uppercase">Matériaux à préparer :</strong>
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {sessionMateriaux.size > 0 ? Array.from(sessionMateriaux).map(m => (
+                        <span key={m} className="text-[9px] bg-white text-cordel-wood px-2 py-0.5 rounded font-bold shadow-sm">{m}</span>
+                      )) : <span className="text-[9px] opacity-50 italic">Aucun matériau spécifique</span>}
+                    </div>
+                  </div>
+                </div>
+              </CordelCard>
+            )}
+
             <CordelCard variant="default" className="p-4 bg-cordel-master-dark/5 border-cordel-master-dark/20 shadow-none">
               <h4 className="text-xs font-extrabold text-cordel-wood uppercase mb-2 flex items-center gap-2">
                 <XiloChisel size={14} /> Feuille de route
               </h4>
               <p className="text-[9px] text-stone-600 leading-relaxed mb-4">
-                Liste consolidée pour les <strong className="text-cordel-rouge">{missingParts.length} pièces restant à fabriquer</strong>.
+                Liste consolidée pour les <strong className="text-cordel-rouge">{missingSlots.length} pièces restant à fabriquer</strong>.
               </p>
 
               <div className="flex flex-col gap-4">
@@ -241,6 +371,16 @@ export default function InventoryProjectsView({ groupId, isAuthorized, t, invent
             </CordelCard>
           </div>
         </div>
+
+        <PartWorkflowModal
+          isOpen={!!selectedWorkflowSlot}
+          onClose={() => setSelectedWorkflowSlot(null)}
+          slot={selectedWorkflowSlot?.slot}
+          invPart={selectedWorkflowSlot?.invPart}
+          updatePartWorkflow={updatePartWorkflow}
+          isValidator={isWorkshopValidator}
+          validatorName={profileData?.prenom || profileData?.nom_complet || 'Admin'}
+        />
       </div>
     );
   }
