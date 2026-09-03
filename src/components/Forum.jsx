@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { collection, query, where, onSnapshot, or, doc, setDoc, addDoc, updateDoc } from 'firebase/firestore';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { collection, query, where, onSnapshot, or, and, doc, setDoc, addDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
@@ -15,12 +15,11 @@ import { XiloMegaphone } from './XiloIcons';
 import useConfirm from '../hooks/useConfirm';
 import { resolveEffectiveUserTags, getTagId, findTagObject } from '../utils/tagUtils'; // Utilitaires pour la gestion et la résolution des étiquettes
 import { useForumThreads } from '../hooks/useForumThreads';
+import { countThreadUnreadMessages, getAllChannelsUnreadStats } from '../utils/forumUnreadUtils';
 import ForumChannelHeader from './forum/ForumChannelHeader';
 import ForumThreadCard from './forum/ForumThreadCard';
 import NewThreadModal from './forum/NewThreadModal';
 import useHardwareBack from '../hooks/useHardwareBack';
-
-// Utilisation du composant réutilisable ForumThreadCard importé depuis ./forum/ForumThreadCard
 
 function ChannelTreeItem({ 
   channel, 
@@ -32,6 +31,7 @@ function ChannelTreeItem({
   selectedThreadId,
   hasWriteAccess,
   profileData,
+  channelStatsMap = {},
   level = 0 
 }) {
   const children = channels.filter(c => c.parentId === channel.id);
@@ -43,6 +43,11 @@ function ChannelTreeItem({
   const isActive = channel.id === activeChannelId;
   const isReadOnly = !hasWriteAccess(channel);
 
+  // Statistiques de non-lus en cascade (incluant sous-dossiers et sujets enfants)
+  const channelStats = channelStatsMap[channel.id];
+  const unreadMessagesCount = channelStats?.unreadMessages || 0;
+  const hasUnread = unreadMessagesCount > 0;
+
   const hasActiveThread = useMemo(() => {
     return selectedThreadId && channelThreads.some(t => t.id === selectedThreadId);
   }, [selectedThreadId, channelThreads]);
@@ -50,10 +55,10 @@ function ChannelTreeItem({
   const [isOpen, setIsOpen] = useState(true);
 
   useEffect(() => {
-    if (isActive || hasActiveThread) {
+    if (isActive || hasActiveThread || hasUnread) {
       setIsOpen(true);
     }
-  }, [isActive, hasActiveThread]);
+  }, [isActive, hasActiveThread, hasUnread]);
 
   return (
     <div className="flex flex-col gap-1 w-full min-w-0">
@@ -74,10 +79,12 @@ function ChannelTreeItem({
         <button
           type="button"
           onClick={() => onSelectChannel(channel.id)}
-          className={`flex-1 text-left px-2 py-1.5 text-xs font-black rounded transition-all cursor-pointer border flex justify-between items-center min-w-0 ${
+          className={`flex-1 text-left px-2 py-1.5 text-xs rounded transition-all cursor-pointer border flex justify-between items-center min-w-0 ${
             isActive
-              ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
-              : 'bg-transparent text-encre-noire border-transparent hover:bg-white/40'
+              ? 'theme-bg-ocre text-encre-noire border-encre-noire font-black shadow-none translate-x-[0.5px] translate-y-[0.5px]'
+              : hasUnread
+                ? 'bg-transparent text-encre-noire font-black border-transparent hover:bg-white/40'
+                : 'bg-transparent text-cordel-master-dark font-extrabold border-transparent hover:bg-white/40'
           }`}
           style={{ paddingLeft: `${Math.max(6, level * 10 + 6)}px` }}
         >
@@ -85,18 +92,28 @@ function ChannelTreeItem({
             <span className="shrink-0 font-extrabold text-cordel-wood opacity-75">
               {channel.readOnlyForMembers ? '📢' : (!channel.readRoles || channel.readRoles.includes('all') || channel.readRoles.length === 0) ? (level === 0 ? '📂' : '#') : '🔒'}
             </span>
-            <span className="truncate">{channel.name}</span>
+            <span className={`truncate ${hasUnread ? 'font-black text-encre-noire' : ''}`}>{channel.name}</span>
             {channelThreads.length > 0 && (
               <span className="text-[9px] opacity-60 font-normal shrink-0">({channelThreads.length})</span>
             )}
           </span>
-          {isReadOnly && <span className="text-[9px] opacity-75 shrink-0 ml-1" title="Lecture seule">🔒</span>}
+
+          <div className="flex items-center gap-1 shrink-0 ml-1">
+            {hasUnread && (
+              <span 
+                className="text-[8px] font-black text-white bg-red-600 px-1.5 py-0.2 rounded-full shadow-xs flex items-center justify-center min-w-[16px] animate-pulse"
+                title={`${unreadMessagesCount} message(s) non lu(s)`}
+              >
+                {unreadMessagesCount}
+              </span>
+            )}
+            {isReadOnly && <span className="text-[9px] opacity-75" title="Lecture seule">🔒</span>}
+          </div>
         </button>
       </div>
 
       {isOpen && hasChildren && (
         <div className="flex flex-col gap-1 ml-2 border-l border-dashed border-cordel-master-dark/25 pl-1 min-w-0">
-          {/* Subchannels */}
           {children.map(child => (
             <ChannelTreeItem
               key={child.id}
@@ -109,6 +126,7 @@ function ChannelTreeItem({
               selectedThreadId={selectedThreadId}
               hasWriteAccess={hasWriteAccess}
               profileData={profileData}
+              channelStatsMap={channelStatsMap}
               level={level + 1}
             />
           ))}
@@ -117,18 +135,19 @@ function ChannelTreeItem({
           {channelThreads.map(thread => {
             const isThreadActive = selectedThreadId === thread.id;
             const repliesCount = thread.reponses ? thread.reponses.length - 1 : 0;
-            const threadLastMod = new Date(thread.derniereModification || thread.dateCreation).getTime();
-            const userLastReadStr = profileData?.readThreads?.[thread.id];
-            const userLastRead = userLastReadStr ? new Date(userLastReadStr).getTime() : 0;
-            const isUnread = !isThreadActive && threadLastMod > userLastRead;
+            const unreadCount = countThreadUnreadMessages(
+              thread,
+              profileData?.uid || profileData?.id,
+              profileData?.readThreads?.[thread.id]
+            );
+            const isUnread = !isThreadActive && unreadCount > 0;
 
             return (
               <button
                 key={thread.id}
                 type="button"
                 onClick={() => {
-                  onSelectChannel(channel.id);
-                  if (onSelectThread) onSelectThread(thread);
+                  if (onSelectThread) onSelectThread(thread, activeChannelId);
                 }}
                 className={`w-full text-left py-1 px-2 text-[11px] rounded transition-all cursor-pointer flex items-center justify-between gap-1 min-w-0 border ${
                   isThreadActive
@@ -147,11 +166,18 @@ function ChannelTreeItem({
                   </span>
                   <span className={`truncate ${isUnread ? 'font-black' : ''}`}>{thread.titre}</span>
                 </span>
-                {repliesCount > 0 && (
-                  <span className={`text-[8.5px] opacity-60 shrink-0 font-bold ${isUnread ? 'text-red-600 opacity-100' : ''}`}>
-                    {repliesCount}
-                  </span>
-                )}
+                <div className="flex items-center gap-1 shrink-0">
+                  {isUnread && (
+                    <span className="text-[7.5px] font-black text-white bg-red-600 px-1 py-0.2 rounded-full">
+                      {unreadCount}
+                    </span>
+                  )}
+                  {repliesCount > 0 && (
+                    <span className={`text-[8.5px] opacity-60 shrink-0 font-bold ${isUnread ? 'text-red-600 opacity-100 font-black' : ''}`}>
+                      {repliesCount}
+                    </span>
+                  )}
+                </div>
               </button>
             );
           })}
@@ -363,8 +389,32 @@ export default function Forum({
     const userTags = effectiveUserTags;
     const isMestreOrAdmin = profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.role === 'admin' || profileData?.isSystemAdmin;
 
-    // Charger all channels for this group
-    const q = query(channelsRef, where('groupId', '==', profileData.groupId));
+    // Charger les salons pour ce groupe
+    let q;
+
+    if (!isMestreOrAdmin && !breakGlassActive) {
+      const allowedRoles = ['all', userRole];
+      if (userTags && userTags.length > 0) {
+        userTags.forEach(t => {
+          const tagId = typeof t === 'string' ? t : (t.id || t.nomM || '');
+          if (tagId) allowedRoles.push(tagId);
+        });
+      }
+      const slicedRoles = allowedRoles.slice(0, 10);
+
+      q = query(
+        channelsRef,
+        and(
+          where('groupId', '==', profileData.groupId),
+          or(
+            where('readRoles', 'array-contains-any', slicedRoles),
+            where('isTransparent', '==', true)
+          )
+        )
+      );
+    } else {
+      q = query(channelsRef, where('groupId', '==', profileData.groupId));
+    }
 
     const unsubscribe = onSnapshot(q, async (snap) => {
       const fetched = [];
@@ -433,7 +483,7 @@ export default function Forum({
       }
       setLoading(false);
     }, (error) => {
-      console.error("Forum - Erreur onSnapshot channels :", error);
+      console.error("Erreur chargement Porte-voix :", error);
       setLoading(false);
     });
 
@@ -474,12 +524,15 @@ export default function Forum({
       setThreads(sorted);
       setLoading(false);
     }, (error) => {
-      console.error("Forum - Erreur onSnapshot threads:", error);
+      console.error("Erreur chargement Porte-voix :", error);
       setLoading(false);
     });
 
     return () => unsubscribe();
   }, [profileData?.groupId]);
+
+  // Référence pour mémoriser le salon d'origine avant ouverture d'un sujet
+  const previousChannelRef = useRef(null);
 
   // Synchronisation de l'URL et de l'historique pour le routage des discussions
   useEffect(() => {
@@ -491,12 +544,14 @@ export default function Forum({
         const matchedThread = threads.find(t => t.id === targetThreadId);
         if (matchedThread) {
           setSelectedThread(matchedThread);
-          if (matchedThread.channelId) {
-            setActiveChannelId(matchedThread.channelId);
-          }
         }
       } else {
-        setSelectedThread(null);
+        if (selectedThread) {
+          setSelectedThread(null);
+          if (previousChannelRef.current) {
+            setActiveChannelId(previousChannelRef.current);
+          }
+        }
       }
     };
 
@@ -507,7 +562,7 @@ export default function Forum({
     handlePopState();
 
     return () => window.removeEventListener('popstate', handlePopState);
-  }, [threads]);
+  }, [threads, selectedThread]);
 
   const activeChannelThreads = useMemo(() => {
     if (!activeChannelId) return [];
@@ -518,6 +573,47 @@ export default function Forum({
       return false;
     });
   }, [threads, activeChannelId, channels]);
+
+  // Carte des statistiques de non-lus calculée en cascade pour l'arborescence des salons
+  const channelStatsMap = useMemo(() => {
+    return getAllChannelsUnreadStats(channels, threads, user?.uid, profileData?.readThreads);
+  }, [channels, threads, user?.uid, profileData?.readThreads]);
+
+  // Action globale pour acquitter tous les sujets de la section courante
+  const handleMarkAllAsRead = useCallback(async () => {
+    if (!user?.uid || !threads || threads.length === 0) return;
+
+    let targetThreads = threads;
+    if (activeChannelId) {
+      const getDescendantIds = (cId) => {
+        const kids = channels.filter(c => c.parentId === cId);
+        return [cId, ...kids.flatMap(k => getDescendantIds(k.id))];
+      };
+      const scopeIds = new Set(getDescendantIds(activeChannelId));
+      const activeChan = channels.find(c => c.id === activeChannelId);
+
+      targetThreads = threads.filter(t => {
+        if (t.channelId) return scopeIds.has(t.channelId);
+        if (activeChan && activeChan.name === (t.categorie || 'Général')) return true;
+        return false;
+      });
+    }
+
+    if (targetThreads.length === 0) return;
+
+    const nowIso = new Date().toISOString();
+    const updates = {};
+    targetThreads.forEach(t => {
+      updates[`readThreads.${t.id}`] = nowIso;
+    });
+
+    try {
+      const userRef = doc(db, 'users', user.uid);
+      await updateDoc(userRef, updates);
+    } catch (err) {
+      console.error("Erreur lors de l'acquittement global :", err);
+    }
+  }, [user?.uid, threads, activeChannelId, channels]);
 
   const categoryBadges = useMemo(() => ({
     Général: 'ocre',
@@ -564,16 +660,31 @@ export default function Forum({
     ? threads.find(t => t.id === selectedThread.id) || selectedThread
     : null;
 
-  const handleSelectThread = useCallback((thread) => {
+  const handleSelectThread = useCallback((thread, originChannelId = null) => {
+    // Mémorise le salon d'où venait l'utilisateur avant d'ouvrir le sujet
+    previousChannelRef.current = originChannelId !== null ? originChannelId : activeChannelId;
     setSelectedThread(thread);
+
     const newUrl = new URL(window.location);
     newUrl.searchParams.set('threadId', thread.id);
-    
     window.history.pushState(
       { ...window.history.state, threadId: thread.id },
       '',
       newUrl.toString()
     );
+  }, [activeChannelId]);
+
+  const handleCloseThread = useCallback(() => {
+    // 1. Nettoyer l'URL de manière idempotente sans double popstate
+    const newUrl = new URL(window.location);
+    newUrl.searchParams.delete('threadId');
+    window.history.replaceState({ ...window.history.state, threadId: null }, '', newUrl.toString());
+
+    // 2. Restaurer le salon d'origine sans éjecter l'utilisateur vers l'accueil de l'application
+    if (previousChannelRef.current !== null && previousChannelRef.current !== undefined) {
+      setActiveChannelId(previousChannelRef.current);
+    }
+    setSelectedThread(null);
   }, []);
 
   const hasWriteAccess = useCallback((channel) => {
@@ -639,18 +750,7 @@ export default function Forum({
         allThreads={threads}
         allUsers={Object.values(usersMap)}
         breakGlassActive={breakGlassActive}
-        onClose={() => {
-          // Navigation relative : on dépile l'état de l'historique
-          if (window.history.state && window.history.state.threadId) {
-            window.history.back();
-          } else {
-            // Fallback si ouvert via deep link
-            const newUrl = new URL(window.location);
-            newUrl.searchParams.delete('threadId');
-            window.history.replaceState({ ...window.history.state, threadId: null }, '', newUrl.toString());
-            setSelectedThread(null);
-          }
-        }} 
+        onClose={handleCloseThread} 
       />
     );
   }
@@ -785,9 +885,20 @@ export default function Forum({
           <div className={`${mobileView === 'channels' ? 'block' : 'hidden'} md:block w-full md:w-72 lg:w-80 shrink-0 flex flex-col gap-2 select-none`}>
             <div className="flex flex-col gap-2 p-3 bg-cordel-bg-light border-2 border-encre-noire rounded-[8px_6px_10px_7px] shadow-[2.5px_2.5px_0px_0px_#181716] min-w-0">
               <div className="flex justify-between items-center mb-2 border-b border-dashed border-cordel-master-dark/20 pb-1 min-w-0">
-                <h3 className="text-xs font-black uppercase tracking-widest text-cordel-wood truncate">
-                  📂 {translate('forum.channelsHeader', "Salons")}
-                </h3>
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <h3 className="text-xs font-black uppercase tracking-widest text-cordel-wood truncate">
+                    📂 {translate('forum.channelsHeader', "Salons")}
+                  </h3>
+                  {/* Bouton Tout marquer comme lu */}
+                  <button
+                    type="button"
+                    onClick={handleMarkAllAsRead}
+                    className="text-[8.5px] font-black uppercase tracking-wider text-cordel-wood hover:text-encre-noire cursor-pointer flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-cordel-bg border border-cordel-master-dark/20 hover:border-encre-noire transition-all shadow-xs shrink-0"
+                    title="Marquer tous les sujets de la section comme lus"
+                  >
+                    ✓✓ {translate('forum.markAllAsRead', "Tout lire")}
+                  </button>
+                </div>
                 <button
                   type="button"
                   onClick={() => setIsCreatingChannel(true)}
@@ -810,6 +921,7 @@ export default function Forum({
                     selectedThreadId={selectedThread?.id}
                     hasWriteAccess={hasWriteAccess}
                     profileData={profileData}
+                    channelStatsMap={channelStatsMap}
                     level={0}
                   />
                 ))}

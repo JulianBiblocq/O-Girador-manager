@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { doc, onSnapshot, updateDoc, arrayUnion, collection, addDoc } from 'firebase/firestore';
 import { db } from '../firebase';
+import { getFirstUnreadIndex } from '../utils/forumUnreadUtils';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
 import { useTranslation } from './LanguageContext';
@@ -173,6 +174,14 @@ export default function ThreadView({ threadId, user, profileData, channels = [],
   const [lienDepotForum, setLienDepotForum] = useState('');
   const [consignesDepotForum, setConsignesDepotForum] = useState('');
 
+  // Gestion de la barre de réponse compacte dépliable et du scroll intelligent façon Discord
+  const [isReplyExpanded, setIsReplyExpanded] = useState(false);
+  const [showScrollBottom, setShowScrollBottom] = useState(false);
+  const unreadSeparatorRef = useRef(null);
+  const messagesContainerRef = useRef(null);
+  const hasScrolledInitialRef = useRef(false);
+  const initialLastReadRef = useRef(null);
+
   // Modals state
   const [isMoveThreadOpen, setIsMoveThreadOpen] = useState(false);
   const [movingReplyData, setMovingReplyData] = useState(null); // { reply, index }
@@ -312,7 +321,20 @@ export default function ThreadView({ threadId, user, profileData, channels = [],
     return () => unsubscribe();
   }, [threadId]);
 
-  // Marquer le sujet comme lu
+  // Mémoriser l'horodatage de lecture initial au premier montage pour figer la ligne de non-lus
+  useEffect(() => {
+    if (initialLastReadRef.current === null && threadId) {
+      initialLastReadRef.current = profileData?.readThreads?.[threadId] || null;
+    }
+  }, [threadId, profileData?.readThreads]);
+
+  // Détection du premier message non lu basé sur l'horodatage initial
+  const firstUnreadIdx = useMemo(() => {
+    if (!thread || !user?.uid) return -1;
+    return getFirstUnreadIndex(thread, user.uid, initialLastReadRef.current);
+  }, [thread, user?.uid]);
+
+  // Marquer le sujet comme lu en base Firestore (pour acquitter les compteurs en cascade)
   useEffect(() => {
     if (thread && user?.uid && thread.derniereModification) {
       const threadLastMod = new Date(thread.derniereModification).getTime();
@@ -322,18 +344,33 @@ export default function ThreadView({ threadId, user, profileData, channels = [],
       if (threadLastMod > userLastRead) {
         const userRef = doc(db, 'users', user.uid);
         updateDoc(userRef, {
-          [`readThreads.${thread.id}`]: thread.derniereModification
+          [`readThreads.${thread.id}`]: new Date().toISOString()
         }).catch(err => console.error("Erreur mise à jour lecture:", err));
       }
     }
-  }, [thread?.id, thread?.derniereModification, user?.uid, profileData?.readThreads]);
+  }, [thread?.id, thread?.derniereModification, user?.uid]);
 
-  // Fait défiler vers le bas lors de la mise à jour des messages
+  // Scroll automatique intelligent à l'ouverture du sujet
   useEffect(() => {
-    if (thread?.reponses) {
-      scrollToBottom();
+    if (thread?.reponses && thread.reponses.length > 0 && !hasScrolledInitialRef.current) {
+      hasScrolledInitialRef.current = true;
+      // Laisser le temps au rendu de placer les messages et le séparateur
+      setTimeout(() => {
+        if (firstUnreadIdx !== -1 && unreadSeparatorRef.current) {
+          unreadSeparatorRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        } else {
+          scrollToBottom();
+        }
+      }, 120);
     }
-  }, [thread?.reponses]);
+  }, [thread?.reponses, firstUnreadIdx]);
+
+  // Détection de la position de défilement pour la pastille de défilement rapide (↓)
+  const handleScroll = (e) => {
+    const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
+    const isFarFromBottom = scrollHeight - scrollTop - clientHeight > 80;
+    setShowScrollBottom(isFarFromBottom);
+  };
 
   // Chargement en temps réel des étiquettes et instruments disponibles
   useEffect(() => {
@@ -705,103 +742,195 @@ export default function ThreadView({ threadId, user, profileData, channels = [],
             </div>
           )}
 
-          {/* Messages Container (Scrollable) */}
-          <div className="flex flex-col gap-3 overflow-y-auto max-h-[360px] p-2 bg-cordel-bg-light border-2 border-dashed border-cordel-master-dark/20 rounded-md">
-            {(thread.reponses || []).map((reply, index) => {
-              const dateMsg = new Date(reply.dateCreation);
-              const formattedTime = isNaN(dateMsg.getTime())
-                ? ''
-                : (t('forum.atTime') || "{time} le {date}")
-                    .replace('{time}', dateMsg.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' }))
-                    .replace('{date}', dateMsg.toLocaleDateString(undefined, { day: 'numeric', month: 'short' }));
+          {/* Messages Container (Scrollable) avec Séparateur de non-lus et Bouton flottant */}
+          <div className="relative flex flex-col flex-1 min-h-0">
+            <div 
+              ref={messagesContainerRef}
+              onScroll={handleScroll}
+              className="flex flex-col gap-3 overflow-y-auto max-h-[460px] min-h-[220px] p-3 bg-cordel-bg-light border-2 border-dashed border-cordel-master-dark/20 rounded-md select-text"
+            >
+              {(thread.reponses || []).map((reply, index) => {
+                const isFirstUnread = index === firstUnreadIdx;
+                const dateMsg = new Date(reply.dateCreation);
+                const formattedTime = isNaN(dateMsg.getTime())
+                  ? ''
+                  : (t('forum.atTime') || "{time} le {date}")
+                      .replace('{time}', dateMsg.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' }))
+                      .replace('{date}', dateMsg.toLocaleDateString(undefined, { day: 'numeric', month: 'short' }));
 
-              return (
-                <ThreadReplyItem
-                  key={`${reply.dateCreation}-${index}`}
-                  reply={reply}
-                  index={index}
-                  userId={user.uid}
-                  profileData={profileData}
-                  isModeratorOrAdmin={isModeratorOrAdmin}
-                  onDeleteReply={handleDeleteReply}
-                  onMoveReply={handleOpenMoveReply}
-                  onEditReply={handleOpenEditReply}
-                  onReplyToMessage={handleReplyToMessage}
-                  t={t}
-                  formattedTime={formattedTime}
-                />
-              );
-            })}
-            <div ref={messagesEndRef} />
+                return (
+                  <React.Fragment key={`${reply.dateCreation}-${index}`}>
+                    {/* Ligne de repère de nouveaux messages */}
+                    {isFirstUnread && (
+                      <div 
+                        ref={unreadSeparatorRef}
+                        className="flex items-center my-3 gap-2 select-none w-full"
+                      >
+                        <div className="flex-1 h-[1.5px] bg-[#8b2a1a]/40"></div>
+                        <span className="text-[10px] font-black uppercase tracking-wider text-[#8b2a1a] bg-cordel-bg px-2.5 py-0.5 rounded border border-[#8b2a1a]/40 shadow-xs">
+                          ── Nouveaux messages ──
+                        </span>
+                        <div className="flex-1 h-[1.5px] bg-[#8b2a1a]/40"></div>
+                      </div>
+                    )}
+
+                    <ThreadReplyItem
+                      reply={reply}
+                      index={index}
+                      userId={user.uid}
+                      profileData={profileData}
+                      isModeratorOrAdmin={isModeratorOrAdmin}
+                      onDeleteReply={handleDeleteReply}
+                      onMoveReply={handleOpenMoveReply}
+                      onEditReply={handleOpenEditReply}
+                      onReplyToMessage={handleReplyToMessage}
+                      t={t}
+                      formattedTime={formattedTime}
+                    />
+                  </React.Fragment>
+                );
+              })}
+              <div ref={messagesEndRef} />
+            </div>
+
+            {/* Pastille flottante de défilement rapide vers le bas (↓) */}
+            {showScrollBottom && (
+              <button
+                type="button"
+                onClick={scrollToBottom}
+                className="absolute right-4 bottom-3 z-20 w-8 h-8 rounded-full bg-cordel-bg/95 hover:bg-white text-encre-noire border-2 border-encre-noire flex items-center justify-center font-black shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] cursor-pointer transition-all text-xs select-none backdrop-blur-xs"
+                title="Sauter au dernier message"
+              >
+                ↓
+              </button>
+            )}
           </div>
 
-          {/* Quick Reply Form or Read-Only Banner */}
+          {/* Quick Reply Form docké et dépliable (Bas d'écran façon Discord) */}
           {isReadOnly ? (
-            <div className="p-4 text-center border-2 border-dashed border-cordel-wood/30 bg-cordel-bg rounded-md select-none mt-2">
+            <div className="p-3 text-center border-2 border-dashed border-cordel-wood/30 bg-cordel-bg rounded-md select-none mt-2">
               <span className="text-xs font-black text-cordel-wood">
                 🔇 Ce salon est en lecture seule pour votre rôle.
               </span>
             </div>
           ) : (
-            <form onSubmit={handleSend} className="flex flex-col gap-2 mt-auto select-none">
-              {/* Target Group Selector */}
-              <div className="flex flex-col gap-1">
-                <label className="text-[8px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                  🗣️ {t('forum.targetGroup') || "Cibler un groupe (Optionnel)"}
-                </label>
-                <select
-                  value={selectedTarget}
-                  onChange={(e) => setSelectedTarget(e.target.value)}
-                  disabled={sending}
-                  className="theme-input w-full disabled:opacity-50 text-[10px] py-1 font-bold bg-cordel-bg"
-                >
-                  <option value="">{t('forum.targetAll') || "-- Tout le monde --"}</option>
-                  {availableTargets.map((target) => (
-                    <option key={target} value={target}>
-                      {target}
-                    </option>
-                  ))}
-                </select>
-              </div>
+            <form onSubmit={handleSend} className="sticky bottom-0 bg-cordel-bg z-10 pt-2 pb-1 border-t border-dashed border-cordel-master-dark/20 flex flex-col gap-2 select-none">
+              {!isReplyExpanded ? (
+                /* Barre compacte fixée */
+                <div className="flex items-center gap-2 p-1.5 bg-cordel-bg-light border-2 border-encre-noire rounded-[6px_8px_6px_8px] shadow-[1.5px_1.5px_0px_0px_#181716]">
+                  <button
+                    type="button"
+                    onClick={() => setIsReplyExpanded(true)}
+                    className="w-7 h-7 flex items-center justify-center font-black text-xs text-cordel-wood hover:text-encre-noire bg-cordel-bg hover:bg-white rounded border border-cordel-master-dark/30 cursor-pointer shrink-0 transition-all"
+                    title="Options de réponse (Groupe cible, mentions, mise en forme)"
+                  >
+                    ➕
+                  </button>
+                  <input
+                    type="text"
+                    value={replyText}
+                    onChange={(e) => setReplyText(e.target.value)}
+                    onFocus={() => setIsReplyExpanded(true)}
+                    placeholder={t('forum.writeReplyPlaceholder') || "Écrire une réponse... (cliquez pour déplier)"}
+                    disabled={sending}
+                    className="flex-1 bg-transparent text-xs font-semibold text-encre-noire placeholder:opacity-50 outline-none px-1"
+                  />
+                  <CordelButton
+                    type="submit"
+                    variant="ocre"
+                    disabled={sending || !replyText.trim()}
+                    className="text-xs px-3 py-1 uppercase font-bold tracking-wider shrink-0"
+                  >
+                    {sending ? "..." : "➤"}
+                  </CordelButton>
+                </div>
+              ) : (
+                /* Vue dépliée à la demande */
+                <div className="flex flex-col gap-2 bg-cordel-bg-light p-3 border-2 border-encre-noire rounded-[6px_8px_6px_8px] shadow-[2px_2px_0px_0px_#181716]">
+                  <div className="flex justify-between items-center pb-1 border-b border-dashed border-cordel-master-dark/20">
+                    <span className="text-[9px] font-black uppercase tracking-wider text-cordel-wood">
+                      ✍️ {t('forum.writeReplyPlaceholder') || "Rédiger une réponse"}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setIsReplyExpanded(false)}
+                      className="text-[9px] font-black text-cordel-master-dark/60 hover:text-encre-noire hover:underline cursor-pointer"
+                      title="Revenir à la barre compacte"
+                    >
+                      Réduire ✕
+                    </button>
+                  </div>
 
-              {availableTargets.length > 0 && (
-                <div className="flex flex-wrap items-center gap-1.5 my-1.5 select-none">
-                  <span className="text-[9px] font-black uppercase text-cordel-master-dark opacity-60">Mentionner :</span>
-                  {availableTargets.map(tag => {
-                    const tagLabel = typeof tag === 'string' ? tag : getTagId(tag);
-                    return (
-                      <button
-                        key={tagLabel}
-                        type="button"
-                        onClick={() => setReplyText(prev => prev + `@${tagLabel} `)}
-                        className="px-2 py-0.5 text-[9px] font-bold bg-cordel-bg border border-cordel-master-dark/20 rounded hover:border-encre-noire transition-all cursor-pointer shadow-[1px_1px_0px_0px_rgba(24,23,22,0.15)] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none"
-                      >
-                        @{tagLabel}
-                      </button>
-                    );
-                  })}
+                  {/* Target Group Selector */}
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[8px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                      🗣️ {t('forum.targetGroup') || "Cibler un groupe (Optionnel)"}
+                    </label>
+                    <select
+                      value={selectedTarget}
+                      onChange={(e) => setSelectedTarget(e.target.value)}
+                      disabled={sending}
+                      className="theme-input w-full disabled:opacity-50 text-[10px] py-1 font-bold bg-cordel-bg"
+                    >
+                      <option value="">{t('forum.targetAll') || "-- Tout le monde --"}</option>
+                      {availableTargets.map((target) => (
+                        <option key={target} value={target}>
+                          {target}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Mentions tags */}
+                  {availableTargets.length > 0 && (
+                    <div className="flex flex-wrap items-center gap-1.5 select-none">
+                      <span className="text-[9px] font-black uppercase text-cordel-master-dark opacity-60">Mentionner :</span>
+                      {availableTargets.map(tag => {
+                        const tagLabel = typeof tag === 'string' ? tag : getTagId(tag);
+                        return (
+                          <button
+                            key={tagLabel}
+                            type="button"
+                            onClick={() => setReplyText(prev => prev + `@${tagLabel} `)}
+                            className="px-2 py-0.5 text-[9px] font-bold bg-cordel-bg border border-cordel-master-dark/20 rounded hover:border-encre-noire transition-all cursor-pointer shadow-[1px_1px_0px_0px_rgba(24,23,22,0.15)] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none"
+                          >
+                            @{tagLabel}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* Éditeur riche */}
+                  <RichTextEditor
+                    value={replyText}
+                    onChange={setReplyText}
+                    disabled={sending}
+                    placeholder={t('forum.writeReplyPlaceholder')}
+                    groupId={profileData?.groupId}
+                    lienDepotForum={lienDepotForum}
+                    minHeight="85px"
+                  />
+
+                  <div className="flex justify-between items-center pt-1 border-t border-dashed border-cordel-master-dark/15">
+                    <button
+                      type="button"
+                      onClick={() => setIsReplyExpanded(false)}
+                      className="text-[10px] font-bold text-cordel-master-dark hover:underline cursor-pointer"
+                    >
+                      Mode compact
+                    </button>
+                    <CordelButton
+                      variant="ocre"
+                      useExtremeBorder={true}
+                      disabled={sending || !replyText.trim()}
+                      className="text-xs px-5 py-2 uppercase font-bold tracking-widest"
+                    >
+                      {sending ? t('forum.sendingMsg') : (t('common.send') || "Envoyer")}
+                    </CordelButton>
+                  </div>
                 </div>
               )}
-
-              <RichTextEditor
-                value={replyText}
-                onChange={setReplyText}
-                disabled={sending}
-                placeholder={t('forum.writeReplyPlaceholder')}
-                groupId={profileData?.groupId}
-                lienDepotForum={lienDepotForum}
-                minHeight="90px"
-              />
-              <div className="flex justify-end">
-                <CordelButton
-                  variant="ocre"
-                  useExtremeBorder={true}
-                  disabled={sending || !replyText.trim()}
-                  className="text-xs px-5 py-2 uppercase font-bold tracking-widest"
-                >
-                  {sending ? t('forum.sendingMsg') : (t('common.send') || "Envoyer")}
-                </CordelButton>
-              </div>
             </form>
           )}
 

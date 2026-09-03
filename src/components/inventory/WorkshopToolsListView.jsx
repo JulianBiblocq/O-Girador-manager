@@ -25,10 +25,18 @@ export default function WorkshopToolsListView({ tools, loading, addTool, updateT
     }));
   };
 
+  const [submitting, setSubmitting] = useState(false);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (formData.nom) {
-      await addTool({ ...formData, domaine });
+      setSubmitting(true);
+      const ok = await addTool({ ...formData, domaine: domaine || 'lutherie' });
+      setSubmitting(false);
+      if (!ok) {
+        alert("Erreur lors de l'enregistrement de l'outil. Veuillez vérifier vos droits d'accès.");
+        return;
+      }
       setIsAdding(false);
       setFormData({ nom: '', isResident: true, emplacement: '', etat: 'bon' });
     }
@@ -122,8 +130,8 @@ export default function WorkshopToolsListView({ tools, loading, addTool, updateT
               </div>
             </div>
             <div className="flex justify-end mt-2">
-              <CordelButton type="submit" variant="vert" className="px-6 py-2 text-xs">
-                💾 Enregistrer
+              <CordelButton type="submit" variant="vert" disabled={submitting} className="px-6 py-2 text-xs">
+                {submitting ? "Enregistrement..." : "💾 Enregistrer"}
               </CordelButton>
             </div>
           </form>

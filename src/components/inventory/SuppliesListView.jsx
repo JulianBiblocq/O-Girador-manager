@@ -20,6 +20,8 @@ export default function SuppliesListView({ supplies, loading, addSupply, updateS
     notes: ''
   });
 
+  const [submitting, setSubmitting] = useState(false);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
@@ -28,7 +30,13 @@ export default function SuppliesListView({ supplies, loading, addSupply, updateS
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (formData.nom) {
-      await addSupply({ ...formData, domaine });
+      setSubmitting(true);
+      const ok = await addSupply({ ...formData, domaine: domaine || 'lutherie' });
+      setSubmitting(false);
+      if (!ok) {
+        alert("Erreur lors de l'enregistrement de la fourniture. Veuillez vérifier vos droits d'accès.");
+        return;
+      }
       setIsAdding(false);
       setFormData({
         nom: '', categorie: '', quantiteStock: 0, unite: 'unités',
@@ -106,8 +114,8 @@ export default function SuppliesListView({ supplies, loading, addSupply, updateS
               </div>
             </div>
             <div className="flex justify-end mt-2">
-              <CordelButton type="submit" variant="vert" className="px-6 py-2 text-xs">
-                💾 Enregistrer
+              <CordelButton type="submit" variant="vert" disabled={submitting} className="px-6 py-2 text-xs">
+                {submitting ? "Enregistrement..." : "💾 Enregistrer"}
               </CordelButton>
             </div>
           </form>

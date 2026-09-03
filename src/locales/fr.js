@@ -257,7 +257,7 @@ export const fr = {
     title: "Le Porte-Voix",
     subjectCountLabel: "sujet",
     subtitle: "Dernières discussions & sujets de la communauté",
-    openForum: "💬 Ouvrir le Forum",
+    openForum: "💬 Ouvrir le Porte-Voix",
     noThreads: "Aucun sujet dans le Porte-Voix pour le moment.",
     startFirst: "+ Lancer la première discussion",
     pinned: "📌 Épinglé",

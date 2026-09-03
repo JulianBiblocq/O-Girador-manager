@@ -67,8 +67,6 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin,
     addTool, updateTool, deleteTool
   } = useSuppliesData(groupId, 'lutherie');
 
-  const isLoading = loading || suppliesLoading;
-
   const [showConfig, setShowConfig] = useState(false);
   const [activeTab, setActiveTab] = useState('instruments'); // 'instruments' or 'parts'
   const [diagnosticInstrument, setDiagnosticInstrument] = useState(null);

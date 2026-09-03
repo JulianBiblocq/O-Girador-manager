@@ -93,7 +93,7 @@ export default function WidgetForum({ groupId, onOpen }) {
             onClick={() => onOpen()}
             className="text-[10px] px-3 py-1 font-bold uppercase tracking-wider flex items-center gap-1 shrink-0"
           >
-            {t('widgetForum.openForum') || "💬 Ouvrir le Forum"}
+            {t('widgetForum.openForum') || "💬 Ouvrir le Porte-Voix"}
           </CordelButton>
         </div>
 

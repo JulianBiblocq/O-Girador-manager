@@ -72,7 +72,7 @@ export default function Onboarding({ user, branding, onComplete, profileData }) 
 
   // Extract the group ID parameter from the URL if present, fallback to profileData or default
   const searchParams = new URLSearchParams(window.location.search);
-  const groupId = searchParams.get('groupe') || searchParams.get('assoc') || profileData?.groupId || 'samambaia';
+  const groupId = searchParams.get('groupe') || searchParams.get('assoc') || profileData?.groupId || 'Samambaia';
 
   // Charger custom fields configuration and association details for Onboarding
   useEffect(() => {

@@ -15,14 +15,19 @@ service cloud.firestore {
       return isAuthenticated() && 
         exists(/databases/$(database)/documents/users/$(request.auth.uid)) && (
           getUserData().role == 'mestre' || 
+          getUserData().role == 'Mestre' || 
           getUserData().role == 'super-admin' || 
-          getUserData().role == 'admin' ||
-          getUserData().role == 'bureau' ||
-          getUserData().role == 'ca' ||
+          getUserData().role == 'Super-admin' || 
+          getUserData().role == 'admin' || 
+          getUserData().role == 'Admin' || 
+          getUserData().role == 'bureau' || 
+          getUserData().role == 'Bureau' || 
+          getUserData().role == 'ca' || 
+          getUserData().role == 'CA' || 
           getUserData().isSystemAdmin == true ||
           (getUserData().keys().hasAny(['hasAccessLogistique']) && getUserData().hasAccessLogistique == true) ||
           (getUserData().keys().hasAny(['tags']) && getUserData().tags.hasAny([
-            'Bureau', 'Président', 'Présidente', 'Présidence', 'CA', 'Direction', 'Admin', 'Modérateur'
+            'Bureau', 'Président', 'Présidente', 'Présidence', 'CA', 'C.A', 'Direction', 'Admin', 'Modérateur', 'Mestre', 'Logistique', 'Logisticien'
           ]))
         );
     }
@@ -51,9 +56,13 @@ service cloud.firestore {
     }
 
     function canManageInventory() {
-      return isAdminOrMestre() || hasAnyTag([
-        'Inventaire', 'Logistique', 'MatÃ©riel', 'Instruments', 'Commandes', 'Bureau', 'CA', 'Direction'
-      ]);
+      return isAdminOrMestre() || 
+        (getUserData().keys().hasAny(['hasAccessLogistique']) && getUserData().hasAccessLogistique == true) ||
+        hasAnyTag([
+          'Inventaire', 'Logistique', 'logistique', 'Logisticien', 'Logisticienne',
+          'Matériel', 'matériel', 'MatÃ©riel', 'Instruments', 'Commandes',
+          'Bureau', 'CA', 'C.A', 'Direction', 'Atelier', 'Lutherie', 'Costumerie'
+        ]);
     }
 
     function canManageTreasury() {
@@ -214,6 +223,36 @@ service cloud.firestore {
       allow write: if canManageInventory();
     }
 
+    match /inventory_supplies/{item} {
+      allow read: if isAuthenticated();
+      allow write: if canManageInventory();
+    }
+
+    match /workshop_tools/{item} {
+      allow read: if isAuthenticated();
+      allow write: if canManageInventory();
+    }
+
+    match /inventory_parts/{item} {
+      allow read: if isAuthenticated();
+      allow write: if canManageInventory();
+    }
+
+    match /inventoryParts/{item} {
+      allow read: if isAuthenticated();
+      allow write: if canManageInventory();
+    }
+
+    match /inventory_projects/{item} {
+      allow read: if isAuthenticated();
+      allow write: if canManageInventory();
+    }
+
+    match /agendaTemplates/{item} {
+      allow read: if isAuthenticated();
+      allow write: if canManageEvents();
+    }
+
     match /associations/{assocId} {
       allow read: if true;
       allow create, delete: if isAdminOrMestre() || hasAnyTag(['Vitrine', 'Webmaster', 'Bureau', 'PrÃ©sident', 'PrÃ©sidente', 'CA']);
@@ -324,7 +363,8 @@ service cloud.firestore {
             (resource.data.keys().hasAny(['allowedRoles']) && resource.data.allowedRoles.hasAny(['all'])) ||
             (resource.data.keys().hasAny(['allowedRoles']) && resource.data.allowedRoles.hasAny([getUserData().role])) ||
             resource.data.readRoles.hasAny([getUserData().role]) ||
-            (getUserData().keys().hasAny(['tags']) && getUserData().tags.hasAny(resource.data.readRoles))
+            (getUserData().keys().hasAny(['tags']) && getUserData().tags.hasAny(resource.data.readRoles)) ||
+            request.auth != null
           )
         )
       );
@@ -336,7 +376,8 @@ service cloud.firestore {
       allow read: if isAuthenticated() && (
         isAdminOrMestre() ||
         isModerator() ||
-        hasChannelReadAccess(resource.data.channelId)
+        hasChannelReadAccess(resource.data.channelId) ||
+        (resource.data.groupId == getUserData().groupId && request.auth != null)
       );
       allow create: if isAuthenticated() && (
         hasChannelWriteAccess(request.resource.data.channelId)
@@ -515,7 +556,7 @@ service cloud.firestore {
     }
     match /instrument_models/{item} {
       allow read: if request.auth != null;
-      allow write: if isAdminOrMestre();
+      allow write: if isAdminOrMestre() || canManageInventory();
     }
     
   }

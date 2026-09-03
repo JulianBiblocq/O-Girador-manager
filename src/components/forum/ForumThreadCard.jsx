@@ -2,6 +2,7 @@ import React from 'react';
 import CordelCard from '../CordelCard';
 import XiloAvatar from '../XiloAvatar';
 import { usePresenceContext } from '../../context/PresenceContext';
+import { countThreadUnreadMessages } from '../../utils/forumUnreadUtils';
 
 /**
  * Carte de prévisualisation d'un sujet dans le forum.
@@ -36,6 +37,14 @@ const ForumThreadCard = React.memo(({
   
   const repliesCount = thread.reponses ? thread.reponses.length - 1 : 0;
 
+  // Calcul du nombre de messages non lus pour l'utilisateur
+  const unreadCount = countThreadUnreadMessages(
+    thread,
+    profileData?.uid || profileData?.id,
+    profileData?.readThreads?.[thread.id]
+  );
+  const isUnread = unreadCount > 0;
+
   // Détection du ciblage par instrument/tag
   const userPlaysInstrument = (profileData?.instrumentsJoues && profileData.instrumentsJoues.includes(thread.targetTag)) ||
                                (profileData?.instrument === thread.targetTag);
@@ -63,7 +72,7 @@ const ForumThreadCard = React.memo(({
           </span>
         )}
 
-        {/* Categorie & Sondage */}
+        {/* Categorie & Sondage & Badge Non Lus */}
         <div className="flex items-center gap-1.5 flex-wrap mb-1">
           <span className="theme-stamp-badge theme-stamp-badge-dark text-[7px] rotate-0">
             {thread.categorie || 'Général'}
@@ -73,10 +82,16 @@ const ForumThreadCard = React.memo(({
               📊 Sondage {thread.poll.isClosed ? '(Clôturé)' : ''}
             </span>
           )}
+          {isUnread && (
+            <span className="text-[7.5px] font-black text-white bg-red-600 px-1.5 py-0.5 rounded shadow-xs uppercase tracking-wider flex items-center gap-1">
+              <span className="w-1.5 h-1.5 bg-white rounded-full animate-ping"></span>
+              {unreadCount} {unreadCount > 1 ? 'nouveaux' : 'nouveau'}
+            </span>
+          )}
         </div>
 
         {/* Titre du sujet */}
-        <h4 className="font-extrabold text-sm text-encre-noire leading-tight pr-4">
+        <h4 className={`text-sm text-encre-noire leading-tight pr-4 ${isUnread ? 'font-black' : 'font-extrabold'}`}>
           {thread.titre}
         </h4>
 

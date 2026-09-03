@@ -68,15 +68,15 @@ export function useSuppliesData(groupId, domainFilter = null) {
     return () => unsubscribe();
   }, [groupId]);
 
-  // Filtrage local par domaine
+  // Filtrage local par domaine (avec repli sur 'lutherie' pour les données historiques)
   const filteredSupplies = useMemo(() => {
     if (!domainFilter) return supplies;
-    return supplies.filter(s => s.domaine === domainFilter);
+    return supplies.filter(s => (s.domaine || 'lutherie') === domainFilter);
   }, [supplies, domainFilter]);
 
   const filteredTools = useMemo(() => {
     if (!domainFilter) return tools;
-    return tools.filter(t => t.domaine === domainFilter);
+    return tools.filter(t => (t.domaine || 'lutherie') === domainFilter);
   }, [tools, domainFilter]);
 
   // Actions CRUD pour Fournitures
@@ -84,6 +84,7 @@ export function useSuppliesData(groupId, domainFilter = null) {
     try {
       await addDoc(collection(db, 'inventory_supplies'), {
         ...data,
+        domaine: data.domaine || domainFilter || 'lutherie',
         groupId,
         quantiteStock: Number(data.quantiteStock) || 0,
         seuilCritique: Number(data.seuilCritique) || 0,
@@ -93,7 +94,7 @@ export function useSuppliesData(groupId, domainFilter = null) {
       console.error("Erreur lors de l'ajout d'une fourniture :", error);
       return false;
     }
-  }, [groupId]);
+  }, [groupId, domainFilter]);
 
   const updateSupply = useCallback(async (id, data) => {
     try {
@@ -134,6 +135,7 @@ export function useSuppliesData(groupId, domainFilter = null) {
     try {
       await addDoc(collection(db, 'workshop_tools'), {
         ...data,
+        domaine: data.domaine || domainFilter || 'lutherie',
         groupId,
       });
       return true;
@@ -141,7 +143,7 @@ export function useSuppliesData(groupId, domainFilter = null) {
       console.error("Erreur lors de l'ajout d'un outil :", error);
       return false;
     }
-  }, [groupId]);
+  }, [groupId, domainFilter]);
 
   const updateTool = useCallback(async (id, data) => {
     try {
