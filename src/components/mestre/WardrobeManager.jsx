@@ -12,6 +12,7 @@ import useHardwareBack from '../../hooks/useHardwareBack';
 import { useSuppliesData } from '../../hooks/useSuppliesData';
 import SuppliesListView from '../inventory/SuppliesListView';
 import WorkshopToolsListView from '../inventory/WorkshopToolsListView';
+import useConfirm from '../../hooks/useConfirm';
 
 export default function WardrobeManager({ groupId, role, isSystemAdmin, hasAccessLogistique, onBack, activeTab = 'inventory' }) {
   const { t } = useTranslation();
