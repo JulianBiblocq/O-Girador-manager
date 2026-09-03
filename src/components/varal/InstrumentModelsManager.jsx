@@ -6,10 +6,17 @@ import InstrumentModelEditor from './InstrumentModelEditor';
 import { XiloChisel } from '../XiloIcons';
 import { doc, getDoc, updateDoc, increment } from 'firebase/firestore';
 import { db } from '../../firebase';
+import { exportInstrumentMasterBundle } from '../../utils/bundleExportService';
+import ImportModelWizardModal from '../inventory/ImportModelWizardModal';
+import { useSuppliesData } from '../../hooks/useSuppliesData';
 
 export default function InstrumentModelsManager({ groupId, isAuthorized, varalCategories }) {
   const { models, loading, addModel, updateModel, deleteModel } = useInstrumentModels(groupId);
   const [editingModel, setEditingModel] = useState(null);
+  const [importFile, setImportFile] = useState(null);
+  const [isExporting, setIsExporting] = useState(false);
+
+  const { supplies, tools } = useSuppliesData(groupId, 'lutherie');
 
   const handleSaveModel = async (modelData) => {
     try {
@@ -67,42 +74,28 @@ export default function InstrumentModelsManager({ groupId, isAuthorized, varalCa
     }
   };
 
-  const handleExportModel = (model) => {
-    const exportData = { ...model };
-    delete exportData.id;
-    delete exportData.groupId;
-    
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportData, null, 2));
-    const downloadAnchorNode = document.createElement('a');
-    downloadAnchorNode.setAttribute("href", dataStr);
-    downloadAnchorNode.setAttribute("download", `pack_${(model.nom || 'modele').replace(/\s+/g, '_').toLowerCase()}.json`);
-    document.body.appendChild(downloadAnchorNode);
-    downloadAnchorNode.click();
-    downloadAnchorNode.remove();
+  const handleExportModel = async (model) => {
+    setIsExporting(true);
+    try {
+      await exportInstrumentMasterBundle(model, supplies, tools);
+    } catch (err) {
+      console.error("Erreur lors de l'export :", err);
+      alert("Une erreur est survenue lors de la création du bundle.");
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   const handleImportPack = (event) => {
     const file = event.target.files[0];
     if (!file) return;
+    setImportFile(file);
+    event.target.value = null; // Reset input pour permettre de resélectionner le même fichier
+  };
 
-    const reader = new FileReader();
-    reader.onload = async (e) => {
-      try {
-        const importedData = JSON.parse(e.target.result);
-        if (!importedData.nom || !importedData.type) {
-          alert("Fichier non valide : ce pack ne semble pas être un Modèle d'instrument.");
-          return;
-        }
-        // Force l'association à ce groupe via le hook useInstrumentModels qui s'en charge
-        await addModel(importedData);
-        alert(`Pack "${importedData.nom}" importé avec succès !`);
-      } catch (err) {
-        alert("Erreur lors de la lecture ou de l'import du fichier JSON.");
-        console.error(err);
-      }
-      event.target.value = null; // Reset input
-    };
-    reader.readAsText(file);
+  const handleImportSuccess = (nomModel) => {
+    alert(`Bundle "${nomModel}" importé avec succès !`);
+    setImportFile(null);
   };
 
   if (loading) {
@@ -133,8 +126,8 @@ export default function InstrumentModelsManager({ groupId, isAuthorized, varalCa
         </h3>
         <div className="flex gap-2">
           <label className="cursor-pointer bg-white text-cordel-wood border border-cordel-wood text-xs px-4 py-1.5 shadow-[2px_2px_0px_0px_var(--color-cordel-wood)] rounded font-bold uppercase tracking-widest hover:bg-neutral-100 transition-colors">
-            📥 Importer Pack
-            <input type="file" accept=".json" onChange={handleImportPack} className="hidden" />
+            📥 Importer Master Bundle
+            <input type="file" accept=".json,.zip" onChange={handleImportPack} className="hidden" />
           </label>
           <CordelButton 
             variant="ocre" 
@@ -200,10 +193,30 @@ export default function InstrumentModelsManager({ groupId, isAuthorized, varalCa
                 >
                   Supprimer
                 </button>
+                <CordelButton 
+                  variant="secondary" 
+                  className="text-[10px] uppercase font-bold py-1 flex-1 text-center justify-center flex items-center"
+                  onClick={() => handleExportModel(model)}
+                  disabled={isExporting}
+                >
+                  {isExporting ? "Export..." : "📦 Exporter Bundle"}
+                </CordelButton>
               </div>
             </CordelCard>
           ))}
         </div>
+      )}
+
+      {/* Modale d'importation Wizard */}
+      {importFile && (
+        <ImportModelWizardModal
+          groupId={groupId}
+          file={importFile}
+          suppliesList={supplies}
+          toolsList={tools}
+          onClose={() => setImportFile(null)}
+          onSuccess={handleImportSuccess}
+        />
       )}
     </div>
   );

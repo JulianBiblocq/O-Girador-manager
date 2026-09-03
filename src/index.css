@@ -13,6 +13,7 @@
 :root {
   /* Mode Clair par défaut (Thème papier crème Cordel) */
   --cordel-bg: #f4ecd8;
+  --color-cordel-bg: #f4ecd8;
   --cordel-card-bg: #f4ecd8;
   --cordel-text: #1a1a1a;
   --cordel-border: #1a1a1a;

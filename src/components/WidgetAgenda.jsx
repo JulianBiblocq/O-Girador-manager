@@ -376,7 +376,9 @@ export default function WidgetAgenda({
       includesDance: false,
       enableCarpool: true,
       description: '',
-      linkedPatterns: []
+      linkedPatterns: [],
+      specialiteAtelier: 'general',
+      programmeFabrication: null
     });
     setIsAdding(true);
   };
@@ -473,7 +475,9 @@ export default function WidgetAgenda({
           description: formData.description || '',
           latitude: formData.latitude ? Number(formData.latitude) : null,
           longitude: formData.longitude ? Number(formData.longitude) : null,
-          linkedPatterns: formData.linkedPatterns || []
+          linkedPatterns: formData.linkedPatterns || [],
+          specialiteAtelier: (formData.type === 'atelier' || formData.type === 'stage') ? (formData.specialiteAtelier || 'general') : null,
+          programmeFabrication: (formData.type === 'atelier' || formData.type === 'stage') && formData.specialiteAtelier === 'fabrication' ? (formData.programmeFabrication || null) : null
         });
       };
 

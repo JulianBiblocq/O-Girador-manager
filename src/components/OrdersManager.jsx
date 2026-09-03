@@ -10,6 +10,7 @@ import { XiloClose, XiloBox } from './XiloIcons';
 import { useTranslation } from './LanguageContext';
 import { fr } from '../locales/fr';
 import useConfirm from '../hooks/useConfirm';
+import { useSuppliesData } from '../hooks/useSuppliesData';
 
 export default function OrdersManager({ groupId, onBack, role, isSystemAdmin, hasAccessLogistique }) {
   const { t } = useTranslation();
@@ -34,10 +35,14 @@ export default function OrdersManager({ groupId, onBack, role, isSystemAdmin, ha
   const [loading, setLoading] = useState(true);
   const [loadingReq, setLoadingReq] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [restockConfirmData, setRestockConfirmData] = useState(null);
 
   // Form state
   const [newCampaignTitle, setNewCampaignTitle] = useState('');
   const [isCreating, setIsCreating] = useState(false);
+
+  // Hook pour les fournitures
+  const { supplies = [], adjustSupplyStock } = useSuppliesData(groupId, 'lutherie');
 
   const [editingArticleId, setEditingArticleId] = useState(null);
   const [articleName, setArticleName] = useState('');
@@ -270,6 +275,34 @@ export default function OrdersManager({ groupId, onBack, role, isSystemAdmin, ha
     } catch (err) {
       console.error("OrdersManager - Erreur de validation de demande :", err);
       alert(t('common.saveError') || "Erreur lors de l'enregistrement.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleMarkAsReceived = (req) => {
+    const articleLabel = getArticleLabel(req.article);
+    const match = supplies.find(s => s.nom.toLowerCase().trim() === articleLabel.toLowerCase().trim());
+    
+    // Si correspondance trouvée et que ce n'est pas un achat perso
+    if (match && !req.isPersonalOrder) {
+      setRestockConfirmData({ request: req, supply: match, amount: Number(req.quantite) || 1 });
+    } else {
+      handleValidateRequest(req.id, 'recu');
+    }
+  };
+
+  const handleConfirmRestock = async () => {
+    if (!restockConfirmData) return;
+    setSaving(true);
+    try {
+      await adjustSupplyStock(restockConfirmData.supply.id, restockConfirmData.amount);
+      const requestRef = doc(db, 'campaignRequests', restockConfirmData.request.id);
+      await updateDoc(requestRef, { status: 'recu' });
+      setRestockConfirmData(null);
+    } catch (e) {
+      console.error("OrdersManager - Erreur de réassort :", e);
+      alert("Erreur lors du réapprovisionnement.");
     } finally {
       setSaving(false);
     }
@@ -808,17 +841,36 @@ export default function OrdersManager({ groupId, onBack, role, isSystemAdmin, ha
                           )}
                           <div className="flex justify-between items-center mt-1.5 pt-1.5 border-t border-dashed border-encre-noire/5">
                             <span className="text-[8px] font-bold text-cordel-master-dark/50">
-                              {req.status === 'validated' ? "✓ Validé" : "⏳ En attente"}
+                              {req.status === 'recu' ? "📦 Reçu" : req.status === 'validated' ? "✓ Validé" : "⏳ En attente"}
                             </span>
                             <div className="flex gap-1.5 items-center">
                               {req.status === 'validated' ? (
+                                <>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleMarkAsReceived(req)}
+                                    disabled={saving}
+                                    className="text-[8.5px] font-bold text-blue-800 hover:text-blue-900 bg-blue-500/10 px-1.5 py-0.5 rounded border border-dashed border-blue-400 cursor-pointer"
+                                  >
+                                    📦 Réceptionner
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleValidateRequest(req.id, 'pending')}
+                                    disabled={saving}
+                                    className="text-[8.5px] font-bold text-amber-800 hover:text-amber-900 bg-amber-500/10 px-1.5 py-0.5 rounded border border-dashed border-amber-400 cursor-pointer"
+                                  >
+                                    {t('ordersManager.unvalidateBtn') || "Invalider"}
+                                  </button>
+                                </>
+                              ) : req.status === 'recu' ? (
                                 <button
                                   type="button"
-                                  onClick={() => handleValidateRequest(req.id, 'pending')}
+                                  onClick={() => handleValidateRequest(req.id, 'validated')}
                                   disabled={saving}
                                   className="text-[8.5px] font-bold text-amber-800 hover:text-amber-900 bg-amber-500/10 px-1.5 py-0.5 rounded border border-dashed border-amber-400 cursor-pointer"
                                 >
-                                  {t('ordersManager.unvalidateBtn') || "Invalider"}
+                                  Annuler réception
                                 </button>
                               ) : (
                                 <button
@@ -849,6 +901,37 @@ export default function OrdersManager({ groupId, onBack, role, isSystemAdmin, ha
               </>
             )}
 
+            {/* Modale de réapprovisionnement */}
+            {restockConfirmData && (
+              <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in text-left">
+                <div className="w-full max-w-sm">
+                  <CordelCard variant="default" className="p-5 flex flex-col gap-4">
+                    <h3 className="text-sm font-black text-cordel-wood uppercase">
+                      📦 Réapprovisionnement Stock
+                    </h3>
+                    <p className="text-[11px] text-stone-700 leading-relaxed">
+                      L'article <strong className="text-encre-noire">{getArticleLabel(restockConfirmData.request.article)}</strong> correspond à la fourniture <strong className="text-cordel-ocre">{restockConfirmData.supply.nom}</strong>.
+                    </p>
+                    <div className="p-3 bg-cordel-ocre/10 border border-cordel-ocre rounded text-center">
+                      <span className="text-[10px] font-bold uppercase text-cordel-wood">
+                        Voulez-vous ajouter <strong className="text-lg">+{restockConfirmData.amount}</strong> {restockConfirmData.supply.unite} au stock ?
+                      </span>
+                    </div>
+                    <div className="flex justify-end gap-2 mt-2 pt-3 border-t border-dashed border-cordel-master-dark/20">
+                      <CordelButton variant="secondary" onClick={() => {
+                        handleValidateRequest(restockConfirmData.request.id, 'recu');
+                        setRestockConfirmData(null);
+                      }} disabled={saving}>
+                        Non, ignorer
+                      </CordelButton>
+                      <CordelButton variant="vert" onClick={handleConfirmRestock} disabled={saving}>
+                        Oui, réapprovisionner
+                      </CordelButton>
+                    </div>
+                  </CordelCard>
+                </div>
+              </div>
+            )}
           </div>
         )}
 

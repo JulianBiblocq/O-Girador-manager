@@ -13,6 +13,9 @@ import InventoryFilterBar from './inventory/InventoryFilterBar';
 import InventoryItemCard from './inventory/InventoryItemCard';
 import InventoryPartsView from './inventory/InventoryPartsView';
 import InventoryProjectsView from './inventory/InventoryProjectsView';
+import SuppliesListView from './inventory/SuppliesListView';
+import WorkshopToolsListView from './inventory/WorkshopToolsListView';
+import { useSuppliesData } from '../hooks/useSuppliesData';
 
 import RepairDiagnosticModal from './inventory/RepairDiagnosticModal';
 
@@ -56,12 +59,15 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin,
   // Contrôle de sécurité : Mestre, Super-Admin, Admin Système ou Accès Logistique
   const isAuthorized = role === 'mestre' || role === 'super-admin' || isSystemAdmin === true || hasAccessLogistique === true;
 
+  const { settings, saving: savingSettings, handleSaveSettings, handleUpdateSetting } = useAssociationSettings(groupId);
+
   const {
-    formData: settingsData,
-    handleChange: handleSettingsChange,
-    handleSave: handleSaveSettings,
-    saving: savingSettings
-  } = useAssociationSettings(groupId, isAuthorized, onBack, t);
+    supplies, tools, loading: suppliesLoading,
+    addSupply, updateSupply, deleteSupply, adjustSupplyStock,
+    addTool, updateTool, deleteTool
+  } = useSuppliesData(groupId, 'lutherie');
+
+  const isLoading = loading || suppliesLoading;
 
   const [showConfig, setShowConfig] = useState(false);
   const [activeTab, setActiveTab] = useState('instruments'); // 'instruments' or 'parts'
@@ -172,7 +178,7 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin,
   };
 
   const getKitCompletionText = (inst) => {
-    const kit = (settingsData.logisticsKits || []).find(k => k.pupitre === inst.type);
+    const kit = (settings?.logisticsKits || []).find(k => k.pupitre === inst.type);
     if (!kit || !kit.accessories || kit.accessories.length === 0) return "-";
     const checked = inst.kitChecklist || [];
     const validChecked = checked.filter(acc => kit.accessories.includes(acc)).length;
@@ -182,7 +188,7 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin,
   };
 
   const getKitCompletionRatio = (inst) => {
-    const kit = (settingsData.logisticsKits || []).find(k => k.pupitre === inst.type);
+    const kit = (settings?.logisticsKits || []).find(k => k.pupitre === inst.type);
     if (!kit || !kit.accessories || kit.accessories.length === 0) return -1;
     const checked = inst.kitChecklist || [];
     const validChecked = checked.filter(acc => kit.accessories.includes(acc)).length;
@@ -385,14 +391,14 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin,
           {showConfig && (
             <form onSubmit={(e) => { e.preventDefault(); handleSaveSettings(); }} className="flex flex-col gap-4 mt-4 pt-4 border-t border-dashed border-cordel-master-dark/20 text-left">
               <InstrumentsCatalogBlock 
-                formData={settingsData}
-                handleChange={handleSettingsChange}
+                formData={settings}
+                handleChange={handleUpdateSetting}
                 saving={savingSettings}
                 t={t}
               />
               <AccessoriesKitsBlock 
-                formData={settingsData}
-                handleChange={handleSettingsChange}
+                formData={settings}
+                handleChange={handleUpdateSetting}
                 saving={savingSettings}
                 t={t}
               />
@@ -467,41 +473,59 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin,
         )}
 
         {/* Tab Switcher */}
-        <div className="flex gap-2 border-b-2 border-dashed border-cordel-master-dark/30 mb-2 select-none overflow-x-auto pb-1">
-          <button
-            type="button"
-            onClick={() => setActiveTab('instruments')}
-            className={`px-4 py-2 text-xs font-black uppercase tracking-widest transition-colors border-b-2 whitespace-nowrap ${
-              activeTab === 'instruments'
-                ? 'border-cordel-wood text-cordel-wood'
-                : 'border-transparent text-cordel-master-dark/60 hover:text-cordel-master-dark'
-            }`}
-          >
-            🥁 Instruments & Kits
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('parts')}
-            className={`px-4 py-2 text-xs font-black uppercase tracking-widest transition-colors border-b-2 whitespace-nowrap ${
-              activeTab === 'parts'
-                ? 'border-cordel-wood text-cordel-wood'
-                : 'border-transparent text-cordel-master-dark/60 hover:text-cordel-master-dark'
-            }`}
-          >
-            🔩 Pièces Détachées
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('projects')}
-            className={`px-4 py-2 text-xs font-black uppercase tracking-widest transition-colors border-b-2 whitespace-nowrap ${
-              activeTab === 'projects'
-                ? 'border-cordel-wood text-cordel-wood'
-                : 'border-transparent text-cordel-master-dark/60 hover:text-cordel-master-dark'
-            }`}
-          >
-            🛠️ Assemblage
-          </button>
-
+        <div className="border-b-2 border-cordel-master-dark/20">
+          <div className="flex gap-1 overflow-x-auto">
+            <button
+              onClick={() => setActiveTab('instruments')}
+              className={`px-4 py-3 font-extrabold uppercase tracking-widest text-xs transition-colors rounded-t-lg border-b-2 ${
+                activeTab === 'instruments'
+                  ? 'bg-cordel-bg text-cordel-wood border-cordel-wood'
+                  : 'text-cordel-master-dark hover:text-cordel-wood border-transparent hover:bg-white/30'
+              }`}
+            >
+              Instruments
+            </button>
+            <button
+              onClick={() => setActiveTab('parts')}
+              className={`px-4 py-3 font-extrabold uppercase tracking-widest text-[10px] transition-colors rounded-t-lg border-b-2 ${
+                activeTab === 'parts'
+                  ? 'bg-cordel-bg text-cordel-wood border-cordel-wood'
+                  : 'text-cordel-master-dark hover:text-cordel-wood border-transparent hover:bg-white/30'
+              }`}
+            >
+              Pièces Détachées
+            </button>
+            <button
+              onClick={() => setActiveTab('projects')}
+              className={`px-4 py-3 font-extrabold uppercase tracking-widest text-[10px] transition-colors rounded-t-lg border-b-2 ${
+                activeTab === 'projects'
+                  ? 'bg-cordel-bg text-cordel-wood border-cordel-wood'
+                  : 'text-cordel-master-dark hover:text-cordel-wood border-transparent hover:bg-white/30'
+              }`}
+            >
+              Projets
+            </button>
+            <button
+              onClick={() => setActiveTab('supplies')}
+              className={`px-4 py-3 font-extrabold uppercase tracking-widest text-[10px] transition-colors rounded-t-lg border-b-2 ${
+                activeTab === 'supplies'
+                  ? 'bg-cordel-bg text-cordel-wood border-cordel-wood'
+                  : 'text-cordel-master-dark hover:text-cordel-wood border-transparent hover:bg-white/30'
+              }`}
+            >
+              Matières Premières
+            </button>
+            <button
+              onClick={() => setActiveTab('tools')}
+              className={`px-4 py-3 font-extrabold uppercase tracking-widest text-[10px] transition-colors rounded-t-lg border-b-2 ${
+                activeTab === 'tools'
+                  ? 'bg-cordel-bg text-cordel-wood border-cordel-wood'
+                  : 'text-cordel-master-dark hover:text-cordel-wood border-transparent hover:bg-white/30'
+              }`}
+            >
+              Outillage
+            </button>
+          </div>
         </div>
 
         <div className={activeTab === 'instruments' ? 'block' : 'hidden'}>
@@ -601,7 +625,7 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin,
                 <label className="text-[8px] uppercase font-bold tracking-wider text-cordel-master-dark mb-1 flex items-center justify-between">
                   <span>Kit Accessoires</span>
                   {(() => {
-                    const kit = (settingsData?.logisticsKits || []).find(k => k.pupitre === formData.type);
+                    const kit = (settings?.logisticsKits || []).find(k => k.pupitre === formData.type);
                     if (kit && kit.accessories && kit.accessories.length > 0) {
                       const checked = formData.kitChecklist || [];
                       const validChecked = checked.filter(acc => kit.accessories.includes(acc)).length;
@@ -616,7 +640,7 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin,
                 </label>
                 <div className="flex flex-col gap-1.5 p-2 bg-cordel-bg-light/50 border border-encre-noire/10 rounded">
                   {(() => {
-                    const kit = (settingsData?.logisticsKits || []).find(k => k.pupitre === formData.type);
+                    const kit = (settings?.logisticsKits || []).find(k => k.pupitre === formData.type);
                     
                     if (!kit || !kit.accessories || kit.accessories.length === 0) {
                       return (
@@ -1255,6 +1279,34 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin,
           />
         </div>
 
+        {/* TAB: MATIERES PREMIERES */}
+        {activeTab === 'supplies' && (
+          <div className="bg-cordel-bg p-4 rounded-b-lg border-x-2 border-b-2 border-encre-noire shadow-[4px_4px_0px_0px_#181716]">
+            <SuppliesListView 
+              supplies={supplies} 
+              loading={suppliesLoading} 
+              addSupply={addSupply} 
+              updateSupply={updateSupply} 
+              deleteSupply={deleteSupply} 
+              adjustSupplyStock={adjustSupplyStock}
+              domaine="lutherie"
+            />
+          </div>
+        )}
+
+        {/* TAB: OUTILLAGE */}
+        {activeTab === 'tools' && (
+          <div className="bg-cordel-bg p-4 rounded-b-lg border-x-2 border-b-2 border-encre-noire shadow-[4px_4px_0px_0px_#181716]">
+            <WorkshopToolsListView 
+              tools={tools} 
+              loading={suppliesLoading} 
+              addTool={addTool} 
+              updateTool={updateTool} 
+              deleteTool={deleteTool} 
+              domaine="lutherie"
+            />
+          </div>
+        )}
 
       </div>
     </>

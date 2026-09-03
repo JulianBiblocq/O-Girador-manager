@@ -895,6 +895,7 @@ export const fr = {
     tabDashboard: "Synthèse",
     tabProfil: "Profil",
     tabAgenda: "Agenda",
+    tabAtelier: "Atelier",
     tabMateriel: "Matériel",
     tabVestiaire: "Vestiaire",
     tabTrombinoscope: "Trombinoscope",

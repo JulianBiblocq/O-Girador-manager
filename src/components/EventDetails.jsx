@@ -20,6 +20,7 @@ import useConfirm from '../hooks/useConfirm';
 import EventRSVPSection from './event-details/EventRSVPSection';
 import EventCarpoolSection from './event-details/EventCarpoolSection';
 import EventRevisionProgram from './event-details/EventRevisionProgram';
+import EventWorkshopProgram from './event-details/EventWorkshopProgram';
 import EventReportSection from './event-details/EventReportSection';
 import EventStageLayoutSection from './event-details/EventStageLayoutSection';
 import EventVolunteerSection from './event-details/EventVolunteerSection';
@@ -91,7 +92,9 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
     includesDance: event.includesDance || false,
     enableCarpool: event.enableCarpool !== false,
     description: event.description || '',
-    linkedPatterns: event.linkedPatterns || []
+    linkedPatterns: event.linkedPatterns || [],
+    specialiteAtelier: event.specialiteAtelier || 'general',
+    programmeFabrication: event.programmeFabrication || null
   });
 
   const [uploadingImage, setUploadingImage] = useState(false);
@@ -861,7 +864,9 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
         description: updatedDescription,
         latitude: editForm.latitude ? Number(editForm.latitude) : null,
         longitude: editForm.longitude ? Number(editForm.longitude) : null,
-        linkedPatterns: editForm.linkedPatterns || []
+        linkedPatterns: editForm.linkedPatterns || [],
+        specialiteAtelier: (editForm.type === 'atelier' || editForm.type === 'stage') ? (editForm.specialiteAtelier || 'general') : null,
+        programmeFabrication: (editForm.type === 'atelier' || editForm.type === 'stage') && editForm.specialiteAtelier === 'fabrication' ? (editForm.programmeFabrication || null) : null
       });
 
       // Synchronisation automatique par lot (batch mettre à jour) si l'événement fait partie d'un sondage (pollGroupId)
@@ -1824,6 +1829,18 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
                 handleAssignPassenger={handleAssignPassenger}
                 handleRemovePassenger={handleRemovePassenger}
               />
+            </CordelAccordion>
+          )}
+
+          {/* ACCORDION ATELIER : Programme de Fabrication & Lutherie */}
+          {(event.type === 'atelier' || event.type === 'stage') && event.specialiteAtelier === 'fabrication' && (
+            <CordelAccordion
+              title="Programme de Fabrication & Lutherie"
+              subtitle="Chantiers prévus, étapes visées et boîte à outils"
+              icon="🛠️"
+              defaultOpen={true}
+            >
+              <EventWorkshopProgram event={activeEvent || event} />
             </CordelAccordion>
           )}
 

@@ -27,7 +27,7 @@ export function useInventoryData(groupId, isAuthorized, t) {
   
   const [partFormData, setPartFormData] = useState({
     nom: '',
-    typePiece: 'Fût',
+    typePiece: '',
     etat: 'Neuf',
     status: 'En stock',
     instrumentAssocie_id: null,
@@ -235,7 +235,7 @@ export function useInventoryData(groupId, isAuthorized, t) {
   const handleOpenPartAdd = useCallback(() => {
     setPartFormData({
       nom: '',
-      typePiece: 'Fût',
+      typePiece: '',
       etat: 'Neuf',
       status: 'En stock',
       instrumentAssocie_id: null,
@@ -254,7 +254,7 @@ export function useInventoryData(groupId, isAuthorized, t) {
   const handleOpenPartEdit = useCallback((part) => {
     setPartFormData({
       nom: part.nom || '',
-      typePiece: part.typePiece || 'Fût',
+      typePiece: part.typePiece || '',
       etat: part.etat || 'Neuf',
       status: part.status || 'En stock',
       instrumentAssocie_id: part.instrumentAssocie_id || null,

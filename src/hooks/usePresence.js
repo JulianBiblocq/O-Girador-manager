@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { doc, updateDoc, collection, query, where, onSnapshot } from 'firebase/firestore';
-import { db } from '../firebase';
+import { db, auth } from '../firebase';
 
 export function usePresence(userId, groupId, isPresenceEnabled = true) {
   const [onlineMembers, setOnlineMembers] = useState([]);
@@ -15,11 +15,17 @@ export function usePresence(userId, groupId, isPresenceEnabled = true) {
     const userRef = doc(db, 'users', userId);
 
     const updateStatus = (isOnlineStatus) => {
+      // Si l'utilisateur n'est plus connecté ou si la session a expiré, ne pas tenter l'écriture
+      if (!auth.currentUser || auth.currentUser.uid !== userId) return;
+
       updateDoc(userRef, {
         isOnline: isOnlineStatus,
         lastActive: new Date().toISOString()
       }).catch(err => {
-        console.error("usePresence - Erreur de mise à jour du statut :", err);
+        // Ignorer silencieusement si la déconnexion a déjà invalidé les permissions
+        if (err?.code !== 'permission-denied') {
+          console.error("usePresence - Erreur de mise à jour du statut :", err);
+        }
       });
     };
 

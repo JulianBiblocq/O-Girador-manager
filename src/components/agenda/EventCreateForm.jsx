@@ -10,6 +10,7 @@ import AddressAutocomplete from '../AddressAutocomplete';
 import LocationSelector from '../LocationSelector';
 import { DEFAULT_CUSTOM_CATEGORIES } from '../../utils/categoryUtils';
 import { useSequencerFirestoreData } from '../../hooks/useSequencerFirestoreData';
+import WorkshopProgramSelector from './WorkshopProgramSelector';
 
 /**
  * EventCreateForm component handles creation details of a new event.
@@ -176,6 +177,18 @@ export default function EventCreateForm({
                   ))}
                 </select>
               </div>
+
+              {/* Thématique & Programme d'Atelier de Lutherie / Fabrication */}
+              {(formData.type === 'atelier' || formData.type === 'stage') && (
+                <WorkshopProgramSelector
+                  specialiteAtelier={formData.specialiteAtelier || 'general'}
+                  setSpecialiteAtelier={(val) => setFormData(prev => ({ ...prev, specialiteAtelier: val }))}
+                  programmeFabrication={formData.programmeFabrication}
+                  setProgrammeFabrication={(val) => setFormData(prev => ({ ...prev, programmeFabrication: val }))}
+                  groupId={groupId}
+                  disabled={saving}
+                />
+              )}
 
               {/* Description de l'événement (Consolidée) */}
               <div className="flex flex-col gap-1">

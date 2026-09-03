@@ -1,12 +1,19 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { collection, query, where, onSnapshot } from 'firebase/firestore';
+import { db } from '../../firebase';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
-import { XiloClose, XiloChisel } from '../XiloIcons';
+import { XiloChisel } from '../XiloIcons';
 import { useInventoryProjects } from '../../hooks/useInventoryProjects';
 import { useInstrumentModels } from '../../hooks/useInstrumentModels';
 import { useInventoryData } from '../../hooks/useInventoryData';
 import { useAssociationSettings } from '../../hooks/useAssociationSettings';
 import PartWorkflowModal from './PartWorkflowModal';
+import FabricationCard from '../FabricationCard';
+import AssemblySlotItem from './AssemblySlotItem';
+import InstrumentVisualizer from './InstrumentVisualizer';
+import InstrumentBaptismModal from './InstrumentBaptismModal';
+import { doc, writeBatch } from 'firebase/firestore';
 
 export default function InventoryProjectsView({ groupId, isAuthorized, profileData, t, inventoryParts, onCreateInstrument }) {
   const { projects, loading: pLoading, addProject, updateProject, deleteProject } = useInventoryProjects(groupId);
@@ -16,9 +23,64 @@ export default function InventoryProjectsView({ groupId, isAuthorized, profileDa
   
   const [isAdding, setIsAdding] = useState(false);
   const [editingProject, setEditingProject] = useState(null);
-  const [newProjectData, setNewProjectData] = useState({ nom: '', modelId: '' });
+  const [newProjectData, setNewProjectData] = useState({ nom: '', modelId: '', artisanId: '' });
   const [selectedSessionSlots, setSelectedSessionSlots] = useState([]);
   const [selectedWorkflowSlot, setSelectedWorkflowSlot] = useState(null);
+  const [selectedVaralTutorial, setSelectedVaralTutorial] = useState(null);
+  const [membersList, setMembersList] = useState([]);
+  const [viewMode, setViewMode] = useState('schema'); // 'schema' | 'list'
+  const [showBaptismModal, setShowBaptismModal] = useState(false);
+
+  // Synchronisation de la liste des membres pour assignation d'artisan/élève
+  useEffect(() => {
+    if (!groupId) return;
+    const q = query(collection(db, 'users'), where('groupId', '==', groupId));
+    const unsub = onSnapshot(q, (snap) => {
+      const list = [];
+      snap.forEach(docSnap => {
+        const d = docSnap.data();
+        list.push({
+          id: docSnap.id,
+          nom: d.nom || '',
+          prenom: d.prenom || '',
+          instrument: d.instrument || ''
+        });
+      });
+      list.sort((a, b) => (a.prenom || '').localeCompare(b.prenom || ''));
+      setMembersList(list);
+    });
+    return () => unsub();
+  }, [groupId]);
+
+  /**
+   * Adaptateur de données pour convertir les chapitres/matériaux du modèle
+   * au format attendu par la modale FabricationCard du Varal.
+   */
+  const handleOpenVaralTutorial = (slot, model) => {
+    if (!slot) return;
+    const etapes = (slot.chapitres || []).map((chap, idx) => ({
+      id: chap.id || idx,
+      sousTitre: chap.titre || `Étape ${idx + 1}`,
+      description: chap.texte || '',
+      imageUrl: chap.photoUrl || '',
+      materiaux: Array.isArray(chap.materiaux) ? chap.materiaux : [],
+      outils: Array.isArray(chap.outils) ? chap.outils : []
+    }));
+
+    const cardPayload = {
+      id: slot.id || slot.slotId,
+      titre: `${model?.nom || 'Instrument'} - ${slot.nom || slot.slotLabel}`,
+      instrumentConcerne: model?.type || model?.nom || '',
+      materielRequis: Array.isArray(slot.materiels) ? slot.materiels : [],
+      outilsNecessaires: Array.isArray(slot.outils) ? slot.outils : [],
+      contenuFabrication: slot.description || `Fiche de fabrication et montage pour la pièce "${slot.nom || slot.slotLabel}". Suivez les étapes pour usiner et préparer cette pièce.`,
+      visuelAnimeUrl: slot.visuelAnimeUrl || '',
+      etapesFabrication: etapes,
+      notesLexique: slot.notesLexique || []
+    };
+
+    setSelectedVaralTutorial(cardPayload);
+  };
 
   const isWorkshopValidator = useMemo(() => {
     if (!profileData) return false;
@@ -46,9 +108,15 @@ export default function InventoryProjectsView({ groupId, isAuthorized, profileDa
     e.preventDefault();
     if (!newProjectData.nom || !newProjectData.modelId) return;
     try {
-      await addProject(newProjectData);
+      const selectedMember = membersList.find(m => m.id === newProjectData.artisanId);
+      const artisanNom = selectedMember ? `${selectedMember.prenom || ''} ${selectedMember.nom || ''}`.trim() : null;
+      await addProject({
+        ...newProjectData,
+        artisanId: newProjectData.artisanId || null,
+        artisanNom: artisanNom || null
+      });
       setIsAdding(false);
-      setNewProjectData({ nom: '', modelId: '' });
+      setNewProjectData({ nom: '', modelId: '', artisanId: '' });
     } catch (err) {
       alert("Erreur lors de la création du projet.");
     }
@@ -86,28 +154,62 @@ export default function InventoryProjectsView({ groupId, isAuthorized, profileDa
     }
   };
 
-  const handleFinalizeProject = async (project, model) => {
-    if (window.confirm(`Voulez-vous clôturer ce projet et générer l'instrument "${project.nom}" complet dans l'inventaire ?`)) {
-      // 1. Appeler le parent pour créer l'instrument avec la nomenclature
-      const assignedPartsIds = (project.piecesAssignees || []).map(a => a.inventoryPartId).filter(Boolean);
+  const handleOpenBaptismModal = (project, model) => {
+    setShowBaptismModal(true);
+  };
+
+  const handleValidateBaptism = async (project, model, formData) => {
+    try {
+      const batch = writeBatch(db);
+      const inventoryRef = collection(db, 'inventory');
+      const newInstrumentRef = doc(inventoryRef);
       
-      const success = await onCreateInstrument({
-        nom: project.nom,
-        type: model.type,
+      const assignedPartsIds = (project.piecesAssignees || []).map(a => a.inventoryPartId).filter(Boolean);
+
+      const kitChecklist = formData.kitAccessoires 
+        ? formData.kitAccessoires.split(',').map(s => s.trim()).filter(Boolean).map((nom, idx) => ({ id: Date.now() + idx, nom, checked: true }))
+        : [];
+
+      // 1. Création de l'instrument
+      const instrumentData = {
+        groupId,
+        nom: formData.nom,
+        type: model.type || model.nom,
         etat: 'Neuf',
-        proprietaire: 'Association',
-        localisationPhysique: 'Local',
+        proprietaire: formData.proprietaire || 'Association',
+        localisationPhysique: formData.localisationPhysique || 'Local',
         status: 'En stock',
         assignations: [],
-        kitChecklist: [],
-        nomenclature: assignedPartsIds
+        kitChecklist,
+        nomenclature: assignedPartsIds,
+        createdAt: new Date().toISOString()
+      };
+      batch.set(newInstrumentRef, instrumentData);
+
+      // 2. Mise à jour des pièces détachées
+      assignedPartsIds.forEach(partId => {
+        const partRef = doc(db, 'inventory_parts', partId);
+        batch.update(partRef, {
+          status: 'Assemble',
+          instrumentAssocie_id: newInstrumentRef.id
+        });
       });
 
-      if (success) {
-        // 2. Supprimer ou archiver le projet
-        await deleteProject(project.id);
-        setEditingProject(null);
-      }
+      // 3. Marquer le projet comme terminé
+      const projectRef = doc(db, 'inventory_projects', project.id);
+      batch.update(projectRef, {
+        status: 'termine',
+        updatedAt: new Date().toISOString()
+      });
+
+      await batch.commit();
+      
+      setShowBaptismModal(false);
+      setEditingProject(null);
+      // Appel optionnel pour rafraîchir ou notifier le parent si nécessaire
+    } catch (err) {
+      console.error("Erreur lors de la clôture du chantier :", err);
+      alert("Une erreur est survenue lors de la clôture du chantier.");
     }
   };
 
@@ -176,124 +278,96 @@ export default function InventoryProjectsView({ groupId, isAuthorized, profileDa
 
     return (
       <div className="flex flex-col gap-4">
-        <div className="flex justify-between items-center bg-cordel-bg-light border border-cordel-master-dark/20 p-3 rounded">
+        <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 bg-cordel-bg-light border border-cordel-master-dark/20 p-3 rounded">
           <div>
             <h3 className="text-sm font-black text-cordel-wood uppercase">Projet : {project.nom}</h3>
             <p className="text-[10px] text-stone-500 font-bold">Modèle : {model.nom}</p>
           </div>
-          <button onClick={() => setEditingProject(null)} className="text-[10px] bg-white border border-encre-noire px-3 py-1 rounded shadow hover:bg-stone-100">
-            Fermer le projet
-          </button>
+          
+          <div className="flex items-center gap-3 flex-wrap">
+            <div className="flex items-center gap-1.5 bg-white px-2 py-1 border border-stone-300 rounded shadow-xs">
+              <span className="text-[10px] font-bold text-stone-500">👤 Artisan :</span>
+              <select
+                value={project.artisanId || ''}
+                onChange={async (e) => {
+                  const aid = e.target.value;
+                  const selectedMember = membersList.find(m => m.id === aid);
+                  const anom = selectedMember ? `${selectedMember.prenom || ''} ${selectedMember.nom || ''}`.trim() : null;
+                  await updateProject(project.id, { artisanId: aid || null, artisanNom: anom || null });
+                  setEditingProject(prev => ({ ...prev, artisanId: aid || null, artisanNom: anom || null }));
+                }}
+                className="theme-input text-[10px] py-0.5 px-1 bg-transparent border-none cursor-pointer"
+              >
+                <option value="">-- Projet collectif (Atelier) --</option>
+                {membersList.map(m => (
+                  <option key={m.id} value={m.id}>
+                    {m.prenom} {m.nom} {m.instrument ? `(${m.instrument})` : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <button onClick={() => setEditingProject(null)} className="text-[10px] bg-white border border-encre-noire px-3 py-1 rounded shadow hover:bg-stone-100 cursor-pointer font-bold">
+              Fermer le projet
+            </button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* Colonne gauche : Assemblage */}
           <div className="lg:col-span-2 flex flex-col gap-3">
             <CordelCard variant="default" useExtremeBorder={true} className="p-4 bg-white/50">
-              <h4 className="text-xs font-bold text-encre-noire uppercase mb-3 flex justify-between">
-                <span>Pièces requises pour l'assemblage</span>
-                <span className="text-[10px] bg-cordel-wood text-white px-2 rounded-full">{allSlots.length - missingSlots.length} / {allSlots.length}</span>
+              <h4 className="text-xs font-bold text-encre-noire uppercase mb-3 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+                <div className="flex items-center gap-2">
+                  <span>Pièces requises pour l'assemblage</span>
+                  <span className="text-[10px] bg-cordel-wood text-white px-2 py-0.5 rounded-full">{allSlots.length - missingSlots.length} / {allSlots.length}</span>
+                </div>
+                <div className="flex gap-1 bg-cordel-master-dark/10 p-0.5 rounded">
+                  <button 
+                    onClick={() => setViewMode('schema')} 
+                    className={`text-[9px] px-2 py-1 rounded transition-colors ${viewMode === 'schema' ? 'bg-white shadow text-cordel-wood font-black' : 'text-stone-500 hover:text-cordel-wood'}`}
+                  >
+                    🖼️ Schéma
+                  </button>
+                  <button 
+                    onClick={() => setViewMode('list')} 
+                    className={`text-[9px] px-2 py-1 rounded transition-colors ${viewMode === 'list' ? 'bg-white shadow text-cordel-wood font-black' : 'text-stone-500 hover:text-cordel-wood'}`}
+                  >
+                    📋 Liste
+                  </button>
+                </div>
               </h4>
               
               <div className="flex flex-col gap-2">
-                {allSlots.map(slot => {
-                  const assignedInvId = assignedMap[slot.slotId];
-                  const invPart = inventoryParts.find(p => p.id === assignedInvId);
-                  const isAssigned = !!assignedInvId;
-                  
-                  // Calcul de l'état Terminé (Vert) ou En cours (Ocre)
-                  const totalSteps = slot.chapitres?.length || 0;
-                  const currentStep = invPart?.currentStepIndex || 0;
-                  const statutEtape = invPart?.statutEtape || 'en_cours';
-                  
-                  const isCompleted = isAssigned && (statutEtape === 'terminee' || (totalSteps === 0));
-                  const isWaitingControl = isAssigned && statutEtape === 'en_attente_controle';
-                  
-                  let cardClass = "bg-[#faf8f5] border-dashed border-cordel-master-dark/30 hover:bg-stone-100"; // Gris/Vide
-                  let icon = '⏳';
-                  
-                  if (isAssigned) {
-                    if (isCompleted) {
-                      cardClass = "bg-cordel-vert/10 border-cordel-vert hover:bg-cordel-vert/20";
-                      icon = '✅';
-                    } else if (isWaitingControl) {
-                      cardClass = "bg-amber-100 border-amber-400 animate-[pulse_2s_ease-in-out_infinite]";
-                      icon = '⏳';
-                    } else {
-                      cardClass = "bg-cordel-ocre/10 border-cordel-ocre hover:bg-cordel-ocre/20";
-                      icon = '🛠️';
-                    }
-                  }
-                  const isSessionSelected = selectedSessionSlots.includes(slot.slotId);
-                  if (isSessionSelected) {
-                    cardClass += " ring-2 ring-cordel-wood shadow-md scale-[1.01]";
-                  }
-                  
-                  return (
-                    <div 
-                      key={slot.slotId} 
-                      className={`flex flex-col sm:flex-row justify-between sm:items-start p-2 rounded border transition-all cursor-pointer ${cardClass}`}
-                      onClick={() => {
-                        if (isAssigned) {
-                          setSelectedWorkflowSlot({ slot, invPart });
-                        }
-                      }}
-                    >
-                      <div className="flex flex-col flex-1">
-                        <div className="flex items-center gap-2">
-                          <div onClick={(e) => { e.stopPropagation(); toggleSessionSlot(slot.slotId); }} className="cursor-pointer p-1">
-                            <input type="checkbox" checked={isSessionSelected} readOnly className="accent-cordel-wood pointer-events-none" />
-                          </div>
-                          <span className="text-xs font-bold text-encre-noire flex items-center gap-2">
-                            {icon} {slot.slotLabel}
-                          </span>
-                        </div>
-                        
-                        {!isAssigned && slot.chapitres?.length > 0 && (
-                          <span className="text-[9px] text-cordel-wood italic mt-0.5 ml-8">
-                            Voir le tuto ({slot.chapitres.length} étapes) dans le Varal
-                          </span>
-                        )}
-                        
-                        {isAssigned && !isCompleted && slot.chapitres?.length > 0 && (
-                          <span className={`text-[10px] font-bold mt-1 ml-8 ${isWaitingControl ? 'text-amber-600' : 'text-cordel-ocre'}`}>
-                            {isWaitingControl ? 'À CONTRÔLER' : (currentStep < totalSteps ? `En cours : Étape ${currentStep + 1} - ${slot.chapitres[currentStep]?.titre || 'Perçage'}` : 'En cours...')}
-                          </span>
-                        )}
-                      </div>
+                {viewMode === 'schema' ? (
+                  <InstrumentVisualizer 
+                    modelType={model.type || model.nom}
+                    slots={allSlots}
+                    assignedMap={assignedMap}
+                    inventoryParts={inventoryParts}
+                    onSelectPiece={setSelectedWorkflowSlot}
+                  />
+                ) : (
+                  allSlots.map(slot => {
+                    const assignedInvId = assignedMap[slot.slotId];
+                    const invPart = inventoryParts.find(p => p.id === assignedInvId);
 
-                      <div className="mt-2 sm:mt-0 self-center sm:self-start flex flex-col sm:items-end gap-1" onClick={e => e.stopPropagation()}>
-                        {isAssigned ? (
-                          <div className="flex items-center gap-2">
-                            <span className={`text-[10px] px-2 py-0.5 rounded border font-bold ${isCompleted ? 'text-cordel-vert bg-white border-cordel-vert/30' : 'text-cordel-ocre bg-white border-cordel-ocre/30'}`}>
-                              Assigné: {invPart?.nom || 'Pièce inconnue'}
-                            </span>
-                            <button 
-                              onClick={() => handleAssignPart(project.id, slot.slotId, null)}
-                              className="text-[9px] text-red-500 hover:underline font-bold"
-                            >
-                              Retirer
-                            </button>
-                          </div>
-                        ) : (
-                          <select
-                            onChange={(e) => handleAssignPart(project.id, slot.slotId, e.target.value)}
-                            value=""
-                            className="theme-input text-[10px] py-1 bg-white max-w-[200px]"
-                          >
-                            <option value="">-- Piocher dans le stock --</option>
-                            {availableStock.map(sp => (
-                              // On ne disable pas strictement car les noms peuvent différer, on fait confiance au luthier
-                              <option key={sp.id} value={sp.id}>
-                                {sp.nom} ({sp.typePiece})
-                              </option>
-                            ))}
-                          </select>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
+                    return (
+                      <AssemblySlotItem
+                        key={slot.slotId}
+                        slot={slot}
+                        model={model}
+                        invPart={invPart}
+                        isSessionSelected={selectedSessionSlots.includes(slot.slotId)}
+                        onToggleSessionSlot={toggleSessionSlot}
+                        onSelectWorkflow={setSelectedWorkflowSlot}
+                        onAssignPart={(slotId, partId) => handleAssignPart(project.id, slotId, partId)}
+                        onOpenVaralTutorial={(s) => handleOpenVaralTutorial(s, model)}
+                        availableStock={availableStock}
+                      />
+                    );
+                  })
+                )}
               </div>
 
               {isComplete && (
@@ -302,10 +376,10 @@ export default function InventoryProjectsView({ groupId, isAuthorized, profileDa
                   <CordelButton 
                     variant="vert" 
                     useExtremeBorder={true}
-                    onClick={() => handleFinalizeProject(project, model)}
+                    onClick={() => handleOpenBaptismModal(project, model)}
                     className="self-center shadow-lg"
                   >
-                    Valider la fabrication & Créer l'instrument
+                    🥁 Clôturer l'assemblage & Baptiser l'instrument
                   </CordelButton>
                 </div>
               )}
@@ -381,6 +455,13 @@ export default function InventoryProjectsView({ groupId, isAuthorized, profileDa
           isValidator={isWorkshopValidator}
           validatorName={profileData?.prenom || profileData?.nom_complet || 'Admin'}
         />
+
+        {selectedVaralTutorial && (
+          <FabricationCard
+            fabrication={selectedVaralTutorial}
+            onClose={() => setSelectedVaralTutorial(null)}
+          />
+        )}
       </div>
     );
   }
@@ -409,29 +490,41 @@ export default function InventoryProjectsView({ groupId, isAuthorized, profileDa
       {isAdding && (
         <CordelCard variant="default" className="p-4 bg-cordel-vert/5 border-cordel-vert/30 mb-4">
           <h4 className="text-xs font-bold text-encre-noire uppercase mb-3">Nouveau projet d'assemblage</h4>
-          <form onSubmit={handleCreateProject} className="flex flex-col sm:flex-row gap-3">
+          <form onSubmit={handleCreateProject} className="flex flex-col sm:flex-row gap-3 flex-wrap">
             <input
               type="text"
               placeholder="Nom de l'instrument (ex: Alfaia N°12)"
               value={newProjectData.nom}
               onChange={e => setNewProjectData(prev => ({ ...prev, nom: e.target.value }))}
               required
-              className="theme-input text-xs py-1.5 flex-1"
+              className="theme-input text-xs py-1.5 flex-1 min-w-[200px]"
             />
             <select
               value={newProjectData.modelId}
               onChange={e => setNewProjectData(prev => ({ ...prev, modelId: e.target.value }))}
               required
-              className="theme-input text-xs py-1.5 flex-1 bg-white"
+              className="theme-input text-xs py-1.5 flex-1 min-w-[180px] bg-white"
             >
               <option value="">-- Choisir un Modèle du Varal --</option>
               {models.map(m => (
                 <option key={m.id} value={m.id}>{m.nom} ({m.type})</option>
               ))}
             </select>
+            <select
+              value={newProjectData.artisanId || ''}
+              onChange={e => setNewProjectData(prev => ({ ...prev, artisanId: e.target.value }))}
+              className="theme-input text-xs py-1.5 flex-1 min-w-[180px] bg-white"
+            >
+              <option value="">-- Artisan : Projet collectif (Atelier) --</option>
+              {membersList.map(m => (
+                <option key={m.id} value={m.id}>
+                  👤 {m.prenom} {m.nom} {m.instrument ? `(${m.instrument})` : ''}
+                </option>
+              ))}
+            </select>
             <div className="flex gap-2">
-              <button type="button" onClick={() => setIsAdding(false)} className="text-[10px] font-bold px-3 border rounded hover:bg-stone-100">Annuler</button>
-              <button type="submit" className="text-[10px] font-bold px-3 bg-cordel-vert text-white rounded">Créer</button>
+              <button type="button" onClick={() => setIsAdding(false)} className="text-[10px] font-bold px-3 border rounded hover:bg-stone-100 cursor-pointer">Annuler</button>
+              <button type="submit" className="text-[10px] font-bold px-3 bg-cordel-vert text-white rounded cursor-pointer">Créer</button>
             </div>
           </form>
         </CordelCard>
@@ -454,7 +547,12 @@ export default function InventoryProjectsView({ groupId, isAuthorized, profileDa
                 <div className="flex justify-between items-start">
                   <div>
                     <h4 className="text-sm font-bold text-encre-noire">{proj.nom}</h4>
-                    <span className="text-[9px] text-cordel-wood uppercase font-bold tracking-wider">Modèle : {model?.nom || 'Inconnu'}</span>
+                    <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                      <span className="text-[9px] text-cordel-wood uppercase font-bold tracking-wider">Modèle : {model?.nom || 'Inconnu'}</span>
+                      <span className="text-[9px] px-1.5 py-0.2 rounded font-semibold bg-stone-100 border border-stone-200 text-stone-700">
+                        {proj.artisanNom ? `👤 ${proj.artisanNom}` : "🏛️ Projet d'atelier"}
+                      </span>
+                    </div>
                   </div>
                   <span className="text-[9px] bg-cordel-master-dark/10 px-2 py-0.5 rounded text-encre-noire uppercase font-bold">
                     {proj.statut}

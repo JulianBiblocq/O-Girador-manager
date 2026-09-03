@@ -44,6 +44,8 @@ export function useInventoryProjects(groupId) {
       const docRef = await addDoc(collection(db, 'inventory_projects'), {
         ...projectData,
         groupId,
+        artisanId: projectData.artisanId || null,
+        artisanNom: projectData.artisanNom || null,
         statut: 'En cours',
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),

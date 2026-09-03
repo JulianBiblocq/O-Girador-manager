@@ -12,6 +12,7 @@ import LocationSelector from '../LocationSelector';
 import { DEFAULT_CUSTOM_CATEGORIES } from '../../utils/categoryUtils';
 import { useSequencerFirestoreData } from '../../hooks/useSequencerFirestoreData';
 import { useEventFinance } from '../../hooks/useEventFinance';
+import WorkshopProgramSelector from '../agenda/WorkshopProgramSelector';
 
 /**
  * EventEditForm component handles editing details of an event.
@@ -189,6 +190,18 @@ export default function EventEditForm({
                   ))}
                 </select>
               </div>
+
+              {/* Thématique & Programme d'Atelier de Lutherie / Fabrication */}
+              {(editForm.type === 'atelier' || editForm.type === 'stage') && (
+                <WorkshopProgramSelector
+                  specialiteAtelier={editForm.specialiteAtelier || 'general'}
+                  setSpecialiteAtelier={(val) => setEditForm(prev => ({ ...prev, specialiteAtelier: val }))}
+                  programmeFabrication={editForm.programmeFabrication}
+                  setProgrammeFabrication={(val) => setEditForm(prev => ({ ...prev, programmeFabrication: val }))}
+                  groupId={groupId}
+                  disabled={savingEvent}
+                />
+              )}
 
               {/* Date */}
               <div className="flex flex-col gap-1">

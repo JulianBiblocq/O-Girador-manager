@@ -6,10 +6,12 @@ import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 import CostumeSizesTable from './CostumeSizesTable';
 import CostumesAdminManager from './CostumesAdminManager';
-import useConfirm from '../../hooks/useConfirm';
 import { useAssociationSettings } from '../../hooks/useAssociationSettings';
 import WardrobeBlock from '../association-settings/blocks/WardrobeBlock';
 import useHardwareBack from '../../hooks/useHardwareBack';
+import { useSuppliesData } from '../../hooks/useSuppliesData';
+import SuppliesListView from '../inventory/SuppliesListView';
+import WorkshopToolsListView from '../inventory/WorkshopToolsListView';
 
 export default function WardrobeManager({ groupId, role, isSystemAdmin, hasAccessLogistique, onBack, activeTab = 'inventory' }) {
   const { t } = useTranslation();
@@ -24,6 +26,12 @@ export default function WardrobeManager({ groupId, role, isSystemAdmin, hasAcces
     handleSave,
     saving: savingSettings
   } = useAssociationSettings(groupId, isAuthorized, onBack, t);
+
+  const {
+    supplies, tools, loading: suppliesLoading,
+    addSupply, updateSupply, deleteSupply, adjustSupplyStock,
+    addTool, updateTool, deleteTool
+  } = useSuppliesData(groupId, 'costumerie');
 
   // Costume Inventory State
   const [costumes, setCostumes] = useState([]);
@@ -637,6 +645,35 @@ export default function WardrobeManager({ groupId, role, isSystemAdmin, hasAcces
           />
         </div>
       )}
+      {/* TAB 4: MATIERES PREMIERES */}
+      {activeTab === 'supplies' && (
+        <div className="flex flex-col gap-6">
+          <SuppliesListView 
+            supplies={supplies} 
+            loading={suppliesLoading} 
+            addSupply={addSupply} 
+            updateSupply={updateSupply} 
+            deleteSupply={deleteSupply} 
+            adjustSupplyStock={adjustSupplyStock}
+            domaine="costumerie"
+          />
+        </div>
+      )}
+
+      {/* TAB 5: OUTILLAGE */}
+      {activeTab === 'tools' && (
+        <div className="flex flex-col gap-6">
+          <WorkshopToolsListView 
+            tools={tools} 
+            loading={suppliesLoading} 
+            addTool={addTool} 
+            updateTool={updateTool} 
+            deleteTool={deleteTool} 
+            domaine="costumerie"
+          />
+        </div>
+      )}
+      
     </div>
   );
 }

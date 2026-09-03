@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { doc, onSnapshot, updateDoc, collection, query, where } from 'firebase/firestore';
 import { auth, db } from './firebase';
@@ -61,6 +61,7 @@ const WidgetAgenda = lazyWithRetry(() => import('./components/WidgetAgenda'));
 const WidgetDocuments = lazyWithRetry(() => import('./components/WidgetDocuments'));
 const AtelierCouture = lazyWithRetry(() => import('./components/profile/AtelierCouture'));
 const MonParcours = lazyWithRetry(() => import('./components/pedagogy/MonParcours'));
+const MonAtelier = lazyWithRetry(() => import('./components/profile/MonAtelier'));
 
 const POLES_CONFIG = [
   {
@@ -77,6 +78,7 @@ const POLES_CONFIG = [
       { id: 'profil', label: 'Profil', labelKey: 'tabProfil' },
       { id: 'mon-parcours', label: 'Mon Parcours', labelKey: 'tabParcours' },
       { id: 'agenda', label: 'Agenda', labelKey: 'tabAgenda' },
+      { id: 'atelier', label: 'Atelier', labelKey: 'tabAtelier' },
       { id: 'materiel', label: 'Matériel', labelKey: 'tabMateriel' },
       { id: 'vestiaire', label: 'Vestiaire', labelKey: 'tabVestiaire' },
       { id: 'trombinoscope', label: 'Trombinoscope', labelKey: 'tabTrombinoscope' },
@@ -115,7 +117,9 @@ const POLES_CONFIG = [
       { id: 'orders-manager', label: 'Commandes', labelKey: 'tabOrders' },
       { id: 'wardrobe-inventory', label: "Costumes", labelKey: 'tabWardrobeInventory' },
       { id: 'wardrobe-couture', label: 'Atelier Couture', labelKey: 'tabWardrobeCouture' },
-      { id: 'wardrobe-sizes', label: 'Mensurations', labelKey: 'tabWardrobeSizes' }
+      { id: 'wardrobe-sizes', label: 'Mensurations', labelKey: 'tabWardrobeSizes' },
+      { id: 'wardrobe-supplies', label: 'Tissus & Mercerie', labelKey: 'tabWardrobeSupplies' },
+      { id: 'wardrobe-tools', label: 'Matériel Couture', labelKey: 'tabWardrobeTools' }
     ]
   },
 
@@ -287,8 +291,21 @@ export default function App() {
   const [installPromptAvailable, setInstallPromptAvailable] = useState(false);
   const [unreadPrivateMessagesCount, setUnreadPrivateMessagesCount] = useState(0);
   const [activePrivateChatUserId, setActivePrivateChatUserId] = useState(null);
+  const [latestUnreadSenderId, setLatestUnreadSenderId] = useState(null);
+  const [forumInitialTab, setForumInitialTab] = useState('discussions');
   const [initialPrivateMessage, setInitialPrivateMessage] = useState('');
   const [dashboardKey, setDashboardKey] = useState(0);
+
+  // Redirection directe vers la messagerie privée (avec interlocuteur spécifique si disponible)
+  const handleOpenPrivateMessages = useCallback((senderId = null) => {
+    const targetUserId = senderId || latestUnreadSenderId;
+    setForumInitialTab('inbox');
+    if (targetUserId) {
+      setActivePrivateChatUserId(targetUserId);
+    }
+    setCurrentPole('mon-espace');
+    setCurrentTab('forum');
+  }, [latestUnreadSenderId]);
 
   // Vérifier si l'utilisateur connecté fâte son anniversaire ce mois-ci
   const isUserBirthdayMonth = useMemo(() => {
@@ -304,7 +321,7 @@ export default function App() {
       return (d.getMonth() + 1) === currentMonth;
     }
     return false;
-  }, [profileData?.dateNaissance]);
+  }, [profileData]);
 
   const [associationData, setAssociationData] = useState(null);
   const [showOnboardingWizard, setShowOnboardingWizard] = useState(false);
@@ -743,10 +760,11 @@ export default function App() {
     };
   }, [user, profileData]);
 
-  // Synchroniser unread private messages count
+  // Synchroniser unread private messages count et identifier le dernier expéditeur
   useEffect(() => {
     if (!user?.uid) {
       setUnreadPrivateMessagesCount(0);
+      setLatestUnreadSenderId(null);
       return;
     }
     const messagesRef = collection(db, 'private_messages');
@@ -757,6 +775,14 @@ export default function App() {
     );
     const unsubscribe = onSnapshot(q, (snap) => {
       setUnreadPrivateMessagesCount(snap.size);
+      if (!snap.empty) {
+        // Trier pour identifier l'expéditeur du message non lu le plus récent
+        const docs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        docs.sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0));
+        setLatestUnreadSenderId(docs[0]?.senderId || null);
+      } else {
+        setLatestUnreadSenderId(null);
+      }
     }, (error) => {
       console.error("App - Error syncing unread messages:", error);
     });
@@ -987,7 +1013,7 @@ export default function App() {
   // 4. Utilisateur connecté mais profil Firestore manquant ou incomplet -> Onboarding
   const isProfileComplete = profileData?.onboardingCompleted === true || (profileData?.telephone && profileData?.adresseRue);
 
-  if (!profileExists || !profileData || !isProfileComplete) {
+  if (!profileExists || !profileData || (!isProfileComplete && !isSystemOrSuperAdminOrMestre)) {
     return (
       <div style={brandingStyle} className="min-h-screen flex flex-col w-full force-light-theme">
         <React.Suspense fallback={<div className="flex-1 flex justify-center items-center py-12 animate-pulse text-xs font-bold select-none">⏳ Initialisation...</div>}>
@@ -1035,7 +1061,7 @@ export default function App() {
     if (tabId === 'mon-parcours' && enabledModules.monParcoursGlobal === false) return false;
     if (tabId === 'inventory' && enabledModules.logistique === false) return false;
     if (tabId === 'orders-manager' && enabledModules.commandes === false) return false;
-    if (['vestiaire', 'wardrobe-inventory', 'wardrobe-couture', 'wardrobe-sizes'].includes(tabId) && enabledModules.vestiaire === false) return false;
+    if (['vestiaire', 'wardrobe-inventory', 'wardrobe-couture', 'wardrobe-sizes', 'wardrobe-supplies', 'wardrobe-tools'].includes(tabId) && enabledModules.vestiaire === false) return false;
     if (['studio-social', 'newsletter'].includes(tabId) && enabledModules.studioSocial === false) return false;
     if (tabId === 'reunion-manager' && enabledModules.reunions === false) return false;
     if (['forum', 'mestre-forum-channels'].includes(tabId) && enabledModules.forum === false) return false;
@@ -1249,6 +1275,7 @@ export default function App() {
           onNavigateToPole={handleNavigateToPole}
           currentTab={currentTab}
           onNavigateToTab={(tab) => setCurrentTab(tab)}
+          onOpenPrivateMessages={handleOpenPrivateMessages}
           polesList={POLES_CONFIG}
           profileData={profileData}
           onSignOut={handleSignOut}
@@ -1303,6 +1330,12 @@ export default function App() {
                 onNavigateToView={handleNavigateToView} 
                 isFullPage={true}
               />
+            ) : currentTab === 'atelier' ? (
+              <MonAtelier 
+                user={user} 
+                profileData={profileData} 
+                onBack={() => handleNavigateToPole('accueil')} 
+              />
             ) : currentTab === 'materiel' ? (
               <UserMateriel 
                 user={user} 
@@ -1334,6 +1367,7 @@ export default function App() {
                 onBack={() => handleNavigateToPole('accueil')} 
                 activePrivateChatUserId={activePrivateChatUserId}
                 initialPrivateMessage={initialPrivateMessage}
+                initialTab={forumInitialTab}
                 onClearActivePrivateChat={() => {
                   setActivePrivateChatUserId(null);
                   setInitialPrivateMessage('');
@@ -1461,7 +1495,7 @@ export default function App() {
                 hasAccessLogistique={hasAccessLogistique}
                 onBack={() => handleNavigateToPole('accueil')} 
               />
-            ) : (['wardrobe-inventory', 'wardrobe-couture', 'wardrobe-sizes'].includes(currentTab) && hasAccessLogistique) ? (
+            ) : (['wardrobe-inventory', 'wardrobe-couture', 'wardrobe-sizes', 'wardrobe-supplies', 'wardrobe-tools'].includes(currentTab) && hasAccessLogistique) ? (
               <WardrobeManager 
                 groupId={profileData?.groupId}
                 role={profileData?.role}
@@ -1469,7 +1503,9 @@ export default function App() {
                 hasAccessLogistique={hasAccessLogistique}
                 activeTab={
                   currentTab === 'wardrobe-inventory' ? 'inventory' :
-                  currentTab === 'wardrobe-couture' ? 'couture' : 'sizes'
+                  currentTab === 'wardrobe-couture' ? 'couture' :
+                  currentTab === 'wardrobe-supplies' ? 'supplies' :
+                  currentTab === 'wardrobe-tools' ? 'tools' : 'sizes'
                 }
                 onBack={() => handleNavigateToPole('accueil')}
               />

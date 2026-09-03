@@ -920,6 +920,7 @@ export const pt = {
     tabDashboard: "Resumo",
     tabProfil: "Perfil",
     tabAgenda: "Agenda",
+    tabAtelier: "Oficina",
     tabMateriel: "Material",
     tabVestiaire: "Figurino",
     tabTrombinoscope: "Elenco",

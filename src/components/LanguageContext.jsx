@@ -1,8 +1,7 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { fr } from '../locales/fr';
 import { pt } from '../locales/pt';
-
-const LanguageContext = createContext();
+import { LanguageContext } from '../context/languageContext';
 
 const translations = { fr, pt };
 
@@ -71,10 +70,5 @@ export function LanguageProvider({ children }) {
   );
 }
 
-export function useTranslation() {
-  const context = useContext(LanguageContext);
-  if (!context) {
-    throw new Error('useTranslation must be used within a LanguageProvider');
-  }
-  return context;
-}
+// Ré-exportation pour compatibilité ascendante totale
+export { useTranslation } from '../hooks/useTranslation';

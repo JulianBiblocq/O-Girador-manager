@@ -43,6 +43,7 @@ export default function LayoutShell({
   onNavigateToPole,
   currentTab,
   onNavigateToTab,
+  onOpenPrivateMessages,
   polesList = [],
   profileData, 
   onSignOut, 
@@ -188,8 +189,9 @@ export default function LayoutShell({
     { id: 'profil', label: 'Profil', icon: <XiloUser size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('mon-espace'); onNavigateToTab && onNavigateToTab('profil'); } },
     { id: 'mon-parcours', label: 'Mon Parcours', icon: <XiloCompass size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('mon-espace'); onNavigateToTab && onNavigateToTab('mon-parcours'); } },
     { id: 'agenda', label: 'Agenda', icon: <XiloCalendar size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('mon-espace'); onNavigateToTab && onNavigateToTab('agenda'); } },
+    { id: 'atelier', label: 'Atelier', icon: <XiloChisel size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('mon-espace'); onNavigateToTab && onNavigateToTab('atelier'); } },
     { id: 'materiel', label: 'Matériel', icon: <XiloCaixa size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('mon-espace'); onNavigateToTab && onNavigateToTab('materiel'); } },
-
+    { id: 'vestiaire', label: 'Vestiaire', icon: <XiloHanger size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('mon-espace'); onNavigateToTab && onNavigateToTab('vestiaire'); } },
     { id: 'trombinoscope', label: 'Trombinoscope', icon: <XiloPeople size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('mon-espace'); onNavigateToTab && onNavigateToTab('trombinoscope'); } },
     { id: 'forum', label: 'Porte-voix', icon: <XiloMegaphone size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('mon-espace'); onNavigateToTab && onNavigateToTab('forum'); } },
     { id: 'varal', label: 'Varal', icon: <XiloScroll size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('accueil'); onNavigateToTab && onNavigateToTab('varal'); } }
@@ -485,7 +487,27 @@ export default function LayoutShell({
                         {t(`poles.${pole.id}`) || pole.label}
                       </span>
                       {pole.id === 'accueil' && unreadPrivateMessagesCount > 0 && (
-                        <span className="w-3.5 h-3.5 bg-red-600 text-white text-[8px] font-black rounded-full flex items-center justify-center animate-pulse shrink-0">
+                        <span
+                          role="button"
+                          tabIndex={0}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (onOpenPrivateMessages) {
+                              onOpenPrivateMessages();
+                            } else {
+                              if (onNavigateToPole) onNavigateToPole('mon-espace');
+                              if (onNavigateToTab) onNavigateToTab('forum');
+                            }
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.stopPropagation();
+                              if (onOpenPrivateMessages) onOpenPrivateMessages();
+                            }
+                          }}
+                          className="w-4 h-4 bg-red-600 hover:bg-red-700 text-white text-[9px] font-black rounded-full flex items-center justify-center animate-pulse shrink-0 cursor-pointer shadow-xs hover:scale-125 transition-transform"
+                          title={`${unreadPrivateMessagesCount} message(s) privé(s) non lu(s) - Cliquer pour ouvrir`}
+                        >
                           {unreadPrivateMessagesCount}
                         </span>
                       )}
@@ -511,7 +533,27 @@ export default function LayoutShell({
                         {item.label}
                       </span>
                       {item.id === 'forum' && unreadPrivateMessagesCount > 0 && (
-                        <span className="w-3.5 h-3.5 bg-red-600 text-white text-[8px] font-black rounded-full flex items-center justify-center animate-pulse shrink-0">
+                        <span
+                          role="button"
+                          tabIndex={0}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (onOpenPrivateMessages) {
+                              onOpenPrivateMessages();
+                            } else {
+                              if (onNavigateToPole) onNavigateToPole('mon-espace');
+                              if (onNavigateToTab) onNavigateToTab('forum');
+                            }
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.stopPropagation();
+                              if (onOpenPrivateMessages) onOpenPrivateMessages();
+                            }
+                          }}
+                          className="w-4 h-4 bg-red-600 hover:bg-red-700 text-white text-[9px] font-black rounded-full flex items-center justify-center animate-pulse shrink-0 cursor-pointer shadow-xs hover:scale-125 transition-transform"
+                          title={`${unreadPrivateMessagesCount} message(s) privé(s) non lu(s) - Cliquer pour ouvrir`}
+                        >
                           {unreadPrivateMessagesCount}
                         </span>
                       )}
@@ -788,7 +830,29 @@ export default function LayoutShell({
                           {t(`poles.${pole.id}`) || pole.label}
                         </span>
                         {pole.id === 'accueil' && unreadPrivateMessagesCount > 0 && (
-                          <span className="w-4 h-4 bg-red-600 text-white text-[8px] font-black rounded-full flex items-center justify-center animate-pulse shrink-0">
+                          <span
+                            role="button"
+                            tabIndex={0}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (onOpenPrivateMessages) {
+                                onOpenPrivateMessages();
+                              } else {
+                                if (onNavigateToPole) onNavigateToPole('mon-espace');
+                                if (onNavigateToTab) onNavigateToTab('forum');
+                              }
+                              setIsDrawerOpen(false);
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' || e.key === ' ') {
+                                e.stopPropagation();
+                                if (onOpenPrivateMessages) onOpenPrivateMessages();
+                                setIsDrawerOpen(false);
+                              }
+                            }}
+                            className="w-4 h-4 bg-red-600 hover:bg-red-700 text-white text-[9px] font-black rounded-full flex items-center justify-center animate-pulse shrink-0 cursor-pointer shadow-xs hover:scale-125 transition-transform"
+                            title={`${unreadPrivateMessagesCount} message(s) privé(s) non lu(s) - Cliquer pour ouvrir`}
+                          >
                             {unreadPrivateMessagesCount}
                           </span>
                         )}
@@ -817,7 +881,29 @@ export default function LayoutShell({
                           {item.label}
                         </span>
                         {item.id === 'forum' && unreadPrivateMessagesCount > 0 && (
-                          <span className="w-4 h-4 bg-red-600 text-white text-[8px] font-black rounded-full flex items-center justify-center animate-pulse shrink-0">
+                          <span
+                            role="button"
+                            tabIndex={0}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (onOpenPrivateMessages) {
+                                onOpenPrivateMessages();
+                              } else {
+                                if (onNavigateToPole) onNavigateToPole('mon-espace');
+                                if (onNavigateToTab) onNavigateToTab('forum');
+                              }
+                              setIsDrawerOpen(false);
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' || e.key === ' ') {
+                                e.stopPropagation();
+                                if (onOpenPrivateMessages) onOpenPrivateMessages();
+                                setIsDrawerOpen(false);
+                              }
+                            }}
+                            className="w-4 h-4 bg-red-600 hover:bg-red-700 text-white text-[9px] font-black rounded-full flex items-center justify-center animate-pulse shrink-0 cursor-pointer shadow-xs hover:scale-125 transition-transform"
+                            title={`${unreadPrivateMessagesCount} message(s) privé(s) non lu(s) - Cliquer pour ouvrir`}
+                          >
                             {unreadPrivateMessagesCount}
                           </span>
                         )}

@@ -161,7 +161,17 @@ function ChannelTreeItem({
   );
 }
 
-export default function Forum({ user, profileData, onBack, activePrivateChatUserId, initialPrivateMessage = '', onClearActivePrivateChat, onOpenStudioForum, breakGlassActive = false }) {
+export default function Forum({ 
+  user, 
+  profileData, 
+  onBack, 
+  activePrivateChatUserId, 
+  initialPrivateMessage = '', 
+  onClearActivePrivateChat, 
+  onOpenStudioForum, 
+  breakGlassActive = false,
+  initialTab = 'discussions'
+}) {
   const { t } = useTranslation();
   const { confirm } = useConfirm();
   const { actionLoading, moveThread, togglePinThread, deleteThread } = useForumModeration(profileData?.groupId);
@@ -220,7 +230,14 @@ export default function Forum({ user, profileData, onBack, activePrivateChatUser
     }
   };
   
-  const [activeTab, setActiveTab] = useState('discussions'); // 'discussions' ou 'inbox'
+  const [activeTab, setActiveTab] = useState(initialTab || 'discussions'); // 'discussions' ou 'inbox'
+  
+  // Synchronisation de l'onglet actif si initialTab est passé en navigation directe
+  useEffect(() => {
+    if (initialTab) {
+      setActiveTab(initialTab);
+    }
+  }, [initialTab]);
   const [mobileView, setMobileView] = useState('channels'); // 'channels' (Écran 1) ou 'discussion' (Écran 2)
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [privateMessages, setPrivateMessages] = useState([]);

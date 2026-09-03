@@ -28,7 +28,7 @@ export default function FabricationCard({ fabrication, onClose }) {
     const isVideo = url.toLowerCase().includes('.mp4') || url.toLowerCase().includes('video');
     
     // Style Cordel: Bordure irrégulière, shadow, léger rotate
-    const mediaContainerClass = "relative bg-[var(--color-cordel-bg)] p-2 md:p-3 shadow-[3px_3px_0px_0px_var(--color-cordel-wood)] border-[var(--theme-border-width)] border-[var(--theme-border-style)] border-[var(--color-cordel-wood)] transform rotate-[1deg] w-full max-w-lg mx-auto";
+    const mediaContainerClass = "relative bg-[#fdfaf2] p-2 md:p-3 shadow-[3px_3px_0px_0px_var(--color-cordel-wood)] border-[var(--theme-border-width)] border-[var(--theme-border-style)] border-[var(--color-cordel-wood)] transform rotate-[1deg] w-full max-w-lg mx-auto";
 
     if (isVideo) {
       return (
@@ -86,7 +86,7 @@ export default function FabricationCard({ fabrication, onClose }) {
       }}
     >
       <div 
-        className="relative bg-[var(--color-cordel-bg)] w-full max-w-3xl max-h-[95vh] flex flex-col rounded-[var(--theme-border-radius)] shadow-[5px_5px_0px_0px_#181716] border-[var(--theme-border-width)] border-[var(--theme-border-style)] border-black overflow-hidden"
+        className="relative bg-[#fdfaf2] w-full max-w-3xl max-h-[95vh] flex flex-col rounded-[var(--theme-border-radius)] shadow-[5px_5px_0px_0px_#181716] border-[var(--theme-border-width)] border-[var(--theme-border-style)] border-black overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* En-tête de la Modale */}
@@ -119,7 +119,7 @@ export default function FabricationCard({ fabrication, onClose }) {
         </div>
 
         {/* Corps défilable */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-[var(--color-cordel-bg)]">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-[#fdfaf2]">
           <div className="flex flex-col gap-8 max-w-2xl mx-auto">
             
             {/* Visuel Anime Principal (Proéminent) */}
