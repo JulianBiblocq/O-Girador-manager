@@ -22,6 +22,7 @@ export default function InventoryPartsView({
   handleOpenPartEdit,
   handleSavePart,
   handleDeletePart,
+  handleSplitPart,
   saving,
   t: _t
 }) {
@@ -178,6 +179,33 @@ export default function InventoryPartsView({
             </div>
           )}
 
+          {editingPartId && parseInt(partFormData.quantite, 10) > 1 && (
+            <div className="mb-4 bg-amber-50 border border-amber-300 p-2.5 rounded flex items-center justify-between gap-3 text-left">
+              <div className="flex flex-col gap-0.5">
+                <span className="text-[10px] font-black text-amber-900 uppercase">
+                  ⚡ Lot de {partFormData.quantite} pièces groupées
+                </span>
+                <span className="text-[9px] text-stone-600">
+                  Cette référence compte {partFormData.quantite} unités groupées. Vous pouvez la scinder pour créer {partFormData.quantite} pièces distinctes et les affecter chacune à un projet différent.
+                </span>
+              </div>
+              <button
+                type="button"
+                disabled={saving}
+                onClick={async () => {
+                  const fullPart = inventoryParts.find(p => p.id === editingPartId);
+                  if (fullPart && handleSplitPart) {
+                    await handleSplitPart(fullPart);
+                    setIsPartFormOpen(false);
+                  }
+                }}
+                className="text-[9px] font-black uppercase bg-amber-600 hover:bg-amber-700 text-white px-2.5 py-1.5 rounded shadow-xs cursor-pointer shrink-0 transition-all active:scale-95"
+              >
+                ⚡ Scinder en {partFormData.quantite} pièces
+              </button>
+            </div>
+          )}
+
           <form onSubmit={handleSavePart} className="flex flex-col gap-3.5">
             <div className="flex flex-col gap-1">
               <label className="text-[8px] uppercase font-bold tracking-wider text-cordel-master-dark">
@@ -293,18 +321,31 @@ export default function InventoryPartsView({
               </div>
 
               <div className="flex flex-col gap-1">
-                <label className="text-[8px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                  Quantité
-                </label>
+                <div className="flex justify-between items-center">
+                  <label className="text-[8px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                    Quantité {editingPartId ? "unitaire" : "à créer (pièces indépendantes)"}
+                  </label>
+                  {!editingPartId && (parseInt(partFormData.quantite, 10) || 1) > 1 && (
+                    <span className="text-[8px] font-black text-[var(--color-cordel-vert)]">
+                      {partFormData.quantite} pièces distinctes (#1 à #{partFormData.quantite})
+                    </span>
+                  )}
+                </div>
                 <input
                   type="number"
                   name="quantite"
                   min="1"
+                  max="50"
                   value={partFormData.quantite || 1}
                   onChange={handlePartInputChange}
-                  disabled={saving}
-                  className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light"
+                  disabled={saving || Boolean(editingPartId)}
+                  className={`theme-input text-xs font-bold py-1.5 bg-cordel-bg-light ${editingPartId ? 'opacity-60 cursor-not-allowed' : ''}`}
                 />
+                {!editingPartId && (
+                  <span className="text-[8px] text-stone-500 italic">
+                    Chaque pièce sera créée de façon autonome et numérotée pour être affectée individuellement à un projet.
+                  </span>
+                )}
               </div>
             </div>
 
@@ -512,7 +553,14 @@ export default function InventoryPartsView({
                     return (
                       <tr key={part.id} className="border-b border-dashed border-encre-noire/20 hover:bg-black/5 transition-colors">
                         <td className="p-2 border-r border-encre-noire/10 font-bold sticky left-0 bg-cordel-card-bg z-10 shadow-[1px_0_0_0_rgba(24,23,22,0.1)]">
-                          {part.nom}
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span>{part.nom}</span>
+                            {parseInt(part.quantite, 10) > 1 && (
+                              <span className="px-1.5 py-0.2 rounded text-[8px] font-black uppercase tracking-wider bg-amber-100 text-amber-800 border border-amber-300">
+                                Lot de {part.quantite}
+                              </span>
+                            )}
+                          </div>
                           {part.modelId && (
                             <div className="text-[9px] text-cordel-master-dark opacity-80 mt-0.5">
                               Modèle : {model?.nom || 'Inconnu'}
@@ -573,7 +621,19 @@ export default function InventoryPartsView({
                           )}
                         </td>
                         <td className="p-2 text-right">
-                          <div className="flex justify-end gap-2">
+                          <div className="flex justify-end items-center gap-1.5">
+                            {parseInt(part.quantite, 10) > 1 && (
+                              <button
+                                type="button"
+                                onClick={() => handleSplitPart && handleSplitPart(part)}
+                                className="px-2 py-1 border border-amber-600 bg-amber-50 hover:bg-amber-100 text-amber-900 rounded shadow-[1px_1px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none cursor-pointer text-[9px] font-black uppercase flex items-center gap-1 shrink-0"
+                                title={`Cette référence regroupe ${part.quantite} unités. Cliquer pour scinder en ${part.quantite} pièces distinctes.`}
+                              >
+                                <span>⚡</span>
+                                <span className="hidden sm:inline">Scinder</span>
+                                <span>({part.quantite})</span>
+                              </button>
+                            )}
                             <button
                               onClick={() => handleOpenPartEdit(part)}
                               className="p-1.5 border border-encre-noire bg-cordel-bg-light hover:bg-cordel-hover text-encre-noire rounded shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none cursor-pointer"

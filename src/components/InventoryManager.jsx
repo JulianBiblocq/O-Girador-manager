@@ -107,7 +107,8 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin,
     handleOpenPartAdd,
     handleOpenPartEdit,
     handleSavePart,
-    handleDeletePart
+    handleDeletePart,
+    handleSplitPart
   } = useInventoryData(groupId, isAuthorized, t);
 
   const handleSaveWrapper = async (e) => {
@@ -1316,6 +1317,7 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin,
             handleOpenPartEdit={handleOpenPartEdit}
             handleSavePart={handleSavePart}
             handleDeletePart={handleDeletePart}
+            handleSplitPart={handleSplitPart}
             saving={saving}
             t={t}
           />

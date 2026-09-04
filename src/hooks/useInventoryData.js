@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { collection, query, where, onSnapshot, doc, addDoc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, doc, addDoc, updateDoc, deleteDoc, writeBatch } from 'firebase/firestore';
 import { db } from '../firebase';
 import useConfirm from './useConfirm';
 
@@ -276,8 +276,10 @@ export function useInventoryData(groupId, isAuthorized, t) {
 
     setSaving(true);
     try {
-      const payload = {
-        nom: partFormData.nom.trim(),
+      const baseNom = partFormData.nom.trim();
+      const qty = Math.max(1, parseInt(partFormData.quantite, 10) || 1);
+
+      const basePayload = {
         typePiece: partFormData.typePiece,
         etat: partFormData.etat,
         status: partFormData.status || 'En stock',
@@ -287,15 +289,59 @@ export function useInventoryData(groupId, isAuthorized, t) {
         partId: partFormData.partId || null,
         notesAtelier: partFormData.notesAtelier || '',
         currentStepIndex: partFormData.currentStepIndex || 0,
-        quantite: partFormData.quantite || 1,
+        quantite: 1, // Chaque pièce enregistrée est unitaire et autonome
         statutEtape: partFormData.statutEtape || 'en_cours',
         historiqueControles: partFormData.historiqueControles || []
       };
 
       if (editingPartId) {
-        await updateDoc(doc(db, 'inventory_parts', editingPartId), payload);
+        // Mise à jour d'une pièce individuelle existante
+        await updateDoc(doc(db, 'inventory_parts', editingPartId), {
+          ...basePayload,
+          nom: baseNom
+        });
       } else {
-        await addDoc(collection(db, 'inventory_parts'), payload);
+        if (qty === 1) {
+          // Création d'une pièce unique
+          await addDoc(collection(db, 'inventory_parts'), {
+            ...basePayload,
+            nom: baseNom
+          });
+        } else {
+          // Création de N pièces indépendantes et numérotées
+          const explicitMatch = baseNom.match(/^(.*?)\s*#(\d+)$/);
+          let cleanBase = baseNom;
+          let startNumber = 1;
+
+          if (explicitMatch) {
+            cleanBase = explicitMatch[1].trim();
+            startNumber = parseInt(explicitMatch[2], 10);
+          } else {
+            // Recherche de la numérotation la plus élevée existante pour ce même nom
+            const existingMatchingNumbers = (inventoryParts || [])
+              .filter(p => p.nom && p.nom.startsWith(`${baseNom} #`))
+              .map(p => {
+                const match = p.nom.slice(`${baseNom} #`.length).match(/^(\d+)/);
+                return match ? parseInt(match[1], 10) : 0;
+              });
+            const maxExisting = existingMatchingNumbers.length > 0 ? Math.max(...existingMatchingNumbers) : 0;
+            startNumber = maxExisting > 0 ? maxExisting + 1 : 1;
+          }
+
+          const batch = writeBatch(db);
+          const partsRef = collection(db, 'inventory_parts');
+
+          for (let i = 0; i < qty; i++) {
+            const num = startNumber + i;
+            const newDocRef = doc(partsRef);
+            batch.set(newDocRef, {
+              ...basePayload,
+              nom: `${cleanBase} #${num}`
+            });
+          }
+
+          await batch.commit();
+        }
       }
 
       setIsPartFormOpen(false);
@@ -305,7 +351,68 @@ export function useInventoryData(groupId, isAuthorized, t) {
     } finally {
       setSaving(false);
     }
-  }, [groupId, partFormData, editingPartId]);
+  }, [groupId, partFormData, editingPartId, inventoryParts]);
+
+  // Scinder une pièce existante ayant une quantité > 1 en pièces unitaires indépendantes
+  const handleSplitPart = useCallback(async (part) => {
+    const qty = parseInt(part.quantite, 10) || 1;
+    if (qty <= 1) return;
+
+    const ok = await confirm({
+      title: "Scinder la pièce en unités indépendantes",
+      message: `La référence « ${part.nom} » compte actuellement ${qty} unités.\n\nSouhaitez-vous la diviser en ${qty} pièces indépendantes afin de pouvoir affecter chaque exemplaire à un projet spécifique ?`,
+      confirmText: `Scinder en ${qty} pièces`,
+      cancelText: "Annuler",
+      variant: "default"
+    });
+
+    if (!ok) return;
+
+    setSaving(true);
+    try {
+      const batch = writeBatch(db);
+      const baseNom = part.nom.trim();
+      const explicitMatch = baseNom.match(/^(.*?)\s*#(\d+)$/);
+      let cleanBase = baseNom;
+      let startNumber = 1;
+
+      if (explicitMatch) {
+        cleanBase = explicitMatch[1].trim();
+        startNumber = parseInt(explicitMatch[2], 10);
+      } else {
+        cleanBase = baseNom;
+        startNumber = 1;
+      }
+
+      // 1. Mettre à jour la pièce initiale pour la transformer en exemplaire #1
+      const currentDocRef = doc(db, 'inventory_parts', part.id);
+      batch.update(currentDocRef, {
+        nom: `${cleanBase} #${startNumber}`,
+        quantite: 1
+      });
+
+      // 2. Créer les (qty - 1) exemplaires supplémentaires indépendants
+      const partsRef = collection(db, 'inventory_parts');
+      const { id: _ignoreId, ...restPart } = part;
+
+      for (let i = 1; i < qty; i++) {
+        const num = startNumber + i;
+        const newDocRef = doc(partsRef);
+        batch.set(newDocRef, {
+          ...restPart,
+          nom: `${cleanBase} #${num}`,
+          quantite: 1
+        });
+      }
+
+      await batch.commit();
+    } catch (err) {
+      console.error("useInventoryData - Erreur lors de la scission de la pièce :", err);
+      alert("Erreur lors de la scission de la pièce.");
+    } finally {
+      setSaving(false);
+    }
+  }, [confirm]);
 
   const handleDeletePart = useCallback(async (id) => {
     const ok = await confirm({
@@ -438,6 +545,7 @@ export function useInventoryData(groupId, isAuthorized, t) {
     handleOpenPartEdit,
     handleSavePart,
     handleDeletePart,
+    handleSplitPart,
     updatePartWorkflow
   };
 }
