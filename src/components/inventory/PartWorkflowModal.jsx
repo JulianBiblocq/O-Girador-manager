@@ -1,13 +1,36 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { XiloClose } from '../XiloIcons';
 import CordelButton from '../CordelButton';
 
-export default function PartWorkflowModal({ isOpen, onClose, slot, invPart, updatePartWorkflow, isValidator, validatorName }) {
+export default function PartWorkflowModal({ isOpen, onClose, slot, invPart, updatePartWorkflow, isValidator, validatorName, onFeedback }) {
   if (!isOpen || !slot || !invPart) return null;
 
   const [retoucheNote, setRetoucheNote] = useState('');
   const [showRetoucheInput, setShowRetoucheInput] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [feedback, setFeedback] = useState(null);
+  const [autoCloseTimer, setAutoCloseTimer] = useState(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      setFeedback(null);
+      setShowRetoucheInput(false);
+      setRetoucheNote('');
+      if (autoCloseTimer) {
+        clearTimeout(autoCloseTimer);
+        setAutoCloseTimer(null);
+      }
+    }
+  }, [isOpen, invPart?.id]);
+
+  const handleClose = () => {
+    if (autoCloseTimer) {
+      clearTimeout(autoCloseTimer);
+      setAutoCloseTimer(null);
+    }
+    setFeedback(null);
+    onClose();
+  };
 
   const totalSteps = slot.chapitres?.length || 0;
   const currentStep = invPart.currentStepIndex || 0;
@@ -20,6 +43,19 @@ export default function PartWorkflowModal({ isOpen, onClose, slot, invPart, upda
     setLoading(true);
     try {
       await updatePartWorkflow(invPart.id, { statutEtape: 'en_attente_controle' });
+      const fb = {
+        type: 'submitted',
+        title: "Étape soumise au contrôle !",
+        message: "Votre étape a été soumise au contrôle du Mestre avec succès. Fermeture..."
+      };
+      setFeedback(fb);
+      onFeedback?.(fb);
+      const timer = setTimeout(() => {
+        handleClose();
+      }, 1400);
+      setAutoCloseTimer(timer);
+    } catch (err) {
+      console.error("Erreur soumission étape :", err);
     } finally {
       setLoading(false);
     }
@@ -39,6 +75,22 @@ export default function PartWorkflowModal({ isOpen, onClose, slot, invPart, upda
           { date: new Date().toISOString(), action: 'Validation', etape: currentStep, validateur: validatorName || 'Maître d\'atelier' }
         ]
       });
+
+      const fb = {
+        type: 'validated',
+        title: isNowFinished ? "🏆 Bravo ! Pièce terminée !" : `🎉 Bravo ! Étape ${currentStep + 1} validée !`,
+        message: isNowFinished 
+          ? "Toutes les étapes d'assemblage sont complétées et validées. Fermeture..." 
+          : `L'étape ${currentStep + 1} a été validée avec succès. Fermeture...`
+      };
+      setFeedback(fb);
+      onFeedback?.(fb);
+      const timer = setTimeout(() => {
+        handleClose();
+      }, 1400);
+      setAutoCloseTimer(timer);
+    } catch (err) {
+      console.error("Erreur validation étape :", err);
     } finally {
       setLoading(false);
     }
@@ -58,6 +110,20 @@ export default function PartWorkflowModal({ isOpen, onClose, slot, invPart, upda
       });
       setRetoucheNote('');
       setShowRetoucheInput(false);
+
+      const fb = {
+        type: 'retouche',
+        title: "Demande de retouche envoyée !",
+        message: "La consigne de retouche a été enregistrée dans l'atelier. Fermeture..."
+      };
+      setFeedback(fb);
+      onFeedback?.(fb);
+      const timer = setTimeout(() => {
+        handleClose();
+      }, 1400);
+      setAutoCloseTimer(timer);
+    } catch (err) {
+      console.error("Erreur retouche étape :", err);
     } finally {
       setLoading(false);
     }
@@ -67,8 +133,8 @@ export default function PartWorkflowModal({ isOpen, onClose, slot, invPart, upda
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
       <div className="relative bg-[#faf8f5] w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-lg shadow-2xl border-[3px] border-encre-noire/80">
         <button 
-          onClick={onClose} 
-          className="absolute top-3 right-3 text-encre-noire hover:text-cordel-rouge transition-colors"
+          onClick={handleClose} 
+          className="absolute top-3 right-3 text-encre-noire hover:text-cordel-rouge transition-colors cursor-pointer"
         >
           <XiloClose size={24} />
         </button>
@@ -97,6 +163,17 @@ export default function PartWorkflowModal({ isOpen, onClose, slot, invPart, upda
             <div className="flex flex-col gap-4">
               <div className="bg-white p-4 border border-encre-noire/10 rounded">
                 <h3 className="text-md font-bold text-encre-noire mb-2">{stepData.titre || 'Étape sans titre'}</h3>
+
+                {stepData.photoUrl && (
+                  <div className="w-full mb-3 overflow-hidden rounded border border-encre-noire/20 bg-stone-100 flex items-center justify-center">
+                    <img 
+                      src={stepData.photoUrl} 
+                      alt={stepData.titre || 'Illustration de l\'étape'} 
+                      className="w-full max-h-56 object-contain"
+                    />
+                  </div>
+                )}
+
                 {stepData.texte && <p className="text-sm text-stone-700 whitespace-pre-wrap">{stepData.texte}</p>}
                 
                 {(stepData.outils?.length > 0 || stepData.materiaux?.length > 0) && (
@@ -124,55 +201,84 @@ export default function PartWorkflowModal({ isOpen, onClose, slot, invPart, upda
                 </div>
               )}
 
-              {/* SECTION WORKFLOW */}
+              {/* SECTION WORKFLOW OU RETOUR DE VALIDATION */}
               <div className="mt-4 pt-4 border-t-2 border-encre-noire/10 flex flex-col gap-3">
-                {statutEtape === 'en_cours' && (
-                  <CordelButton 
-                    variant="default" 
-                    onClick={handleSoumettre} 
-                    disabled={loading}
-                    className="w-full justify-center text-sm py-3"
-                  >
-                    🔨 Étape terminée — Soumettre au contrôle
-                  </CordelButton>
-                )}
+                {feedback ? (
+                  <div className={`p-5 rounded-lg border-2 text-center flex flex-col items-center gap-2 animate-fade-in shadow-inner ${
+                    feedback.type === 'submitted'
+                      ? 'bg-[var(--color-cordel-vert)]/10 border-[var(--color-cordel-vert)] text-[var(--color-cordel-vert)]'
+                      : feedback.type === 'validated'
+                      ? 'bg-[var(--color-cordel-vert)]/10 border-[var(--color-cordel-vert)] text-[var(--color-cordel-vert)]'
+                      : 'bg-cordel-ocre/10 border-cordel-ocre text-cordel-ocre'
+                  }`}>
+                    <span className="text-4xl animate-bounce">
+                      {feedback.type === 'submitted' ? '📨' : feedback.type === 'validated' ? '🎉' : '🔄'}
+                    </span>
+                    <h4 className="text-base font-black uppercase tracking-wider">
+                      {feedback.title}
+                    </h4>
+                    <p className="text-xs text-stone-700 font-bold max-w-sm">
+                      {feedback.message}
+                    </p>
+                    <CordelButton 
+                      variant={feedback.type === 'retouche' ? 'ocre' : 'vert'} 
+                      onClick={handleClose} 
+                      className="text-xs py-1.5 px-5 mt-2 font-black uppercase tracking-wider shadow-[2px_2px_0px_0px_#181716]"
+                    >
+                      Fermer maintenant
+                    </CordelButton>
+                  </div>
+                ) : (
+                  <>
+                    {statutEtape === 'en_cours' && (
+                      <CordelButton 
+                        variant="default" 
+                        onClick={handleSoumettre} 
+                        disabled={loading}
+                        className="w-full justify-center text-sm py-3 font-black"
+                      >
+                        {loading ? "Soumission en cours..." : "🔨 Étape terminée — Soumettre au contrôle"}
+                      </CordelButton>
+                    )}
 
-                {statutEtape === 'en_attente_controle' && (
-                  <div className="flex flex-col gap-3 p-4 bg-amber-50 border border-amber-200 rounded text-center">
-                    <span className="text-amber-600 font-bold animate-pulse">⏳ En attente de vérification par un Mestre</span>
-                    
-                    {isValidator && (
-                      <div className="flex flex-col gap-2 mt-2">
-                        <span className="text-[10px] uppercase font-bold text-stone-400">Espace Mestre / Validateur</span>
-                        <div className="grid grid-cols-2 gap-2">
-                          <CordelButton variant="vert" onClick={handleValider} disabled={loading} className="justify-center">
-                            ✅ Valider
-                          </CordelButton>
-                          <CordelButton variant="danger" onClick={() => setShowRetoucheInput(!showRetoucheInput)} disabled={loading} className="justify-center">
-                            🔄 Retouche
-                          </CordelButton>
-                        </div>
+                    {statutEtape === 'en_attente_controle' && (
+                      <div className="flex flex-col gap-3 p-4 bg-amber-50 border border-amber-200 rounded text-center">
+                        <span className="text-amber-700 font-black animate-pulse">⏳ En attente de vérification par un Mestre</span>
                         
-                        {showRetoucheInput && (
-                          <div className="flex flex-col gap-2 mt-2 text-left">
-                            <textarea 
-                              value={retoucheNote}
-                              onChange={e => setRetoucheNote(e.target.value)}
-                              placeholder="Consigne pour la retouche..."
-                              className="theme-input text-xs p-2 min-h-[60px]"
-                            />
-                            <button 
-                              onClick={handleRetouche}
-                              disabled={loading || !retoucheNote.trim()}
-                              className="bg-cordel-rouge text-white text-xs font-bold py-1.5 rounded disabled:opacity-50"
-                            >
-                              Envoyer la demande
-                            </button>
+                        {isValidator && (
+                          <div className="flex flex-col gap-2 mt-2">
+                            <span className="text-[10px] uppercase font-bold text-stone-500">Espace Mestre / Validateur</span>
+                            <div className="grid grid-cols-2 gap-2">
+                              <CordelButton variant="vert" onClick={handleValider} disabled={loading} className="justify-center font-bold">
+                                {loading ? "Validation..." : "✅ Valider"}
+                              </CordelButton>
+                              <CordelButton variant="danger" onClick={() => setShowRetoucheInput(!showRetoucheInput)} disabled={loading} className="justify-center font-bold">
+                                🔄 Retouche
+                              </CordelButton>
+                            </div>
+                            
+                            {showRetoucheInput && (
+                              <div className="flex flex-col gap-2 mt-2 text-left">
+                                <textarea 
+                                  value={retoucheNote}
+                                  onChange={e => setRetoucheNote(e.target.value)}
+                                  placeholder="Consigne pour la retouche..."
+                                  className="theme-input text-xs p-2 min-h-[60px]"
+                                />
+                                <button 
+                                  onClick={handleRetouche}
+                                  disabled={loading || !retoucheNote.trim()}
+                                  className="bg-cordel-rouge text-white text-xs font-bold py-1.5 rounded disabled:opacity-50 cursor-pointer"
+                                >
+                                  {loading ? "Envoi..." : "Envoyer la demande"}
+                                </button>
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>
                     )}
-                  </div>
+                  </>
                 )}
               </div>
 

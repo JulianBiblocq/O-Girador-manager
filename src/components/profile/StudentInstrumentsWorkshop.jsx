@@ -23,6 +23,14 @@ export default function StudentInstrumentsWorkshop({ user, profileData, onNaviga
   const [selectedSessionSlots, setSelectedSessionSlots] = useState([]);
   const [selectedWorkflowSlot, setSelectedWorkflowSlot] = useState(null);
   const [selectedVaralTutorial, setSelectedVaralTutorial] = useState(null);
+  const [workflowToast, setWorkflowToast] = useState(null);
+
+  // Auto-fermeture du toast d'atelier
+  useEffect(() => {
+    if (!workflowToast) return;
+    const timer = setTimeout(() => setWorkflowToast(null), 4000);
+    return () => clearTimeout(timer);
+  }, [workflowToast]);
 
   // Filtrer les projets : instruments assignés à l'élève en priorité, ou projets collectifs
   const myProjects = useMemo(() => {
@@ -179,10 +187,11 @@ export default function StudentInstrumentsWorkshop({ user, profileData, onNaviga
           isOpen={!!selectedWorkflowSlot}
           onClose={() => setSelectedWorkflowSlot(null)}
           slot={selectedWorkflowSlot?.slot}
-          invPart={selectedWorkflowSlot?.invPart}
+          invPart={inventoryParts?.find(p => p.id === selectedWorkflowSlot?.invPart?.id) || selectedWorkflowSlot?.invPart}
           updatePartWorkflow={updatePartWorkflow}
           isValidator={false} // L'élève soumet son étape, il ne valide pas lui-même
           validatorName={profileData?.prenom || 'Élève'}
+          onFeedback={(fb) => setWorkflowToast(fb)}
         />
 
         {/* Modale de tutoriel Varal avec fond crème opaque */}
@@ -191,6 +200,25 @@ export default function StudentInstrumentsWorkshop({ user, profileData, onNaviga
             fabrication={selectedVaralTutorial}
             onClose={() => setSelectedVaralTutorial(null)}
           />
+        )}
+
+        {/* Notification flottante d'atelier */}
+        {workflowToast && (
+          <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3 px-5 py-3 rounded-lg border-2 border-encre-noire shadow-2xl bg-white animate-fade-in">
+            <span className="text-3xl">
+              {workflowToast.type === 'submitted' ? '📨' : workflowToast.type === 'validated' ? '🎉' : '🔄'}
+            </span>
+            <div className="text-left">
+              <h5 className="text-xs font-black uppercase tracking-wider text-encre-noire">{workflowToast.title}</h5>
+              <p className="text-[11px] text-stone-600 font-bold">{workflowToast.message}</p>
+            </div>
+            <button 
+              onClick={() => setWorkflowToast(null)} 
+              className="ml-2 text-stone-400 hover:text-stone-700 font-bold text-xs cursor-pointer"
+            >
+              ✕
+            </button>
+          </div>
         )}
       </div>
     );
