@@ -14,6 +14,7 @@ import { usePresenceContext } from '../context/PresenceContext';
 import { XiloMegaphone } from './XiloIcons';
 import useConfirm from '../hooks/useConfirm';
 import { resolveEffectiveUserTags, getTagId, findTagObject } from '../utils/tagUtils'; // Utilitaires pour la gestion et la résolution des étiquettes
+import { isUserModeratorOrAdmin, canUserWriteInForumChannel, canUserReadForumChannel, checkUserAccessToList } from '../utils/permissionUtils';
 import { useForumThreads } from '../hooks/useForumThreads';
 import { countThreadUnreadMessages, getAllChannelsUnreadStats } from '../utils/forumUnreadUtils';
 import ForumChannelHeader from './forum/ForumChannelHeader';
@@ -276,17 +277,7 @@ export default function Forum({
     setIsDrawerOpen(false);
   }, []);
 
-  const isModeratorOrAdmin = profileData?.role === 'mestre' || 
-                             profileData?.role === 'super-admin' || 
-                             profileData?.role === 'bureau' || 
-                             profileData?.role === 'ca' || 
-                             profileData?.isSystemAdmin === true || 
-                             (profileData?.tags && (
-                               profileData.tags.includes('Modérateur') || 
-                               profileData.tags.includes('Modérateur Forum') ||
-                               profileData.tags.includes('Gestionnaire Porte-voix') ||
-                               profileData.tags.includes('Porte-voix')
-                             ));
+  const isModeratorOrAdmin = isUserModeratorOrAdmin(profileData);
 
   // Synchronisation des membres de l'association pour la recherche de nom/avatar
   useEffect(() => {
@@ -349,32 +340,9 @@ export default function Forum({
     return resolveEffectiveUserTags(profileData?.tags || [], tagsDisponibles);
   }, [profileData?.tags, tagsDisponibles]);
 
-  // Fonction utilitaire pour vérifier si les étiquettes/rôles du membre correspondent à la liste autorisée du salon
-  const checkUserAccessToList = useCallback((allowedList = ['all'], userRole, userTags = [], tagsAvailable = []) => {
-    if (!Array.isArray(allowedList) || allowedList.length === 0) return true;
-    if (allowedList.includes('all')) return true;
-
-    const lowerRole = (userRole || '').toLowerCase();
-    if (allowedList.some(r => String(r).toLowerCase() === lowerRole)) return true;
-
-    // Vérifier les étiquettes effectives du membre par rapport aux rôles/tags autorisés
-    return allowedList.some(r => {
-      const targetLower = String(r).toLowerCase();
-
-      return userTags.some(t => {
-        const tagStr = typeof t === 'string' ? t : getTagId(t);
-        if (tagStr.toLowerCase() === targetLower) return true;
-
-        const tagObj = findTagObject(tagStr, tagsAvailable);
-        if (tagObj) {
-          if (tagObj.id && String(tagObj.id).toLowerCase() === targetLower) return true;
-          if (tagObj.nomM && String(tagObj.nomM).toLowerCase() === targetLower) return true;
-          if (tagObj.nomF && String(tagObj.nomF).toLowerCase() === targetLower) return true;
-        }
-
-        return false;
-      });
-    });
+  // Fonction utilitaire de vérification des droits d'accès déléguée à permissionUtils
+  const checkUserAccess = useCallback((allowedList, userRole, userTags = [], tagsAvailable = []) => {
+    return checkUserAccessToList(allowedList, userRole, userTags, tagsAvailable);
   }, []);
 
   // Real-time synchronization of channels (salons)
@@ -443,18 +411,9 @@ export default function Forum({
         }
       } else {
         // Filtrer client-side : Le mode intervention (breakGlassActive) donne accès à tout.
-        // En mode standard, chaque utilisateur (y compris admin/CA) n'accède qu'aux salons autorisés par ses badges/rôles.
+        // En mode standard, chaque utilisateur n'accède qu'aux salons autorisés par ses badges/rôles.
         const allowedChannels = fetched.filter(ch => {
-          if (breakGlassActive) return true;
-
-          const readList = ch.readRoles || ch.allowedRoles || ch.allowedTags || ['all'];
-          if (!readList || readList.length === 0 || readList.includes('all')) return true;
-
-          if (checkUserAccessToList(readList, userRole, userTags, tagsDisponibles)) return true;
-
-          if (ch.isTransparent === true) return true;
-
-          return false;
+          return canUserReadForumChannel(ch, profileData, tagsDisponibles, effectiveUserTags, breakGlassActive);
         });
 
         const order = ["Général", "CA", "Bureau"];
@@ -688,18 +647,8 @@ export default function Forum({
   }, []);
 
   const hasWriteAccess = useCallback((channel) => {
-    if (!channel) return true;
-    if (breakGlassActive) return true;
-
-    // Vérifier if channel is explicitly read-only for regular members
-    if (channel.readOnlyForMembers === true) return false;
-
-    const userRole = profileData?.role || 'membre';
-    const userTags = effectiveUserTags;
-
-    const writeList = channel.writeRoles || channel.allowedRoles || ['all'];
-    return checkUserAccessToList(writeList, userRole, userTags, tagsDisponibles);
-  }, [profileData?.role, effectiveUserTags, profileData?.isSystemAdmin, breakGlassActive, tagsDisponibles, checkUserAccessToList]);
+    return canUserWriteInForumChannel(channel, profileData, tagsDisponibles, effectiveUserTags, breakGlassActive);
+  }, [profileData, tagsDisponibles, effectiveUserTags, breakGlassActive]);
 
   const activeChannel = useMemo(() => {
     return channels.find(c => c.id === activeChannelId);
@@ -750,6 +699,8 @@ export default function Forum({
         allThreads={threads}
         allUsers={Object.values(usersMap)}
         breakGlassActive={breakGlassActive}
+        tagsDisponibles={tagsDisponibles}
+        effectiveUserTags={effectiveUserTags}
         onClose={handleCloseThread} 
       />
     );

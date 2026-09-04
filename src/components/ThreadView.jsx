@@ -11,7 +11,8 @@ import MoveThreadModal from './MoveThreadModal';
 import MoveReplyModal from './MoveReplyModal';
 import PollDisplay from './forum/PollDisplay';
 import { useForumModeration } from '../hooks/useForumModeration';
-import { getTagId } from '../utils/tagUtils';
+import { getTagId, resolveEffectiveUserTags } from '../utils/tagUtils';
+import { isUserModeratorOrAdmin, canUserWriteInForumChannel } from '../utils/permissionUtils';
 import { usePresenceContext } from '../context/PresenceContext';
 import useConfirm from '../hooks/useConfirm';
 
@@ -211,7 +212,18 @@ const ThreadReplyItem = React.memo(({
          prevProps.onToggleReaction === nextProps.onToggleReaction;
 });
 
-export default function ThreadView({ threadId, user, profileData, channels = [], allThreads = [], allUsers = [], onClose, breakGlassActive = false }) {
+export default function ThreadView({ 
+  threadId, 
+  user, 
+  profileData, 
+  channels = [], 
+  allThreads = [], 
+  allUsers = [], 
+  onClose, 
+  breakGlassActive = false,
+  tagsDisponibles = [],
+  effectiveUserTags = []
+}) {
   const { t } = useTranslation();
   const { confirm } = useConfirm();
   const {
@@ -232,10 +244,19 @@ export default function ThreadView({ threadId, user, profileData, channels = [],
   const [loading, setLoading] = useState(true);
   const [replyText, setReplyText] = useState('');
   const [sending, setSending] = useState(false);
+  const [internalTagsDisponibles, setInternalTagsDisponibles] = useState([]);
   const [availableTargets, setAvailableTargets] = useState([]);
   const [selectedTarget, setSelectedTarget] = useState('');
   const [lienDepotForum, setLienDepotForum] = useState('');
   const [consignesDepotForum, setConsignesDepotForum] = useState('');
+
+  // Résolution des étiquettes disponibles et des étiquettes effectives du membre
+  const activeTagsDisponibles = (tagsDisponibles && tagsDisponibles.length > 0) ? tagsDisponibles : internalTagsDisponibles;
+
+  const activeEffectiveUserTags = useMemo(() => {
+    if (effectiveUserTags && effectiveUserTags.length > 0) return effectiveUserTags;
+    return resolveEffectiveUserTags(profileData?.tags || [], activeTagsDisponibles);
+  }, [effectiveUserTags, profileData?.tags, activeTagsDisponibles]);
 
   const [isReplyExpanded, setIsReplyExpanded] = useState(false);
   const [isTargetingExpanded, setIsTargetingExpanded] = useState(false);
@@ -319,37 +340,19 @@ export default function ThreadView({ threadId, user, profileData, channels = [],
   };
 
   const threadChannel = channels.find(c => c.id === thread?.channelId);
-  const isModeratorOrAdmin = profileData?.role === 'mestre' || 
-                             profileData?.role === 'super-admin' || 
-                             profileData?.role === 'bureau' || 
-                             profileData?.role === 'ca' || 
-                             profileData?.isSystemAdmin === true || 
-                             (profileData?.tags && (
-                               profileData.tags.includes('Modérateur') || 
-                               profileData.tags.includes('Modérateur Forum') ||
-                               profileData.tags.includes('Gestionnaire Porte-voix') ||
-                               profileData.tags.includes('Porte-voix')
-                             ));
+  const isModeratorOrAdmin = isUserModeratorOrAdmin(profileData);
 
-  const isReadOnly = (() => {
-    if (breakGlassActive) return false;
+  // Vérifie si le membre possède les droits de réponse/publication dans ce salon
+  const isReadOnly = useMemo(() => {
     if (!thread) return true;
-
-    // Vérifier si le salon est explicitement en lecture seule pour les membres simples
-    if (threadChannel && threadChannel.readOnlyForMembers === true) return true;
-
-    if (!thread.channelId || !threadChannel) return false;
-
-    const userRole = profileData?.role || 'membre';
-    const userTags = profileData?.tags || [];
-
-    const write = threadChannel.writeRoles || threadChannel.allowedRoles || ['all'];
-    if (!write || write.length === 0 || write.includes('all')) return false;
-    if (write.includes(userRole)) return false;
-    if (userTags.some(tag => write.includes(tag))) return false;
-
-    return true;
-  })();
+    return !canUserWriteInForumChannel(
+      threadChannel,
+      profileData,
+      activeTagsDisponibles,
+      activeEffectiveUserTags,
+      breakGlassActive
+    );
+  }, [thread, threadChannel, profileData, activeTagsDisponibles, activeEffectiveUserTags, breakGlassActive]);
   
   const messagesEndRef = useRef(null);
 
@@ -450,6 +453,7 @@ export default function ThreadView({ threadId, user, profileData, channels = [],
       if (snap.exists()) {
         const data = snap.data();
         const tags = data.tagsDisponibles || [];
+        setInternalTagsDisponibles(tags);
         const tagLabels = tags.map(t => getTagId(t)).filter(Boolean);
         const instruments = data.instrumentsDisponibles || [];
         const combined = [...new Set([...tagLabels, ...instruments])].filter(Boolean).sort();
