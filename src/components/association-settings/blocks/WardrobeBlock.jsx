@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import CordelCard from '../../CordelCard';
 
-export default function WardrobeBlock({ formData, handleChange, saving }) {
-  const { dressCodes = [] } = formData;
+export default function WardrobeBlock({ formData = {}, handleChange, saving }) {
+  const safeFormData = formData || {};
+  const { dressCodes = [] } = safeFormData;
   const [newDressCodeName, setNewDressCodeName] = useState('');
   const [newDressCodeIncluded, setNewDressCodeIncluded] = useState('');
 

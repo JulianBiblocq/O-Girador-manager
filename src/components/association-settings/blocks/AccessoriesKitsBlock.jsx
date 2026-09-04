@@ -3,14 +3,15 @@ import CordelCard from '../../CordelCard';
 import CordelButton from '../../CordelButton';
 import { XiloCaixa } from '../../XiloIcons';
 
-export default function AccessoriesKitsBlock({ formData, handleChange, saving, t }) {
+export default function AccessoriesKitsBlock({ formData = {}, handleChange, saving, t }) {
   const [newKitPupitre, setNewKitPupitre] = useState('');
   const [newKitAccessories, setNewKitAccessories] = useState('');
 
-  const kits = formData.logisticsKits || [];
+  const safeFormData = formData || {};
+  const kits = safeFormData.logisticsKits || [];
 
   // Calcul des pupitres / instruments disponibles (identique à InstrumentsCatalogBlock)
-  const { instrumentsDisponibles = [], linkedInstruments = [] } = formData;
+  const { instrumentsDisponibles = [], linkedInstruments = [] } = safeFormData;
   const rawPupitres = [
     'Mestre',
     ...linkedInstruments.map(g => {

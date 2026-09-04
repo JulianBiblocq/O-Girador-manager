@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import CordelCard from '../../CordelCard';
 import CordelButton from '../../CordelButton';
 
-export default function InstrumentsCatalogBlock({ formData, handleChange, saving, t }) {
-  const { instrumentsDisponibles = [], linkedInstruments = [], pupitresColors = {} } = formData;
+export default function InstrumentsCatalogBlock({ formData = {}, handleChange, saving, t }) {
+  const safeFormData = formData || {};
+  const { instrumentsDisponibles = [], linkedInstruments = [], pupitresColors = {} } = safeFormData;
   const translationFn = t || ((key) => key);
 
   const rawPupitres = [

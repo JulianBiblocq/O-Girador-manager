@@ -3,7 +3,7 @@ import CordelCard from '../../CordelCard';
 import CordelButton from '../../CordelButton';
 import { XiloClose } from '../../XiloIcons';
 
-export default function CotisationsBlock({ formData, handleChange, saving, groupId, handleSaveHelloAssoKey }) {
+export default function CotisationsBlock({ formData = {}, handleChange, saving, groupId, handleSaveHelloAssoKey }) {
   const {
     montantAdhesion = 0,
     optionsCotisation = [],

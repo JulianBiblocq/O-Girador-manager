@@ -59,7 +59,12 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin,
   // Contrôle de sécurité : Mestre, Super-Admin, Admin Système ou Accès Logistique
   const isAuthorized = role === 'mestre' || role === 'super-admin' || isSystemAdmin === true || hasAccessLogistique === true;
 
-  const { settings, saving: savingSettings, handleSaveSettings, handleUpdateSetting } = useAssociationSettings(groupId);
+  const { 
+    formData: settings = {}, 
+    saving: savingSettings, 
+    handleSave: handleSaveSettings, 
+    handleChange: handleUpdateSetting 
+  } = useAssociationSettings(groupId, isAuthorized, onBack, t);
 
   const {
     supplies, tools, loading: suppliesLoading,

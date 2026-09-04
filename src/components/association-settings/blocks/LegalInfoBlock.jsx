@@ -1,7 +1,7 @@
 import React from 'react';
 import CordelCard from '../../CordelCard';
 
-export default function LegalInfoBlock({ formData, handleChange, saving, signaturePresidentFile, setSignaturePresidentFile, signatureTresorierFile, setSignatureTresorierFile }) {
+export default function LegalInfoBlock({ formData = {}, handleChange, saving, signaturePresidentFile, setSignaturePresidentFile, signatureTresorierFile, setSignatureTresorierFile }) {
   return (
     <CordelCard variant="default" useExtremeBorder={true} className="py-4 px-5">
       <h3 className="text-xs uppercase font-extrabold tracking-wider text-cordel-wood mb-3">

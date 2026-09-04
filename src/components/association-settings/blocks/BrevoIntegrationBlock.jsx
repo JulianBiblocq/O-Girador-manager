@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import CordelCard from '../../CordelCard';
 
-export default function BrevoIntegrationBlock({ formData, handleChange, saving }) {
+export default function BrevoIntegrationBlock({ formData = {}, handleChange, saving }) {
   const [showBrevoKey, setShowBrevoKey] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
 

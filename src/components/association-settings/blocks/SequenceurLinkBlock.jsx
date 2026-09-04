@@ -1,8 +1,8 @@
 import React from 'react';
 import CordelCard from '../../CordelCard';
 
-export default function SequenceurLinkBlock({ formData, handleChange, saving }) {
-  const { sequenceurUrl = '' } = formData;
+export default function SequenceurLinkBlock({ formData = {}, handleChange, saving }) {
+  const { sequenceurUrl = '' } = formData || {};
 
   return (
     <CordelCard variant="default" useExtremeBorder={true} className="py-4 px-5">

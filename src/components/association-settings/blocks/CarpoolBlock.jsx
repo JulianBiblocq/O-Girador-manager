@@ -149,7 +149,7 @@ function GoogleMapsPreview({ address }) {
   );
 }
 
-export default function CarpoolBlock({ formData, handleChange, saving }) {
+export default function CarpoolBlock({ formData = {}, handleChange, saving }) {
   const {
     indemniteKilometrique = 0,
     enableCarpoolReimbursement = true,
