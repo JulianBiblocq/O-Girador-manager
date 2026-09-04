@@ -5,6 +5,7 @@ import Link from '@tiptap/extension-link';
 import TextAlign from '@tiptap/extension-text-align';
 import Image from '@tiptap/extension-image';
 import ForumImageInsertModal from './forum/ForumImageInsertModal';
+import EmojiPickerPopover, { EmojiQuickRow } from './forum/EmojiPickerPopover';
 
 export default function RichTextEditor({ 
   value = '', 
@@ -18,10 +19,19 @@ export default function RichTextEditor({
   showLists = true,
   showImage = true,
   showAlign = true,
+  showEmojis = true,
   onAddPoll = null
 }) {
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
+  const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
   const [, forceUpdate] = useState({});
+
+  // Insertion d'un émoticône à l'emplacement du curseur dans l'éditeur
+  const handleInsertEmoji = (emoji) => {
+    if (editor && emoji) {
+      editor.chain().focus().insertContent(emoji).run();
+    }
+  };
 
   const editor = useEditor({
     extensions: [
@@ -251,7 +261,52 @@ export default function RichTextEditor({
             )}
           </>
         )}
+
+        {showEmojis && (
+          <>
+            <div className="h-4 w-[1px] bg-encre-noire/20 mx-1"></div>
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setIsEmojiPickerOpen(prev => !prev)}
+                className={`px-2 py-1 text-xs font-bold rounded border transition-all cursor-pointer flex items-center gap-1 shadow-xs ${
+                  isEmojiPickerOpen
+                    ? 'bg-cordel-wood text-white border-encre-noire'
+                    : 'bg-white hover:bg-neutral-100 border-encre-noire/20 text-encre-noire'
+                }`}
+                title="Insérer un émoticône"
+              >
+                <span>😀</span>
+                <span className="hidden sm:inline text-[10px] font-bold">Émojis</span>
+              </button>
+
+              {isEmojiPickerOpen && (
+                <EmojiPickerPopover
+                  onSelectEmoji={(emoji) => {
+                    handleInsertEmoji(emoji);
+                    setIsEmojiPickerOpen(false);
+                  }}
+                  onClose={() => setIsEmojiPickerOpen(false)}
+                />
+              )}
+            </div>
+          </>
+        )}
       </div>
+
+      {/* Ligne d'accès direct aux émoticônes fréquents */}
+      {showEmojis && (
+        <div className="flex items-center px-2 py-0.5 bg-cordel-master-light/5 border-b border-dashed border-encre-noire/15 text-xs">
+          <span className="text-[8px] font-black uppercase text-cordel-wood opacity-75 shrink-0 select-none mr-1.5">
+            Émojis :
+          </span>
+          <EmojiQuickRow
+            onSelectEmoji={handleInsertEmoji}
+            onOpenFullPicker={() => setIsEmojiPickerOpen(true)}
+            className="flex-1"
+          />
+        </div>
+      )}
 
       {/* Editor Content Box */}
       <div className="p-3 bg-white/70 dark:bg-black/10 text-xs font-medium focus-within:ring-1 focus-within:ring-cordel-wood">

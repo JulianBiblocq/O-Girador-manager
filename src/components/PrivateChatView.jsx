@@ -4,12 +4,14 @@ import { db } from '../firebase';
 import CordelButton from './CordelButton';
 import XiloAvatar from './XiloAvatar';
 import { useTerminologie } from '../hooks/useTerminologie';
+import EmojiPickerPopover, { EmojiQuickRow } from './forum/EmojiPickerPopover';
 
 export default function PrivateChatView({ user, otherUser, profileData, initialText = '', onClose }) {
   const { tRole } = useTerminologie();
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState(initialText || '');
   const [sending, setSending] = useState(false);
+  const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
   const messagesEndRef = useRef(null);
 
   // Mettre à jour la saisie si un texte initial spécifique (ex: voeu d'anniversaire) est fourni
@@ -170,29 +172,66 @@ export default function PrivateChatView({ user, otherUser, profileData, initialT
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Footer Input Bar */}
-      <form 
-        onSubmit={handleSendMessage}
-        className="flex items-center gap-2 border-t-2 border-dashed border-encre-noire/20 p-2.5 bg-white/40 dark:bg-black/10"
-      >
-        <input 
-          type="text"
-          value={inputText}
-          onChange={(e) => setInputText(e.target.value)}
-          placeholder="Rédiger un message..."
-          disabled={sending}
-          className="theme-input text-xs font-bold py-2 bg-cordel-bg-light flex-grow"
-        />
-        <CordelButton
-          type="submit"
-          variant="ocre"
-          useExtremeBorder={true}
-          disabled={sending || !inputText.trim()}
-          className="px-4 py-2 text-[10px] font-black uppercase tracking-wider min-h-[38px] shrink-0"
+      {/* Footer Input Bar avec ligne d'émoticônes */}
+      <div className="flex flex-col border-t-2 border-dashed border-encre-noire/20 p-2.5 bg-white/40 dark:bg-black/10 select-none">
+        {/* Ligne d'accès direct aux émoticônes fréquents */}
+        <div className="flex items-center gap-1.5 px-1 pb-1.5">
+          <span className="text-[8px] font-black uppercase text-cordel-wood opacity-75 shrink-0">
+            Émojis :
+          </span>
+          <EmojiQuickRow
+            onSelectEmoji={(emoji) => setInputText(prev => (prev || '') + emoji)}
+            onOpenFullPicker={() => setIsEmojiPickerOpen(prev => !prev)}
+            className="flex-1"
+          />
+        </div>
+
+        <form 
+          onSubmit={handleSendMessage}
+          className="relative flex items-center gap-2"
         >
-          Envoyer
-        </CordelButton>
-      </form>
+          {isEmojiPickerOpen && (
+            <EmojiPickerPopover
+              onSelectEmoji={(emoji) => {
+                setInputText(prev => (prev || '') + emoji);
+                setIsEmojiPickerOpen(false);
+              }}
+              onClose={() => setIsEmojiPickerOpen(false)}
+            />
+          )}
+
+          <button
+            type="button"
+            onClick={() => setIsEmojiPickerOpen(prev => !prev)}
+            className={`w-9 h-[38px] flex items-center justify-center text-sm rounded border-2 transition-all cursor-pointer shrink-0 ${
+              isEmojiPickerOpen
+                ? 'bg-cordel-wood text-white border-encre-noire'
+                : 'bg-cordel-bg hover:bg-white border-encre-noire/40'
+            }`}
+            title="Choisir un émoticône"
+          >
+            😀
+          </button>
+
+          <input 
+            type="text"
+            value={inputText}
+            onChange={(e) => setInputText(e.target.value)}
+            placeholder="Rédiger un message..."
+            disabled={sending}
+            className="theme-input text-xs font-bold py-2 bg-cordel-bg-light flex-grow"
+          />
+          <CordelButton
+            type="submit"
+            variant="ocre"
+            useExtremeBorder={true}
+            disabled={sending || !inputText.trim()}
+            className="px-4 py-2 text-[10px] font-black uppercase tracking-wider min-h-[38px] shrink-0"
+          >
+            Envoyer
+          </CordelButton>
+        </form>
+      </div>
     </div>
   );
 }

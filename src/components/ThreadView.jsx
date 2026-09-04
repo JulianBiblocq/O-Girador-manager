@@ -15,6 +15,7 @@ import { getTagId, resolveEffectiveUserTags } from '../utils/tagUtils';
 import { isUserModeratorOrAdmin, canUserWriteInForumChannel } from '../utils/permissionUtils';
 import { usePresenceContext } from '../context/PresenceContext';
 import useConfirm from '../hooks/useConfirm';
+import EmojiPickerPopover, { EmojiQuickRow } from './forum/EmojiPickerPopover';
 
 const ReactionBar = ({ reactions = {}, currentUserId, onToggle, allUsers = [] }) => {
   const emojis = ['👍', '👎', '❤️', '👏'];
@@ -260,6 +261,7 @@ export default function ThreadView({
 
   const [isReplyExpanded, setIsReplyExpanded] = useState(false);
   const [isTargetingExpanded, setIsTargetingExpanded] = useState(false);
+  const [isCompactEmojiOpen, setIsCompactEmojiOpen] = useState(false);
   const [showScrollBottom, setShowScrollBottom] = useState(false);
   const unreadSeparatorRef = useRef(null);
   const messagesContainerRef = useRef(null);
@@ -932,33 +934,71 @@ export default function ThreadView({
           ) : (
             <form onSubmit={handleSend} className="sticky bottom-0 bg-cordel-bg z-10 pt-2 pb-1 border-t border-dashed border-cordel-master-dark/20 flex flex-col gap-2 select-none">
               {!isReplyExpanded ? (
-                /* Barre compacte fixée */
-                <div className="flex items-center gap-2 p-1.5 bg-cordel-bg-light border-2 border-encre-noire rounded-[6px_8px_6px_8px] shadow-[1.5px_1.5px_0px_0px_#181716]">
-                  <button
-                    type="button"
-                    onClick={() => setIsReplyExpanded(true)}
-                    className="w-7 h-7 flex items-center justify-center font-black text-xs text-cordel-wood hover:text-encre-noire bg-cordel-bg hover:bg-white rounded border border-cordel-master-dark/30 cursor-pointer shrink-0 transition-all"
-                    title="Options de réponse (Groupe cible, mentions, mise en forme)"
-                  >
-                    ➕
-                  </button>
-                  <input
-                    type="text"
-                    value={replyText}
-                    onChange={(e) => setReplyText(e.target.value)}
-                    onFocus={() => setIsReplyExpanded(true)}
-                    placeholder={t('forum.writeReplyPlaceholder') || "Écrire une réponse... (cliquez pour déplier)"}
-                    disabled={sending}
-                    className="flex-1 bg-transparent text-xs font-semibold text-encre-noire placeholder:opacity-50 outline-none px-1"
-                  />
-                  <CordelButton
-                    type="submit"
-                    variant="ocre"
-                    disabled={sending || !replyText.trim()}
-                    className="text-xs px-3 py-1 uppercase font-bold tracking-wider shrink-0"
-                  >
-                    {sending ? "..." : "➤"}
-                  </CordelButton>
+                /* Barre compacte fixée avec ligne d'émoticônes */
+                <div className="flex flex-col gap-1">
+                  {/* Petite ligne d'émoticônes fréquents en accès direct */}
+                  <div className="flex items-center gap-1.5 px-1">
+                    <span className="text-[8px] font-black uppercase text-cordel-wood opacity-75 shrink-0 select-none">
+                      Émojis :
+                    </span>
+                    <EmojiQuickRow
+                      onSelectEmoji={(emoji) => setReplyText(prev => (prev || '') + emoji)}
+                      onOpenFullPicker={() => setIsCompactEmojiOpen(prev => !prev)}
+                      className="flex-1"
+                    />
+                  </div>
+
+                  <div className="relative flex items-center gap-2 p-1.5 bg-cordel-bg-light border-2 border-encre-noire rounded-[6px_8px_6px_8px] shadow-[1.5px_1.5px_0px_0px_#181716]">
+                    {isCompactEmojiOpen && (
+                      <EmojiPickerPopover
+                        onSelectEmoji={(emoji) => {
+                          setReplyText(prev => (prev || '') + emoji);
+                          setIsCompactEmojiOpen(false);
+                        }}
+                        onClose={() => setIsCompactEmojiOpen(false)}
+                      />
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={() => setIsReplyExpanded(true)}
+                      className="w-7 h-7 flex items-center justify-center font-black text-xs text-cordel-wood hover:text-encre-noire bg-cordel-bg hover:bg-white rounded border border-cordel-master-dark/30 cursor-pointer shrink-0 transition-all"
+                      title="Options de réponse (Groupe cible, mentions, mise en forme)"
+                    >
+                      ➕
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setIsCompactEmojiOpen(prev => !prev)}
+                      className={`w-7 h-7 flex items-center justify-center text-sm rounded border transition-all cursor-pointer shrink-0 ${
+                        isCompactEmojiOpen
+                          ? 'bg-cordel-wood text-white border-encre-noire'
+                          : 'bg-cordel-bg hover:bg-white border-cordel-master-dark/30'
+                      }`}
+                      title="Choisir un émoticône"
+                    >
+                      😀
+                    </button>
+
+                    <input
+                      type="text"
+                      value={replyText}
+                      onChange={(e) => setReplyText(e.target.value)}
+                      onFocus={() => setIsReplyExpanded(true)}
+                      placeholder={t('forum.writeReplyPlaceholder') || "Écrire une réponse... (cliquez pour déplier)"}
+                      disabled={sending}
+                      className="flex-1 bg-transparent text-xs font-semibold text-encre-noire placeholder:opacity-50 outline-none px-1"
+                    />
+                    <CordelButton
+                      type="submit"
+                      variant="ocre"
+                      disabled={sending || !replyText.trim()}
+                      className="text-xs px-3 py-1 uppercase font-bold tracking-wider shrink-0"
+                    >
+                      {sending ? "..." : "➤"}
+                    </CordelButton>
+                  </div>
                 </div>
               ) : (
                 /* Vue dépliée à la demande */
