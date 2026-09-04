@@ -90,6 +90,25 @@ export default function SuppliesListView({ supplies, loading, addSupply, updateS
     }
   };
 
+  // Gestion de la commande d'une matière première
+  const handleOrderSupply = async (supply) => {
+    const rawUrl = (supply.urlFournisseur || '').trim();
+    if (rawUrl) {
+      // S'assurer que l'URL est absolue pour éviter une navigation interne relative
+      const finalUrl = /^https?:\/\//i.test(rawUrl) ? rawUrl : `https://${rawUrl}`;
+      window.open(finalUrl, '_blank', 'noopener,noreferrer');
+      return;
+    }
+
+    // Si aucun lien d'achat n'est configuré, proposer d'éditer la fourniture pour l'ajouter
+    const wantEdit = await confirm(
+      `Aucun lien d'achat n'est configuré pour la fourniture « ${supply.nom} ».\n\nSouhaitez-vous modifier la fiche pour renseigner l'adresse web du fournisseur ?`
+    );
+    if (wantEdit) {
+      handleEdit(supply);
+    }
+  };
+
   const handleToggleAdd = () => {
     if (isAdding) {
       setIsAdding(false);
@@ -276,10 +295,19 @@ export default function SuppliesListView({ supplies, loading, addSupply, updateS
                       <div className="flex flex-col items-center gap-2">
                         {isCritical && (
                           <button 
-                            className="w-full px-2 py-1 bg-cordel-ocre text-white rounded text-[10px] font-bold uppercase tracking-wider shadow-[1px_1px_0px_0px_#181716] hover:brightness-110 active:translate-y-[1px] active:shadow-none"
-                            onClick={() => window.open(supply.urlFournisseur || '#', '_blank')}
+                            type="button"
+                            className={`w-full px-2 py-1 text-white rounded text-[10px] font-bold uppercase tracking-wider shadow-[1px_1px_0px_0px_#181716] hover:brightness-110 active:translate-y-[1px] active:shadow-none flex items-center justify-center gap-1 transition-all ${
+                              supply.urlFournisseur?.trim() ? 'bg-cordel-vert' : 'bg-cordel-ocre'
+                            }`}
+                            onClick={() => handleOrderSupply(supply)}
+                            title={
+                              supply.urlFournisseur?.trim() 
+                                ? `Commander chez ${supply.fournisseur || 'le fournisseur'} (ouvre le site externe)` 
+                                : "Aucun lien web configuré — Cliquez pour modifier la fourniture"
+                            }
                           >
-                            🛒 Commander
+                            <span>🛒 Commander</span>
+                            {supply.urlFournisseur?.trim() && <span className="text-[9px]">↗</span>}
                           </button>
                         )}
                         <div className="flex items-center gap-1 justify-center">

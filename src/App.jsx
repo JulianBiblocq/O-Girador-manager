@@ -1128,6 +1128,24 @@ export default function App() {
   const hasAccessConfig = isMasterKeyActive || checkTabAccess('config-identity', 'config') || checkTabAccess('config-communication', 'config') || checkTabAccess('config-profile', 'config') || checkTabAccess('tag-manager', 'config') || checkTabAccess('instruments', 'config') || checkTabAccess('config-security', 'config') || checkTabAccess('config-modules', 'config') || checkTabAccess('config-logistics', 'config') || checkTabAccess('config-documents', 'config') || checkTabAccess('config-agenda', 'config') || checkTabAccess('config-lieux', 'config') || checkTabAccess('config-layout', 'config');
   const hasAccessForumMod = isMasterKeyActive || userTags.some(t => ['Modérateur', 'Modérateur Forum', 'Gestionnaire Porte-voix', 'Porte-voix'].includes(t));
 
+  // Fonction utilitaire pour nettoyer les paramètres d'URL (ex: threadId, eventId) lors des navigations
+  const cleanUrlParams = (keys = ['threadId', 'eventId']) => {
+    const searchParams = new URLSearchParams(window.location.search);
+    let changed = false;
+    keys.forEach(k => {
+      if (searchParams.has(k)) {
+        searchParams.delete(k);
+        changed = true;
+      }
+    });
+    if (changed) {
+      const cleanUrl = window.location.pathname + (searchParams.toString() ? '?' + searchParams.toString() : '');
+      const stateUpdate = {};
+      keys.forEach(k => { stateUpdate[k] = null; });
+      window.history.replaceState({ ...window.history.state, ...stateUpdate }, '', cleanUrl);
+    }
+  };
+
   const handleNavigateToPole = (poleId) => {
     if (poleId !== 'accueil' && poleId !== 'mon-espace') {
       let isAllowed = canAccessPole(poleId, profileData, permissionsMatrice, userTags);
@@ -1147,17 +1165,17 @@ export default function App() {
     }
     setCurrentPole(poleId);
     if (poleId === 'accueil') {
-      const searchParams = new URLSearchParams(window.location.search);
-      if (searchParams.has('eventId') || searchParams.has('threadId')) {
-        searchParams.delete('eventId');
-        searchParams.delete('threadId');
-        const cleanUrl = window.location.pathname + (searchParams.toString() ? '?' + searchParams.toString() : '');
-        window.history.replaceState({ ...window.history.state, eventId: null, threadId: null }, '', cleanUrl);
-      }
+      cleanUrlParams(['eventId', 'threadId']);
       setCurrentTab('dashboard');
       setDashboardKey(prev => prev + 1);
       return;
     }
+    // Nettoyer les paramètres de deep-link lorsqu'on quitte les pôles respectifs
+    if (poleId !== 'mon-espace') {
+      cleanUrlParams(['threadId']);
+    }
+    cleanUrlParams(['eventId']);
+
     const poleObj = POLES_CONFIG.find(p => p.id === poleId);
     if (poleObj && poleObj.tabs.length > 0) {
       const allowedTab = poleObj.tabs.find(tab => checkTabAccess(tab.id, poleId));
@@ -1177,17 +1195,17 @@ export default function App() {
       const searchParams = new URLSearchParams(window.location.search);
       searchParams.set('threadId', extraOptions.threadId);
       window.history.pushState({}, '', window.location.pathname + '?' + searchParams.toString());
+    } else if (viewName !== 'forum') {
+      cleanUrlParams(['threadId']);
+    }
+
+    if (viewName !== 'agenda' && viewName !== 'studio-events' && !extraOptions?.eventId) {
+      cleanUrlParams(['eventId']);
     }
 
     switch (viewName) {
       case 'dashboard': {
-        const searchParams = new URLSearchParams(window.location.search);
-        if (searchParams.has('eventId') || searchParams.has('threadId')) {
-          searchParams.delete('eventId');
-          searchParams.delete('threadId');
-          const cleanUrl = window.location.pathname + (searchParams.toString() ? '?' + searchParams.toString() : '');
-          window.history.replaceState({ ...window.history.state, eventId: null, threadId: null }, '', cleanUrl);
-        }
+        cleanUrlParams(['eventId', 'threadId']);
         setCurrentPole('accueil');
         setCurrentTab('dashboard');
         setDashboardKey(prev => prev + 1);
@@ -1310,7 +1328,15 @@ export default function App() {
           currentPole={currentPole}
           onNavigateToPole={handleNavigateToPole}
           currentTab={currentTab}
-          onNavigateToTab={(tab) => setCurrentTab(tab)}
+          onNavigateToTab={(tab) => {
+            if (tab !== 'forum') {
+              cleanUrlParams(['threadId']);
+            }
+            if (tab !== 'agenda' && tab !== 'studio-events') {
+              cleanUrlParams(['eventId']);
+            }
+            setCurrentTab(tab);
+          }}
           onOpenPrivateMessages={handleOpenPrivateMessages}
           polesList={POLES_CONFIG}
           profileData={profileData}
