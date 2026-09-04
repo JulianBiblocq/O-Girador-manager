@@ -6,6 +6,7 @@ import TextAlign from '@tiptap/extension-text-align';
 import Image from '@tiptap/extension-image';
 import ForumImageInsertModal from './forum/ForumImageInsertModal';
 import EmojiPickerPopover, { EmojiQuickRow } from './forum/EmojiPickerPopover';
+import { MentionDropdown, filterUsersByMentionQuery } from './forum/MentionAutocomplete';
 
 export default function RichTextEditor({ 
   value = '', 
@@ -20,10 +21,14 @@ export default function RichTextEditor({
   showImage = true,
   showAlign = true,
   showEmojis = true,
+  showMentions = true,
+  allUsers = [],
   onAddPoll = null
 }) {
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
+  const [isMentionListOpen, setIsMentionListOpen] = useState(false);
+  const [mentionQuery, setMentionQuery] = useState(null); // { query, from, to }
   const [, forceUpdate] = useState({});
 
   // Insertion d'un émoticône à l'emplacement du curseur dans l'éditeur
@@ -31,6 +36,30 @@ export default function RichTextEditor({
     if (editor && emoji) {
       editor.chain().focus().insertContent(emoji).run();
     }
+  };
+
+  // Insertion d'une mention de membre (@Prénom Nom)
+  const handleSelectMentionUser = (targetUser) => {
+    if (!editor || !targetUser) return;
+    const fullName = `${targetUser.prenom || ''} ${targetUser.nom || ''}`.trim() || targetUser.email || 'Membre';
+    const mentionText = `@${fullName} `;
+
+    if (mentionQuery && mentionQuery.from !== undefined) {
+      editor
+        .chain()
+        .focus()
+        .deleteRange({ from: mentionQuery.from, to: mentionQuery.to })
+        .insertContent(mentionText)
+        .run();
+    } else {
+      editor
+        .chain()
+        .focus()
+        .insertContent(mentionText)
+        .run();
+    }
+    setMentionQuery(null);
+    setIsMentionListOpen(false);
   };
 
   const editor = useEditor({
@@ -67,6 +96,25 @@ export default function RichTextEditor({
       const html = editor.getHTML();
       if (onChange) {
         onChange(html);
+      }
+
+      // Détection de la saisie d'un @ pour proposer l'autocomplétion des membres
+      if (showMentions && allUsers && allUsers.length > 0) {
+        const { from } = editor.state.selection;
+        const textBefore = editor.state.doc.textBetween(Math.max(0, from - 30), from, '\n', '\0');
+        const match = textBefore.match(/(?:^|\s)@([a-zA-ZÀ-ÿ0-9_-]*)$/);
+
+        if (match) {
+          const queryStr = match[1];
+          const queryLen = queryStr.length + 1; // +1 pour le '@'
+          setMentionQuery({
+            query: queryStr,
+            from: from - queryLen,
+            to: from
+          });
+        } else {
+          setMentionQuery(null);
+        }
       }
     },
     onSelectionUpdate: () => {
@@ -292,7 +340,50 @@ export default function RichTextEditor({
             </div>
           </>
         )}
+
+        {/* Bouton de mention de membre (@) */}
+        {showMentions && allUsers && allUsers.length > 0 && (
+          <>
+            <div className="h-4 w-[1px] bg-encre-noire/20 mx-1"></div>
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setIsMentionListOpen(prev => !prev)}
+                className={`px-2 py-1 text-xs font-bold rounded border transition-all cursor-pointer flex items-center gap-1 shadow-xs ${
+                  isMentionListOpen
+                    ? 'bg-cordel-wood text-white border-encre-noire'
+                    : 'bg-white hover:bg-neutral-100 border-encre-noire/20 text-encre-noire'
+                }`}
+                title="Mentionner un membre (@)"
+              >
+                <span className="font-black text-cordel-wood text-sm leading-none">@</span>
+                <span className="hidden sm:inline text-[10px] font-bold">Mentionner</span>
+              </button>
+
+              {isMentionListOpen && (
+                <MentionDropdown
+                  suggestions={filterUsersByMentionQuery(allUsers, '')}
+                  onSelectUser={handleSelectMentionUser}
+                  onClose={() => setIsMentionListOpen(false)}
+                  position="bottom"
+                />
+              )}
+            </div>
+          </>
+        )}
       </div>
+
+      {/* Popover d'autocomplétion pendant la frappe d'un @ */}
+      {mentionQuery && (
+        <div className="relative px-3">
+          <MentionDropdown
+            suggestions={filterUsersByMentionQuery(allUsers, mentionQuery.query)}
+            onSelectUser={handleSelectMentionUser}
+            onClose={() => setMentionQuery(null)}
+            position="bottom"
+          />
+        </div>
+      )}
 
       {/* Ligne d'accès direct aux émoticônes fréquents */}
       {showEmojis && (

@@ -16,6 +16,7 @@ import { isUserModeratorOrAdmin, canUserWriteInForumChannel } from '../utils/per
 import { usePresenceContext } from '../context/PresenceContext';
 import useConfirm from '../hooks/useConfirm';
 import EmojiPickerPopover, { EmojiQuickRow } from './forum/EmojiPickerPopover';
+import { MentionDropdown, getMentionQueryAtCursor, filterUsersByMentionQuery, extractMentionedUserIds } from './forum/MentionAutocomplete';
 
 const ReactionBar = ({ reactions = {}, currentUserId, onToggle, allUsers = [] }) => {
   const emojis = ['👍', '👎', '❤️', '👏'];
@@ -93,7 +94,20 @@ const ThreadReplyItem = React.memo(({
   const userPlaysInstrument = (profileData?.instrumentsJoues && profileData.instrumentsJoues.includes(reply.targetTag)) ||
                                (profileData?.instrument === reply.targetTag);
   const userHasTag = profileData?.tags && profileData.tags.includes(reply.targetTag);
-  const isTargeted = reply.targetTag && (userPlaysInstrument || userHasTag);
+  const isTagTargeted = reply.targetTag && (userPlaysInstrument || userHasTag);
+
+  // Vérification si le membre est directement nommé/mentionné avec @Prénom Nom
+  const userFullName = `${profileData?.prenom || ''} ${profileData?.nom || ''}`.trim().toLowerCase();
+  const userFirstName = (profileData?.prenom || '').trim().toLowerCase();
+  const rawMsg = (reply.message || '').toLowerCase();
+
+  const isDirectlyMentioned = Boolean(
+    (userFullName && rawMsg.includes(`@${userFullName}`)) ||
+    (userFirstName && rawMsg.includes(`@${userFirstName}`)) ||
+    (reply.mentionedUserIds && Array.isArray(reply.mentionedUserIds) && reply.mentionedUserIds.includes(userId))
+  );
+
+  const isTargeted = isDirectlyMentioned || isTagTargeted;
 
   return (
     <div 
@@ -105,18 +119,24 @@ const ThreadReplyItem = React.memo(({
       <div 
         className={`
           border-2 p-3 shadow-[2px_2px_0px_0px_#181716] transition-all relative group
-          ${isTargeted 
-            ? 'theme-bg-jaune border-cordel-wood rounded-[6px_10px_6px_10px] scale-[1.02] shadow-[2.5px_2.5px_0px_0px_#8b2a1a]' 
-            : isCurrentUser 
-              ? 'theme-bg-vert border-encre-noire rounded-[10px_2px_8px_10px]' 
-              : 'bg-[var(--cordel-hover-bg)] border-encre-noire text-encre-noire rounded-[2px_10px_10px_8px]'}
+          ${isDirectlyMentioned
+            ? 'theme-bg-jaune border-cordel-wood rounded-[6px_10px_6px_10px] scale-[1.02] shadow-[3px_3px_0px_0px_#8b2a1a] ring-2 ring-cordel-wood/40'
+            : isTagTargeted 
+              ? 'theme-bg-jaune border-cordel-wood rounded-[6px_10px_6px_10px] scale-[1.02] shadow-[2.5px_2.5px_0px_0px_#8b2a1a]' 
+              : isCurrentUser 
+                ? 'theme-bg-vert border-encre-noire rounded-[10px_2px_8px_10px]' 
+                : 'bg-[var(--cordel-hover-bg)] border-encre-noire text-encre-noire rounded-[2px_10px_10px_8px]'}
         `}
       >
-        {isTargeted && (
+        {isDirectlyMentioned ? (
+          <span className="text-[8.5px] font-black text-cordel-wood block mb-1 uppercase tracking-wider animate-pulse select-none bg-amber-200/70 border border-cordel-wood/40 px-2 py-0.5 rounded-[4px] w-fit shadow-xs">
+            🗣️ Vous êtes mentionné(e) dans ce message
+          </span>
+        ) : isTagTargeted ? (
           <span className="text-[8px] font-black text-cordel-wood block mb-1 uppercase tracking-wider animate-pulse select-none">
             🗣️ Ce message vous concerne ({reply.targetTag})
           </span>
-        )}
+        ) : null}
 
         <div className="flex justify-between items-start gap-4 mb-1">
           {!isCurrentUser ? (
@@ -201,6 +221,7 @@ const ThreadReplyItem = React.memo(({
          JSON.stringify(prevProps.reply.reactions) === JSON.stringify(nextProps.reply.reactions) &&
          prevProps.reply.dateCreation === nextProps.reply.dateCreation &&
          prevProps.reply.targetTag === nextProps.reply.targetTag &&
+         JSON.stringify(prevProps.reply.mentionedUserIds) === JSON.stringify(nextProps.reply.mentionedUserIds) &&
          prevProps.reply.isEdited === nextProps.reply.isEdited &&
          prevProps.userId === nextProps.userId &&
          prevProps.profileData === nextProps.profileData &&
@@ -262,6 +283,8 @@ export default function ThreadView({
   const [isReplyExpanded, setIsReplyExpanded] = useState(false);
   const [isTargetingExpanded, setIsTargetingExpanded] = useState(false);
   const [isCompactEmojiOpen, setIsCompactEmojiOpen] = useState(false);
+  const [compactMentionQuery, setCompactMentionQuery] = useState(null); // { query, start, end }
+  const compactInputRef = useRef(null);
   const [showScrollBottom, setShowScrollBottom] = useState(false);
   const unreadSeparatorRef = useRef(null);
   const messagesContainerRef = useRef(null);
@@ -478,6 +501,7 @@ export default function ThreadView({
       const threadRef = doc(db, 'forum', threadId);
       const nowIso = new Date().toISOString();
       const authorName = `${profileData.prenom} ${profileData.nom}`;
+      const mentionedUserIds = extractMentionedUserIds(cleanText, allUsers);
 
       await updateDoc(threadRef, {
         reponses: arrayUnion({
@@ -485,12 +509,36 @@ export default function ThreadView({
           auteurNom: authorName,
           message: cleanText,
           dateCreation: nowIso,
-          targetTag: selectedTarget || null
+          targetTag: selectedTarget || null,
+          mentionedUserIds: mentionedUserIds.length > 0 ? mentionedUserIds : null
         }),
         derniereModification: nowIso
       });
 
-      // Détecter les mentions @Badge
+      // Notifier les membres directement mentionnés (@Prénom Nom)
+      if (mentionedUserIds.length > 0) {
+        for (const mentionedUid of mentionedUserIds) {
+          if (mentionedUid !== user.uid) {
+            try {
+              const cleanPreview = cleanText.replace(/<[^>]*>/g, '');
+              await addDoc(collection(db, 'notifications_queue'), {
+                groupId: profileData.groupId,
+                title: `Mention dans le forum (#${threadChannel?.name || 'Discussion'})`,
+                body: `${authorName} vous a mentionné(e) : "${cleanPreview.slice(0, 100)}${cleanPreview.length > 100 ? '...' : ''}"`,
+                targetUserId: mentionedUid,
+                senderId: user.uid,
+                threadId: threadId,
+                channelId: thread?.channelId || null,
+                createdAt: nowIso
+              });
+            } catch (err) {
+              console.error("Error writing notification for mentioned user:", err);
+            }
+          }
+        }
+      }
+
+      // Détecter les mentions de groupe @Badge
       const mentions = availableTargets.filter(tag => {
         const regex = new RegExp(`@${tag}\\b`, 'gi');
         return regex.test(cleanText);
@@ -959,6 +1007,23 @@ export default function ThreadView({
                       />
                     )}
 
+                    {/* Autocomplétion lors de la saisie d'un @ dans la barre compacte */}
+                    {compactMentionQuery && (
+                      <MentionDropdown
+                        suggestions={filterUsersByMentionQuery(allUsers, compactMentionQuery.query)}
+                        onSelectUser={(targetUser) => {
+                          const fullName = `${targetUser.prenom || ''} ${targetUser.nom || ''}`.trim() || targetUser.email || 'Membre';
+                          const mentionInsert = `@${fullName} `;
+                          const nextText = replyText.slice(0, compactMentionQuery.start) + mentionInsert + replyText.slice(compactMentionQuery.end);
+                          setReplyText(nextText);
+                          setCompactMentionQuery(null);
+                          if (compactInputRef.current) compactInputRef.current.focus();
+                        }}
+                        onClose={() => setCompactMentionQuery(null)}
+                        position="top"
+                      />
+                    )}
+
                     <button
                       type="button"
                       onClick={() => setIsReplyExpanded(true)}
@@ -982,9 +1047,16 @@ export default function ThreadView({
                     </button>
 
                     <input
+                      ref={compactInputRef}
                       type="text"
                       value={replyText}
-                      onChange={(e) => setReplyText(e.target.value)}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setReplyText(val);
+                        const cursor = e.target.selectionStart;
+                        const match = getMentionQueryAtCursor(val, cursor);
+                        setCompactMentionQuery(match);
+                      }}
                       onFocus={() => setIsReplyExpanded(true)}
                       placeholder={t('forum.writeReplyPlaceholder') || "Écrire une réponse... (cliquez pour déplier)"}
                       disabled={sending}
@@ -1080,6 +1152,7 @@ export default function ThreadView({
                     placeholder={t('forum.writeReplyPlaceholder')}
                     groupId={profileData?.groupId}
                     lienDepotForum={lienDepotForum}
+                    allUsers={allUsers}
                     minHeight="85px"
                     onAddPoll={(!thread?.poll && (user?.uid === thread?.auteurId || isModeratorOrAdmin)) ? () => setIsAddPollOpen(true) : null}
                   />

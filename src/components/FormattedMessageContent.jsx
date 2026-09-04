@@ -63,9 +63,15 @@ export default function FormattedMessageContent({ content, className = '' }) {
       </div>`;
     });
 
+    // Mise en valeur des mentions de membres (@Prénom Nom ou @Prénom)
+    const mentionRegex = /(^|[^\w@])@([a-zA-ZÀ-ÿ0-9_-]+(?:\s[a-zA-ZÀ-ÿ0-9_-]+)?)/g;
+    html = html.replace(mentionRegex, (match, prefix, name) => {
+      return `${prefix}<span class="inline-flex items-center px-1.5 py-0.5 rounded font-black text-cordel-wood bg-amber-500/15 border border-amber-600/30 text-[11px] select-all shadow-xs">@${name}</span>`;
+    });
+
     // Sanitize with DOMPurify
     return DOMPurify.sanitize(html, {
-      ADD_TAGS: ['iframe', 'img'],
+      ADD_TAGS: ['iframe', 'img', 'span'],
       ADD_ATTR: ['allow', 'allowfullscreen', 'frameborder', 'scrolling', 'src', 'width', 'height', 'target', 'rel', 'class', 'style', 'alt', 'loading'],
       ALLOWED_URI_REGEXP: /^(?:(?:(?:f|ht)tps?|mailto|tel|callto|sms|cid|xmpp):|[^a-z]|[a-z+.\-]+(?:[^a-z+.\-:]|$))/i
     });

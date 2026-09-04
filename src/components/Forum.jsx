@@ -904,6 +904,7 @@ export default function Forum({
                 channelId={activeChannelId}
                 user={user} 
                 profileData={profileData} 
+                allUsers={Object.values(usersMap)}
                 onClose={() => setIsAdding(false)} 
               />
             ) : (

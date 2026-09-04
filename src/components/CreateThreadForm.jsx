@@ -8,7 +8,7 @@ import RichTextEditor from './RichTextEditor';
 
 import { getTagId } from '../utils/tagUtils';
 
-export default function CreateThreadForm({ groupId, channelId, user, profileData, onClose, inModal = false }) {
+export default function CreateThreadForm({ groupId, channelId, user, profileData, allUsers = [], onClose, inModal = false }) {
   const { t } = useTranslation();
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState('Général');
@@ -271,6 +271,7 @@ export default function CreateThreadForm({ groupId, channelId, user, profileData
             groupId={groupId}
             lienDepotForum={lienDepotForum}
             consignesDepotForum={consignesDepotForum}
+            allUsers={allUsers}
             minHeight="140px"
             onAddPoll={() => setShowPollForm(!showPollForm)}
           />
