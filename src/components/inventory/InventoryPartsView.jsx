@@ -2,11 +2,15 @@ import React, { useState, useMemo } from 'react';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 import { XiloClose, XiloChisel } from '../XiloIcons';
+import { useInventoryProjects } from '../../hooks/useInventoryProjects';
+import PartAssignmentBadge from './PartAssignmentBadge';
 
 const ETAT_OPTIONS = ['Neuf', 'Bon', 'Usé', 'À réparer', 'Au rebut'];
 const STATUS_OPTIONS = ['En stock', 'Assemblé'];
 
 export default function InventoryPartsView({
+  groupId,
+  instruments = [],
   inventoryParts,
   instrumentModels = [],
   isPartFormOpen,
@@ -23,8 +27,32 @@ export default function InventoryPartsView({
 }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [isCustomType, setIsCustomType] = useState(false);
+  const [assignmentFilter, setAssignmentFilter] = useState('all');
+
+  const { projects = [] } = useInventoryProjects(groupId);
+
+  const assignmentsMap = useMemo(() => {
+    const map = {};
+    inventoryParts.forEach(part => {
+      const inst = instruments.find(i => (i.nomenclature || []).includes(part.id));
+      if (inst) {
+        map[part.id] = { type: 'instrument', instrumentName: inst.nom, instId: inst.id };
+        return;
+      }
+      const proj = projects.find(p => (p.piecesAssignees || []).some(a => a.inventoryPartId === part.id));
+      if (proj) {
+        map[part.id] = { type: 'projet', projectName: proj.nom, projId: proj.id };
+        return;
+      }
+      map[part.id] = { type: 'libre' };
+    });
+    return map;
+  }, [inventoryParts, instruments, projects]);
 
   const filteredParts = inventoryParts.filter(part => {
+    const assign = assignmentsMap[part.id] || { type: 'libre' };
+    if (assignmentFilter !== 'all' && assign.type !== assignmentFilter) return false;
+
     if (!searchQuery) return true;
     const lowerQuery = searchQuery.toLowerCase();
     return (
@@ -137,6 +165,18 @@ export default function InventoryPartsView({
           <h3 className="panel-title text-sm font-bold text-cordel-wood mb-4">
             {editingPartId ? "Modifier une pièce" : "Ajouter une pièce détachée"}
           </h3>
+
+          {editingPartId && (
+            <div className="mb-4">
+              <label className="text-[8px] uppercase font-bold tracking-wider text-cordel-master-dark block mb-1">
+                Affectation actuelle
+              </label>
+              <div className="bg-stone-50 border border-stone-200 p-2 rounded flex items-center justify-between">
+                <PartAssignmentBadge assignment={assignmentsMap[editingPartId]} />
+                <span className="text-[9px] text-stone-500 italic">Information en lecture seule</span>
+              </div>
+            </div>
+          )}
 
           <form onSubmit={handleSavePart} className="flex flex-col gap-3.5">
             <div className="flex flex-col gap-1">
@@ -408,18 +448,31 @@ export default function InventoryPartsView({
         </CordelCard>
       ) : (
         <div className="flex flex-col gap-4">
-          <div className="flex justify-between items-center bg-cordel-bg border-2 border-encre-noire p-2 rounded-[5px_4px_6px_3px] shadow-[2px_2px_0px_0px_#181716]">
-            <input
-              type="text"
-              placeholder="Rechercher une pièce..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="theme-input text-xs py-1.5 px-3 w-64 border-none shadow-none bg-transparent"
-            />
+          <div className="flex justify-between items-center bg-cordel-bg border-2 border-encre-noire p-2 rounded-[5px_4px_6px_3px] shadow-[2px_2px_0px_0px_#181716] flex-wrap gap-2">
+            <div className="flex items-center gap-3">
+              <input
+                type="text"
+                placeholder="Rechercher une pièce..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="theme-input text-xs py-1.5 px-3 w-64 border-none shadow-none bg-transparent"
+              />
+              <div className="h-6 w-px bg-cordel-master-dark/20 hidden sm:block"></div>
+              <select
+                value={assignmentFilter}
+                onChange={(e) => setAssignmentFilter(e.target.value)}
+                className="theme-input text-xs py-1.5 px-2 bg-white border border-stone-300 rounded text-stone-700 font-bold cursor-pointer"
+              >
+                <option value="all">Toutes les pièces</option>
+                <option value="libre">🟢 Libres uniquement</option>
+                <option value="projet">🟠 En projet d'assemblage</option>
+                <option value="instrument">🔵 Montées sur instrument</option>
+              </select>
+            </div>
             <CordelButton
               variant="ocre"
               onClick={handleOpenPartAdd}
-              className="text-xs px-3 py-1.5 font-bold"
+              className="text-xs px-3 py-1.5 font-bold shrink-0"
             >
               + Ajouter Pièce
             </CordelButton>
@@ -431,6 +484,7 @@ export default function InventoryPartsView({
                 <tr>
                   <th className="p-3 border-r border-encre-noire/15 sticky top-0 left-0 bg-cordel-bg-light z-30">Nom / Réf</th>
                   <th className="p-3 border-r border-encre-noire/15 sticky top-0 z-20">Type</th>
+                  <th className="p-3 border-r border-encre-noire/15 sticky top-0 z-20">Affectation</th>
                   <th className="p-3 border-r border-encre-noire/15 sticky top-0 z-20">État</th>
                   <th className="p-3 border-r border-encre-noire/15 sticky top-0 z-20">Statut</th>
                   <th className="p-3 border-r border-encre-noire/15 sticky top-0 z-20">Avancement</th>
@@ -467,6 +521,9 @@ export default function InventoryPartsView({
                         </td>
                         <td className="p-2 border-r border-encre-noire/10 font-semibold">
                           {part.typePiece || '—'}
+                        </td>
+                        <td className="p-2 border-r border-encre-noire/10">
+                          <PartAssignmentBadge assignment={assignmentsMap[part.id]} />
                         </td>
                         <td className="p-2 border-r border-encre-noire/10">
                           <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider border ${

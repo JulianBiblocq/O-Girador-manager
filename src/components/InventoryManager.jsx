@@ -1233,6 +1233,8 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin,
 
         {activeTab === 'parts' && (
           <InventoryPartsView
+            groupId={groupId}
+            instruments={instruments}
             inventoryParts={inventoryParts}
             instrumentModels={instrumentModels}
             isPartFormOpen={isPartFormOpen}
