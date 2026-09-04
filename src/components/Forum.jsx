@@ -357,32 +357,8 @@ export default function Forum({
     const userTags = effectiveUserTags;
     const isMestreOrAdmin = profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.role === 'admin' || profileData?.isSystemAdmin;
 
-    // Charger les salons pour ce groupe
-    let q;
-
-    if (!isMestreOrAdmin && !breakGlassActive) {
-      const allowedRoles = ['all', userRole];
-      if (userTags && userTags.length > 0) {
-        userTags.forEach(t => {
-          const tagId = typeof t === 'string' ? t : (t.id || t.nomM || '');
-          if (tagId) allowedRoles.push(tagId);
-        });
-      }
-      const slicedRoles = allowedRoles.slice(0, 10);
-
-      q = query(
-        channelsRef,
-        and(
-          where('groupId', '==', profileData.groupId),
-          or(
-            where('readRoles', 'array-contains-any', slicedRoles),
-            where('isTransparent', '==', true)
-          )
-        )
-      );
-    } else {
-      q = query(channelsRef, where('groupId', '==', profileData.groupId));
-    }
+    // Charger les salons de l'association (le filtrage étanche des accès est assuré ci-dessous par canUserReadForumChannel)
+    const q = query(channelsRef, where('groupId', '==', profileData.groupId));
 
     const unsubscribe = onSnapshot(q, async (snap) => {
       const fetched = [];

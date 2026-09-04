@@ -385,14 +385,13 @@ export default function ThreadView({
       getDoc(doc(db, 'forum_channels', thread.channelId))
         .then((snap) => {
           if (snap.exists()) {
-            setChannelData({ id: snap.id, ...snap.data() });
-          } else {
-            // Salon privé introuvable ou supprimé
-            setChannelData({ id: thread.channelId, readRoles: ['bureau'] });
+            const isCa = String(thread.channelId).toLowerCase().includes('ca');
+            setChannelData({ id: thread.channelId, readRoles: [isCa ? 'ca' : 'bureau'] });
           }
         })
         .catch(() => {
-          setChannelData({ id: thread.channelId, readRoles: ['bureau'] });
+          const isCa = String(thread.channelId).toLowerCase().includes('ca');
+          setChannelData({ id: thread.channelId, readRoles: [isCa ? 'ca' : 'bureau'] });
         });
     } else {
       setChannelData(null);
@@ -410,16 +409,19 @@ export default function ThreadView({
     const catLower = (thread.categorie || '').toLowerCase();
     const chanIdLower = (thread.channelId || '').toLowerCase();
 
-    // Si le sujet est étiqueté Bureau par sa catégorie ou son identifiant de salon
-    if (catLower === 'bureau' || chanIdLower.includes('bureau')) {
-      const userTags = (activeEffectiveUserTags || []).map(t => String(typeof t === 'string' ? t : (t.id || t.nomM || '')).toLowerCase());
-      const cleanRole = (profileData?.role || '').toLowerCase();
-      const BUREAU_KEYWORDS = ['bureau', 'président', 'présidente', 'présidence', 'trésorier', 'trésorière', 'secrétaire', 'direction'];
-      const hasBureauTag = userTags.some(t => BUREAU_KEYWORDS.some(kw => t.includes(kw))) || cleanRole === 'bureau';
-      if (!hasBureauTag) return true;
+    // 1. Si le sujet est rattaché au Bureau par sa catégorie ou son identifiant de salon
+    if (catLower === 'bureau' || chanIdLower.endsWith('_bureau') || chanIdLower === 'bureau') {
+      const isBureauAllowed = checkUserAccessToList(['bureau'], profileData?.role, activeEffectiveUserTags, activeTagsDisponibles);
+      if (!isBureauAllowed) return true;
     }
 
-    // Si le salon a été résolu, vérifier avec canUserReadForumChannel
+    // 2. Si le sujet est rattaché au CA par sa catégorie ou son identifiant de salon
+    if (catLower === 'ca' || chanIdLower.endsWith('_ca') || chanIdLower === 'ca') {
+      const isCaAllowed = checkUserAccessToList(['ca'], profileData?.role, activeEffectiveUserTags, activeTagsDisponibles);
+      if (!isCaAllowed) return true;
+    }
+
+    // 3. Si le salon a été résolu, vérifier avec canUserReadForumChannel
     if (threadChannel) {
       return !canUserReadForumChannel(
         threadChannel,
@@ -430,7 +432,7 @@ export default function ThreadView({
       );
     }
 
-    // Si le sujet a un channelId spécifique absent de tous les salons autorisés du membre
+    // 4. Si le sujet a un channelId spécifique absent de tous les salons autorisés du membre
     if (thread.channelId && channels.length > 0 && !channels.some(c => c.id === thread.channelId)) {
       return true;
     }

@@ -391,75 +391,104 @@ export function checkUserAccessToList(allowedList = ['all'], userRole = 'membre'
   if (!Array.isArray(allowedList) || allowedList.length === 0) return true;
   if (allowedList.includes('all')) return true;
 
-  const cleanRole = (userRole || '').toLowerCase();
+  const cleanRole = (userRole || '').toLowerCase().trim();
 
-  // Normalisation des étiquettes utilisateur en minuscules
-  const userTagStrs = (userTags || []).map(t => {
-    const raw = typeof t === 'string' ? t : getTagId(t);
-    return (raw || '').toLowerCase();
-  }).filter(Boolean);
+  // Résolution exhaustive de toutes les variantes textuelles des étiquettes de l'utilisateur
+  const allUserTagVariants = new Set();
+  (userTags || []).forEach(t => {
+    if (!t) return;
+    const directStr = typeof t === 'string' ? t : getTagId(t);
+    if (directStr) {
+      const lower = directStr.toLowerCase().trim();
+      allUserTagVariants.add(lower);
+      allUserTagVariants.add(lower.replace(/[\.\-_]/g, '').trim());
+    }
+    if (typeof t === 'object') {
+      if (t.id) {
+        const idLower = String(t.id).toLowerCase().trim();
+        allUserTagVariants.add(idLower);
+        allUserTagVariants.add(idLower.replace(/[\.\-_]/g, '').trim());
+      }
+      if (t.nomM) allUserTagVariants.add(String(t.nomM).toLowerCase().trim());
+      if (t.nomF) allUserTagVariants.add(String(t.nomF).toLowerCase().trim());
+      if (t.name) allUserTagVariants.add(String(t.name).toLowerCase().trim());
+    }
+
+    // Résolution via tagsAvailable (nomM, nomF, id, inheritsFrom)
+    const tagObj = findTagObject(t, tagsAvailable);
+    if (tagObj && typeof tagObj === 'object') {
+      if (tagObj.id) {
+        const idLower = String(tagObj.id).toLowerCase().trim();
+        allUserTagVariants.add(idLower);
+        allUserTagVariants.add(idLower.replace(/[\.\-_]/g, '').trim());
+      }
+      if (tagObj.nomM) allUserTagVariants.add(String(tagObj.nomM).toLowerCase().trim());
+      if (tagObj.nomF) allUserTagVariants.add(String(tagObj.nomF).toLowerCase().trim());
+      if (tagObj.name) allUserTagVariants.add(String(tagObj.name).toLowerCase().trim());
+      if (Array.isArray(tagObj.inheritsFrom)) {
+        tagObj.inheritsFrom.forEach(p => {
+          const pId = getTagId(p);
+          if (pId) {
+            const pLower = String(pId).toLowerCase().trim();
+            allUserTagVariants.add(pLower);
+            allUserTagVariants.add(pLower.replace(/[\.\-_]/g, '').trim());
+          }
+        });
+      }
+    }
+  });
+
+  const tagVariantsArray = Array.from(allUserTagVariants);
 
   // Mots-clés stricts du Bureau (exécutif restreint) : NE JAMAIS INCLURE 'ca' !
-  const BUREAU_KEYWORDS = ['bureau', 'président', 'présidente', 'présidence', 'trésorier', 'trésorière', 'secrétaire', 'direction'];
-  const hasBureauTag = userTagStrs.some(t => BUREAU_KEYWORDS.some(kw => t.includes(kw))) || cleanRole === 'bureau';
+  const BUREAU_KEYWORDS = ['bureau', 'président', 'présidente', 'présidence', 'trésorier', 'trésorière', 'secrétaire'];
+  const hasBureauTag = tagVariantsArray.some(t => BUREAU_KEYWORDS.some(kw => t.includes(kw))) || cleanRole === 'bureau';
 
-  // Mots-clés stricts du CA (Conseil d'Administration délibérant)
-  const CA_KEYWORDS = ['ca', 'conseil d\'administration', 'administrateur', 'administratrice'];
-  const hasCaTag = userTagStrs.some(t => CA_KEYWORDS.some(kw => t.includes(kw))) || cleanRole === 'ca';
+  // Rôles et étiquettes du Conseil d'Administration (CA) :
+  // Le CA comprend :
+  // 1. Les membres du Bureau (Président, Trésorier, Secrétaire...).
+  // 2. Les membres élus du CA (badges 'CA', 'C.A.', 'Conseil d\'administration', rôle 'ca').
+  // 3. Les administrateurs de l'association / système ('admin', 'super-admin', 'mestre', 'administrateur', 'administratrice').
+  const isCaRole = cleanRole === 'ca' || cleanRole === 'admin' || cleanRole === 'super-admin' || cleanRole === 'mestre';
+  const hasCaTag = isCaRole || hasBureauTag || tagVariantsArray.some(t => {
+    return t === 'ca' ||
+      t.startsWith('ca ') ||
+      t.endsWith(' ca') ||
+      t.includes('conseil') ||
+      t.includes('administrateur') ||
+      t.includes('administratrice') ||
+      t.includes('admin');
+  });
 
   // 1. Règle pour le salon 'Bureau' :
-  // Seuls les membres possédant un badge du Bureau (Présidence, Bureau, Trésorerie, Secrétariat) sont autorisés.
-  // Les membres du CA non-membres du bureau n'ont PAS accès au salon Bureau !
-  const isBureauChannel = allowedList.some(r => String(r).toLowerCase() === 'bureau');
+  // Seuls les membres possédant un badge ou rôle du Bureau sont autorisés.
+  // Les membres du CA non-membres du bureau en sont strictement exclus.
+  const isBureauChannel = allowedList.some(r => {
+    const s = String(r).toLowerCase().trim();
+    return s === 'bureau' || s.endsWith('_bureau');
+  });
   if (isBureauChannel) {
     return hasBureauTag;
   }
 
   // 2. Règle pour le salon 'CA' :
-  // Accessible aux membres du CA et aux membres du Bureau (qui font partie du CA).
-  const isCaChannel = allowedList.some(r => String(r).toLowerCase() === 'ca');
+  // Accessible à tous les membres du CA (administrateurs, mestre, membres du CA et membres du Bureau).
+  const isCaChannel = allowedList.some(r => {
+    const s = String(r).toLowerCase().trim();
+    return s === 'ca' || s.endsWith('_ca') || s.includes('conseil');
+  });
   if (isCaChannel) {
-    return hasCaTag || hasBureauTag;
+    return hasCaTag;
   }
 
   // 3. Correspondance directe de rôle système (pour les autres salons)
-  if (allowedList.some(r => String(r).toLowerCase() === cleanRole)) return true;
+  if (allowedList.some(r => String(r).toLowerCase().trim() === cleanRole)) return true;
 
   // 4. Vérification générique pour les autres salons (pupitres, groupes de travail...)
   return allowedList.some(allowedItem => {
-    const targetLower = String(allowedItem).toLowerCase();
-
-    return (userTags || []).some(t => {
-      const tagStr = typeof t === 'string' ? t : getTagId(t);
-      if (!tagStr) return false;
-      const tagLower = tagStr.toLowerCase();
-
-      if (tagLower === targetLower) return true;
-
-      // Correspondance avec l'objet étiquette dans tagsAvailable (nomM, nomF, id, inheritsFrom)
-      const tagObj = findTagObject(tagStr, tagsAvailable);
-      if (tagObj) {
-        if (tagObj.id && String(tagObj.id).toLowerCase() === targetLower) return true;
-        if (tagObj.nomM && String(tagObj.nomM).toLowerCase() === targetLower) return true;
-        if (tagObj.nomF && String(tagObj.nomF).toLowerCase() === targetLower) return true;
-        if (Array.isArray(tagObj.inheritsFrom) && tagObj.inheritsFrom.some(p => String(getTagId(p)).toLowerCase() === targetLower)) {
-          return true;
-        }
-      }
-
-      // Si l'élément cible est lui-même un tag de tagsAvailable
-      const targetObj = findTagObject(allowedItem, tagsAvailable);
-      if (targetObj) {
-        if (targetObj.id && tagLower === String(targetObj.id).toLowerCase()) return true;
-        if (targetObj.nomM && tagLower === String(targetObj.nomM).toLowerCase()) return true;
-        if (targetObj.nomF && tagLower === String(targetObj.nomF).toLowerCase()) return true;
-        if (Array.isArray(targetObj.inheritsFrom) && targetObj.inheritsFrom.some(p => String(getTagId(p)).toLowerCase() === tagLower)) {
-          return true;
-        }
-      }
-
-      return false;
-    });
+    const targetLower = String(allowedItem).toLowerCase().trim();
+    if (tagVariantsArray.includes(targetLower)) return true;
+    return tagVariantsArray.some(t => t.includes(targetLower));
   });
 }
 
