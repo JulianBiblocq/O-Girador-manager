@@ -336,19 +336,26 @@ export default function ThreadView({ threadId, user, profileData, channels = [],
 
   // Marquer le sujet comme lu en base Firestore (pour acquitter les compteurs en cascade)
   useEffect(() => {
-    if (thread && user?.uid && thread.derniereModification) {
-      const threadLastMod = new Date(thread.derniereModification).getTime();
+    if (thread && user?.uid) {
+      const modStr = thread.derniereModification || thread.dateCreation;
+      if (!modStr) return;
+
+      const threadLastMod = new Date(modStr).getTime();
       const userLastReadStr = profileData?.readThreads?.[thread.id];
       const userLastRead = userLastReadStr ? new Date(userLastReadStr).getTime() : 0;
       
       if (threadLastMod > userLastRead) {
+        // Anti-horloge-locale-désynchronisée : on prend le max entre l'heure locale et l'heure du message + 1s
+        const now = Date.now();
+        const safeReadTime = new Date(Math.max(now, threadLastMod + 1000)).toISOString();
+
         const userRef = doc(db, 'users', user.uid);
         updateDoc(userRef, {
-          [`readThreads.${thread.id}`]: new Date().toISOString()
+          [`readThreads.${thread.id}`]: safeReadTime
         }).catch(err => console.error("Erreur mise à jour lecture:", err));
       }
     }
-  }, [thread?.id, thread?.derniereModification, user?.uid]);
+  }, [thread?.id, thread?.derniereModification, thread?.dateCreation, user?.uid, profileData?.readThreads]);
 
   // Scroll automatique intelligent à l'ouverture du sujet
   useEffect(() => {
