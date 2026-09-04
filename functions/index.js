@@ -660,6 +660,34 @@ exports.approveQrSession = onCall(async (request) => {
 });
 
 /**
+ * Cloud Function HTTPS Callable (v2) : getCrossAppAuthToken
+ * Permet à un utilisateur authentifié de forger un jeton personnalisé Firebase (customToken)
+ * pour réaliser un Single Sign-On (SSO) transparent vers une autre application de la suite O Girador.
+ */
+exports.getCrossAppAuthToken = onCall({ cors: true }, async (request) => {
+  const authData = request.auth || (request.context && request.context.auth);
+  if (!authData || !authData.uid) {
+    throw new HttpsError(
+      "unauthenticated",
+      "Vous devez être authentifié pour obtenir un jeton SSO."
+    );
+  }
+
+  const uid = authData.uid;
+
+  try {
+    const customToken = await getAuth().createCustomToken(uid);
+    return { customToken };
+  } catch (error) {
+    console.error("Erreur lors de la création du customToken SSO pour l'UID " + uid + " :", error);
+    throw new HttpsError(
+      "internal",
+      "Impossible de forger le jeton d'authentification SSO."
+    );
+  }
+});
+
+/**
  * Cloud Function HTTPS : helloAssoWebhook
  * Reçoit les notifications webhook de HelloAsso (Order / Payment).
  * Identifie le membre de l'association par son email (payer.email),

@@ -33,6 +33,8 @@ import PageAccessBadgeIndicator from './common/PageAccessBadgeIndicator';
 import FeedbackModal from './FeedbackModal';
 import { useTenantContext } from '../context/TenantContext';
 import { getVitrineUrl } from '../utils/urlUtils';
+import { httpsCallable } from 'firebase/functions';
+import { auth, functions } from '../firebase';
 
 export default function LayoutShell({ 
   logoUrl, 
@@ -65,6 +67,7 @@ export default function LayoutShell({
   const [isLogoTilting, setIsLogoTilting] = useState(false);
   const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
   const [combinedLogoUrl, setCombinedLogoUrl] = useState(null);
+  const [launchingAppKey, setLaunchingAppKey] = useState(null);
 
   React.useEffect(() => {
     // Vérifie si le logo combiné a déjà été généré par App.jsx
@@ -247,6 +250,8 @@ export default function LayoutShell({
   };
 
   const renderAppLauncher = (isMobile = false) => {
+    const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+
     const apps = [
       {
         key: 'vitrine',
@@ -256,23 +261,63 @@ export default function LayoutShell({
       },
       {
         key: 'sequenciador',
-        url: 'https://sequenciador.o-girador.com',
+        url: isLocal ? 'http://localhost:5174' : 'https://sequenciador.o-girador.com',
         img: '/ecosystem/favicon.svg',
         label: 'O Girador Séquenceur'
       },
       {
         key: 'dancador',
-        url: 'https://dancador.o-girador.com',
+        url: isLocal ? 'http://localhost:5175' : 'https://dancador.o-girador.com',
         img: '/ecosystem/dancador-logo.png',
         label: 'O Girador Dançador'
       },
       {
         key: 'hub',
-        url: 'https://o-girador.com',
+        url: isLocal ? 'http://localhost:5176' : 'https://o-girador.com',
         img: '/ecosystem/hub-logo.png',
         label: 'Hub Orchestrador'
       }
     ];
+
+    const handleLaunchApp = async (e, app) => {
+      e.preventDefault();
+      if (launchingAppKey) return;
+
+      // Vitrine publique ou non connecté : ouverture directe
+      if (app.key === 'vitrine' || !auth.currentUser) {
+        window.open(app.url, '_blank', 'noopener,noreferrer');
+        return;
+      }
+
+      setLaunchingAppKey(app.key);
+      // Pré-ouverture synchrone pour éviter le blocage pop-up du navigateur
+      const newTab = window.open('', '_blank');
+
+      try {
+        const getSSOToken = httpsCallable(functions, 'getCrossAppAuthToken');
+        const res = await getSSOToken();
+        const customToken = res.data?.customToken;
+
+        if (customToken) {
+          const targetUrl = new URL(app.url);
+          targetUrl.searchParams.set('ssoToken', customToken);
+          if (newTab) {
+            newTab.location.href = targetUrl.toString();
+          } else {
+            window.open(targetUrl.toString(), '_blank', 'noopener,noreferrer');
+          }
+        } else {
+          if (newTab) newTab.location.href = app.url;
+          else window.open(app.url, '_blank', 'noopener,noreferrer');
+        }
+      } catch (error) {
+        console.warn("[SSO Launcher] Erreur obtention token, fallback direct :", error);
+        if (newTab) newTab.location.href = app.url;
+        else window.open(app.url, '_blank', 'noopener,noreferrer');
+      } finally {
+        setLaunchingAppKey(null);
+      }
+    };
 
     return (
       <div className={`flex items-center ${isMobile ? 'gap-0.5 sm:gap-1' : 'gap-1.5'} justify-center flex-nowrap`}>
@@ -295,16 +340,21 @@ export default function LayoutShell({
             );
           }
 
+          const isLaunching = launchingAppKey === app.key;
+
           return (
             <a
               key={app.key}
               href={app.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={`${isMobile ? 'p-0.5 sm:p-1' : 'p-1.5'} border border-transparent rounded flex items-center justify-center transition-all cursor-pointer hover:scale-105 hover:bg-encre-noire/5 hover:border-cordel-wood ${app.isSvg ? 'hover:border-emerald-600 text-emerald-700 hover:bg-emerald-50' : ''}`}
+              onClick={(e) => handleLaunchApp(e, app)}
+              className={`${isMobile ? 'p-0.5 sm:p-1' : 'p-1.5'} border border-transparent rounded flex items-center justify-center transition-all cursor-pointer hover:scale-105 hover:bg-encre-noire/5 hover:border-cordel-wood ${app.isSvg ? 'hover:border-emerald-600 text-emerald-700 hover:bg-emerald-50' : ''} ${isLaunching ? 'opacity-50 pointer-events-none' : ''}`}
               title={app.label}
             >
-              {app.isSvg ? (
+              {isLaunching ? (
+                <div className={`${isMobile ? 'w-5 h-5 sm:w-6 sm:h-6' : 'w-6 h-6'} flex items-center justify-center`}>
+                  <div className="w-3.5 h-3.5 border-2 border-cordel-master-dark border-t-transparent rounded-full animate-spin" />
+                </div>
+              ) : app.isSvg ? (
                 <div>{app.icon}</div>
               ) : (
                 <img src={app.img} alt={app.label} className={`${isMobile ? 'w-5 h-5 sm:w-6 sm:h-6' : 'w-6 h-6'} object-contain shrink-0`} />

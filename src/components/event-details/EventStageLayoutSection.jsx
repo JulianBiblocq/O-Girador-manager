@@ -635,7 +635,7 @@ export default function EventStageLayoutSection({
                             {formatMemberName(mestreMember.name)}
                           </span>
                           <span className="text-[7px] opacity-75 font-semibold leading-none mt-0.5 uppercase truncate max-w-full">
-                            {mestreMember.instrument.split(' ')[0]}{mestreMember.instrument.toLowerCase().includes('alfaia') && activePlacements[mestreMember.id]?.voice ? ` (${activePlacements[mestreMember.id].voice.substring(0, 4)}.)` : ''}
+                            {mestreMember.instrument.split(' ')[0]}{mestreMember.instrument.toLowerCase().includes('alfaia') && activePlacements[mestreMember.id]?.voice ? ` (${activePlacements[mestreMember.id].voice.toLowerCase().startsWith('mei') ? 'Meio.' : activePlacements[mestreMember.id].voice.toLowerCase().startsWith('rep') ? 'Rep.' : 'Marc.'})` : ''}
                           </span>
                           
                           {/* Admin retirer placement button */}
@@ -708,7 +708,7 @@ export default function EventStageLayoutSection({
                             {formatMemberName(member.name)}
                           </span>
                           <span className="text-[7px] sm:text-[8px] opacity-75 font-semibold leading-none mt-0.5 uppercase truncate max-w-full">
-                            {member.instrument.split(' ')[0]}{member.instrument.toLowerCase().includes('alfaia') && activePlacements[member.id]?.voice ? ` (${activePlacements[member.id].voice.substring(0, 4)}.)` : ''}
+                            {member.instrument.split(' ')[0]}{member.instrument.toLowerCase().includes('alfaia') && activePlacements[member.id]?.voice ? ` (${activePlacements[member.id].voice.toLowerCase().startsWith('mei') ? 'Meio.' : activePlacements[member.id].voice.toLowerCase().startsWith('rep') ? 'Rep.' : 'Marc.'})` : ''}
                           </span>
                           
                           {/* Admin retirer placement cross button */}

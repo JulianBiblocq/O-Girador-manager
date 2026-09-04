@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { onAuthStateChanged, signOut, signInWithCustomToken } from 'firebase/auth';
 import { doc, onSnapshot, updateDoc, collection, query, where } from 'firebase/firestore';
 import { auth, db } from './firebase';
 import Login from './components/Login';
@@ -794,6 +794,40 @@ export default function App() {
     let unsubscribeAuth = null;
     let isMounted = true;
 
+    // Détection et traitement du SSO Custom Token
+    const searchParams = new URLSearchParams(window.location.search);
+    const ssoToken = searchParams.get('ssoToken');
+    let isSSOPending = Boolean(ssoToken);
+
+    if (ssoToken) {
+      const cleanUrl = new URL(window.location.href);
+      cleanUrl.searchParams.delete('ssoToken');
+      window.history.replaceState({}, document.title, cleanUrl.toString());
+
+      let tokenUid = null;
+      try {
+        const parts = ssoToken.split('.');
+        if (parts.length === 3) {
+          const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+          tokenUid = payload.uid || payload.sub || null;
+        }
+      } catch (_) {}
+
+      if (auth.currentUser && tokenUid && auth.currentUser.uid === tokenUid) {
+        isSSOPending = false;
+      } else {
+        setLoading(true);
+        signInWithCustomToken(auth, ssoToken)
+          .catch((err) => {
+            console.warn("[Organizad'Or SSO] Erreur custom token :", err);
+            setLoading(false);
+          })
+          .finally(() => {
+            isSSOPending = false;
+          });
+      }
+    }
+
     const initAuth = () => {
       if (!isMounted) return;
 
@@ -841,7 +875,9 @@ export default function App() {
           setProfileData(null);
           setProfileExists(false);
           setCheckingProfile(false);
-          setLoading(false);
+          if (!isSSOPending) {
+            setLoading(false);
+          }
         }
       });
     };
