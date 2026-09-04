@@ -6,7 +6,7 @@ import PartEditor from './PartEditor';
 
 const INSTRUMENT_TYPES = ['Alfaia', 'Caixa', 'Agbê', 'Gonguê', 'Mineiro', 'Apito', 'Timbal', 'Maintenance', 'Costume', 'Autre'];
 
-export default function InstrumentModelEditor({ model, existingModels, varalCategories, onSave, onCancel }) {
+export default function InstrumentModelEditor({ model, existingModels, varalCategories, tools = [], supplies = [], onSave, onCancel }) {
   const allTypes = useMemo(() => {
     const types = new Set(INSTRUMENT_TYPES);
     (existingModels || []).forEach(m => {
@@ -90,6 +90,8 @@ export default function InstrumentModelEditor({ model, existingModels, varalCate
     return (
       <PartEditor 
         part={editingPart.id === 'new' ? null : editingPart} 
+        existingTools={tools}
+        existingSupplies={supplies}
         onSave={handleSavePart} 
         onCancel={() => setEditingPart(null)} 
       />

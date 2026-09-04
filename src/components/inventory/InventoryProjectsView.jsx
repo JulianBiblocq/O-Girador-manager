@@ -8,6 +8,7 @@ import { useInventoryProjects } from '../../hooks/useInventoryProjects';
 import { useInstrumentModels } from '../../hooks/useInstrumentModels';
 import { useInventoryData } from '../../hooks/useInventoryData';
 import { useAssociationSettings } from '../../hooks/useAssociationSettings';
+import { useSuppliesData } from '../../hooks/useSuppliesData';
 import PartWorkflowModal from './PartWorkflowModal';
 import FabricationCard from '../FabricationCard';
 import AssemblySlotItem from './AssemblySlotItem';
@@ -20,6 +21,7 @@ export default function InventoryProjectsView({ groupId, isAuthorized, profileDa
   const { models, loading: mLoading } = useInstrumentModels(groupId);
   const { updatePartWorkflow } = useInventoryData(groupId);
   const { formData: settingsData } = useAssociationSettings(groupId);
+  const { tools = [], supplies = [] } = useSuppliesData(groupId, 'lutherie');
   
   const [isAdding, setIsAdding] = useState(false);
   const [editingProject, setEditingProject] = useState(null);
@@ -434,18 +436,69 @@ export default function InventoryProjectsView({ groupId, isAuthorized, profileDa
 
               <div className="flex flex-col gap-4">
                 <div>
-                  <h5 className="text-[10px] font-bold text-encre-noire uppercase mb-1">🛒 Matériaux à acheter / prévoir</h5>
+                  <h5 className="text-[10px] font-bold text-encre-noire uppercase mb-1">🛒 Matériaux & Fournitures</h5>
                   {missingMats.size === 0 ? <span className="text-[9px] italic opacity-50">Aucun</span> : (
-                    <ul className="list-disc list-inside text-[9px] flex flex-col gap-0.5">
-                      {Array.from(missingMats).map((m, i) => <li key={i} className="bg-white px-1 py-0.5 rounded border border-encre-noire/10 w-fit">{m}</li>)}
+                    <ul className="flex flex-col gap-1 text-[10px]">
+                      {Array.from(missingMats).map((matNom, i) => {
+                        const found = supplies.find(s => s.nom?.toLowerCase().trim() === matNom.toLowerCase().trim());
+                        const hasStock = found && Number(found.quantiteStock) > 0;
+                        return (
+                          <li key={i} className="bg-white px-2 py-1 rounded border border-encre-noire/15 flex items-center justify-between gap-2">
+                            <span className="font-bold flex items-center gap-1.5 text-stone-800">
+                              <span>📦</span> {matNom}
+                            </span>
+                            {found ? (
+                              <span className={`text-[9px] font-black px-1.5 py-0.5 rounded border ${
+                                hasStock
+                                  ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
+                                  : 'bg-red-50 text-red-800 border-red-300'
+                              }`}>
+                                {hasStock ? `En stock : ${found.quantiteStock} ${found.unite || ''}` : 'Rupture'}
+                              </span>
+                            ) : (
+                              <span className="text-[9px] text-stone-400 italic">
+                                Non répertorié
+                              </span>
+                            )}
+                          </li>
+                        );
+                      })}
                     </ul>
                   )}
                 </div>
+
                 <div>
                   <h5 className="text-[10px] font-bold text-encre-noire uppercase mb-1">🧰 Outils à préparer</h5>
                   {missingOutils.size === 0 ? <span className="text-[9px] italic opacity-50">Aucun</span> : (
-                    <ul className="list-disc list-inside text-[9px] flex flex-col gap-0.5">
-                      {Array.from(missingOutils).map((m, i) => <li key={i} className="bg-white px-1 py-0.5 rounded border border-encre-noire/10 w-fit">{m}</li>)}
+                    <ul className="flex flex-col gap-1 text-[10px]">
+                      {Array.from(missingOutils).map((outilNom, i) => {
+                        const found = tools.find(t => t.nom?.toLowerCase().trim() === outilNom.toLowerCase().trim());
+                        return (
+                          <li key={i} className="bg-white px-2 py-1 rounded border border-encre-noire/15 flex items-center justify-between gap-2">
+                            <span className="font-bold flex items-center gap-1.5 text-stone-800">
+                              <span>🛠️</span> {outilNom}
+                            </span>
+                            {found ? (
+                              <div className="flex items-center gap-1.5 shrink-0 text-[9px]">
+                                <span className={`px-1.5 py-0.5 rounded font-black uppercase ${
+                                  found.isResident ? 'bg-cordel-vert/15 text-cordel-vert' : 'bg-cordel-ocre/15 text-cordel-ocre'
+                                }`}>
+                                  {found.isResident ? '🏠 Au local' : '🚗 Mobile'}
+                                </span>
+                                {found.emplacement && (
+                                  <span className="bg-stone-100 text-stone-800 px-1.5 py-0.5 rounded border border-stone-200 font-bold" title="Emplacement / Atelier de l'outil">
+                                    📍 {found.emplacement}
+                                  </span>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="text-[9px] text-stone-400 italic">
+                                Non répertorié
+                              </span>
+                            )}
+                          </li>
+                        );
+                      })}
                     </ul>
                   )}
                 </div>

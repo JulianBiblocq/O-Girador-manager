@@ -34,15 +34,15 @@ export default function EventWorkshopProgram({ event, isMestre, isAuthorized }) 
     const inconnus = [];
     
     outilsRequis.forEach(outilNom => {
-      const foundTool = tools.find(t => t.nom.toLowerCase().trim() === outilNom.toLowerCase().trim());
+      const foundTool = tools.find(t => t.nom?.toLowerCase().trim() === outilNom.toLowerCase().trim());
       if (foundTool) {
         if (foundTool.isResident) {
-          resident.push(outilNom);
+          resident.push({ nom: outilNom, emplacement: foundTool.emplacement });
         } else {
-          mobile.push(outilNom);
+          mobile.push({ nom: outilNom, emplacement: foundTool.emplacement });
         }
       } else {
-        inconnus.push(outilNom);
+        inconnus.push({ nom: outilNom });
       }
     });
     
@@ -261,9 +261,18 @@ export default function EventWorkshopProgram({ event, isMestre, isAuthorized }) 
                   Déjà sur place au local
                 </h5>
                 {malletteItems.resident.length > 0 ? (
-                  <ul className="list-disc list-inside text-[11px] text-green-700 font-medium space-y-0.5">
-                    {malletteItems.resident.map((outil, i) => (
-                      <li key={i}>{outil}</li>
+                  <ul className="space-y-1 text-[11px] text-green-800 font-medium">
+                    {malletteItems.resident.map((toolObj, i) => (
+                      <li key={i} className="flex items-center justify-between gap-1">
+                        <span className="flex items-center gap-1">
+                          <span className="text-green-600">✓</span> {toolObj.nom}
+                        </span>
+                        {toolObj.emplacement && (
+                          <span className="text-[9px] bg-green-100/80 text-green-800 px-1.5 py-0.2 rounded border border-green-300 font-normal">
+                            📍 {toolObj.emplacement}
+                          </span>
+                        )}
+                      </li>
                     ))}
                   </ul>
                 ) : (
@@ -278,12 +287,26 @@ export default function EventWorkshopProgram({ event, isMestre, isAuthorized }) 
                   À emporter dans la mallette
                 </h5>
                 {(malletteItems.mobile.length > 0 || malletteItems.inconnus.length > 0) ? (
-                  <ul className="list-disc list-inside text-[11px] text-amber-700 font-medium space-y-0.5">
-                    {malletteItems.mobile.map((outil, i) => (
-                      <li key={`mob-${i}`}>{outil}</li>
+                  <ul className="space-y-1 text-[11px] text-amber-800 font-medium">
+                    {malletteItems.mobile.map((toolObj, i) => (
+                      <li key={`mob-${i}`} className="flex flex-wrap items-center justify-between gap-1">
+                        <span className="flex items-center gap-1 font-semibold text-stone-800">
+                          <span className="text-amber-600">🧰</span> {toolObj.nom}
+                        </span>
+                        {toolObj.emplacement ? (
+                          <span className="text-[9px] bg-amber-100 text-amber-900 px-1.5 py-0.5 rounded border border-amber-300 font-bold">
+                            📍 {toolObj.emplacement} (à emmener)
+                          </span>
+                        ) : (
+                          <span className="text-[9px] text-amber-800 opacity-75 font-normal">(à emmener)</span>
+                        )}
+                      </li>
                     ))}
-                    {malletteItems.inconnus.map((outil, i) => (
-                      <li key={`inc-${i}`}>{outil} <span className="opacity-50 font-normal text-[9px]">(non répertorié)</span></li>
+                    {malletteItems.inconnus.map((toolObj, i) => (
+                      <li key={`inc-${i}`} className="text-stone-600 flex items-center justify-between gap-1">
+                        <span>• {toolObj.nom}</span>
+                        <span className="opacity-60 font-normal text-[9px] bg-stone-100 px-1 rounded border border-stone-200">non répertorié</span>
+                      </li>
                     ))}
                   </ul>
                 ) : (

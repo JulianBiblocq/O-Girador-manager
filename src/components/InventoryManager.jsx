@@ -1293,6 +1293,7 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin,
               deleteSupply={deleteSupply} 
               adjustSupplyStock={adjustSupplyStock}
               domaine="lutherie"
+              models={instrumentModels}
             />
           </div>
         )}
@@ -1307,6 +1308,8 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin,
               updateTool={updateTool} 
               deleteTool={deleteTool} 
               domaine="lutherie"
+              models={instrumentModels}
+              membersList={usersList}
             />
           </div>
         )}

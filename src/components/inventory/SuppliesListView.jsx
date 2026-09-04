@@ -1,12 +1,26 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 import { XiloClose } from '../XiloIcons';
 import useConfirm from '../../hooks/useConfirm';
 
-export default function SuppliesListView({ supplies, loading, addSupply, updateSupply, deleteSupply, adjustSupplyStock, domaine }) {
+export default function SuppliesListView({ supplies, loading, addSupply, updateSupply, deleteSupply, adjustSupplyStock, domaine, models = [] }) {
   const { confirm } = useConfirm();
   const [isAdding, setIsAdding] = useState(false);
+
+  // Extraction de toutes les matières premières référencées dans les modèles et tutoriels du Varal
+  const tutorialSupplies = useMemo(() => {
+    const set = new Set();
+    (models || []).forEach(m => {
+      (m.parts || []).forEach(p => {
+        (p.materiels || []).forEach(mat => mat?.trim() && set.add(mat.trim()));
+        (p.chapitres || []).forEach(c => {
+          (c.materiaux || []).forEach(mat => mat?.trim() && set.add(mat.trim()));
+        });
+      });
+    });
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [models]);
   const [formData, setFormData] = useState({
     nom: '',
     categorie: '',
@@ -72,15 +86,56 @@ export default function SuppliesListView({ supplies, loading, addSupply, updateS
       {isAdding && (
         <CordelCard className="p-4 bg-cordel-bg-light border-dashed border-cordel-master-dark/30">
           <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-            <h4 className="text-xs font-bold text-encre-noire uppercase mb-2">Nouvelle fourniture</h4>
+            <h4 className="text-xs font-bold text-encre-noire uppercase mb-1">Nouvelle fourniture</h4>
+
+            {/* Suggestions rapides depuis les tutoriels du Varal */}
+            {tutorialSupplies.length > 0 && (
+              <div className="bg-white/90 p-2.5 rounded border border-amber-300 flex flex-col gap-1.5 text-left">
+                <span className="text-[9.5px] font-black uppercase tracking-wider text-cordel-wood flex items-center gap-1">
+                  <span>💡</span> Matières premières requises par les tutoriels du Varal :
+                </span>
+                <div className="flex flex-wrap gap-1">
+                  {tutorialSupplies.map(s => {
+                    const alreadyInStock = supplies.some(existing => existing.nom.toLowerCase().trim() === s.toLowerCase().trim());
+                    return (
+                      <button
+                        key={s}
+                        type="button"
+                        onClick={() => setFormData(prev => ({ ...prev, nom: s }))}
+                        className={`text-[9px] px-2 py-0.5 rounded border font-bold flex items-center gap-1 cursor-pointer transition-colors ${
+                          alreadyInStock
+                            ? 'bg-stone-100 text-stone-500 border-stone-300'
+                            : 'bg-amber-50 text-amber-900 border-amber-300 hover:bg-amber-100 shadow-2xs'
+                        }`}
+                        title={alreadyInStock ? 'Déjà répertorié au stock' : 'Cliquer pour sélectionner cette matière'}
+                      >
+                        <span>{alreadyInStock ? '✓' : '+'}</span> {s}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
               <div className="flex flex-col gap-1">
-                <label className="text-[10px] font-bold text-cordel-master-dark uppercase">Nom *</label>
-                <input required name="nom" value={formData.nom} onChange={handleChange} className="theme-input text-xs" placeholder="Ex: Corde 8mm" />
+                <label className="text-[10px] font-bold text-cordel-master-dark uppercase">Nom de l'article *</label>
+                <input 
+                  required 
+                  name="nom" 
+                  list="tutorial-supplies-datalist"
+                  value={formData.nom} 
+                  onChange={handleChange} 
+                  className="theme-input text-xs" 
+                  placeholder="Ex: Calebasse, Corde nylon" 
+                />
+                <datalist id="tutorial-supplies-datalist">
+                  {tutorialSupplies.map(s => <option key={s} value={s} />)}
+                </datalist>
               </div>
               <div className="flex flex-col gap-1">
                 <label className="text-[10px] font-bold text-cordel-master-dark uppercase">Catégorie</label>
-                <input name="categorie" value={formData.categorie} onChange={handleChange} className="theme-input text-xs" placeholder="Ex: Corderie" />
+                <input name="categorie" value={formData.categorie} onChange={handleChange} className="theme-input text-xs" placeholder="Ex: Corderie, Bois, Végétal" />
               </div>
               <div className="flex flex-col gap-1">
                 <label className="text-[10px] font-bold text-cordel-master-dark uppercase">Stock initial</label>
@@ -102,7 +157,7 @@ export default function SuppliesListView({ supplies, loading, addSupply, updateS
               </div>
               <div className="flex flex-col gap-1">
                 <label className="text-[10px] font-bold text-cordel-master-dark uppercase">Format Achat</label>
-                <input name="conditionnementAchat" value={formData.conditionnementAchat} onChange={handleChange} className="theme-input text-xs" placeholder="Ex: Rouleau 100m" />
+                <input name="conditionnementAchat" value={formData.conditionnementAchat} onChange={handleChange} className="theme-input text-xs" placeholder="Ex: Lot de 10" />
               </div>
               <div className="flex flex-col gap-1">
                 <label className="text-[10px] font-bold text-cordel-master-dark uppercase">Fournisseur</label>
@@ -114,8 +169,8 @@ export default function SuppliesListView({ supplies, loading, addSupply, updateS
               </div>
             </div>
             <div className="flex justify-end mt-2">
-              <CordelButton type="submit" variant="vert" disabled={submitting} className="px-6 py-2 text-xs">
-                {submitting ? "Enregistrement..." : "💾 Enregistrer"}
+              <CordelButton type="submit" variant="vert" disabled={submitting} className="px-6 py-2 text-xs font-black uppercase">
+                {submitting ? "Enregistrement..." : "💾 Enregistrer la fourniture"}
               </CordelButton>
             </div>
           </form>
@@ -138,10 +193,18 @@ export default function SuppliesListView({ supplies, loading, addSupply, updateS
             <tbody>
               {supplies.map(supply => {
                 const isCritical = supply.quantiteStock <= supply.seuilCritique;
+                const isFromTutorial = tutorialSupplies.some(s => s.toLowerCase().trim() === supply.nom.toLowerCase().trim());
                 return (
                   <tr key={supply.id} className="border-b border-dashed border-encre-noire/20 hover:bg-white/50 transition-colors">
                     <td className="p-3 border-r border-encre-noire/10">
-                      <div className="font-bold text-encre-noire text-sm">{supply.nom}</div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-encre-noire text-sm">{supply.nom}</span>
+                        {isFromTutorial && (
+                          <span className="text-[8.5px] font-black uppercase tracking-wider text-amber-800 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded">
+                            📖 Tuto Varal
+                          </span>
+                        )}
+                      </div>
                       {supply.notes && <div className="text-[10px] text-cordel-master-dark italic mt-0.5">{supply.notes}</div>}
                     </td>
                     <td className="p-3 border-r border-encre-noire/10 text-center">

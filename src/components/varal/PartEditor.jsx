@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 import { XiloClose } from '../XiloIcons';
 
-export default function PartEditor({ part, onSave, onCancel }) {
+export default function PartEditor({ part, existingTools = [], existingSupplies = [], onSave, onCancel }) {
   const [formData, setFormData] = useState({
     id: part?.id || `part_${Date.now()}`,
     nom: part?.nom || '',
@@ -20,6 +20,16 @@ export default function PartEditor({ part, onSave, onCancel }) {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
+
+  // Outils disponibles dans l'inventaire physique non encore ajoutés
+  const unselectedStockTools = useMemo(() => {
+    return (existingTools || []).filter(t => t.nom && !formData.outils.some(o => o.toLowerCase().trim() === t.nom.toLowerCase().trim()));
+  }, [existingTools, formData.outils]);
+
+  // Fournitures disponibles dans l'inventaire physique non encore ajoutées
+  const unselectedStockSupplies = useMemo(() => {
+    return (existingSupplies || []).filter(s => s.nom && !formData.materiels.some(m => m.toLowerCase().trim() === s.nom.toLowerCase().trim()));
+  }, [existingSupplies, formData.materiels]);
 
   // Gestion des listes simples
   const addMat = () => {
@@ -130,48 +140,129 @@ export default function PartEditor({ part, onSave, onCancel }) {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Matériel */}
-          <div className="flex flex-col gap-2 p-2 border border-dashed border-cordel-master-dark/30 rounded">
-            <label className="text-[10px] uppercase font-bold text-cordel-master-dark">Matériaux requis</label>
+          <div className="flex flex-col gap-2 p-2.5 border border-dashed border-cordel-master-dark/30 rounded bg-white/40">
+            <label className="text-[10px] uppercase font-bold text-cordel-master-dark flex items-center justify-between">
+              <span>Matériaux requis</span>
+              <span className="text-[8.5px] font-normal text-stone-500">Connecté au stock physique</span>
+            </label>
             <div className="flex gap-1">
               <input 
                 type="text" 
                 value={newMat} 
                 onChange={e => setNewMat(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addMat())}
+                list="part-editor-supplies-datalist"
                 className="theme-input text-xs py-1 flex-1"
                 placeholder="Ex: Bois de frêne 2m"
               />
-              <button type="button" onClick={addMat} className="bg-cordel-wood text-white px-2 rounded font-bold">+</button>
+              <button type="button" onClick={addMat} className="bg-cordel-wood text-white px-2.5 rounded font-bold hover:bg-stone-800 transition-colors">+</button>
+              
+              <datalist id="part-editor-supplies-datalist">
+                {(existingSupplies || []).map(s => (
+                  <option key={s.id || s.nom} value={s.nom}>
+                    {s.stockActuel !== undefined ? `(Stock : ${s.stockActuel} ${s.unite || 'u.'})` : ''}
+                  </option>
+                ))}
+              </datalist>
             </div>
+
+            {/* Suggestions rapides issues du stock */}
+            {unselectedStockSupplies.length > 0 && (
+              <div className="flex flex-wrap items-center gap-1 mt-0.5">
+                <span className="text-[8.5px] font-bold text-stone-500 uppercase">Du stock :</span>
+                {unselectedStockSupplies.slice(0, 6).map(s => (
+                  <button
+                    key={s.id || s.nom}
+                    type="button"
+                    onClick={() => setFormData(prev => ({ ...prev, materiels: [...prev.materiels, s.nom] }))}
+                    className="text-[9px] bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded px-1.5 py-0.5 transition-colors font-medium flex items-center gap-1"
+                    title={`Stock : ${s.stockActuel || 0} ${s.unite || 'u.'}`}
+                  >
+                    <span>+</span> {s.nom}
+                  </button>
+                ))}
+              </div>
+            )}
+
             <ul className="flex flex-wrap gap-1 mt-1">
-              {formData.materiels.map((m, i) => (
-                <li key={i} className="text-[9px] bg-white border border-cordel-master-dark/20 px-2 py-0.5 rounded flex items-center gap-1">
-                  {m} <button type="button" onClick={() => removeMat(i)} className="text-red-500 font-bold ml-1">x</button>
-                </li>
-              ))}
+              {formData.materiels.map((m, i) => {
+                const matched = (existingSupplies || []).find(s => s.nom?.toLowerCase().trim() === m.toLowerCase().trim());
+                return (
+                  <li key={i} className="text-[9px] bg-white border border-cordel-master-dark/20 px-2 py-0.5 rounded flex items-center gap-1.5 shadow-sm">
+                    <span className="font-semibold text-stone-800">{m}</span>
+                    {matched && (
+                      <span className="text-[8px] bg-emerald-100 text-emerald-800 border border-emerald-300 rounded px-1 font-bold">
+                        Stock : {matched.stockActuel} {matched.unite || 'u.'}
+                      </span>
+                    )}
+                    <button type="button" onClick={() => removeMat(i)} className="text-red-500 hover:text-red-700 font-bold ml-0.5">×</button>
+                  </li>
+                );
+              })}
             </ul>
           </div>
 
           {/* Outils */}
-          <div className="flex flex-col gap-2 p-2 border border-dashed border-cordel-master-dark/30 rounded">
-            <label className="text-[10px] uppercase font-bold text-cordel-master-dark">Outils nécessaires</label>
+          <div className="flex flex-col gap-2 p-2.5 border border-dashed border-cordel-master-dark/30 rounded bg-white/40">
+            <label className="text-[10px] uppercase font-bold text-cordel-master-dark flex items-center justify-between">
+              <span>Outils nécessaires</span>
+              <span className="text-[8.5px] font-normal text-stone-500">Connecté à l'inventaire</span>
+            </label>
             <div className="flex gap-1">
               <input 
                 type="text" 
                 value={newOutil} 
                 onChange={e => setNewOutil(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addOutil())}
+                list="part-editor-tools-datalist"
                 className="theme-input text-xs py-1 flex-1"
-                placeholder="Ex: Scie sauteuse"
+                placeholder="Ex: Scie fine, Vrille..."
               />
-              <button type="button" onClick={addOutil} className="bg-cordel-wood text-white px-2 rounded font-bold">+</button>
+              <button type="button" onClick={addOutil} className="bg-cordel-wood text-white px-2.5 rounded font-bold hover:bg-stone-800 transition-colors">+</button>
+              
+              <datalist id="part-editor-tools-datalist">
+                {(existingTools || []).map(t => (
+                  <option key={t.id || t.nom} value={t.nom}>
+                    {t.emplacement ? `(Emplacement : ${t.emplacement})` : ''}
+                  </option>
+                ))}
+              </datalist>
             </div>
+
+            {/* Suggestions rapides issues de l'inventaire physique */}
+            {unselectedStockTools.length > 0 && (
+              <div className="flex flex-wrap items-center gap-1 mt-0.5">
+                <span className="text-[8.5px] font-bold text-stone-500 uppercase">De l'inventaire :</span>
+                {unselectedStockTools.slice(0, 6).map(t => (
+                  <button
+                    key={t.id || t.nom}
+                    type="button"
+                    onClick={() => setFormData(prev => ({ ...prev, outils: [...prev.outils, t.nom] }))}
+                    className="text-[9px] bg-stone-100 hover:bg-stone-200 text-stone-800 border border-stone-300 rounded px-1.5 py-0.5 transition-colors font-medium flex items-center gap-1"
+                    title={`Emplacement : ${t.emplacement || 'Non renseigné'}`}
+                  >
+                    <span>+</span> {t.nom}
+                    {t.emplacement && <span className="opacity-60 text-[8px]">({t.emplacement})</span>}
+                  </button>
+                ))}
+              </div>
+            )}
+
             <ul className="flex flex-wrap gap-1 mt-1">
-              {formData.outils.map((o, i) => (
-                <li key={i} className="text-[9px] bg-white border border-cordel-master-dark/20 px-2 py-0.5 rounded flex items-center gap-1">
-                  {o} <button type="button" onClick={() => removeOutil(i)} className="text-red-500 font-bold ml-1">x</button>
-                </li>
-              ))}
+              {formData.outils.map((o, i) => {
+                const matched = (existingTools || []).find(t => t.nom?.toLowerCase().trim() === o.toLowerCase().trim());
+                return (
+                  <li key={i} className="text-[9px] bg-white border border-cordel-master-dark/20 px-2 py-0.5 rounded flex items-center gap-1.5 shadow-sm">
+                    <span className="font-semibold text-stone-800">🛠 {o}</span>
+                    {matched?.emplacement && (
+                      <span className="text-[8px] bg-amber-100 text-amber-900 border border-amber-300 rounded px-1 font-bold">
+                        📍 {matched.emplacement}
+                      </span>
+                    )}
+                    <button type="button" onClick={() => removeOutil(i)} className="text-red-500 hover:text-red-700 font-bold ml-0.5">×</button>
+                  </li>
+                );
+              })}
             </ul>
           </div>
         </div>

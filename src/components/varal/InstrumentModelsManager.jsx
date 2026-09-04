@@ -112,6 +112,8 @@ export default function InstrumentModelsManager({ groupId, isAuthorized, varalCa
         model={editingModel.id === 'new' ? null : editingModel}
         existingModels={models}
         varalCategories={varalCategories}
+        tools={tools}
+        supplies={supplies}
         onSave={handleSaveModel}
         onCancel={() => setEditingModel(null)}
       />
