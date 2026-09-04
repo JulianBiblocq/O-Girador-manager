@@ -19,6 +19,8 @@ export default function AssemblySlotItem({
   slot,
   model: _model,
   invPart,
+  slotWorkflow,
+  defaultProjectPiece,
   isSessionSelected,
   onToggleSessionSlot,
   onSelectWorkflow,
@@ -30,8 +32,11 @@ export default function AssemblySlotItem({
 
   const isAssigned = !!invPart;
   const totalSteps = slot.chapitres?.length || 0;
-  const currentStep = invPart?.currentStepIndex || 0;
-  const statutEtape = invPart?.statutEtape || 'en_cours';
+  
+  // Progression spécifique au slot/phase dans le projet (avec fallback sur la pièce physique)
+  const slotWf = slotWorkflow || {};
+  const currentStep = slotWf.currentStepIndex !== undefined ? slotWf.currentStepIndex : (invPart?.currentStepIndex || 0);
+  const statutEtape = slotWf.statutEtape || invPart?.statutEtape || 'en_cours';
 
   const isCompleted = isAssigned && (statutEtape === 'terminee' || totalSteps === 0 || currentStep >= totalSteps);
   const isWaitingControl = isAssigned && statutEtape === 'en_attente_controle';
@@ -77,22 +82,23 @@ export default function AssemblySlotItem({
       {/* Ligne principale du composant */}
       <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2">
         <div className="flex items-center gap-2 flex-1 min-w-0">
-          {/* Case à cocher pour la mallette de la séance */}
-          <div
+          {/* Bouton explicite pour composer la mallette de séance */}
+          <button
+            type="button"
             onClick={(e) => {
               e.stopPropagation();
               onToggleSessionSlot(slot.slotId);
             }}
-            className="cursor-pointer p-1 -ml-1 text-cordel-wood hover:opacity-80"
-            title="Ajouter les outils/matériaux de cette étape à la mallette de séance"
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-[10px] font-black border transition-all cursor-pointer select-none shrink-0 ${
+              isSessionSelected 
+                ? 'bg-[var(--color-cordel-wood)] text-white border-[var(--color-cordel-wood)] shadow-sm' 
+                : 'bg-white text-stone-700 border-stone-300 hover:border-[var(--color-cordel-wood)] hover:text-[var(--color-cordel-wood)] hover:bg-stone-50 shadow-xs'
+            }`}
+            title={isSessionSelected ? "Retirer de la mallette de séance" : "Ajouter tous les outils et matériaux de cette phase à la mallette de séance"}
           >
-            <input
-              type="checkbox"
-              checked={isSessionSelected}
-              readOnly
-              className="accent-[var(--color-cordel-wood)] pointer-events-none cursor-pointer"
-            />
-          </div>
+            <span className="text-xs">🧰</span>
+            <span>{isSessionSelected ? 'Dans la mallette ✓' : '+ Mallette séance'}</span>
+          </button>
 
           {/* Nom et statut du composant */}
           <div className="flex flex-col flex-1 min-w-0">
@@ -172,22 +178,53 @@ export default function AssemblySlotItem({
               </button>
             </div>
           ) : availableStock.length > 0 ? (
-            <select
-              onChange={(e) => onAssignPart(slot.slotId, e.target.value)}
-              value=""
-              className="theme-input text-[10px] py-1 px-2 bg-white max-w-[190px] border border-stone-300 rounded shadow-xs cursor-pointer"
-            >
-              <option value="">-- Piocher dans le stock ({availableStock.length}) --</option>
-              {availableStock.map((sp) => (
-                <option key={sp.id} value={sp.id}>
-                  {sp.nom} ({sp.typePiece})
-                </option>
-              ))}
-            </select>
+            <div className="flex items-center gap-1.5 flex-wrap justify-end">
+              {defaultProjectPiece && (
+                <button
+                  type="button"
+                  onClick={() => onAssignPart(slot.slotId, defaultProjectPiece.id)}
+                  className="text-[9.5px] bg-[var(--color-cordel-vert)]/15 text-[var(--color-cordel-vert)] hover:bg-[var(--color-cordel-vert)]/25 border border-[var(--color-cordel-vert)] px-2 py-1 rounded font-black flex items-center gap-1 cursor-pointer transition-all shadow-xs"
+                  title={`Continuer avec la pièce "${defaultProjectPiece.nom}" déjà utilisée dans le projet`}
+                >
+                  <span>⭐</span>
+                  <span>Continuer : {defaultProjectPiece.nom}</span>
+                </button>
+              )}
+              <select
+                onChange={(e) => onAssignPart(slot.slotId, e.target.value)}
+                value=""
+                className="theme-input text-[10px] py-1 px-2 bg-white max-w-[190px] border border-stone-300 rounded shadow-xs cursor-pointer"
+              >
+                <option value="">-- Piocher dans le stock ({availableStock.length}) --</option>
+                {defaultProjectPiece && (
+                  <option value={defaultProjectPiece.id}>
+                    ⭐ Continuer : {defaultProjectPiece.nom} (pièce du projet)
+                  </option>
+                )}
+                {availableStock.map((sp) => (
+                  <option key={sp.id} value={sp.id}>
+                    {sp.nom} ({sp.typePiece})
+                  </option>
+                ))}
+              </select>
+            </div>
           ) : (
-            <span className="text-[9.5px] italic text-stone-500 bg-stone-100/80 px-2 py-1 rounded border border-stone-200 select-none">
-              ⏳ En attente de fourniture
-            </span>
+            <div className="flex items-center gap-1.5">
+              {defaultProjectPiece && (
+                <button
+                  type="button"
+                  onClick={() => onAssignPart(slot.slotId, defaultProjectPiece.id)}
+                  className="text-[9.5px] bg-[var(--color-cordel-vert)]/15 text-[var(--color-cordel-vert)] hover:bg-[var(--color-cordel-vert)]/25 border border-[var(--color-cordel-vert)] px-2 py-1 rounded font-black flex items-center gap-1 cursor-pointer transition-all shadow-xs"
+                  title={`Continuer avec la pièce "${defaultProjectPiece.nom}" déjà utilisée dans le projet`}
+                >
+                  <span>⭐</span>
+                  <span>Continuer : {defaultProjectPiece.nom}</span>
+                </button>
+              )}
+              <span className="text-[9.5px] italic text-stone-500 bg-stone-100/80 px-2 py-1 rounded border border-stone-200 select-none">
+                ⏳ En attente de fourniture
+              </span>
+            </div>
           )}
 
           {/* Bouton pour déplier/replier l'accordéon des étapes */}

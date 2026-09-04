@@ -168,6 +168,78 @@ export default function InventoryProjectsView({ groupId, isAuthorized, profileDa
     setShowBaptismModal(true);
   };
 
+  const handleUpdateSlotWorkflow = async (slotId, workflowUpdates, isSlotFinished) => {
+    const currentProject = projects.find(p => p.id === editingProject?.id) || editingProject;
+    if (!currentProject) return;
+
+    try {
+      const currentSlotsWf = currentProject.slotsWorkflow || {};
+      const newSlotsWf = {
+        ...currentSlotsWf,
+        [slotId]: {
+          ...(currentSlotsWf[slotId] || {}),
+          ...workflowUpdates
+        }
+      };
+
+      let updatedAssignees = [...(currentProject.piecesAssignees || [])];
+      
+      // Si la phase est terminée, propager automatiquement la pièce à la phase suivante si elle n'est pas assignée !
+      if (isSlotFinished) {
+        const model = models.find(m => m.id === currentProject.modelId);
+        const allSlots = (model?.parts || []).flatMap(p => {
+          const qty = parseInt(p.quantiteRequise, 10) || 1;
+          return Array.from({length: qty}, (_, i) => ({
+            ...p,
+            slotId: qty > 1 ? `${p.id}_${i}` : p.id,
+            slotLabel: qty > 1 ? `${p.nom} (${i + 1}/${qty})` : p.nom,
+            originalPartId: p.id
+          }));
+        });
+
+        const currentSlotIdx = allSlots.findIndex(s => s.slotId === slotId);
+        const assignedMap = updatedAssignees.reduce((acc, curr) => {
+          acc[curr.modelPartId] = curr.inventoryPartId;
+          return acc;
+        }, {});
+        const currentAssignedId = assignedMap[slotId];
+
+        if (currentSlotIdx >= 0 && currentSlotIdx < allSlots.length - 1 && currentAssignedId) {
+          const nextSlot = allSlots[currentSlotIdx + 1];
+          const nextAssigned = updatedAssignees.find(a => a.modelPartId === nextSlot.slotId);
+          if (!nextAssigned) {
+            updatedAssignees.push({
+              modelPartId: nextSlot.slotId,
+              inventoryPartId: currentAssignedId
+            });
+          }
+          // Initialiser la phase suivante à l'étape 0
+          if (!newSlotsWf[nextSlot.slotId]) {
+            newSlotsWf[nextSlot.slotId] = {
+              currentStepIndex: 0,
+              statutEtape: 'en_cours',
+              historiqueControles: []
+            };
+          }
+        }
+      }
+
+      await updateProject(currentProject.id, {
+        slotsWorkflow: newSlotsWf,
+        piecesAssignees: updatedAssignees
+      });
+
+      setEditingProject(prev => prev ? ({
+        ...prev,
+        slotsWorkflow: newSlotsWf,
+        piecesAssignees: updatedAssignees
+      }) : prev);
+    } catch (err) {
+      console.error("Erreur mise à jour workflow du slot :", err);
+      throw err;
+    }
+  };
+
   const handleValidateBaptism = async (project, model, formData) => {
     try {
       const batch = writeBatch(db);
@@ -209,6 +281,8 @@ export default function InventoryProjectsView({ groupId, isAuthorized, profileDa
       const projectRef = doc(db, 'inventory_projects', project.id);
       batch.update(projectRef, {
         status: 'termine',
+        statut: 'Terminé',
+        statutProjet: 'termine',
         updatedAt: new Date().toISOString()
       });
 
@@ -216,7 +290,11 @@ export default function InventoryProjectsView({ groupId, isAuthorized, profileDa
       
       setShowBaptismModal(false);
       setEditingProject(null);
-      // Appel optionnel pour rafraîchir ou notifier le parent si nécessaire
+      setWorkflowToast({
+        type: 'validated',
+        title: "🎉 Instrument baptisé avec succès !",
+        message: `L'instrument "${formData.nom}" a été intégré au parc officiel de l'association.`
+      });
     } catch (err) {
       console.error("Erreur lors de la clôture du chantier :", err);
       alert("Une erreur est survenue lors de la clôture du chantier.");
@@ -258,6 +336,26 @@ export default function InventoryProjectsView({ groupId, isAuthorized, profileDa
 
     const missingSlots = allSlots.filter(s => !assignedMap[s.slotId]);
     
+    // Pièce de référence déjà assignée dans le projet pour continuer simplement entre les phases
+    const defaultProjectPiece = (() => {
+      const firstAssigned = (project.piecesAssignees || []).find(a => a.inventoryPartId);
+      if (!firstAssigned) return null;
+      return inventoryParts.find(p => p.id === firstAssigned.inventoryPartId) || null;
+    })();
+
+    // Progression globale des phases
+    const finishedSlotsCount = allSlots.filter(slot => {
+      const slotWf = project.slotsWorkflow?.[slot.slotId];
+      const assignedInvId = assignedMap[slot.slotId];
+      const invPart = inventoryParts.find(p => p.id === assignedInvId);
+      const totalSteps = slot.chapitres?.length || 0;
+      const currentStep = slotWf?.currentStepIndex !== undefined ? slotWf.currentStepIndex : (invPart?.currentStepIndex || 0);
+      const statutEtape = slotWf?.statutEtape || invPart?.statutEtape || 'en_cours';
+      return !!assignedInvId && (statutEtape === 'terminee' || totalSteps === 0 || currentStep >= totalSteps);
+    }).length;
+
+    const allSlotsFinished = allSlots.length > 0 && finishedSlotsCount === allSlots.length;
+
     // Compilation liste courses / outils pour les pièces MANQUANTES uniquement
     const missingMats = new Set();
     const missingOutils = new Set();
@@ -266,24 +364,25 @@ export default function InventoryProjectsView({ groupId, isAuthorized, profileDa
       (s.outils || []).forEach(o => missingOutils.add(o));
     });
 
-    const isComplete = missingSlots.length === 0;
+    const isComplete = allSlotsFinished || (allSlots.length > 0 && missingSlots.length === 0);
 
-    // Calcul de la Mallette
+    // Compilation complète de la Mallette de la séance
     const sessionOutils = new Set();
     const sessionMateriaux = new Set();
     
     selectedSessionSlots.forEach(slotId => {
       const slot = allSlots.find(s => s.slotId === slotId);
       if (!slot) return;
-      const assignedInvId = assignedMap[slotId];
-      const invPart = inventoryParts.find(p => p.id === assignedInvId);
-      const currentStep = invPart?.currentStepIndex || 0;
       
-      const stepData = slot.chapitres?.[currentStep];
-      if (stepData) {
-        (stepData.outils || []).forEach(o => sessionOutils.add(o));
-        (stepData.materiaux || []).forEach(m => sessionMateriaux.add(m));
-      }
+      // 1. Outils & matériaux du slot (définis au niveau de la pièce/phase)
+      (slot.outils || []).forEach(o => o && sessionOutils.add(o.trim()));
+      (slot.materiels || []).forEach(m => m && sessionMateriaux.add(m.trim()));
+
+      // 2. Outils & matériaux de tous les chapitres/étapes de ce slot
+      (slot.chapitres || []).forEach(chap => {
+        (chap.outils || []).forEach(o => o && sessionOutils.add(o.trim()));
+        (chap.materiaux || []).forEach(m => m && sessionMateriaux.add(m.trim()));
+      });
     });
 
     return (
@@ -329,8 +428,10 @@ export default function InventoryProjectsView({ groupId, isAuthorized, profileDa
             <CordelCard variant="default" useExtremeBorder={true} className="p-4 bg-white/50">
               <h4 className="text-xs font-bold text-encre-noire uppercase mb-3 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
                 <div className="flex items-center gap-2">
-                  <span>Pièces requises pour l'assemblage</span>
-                  <span className="text-[10px] bg-cordel-wood text-white px-2 py-0.5 rounded-full">{allSlots.length - missingSlots.length} / {allSlots.length}</span>
+                  <span>Pièces & Phases requises</span>
+                  <span className="text-[10px] bg-cordel-wood text-white px-2 py-0.5 rounded-full font-black">
+                    {finishedSlotsCount} / {allSlots.length} validée{allSlots.length > 1 ? 's' : ''}
+                  </span>
                 </div>
                 <div className="flex gap-1 bg-cordel-master-dark/10 p-0.5 rounded">
                   <button 
@@ -355,7 +456,11 @@ export default function InventoryProjectsView({ groupId, isAuthorized, profileDa
                     slots={allSlots}
                     assignedMap={assignedMap}
                     inventoryParts={inventoryParts}
-                    onSelectPiece={setSelectedWorkflowSlot}
+                    onSelectPiece={(slot) => {
+                      const assignedInvId = assignedMap[slot.slotId] || defaultProjectPiece?.id;
+                      const invPart = inventoryParts.find(p => p.id === assignedInvId);
+                      setSelectedWorkflowSlot({ slot, invPart });
+                    }}
                   />
                 ) : (
                   allSlots.map(slot => {
@@ -368,6 +473,8 @@ export default function InventoryProjectsView({ groupId, isAuthorized, profileDa
                         slot={slot}
                         model={model}
                         invPart={invPart}
+                        slotWorkflow={project.slotsWorkflow?.[slot.slotId]}
+                        defaultProjectPiece={defaultProjectPiece}
                         isSessionSelected={selectedSessionSlots.includes(slot.slotId)}
                         onToggleSessionSlot={toggleSessionSlot}
                         onSelectWorkflow={setSelectedWorkflowSlot}
@@ -382,7 +489,9 @@ export default function InventoryProjectsView({ groupId, isAuthorized, profileDa
 
               {isComplete && (
                 <div className="mt-6 p-4 bg-cordel-vert/20 border border-cordel-vert rounded text-center flex flex-col gap-3">
-                  <span className="text-sm font-black text-cordel-vert uppercase tracking-wider">🎉 Toutes les pièces sont assemblées !</span>
+                  <span className="text-sm font-black text-cordel-vert uppercase tracking-wider">
+                    🎉 {allSlotsFinished ? "Toutes les phases de fabrication sont validées !" : "Toutes les pièces sont assemblées !"}
+                  </span>
                   <CordelButton 
                     variant="vert" 
                     useExtremeBorder={true}
@@ -399,30 +508,118 @@ export default function InventoryProjectsView({ groupId, isAuthorized, profileDa
           {/* Colonne droite : Feuille de route & Mallette */}
           <div className="flex flex-col gap-3">
             {/* Mallette de la Session */}
-            {selectedSessionSlots.length > 0 && (
-              <CordelCard variant="ocre" className="p-4 bg-cordel-wood text-cordel-bg-light">
-                <h4 className="text-xs font-black uppercase mb-3 flex items-center gap-2 border-b border-cordel-bg-light/30 pb-2">
-                  🧰 Mallette de la séance
-                </h4>
+            {selectedSessionSlots.length > 0 ? (
+              <CordelCard variant="ocre" className="p-4 bg-[var(--color-cordel-wood)] text-white shadow-md">
+                <div className="flex justify-between items-center border-b border-white/20 pb-2 mb-3">
+                  <h4 className="text-xs font-black uppercase flex items-center gap-2 tracking-wider">
+                    <span>🧰</span> Mallette de la séance ({selectedSessionSlots.length} phase{selectedSessionSlots.length > 1 ? 's' : ''})
+                  </h4>
+                  <button
+                    onClick={() => setSelectedSessionSlots([])}
+                    className="text-[9px] bg-white/20 hover:bg-white/30 text-white px-2 py-0.5 rounded cursor-pointer font-bold transition-colors"
+                    title="Vider la mallette de séance"
+                  >
+                    Vider
+                  </button>
+                </div>
                 
                 <div className="flex flex-col gap-3">
+                  {/* Outils nécessaires avec correspondance inventaire physique */}
                   <div>
-                    <strong className="text-[10px] opacity-80 uppercase">Outils nécessaires :</strong>
-                    <div className="flex flex-wrap gap-1 mt-1">
-                      {sessionOutils.size > 0 ? Array.from(sessionOutils).map(o => (
-                        <span key={o} className="text-[9px] bg-white text-cordel-wood px-2 py-0.5 rounded font-bold shadow-sm">{o}</span>
-                      )) : <span className="text-[9px] opacity-50 italic">Aucun outil spécifique</span>}
+                    <div className="flex justify-between items-center mb-1.5">
+                      <strong className="text-[10px] uppercase font-bold text-white/90">
+                        🛠️ Outils à emporter ({sessionOutils.size})
+                      </strong>
                     </div>
+                    {sessionOutils.size > 0 ? (
+                      <ul className="flex flex-col gap-1.5">
+                        {Array.from(sessionOutils).map((outilNom, idx) => {
+                          const found = tools.find(t => t.nom?.toLowerCase().trim() === outilNom.toLowerCase().trim());
+                          return (
+                            <li key={idx} className="bg-white text-stone-900 px-2.5 py-1.5 rounded border border-stone-300 flex items-center justify-between gap-2 shadow-xs text-[10px]">
+                              <span className="font-bold flex items-center gap-1.5 min-w-0 truncate">
+                                <span>🔧</span>
+                                <span className="truncate">{outilNom}</span>
+                              </span>
+                              {found ? (
+                                <div className="flex items-center gap-1 shrink-0 text-[9px]">
+                                  <span className={`px-1.5 py-0.5 rounded font-black uppercase ${
+                                    found.isResident 
+                                      ? 'bg-[var(--color-cordel-vert)]/15 text-[var(--color-cordel-vert)]' 
+                                      : 'bg-amber-100 text-amber-900 border border-amber-300'
+                                  }`}>
+                                    {found.isResident ? '🏠 Au local' : '🚗 Mobile'}
+                                  </span>
+                                  {found.emplacement && (
+                                    <span className="bg-stone-100 text-stone-800 px-1.5 py-0.5 rounded border border-stone-200 font-bold" title="Emplacement / Atelier de l'outil">
+                                      📍 {found.emplacement}
+                                    </span>
+                                  )}
+                                </div>
+                              ) : (
+                                <span className="text-[9px] text-stone-400 italic shrink-0">
+                                  Non inventorié
+                                </span>
+                              )}
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    ) : (
+                      <span className="text-[10px] text-white/70 italic">Aucun outil requis pour les phases sélectionnées</span>
+                    )}
                   </div>
-                  <div>
-                    <strong className="text-[10px] opacity-80 uppercase">Matériaux à préparer :</strong>
-                    <div className="flex flex-wrap gap-1 mt-1">
-                      {sessionMateriaux.size > 0 ? Array.from(sessionMateriaux).map(m => (
-                        <span key={m} className="text-[9px] bg-white text-cordel-wood px-2 py-0.5 rounded font-bold shadow-sm">{m}</span>
-                      )) : <span className="text-[9px] opacity-50 italic">Aucun matériau spécifique</span>}
+
+                  {/* Matériaux & Fournitures à préparer avec stock */}
+                  <div className="border-t border-white/20 pt-2.5">
+                    <div className="flex justify-between items-center mb-1.5">
+                      <strong className="text-[10px] uppercase font-bold text-white/90">
+                        📦 Matériaux & Fournitures ({sessionMateriaux.size})
+                      </strong>
                     </div>
+                    {sessionMateriaux.size > 0 ? (
+                      <ul className="flex flex-col gap-1.5">
+                        {Array.from(sessionMateriaux).map((matNom, idx) => {
+                          const found = supplies.find(s => s.nom?.toLowerCase().trim() === matNom.toLowerCase().trim());
+                          const hasStock = found && Number(found.quantiteStock) > 0;
+                          return (
+                            <li key={idx} className="bg-white text-stone-900 px-2.5 py-1.5 rounded border border-stone-300 flex items-center justify-between gap-2 shadow-xs text-[10px]">
+                              <span className="font-bold flex items-center gap-1.5 min-w-0 truncate">
+                                <span>📦</span>
+                                <span className="truncate">{matNom}</span>
+                              </span>
+                              {found ? (
+                                <span className={`text-[9px] font-black px-1.5 py-0.5 rounded border shrink-0 ${
+                                  hasStock
+                                    ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
+                                    : 'bg-red-50 text-red-800 border-red-300'
+                                }`}>
+                                  {hasStock ? `Stock : ${found.quantiteStock} ${found.unite || ''}` : 'Rupture'}
+                                </span>
+                              ) : (
+                                <span className="text-[9px] text-stone-400 italic shrink-0">
+                                  Non répertorié
+                                </span>
+                              )}
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    ) : (
+                      <span className="text-[10px] text-white/70 italic">Aucun matériau requis pour les phases sélectionnées</span>
+                    )}
                   </div>
                 </div>
+              </CordelCard>
+            ) : (
+              <CordelCard variant="default" className="p-3.5 bg-amber-50/70 border-dashed border-amber-300 text-stone-700">
+                <div className="flex items-center gap-2 mb-1 text-[11px] font-bold text-[var(--color-cordel-wood)]">
+                  <span>🧰</span>
+                  <span>Mallette de la séance d'atelier</span>
+                </div>
+                <p className="text-[10px] text-stone-600 leading-snug">
+                  Cliquez sur le bouton <strong>"+ Mallette séance"</strong> à côté d'une ou plusieurs phases pour préparer la liste des outils et matériaux à emporter pour votre atelier.
+                </p>
               </CordelCard>
             )}
 
@@ -512,11 +709,22 @@ export default function InventoryProjectsView({ groupId, isAuthorized, profileDa
           onClose={() => setSelectedWorkflowSlot(null)}
           slot={selectedWorkflowSlot?.slot}
           invPart={inventoryParts?.find(p => p.id === selectedWorkflowSlot?.invPart?.id) || selectedWorkflowSlot?.invPart}
+          project={project}
+          onUpdateSlotWorkflow={handleUpdateSlotWorkflow}
           updatePartWorkflow={updatePartWorkflow}
           isValidator={isWorkshopValidator}
           validatorName={profileData?.prenom || profileData?.nom_complet || 'Admin'}
           onFeedback={(fb) => setWorkflowToast(fb)}
         />
+
+        {showBaptismModal && (
+          <InstrumentBaptismModal
+            project={project}
+            model={model}
+            onClose={() => setShowBaptismModal(false)}
+            onValidate={(formData) => handleValidateBaptism(project, model, formData)}
+          />
+        )}
 
         {selectedVaralTutorial && (
           <FabricationCard

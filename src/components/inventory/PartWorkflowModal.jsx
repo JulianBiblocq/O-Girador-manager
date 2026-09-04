@@ -2,7 +2,18 @@ import React, { useState, useEffect } from 'react';
 import { XiloClose } from '../XiloIcons';
 import CordelButton from '../CordelButton';
 
-export default function PartWorkflowModal({ isOpen, onClose, slot, invPart, updatePartWorkflow, isValidator, validatorName, onFeedback }) {
+export default function PartWorkflowModal({
+  isOpen,
+  onClose,
+  slot,
+  invPart,
+  project,
+  onUpdateSlotWorkflow,
+  updatePartWorkflow,
+  isValidator,
+  validatorName,
+  onFeedback
+}) {
   if (!isOpen || !slot || !invPart) return null;
 
   const [retoucheNote, setRetoucheNote] = useState('');
@@ -21,7 +32,7 @@ export default function PartWorkflowModal({ isOpen, onClose, slot, invPart, upda
         setAutoCloseTimer(null);
       }
     }
-  }, [isOpen, invPart?.id]);
+  }, [isOpen, invPart?.id, slot?.slotId]);
 
   const handleClose = () => {
     if (autoCloseTimer) {
@@ -32,9 +43,10 @@ export default function PartWorkflowModal({ isOpen, onClose, slot, invPart, upda
     onClose();
   };
 
+  const slotWf = project?.slotsWorkflow?.[slot.slotId] || {};
   const totalSteps = slot.chapitres?.length || 0;
-  const currentStep = invPart.currentStepIndex || 0;
-  const statutEtape = invPart.statutEtape || 'en_cours';
+  const currentStep = slotWf.currentStepIndex !== undefined ? slotWf.currentStepIndex : (invPart.currentStepIndex || 0);
+  const statutEtape = slotWf.statutEtape || invPart.statutEtape || 'en_cours';
   
   const isCompleted = statutEtape === 'terminee' || (totalSteps > 0 && currentStep >= totalSteps);
   const stepData = slot.chapitres?.[currentStep];
@@ -42,7 +54,12 @@ export default function PartWorkflowModal({ isOpen, onClose, slot, invPart, upda
   const handleSoumettre = async () => {
     setLoading(true);
     try {
-      await updatePartWorkflow(invPart.id, { statutEtape: 'en_attente_controle' });
+      if (onUpdateSlotWorkflow) {
+        await onUpdateSlotWorkflow(slot.slotId, { statutEtape: 'en_attente_controle' }, false);
+      } else if (invPart?.id && updatePartWorkflow) {
+        await updatePartWorkflow(invPart.id, { statutEtape: 'en_attente_controle' });
+      }
+
       const fb = {
         type: 'submitted',
         title: "Étape soumise au contrôle !",
@@ -67,20 +84,26 @@ export default function PartWorkflowModal({ isOpen, onClose, slot, invPart, upda
       const newStep = currentStep + 1;
       const isNowFinished = newStep >= totalSteps;
       
-      await updatePartWorkflow(invPart.id, { 
+      const updates = { 
         currentStepIndex: newStep,
         statutEtape: isNowFinished ? 'terminee' : 'en_cours',
         historiqueControles: [
-          ...(invPart.historiqueControles || []),
+          ...(slotWf.historiqueControles || invPart.historiqueControles || []),
           { date: new Date().toISOString(), action: 'Validation', etape: currentStep, validateur: validatorName || 'Maître d\'atelier' }
         ]
-      });
+      };
+
+      if (onUpdateSlotWorkflow) {
+        await onUpdateSlotWorkflow(slot.slotId, updates, isNowFinished);
+      } else if (invPart?.id && updatePartWorkflow) {
+        await updatePartWorkflow(invPart.id, updates);
+      }
 
       const fb = {
         type: 'validated',
-        title: isNowFinished ? "🏆 Bravo ! Pièce terminée !" : `🎉 Bravo ! Étape ${currentStep + 1} validée !`,
+        title: isNowFinished ? "🏆 Bravo ! Phase terminée !" : `🎉 Bravo ! Étape ${currentStep + 1} validée !`,
         message: isNowFinished 
-          ? "Toutes les étapes d'assemblage sont complétées et validées. Fermeture..." 
+          ? "Toutes les étapes de cette phase sont validées. Passage à la suite..." 
           : `L'étape ${currentStep + 1} a été validée avec succès. Fermeture...`
       };
       setFeedback(fb);
@@ -100,14 +123,21 @@ export default function PartWorkflowModal({ isOpen, onClose, slot, invPart, upda
     if (!retoucheNote.trim()) return;
     setLoading(true);
     try {
-      await updatePartWorkflow(invPart.id, {
+      const updates = {
         statutEtape: 'en_cours',
-        notesAtelier: (invPart.notesAtelier ? invPart.notesAtelier + '\n' : '') + `[Retouche Étape ${currentStep + 1}] : ${retoucheNote}`,
+        notesAtelier: ((slotWf.notesAtelier || invPart.notesAtelier) ? (slotWf.notesAtelier || invPart.notesAtelier) + '\n' : '') + `[Retouche Étape ${currentStep + 1}] : ${retoucheNote}`,
         historiqueControles: [
-          ...(invPart.historiqueControles || []),
+          ...(slotWf.historiqueControles || invPart.historiqueControles || []),
           { date: new Date().toISOString(), action: 'Retouche demandée', etape: currentStep, note: retoucheNote, validateur: validatorName || 'Maître d\'atelier' }
         ]
-      });
+      };
+
+      if (onUpdateSlotWorkflow) {
+        await onUpdateSlotWorkflow(slot.slotId, updates, false);
+      } else if (invPart?.id && updatePartWorkflow) {
+        await updatePartWorkflow(invPart.id, updates);
+      }
+
       setRetoucheNote('');
       setShowRetoucheInput(false);
 
