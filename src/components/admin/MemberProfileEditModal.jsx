@@ -17,7 +17,7 @@ export default function MemberProfileEditModal({
   userItem,
   availableTags = [],
   customCategories = DEFAULT_CUSTOM_CATEGORIES,
-  instrumentsDisponibles = ["Alfaia Marcante", "Alfaia Meião", "Alfaia Repique", "Caixa", "Tarol", "Gonguê", "Agbê", "Mineiro", "Timbal", "Chant"],
+  instrumentsDisponibles = ["Alfaia", "Caixa", "Tarol", "Gonguê", "Agbê", "Mineiro", "Timbal", "Chant"],
   onClose,
   onSave,
   onValidateNewMember,

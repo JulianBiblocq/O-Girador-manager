@@ -109,7 +109,7 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
   const [indemniteKilometrique, setIndemniteKilometrique] = useState(0);
   const [adresseLocal, setAdresseLocal] = useState('');
   const [lieuxImportants, setLieuxImportants] = useState([]);
-  const [instrumentsDisponibles, setInstrumentsDisponibles] = useState(["Alfaia Marcante", "Alfaia Meião", "Alfaia Repique", "Caixa", "Tarol", "Gonguê", "Agbê", "Mineiro", "Timbal", "Chant", "Danse"]);
+  const [instrumentsDisponibles, setInstrumentsDisponibles] = useState(["Alfaia", "Caixa", "Tarol", "Gonguê", "Agbê", "Mineiro", "Timbal", "Chant", "Danse"]);
   const [linkedInstruments, setLinkedInstruments] = useState([]);
   const [enableCarpoolReimbursement, setEnableCarpoolReimbursement] = useState(true);
   const [reimbursementRule, setReimbursementRule] = useState('full_cars_only');

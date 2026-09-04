@@ -106,7 +106,7 @@ export default function InventoryFilterBar({
         </div>
 
         <CordelButton variant="vert" onClick={onOpenAdd} className="px-3 py-1.5 text-xs font-black">
-          ➕ Ajouter un matériel
+          ➕ Ajouter un instrument
         </CordelButton>
       </div>
     </div>

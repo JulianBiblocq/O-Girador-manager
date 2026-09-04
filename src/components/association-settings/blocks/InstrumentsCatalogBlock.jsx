@@ -173,7 +173,7 @@ export default function InstrumentsCatalogBlock({ formData = {}, handleChange, s
           <div className="flex flex-col gap-2 text-left">
             <div className="flex flex-col gap-1">
               <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                {translationFn('logistics.optionalSectionName') || "Nom du pupitre (optionnel)"}
+                {translationFn('associationSettings.pupitreNameLabel') || "Nom du pupitre (optionnel)"}
               </label>
               <input 
                 type="text"

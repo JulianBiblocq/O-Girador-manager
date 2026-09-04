@@ -53,7 +53,7 @@ export const DEFAULT_ECOSYSTEM_ACCESS = {
   hub: true
 };
 
-export const DEFAULT_INSTRUMENTS = ["Alfaia Marcante", "Alfaia Meião", "Alfaia Repique", "Caixa", "Tarol", "Gonguê", "Agbê", "Mineiro", "Timbal", "Chant"];
+export const DEFAULT_INSTRUMENTS = ["Alfaia", "Caixa", "Tarol", "Gonguê", "Agbê", "Mineiro", "Timbal", "Chant"];
 
 // Textes, badges et titres par défaut des sections de la vitrine publique
 export const DEFAULT_VITRINE_TEXTS = {

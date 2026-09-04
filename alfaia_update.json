@@ -1,0 +1,269 @@
+{
+  "version": "1.1",
+  "model": {
+    "nom": "Alfaia (16\", 18\", 20\", 22\")",
+    "type": "Alfaia",
+    "categoryId": "TutosFabrication",
+    "description": "Fabrication complète d'une Alfaia traditionnelle de Maracatu : fût cintré 5 mm, renforts séquoia, cerclages bois étuvés, chaulage de peau de chèvre et cordage drisse 10 mm en V.",
+    "parts": [
+      {
+        "id": "part_alfaia_fut",
+        "nom": "Fût (Corpo)",
+        "quantiteRequise": 1,
+        "materiels": [
+          "Contreplaqué cintrable (épaisseur 5 mm)",
+          "Colle à bois vinylique",
+          "Bandes de renfort en séquoia (3 mm)",
+          "Carrés de renfort en séquoia",
+          "Feuilles de radio médicale",
+          "Colle repositionnable en spray",
+          "Peinture acrylique",
+          "Vernis de protection"
+        ],
+        "outils": [
+          "Gabarit extérieur avec fente de serrage (16\", 18\", 20\" ou 22\")",
+          "Jeu de serre-joints",
+          "Scie japonaise à denture fine",
+          "Rabot manuel",
+          "Défonceuse avec fraise quart-de-rond et fraise 45°",
+          "Perceuse",
+          "Mèche à bois 10 mm",
+          "Cale à poncer et papier de verre",
+          "Cutter de précision",
+          "Pinceau et brosse à pochoir"
+        ],
+        "chapitres": [
+          {
+            "id": "chap_fut_01",
+            "titre": "Étape 1 : Cylindre du fût et jonction",
+            "texte": "Placer la feuille de contreplaqué cintrable de 5 mm dans le gabarit extérieur correspondant au diamètre souhaité (16\", 18\", 20\" ou 22\"). Encoller le chant de raccord, puis resserrer le gabarit à l'aide des serre-joints pour former un cylindre bien rond. Découper une bande de contreplaqué pour créer un renfort central intérieur sur la jonction, en réservant 5 cm en haut et en bas. Laisser sécher 24 heures sous presse.",
+            "photoUrl": ""
+          },
+          {
+            "id": "chap_fut_02",
+            "titre": "Étape 2 : Renforts horizontaux en séquoia",
+            "texte": "Découper une bande de séquoia (3 mm) légèrement plus courte que le périmètre intérieur du fût, et biseauter chaque extrémité. Confectionner une clé en séquoia aux biseaux inversés. Encoller et insérer la bande dans le fût, puis entrer la clé en force pour plaquer le séquoia sous tension. Doubler avec une deuxième bande en plaçant la clé à l'opposé. Répéter l'opération pour la base du fût.",
+            "photoUrl": ""
+          },
+          {
+            "id": "chap_fut_03",
+            "titre": "Étape 3 : Chanfreins et trou d'évent",
+            "texte": "Usiner les bords de frappe à la défonceuse : quart-de-rond extérieur et biseau à 45° intérieur pour créer une arête d'appui nette pour la peau. Coller un carré de renfort en séquoia à l'intérieur et à l'extérieur à l'opposé du renfort vertical. Percer le trou d'évent de 10 mm à travers le fût et ses renforts. Poncer soigneusement l'ensemble du fût aux grains 80 puis 120.",
+            "photoUrl": ""
+          },
+          {
+            "id": "chap_fut_04",
+            "titre": "Étape 4 : Décoration au pochoir et vernissage",
+            "texte": "Découper les motifs graphiques dans les radios médicales pour réaliser des pochoirs réutilisables. Fixer avec un voile de colle repositionnable. Tamponner la peinture acrylique sans bavure. Laisser sécher puis appliquer au minimum 2 à 3 couches de vernis protecteur.",
+            "photoUrl": ""
+          }
+        ]
+      },
+      {
+        "id": "part_alfaia_cerclages",
+        "nom": "Cerclages de tension (x2)",
+        "quantiteRequise": 2,
+        "materiels": [
+          "Lattes de bois dur (Frêne, Chêne ou Châtaignier) 200 x 5 x 0,7 cm",
+          "Colle à bois vinylique",
+          "Eau"
+        ],
+        "outils": [
+          "Déligneuse ou scie sur rail",
+          "Rabot manuel",
+          "Étuve artisanale à vapeur",
+          "Gabarit de cintrage plein (16\", 18\", 20\" ou 22\")",
+          "Jeu de serre-joints",
+          "Râpe à bois mi-ronde et râpe plate",
+          "Perceuse",
+          "Mèche plate 12 mm",
+          "Foret à chanfreiner",
+          "Défonceuse ou cale à poncer"
+        ],
+        "chapitres": [
+          {
+            "id": "chap_cercle_01",
+            "titre": "Étape 1 : Débit des lattes et taille en sifflet",
+            "texte": "Débiter le plateau en lattes de 2 m de long, 5 cm de haut et 7 mm d'épaisseur (compatible du 16 au 22 pouces). Sélectionner les pièces au fil droit. Superposer les lattes en les décalant d'environ 15 cm et raboter pour tailler une diagonale lisse en sifflet d'au moins 15 cm de long.",
+            "photoUrl": ""
+          },
+          {
+            "id": "chap_cercle_02",
+            "titre": "Étape 2 : Étuvage à la vapeur et cintrage",
+            "texte": "Placer les lattes dans le conduit de l'étuve sous vapeur vive pendant 45 minutes pour assouplir la fibre. Sortir la latte rapidement, l'enrouler autour du gabarit plein correspondant au diamètre de l'instrument (16\", 18\", 20\" ou 22\") et la brider immédiatement avec les serre-joints. Laisser refroidir et sécher au moins 24 heures.",
+            "photoUrl": ""
+          },
+          {
+            "id": "chap_cercle_03",
+            "titre": "Étape 3 : Collage en 2 épaisseurs croisées",
+            "texte": "Replacer une première latte sur le gabarit, encoller le sifflet et fermer la boucle. Après séchage, égaliser la jonction à la râpe plate. Encoller et poser la seconde latte par-dessus la première en plaçant son sifflet à l'opposé exact (180°) du premier pour garantir la solidité mécanique.",
+            "photoUrl": ""
+          },
+          {
+            "id": "chap_cercle_04",
+            "titre": "Étape 4 : Dressage, perçage et adoucissement",
+            "texte": "Raboter les chants pour ramener la hauteur à 4,5 cm. Percer au centre : 7 trous pour un 16\", 8 pour un 18\", 8-9 pour un 20\", 9-10 pour un 22\" à la mèche plate de 12 mm. Chanfreiner les trous intérieur/extérieur avec un foret à chanfreiner. Casser soigneusement les arêtes à la râpe mi-ronde et au papier de verre pour éviter de cisailler la corde de 10 mm.",
+            "photoUrl": ""
+          }
+        ]
+      },
+      {
+        "id": "part_alfaia_anneaux_peau",
+        "nom": "Anneaux de peau (x2)",
+        "quantiteRequise": 2,
+        "materiels": [
+          "Cylindre brut en bois dur contrecollé"
+        ],
+        "outils": [
+          "Scie sur rail ou scie japonaise",
+          "Râpe à bois mi-ronde et râpe plate",
+          "Cale à poncer et papier de verre"
+        ],
+        "chapitres": [
+          {
+            "id": "chap_anneau_01",
+            "titre": "Étape 1 : Débit du cylindre en deux anneaux",
+            "texte": "Prendre un cylindre en bois brut monté en 2 épaisseurs (identique au cerclage avant perçage). Le scier précisément en deux moitiés égales dans le sens de la hauteur pour obtenir deux anneaux réguliers d'environ 2 cm de large.",
+            "photoUrl": ""
+          },
+          {
+            "id": "chap_anneau_02",
+            "titre": "Étape 2 : Ébavurage et arrondis de sécurité",
+            "texte": "Chanfreiner et arrondir minutieusement toutes les arêtes intérieures et extérieures à la râpe mi-ronde et au papier de verre. L'anneau ne doit présenter aucune aspérité ni écharde pour ne pas déchirer la peau lors du montage.",
+            "photoUrl": ""
+          }
+        ]
+      },
+      {
+        "id": "part_alfaia_peaux_chaulage",
+        "nom": "Peau préparée (Frappe & Résonance)",
+        "quantiteRequise": 2,
+        "materiels": [
+          "Peaux de chèvre brutes non tannées",
+          "Chaux aérienne éteinte (CL-90)",
+          "Vinaigre blanc ménager",
+          "Eau claire"
+        ],
+        "outils": [
+          "Grande bassine plastique (30-40 L)",
+          "Gants de protection étanches",
+          "Lunettes de protection",
+          "Balance",
+          "Poids neutre / brique propre",
+          "Poste de grattage (tube PVC)",
+          "Règle en inox"
+        ],
+        "chapitres": [
+          {
+            "id": "chap_peau_01",
+            "titre": "Étape 1 : Assouplissement préliminaire",
+            "texte": "Étaler la peau brute sèche à plat au sol. L'arroser légèrement d'eau claire et laisser reposer 10 minutes. Répéter l'opération 2 à 3 fois jusqu'à ce que le cuir devienne maniable sans casser ses fibres.",
+            "photoUrl": ""
+          },
+          {
+            "id": "chap_peau_02",
+            "titre": "Étape 2 : Préparation du bain de chaux",
+            "texte": "Doser 50 g de chaux aérienne par litre d'eau. Compter 6 à 8 litres d'eau (soit 300 à 400 g de chaux) pour recouvrir une peau. Verser toujours l'eau en premier dans la bassine, puis incorporer la chaux en poudre pour éviter les projections. Mélanger soigneusement.",
+            "photoUrl": ""
+          },
+          {
+            "id": "chap_peau_03",
+            "titre": "Étape 3 : Immersion et suivi (4 jours)",
+            "texte": "Plonger la peau assouplie dans le bain et la lester au fond avec une brique propre. Chaque jour, retirer le poids et brasser la peau pour remettre la chaux en suspension. Sortir impérativement la peau au 4ᵉ jour dès qu'elle est blanche et souple, avant qu'elle ne prenne un aspect gélatineux.",
+            "photoUrl": ""
+          },
+          {
+            "id": "chap_peau_04",
+            "titre": "Étape 4 : Épilage et écharnage sur tube",
+            "texte": "Disposer la peau sur le tube PVC installé sur tréteaux. Épiler le côté fleur (poils) en raclant énergiquement à la règle en inox, particulièrement sur la colonne vertébrale. Retourner la peau côté chair et écharner avec force pour enlever graisses et nerfs jusqu'à mettre à nu la membrane saine.",
+            "photoUrl": ""
+          },
+          {
+            "id": "chap_peau_05",
+            "titre": "Étape 5 : Rinçages et neutralisation acide (6 heures)",
+            "texte": "Plonger la peau dans une bassine d'eau claire, malaxer vigoureusement pour expulser la chaux et renouveler 3 fois. Terminer par un rinçage abondant au jet d'eau. Préparer le bain de neutralisation : 10 L d'eau claire + 20 cl de vinaigre blanc ménager. Laisser tremper pendant 6 heures en malaxant régulièrement pour stopper l'action basique. Rincer une dernière fois.",
+            "photoUrl": ""
+          }
+        ]
+      },
+      {
+        "id": "part_alfaia_montage_tension",
+        "nom": "Montage, Cordage & Accordage",
+        "quantiteRequise": 1,
+        "materiels": [
+          "Corde drisse polyester pré-étirée 10 mm (13 à 20 m selon taille)"
+        ],
+        "outils": [
+          "Ciseaux d'atelier",
+          "Cuillère à soupe",
+          "Gants fins / chiffon de tension",
+          "Mailloches d'alfaia"
+        ],
+        "chapitres": [
+          {
+            "id": "chap_montage_01",
+            "titre": "Étape 1 : Découpe de peau et confection de l'ourlet",
+            "texte": "Poser la peau humide sur une surface propre, centrer l'anneau de peau et découper le pourtour aux ciseaux avec 4 à 5 cm de marge. Replier l'excédent de peau par-dessus l'anneau vers l'intérieur pour confectionner l'ourlet, en travaillant systématiquement en croix (Nord, Sud, Est, Ouest). Enfoncer et lisser l'ourlet à l'aide du dos d'une cuillère.",
+            "photoUrl": ""
+          },
+          {
+            "id": "chap_montage_02",
+            "titre": "Étape 2 : Positionnement et cordage à blanc",
+            "texte": "Poser la peau et son anneau directement sur le chanfrein supérieur du fût pendant que le cuir est bien humide. Coiffer avec le cerclage en bois. Passer le cordage de 10 mm reliant les deux cerclages en V sans serrer. L'objectif est uniquement de maintenir la peau plaquée au chanfrein pendant le séchage.",
+            "photoUrl": ""
+          },
+          {
+            "id": "chap_montage_03",
+            "titre": "Étape 3 : Séchage et montée en tension progressive",
+            "texte": "Quand la peau est presque sèche, reprendre légèrement le mou de la corde. Une fois la peau totalement sèche et rigide, tendre fermement les brins verticaux. Règle absolue : faire plusieurs tours successifs sans jamais forcer un point d'un coup, pour garder les cerclages parfaitement horizontaux.",
+            "photoUrl": ""
+          },
+          {
+            "id": "chap_montage_04",
+            "titre": "Étape 4 : Nœud de blocage et rodage sonore",
+            "texte": "Verrouiller le nœud terminal. Jouer l'instrument aux mailloches pendant un premier rodage de 15 minutes. Le cuir et la drisse de 10 mm vont se tasser et détendre légèrement la tension. Retendre une dernière fois l'alfaia pour stabiliser l'accordage final.",
+            "photoUrl": ""
+          }
+        ]
+      }
+    ],
+    "createdAt": {
+      "type": "firestore/timestamp/1.0",
+      "seconds": 1788172781,
+      "nanoseconds": 950000000
+    },
+    "updatedAt": {
+      "type": "firestore/timestamp/1.0",
+      "seconds": 1788172781,
+      "nanoseconds": 950000000
+    }
+  },
+  "suppliesManifest": {
+    "contreplaque_5mm": { "nom": "Contreplaqué cintrable (épaisseur 5 mm)", "unite": "plaques", "domaine": "lutherie" },
+    "lattes_bois_dur": { "nom": "Lattes de bois dur (Frêne, Chêne ou Châtaignier) 200 x 5 x 0,7 cm", "unite": "lattes", "domaine": "lutherie" },
+    "sequoia_renfort": { "nom": "Bandes de renfort en séquoia (3 mm)", "unite": "metres", "domaine": "lutherie" },
+    "colle_pva": { "nom": "Colle à bois vinylique", "unite": "litres", "domaine": "lutherie" },
+    "peau_chevre_brute": { "nom": "Peaux de chèvre brutes non tannées", "unite": "peaux", "domaine": "lutherie" },
+    "chaux_aerienne": { "nom": "Chaux aérienne éteinte (CL-90)", "unite": "kg", "domaine": "lutherie" },
+    "vinaigre_blanc": { "nom": "Vinaigre blanc ménager", "unite": "litres", "domaine": "lutherie" },
+    "drisse_10mm": { "nom": "Corde drisse polyester pré-étirée 10 mm", "unite": "metres", "domaine": "lutherie" },
+    "vernis_protection": { "nom": "Vernis de protection", "unite": "litres", "domaine": "lutherie" }
+  },
+  "toolsManifest": {
+    "gabarit_exterieur": { "nom": "Gabarit extérieur avec fente de serrage (16\", 18\", 20\" ou 22\")", "isResident": true, "domaine": "lutherie" },
+    "gabarit_plein": { "nom": "Gabarit de cintrage plein (16\", 18\", 20\" ou 22\")", "isResident": true, "domaine": "lutherie" },
+    "etuve_vapeur": { "nom": "Étuve artisanale à vapeur", "isResident": true, "domaine": "lutherie" },
+    "deligneuse": { "nom": "Déligneuse ou scie sur rail", "isResident": true, "domaine": "lutherie" },
+    "defonceuse": { "nom": "Défonceuse avec fraise quart-de-rond et fraise 45°", "isResident": true, "domaine": "lutherie" },
+    "perceuse_atelier": { "nom": "Perceuse", "isResident": true, "domaine": "lutherie" },
+    "poste_grattage_pvc": { "nom": "Poste de grattage (tube PVC)", "isResident": true, "domaine": "lutherie" },
+    "rabot_manuel": { "nom": "Rabot manuel", "isResident": false, "domaine": "lutherie" },
+    "scie_japonaise": { "nom": "Scie japonaise à denture fine", "isResident": false, "domaine": "lutherie" },
+    "serre_joints": { "nom": "Jeu de serre-joints", "isResident": false, "domaine": "lutherie" },
+    "rapes_bois": { "nom": "Râpe à bois mi-ronde et râpe plate", "isResident": false, "domaine": "lutherie" },
+    "regle_inox": { "nom": "Règle en inox", "isResident": false, "domaine": "lutherie" },
+    "bassine_30l": { "nom": "Grande bassine plastique (30-40 L)", "isResident": false, "domaine": "lutherie" },
+    "gants_lunettes_chimie": { "nom": "Gants de protection étanches et Lunettes", "isResident": false, "domaine": "lutherie" },
+    "ciseaux_cuillere": { "nom": "Ciseaux d'atelier et Cuillère à soupe", "isResident": false, "domaine": "lutherie" }
+  }
+}

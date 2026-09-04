@@ -115,7 +115,7 @@ export default function UserProfile({ user, profileData, associationName, onBack
   return (
     <div className="flex flex-col gap-4 text-left max-w-3xl mx-auto w-full">
       {/* Header bar */}
-      <div className="flex justify-between items-center border-b-2 border-dashed border-cordel-master-dark/30 pb-2 select-none">
+      <div className="sticky top-0 z-[100] bg-cordel-bg/95 backdrop-blur-sm flex justify-between items-center border-b-2 border-dashed border-cordel-master-dark/30 py-2 select-none">
         <CordelButton variant="default" onClick={onBack} className="px-3 py-1 text-xs">
           ← {t('common.back')}
         </CordelButton>

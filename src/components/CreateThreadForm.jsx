@@ -25,6 +25,9 @@ export default function CreateThreadForm({ groupId, channelId, user, profileData
   const [pollQuestion, setPollQuestion] = useState('');
   const [pollOptions, setPollOptions] = useState(['', '']);
   const [pollAllowMultiple, setPollAllowMultiple] = useState(false);
+  
+  // État de ciblage (dépliable pour gain de place)
+  const [isTargetingExpanded, setIsTargetingExpanded] = useState(false);
 
   const handleAddPollOption = () => {
     if (pollOptions.length < 10) {
@@ -197,46 +200,68 @@ export default function CreateThreadForm({ groupId, channelId, user, profileData
           </select>
         </div>
 
-        {/* Target Group Selector */}
-        <div className="flex flex-col gap-1">
-          <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-            🗣️ {t('forum.targetGroup') || "Cibler un groupe (Optionnel)"}
-          </label>
-          <select
-            value={selectedTarget}
-            onChange={(e) => setSelectedTarget(e.target.value)}
-            disabled={saving}
-            className="theme-input w-full disabled:opacity-50 text-xs py-1.5 font-bold"
+        {/* Targeting & Mentions (Collapsible) */}
+        <div className="flex flex-col gap-2 pt-1 border-t border-dashed border-cordel-master-dark/15 select-none">
+          <button
+            type="button"
+            onClick={() => setIsTargetingExpanded(!isTargetingExpanded)}
+            className="text-[10px] font-black uppercase tracking-wider text-cordel-master-dark hover:text-cordel-wood flex items-center gap-1.5 w-fit cursor-pointer transition-colors"
           >
-            <option value="">{t('forum.targetAll') || "-- Tout le monde --"}</option>
-            {availableTargets.map((target) => (
-              <option key={target} value={target}>
-                {target}
-              </option>
-            ))}
-          </select>
+            {isTargetingExpanded ? '▼ Masquer les options de ciblage & mentions' : '▶ Afficher les options de ciblage & mentions (Optionnel)'}
+          </button>
+          
+          {isTargetingExpanded && (
+            <div className="flex flex-col gap-3 p-3 bg-cordel-master-light/5 border border-cordel-master-dark/20 rounded">
+              {/* Target Group Selector */}
+              <div className="flex flex-col gap-1">
+                <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                  🗣️ {t('forum.targetGroup') || "Cibler un groupe (Optionnel)"}
+                </label>
+                <select
+                  value={selectedTarget}
+                  onChange={(e) => setSelectedTarget(e.target.value)}
+                  disabled={saving}
+                  className="theme-input w-full disabled:opacity-50 text-xs py-1.5 font-bold"
+                >
+                  <option value="">{t('forum.targetAll') || "-- Tout le monde --"}</option>
+                  {availableTargets.map((target) => (
+                    <option key={target} value={target}>
+                      {target}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Mentions */}
+              <div className="flex flex-col gap-1">
+                <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                  {t('forum.firstMessageLabel')} (Mentions)
+                </label>
+                {availableTargets.length > 0 && (
+                  <div className="flex flex-wrap items-center gap-1.5 mt-1 select-none">
+                    <span className="text-[9px] font-black uppercase text-cordel-master-dark opacity-60">Mentionner :</span>
+                    {availableTargets.map(tag => (
+                      <button
+                        key={tag}
+                        type="button"
+                        onClick={() => setMessage(prev => prev + `@${tag} `)}
+                        className="px-2 py-0.5 text-[9px] font-bold bg-cordel-bg border border-cordel-master-dark/20 rounded hover:border-encre-noire transition-all cursor-pointer shadow-[1px_1px_0px_0px_rgba(24,23,22,0.15)] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none"
+                      >
+                        @{tag}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* First Message */}
+        {/* First Message Editor */}
         <div className="flex flex-col gap-1">
           <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
             {t('forum.firstMessageLabel')}
           </label>
-          {availableTargets.length > 0 && (
-            <div className="flex flex-wrap items-center gap-1.5 my-1.5 select-none">
-              <span className="text-[9px] font-black uppercase text-cordel-master-dark opacity-60">Mentionner :</span>
-              {availableTargets.map(tag => (
-                <button
-                  key={tag}
-                  type="button"
-                  onClick={() => setMessage(prev => prev + `@${tag} `)}
-                  className="px-2 py-0.5 text-[9px] font-bold bg-cordel-bg border border-cordel-master-dark/20 rounded hover:border-encre-noire transition-all cursor-pointer shadow-[1px_1px_0px_0px_rgba(24,23,22,0.15)] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none"
-                >
-                  @{tag}
-                </button>
-              ))}
-            </div>
-          )}
 
           <RichTextEditor
             value={message}
@@ -247,19 +272,12 @@ export default function CreateThreadForm({ groupId, channelId, user, profileData
             lienDepotForum={lienDepotForum}
             consignesDepotForum={consignesDepotForum}
             minHeight="140px"
+            onAddPoll={() => setShowPollForm(!showPollForm)}
           />
         </div>
 
-        {/* Basculer Poll Form Section */}
-        <div className="flex flex-col gap-2 pt-1 border-t border-dashed border-cordel-master-dark/15 select-none">
-          <button
-            type="button"
-            onClick={() => setShowPollForm(!showPollForm)}
-            className="text-[10px] font-black uppercase tracking-wider text-cordel-wood hover:underline flex items-center gap-1.5 w-fit cursor-pointer"
-          >
-            📊 {showPollForm ? "Retirer le sondage" : "Créer un sondage"}
-          </button>
-
+        {/* Poll Form Section */}
+        <div className="flex flex-col gap-2 select-none">
           {showPollForm && (
             <div className="p-3.5 bg-cordel-bg-light border-2 border-cordel-master-dark/25 rounded-[6px] flex flex-col gap-3">
               <span className="text-[10px] font-black uppercase tracking-wider text-cordel-wood border-b border-dashed border-cordel-master-dark/15 pb-1">

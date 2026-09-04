@@ -44,7 +44,7 @@ export default function EventHeaderCard({ event, onClose, onPrev, onNext, t }) {
       )}
 
       {/* Barre supérieure : Retour & Navigation Précédent/Suivant */}
-      <div className="flex justify-between items-center border-b border-dashed border-cordel-master-dark/20 pb-2 select-none">
+      <div className="sticky top-0 z-[100] bg-cordel-bg/95 backdrop-blur-sm flex justify-between items-center border-b border-dashed border-cordel-master-dark/20 py-2 select-none">
         <CordelButton variant="default" onClick={onClose} className="px-3 py-1 text-xs">
           ← {t('common.back') || "Retour"}
         </CordelButton>

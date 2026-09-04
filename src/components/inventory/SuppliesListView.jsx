@@ -7,6 +7,7 @@ import useConfirm from '../../hooks/useConfirm';
 export default function SuppliesListView({ supplies, loading, addSupply, updateSupply, deleteSupply, adjustSupplyStock, domaine, models = [] }) {
   const { confirm } = useConfirm();
   const [isAdding, setIsAdding] = useState(false);
+  const [editingId, setEditingId] = useState(null);
 
   // Extraction de toutes les matières premières référencées dans les modèles et tutoriels du Varal
   const tutorialSupplies = useMemo(() => {
@@ -41,17 +42,40 @@ export default function SuppliesListView({ supplies, loading, addSupply, updateS
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  const handleEdit = (supply) => {
+    setFormData({
+      nom: supply.nom || '',
+      categorie: supply.categorie || '',
+      quantiteStock: supply.quantiteStock || 0,
+      unite: supply.unite || 'unités',
+      seuilCritique: supply.seuilCritique || 0,
+      conditionnementAchat: supply.conditionnementAchat || '',
+      fournisseur: supply.fournisseur || '',
+      referenceFournisseur: supply.referenceFournisseur || '',
+      urlFournisseur: supply.urlFournisseur || '',
+      notes: supply.notes || ''
+    });
+    setEditingId(supply.id);
+    setIsAdding(true);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (formData.nom) {
       setSubmitting(true);
-      const ok = await addSupply({ ...formData, domaine: domaine || 'lutherie' });
+      let ok;
+      if (editingId) {
+        ok = await updateSupply(editingId, { ...formData, domaine: domaine || 'lutherie' });
+      } else {
+        ok = await addSupply({ ...formData, domaine: domaine || 'lutherie' });
+      }
       setSubmitting(false);
       if (!ok) {
         alert("Erreur lors de l'enregistrement de la fourniture. Veuillez vérifier vos droits d'accès.");
         return;
       }
       setIsAdding(false);
+      setEditingId(null);
       setFormData({
         nom: '', categorie: '', quantiteStock: 0, unite: 'unités',
         seuilCritique: 0, conditionnementAchat: '', fournisseur: '',
@@ -66,6 +90,20 @@ export default function SuppliesListView({ supplies, loading, addSupply, updateS
     }
   };
 
+  const handleToggleAdd = () => {
+    if (isAdding) {
+      setIsAdding(false);
+      setEditingId(null);
+      setFormData({
+        nom: '', categorie: '', quantiteStock: 0, unite: 'unités',
+        seuilCritique: 0, conditionnementAchat: '', fournisseur: '',
+        referenceFournisseur: '', urlFournisseur: '', notes: ''
+      });
+    } else {
+      setIsAdding(true);
+    }
+  };
+
   if (loading) {
     return <div className="p-4 text-center text-cordel-master-dark">Chargement des fournitures...</div>;
   }
@@ -75,10 +113,10 @@ export default function SuppliesListView({ supplies, loading, addSupply, updateS
       {/* En-tête et bouton Ajout */}
       <div className="flex justify-between items-center bg-cordel-bg border-2 border-encre-noire p-3 shadow-[3px_3px_0px_0px_#181716] rounded">
         <h3 className="text-sm font-extrabold tracking-wider text-cordel-wood uppercase">
-          📦 Stock de Matières Premières ({supplies.length})
+          📦 Stock Matériaux & Accessoires ({supplies.length})
         </h3>
-        <CordelButton variant="default" onClick={() => setIsAdding(!isAdding)} className="text-xs font-bold px-3 py-1.5">
-          {isAdding ? "Annuler" : "+ Ajouter une fourniture"}
+        <CordelButton variant="default" onClick={handleToggleAdd} className="text-xs font-bold px-3 py-1.5">
+          {isAdding ? "Annuler" : editingId ? "Mode Édition..." : "+ Ajouter une fourniture"}
         </CordelButton>
       </div>
 
@@ -86,10 +124,12 @@ export default function SuppliesListView({ supplies, loading, addSupply, updateS
       {isAdding && (
         <CordelCard className="p-4 bg-cordel-bg-light border-dashed border-cordel-master-dark/30">
           <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-            <h4 className="text-xs font-bold text-encre-noire uppercase mb-1">Nouvelle fourniture</h4>
+            <h4 className="text-xs font-bold text-encre-noire uppercase mb-1">
+              {editingId ? "Modifier la fourniture" : "Nouvelle fourniture"}
+            </h4>
 
             {/* Suggestions rapides depuis les tutoriels du Varal */}
-            {tutorialSupplies.length > 0 && (
+            {!editingId && tutorialSupplies.length > 0 && (
               <div className="bg-white/90 p-2.5 rounded border border-amber-300 flex flex-col gap-1.5 text-left">
                 <span className="text-[9.5px] font-black uppercase tracking-wider text-cordel-wood flex items-center gap-1">
                   <span>💡</span> Matières premières requises par les tutoriels du Varal :
@@ -170,7 +210,7 @@ export default function SuppliesListView({ supplies, loading, addSupply, updateS
             </div>
             <div className="flex justify-end mt-2">
               <CordelButton type="submit" variant="vert" disabled={submitting} className="px-6 py-2 text-xs font-black uppercase">
-                {submitting ? "Enregistrement..." : "💾 Enregistrer la fourniture"}
+                {submitting ? "Enregistrement..." : editingId ? "💾 Mettre à jour" : "💾 Enregistrer la fourniture"}
               </CordelButton>
             </div>
           </form>
@@ -242,13 +282,22 @@ export default function SuppliesListView({ supplies, loading, addSupply, updateS
                             🛒 Commander
                           </button>
                         )}
-                        <button 
-                          onClick={() => handleDelete(supply.id, supply.nom)}
-                          className="p-1.5 bg-cordel-rouge/10 text-cordel-rouge rounded hover:bg-cordel-rouge/20 transition-colors self-center"
-                          title="Supprimer"
-                        >
-                          <XiloClose size={14} />
-                        </button>
+                        <div className="flex items-center gap-1 justify-center">
+                          <button 
+                            onClick={() => handleEdit(supply)}
+                            className="text-[10px] p-1.5 bg-cordel-wood/10 text-cordel-wood rounded hover:bg-cordel-wood/20 transition-colors font-bold uppercase"
+                            title="Éditer"
+                          >
+                            Éditer
+                          </button>
+                          <button 
+                            onClick={() => handleDelete(supply.id, supply.nom)}
+                            className="p-1.5 bg-cordel-rouge/10 text-cordel-rouge rounded hover:bg-cordel-rouge/20 transition-colors"
+                            title="Supprimer"
+                          >
+                            <XiloClose size={14} />
+                          </button>
+                        </div>
                       </div>
                     </td>
                   </tr>

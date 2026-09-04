@@ -469,7 +469,7 @@ export const fr = {
     notesPlaceholder: "Note (Ex: Retard d'1h, Instrument transporté...)",
     updatePresenceBtn: "Enregistrer ma présence",
     updating: "Mise à jour...",
-    carpoolingHeading: "Covoiturage & Logistique",
+    carpoolingHeading: "Logistique",
     addCarBtn: "Proposer ma voiture",
     carName: "Véhicule (Ex: Clio Blanche)",
     carPlaces: "Places passagers disponibles",

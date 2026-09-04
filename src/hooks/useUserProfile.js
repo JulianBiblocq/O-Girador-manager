@@ -20,7 +20,7 @@ export const DEFAULT_FIELDS_CONFIG = {
   niveaux: { key: "niveaux", label: "Affichage des niveaux dans le trombinoscope", enabled: true, filledBy: "admin", isRequired: false }
 };
 
-export const DEFAULT_INSTRUMENTS = ["Alfaia Marcante", "Alfaia Meião", "Alfaia Repique", "Caixa", "Tarol", "Gonguê", "Agbê", "Mineiro", "Timbal", "Chant"];
+export const DEFAULT_INSTRUMENTS = ["Alfaia", "Caixa", "Tarol", "Gonguê", "Agbê", "Mineiro", "Timbal", "Chant"];
 
 const getFullAddress = (pd) => {
   if (!pd) return '';

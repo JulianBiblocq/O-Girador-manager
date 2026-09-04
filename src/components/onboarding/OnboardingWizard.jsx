@@ -35,7 +35,7 @@ export default function OnboardingWizard({
       colors: { primary: '#d99f4d', secondary: '#84967a', background: '#f4ecd8', text: '#1a1a1a' }
     },
     instrumentsDisponibles: associationSettings.instrumentsDisponibles || [
-      "Alfaia Marcante", "Alfaia Meião", "Alfaia Repique", "Caixa", "Tarol", "Gonguê", "Agbê", "Mineiro", "Timbal", "Chant", "Danse"
+      "Alfaia", "Caixa", "Tarol", "Gonguê", "Agbê", "Mineiro", "Timbal", "Chant", "Danse"
     ],
     majoriteFeminine: Boolean(associationSettings.majoriteFeminine),
     montantAdhesion: associationSettings.montantAdhesion !== undefined ? associationSettings.montantAdhesion : 10,
@@ -55,7 +55,7 @@ export default function OnboardingWizard({
           colors: { primary: '#d99f4d', secondary: '#84967a', background: '#f4ecd8', text: '#1a1a1a' }
         },
         instrumentsDisponibles: associationSettings.instrumentsDisponibles || [
-          "Alfaia Marcante", "Alfaia Meião", "Alfaia Repique", "Caixa", "Tarol", "Gonguê", "Agbê", "Mineiro", "Timbal", "Chant", "Danse"
+          "Alfaia", "Caixa", "Tarol", "Gonguê", "Agbê", "Mineiro", "Timbal", "Chant", "Danse"
         ],
         majoriteFeminine: Boolean(associationSettings.majoriteFeminine),
         montantAdhesion: associationSettings.montantAdhesion !== undefined ? associationSettings.montantAdhesion : 10,

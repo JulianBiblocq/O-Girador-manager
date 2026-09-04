@@ -351,7 +351,7 @@ const getSectionForSingleInstrument = (instName, member) => {
   return 'autres';
 };
 
-const DEFAULT_INSTRUMENTS = ["Alfaia Marcante", "Alfaia Meião", "Alfaia Repique", "Caixa", "Tarol", "Gonguê", "Agbê", "Mineiro", "Timbal", "Chant", "Danse"];
+const DEFAULT_INSTRUMENTS = ["Alfaia", "Caixa", "Tarol", "Gonguê", "Agbê", "Mineiro", "Timbal", "Chant", "Danse"];
 
 export default function Trombinoscope({ user, profileData, onBack, onContactUser }) {
   const { t, locale } = useTranslation();

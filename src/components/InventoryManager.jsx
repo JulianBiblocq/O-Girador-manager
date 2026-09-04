@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, updateDoc, increment } from 'firebase/firestore';
 import { db } from '../firebase';
 import LayoutShell from './LayoutShell';
 import CordelCard from './CordelCard';
@@ -75,6 +75,7 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin,
   const [showConfig, setShowConfig] = useState(false);
   const [activeTab, setActiveTab] = useState('instruments'); // 'instruments' or 'parts'
   const [diagnosticInstrument, setDiagnosticInstrument] = useState(null);
+  const [newAccessoryText, setNewAccessoryText] = useState('');
 
   const {
     instruments,
@@ -90,8 +91,8 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin,
     setFormData,
     handleOpenAdd,
     handleOpenEdit,
-    handleSave,
-    handleDelete,
+    handleSave: originalHandleSave,
+    handleDelete: originalHandleDelete,
     handleToggleBorrowStatus,
     handleApproveMovement,
     handleRejectMovement,
@@ -108,6 +109,53 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin,
     handleSavePart,
     handleDeletePart
   } = useInventoryData(groupId, isAuthorized, t);
+
+  const handleSaveWrapper = async (e) => {
+    e.preventDefault();
+    const isEdit = !!editingId;
+    const oldInst = isEdit ? instruments.find(i => i.id === editingId) : null;
+    const oldChecklist = oldInst?.kitChecklist || [];
+    const newChecklist = formData.kitChecklist || [];
+    
+    await originalHandleSave(e);
+
+    const addedItems = newChecklist.filter(item => !oldChecklist.includes(item));
+    const removedItems = oldChecklist.filter(item => !newChecklist.includes(item));
+
+    const promises = [];
+    for (const supplyId of addedItems) {
+      if (supplies.some(s => s.id === supplyId)) {
+        promises.push(updateDoc(doc(db, 'inventory_supplies', supplyId), {
+          quantiteStock: increment(-1)
+        }).catch(err => console.error(err)));
+      }
+    }
+    for (const supplyId of removedItems) {
+      if (supplies.some(s => s.id === supplyId)) {
+        promises.push(updateDoc(doc(db, 'inventory_supplies', supplyId), {
+          quantiteStock: increment(1)
+        }).catch(err => console.error(err)));
+      }
+    }
+    await Promise.all(promises);
+  };
+
+  const handleDeleteWrapper = async (id) => {
+    const inst = instruments.find(i => i.id === id);
+    const oldChecklist = inst?.kitChecklist || [];
+    
+    await originalHandleDelete(id);
+    
+    const promises = [];
+    for (const supplyId of oldChecklist) {
+      if (supplies.some(s => s.id === supplyId)) {
+        promises.push(updateDoc(doc(db, 'inventory_supplies', supplyId), {
+          quantiteStock: increment(1)
+        }).catch(err => console.error(err)));
+      }
+    }
+    await Promise.all(promises);
+  };
 
   const pendingMovements = instruments.filter(inst => inst.pendingMovement);
 
@@ -404,6 +452,8 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin,
                 handleChange={handleUpdateSetting}
                 saving={savingSettings}
                 t={t}
+                groupId={groupId}
+                supplies={supplies}
               />
               <div className="flex justify-end mt-2 pt-3 border-t border-dashed border-cordel-master-dark/15">
                 <CordelButton
@@ -548,7 +598,7 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin,
               {editingId ? t('inventory.editTitle') : t('inventory.addTitle')}
             </h3>
 
-            <form onSubmit={handleSave} className="flex flex-col gap-3.5">
+            <form onSubmit={handleSaveWrapper} className="flex flex-col gap-3.5">
               {/* Nom */}
               <div className="flex flex-col gap-1">
                 <label className="text-[8px] uppercase font-bold tracking-wider text-cordel-master-dark">
@@ -626,60 +676,80 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin,
               {/* Kit Accessoires Dynamique */}
               <div className="flex flex-col gap-1 pt-1 border-t border-dashed border-cordel-master-dark/15">
                 <label className="text-[8px] uppercase font-bold tracking-wider text-cordel-master-dark mb-1 flex items-center justify-between">
-                  <span>Kit Accessoires</span>
+                  <span>Kit / Accessoires</span>
                   {(() => {
                     const kit = (settings?.logisticsKits || []).find(k => k.pupitre === formData.type);
-                    if (kit && kit.accessories && kit.accessories.length > 0) {
+                    const kitAccessories = kit?.accessories || [];
+                    
+                    if (kitAccessories.length > 0) {
                       const checked = formData.kitChecklist || [];
-                      const validChecked = checked.filter(acc => kit.accessories.includes(acc)).length;
+                      const validChecked = checked.filter(accId => kitAccessories.some(k => k.supplyId === accId)).length;
                       return (
                         <span className="text-[9px] bg-cordel-master-dark/10 px-1 rounded text-cordel-master-dark">
-                          {validChecked}/{kit.accessories.length}
+                          {validChecked}/{kitAccessories.length}
                         </span>
                       );
                     }
                     return null;
                   })()}
                 </label>
+                
                 <div className="flex flex-col gap-1.5 p-2 bg-cordel-bg-light/50 border border-encre-noire/10 rounded">
                   {(() => {
                     const kit = (settings?.logisticsKits || []).find(k => k.pupitre === formData.type);
+                    const kitAccessories = kit?.accessories || [];
                     
-                    if (!kit || !kit.accessories || kit.accessories.length === 0) {
+                    if (kitAccessories.length === 0) {
                       return (
-                        <span className="text-[9px] text-stone-500 italic">
-                          Aucun kit configuré pour cet instrument.
+                        <span className="text-[9px] text-stone-500 italic mt-1">
+                          Aucun accessoire configuré pour ce pupitre.
                         </span>
                       );
                     }
 
                     const checkedList = formData.kitChecklist || [];
 
-                    return kit.accessories.map(acc => {
-                      const isChecked = checkedList.includes(acc);
-                      return (
-                        <label
-                          key={acc}
-                          className={`flex items-center gap-2 p-1 rounded text-[10px] font-bold cursor-pointer transition-colors ${
-                            isChecked ? 'bg-cordel-master-light/50 text-cordel-wood' : 'hover:bg-stone-100 text-encre-noire'
-                          }`}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={isChecked}
-                            onChange={(e) => {
-                              const newChecked = e.target.checked
-                                ? [...checkedList, acc]
-                                : checkedList.filter(item => item !== acc);
-                              setFormData(prev => ({ ...prev, kitChecklist: newChecked }));
-                            }}
-                            disabled={saving}
-                            className="w-3.5 h-3.5 text-cordel-wood rounded cursor-pointer"
-                          />
-                          <span>{acc}</span>
-                        </label>
-                      );
-                    });
+                    return (
+                      <div className="flex flex-wrap gap-1.5 mt-1">
+                        {kitAccessories.map(acc => {
+                          const isChecked = checkedList.includes(acc.supplyId);
+                          const supplyInfo = supplies.find(s => s.id === acc.supplyId);
+                          const supplyName = supplyInfo ? supplyInfo.nom : acc.name;
+                          const stockCount = supplyInfo ? supplyInfo.quantiteStock : '?';
+                          
+                          return (
+                            <label
+                              key={acc.supplyId}
+                              className={`flex items-center gap-1.5 p-1 px-1.5 rounded text-[10px] font-bold cursor-pointer transition-colors border ${
+                                isChecked 
+                                  ? 'bg-cordel-master-light/20 border-cordel-master-dark/30 text-cordel-wood shadow-xs' 
+                                  : 'bg-white border-encre-noire/15 text-encre-noire/70 hover:bg-stone-50'
+                              }`}
+                              title={supplyInfo ? `Stock disponible: ${stockCount}` : ''}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={isChecked}
+                                onChange={(e) => {
+                                  const newChecked = e.target.checked
+                                    ? [...checkedList, acc.supplyId]
+                                    : checkedList.filter(id => id !== acc.supplyId);
+                                  setFormData(prev => ({ ...prev, kitChecklist: newChecked }));
+                                }}
+                                disabled={saving}
+                                className="w-3.5 h-3.5 text-cordel-wood rounded cursor-pointer"
+                              />
+                              <span>{supplyName}</span>
+                              {!isChecked && supplyInfo && (
+                                <span className={`text-[8px] opacity-70 ${stockCount <= 0 ? 'text-red-600 font-black' : ''}`}>
+                                  ({stockCount})
+                                </span>
+                              )}
+                            </label>
+                          );
+                        })}
+                      </div>
+                    );
                   })()}
                 </div>
               </div>
@@ -846,7 +916,7 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin,
                 {editingId ? (
                   <button
                     type="button"
-                    onClick={() => handleDelete(editingId, formData.nom)}
+                    onClick={() => handleDeleteWrapper(editingId)}
                     disabled={saving}
                     className="text-[9px] font-black uppercase tracking-wider bg-cordel-wood text-cordel-bg-light px-3 py-1.5 border border-encre-noire rounded-[4px_6px_3px_5px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-110 cursor-pointer disabled:opacity-50"
                   >
@@ -1194,7 +1264,7 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin,
                               )}
                               <button
                                 type="button"
-                                onClick={() => handleDelete(inst.id, inst.nom)}
+                                onClick={() => handleDeleteWrapper(inst.id)}
                                 className="p-1.5 border border-red-700 bg-red-50 hover:bg-red-100 text-red-700 rounded shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none cursor-pointer text-[10px]"
                                 title="Supprimer de l'inventaire"
                               >
@@ -1217,7 +1287,7 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin,
                     item={inst}
                     usersMap={usersMap}
                     onEdit={handleOpenEdit}
-                    onDelete={handleDelete}
+                    onDelete={handleDeleteWrapper}
                     onToggleBorrow={handleToggleBorrowStatus}
                     onDiagnose={setDiagnosticInstrument}
                     inventoryParts={inventoryParts}

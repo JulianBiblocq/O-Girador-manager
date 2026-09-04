@@ -9,12 +9,12 @@ import OnboardingToggleSwitch from '../OnboardingToggleSwitch';
 export default function WizardStepMusic({ wizardData, updateWizardData }) {
   const instrumentsList = Array.isArray(wizardData.instrumentsDisponibles) && wizardData.instrumentsDisponibles.length > 0
     ? wizardData.instrumentsDisponibles
-    : ["Alfaia Marcante", "Alfaia Meião", "Alfaia Repique", "Caixa", "Tarol", "Gonguê", "Agbê", "Mineiro", "Timbal", "Chant", "Danse"];
+    : ["Alfaia", "Caixa", "Tarol", "Gonguê", "Agbê", "Mineiro", "Timbal", "Chant", "Danse"];
 
   const majoriteFeminine = Boolean(wizardData.majoriteFeminine);
 
   const defaultInstruments = [
-    "Alfaia Marcante", "Alfaia Meião", "Alfaia Repique", 
+    "Alfaia", 
     "Caixa", "Tarol", "Gonguê", "Agbê", "Mineiro", 
     "Timbal", "Chant", "Danse", "Performance"
   ];

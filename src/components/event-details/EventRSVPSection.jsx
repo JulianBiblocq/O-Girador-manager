@@ -45,7 +45,7 @@ export default function EventRSVPSection({
   agendaEnableMaybeStatus = true,
   handleAddInviteExterne,
   handleRemoveInviteExterne,
-  instrumentsDisponibles = ["Alfaia Marcante", "Alfaia Meião", "Alfaia Repique", "Caixa", "Tarol", "Gonguê", "Agbê", "Mineiro", "Timbal", "Chant", "Danse"],
+  instrumentsDisponibles = ["Alfaia", "Caixa", "Tarol", "Gonguê", "Agbê", "Mineiro", "Timbal", "Chant", "Danse"],
   besoinTransportInstrument = false,
   setBesoinTransportInstrument,
   enableCarpool = true,

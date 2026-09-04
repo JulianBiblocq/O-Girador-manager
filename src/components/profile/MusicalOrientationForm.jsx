@@ -3,9 +3,7 @@ import { filterPublicPercussionInstruments } from '../../utils/tagUtils';
 import { DEFAULT_CUSTOM_CATEGORIES } from '../../utils/categoryUtils';
 
 const DEFAULT_INSTRUMENTS = [
-  "Alfaia Marcante",
-  "Alfaia Meião",
-  "Alfaia Repique",
+  "Alfaia",
   "Caixa",
   "Tarol",
   "Gonguê",

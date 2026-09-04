@@ -57,12 +57,19 @@ export default function ImportModelWizardModal({ groupId, file, suppliesList = [
           reader.onload = (e) => {
             try {
               const parsed = JSON.parse(e.target.result);
-              setManifest({
-                version: "legacy",
-                model: parsed,
-                suppliesManifest: {},
-                toolsManifest: {}
-              });
+              
+              if (parsed.version && parsed.model) {
+                // Le fichier est déjà au bon format v1.1 avec manifest
+                setManifest(parsed);
+              } else {
+                // Fallback pour les anciens JSON bruts
+                setManifest({
+                  version: "legacy",
+                  model: parsed,
+                  suppliesManifest: {},
+                  toolsManifest: {}
+                });
+              }
               setLoading(false);
             } catch (err) {
               setError("Fichier JSON invalide.");

@@ -37,6 +37,7 @@ export default function EventStageLayoutSection({
   });
 
   const [selectedMemberId, setSelectedMemberId] = useState(null);
+  const [pendingVoice, setPendingVoice] = useState(null);
   const [saving, setSaving] = useState(false);
   const [isPublished, setIsPublished] = useState(event.isStageLayoutPublished || false);
 
@@ -148,7 +149,7 @@ export default function EventStageLayoutSection({
       const newPlacements = { ...activePlacements };
 
       // Swap or effacer old position if they were already placed
-      newPlacements[selectedMemberId] = { row, col };
+      newPlacements[selectedMemberId] = { row, col, ...(pendingVoice && { voice: pendingVoice }), ...(!pendingVoice && activePlacements[selectedMemberId]?.voice && { voice: activePlacements[selectedMemberId].voice }) };
 
       // Unplace the previous member who was in this cell
       if (placedMemberId && placedMemberId !== selectedMemberId) {
@@ -412,17 +413,61 @@ export default function EventStageLayoutSection({
                   {t('eventDetails.stageLayoutHelp') || "👉 Sélectionnez un membre ci-dessous, puis cliquez sur une case de la grille pour le placer."}
                 </span>
                 {selectedMemberId && (
-                  <div className="bg-amber-100 border border-amber-400 text-amber-950 font-extrabold px-3 py-1.5 rounded flex items-center justify-between text-[11px]">
-                    <span>
-                      Placement en cours : {presentMembers.find(m => m.id === selectedMemberId)?.name}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => setSelectedMemberId(null)}
-                      className="text-red-700 hover:text-red-900 font-bold ml-3 cursor-pointer"
-                    >
-                      Annuler
-                    </button>
+                                    <div className="flex flex-col gap-2 w-full">
+                    <div className="bg-amber-100 border border-amber-400 text-amber-950 font-extrabold px-3 py-1.5 rounded flex items-center justify-between text-[11px]">
+                      <span>
+                        Placement en cours : {presentMembers.find(m => m.id === selectedMemberId)?.name}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => { setSelectedMemberId(null); setPendingVoice(null); }}
+                        className="text-red-700 hover:text-red-900 font-bold ml-3 cursor-pointer"
+                      >
+                        Annuler
+                      </button>
+                    </div>
+                    {(() => {
+                      const selectedUser = presentMembers.find(m => m.id === selectedMemberId);
+                      if (selectedUser && selectedUser.instrument.toLowerCase().includes('alfaia')) {
+                        const fullUserInfo = allUsers.find(u => u.id === selectedMemberId);
+                        const competences = fullUserInfo?.competencesAlfaia || ['marcante'];
+                        const currentVoice = activePlacements[selectedMemberId]?.voice || pendingVoice || null;
+                        
+                        return (
+                          <div className="flex flex-col gap-1.5 bg-white/40 dark:bg-black/20 p-2.5 rounded border border-dashed border-cordel-master-dark/20 mt-1">
+                            <span className="text-[10px] font-black uppercase text-cordel-master-dark">Voix pour la scène :</span>
+                            <div className="flex gap-3">
+                              {['Marcante', 'Meião', 'Repique'].map(v => {
+                                const voiceLower = v.toLowerCase();
+                                const isCompetent = competences.includes(voiceLower);
+                                const isSelectedVoice = currentVoice === voiceLower;
+                                return (
+                                  <label key={v} className={`flex items-center gap-1.5 cursor-pointer ${!isCompetent ? 'opacity-50 grayscale' : ''}`}>
+                                    <input
+                                      type="radio"
+                                      name="alfaia-voice"
+                                      checked={isSelectedVoice}
+                                      onChange={() => {
+                                        if (activePlacements[selectedMemberId]) {
+                                          const newP = { ...activePlacements };
+                                          newP[selectedMemberId].voice = voiceLower;
+                                          setLayout(prev => ({ ...prev, placements: newP }));
+                                        } else {
+                                          setPendingVoice(voiceLower);
+                                        }
+                                      }}
+                                      className="w-3.5 h-3.5 accent-cordel-wood"
+                                    />
+                                    <span className="text-[10px] font-bold text-cordel-master-dark">{v}</span>
+                                  </label>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        );
+                      }
+                      return null;
+                    })()}
                   </div>
                 )}
               </div>
@@ -434,6 +479,35 @@ export default function EventStageLayoutSection({
             {/* The Visual Stage Layout Grid */}
             <div className="flex-1 w-full overflow-x-auto pb-4">
               <div className="w-full min-w-[500px] max-w-[560px] mx-auto flex flex-col items-center">
+                            {(() => {
+                let marcante = 0; let meiao = 0; let repique = 0;
+                Object.entries(activePlacements).forEach(([uid, pos]) => {
+                  const m = presentMembers.find(x => x.id === uid);
+                  if (m && m.instrument.toLowerCase().includes('alfaia')) {
+                    if (pos.voice === 'marcante') marcante++;
+                    else if (pos.voice === 'meião') meiao++;
+                    else if (pos.voice === 'repique') repique++;
+                  }
+                });
+                const total = marcante + meiao + repique;
+                if (total > 0) {
+                  return (
+                    <div className="w-full flex justify-center mb-4">
+                      <div className="bg-cordel-wood/10 border border-cordel-wood text-cordel-wood text-[10px] font-black px-3 py-1.5 rounded-full uppercase tracking-wider shadow-sm flex items-center gap-2">
+                        <span>🥁 Alfaias affectés :</span>
+                        <span>{marcante} Marc.</span>
+                        <span className="opacity-50">|</span>
+                        <span>{meiao} Meio.</span>
+                        <span className="opacity-50">|</span>
+                        <span>{repique} Rep.</span>
+                        <span className="opacity-50">|</span>
+                        <span>(Total : {total})</span>
+                      </div>
+                    </div>
+                  );
+                }
+                return null;
+              })()}
               <div className="text-[9px] uppercase tracking-wider font-extrabold opacity-60 mb-2">
                 {t('eventDetails.stageFront') || "▲ AVANT DE LA SCÈNE (PUBLIC) ▲"}
               </div>
@@ -561,7 +635,7 @@ export default function EventStageLayoutSection({
                             {formatMemberName(mestreMember.name)}
                           </span>
                           <span className="text-[7px] opacity-75 font-semibold leading-none mt-0.5 uppercase truncate max-w-full">
-                            {mestreMember.instrument.split(' ')[0]}
+                            {mestreMember.instrument.split(' ')[0]}{mestreMember.instrument.toLowerCase().includes('alfaia') && activePlacements[mestreMember.id]?.voice ? ` (${activePlacements[mestreMember.id].voice.substring(0, 4)}.)` : ''}
                           </span>
                           
                           {/* Admin retirer placement button */}
@@ -634,7 +708,7 @@ export default function EventStageLayoutSection({
                             {formatMemberName(member.name)}
                           </span>
                           <span className="text-[7px] sm:text-[8px] opacity-75 font-semibold leading-none mt-0.5 uppercase truncate max-w-full">
-                            {member.instrument.split(' ')[0]}
+                            {member.instrument.split(' ')[0]}{member.instrument.toLowerCase().includes('alfaia') && activePlacements[member.id]?.voice ? ` (${activePlacements[member.id].voice.substring(0, 4)}.)` : ''}
                           </span>
                           
                           {/* Admin retirer placement cross button */}

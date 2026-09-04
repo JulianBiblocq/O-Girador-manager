@@ -202,6 +202,48 @@ export default function FabricationCard({ fabrication, onClose }) {
               </div>
             )}
 
+            {/* Matrice Multi-tailles pour Alfaia */}
+            {fabrication.instrumentConcerne && fabrication.instrumentConcerne.toLowerCase().includes('alfaia') && (
+              <div className="bg-cordel-master-dark/5 p-4 rounded-md border-[var(--theme-border-width)] border-[var(--theme-border-style)] border-[var(--color-cordel-wood)]/50 shadow-sm">
+                <h4 className="font-cactus font-black text-xl text-[var(--color-cordel-wood)] mb-3 text-center">
+                  Tableau Mémo des Tailles d'Alfaia
+                </h4>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm text-left border-collapse">
+                    <thead>
+                      <tr className="bg-[var(--color-cordel-wood)] text-white">
+                        <th className="px-4 py-2 border border-[var(--color-cordel-wood)]/20 font-bold uppercase tracking-wider text-xs">Taille (Pouces)</th>
+                        <th className="px-4 py-2 border border-[var(--color-cordel-wood)]/20 font-bold uppercase tracking-wider text-xs">Diamètre (Gabarit)</th>
+                        <th className="px-4 py-2 border border-[var(--color-cordel-wood)]/20 font-bold uppercase tracking-wider text-xs">Longueur de corde (10 mm)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr className="bg-white/60">
+                        <td className="px-4 py-2 border border-[var(--color-cordel-wood)]/20 font-bold text-black">16"</td>
+                        <td className="px-4 py-2 border border-[var(--color-cordel-wood)]/20 text-stone-700">~ 40,6 cm</td>
+                        <td className="px-4 py-2 border border-[var(--color-cordel-wood)]/20 text-stone-700">~ 13 m</td>
+                      </tr>
+                      <tr className="bg-black/5">
+                        <td className="px-4 py-2 border border-[var(--color-cordel-wood)]/20 font-bold text-black">18"</td>
+                        <td className="px-4 py-2 border border-[var(--color-cordel-wood)]/20 text-stone-700">~ 45,7 cm</td>
+                        <td className="px-4 py-2 border border-[var(--color-cordel-wood)]/20 text-stone-700">~ 15 m</td>
+                      </tr>
+                      <tr className="bg-white/60">
+                        <td className="px-4 py-2 border border-[var(--color-cordel-wood)]/20 font-bold text-black">20"</td>
+                        <td className="px-4 py-2 border border-[var(--color-cordel-wood)]/20 text-stone-700">~ 50,8 cm</td>
+                        <td className="px-4 py-2 border border-[var(--color-cordel-wood)]/20 text-stone-700">~ 18 m</td>
+                      </tr>
+                      <tr className="bg-black/5">
+                        <td className="px-4 py-2 border border-[var(--color-cordel-wood)]/20 font-bold text-black">22"</td>
+                        <td className="px-4 py-2 border border-[var(--color-cordel-wood)]/20 text-stone-700">~ 55,9 cm</td>
+                        <td className="px-4 py-2 border border-[var(--color-cordel-wood)]/20 text-stone-700">~ 20 m</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
             {/* Étapes pas à pas */}
             {hasEtapes && (
               <div className="flex flex-col gap-6">

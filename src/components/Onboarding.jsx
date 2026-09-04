@@ -63,7 +63,7 @@ export default function Onboarding({ user, branding, onComplete, profileData }) 
 
   const [fieldsConfig, setFieldsConfig] = useState(null);
   const [nomAssociation, setNomAssociation] = useState(branding?.nomAssociation || branding?.nom || branding?.name || '');
-  const [instrumentsDisponibles, setInstrumentsDisponibles] = useState(["Alfaia Marcante", "Alfaia Meião", "Alfaia Repique", "Caixa", "Tarol", "Gonguê", "Agbê", "Mineiro", "Timbal", "Chant"]);
+  const [instrumentsDisponibles, setInstrumentsDisponibles] = useState(["Alfaia", "Caixa", "Tarol", "Gonguê", "Agbê", "Mineiro", "Timbal", "Chant"]);
   const [submitting, setSubmitting] = useState(false);
   const [droitImageDocUrl, setDroitImageDocUrl] = useState('');
   const [aptitudeMedicaleDocUrl, setAptitudeMedicaleDocUrl] = useState('');
@@ -228,7 +228,7 @@ export default function Onboarding({ user, branding, onComplete, profileData }) 
         role: profileData?.role || "membre",
         isNew: profileData?.isNew !== undefined ? profileData.isNew : true,
         statutActuel: profileData?.statutActuel || "active",
-        groupId: profileData?.groupId || groupId,
+        groupId: (profileData?.groupId || groupId)?.toLowerCase() === 'samambaia' ? 'Samambaia' : (profileData?.groupId || groupId),
         tags: profileData?.tags || [],
         afficherTelephone: Boolean(formData.afficherTelephone),
         afficherDateNaissance: Boolean(formData.afficherDateNaissance),

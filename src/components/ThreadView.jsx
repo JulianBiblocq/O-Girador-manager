@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { doc, onSnapshot, updateDoc, arrayUnion, collection, addDoc } from 'firebase/firestore';
+import { doc, onSnapshot, updateDoc, arrayUnion, collection, addDoc, runTransaction } from 'firebase/firestore';
 import { db } from '../firebase';
 import { getFirstUnreadIndex } from '../utils/forumUnreadUtils';
 import CordelCard from './CordelCard';
@@ -15,6 +15,58 @@ import { getTagId } from '../utils/tagUtils';
 import { usePresenceContext } from '../context/PresenceContext';
 import useConfirm from '../hooks/useConfirm';
 
+const ReactionBar = ({ reactions = {}, currentUserId, onToggle, allUsers = [] }) => {
+  const emojis = ['👍', '👎', '❤️', '👏'];
+  const getUserName = (uid) => {
+    const user = allUsers.find(u => u.id === uid);
+    return user ? `${user.prenom} ${user.nom}` : 'Inconnu';
+  };
+
+  return (
+    <div className="flex items-center gap-1.5 mt-2 flex-wrap">
+      {emojis.map(emoji => {
+        const usersWhoReacted = reactions[emoji] || [];
+        const count = usersWhoReacted.length;
+        const hasReacted = usersWhoReacted.includes(currentUserId);
+        
+        if (count === 0) {
+           return (
+             <button
+                key={emoji}
+                type="button"
+                onClick={() => onToggle(emoji)}
+                className="opacity-60 hover:opacity-100 text-[14px] transition-opacity cursor-pointer p-0.5 grayscale hover:grayscale-0"
+                title="Réagir"
+             >
+               {emoji}
+             </button>
+           );
+        }
+
+        const tooltipText = usersWhoReacted.map(getUserName).join(', ');
+
+        return (
+          <button
+            key={emoji}
+            type="button"
+            onClick={() => onToggle(emoji)}
+            className={`flex items-center gap-1.5 px-2.5 py-0.5 rounded-[12px] text-[13px] font-black border transition-all cursor-pointer shadow-xs active:translate-y-[0.5px] ${
+              hasReacted 
+                ? 'bg-[#c05621]/15 border-[#c05621]/40 text-[#c05621]' 
+                : 'bg-white/90 border-encre-noire/30 text-encre-noire/80 hover:bg-stone-100'
+            }`}
+            title={tooltipText}
+          >
+            <span className="text-[14px]">{emoji}</span>
+            <span className="text-[11px] leading-none">{count}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+};
+
+
 // Composant ThreadReplyItem mémoïsé pour éviter les rendus inutiles lors de la saisie
 const ThreadReplyItem = React.memo(({
   reply,
@@ -26,6 +78,8 @@ const ThreadReplyItem = React.memo(({
   onMoveReply,
   onEditReply,
   onReplyToMessage,
+  onToggleReaction,
+  allUsers,
   t,
   formattedTime
 }) => {
@@ -118,6 +172,13 @@ const ThreadReplyItem = React.memo(({
         </div>
 
         <FormattedMessageContent content={reply.message} />
+        
+        <ReactionBar 
+          reactions={reply.reactions} 
+          currentUserId={userId} 
+          onToggle={(emoji) => onToggleReaction(index, emoji)}
+          allUsers={allUsers}
+        />
 
         <div className="flex items-center justify-between gap-2 mt-2 select-none">
           {reply.isEdited && (
@@ -135,6 +196,7 @@ const ThreadReplyItem = React.memo(({
 }, (prevProps, nextProps) => {
   return prevProps.index === nextProps.index &&
          prevProps.reply.message === nextProps.reply.message &&
+         JSON.stringify(prevProps.reply.reactions) === JSON.stringify(nextProps.reply.reactions) &&
          prevProps.reply.dateCreation === nextProps.reply.dateCreation &&
          prevProps.reply.targetTag === nextProps.reply.targetTag &&
          prevProps.reply.isEdited === nextProps.reply.isEdited &&
@@ -145,7 +207,8 @@ const ThreadReplyItem = React.memo(({
          prevProps.onDeleteReply === nextProps.onDeleteReply &&
          prevProps.onMoveReply === nextProps.onMoveReply &&
          prevProps.onEditReply === nextProps.onEditReply &&
-         prevProps.onReplyToMessage === nextProps.onReplyToMessage;
+         prevProps.onReplyToMessage === nextProps.onReplyToMessage &&
+         prevProps.onToggleReaction === nextProps.onToggleReaction;
 });
 
 export default function ThreadView({ threadId, user, profileData, channels = [], allThreads = [], allUsers = [], onClose, breakGlassActive = false }) {
@@ -174,8 +237,8 @@ export default function ThreadView({ threadId, user, profileData, channels = [],
   const [lienDepotForum, setLienDepotForum] = useState('');
   const [consignesDepotForum, setConsignesDepotForum] = useState('');
 
-  // Gestion de la barre de réponse compacte dépliable et du scroll intelligent façon Discord
   const [isReplyExpanded, setIsReplyExpanded] = useState(false);
+  const [isTargetingExpanded, setIsTargetingExpanded] = useState(false);
   const [showScrollBottom, setShowScrollBottom] = useState(false);
   const unreadSeparatorRef = useRef(null);
   const messagesContainerRef = useRef(null);
@@ -512,6 +575,56 @@ export default function ThreadView({ threadId, user, profileData, channels = [],
     }, 100);
   }, []);
 
+  const handleToggleReaction = useCallback(async (replyIndex, emoji) => {
+    if (!threadId || !user?.uid) return;
+    const threadRef = doc(db, 'forum', threadId);
+    try {
+      await runTransaction(db, async (transaction) => {
+        const threadDoc = await transaction.get(threadRef);
+        if (!threadDoc.exists()) return;
+        
+        const threadData = threadDoc.data();
+        
+        if (replyIndex === -1) {
+          // Réaction sur le sujet principal
+          const reactions = threadData.reactions || {};
+          const userList = reactions[emoji] || [];
+          let newUserList = userList.includes(user.uid) 
+            ? userList.filter(id => id !== user.uid)
+            : [...userList, user.uid];
+          
+          let newReactions = { ...reactions, [emoji]: newUserList };
+          if (newUserList.length === 0) {
+            delete newReactions[emoji];
+          }
+          
+          transaction.update(threadRef, { reactions: newReactions });
+        } else {
+          // Réaction sur une réponse
+          const replies = [...(threadData.reponses || [])];
+          if (replyIndex >= 0 && replyIndex < replies.length) {
+            const reply = replies[replyIndex];
+            const reactions = reply.reactions || {};
+            const userList = reactions[emoji] || [];
+            let newUserList = userList.includes(user.uid) 
+              ? userList.filter(id => id !== user.uid)
+              : [...userList, user.uid];
+            
+            let newReactions = { ...reactions, [emoji]: newUserList };
+            if (newUserList.length === 0) {
+              delete newReactions[emoji];
+            }
+            
+            replies[replyIndex] = { ...reply, reactions: newReactions };
+            transaction.update(threadRef, { reponses: replies });
+          }
+        }
+      });
+    } catch (err) {
+      console.error("Error toggling reaction:", err);
+    }
+  }, [threadId, user?.uid]);
+
   const handleSaveEditReply = async (e) => {
     e.preventDefault();
     if (!editingReplyData || !editingReplyData.text.trim()) return;
@@ -537,7 +650,7 @@ export default function ThreadView({ threadId, user, profileData, channels = [],
   return (
     <div className="flex flex-col gap-4 text-left h-full">
       {/* Header bar */}
-      <div className="flex justify-between items-center border-b-2 border-dashed border-cordel-master-dark/30 pb-2 select-none">
+      <div className="sticky top-0 z-[100] bg-cordel-bg/95 backdrop-blur-sm flex justify-between items-center border-b-2 border-dashed border-cordel-master-dark/30 py-2 select-none">
         <CordelButton variant="default" onClick={onClose} className="px-3 py-1 text-xs">
           ← {t('common.back')}
         </CordelButton>
@@ -622,7 +735,7 @@ export default function ThreadView({ threadId, user, profileData, channels = [],
           </CordelCard>
 
           {/* Interactive Poll Component if attached */}
-          {thread.poll ? (
+          {thread.poll && (
             <PollDisplay 
               poll={thread.poll} 
               threadId={thread.id} 
@@ -630,18 +743,6 @@ export default function ThreadView({ threadId, user, profileData, channels = [],
               allUsers={allUsers}
               isAuthorOrAdmin={user.uid === thread.auteurId || isModeratorOrAdmin}
             />
-          ) : (
-            (user.uid === thread.auteurId || isModeratorOrAdmin) && (
-              <div className="my-2 flex justify-end">
-                <button
-                  type="button"
-                  onClick={() => setIsAddPollOpen(true)}
-                  className="text-[10px] font-black uppercase tracking-wider text-cordel-wood bg-cordel-bg-light border border-dashed border-cordel-master-dark/30 hover:bg-cordel-hover px-3 py-1.5 rounded flex items-center gap-1.5 cursor-pointer shadow-xs active:translate-x-[0.5px] active:translate-y-[0.5px]"
-                >
-                  📊 Ajouter un sondage à ce sujet
-                </button>
-              </div>
-            )
           )}
 
           {/* Modal de création de sondage sur sujet existant */}
@@ -791,6 +892,8 @@ export default function ThreadView({ threadId, user, profileData, channels = [],
                       onMoveReply={handleOpenMoveReply}
                       onEditReply={handleOpenEditReply}
                       onReplyToMessage={handleReplyToMessage}
+                      onToggleReaction={handleToggleReaction}
+                      allUsers={allUsers}
                       t={t}
                       formattedTime={formattedTime}
                     />
@@ -802,14 +905,16 @@ export default function ThreadView({ threadId, user, profileData, channels = [],
 
             {/* Pastille flottante de défilement rapide vers le bas (↓) */}
             {showScrollBottom && (
-              <button
-                type="button"
-                onClick={scrollToBottom}
-                className="absolute right-4 bottom-3 z-20 w-8 h-8 rounded-full bg-cordel-bg/95 hover:bg-white text-encre-noire border-2 border-encre-noire flex items-center justify-center font-black shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] cursor-pointer transition-all text-xs select-none backdrop-blur-xs"
-                title="Sauter au dernier message"
-              >
-                ↓
-              </button>
+              <div className="sticky bottom-4 flex justify-end pointer-events-none pr-2">
+                <button
+                  type="button"
+                  onClick={scrollToBottom}
+                  className="pointer-events-auto w-8 h-8 rounded-full bg-cordel-bg/95 hover:bg-white text-encre-noire border-2 border-encre-noire flex items-center justify-center font-black shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] cursor-pointer transition-all text-xs select-none backdrop-blur-xs"
+                  title="Sauter au dernier message"
+                >
+                  ↓
+                </button>
+              </div>
             )}
           </div>
 
@@ -868,45 +973,60 @@ export default function ThreadView({ threadId, user, profileData, channels = [],
                     </button>
                   </div>
 
-                  {/* Target Group Selector */}
-                  <div className="flex flex-col gap-1">
-                    <label className="text-[8px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                      🗣️ {t('forum.targetGroup') || "Cibler un groupe (Optionnel)"}
-                    </label>
-                    <select
-                      value={selectedTarget}
-                      onChange={(e) => setSelectedTarget(e.target.value)}
-                      disabled={sending}
-                      className="theme-input w-full disabled:opacity-50 text-[10px] py-1 font-bold bg-cordel-bg"
+                  {/* Targeting & Mentions (Collapsible) */}
+                  <div className="flex flex-col gap-2 pt-1 pb-2 border-b border-dashed border-cordel-master-dark/15 select-none">
+                    <button
+                      type="button"
+                      onClick={() => setIsTargetingExpanded(!isTargetingExpanded)}
+                      className="text-[9px] font-black uppercase tracking-wider text-cordel-master-dark hover:text-cordel-wood flex items-center gap-1.5 w-fit cursor-pointer transition-colors"
                     >
-                      <option value="">{t('forum.targetAll') || "-- Tout le monde --"}</option>
-                      {availableTargets.map((target) => (
-                        <option key={target} value={target}>
-                          {target}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {/* Mentions tags */}
-                  {availableTargets.length > 0 && (
-                    <div className="flex flex-wrap items-center gap-1.5 select-none">
-                      <span className="text-[9px] font-black uppercase text-cordel-master-dark opacity-60">Mentionner :</span>
-                      {availableTargets.map(tag => {
-                        const tagLabel = typeof tag === 'string' ? tag : getTagId(tag);
-                        return (
-                          <button
-                            key={tagLabel}
-                            type="button"
-                            onClick={() => setReplyText(prev => prev + `@${tagLabel} `)}
-                            className="px-2 py-0.5 text-[9px] font-bold bg-cordel-bg border border-cordel-master-dark/20 rounded hover:border-encre-noire transition-all cursor-pointer shadow-[1px_1px_0px_0px_rgba(24,23,22,0.15)] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none"
+                      {isTargetingExpanded ? '▼ Masquer les options de ciblage & mentions' : '▶ Afficher les options de ciblage & mentions (Optionnel)'}
+                    </button>
+                    
+                    {isTargetingExpanded && (
+                      <div className="flex flex-col gap-2 p-2 bg-cordel-master-light/5 border border-cordel-master-dark/20 rounded">
+                        {/* Target Group Selector */}
+                        <div className="flex flex-col gap-1">
+                          <label className="text-[8px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                            🗣️ {t('forum.targetGroup') || "Cibler un groupe (Optionnel)"}
+                          </label>
+                          <select
+                            value={selectedTarget}
+                            onChange={(e) => setSelectedTarget(e.target.value)}
+                            disabled={sending}
+                            className="theme-input w-full disabled:opacity-50 text-[10px] py-1 font-bold bg-cordel-bg"
                           >
-                            @{tagLabel}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  )}
+                            <option value="">{t('forum.targetAll') || "-- Tout le monde --"}</option>
+                            {availableTargets.map((target) => (
+                              <option key={target} value={target}>
+                                {target}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        {/* Mentions tags */}
+                        {availableTargets.length > 0 && (
+                          <div className="flex flex-wrap items-center gap-1.5 select-none mt-1">
+                            <span className="text-[9px] font-black uppercase text-cordel-master-dark opacity-60">Mentionner :</span>
+                            {availableTargets.map(tag => {
+                              const tagLabel = typeof tag === 'string' ? tag : getTagId(tag);
+                              return (
+                                <button
+                                  key={tagLabel}
+                                  type="button"
+                                  onClick={() => setReplyText(prev => prev + `@${tagLabel} `)}
+                                  className="px-2 py-0.5 text-[9px] font-bold bg-cordel-bg border border-cordel-master-dark/20 rounded hover:border-encre-noire transition-all cursor-pointer shadow-[1px_1px_0px_0px_rgba(24,23,22,0.15)] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none"
+                                >
+                                  @{tagLabel}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
 
                   {/* Éditeur riche */}
                   <RichTextEditor
@@ -917,6 +1037,7 @@ export default function ThreadView({ threadId, user, profileData, channels = [],
                     groupId={profileData?.groupId}
                     lienDepotForum={lienDepotForum}
                     minHeight="85px"
+                    onAddPoll={(!thread?.poll && (user?.uid === thread?.auteurId || isModeratorOrAdmin)) ? () => setIsAddPollOpen(true) : null}
                   />
 
                   <div className="flex justify-between items-center pt-1 border-t border-dashed border-cordel-master-dark/15">

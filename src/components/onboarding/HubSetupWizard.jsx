@@ -144,7 +144,7 @@ export default function HubSetupWizard({ brandingStyle, onComplete }) {
       };
 
       if (wizardData.poles.percussion) {
-        instrumentsDisponibles = ["Alfaia Marcante", "Alfaia Meião", "Alfaia Repique", "Caixa", "Tarol", "Gonguê", "Agbê", "Mineiro", "Timbal"];
+        instrumentsDisponibles = ["Alfaia", "Caixa", "Tarol", "Gonguê", "Agbê", "Mineiro", "Timbal"];
       }
       
       if (wizardData.poles.danse) {

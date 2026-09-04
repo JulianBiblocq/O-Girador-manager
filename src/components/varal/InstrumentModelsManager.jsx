@@ -170,34 +170,30 @@ export default function InstrumentModelsManager({ groupId, isAuthorized, varalCa
                 {model.parts?.length || 0} Pièces à fabriquer
               </div>
 
-              <div className="flex justify-end gap-2 mt-2 pt-2 border-t border-dashed border-cordel-master-dark/20">
-                <button 
-                  onClick={() => handleTogglePublic(model)}
-                  className={`text-[10px] font-bold ${model.isPublic ? 'text-cordel-vert' : 'text-cordel-ocre'} hover:underline`}
-                >
-                  {model.isPublic ? '🔓 Dépublier' : '🔒 Publier Terreiro'}
-                </button>
-                <button 
-                  onClick={() => handleExportModel(model)}
-                  className="text-[10px] font-bold text-cordel-vert hover:underline"
-                >
-                  Exporter Pack
-                </button>
-                <button 
-                  onClick={() => setEditingModel(model)}
-                  className="text-[10px] font-bold text-cordel-wood hover:underline"
-                >
-                  Éditer
-                </button>
-                <button 
-                  onClick={() => handleDeleteModel(model.id, model.nom)}
-                  className="text-[10px] font-bold text-red-500 hover:underline"
-                >
-                  Supprimer
-                </button>
+              <div className="flex flex-wrap items-center justify-between gap-2 mt-2 pt-2 border-t border-dashed border-cordel-master-dark/20">
+                <div className="flex flex-wrap items-center gap-3">
+                  <button 
+                    onClick={() => handleTogglePublic(model)}
+                    className={`text-[10px] font-bold ${model.isPublic ? 'text-cordel-vert' : 'text-cordel-ocre'} hover:underline flex items-center gap-1`}
+                  >
+                    {model.isPublic ? '🔓 Dépublier' : '🔒 Publier Terreiro'}
+                  </button>
+                  <button 
+                    onClick={() => setEditingModel(model)}
+                    className="text-[10px] font-bold text-cordel-wood hover:underline"
+                  >
+                    Éditer
+                  </button>
+                  <button 
+                    onClick={() => handleDeleteModel(model.id, model.nom)}
+                    className="text-[10px] font-bold text-red-500 hover:underline"
+                  >
+                    Supprimer
+                  </button>
+                </div>
                 <CordelButton 
                   variant="secondary" 
-                  className="text-[10px] uppercase font-bold py-1 flex-1 text-center justify-center flex items-center"
+                  className="text-[10px] uppercase font-bold py-1.5 px-3 shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none"
                   onClick={() => handleExportModel(model)}
                   disabled={isExporting}
                 >

@@ -7,6 +7,7 @@ import useConfirm from '../../hooks/useConfirm';
 export default function WorkshopToolsListView({ tools, loading, addTool, updateTool, deleteTool, domaine, models = [], membersList = [] }) {
   const { confirm } = useConfirm();
   const [isAdding, setIsAdding] = useState(false);
+  const [editingId, setEditingId] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterResident, setFilterResident] = useState('all'); // 'all', 'resident', 'mobile'
   
@@ -49,19 +50,46 @@ export default function WorkshopToolsListView({ tools, loading, addTool, updateT
     }));
   };
 
+  const handleEdit = (tool) => {
+    setFormData({
+      nom: tool.nom || '',
+      isResident: typeof tool.isResident !== 'undefined' ? tool.isResident : true,
+      emplacement: tool.emplacement || '',
+      etat: tool.etat || 'bon'
+    });
+    setEditingId(tool.id);
+    setIsAdding(true);
+  };
+
+  const handleToggleAdd = () => {
+    if (isAdding) {
+      setIsAdding(false);
+      setEditingId(null);
+      setFormData({ nom: '', isResident: true, emplacement: '', etat: 'bon' });
+    } else {
+      setIsAdding(true);
+    }
+  };
+
   const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (formData.nom) {
       setSubmitting(true);
-      const ok = await addTool({ ...formData, domaine: domaine || 'lutherie' });
+      let ok;
+      if (editingId) {
+        ok = await updateTool(editingId, { ...formData, domaine: domaine || 'lutherie' });
+      } else {
+        ok = await addTool({ ...formData, domaine: domaine || 'lutherie' });
+      }
       setSubmitting(false);
       if (!ok) {
         alert("Erreur lors de l'enregistrement de l'outil. Veuillez vérifier vos droits d'accès.");
         return;
       }
       setIsAdding(false);
+      setEditingId(null);
       setFormData({ nom: '', isResident: true, emplacement: '', etat: 'bon' });
     }
   };
@@ -118,8 +146,8 @@ export default function WorkshopToolsListView({ tools, loading, addTool, updateT
             <option value="resident">Résidents locaux</option>
             <option value="mobile">Mobiles</option>
           </select>
-          <CordelButton variant="default" onClick={() => setIsAdding(!isAdding)} className="text-xs font-bold px-3 py-1.5">
-            {isAdding ? "Annuler" : "+ Ajouter outil"}
+          <CordelButton variant="default" onClick={handleToggleAdd} className="text-xs font-bold px-3 py-1.5">
+            {isAdding ? "Annuler" : editingId ? "Mode Édition..." : "+ Ajouter outil"}
           </CordelButton>
         </div>
       </div>
@@ -128,10 +156,12 @@ export default function WorkshopToolsListView({ tools, loading, addTool, updateT
       {isAdding && (
         <CordelCard className="p-4 bg-cordel-bg-light border-dashed border-cordel-master-dark/30">
           <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-            <h4 className="text-xs font-bold text-encre-noire uppercase mb-1">Nouvel outil</h4>
+            <h4 className="text-xs font-bold text-encre-noire uppercase mb-1">
+              {editingId ? "Modifier l'outil" : "Nouvel outil"}
+            </h4>
 
             {/* Suggestions rapides depuis les tutoriels du Varal */}
-            {tutorialTools.length > 0 && (
+            {!editingId && tutorialTools.length > 0 && (
               <div className="bg-white/90 p-2.5 rounded border border-amber-300 flex flex-col gap-1.5 text-left">
                 <span className="text-[9.5px] font-black uppercase tracking-wider text-cordel-wood flex items-center gap-1">
                   <span>💡</span> Outils requis par les tutoriels du Varal :
@@ -210,7 +240,7 @@ export default function WorkshopToolsListView({ tools, loading, addTool, updateT
 
             <div className="flex justify-end mt-2">
               <CordelButton type="submit" variant="vert" disabled={submitting} className="px-6 py-2 text-xs font-black uppercase">
-                {submitting ? "Enregistrement..." : "💾 Enregistrer l'outil"}
+                {submitting ? "Enregistrement..." : editingId ? "💾 Mettre à jour" : "💾 Enregistrer l'outil"}
               </CordelButton>
             </div>
           </form>
@@ -224,7 +254,7 @@ export default function WorkshopToolsListView({ tools, loading, addTool, updateT
             const isFromTutorial = tutorialTools.some(t => t.toLowerCase().trim() === tool.nom.toLowerCase().trim());
             return (
               <div key={tool.id} className="flex flex-col gap-2 p-3 bg-white border-2 border-encre-noire rounded shadow-[2px_2px_0px_0px_#181716] relative text-left">
-                <div className="flex justify-between items-start pr-6 gap-1">
+                <div className="flex justify-between items-start pr-12 gap-1">
                   <div className="flex flex-col">
                     <h4 className="font-bold text-sm text-encre-noire">{tool.nom}</h4>
                     {isFromTutorial && (
@@ -233,13 +263,22 @@ export default function WorkshopToolsListView({ tools, loading, addTool, updateT
                       </span>
                     )}
                   </div>
-                  <button 
-                    onClick={() => handleDelete(tool.id, tool.nom)}
-                    className="absolute top-2 right-2 p-1 text-cordel-rouge/50 hover:text-cordel-rouge transition-colors cursor-pointer"
-                    title="Supprimer cet outil"
-                  >
-                    <XiloClose size={14} />
-                  </button>
+                  <div className="absolute top-2 right-2 flex items-center gap-1">
+                    <button 
+                      onClick={() => handleEdit(tool)}
+                      className="p-1 text-cordel-wood/50 hover:text-cordel-wood transition-colors cursor-pointer text-[10px] font-bold uppercase"
+                      title="Éditer"
+                    >
+                      Éditer
+                    </button>
+                    <button 
+                      onClick={() => handleDelete(tool.id, tool.nom)}
+                      className="p-1 text-cordel-rouge/50 hover:text-cordel-rouge transition-colors cursor-pointer"
+                      title="Supprimer cet outil"
+                    >
+                      <XiloClose size={14} />
+                    </button>
+                  </div>
                 </div>
                 
                 <div className="text-[10.5px] font-bold text-stone-800 bg-stone-50 px-2 py-1 rounded border border-stone-200 mt-1 flex items-center justify-between">

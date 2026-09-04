@@ -17,7 +17,8 @@ export default function RichTextEditor({
   minHeight = '120px',
   showLists = true,
   showImage = true,
-  showAlign = true
+  showAlign = true,
+  onAddPoll = null
 }) {
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   const [, forceUpdate] = useState({});
@@ -183,59 +184,71 @@ export default function RichTextEditor({
             <button
               type="button"
               onClick={() => editor.chain().focus().setTextAlign('left').run()}
-              className={`px-2 py-1 text-xs font-bold rounded border transition-all cursor-pointer ${
+              className={`p-1.5 rounded border transition-all cursor-pointer flex items-center justify-center ${
                 editor.isActive({ textAlign: 'left' })
                   ? 'bg-cordel-wood text-white border-encre-noire'
                   : 'bg-white text-encre-noire border-encre-noire/20 hover:bg-neutral-100'
               }`}
               title="Aligner à gauche"
             >
-              ⬅️
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="21" x2="3" y1="6" y2="6"/><line x1="15" x2="3" y1="12" y2="12"/><line x1="17" x2="3" y1="18" y2="18"/></svg>
             </button>
 
             {/* Align Center */}
             <button
               type="button"
               onClick={() => editor.chain().focus().setTextAlign('center').run()}
-              className={`px-2 py-1 text-xs font-bold rounded border transition-all cursor-pointer ${
+              className={`p-1.5 rounded border transition-all cursor-pointer flex items-center justify-center ${
                 editor.isActive({ textAlign: 'center' })
                   ? 'bg-cordel-wood text-white border-encre-noire'
                   : 'bg-white text-encre-noire border-encre-noire/20 hover:bg-neutral-100'
               }`}
               title="Centrer"
             >
-              ↔️
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="21" x2="3" y1="6" y2="6"/><line x1="17" x2="7" y1="12" y2="12"/><line x1="19" x2="5" y1="18" y2="18"/></svg>
             </button>
 
             {/* Align Right */}
             <button
               type="button"
               onClick={() => editor.chain().focus().setTextAlign('right').run()}
-              className={`px-2 py-1 text-xs font-bold rounded border transition-all cursor-pointer ${
+              className={`p-1.5 rounded border transition-all cursor-pointer flex items-center justify-center ${
                 editor.isActive({ textAlign: 'right' })
                   ? 'bg-cordel-wood text-white border-encre-noire'
                   : 'bg-white text-encre-noire border-encre-noire/20 hover:bg-neutral-100'
               }`}
               title="Aligner à droite"
             >
-              ➡️
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="21" x2="3" y1="6" y2="6"/><line x1="21" x2="9" y1="12" y2="12"/><line x1="21" x2="7" y1="18" y2="18"/></svg>
             </button>
           </>
         )}
 
-        {showImage && (
+        {(showImage || onAddPoll) && (
           <>
             <div className="h-4 w-[1px] bg-encre-noire/20 mx-1"></div>
+            
+            {showImage && (
+              <button
+                type="button"
+                onClick={() => setIsImageModalOpen(true)}
+                className="px-2.5 py-1 text-xs font-bold rounded border bg-amber-50 hover:bg-amber-100 border-amber-600/40 text-amber-900 transition-all cursor-pointer flex items-center gap-1 shadow-sm"
+                title="Insérer une image dans la discussion"
+              >
+                📷 <span className="hidden sm:inline text-[10px] font-black uppercase">Photo</span>
+              </button>
+            )}
 
-            {/* Photo Insert Button */}
-            <button
-              type="button"
-              onClick={() => setIsImageModalOpen(true)}
-              className="px-2.5 py-1 text-xs font-bold rounded border bg-amber-50 hover:bg-amber-100 border-amber-600/40 text-amber-900 transition-all cursor-pointer flex items-center gap-1 shadow-sm"
-              title="Insérer une image dans la discussion"
-            >
-              📷 <span className="hidden sm:inline text-[10px] font-black uppercase">Photo</span>
-            </button>
+            {onAddPoll && (
+              <button
+                type="button"
+                onClick={onAddPoll}
+                className="px-2.5 py-1 text-xs font-bold rounded border bg-blue-50 hover:bg-blue-100 border-blue-600/40 text-blue-900 transition-all cursor-pointer flex items-center gap-1 shadow-sm ml-1"
+                title="Ajouter un sondage"
+              >
+                📊 <span className="hidden sm:inline text-[10px] font-black uppercase">Sondage</span>
+              </button>
+            )}
           </>
         )}
       </div>

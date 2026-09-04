@@ -1,0 +1,193 @@
+{
+  "version": "1.1",
+  "model": {
+    "nom": "Agbê",
+    "type": "Agbê",
+    "categoryId": "TutosFabrication",
+    "description": "Fabrication artisanale d'un Agbê (Xequerê) : préparation de la calebasse brute, renfort intérieur, couronne tressée et filet en graines d'açaí ou perles.",
+    "parts": [
+      {
+        "id": "part_agbe_calebasse",
+        "nom": "Calebasse",
+        "quantiteRequise": 1,
+        "materiels": [
+          "Calebasse brute (23 cm de diamètre minimum)",
+          "Eau claire",
+          "Vinaigre blanc ménager",
+          "Colle blanche vinylique (PVA)",
+          "Cire à bois naturelle"
+        ],
+        "outils": [
+          "Papier de verre fin (grain 120)",
+          "Torchon d'atelier et chiffon sec",
+          "Scie à denture fine",
+          "Grande cuillère ou grattoir en métal"
+        ],
+        "chapitres": [
+          {
+            "id": "chap_calebasse_01",
+            "titre": "Étape 1 : Nettoyage extérieur et ponçage",
+            "texte": "Passez la calebasse sous l'eau tiède et frottez la surface avec un torchon pour éliminer les poussières et moisissures de séchage. Poncez ensuite délicatement toute la coque au papier de verre grain 120 pour obtenir un toucher parfaitement lisse et doux.",
+            "photoUrl": ""
+          },
+          {
+            "id": "chap_calebasse_02",
+            "titre": "Étape 2 : Découpe du col et vidage intérieur",
+            "texte": "À l'aide de la scie à denture fine, sciez le haut du col (le chapeau) d'un trait net et régulier. Raclez énergiquement l'intérieur avec une grande cuillère ou des outils en métal pour détacher la pulpe sèche et les filaments. Videz toutes les graines (à conserver pour de futurs semis).",
+            "photoUrl": ""
+          },
+          {
+            "id": "chap_calebasse_03",
+            "titre": "Étape 3 : Désinfection et assainissement",
+            "texte": "Rincez abondamment la cavité intérieure avec une solution d'eau claire et de vinaigre blanc pour assainir le bois végétal en profondeur et neutraliser les odeurs. Laissez sécher intégralement à l'air libre.",
+            "photoUrl": ""
+          },
+          {
+            "id": "chap_calebasse_04",
+            "titre": "Étape 4 : Renforcement intérieur à la colle PVA",
+            "texte": "Si les parois de la courge sont fines ou sonnent creux, préparez un mélange d'1/3 de colle blanche vinylique pour 2/3 d'eau. Versez le liquide à l'intérieur, faites tourner la calebasse pour napper l'ensemble des parois, videz le surplus et laissez sécher 24 heures.",
+            "photoUrl": ""
+          },
+          {
+            "id": "chap_calebasse_05",
+            "titre": "Étape 5 : Protection et lustrage à la cire",
+            "texte": "Appliquez une couche uniforme de cire à bois sur toute la surface extérieure. Laissez pénétrer les fibres végétales quelques minutes, puis lustrez vigoureusement au chiffon sec pour faire briller la courge et protéger le bois.",
+            "photoUrl": ""
+          }
+        ]
+      },
+      {
+        "id": "part_agbe_filet",
+        "nom": "Filet de graines",
+        "quantiteRequise": 1,
+        "materiels": [
+          "Fil polyester ciré Linhasita 1 mm",
+          "Graines d'açaí (ou perles)",
+          "Feuille quadrillée et crayon"
+        ],
+        "outils": [
+          "Mini-perceuse (type Dremel) avec foret fin",
+          "Mètre ruban",
+          "Ciseaux de précision",
+          "Briquet"
+        ],
+        "chapitres": [
+          {
+            "id": "chap_filet_01",
+            "titre": "Étape 1 : Motif sur papier et perçage des graines",
+            "texte": "Dessinez le motif géométrique sur papier quadrillé en choisissant vos alternances de couleurs. Le nombre total de brins descendants doit impérativement être un multiple du motif (ex : 40, 50 ou 60 brins pour un motif de 10 graines). À la mini-perceuse munie d'un foret fin, alésez les graines d'açaí dont le trou naturel est trop étroit pour le fil.",
+            "photoUrl": ""
+          },
+          {
+            "id": "chap_filet_02",
+            "titre": "Étape 2 : Confection de la couronne supérieure",
+            "texte": "Tressez trois brins de fil ciré ensemble pour former un anneau de tête robuste (vous pouvez y insérer une première rangée de graines). Positionnez la tresse autour du col de la courge et ajustez son diamètre pour laisser passer confortablement la main entre le bois et le futur filet.",
+            "photoUrl": ""
+          },
+          {
+            "id": "chap_filet_03",
+            "titre": "Étape 3 : Découpe et accroche des brins descendants",
+            "texte": "Mesurez la distance entre le col et le fond de la calebasse, puis multipliez par 5 pour obtenir la longueur d'un brin. Découpez autant de brins que de fixations prévues. Pliez chaque fil en deux et nouez-le en tête d'alouette sur la couronne, dans l'espace situé entre deux graines, sur tout le pourtour.",
+            "photoUrl": ""
+          },
+          {
+            "id": "chap_filet_04",
+            "titre": "Étape 4 : Tressage du filet et maillage en losanges",
+            "texte": "Chauffez légèrement les pointes de fil au briquet et aplatissez-les pour faciliter l'enfilage. Prenez le brin droit d'une attache et le brin gauche de la suivante, enfilez une graine, puis formez un nœud simple en triangle dessous. Tressez rangée par rangée en conservant une tension équilibrée pour que les graines claquent librement contre le bois.",
+            "photoUrl": ""
+          },
+          {
+            "id": "chap_filet_05",
+            "titre": "Étape 5 : Couronne inférieure, arrimage et cautérisation",
+            "texte": "Après plusieurs rangées, contrôlez la hauteur pour englober la partie large de la courge. Tirez sur les nœuds pour parfaire la géométrie. Tressez une couronne inférieure à la taille de l'ouverture basse souhaitée, arrimez-y les brins avec des nœuds doubles, coupez l'excédent aux ciseaux et cautérisez chaque pointe au briquet.",
+            "photoUrl": ""
+          }
+        ]
+      }
+    ],
+    "createdAt": {
+      "type": "firestore/timestamp/1.0",
+      "seconds": 1788119210,
+      "nanoseconds": 429000000
+    },
+    "updatedAt": {
+      "type": "firestore/timestamp/1.0",
+      "seconds": 1788119210,
+      "nanoseconds": 429000000
+    }
+  },
+  "suppliesManifest": {
+    "calebasse_brute": {
+      "nom": "Calebasse brute (23 cm de diamètre minimum)",
+      "unite": "pièces",
+      "domaine": "lutherie"
+    },
+    "fil_cire_linhasita": {
+      "nom": "Fil polyester ciré Linhasita 1 mm",
+      "unite": "bobines",
+      "domaine": "lutherie"
+    },
+    "graines_acai": {
+      "nom": "Graines d'açaí (ou perles)",
+      "unite": "lots",
+      "domaine": "lutherie"
+    },
+    "colle_pva": {
+      "nom": "Colle blanche vinylique (PVA)",
+      "unite": "litres",
+      "domaine": "lutherie"
+    },
+    "vinaigre_blanc": {
+      "nom": "Vinaigre blanc ménager",
+      "unite": "litres",
+      "domaine": "lutherie"
+    },
+    "cire_bois": {
+      "nom": "Cire à bois naturelle",
+      "unite": "pots",
+      "domaine": "lutherie"
+    }
+  },
+  "toolsManifest": {
+    "scie_fine": {
+      "nom": "Scie à denture fine",
+      "isResident": false,
+      "domaine": "lutherie"
+    },
+    "cuillere_longue": {
+      "nom": "Grande cuillère ou grattoir en métal",
+      "isResident": false,
+      "domaine": "lutherie"
+    },
+    "papier_verre_120": {
+      "nom": "Papier de verre fin (grain 120)",
+      "isResident": true,
+      "domaine": "lutherie"
+    },
+    "torchon": {
+      "nom": "Torchon d'atelier et chiffon sec",
+      "isResident": true,
+      "domaine": "lutherie"
+    },
+    "mini_perceuse_dremel": {
+      "nom": "Mini-perceuse (type Dremel) avec foret fin",
+      "isResident": true,
+      "domaine": "lutherie"
+    },
+    "ciseaux_atelier": {
+      "nom": "Ciseaux de précision",
+      "isResident": false,
+      "domaine": "lutherie"
+    },
+    "briquet": {
+      "nom": "Briquet",
+      "isResident": false,
+      "domaine": "lutherie"
+    },
+    "metre_ruban": {
+      "nom": "Mètre ruban",
+      "isResident": false,
+      "domaine": "lutherie"
+    }
+  }
+}

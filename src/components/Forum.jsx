@@ -84,12 +84,12 @@ function ChannelTreeItem({
               ? 'theme-bg-ocre text-encre-noire border-encre-noire font-black shadow-none translate-x-[0.5px] translate-y-[0.5px]'
               : hasUnread
                 ? 'bg-transparent text-encre-noire font-black border-transparent hover:bg-white/40'
-                : 'bg-transparent text-cordel-master-dark font-extrabold border-transparent hover:bg-white/40'
+                : 'bg-transparent text-cordel-master-dark font-semibold border-transparent hover:bg-white/40'
           }`}
           style={{ paddingLeft: `${Math.max(6, level * 10 + 6)}px` }}
         >
           <span className="flex items-center gap-1.5 min-w-0 overflow-hidden flex-1 pr-1">
-            <span className="shrink-0 font-extrabold text-cordel-wood opacity-75">
+            <span className="shrink-0 font-bold text-cordel-wood opacity-75">
               {channel.readOnlyForMembers ? '📢' : (!channel.readRoles || channel.readRoles.includes('all') || channel.readRoles.length === 0) ? (level === 0 ? '📂' : '#') : '🔒'}
             </span>
             <span className={`truncate ${hasUnread ? 'font-black text-encre-noire' : ''}`}>{channel.name}</span>

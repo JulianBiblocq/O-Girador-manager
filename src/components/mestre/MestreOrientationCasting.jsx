@@ -8,9 +8,7 @@ import { filterPublicPercussionInstruments } from '../../utils/tagUtils';
 import { DEFAULT_CUSTOM_CATEGORIES, resolveCategory } from '../../utils/categoryUtils';
 
 const DEFAULT_INSTRUMENTS = [
-  "Alfaia Marcante",
-  "Alfaia Meião",
-  "Alfaia Repique",
+  "Alfaia",
   "Caixa",
   "Tarol",
   "Gonguê",
@@ -518,6 +516,43 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
     }
   };
 
+  const handleToggleAlfaiaCompetence = async (member, voiceName) => {
+    setSaving(true);
+    try {
+      let currentList = member.competencesAlfaia;
+      
+      // Initialisation si vide basée sur l'ensemble des instruments renseignés
+      if (!currentList || currentList.length === 0) {
+        const histInst = `${member.instrumentPrincipal || member.instrument || ''} ${member.instrumentSecondaire || ''} ${member.instrumentSaison || ''}`.toLowerCase();
+        if (histInst.includes('meian') || histInst.includes('meiao') || histInst.includes('meião')) {
+          currentList = ['meião'];
+        } else if (histInst.includes('repique')) {
+          currentList = ['repique'];
+        } else {
+          currentList = ['marcante'];
+        }
+      }
+
+      const voiceLower = voiceName.toLowerCase();
+      let newList;
+      if (currentList.includes(voiceLower)) {
+        newList = currentList.filter(v => v !== voiceLower);
+        // Au moins une voix doit être sélectionnée (fallback sécurité)
+        if (newList.length === 0) newList = ['marcante'];
+      } else {
+        newList = [...currentList, voiceLower];
+      }
+
+      const userRef = doc(db, 'users', member.id);
+      await updateDoc(userRef, { competencesAlfaia: newList });
+    } catch (err) {
+      console.error(err);
+      alert("Erreur de sauvegarde de la voix d'Alfaia");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handleTogglePoursuite = async (member, currentValue) => {
     setSaving(true);
     try {
@@ -670,6 +705,48 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+
+  // Rendu modulaire des boutons de sélection des voix d'Alfaia (Marcante, Meião, Repique)
+  const renderAlfaiaVoices = (member, context = 'default') => {
+    let currentList = member.competencesAlfaia;
+    if (!currentList || currentList.length === 0) {
+      const allInst = `${member.instrumentPrincipal || member.instrument || ''} ${member.instrumentSecondaire || ''} ${member.instrumentSaison || ''}`.toLowerCase();
+      if (allInst.includes('meian') || allInst.includes('meiao') || allInst.includes('meião')) {
+        currentList = ['meião'];
+      } else if (allInst.includes('repique')) {
+        currentList = ['repique'];
+      } else {
+        currentList = ['marcante'];
+      }
+    }
+
+    return (
+      <div className="flex flex-col gap-1 mt-1 bg-black/5 dark:bg-white/5 p-1.5 rounded border border-dashed border-cordel-master-dark/15 w-max">
+        <span className="text-[8px] font-black uppercase text-cordel-master-dark opacity-80">
+          Voix Alfaia :
+        </span>
+        <div className="flex gap-2">
+          {['Marcante', 'Meião', 'Repique'].map(voice => {
+            const isActive = currentList.includes(voice.toLowerCase());
+            return (
+              <label key={`voice-${context}-${voice}-${member.id}`} className="flex items-center gap-1 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={isActive}
+                  onChange={() => handleToggleAlfaiaCompetence(member, voice)}
+                  disabled={saving}
+                  className="w-2.5 h-2.5 accent-cordel-wood cursor-pointer"
+                />
+                <span className={`text-[9px] uppercase font-bold ${isActive ? 'text-cordel-wood' : 'text-cordel-master-dark/60'}`}>
+                  {voice}
+                </span>
+              </label>
+            );
+          })}
+        </div>
+      </div>
+    );
   };
 
   if (loading) {
@@ -959,6 +1036,9 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
                                 </span>
                               </label>
                             )}
+
+                            {/* Voix Alfaia pour l'instrument principal */}
+                            {(mainInst || '').toLowerCase().includes('alfaia') && renderAlfaiaVoices(m, 'main')}
                           </div>
 
                           <div className="flex flex-col gap-1 pt-1 border-t border-dashed border-cordel-master-dark/10">
@@ -1005,6 +1085,9 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
                                 </span>
                               </label>
                             )}
+
+                            {/* Voix Alfaia pour le 2ème instrument historique */}
+                            {(m.instrumentSecondaire || '').toLowerCase().includes('alfaia') && renderAlfaiaVoices(m, 'sec')}
                           </div>
                         </div>
                       </td>
@@ -1053,6 +1136,8 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
                                     🔄 Poursuite ({mainInst})
                                   </span>
                                 </label>
+                                {/* Voix Alfaia si la poursuite concerne l'Alfaia */}
+                                {m.poursuiteInstrumentPrincipal !== false && (mainInst || '').toLowerCase().includes('alfaia') && renderAlfaiaVoices(m, 'poursuite')}
                               </div>
                             ) : null
                           )}
@@ -1103,6 +1188,9 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
                                   </span>
                                 </label>
                               )}
+
+                              {/* Voix Alfaia pour l'apprentissage de la saison */}
+                              {(m.instrumentSaison || '').toLowerCase().includes('alfaia') && renderAlfaiaVoices(m, 'saison')}
                             </div>
                           )}
                         </div>

@@ -4,9 +4,7 @@ import CordelButton from '../CordelButton';
 import { filterPublicPercussionInstruments } from '../../utils/tagUtils';
 
 const DEFAULT_INSTRUMENTS = [
-  "Alfaia Marcante",
-  "Alfaia Meião",
-  "Alfaia Repique",
+  "Alfaia",
   "Caixa",
   "Tarol",
   "Gonguê",
@@ -228,7 +226,7 @@ export default function OrientationAssignmentModal({
                 value={messageToMember}
                 onChange={(e) => setMessageToMember(e.target.value)}
                 disabled={saving}
-                placeholder="Ex: Bravo ! Tu es validé(e) à l'Alfaia Marcante cette année. Pense à vérifier tes morceaux sur l'application !"
+                placeholder="Ex: Bravo ! Tu es validé(e) à l'Alfaia cette année. Pense à vérifier tes morceaux sur l'application !"
                 className="theme-input w-full text-xs resize-none"
               />
             </div>
