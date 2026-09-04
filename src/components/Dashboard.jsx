@@ -18,7 +18,18 @@ import { useTerminologie } from '../hooks/useTerminologie';
 import InstrumentReminderBanner from './dashboard/InstrumentReminderBanner';
 import { usePresenceContext } from '../context/PresenceContext';
 
-export default function Dashboard({ user, profileData, onNavigateToTrombi, onNavigateToView, onSignOut, installPromptAvailable, onTriggerInstall, permissionsMatrice }) {
+export default function Dashboard({ 
+  user, 
+  profileData, 
+  onNavigateToTrombi, 
+  onNavigateToView, 
+  onSignOut, 
+  installPromptAvailable, 
+  onTriggerInstall, 
+  permissionsMatrice,
+  breakGlassActive = false,
+  tagsDisponibles = []
+}) {
   const { tRole } = useTerminologie();
   const { locale, toggleLanguage, t } = useTranslation();
   const { isPresenceEnabled } = usePresenceContext();
@@ -375,6 +386,9 @@ export default function Dashboard({ user, profileData, onNavigateToTrombi, onNav
               widgetContent = (
                 <WidgetForum 
                   groupId={profileData?.groupId} 
+                  profileData={profileData}
+                  breakGlassActive={breakGlassActive}
+                  tagsDisponibles={tagsDisponibles}
                   onOpen={(threadId) => onNavigateToView('forum', threadId ? { threadId } : null)} 
                 />
               );

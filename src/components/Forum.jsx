@@ -493,16 +493,38 @@ export default function Forum({
   // Référence pour mémoriser le salon d'origine avant ouverture d'un sujet
   const previousChannelRef = useRef(null);
 
+  // Ensemble des identifiants de salons autorisés pour le membre
+  const allowedChannelIdSet = useMemo(() => {
+    return new Set(channels.map(c => c.id));
+  }, [channels]);
+
+  // Discussions filtrées de manière étanche selon les salons autorisés en lecture pour le membre
+  const accessibleThreads = useMemo(() => {
+    if (breakGlassActive) return threads;
+    return threads.filter(t => {
+      if (t.channelId) {
+        return allowedChannelIdSet.has(t.channelId);
+      }
+      const ch = channels.find(c => c.name === (t.categorie || 'Général'));
+      if (ch) return allowedChannelIdSet.has(ch.id);
+      const catLower = (t.categorie || '').toLowerCase();
+      if (catLower === 'bureau') return false;
+      return true;
+    });
+  }, [threads, allowedChannelIdSet, channels, breakGlassActive]);
+
   // Synchronisation de l'URL et de l'historique pour le routage des discussions
   useEffect(() => {
     const handlePopState = (event) => {
       const searchParams = new URLSearchParams(window.location.search);
       const targetThreadId = searchParams.get('threadId');
       
-      if (targetThreadId && threads.length > 0) {
-        const matchedThread = threads.find(t => t.id === targetThreadId);
+      if (targetThreadId && accessibleThreads.length > 0) {
+        const matchedThread = accessibleThreads.find(t => t.id === targetThreadId);
         if (matchedThread) {
           setSelectedThread(matchedThread);
+        } else {
+          setSelectedThread(null);
         }
       } else {
         if (selectedThread) {
@@ -521,28 +543,28 @@ export default function Forum({
     handlePopState();
 
     return () => window.removeEventListener('popstate', handlePopState);
-  }, [threads, selectedThread]);
+  }, [accessibleThreads, selectedThread]);
 
   const activeChannelThreads = useMemo(() => {
     if (!activeChannelId) return [];
     const activeChan = channels.find(c => c.id === activeChannelId);
-    return threads.filter(t => {
+    return accessibleThreads.filter(t => {
       if (t.channelId) return t.channelId === activeChannelId;
       if (activeChan && activeChan.name === (t.categorie || 'Général')) return true;
       return false;
     });
-  }, [threads, activeChannelId, channels]);
+  }, [accessibleThreads, activeChannelId, channels]);
 
   // Carte des statistiques de non-lus calculée en cascade pour l'arborescence des salons
   const channelStatsMap = useMemo(() => {
-    return getAllChannelsUnreadStats(channels, threads, user?.uid, profileData?.readThreads);
-  }, [channels, threads, user?.uid, profileData?.readThreads]);
+    return getAllChannelsUnreadStats(channels, accessibleThreads, user?.uid, profileData?.readThreads);
+  }, [channels, accessibleThreads, user?.uid, profileData?.readThreads]);
 
   // Action globale pour acquitter tous les sujets de la section courante
   const handleMarkAllAsRead = useCallback(async () => {
-    if (!user?.uid || !threads || threads.length === 0) return;
+    if (!user?.uid || !accessibleThreads || accessibleThreads.length === 0) return;
 
-    let targetThreads = threads;
+    let targetThreads = accessibleThreads;
     if (activeChannelId) {
       const getDescendantIds = (cId) => {
         const kids = channels.filter(c => c.parentId === cId);
@@ -551,7 +573,7 @@ export default function Forum({
       const scopeIds = new Set(getDescendantIds(activeChannelId));
       const activeChan = channels.find(c => c.id === activeChannelId);
 
-      targetThreads = threads.filter(t => {
+      targetThreads = accessibleThreads.filter(t => {
         if (t.channelId) return scopeIds.has(t.channelId);
         if (activeChan && activeChan.name === (t.categorie || 'Général')) return true;
         return false;
@@ -572,7 +594,7 @@ export default function Forum({
     } catch (err) {
       console.error("Erreur lors de l'acquittement global :", err);
     }
-  }, [user?.uid, threads, activeChannelId, channels]);
+  }, [user?.uid, accessibleThreads, activeChannelId, channels]);
 
   const categoryBadges = useMemo(() => ({
     Général: 'ocre',
@@ -616,7 +638,7 @@ export default function Forum({
 
   // Retrouver la discussion sélectionnée dans l'état synchronisé pour avoir les messages en temps réel
   const activeThread = selectedThread
-    ? threads.find(t => t.id === selectedThread.id) || selectedThread
+    ? accessibleThreads.find(t => t.id === selectedThread.id) || selectedThread
     : null;
 
   const handleSelectThread = useCallback((thread, originChannelId = null) => {
@@ -696,7 +718,7 @@ export default function Forum({
         user={user} 
         profileData={profileData} 
         channels={channels}
-        allThreads={threads}
+        allThreads={accessibleThreads}
         allUsers={Object.values(usersMap)}
         breakGlassActive={breakGlassActive}
         tagsDisponibles={tagsDisponibles}
@@ -865,7 +887,7 @@ export default function Forum({
                     key={ch.id}
                     channel={ch}
                     channels={channels}
-                    allThreads={threads}
+                    allThreads={accessibleThreads}
                     activeChannelId={activeChannelId}
                     onSelectChannel={handleSelectChannel}
                     onSelectThread={handleSelectThread}

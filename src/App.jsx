@@ -1826,6 +1826,8 @@ export default function App() {
                 installPromptAvailable={installPromptAvailable}
                 onTriggerInstall={triggerInstallPrompt}
                 permissionsMatrice={permissionsMatrice}
+                breakGlassActive={breakGlassActive}
+                tagsDisponibles={tagsDisponibles}
               />
             )}
             </ErrorBoundary>

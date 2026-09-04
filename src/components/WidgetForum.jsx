@@ -1,28 +1,62 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { collection, query, where, onSnapshot, limit } from 'firebase/firestore';
 import { db } from '../firebase';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
 import { XiloChat, XiloMegaphone } from './XiloIcons';
 import { useTranslation } from './LanguageContext';
+import { canUserReadForumChannel } from '../utils/permissionUtils';
+import { resolveEffectiveUserTags } from '../utils/tagUtils';
 
-export default function WidgetForum({ groupId, onOpen }) {
+export default function WidgetForum({ groupId, profileData, breakGlassActive = false, tagsDisponibles = [], onOpen }) {
   const { t } = useTranslation();
   const [threads, setThreads] = useState([]);
-  const [threadCount, setThreadCount] = useState(0);
+  const [channels, setChannels] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // Synchronisation des salons du groupe pour vérifier les droits d'accès
+  useEffect(() => {
+    if (!groupId) {
+      setChannels([]);
+      return;
+    }
+    const channelsRef = collection(db, 'forum_channels');
+    const qChan = query(channelsRef, where('groupId', '==', groupId));
+    const unsub = onSnapshot(qChan, (snap) => {
+      const list = [];
+      snap.forEach(d => list.push({ id: d.id, ...d.data() }));
+      setChannels(list);
+    }, (err) => {
+      console.error("WidgetForum - Erreur chargement salons :", err);
+    });
+    return () => unsub();
+  }, [groupId]);
+
+  const effectiveUserTags = useMemo(() => {
+    return resolveEffectiveUserTags(profileData?.tags || [], tagsDisponibles);
+  }, [profileData?.tags, tagsDisponibles]);
+
+  const allowedChannelIds = useMemo(() => {
+    if (breakGlassActive) return null;
+    const ids = new Set();
+    channels.forEach(ch => {
+      if (canUserReadForumChannel(ch, profileData, tagsDisponibles, effectiveUserTags, breakGlassActive)) {
+        ids.add(ch.id);
+      }
+    });
+    return ids;
+  }, [channels, profileData, tagsDisponibles, effectiveUserTags, breakGlassActive]);
 
   useEffect(() => {
     if (!groupId) {
       setThreads([]);
-      setThreadCount(0);
       setLoading(false);
       return;
     }
 
     setLoading(true);
     const forumRef = collection(db, 'forum');
-    const q = query(forumRef, where('groupId', '==', groupId), limit(20));
+    const q = query(forumRef, where('groupId', '==', groupId), limit(30));
 
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
       const fetchedThreads = [];
@@ -32,8 +66,6 @@ export default function WidgetForum({ groupId, onOpen }) {
           ...doc.data()
         });
       });
-
-      setThreadCount(fetchedThreads.length);
 
       if (fetchedThreads.length > 0) {
         // Trier by derniereModification descending (most recent first)
@@ -51,7 +83,25 @@ export default function WidgetForum({ groupId, onOpen }) {
     return () => unsubscribe();
   }, [groupId]);
 
-  const recentThreads = threads.slice(0, 3);
+  // Discussions filtrées selon les permissions de salon du membre
+  const visibleThreads = useMemo(() => {
+    if (breakGlassActive || !allowedChannelIds) return threads;
+    return threads.filter(t => {
+      if (t.channelId) {
+        return allowedChannelIds.has(t.channelId);
+      }
+      const ch = channels.find(c => c.name === (t.categorie || 'Général'));
+      if (ch) {
+        return allowedChannelIds.has(ch.id);
+      }
+      const catLower = (t.categorie || '').toLowerCase();
+      if (catLower === 'bureau') return false;
+      return true;
+    });
+  }, [threads, allowedChannelIds, channels, breakGlassActive]);
+
+  const recentThreads = visibleThreads.slice(0, 3);
+  const displayCount = visibleThreads.length;
 
   const formatDateShort = (dateStr) => {
     if (!dateStr) return '';
@@ -80,7 +130,7 @@ export default function WidgetForum({ groupId, onOpen }) {
             </div>
             <div>
               <h3 className="text-xs uppercase font-black tracking-wider text-cordel-wood flex items-center gap-1.5">
-                {t('widgetForum.title') || "Porte-Voix"} <span className="opacity-60 text-[10px] font-bold">({threadCount} {t('widgetForum.subjectCountLabel') || 'sujet'}{threadCount > 1 ? 's' : ''})</span>
+                {t('widgetForum.title') || "Porte-Voix"} <span className="opacity-60 text-[10px] font-bold">({displayCount} {t('widgetForum.subjectCountLabel') || 'sujet'}{displayCount > 1 ? 's' : ''})</span>
               </h3>
               <p className="text-[9px] font-semibold text-cordel-master-dark/70">
                 {t('widgetForum.subtitle') || "Dernières discussions & sujets de la communauté"}

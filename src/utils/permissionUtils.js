@@ -329,9 +329,11 @@ export function canAccessTabPermission(tabId, poleId, profileData, permissionsMa
 /**
  * Vérifie si l'utilisateur possède les privilèges d'administration ou de modération pour le Forum / Porte-voix.
  * Sont reconnus comme modérateurs/administrateurs :
- * 1. Rôles système : 'mestre', 'admin', 'super-admin', 'bureau', 'ca', ou isSystemAdmin === true.
+ * 1. Rôles système : 'mestre', 'admin', 'super-admin', ou isSystemAdmin === true.
  * 2. Étiquettes explicites de modération : 'Modérateur', 'Modérateur Forum', 'Gestionnaire Porte-voix', 'Porte-voix'.
- * 3. Étiquettes de direction / présidence : contenant 'bureau', 'président', 'présidente', 'présidence', 'direction', 'ca'.
+ * 3. Étiquettes de direction / présidence : 'bureau', 'président', 'présidente', 'présidence', 'direction'.
+ *
+ * NOTE : Le statut 'CA' (Conseil d'Administration) ne confère pas de modération globale du forum.
  *
  * @param {Object} profileData Profil de l'utilisateur
  * @returns {boolean} true si le membre est modérateur ou administrateur
@@ -345,7 +347,6 @@ export function isUserModeratorOrAdmin(profileData) {
     role === 'admin' ||
     role === 'super-admin' ||
     role === 'bureau' ||
-    role === 'ca' ||
     profileData.isSystemAdmin === true
   ) {
     return true;
@@ -364,7 +365,6 @@ export function isUserModeratorOrAdmin(profileData) {
     'présidente',
     'présidence',
     'direction',
-    'ca',
     'admin'
   ];
 
@@ -373,8 +373,13 @@ export function isUserModeratorOrAdmin(profileData) {
 
 /**
  * Vérifie si le rôle ou les étiquettes du membre correspondent à la liste des rôles/étiquettes autorisés d'un salon.
- * Gère les équivalences administratives (ex: 'admin' ou badge 'Présidente' correspond à 'bureau'),
- * la recherche insensible à la casse et la résolution d'étiquettes via tagsAvailable.
+ *
+ * Respecte strictement la hiérarchie associative :
+ * 1. Salon 'all' : public à tous les membres.
+ * 2. Salon 'bureau' : STRICTEMENT réservé aux membres du Bureau (badges 'Bureau', 'Président', 'Présidente',
+ *    'Trésorier', 'Secrétaire'...). Les membres du CA non-membres du Bureau sont STRICTEMENT EXCLUS.
+ * 3. Salon 'ca' : accessible aux membres du CA ('ca') et aux membres du Bureau (le Bureau faisant partie du CA).
+ * 4. Les autres salons respectent leurs étiquettes et héritages respectifs.
  *
  * @param {Array<string>} allowedList Liste des identifiants autorisés ('all', 'membre', 'bureau', 'ca', id de tag...)
  * @param {string} userRole Rôle système du membre
@@ -388,37 +393,39 @@ export function checkUserAccessToList(allowedList = ['all'], userRole = 'membre'
 
   const cleanRole = (userRole || '').toLowerCase();
 
-  // Correspondance directe de rôle système
-  if (allowedList.some(r => String(r).toLowerCase() === cleanRole)) return true;
-
   // Normalisation des étiquettes utilisateur en minuscules
   const userTagStrs = (userTags || []).map(t => {
     const raw = typeof t === 'string' ? t : getTagId(t);
     return (raw || '').toLowerCase();
   }).filter(Boolean);
 
-  const BUREAU_KEYWORDS = ['bureau', 'président', 'présidente', 'présidence', 'direction', 'ca'];
-  const hasBureauKeywordTag = userTagStrs.some(t => BUREAU_KEYWORDS.some(kw => t.includes(kw)));
-  const isSystemAdminRole = cleanRole === 'admin' || cleanRole === 'super-admin' || cleanRole === 'mestre';
+  // Mots-clés stricts du Bureau (exécutif restreint) : NE JAMAIS INCLURE 'ca' !
+  const BUREAU_KEYWORDS = ['bureau', 'président', 'présidente', 'présidence', 'trésorier', 'trésorière', 'secrétaire', 'direction'];
+  const hasBureauTag = userTagStrs.some(t => BUREAU_KEYWORDS.some(kw => t.includes(kw))) || cleanRole === 'bureau';
 
-  // Correspondance pour 'bureau' ou 'ca' :
-  // Si le salon autorise 'bureau' ou 'ca', les rôles admin/mestre ainsi que les badges de présidence/bureau sont autorisés
-  const allowsBureauOrCa = allowedList.some(r => {
-    const lower = String(r).toLowerCase();
-    return lower === 'bureau' || lower === 'ca' || lower === 'direction';
-  });
+  // Mots-clés stricts du CA (Conseil d'Administration délibérant)
+  const CA_KEYWORDS = ['ca', 'conseil d\'administration', 'administrateur', 'administratrice'];
+  const hasCaTag = userTagStrs.some(t => CA_KEYWORDS.some(kw => t.includes(kw))) || cleanRole === 'ca';
 
-  if (allowsBureauOrCa && (isSystemAdminRole || hasBureauKeywordTag)) {
-    return true;
+  // 1. Règle pour le salon 'Bureau' :
+  // Seuls les membres possédant un badge du Bureau (Présidence, Bureau, Trésorerie, Secrétariat) sont autorisés.
+  // Les membres du CA non-membres du bureau n'ont PAS accès au salon Bureau !
+  const isBureauChannel = allowedList.some(r => String(r).toLowerCase() === 'bureau');
+  if (isBureauChannel) {
+    return hasBureauTag;
   }
 
-  // Si le salon autorise 'admin', les admins ou badges de direction sont autorisés
-  const allowsAdmin = allowedList.some(r => String(r).toLowerCase() === 'admin');
-  if (allowsAdmin && (isSystemAdminRole || hasBureauKeywordTag)) {
-    return true;
+  // 2. Règle pour le salon 'CA' :
+  // Accessible aux membres du CA et aux membres du Bureau (qui font partie du CA).
+  const isCaChannel = allowedList.some(r => String(r).toLowerCase() === 'ca');
+  if (isCaChannel) {
+    return hasCaTag || hasBureauTag;
   }
 
-  // Vérification de chaque entrée de la liste autorisée par rapport aux étiquettes du membre
+  // 3. Correspondance directe de rôle système (pour les autres salons)
+  if (allowedList.some(r => String(r).toLowerCase() === cleanRole)) return true;
+
+  // 4. Vérification générique pour les autres salons (pupitres, groupes de travail...)
   return allowedList.some(allowedItem => {
     const targetLower = String(allowedItem).toLowerCase();
 
@@ -446,6 +453,9 @@ export function checkUserAccessToList(allowedList = ['all'], userRole = 'membre'
         if (targetObj.id && tagLower === String(targetObj.id).toLowerCase()) return true;
         if (targetObj.nomM && tagLower === String(targetObj.nomM).toLowerCase()) return true;
         if (targetObj.nomF && tagLower === String(targetObj.nomF).toLowerCase()) return true;
+        if (Array.isArray(targetObj.inheritsFrom) && targetObj.inheritsFrom.some(p => String(getTagId(p)).toLowerCase() === tagLower)) {
+          return true;
+        }
       }
 
       return false;
@@ -473,17 +483,17 @@ export function canUserWriteInForumChannel(
   if (!channel) return true;
   if (breakGlassActive) return true;
 
+  // L'utilisateur doit d'abord obligatoirement avoir accès en lecture au salon pour pouvoir y écrire
+  if (!canUserReadForumChannel(channel, profileData, tagsDisponibles, effectiveUserTags, breakGlassActive)) {
+    return false;
+  }
+
   const isModOrAdmin = isUserModeratorOrAdmin(profileData);
 
   // Si le salon est réservé en lecture seule pour les membres (annonces, informations officielles),
   // seuls les modérateurs et administrateurs peuvent y publier ou répondre.
   if (channel.readOnlyForMembers === true) {
     return isModOrAdmin;
-  }
-
-  // Si l'utilisateur est modérateur ou administrateur, il a le droit d'écrire dans les salons où il a accès
-  if (isModOrAdmin) {
-    return true;
   }
 
   const userRole = profileData?.role || 'membre';
@@ -514,18 +524,33 @@ export function canUserReadForumChannel(
 ) {
   if (!channel) return true;
   if (breakGlassActive) return true;
-  if (channel.isTransparent === true) return true;
 
-  const readList = channel.readRoles || channel.allowedRoles || channel.allowedTags || ['all'];
-  if (!readList || readList.length === 0 || readList.includes('all')) return true;
+  const channelNameLower = (channel.name || '').toLowerCase().trim();
+  const channelIdLower = (channel.id || '').toLowerCase().trim();
 
   const userRole = profileData?.role || 'membre';
   const userTags = (effectiveUserTags && effectiveUserTags.length > 0)
     ? effectiveUserTags
     : (profileData?.tags || []);
 
+  // Sécurité absolue pour le salon Bureau : toujours strictement restreint aux membres du Bureau
+  if (channelNameLower === 'bureau' || channelIdLower.endsWith('_bureau') || channelIdLower === 'bureau') {
+    return checkUserAccessToList(['bureau'], userRole, userTags, tagsDisponibles);
+  }
+
+  // Sécurité pour le salon CA : restreint aux membres du CA et du Bureau
+  if (channelNameLower === 'ca' || channelIdLower.endsWith('_ca') || channelIdLower === 'ca') {
+    return checkUserAccessToList(['ca'], userRole, userTags, tagsDisponibles);
+  }
+
+  if (channel.isTransparent === true) return true;
+
+  const readList = channel.readRoles || channel.allowedRoles || channel.allowedTags || ['all'];
+  if (!readList || readList.length === 0 || readList.includes('all')) return true;
+
   return checkUserAccessToList(readList, userRole, userTags, tagsDisponibles);
 }
+
 
 
 

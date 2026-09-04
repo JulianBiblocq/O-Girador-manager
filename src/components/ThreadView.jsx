@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { doc, onSnapshot, updateDoc, arrayUnion, collection, addDoc, runTransaction } from 'firebase/firestore';
+import { doc, onSnapshot, updateDoc, arrayUnion, collection, addDoc, runTransaction, getDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { getFirstUnreadIndex } from '../utils/forumUnreadUtils';
 import CordelCard from './CordelCard';
@@ -12,7 +12,7 @@ import MoveReplyModal from './MoveReplyModal';
 import PollDisplay from './forum/PollDisplay';
 import { useForumModeration } from '../hooks/useForumModeration';
 import { getTagId, resolveEffectiveUserTags } from '../utils/tagUtils';
-import { isUserModeratorOrAdmin, canUserWriteInForumChannel } from '../utils/permissionUtils';
+import { isUserModeratorOrAdmin, canUserWriteInForumChannel, canUserReadForumChannel } from '../utils/permissionUtils';
 import { usePresenceContext } from '../context/PresenceContext';
 import useConfirm from '../hooks/useConfirm';
 import EmojiPickerPopover, { EmojiQuickRow } from './forum/EmojiPickerPopover';
@@ -364,12 +364,83 @@ export default function ThreadView({
     }
   };
 
-  const threadChannel = channels.find(c => c.id === thread?.channelId);
+  // Résolution du salon du sujet et vérification des droits
+  const [channelData, setChannelData] = useState(null);
+
+  useEffect(() => {
+    if (!thread) {
+      setChannelData(null);
+      return;
+    }
+
+    // 1. Chercher d'abord dans les salons autorisés passés en props
+    const matched = channels.find(c => c.id === thread.channelId);
+    if (matched) {
+      setChannelData(matched);
+      return;
+    }
+
+    // 2. Si non trouvé dans les salons passés mais thread.channelId existe, récupérer le doc Firestore
+    if (thread.channelId) {
+      getDoc(doc(db, 'forum_channels', thread.channelId))
+        .then((snap) => {
+          if (snap.exists()) {
+            setChannelData({ id: snap.id, ...snap.data() });
+          } else {
+            // Salon privé introuvable ou supprimé
+            setChannelData({ id: thread.channelId, readRoles: ['bureau'] });
+          }
+        })
+        .catch(() => {
+          setChannelData({ id: thread.channelId, readRoles: ['bureau'] });
+        });
+    } else {
+      setChannelData(null);
+    }
+  }, [thread?.channelId, channels, thread]);
+
+  const threadChannel = channelData || channels.find(c => c.id === thread?.channelId);
   const isModeratorOrAdmin = isUserModeratorOrAdmin(profileData);
+
+  // Vérifie si l'accès en lecture est formellement interdit pour ce sujet
+  const isAccessForbidden = useMemo(() => {
+    if (breakGlassActive) return false;
+    if (!thread) return false;
+
+    const catLower = (thread.categorie || '').toLowerCase();
+    const chanIdLower = (thread.channelId || '').toLowerCase();
+
+    // Si le sujet est étiqueté Bureau par sa catégorie ou son identifiant de salon
+    if (catLower === 'bureau' || chanIdLower.includes('bureau')) {
+      const userTags = (activeEffectiveUserTags || []).map(t => String(typeof t === 'string' ? t : (t.id || t.nomM || '')).toLowerCase());
+      const cleanRole = (profileData?.role || '').toLowerCase();
+      const BUREAU_KEYWORDS = ['bureau', 'président', 'présidente', 'présidence', 'trésorier', 'trésorière', 'secrétaire', 'direction'];
+      const hasBureauTag = userTags.some(t => BUREAU_KEYWORDS.some(kw => t.includes(kw))) || cleanRole === 'bureau';
+      if (!hasBureauTag) return true;
+    }
+
+    // Si le salon a été résolu, vérifier avec canUserReadForumChannel
+    if (threadChannel) {
+      return !canUserReadForumChannel(
+        threadChannel,
+        profileData,
+        activeTagsDisponibles,
+        activeEffectiveUserTags,
+        breakGlassActive
+      );
+    }
+
+    // Si le sujet a un channelId spécifique absent de tous les salons autorisés du membre
+    if (thread.channelId && channels.length > 0 && !channels.some(c => c.id === thread.channelId)) {
+      return true;
+    }
+
+    return false;
+  }, [thread, threadChannel, channels, breakGlassActive, profileData, activeTagsDisponibles, activeEffectiveUserTags]);
 
   // Vérifie si le membre possède les droits de réponse/publication dans ce salon
   const isReadOnly = useMemo(() => {
-    if (!thread) return true;
+    if (!thread || isAccessForbidden) return true;
     return !canUserWriteInForumChannel(
       threadChannel,
       profileData,
@@ -377,7 +448,7 @@ export default function ThreadView({
       activeEffectiveUserTags,
       breakGlassActive
     );
-  }, [thread, threadChannel, profileData, activeTagsDisponibles, activeEffectiveUserTags, breakGlassActive]);
+  }, [thread, isAccessForbidden, threadChannel, profileData, activeTagsDisponibles, activeEffectiveUserTags, breakGlassActive]);
   
   const messagesEndRef = useRef(null);
 
@@ -721,6 +792,12 @@ export default function ThreadView({
       ) : !thread ? (
         <CordelCard variant="default" className="p-8 text-center select-none">
           <p className="text-xs opacity-75 font-semibold">{t('forum.notFound')}</p>
+        </CordelCard>
+      ) : isAccessForbidden ? (
+        <CordelCard variant="default" className="p-8 text-center select-none">
+          <p className="text-xs font-black text-cordel-wood">
+            🔒 Ce salon est privé et réservé à un groupe spécifique. Vous n'avez pas les droits d'accès requis pour consulter cette discussion.
+          </p>
         </CordelCard>
       ) : (
         <div className="flex flex-col gap-4 flex-1">
