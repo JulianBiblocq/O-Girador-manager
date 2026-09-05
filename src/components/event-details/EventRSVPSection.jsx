@@ -312,8 +312,8 @@ export default function EventRSVPSection({
                           </div>
                         </div>
 
-                        {/* Instrument Selector for Family Member */}
-                        {mResp.status !== 'absent' && (
+                        {/* Instrument Selector for Family Member (conditionné à includesPercussion) */}
+                        {mResp.status !== 'absent' && (event.includesPercussion !== false) && (
                           <div className="flex items-center gap-2 pl-6 text-[10px] select-none">
                             <span className="font-bold text-cordel-master-dark">Instrument :</span>
                             <select
@@ -443,7 +443,7 @@ export default function EventRSVPSection({
             )}
 
             {/* Conditional Instrument Choice Options */}
-            {status === 'present' && (isInstrumentLocked || agendaRequireInstrument || (profileData?.instrumentsJoues && profileData.instrumentsJoues.length > 1)) && (
+            {status === 'present' && (event.includesPercussion !== false) && (isInstrumentLocked || agendaRequireInstrument || (profileData?.instrumentsJoues && profileData.instrumentsJoues.length > 1)) && (
               <div className="flex flex-col gap-4 border-t border-dashed border-cordel-master-dark/20 pt-4 mt-2">
                 
                 {/* Choice of Instrument for Polyvalents or locked notice */}
@@ -684,7 +684,7 @@ export default function EventRSVPSection({
         )}
 
         {/* Grouped by instrument for prestation, repetition, stage, atelier */}
-        {(event.type === 'prestation' || event.type === 'repetition' || event.type === 'stage' || event.type === 'atelier') ? (
+        {(event.includesPercussion !== false) ? (
           Object.keys(presentsByInstrument).length === 0 ? (
             <p className="text-[11px] italic opacity-60">Aucun membre présent pour le moment.</p>
           ) : (
@@ -994,7 +994,7 @@ export default function EventRSVPSection({
           </div>
         )}
 
-        {isAuthorized && (event.inscriptions || []).filter(i => i.status === 'present').length > 0 && (
+        {isAuthorized && (event.includesPercussion !== false) && (event.inscriptions || []).filter(i => i.status === 'present').length > 0 && (
           <div className="mt-4 pt-4 border-t border-dashed border-cordel-master-dark/15 text-left flex flex-col gap-3">
             <h5 className="font-bold text-[10px] uppercase tracking-widest text-cordel-wood mb-1">
               🛠️ Gestion des instruments par Mestre

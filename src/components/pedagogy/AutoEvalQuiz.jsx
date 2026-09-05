@@ -5,12 +5,13 @@ import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 import SeloAxeStamp from '../SeloAxeStamp';
 import { generateQuizFromSheet, generateQuizFromSong, generateQuizFromSequencerJson, generateQuizFromInstrumentModel } from '../../utils/quizGenerator';
+import { normalizePartSteps } from '../../utils/workshopProjectionUtils';
 import PatternVisualizer from './PatternVisualizer';
 import FirestoreMediaRenderer from '../student/FirestoreMediaRenderer';
 import { useTranslation } from '../LanguageContext';
 import useMestreSignals from '../../hooks/useMestreSignals';
 
-export default function AutoEvalQuiz({ sheetData, allSheetsData, profileData, onClose, customQuizData, customQuizId, customQuizTitle, songData, allSongsData, instrumentModelData, allModelsData, qcmGlobalConfig, isSong, rhythms, sequenceurUrl, parsedSequencerJson }) {
+export default function AutoEvalQuiz({ sheetData, allSheetsData, profileData, onClose, customQuizData, customQuizId, customQuizTitle, songData, allSongsData, instrumentModelData, allModelsData, qcmGlobalConfig, isSong, rhythms, sequenceurUrl, parsedSequencerJson, targetPartId = null, targetStepIndex = null }) {
   const { t } = useTranslation();
   const { signals: mestreSignals } = useMestreSignals();
   const [questions, setQuestions] = useState([]);
@@ -53,13 +54,13 @@ export default function AutoEvalQuiz({ sheetData, allSheetsData, profileData, on
       const generated = generateQuizFromSong(songData, allSongsData, allSheetsData, { ...qcmGlobalConfig, t });
       setQuestions(generated);
     } else if (instrumentModelData) {
-      const generated = generateQuizFromInstrumentModel(instrumentModelData, allModelsData, { limit: 10, t });
+      const generated = generateQuizFromInstrumentModel(instrumentModelData, allModelsData, { limit: 10, targetPartId, targetStepIndex, t });
       setQuestions(generated);
     } else {
       const generated = generateQuizFromSheet(sheetData, allSheetsData, allSongsData, { difficulty: qcmGlobalConfig?.difficulty || 'medium', t });
       setQuestions(generated);
     }
-  }, [sheetData, allSheetsData, customQuizData, parsedSequencerJson, isSong, songData, allSongsData, instrumentModelData, allModelsData, qcmGlobalConfig, customQuizTitle, mestreSignals]);
+  }, [sheetData, allSheetsData, customQuizData, parsedSequencerJson, isSong, songData, allSongsData, instrumentModelData, allModelsData, qcmGlobalConfig, customQuizTitle, mestreSignals, targetPartId, targetStepIndex, t]);
 
   if (questions.length === 0) {
     const isAdmin = profileData?.isSystemAdmin || profileData?.role === 'super-admin' || profileData?.role === 'mestre' || profileData?.role === 'admin';
@@ -102,9 +103,30 @@ export default function AutoEvalQuiz({ sheetData, allSheetsData, profileData, on
   const finishQuiz = async () => {
     setIsFinished(true);
     const finalScore = score + (selectedChoice?.isCorrect && !showFeedback ? 1 : 0);
-    const percentage = finalScore / questions.length;
-    const targetId = customQuizId || (isSong ? songData?.id : (instrumentModelData ? instrumentModelData.id : sheetData?.id));
-    const targetTitle = instrumentModelData?.nom || sheetData?.titre || songData?.titre || customQuizTitle || 'Atelier';
+    const percentage = questions.length > 0 ? finalScore / questions.length : 0;
+    const isAtelier = !!instrumentModelData;
+    const targetId = customQuizId || (isSong ? songData?.id : (isAtelier ? instrumentModelData.id : sheetData?.id));
+    const targetTitle = isAtelier ? (instrumentModelData?.nom || 'Atelier') : (sheetData?.titre || songData?.titre || customQuizTitle || 'Atelier');
+
+    // Résolution précise des libellés de pièce et d'étape pour les quiz d'atelier
+    let resolvedPartTitle = null;
+    let resolvedStepTitle = null;
+
+    if (isAtelier && targetPartId) {
+      const p = (instrumentModelData.parts || []).find((part, idx) => 
+        (part.id && part.id === targetPartId) || `part_${idx}` === targetPartId || part.nom === targetPartId
+      );
+      if (p) {
+        resolvedPartTitle = p.nom;
+        if (targetStepIndex !== undefined && targetStepIndex !== null) {
+          const steps = normalizePartSteps(p);
+          const s = steps[Number(targetStepIndex)];
+          if (s) {
+            resolvedStepTitle = s.titre || `Étape ${Number(targetStepIndex) + 1}`;
+          }
+        }
+      }
+    }
 
     // 1. Enregistrement systématique de la tentative dans users/{uid}.quizHistory
     if (profileData?.uid) {
@@ -112,16 +134,28 @@ export default function AutoEvalQuiz({ sheetData, allSheetsData, profileData, on
         const userRef = doc(db, 'users', profileData.uid);
         const historyEntry = {
           date: new Date().toISOString(),
-          theme: instrumentModelData ? 'atelier' : (sheetData?.themeCulture || (isSong ? 'toadas' : 'pedagogie')),
+          theme: isAtelier ? 'atelier' : (sheetData?.themeCulture || (isSong ? 'toadas' : 'pedagogie')),
           difficulty: qcmGlobalConfig?.difficulty || 'medium',
           score: finalScore,
           total: questions.length,
           targetId: targetId || null,
           targetTitle: targetTitle,
-          type: instrumentModelData ? 'instrument_model' : (isSong ? 'song' : 'sheet'),
+          type: isAtelier ? 'instrument_model' : (isSong ? 'song' : 'sheet'),
           passed: percentage >= 0.75,
           toadaId: isSong ? (songData?.id || null) : null
         };
+
+        // Enrichissement granulaire d'atelier (pièce, étape, granularité)
+        if (isAtelier) {
+          historyEntry.granularity = targetPartId 
+            ? (targetStepIndex !== undefined && targetStepIndex !== null ? 'step' : 'part') 
+            : 'model';
+          historyEntry.partId = targetPartId || null;
+          historyEntry.partTitle = resolvedPartTitle || null;
+          historyEntry.stepIndex = targetStepIndex ?? null;
+          historyEntry.stepTitle = resolvedStepTitle || null;
+        }
+
         await setDoc(userRef, { quizHistory: arrayUnion(historyEntry) }, { merge: true });
       } catch (err) {
         console.error("Erreur lors de l'enregistrement dans quizHistory :", err);
@@ -140,14 +174,27 @@ export default function AutoEvalQuiz({ sheetData, allSheetsData, profileData, on
           currentEvals = docSnap.data().evaluations;
         }
         
-        // On augmente le confort : si c'était vide -> pratique, si pratique -> alaise, etc.
-        let newLevel = 'pratique'; // 🌿
-        const currentLevel = currentEvals[targetId];
-        if (currentLevel === 'pratique') newLevel = 'alaise';
-        else if (currentLevel === 'alaise') newLevel = 'referent';
-        else if (currentLevel === 'referent') newLevel = 'referent';
+        // Calcul d'élévation du niveau de confort
+        const getElevatedLevel = (currentLevel) => {
+          if (currentLevel === 'pratique') return 'alaise';
+          if (currentLevel === 'alaise' || currentLevel === 'referent') return 'referent';
+          return 'pratique'; // 🌿 Palier initial
+        };
+
+        const updatedEvals = { ...currentEvals };
+
+        // 1. Clé principale du modèle (préserve la jauge globale de l'instrument ou de la fiche)
+        const currentGlobalLevel = currentEvals[targetId];
+        updatedEvals[targetId] = getElevatedLevel(currentGlobalLevel);
+
+        // 2. Clé composite si une pièce spécifique est évaluée
+        if (isAtelier && targetPartId) {
+          const compositeKey = `${instrumentModelData.id}__${targetPartId}`;
+          const currentPartLevel = currentEvals[compositeKey];
+          updatedEvals[compositeKey] = getElevatedLevel(currentPartLevel);
+        }
         
-        await setDoc(parcoursRef, { evaluations: { ...currentEvals, [targetId]: newLevel } }, { merge: true });
+        await setDoc(parcoursRef, { evaluations: updatedEvals }, { merge: true });
         setSavedSuccess(true);
       } catch (err) {
         console.error("Erreur de sauvegarde parcours quiz :", err);

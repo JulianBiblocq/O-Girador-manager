@@ -5,6 +5,8 @@ import { parseSequencerJson } from '../../utils/sequencerParser';
 import { generateQuizFromSheet, generateQuizFromInstrumentModel } from '../../utils/quizGenerator';
 import { useInstrumentModels } from '../../hooks/useInstrumentModels';
 import AutoEvalQuizContainer from '../student/AutoEvalQuizContainer';
+import AutoEvalQuiz from './AutoEvalQuiz';
+import AtelierModelPartsProgress from './AtelierModelPartsProgress';
 import QcmSequenceurBlindTest from './QcmSequenceurBlindTest';
 import DailyRevisionSession from './DailyRevisionSession';
 import ExamDashboard from './ExamDashboard';
@@ -272,6 +274,9 @@ export default function MonCarnetAisance({
 
   // État pour le quiz ciblé sur une Toada (onglet Chants)
   const [quizToadaId, setQuizToadaId] = useState(null);
+
+  // État pour le quiz d'atelier ciblé sur une pièce spécifique
+  const [targetedAtelierQuiz, setTargetedAtelierQuiz] = useState(null); // { model, partId, stepIndex }
 
   // Construction de l'URL du séquenceur avec paramètres
   const getSequencerUrl = (rhythm, bpm) => {
@@ -724,12 +729,34 @@ export default function MonCarnetAisance({
                   <ComfortBar itemId={fiche.id} evaluations={evaluations} handleSetEvaluation={handleSetEvaluation} comfortLevels={comfortLevels} />
                 </div>
 
+                {/* Suivi granulaire des pièces et nomenclature pour les modèles d'instruments */}
+                {fiche.isInstrumentModel && fiche.parts?.length > 0 && (
+                  <AtelierModelPartsProgress
+                    model={fiche}
+                    evaluations={evaluations}
+                    handleSetEvaluation={handleSetEvaluation}
+                    comfortLevels={comfortLevels}
+                    onLaunchPartQuiz={(target) => setTargetedAtelierQuiz(target)}
+                  />
+                )}
+
                 {/* Mini-quiz inline automatisé */}
                 <InlineQuiz fiche={fiche} allSheets={educationalSheets} allSongs={songs} allModels={instrumentModels} />
               </CordelCard>
             ))
           )}
         </div>
+      )}
+
+      {/* Modale de Quiz Atelier Granulaire (Pièce ou Étape) */}
+      {targetedAtelierQuiz && (
+        <AutoEvalQuiz
+          instrumentModelData={targetedAtelierQuiz.model}
+          targetPartId={targetedAtelierQuiz.partId || null}
+          targetStepIndex={targetedAtelierQuiz.stepIndex ?? null}
+          profileData={profileData}
+          onClose={() => setTargetedAtelierQuiz(null)}
+        />
       )}
     </div>
   );

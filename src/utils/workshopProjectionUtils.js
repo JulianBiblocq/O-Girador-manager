@@ -92,3 +92,113 @@ export function projectWorkshopBooklets(models = []) {
 
   return projectedBooklets;
 }
+
+/**
+ * Calcule la signalétique visuelle d'une étape d'usinage d'une pièce.
+ * Respecte strictement la charte de couleurs :
+ * - stepIndex < currentStepIndex : VERT (validé)
+ * - stepIndex === currentStepIndex :
+ *   - statutEtape === 'terminee' : VERT
+ *   - statutEtape === 'en_attente_controle' : AMBRE PULSE (⏳)
+ *   - sinon (en_cours) : OCRE / JAUNE (🛠️)
+ * - stepIndex > currentStepIndex : GRIS NEUTRE (à venir)
+ *
+ * @param {number} stepIndex - Index de l'étape testée (0-indexé)
+ * @param {number} currentStepIndex - Index de l'étape courante (0-indexé)
+ * @param {string} statutEtape - 'en_cours' | 'en_attente_controle' | 'terminee'
+ * @returns {{
+ *   status: 'validated' | 'waiting' | 'in_progress' | 'upcoming',
+ *   colorClass: string,
+ *   badgeClass: string,
+ *   icon: string,
+ *   label: string
+ * }}
+ */
+export function getStepSignal(stepIndex, currentStepIndex = 0, statutEtape = 'en_cours') {
+  const cStep = typeof currentStepIndex === 'number' ? currentStepIndex : (parseInt(currentStepIndex, 10) || 0);
+
+  // 1. Étape antérieure : validée
+  if (stepIndex < cStep) {
+    return {
+      status: 'validated',
+      colorClass: 'bg-emerald-700 text-white border-emerald-800',
+      badgeClass: 'bg-emerald-700/15 text-emerald-800 border-emerald-700/40 font-black',
+      icon: '✓',
+      label: 'Validée'
+    };
+  }
+
+  // 2. Étape courante
+  if (stepIndex === cStep) {
+    if (statutEtape === 'terminee') {
+      return {
+        status: 'validated',
+        colorClass: 'bg-emerald-700 text-white border-emerald-800',
+        badgeClass: 'bg-emerald-700/15 text-emerald-800 border-emerald-700/40 font-black',
+        icon: '✓',
+        label: 'Validée'
+      };
+    }
+    if (statutEtape === 'en_attente_controle') {
+      return {
+        status: 'waiting',
+        colorClass: 'bg-amber-500 text-white border-amber-600 animate-pulse',
+        badgeClass: 'bg-amber-100 text-amber-800 border-amber-400 font-black animate-pulse',
+        icon: '⏳',
+        label: 'À contrôler'
+      };
+    }
+    // En cours actif
+    return {
+      status: 'in_progress',
+      colorClass: 'bg-amber-600 text-white border-amber-700',
+      badgeClass: 'bg-amber-600/15 text-amber-800 border-amber-600/40 font-black',
+      icon: '🛠️',
+      label: 'En cours'
+    };
+  }
+
+  // 3. Étape ultérieure : à venir
+  return {
+    status: 'upcoming',
+    colorClass: 'bg-stone-200 text-stone-500 border-stone-300',
+    badgeClass: 'bg-stone-100 text-stone-600 border-stone-300',
+    icon: String(stepIndex + 1),
+    label: 'À venir'
+  };
+}
+
+/**
+ * Calcule le nombre exact d'étapes terminées pour une pièce.
+ * Règle : `${currentStepIndex}` tant que la pièce est en cours,
+ * et `${totalSteps}` uniquement quand statutEtape === 'terminee'.
+ *
+ * @param {number} totalSteps - Nombre total d'étapes
+ * @param {number} currentStepIndex - Index de l'étape active (0-indexé)
+ * @param {string} statutEtape - 'en_cours' | 'en_attente_controle' | 'terminee'
+ * @returns {number} Nombre d'étapes terminées
+ */
+export function getCompletedStepsCount(totalSteps, currentStepIndex = 0, statutEtape = 'en_cours') {
+  if (!totalSteps || totalSteps <= 0) return 0;
+  if (statutEtape === 'terminee') {
+    return totalSteps;
+  }
+  const cStep = typeof currentStepIndex === 'number' ? currentStepIndex : (parseInt(currentStepIndex, 10) || 0);
+  return Math.min(Math.max(0, cStep), totalSteps);
+}
+
+/**
+ * Formate le ratio textuel d'avancement des étapes.
+ * Affiche `${currentStepIndex} / ${totalEtapes} terminées` tant que la pièce est en cours,
+ * et `${totalEtapes} / ${totalEtapes} terminées` uniquement quand elle est marquée terminée.
+ *
+ * @param {number} totalSteps - Nombre total d'étapes
+ * @param {number} currentStepIndex - Index de l'étape active (0-indexé)
+ * @param {string} statutEtape - 'en_cours' | 'en_attente_controle' | 'terminee'
+ * @returns {string} Ratio textuel formaté
+ */
+export function getStepProgressRatio(totalSteps, currentStepIndex = 0, statutEtape = 'en_cours') {
+  const completed = getCompletedStepsCount(totalSteps, currentStepIndex, statutEtape);
+  return `${completed} / ${totalSteps} terminées`;
+}
+

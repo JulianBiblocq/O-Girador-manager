@@ -11,7 +11,8 @@ const { onDocumentCreated } = require("firebase-functions/v2/firestore");
 const { defineSecret } = require("firebase-functions/params");
 
 const { getApps, initializeApp } = require("firebase-admin/app");
-const { getFirestore, FieldValue } = require("firebase-admin/firestore");
+const crypto = require("crypto");
+const { getFirestore, FieldValue, Timestamp } = require("firebase-admin/firestore");
 const { getMessaging } = require("firebase-admin/messaging");
 const { getAuth } = require("firebase-admin/auth");
 
@@ -720,12 +721,13 @@ exports.helloAssoWebhook = onRequest(
       const eventType = body.eventType || "Unknown";
       const data = body.data || {};
       const payer = data.payer || {};
-      const payerEmail = (payer.email || "").trim().toLowerCase();
-      const payerFirstName = payer.firstName || "";
-      const payerLastName = payer.lastName || "";
-      // Les montants HelloAsso sont en centimes
-      const amountCents = data.amount || 0;
-      const amountEuros = amountCents / 100;
+      const payerEmail = (payer.email || (data.order && data.order.payer && data.order.payer.email) || "").trim().toLowerCase();
+      const payerFirstName = payer.firstName || (data.order && data.order.payer && data.order.payer.firstName) || "";
+      const payerLastName = payer.lastName || (data.order && data.order.payer && data.order.payer.lastName) || "";
+
+      // Calcul résilient du montant (bannir tout risque de NaN pour les objets ou entiers)
+      const rawAmount = typeof data.amount === "object" ? (data.amount?.total || 0) : (data.amount || 0);
+      const amountEuros = rawAmount / 100;
       const items = data.items || [];
       const helloAssoOrderId = data.id || data.order?.id || null;
       const paymentDate = data.date || new Date().toISOString();
@@ -740,7 +742,7 @@ exports.helloAssoWebhook = onRequest(
         itemsCount: items.length
       });
 
-      // Vérification optionnelle de la clé de signature HelloAsso
+      // Vérification sécurisée de la signature HelloAsso (directe ou HMAC-SHA256)
       const db = getFirestore();
       try {
         const credsDoc = await db
@@ -750,17 +752,28 @@ exports.helloAssoWebhook = onRequest(
 
         if (credsDoc.exists) {
           const storedKey = credsDoc.data().helloAssoSignatureKey || "";
-          // Si une clé est configurée ET que HelloAsso envoie un header de vérification, on compare
           const receivedKey = req.headers["x-helloasso-key"] || req.headers["x-helloasso-signature"] || "";
-          if (storedKey && receivedKey && storedKey !== receivedKey) {
-            console.warn("helloAssoWebhook - Clé de signature invalide pour le groupe", groupId);
-            return res.status(403).json({
-              error: "Clé de signature invalide."
-            });
+          if (storedKey && receivedKey) {
+            const isDirectMatch = storedKey === receivedKey;
+            let isHmacMatch = false;
+            try {
+              const hmac = crypto.createHmac("sha256", storedKey);
+              const computedHash = hmac.update(req.rawBody || JSON.stringify(req.body)).digest("hex");
+              isHmacMatch = computedHash.toLowerCase() === receivedKey.toLowerCase();
+            } catch (hmacErr) {
+              console.warn("helloAssoWebhook - Erreur calcul HMAC :", hmacErr.message);
+            }
+
+            if (!isDirectMatch && !isHmacMatch) {
+              console.warn("helloAssoWebhook - Signature invalide pour le groupe", groupId);
+              return res.status(403).json({
+                error: "Signature de notification invalide."
+              });
+            }
           }
         }
       } catch (credErr) {
-        // En cas d'erreur de lecture des credentials, on continue quand même
+        // En cas d'erreur de lecture des credentials, on consigne un avertissement et continue
         console.warn("helloAssoWebhook - Impossible de lire les credentials :", credErr.message);
       }
 
@@ -770,14 +783,13 @@ exports.helloAssoWebhook = onRequest(
         payerEmail,
         payerFirstName,
         payerLastName,
-        amountCents,
         amountEuros,
         helloAssoOrderId,
         paymentDate,
         items: items.map(item => ({
           id: item.id || null,
           name: item.name || "",
-          amount: (item.amount || 0) / 100,
+          amount: (typeof item.amount === "number" ? item.amount : (item.amount?.total || 0)) / 100,
           type: item.type || ""
         })),
         rawPayload: JSON.stringify(body).substring(0, 5000),
@@ -827,10 +839,51 @@ exports.helloAssoWebhook = onRequest(
             amount: amountEuros
           });
         } else {
-          console.warn("helloAssoWebhook - Aucun membre trouvé pour l'email :", payerEmail, "dans le groupe :", groupId);
+          console.warn("helloAssoWebhook - Aucun membre trouvé pour l'email :", payerEmail, "dans le groupe :", groupId, "- Enregistrement dans pending_payments");
+          // Sas pending_payments pour réconciliation automatique lors de l'onboarding futur
+          await db.collection("pending_payments").doc(payerEmail).set({
+            groupId,
+            payerEmail,
+            payerFirstName,
+            payerLastName,
+            amountEuros,
+            orderId: helloAssoOrderId,
+            eventType,
+            paymentDate,
+            items: items.map(item => ({
+              id: item.id || null,
+              name: item.name || "",
+              amount: (typeof item.amount === "number" ? item.amount : (item.amount?.total || 0)) / 100,
+              type: item.type || ""
+            })),
+            reconciled: false,
+            createdAt: FieldValue.serverTimestamp()
+          }, { merge: true });
         }
       } else {
         console.warn("helloAssoWebhook - Aucun email de payeur dans la notification.");
+      }
+
+      // Écriture comptable systématique dans la collection racine transactions
+      if (amountEuros > 0) {
+        try {
+          const txDoc = await db.collection("transactions").add({
+            groupId,
+            date: Timestamp.fromDate(new Date(paymentDate)),
+            type: "recette",
+            montant: amountEuros,
+            categorie: "Cotisations",
+            libelle: `Paiement HelloAsso - ${matchedUserName || (payerFirstName + " " + payerLastName).trim() || payerEmail} (${eventType})`,
+            justificatifNom: helloAssoOrderId ? `HelloAsso #${helloAssoOrderId}` : "Notification HelloAsso",
+            helloAssoOrderId: helloAssoOrderId || null,
+            userId: matchedUserId || null,
+            source: "helloasso",
+            createdAt: FieldValue.serverTimestamp()
+          });
+          logEntry.transactionId = txDoc.id;
+        } catch (txErr) {
+          console.error("helloAssoWebhook - Erreur enregistrement transaction comptable :", txErr.message);
+        }
       }
 
       // Écriture du log dans Firestore
@@ -846,7 +899,7 @@ exports.helloAssoWebhook = onRequest(
         matchedUser: matchedUserName || null,
         message: matchedUserId
           ? `Membre "${matchedUserName}" mis à jour avec succès (paymentStatus: paid).`
-          : `Notification enregistrée mais aucun membre trouvé pour l'email "${payerEmail}".`
+          : `Notification enregistrée dans pending_payments pour l'email "${payerEmail}".`
       });
 
     } catch (err) {

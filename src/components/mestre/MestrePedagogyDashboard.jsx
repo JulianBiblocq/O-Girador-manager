@@ -4,9 +4,11 @@ import { db } from '../../firebase';
 import CordelCard from '../CordelCard';
 import MestrePedagogyNotepad from './MestrePedagogyNotepad';
 import MestreToadasAnalytics from '../pedagogy/MestreToadasAnalytics';
+import ProgramRehearsalModal from './ProgramRehearsalModal';
 import useConfirm from '../../hooks/useConfirm';
 import { useSequencerFirestoreData } from '../../hooks/useSequencerFirestoreData';
 import { calculateToadaScore } from '../../utils/toadaProgressEngine';
+import { normalizePupitreName } from '../../utils/secretariatMetrics';
 
 export default function MestrePedagogyDashboard({ profileData }) {
   const { confirm } = useConfirm();
@@ -16,6 +18,8 @@ export default function MestrePedagogyDashboard({ profileData }) {
   const [activeAnalyseTab, setActiveAnalyseTab] = useState('percussion');
   const [loadingData, setLoadingData] = useState(true);
   const [pinnedSuccessItem, setPinnedSuccessItem] = useState(null);
+  const [itemToProgramDirect, setItemToProgramDirect] = useState(null);
+  const [programDirectSuccess, setProgramDirectSuccess] = useState(null);
 
   // 1. Branchement sur le catalogue complet du Séquenceur officiel
   const { rhythms: sequencerRhythms, loading: loadingSequencer } = useSequencerFirestoreData(groupId);
@@ -207,9 +211,9 @@ export default function MestrePedagogyDashboard({ profileData }) {
 
     // 2. Pupitres déclarés par les membres
     percuUsers.forEach(u => {
-      const declared = u.instrument || u.instrumentPrincipal || u.pupitre;
-      if (declared && typeof declared === 'string' && declared.trim() && declared.toLowerCase() !== 'danse') {
-        set.add(declared.trim());
+      const declared = normalizePupitreName(u.instrumentPrincipal || u.instrument || u.pupitre);
+      if (declared && declared !== 'Non défini' && declared.toLowerCase() !== 'danse') {
+        set.add(declared);
       }
     });
 
@@ -324,7 +328,9 @@ export default function MestrePedagogyDashboard({ profileData }) {
               detail: reqCount > 0 
                 ? `🙋 ${reqCount} demande${reqCount > 1 ? 's' : ''} d'élèves • ${stats.total > 0 ? `${stats.okCount}/${stats.total} à l'aise (${stats.pct}%)` : 'Non évalué'}`
                 : `${stats.okCount}/${stats.total} à l'aise (${stats.pct}%)`,
-              rawItem: r
+              rawItem: r,
+              type: 'percussion',
+              itemId: r.id
             });
           }
         }
@@ -349,7 +355,9 @@ export default function MestrePedagogyDashboard({ profileData }) {
             detail: reqCount > 0 
               ? `🙋 ${reqCount} demande${reqCount > 1 ? 's' : ''} de danseurs • ${stats.total > 0 ? `${stats.okCount}/${stats.total} à l'aise (${stats.pct}%)` : 'Non évalué'}`
               : `${stats.okCount}/${stats.total} à l'aise (${stats.pct}%)`,
-            rawItem: r
+            rawItem: r,
+            type: 'danse',
+            itemId: `danse_${r.id}`
           });
         }
       });
@@ -394,7 +402,9 @@ export default function MestrePedagogyDashboard({ profileData }) {
           detail: reqCount > 0
             ? `🙋 ${reqCount} demande${reqCount > 1 ? 's' : ''} d'élèves • ${avg}% maîtrise (${evaluatedCount} avis/quiz)`
             : `${avg}% (${evaluatedCount} avis/quiz)`,
-          rawItem: song
+          rawItem: song,
+          type: 'song',
+          itemId: song.id
         });
       }
     });
@@ -489,6 +499,12 @@ export default function MestrePedagogyDashboard({ profileData }) {
             <span>Épinglé : {pinnedSuccessItem}</span>
           </div>
         )}
+        {programDirectSuccess && (
+          <div className="animate-fadeIn bg-[var(--color-cordel-vert,#2d6a4f)] text-white text-[11px] font-black uppercase px-3 py-1.5 rounded-[4px_6px_3px_5px] border border-encre-noire shadow-xs flex items-center gap-1.5">
+            <span>⚡</span>
+            <span>{programDirectSuccess}</span>
+          </div>
+        )}
       </div>
 
       {/* ========================================================================= */}
@@ -541,15 +557,27 @@ export default function MestrePedagogyDashboard({ profileData }) {
                     </span>
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={() => handlePinNote(item.titre, item.discipline, item.requestCount || 0)}
-                    className="mt-1 text-[9px] font-black uppercase tracking-wider px-2 py-1 bg-white border border-encre-noire/30 rounded hover:bg-neutral-100 hover:scale-[1.02] active:scale-95 transition-all self-start flex items-center gap-1 cursor-pointer shadow-xs"
-                    title="Épingler directement dans le bloc-notes de répétition"
-                  >
-                    <span>📌</span>
-                    <span>Épingler au bloc-notes</span>
-                  </button>
+                  <div className="flex flex-wrap items-center gap-1.5 mt-2 pt-2 border-t border-dashed border-encre-noire/15">
+                    <button
+                      type="button"
+                      onClick={() => setItemToProgramDirect(item)}
+                      className="text-[9px] font-black uppercase tracking-wider px-2 py-1 bg-[var(--color-cordel-vert,#2d6a4f)] text-white border border-[#1b4332] rounded hover:brightness-110 active:scale-95 transition-all flex items-center gap-1 cursor-pointer shadow-xs"
+                      title="Programmer directement dans le fil conducteur de la prochaine répétition"
+                    >
+                      <span>⚡</span>
+                      <span>Programmer en répétition</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => handlePinNote(item.titre, item.discipline, item.requestCount || 0)}
+                      className="text-[9px] font-black uppercase tracking-wider px-2 py-1 bg-white text-encre-noire border border-encre-noire/30 rounded hover:bg-neutral-100 active:scale-95 transition-all flex items-center gap-1 cursor-pointer shadow-xs"
+                      title="Épingler directement dans le bloc-notes de répétition"
+                    >
+                      <span>📌</span>
+                      <span>Épingler</span>
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -808,6 +836,21 @@ export default function MestrePedagogyDashboard({ profileData }) {
           <MestrePedagogyNotepad groupId={groupId} />
         </div>
       </section>
+
+      {/* Modale d'action rapide : programmer directement un point chaud en répétition */}
+      {itemToProgramDirect && (
+        <ProgramRehearsalModal
+          isOpen={Boolean(itemToProgramDirect)}
+          onClose={() => setItemToProgramDirect(null)}
+          groupId={groupId}
+          item={itemToProgramDirect}
+          onSuccess={(setlistItem, ev) => {
+            const evName = ev ? (ev.titre || ev.title || 'la répétition') : 'la répétition';
+            setProgramDirectSuccess(`« ${setlistItem.titre} » ajouté au fil conducteur de ${evName} !`);
+            setTimeout(() => setProgramDirectSuccess(null), 4000);
+          }}
+        />
+      )}
 
     </div>
   );

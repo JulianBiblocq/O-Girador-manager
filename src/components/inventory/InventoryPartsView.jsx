@@ -4,6 +4,7 @@ import CordelButton from '../CordelButton';
 import { XiloClose, XiloChisel } from '../XiloIcons';
 import { useInventoryProjects } from '../../hooks/useInventoryProjects';
 import PartAssignmentBadge from './PartAssignmentBadge';
+import { getStepSignal, getStepProgressRatio } from '../../utils/workshopProjectionUtils';
 
 const ETAT_OPTIONS = ['Neuf', 'Bon', 'Usé', 'À réparer', 'Au rebut'];
 const STATUS_OPTIONS = ['En stock', 'Assemblé'];
@@ -358,9 +359,9 @@ export default function InventoryPartsView({
                   </label>
                   {currentPartSteps.length > 0 && (
                     <span className="text-[8px] font-bold text-cordel-wood">
-                      {partFormData.currentStepIndex >= currentPartSteps.length 
+                      {partFormData.statutEtape === 'terminee'
                         ? '✅ Terminée' 
-                        : `Étape ${(parseInt(partFormData.currentStepIndex, 10) || 0) + 1} / ${currentPartSteps.length}`}
+                        : `Étape ${(parseInt(partFormData.currentStepIndex, 10) || 0) + 1} / ${currentPartSteps.length} • ${getStepProgressRatio(currentPartSteps.length, partFormData.currentStepIndex, partFormData.statutEtape)}`}
                     </span>
                   )}
                 </div>
@@ -548,7 +549,7 @@ export default function InventoryPartsView({
                     const totalEtapes = modelPart?.chapitres?.length || 0;
                     const currentStep = part.currentStepIndex || 0;
                     const statutEtape = part.statutEtape || 'en_cours';
-                    const isTerminee = statutEtape === 'terminee' || (totalEtapes > 0 && currentStep >= totalEtapes);
+                    const isTerminee = statutEtape === 'terminee';
                     const isWaiting = statutEtape === 'en_attente_controle';
 
                     return (
@@ -595,19 +596,47 @@ export default function InventoryPartsView({
                         <td className="p-2 border-r border-encre-noire/10">
                           {totalEtapes > 0 ? (
                             isTerminee ? (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-[var(--color-cordel-vert)]/15 text-[var(--color-cordel-vert)] border border-[var(--color-cordel-vert)]/40">
-                                <span>✅</span> Terminée ({totalEtapes}/{totalEtapes})
-                              </span>
+                              <div className="flex flex-col gap-1">
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-[var(--color-cordel-vert)]/15 text-[var(--color-cordel-vert)] border border-[var(--color-cordel-vert)]/40">
+                                  <span>✅</span> Terminée ({totalEtapes}/{totalEtapes})
+                                </span>
+                                <div className="flex items-center gap-0.5">
+                                  {Array.from({ length: totalEtapes }, (_, idx) => (
+                                    <span
+                                      key={idx}
+                                      className="w-3.5 h-3.5 rounded-full flex items-center justify-center text-[7px] font-black bg-emerald-700 text-white border border-emerald-800"
+                                      title={`Étape ${idx + 1} (Validée)`}
+                                    >
+                                      ✓
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
                             ) : (
-                              <div className="flex flex-col gap-0.5">
+                              <div className="flex flex-col gap-1">
                                 <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider border ${
                                   isWaiting
                                     ? 'bg-amber-100 text-amber-800 border-amber-400 animate-pulse'
                                     : 'bg-[var(--color-cordel-ocre)]/15 text-[var(--color-cordel-ocre)] border-[var(--color-cordel-ocre)]/40'
                                 }`}>
                                   <span>{isWaiting ? '⏳' : '🛠️'}</span>
-                                  <span>Étape {Math.min(currentStep + 1, totalEtapes)} / {totalEtapes}</span>
+                                  <span>Étape {Math.min(currentStep + 1, totalEtapes)} / {totalEtapes} • {getStepProgressRatio(totalEtapes, currentStep, statutEtape)}</span>
                                 </span>
+                                {/* Mini pastilles colorées pour chaque étape */}
+                                <div className="flex items-center gap-0.5">
+                                  {Array.from({ length: totalEtapes }, (_, idx) => {
+                                    const sig = getStepSignal(idx, currentStep, statutEtape);
+                                    return (
+                                      <span
+                                        key={idx}
+                                        className={`w-3.5 h-3.5 rounded-full flex items-center justify-center text-[7px] font-black border ${sig.colorClass}`}
+                                        title={`Étape ${idx + 1} (${sig.label})`}
+                                      >
+                                        {sig.icon}
+                                      </span>
+                                    );
+                                  })}
+                                </div>
                                 {modelPart?.chapitres?.[currentStep]?.titre && (
                                   <span className="text-[8px] text-stone-500 font-semibold truncate max-w-[130px]" title={modelPart.chapitres[currentStep].titre}>
                                     {modelPart.chapitres[currentStep].titre}

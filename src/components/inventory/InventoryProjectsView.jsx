@@ -17,7 +17,7 @@ import InstrumentBaptismModal from './InstrumentBaptismModal';
 import { canValidateWorkshop } from '../../utils/permissionUtils';
 import { doc, writeBatch } from 'firebase/firestore';
 
-export default function InventoryProjectsView({ groupId, isAuthorized, profileData, t, inventoryParts, onCreateInstrument }) {
+export default function InventoryProjectsView({ groupId, isAuthorized, profileData, t, inventoryParts, onCreateInstrument, onNavigateToView }) {
   const { projects, loading: pLoading, addProject, updateProject, deleteProject } = useInventoryProjects(groupId);
   const { models, loading: mLoading } = useInstrumentModels(groupId);
   const { updatePartWorkflow } = useInventoryData(groupId);
@@ -374,7 +374,7 @@ export default function InventoryProjectsView({ groupId, isAuthorized, profileDa
       const totalSteps = slot.chapitres?.length || 0;
       const currentStep = slotWf?.currentStepIndex !== undefined ? slotWf.currentStepIndex : (invPart?.currentStepIndex || 0);
       const statutEtape = slotWf?.statutEtape || invPart?.statutEtape || 'en_cours';
-      return !!assignedInvId && (statutEtape === 'terminee' || totalSteps === 0 || currentStep >= totalSteps);
+      return !!assignedInvId && (statutEtape === 'terminee' || totalSteps === 0);
     }).length;
 
     const allSlotsFinished = allSlots.length > 0 && finishedSlotsCount === allSlots.length;
@@ -387,7 +387,75 @@ export default function InventoryProjectsView({ groupId, isAuthorized, profileDa
       (s.outils || []).forEach(o => missingOutils.add(o));
     });
 
-    const isComplete = allSlotsFinished || (allSlots.length > 0 && missingSlots.length === 0);
+    const handleProgrammerAtelierAgenda = () => {
+    if (!project || selectedSessionSlots.length === 0) return;
+
+    // Extraire les pièces cibles
+    const piecesCibles = selectedSessionSlots.map(slotId => {
+      const slot = allSlots.find(s => s.slotId === slotId);
+      if (!slot) return null;
+
+      const slotWf = project.slotsWorkflow?.[slot.slotId];
+      const invPartId = assignedMap[slot.slotId];
+      const invPart = inventoryParts.find(p => p.id === invPartId);
+      const currentStepIdx = slotWf?.currentStepIndex !== undefined ? slotWf.currentStepIndex : (invPart?.currentStepIndex || 0);
+      const currentChapitre = (slot.chapitres || [])[currentStepIdx] || (slot.chapitres || [])[0];
+
+      return {
+        projetId: project.id,
+        nomProjet: project.nom,
+        slotId: slot.slotId,
+        partId: slot.originalPartId || slot.id || slot.slotId,
+        inventoryPartId: invPartId || null,
+        nomPiece: slot.nom || slot.slotLabel,
+        etapeCibleIndex: currentStepIdx,
+        titreEtape: currentChapitre?.titre || `Étape ${currentStepIdx + 1}`,
+        totalEtapes: (slot.chapitres || []).length || 1,
+        consigneEtape: currentChapitre?.texte || '',
+        modelNom: model.nom,
+        modelType: model.type || '',
+        stepOutils: Array.isArray(currentChapitre?.outils) ? currentChapitre.outils : (slot.outils || []),
+        stepMateriaux: Array.isArray(currentChapitre?.materiaux) ? currentChapitre.materiaux : (slot.materiels || [])
+      };
+    }).filter(Boolean);
+
+    const prefilledEvent = {
+      titre: `Atelier Lutherie — ${project.nom}`,
+      type: 'atelier',
+      specialiteAtelier: 'fabrication',
+      includesPercussion: true,
+      includesDance: false,
+      enableCarpool: true,
+      isPublic: false,
+      description: `Session d'atelier de lutherie pour ${project.nom}. Chantiers prévus : ${piecesCibles.map(p => p.nomPiece).join(', ')}.`,
+      programmeFabrication: {
+        piecesCibles,
+        outilsRequis: Array.from(sessionOutils),
+        materiauxRequis: Array.from(sessionMateriaux),
+        consignesSecurite: "Prévoir vêtements d'atelier et vos équipements de protection (EPI)."
+      }
+    };
+
+    try {
+      sessionStorage.setItem('pendingWorkshopAgendaEvent', JSON.stringify(prefilledEvent));
+    } catch (e) {
+      console.warn("Impossible de stocker pendingWorkshopAgendaEvent :", e);
+    }
+
+    // Déclencher l'événement pour tout composant Agenda déjà monté
+    window.dispatchEvent(new CustomEvent('open-prefilled-agenda-event', { detail: prefilledEvent }));
+
+    if (typeof onNavigateToView === 'function') {
+      onNavigateToView('agenda', { initialEventData: prefilledEvent });
+    } else {
+      const searchParams = new URLSearchParams(window.location.search);
+      searchParams.set('tab', 'agenda');
+      window.history.pushState({}, '', window.location.pathname + '?' + searchParams.toString());
+      window.dispatchEvent(new PopStateEvent('popstate'));
+    }
+  };
+
+  const isComplete = allSlotsFinished || (allSlots.length > 0 && missingSlots.length === 0);
 
     // Compilation complète de la Mallette de la séance
     const sessionOutils = new Set();
@@ -633,6 +701,18 @@ export default function InventoryProjectsView({ groupId, isAuthorized, profileDa
                       <span className="text-[10px] text-white/70 italic">Aucun matériau requis pour les phases sélectionnées</span>
                     )}
                   </div>
+
+                  {/* Bouton passerelle vers l'Agenda */}
+                  <div className="pt-2.5 border-t border-white/20 flex justify-end">
+                    <button
+                      type="button"
+                      onClick={handleProgrammerAtelierAgenda}
+                      className="w-full text-xs font-black uppercase tracking-wider px-3.5 py-2 rounded bg-cordel-vert text-white hover:bg-emerald-700 transition-all shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] flex items-center justify-center gap-1.5 cursor-pointer"
+                    >
+                      <span>📅</span>
+                      <span>Programmer cet atelier sur l'Agenda</span>
+                    </button>
+                  </div>
                 </div>
               </CordelCard>
             ) : (
@@ -734,6 +814,8 @@ export default function InventoryProjectsView({ groupId, isAuthorized, profileDa
           slot={selectedWorkflowSlot?.slot}
           invPart={inventoryParts?.find(p => p.id === selectedWorkflowSlot?.invPart?.id) || selectedWorkflowSlot?.invPart}
           project={project}
+          model={model}
+          profileData={profileData}
           onUpdateSlotWorkflow={handleUpdateSlotWorkflow}
           updatePartWorkflow={updatePartWorkflow}
           isValidator={isWorkshopValidator}

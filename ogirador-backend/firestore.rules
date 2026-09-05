@@ -350,7 +350,7 @@ service cloud.firestore {
 
     match /campaigns/{campaign} {
       allow read: if isAuthenticated();
-      allow write: if isAdminOrMestre();
+      allow write: if isAdminOrMestre() || canManageInventory();
     }
 
     match /events/{event} {

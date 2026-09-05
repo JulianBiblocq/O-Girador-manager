@@ -3,24 +3,7 @@ import EventDisciplineBadges from './EventDisciplineBadges';
 import { formatLocationShort } from '../../utils/locationUtils';
 import { formatDateWithDay } from '../../utils/dateUtils';
 
-/**
- * Helper sécurisé pour extraire la miniature d'une vidéo (YouTube, Vimeo, Dailymotion).
- * 
- * @param {string} url - URL de la vidéo
- * @returns {string|null} URL de la miniature
- */
-function getSocialVideoThumbnail(url) {
-  if (!url) return null;
-  const youtubeMatch = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
-  if (youtubeMatch && youtubeMatch[1]) {
-    return `https://img.youtube.com/vi/${youtubeMatch[1]}/hqdefault.jpg`;
-  }
-  const vimeoMatch = url.match(/vimeo\.com\/(?:channels\/(?:\w+\/)?|groups\/(?:[^\/]*)\/videos\/|album\/(?:\d+)\/video\/|video\/|)(\d+)/);
-  if (vimeoMatch && vimeoMatch[1]) {
-    return `https://vumbnail.com/${vimeoMatch[1]}.jpg`;
-  }
-  return null;
-}
+import EventThumbnail from './EventThumbnail';
 
 /**
  * Composant de carte/billet d'événement individuel (EventCard).
@@ -61,10 +44,7 @@ export default function EventCard({
   const userStatus = userInscription ? userInscription.status : null;
   const presentCount = (event.inscriptions || []).filter(i => i.status === 'present').length + (event.invitesExternes || []).length;
 
-  // Miniature visuelle ou vidéo
-  const videoUrl = event.socialVideoUrl || event.videoUrl;
-  const thumbnailCandidate = event.socialThumbnailUrl || (videoUrl ? getSocialVideoThumbnail(videoUrl) : null) || event.imageUrl;
-  const isVideo = Boolean(videoUrl || event.socialThumbnailUrl);
+
 
   // Libellé du lieu raccourci avec l'utilitaire
   const locationShort = formatLocationShort(event, lieuxImportants);
@@ -119,14 +99,14 @@ export default function EventCard({
       )}
 
       {/* Côté gauche : Bloc Date */}
-      <div className="w-20 shrink-0 flex flex-col justify-center items-center text-center border-r-2 border-dashed border-encre-noire/30 px-2 select-none">
-        <span className="text-2xl font-black tracking-tighter leading-none">{day}</span>
-        <span className="text-[10px] font-bold tracking-widest mt-0.5">{month}</span>
-        <span className="text-[9px] font-semibold opacity-75 mt-1">{time}</span>
+      <div className="w-16 sm:w-20 shrink-0 flex flex-col justify-center items-center text-center border-r-2 border-dashed border-encre-noire/30 px-1 sm:px-2 select-none">
+        <span className="text-xl sm:text-2xl font-black tracking-tighter leading-none">{day}</span>
+        <span className="text-[9px] sm:text-[10px] font-bold tracking-widest mt-0.5">{month}</span>
+        <span className="text-[8px] sm:text-[9px] font-semibold opacity-75 mt-0.5 sm:mt-1">{time}</span>
       </div>
 
       {/* Côté droit : Détails du billet */}
-      <div className="flex-1 p-3 sm:p-4 flex items-center gap-3 text-left pl-4 sm:pl-5">
+      <div className="flex-1 p-3 sm:p-4 flex items-center gap-2.5 sm:gap-4 text-left pl-3.5 sm:pl-5 pr-7 sm:pr-8 min-w-0">
         <div className="flex-1 flex flex-col justify-center min-w-0">
           {/* Titre de l'événement */}
           <div className="flex justify-between items-start gap-2 mb-0.5">
@@ -188,42 +168,8 @@ export default function EventCard({
           </div>
         </div>
 
-        {/* Miniature vidéo / Visuel de l'événement */}
-        <div 
-          className="w-14 h-14 md:w-16 md:h-16 shrink-0 rounded border border-encre-noire/30 bg-[#fdfaf2] dark:bg-[#1f1b18] overflow-hidden flex items-center justify-center select-none shadow-[1px_1px_0px_0px_#181716] relative group cursor-pointer"
-          onClick={(e) => {
-            if (videoUrl) {
-              e.stopPropagation();
-              window.open(videoUrl, '_blank', 'noopener,noreferrer');
-            }
-          }}
-          title={videoUrl ? `Regarder la vidéo (${videoUrl})` : "Visuel de l'événement"}
-        >
-          {thumbnailCandidate ? (
-            <img 
-              src={thumbnailCandidate} 
-              alt="Visuel de l'événement" 
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform" 
-            />
-          ) : (
-            <span className="text-lg opacity-40 grayscale select-none">
-              {event.type === 'prestation' ? '🎭' :
-               event.type === 'repetition' ? '🥁' :
-               event.type === 'stage' ? '🎓' :
-               event.type === 'atelier' ? '🔨' :
-               event.type === 'reunion' ? '📅' : '📆'}
-            </span>
-          )}
-
-          {/* Filigrane bouton Play si vidéo */}
-          {isVideo && (
-            <div className="absolute inset-0 bg-black/35 flex items-center justify-center transition-all group-hover:bg-black/50">
-              <div className="w-6 h-6 rounded-full bg-red-600/90 text-white flex items-center justify-center text-[10px] font-black shadow-md border border-white/70 transform group-hover:scale-110 transition-transform">
-                ▶
-              </div>
-            </div>
-          )}
-        </div>
+        {/* Miniature résiliente avec détection anti-403 et support vidéo */}
+        <EventThumbnail event={event} />
       </div>
 
       {/* Encoches latérales style ticket Cordel */}

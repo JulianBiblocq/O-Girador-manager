@@ -1,6 +1,8 @@
 // Composant modulaire d'affichage : Programme de Fabrication & Lutherie pour l'Agenda
 // Présente les chantiers d'instruments ciblés, les jauges d'étape, la boîte à outils et le déclencheur du tutoriel Varal
 import React, { useState, useMemo } from 'react';
+import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { db } from '../../firebase';
 import CordelButton from '../CordelButton';
 import FabricationCard from '../FabricationCard';
 import { useInstrumentModels } from '../../hooks/useInstrumentModels';
@@ -9,7 +11,7 @@ import { useInventoryData } from '../../hooks/useInventoryData';
 import { useInventoryProjects } from '../../hooks/useInventoryProjects';
 import WorkshopValidationModal from './WorkshopValidationModal';
 
-export default function EventWorkshopProgram({ event, isMestre, isAuthorized }) {
+export default function EventWorkshopProgram({ event, isMestre, isAuthorized, profileData }) {
   const [selectedVaralTutorial, setSelectedVaralTutorial] = useState(null);
   const [showValidationModal, setShowValidationModal] = useState(false);
 
@@ -19,7 +21,17 @@ export default function EventWorkshopProgram({ event, isMestre, isAuthorized }) 
   const { updatePartWorkflow, inventoryParts = [] } = useInventoryData(event?.groupId);
   
   // Chargement de l'outillage pour la mallette intelligente
-  const { tools = [] } = useSuppliesData(event?.groupId, 'lutherie');
+  const { tools = [], supplies = [] } = useSuppliesData(event?.groupId, 'lutherie');
+  const [checkedTools, setCheckedTools] = useState(new Set());
+
+  const toggleToolChecked = (toolNom) => {
+    setCheckedTools(prev => {
+      const next = new Set(prev);
+      if (next.has(toolNom)) next.delete(toolNom);
+      else next.add(toolNom);
+      return next;
+    });
+  };
 
   const programme = event?.programmeFabrication;
   const piecesCibles = programme?.piecesCibles || [];
@@ -103,37 +115,56 @@ export default function EventWorkshopProgram({ event, isMestre, isAuthorized }) 
   const isFabrication = (event?.type === 'atelier' || event?.type === 'stage') && event?.specialiteAtelier === 'fabrication';
   if (!isFabrication) return null;
 
-  const isAdminOrMestre = isMestre || isAuthorized;
+  const isAdminOrMestre = Boolean(
+    isMestre || 
+    isAuthorized || 
+    profileData?.role === 'mestre' || 
+    profileData?.role === 'admin' || 
+    profileData?.isMestre || 
+    profileData?.isSystemAdmin
+  );
 
   const handleValidateSteps = async (validatedPieces) => {
     try {
-      // Pour chaque pièce validée, on trouve l'ID réel dans inventory_parts, on incrémente ou on termine
+      // Pour chaque pièce validée, synchronisation simultanée dans inventory_projects et inventory_parts
       for (const piece of validatedPieces) {
-        const project = projects.find(p => p.id === piece.projetId);
-        if (!project) continue;
-        
-        const assignation = project.piecesAssignees?.find(a => a.modelPartId === piece.partId);
-        const actualInventoryPartId = assignation?.inventoryPartId;
-        if (!actualInventoryPartId) continue;
-
-        const actualPart = inventoryParts.find(p => p.id === actualInventoryPartId);
-        if (!actualPart) continue;
-
-        const currentIndex = actualPart.currentStepIndex || 0;
         const total = piece.totalEtapes || 1;
-        const newIndex = currentIndex + 1;
-        
-        const updates = {
-          currentStepIndex: newIndex < total ? newIndex : total,
-          statutEtape: newIndex < total ? 'en_cours' : 'terminee'
-        };
+        const nextStepIndex = Math.min(total, (piece.etapeCibleIndex !== undefined ? piece.etapeCibleIndex + 1 : 1));
+        const isComplete = nextStepIndex >= total;
+        const slotKey = piece.slotId || piece.partId;
 
-        const today = new Date().toLocaleDateString('fr-FR');
-        const oldNotes = actualPart.notesAtelier || '';
-        const newNoteEntry = `[${today}] Étape ${piece.etapeCibleIndex + 1} validée lors de la séance.`;
-        updates.notesAtelier = oldNotes ? `${oldNotes}\n${newNoteEntry}` : newNoteEntry;
+        // 1. Mise à jour conjointe du projet d'assemblage (slotsWorkflow dans inventory_projects)
+        if (piece.projetId && slotKey) {
+          const projectRef = doc(db, 'inventory_projects', piece.projetId);
+          await updateDoc(projectRef, {
+            [`slotsWorkflow.${slotKey}.currentStepIndex`]: nextStepIndex,
+            [`slotsWorkflow.${slotKey}.statutEtape`]: isComplete ? 'terminee' : 'en_cours',
+            [`slotsWorkflow.${slotKey}.status`]: isComplete ? 'terminee' : 'en_cours',
+            updatedAt: serverTimestamp()
+          });
+        }
 
-        await updatePartWorkflow(actualInventoryPartId, updates);
+        // 2. Mise à jour de la pièce physique liée dans inventory_parts (si assignée)
+        let actualInventoryPartId = piece.inventoryPartId;
+        if (!actualInventoryPartId && piece.projetId) {
+          const project = projects.find(p => p.id === piece.projetId);
+          const assignation = project?.piecesAssignees?.find(a => a.modelPartId === slotKey || a.modelPartId === piece.partId);
+          actualInventoryPartId = assignation?.inventoryPartId;
+        }
+
+        if (actualInventoryPartId) {
+          const actualPart = inventoryParts.find(p => p.id === actualInventoryPartId);
+          const updates = {
+            currentStepIndex: nextStepIndex,
+            statutEtape: isComplete ? 'terminee' : 'en_cours'
+          };
+          const today = new Date().toLocaleDateString('fr-FR');
+          const oldNotes = actualPart?.notesAtelier || '';
+          const newNoteEntry = `[${today}] Étape ${piece.etapeCibleIndex + 1} validée lors de la séance.`;
+          updates.notesAtelier = oldNotes ? `${oldNotes}\n${newNoteEntry}` : newNoteEntry;
+
+          await updatePartWorkflow(actualInventoryPartId, updates);
+        }
       }
       
       setShowValidationModal(false);
@@ -160,13 +191,19 @@ export default function EventWorkshopProgram({ event, isMestre, isAuthorized }) 
           <span className="text-[10px] bg-[var(--color-cordel-vert)] text-white font-bold px-2 py-0.5 rounded shadow-2xs">
             {piecesCibles.length} chantier{piecesCibles.length > 1 ? 's' : ''}
           </span>
-          {isAdminOrMestre && piecesCibles.length > 0 && (
+          {isAdminOrMestre && (
             <button
               type="button"
+              disabled={piecesCibles.length === 0}
               onClick={() => setShowValidationModal(true)}
-              className="text-[9px] font-black uppercase bg-cordel-ocre text-white px-2.5 py-1 rounded shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:bg-amber-600 cursor-pointer flex items-center gap-1"
+              className={`text-[9px] font-black uppercase px-2.5 py-1 rounded shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none flex items-center gap-1 cursor-pointer transition-all ${
+                piecesCibles.length > 0
+                  ? 'bg-cordel-vert text-white hover:bg-emerald-700'
+                  : 'bg-stone-200 text-stone-400 border border-stone-300 cursor-not-allowed'
+              }`}
+              title={piecesCibles.length === 0 ? "Aucun chantier ciblé pour cet atelier" : "Émarger et valider les étapes achevées lors de la séance"}
             >
-              <span>✍️</span> Valider étapes
+              <span>✍️</span> Valider les étapes de la séance
             </button>
           )}
         </div>
@@ -189,9 +226,19 @@ export default function EventWorkshopProgram({ event, isMestre, isAuthorized }) 
                   {/* Titre du projet / Instrument */}
                   <div className="flex items-start justify-between gap-2">
                     <div>
-                      <span className="text-xs font-black text-cordel-wood uppercase block">
-                        🥁 {piece.nomProjet}
-                      </span>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="text-xs font-black text-cordel-wood uppercase block">
+                          🥁 {piece.nomProjet}
+                        </span>
+                        {(() => {
+                          const proj = projects.find(p => p.id === piece.projetId);
+                          return proj?.artisanNom ? (
+                            <span className="text-[9px] bg-amber-100 text-amber-900 border border-amber-300 font-bold px-1.5 py-0.2 rounded">
+                              👤 {proj.artisanNom}
+                            </span>
+                          ) : null;
+                        })()}
+                      </div>
                       <span className="text-[11px] font-bold text-encre-noire">
                         Composant : {piece.nomPiece}
                       </span>
@@ -280,35 +327,91 @@ export default function EventWorkshopProgram({ event, isMestre, isAuthorized }) 
                 )}
               </div>
 
-              {/* Outils Mobiles */}
+              {/* Outils Mobiles avec Check-list Interactive pour le convoi */}
               <div className="bg-amber-50 border border-amber-200 rounded p-2.5 relative overflow-hidden">
-                <div className="absolute top-0 right-0 p-2 opacity-10 text-xl">🚗</div>
-                <h5 className="text-[10px] font-black uppercase text-amber-800 mb-1.5 flex items-center gap-1">
-                  À emporter dans la mallette
-                </h5>
+                <div className="flex items-center justify-between mb-1.5">
+                  <h5 className="text-[10px] font-black uppercase text-amber-800 flex items-center gap-1">
+                    <span>🚗</span> À emporter dans la mallette (Convoi)
+                  </h5>
+                  {(malletteItems.mobile.length > 0 || malletteItems.inconnus.length > 0) && (
+                    <span className="text-[9px] font-bold text-amber-900 bg-amber-200/70 px-1.5 py-0.2 rounded">
+                      {checkedTools.size} / {malletteItems.mobile.length + malletteItems.inconnus.length} vérifié{checkedTools.size > 1 ? 's' : ''}
+                    </span>
+                  )}
+                </div>
                 {(malletteItems.mobile.length > 0 || malletteItems.inconnus.length > 0) ? (
-                  <ul className="space-y-1 text-[11px] text-amber-800 font-medium">
-                    {malletteItems.mobile.map((toolObj, i) => (
-                      <li key={`mob-${i}`} className="flex flex-wrap items-center justify-between gap-1">
-                        <span className="flex items-center gap-1 font-semibold text-stone-800">
-                          <span className="text-amber-600">🧰</span> {toolObj.nom}
-                        </span>
-                        {toolObj.emplacement ? (
-                          <span className="text-[9px] bg-amber-100 text-amber-900 px-1.5 py-0.5 rounded border border-amber-300 font-bold">
-                            📍 {toolObj.emplacement} (à emmener)
+                  <div className="flex flex-col gap-1">
+                    {malletteItems.mobile.map((toolObj, i) => {
+                      const isChecked = checkedTools.has(toolObj.nom);
+                      return (
+                        <div
+                          key={`mob-${i}`}
+                          role="button"
+                          tabIndex={0}
+                          onClick={() => toggleToolChecked(toolObj.nom)}
+                          onKeyDown={(e) => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); toggleToolChecked(toolObj.nom); } }}
+                          className={`flex items-center justify-between gap-1.5 p-1.5 rounded border text-[11px] transition-all cursor-pointer select-none ${
+                            isChecked
+                              ? 'bg-emerald-50/70 border-emerald-300 text-stone-500 line-through opacity-75'
+                              : 'bg-white border-amber-200 text-stone-800 hover:bg-amber-100/50'
+                          }`}
+                        >
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              readOnly
+                              className="w-3.5 h-3.5 text-emerald-700 rounded focus:ring-emerald-700 pointer-events-none"
+                            />
+                            <span className="font-semibold truncate">
+                              {isChecked ? '✓' : '🧰'} {toolObj.nom}
+                            </span>
+                          </div>
+                          {toolObj.emplacement && (
+                            <span className={`text-[9px] px-1.5 py-0.2 rounded border shrink-0 ${
+                              isChecked
+                                ? 'bg-stone-100 text-stone-400 border-stone-200'
+                                : 'bg-amber-100 text-amber-900 border-amber-300 font-bold'
+                            }`}>
+                              📍 {toolObj.emplacement}
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })}
+                    {malletteItems.inconnus.map((toolObj, i) => {
+                      const isChecked = checkedTools.has(toolObj.nom);
+                      return (
+                        <div
+                          key={`inc-${i}`}
+                          role="button"
+                          tabIndex={0}
+                          onClick={() => toggleToolChecked(toolObj.nom)}
+                          onKeyDown={(e) => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); toggleToolChecked(toolObj.nom); } }}
+                          className={`flex items-center justify-between gap-1.5 p-1.5 rounded border text-[11px] transition-all cursor-pointer select-none ${
+                            isChecked
+                              ? 'bg-emerald-50/70 border-emerald-300 text-stone-500 line-through opacity-75'
+                              : 'bg-white border-stone-200 text-stone-700 hover:bg-stone-50'
+                          }`}
+                        >
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              readOnly
+                              className="w-3.5 h-3.5 text-emerald-700 rounded focus:ring-emerald-700 pointer-events-none"
+                            />
+                            <span className="truncate">
+                              {isChecked ? '✓' : '•'} {toolObj.nom}
+                            </span>
+                          </div>
+                          <span className="text-[8.5px] text-stone-600 bg-stone-100 px-1.5 py-0.2 rounded border border-stone-200 shrink-0">
+                            non répertorié
                           </span>
-                        ) : (
-                          <span className="text-[9px] text-amber-800 opacity-75 font-normal">(à emmener)</span>
-                        )}
-                      </li>
-                    ))}
-                    {malletteItems.inconnus.map((toolObj, i) => (
-                      <li key={`inc-${i}`} className="text-stone-600 flex items-center justify-between gap-1">
-                        <span>• {toolObj.nom}</span>
-                        <span className="opacity-60 font-normal text-[9px] bg-stone-100 px-1 rounded border border-stone-200">non répertorié</span>
-                      </li>
-                    ))}
-                  </ul>
+                        </div>
+                      );
+                    })}
+                  </div>
                 ) : (
                   <p className="text-[9.5px] text-amber-600/70 italic">Aucun outil mobile requis.</p>
                 )}
@@ -316,21 +419,43 @@ export default function EventWorkshopProgram({ event, isMestre, isAuthorized }) 
             </div>
           )}
 
-          {/* Matériaux */}
+          {/* Fournitures & Matériaux avec Statut de Stock Temps Réel */}
           {materiauxRequis.length > 0 && (
             <div className="flex flex-col gap-1.5 bg-white/70 p-2.5 rounded border border-stone-200">
               <h5 className="text-[10px] font-black uppercase tracking-wider text-cordel-wood flex items-center gap-1">
                 <span>📦</span> Fournitures & Matériaux de Session
               </h5>
               <div className="flex flex-wrap gap-1.5">
-                {materiauxRequis.map((mat, idx) => (
-                  <span
-                    key={idx}
-                    className="text-[10px] bg-emerald-50 text-stone-800 border border-emerald-300 font-bold px-2 py-0.5 rounded-full"
-                  >
-                    {mat}
-                  </span>
-                ))}
+                {materiauxRequis.map((mat, idx) => {
+                  const foundSupply = supplies.find(s => s.nom?.toLowerCase().trim() === mat.toLowerCase().trim());
+                  const qty = Number(foundSupply?.quantiteStock || 0);
+                  const seuil = Number(foundSupply?.seuilCritique || 0);
+                  const isOutOfStock = foundSupply && qty <= 0;
+                  const isLow = foundSupply && !isOutOfStock && qty <= seuil;
+
+                  return (
+                    <div
+                      key={idx}
+                      className={`text-[10px] px-2 py-0.5 rounded-full border flex items-center gap-1.5 shadow-2xs font-bold ${
+                        isOutOfStock
+                          ? 'bg-red-50 text-red-800 border-red-300'
+                          : isLow
+                          ? 'bg-amber-50 text-amber-900 border-amber-300'
+                          : foundSupply
+                          ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
+                          : 'bg-stone-50 text-stone-700 border-stone-300'
+                      }`}
+                    >
+                      <span>{isOutOfStock ? '⚠️' : isLow ? '⚡' : foundSupply ? '✓' : '📦'}</span>
+                      <span>{mat}</span>
+                      {foundSupply && (
+                        <span className="text-[9px] opacity-80 font-normal">
+                          ({isOutOfStock ? 'Rupture' : `${qty} ${foundSupply.unite || ''}`})
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}

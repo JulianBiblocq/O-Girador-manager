@@ -113,9 +113,12 @@ export default function StudentInstrumentsWorkshop({ user, profileData, onNaviga
 
     const completedSlotsCount = allSlots.filter(slot => {
       const assignedInvId = assignedMap[slot.slotId];
+      if (!assignedInvId) return false;
       const invPart = inventoryParts.find(p => p.id === assignedInvId);
+      const slotWf = activeProject.slotsWorkflow?.[slot.slotId];
+      const statutEtape = slotWf?.statutEtape || invPart?.statutEtape || 'en_cours';
       const totalSteps = slot.chapitres?.length || 0;
-      return invPart?.statutEtape === 'terminee' || (totalSteps > 0 && invPart?.currentStepIndex >= totalSteps);
+      return statutEtape === 'terminee' || totalSteps === 0;
     }).length;
 
     return (
@@ -170,6 +173,7 @@ export default function StudentInstrumentsWorkshop({ user, profileData, onNaviga
                   slot={slot}
                   model={activeModel}
                   invPart={invPart}
+                  slotWorkflow={activeProject?.slotsWorkflow?.[slot.slotId]}
                   isSessionSelected={selectedSessionSlots.includes(slot.slotId)}
                   onToggleSessionSlot={toggleSessionSlot}
                   onSelectWorkflow={setSelectedWorkflowSlot}
@@ -188,6 +192,10 @@ export default function StudentInstrumentsWorkshop({ user, profileData, onNaviga
           onClose={() => setSelectedWorkflowSlot(null)}
           slot={selectedWorkflowSlot?.slot}
           invPart={inventoryParts?.find(p => p.id === selectedWorkflowSlot?.invPart?.id) || selectedWorkflowSlot?.invPart}
+          project={activeProject}
+          model={activeModel}
+          profileData={profileData}
+          slotWorkflow={activeProject?.slotsWorkflow?.[selectedWorkflowSlot?.slot?.slotId]}
           updatePartWorkflow={updatePartWorkflow}
           isValidator={false} // L'élève soumet son étape, il ne valide pas lui-même
           validatorName={profileData?.prenom || 'Élève'}

@@ -15,6 +15,7 @@ import { normalizePartSteps } from '../utils/workshopProjectionUtils';
  */
 export default function InstrumentModelCard({ model, initialPartId = null, onClose, profileData }) {
   const [showQuiz, setShowQuiz] = useState(false);
+  const [quizTargetPartId, setQuizTargetPartId] = useState(null);
   const [selectedPartId, setSelectedPartId] = useState(initialPartId || model?.focusedPartId || null);
 
   // Synchronisation si le prop initialPartId ou model change
@@ -26,15 +27,19 @@ export default function InstrumentModelCard({ model, initialPartId = null, onClo
     }
   }, [initialPartId, model?.focusedPartId]);
 
-  // Recherche de la pièce active focalisée
-  const activePart = useMemo(() => {
-    if (!selectedPartId || !model?.parts) return null;
-    return model.parts.find((p, idx) => (
+  // Recherche de la pièce active focalisée et son index dans la nomenclature
+  const { activePart, activePartIndex } = useMemo(() => {
+    if (!selectedPartId || !model?.parts) return { activePart: null, activePartIndex: -1 };
+    const idx = model.parts.findIndex((p, i) => (
       (p.id && p.id === selectedPartId) ||
-      `part_${idx}` === selectedPartId ||
+      `part_${i}` === selectedPartId ||
       p.nom === selectedPartId
-    )) || null;
+    ));
+    if (idx === -1) return { activePart: null, activePartIndex: -1 };
+    return { activePart: model.parts[idx], activePartIndex: idx };
   }, [model?.parts, selectedPartId]);
+
+  const activePartKey = activePart ? (activePart.id || `part_${activePartIndex}`) : null;
 
   // Agréger les matières et outils de toutes les pièces pour la fiche d'ensemble globale
   const { globalMaterials, globalTools } = useMemo(() => {
@@ -229,13 +234,28 @@ export default function InstrumentModelCard({ model, initialPartId = null, onClo
                     )}
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={() => setSelectedPartId(null)}
-                    className="self-start sm:self-center text-xs font-bold px-3 py-1.5 rounded bg-white border border-encre-noire/30 hover:bg-neutral-100 shadow-xs cursor-pointer"
-                  >
-                    ⬅️ Retour à l'ensemble
-                  </button>
+                  <div className="flex flex-wrap items-center gap-2 self-start sm:self-center">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setQuizTargetPartId(activePartKey);
+                        setShowQuiz(true);
+                      }}
+                      className="bg-cordel-wood text-white font-bold text-xs px-3.5 py-1.5 rounded shadow-[2px_2px_0px_0px_#181716] uppercase tracking-wider hover:bg-red-800 transition-all active:translate-y-[1px] active:translate-x-[1px] active:shadow-none cursor-pointer flex items-center gap-1.5"
+                      title={`Lancer l'auto-évaluation sur ${activePart.nom}`}
+                    >
+                      <span>📝</span>
+                      <span>Évaluer mes connaissances sur : {activePart.nom}</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setSelectedPartId(null)}
+                      className="text-xs font-bold px-3 py-1.5 rounded bg-white border border-encre-noire/30 hover:bg-neutral-100 shadow-xs cursor-pointer"
+                    >
+                      ⬅️ Retour à l'ensemble
+                    </button>
+                  </div>
                 </div>
 
                 {/* Encarts Outils et Matières spécifiques à la pièce */}
@@ -482,10 +502,13 @@ export default function InstrumentModelCard({ model, initialPartId = null, onClo
         {model.parts && model.parts.length > 0 && (
           <div className="flex justify-center p-3 bg-white/50 border-t border-dashed border-cordel-master-dark/10">
             <button
-              onClick={() => setShowQuiz(true)}
+              onClick={() => {
+                setQuizTargetPartId(null);
+                setShowQuiz(true);
+              }}
               className="bg-cordel-wood text-white font-bold text-xs px-6 py-2 rounded shadow-[2px_2px_0px_0px_#181716] uppercase tracking-wider hover:bg-red-800 transition-colors active:translate-y-[1px] active:translate-x-[1px] active:shadow-none cursor-pointer"
             >
-              📝 Auto-Évaluation (Quiz Atelier)
+              📝 Auto-Évaluation (Quiz Atelier Global)
             </button>
           </div>
         )}
@@ -501,8 +524,12 @@ export default function InstrumentModelCard({ model, initialPartId = null, onClo
       {showQuiz && (
         <AutoEvalQuiz
           instrumentModelData={model}
+          targetPartId={quizTargetPartId}
           profileData={profileData}
-          onClose={() => setShowQuiz(false)}
+          onClose={() => {
+            setShowQuiz(false);
+            setQuizTargetPartId(null);
+          }}
         />
       )}
     </div>

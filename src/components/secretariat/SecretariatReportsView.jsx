@@ -4,15 +4,26 @@ import { db } from '../../firebase';
 import CordelCard from '../CordelCard';
 import { XiloScroll } from '../XiloIcons';
 import { useTranslation } from '../LanguageContext';
+import {
+  computeTerritorialStats,
+  computeVolunteeringAndActivity,
+  computeAudienceAndDiffusion,
+  normalizePupitreName
+} from '../../utils/secretariatMetrics';
+import ReportTerritoryCard from './reports/ReportTerritoryCard';
+import ReportVolunteerCard from './reports/ReportVolunteerCard';
+import ReportAudienceCard from './reports/ReportAudienceCard';
+import AgSlideshowModal from './reports/AgSlideshowModal';
 
 /**
  * Composant : SecretariatReportsView
  * 
  * Vue de synthèse consolidée et bilan de saison pour l'Assemblée Générale et les subventions.
  * Agrège à la demande (lecture ponctuelle getDocs) les données des différents pôles :
- * - Pôle Secrétariat / Adhérents (effectifs, cotisations, répartition par pupitre)
- * - Pôle Activités / Événements (sorties, répétitions, volume de présences)
+ * - Pôle Secrétariat / Adhérents (effectifs, cotisations, répartition par pupitre, ancrage communal)
+ * - Pôle Activités / Événements (sorties, répétitions, volume de présences, bénévolat Cerfa)
  * - Pôles Ateliers (projets couture, pièces de lutherie, instruments)
+ * - Pôle Diffusion / Vitrine (trafic vitrine, demandes de prestations et concrétisation)
  * - Pôle Trésorerie (recettes, dépenses, résultat net de saison)
  * 
  * @param {string} groupId Identifiant du groupe/association
@@ -36,6 +47,9 @@ export default function SecretariatReportsView({ groupId, onBack }) {
   const [startDate, setStartDate] = useState(defaultStartDate);
   const [endDate, setEndDate] = useState(defaultEndDate);
 
+  // État d'ouverture du Diaporama / Livret d'AG
+  const [isSlideshowOpen, setIsSlideshowOpen] = useState(false);
+
   // État de chargement et de synchronisation des données
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -48,6 +62,7 @@ export default function SecretariatReportsView({ groupId, onBack }) {
   const [rawParts, setRawParts] = useState([]);
   const [rawInventory, setRawInventory] = useState([]);
   const [rawTransactions, setRawTransactions] = useState([]);
+  const [rawGigs, setRawGigs] = useState([]);
   const [assocInfo, setAssocInfo] = useState(null);
 
   // Sélecteur de préréglages de dates
@@ -82,7 +97,8 @@ export default function SecretariatReportsView({ groupId, onBack }) {
         partsSnap,
         inventorySnap,
         txSnap,
-        assocSnap
+        assocSnap,
+        gigsSnap
       ] = await Promise.all([
         getDocs(query(collection(db, 'users'), where('groupId', '==', groupId))),
         getDocs(query(collection(db, 'events'), where('groupId', '==', groupId))),
@@ -90,7 +106,8 @@ export default function SecretariatReportsView({ groupId, onBack }) {
         getDocs(query(collection(db, 'inventory_parts'), where('groupId', '==', groupId))),
         getDocs(query(collection(db, 'inventory'), where('groupId', '==', groupId))),
         getDocs(query(collection(db, 'transactions'), where('groupId', '==', groupId))),
-        getDoc(doc(db, 'associations', groupId))
+        getDoc(doc(db, 'associations', groupId)),
+        getDocs(query(collection(db, 'gigs_pipeline'), where('groupId', '==', groupId))).catch(() => ({ forEach: () => {} }))
       ]);
 
       const usersList = [];
@@ -111,12 +128,18 @@ export default function SecretariatReportsView({ groupId, onBack }) {
       const txList = [];
       txSnap.forEach(d => txList.push({ id: d.id, ...d.data() }));
 
+      const gigsList = [];
+      if (gigsSnap && typeof gigsSnap.forEach === 'function') {
+        gigsSnap.forEach(d => gigsList.push({ id: d.id, ...d.data() }));
+      }
+
       setRawUsers(usersList);
       setRawEvents(eventsList);
       setRawCouture(coutureList);
       setRawParts(partsList);
       setRawInventory(inventoryList);
       setRawTransactions(txList);
+      setRawGigs(gigsList);
       setAssocInfo(assocSnap.exists() ? assocSnap.data() : null);
       setLastRefreshed(new Date());
     } catch (err) {
@@ -174,9 +197,9 @@ export default function SecretariatReportsView({ groupId, onBack }) {
       if (isPaid) cotisationsUpToDate++;
       else cotisationsPending++;
 
-      // Pupitre ou section principale
-      const rawPupitre = u.instrument || u.instrumentPrincipal || u.pupitre || u.section || 'Non défini';
-      const cleanPupitre = rawPupitre.trim();
+      // Pupitre ou section principale (priorité à instrumentPrincipal puis instrument avec normalisation)
+      const rawPupitre = u.instrumentPrincipal || u.instrument || u.pupitre || u.section || 'Non défini';
+      const cleanPupitre = normalizePupitreName(rawPupitre);
       pupitresCount[cleanPupitre] = (pupitresCount[cleanPupitre] || 0) + 1;
     });
 
@@ -257,6 +280,12 @@ export default function SecretariatReportsView({ groupId, onBack }) {
 
     const soldeNet = recettesGlobales - depensesGlobales;
 
+    // --- NOUVEAUX CALCULS MODULAIRES SECRETARIATMETRICS ---
+    const assocAddress = assocInfo?.adresseSiegeSocial || assocInfo?.adresse || '';
+    const territorialStats = computeTerritorialStats(rawUsers, assocAddress);
+    const volunteeringStats = computeVolunteeringAndActivity(filteredEvents, activeMembers, assocInfo || {});
+    const audienceStats = computeAudienceAndDiffusion(rawGigs, assocInfo?.vitrineViews || 0, isWithinRange);
+
     return {
       totalMembers,
       activeMembers,
@@ -276,9 +305,12 @@ export default function SecretariatReportsView({ groupId, onBack }) {
       instrumentsMaintenance,
       recettesGlobales,
       depensesGlobales,
-      soldeNet
+      soldeNet,
+      territorialStats,
+      volunteeringStats,
+      audienceStats
     };
-  }, [rawUsers, rawEvents, rawCouture, rawParts, rawInventory, rawTransactions, isWithinRange]);
+  }, [rawUsers, rawEvents, rawCouture, rawParts, rawInventory, rawTransactions, rawGigs, assocInfo, isWithinRange]);
 
   // =========================================================================
   // 5. EXPORT CSV COMPLET (UTF-8 BOM + Séparateur point-virgule Excel)
@@ -293,13 +325,17 @@ export default function SecretariatReportsView({ groupId, onBack }) {
     lines.push(`Date d'édition;${new Date().toLocaleDateString('fr-FR')}`);
     lines.push('');
 
-    // Section 1 : Vie associative
-    lines.push(`1. VIE ASSOCIATIVE & EFFECTIFS`);
+    // Section 1 : Vie associative & Territoire
+    lines.push(`1. VIE ASSOCIATIVE, EFFECTIFS & ANCRAGE TERRITORIAL (CERFA)`);
     lines.push(`Indicateur;Valeur`);
     lines.push(`Total membres enregistrés;${indicators.totalMembers}`);
     lines.push(`Membres actifs;${indicators.activeMembers}`);
     lines.push(`Cotisations à jour;${indicators.cotisationsUpToDate}`);
     lines.push(`Cotisations en attente ou partielles;${indicators.cotisationsPending}`);
+    lines.push(`Commune de rattachement du siège;${indicators.territorialStats.siegeVille || 'Non renseignée'}${indicators.territorialStats.siegeCP ? ` (${indicators.territorialStats.siegeCP})` : ''}`);
+    lines.push(`Adhérents de la commune du siège;${indicators.territorialStats.communeMembersCount} (${indicators.territorialStats.communeMembersPercent}%)`);
+    lines.push(`Adhérents des communes extérieures;${indicators.territorialStats.externalMembersCount} (${indicators.territorialStats.externalMembersPercent}%)`);
+    lines.push(`Profils audités avec adresse;${indicators.territorialStats.totalAudited} / ${indicators.territorialStats.totalActiveMembers}`);
     lines.push('');
     lines.push(`RÉPARTITION PAR PUPITRE`);
     lines.push(`Pupitre / Section;Effectif;Pourcentage`);
@@ -308,16 +344,20 @@ export default function SecretariatReportsView({ groupId, onBack }) {
     });
     lines.push('');
 
-    // Section 2 : Activités & Rayonnement
-    lines.push(`2. RAYONNEMENT SCÉNIQUE & PRATIQUE COLLECTIVE`);
-    lines.push(`Type d'événement;Nombre`);
+    // Section 2 : Activités, Rayonnement & Bénévolat Cerfa
+    lines.push(`2. RAYONNEMENT SCÉNIQUE, PRATIQUE COLLECTIVE & BÉNÉVOLAT (CERFA 12156)`);
+    lines.push(`Indicateur;Valeur`);
     lines.push(`Prestations publiques / Concerts;${indicators.eventsByType.prestation}`);
     lines.push(`Répétitions régulières;${indicators.eventsByType.repetition}`);
     lines.push(`Stages & Ateliers;${indicators.eventsByType.stage + indicators.eventsByType.atelier}`);
     lines.push(`Réunions & Assemblées;${indicators.eventsByType.reunion}`);
-    lines.push(`TOTAL ÉVÉNEMENTS;${indicators.totalEvents}`);
-    lines.push(`Mobilisations cumulées (Présences);${indicators.totalPresencesAll}`);
+    lines.push(`TOTAL ÉVÉNEMENTS RÉALISÉS;${indicators.totalEvents}`);
+    lines.push(`Mobilisations cumulées (Présences réelles);${indicators.totalPresencesAll}`);
     lines.push(`Moyenne de musiciens / sortie;${indicators.avgPresencePrestation}`);
+    lines.push(`Heures de jeu en public (scène);${indicators.volunteeringStats.totalPublicPlayingHours} h`);
+    lines.push(`Heures-participants activité collective;${indicators.volunteeringStats.totalCollectiveVolunteerHours} h`);
+    lines.push(`Forfaits annuels statutaires bureau & atelier;${indicators.volunteeringStats.forfaitHeuresAdmin + indicators.volunteeringStats.forfaitHeuresArtisanat} h`);
+    lines.push(`TOTAL HEURES DE BÉNÉVOLAT VALORISÉES (CERFA);${indicators.volunteeringStats.totalCerfaVolunteerHours} h`);
     lines.push('');
 
     // Section 3 : Ateliers & Patrimoine
@@ -336,6 +376,15 @@ export default function SecretariatReportsView({ groupId, onBack }) {
     lines.push(`Recettes globales consolidées;${indicators.recettesGlobales.toFixed(2)} €`);
     lines.push(`Dépenses globales consolidées;${indicators.depensesGlobales.toFixed(2)} €`);
     lines.push(`RÉSULTAT NET D'EXERCICE;${indicators.soldeNet.toFixed(2)} €`);
+    lines.push('');
+
+    // Section 5 : Vitrine publique & Audience
+    lines.push(`5. RAYONNEMENT NUMÉRIQUE & VITRINE PUBLIQUE`);
+    lines.push(`Indicateur;Valeur`);
+    lines.push(`Consultations uniques de la vitrine;${indicators.audienceStats.vitrineViews}`);
+    lines.push(`Demandes de prestations reçues via le site;${indicators.audienceStats.vitrineRequestsTotal}`);
+    lines.push(`Dossiers de prestation concrétisés;${indicators.audienceStats.vitrineRequestsConverted}`);
+    lines.push(`Taux de concrétisation des demandes web;${indicators.audienceStats.conversionRate}%`);
 
     // Assemblage du fichier avec BOM UTF-8 (\uFEFF)
     const csvContent = '\uFEFF' + lines.join('\n');
@@ -449,13 +498,24 @@ export default function SecretariatReportsView({ groupId, onBack }) {
 
           <button
             type="button"
+            onClick={() => setIsSlideshowOpen(true)}
+            disabled={loading}
+            className="px-3.5 py-1.5 text-[10px] font-black uppercase tracking-wider bg-[#2d6a4f] text-white hover:bg-emerald-800 border-2 border-emerald-950 rounded-[4px_6px_3px_5px] shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none cursor-pointer flex items-center gap-1.5"
+            title="Lancer la projection grand écran et le livret imprimable d'Assemblée Générale"
+          >
+            <span>📽️</span>
+            <span>{t('secretariatReports.launchSlideshow') || "Lancer la Présentation AG"}</span>
+          </button>
+
+          <button
+            type="button"
             onClick={handlePrint}
             disabled={loading}
-            className="px-3 py-1.5 text-[10px] font-black uppercase tracking-wider bg-[#2d6a4f] text-white hover:bg-emerald-800 border-2 border-emerald-950 rounded-[4px_6px_3px_5px] shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none cursor-pointer flex items-center gap-1.5"
-            title="Ouvrir le menu d'impression formaté pour livret d'AG"
+            className="px-3 py-1.5 text-[10px] font-black uppercase tracking-wider bg-cordel-bg text-encre-noire hover:bg-amber-100 border-2 border-encre-noire rounded-[4px_6px_3px_5px] shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none cursor-pointer flex items-center gap-1.5"
+            title="Ouvrir le menu d'impression rapide de la synthèse à l'écran"
           >
             <span>📄</span>
-            <span>{t('secretariatReports.printAg') || "Imprimer le bilan AG"}</span>
+            <span>{t('secretariatReports.printAg') || "Imprimer la synthèse"}</span>
           </button>
         </div>
       </div>
@@ -629,6 +689,11 @@ export default function SecretariatReportsView({ groupId, onBack }) {
           </div>
 
           {/* ========================================================================= */}
+          {/* NOUVELLE SOUS-CARTE : ANCRAGE TERRITORIAL & COMMUNE (CERFA)               */}
+          {/* ========================================================================= */}
+          <ReportTerritoryCard territorialStats={indicators.territorialStats} />
+
+          {/* ========================================================================= */}
           {/* BLOC 2 : RAYONNEMENT SCÉNIQUE & PRATIQUE COLLECTIVE                       */}
           {/* ========================================================================= */}
           <div className="bg-cordel-card-bg text-encre-noire border-2 border-encre-noire rounded-[6px_12px_7px_10px] p-5 shadow-[2.5px_2.5px_0px_0px_#181716] flex flex-col gap-4 print-card">
@@ -693,6 +758,16 @@ export default function SecretariatReportsView({ groupId, onBack }) {
           </div>
 
           {/* ========================================================================= */}
+          {/* NOUVELLE SOUS-CARTE : BÉNÉVOLAT & VIE DE TROUPE (CERFA 12156)             */}
+          {/* ========================================================================= */}
+          <ReportVolunteerCard volunteeringStats={indicators.volunteeringStats} />
+
+          {/* ========================================================================= */}
+          {/* NOUVELLE SOUS-CARTE : RAYONNEMENT & VITRINE PUBLIQUE                      */}
+          {/* ========================================================================= */}
+          <ReportAudienceCard audienceStats={indicators.audienceStats} />
+
+          {/* ========================================================================= */}
           {/* BLOC 3 : CHANTIERS, ATELIERS & PATRIMOINE                                 */}
           {/* ========================================================================= */}
           <div className="bg-cordel-card-bg text-encre-noire border-2 border-encre-noire rounded-[6px_12px_7px_10px] p-5 shadow-[2.5px_2.5px_0px_0px_#181716] flex flex-col gap-4 print-card">
@@ -750,9 +825,9 @@ export default function SecretariatReportsView({ groupId, onBack }) {
           </div>
 
           {/* ========================================================================= */}
-          {/* BLOC 4 : BILAN FINANCIER CONDENSÉ                                         */}
+          {/* BLOC 4 : BILAN FINANCIER CONDENSÉ (PLEINE LARGEUR)                        */}
           {/* ========================================================================= */}
-          <div className="bg-cordel-card-bg text-encre-noire border-2 border-encre-noire rounded-[6px_12px_7px_10px] p-5 shadow-[2.5px_2.5px_0px_0px_#181716] flex flex-col gap-4 print-card">
+          <div className="lg:col-span-2 bg-cordel-card-bg text-encre-noire border-2 border-encre-noire rounded-[6px_12px_7px_10px] p-5 shadow-[2.5px_2.5px_0px_0px_#181716] flex flex-col gap-4 print-card">
             <div className="border-b border-dashed border-cordel-master-dark/25 pb-2.5 flex items-center justify-between">
               <div>
                 <h3 className="text-xs sm:text-sm font-black uppercase tracking-wider text-cordel-wood flex items-center gap-2">
@@ -816,6 +891,19 @@ export default function SecretariatReportsView({ groupId, onBack }) {
           </div>
 
         </div>
+      )}
+
+      {/* Modale autonome de Diaporama Grand Écran & Livret d'AG */}
+      {isSlideshowOpen && (
+        <AgSlideshowModal
+          isOpen={isSlideshowOpen}
+          onClose={() => setIsSlideshowOpen(false)}
+          groupId={groupId}
+          indicators={indicators}
+          assocInfo={assocInfo}
+          startDate={startDate}
+          endDate={endDate}
+        />
       )}
     </div>
   );

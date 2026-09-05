@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import LayoutShell from './LayoutShell';
 import CordelCard from './CordelCard';
@@ -238,7 +238,42 @@ export default function Onboarding({ user, branding, onComplete, profileData }) 
         onboardingCompleted: true
       };
 
-      // Write user document to Firestore using Auth UID as the key
+      // Réconciliation avec le sas de paiement HelloAsso préalable (pending_payments)
+      const cleanEmail = (user.email || '').trim().toLowerCase();
+      if (cleanEmail) {
+        try {
+          const pendingRef = doc(db, 'pending_payments', cleanEmail);
+          const pendingSnap = await getDoc(pendingRef);
+          if (pendingSnap.exists()) {
+            const pendingData = pendingSnap.data();
+            userDoc.paymentStatus = 'paid';
+            userDoc.helloAssoLastPayment = {
+              date: pendingData.paymentDate || new Date().toISOString(),
+              amount: pendingData.amountEuros || 0,
+              orderId: pendingData.orderId || null,
+              eventType: pendingData.eventType || 'Order'
+            };
+
+            // Rapatrier la transaction financière avec son UID si transactionId existe
+            if (pendingData.transactionId) {
+              try {
+                await updateDoc(doc(db, 'transactions', pendingData.transactionId), {
+                  userId: user.uid
+                });
+              } catch (txUpdateErr) {
+                console.warn("Onboarding - Impossible de rattacher la transaction comptable :", txUpdateErr);
+              }
+            }
+
+            // Supprimer l'entrée réconciliée du sas pending_payments
+            await deleteDoc(pendingRef);
+          }
+        } catch (pendingErr) {
+          console.warn("Onboarding - Erreur vérification sas pending_payments :", pendingErr);
+        }
+      }
+
+      // Enregistrement de la fiche adhérent dans Firestore avec l'UID Auth comme identifiant
       await setDoc(doc(db, 'users', user.uid), userDoc, { merge: true });
 
       // Trigger the parent callback to complete onboarding

@@ -41,8 +41,8 @@ export default function EventCarpoolSection({
 
   return (
     <>
-      {/* 🚗 Frais de déplacement / Convoi (uniquement pour les administrateurs pour prestation, stage & atelier) */}
-      {isAuthorized && (event.type === 'prestation' || event.type === 'stage' || event.type === 'atelier') && (
+      {/* 🚗 Frais de déplacement / Convoi (uniquement pour les administrateurs) */}
+      {isAuthorized && (
         <CordelCard variant="default" useExtremeBorder={true} className="py-4 px-5 select-none">
           <h4 className="font-bold text-xs uppercase tracking-wider text-cordel-wood border-b border-dashed border-cordel-master-dark/15 pb-1 mb-3">
             {enableCarpoolReimbursement ? "🚗 Frais de déplacement (Admin)" : "🚗 Covoiturage & Convoi (Admin)"}
@@ -116,8 +116,8 @@ export default function EventCarpoolSection({
         </CordelCard>
       )}
 
-      {/* 🚗 Convoi & Covoiturage (uniquement prestation, stage et atelier) */}
-      {(event.type === 'prestation' || event.type === 'stage' || event.type === 'atelier') && (
+      {/* 🚗 Convoi & Covoiturage (piloté par le drapeau booléen enableCarpool) */}
+      {(event.enableCarpool !== false) && (
         <CordelCard variant="default" useExtremeBorder={true} className="py-4 px-5">
           <h4 className="font-bold text-xs uppercase tracking-wider text-cordel-wood border-b border-dashed border-cordel-master-dark/15 pb-1 mb-3">
             🚗 Convoi & Covoiturage (Départ du local)

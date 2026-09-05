@@ -7,25 +7,29 @@ import CotisationsBlock from '../association-settings/blocks/CotisationsBlock';
 import FormulesManager from '../association-settings/FormulesManager';
 
 export default function TreasuryCotisations({
-  members,
+  members = [],
   associationSettings,
   helloAssoSignatureKey,
   savingSettings,
   handleSaveAssociationSettings,
-  groupId
+  groupId,
+  cautionsByMember = {},
+  handleUpdateCaution
 }) {
   const { t } = useTranslation();
 
-  // Search & Filtrer state
+  // États de recherche et de filtres
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
+  const [filterCaution, setFilterCaution] = useState('all');
 
-  // Config accordeon state
+  // État de l'accordéon de configuration
   const [showConfig, setShowConfig] = useState(false);
 
-  // Local configuration form state
+  // État du formulaire de configuration locale
   const [formConfig, setFormConfig] = useState({
     montantAdhesion: 0,
+    montantCautionDefaut: 150,
     optionsCotisation: [],
     formulesAdhesion: [],
     lienPaiementExterne: '',
@@ -42,7 +46,7 @@ export default function TreasuryCotisations({
   const projectId = import.meta.env.VITE_FIREBASE_PROJECT_ID || 'o-girador-7828c';
   const webhookUrl = `https://us-central1-${projectId}.cloudfunctions.net/helloAssoWebhook?groupId=${groupId}`;
 
-  // Synchroniser settings values to form state when settings charger
+  // Synchronisation des paramètres associatifs reçus
   useEffect(() => {
     if (associationSettings) {
       const existingFormules = Array.isArray(associationSettings.formulesAdhesion) && associationSettings.formulesAdhesion.length > 0
@@ -53,6 +57,9 @@ export default function TreasuryCotisations({
         montantAdhesion: associationSettings.montantAdhesion !== undefined 
           ? associationSettings.montantAdhesion 
           : (associationSettings.montantCotisation || 0),
+        montantCautionDefaut: associationSettings.montantCautionDefaut !== undefined
+          ? associationSettings.montantCautionDefaut
+          : 150,
         optionsCotisation: Array.isArray(associationSettings.optionsCotisation) 
           ? [...associationSettings.optionsCotisation] 
           : [],
@@ -66,7 +73,7 @@ export default function TreasuryCotisations({
     }
   }, [associationSettings, helloAssoSignatureKey]);
 
-  // Statistics
+  // Statistiques globales
   const totalActive = members.length;
   const countPaid = members.filter(m => m.paymentStatus === 'paid').length;
   const countPartial = members.filter(m => m.paymentStatus === 'partial').length;
@@ -81,7 +88,7 @@ export default function TreasuryCotisations({
     ? associationSettings.optionsCotisation 
     : [];
 
-  // Filtrer members list
+  // Filtrage combiné des adhérents (Recherche, Statut Cotisation, Statut Caution)
   const filteredMembers = members.filter((member) => {
     const fullName = `${member.prenom || ''} ${member.nom || ''}`.toLowerCase();
     const matchesSearch = fullName.includes(searchQuery.toLowerCase());
@@ -89,7 +96,10 @@ export default function TreasuryCotisations({
     const status = member.paymentStatus || 'unpaid';
     const matchesStatus = filterStatus === 'all' || status === filterStatus;
 
-    return matchesSearch && matchesStatus;
+    const caution = cautionsByMember?.[member.id] || { statutGlobal: 'na' };
+    const matchesCaution = filterCaution === 'all' || caution.statutGlobal === filterCaution;
+
+    return matchesSearch && matchesStatus && matchesCaution;
   });
 
   const handleCopyUrl = () => {
@@ -134,6 +144,7 @@ export default function TreasuryCotisations({
     try {
       const updates = {
         montantAdhesion: parseFloat(formConfig.montantAdhesion) || 0,
+        montantCautionDefaut: parseFloat(formConfig.montantCautionDefaut) || 150,
         optionsCotisation: formConfig.optionsCotisation,
         formulesAdhesion: formConfig.formulesAdhesion,
         "publicTheme.formulesRecrutement": formConfig.formulesAdhesion,
@@ -159,14 +170,18 @@ export default function TreasuryCotisations({
     }
   };
 
-  // Export to Excel (CSV)
+  // Export comptable complet au format CSV
   const exportToCSV = () => {
     const headers = [
       t('widgetTreasury.tableMemberName') || "Nom du membre",
       t('widgetTreasury.tableBaseAdhesion') || "Adhésion de base",
       t('widgetTreasury.tableOptions') || "Options choisies",
       `${t('widgetTreasury.tableTotalDue') || "Total dû"} (€)`,
-      t('widgetTreasury.tablePaymentStatus') || "Statut du paiement"
+      t('widgetTreasury.tablePaymentStatus') || "Statut du paiement",
+      "Instruments prêtés",
+      "Caution requise (€)",
+      "Statut caution",
+      "Garantie & Réf"
     ];
     
     const rows = filteredMembers.map(member => {
@@ -194,12 +209,28 @@ export default function TreasuryCotisations({
       else if (member.paymentStatus === 'partial') paymentStatusStr = t('widgetTreasury.partial') || "Partiel";
       else if (member.paymentStatus === 'exempted') paymentStatusStr = t('widgetTreasury.exempted') || "Exonéré";
 
+      // Cautions
+      const caution = cautionsByMember?.[member.id] || { statutGlobal: 'na', totalCaution: 0, instruments: [] };
+      const instrumentsList = caution.instruments.map(i => i.nom).join(', ') || 'Aucun';
+      const cautionMontant = caution.totalCaution || 0;
+      let cautionStatutLabel = 'N/A';
+      if (caution.statutGlobal === 'recue') cautionStatutLabel = 'Reçue';
+      else if (caution.statutGlobal === 'en_attente') cautionStatutLabel = 'En attente';
+
+      const garantiesRefs = caution.instruments
+        .map(i => `${i.typeGarantie || 'Chèque'}${i.reference ? ` (${i.reference})` : ''}`)
+        .join(', ') || '';
+
       return [
         fullName,
         baseMembership,
         chosenOptionsList,
         totalDue,
-        paymentStatusStr
+        paymentStatusStr,
+        instrumentsList,
+        cautionMontant,
+        cautionStatutLabel,
+        garantiesRefs
       ];
     });
 
@@ -211,7 +242,7 @@ export default function TreasuryCotisations({
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.setAttribute("href", url);
-    link.setAttribute("download", `tresorerie_${groupId || 'membres'}_${new Date().toISOString().split('T')[0]}.csv`);
+    link.setAttribute("download", `tresorerie_pointage_${groupId || 'membres'}_${new Date().toISOString().split('T')[0]}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -219,31 +250,31 @@ export default function TreasuryCotisations({
 
   return (
     <div className="flex flex-col gap-6 w-full">
-      {/* Stats Bar */}
+      {/* Barre de Statistiques */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 text-center">
         <div className="border border-encre-noire/25 p-2 bg-white/40 dark:bg-black/10 rounded">
           <div className="text-[10px] uppercase font-bold text-cordel-master-dark opacity-60">{t('widgetTreasury.activeMembers') || "Membres actifs"}</div>
           <div className="text-xl font-black text-encre-noire">{totalActive}</div>
         </div>
         <div className="border border-encre-noire/25 p-2 bg-green-100/35 dark:bg-green-950/15 rounded">
-          <div className="text-[10px] uppercase font-bold text-green-700 dark:text-green-400 opacity-80">{t('widgetTreasury.upToDate') || "À jour"}</div>
-          <div className="text-xl font-black text-green-700 dark:text-green-400">{countPaid}</div>
+          <div className="text-[10px] uppercase font-bold text-[#2d6a4f] opacity-80">{t('widgetTreasury.upToDate') || "À jour"}</div>
+          <div className="text-xl font-black text-[#2d6a4f]">{countPaid}</div>
         </div>
         <div className="border border-encre-noire/25 p-2 bg-amber-100/35 dark:bg-amber-950/15 rounded">
-          <div className="text-[10px] uppercase font-bold text-amber-700 dark:text-amber-400 opacity-80">{t('widgetTreasury.partial') || "Partiel"}</div>
-          <div className="text-xl font-black text-amber-700 dark:text-amber-400">{countPartial}</div>
+          <div className="text-[10px] uppercase font-bold text-[#c05621] opacity-80">{t('widgetTreasury.partial') || "Partiel"}</div>
+          <div className="text-xl font-black text-[#c05621]">{countPartial}</div>
         </div>
         <div className="border border-encre-noire/25 p-2 bg-blue-100/35 dark:bg-blue-950/15 rounded">
           <div className="text-[10px] uppercase font-bold text-blue-700 dark:text-blue-400 opacity-80">{t('widgetTreasury.exempted') || "Exonéré"}</div>
           <div className="text-xl font-black text-blue-700 dark:text-blue-400">{countExempted}</div>
         </div>
         <div className="border border-encre-noire/25 p-2 bg-red-100/35 dark:bg-red-950/15 rounded">
-          <div className="text-[10px] uppercase font-bold text-red-700 dark:text-red-400 opacity-80">{t('widgetTreasury.unpaid') || "Non payé"}</div>
-          <div className="text-xl font-black text-red-700 dark:text-red-400">{countUnpaid}</div>
+          <div className="text-[10px] uppercase font-bold text-[#8b2a1a] opacity-80">{t('widgetTreasury.unpaid') || "Non payé"}</div>
+          <div className="text-xl font-black text-[#8b2a1a]">{countUnpaid}</div>
         </div>
       </div>
 
-      {/* Configuration Section (Accordeon) */}
+      {/* Section Paramètres & Configuration des Cotisations (Accordéon) */}
       <CordelCard variant="default" useExtremeBorder={true} className="p-4">
         <div className="flex justify-between items-center cursor-pointer select-none" onClick={() => setShowConfig(!showConfig)}>
           <h3 className="text-xs font-extrabold tracking-wider text-cordel-wood uppercase">
@@ -292,7 +323,7 @@ export default function TreasuryCotisations({
         )}
       </CordelCard>
 
-      {/* Filters and Search Toolbar */}
+      {/* Barre d'outils, Recherche et Filtres */}
       <CordelCard variant="default" useExtremeBorder={false} className="p-4 bg-cordel-bg flex flex-col md:flex-row gap-3 items-end">
         <div className="flex-1 flex flex-col gap-1 text-left w-full">
           <label className="text-[9px] uppercase font-extrabold tracking-wider text-cordel-wood">
@@ -307,9 +338,9 @@ export default function TreasuryCotisations({
           />
         </div>
 
-        <div className="flex flex-col gap-1 text-left min-w-[150px] w-full md:w-auto">
+        <div className="flex flex-col gap-1 text-left min-w-[130px] w-full md:w-auto">
           <label className="text-[9px] uppercase font-extrabold tracking-wider text-cordel-wood">
-            {t('widgetTreasury.statusLabel') || "Statut"}
+            {t('widgetTreasury.statusLabel') || "Statut cotisation"}
           </label>
           <select
             value={filterStatus}
@@ -324,6 +355,22 @@ export default function TreasuryCotisations({
           </select>
         </div>
 
+        <div className="flex flex-col gap-1 text-left min-w-[140px] w-full md:w-auto">
+          <label className="text-[9px] uppercase font-extrabold tracking-wider text-cordel-wood">
+            Caution instrument
+          </label>
+          <select
+            value={filterCaution}
+            onChange={(e) => setFilterCaution(e.target.value)}
+            className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light"
+          >
+            <option value="all">Toutes les cautions</option>
+            <option value="en_attente">⏳ Cautions en attente</option>
+            <option value="recue">✓ Cautions reçues</option>
+            <option value="na">Sans prêt (N/A)</option>
+          </select>
+        </div>
+
         <button
           type="button"
           onClick={exportToCSV}
@@ -333,7 +380,7 @@ export default function TreasuryCotisations({
         </button>
       </CordelCard>
 
-      {/* Members Table / List */}
+      {/* Tableau de pointage de rentrée */}
       <div className="flex flex-col gap-3">
         {filteredMembers.length === 0 ? (
           <CordelCard variant="default" useExtremeBorder={false} className="p-8 text-center bg-cordel-bg">
@@ -341,22 +388,25 @@ export default function TreasuryCotisations({
           </CordelCard>
         ) : (
           <div className="flex flex-col gap-2">
-            {/* Table Header for Desktop */}
-            <div className="hidden md:grid grid-cols-12 gap-4 px-4 py-2 border-b border-dashed border-cordel-master-dark/30 text-[9px] font-extrabold uppercase tracking-wider text-cordel-wood">
-              <div className="col-span-3 text-left">{t('widgetTreasury.tableMemberName') || "Nom"}</div>
-              <div className="col-span-2 text-center">{t('widgetTreasury.tableBaseAdhesion') || "Base"}</div>
-              <div className="col-span-3 text-left">{t('widgetTreasury.tableOptions') || "Options"}</div>
+            {/* En-tête Desktop à 6 colonnes (Total 12 colonnes de grille) */}
+            <div className="hidden md:grid grid-cols-12 gap-3 px-4 py-2 border-b border-dashed border-cordel-master-dark/30 text-[9px] font-extrabold uppercase tracking-wider text-cordel-wood">
+              <div className="col-span-3 text-left">{t('widgetTreasury.tableMemberName') || "Membre"}</div>
+              <div className="col-span-1 text-center">{t('widgetTreasury.tableBaseAdhesion') || "Base"}</div>
+              <div className="col-span-2 text-left">{t('widgetTreasury.tableOptions') || "Options"}</div>
               <div className="col-span-2 text-center">{t('widgetTreasury.tableTotalDue') || "Total dû"}</div>
+              <div className="col-span-2 text-center">Caution instrument</div>
               <div className="col-span-2 text-right">{t('widgetTreasury.tablePaymentStatus') || "Statut"}</div>
             </div>
 
-            {/* Table Rows */}
+            {/* Lignes du tableau */}
             {filteredMembers.map((member) => (
               <MemberTreasuryRow
                 key={member.id}
                 member={member}
                 optionsCotisation={optionsCotisation}
                 baseAdhesionAmount={parseFloat(baseAdhesionAmount) || 0}
+                cautionData={cautionsByMember?.[member.id]}
+                onUpdateCaution={handleUpdateCaution}
               />
             ))}
           </div>

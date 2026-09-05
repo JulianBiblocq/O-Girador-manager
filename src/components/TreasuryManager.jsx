@@ -32,6 +32,8 @@ export default function TreasuryManager({ groupId, onBack, role, isSystemAdmin, 
     events,
     associationSettings,
     helloAssoSignatureKey,
+    cautionsByMember,
+    handleUpdateCaution,
     loading,
     error,
     savingSettings,
@@ -83,6 +85,8 @@ export default function TreasuryManager({ groupId, onBack, role, isSystemAdmin, 
             savingSettings={savingSettings}
             handleSaveAssociationSettings={handleSaveAssociationSettings}
             groupId={groupId}
+            cautionsByMember={cautionsByMember}
+            handleUpdateCaution={handleUpdateCaution}
           />
         );
       case 'facturation':

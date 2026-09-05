@@ -3,6 +3,7 @@ import { collection, query, where, getDocs, doc } from 'firebase/firestore';
 import { db } from '../../firebase';
 import CordelCard from '../CordelCard';
 import { calculateToadaScore, getProgressColor } from '../../utils/toadaProgressEngine';
+import { normalizePupitreName } from '../../utils/secretariatMetrics';
 
 export default function MestreToadasAnalytics({ 
   profileData, 
@@ -55,8 +56,12 @@ export default function MestreToadasAnalytics({
           }));
         }
 
-        // Pupitres uniques déduits des utilisateurs actifs
-        const pupitres = [...new Set(usersList.map(u => u.instrument || u.instrumentPrincipal || u.pupitre).filter(Boolean))];
+        // Pupitres uniques déduits des utilisateurs actifs (normalisés)
+        const pupitres = [...new Set(
+          usersList
+            .map(u => normalizePupitreName(u.instrumentPrincipal || u.instrument || u.pupitre))
+            .filter(p => Boolean(p) && p !== 'Non défini')
+        )];
         setPupitresList(pupitres);
 
         const activeSongs = allSongs.filter(s => !s.isArchived);

@@ -3,7 +3,8 @@
  * Prend en entrée les données d'une Fiche Pédagogique et génère des QCM.
  */
 
-import { distractorPool } from '../data/distractorPool';
+import { distractorPool } from '../data/distractorPool.js';
+import { normalizePartSteps } from './workshopProjectionUtils.js';
 
 const shuffleArray = (array) => {
   const arr = [...array];
@@ -86,18 +87,67 @@ export const generateQuizFromInstrumentModel = (model, allModels = [], config = 
   const questions = [];
   if (!model) return questions;
 
-  const t = config.t || ((key, fallback) => fallback || key);
+  const { targetPartId = null, targetStepIndex = null, limit = 10 } = config;
+  const _t = config.t || ((key, fallback) => fallback || key);
 
-  // Distracteurs globaux (tirés de tous les modèles de la base)
+  // Vivier de repli spécialisé pour la lutherie et l'artisanat
+  const fallbackLutherie = (distractorPool.materiauxEtLutherie && distractorPool.materiauxEtLutherie.length > 0)
+    ? distractorPool.materiauxEtLutherie
+    : ["Peau Mylar synthétique", "Archet de violon", "Corde de guitare", "Peau de chèvre naturelle", "Contreplaqué cintrable", "Colle vinylique D3"];
+
+  /**
+   * Sélectionne jusqu'à 3 distracteurs uniques distincts de la réponse correcte,
+   * avec dédoublonnage strict et repli exclusif sur le vivier de lutherie.
+   */
+  const getUniqueDistractors = (correctAnswer, candidatePool, fallbackList) => {
+    const normalizedCorrect = String(correctAnswer || '').trim().toLowerCase();
+    const uniqueDistractors = new Set();
+
+    // 1. Sélection depuis le vivier de candidats réels
+    const candidatesShuffled = shuffleArray(candidatePool || []);
+    for (const item of candidatesShuffled) {
+      if (!item) continue;
+      const trimmed = String(item).trim();
+      if (trimmed.toLowerCase() !== normalizedCorrect && !uniqueDistractors.has(trimmed)) {
+        uniqueDistractors.add(trimmed);
+        if (uniqueDistractors.size >= 3) break;
+      }
+    }
+
+    // 2. Si vivier insuffisant, combler avec le vivier de secours lutherie sans doublon
+    if (uniqueDistractors.size < 3) {
+      const fallbackShuffled = shuffleArray(fallbackList || []);
+      for (const fb of fallbackShuffled) {
+        if (!fb) continue;
+        const trimmed = String(fb).trim();
+        if (trimmed.toLowerCase() !== normalizedCorrect && !uniqueDistractors.has(trimmed)) {
+          uniqueDistractors.add(trimmed);
+          if (uniqueDistractors.size >= 3) break;
+        }
+      }
+    }
+
+    return Array.from(uniqueDistractors);
+  };
+
+  // Collecte globale des distracteurs issus de tous les modèles d'instruments
   const allMaterials = new Set();
   const allTools = new Set();
   const allPartNames = new Set();
-  
-  allModels.forEach(m => {
+
+  const modelsToScan = (allModels && allModels.length > 0) ? allModels : [model];
+  modelsToScan.forEach(m => {
     (m.parts || []).forEach(p => {
       if (p.nom) allPartNames.add(p.nom);
       (p.materiels || []).forEach(mat => allMaterials.add(mat));
       (p.outils || []).forEach(out => allTools.add(out));
+      
+      // Analyse également les étapes normalisées pour enrichir les outils et matières
+      const normSteps = normalizePartSteps(p);
+      normSteps.forEach(s => {
+        (s.materiaux || []).forEach(mat => allMaterials.add(mat));
+        (s.outils || []).forEach(out => allTools.add(out));
+      });
     });
   });
 
@@ -105,74 +155,188 @@ export const generateQuizFromInstrumentModel = (model, allModels = [], config = 
   const tPool = Array.from(allTools);
   const pPool = Array.from(allPartNames);
 
-  // Pour chaque pièce du modèle, on essaie de générer une question pertinente
-  (model.parts || []).forEach((part, index) => {
-    // 1. Question sur les pièces
-    if (part.nom && pPool.length > 1) {
-      let wrong = pPool.filter(n => n.toLowerCase() !== part.nom.toLowerCase() && !(model.parts || []).some(mp => mp.nom.toLowerCase() === n.toLowerCase()));
-      wrong = shuffleArray(wrong).slice(0, 3);
-      if (wrong.length > 0) {
-        // Ajouter quelques distracteurs de secours si besoin
-        while (wrong.length < 3) wrong.push(distractorPool.fallbacksGeneral[Math.floor(Math.random() * distractorPool.fallbacksGeneral.length)]);
-        
-        questions.push({
-          id: `qcm_auto_fab_part_${model.id}_${index}`,
-          type: 'fabrication_piece',
-          questionText: `Laquelle de ces pièces fait partie de l'instrument "${model.nom}" ?`,
-          instruction: "Reconnaissance de pièce",
-          choices: shuffleArray([
-            { text: part.nom, isCorrect: true },
-            ...wrong.slice(0,3).map(w => ({ text: w, isCorrect: false }))
-          ]),
-          feedback: `Oui, la pièce "${part.nom}" fait partie de la conception de "${model.nom}".`
-        });
-      }
-    }
-
-    // 2. Question sur le matériel
-    if (part.materiels && part.materiels.length > 0 && mPool.length > 1) {
-      const mat = part.materiels[Math.floor(Math.random() * part.materiels.length)];
-      let wrong = mPool.filter(m => m.toLowerCase() !== mat.toLowerCase() && !part.materiels.some(pm => pm.toLowerCase() === m.toLowerCase()));
-      wrong = shuffleArray(wrong).slice(0, 3);
-      if (wrong.length > 0) {
-        while (wrong.length < 3) wrong.push(distractorPool.fallbacksGeneral[Math.floor(Math.random() * distractorPool.fallbacksGeneral.length)]);
-        questions.push({
-          id: `qcm_auto_fab_mat_${model.id}_${index}`,
-          type: 'fabrication_materiel',
-          questionText: `Quel matériel est nécessaire pour fabriquer la pièce "${part.nom}" ?`,
-          instruction: "Matériaux de fabrication",
-          choices: shuffleArray([
-            { text: mat, isCorrect: true },
-            ...wrong.slice(0,3).map(w => ({ text: w, isCorrect: false }))
-          ]),
-          feedback: `Le matériel exact est "${mat}".`
-        });
-      }
-    }
-
-    // 3. Question sur l'outillage
-    if (part.outils && part.outils.length > 0 && tPool.length > 1) {
-      const outil = part.outils[Math.floor(Math.random() * part.outils.length)];
-      let wrong = tPool.filter(t => t.toLowerCase() !== outil.toLowerCase() && !part.outils.some(pt => pt.toLowerCase() === t.toLowerCase()));
-      wrong = shuffleArray(wrong).slice(0, 3);
-      if (wrong.length > 0) {
-        while (wrong.length < 3) wrong.push(distractorPool.fallbacksGeneral[Math.floor(Math.random() * distractorPool.fallbacksGeneral.length)]);
-        questions.push({
-          id: `qcm_auto_fab_outil_${model.id}_${index}`,
-          type: 'fabrication_outil',
-          questionText: `Quel outil est utilisé pour la fabrication de la pièce "${part.nom}" ?`,
-          instruction: "Outillage",
-          choices: shuffleArray([
-            { text: outil, isCorrect: true },
-            ...wrong.slice(0,3).map(w => ({ text: w, isCorrect: false }))
-          ]),
-          feedback: `L'outil "${outil}" est bien requis.`
-        });
-      }
-    }
+  // Filtrage ciblé si une pièce spécifique est demandée
+  const partsToProcess = (model.parts || []).filter((part, idx) => {
+    if (!targetPartId) return true;
+    const partIdentifier = part.id || `part_${idx}`;
+    return partIdentifier === targetPartId || part.id === targetPartId || part.nom === targetPartId;
   });
 
-  return shuffleArray(questions).slice(0, config.limit || 10);
+  // Détection du mode de ciblage par étape
+  const isTargetingStep = targetStepIndex !== null && targetStepIndex !== undefined;
+  const targetStepNumber = isTargetingStep ? Number(targetStepIndex) : null;
+
+  partsToProcess.forEach((part, index) => {
+    const currentPartId = part.id || `part_${index}`;
+    const currentPartTitle = part.nom || `Pièce ${index + 1}`;
+    const normalizedSteps = normalizePartSteps(part);
+
+    // =========================================================================
+    // 1. QUESTIONS AU NIVEAU DE LA PIÈCE (si pas de ciblage exclusif d'étape)
+    // =========================================================================
+    if (!isTargetingStep) {
+      // 1.1 Question reconnaissance de la pièce
+      if (part.nom && pPool.length > 1) {
+        const candidateParts = pPool.filter(n => !(model.parts || []).some(mp => mp.nom && mp.nom.toLowerCase() === n.toLowerCase()));
+        const wrong = getUniqueDistractors(part.nom, candidateParts, fallbackLutherie);
+        if (wrong.length > 0) {
+          questions.push({
+            id: `qcm_auto_fab_part_${model.id}_${currentPartId}`,
+            type: 'fabrication_piece',
+            partId: currentPartId,
+            partTitle: currentPartTitle,
+            stepIndex: null,
+            stepTitle: null,
+            questionText: `Laquelle de ces pièces fait partie de l'instrument "${model.nom}" ?`,
+            instruction: "Reconnaissance de pièce",
+            choices: shuffleArray([
+              { text: part.nom, isCorrect: true },
+              ...wrong.map(w => ({ text: w, isCorrect: false }))
+            ]),
+            feedback: `Oui, la pièce "${part.nom}" fait partie de la conception de "${model.nom}".`
+          });
+        }
+      }
+
+      // 1.2 Question matériel requis pour la pièce
+      if (part.materiels && part.materiels.length > 0) {
+        const mat = part.materiels[Math.floor(Math.random() * part.materiels.length)];
+        const candidateMaterials = mPool.filter(m => !part.materiels.some(pm => pm.toLowerCase() === m.toLowerCase()));
+        const wrong = getUniqueDistractors(mat, candidateMaterials, fallbackLutherie);
+        if (wrong.length > 0) {
+          questions.push({
+            id: `qcm_auto_fab_mat_${model.id}_${currentPartId}`,
+            type: 'fabrication_materiel',
+            partId: currentPartId,
+            partTitle: currentPartTitle,
+            stepIndex: null,
+            stepTitle: null,
+            questionText: `Quel matériel est nécessaire pour fabriquer la pièce "${currentPartTitle}" ?`,
+            instruction: "Matériaux de fabrication",
+            choices: shuffleArray([
+              { text: mat, isCorrect: true },
+              ...wrong.map(w => ({ text: w, isCorrect: false }))
+            ]),
+            feedback: `Le matériel exact est "${mat}".`
+          });
+        }
+      }
+
+      // 1.3 Question outillage de la pièce
+      if (part.outils && part.outils.length > 0) {
+        const outil = part.outils[Math.floor(Math.random() * part.outils.length)];
+        const candidateTools = tPool.filter(t => !part.outils.some(pt => pt.toLowerCase() === t.toLowerCase()));
+        const wrong = getUniqueDistractors(outil, candidateTools, fallbackLutherie);
+        if (wrong.length > 0) {
+          questions.push({
+            id: `qcm_auto_fab_outil_${model.id}_${currentPartId}`,
+            type: 'fabrication_outil',
+            partId: currentPartId,
+            partTitle: currentPartTitle,
+            stepIndex: null,
+            stepTitle: null,
+            questionText: `Quel outil est utilisé pour la fabrication de la pièce "${currentPartTitle}" ?`,
+            instruction: "Outillage",
+            choices: shuffleArray([
+              { text: outil, isCorrect: true },
+              ...wrong.map(w => ({ text: w, isCorrect: false }))
+            ]),
+            feedback: `L'outil "${outil}" est bien requis.`
+          });
+        }
+      }
+    }
+
+    // =========================================================================
+    // 2. QUESTIONS AU NIVEAU DES ÉTAPES DE FABRICATION
+    // =========================================================================
+    normalizedSteps.forEach((step, sIdx) => {
+      // Filtrage si une étape précise est ciblée
+      if (isTargetingStep && sIdx !== targetStepNumber) return;
+
+      const actualStepIndex = sIdx;
+      const currentStepTitle = step.titre || `Étape ${actualStepIndex + 1}`;
+
+      // 2.1 Question outil requis à cette étape
+      if (step.outils && step.outils.length > 0) {
+        const stepOutil = step.outils[Math.floor(Math.random() * step.outils.length)];
+        const candidateTools = tPool.filter(t => !step.outils.some(so => so.toLowerCase() === t.toLowerCase()));
+        const wrong = getUniqueDistractors(stepOutil, candidateTools, fallbackLutherie);
+        if (wrong.length > 0) {
+          questions.push({
+            id: `qcm_auto_fab_step_outil_${model.id}_${currentPartId}_${actualStepIndex}`,
+            type: 'fabrication_etape_outil',
+            partId: currentPartId,
+            partTitle: currentPartTitle,
+            stepIndex: actualStepIndex ?? null,
+            stepTitle: currentStepTitle,
+            questionText: `Quel outil est nécessaire pour l'étape "${currentStepTitle}" ?`,
+            instruction: "Outillage d'étape",
+            choices: shuffleArray([
+              { text: stepOutil, isCorrect: true },
+              ...wrong.map(w => ({ text: w, isCorrect: false }))
+            ]),
+            feedback: `Pour l'étape "${currentStepTitle}", l'outil requis est bien "${stepOutil}".`
+          });
+        }
+      }
+
+      // 2.2 Question matériau manipulé à cette étape
+      if (step.materiaux && step.materiaux.length > 0) {
+        const stepMat = step.materiaux[Math.floor(Math.random() * step.materiaux.length)];
+        const candidateMaterials = mPool.filter(m => !step.materiaux.some(sm => sm.toLowerCase() === m.toLowerCase()));
+        const wrong = getUniqueDistractors(stepMat, candidateMaterials, fallbackLutherie);
+        if (wrong.length > 0) {
+          questions.push({
+            id: `qcm_auto_fab_step_mat_${model.id}_${currentPartId}_${actualStepIndex}`,
+            type: 'fabrication_etape_materiel',
+            partId: currentPartId,
+            partTitle: currentPartTitle,
+            stepIndex: actualStepIndex ?? null,
+            stepTitle: currentStepTitle,
+            questionText: `Quel matériau est manipulé lors de l'étape "${currentStepTitle}" ?`,
+            instruction: "Matériaux d'étape",
+            choices: shuffleArray([
+              { text: stepMat, isCorrect: true },
+              ...wrong.map(w => ({ text: w, isCorrect: false }))
+            ]),
+            feedback: `Pour l'étape "${currentStepTitle}", le matériau manipulé est bien "${stepMat}".`
+          });
+        }
+      }
+
+      // 2.3 Question ordre chronologique de fabrication
+      if (normalizedSteps.length > 1) {
+        const stepNumberText = `Étape ${actualStepIndex + 1}`;
+        const otherStepChoices = [];
+        for (let i = 0; i < normalizedSteps.length; i++) {
+          if (i !== actualStepIndex) {
+            otherStepChoices.push(`Étape ${i + 1}`);
+          }
+        }
+        const wrong = shuffleArray(otherStepChoices).slice(0, 3);
+        if (wrong.length > 0) {
+          questions.push({
+            id: `qcm_auto_fab_step_ordre_${model.id}_${currentPartId}_${actualStepIndex}`,
+            type: 'fabrication_etape_ordre',
+            partId: currentPartId,
+            partTitle: currentPartTitle,
+            stepIndex: actualStepIndex ?? null,
+            stepTitle: currentStepTitle,
+            questionText: `À quelle étape intervient "${currentStepTitle}" dans la fabrication de ${currentPartTitle} ?`,
+            instruction: "Ordre chronologique de fabrication",
+            choices: shuffleArray([
+              { text: stepNumberText, isCorrect: true },
+              ...wrong.map(w => ({ text: w, isCorrect: false }))
+            ]),
+            feedback: `L'étape "${currentStepTitle}" correspond bien à l'étape numéro ${actualStepIndex + 1} sur un total de ${normalizedSteps.length} étapes.`
+          });
+        }
+      }
+    });
+  });
+
+  return shuffleArray(questions).slice(0, limit);
 };
 
 export const generateQuizFromSheet = (sheetData, allSheetsData = [], allSongsData = [], config = {}) => {

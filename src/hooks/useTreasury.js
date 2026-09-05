@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { collection, query, where, onSnapshot, doc, addDoc, deleteDoc, updateDoc, setDoc, getDoc, Timestamp } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { auth, db, storage } from '../firebase';
@@ -34,6 +34,7 @@ export function useTreasury(groupId) {
   const [members, setMembers] = useState([]);
   const [transactions, setTransactions] = useState([]);
   const [events, setEvents] = useState([]);
+  const [instruments, setInstruments] = useState([]);
   const [associationSettings, setAssociationSettings] = useState(null);
   const [helloAssoSignatureKey, setHelloAssoSignatureKey] = useState('');
 
@@ -41,6 +42,7 @@ export function useTreasury(groupId) {
     members: true,
     transactions: true,
     events: true,
+    inventory: true,
     settings: true,
     credentials: true
   });
@@ -68,6 +70,7 @@ export function useTreasury(groupId) {
         members: false,
         transactions: false,
         events: false,
+        inventory: false,
         settings: false,
         credentials: false
       });
@@ -149,7 +152,22 @@ export function useTreasury(groupId) {
 
 
 
-    // 7. HelloAsso Credentials
+    // 5. Inventaire du matériel (pour le suivi des prêts et cautions)
+    const invRef = collection(db, 'inventory');
+    const qInv = query(invRef, where('groupId', '==', groupId));
+    const unsubInv = onSnapshot(qInv, (snap) => {
+      const fetched = [];
+      snap.forEach((docSnap) => {
+        fetched.push({ id: docSnap.id, ...docSnap.data() });
+      });
+      setInstruments(fetched);
+      setLoadingStates(prev => ({ ...prev, inventory: false }));
+    }, (err) => {
+      console.error("useTreasury - Erreur chargement inventaire :", err);
+      setLoadingStates(prev => ({ ...prev, inventory: false }));
+    });
+
+    // 6. HelloAsso Credentials
     const credentialsRef = doc(db, 'associations', groupId, 'private_settings', 'credentials');
     getDoc(credentialsRef).then((docSnap) => {
       if (docSnap.exists()) {
@@ -161,6 +179,13 @@ export function useTreasury(groupId) {
       setLoadingStates(prev => ({ ...prev, credentials: false }));
     });
 
+    return () => {
+      unsubMembers();
+      unsubTx();
+      unsubEvents();
+      unsubSettings();
+      unsubInv();
+    };
   }, [groupId, currentUser?.uid]);
 
   // Operations
@@ -492,10 +517,89 @@ export function useTreasury(groupId) {
     };
   };
 
+  // Agrégation réactive des cautions d'instruments par adhérent
+  const cautionsByMember = useMemo(() => {
+    const defaultMontant = Number(associationSettings?.montantCautionDefaut) || 150;
+    const map = {};
+
+    members.forEach(member => {
+      const memberId = member.id;
+      // Instruments actuellement empruntés ou détenus par ce membre
+      const borrowed = (instruments || []).filter(inst => 
+        (inst.status === 'Emprunté' && inst.borrowedBy === memberId) ||
+        (inst.status === 'Emprunté' && inst.localisationPhysique === memberId)
+      );
+
+      if (borrowed.length === 0) {
+        map[memberId] = {
+          statutGlobal: 'na',
+          totalCaution: 0,
+          countInstruments: 0,
+          instruments: []
+        };
+      } else {
+        let allRecue = true;
+        let totalCaution = 0;
+
+        const detailedList = borrowed.map(inst => {
+          const montant = inst.caution?.montant !== undefined && inst.caution?.montant !== null
+            ? Number(inst.caution.montant) 
+            : defaultMontant;
+          const statut = inst.caution?.statut || 'non_recue';
+          const typeGarantie = inst.caution?.typeGarantie || 'cheque';
+          const reference = inst.caution?.reference || '';
+          
+          if (statut !== 'recue') {
+            allRecue = false;
+          }
+          totalCaution += montant;
+
+          return {
+            id: inst.id,
+            nom: inst.nom || 'Instrument',
+            type: inst.type || '',
+            montant,
+            statut,
+            typeGarantie,
+            reference,
+            dateReception: inst.caution?.dateReception || null
+          };
+        });
+
+        map[memberId] = {
+          statutGlobal: allRecue ? 'recue' : 'en_attente',
+          totalCaution,
+          countInstruments: detailedList.length,
+          instruments: detailedList
+        };
+      }
+    });
+
+    return map;
+  }, [members, instruments, associationSettings?.montantCautionDefaut]);
+
+  // Enregistrement ou mise à jour de la caution sur un instrument physique
+  const handleUpdateCaution = useCallback(async (instrumentId, cautionData) => {
+    try {
+      const instRef = doc(db, 'inventory', instrumentId);
+      await updateDoc(instRef, {
+        caution: {
+          ...cautionData,
+          updatedAt: Timestamp.now()
+        }
+      });
+    } catch (err) {
+      console.error("useTreasury - Erreur mise à jour caution :", err);
+      throw new Error("Erreur lors de l'enregistrement de la caution.");
+    }
+  }, []);
+
   return {
     members,
     transactions,
     events,
+    instruments,
+    cautionsByMember,
     associationSettings,
     helloAssoSignatureKey,
     loading,
@@ -507,6 +611,7 @@ export function useTreasury(groupId) {
     handleDeleteTx,
     handleUpdateEventFinances,
     handleSaveAssociationSettings,
+    handleUpdateCaution,
     calculateGlobalBalance
   };
 }

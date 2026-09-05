@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { XiloClose } from '../XiloIcons';
 import CordelButton from '../CordelButton';
+import { getStepSignal, getStepProgressRatio } from '../../utils/workshopProjectionUtils';
+import AutoEvalQuiz from '../pedagogy/AutoEvalQuiz';
 
 export default function PartWorkflowModal({
   isOpen,
@@ -8,31 +10,35 @@ export default function PartWorkflowModal({
   slot,
   invPart,
   project,
+  model = null,
+  profileData = null,
   onUpdateSlotWorkflow,
   updatePartWorkflow,
   isValidator,
   validatorName,
   onFeedback
 }) {
-  if (!isOpen || !slot || !invPart) return null;
-
   const [retoucheNote, setRetoucheNote] = useState('');
   const [showRetoucheInput, setShowRetoucheInput] = useState(false);
   const [loading, setLoading] = useState(false);
   const [feedback, setFeedback] = useState(null);
   const [autoCloseTimer, setAutoCloseTimer] = useState(null);
+  const [showStepQuiz, setShowStepQuiz] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
       setFeedback(null);
       setShowRetoucheInput(false);
       setRetoucheNote('');
+      setShowStepQuiz(false);
       if (autoCloseTimer) {
         clearTimeout(autoCloseTimer);
         setAutoCloseTimer(null);
       }
     }
   }, [isOpen, invPart?.id, slot?.slotId]);
+
+  if (!isOpen || !slot || !invPart) return null;
 
   const handleClose = () => {
     if (autoCloseTimer) {
@@ -48,7 +54,7 @@ export default function PartWorkflowModal({
   const currentStep = slotWf.currentStepIndex !== undefined ? slotWf.currentStepIndex : (invPart.currentStepIndex || 0);
   const statutEtape = slotWf.statutEtape || invPart.statutEtape || 'en_cours';
   
-  const isCompleted = statutEtape === 'terminee' || (totalSteps > 0 && currentStep >= totalSteps);
+  const isCompleted = statutEtape === 'terminee' || totalSteps === 0;
   const stepData = slot.chapitres?.[currentStep];
 
   const handleSoumettre = async () => {
@@ -172,27 +178,57 @@ export default function PartWorkflowModal({
         <div className="p-6">
           <div className="mb-4 pb-4 border-b-2 border-dashed border-encre-noire/20">
             <h2 className="text-xl font-black text-cordel-wood uppercase tracking-wider">{slot.slotLabel}</h2>
-            <div className="flex items-center gap-3 mt-2">
+            <div className="flex items-center gap-3 mt-2 flex-wrap">
               <span className="text-xs font-bold text-stone-500 bg-stone-200 px-2 py-1 rounded">
                 Pièce assignée : {invPart.nom}
               </span>
               {totalSteps > 0 && !isCompleted && (
                 <span className="text-xs font-bold text-white bg-cordel-wood px-2 py-1 rounded shadow">
-                  Étape {currentStep + 1} / {totalSteps}
+                  Étape {Math.min(currentStep + 1, totalSteps)} / {totalSteps} • {getStepProgressRatio(totalSteps, currentStep, statutEtape)}
                 </span>
               )}
               {isCompleted && (
                 <span className="text-xs font-bold text-white bg-cordel-vert px-2 py-1 rounded shadow">
-                  Terminée ✅
+                  Terminée ✅ ({totalSteps} / {totalSteps})
                 </span>
               )}
             </div>
+
+            {/* Rangée de pastilles numérotées des étapes */}
+            {totalSteps > 0 && (
+              <div className="flex items-center gap-1.5 mt-3 flex-wrap">
+                {slot.chapitres?.map((chap, stepIdx) => {
+                  const signal = getStepSignal(stepIdx, currentStep, statutEtape);
+                  return (
+                    <div
+                      key={stepIdx}
+                      title={`Étape ${stepIdx + 1} : ${chap.titre || ''} (${signal.label})`}
+                      className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-black border shadow-xs select-none transition-all ${signal.colorClass}`}
+                    >
+                      <span>{signal.icon}</span>
+                      <span>Étape {stepIdx + 1}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           {!isCompleted && stepData ? (
             <div className="flex flex-col gap-4">
               <div className="bg-white p-4 border border-encre-noire/10 rounded">
-                <h3 className="text-md font-bold text-encre-noire mb-2">{stepData.titre || 'Étape sans titre'}</h3>
+                <div className="flex justify-between items-start gap-2 mb-2">
+                  <h3 className="text-md font-bold text-encre-noire">{stepData.titre || 'Étape sans titre'}</h3>
+                  <button
+                    type="button"
+                    onClick={() => setShowStepQuiz(true)}
+                    className="text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded bg-cordel-wood/10 text-cordel-wood border border-cordel-wood/30 hover:bg-cordel-wood hover:text-white transition-all cursor-pointer flex items-center gap-1 shrink-0 active:scale-95 shadow-xs"
+                    title="Tester mes connaissances sur cette étape de fabrication"
+                  >
+                    <span>🎯</span>
+                    <span>Quiz de l'étape</span>
+                  </button>
+                </div>
 
                 {stepData.photoUrl && (
                   <div className="w-full mb-3 overflow-hidden rounded border border-encre-noire/20 bg-stone-100 flex items-center justify-center">
@@ -322,6 +358,21 @@ export default function PartWorkflowModal({
 
         </div>
       </div>
+
+      {/* Modale d'évaluation ciblée sur l'étape courante */}
+      {showStepQuiz && (
+        <AutoEvalQuiz
+          instrumentModelData={model || {
+            id: project?.modelId || 'model_atelier',
+            nom: project?.nom || slot.slotLabel || 'Atelier',
+            parts: [slot]
+          }}
+          targetPartId={invPart?.partId || slot?.partId || `part_0`}
+          targetStepIndex={currentStep ?? 0}
+          profileData={profileData}
+          onClose={() => setShowStepQuiz(false)}
+        />
+      )}
     </div>
   );
 }

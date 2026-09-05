@@ -333,6 +333,7 @@ export default function GigEventCreateModal({
               adresseLocal={adresseLocal}
               lieuxImportants={lieuxImportants}
               defaultLocationsByEventType={defaultLocationsByEventType}
+              eventTypeConfigs={eventTypeConfigs}
               t={t}
             />
           )}

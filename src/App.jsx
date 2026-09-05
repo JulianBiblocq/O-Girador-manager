@@ -1779,6 +1779,7 @@ export default function App() {
                 activeTabProp="projects"
                 hideSubTabs={true}
                 onBack={() => handleNavigateToPole('accueil')} 
+                onNavigateToView={handleNavigateToView}
               />
             ) : (currentTab === 'instrument-models' && hasAccessLutherie) ? (
               <div className="max-w-4xl mx-auto w-full">

@@ -96,6 +96,22 @@ export default function EventsDataGrid({
           valA = a.enableInscriptions !== false ? 1 : 0;
           valB = b.enableInscriptions !== false ? 1 : 0;
           break;
+        case 'enableCarpool':
+          valA = a.enableCarpool !== false ? 1 : 0;
+          valB = b.enableCarpool !== false ? 1 : 0;
+          break;
+        case 'isPublic':
+          valA = Boolean(a.isPublic) ? 1 : 0;
+          valB = Boolean(b.isPublic) ? 1 : 0;
+          break;
+        case 'morceaux':
+          valA = (a.linkedPatterns || []).length;
+          valB = (b.linkedPatterns || []).length;
+          break;
+        case 'scene':
+          valA = a.isStageLayoutPublished ? 2 : (a.stageLayout ? 1 : 0);
+          valB = b.isStageLayoutPublished ? 2 : (b.stageLayout ? 1 : 0);
+          break;
         default:
           valA = a[sortConfig.key] || '';
           valB = b[sortConfig.key] || '';
@@ -110,27 +126,19 @@ export default function EventsDataGrid({
     });
   }, [events, sortConfig]);
 
-  // Fonction utilitaire pour afficher sorting chevrons
   const renderSortChevron = (key) => {
-    if (sortConfig.key !== key) {
-      return <span className="opacity-30 text-[9px] ml-1 font-bold select-none">↕️</span>;
-    }
-    return (
-      <span className="text-[10px] ml-1 font-black text-[var(--cordel-wood)] select-none">
-        {sortConfig.direction === 'asc' ? '🔼' : '🔽'}
-      </span>
-    );
+    if (sortConfig.key !== key) return <span className="opacity-20 text-[9px]">↕</span>;
+    return <span className="text-cordel-wood font-black text-[10px]">{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>;
   };
 
   return (
-    <div className="w-full max-h-[calc(100vh-260px)] overflow-x-auto overflow-y-auto border-2 border-[var(--encre-noire)] rounded-[6px_4px_5px_3px] shadow-[2px_2px_0px_0px_#181716] bg-[var(--cordel-card-bg)] relative">
-      <table className="w-full text-left text-xs border-collapse min-w-[1300px]">
-        <thead className="bg-[var(--cordel-master-light-color)] border-b-2 border-[var(--encre-noire)] text-[10px] uppercase tracking-wider text-[var(--cordel-wood)] font-black select-none">
+    <div className="w-full overflow-x-auto border-2 border-[var(--encre-noire)] rounded-[6px_10px_7px_9px] shadow-[4px_4px_0px_0px_#181716] bg-[var(--cordel-bg-light)]">
+      <table className="w-full text-left text-xs border-collapse select-none">
+        <thead className="border-b-2 border-[var(--encre-noire)] text-[10px] uppercase font-black tracking-wider text-[var(--cordel-wood)]">
           <tr>
-            {/* Top-Left Corner Cell: Sticky top-0 left-0 with z-30 */}
             <th 
               onClick={() => handleHeaderClick('titre')}
-              className="p-3 border-r-2 border-[var(--encre-noire)]/30 whitespace-nowrap min-w-[180px] sticky top-0 left-0 z-30 bg-[var(--cordel-master-light-color)] shadow-[2px_2px_5px_-2px_rgba(0,0,0,0.2)] cursor-pointer hover:bg-black/5 transition-colors"
+              className="p-3 border-r border-[var(--encre-noire)]/15 whitespace-nowrap min-w-[200px] sticky left-0 top-0 z-30 bg-[var(--cordel-bg-light)] shadow-[2px_0px_0px_0px_rgba(24,23,22,0.1)] cursor-pointer hover:bg-black/5 transition-colors"
               title="Cliquer pour trier par Titre"
             >
               <div className="flex items-center gap-1">
@@ -139,10 +147,9 @@ export default function EventsDataGrid({
               </div>
             </th>
 
-            {/* Sticky Header Cells: Sticky top-0 with z-20 */}
             <th 
               onClick={() => handleHeaderClick('type')}
-              className="p-3 border-r border-[var(--encre-noire)]/15 whitespace-nowrap min-w-[110px] sticky top-0 z-20 bg-[var(--cordel-master-light-color)] cursor-pointer hover:bg-black/5 transition-colors"
+              className="p-3 border-r border-[var(--encre-noire)]/15 whitespace-nowrap min-w-[130px] sticky top-0 z-20 bg-[var(--cordel-master-light-color)] cursor-pointer hover:bg-black/5 transition-colors"
               title="Cliquer pour trier par Type"
             >
               <div className="flex items-center gap-1">
@@ -256,7 +263,7 @@ export default function EventsDataGrid({
               title="Cliquer pour trier par Inclut perc"
             >
               <div className="flex items-center justify-center gap-1">
-                <span>12. Inclut perc</span>
+                <span>12. Perc 🥁</span>
                 {renderSortChevron('includesPercussion')}
               </div>
             </th>
@@ -267,7 +274,7 @@ export default function EventsDataGrid({
               title="Cliquer pour trier par Inclut danse"
             >
               <div className="flex items-center justify-center gap-1">
-                <span>13. Inclut danse</span>
+                <span>13. Danse 💃</span>
                 {renderSortChevron('includesDance')}
               </div>
             </th>
@@ -278,19 +285,67 @@ export default function EventsDataGrid({
               title="Cliquer pour trier par Soumis à validation"
             >
               <div className="flex items-center justify-center gap-1">
-                <span>14. Validation</span>
+                <span>14. Validation 🔒</span>
                 {renderSortChevron('requiresValidation')}
               </div>
             </th>
 
             <th 
               onClick={() => handleHeaderClick('enableInscriptions')}
-              className="p-3 text-center whitespace-nowrap min-w-[125px] sticky top-0 z-20 bg-[var(--cordel-master-light-color)] cursor-pointer hover:bg-black/5 transition-colors"
+              className="p-3 border-r border-[var(--encre-noire)]/15 text-center whitespace-nowrap min-w-[125px] sticky top-0 z-20 bg-[var(--cordel-master-light-color)] cursor-pointer hover:bg-black/5 transition-colors"
               title="Cliquer pour trier par Inscriptions requises"
             >
               <div className="flex items-center justify-center gap-1">
-                <span>15. Inscriptions</span>
+                <span>15. Inscriptions 📝</span>
                 {renderSortChevron('enableInscriptions')}
+              </div>
+            </th>
+
+            {/* 16. Covoiturage (Toggle interactif) */}
+            <th 
+              onClick={() => handleHeaderClick('enableCarpool')}
+              className="p-3 border-r border-[var(--encre-noire)]/15 text-center whitespace-nowrap min-w-[105px] sticky top-0 z-20 bg-[var(--cordel-master-light-color)] cursor-pointer hover:bg-black/5 transition-colors"
+              title="Cliquer pour trier par Covoiturage actif"
+            >
+              <div className="flex items-center justify-center gap-1">
+                <span>16. Covoit 🚗</span>
+                {renderSortChevron('enableCarpool')}
+              </div>
+            </th>
+
+            {/* 17. Public / Vitrine (Toggle interactif) */}
+            <th 
+              onClick={() => handleHeaderClick('isPublic')}
+              className="p-3 border-r border-[var(--encre-noire)]/15 text-center whitespace-nowrap min-w-[100px] sticky top-0 z-20 bg-[var(--cordel-master-light-color)] cursor-pointer hover:bg-black/5 transition-colors"
+              title="Cliquer pour trier par Visibilité Publique"
+            >
+              <div className="flex items-center justify-center gap-1">
+                <span>17. Public 🌍</span>
+                {renderSortChevron('isPublic')}
+              </div>
+            </th>
+
+            {/* 18. Morceaux / Setlist (Indicateur) */}
+            <th 
+              onClick={() => handleHeaderClick('morceaux')}
+              className="p-3 border-r border-[var(--encre-noire)]/15 text-center whitespace-nowrap min-w-[110px] sticky top-0 z-20 bg-[var(--cordel-master-light-color)] cursor-pointer hover:bg-black/5 transition-colors"
+              title="Cliquer pour trier par Nombre de morceaux"
+            >
+              <div className="flex items-center justify-center gap-1">
+                <span>18. Morceaux 🎵</span>
+                {renderSortChevron('morceaux')}
+              </div>
+            </th>
+
+            {/* 19. Plan de Scène (Indicateur) */}
+            <th 
+              onClick={() => handleHeaderClick('scene')}
+              className="p-3 text-center whitespace-nowrap min-w-[110px] sticky top-0 z-20 bg-[var(--cordel-master-light-color)] cursor-pointer hover:bg-black/5 transition-colors"
+              title="Cliquer pour trier par Statut Scène"
+            >
+              <div className="flex items-center justify-center gap-1">
+                <span>19. Scène 📐</span>
+                {renderSortChevron('scene')}
               </div>
             </th>
           </tr>
@@ -298,7 +353,7 @@ export default function EventsDataGrid({
         <tbody className="divide-y divide-[var(--encre-noire)]/10 font-medium">
           {sortedEvents.length === 0 ? (
             <tr>
-              <td colSpan="15" className="p-8 text-center text-[var(--cordel-text)]/60 font-bold italic">
+              <td colSpan="19" className="p-8 text-center text-[var(--cordel-text)]/60 font-bold italic">
                 Aucun événement disponible.
               </td>
             </tr>

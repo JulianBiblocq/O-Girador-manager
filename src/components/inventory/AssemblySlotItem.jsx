@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { getStepSignal, getCompletedStepsCount, getStepProgressRatio } from '../../utils/workshopProjectionUtils';
 
 /**
  * Composant unitaire représentant une pièce requise pour l'assemblage d'un instrument.
@@ -38,16 +39,11 @@ export default function AssemblySlotItem({
   const currentStep = slotWf.currentStepIndex !== undefined ? slotWf.currentStepIndex : (invPart?.currentStepIndex || 0);
   const statutEtape = slotWf.statutEtape || invPart?.statutEtape || 'en_cours';
 
-  const isCompleted = isAssigned && (statutEtape === 'terminee' || totalSteps === 0 || currentStep >= totalSteps);
+  const isCompleted = isAssigned && (statutEtape === 'terminee' || totalSteps === 0);
   const isWaitingControl = isAssigned && statutEtape === 'en_attente_controle';
 
   // Calcul du nombre d'étapes validées pour la jauge
-  let completedStepsCount = 0;
-  if (isCompleted) {
-    completedStepsCount = totalSteps;
-  } else if (isAssigned) {
-    completedStepsCount = Math.min(currentStep, totalSteps);
-  }
+  const completedStepsCount = isAssigned ? getCompletedStepsCount(totalSteps, currentStep, statutEtape) : 0;
 
   // Styles thématiques sémantiques Cordel
   let cardBgClass = "bg-[#faf8f5] border-dashed border-cordel-master-dark/30 hover:bg-stone-100";
@@ -119,19 +115,42 @@ export default function AssemblySlotItem({
                       : 'bg-stone-200 text-stone-700 border-stone-300'
                   }`}
                 >
-                  {completedStepsCount}/{totalSteps} étape{totalSteps > 1 ? 's' : ''}
+                  {isAssigned 
+                    ? getStepProgressRatio(totalSteps, currentStep, statutEtape) 
+                    : `0 / ${totalSteps} terminées`}
                 </span>
               )}
 
               {/* Statut textuel si assigné et en cours */}
               {isAssigned && !isCompleted && totalSteps > 0 && (
-                <span className={`text-[10px] font-bold ${isWaitingControl ? 'text-amber-700 font-black' : 'text-[var(--color-cordel-ocre)]'}`}>
+                <span className={`text-[10px] font-bold ${isWaitingControl ? 'text-amber-700 font-black animate-pulse' : 'text-[var(--color-cordel-ocre)]'}`}>
                   {isWaitingControl
                     ? '• À CONTRÔLER'
-                    : `• Étape ${currentStep + 1} : ${slot.chapitres[currentStep]?.titre || 'En cours'}`}
+                    : `• Étape ${Math.min(currentStep + 1, totalSteps)} : ${slot.chapitres[currentStep]?.titre || 'En cours'}`}
                 </span>
               )}
             </div>
+
+            {/* Pastilles numérotées des étapes (visibles immédiatement sur la carte) */}
+            {totalSteps > 0 && (
+              <div className="flex items-center gap-1 mt-1.5 flex-wrap">
+                {slot.chapitres.map((chap, stepIdx) => {
+                  const signal = isAssigned
+                    ? getStepSignal(stepIdx, currentStep, statutEtape)
+                    : { colorClass: 'bg-stone-200 text-stone-500 border-stone-300', icon: String(stepIdx + 1), label: 'À faire' };
+
+                  return (
+                    <span
+                      key={stepIdx}
+                      className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-black border shadow-xs transition-all select-none ${signal.colorClass}`}
+                      title={`Étape ${stepIdx + 1} : ${chap.titre || ''} (${signal.label})`}
+                    >
+                      {signal.icon}
+                    </span>
+                  );
+                })}
+              </div>
+            )}
 
             {/* Lien cliquable ouvrant le tutoriel du Varal en modale */}
             {totalSteps > 0 && (
@@ -265,7 +284,7 @@ export default function AssemblySlotItem({
           <div className="flex items-center justify-between text-[10px] font-bold text-stone-600 mb-1">
             <span>Progression de fabrication</span>
             <span className="font-black text-black">
-              {completedStepsCount} / {totalSteps} validée{totalSteps > 1 ? 's' : ''}
+              {isAssigned ? getStepProgressRatio(totalSteps, currentStep, statutEtape) : `0 / ${totalSteps} terminées`}
             </span>
           </div>
           <div className="w-full bg-stone-200 h-1.5 rounded-full overflow-hidden mb-2">
@@ -278,52 +297,34 @@ export default function AssemblySlotItem({
           {/* Liste détaillée des étapes */}
           <div className="flex flex-col gap-1.5">
             {slot.chapitres.map((chap, stepIdx) => {
-              // Calcul du statut de l'étape
-              const isStepValidated = isAssigned && (isCompleted || stepIdx < currentStep);
-              const isStepCurrent = isAssigned && !isCompleted && stepIdx === currentStep;
-
-              let stepBadgeClass = "bg-stone-100 text-stone-600 border-stone-300";
-              let stepLabel = "À faire";
-              let stepIcon = "⭕";
-
-              if (isStepValidated) {
-                stepBadgeClass = "bg-[var(--color-cordel-vert)]/15 text-[var(--color-cordel-vert)] border-[var(--color-cordel-vert)]/40 font-black";
-                stepLabel = "Validée";
-                stepIcon = "✓";
-              } else if (isStepCurrent) {
-                if (isWaitingControl) {
-                  stepBadgeClass = "bg-amber-100 text-amber-800 border-amber-400 font-black";
-                  stepLabel = "À contrôler";
-                  stepIcon = "⏳";
-                } else {
-                  stepBadgeClass = "bg-[var(--color-cordel-ocre)]/15 text-[var(--color-cordel-ocre)] border-[var(--color-cordel-ocre)]/40 font-black";
-                  stepLabel = "En cours";
-                  stepIcon = "🛠️";
-                }
-              }
+              const signal = isAssigned
+                ? getStepSignal(stepIdx, currentStep, statutEtape)
+                : { colorClass: 'bg-stone-200 text-stone-500 border-stone-300', badgeClass: 'bg-stone-100 text-stone-600 border-stone-300', icon: String(stepIdx + 1), label: 'À faire', status: 'upcoming' };
 
               return (
                 <div
                   key={chap.id || stepIdx}
                   className={`flex flex-col p-1.5 rounded border text-left transition-colors ${
-                    isStepCurrent
-                      ? 'bg-amber-50/70 border-amber-300'
-                      : isStepValidated
-                      ? 'bg-[var(--color-cordel-vert)]/5 border-[var(--color-cordel-vert)]/20'
+                    signal.status === 'in_progress'
+                      ? 'bg-amber-50/80 border-amber-400'
+                      : signal.status === 'waiting'
+                      ? 'bg-amber-100/70 border-amber-400'
+                      : signal.status === 'validated'
+                      ? 'bg-emerald-50/60 border-emerald-300'
                       : 'bg-white border-stone-200'
                   }`}
                 >
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-[11px] font-bold text-encre-noire flex items-center gap-1.5">
-                      <span className="text-[9px] font-black text-stone-500 w-4 text-center">
-                        #{stepIdx + 1}
+                      <span className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-[9px] font-black border shadow-xs ${signal.colorClass}`}>
+                        {signal.icon}
                       </span>
                       <span>{chap.titre || `Étape ${stepIdx + 1}`}</span>
                     </span>
 
-                    <span className={`text-[8px] uppercase tracking-wider px-1.5 py-0.5 rounded border flex items-center gap-1 ${stepBadgeClass}`}>
-                      <span>{stepIcon}</span>
-                      <span>{stepLabel}</span>
+                    <span className={`text-[8px] uppercase tracking-wider px-1.5 py-0.5 rounded border flex items-center gap-1 ${signal.badgeClass}`}>
+                      <span>{signal.status === 'in_progress' ? '🛠️' : signal.status === 'waiting' ? '⏳' : signal.status === 'validated' ? '✓' : '⭕'}</span>
+                      <span>{signal.label}</span>
                     </span>
                   </div>
 

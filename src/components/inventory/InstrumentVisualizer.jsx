@@ -64,10 +64,10 @@ export default function InstrumentVisualizer({ modelType, slots, assignedMap, in
         const totalSteps = slot.chapitres?.length || 1;
         const statutEtape = invPart.statutEtape || 'en_cours';
 
-        if (statutEtape === 'a_valider') {
+        if (statutEtape === 'a_valider' || statutEtape === 'en_attente_controle') {
           status = 'to_control';
           progressLabel = `À contrôler (Étape ${currentStep + 1}/${totalSteps})`;
-        } else if (currentStep >= totalSteps || (currentStep === totalSteps - 1 && statutEtape === 'valide')) {
+        } else if (statutEtape === 'terminee' || (statutEtape === 'valide' && currentStep >= totalSteps - 1) || totalSteps === 0) {
           status = 'finished';
           progressLabel = 'Terminé';
         } else {

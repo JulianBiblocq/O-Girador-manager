@@ -48,7 +48,8 @@ export default function InventoryManager({
   hasAccessLutherie,
   profileData,
   activeTabProp,
-  hideSubTabs = false
+  hideSubTabs = false,
+  onNavigateToView
 }) {
   const { t } = useTranslation();
   const { confirm } = useConfirm();
@@ -1368,6 +1369,7 @@ export default function InventoryManager({
             profileData={profileData}
             t={t} 
             inventoryParts={inventoryParts}
+            onNavigateToView={onNavigateToView}
             onCreateInstrument={async (instData) => {
               try {
                 const e = { preventDefault: () => {} };

@@ -42,29 +42,29 @@ export default function MestrePedagogyNotepad({ groupId }) {
     setSelectedNotes(newSet);
   };
 
+  // Ouverture de la modale de programmation avec récupération des répétitions futures
   const handleOpenProgramModal = async () => {
     if (selectedNotes.size === 0) return;
     setIsModalOpen(true);
     
-    // Récupérer future events
+    // Récupération des répétitions futures uniquement
     const today = new Date().toISOString().split('T')[0];
     const eventsRef = collection(db, 'events');
-    const q = query(eventsRef); // Can't easily complex query without index, so récupérer all active for group
-    // Actually we can just récupérer all events for the group
-    // Let's just récupérer all events and filtrer client side
-    const snap = await getDocs(q);
+    const snap = await getDocs(eventsRef);
     const fetchedEvents = [];
     snap.forEach(d => {
       const data = d.data();
-      if (data.groupId === groupId && data.date >= today) {
+      const eventDate = data.dateDebut || data.date || '';
+      if (data.groupId === groupId && data.type === 'repetition' && eventDate >= today) {
         fetchedEvents.push({ id: d.id, ...data });
       }
     });
-    fetchedEvents.sort((a, b) => a.date.localeCompare(b.date));
+    fetchedEvents.sort((a, b) => (a.dateDebut || a.date || '').localeCompare(b.dateDebut || b.date || ''));
     setEvents(fetchedEvents);
     if (fetchedEvents.length > 0) setSelectedEventId(fetchedEvents[0].id);
   };
 
+  // Injection des notes sélectionnées dans la setlist de la répétition choisie
   const handlePushToEvent = async () => {
     if (!selectedEventId || selectedNotes.size === 0) return;
     setPushing(true);
@@ -73,24 +73,37 @@ export default function MestrePedagogyNotepad({ groupId }) {
       
       const newItems = Array.from(selectedNotes).map(noteId => {
         const note = notes.find(n => n.id === noteId);
-        return {
+        // Déduction sémantique de la discipline
+        let disciplineType = note?.type;
+        if (!disciplineType) {
+          const lower = (note?.titre || '').toLowerCase();
+          if (lower.includes('danse')) disciplineType = 'danse';
+          else if (lower.includes('chant') || lower.includes('toada')) disciplineType = 'song';
+          else disciplineType = 'percussion';
+        }
+
+        const itemObj = {
           id: `revision_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-          titre: note.titre || '🛠️ À travailler',
-          notes: note.contenu
+          titre: note?.titre || '🛠️ À travailler',
+          notes: note?.contenu || '',
+          type: disciplineType
         };
+
+        if (note?.itemId) {
+          itemObj.itemId = note.itemId;
+        }
+
+        return itemObj;
       });
 
-      // Push to setlist (assuming setlist is an array of objects)
-      // The event schema uses 'setlist' as an array
-      // If it doesn't exist, arrayUnion handles it? Firebase arrayUnion requires the field to exist or creates it.
-      // Wait, we need to push multiple objects
+      // Injection dans la setlist de l'événement
       for (const item of newItems) {
         await updateDoc(eventRef, {
           setlist: arrayUnion(item)
         });
       }
 
-      // Supprimer the notes from the notepad
+      // Suppression des notes transférées depuis le bloc-notes
       for (const noteId of selectedNotes) {
         const noteRef = doc(db, 'associations', groupId, 'blocNotes', noteId);
         await deleteDoc(noteRef);
@@ -99,7 +112,7 @@ export default function MestrePedagogyNotepad({ groupId }) {
       setSelectedNotes(new Set());
       setIsModalOpen(false);
     } catch (err) {
-      console.error("Erreur lors de l'ajout à l'agenda", err);
+      console.error("Erreur lors de l'ajout à la répétition :", err);
     } finally {
       setPushing(false);
     }
@@ -186,29 +199,40 @@ export default function MestrePedagogyNotepad({ groupId }) {
         </div>
       )}
 
-      {/* Modal Programmation */}
+      {/* Modal Programmation en Répétition */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
           <CordelCard className="w-full max-w-md p-6 flex flex-col gap-4 animate-scale-in">
-            <h3 className="text-lg font-black uppercase tracking-widest text-cordel-wood border-b-2 border-dashed border-cordel-wood/30 pb-2">
-              📅 Ajouter à un événement
+            <h3 className="text-lg font-black uppercase tracking-widest text-cordel-wood border-b-2 border-dashed border-cordel-wood/30 pb-2 flex items-center gap-2">
+              <span>📅</span>
+              <span>Ajouter à une répétition</span>
             </h3>
             
-            <p className="text-xs font-medium text-encre-noire/80">
-              Les {selectedNotes.size} notes sélectionnées seront ajoutées au programme de révision de l'événement choisi.
+            <p className="text-xs font-medium text-encre-noire/80 leading-relaxed">
+              Les {selectedNotes.size} note{selectedNotes.size > 1 ? 's' : ''} sélectionnée{selectedNotes.size > 1 ? 's' : ''} ser{selectedNotes.size > 1 ? 'ont' : 'a'} ajoutée{selectedNotes.size > 1 ? 's' : ''} au fil conducteur de la répétition choisie.
             </p>
 
             <select
               value={selectedEventId}
               onChange={(e) => setSelectedEventId(e.target.value)}
-              className="w-full p-2 border-2 border-encre-noire rounded text-sm font-bold bg-[#fdfaf2]"
+              className="w-full p-2 border-2 border-encre-noire rounded text-sm font-bold bg-[#fdfaf2] text-encre-noire cursor-pointer"
             >
-              <option value="" disabled>-- Choisir un événement --</option>
-              {events.map(ev => (
-                <option key={ev.id} value={ev.id}>
-                  {new Date(ev.date).toLocaleDateString('fr-FR')} - {ev.title}
-                </option>
-              ))}
+              {events.length === 0 ? (
+                <option value="" disabled>-- Aucune répétition à venir trouvée --</option>
+              ) : (
+                <>
+                  <option value="" disabled>-- Choisir une répétition --</option>
+                  {events.map(ev => {
+                    const evDate = ev.dateDebut || ev.date;
+                    const formattedDate = evDate ? new Date(evDate).toLocaleDateString('fr-FR') : 'Date indéfinie';
+                    return (
+                      <option key={ev.id} value={ev.id}>
+                        {formattedDate} - {ev.titre || ev.title || 'Répétition'}
+                      </option>
+                    );
+                  })}
+                </>
+              )}
             </select>
 
             <div className="flex gap-2 justify-end mt-4">

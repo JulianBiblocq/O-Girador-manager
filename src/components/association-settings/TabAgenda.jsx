@@ -44,7 +44,11 @@ export default function TabAgenda({
       agendaEnableOrdreDuJour: cleanType === 'reunion',
       agendaEnableAdresse: true,
       agendaEnableUrl: true,
-      agendaEnableVolunteerShifts: cleanType === 'prestation' || cleanType === 'stage'
+      agendaEnableVolunteerShifts: cleanType === 'prestation' || cleanType === 'stage',
+      includesPercussion: cleanType !== 'reunion',
+      includesDance: cleanType === 'prestation' || cleanType === 'repetition' || cleanType === 'stage',
+      enableCarpool: cleanType !== 'reunion' && cleanType !== 'atelier',
+      isPublic: cleanType === 'prestation'
     };
 
     const updatedConfigs = {
@@ -307,7 +311,11 @@ export default function TabAgenda({
                 agendaEnableOrdreDuJour: rawConfig.agendaEnableOrdreDuJour !== undefined ? rawConfig.agendaEnableOrdreDuJour : type === 'reunion',
                 agendaEnableAdresse: rawConfig.agendaEnableAdresse !== false,
                 agendaEnableUrl: rawConfig.agendaEnableUrl !== false,
-                agendaEnableVolunteerShifts: rawConfig.agendaEnableVolunteerShifts !== undefined ? rawConfig.agendaEnableVolunteerShifts : (type === 'prestation' || type === 'stage')
+                agendaEnableVolunteerShifts: rawConfig.agendaEnableVolunteerShifts !== undefined ? rawConfig.agendaEnableVolunteerShifts : (type === 'prestation' || type === 'stage'),
+                includesPercussion: rawConfig.includesPercussion !== undefined ? rawConfig.includesPercussion : (type !== 'reunion'),
+                includesDance: rawConfig.includesDance !== undefined ? rawConfig.includesDance : (type === 'prestation' || type === 'repetition' || type === 'stage'),
+                enableCarpool: rawConfig.enableCarpool !== undefined ? rawConfig.enableCarpool : (type !== 'reunion' && type !== 'atelier'),
+                isPublic: rawConfig.isPublic !== undefined ? rawConfig.isPublic : (type === 'prestation')
               };
 
               const handleToggleOption = (optionKey, isChecked) => {
@@ -453,6 +461,44 @@ export default function TabAgenda({
                         className="scale-95"
                       />
                       Créneaux Bénévolat
+                    </label>
+
+                    {/* Presets Disciplines et Logistique par défaut pour ce Type */}
+                    <label className="flex items-center gap-1.5 cursor-pointer select-none">
+                      <input 
+                        type="checkbox" 
+                        checked={config.includesPercussion}
+                        onChange={(e) => handleToggleOption('includesPercussion', e.target.checked)}
+                        className="scale-95"
+                      />
+                      🥁 Inclut Percussion
+                    </label>
+                    <label className="flex items-center gap-1.5 cursor-pointer select-none">
+                      <input 
+                        type="checkbox" 
+                        checked={config.includesDance}
+                        onChange={(e) => handleToggleOption('includesDance', e.target.checked)}
+                        className="scale-95"
+                      />
+                      💃 Inclut Danse
+                    </label>
+                    <label className="flex items-center gap-1.5 cursor-pointer select-none">
+                      <input 
+                        type="checkbox" 
+                        checked={config.enableCarpool}
+                        onChange={(e) => handleToggleOption('enableCarpool', e.target.checked)}
+                        className="scale-95"
+                      />
+                      🚗 Covoiturage actif
+                    </label>
+                    <label className="flex items-center gap-1.5 cursor-pointer select-none">
+                      <input 
+                        type="checkbox" 
+                        checked={config.isPublic}
+                        onChange={(e) => handleToggleOption('isPublic', e.target.checked)}
+                        className="scale-95"
+                      />
+                      🌍 Public (Vitrine)
                     </label>
                   </div>
                 </div>

@@ -11,9 +11,8 @@ import AgendaFilterBar from './agenda/AgendaFilterBar';
 import EventDisciplineBadges from './agenda/EventDisciplineBadges';
 import { useTranslation } from './LanguageContext';
 import { XiloCalendar, XiloEye, XiloEyeOff } from './XiloIcons';
-import { calculateRoadDistance } from '../utils/googleMaps';
 import { splitEventsByTime } from '../utils/dateUtils';
-import { getSocialVideoThumbnail } from '../utils/videoUtils';
+import EventThumbnail from './agenda/EventThumbnail';
 import { canManageEvents } from '../utils/permissionUtils';
 import { resolveEffectiveUserTags } from '../utils/tagUtils';
 import { formatLocationShort } from '../utils/locationUtils';
@@ -257,6 +256,40 @@ export default function WidgetAgenda({
     return canManageEvents(profileData || { role, isSystemAdmin }, permissionsMatrice, effectiveUserTags);
   }, [profileData, role, isSystemAdmin, permissionsMatrice, effectiveUserTags]);
 
+  // Écoute de la passerelle Établi -> Agenda pour pré-remplir la création d'un atelier
+  useEffect(() => {
+    const handleCheckPendingEvent = (e) => {
+      let pendingData = e?.detail || null;
+      if (!pendingData) {
+        try {
+          const raw = sessionStorage.getItem('pendingWorkshopAgendaEvent');
+          if (raw) {
+            pendingData = JSON.parse(raw);
+            sessionStorage.removeItem('pendingWorkshopAgendaEvent');
+          }
+        } catch (err) {
+          console.warn("Erreur lecture pendingWorkshopAgendaEvent :", err);
+        }
+      }
+
+      if (pendingData) {
+        setFormData(prev => ({
+          ...prev,
+          ...pendingData,
+          titre: pendingData.titre || prev.titre,
+          type: pendingData.type || 'atelier',
+          specialiteAtelier: pendingData.specialiteAtelier || 'fabrication',
+          programmeFabrication: pendingData.programmeFabrication || null
+        }));
+        setIsAdding(true);
+      }
+    };
+
+    handleCheckPendingEvent();
+    window.addEventListener('open-prefilled-agenda-event', handleCheckPendingEvent);
+    return () => window.removeEventListener('open-prefilled-agenda-event', handleCheckPendingEvent);
+  }, []);
+
   // Real-time synchronization with Firestore events collection
   useEffect(() => {
     if (!groupId) {
@@ -352,12 +385,32 @@ export default function WidgetAgenda({
   };
 
   const handleOpenForm = () => {
+    const defaultType = 'prestation';
+    const typeCfg = eventTypeConfigs[defaultType] || {};
+    const defaultLieuId = defaultLocationsByEventType[defaultType];
+    let initialLieu = '';
+    let initialLieuId = null;
+    let initialLat = null;
+    let initialLng = null;
+    if (defaultLieuId) {
+      const foundLieu = (lieuxImportants || []).find(l => l.id === defaultLieuId);
+      if (foundLieu) {
+        initialLieu = foundLieu.nom && foundLieu.adresse ? `${foundLieu.nom} - ${foundLieu.adresse}` : (foundLieu.adresse || foundLieu.nom);
+        initialLieuId = defaultLieuId;
+        initialLat = foundLieu.latitude || null;
+        initialLng = foundLieu.longitude || null;
+      }
+    }
+
     setFormData({
       titre: '',
-      type: 'prestation',
+      type: defaultType,
       date: '',
       dateFin: '',
-      lieu: '',
+      lieu: initialLieu,
+      lieuId: initialLieuId,
+      latitude: initialLat,
+      longitude: initialLng,
       horairesPassages: '',
       horaireCovoiturage: '',
       niveauRequis: 'tous',
@@ -372,9 +425,11 @@ export default function WidgetAgenda({
       budgetRecettes: [],
       budgetDepenses: [],
       dateLimiteInscription: '',
-      includesPercussion: false,
-      includesDance: false,
-      enableCarpool: true,
+      includesPercussion: typeCfg.includesPercussion !== false,
+      includesDance: typeCfg.includesDance !== false,
+      enableCarpool: typeCfg.enableCarpool !== false,
+      isPublic: Boolean(typeCfg.isPublic),
+      enableInscriptions: true,
       description: '',
       linkedPatterns: [],
       specialiteAtelier: 'general',
@@ -467,9 +522,10 @@ export default function WidgetAgenda({
               : (formData.dressCodePercussion || formData.dressCodeDanse || '')
           ),
           volunteerShifts: formData.volunteerShifts || [],
-          includesPercussion: formData.includesPercussion || false,
-          includesDance: formData.includesDance || false,
+          includesPercussion: formData.includesPercussion !== false,
+          includesDance: formData.includesDance !== false,
           enableCarpool: formData.enableCarpool !== false,
+          isPublic: Boolean(formData.isPublic),
           enableInscriptions: formData.enableInscriptions !== false,
           sendPushNotification: Boolean(formData.sendPushNotification),
           description: formData.description || '',
@@ -718,6 +774,7 @@ export default function WidgetAgenda({
           adresseLocal={adresseLocal}
           lieuxImportants={lieuxImportants}
           defaultLocationsByEventType={defaultLocationsByEventType}
+          eventTypeConfigs={eventTypeConfigs}
           t={t}
           groupId={groupId}
         />
@@ -827,7 +884,7 @@ export default function WidgetAgenda({
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-1 overflow-visible">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3.5 sm:gap-4 p-1 overflow-visible">
               {visibleEvents.map((event) => {
                 const dateObj = new Date(event.date);
                 const day = isNaN(dateObj.getTime()) ? '?' : dateObj.getDate();
@@ -896,15 +953,15 @@ export default function WidgetAgenda({
                     )}
 
                     {/* Left Side: Date Block */}
-                    <div className="w-20 shrink-0 flex flex-col justify-center items-center text-center border-r-2 border-dashed border-encre-noire/30 px-2 select-none">
-                      <span className="text-2xl font-black tracking-tighter leading-none">{day}</span>
-                      <span className="text-[10px] font-bold tracking-widest mt-0.5">{month}</span>
-                      <span className="text-[9px] font-semibold opacity-75 mt-1">{time}</span>
+                    <div className="w-16 sm:w-20 shrink-0 flex flex-col justify-center items-center text-center border-r-2 border-dashed border-encre-noire/30 px-1 sm:px-2 select-none">
+                      <span className="text-xl sm:text-2xl font-black tracking-tighter leading-none">{day}</span>
+                      <span className="text-[9px] sm:text-[10px] font-bold tracking-widest mt-0.5">{month}</span>
+                      <span className="text-[8px] sm:text-[9px] font-semibold opacity-75 mt-0.5 sm:mt-1">{time}</span>
                     </div>
 
                     {/* Right Side: Details */}
-                    <div className="flex-1 p-4 flex items-center gap-4 text-left pl-5">
-                      <div className="flex-1 flex flex-col justify-center">
+                    <div className="flex-1 p-3 sm:p-4 flex items-center gap-2.5 sm:gap-4 text-left pl-3.5 sm:pl-5 pr-7 sm:pr-8 min-w-0">
+                      <div className="flex-1 flex flex-col justify-center min-w-0">
                         <div className="flex justify-between items-start gap-2 mb-0.5">
                           <h4 className="font-bold text-sm leading-tight">{event.titre}</h4>
                         </div>
@@ -961,58 +1018,8 @@ export default function WidgetAgenda({
                         </div>
                       </div>
 
-                      {/* Thumbnail (Miniature) avec support vidéo et badge Play filigrane */}
-                      {(() => {
-                        const videoUrl = event.socialVideoUrl || event.videoUrl;
-                        const thumbnailCandidate = event.socialThumbnailUrl || (videoUrl ? getSocialVideoThumbnail(videoUrl) : null) || event.imageUrl;
-                        const isVideo = Boolean(videoUrl || event.socialThumbnailUrl);
-
-                        return (
-                          <div 
-                            className="w-14 h-14 md:w-16 md:h-16 shrink-0 rounded border border-encre-noire/30 bg-[#fdfaf2] dark:bg-[#1f1b18] overflow-hidden flex items-center justify-center select-none shadow-[1px_1px_0px_0px_#181716] relative group cursor-pointer"
-                            onClick={(e) => {
-                              if (videoUrl) {
-                                e.stopPropagation();
-                                window.open(videoUrl, '_blank', 'noopener,noreferrer');
-                              }
-                            }}
-                            title={videoUrl ? `Regarder la vidéo (${videoUrl})` : t('common.visual')}
-                          >
-                            {thumbnailCandidate ? (
-                              <img 
-                                src={thumbnailCandidate} 
-                                alt={t('common.visual')} 
-                                onError={(e) => {
-                                  e.currentTarget.style.display = 'none';
-                                  if (e.currentTarget.nextElementSibling) {
-                                    e.currentTarget.nextElementSibling.style.display = 'block';
-                                  }
-                                }}
-                                className="w-full h-full object-cover group-hover:scale-105 transition-transform" 
-                              />
-                            ) : null}
-                            <span 
-                              className="text-lg opacity-40 grayscale select-none"
-                              style={{ display: thumbnailCandidate ? 'none' : 'block' }}
-                            >
-                              {event.type === 'prestation' ? '🎭' :
-                               event.type === 'repetition' ? '🥁' :
-                               event.type === 'stage' ? '🎓' :
-                               event.type === 'atelier' ? '🔨' :
-                               event.type === 'reunion' ? '📅' : '📆'}
-                            </span>
-
-                            {/* Icône Play (▶️) filigrane discrète superposée pour les événements avec vidéo */}
-                            {isVideo && (
-                              <div className="absolute inset-0 bg-black/35 flex items-center justify-center transition-all group-hover:bg-black/50">
-                                <div className="w-6 h-6 rounded-full bg-red-600/90 text-white flex items-center justify-center text-[10px] font-black shadow-md border border-white/70 transform group-hover:scale-110 transition-transform">
-                                  ▶
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })()}
+                      {/* Miniature résiliente avec détection anti-403 et support vidéo */}
+                      <EventThumbnail event={event} />
                     </div>
 
                     {/* Ticket Circular Cut-out notches (blends dynamically with theme background using var(--cordel-bg)) */}

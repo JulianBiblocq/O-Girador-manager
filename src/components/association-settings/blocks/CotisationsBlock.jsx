@@ -6,6 +6,7 @@ import { XiloClose } from '../../XiloIcons';
 export default function CotisationsBlock({ formData = {}, handleChange, saving, groupId, handleSaveHelloAssoKey }) {
   const {
     montantAdhesion = 0,
+    montantCautionDefaut = 150,
     optionsCotisation = [],
     lienPaiementExterne = '',
     instructionsPaiement = '',
@@ -75,21 +76,37 @@ export default function CotisationsBlock({ formData = {}, handleChange, saving, 
   return (
     <CordelCard variant="default" useExtremeBorder={true} className="py-4 px-5">
       <h3 className="text-xs uppercase font-extrabold tracking-wider text-cordel-wood mb-3">
-        🪙 Trésorerie (Cotisations)
+        🪙 Trésorerie (Cotisations & Cautions)
       </h3>
       <div className="flex flex-col gap-3">
-        <div className="flex flex-col gap-1 text-left">
-          <label className="text-[9px] uppercase font-extrabold tracking-wider text-cordel-master-dark">
-            Montant de l'Adhésion de base (€) (Fixe)
-          </label>
-          <input 
-            type="number"
-            min="0"
-            value={montantAdhesion}
-            onChange={(e) => handleChange('montantAdhesion', parseFloat(e.target.value) || 0)}
-            placeholder="ex: 30"
-            className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light w-full"
-          />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="flex flex-col gap-1 text-left">
+            <label className="text-[9px] uppercase font-extrabold tracking-wider text-cordel-master-dark">
+              Montant de l'Adhésion de base (€) (Fixe)
+            </label>
+            <input 
+              type="number"
+              min="0"
+              value={montantAdhesion}
+              onChange={(e) => handleChange('montantAdhesion', parseFloat(e.target.value) || 0)}
+              placeholder="ex: 30"
+              className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light w-full"
+            />
+          </div>
+
+          <div className="flex flex-col gap-1 text-left">
+            <label className="text-[9px] uppercase font-extrabold tracking-wider text-cordel-master-dark">
+              Caution d'instrument par défaut (€)
+            </label>
+            <input 
+              type="number"
+              min="0"
+              value={montantCautionDefaut}
+              onChange={(e) => handleChange('montantCautionDefaut', parseFloat(e.target.value) || 0)}
+              placeholder="ex: 150"
+              className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light w-full"
+            />
+          </div>
         </div>
 
         <div className="flex flex-col gap-2 mt-2 text-left">

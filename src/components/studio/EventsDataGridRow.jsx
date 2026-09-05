@@ -266,12 +266,12 @@ function EventsDataGridRow({
         />
       </td>
 
-      {/* 12. Inclut perc (Interactive Basculer) */}
+      {/* 12. Inclut perc (Interactive Basculer avec fallback strict) */}
       <td className="p-2 border-r border-[var(--encre-noire)]/10 text-center select-none min-w-[95px]">
         <div className="flex items-center justify-center gap-1.5">
           <EventToggleSwitch
-            checked={Boolean(event.includesPercussion)}
-            onChange={() => onToggleField(event.id, 'includesPercussion', Boolean(event.includesPercussion))}
+            checked={event.includesPercussion !== false}
+            onChange={() => onToggleField(event.id, 'includesPercussion', event.includesPercussion !== false)}
             disabled={isUpdatingRow && updatingField === 'includesPercussion'}
             activeColor="bg-amber-600 dark:bg-amber-500"
             label={`Toggle Percussion pour ${event.titre}`}
@@ -280,12 +280,12 @@ function EventsDataGridRow({
         </div>
       </td>
 
-      {/* 13. Inclut danse (Interactive Basculer) */}
+      {/* 13. Inclut danse (Interactive Basculer avec fallback strict) */}
       <td className="p-2 border-r border-[var(--encre-noire)]/10 text-center select-none min-w-[95px]">
         <div className="flex items-center justify-center gap-1.5">
           <EventToggleSwitch
-            checked={Boolean(event.includesDance)}
-            onChange={() => onToggleField(event.id, 'includesDance', Boolean(event.includesDance))}
+            checked={event.includesDance !== false}
+            onChange={() => onToggleField(event.id, 'includesDance', event.includesDance !== false)}
             disabled={isUpdatingRow && updatingField === 'includesDance'}
             activeColor="bg-pink-600 dark:bg-pink-500"
             label={`Toggle Danse pour ${event.titre}`}
@@ -309,7 +309,7 @@ function EventsDataGridRow({
       </td>
 
       {/* 15. Inscriptions requises (Interactive Basculer) */}
-      <td className="p-2 text-center select-none min-w-[125px]">
+      <td className="p-2 border-r border-[var(--encre-noire)]/10 text-center select-none min-w-[125px]">
         <div className="flex items-center justify-center gap-1.5">
           <EventToggleSwitch
             checked={event.enableInscriptions !== false}
@@ -320,6 +320,56 @@ function EventsDataGridRow({
           />
           <span className="text-xs shrink-0">📝</span>
         </div>
+      </td>
+
+      {/* 16. Covoiturage actif (Interactive Basculer avec fallback strict) */}
+      <td className="p-2 border-r border-[var(--encre-noire)]/10 text-center select-none min-w-[100px]">
+        <div className="flex items-center justify-center gap-1.5">
+          <EventToggleSwitch
+            checked={event.enableCarpool !== false}
+            onChange={() => onToggleField(event.id, 'enableCarpool', event.enableCarpool !== false)}
+            disabled={isUpdatingRow && updatingField === 'enableCarpool'}
+            activeColor="bg-emerald-600 dark:bg-emerald-500"
+            label={`Toggle Covoiturage pour ${event.titre}`}
+          />
+          <span className="text-xs shrink-0">🚗</span>
+        </div>
+      </td>
+
+      {/* 17. Public / Vitrine (Interactive Basculer) */}
+      <td className="p-2 border-r border-[var(--encre-noire)]/10 text-center select-none min-w-[100px]">
+        <div className="flex items-center justify-center gap-1.5">
+          <EventToggleSwitch
+            checked={Boolean(event.isPublic)}
+            onChange={() => onToggleField(event.id, 'isPublic', Boolean(event.isPublic))}
+            disabled={isUpdatingRow && updatingField === 'isPublic'}
+            activeColor="bg-sky-600 dark:bg-sky-500"
+            label={`Toggle Public pour ${event.titre}`}
+          />
+          <span className="text-xs shrink-0">🌍</span>
+        </div>
+      </td>
+
+      {/* 18. Morceaux associés (Indicateur en lecture/badge) */}
+      <td className="p-2 border-r border-[var(--encre-noire)]/10 text-center min-w-[90px]">
+        {((event.linkedPatterns && event.linkedPatterns.length > 0) || (event.patterns && event.patterns.length > 0)) ? (
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold bg-amber-100 text-amber-900 border border-amber-300">
+            🎵 {(event.linkedPatterns || event.patterns).length}
+          </span>
+        ) : (
+          <span className="text-stone-400 text-xs font-mono">-</span>
+        )}
+      </td>
+
+      {/* 19. Plan de scène (Indicateur en lecture/badge) */}
+      <td className="p-2 text-center min-w-[90px]">
+        {(event.isStageLayoutPublished || event.stageLayout || event.planScene) ? (
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-100 text-emerald-900 border border-emerald-300">
+            📐 Oui
+          </span>
+        ) : (
+          <span className="text-stone-400 text-xs font-mono">-</span>
+        )}
       </td>
     </tr>
   );

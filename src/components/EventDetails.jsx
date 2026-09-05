@@ -39,12 +39,19 @@ import EventCommentsSection from './event-details/EventCommentsSection';
 import SendContractModal from './studio/SendContractModal';
 import EventPublicQrCodeModal from './event-details/EventPublicQrCodeModal';
 import EventMediaQrCodeModal from './event-details/EventMediaQrCodeModal';
+import EventTabsNav from './event-details/EventTabsNav';
+import TabRsvp from './event-details/tabs/TabRsvp';
+import TabLogistics from './event-details/tabs/TabLogistics';
+import TabProgram from './event-details/tabs/TabProgram';
+import TabAdmin from './event-details/tabs/TabAdmin';
 import useHardwareBack from '../hooks/useHardwareBack';
 import { triggerEventStatusAutomation } from '../utils/automationEngine';
 
 export default function EventDetails({ event, user, profileData, onNavigateToView, onClose, onPrev, onNext, viewMode, setViewMode, onGoToStageLayoutEditor }) {
   const { t } = useTranslation();
   const { confirm } = useConfirm();
+
+  const [activeTab, setActiveTab] = useState('rsvp');
 
   const translate = (key, fallback) => {
     const val = t(key);
@@ -88,8 +95,8 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
     dateLimiteInscription: event.dateLimiteInscription || '',
     tenueRequise: event.tenueRequise || '',
     volunteerShifts: event.volunteerShifts || [],
-    includesPercussion: event.includesPercussion || false,
-    includesDance: event.includesDance || false,
+    includesPercussion: event.includesPercussion !== false,
+    includesDance: event.includesDance !== false,
     enableCarpool: event.enableCarpool !== false,
     description: event.description || '',
     linkedPatterns: event.linkedPatterns || [],
@@ -109,6 +116,7 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
   const [indemniteKilometrique, setIndemniteKilometrique] = useState(0);
   const [adresseLocal, setAdresseLocal] = useState('');
   const [lieuxImportants, setLieuxImportants] = useState([]);
+  const [defaultLocationsByEventType, setDefaultLocationsByEventType] = useState({});
   const [instrumentsDisponibles, setInstrumentsDisponibles] = useState(["Alfaia", "Caixa", "Tarol", "Gonguê", "Agbê", "Mineiro", "Timbal", "Chant", "Danse"]);
   const [linkedInstruments, setLinkedInstruments] = useState([]);
   const [enableCarpoolReimbursement, setEnableCarpoolReimbursement] = useState(true);
@@ -183,7 +191,7 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
   // 2. Vérification du Niveau Danse
   const danseNiveauRequis = resolveCategory(event.niveauDanseRequis || event.danseNiveauRequis, customCategories);
   const userDanceLevel = resolveCategory(profileData?.niveauDanse, customCategories);
-  const isDanceEvent = event.includesDance || ['stage', 'prestation', 'atelier', 'repetition'].includes(event.type);
+  const isDanceEvent = event.includesDance !== false || ['stage', 'prestation', 'atelier', 'repetition'].includes(event.type);
   const isDanceLevelRestricted = isDanceEvent && danseNiveauRequis && danseNiveauRequis !== 'tous' && danseNiveauRequis !== 'aucun' && (userDanceLevel !== danseNiveauRequis);
 
   const isPrestationRestricted = isMusicLevelRestricted;
@@ -287,8 +295,8 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
       dressCodeDanse: event.dressCodeDanse || '',
       tenueRequise: event.tenueRequise || '',
       volunteerShifts: event.volunteerShifts || [],
-      includesPercussion: event.includesPercussion || false,
-      includesDance: event.includesDance || false,
+      includesPercussion: event.includesPercussion !== false,
+      includesDance: event.includesDance !== false,
       enableCarpool: event.enableCarpool !== false,
       enableInscriptions: event.enableInscriptions !== false,
       description: event.description || '',
@@ -336,6 +344,7 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
           setCustomCategories(data.customCategories);
         }
         setLieuxImportants(Array.isArray(data.lieuxImportants) ? data.lieuxImportants : []);
+        setDefaultLocationsByEventType(data.defaultLocationsByEventType && typeof data.defaultLocationsByEventType === 'object' ? data.defaultLocationsByEventType : {});
         if (Array.isArray(data.instrumentsDisponibles)) {
           setInstrumentsDisponibles(data.instrumentsDisponibles);
         }
@@ -593,6 +602,8 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
 
     return hasTagAccess && !isMemberViewSimulation;
   }, [isAuthorized, profileData?.role, permissionsMatrice, effectiveUserTags, tagsDisponibles, isMemberViewSimulation]);
+
+  const canAccessAdminTab = isAuthorized || hasFinanceAccess;
 
   const getPupitreName = (inst) => {
     if (!inst) return null;
@@ -1262,6 +1273,8 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
           associationEventTypes={associationEventTypes}
           adresseLocal={adresseLocal}
           lieuxImportants={lieuxImportants}
+          defaultLocationsByEventType={defaultLocationsByEventType}
+          eventTypeConfigs={eventTypeConfigs}
           imageMode={imageMode}
           setImageMode={setImageMode}
           uploadingImage={uploadingImage}
@@ -1300,337 +1313,27 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
             </div>
           )}
 
-          <CordelAccordionGroup className="flex flex-col gap-3.5">
-          {/* Admin Status Panel */}
-          {isAuthorized && !isEditingEvent && (
-            <div className="flex items-center justify-between gap-3 p-3 bg-cordel-bg border-2 border-encre-noire rounded-[4px_6px_3px_5px] shadow-[2px_2px_0px_0px_#181716] mb-1 flex-wrap">
-              <div className="flex flex-col text-left">
-                <span className="text-[9px] font-bold uppercase text-cordel-wood">Statut de l'événement</span>
-                <span className="text-xs font-black uppercase">
-                  {event.status === 'annule' ? (
-                    <span className="text-red-600">❌ Annulé</span>
-                  ) : event.status === 'a_confirmer' ? (
-                    <span className="text-orange-600">📙 À confirmer</span>
-                  ) : (
-                    <span className="text-green-700">✅ Validé / Maintenu</span>
-                  )}
-                </span>
-              </div>
-              <div className="flex gap-1.5 flex-wrap">
-                <button
-                  type="button"
-                  onClick={() => handleUpdateEventStatus('confirme')}
-                  disabled={!event.status || event.status === 'confirme'}
-                  className={`text-[9px] font-black uppercase tracking-wider px-2.5 py-1.5 rounded-[4px_6px_3px_5px] transition-all cursor-pointer select-none ${
-                    (!event.status || event.status === 'confirme')
-                      ? 'bg-gray-200 text-gray-400 border border-gray-300 cursor-not-allowed shadow-none'
-                      : 'bg-green-100 text-green-800 border border-green-800 hover:bg-green-200 active:translate-x-[0.5px] active:translate-y-[0.5px] shadow-[1.5px_1.5px_0px_0px_#181716] active:shadow-none'
-                  }`}
-                >
-                  Maintenir
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleUpdateEventStatus('a_confirmer')}
-                  disabled={event.status === 'a_confirmer'}
-                  className={`text-[9px] font-black uppercase tracking-wider px-2.5 py-1.5 rounded-[4px_6px_3px_5px] transition-all cursor-pointer select-none ${
-                    event.status === 'a_confirmer'
-                      ? 'bg-gray-200 text-gray-400 border border-gray-300 cursor-not-allowed shadow-none'
-                      : 'bg-orange-100 text-orange-800 border border-orange-700 hover:bg-orange-200 active:translate-x-[0.5px] active:translate-y-[0.5px] shadow-[1.5px_1.5px_0px_0px_#181716] active:shadow-none'
-                  }`}
-                >
-                  À confirmer
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleUpdateEventStatus('annule')}
-                  disabled={event.status === 'annule'}
-                  className={`text-[9px] font-black uppercase tracking-wider px-2.5 py-1.5 rounded-[4px_6px_3px_5px] transition-all cursor-pointer select-none ${
-                    event.status === 'annule'
-                      ? 'bg-gray-200 text-gray-400 border border-gray-300 cursor-not-allowed shadow-none'
-                      : 'bg-red-100 text-red-800 border border-red-800 hover:bg-red-200 active:translate-x-[0.5px] active:translate-y-[0.5px] shadow-[1.5px_1.5px_0px_0px_#181716] active:shadow-none'
-                  }`}
-                >
-                  Annuler l'événement
-                </button>
-              </div>
-            </div>
-          )}
+          {/* Navigation par Onglets Thématiques Cordel */}
+          <EventTabsNav
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+            canAccessAdminTab={canAccessAdminTab}
+            attendeesCount={((event.inscriptions || []).filter(ins => ins.status === 'present').length) + ((event.invitesExternes || []).length)}
+            carsCount={(event.covoiturage?.voitures || []).length}
+            hasProgram={Boolean(
+              (event.linkedPatterns && event.linkedPatterns.length > 0) ||
+              (setlist && setlist.length > 0) ||
+              event.isStageLayoutPublished ||
+              (event.volunteerShifts && event.volunteerShifts.length > 0) ||
+              ((event.type === 'atelier' || event.type === 'stage') && event.specialiteAtelier === 'fabrication')
+            )}
+          />
 
-          {/* ACCORDION 1: Event General Info (Déplié par défaut) */}
-          <CordelAccordion
-            title={event.titre || "Détails de l'événement"}
-            subtitle={`${(event.type || 'événement').toUpperCase()} • ${formattedDate}`}
-            icon="📅"
-            defaultOpen={true}
-          >
-            <div className="relative overflow-hidden">
-              {/* Effet tampon statut événement en biais */}
-              {event.status === 'annule' && (
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10 select-none">
-                  <span 
-                    style={{ transform: 'rotate(-15deg)' }}
-                    className="text-red-600 dark:text-red-500 border-[3.5px] border-red-600 dark:border-red-500 px-6 py-2 rounded-lg font-black text-xl tracking-widest uppercase opacity-85 bg-white/10 dark:bg-black/10 backdrop-blur-[1px]"
-                  >
-                    ANNULÉ
-                  </span>
-                </div>
-              )}
-              {event.status === 'a_confirmer' && (
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10 select-none">
-                  <span 
-                    style={{ transform: 'rotate(-15deg)' }}
-                    className="text-orange-600 dark:text-orange-400 border-[3.5px] border-orange-600 dark:border-orange-400 px-6 py-2 rounded-lg font-black text-xl tracking-widest uppercase opacity-85 bg-white/10 dark:bg-black/10 backdrop-blur-[1px]"
-                  >
-                    À CONFIRMER
-                  </span>
-                </div>
-              )}
-
-              <div className="flex justify-between items-start">
-                <span className="text-[8px] uppercase tracking-widest font-black opacity-60">
-                  {event.type}
-                </span>
-                {event.status === 'annule' && (
-                  <span className="text-[9px] font-black uppercase px-2 py-0.5 bg-red-100 text-red-700 border border-red-300 rounded tracking-wider select-none shrink-0 leading-none">
-                    🚫 Annulé
-                  </span>
-                )}
-                {event.status === 'a_confirmer' && (
-                  <span className="text-[9px] font-black uppercase px-2 py-0.5 bg-orange-100 text-orange-700 border border-orange-300 rounded tracking-wider select-none shrink-0 leading-none">
-                    📙 À confirmer
-                  </span>
-                )}
-              </div>
-              <h3 className="font-bold text-lg leading-tight mt-0.5 mb-2">{event.titre}</h3>
-              <p className="text-xs font-semibold leading-relaxed">
-                {hasDateFin ? (
-                  <span>📅 Du {formattedDate} {formattedTime ? `à ${formattedTime}` : ''} au {formattedDateFin} {formattedTimeFin ? `à ${formattedTimeFin}` : ''}</span>
-                ) : (
-                  <span>📅 {formattedDate} {formattedTime ? `à ${formattedTime}` : ''}</span>
-                )}
-              </p>
-
-              {(event.includesPercussion || event.includesDance) && (
-                <div className="flex gap-2 flex-wrap mt-2">
-                  {event.includesPercussion && (
-                    <span className="inline-flex items-center gap-1.5 bg-orange-100 dark:bg-orange-950/40 text-orange-800 dark:text-orange-300 text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded border border-orange-200 dark:border-orange-900/50 select-none" title="Percussion">
-                      <img src="/icones/alfaia.svg" alt="Percussion" className="w-3.5 h-3.5 object-contain dark:invert inline-block" />
-                      <span className="hidden md:inline">{translate('eventDetails.includesPercussion', "Percussion")}</span>
-                    </span>
-                  )}
-                  {event.includesDance && (
-                    <span className="inline-flex items-center gap-1 bg-pink-100 dark:bg-pink-950/40 text-pink-800 dark:text-pink-300 text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded border border-pink-200 dark:border-pink-900/50 select-none" title="Danse">
-                      💃 <span className="hidden md:inline">{translate('eventDetails.includesDance', "Danse")}</span>
-                    </span>
-                  )}
-                </div>
-              )}
-
-              <div className="mt-3 pt-2.5 border-t border-dashed border-encre-noire/15 text-xs flex flex-col gap-1 font-semibold leading-relaxed">
-                {currentConfig.agendaEnableInscriptions && event.dateLimiteInscription && (
-                  <span className={isRegistrationDeadlinePassed ? "text-red-600 dark:text-red-400 font-extrabold" : "text-amber-700 dark:text-amber-400"}>
-                    🔒 <strong>Date limite d'inscription :</strong> {formattedDateLimite} {formattedTimeLimite ? `à ${formattedTimeLimite}` : ''}
-                    {isRegistrationDeadlinePassed && " (Closes)"}
-                  </span>
-                )}
-                {(event.dressCodePercussion || event.dressCodeDanse || event.tenueRequise) && (
-                  <div className="flex flex-col gap-1.5 mt-1 select-none">
-                    <span className="text-[10px] font-black uppercase tracking-wider text-cordel-wood opacity-80 flex items-center gap-1">
-                      <span>👗 Tenue(s) requise(s) :</span>
-                    </span>
-                    <div className="flex flex-wrap gap-2 items-center">
-                      {/* Tenue Percussion */}
-                      {(event.dressCodePercussion || (userDiscipline !== 'danse' && event.tenueRequise && !event.dressCodeDanse)) && (
-                        <button
-                          type="button"
-                          onClick={() => onNavigateToView && onNavigateToView('vestiaire')}
-                          className="inline-flex items-center gap-1.5 text-xs font-black bg-amber-100/90 dark:bg-amber-950/40 text-amber-900 dark:text-amber-200 px-2.5 py-1.5 rounded-[4px] border border-amber-400 dark:border-amber-700 hover:brightness-110 cursor-pointer shadow-xs transition-all text-left"
-                          title="Cliquez pour ouvrir votre Vestiaire personnel et vérifier vos pièces de costume"
-                        >
-                          <span>🥁 <strong>Percussion :</strong> {event.dressCodePercussion || event.tenueRequise}</span>
-                          <span className="text-[9px] bg-amber-200/90 dark:bg-amber-900 text-amber-900 dark:text-amber-100 px-1.5 py-0.5 rounded font-bold ml-1 border border-amber-300 shrink-0">
-                            🎒 Mon vestiaire →
-                          </span>
-                        </button>
-                      )}
-
-                      {/* Tenue Danse */}
-                      {(event.dressCodeDanse || (userDiscipline !== 'percussion' && event.tenueRequise && !event.dressCodePercussion)) && (
-                        <button
-                          type="button"
-                          onClick={() => onNavigateToView && onNavigateToView('vestiaire')}
-                          className="inline-flex items-center gap-1.5 text-xs font-black bg-pink-100/90 dark:bg-pink-950/40 text-pink-900 dark:text-pink-200 px-2.5 py-1.5 rounded-[4px] border border-pink-400 dark:border-pink-700 hover:brightness-110 cursor-pointer shadow-xs transition-all text-left"
-                          title="Cliquez pour ouvrir votre Vestiaire personnel et vérifier vos pièces de costume"
-                        >
-                          <span>💃 <strong>Danse :</strong> {event.dressCodeDanse || event.tenueRequise}</span>
-                          <span className="text-[9px] bg-pink-200/90 dark:bg-pink-900 text-pink-900 dark:text-pink-100 px-1.5 py-0.5 rounded font-bold ml-1 border border-pink-300 shrink-0">
-                            🎒 Mon vestiaire →
-                          </span>
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                )}
-                {currentConfig.agendaEnableAdresse && event.lieu && (
-                  <span>📍 <strong>Lieu :</strong> {event.lieu}</span>
-                )}
-                {event.type === 'prestation' && event.horairesPassages && (
-                  <span>⏱️ <strong>Horaires de passage :</strong> {event.horairesPassages}</span>
-                )}
-                {currentConfig.agendaEnableCarpool && (event.type === 'prestation' || event.type === 'stage' || event.type === 'atelier') && event.horaireCovoiturage && (
-                  <span>🚗 <strong>Horaire de convoi :</strong> {event.horaireCovoiturage}</span>
-                )}
-                {(event.type === 'prestation' || event.type === 'stage' || event.type === 'repetition' || event.type === 'atelier') && (
-                  <span>🎯 <strong>Niveau requis (Musique) :</strong> {
-                    event.niveauRequis === 'aucun' ? translate('widgetAgenda.levelNone', 'Pas de musicien') :
-                    event.niveauRequis === 'debutant' ? `🌱 ${translate('widgetAgenda.levelDeb', 'Niveau débutant')}` :
-                    event.niveauRequis === 'confirme' ? `🏆 ${translate('widgetAgenda.levelConfirm', 'Niveau confirmé')}` :
-                    `👥 ${translate('widgetAgenda.levelAll', 'Tout le monde')}`
-                  }</span>
-                )}
-                {(event.type === 'prestation' || event.type === 'stage' || event.type === 'repetition' || event.type === 'atelier') && (
-                  <span>💃 <strong>Danse (Niveau requis) :</strong> {
-                    event.niveauDanseRequis === 'debutant' ? `🌱 ${translate('widgetAgenda.danceLevelDeb', 'Niveau débutant')}` :
-                    event.niveauDanseRequis === 'confirme' ? `🏆 ${translate('widgetAgenda.danceLevelConfirm', 'Niveau confirmé')}` :
-                    event.niveauDanseRequis === 'tous' ? `👥 ${translate('widgetAgenda.danceLevelAll', 'Tout le monde')}` :
-                    `❌ ${translate('widgetAgenda.danceLevelNone', 'Pas de danse')}`
-                  }</span>
-                )}
-                {currentConfig.agendaEnableOrdreDuJour && event.lienDocument && (
-                  <span className="truncate">
-                    📄 <strong>Ordre du jour :</strong> <a href={event.lienDocument} target="_blank" rel="noopener noreferrer" className="text-cordel-wood hover:underline">{event.lienDocument}</a>
-                  </span>
-                )}
-                {(event.socialVideoUrl || event.videoUrl) && (
-                  <span className="truncate flex items-center gap-1.5 text-xs">
-                    🎬 <strong>Vidéo attachée :</strong> 
-                    <a 
-                      href={event.socialVideoUrl || event.videoUrl} 
-                      target="_blank" 
-                      rel="noopener noreferrer" 
-                      className="text-cordel-wood font-extrabold hover:underline truncate"
-                    >
-                      {event.socialVideoUrl || event.videoUrl} ↗
-                    </a>
-                  </span>
-                )}
-                {currentConfig.agendaEnableUrl && event.lienSocial && (
-                  <span className="truncate text-xs">
-                    🔗 <strong>Lien social / Externe :</strong> <a href={event.lienSocial} target="_blank" rel="noopener noreferrer" className="text-cordel-wood hover:underline">{event.lienSocial}</a>
-                  </span>
-                )}
-
-                {/* ENCART VISUEL : Dépôt Médias Externe (Framaspace, Drive...) & Album Finalisé */}
-                {(event.lienDepotMedias || event.albumPhotosUrl) && (
-                  <div className="mt-3 p-3.5 bg-cordel-bg-light/90 border-2 border-encre-noire rounded-[8px] shadow-[2.5px_2.5px_0px_0px_#181716] flex flex-col gap-2">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm">📸</span>
-                      <h4 className="text-xs font-black uppercase tracking-wider text-cordel-wood">
-                        Souvenirs & Photos de {event.titre || "l'événement"} !
-                      </h4>
-                    </div>
-                    <p className="text-[10.5px] text-cordel-master-dark/85 font-semibold leading-snug">
-                      {event.albumPhotosUrl 
-                        ? "L'album photo officiel est disponible en ligne. Vous pouvez également déposer vos clichés personnels via le dossier partagé."
-                        : "Déposez vos photos et vidéos directement dans notre dossier partagé ou affichez le QR Code pour le faire scanner sur place."}
-                    </p>
-                    <div className="flex flex-wrap gap-2 mt-1">
-                      {event.albumPhotosUrl && (
-                        <button
-                          type="button"
-                          onClick={() => window.open(event.albumPhotosUrl, '_blank', 'noopener,noreferrer')}
-                          className="px-3 py-1.5 bg-[#2d6a4f] hover:bg-emerald-800 text-white font-extrabold text-xs uppercase tracking-wider rounded border border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none cursor-pointer flex items-center gap-1.5"
-                          title="Consulter l'album photo finalisé de l'événement"
-                        >
-                          <span>🖼️</span>
-                          <span>Consulter l'album finalisé</span>
-                        </button>
-                      )}
-
-                      {event.lienDepotMedias && (
-                        <>
-                          <button
-                            type="button"
-                            onClick={() => window.open(event.lienDepotMedias, '_blank', 'noopener,noreferrer')}
-                            className="px-3 py-1.5 bg-emerald-800 hover:bg-emerald-900 text-white font-extrabold text-xs uppercase tracking-wider rounded border border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none cursor-pointer flex items-center gap-1.5"
-                          >
-                            <span>📸</span>
-                            <span>Envoyer mes images</span>
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() => setShowMediaQrCodeModal(true)}
-                            className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white font-extrabold text-xs uppercase tracking-wider rounded border border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none cursor-pointer flex items-center gap-1.5"
-                          >
-                            <span>📱</span>
-                            <span>Afficher le QR Code</span>
-                          </button>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                )}
-                {currentConfig.agendaEnableImage && (event.imageUrl || event.socialThumbnailUrl) && (
-                  <div 
-                    className="mt-3.5 border-2 border-encre-noire rounded-[8px] overflow-hidden shadow-[2px_2px_0px_0px_rgba(26,26,26,0.15)] bg-white max-h-[300px] min-h-[180px] flex items-center justify-center relative group cursor-pointer"
-                    onClick={() => {
-                      const vUrl = event.socialVideoUrl || event.videoUrl;
-                      if (vUrl) {
-                        window.open(vUrl, '_blank', 'noopener,noreferrer');
-                      }
-                    }}
-                  >
-                    <img 
-                      src={event.socialThumbnailUrl || event.imageUrl} 
-                      alt={event.titre} 
-                      width={400} 
-                      height={200} 
-                      onError={(e) => {
-                        if (e.currentTarget.parentElement) {
-                          e.currentTarget.parentElement.style.display = 'none';
-                        }
-                      }}
-                      className="max-w-full max-h-[300px] object-contain" 
-                    />
-                    {(event.socialVideoUrl || event.videoUrl || event.socialThumbnailUrl) && (
-                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center transition-all group-hover:bg-black/55">
-                        <div className="px-3 py-1.5 bg-red-600/90 text-white rounded-full text-xs font-black shadow-lg border border-white/80 flex items-center gap-1.5 transform group-hover:scale-105 transition-transform">
-                          <span>▶</span> <span>Regarder la vidéo</span>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-                {currentConfig.agendaEnableAdresse && (
-                  <EventLocationMapBox 
-                    event={event} 
-                    isAdmin={isAuthorized} 
-                    onOpenMapModal={() => setIsMapModalOpen(true)} 
-                    t={t} 
-                  />
-                )}
-                {event.description && (
-                  <div className="mt-3.5 pt-3 border-t border-dashed border-encre-noire/15 whitespace-pre-line text-neutral-700 dark:text-neutral-300">
-                    <p className="font-extrabold text-cordel-wood mb-1">📝 {translate('common.description', "Description")} :</p>
-                    <p>{event.description}</p>
-                  </div>
-                )}
-              </div>
-            </div>
-          </CordelAccordion>
-
-          {/* ACCORDION 2: Votre Présence (Déplié par défaut) */}
-          {currentConfig.agendaEnableInscriptions && (
-            <CordelAccordion
-              title="Votre présence & Inscription"
-              subtitle={existingResponse ? `Statut actuel : ${existingResponse.status === 'present' ? '✅ Présent' : existingResponse.status === 'absent' ? '❌ Absent' : '⏳ À confirmer'}` : "Veuillez enregistrer votre statut de présence"}
-              icon="🎟️"
-              defaultOpen={true}
-            >
-              <EventRSVPSection
-                event={event}
+          {/* Contenu de l'Onglet Actif */}
+          <div className="mt-2">
+            {activeTab === 'rsvp' && (
+              <TabRsvp
+                event={activeEvent || event}
                 user={user}
                 profileData={profileData}
                 status={status}
@@ -1665,14 +1368,12 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
                 handleManualUnregister={handleManualUnregister}
                 isRegistrationDeadlinePassed={isRegistrationDeadlinePassed}
                 t={t}
-                agendaRequireInstrument={currentConfig.agendaRequireInstrument}
-                agendaEnableMaybeStatus={currentConfig.agendaEnableMaybeStatus}
+                currentConfig={currentConfig}
                 handleAddInviteExterne={handleAddInviteExterne}
                 handleRemoveInviteExterne={handleRemoveInviteExterne}
                 instrumentsDisponibles={instrumentsDisponibles}
                 besoinTransportInstrument={besoinTransportInstrument}
                 setBesoinTransportInstrument={setBesoinTransportInstrument}
-                enableCarpool={event.enableCarpool !== false}
                 dependents={dependents}
                 familyMembers={familyMembers}
                 familyResponses={familyResponses}
@@ -1682,151 +1383,16 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
                 handleFamilySave={handleFamilySave}
                 handleAddToGoogleCalendar={handleAddToGoogleCalendar}
                 handleDownloadIcs={handleDownloadIcs}
-                mode="rsvp"
               />
-            </CordelAccordion>
-          )}
+            )}
 
-          {/* ACCORDION 3: Tableau de présence / Inscriptions (Replié par défaut) */}
-          {currentConfig.agendaEnableInscriptions && (
-            <CordelAccordion
-              title="Tableau de présence / Inscriptions"
-              subtitle="Liste des membres inscrits et des invités par pupitre"
-              icon="👥"
-              badge={(() => {
-                const count = (event.inscriptions || []).filter(ins => ins.status === 'present').length + (event.invitesExternes || []).length;
-                return count > 0 ? `${count} présent${count > 1 ? 's' : ''}` : null;
-              })()}
-              defaultOpen={false}
-            >
-              <EventRSVPSection
-                event={event}
-                user={user}
-                profileData={profileData}
-                status={status}
-                saving={saving}
-                isPrestationRestricted={isPrestationRestricted}
-                isMusicLevelRestricted={isMusicLevelRestricted}
-                isDanceLevelRestricted={isDanceLevelRestricted}
-                existingResponse={existingResponse}
-                instrumentChoisi={instrumentChoisi}
-                setInstrumentChoisi={setInstrumentChoisi}
-                isInstrumentLocked={isInstrumentLocked}
-                transport={transport}
-                demandeRemboursementKm={demandeRemboursementKm}
-                handleStatusChange={handleStatusChange}
-                handleSave={handleSave}
-                getMemberInstrumentOptions={getMemberInstrumentOptions}
-                getPupitreName={getPupitreName}
-                presentsByInstrument={presentsByInstrument}
-                allUsers={allUsers}
-                isAuthorized={isAuthorized}
-                handleValidatePending={handleValidatePending}
-                handleUpdateMemberInstrument={handleUpdateMemberInstrument}
-                isManualRegisterOpen={isManualRegisterOpen}
-                setIsManualRegisterOpen={setIsManualRegisterOpen}
-                unregisteredUsers={unregisteredUsers}
-                selectedManualUserId={selectedManualUserId}
-                setSelectedManualUserId={setSelectedManualUserId}
-                selectedManualInstrument={selectedManualInstrument}
-                setSelectedManualInstrument={setSelectedManualInstrument}
-                savingManualRegistration={savingManualRegistration}
-                handleManualRegister={handleManualRegister}
-                handleManualUnregister={handleManualUnregister}
-                isRegistrationDeadlinePassed={isRegistrationDeadlinePassed}
-                t={t}
-                agendaRequireInstrument={currentConfig.agendaRequireInstrument}
-                agendaEnableMaybeStatus={currentConfig.agendaEnableMaybeStatus}
-                handleAddInviteExterne={handleAddInviteExterne}
-                handleRemoveInviteExterne={handleRemoveInviteExterne}
-                instrumentsDisponibles={instrumentsDisponibles}
-                besoinTransportInstrument={besoinTransportInstrument}
-                setBesoinTransportInstrument={setBesoinTransportInstrument}
-                enableCarpool={event.enableCarpool !== false}
-                dependents={dependents}
-                familyMembers={familyMembers}
-                familyResponses={familyResponses}
-                handleToggleFamilyMemberSelection={handleToggleFamilyMemberSelection}
-                handleFamilyMemberStatusChange={handleFamilyMemberStatusChange}
-                handleFamilyMemberInstrumentChange={handleFamilyMemberInstrumentChange}
-                handleFamilySave={handleFamilySave}
-                handleAddToGoogleCalendar={handleAddToGoogleCalendar}
-                handleDownloadIcs={handleDownloadIcs}
-                mode="attendance"
-              />
-            </CordelAccordion>
-          )}
-
-          {/* ACCORDION 4: Bilan Financier (Restreint Trésorerie / Bureau / Admins) */}
-          {(isAuthorized || hasFinanceAccess) && agendaEnableFinance && (
-            <CordelAccordion
-              title="Bilan financier de l'événement"
-              subtitle="Synthèse des recettes (Devis/Factures) et dépenses hybrides (Accès habilité)"
-              icon="💰"
-              defaultOpen={false}
-              restrictedState="hidden"
-            >
-              <EventBudgetSection
-                event={event}
-                groupId={profileData?.groupId}
-                onCreateQuote={() => onNavigateToView && onNavigateToView('treasury')}
-              />
-            </CordelAccordion>
-          )}
-
-          {/* ACCORDION 5: Plan de scène & Placement (Replié par défaut) */}
-          {currentConfig.agendaEnableStageLayout && (event.isStageLayoutPublished || isAuthorized) && (
-            <CordelAccordion
-              title="Plan de scène & Placement"
-              subtitle="Disposition et positionnement des pupitres sur scène"
-              icon="🎪"
-              defaultOpen={false}
-              restrictedState={!event.isStageLayoutPublished ? 'hidden' : 'published'}
-            >
-              <EventStageLayoutSection
-                event={event}
-                user={user}
-                profileData={profileData}
-                allUsers={allUsers}
-                isAuthorized={isAuthorized}
-                t={t}
-                readOnly={true}
-                onGoToStageLayoutEditor={onGoToStageLayoutEditor}
-              />
-            </CordelAccordion>
-          )}
-
-          {/* ACCORDION 6: Missions Bénévoles (Replié par défaut) */}
-          {currentConfig.agendaEnableVolunteerShifts && event.volunteerShifts && event.volunteerShifts.length > 0 && (
-            <CordelAccordion
-              title="Missions bénévoles"
-              subtitle="Inscriptions aux créneaux et postes"
-              icon="🙋"
-              defaultOpen={false}
-            >
-              <EventVolunteerSection
-                event={event}
-                user={user}
-                allUsers={allUsers}
-                t={t}
-              />
-            </CordelAccordion>
-          )}
-
-          {/* ACCORDION 7: Covoiturage & Logistique Convoi (Replié par défaut) */}
-          {currentConfig.agendaEnableCarpool && (
-            <CordelAccordion
-              title="Covoiturage & Logistique convoi"
-              subtitle="Organisation des véhicules et des trajets"
-              icon="🚗"
-              badge={event.covoiturage?.voitures?.length ? `${event.covoiturage.voitures.length} voiture${event.covoiturage.voitures.length > 1 ? 's' : ''}` : null}
-              defaultOpen={false}
-            >
-              <EventCarpoolSection
-                event={event}
+            {activeTab === 'logistics' && (
+              <TabLogistics
+                event={activeEvent || event}
                 user={user}
                 profileData={profileData}
                 isAuthorized={isAuthorized}
+                currentConfig={currentConfig}
                 enableCarpoolReimbursement={enableCarpoolReimbursement}
                 indemniteKilometrique={indemniteKilometrique}
                 convoiDrivers={convoiDrivers}
@@ -1851,33 +1417,64 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
                 reimbursementRule={reimbursementRule}
                 handleAssignPassenger={handleAssignPassenger}
                 handleRemovePassenger={handleRemovePassenger}
+                status={status}
+                saving={saving}
+                isPrestationRestricted={isPrestationRestricted}
+                isMusicLevelRestricted={isMusicLevelRestricted}
+                isDanceLevelRestricted={isDanceLevelRestricted}
+                existingResponse={existingResponse}
+                instrumentChoisi={instrumentChoisi}
+                setInstrumentChoisi={setInstrumentChoisi}
+                isInstrumentLocked={isInstrumentLocked}
+                transport={transport}
+                handleStatusChange={handleStatusChange}
+                handleSave={handleSave}
+                getMemberInstrumentOptions={getMemberInstrumentOptions}
+                getPupitreName={getPupitreName}
+                presentsByInstrument={presentsByInstrument}
+                allUsers={allUsers}
+                handleValidatePending={handleValidatePending}
+                handleUpdateMemberInstrument={handleUpdateMemberInstrument}
+                isManualRegisterOpen={isManualRegisterOpen}
+                setIsManualRegisterOpen={setIsManualRegisterOpen}
+                unregisteredUsers={unregisteredUsers}
+                selectedManualUserId={selectedManualUserId}
+                setSelectedManualUserId={setSelectedManualUserId}
+                selectedManualInstrument={selectedManualInstrument}
+                setSelectedManualInstrument={setSelectedManualInstrument}
+                savingManualRegistration={savingManualRegistration}
+                handleManualRegister={handleManualRegister}
+                handleManualUnregister={handleManualUnregister}
+                isRegistrationDeadlinePassed={isRegistrationDeadlinePassed}
+                t={t}
+                handleAddInviteExterne={handleAddInviteExterne}
+                handleRemoveInviteExterne={handleRemoveInviteExterne}
+                instrumentsDisponibles={instrumentsDisponibles}
+                besoinTransportInstrument={besoinTransportInstrument}
+                setBesoinTransportInstrument={setBesoinTransportInstrument}
+                dependents={dependents}
+                familyMembers={familyMembers}
+                familyResponses={familyResponses}
+                handleToggleFamilyMemberSelection={handleToggleFamilyMemberSelection}
+                handleFamilyMemberStatusChange={handleFamilyMemberStatusChange}
+                handleFamilyMemberInstrumentChange={handleFamilyMemberInstrumentChange}
+                handleFamilySave={handleFamilySave}
+                handleAddToGoogleCalendar={handleAddToGoogleCalendar}
+                handleDownloadIcs={handleDownloadIcs}
               />
-            </CordelAccordion>
-          )}
+            )}
 
-          {/* ACCORDION ATELIER : Programme de Fabrication & Lutherie */}
-          {(event.type === 'atelier' || event.type === 'stage') && event.specialiteAtelier === 'fabrication' && (
-            <CordelAccordion
-              title="Programme de Fabrication & Lutherie"
-              subtitle="Chantiers prévus, étapes visées et boîte à outils"
-              icon="🛠️"
-              defaultOpen={true}
-            >
-              <EventWorkshopProgram event={activeEvent || event} />
-            </CordelAccordion>
-          )}
-
-          {/* ACCORDION 8: Programme de révision / Morceaux (Replié par défaut) */}
-          {event.type !== 'reunion' && event.type !== 'atelier' && currentConfig.agendaEnableRevisionProgram && (
-            <CordelAccordion
-              title="Programme de révision & Morceaux"
-              subtitle="Setlist, percussions et chorégraphies"
-              icon="🎵"
-              defaultOpen={false}
-            >
-              <EventRevisionProgram
-                setlist={setlist}
+            {activeTab === 'program' && (
+              <TabProgram
+                event={activeEvent || event}
+                activeEvent={activeEvent}
+                user={user}
+                profileData={profileData}
                 isAuthorized={isAuthorized}
+                currentConfig={currentConfig}
+                allUsers={allUsers}
+                t={t}
+                setlist={setlist}
                 updatingSetlist={updatingSetlist}
                 handleRemoveMorceau={handleRemoveMorceau}
                 assocSequenceurUrl={assocSequenceurUrl}
@@ -1890,38 +1487,28 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
                 setNewMorceauJsonFile={setNewMorceauJsonFile}
                 newMorceauNotes={newMorceauNotes}
                 setNewMorceauNotes={setNewMorceauNotes}
-                groupId={event?.groupId}
                 dancadorChoreoIds={dancadorChoreoIds}
                 handleAddDancadorChoreo={handleAddDancadorChoreo}
                 handleRemoveDancadorChoreo={handleRemoveDancadorChoreo}
-                linkedPatterns={event.linkedPatterns || []}
+                onGoToStageLayoutEditor={onGoToStageLayoutEditor}
               />
-            </CordelAccordion>
-          )}
+            )}
 
-          {/* ACCORDION 9: Ordre du jour & PV de réunion (Replié par défaut) */}
-          {currentConfig.agendaEnableOrdreDuJour && (
-            <CordelAccordion
-              title="Ordre du jour & PV de réunion"
-              subtitle="Procès-verbal et documents de séance"
-              icon="📝"
-              defaultOpen={false}
-            >
-              <ReunionAgendaManager 
-                event={event}
+            {activeTab === 'admin' && canAccessAdminTab && (
+              <TabAdmin
+                event={activeEvent || event}
                 user={user}
                 profileData={profileData}
+                isAuthorized={isAuthorized}
+                hasFinanceAccess={hasFinanceAccess}
+                handleUpdateEventStatus={handleUpdateEventStatus}
+                onNavigateToView={onNavigateToView}
+                setIsSendContractModalOpen={setIsSendContractModalOpen}
+                handlePreparePublication={handlePreparePublication}
+                currentConfig={currentConfig}
               />
-              <div className="mt-4 pt-4 border-t border-dashed border-cordel-master-dark/20">
-                <EventReportSection 
-                  event={event}
-                  user={user}
-                  profileData={profileData}
-                />
-              </div>
-            </CordelAccordion>
-          )}
-        </CordelAccordionGroup>
+            )}
+          </div>
       </>
     )}
 
