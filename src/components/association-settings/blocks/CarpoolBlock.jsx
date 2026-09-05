@@ -50,12 +50,8 @@ function GoogleMapsPreview({ address }) {
     try {
       loadGoogleMaps()
         .then((maps) => {
-          if (!active) {
-            console.error("Détail Erreur Map : composant ou effet inactif lors du retour du chargement SDK");
-            return;
-          }
-          if (!mapRef.current) {
-            console.error("Détail Erreur Map : mapRef.current est null/inactif");
+          // Si le composant a été démonté pendant le chargement du SDK, sortir proprement sans erreur
+          if (!active || !mapRef.current) {
             return;
           }
           try {
