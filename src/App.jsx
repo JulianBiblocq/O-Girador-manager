@@ -59,6 +59,7 @@ const StudioPhotosView = lazyWithRetry(() => import('./components/studio/StudioP
 const MestrePedagogyManager = lazyWithRetry(() => import('./components/mestre/MestrePedagogyManager'));
 const GigsPipelineManager = lazyWithRetry(() => import('./components/diffusion/GigsPipelineManager'));
 const MestreMotMestre = lazyWithRetry(() => import('./components/mestre/MestreMotMestre'));
+const MestreCustomCategories = lazyWithRetry(() => import('./components/mestre/MestreCustomCategories'));
 const MestrePedagogyDashboard = lazyWithRetry(() => import('./components/mestre/MestrePedagogyDashboard'));
 const MestreAutoEvalConfig = lazyWithRetry(() => import('./components/mestre/MestreAutoEvalConfig'));
 const WidgetAgenda = lazyWithRetry(() => import('./components/WidgetAgenda'));
@@ -103,8 +104,8 @@ const POLES_CONFIG = [
       { id: 'mestre-forum-channels', label: 'Porte-voix', labelKey: 'tabMestreForumChannels' },
       { id: 'activity-reports', label: "Rapports", labelKey: 'tabActivityReports' },
       { id: 'secretariat-reports', label: 'Rapports & Bilan AG', labelKey: 'tabSecretariatReports' },
-      { id: 'secretariat-documents', label: 'Chartes & Santé', labelKey: 'tabSecretariatDocuments' },
-      { id: 'secretariat-lieux', label: 'Lieux & Salles', labelKey: 'tabSecretariatLieux' }
+      { id: 'secretariat-documents', label: 'Ressources & Liens', labelKey: 'tabSecretariatDocuments' },
+      { id: 'secretariat-lieux', label: 'Lieux, Types & Relances', labelKey: 'tabSecretariatLieux' }
     ]
   },
   {
@@ -194,6 +195,7 @@ const POLES_CONFIG = [
     label: 'Mestria',
     labelKey: 'poles.mestre',
     tabs: [
+      { id: 'mestre-categories', label: 'Catégories de pratique', labelKey: 'tabMestreCategories' },
       { id: 'mestre-orientation', label: 'Casting & Orientation', labelKey: 'tabMestreOrientation' },
       { id: 'mestre-stage-layout', label: 'Plan de Scène', labelKey: 'tabMestreStage' },
       { id: 'mestre-sequenceur', label: 'Séquenceur & Rythmes', labelKey: 'tabMestreSequenceur' },
@@ -435,7 +437,7 @@ export default function App() {
           setBranding(null);
         }
         setAssociationName(data.nom || '');
-        setMajoriteFeminine(data.majoriteFeminine || false);
+        setMajoriteFeminine(Boolean(data.majoriteFeminine ?? data.majorityFemale ?? false));
         setSequenceurUrl(data.sequenceurUrl || '');
         setPermissionsMatrice(data.permissionsMatrice || null);
         setEnabledModules(data.enabledModules || null);
@@ -1141,7 +1143,7 @@ export default function App() {
     if (['studio-social', 'newsletter'].includes(tabId) && enabledModules.studioSocial === false) return false;
     if (tabId === 'reunion-manager' && enabledModules.reunions === false) return false;
     if (['forum', 'mestre-forum-channels'].includes(tabId) && enabledModules.forum === false) return false;
-    if (['mestre-sante-troupe', 'mestre-pedagogy-dashboard', 'varal-manager', 'mestre-pedagogy-qcm', 'mestre-orientation', 'mestre-events', 'mestre-stage-layout', 'mestre-mot-mestre', 'mestre-sequenceur'].includes(tabId) && enabledModules.mestre === false) return false;
+    if (['mestre-sante-troupe', 'mestre-pedagogy-dashboard', 'varal-manager', 'mestre-pedagogy-qcm', 'mestre-orientation', 'mestre-categories', 'mestre-events', 'mestre-stage-layout', 'mestre-mot-mestre', 'mestre-sequenceur'].includes(tabId) && enabledModules.mestre === false) return false;
 
     return true;
   };
@@ -1435,6 +1437,10 @@ export default function App() {
       case 'varal':
         setCurrentPole('accueil');
         setCurrentTab('varal');
+        break;
+      case 'mestre-categories':
+        setCurrentPole('mestre');
+        setCurrentTab('mestre-categories');
         break;
       case 'mestre-orientation':
         setCurrentPole('mestre');
@@ -2036,6 +2042,11 @@ export default function App() {
                   />
                 </React.Suspense>
               </div>
+            ) : (currentTab === 'mestre-categories' && hasAccessMestre) ? (
+              <MestreCustomCategories 
+                groupId={profileData?.groupId} 
+                onBack={() => setCurrentTab('mestre-orientation')}
+              />
             ) : (currentTab === 'mestre-orientation' && hasAccessMestre) ? (
               <MestreOrientationCasting 
                 user={user}

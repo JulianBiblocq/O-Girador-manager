@@ -203,6 +203,7 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
     demanderDroitImage: false,
     demanderAttestationSante: false,
     majoriteFeminine: false,
+    majorityFemale: false,
     indemniteKilometrique: 0,
     adresseLocal: '',
     pointRassemblementDefaut: '',
@@ -319,6 +320,14 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
           ...prev,
           adresseLocal: actualValue,
           pointRassemblementDefaut: actualValue
+        };
+      }
+
+      if (actualKey === 'majoriteFeminine' || actualKey === 'majorityFemale') {
+        return {
+          ...prev,
+          majoriteFeminine: Boolean(actualValue),
+          majorityFemale: Boolean(actualValue)
         };
       }
 
@@ -462,8 +471,8 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
           },
           sequenceurUrl: data.sequenceurUrl || '',
           droitImageDocUrl: data.droitImageDocUrl || '',
-          aptitudeMedicaleDocUrl: data.aptitudeMedicaleDocUrl || '',
-          majorityFemale: data.majorityFemale !== undefined ? data.majorityFemale : (data.majoriteFeminine || false),
+          majorityFemale: Boolean(data.majorityFemale ?? data.majoriteFeminine ?? false),
+          majoriteFeminine: Boolean(data.majoriteFeminine ?? data.majorityFemale ?? false),
           indemniteKilometrique: data.indemniteKilometrique || 0,
           adresseLocal: data.adresseLocal || '',
           pointRassemblementDefaut: data.adresseLocal || '',
@@ -694,6 +703,7 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
         varalCategories: formData.varalCategories,
         sequenceurUrl: formData.sequenceurUrl,
         lienDepotForum: formData.lienDepotForum || '',
+        consignesDepotForum: formData.consignesDepotForum || '',
         customDomains: formData.customDomains || [],
         branding: {
           logoUrl: finalLogoUrl,
@@ -711,8 +721,8 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
         },
         droitImageDocUrl: finalDroitImageDocUrl,
         aptitudeMedicaleDocUrl: finalAptitudeMedicaleDocUrl,
-        majorityFemale: formData.majorityFemale || formData.majoriteFeminine || false,
-        majoriteFeminine: formData.majorityFemale || formData.majoriteFeminine || false,
+        majorityFemale: Boolean(formData.majorityFemale ?? formData.majoriteFeminine ?? false),
+        majoriteFeminine: Boolean(formData.majorityFemale ?? formData.majoriteFeminine ?? false),
         demanderDroitImage: formData.demanderDroitImage,
         demanderAttestationSante: formData.demanderAttestationSante,
         indemniteKilometrique: formData.indemniteKilometrique,

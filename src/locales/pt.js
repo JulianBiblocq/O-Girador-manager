@@ -998,10 +998,11 @@ export const pt = {
     tabConfigLieux: "Locais & Salas",
     tabConfigLayout: "Aparência",
     tabLogisticsCarpool: "Caronas & Comboios",
-    tabSecretariatDocuments: "Estatuto & Saúde",
-    tabSecretariatLieux: "Locais & Tipos de Eventos",
+    tabSecretariatDocuments: "Recursos & Links",
+    tabSecretariatLieux: "Locais, Tipos & Lembretes",
     tabSecretariatReports: "Relatórios & Balanço da AG",
     tabStudioCommunication: "Comunicação & Brevo",
+    tabMestreCategories: "Categorias de prática",
     tabMestreOrientation: "Casting"
   },
   mestre: {

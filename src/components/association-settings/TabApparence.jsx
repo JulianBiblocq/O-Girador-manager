@@ -9,7 +9,8 @@ export default function TabApparence({
   uploadingLogo,
   saving,
 }) {
-  const { branding = {}, majoriteFeminine = false } = formData;
+  const { branding = {} } = formData;
+  const isMajoriteFeminine = Boolean(formData.majoriteFeminine ?? formData.majorityFemale ?? false);
   const colors = branding.colors || {
     primary: '#d99f4d',
     secondary: '#84967a',
@@ -146,8 +147,11 @@ export default function TabApparence({
           <label className="flex items-start gap-2.5 cursor-pointer select-none">
             <input 
               type="checkbox"
-              checked={majoriteFeminine}
-              onChange={(e) => handleChange('majoriteFeminine', e.target.checked)}
+              checked={isMajoriteFeminine}
+              onChange={(e) => {
+                handleChange('majoriteFeminine', e.target.checked);
+                handleChange('majorityFemale', e.target.checked);
+              }}
               disabled={saving}
               className="w-4 h-4 cursor-pointer mt-0.5 shrink-0"
             />

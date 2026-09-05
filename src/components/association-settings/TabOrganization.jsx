@@ -5,13 +5,10 @@ import useConfirm from '../../hooks/useConfirm';
 import InstrumentsCatalogBlock from './blocks/InstrumentsCatalogBlock';
 
 export default function TabOrganization({ formData, handleChange, saving, t, mode }) {
-  const { customCategories = [], dynamicProfileFields = [] } = formData;
+  const { dynamicProfileFields = [] } = formData;
   const { confirm } = useConfirm();
   
   const translationFn = t || ((key) => key);
-
-  const [newCatName, setNewCatName] = useState('');
-  const [newCatColor, setNewCatColor] = useState('#8b2a1a');
   
   const [newFieldName, setNewFieldName] = useState('');
   const [newFieldType, setNewFieldType] = useState('text');
@@ -28,39 +25,6 @@ export default function TabOrganization({ formData, handleChange, saving, t, mod
     { value: 'multiselect', label: 'Choix multiples' },
     { value: 'checkbox', label: 'Case à cocher' }
   ];
-
-  const handleAddCategory = () => {
-    if (!newCatName.trim()) return;
-    const catExists = customCategories.some(c => c.name.toLowerCase() === newCatName.trim().toLowerCase());
-    if (catExists) {
-      alert("Cette catégorie existe déjà !");
-      return;
-    }
-
-    const newCat = {
-      id: `cat_${Date.now()}`,
-      name: newCatName.trim(),
-      color: newCatColor
-    };
-
-    handleChange('customCategories', [...customCategories, newCat]);
-    setNewCatName('');
-    setNewCatColor('#8b2a1a');
-  };
-
-  const handleRemoveCategory = async (id) => {
-    const isOk = await confirm({
-      title: "Supprimer la catégorie",
-      message: "Êtes-vous sûr de vouloir supprimer cette catégorie de pratique ? Les membres l'ayant sélectionnée ne seront pas supprimés, mais la catégorie n'apparaîtra plus.",
-      confirmText: "Oui, supprimer",
-      cancelText: "Annuler",
-      variant: "danger"
-    });
-    
-    if (isOk) {
-      handleChange('customCategories', customCategories.filter(c => c.id !== id));
-    }
-  };
 
   const handleAddField = () => {
     if (!newFieldName.trim()) return;
@@ -159,118 +123,7 @@ export default function TabOrganization({ formData, handleChange, saving, t, mod
         </div>
       </CordelCard>
 
-      {/* 3. Terminologie & Rendu */}
-      <CordelCard variant="default" useExtremeBorder={true} className="py-4 px-5 mb-4">
-        <h3 className="text-xs uppercase font-extrabold tracking-wider text-cordel-wood mb-3">
-          💬 {translationFn('associationSettings.terminologyHeading') || "Terminologie & Rendu"}
-        </h3>
-        <div className="flex flex-col gap-1 text-left">
-          <div className="flex items-start gap-2 pt-1">
-            <input
-              type="checkbox"
-              id="majorityFemale"
-              checked={formData.majorityFemale || false}
-              onChange={(e) => handleChange('majorityFemale', e.target.checked)}
-              disabled={saving}
-              className="mt-1 cursor-pointer w-4 h-4 text-cordel-wood rounded"
-            />
-            <label htmlFor="majorityFemale" className="text-xs font-bold text-encre-noire cursor-pointer select-none leading-tight">
-              {translationFn('associationSettings.majorityFemale') || "Groupe à majorité féminine (Appliquer le féminin sur les textes au pluriel)"}
-              <p className="text-[10px] text-cordel-master-dark/70 font-semibold mt-1 leading-relaxed">
-                {translationFn('associationSettings.majorityFemaleDesc') || "Active le pluriel féminin pour les termes généraux."}
-              </p>
-            </label>
-          </div>
-        </div>
-      </CordelCard>
 
-      {/* 4. Catégories de Pratique */}
-      <CordelCard variant="default" useExtremeBorder={true} className="py-4 px-5">
-        <h3 className="text-xs uppercase font-extrabold tracking-wider text-cordel-wood mb-3">
-          🏷️ {translationFn('associationSettings.practiceCategoriesHeading') || "Catégories de pratique"}
-        </h3>
-        
-        <p className="text-[10px] text-cordel-master-dark/70 font-semibold mb-3 leading-relaxed text-left">
-          {translationFn('associationSettings.practiceCategoriesDesc') || "Définissez les différentes sections ou niveaux de votre association (ex: Débutants, Avancés, Danse, Percussion, Equipe Pro...). Ces catégories permettent de filtrer les membres et cibler les convocations."}
-        </p>
-
-        <div className="flex flex-col gap-3 pb-3 border-b border-dashed border-cordel-master-dark/15 text-xs text-left">
-          <div className="flex flex-col gap-2">
-            <div className="flex flex-col gap-1">
-              <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                Nom de la catégorie
-              </label>
-              <input 
-                type="text"
-                value={newCatName}
-                onChange={(e) => setNewCatName(e.target.value)}
-                placeholder="Ex: Section Danse Avancée"
-                className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light w-full"
-              />
-            </div>
-
-            <div className="flex flex-col gap-1 mt-1">
-              <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                Couleur d'identification
-              </label>
-              <div className="flex items-center gap-3">
-                <input 
-                  type="color"
-                  value={newCatColor}
-                  onChange={(e) => setNewCatColor(e.target.value)}
-                  className="w-8 h-8 p-0 border-0 rounded cursor-pointer"
-                />
-                <span className="text-[10px] font-mono">{newCatColor}</span>
-              </div>
-            </div>
-          </div>
-          
-          <div className="flex justify-end mt-1">
-            <CordelButton 
-              type="button"
-              variant="ocre"
-              useExtremeBorder={true}
-              onClick={handleAddCategory}
-              disabled={saving || !newCatName.trim()}
-              className="py-1.5 text-[10px] px-3 uppercase tracking-widest font-black shrink-0"
-            >
-              + Ajouter la catégorie
-            </CordelButton>
-          </div>
-        </div>
-
-        <div className="flex flex-col gap-2 mt-3 text-left">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-cordel-master-dark mb-1">
-            Catégories configurées
-          </span>
-          {customCategories.filter(cat => cat && cat.name && cat.name.trim() !== '').length === 0 ? (
-            <span className="text-[10px] italic opacity-60">
-              Aucune catégorie personnalisée configurée.
-            </span>
-          ) : (
-            <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto pr-1">
-              {customCategories.filter(cat => cat && cat.name && cat.name.trim() !== '').map((cat) => (
-                <div 
-                  key={cat.id}
-                  className="flex items-center gap-2 px-2.5 py-1.5 rounded-[4px_6px_3px_5px] border border-cordel-master-dark/30 shadow-sm"
-                  style={{ backgroundColor: `${cat.color || '#cccccc'}20`, borderColor: cat.color || '#cccccc' }}
-                >
-                  <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: cat.color || '#cccccc' }}></span>
-                  <span className="text-[10px] font-bold text-encre-noire">{cat.name}</span>
-                  <button 
-                    type="button"
-                    onClick={() => handleRemoveCategory(cat.id)}
-                    className="text-[10px] hover:text-red-500 font-bold ml-1 cursor-pointer select-none"
-                    title="Supprimer"
-                  >
-                    ✕
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </CordelCard>
 
       {/* Bloc Instruments/Pupitres : affiché uniquement dans le mode global (tous les onglets visibles) */}
       {!mode && (

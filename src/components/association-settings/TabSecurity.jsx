@@ -16,8 +16,8 @@ const PERMISSION_POLES = [
       { id: 'mestre-forum-channels', label: 'Porte-voix (Salons)', desc: 'Modération et configuration des salons du forum' },
       { id: 'activity-reports', label: 'Rapports d\'activité', desc: 'Rédaction et archivage des bilans statutaires' },
       { id: 'secretariat-reports', label: 'Rapports & Bilan AG', desc: 'Consolidation multi-pôles des indicateurs de la saison pour l\'Assemblée Générale' },
-      { id: 'secretariat-documents', label: 'Chartes & Santé', desc: 'Gestion des chartes, droit à l\'image et aptitudes médicales' },
-      { id: 'secretariat-lieux', label: 'Lieux & Types d\'événements', desc: 'Répertoire des salles habituelles et configuration des types d\'événements' }
+      { id: 'secretariat-documents', label: 'Ressources & Liens', desc: 'Gestion des chartes, droit à l\'image, aptitudes médicales et espaces cloud partagés' },
+      { id: 'secretariat-lieux', label: 'Lieux, Types & Relances', desc: 'Répertoire des salles habituelles, types d\'événements et règles de relance automatique' }
     ]
   },
   {
@@ -113,6 +113,7 @@ const PERMISSION_POLES = [
     label: '🥁 Mestria',
     desc: 'Direction artistique, plan de scène et séquenceur',
     tabs: [
+      { id: 'mestre-categories', label: 'Catégories de pratique', desc: 'Gestion des sections et niveaux de pratique de la troupe' },
       { id: 'mestre-orientation', label: 'Casting', desc: 'Gestion des affectations d\'instruments et vœux d\'évolution' },
       { id: 'mestre-events', label: 'Événements', desc: 'Vue mestre détaillée des événements et présences' },
       { id: 'mestre-stage-layout', label: 'Plan de Scène', desc: 'Création et disposition visuelle du placement scénique' },

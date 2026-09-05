@@ -107,73 +107,7 @@ export default function TabIdentity({
         setSignatureTresorierFile={setSignatureTresorierFile}
       />
 
-      <CordelCard variant="default" useExtremeBorder={true} className="py-4 px-5 mt-4">
-        <h3 className="text-xs uppercase font-extrabold tracking-wider text-cordel-wood mb-3">
-          🎛️ Autres Liens Externes Globaux
-        </h3>
-        <div className="flex flex-col gap-4 text-left">
-          {/* Lien externe de récolte de photos (Dropbox, Google Form, etc.) */}
-          <div className="flex flex-col gap-1">
-            <label htmlFor="lienRecoltePhotosExternes" className="text-[9px] uppercase font-extrabold tracking-wider text-cordel-master-dark flex items-center gap-1.5">
-              📷 Lien externe de récolte de photos (Dropbox, etc.)
-            </label>
-            <input 
-              id="lienRecoltePhotosExternes"
-              type="url"
-              value={formData.lienRecoltePhotosExternes || formData.lienGoogleFormRecoltePhotos || ''}
-              onChange={(e) => {
-                handleChange('lienRecoltePhotosExternes', e.target.value);
-                handleChange('lienGoogleFormRecoltePhotos', e.target.value);
-              }}
-              disabled={saving}
-              placeholder="ex: https://www.dropbox.com/request/... ou https://forms.google.com/..."
-              className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light w-full"
-            />
-            <p className="text-[9px] text-cordel-master-dark/70 font-semibold mt-0.5">
-              Permet de générer un QR Code public affichable sur la fiche de chaque événement pour inviter le public à envoyer ses photos et vidéos.
-            </p>
-          </div>
 
-          {/* Lien de Dépôt des Images du Forum (Framaspace / Drive) */}
-          <div className="flex flex-col gap-1 text-left pt-2 border-t border-dashed border-cordel-master-dark/15">
-            <label htmlFor="lienDepotForum" className="text-[9px] uppercase font-extrabold tracking-wider text-cordel-master-dark flex items-center gap-1.5">
-              🖼️ Lien de dépôt des images du Forum (Framaspace, Drive...)
-            </label>
-            <input 
-              id="lienDepotForum"
-              type="url"
-              value={formData.lienDepotForum || ''}
-              onChange={(e) => handleChange('lienDepotForum', e.target.value)}
-              disabled={saving}
-              placeholder="ex: https://mon-asso.framaspace.org/... ou https://drive.google.com/..."
-              className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light w-full"
-            />
-            <p className="text-[9px] text-cordel-master-dark/70 font-semibold mt-0.5">
-              Redirige les membres vers votre espace de stockage partagé lors de l'insertion d'une photo dans le Forum.
-            </p>
-          </div>
-
-          {/* Consignes personnalisées pour le Dépôt des Images */}
-          {formData.lienDepotForum && (
-            <div className="flex flex-col gap-1 text-left animate-fade-in pl-4 border-l-2 border-cordel-wood/30">
-              <label htmlFor="consignesDepotForum" className="text-[9px] uppercase font-extrabold tracking-wider text-cordel-master-dark flex items-center gap-1.5">
-                📝 Consignes personnalisées pour l'upload (Optionnel)
-              </label>
-              <textarea 
-                id="consignesDepotForum"
-                value={formData.consignesDepotForum || ''}
-                onChange={(e) => handleChange('consignesDepotForum', e.target.value)}
-                disabled={saving}
-                placeholder="Ex: Allez dans le dossier 'Photos Publiques', ajoutez votre photo, puis copiez son lien..."
-                className="theme-input text-xs font-bold p-2 bg-cordel-bg-light w-full min-h-[60px]"
-              />
-              <p className="text-[9px] text-cordel-master-dark/70 font-semibold mt-0.5">
-                Texte d'aide qui s'affichera à vos membres pour leur expliquer comment récupérer le lien sur votre espace de stockage externe. S'il est vide, une aide automatique sera affichée.
-              </p>
-            </div>
-          )}
-        </div>
-      </CordelCard>
 
       {/* 🏛️ Bureau Officiel Juridique */}
       <CordelCard variant="default" useExtremeBorder={true} className="py-4 px-5 mt-4">
