@@ -504,7 +504,7 @@ export default function SecretariatReportsView({ groupId, onBack }) {
             title="Lancer la projection grand écran et le livret imprimable d'Assemblée Générale"
           >
             <span>📽️</span>
-            <span>{t('secretariatReports.launchSlideshow') || "Lancer la Présentation AG"}</span>
+            <span>{t('secretariatReports.launchSlideshow', "Lancer la Projection AG")}</span>
           </button>
 
           <button

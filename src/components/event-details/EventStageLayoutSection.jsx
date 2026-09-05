@@ -38,8 +38,22 @@ export default function EventStageLayoutSection({
 
   const [selectedMemberId, setSelectedMemberId] = useState(null);
   const [pendingVoice, setPendingVoice] = useState(null);
+  const [draggedMemberId, setDraggedMemberId] = useState(null);
+  const [dragOverCellKey, setDragOverCellKey] = useState(null);
   const [saving, setSaving] = useState(false);
   const [isPublished, setIsPublished] = useState(event.isStageLayoutPublished || false);
+
+  // Raccourci clavier Échap pour désélectionner immédiatement le membre en cours
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && selectedMemberId) {
+        setSelectedMemberId(null);
+        setPendingVoice(null);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedMemberId]);
 
   // Synchroniser state with event.stageLayout changes
   useEffect(() => {
@@ -112,56 +126,230 @@ export default function EventStageLayoutSection({
     return 'border-encre-noire/30 text-encre-noire';
   };
 
-  // Fonction utilitaire pour formater names to fits in grid cells (e.g. "Julien B.")
+  // Fonction utilitaire pour formater les noms pour les cellules de la grille (ex: "Julien B.")
   const formatMemberName = (fullName) => {
     if (!fullName) return '';
-    const parts = fullName.split(' ');
-    if (parts.length <= 1) return fullName;
-    return `${parts[0]} ${parts[1][0]}.`;
+    const parts = fullName.trim().split(/\s+/).filter(Boolean);
+    if (parts.length <= 1) return fullName.trim();
+    const initial = parts[1][0] ? parts[1][0].toUpperCase() : '';
+    return initial ? `${parts[0]} ${initial}.` : parts[0];
   };
 
+  // Détection des danseurs pour l'avant-scène
+  const isDancer = (member) => {
+    if (!member) return false;
+    const inst = (member.instrument || '').toLowerCase();
+    return inst.includes('danse') || inst.includes('danseur') || inst.includes('danseuse');
+  };
+
+  // Détection des Alfaias pour l'attribution des voix de fond
+  const isAlfaia = (member) => {
+    if (!member) return false;
+    const inst = (member.instrument || '').toLowerCase();
+    return inst.includes('alfaia');
+  };
+
+  // Résolution de la voix initiale par défaut ou enregistrée pour une Alfaia
+  const getInitialVoiceForMember = (memberId) => {
+    if (activePlacements[memberId]?.voice) {
+      return activePlacements[memberId].voice.toLowerCase();
+    }
+    const member = presentMembers.find(m => m.id === memberId);
+    const fullUserInfo = allUsers.find(u => u.id === memberId);
+    const combinedStr = `${member?.instrument || ''} ${fullUserInfo?.instrument || ''}`.toLowerCase();
+    if (combinedStr.includes('repique')) return 'repique';
+    if (combinedStr.includes('meiao') || combinedStr.includes('meião') || combinedStr.includes('meian')) return 'meião';
+    if (fullUserInfo?.competencesAlfaia && fullUserInfo.competencesAlfaia.length > 0) {
+      const firstComp = fullUserInfo.competencesAlfaia[0].toLowerCase();
+      if (firstComp.includes('repique')) return 'repique';
+      if (firstComp.includes('meiao') || firstComp.includes('meião')) return 'meião';
+      return 'marcante';
+    }
+    return 'marcante';
+  };
+
+  // Bascule de sélection d'un membre (cliquer pour sélectionner, re-cliquer pour désélectionner)
+  const handleSelectMember = (memberId) => {
+    if (!isEditingMode) return;
+    if (selectedMemberId === memberId) {
+      setSelectedMemberId(null);
+      setPendingVoice(null);
+    } else {
+      setSelectedMemberId(memberId);
+      setPendingVoice(getInitialVoiceForMember(memberId));
+    }
+  };
+
+  // Changement interactif de la voix d'Alfaia avec mise à jour immédiate
+  const handleVoiceChange = (voiceLower) => {
+    setPendingVoice(voiceLower);
+    if (selectedMemberId && activePlacements[selectedMemberId]) {
+      setLayout((prev) => ({
+        ...prev,
+        placements: {
+          ...prev.placements,
+          [selectedMemberId]: {
+            ...prev.placements[selectedMemberId],
+            voice: voiceLower
+          }
+        }
+      }));
+    }
+  };
+
+  // Gestion du clic sur une case de la grille
   const handleCellClick = (row, col) => {
     if (!isEditingMode) return;
 
-    // Find if there is a member at these coordinates
+    // Vérifier si un membre est déjà présent sur cette case
     const placedMemberId = Object.keys(activePlacements).find(
       (uid) => activePlacements[uid]?.row === row && activePlacements[uid]?.col === col
     );
 
+    // 1. Si on clique sur une case déjà occupée
+    if (placedMemberId) {
+      if (selectedMemberId === placedMemberId) {
+        // Re-clic sur le membre sélectionné : on le désélectionne sans rien changer
+        setSelectedMemberId(null);
+        setPendingVoice(null);
+        return;
+      }
+      // On sélectionne ce membre pour lui définir son rôle/voix ou le déplacer
+      setSelectedMemberId(placedMemberId);
+      setPendingVoice(activePlacements[placedMemberId]?.voice || getInitialVoiceForMember(placedMemberId));
+      return;
+    }
+
+    // 2. Si on clique sur une case vide et qu'un membre était sélectionné : on le place et on désélectionne
     if (selectedMemberId) {
-      // Valider pupitre for Dance row (row < 0)
       if (row < 0) {
         const selectedMember = presentMembers.find(m => m.id === selectedMemberId);
-        const isDancer = selectedMember && (
-          selectedMember.instrument === 'Danse' ||
-          selectedMember.instrument === 'danse' ||
-          selectedMember.instrument === 'danseur' ||
-          selectedMember.instrument === 'danseuse' ||
-          selectedMember.instrument.toLowerCase().includes('danse')
-        );
-        if (!isDancer) {
+        if (!isDancer(selectedMember)) {
           alert("⚠️ Seuls les danseurs et danseuses peuvent être placés sur l'Avant-Scène.");
           return;
         }
       }
 
-      // Place selected member
       const newPlacements = { ...activePlacements };
+      const selectedMember = presentMembers.find(m => m.id === selectedMemberId);
+      const isMemberAlfaia = isAlfaia(selectedMember);
+      const voiceToAssign = isMemberAlfaia
+        ? (pendingVoice || activePlacements[selectedMemberId]?.voice || getInitialVoiceForMember(selectedMemberId))
+        : undefined;
 
-      // Swap or effacer old position if they were already placed
-      newPlacements[selectedMemberId] = { row, col, ...(pendingVoice && { voice: pendingVoice }), ...(!pendingVoice && activePlacements[selectedMemberId]?.voice && { voice: activePlacements[selectedMemberId].voice }) };
-
-      // Unplace the previous member who was in this cell
-      if (placedMemberId && placedMemberId !== selectedMemberId) {
-        delete newPlacements[placedMemberId];
-      }
+      newPlacements[selectedMemberId] = {
+        row,
+        col,
+        ...(voiceToAssign ? { voice: voiceToAssign } : {})
+      };
 
       setLayout((prev) => ({ ...prev, placements: newPlacements }));
+      // Désélection automatique dès que le membre est posé sur la grille
       setSelectedMemberId(null);
-    } else if (placedMemberId) {
-      // Select placed member to move them
-      setSelectedMemberId(placedMemberId);
+      setPendingVoice(null);
     }
+  };
+
+  // =========================================================================
+  // GESTION DU GLISSER-DÉPOSER (HTML5 DRAG AND DROP)
+  // =========================================================================
+  const handleDragStart = (e, memberId) => {
+    if (!isEditingMode) return;
+    e.dataTransfer.setData('text/plain', memberId);
+    e.dataTransfer.effectAllowed = 'move';
+    setDraggedMemberId(memberId);
+    setSelectedMemberId(memberId);
+    setPendingVoice(getInitialVoiceForMember(memberId));
+  };
+
+  const handleDragEnd = () => {
+    setDraggedMemberId(null);
+    setDragOverCellKey(null);
+  };
+
+  const handleDragOver = (e, cellKey) => {
+    if (!isEditingMode) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (dragOverCellKey !== cellKey) {
+      setDragOverCellKey(cellKey);
+    }
+  };
+
+  const handleDragLeave = (e, cellKey) => {
+    if (dragOverCellKey === cellKey) {
+      setDragOverCellKey(null);
+    }
+  };
+
+  const handleDrop = (e, targetRow, targetCol) => {
+    if (!isEditingMode) return;
+    e.preventDefault();
+    setDragOverCellKey(null);
+
+    const memberId = e.dataTransfer.getData('text/plain') || draggedMemberId || selectedMemberId;
+    if (!memberId) return;
+
+    // Validation danse pour l'avant-scène (row < 0)
+    if (targetRow < 0) {
+      const member = presentMembers.find(m => m.id === memberId);
+      if (!isDancer(member)) {
+        alert("⚠️ Seuls les danseurs et danseuses peuvent être placés sur l'Avant-Scène.");
+        setDraggedMemberId(null);
+        return;
+      }
+    }
+
+    const newPlacements = { ...activePlacements };
+    const currentPos = activePlacements[memberId];
+
+    // Identifier qui est actuellement sur la case cible
+    const occupantId = Object.keys(activePlacements).find(
+      uid => activePlacements[uid]?.row === targetRow && activePlacements[uid]?.col === targetCol
+    );
+
+    const member = presentMembers.find(m => m.id === memberId);
+    const isMemberAlfaia = isAlfaia(member);
+    const voiceToAssign = isMemberAlfaia
+      ? (activePlacements[memberId]?.voice || pendingVoice || getInitialVoiceForMember(memberId))
+      : undefined;
+
+    if (occupantId && occupantId !== memberId) {
+      if (currentPos) {
+        // Échange de positions (Swap) entre deux musiciens déjà sur scène
+        newPlacements[occupantId] = {
+          ...newPlacements[occupantId],
+          row: currentPos.row,
+          col: currentPos.col
+        };
+        newPlacements[memberId] = {
+          ...newPlacements[memberId],
+          row: targetRow,
+          col: targetCol,
+          ...(voiceToAssign ? { voice: voiceToAssign } : {})
+        };
+      } else {
+        // Le membre vient de la liste des non-placés : l'occupant retourne dans la liste
+        delete newPlacements[occupantId];
+        newPlacements[memberId] = {
+          row: targetRow,
+          col: targetCol,
+          ...(voiceToAssign ? { voice: voiceToAssign } : {})
+        };
+      }
+    } else {
+      // La case cible était vide
+      newPlacements[memberId] = {
+        row: targetRow,
+        col: targetCol,
+        ...(voiceToAssign ? { voice: voiceToAssign } : {})
+      };
+    }
+
+    setLayout(prev => ({ ...prev, placements: newPlacements }));
+    setDraggedMemberId(null);
+    setSelectedMemberId(null);
+    setPendingVoice(null);
   };
 
   const handleUnplaceMember = (e, userId) => {
@@ -173,6 +361,7 @@ export default function EventStageLayoutSection({
     setLayout((prev) => ({ ...prev, placements: newPlacements }));
     if (selectedMemberId === userId) {
       setSelectedMemberId(null);
+      setPendingVoice(null);
     }
   };
 
@@ -413,52 +602,55 @@ export default function EventStageLayoutSection({
                   {t('eventDetails.stageLayoutHelp') || "👉 Sélectionnez un membre ci-dessous, puis cliquez sur une case de la grille pour le placer."}
                 </span>
                 {selectedMemberId && (
-                                    <div className="flex flex-col gap-2 w-full">
-                    <div className="bg-amber-100 border border-amber-400 text-amber-950 font-extrabold px-3 py-1.5 rounded flex items-center justify-between text-[11px]">
-                      <span>
-                        Placement en cours : {presentMembers.find(m => m.id === selectedMemberId)?.name}
+                  <div className="flex flex-col gap-2 w-full">
+                    <div className="bg-amber-100 border border-amber-400 text-amber-950 font-extrabold px-3 py-1.5 rounded flex items-center justify-between text-[11px] shadow-sm">
+                      <span className="flex items-center gap-1.5">
+                        <span>🎯</span>
+                        <span>
+                          {activePlacements[selectedMemberId] ? "Membre sélectionné :" : "Placement en cours :"} <strong>{presentMembers.find(m => m.id === selectedMemberId)?.name}</strong>
+                        </span>
                       </span>
                       <button
                         type="button"
                         onClick={() => { setSelectedMemberId(null); setPendingVoice(null); }}
-                        className="text-red-700 hover:text-red-900 font-bold ml-3 cursor-pointer"
+                        className="text-red-700 hover:text-red-900 font-bold ml-3 px-2 py-0.5 rounded bg-red-100/60 hover:bg-red-200 border border-red-300 transition-colors cursor-pointer text-[10px] uppercase tracking-wider"
+                        title="Désélectionner (ou touche Échap)"
                       >
-                        Annuler
+                        ✕ Désélectionner
                       </button>
                     </div>
                     {(() => {
                       const selectedUser = presentMembers.find(m => m.id === selectedMemberId);
-                      if (selectedUser && selectedUser.instrument.toLowerCase().includes('alfaia')) {
+                      if (selectedUser && isAlfaia(selectedUser)) {
                         const fullUserInfo = allUsers.find(u => u.id === selectedMemberId);
                         const competences = fullUserInfo?.competencesAlfaia || ['marcante'];
-                        const currentVoice = activePlacements[selectedMemberId]?.voice || pendingVoice || null;
+                        const currentVoice = activePlacements[selectedMemberId]?.voice || pendingVoice || getInitialVoiceForMember(selectedMemberId);
                         
                         return (
-                          <div className="flex flex-col gap-1.5 bg-white/40 dark:bg-black/20 p-2.5 rounded border border-dashed border-cordel-master-dark/20 mt-1">
-                            <span className="text-[10px] font-black uppercase text-cordel-master-dark">Voix pour la scène :</span>
-                            <div className="flex gap-3">
-                              {['Marcante', 'Meião', 'Repique'].map(v => {
-                                const voiceLower = v.toLowerCase();
-                                const isCompetent = competences.includes(voiceLower);
-                                const isSelectedVoice = currentVoice === voiceLower;
+                          <div className="flex flex-col gap-1.5 bg-white/60 dark:bg-black/40 p-2.5 rounded border border-dashed border-cordel-master-dark/20 mt-1">
+                            <span className="text-[10px] font-black uppercase text-cordel-master-dark">
+                              Voix attribuée pour la scène :
+                            </span>
+                            <div className="flex gap-4">
+                              {[
+                                { key: 'marcante', label: 'Marcante' },
+                                { key: 'meião', label: 'Meião' },
+                                { key: 'repique', label: 'Repique' }
+                              ].map(({ key, label }) => {
+                                const isCompetent = competences.includes(key);
+                                const isSelectedVoice = currentVoice === key;
                                 return (
-                                  <label key={v} className={`flex items-center gap-1.5 cursor-pointer ${!isCompetent ? 'opacity-50 grayscale' : ''}`}>
+                                  <label key={key} className={`flex items-center gap-1.5 cursor-pointer ${!isCompetent ? 'opacity-65' : ''}`}>
                                     <input
                                       type="radio"
-                                      name="alfaia-voice"
+                                      name={`alfaia-voice-${selectedMemberId}`}
                                       checked={isSelectedVoice}
-                                      onChange={() => {
-                                        if (activePlacements[selectedMemberId]) {
-                                          const newP = { ...activePlacements };
-                                          newP[selectedMemberId].voice = voiceLower;
-                                          setLayout(prev => ({ ...prev, placements: newP }));
-                                        } else {
-                                          setPendingVoice(voiceLower);
-                                        }
-                                      }}
-                                      className="w-3.5 h-3.5 accent-cordel-wood"
+                                      onChange={() => handleVoiceChange(key)}
+                                      className="w-3.5 h-3.5 accent-cordel-wood cursor-pointer"
                                     />
-                                    <span className="text-[10px] font-bold text-cordel-master-dark">{v}</span>
+                                    <span className="text-[11px] font-bold text-cordel-master-dark">
+                                      {label} {!isCompetent && <span className="text-[9px] opacity-60">(hors profil)</span>}
+                                    </span>
                                   </label>
                                 );
                               })}
@@ -531,24 +723,33 @@ export default function EventStageLayoutSection({
                             colsList.push(c);
                           }
                           return colsList.map((c) => {
+                            const cellKey = `dance-${rowVal}-${c}`;
                             const memberId = Object.keys(activePlacements).find(
                               (uid) => activePlacements[uid]?.row === rowVal && activePlacements[uid]?.col === c
                             );
                             const member = memberId ? presentMembers.find((m) => m.id === memberId) : null;
                             const isSelected = selectedMemberId && selectedMemberId === memberId;
+                            const isDragOver = dragOverCellKey === cellKey;
 
                             return (
                               <div
-                                key={`dance-${rowVal}-${c}`}
+                                key={cellKey}
+                                draggable={isEditingMode && !!member}
+                                onDragStart={(e) => member && handleDragStart(e, member.id)}
+                                onDragEnd={handleDragEnd}
+                                onDragOver={(e) => handleDragOver(e, cellKey)}
+                                onDragLeave={(e) => handleDragLeave(e, cellKey)}
+                                onDrop={(e) => handleDrop(e, rowVal, c)}
                                 onClick={() => !readOnly && handleCellClick(rowVal, c)}
                                 className={`
                                   relative flex flex-col items-center justify-center p-1 rounded border transition-all text-center
                                   w-16 h-16 shadow-[1px_1px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:scale-[1.03]
-                                  ${!readOnly ? 'cursor-pointer' : 'cursor-default'}
+                                  ${!readOnly ? (member ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer') : 'cursor-default'}
                                   ${member 
                                     ? `${getInstrumentColorClass(member.instrument)} border-2` 
                                     : 'border-dashed border-cordel-wood/30 bg-orange-50/10 hover:bg-orange-100/20'}
                                   ${isSelected ? 'ring-2 ring-cordel-wood scale-[1.03] outline-none z-10' : ''}
+                                  ${isDragOver ? 'ring-3 ring-[#2d6a4f] bg-emerald-100/70 scale-105 z-20' : ''}
                                 `}
                                 style={member ? { backgroundColor: getColorForInstrument(member.instrument, 'pastel') } : undefined}
                                 title={member ? `Danse : ${member.name}` : `Emplacement Danse ${Math.abs(rowVal)}, ${c}`}
@@ -603,22 +804,32 @@ export default function EventStageLayoutSection({
                   👑 Chef d'orchestre (Mestre)
                 </span>
                 {(() => {
+                  const cellKey = 'mestre-0-0';
                   const mestreMemberId = Object.keys(activePlacements).find(
                     (uid) => activePlacements[uid]?.row === 0 && activePlacements[uid]?.col === 0
                   );
                   const mestreMember = mestreMemberId ? presentMembers.find((m) => m.id === mestreMemberId) : null;
                   const isSelected = selectedMemberId && selectedMemberId === mestreMemberId;
+                  const isDragOver = dragOverCellKey === cellKey;
 
                   return (
                     <div
+                      draggable={isEditingMode && !!mestreMember}
+                      onDragStart={(e) => mestreMember && handleDragStart(e, mestreMember.id)}
+                      onDragEnd={handleDragEnd}
+                      onDragOver={(e) => handleDragOver(e, cellKey)}
+                      onDragLeave={(e) => handleDragLeave(e, cellKey)}
+                      onDrop={(e) => handleDrop(e, 0, 0)}
                       onClick={() => handleCellClick(0, 0)}
                       className={`
-                        relative flex flex-col items-center justify-center p-2 rounded border-2 transition-all cursor-pointer text-center
+                        relative flex flex-col items-center justify-center p-2 rounded border-2 transition-all text-center
                         w-20 h-20 shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:scale-[1.03]
+                        ${mestreMember ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'}
                         ${mestreMember 
                           ? `${getInstrumentColorClass(mestreMember.instrument)} border-double border-4` 
                           : 'border-dashed border-cordel-wood/40 bg-amber-50/20 hover:bg-amber-100/30'}
                         ${isSelected ? 'ring-2 ring-cordel-wood scale-[1.03] outline-none z-10' : ''}
+                        ${isDragOver ? 'ring-3 ring-[#2d6a4f] bg-emerald-100/70 scale-105 z-20' : ''}
                       `}
                       style={mestreMember ? { backgroundColor: getColorForInstrument(mestreMember.instrument, 'pastel') } : undefined}
                       title={mestreMember ? `Mestre : ${mestreMember.name} (${mestreMember.instrument})` : "Case Mestre"}
@@ -675,23 +886,32 @@ export default function EventStageLayoutSection({
                 className="p-4 border-2 border-encre-noire bg-cordel-bg-light/10 rounded-[8px_12px_9px_11px] shadow-[inset_2px_2px_5px_rgba(0,0,0,0.15)] relative select-none"
               >
                 {gridCells.map(({ row, col }) => {
+                  const cellKey = `${row}-${col}`;
                   const memberId = Object.keys(activePlacements).find(
                     (uid) => activePlacements[uid]?.row === row && activePlacements[uid]?.col === col
                   );
                   const member = memberId ? presentMembers.find((m) => m.id === memberId) : null;
                   const isSelected = selectedMemberId && selectedMemberId === memberId;
+                  const isDragOver = dragOverCellKey === cellKey;
 
                   return (
                     <div
-                      key={`${row}-${col}`}
+                      key={cellKey}
+                      draggable={isEditingMode && !!member}
+                      onDragStart={(e) => member && handleDragStart(e, member.id)}
+                      onDragEnd={handleDragEnd}
+                      onDragOver={(e) => handleDragOver(e, cellKey)}
+                      onDragLeave={(e) => handleDragLeave(e, cellKey)}
+                      onDrop={(e) => handleDrop(e, row, col)}
                       onClick={() => !readOnly && handleCellClick(row, col)}
                       className={`
                         relative flex flex-col items-center justify-center p-1 rounded border transition-all aspect-square text-center
-                        ${!readOnly ? 'cursor-pointer' : 'cursor-default'}
+                        ${!readOnly ? (member ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer') : 'cursor-default'}
                         ${member 
                           ? `${getInstrumentColorClass(member.instrument)} border-2 shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:scale-[1.03]` 
                           : 'border-dashed border-encre-noire/15 bg-white/20 dark:bg-black/10 hover:bg-white/40 dark:hover:bg-black/20 hover:scale-[1.01]'}
                         ${isSelected ? 'ring-2 ring-cordel-wood scale-[1.03] outline-none z-10' : ''}
+                        ${isDragOver ? 'ring-3 ring-[#2d6a4f] bg-emerald-100/70 scale-105 z-20' : ''}
                       `}
                       style={member ? { backgroundColor: getColorForInstrument(member.instrument, 'pastel') } : undefined}
                       title={member ? `${member.name} (${member.instrument})` : `Cellule L${row}-C${col}`}
@@ -763,9 +983,12 @@ export default function EventStageLayoutSection({
                               <button
                                 type="button"
                                 key={member.id}
-                                onClick={() => setSelectedMemberId(member.id)}
+                                draggable={isEditingMode}
+                                onDragStart={(e) => handleDragStart(e, member.id)}
+                                onDragEnd={handleDragEnd}
+                                onClick={() => handleSelectMember(member.id)}
                                 className={`
-                                  w-full text-left inline-flex items-center gap-1.5 px-2 py-1 rounded border text-[11px] font-semibold transition-all cursor-pointer select-none
+                                  w-full text-left inline-flex items-center gap-1.5 px-2 py-1 rounded border text-[11px] font-semibold transition-all cursor-grab active:cursor-grabbing select-none
                                   ${getInstrumentColorClass(member.instrument)}
                                   ${isCurrentlySelected 
                                     ? 'ring-2 ring-cordel-wood font-black translate-x-[2px] shadow-none' 

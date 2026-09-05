@@ -164,6 +164,8 @@ svg.xilo-icon {
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
 
   /* Couleurs officielles et réactives */
+  --color-cordel-bg: var(--cordel-bg);
+  --color-cordel-card-bg: var(--cordel-card-bg);
   --color-cordel-bg-dark: var(--cordel-bg-dark-color);
   --color-cordel-bg-light: var(--cordel-bg-light-color);
   --color-cordel-wood: var(--cordel-wood);
@@ -1446,6 +1448,14 @@ body.eco-mode #center-afficheur {
 /* ==========================================
    THEME SEMANTIC CLASSES (MULTI-THEME PREPARATION)
    ========================================== */
+
+/* Classes utilitaires de fond papier et carte Cordel pour assurer l'opacité */
+.bg-cordel-card-bg {
+  background-color: var(--cordel-card-bg, #f4ecd8) !important;
+}
+.bg-cordel-bg {
+  background-color: var(--cordel-bg, #f4ecd8) !important;
+}
 
 /* Cards */
 .theme-card-extreme {

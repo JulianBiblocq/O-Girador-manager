@@ -267,6 +267,7 @@ export function canAccessMestre(profileData, permissionsMatrice = null, effectiv
   if (permissionsMatrice && typeof permissionsMatrice === 'object') {
     const mestreTags = [
       ...(permissionsMatrice['mestre'] || []),
+      ...(permissionsMatrice['mestre-repertoire'] || []),
       ...(permissionsMatrice['mestre-orientation'] || []),
       ...(permissionsMatrice['mestre-stage-layout'] || []),
       ...(permissionsMatrice['mestre-sequenceur'] || []),

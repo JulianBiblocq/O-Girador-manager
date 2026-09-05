@@ -230,18 +230,18 @@ export const POLE_GUIDES = {
     ]
   },
   'activity-reports': {
-    titre: "📊 Rapports d'Activité & Statistiques",
-    title: "📊 Rapports d'Activité & Statistiques",
-    description: "Analyse quantitative des heures de pratique, taux de présence et bilans de saison.",
+    titre: "📊 Journal d'Activité (CSV)",
+    title: "📊 Journal d'Activité (CSV)",
+    description: "Extraction CSV des dates, sorties, répétitions et registres de présence sur une période personnalisée.",
     etapes: [
-      "Visualisez les statistiques de présence et le volume d'heures de pratique.",
-      "Générez les indicateurs chiffrés requis pour les dossiers de subvention.",
-      "Compilez le rapport d'activité annuel pour l'Assemblée Générale."
+      "Définissez l'intervalle de dates pour votre analyse.",
+      "Cochez les types d'événements à inclure (prestations, répétitions, stages, réunions).",
+      "Générez et téléchargez le fichier CSV tableur formaté pour Excel."
     ],
     steps: [
-      "Visualisez les statistiques de présence et le volume d'heures de pratique.",
-      "Générez les indicateurs chiffrés requis pour les dossiers de subvention.",
-      "Compilez le rapport d'activité annuel pour l'Assemblée Générale."
+      "Définissez l'intervalle de dates pour votre analyse.",
+      "Cochez les types d'événements à inclure (prestations, répétitions, stages, réunions).",
+      "Générez et téléchargez le fichier CSV tableur formaté pour Excel."
     ]
   },
   'secretariat-reports': {
@@ -879,6 +879,21 @@ export const POLE_GUIDES = {
       "Exploitez le Séquenceur et communiquez les consignes musicales."
     ]
   },
+  'mestre-repertoire': {
+    titre: "📜 Classeur du Répertoire de la Troupe",
+    title: "📜 Classeur du Répertoire de la Troupe",
+    description: "Référentiel central des morceaux, rythmes et créations artistiques avec statut de saison et liaisons transversales.",
+    etapes: [
+      "Ajoutez les morceaux et rythmes de la saison avec leur niveau de maturité.",
+      "Liez optionnellement chaque pièce à une toada, un rythme séquenceur ou une chorégraphie.",
+      "Injectez directement les morceaux dans le fil conducteur de vos répétitions et concerts."
+    ],
+    steps: [
+      "Ajoutez les morceaux et rythmes de la saison avec leur niveau de maturité.",
+      "Liez optionnellement chaque pièce à une toada, un rythme séquenceur ou une chorégraphie.",
+      "Injectez directement les morceaux dans le fil conducteur de vos répétitions et concerts."
+    ]
+  },
   'mestre-orientation': {
     titre: "🎯 Orientation & Casting des Pupitres",
     title: "🎯 Orientation & Casting des Pupitres",
@@ -915,13 +930,13 @@ export const POLE_GUIDES = {
     ]
   },
   'mestre-stage-layout': {
-    titre: "📐 Disposition Scénique & Placement",
-    title: "📐 Disposition Scénique & Placement",
-    description: "Conception visuelle de l'implantation des pupitres sur les différents plateaux de spectacle.",
+    titre: "📐 Plans de Scène & Cortejo",
+    title: "📐 Plans de Scène & Cortejo",
+    description: "Tableau de bord des dates de concert et conception visuelle de l'implantation des pupitres sur scène.",
     etapes: [
-      "Positionnez les pupitres et musiciens sur la grille scénique.",
-      "Mobilisez et placez les musiciens présents depuis le roster latéral.",
-      "Ajustez les dimensions de la scène et validez la configuration."
+      "Consultez les dates de prestations et le statut de leurs plans de scène dans le tableau.",
+      "Ouvrez un concert pour concevoir ou ajuster la grille scénique et l'avant-scène danse.",
+      "Mobilisez et placez les musiciens confirmés depuis le roster latéral avec gestion des voix d'alfaia."
     ],
     targets: [
       "mestre-stage-grid",
@@ -929,9 +944,9 @@ export const POLE_GUIDES = {
       "mestre-stage-grid"
     ],
     steps: [
-      "Positionnez les pupitres et musiciens sur la grille scénique.",
-      "Mobilisez et placez les musiciens présents depuis le roster latéral.",
-      "Ajustez les dimensions de la scène et validez la configuration."
+      "Consultez les dates de prestations et le statut de leurs plans de scène dans le tableau.",
+      "Ouvrez un concert pour concevoir ou ajuster la grille scénique et l'avant-scène danse.",
+      "Mobilisez et placez les musiciens confirmés depuis le roster latéral avec gestion des voix d'alfaia."
     ]
   },
   'mestre-categories': {

@@ -167,7 +167,7 @@ export default function AgSlideshowModal({
             </div>
 
             {/* Constat du Quorum statutaire */}
-            <div className="bg-cordel-bg/80 border-2 border-encre-noire rounded-[6px_10px_7px_9px] p-5 shadow-[2px_2px_0px_0px_#181716] flex flex-col gap-4">
+            <div className="bg-[#fcf7ed] border-2 border-encre-noire rounded-[6px_10px_7px_9px] p-5 shadow-[2px_2px_0px_0px_#181716] flex flex-col gap-4">
               <div className="flex items-center justify-between border-b border-dashed border-cordel-master-dark/20 pb-2">
                 <span className="text-xs font-black uppercase tracking-wider text-cordel-wood flex items-center gap-1.5">
                   <span>📜</span> Constat officiel du Quorum & Émargement
@@ -226,7 +226,7 @@ export default function AgSlideshowModal({
               <span className="text-2xl">🖋️</span>
             </div>
 
-            <div className="bg-cordel-bg/80 border-2 border-encre-noire rounded-[6px_10px_7px_9px] p-5 shadow-[2px_2px_0px_0px_#181716] flex flex-col gap-3">
+            <div className="bg-[#fcf7ed] border-2 border-encre-noire rounded-[6px_10px_7px_9px] p-5 shadow-[2px_2px_0px_0px_#181716] flex flex-col gap-3">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-black uppercase tracking-wider text-cordel-wood">
                   Bilan d'activité & Perspectives associatives
@@ -287,7 +287,7 @@ export default function AgSlideshowModal({
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Colonne gauche : Répartition par pupitre */}
-              <div className="bg-cordel-bg/80 border-2 border-encre-noire rounded-[6px_10px_7px_9px] p-4 shadow-[2px_2px_0px_0px_#181716] flex flex-col gap-3">
+              <div className="bg-[#fcf7ed] border-2 border-encre-noire rounded-[6px_10px_7px_9px] p-4 shadow-[2px_2px_0px_0px_#181716] flex flex-col gap-3">
                 <span className="text-xs font-black uppercase tracking-wider text-cordel-wood flex items-center gap-1.5">
                   <span>🎶</span> Répartition par pupitre ({indicators.activeMembers} actifs)
                 </span>
@@ -309,7 +309,7 @@ export default function AgSlideshowModal({
               {/* Colonne droite : Ancrage territorial & Bénévolat */}
               <div className="flex flex-col gap-4">
                 {/* Jauge territoriale */}
-                <div className="bg-cordel-bg/80 border-2 border-encre-noire rounded-[6px_10px_7px_9px] p-4 shadow-[2px_2px_0px_0px_#181716] flex flex-col gap-2.5">
+                <div className="bg-[#fcf7ed] border-2 border-encre-noire rounded-[6px_10px_7px_9px] p-4 shadow-[2px_2px_0px_0px_#181716] flex flex-col gap-2.5">
                   <div className="flex justify-between items-center text-xs font-black uppercase">
                     <span className="text-[#2d6a4f]">Commune siège : {territorial.communeMembersPercent}%</span>
                     <span className="text-[#8b2a1a]">Extérieurs : {territorial.externalMembersPercent}%</span>
@@ -362,13 +362,13 @@ export default function AgSlideshowModal({
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <div className="p-3 bg-cordel-bg/80 border-2 border-encre-noire rounded-[6px_10px_7px_9px] shadow-[2px_2px_0px_0px_#181716] flex flex-col items-center text-center">
+              <div className="p-3 bg-[#fcf7ed] border-2 border-encre-noire rounded-[6px_10px_7px_9px] shadow-[2px_2px_0px_0px_#181716] flex flex-col items-center text-center">
                 <span className="text-[10px] font-black uppercase text-encre-noire/60">Prestations</span>
                 <span className="text-2xl font-black text-cordel-wood mt-0.5">{indicators.eventsByType?.prestation || 0}</span>
                 <span className="text-[9px] text-encre-noire/70 mt-1">Concerts et sorties</span>
               </div>
 
-              <div className="p-3 bg-cordel-bg/80 border-2 border-encre-noire rounded-[6px_10px_7px_9px] shadow-[2px_2px_0px_0px_#181716] flex flex-col items-center text-center">
+              <div className="p-3 bg-[#fcf7ed] border-2 border-encre-noire rounded-[6px_10px_7px_9px] shadow-[2px_2px_0px_0px_#181716] flex flex-col items-center text-center">
                 <span className="text-[10px] font-black uppercase text-encre-noire/60">Répétitions & Ateliers</span>
                 <span className="text-2xl font-black text-encre-noire mt-0.5">
                   {(indicators.eventsByType?.repetition || 0) + (indicators.eventsByType?.stage || 0) + (indicators.eventsByType?.atelier || 0)}
@@ -376,13 +376,13 @@ export default function AgSlideshowModal({
                 <span className="text-[9px] text-encre-noire/70 mt-1">Séances régulières</span>
               </div>
 
-              <div className="p-3 bg-cordel-bg/80 border-2 border-encre-noire rounded-[6px_10px_7px_9px] shadow-[2px_2px_0px_0px_#181716] flex flex-col items-center text-center">
+              <div className="p-3 bg-[#fcf7ed] border-2 border-encre-noire rounded-[6px_10px_7px_9px] shadow-[2px_2px_0px_0px_#181716] flex flex-col items-center text-center">
                 <span className="text-[10px] font-black uppercase text-encre-noire/60">Jeu public (scène)</span>
                 <span className="text-2xl font-black text-emerald-800 mt-0.5">{volunteering.totalPublicPlayingHours} h</span>
                 <span className="text-[9px] text-emerald-900/70 mt-1">Temps de spectacle</span>
               </div>
 
-              <div className="p-3 bg-cordel-bg/80 border-2 border-encre-noire rounded-[6px_10px_7px_9px] shadow-[2px_2px_0px_0px_#181716] flex flex-col items-center text-center">
+              <div className="p-3 bg-[#fcf7ed] border-2 border-encre-noire rounded-[6px_10px_7px_9px] shadow-[2px_2px_0px_0px_#181716] flex flex-col items-center text-center">
                 <span className="text-[10px] font-black uppercase text-encre-noire/60">Moyenne Musiciens</span>
                 <span className="text-2xl font-black text-cordel-wood mt-0.5">{indicators.avgPresencePrestation}</span>
                 <span className="text-[9px] text-encre-noire/70 mt-1">Mobilisés par prestation</span>
@@ -390,7 +390,7 @@ export default function AgSlideshowModal({
             </div>
 
             {/* Rayonnement Vitrine publique */}
-            <div className="bg-cordel-bg/80 border-2 border-encre-noire rounded-[6px_10px_7px_9px] p-4 shadow-[2px_2px_0px_0px_#181716] flex flex-col gap-3 mt-1">
+            <div className="bg-[#fcf7ed] border-2 border-encre-noire rounded-[6px_10px_7px_9px] p-4 shadow-[2px_2px_0px_0px_#181716] flex flex-col gap-3 mt-1">
               <span className="text-xs font-black uppercase tracking-wider text-cordel-wood flex items-center gap-1.5">
                 <span>🌐</span> Rayonnement numérique & Vitrine publique
               </span>
@@ -474,7 +474,7 @@ export default function AgSlideshowModal({
             </div>
 
             {/* Mot du Trésorier */}
-            <div className="bg-cordel-bg/80 border-2 border-encre-noire rounded-[6px_10px_7px_9px] p-4 shadow-[2px_2px_0px_0px_#181716] flex flex-col gap-2">
+            <div className="bg-[#fcf7ed] border-2 border-encre-noire rounded-[6px_10px_7px_9px] p-4 shadow-[2px_2px_0px_0px_#181716] flex flex-col gap-2">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-black uppercase tracking-wider text-cordel-wood">
                   Commentaire du Trésorier & Affectation du résultat
@@ -526,7 +526,7 @@ export default function AgSlideshowModal({
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Patrimoine matériel */}
-              <div className="bg-cordel-bg/80 border-2 border-encre-noire rounded-[6px_10px_7px_9px] p-4 shadow-[2px_2px_0px_0px_#181716] flex flex-col gap-2.5">
+              <div className="bg-[#fcf7ed] border-2 border-encre-noire rounded-[6px_10px_7px_9px] p-4 shadow-[2px_2px_0px_0px_#181716] flex flex-col gap-2.5">
                 <span className="text-xs font-black uppercase tracking-wider text-cordel-wood flex items-center gap-1.5">
                   <span>👗</span> Ateliers, Costumerie & Lutherie
                 </span>
@@ -549,7 +549,7 @@ export default function AgSlideshowModal({
               </div>
 
               {/* Résolutions soumises aux suffrages */}
-              <div className="bg-cordel-bg/80 border-2 border-encre-noire rounded-[6px_10px_7px_9px] p-4 shadow-[2px_2px_0px_0px_#181716] flex flex-col gap-2.5">
+              <div className="bg-[#fcf7ed] border-2 border-encre-noire rounded-[6px_10px_7px_9px] p-4 shadow-[2px_2px_0px_0px_#181716] flex flex-col gap-2.5">
                 <span className="text-xs font-black uppercase tracking-wider text-cordel-wood flex items-center gap-1.5">
                   <span>⚖️</span> Résolutions Soumises aux Votes
                 </span>
@@ -589,7 +589,7 @@ export default function AgSlideshowModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex flex-col justify-between select-none overflow-y-auto">
+    <div className="fixed inset-0 z-50 bg-[#181716] flex flex-col justify-between select-none overflow-y-auto">
       {/* ========================================================================= */}
       {/* STYLES D'IMPRESSION LIVRET A4 MULTI-PAGES & FORMAT PLEIN ÉCRAN            */}
       {/* ========================================================================= */}
@@ -687,7 +687,10 @@ export default function AgSlideshowModal({
       {/* 2. ZONE CENTRALE DE PROJECTION (MODE ÉCRAN)                                */}
       {/* ========================================================================= */}
       <div className="screen-only flex-1 flex items-center justify-center p-4 sm:p-8 w-full max-w-5xl mx-auto">
-        <div className="w-full bg-cordel-card-bg text-encre-noire border-3 border-encre-noire rounded-[8px_16px_9px_14px] p-6 sm:p-10 shadow-[6px_6px_0px_0px_#181716] min-h-[520px] flex flex-col justify-between animate-fade-in">
+        <div 
+          className="w-full bg-[#f4ecd8] text-[#1a1a1a] border-3 border-encre-noire rounded-[8px_16px_9px_14px] p-6 sm:p-10 shadow-[6px_6px_0px_0px_#181716] min-h-[520px] flex flex-col justify-between animate-fade-in"
+          style={{ backgroundColor: 'var(--cordel-card-bg, #f4ecd8)', color: 'var(--cordel-text, #1a1a1a)' }}
+        >
           {renderSlideContent(currentSlide, false)}
 
           {/* Pied de diapositive avec indicateur de progression */}

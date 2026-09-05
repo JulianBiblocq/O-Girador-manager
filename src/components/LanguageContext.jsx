@@ -40,7 +40,8 @@ export function LanguageProvider({ children }) {
           if (fallbackValue && fallbackValue[fKey] !== undefined) {
             fallbackValue = fallbackValue[fKey];
           } else {
-            fallbackValue = path; // Retourne le chemin brut si non trouvé
+            // Si une chaîne de texte de repli est fournie en second argument, l'utiliser à la place du chemin brut
+            fallbackValue = (typeof params === 'string' && params.trim().length > 0) ? params : path;
             break;
           }
         }

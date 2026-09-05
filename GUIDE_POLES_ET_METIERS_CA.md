@@ -189,14 +189,14 @@ L'application applique une convention visuelle stricte sur l'ensemble de ses éc
 - **Badge nécessaire :** Clé `secretariat` ou `mestre-forum-channels` (Mots-clés : `secrétariat`, `modérateur`, `bureau`, `admin`).
 - **Engagement estimé :** Ponctuel (création au besoin et modération continue).
 
-### 🔹 Onglet : Rapports (id: `activity-reports`)
-- **À quoi ça sert :** Outil de mesure et d'analyse quantitative de l'activité annuelle (assiduité, volume horaire, dynamisme des pupitres).
+### 🔹 Onglet : Journal d'activité (CSV) (id: `activity-reports`)
+- **À quoi ça sert :** Extracteur et générateur de fichiers tableurs CSV retraçant les événements et les présences réelles sur une période personnalisée.
 - **Ce qu'on y fait :**
-  - Suivre le taux moyen d'assiduité aux répétitions et identifier les pupitres en sous-effectif.
-  - Quantifier le volume total d'heures de pratique collective dispensées au cours de la saison.
-  - Extraire les graphiques et métriques nécessaires à l'évaluation des actions de l'association.
+  - Choisir une plage de dates libre pour l'extraction des données.
+  - Sélectionner les types d'événements à inclure (prestations, répétitions, stages, réunions).
+  - Télécharger le fichier CSV officiel intégrant les totaux de présences pour Excel / LibreOffice.
 - **Badge nécessaire :** Clé `secretariat` ou `activity-reports` (Mots-clés : `secrétariat`, `bureau`, `direction`, `admin`).
-- **Engagement estimé :** Périodique (fin de trimestre ou mi-saison).
+- **Engagement estimé :** Périodique (fin de trimestre, fin de saison ou à la demande).
 
 ### 🔹 Onglet : Rapports & Bilan AG (id: `secretariat-reports`)
 - **À quoi ça sert :** Générateur consolidé du Bilan d'Activité officiel destiné à être présenté en Assemblée Générale et joint aux dossiers de subventions.
@@ -581,6 +581,16 @@ L'application applique une convention visuelle stricte sur l'ensemble de ses éc
 - **Vocation du pôle :** Direction artistique générale, gestion des équilibres de pupitres, castings de concert, scénographie, conduite des représentations et annonces musicales officielles.
 - **Profil associatif recommandé :** Mestre, Contramestre, Directeur / Directrice Artistique, Maître de Baque.
 
+### 🔹 Onglet : Répertoire de la troupe (id: `mestre-repertoire`)
+- **À quoi ça sert :** Classeur central et référentiel de tous les morceaux, rythmes et créations de la troupe avec état d'avancement et liaisons transversales.
+- **Ce qu'on y fait :**
+  - Renseigner la discographie et setlist de saison (morceaux au programme, chantiers, archives).
+  - Évaluer la maturité artistique de chaque pièce (🟢 Validé / Prêt pour la scène vs 🟡 En chantier).
+  - Relier optionnellement chaque morceau à une Toada (chant du Varal), un pattern du Séquenceur percussions, une chorégraphie Dançador ou une fiche culturelle.
+  - Programmer directement en 1 clic un morceau dans le fil conducteur de n'importe quelle répétition ou prestation future.
+- **Badge nécessaire :** Clé `mestre` ou `mestre-repertoire` (Rôle `mestre`, `admin`, ou mots-clés : `mestre`, `direction`, `artistique`).
+- **Engagement estimé :** Régulier (mise à jour continue du répertoire et préparation des dates).
+
 ### 🔹 Onglet : Catégories de pratique (id: `mestre-categories`)
 - **À quoi ça sert :** Structuration des sections de pratique, filières d'apprentissage et niveaux au sein de la troupe.
 - **Ce qu'on y fait :**
@@ -599,12 +609,14 @@ L'application applique une convention visuelle stricte sur l'ensemble de ses éc
 - **Badge nécessaire :** Clé `mestre` ou `mestre-orientation` (Rôle `mestre` ou mots-clés : `mestre`, `direction`, `artistique`, `chef de pupitre`).
 - **Engagement estimé :** Fort à la rentrée associative et à mi-saison (réajustements de casting).
 
-### 🔹 Onglet : Plan de Scène (id: `mestre-stage-layout`)
-- **À quoi ça sert :** Concepteur visuel interactif permettant de disposer géographiquement les musiciens et pupitres sur le plateau de concert.
+### 🔹 Onglet : Plan de Scène & Cortejo (id: `mestre-stage-layout`)
+- **À quoi ça sert :** Tableau de bord unifié des concerts/prestations et concepteur visuel interactif permettant d'aligner les dates et de disposer géographiquement les musiciens et pupitres sur scène.
 - **Ce qu'on y fait :**
-  - Dessiner l'implantation scénique en glissant-déposant les musiciens confirmés depuis le roster latéral.
-  - Définir les lignes d'instruments (première ligne de danse, caixas au centre, alfaias en fond, chant face public).
-  - Adapter les dimensions de la grille scénique selon la taille réelle du plateau ou de la rue.
+  - Consulter la liste chronologique des prestations avec état du plan de scène (Publié, Brouillon, À créer) et nombre de musiciens présents.
+  - Basculer facilement les filtres pour afficher les prestations (par défaut), les événements avec plan, ou l'ensemble des événements (répétitions/ateliers).
+  - Ouvrir l'implantation scénique d'une date en 1 clic pour glisser-déposer les musiciens confirmés depuis le roster latéral.
+  - Définir les lignes d'instruments (première ligne de danse, caixas au centre, alfaias en fond avec voix Marcante/Meião/Repique, chant face public).
+  - Basculer d'un concert à l'autre sans quitter l'éditeur ou revenir à la liste en 1 clic.
 - **Badge nécessaire :** Clé `mestre` ou `mestre-stage-layout` (Rôle `mestre` ou mots-clés : `mestre`, `scène`, `scene`, `direction`).
 - **Engagement estimé :** Ponctuel, avant chaque concert ou festival pour préparer la régie de scène.
 
@@ -616,15 +628,6 @@ L'application applique une convention visuelle stricte sur l'ensemble de ses éc
   - Utiliser le métronome et le lecteur interactif en répétition pour travailler les ralentis et accélérations.
 - **Badge nécessaire :** Clé `mestre` ou `mestre-sequenceur` (Rôle `mestre` ou mots-clés : `mestre`, `direction`, `artistique`).
 - **Engagement estimé :** Régulier (travail de recherche et préparation en amont des répétitions).
-
-### 🔹 Onglet : Événements & Présences (id: `mestre-events`)
-- **À quoi ça sert :** Vue de pilotage artistique direct des événements, permettant au Mestre de valider la faisabilité musicale d'une prestation.
-- **Ce qu'on y fait :**
-  - Examiner la liste des inscrits par pupitre pour vérifier si le quorum musical est atteint.
-  - Définir la liste des morceaux (*setlist*) et l'ordre de passage pour ce concert précis.
-  - Communiquer les consignes de jeu particulières, la couleur de peau des tambours ou l'ordre des solistes.
-- **Badge nécessaire :** Clé `mestre` ou `mestre-events` (Rôle `mestre` ou mots-clés : `mestre`, `direction`, `artistique`).
-- **Engagement estimé :** Régulier (avant chaque date importante pour finaliser le conducteur artistique).
 
 ### 🔹 Onglet : Annonces du Mestre (id: `mestre-mot-mestre`)
 - **À quoi ça sert :** Canal solennel et direct d'annonces de la direction musicale vers l'ensemble de la communauté des adhérents.

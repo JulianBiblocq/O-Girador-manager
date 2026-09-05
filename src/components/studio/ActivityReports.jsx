@@ -123,14 +123,14 @@ export default function ActivityReports({ groupId, onBack, isEmbedded }) {
           </button>
           
           <h2 className="text-sm font-extrabold tracking-widest text-cordel-wood uppercase flex items-center gap-2">
-            <XiloScroll size={16} /> Rapports d'Activité
+            <XiloScroll size={16} /> Journal d'Activité (CSV)
           </h2>
         </div>
       )}
 
       {/* Intro info box */}
       <div className="text-xs text-encre-noire dark:text-cordel-bg-light opacity-80 border border-dashed border-cordel-master-dark/30 p-3 rounded-[6px_4px_8px_5px] bg-[#fdfaf2] dark:bg-[#201d1a] leading-relaxed">
-        📊 Ce module permet d'extraire les rapports de présence et d'activité de l'association sur une période choisie pour vous aider à préparer les bilans moraux pour vos Assemblées Générales. Les exports sont générés sous forme de fichiers tableurs CSV compatibles avec Microsoft Excel, LibreOffice et Google Sheets.
+        📊 Ce module permet d'extraire le journal des événements et les registres de présence de l'association sur une période choisie. Les exports sont générés sous forme de fichiers tableurs CSV compatibles avec Microsoft Excel, LibreOffice et Google Sheets.
       </div>
 
       {/* Date Filters Card */}

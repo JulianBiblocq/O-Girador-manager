@@ -61,6 +61,7 @@ const GigsPipelineManager = lazyWithRetry(() => import('./components/diffusion/G
 const MestreMotMestre = lazyWithRetry(() => import('./components/mestre/MestreMotMestre'));
 const MestreCustomCategories = lazyWithRetry(() => import('./components/mestre/MestreCustomCategories'));
 const MestrePedagogyDashboard = lazyWithRetry(() => import('./components/mestre/MestrePedagogyDashboard'));
+const MestreRepertoireView = lazyWithRetry(() => import('./components/mestre/MestreRepertoireView'));
 const MestreAutoEvalConfig = lazyWithRetry(() => import('./components/mestre/MestreAutoEvalConfig'));
 const WidgetAgenda = lazyWithRetry(() => import('./components/WidgetAgenda'));
 const WidgetDocuments = lazyWithRetry(() => import('./components/WidgetDocuments'));
@@ -102,7 +103,7 @@ const POLES_CONFIG = [
       { id: 'reunion-manager', label: 'Réunions', labelKey: 'tabReunions' },
       { id: 'varal-secretariat', label: 'Varal Secrétariat', labelKey: 'tabVaralSecretariat' },
       { id: 'mestre-forum-channels', label: 'Porte-voix', labelKey: 'tabMestreForumChannels' },
-      { id: 'activity-reports', label: "Rapports", labelKey: 'tabActivityReports' },
+      { id: 'activity-reports', label: "Journal d'activité (CSV)", labelKey: 'tabActivityReports' },
       { id: 'secretariat-reports', label: 'Rapports & Bilan AG', labelKey: 'tabSecretariatReports' },
       { id: 'secretariat-documents', label: 'Ressources & Liens', labelKey: 'tabSecretariatDocuments' },
       { id: 'secretariat-lieux', label: 'Lieux, Types & Relances', labelKey: 'tabSecretariatLieux' }
@@ -195,11 +196,11 @@ const POLES_CONFIG = [
     label: 'Mestria',
     labelKey: 'poles.mestre',
     tabs: [
+      { id: 'mestre-repertoire', label: '📜 Répertoire', labelKey: 'tabMestreRepertoire' },
       { id: 'mestre-categories', label: 'Catégories de pratique', labelKey: 'tabMestreCategories' },
       { id: 'mestre-orientation', label: 'Casting & Orientation', labelKey: 'tabMestreOrientation' },
       { id: 'mestre-stage-layout', label: 'Plan de Scène', labelKey: 'tabMestreStage' },
       { id: 'mestre-sequenceur', label: 'Séquenceur & Rythmes', labelKey: 'tabMestreSequenceur' },
-      { id: 'mestre-events', label: 'Événements & Présences', labelKey: 'tabMestreEvents' },
       { id: 'mestre-mot-mestre', label: 'Annonces du Mestre', labelKey: 'tabMestreMotMestre' }
     ]
   },
@@ -1143,7 +1144,7 @@ export default function App() {
     if (['studio-social', 'newsletter'].includes(tabId) && enabledModules.studioSocial === false) return false;
     if (tabId === 'reunion-manager' && enabledModules.reunions === false) return false;
     if (['forum', 'mestre-forum-channels'].includes(tabId) && enabledModules.forum === false) return false;
-    if (['mestre-sante-troupe', 'mestre-pedagogy-dashboard', 'varal-manager', 'mestre-pedagogy-qcm', 'mestre-orientation', 'mestre-categories', 'mestre-events', 'mestre-stage-layout', 'mestre-mot-mestre', 'mestre-sequenceur'].includes(tabId) && enabledModules.mestre === false) return false;
+    if (['mestre-repertoire', 'mestre-sante-troupe', 'mestre-pedagogy-dashboard', 'varal-manager', 'mestre-pedagogy-qcm', 'mestre-orientation', 'mestre-categories', 'mestre-events', 'mestre-stage-layout', 'mestre-mot-mestre', 'mestre-sequenceur'].includes(tabId) && enabledModules.mestre === false) return false;
 
     return true;
   };
@@ -1442,10 +1443,15 @@ export default function App() {
         setCurrentPole('mestre');
         setCurrentTab('mestre-categories');
         break;
+      case 'mestre-repertoire':
+        setCurrentPole('mestre');
+        setCurrentTab('mestre-repertoire');
+        break;
       case 'mestre-orientation':
         setCurrentPole('mestre');
         setCurrentTab('mestre-orientation');
         break;
+      case 'mestre-events':
       case 'mestre-stage-layout':
         setCurrentPole('mestre');
         setCurrentTab('mestre-stage-layout');
@@ -1453,10 +1459,6 @@ export default function App() {
       case 'mestre-sequenceur':
         setCurrentPole('mestre');
         setCurrentTab('mestre-sequenceur');
-        break;
-      case 'mestre-events':
-        setCurrentPole('mestre');
-        setCurrentTab('mestre-events');
         break;
       case 'mestre-mot-mestre':
         setCurrentPole('mestre');
@@ -2043,6 +2045,13 @@ export default function App() {
                   />
                 </React.Suspense>
               </div>
+            ) : (currentTab === 'mestre-repertoire' && hasAccessMestre) ? (
+              <MestreRepertoireView 
+                groupId={profileData?.groupId} 
+                user={user}
+                profileData={profileData}
+                sequenceurUrl={sequenceurUrl}
+              />
             ) : (currentTab === 'mestre-categories' && hasAccessMestre) ? (
               <MestreCustomCategories 
                 groupId={profileData?.groupId} 
@@ -2056,22 +2065,14 @@ export default function App() {
                   setCurrentTab('trombinoscope');
                 }}
               />
-            ) : (currentTab === 'mestre-events' && hasAccessMestre) ? (
-              <MestreEvents 
-                groupId={profileData?.groupId} 
-                onSelectForStage={(evt) => {
-                  setSelectedMestreEventId(evt.id);
-                  setCurrentTab('mestre-stage-layout');
-                }} 
-                onOpenDetails={(evt) => setActiveMestreEventDetails(evt)}
-              />
-            ) : (currentTab === 'mestre-stage-layout' && hasAccessMestre) ? (
+            ) : ((currentTab === 'mestre-stage-layout' || currentTab === 'mestre-events') && hasAccessMestre) ? (
               <MestreStageLayout 
-                groupId={profileData?.groupId}
+                groupId={profileData?.groupId} 
                 user={user}
                 profileData={profileData}
                 selectedEventId={selectedMestreEventId}
                 onSelectEventId={setSelectedMestreEventId}
+                onOpenDetails={(evt) => setActiveMestreEventDetails(evt)}
               />
             ) : (currentTab === 'mestre-sequenceur' && (hasAccessMestre || hasAccessPedagogie)) ? (
               <MestreSequenceur 
