@@ -202,7 +202,7 @@ export default function LayoutShell({
     { id: 'vestiaire', label: 'Vestiaire', icon: <XiloHanger size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('mon-espace'); onNavigateToTab && onNavigateToTab('vestiaire'); } },
     { id: 'trombinoscope', label: 'Trombinoscope', icon: <XiloPeople size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('mon-espace'); onNavigateToTab && onNavigateToTab('trombinoscope'); } },
     { id: 'forum', label: 'Porte-voix', icon: <XiloMegaphone size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('mon-espace'); onNavigateToTab && onNavigateToTab('forum'); } },
-    { id: 'varal', label: 'Varal', icon: <XiloScroll size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('accueil'); onNavigateToTab && onNavigateToTab('varal'); } }
+    { id: 'varal', label: 'Varal', icon: <XiloScroll size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('mon-espace', 'varal'); onNavigateToTab && onNavigateToTab('varal'); } }
   ];
 
   const memberMenuItems = allMemberMenuItems.filter(item => isModuleEnabled(item.id, 'mon-espace'));

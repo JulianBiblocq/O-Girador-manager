@@ -19,11 +19,13 @@ import { useTranslation } from './LanguageContext';
 import useConfirm from '../hooks/useConfirm';
 import ReunionViewModal from './ReunionViewModal';
 import { projectWorkshopBooklets, isWorkshopVirtualDoc } from '../utils/workshopProjectionUtils';
+import DocumentViewerModal from './documents/DocumentViewerModal';
 
 export const DEFAULT_VARAL_CATEGORIES = [
   { id: 'Toadas', nom: 'Toadas', activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false },
   { id: 'TutorielsVideo', nom: 'Tutoriels Vidéo', activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false },
   { id: 'TutosFabrication', nom: 'Tutos Fabrication', activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false },
+  { id: 'Costumerie', nom: 'Costumerie & Patrons', activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false },
   { id: 'Culture', nom: 'Culture', activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false },
   { id: 'PhotosPrestations', nom: 'Photos Prestations', activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false },
   { id: 'ComptesRendus', nom: 'Comptes-rendus', activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: true },
@@ -37,7 +39,8 @@ export const DEFAULT_POLE_ROPES = {
   pedagogie: ['Toadas', 'Culture', 'TutorielsVideo'],
   secretariat: ['Administratif', 'ComptesRendus'],
   studio: ['PhotosPrestations'],
-  lutherie: ['TutosFabrication']
+  lutherie: ['TutosFabrication'],
+  costumerie: ['Costumerie', 'TutosCostumes', 'PatronsCostumes']
 };
 
 const getDeterministicColor = (docId) => {
@@ -183,6 +186,7 @@ export default function WidgetDocuments({
   const [selectedFabrication, setSelectedFabrication] = useState(null);
   const [selectedInstrumentModel, setSelectedInstrumentModel] = useState(null);
   const [selectedReunion, setSelectedReunion] = useState(null);
+  const [selectedDocumentView, setSelectedDocumentView] = useState(null);
   const [showBulkPrintModal, setShowBulkPrintModal] = useState(false);
   const [instrumentModels, setInstrumentModels] = useState([]);
   const [isPrinting, setIsPrinting] = useState(false);
@@ -1081,7 +1085,12 @@ export default function WidgetDocuments({
                                   focusedPartId: docItem.partId || null
                                 });
                               } else if (docType === 'report') {
-                                setSelectedReport(docItem);
+                                // Si le compte-rendu est un fichier PDF sans points structurés rédigés, l'ouvrir dans le lecteur universel
+                                if (docItem.fileUrl && (!docItem.points || docItem.points.length === 0) && !docItem.texte) {
+                                  setSelectedDocumentView(docItem);
+                                } else {
+                                  setSelectedReport(docItem);
+                                }
                               } else if (docType === 'song') {
                                 setSelectedToada(docItem);
                               } else if (docType === 'culture_fiche') {
@@ -1091,9 +1100,8 @@ export default function WidgetDocuments({
                               } else if (docType === 'reunion') {
                                 setSelectedReunion(docItem);
                               } else {
-                                if (docItem.fileUrl) {
-                                  window.open(docItem.fileUrl, '_blank', 'noopener,noreferrer');
-                                }
+                                // Pour tout document (PDF administratif, tutoriel vidéo, média externe, lien web)
+                                setSelectedDocumentView(docItem);
                               }
                             }}
                             className={`
@@ -1567,7 +1575,33 @@ export default function WidgetDocuments({
                   ))
                 ) : (
                   <div className="theme-inner-panel p-4 rounded-[4px_6px_3px_5px] whitespace-pre-wrap leading-relaxed italic font-semibold text-encre-noire">
-                    {selectedReport.texte || "Aucun contenu."}
+                    {selectedReport.texte || (selectedReport.fileUrl ? "Document officiel joint ci-dessous." : "Aucun contenu.")}
+                  </div>
+                )}
+
+                {/* Document officiel PDF joint si disponible */}
+                {selectedReport.fileUrl && (
+                  <div className="mt-2 flex flex-col gap-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-black uppercase tracking-wider text-cordel-wood">
+                        📄 Document officiel (PDF joint) :
+                      </span>
+                      <a
+                        href={selectedReport.fileUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[9px] font-black uppercase text-blue-700 hover:underline"
+                      >
+                        Ouvrir en plein écran ↗
+                      </a>
+                    </div>
+                    <div className="w-full h-72 rounded border-2 border-encre-noire overflow-hidden bg-white shadow-inner">
+                      <iframe
+                        src={`${selectedReport.fileUrl}#toolbar=1&navpanes=0`}
+                        title={selectedReport.titre}
+                        className="w-full h-full border-0"
+                      />
+                    </div>
                   </div>
                 )}
               </div>
@@ -1670,6 +1704,14 @@ export default function WidgetDocuments({
           user={user}
           profileData={profileData}
           onClose={() => setSelectedReunion(null)}
+        />
+      )}
+
+      {/* Modale universelle de lecture de documents (PDF, vidéos, dossiers externes) */}
+      {selectedDocumentView && (
+        <DocumentViewerModal
+          document={selectedDocumentView}
+          onClose={() => setSelectedDocumentView(null)}
         />
       )}
     </div>

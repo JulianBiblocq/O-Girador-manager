@@ -16,6 +16,7 @@ import SeloAxeStamp from './SeloAxeStamp';
 import useHardwareBack from '../hooks/useHardwareBack';
 import InstrumentModelsManager from './varal/InstrumentModelsManager';
 import InstrumentModelCard from './InstrumentModelCard';
+import DocumentViewerModal from './documents/DocumentViewerModal';
 import { projectWorkshopBooklets, isWorkshopVirtualDoc } from '../utils/workshopProjectionUtils';
 
 const DEFAULT_VARAL_CATEGORIES = [
@@ -41,6 +42,7 @@ export default function VaralManager({ groupId, onBack, role, isSystemAdmin, isE
   const [selectedToada, setSelectedToada] = useState(null);
   const [selectedCultureCard, setSelectedCultureCard] = useState(null);
   const [selectedInstrumentModel, setSelectedInstrumentModel] = useState(null);
+  const [selectedDocumentView, setSelectedDocumentView] = useState(null);
   const [activeMainTab, setActiveMainTab] = useState('documents'); // 'documents' | 'models'
   
   // Sorting state per category
@@ -61,6 +63,7 @@ export default function VaralManager({ groupId, onBack, role, isSystemAdmin, isE
   useHardwareBack(!!selectedToada, () => setSelectedToada(null));
   useHardwareBack(!!selectedCultureCard, () => setSelectedCultureCard(null));
   useHardwareBack(!!selectedInstrumentModel, () => setSelectedInstrumentModel(null));
+  useHardwareBack(!!selectedDocumentView, () => setSelectedDocumentView(null));
   useHardwareBack(showBulkPrintModal, () => setShowBulkPrintModal(false));
 
   const toggleSongSelection = (id) => {
@@ -1088,17 +1091,17 @@ export default function VaralManager({ groupId, onBack, role, isSystemAdmin, isE
                                                 const cat = (docItem.categorie || '').toLowerCase();
                                                 const inferredType = docItem.type || (cat.includes('toada') ? 'song' : (cat.includes('culture') || cat.includes('fiche') ? 'culture_fiche' : 'pdf'));
                                                 
-                                                if (inferredType === 'report') {
-                                                  setSelectedReport(docItem);
-                                                } else if (inferredType === 'song') {
+                                                if (inferredType === 'song') {
                                                   setSelectedToada(docItem);
                                                 } else if (inferredType === 'culture_fiche') {
                                                   setSelectedCultureCard(docItem);
+                                                } else if (inferredType === 'report' && (!docItem.fileUrl || (docItem.points && docItem.points.length > 0) || docItem.texte)) {
+                                                  setSelectedReport(docItem);
                                                 } else {
-                                                  window.open(docItem.fileUrl, '_blank');
+                                                  setSelectedDocumentView(docItem);
                                                 }
                                               }}
-                                              className="text-[9px] font-black uppercase bg-neutral-100 hover:bg-neutral-200 text-encre-noire border border-encre-noire/30 px-2.5 py-1 rounded"
+                                              className="text-[9px] font-black uppercase bg-neutral-100 hover:bg-neutral-200 text-encre-noire border border-encre-noire/30 px-2.5 py-1 rounded cursor-pointer"
                                             >
                                               Aperçu
                                             </button>
@@ -1266,6 +1269,12 @@ export default function VaralManager({ groupId, onBack, role, isSystemAdmin, isE
           onClose={() => setSelectedInstrumentModel(null)}
         />
       )}
+
+      {/* Modale universelle de consultation de document (PDF, Vidéo, Drive, etc.) */}
+      <DocumentViewerModal
+        document={selectedDocumentView}
+        onClose={() => setSelectedDocumentView(null)}
+      />
     </div>
 
     {/* Bulk Print Hidden Container (Portaled to body to escape all parent layouts) */}

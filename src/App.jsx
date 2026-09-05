@@ -87,7 +87,8 @@ const POLES_CONFIG = [
       { id: 'materiel', label: 'Matériel', labelKey: 'tabMateriel' },
       { id: 'vestiaire', label: 'Vestiaire', labelKey: 'tabVestiaire' },
       { id: 'trombinoscope', label: 'Trombinoscope', labelKey: 'tabTrombinoscope' },
-      { id: 'forum', label: 'Porte-voix', labelKey: 'tabForum' }
+      { id: 'forum', label: 'Porte-voix', labelKey: 'tabForum' },
+      { id: 'varal', label: 'Varal', labelKey: 'tabVaral' }
     ]
   },
   {
@@ -1193,7 +1194,7 @@ export default function App() {
     }
   };
 
-  const handleNavigateToPole = (poleId) => {
+  const handleNavigateToPole = (poleId, targetTab = null) => {
     if (poleId !== 'accueil' && poleId !== 'mon-espace') {
       let isAllowed = canAccessPole(poleId, profileData, permissionsMatrice, userTags);
       
@@ -1213,7 +1214,7 @@ export default function App() {
     setCurrentPole(poleId);
     if (poleId === 'accueil') {
       cleanUrlParams(['eventId', 'threadId']);
-      setCurrentTab('dashboard');
+      setCurrentTab(targetTab || 'dashboard');
       setDashboardKey(prev => prev + 1);
       return;
     }
@@ -1222,6 +1223,11 @@ export default function App() {
       cleanUrlParams(['threadId']);
     }
     cleanUrlParams(['eventId']);
+
+    if (targetTab) {
+      setCurrentTab(targetTab);
+      return;
+    }
 
     const poleObj = POLES_CONFIG.find(p => p.id === poleId);
     if (poleObj && poleObj.tabs.length > 0) {
@@ -1274,6 +1280,10 @@ export default function App() {
       case 'forum':
         setCurrentPole('mon-espace');
         setCurrentTab('forum');
+        break;
+      case 'varal':
+        setCurrentPole('mon-espace');
+        setCurrentTab('varal');
         break;
       case 'export-annu':
         setCurrentPole('secretariat');
