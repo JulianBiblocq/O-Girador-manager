@@ -289,6 +289,18 @@ service cloud.firestore {
       match /rhythmMetadata/{rhythmId} {
         allow read, write: if isAdminOrMestre() && getUserData().groupId == assocId;
       }
+
+      // Règles d'automatisation et de relances d'agenda de l'association
+      match /automation_rules/{ruleId} {
+        allow read: if isAuthenticated() && (getUserData().groupId == assocId || isAdminOrMestre());
+        allow write: if isAuthenticated() && (isAdminOrMestre() || canManageEvents()) && (getUserData().groupId == assocId || request.auth.token.isSystemAdmin == true);
+      }
+    }
+
+    // Collection racine automation_rules (rétrocompatibilité)
+    match /automation_rules/{ruleId} {
+      allow read: if isAuthenticated() && (resource == null || getUserData().groupId == resource.data.groupId || isAdminOrMestre());
+      allow write: if isAuthenticated() && (isAdminOrMestre() || canManageEvents());
     }
 
     match /announcements/{announcement} {
