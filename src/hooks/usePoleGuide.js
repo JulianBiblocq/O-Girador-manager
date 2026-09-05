@@ -2,6 +2,37 @@ import { useState, useEffect, useCallback } from 'react';
 import { getPoleGuide, POLE_GUIDES } from '../config/poleGuides';
 
 /**
+ * Fonction pure utilitaire : lecture synchrone de l'état masqué dans le localStorage.
+ * Déportée en dehors du hook pour éviter des instanciations de callbacks et garantir
+ * une stabilité absolue de l'ordre des hooks React.
+ * 
+ * @param {string} tabId - Identifiant de l'onglet actif
+ * @param {string} poleId - Identifiant du pôle actif
+ * @returns {boolean} true si l'aide doit être masquée, false sinon
+ */
+function readHiddenState(tabId, poleId) {
+  const guideKey = tabId || poleId;
+  if (!guideKey || typeof window === 'undefined') return false;
+  try {
+    // 1. Vérification pour l'onglet spécifique
+    if (tabId && localStorage.getItem(`pole_guide_hidden_${tabId}`) === 'true') {
+      return true;
+    }
+    // 2. Vérification pour la clé directe
+    if (localStorage.getItem(`pole_guide_hidden_${guideKey}`) === 'true') {
+      return true;
+    }
+    // 3. Si l'aide affichée est celle du pôle global
+    if (poleId && (!tabId || !POLE_GUIDES[tabId]) && localStorage.getItem(`pole_guide_hidden_${poleId}`) === 'true') {
+      return true;
+    }
+    return false;
+  } catch (e) {
+    return false;
+  }
+}
+
+/**
  * Hook personnalisé React : usePoleGuide
  * 
  * Gère l'accès au contenu d'aide contextuelle pour l'onglet et le pôle courants,
@@ -13,7 +44,7 @@ import { getPoleGuide, POLE_GUIDES } from '../config/poleGuides';
  * 
  * @param {string} tabId - Identifiant de l'onglet actif
  * @param {string} poleId - Identifiant du pôle actif
- * @returns {Object} { guide, isHidden, hideBanner, showBanner, toggleBanner }
+ * @returns {Object} { guide, guideKey, isHidden, hideBanner, showBanner, toggleBanner }
  */
 export function usePoleGuide(tabId, poleId) {
   // Clé d'identification unique de l'emplacement courant
@@ -22,66 +53,30 @@ export function usePoleGuide(tabId, poleId) {
   // Résolution du guide à partir du fichier de configuration
   const guide = getPoleGuide(tabId, poleId);
 
-  // Fonction de lecture de l'état masqué dans le localStorage
-  const readStateFromStorage = useCallback(() => {
-    if (!guideKey) return false;
-    try {
-      // 1. Vérification pour l'onglet spécifique
-      if (tabId && localStorage.getItem(`pole_guide_hidden_${tabId}`) === 'true') {
-        return true;
-      }
-      // 2. Vérification pour la clé directe
-      if (localStorage.getItem(`pole_guide_hidden_${guideKey}`) === 'true') {
-        return true;
-      }
-      // 3. Si l'aide affichée est celle du pôle global
-      if (poleId && (!tabId || !POLE_GUIDES[tabId]) && localStorage.getItem(`pole_guide_hidden_${poleId}`) === 'true') {
-        return true;
-      }
-      return false;
-    } catch (e) {
-      return false;
-    }
-  }, [guideKey, tabId, poleId]);
+  // 1. Initialisation synchrone de l'état masqué depuis le localStorage
+  const [isHidden, setIsHidden] = useState(() => readHiddenState(tabId, poleId));
 
-  // Suivi de la clé précédente pour mise à jour synchrone dès le rendu
-  const [prevGuideKey, setPrevGuideKey] = useState(guideKey);
-  const [isHidden, setIsHidden] = useState(readStateFromStorage);
-
-  // Synchronisation immédiate pendant le render React lors d'un changement d'onglet
-  if (prevGuideKey !== guideKey) {
-    setPrevGuideKey(guideKey);
-    setIsHidden(readStateFromStorage());
-  }
-
-  // Écoute des événements de synchronisation (changement dans d'autres fenêtres ou composants)
+  // 2. Synchronisation réactive au changement d'onglet ou lors d'événements de stockage
   useEffect(() => {
-    const handleCustomChange = () => {
-      setIsHidden(readStateFromStorage());
+    setIsHidden(readHiddenState(tabId, poleId));
+
+    const handleSync = () => {
+      setIsHidden(readHiddenState(tabId, poleId));
     };
 
-    const handleStorageChange = (e) => {
-      if (
-        e.key === `pole_guide_hidden_${guideKey}` ||
-        (tabId && e.key === `pole_guide_hidden_${tabId}`) ||
-        (poleId && e.key === `pole_guide_hidden_${poleId}`)
-      ) {
-        setIsHidden(readStateFromStorage());
-      }
-    };
-
-    window.addEventListener('pole-guide-changed', handleCustomChange);
-    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('pole-guide-changed', handleSync);
+    window.addEventListener('storage', handleSync);
 
     return () => {
-      window.removeEventListener('pole-guide-changed', handleCustomChange);
-      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('pole-guide-changed', handleSync);
+      window.removeEventListener('storage', handleSync);
     };
-  }, [guideKey, tabId, poleId, readStateFromStorage]);
+  }, [tabId, poleId]);
 
-  // Masquer la bannière d'aide pour l'onglet et la page courante
+  // 3. Masquer la bannière d'aide pour l'onglet et la page courante
   const hideBanner = useCallback(() => {
-    if (!guideKey) return;
+    const currentKey = tabId || poleId;
+    if (!currentKey || typeof window === 'undefined') return;
     try {
       if (tabId) {
         localStorage.setItem(`pole_guide_hidden_${tabId}`, 'true');
@@ -89,17 +84,18 @@ export function usePoleGuide(tabId, poleId) {
       if (poleId && (!tabId || !POLE_GUIDES[tabId])) {
         localStorage.setItem(`pole_guide_hidden_${poleId}`, 'true');
       }
-      localStorage.setItem(`pole_guide_hidden_${guideKey}`, 'true');
+      localStorage.setItem(`pole_guide_hidden_${currentKey}`, 'true');
       setIsHidden(true);
       window.dispatchEvent(new Event('pole-guide-changed'));
     } catch (e) {
       console.warn("Impossible d'enregistrer la préférence dans localStorage", e);
     }
-  }, [guideKey, tabId, poleId]);
+  }, [tabId, poleId]);
 
-  // Afficher / Réouvrir la bannière d'aide pour l'onglet courant
+  // 4. Afficher / Réouvrir la bannière d'aide pour l'onglet courant
   const showBanner = useCallback(() => {
-    if (!guideKey) return;
+    const currentKey = tabId || poleId;
+    if (!currentKey || typeof window === 'undefined') return;
     try {
       if (tabId) {
         localStorage.setItem(`pole_guide_hidden_${tabId}`, 'false');
@@ -107,15 +103,15 @@ export function usePoleGuide(tabId, poleId) {
       if (poleId && (!tabId || !POLE_GUIDES[tabId])) {
         localStorage.setItem(`pole_guide_hidden_${poleId}`, 'false');
       }
-      localStorage.setItem(`pole_guide_hidden_${guideKey}`, 'false');
+      localStorage.setItem(`pole_guide_hidden_${currentKey}`, 'false');
       setIsHidden(false);
       window.dispatchEvent(new Event('pole-guide-changed'));
     } catch (e) {
       console.warn("Impossible d'enregistrer la préférence dans localStorage", e);
     }
-  }, [guideKey, tabId, poleId]);
+  }, [tabId, poleId]);
 
-  // Basculer l'état masqué / affiché
+  // 5. Basculer l'état masqué / affiché
   const toggleBanner = useCallback(() => {
     if (isHidden) {
       showBanner();
