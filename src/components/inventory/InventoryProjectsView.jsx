@@ -14,6 +14,7 @@ import FabricationCard from '../FabricationCard';
 import AssemblySlotItem from './AssemblySlotItem';
 import InstrumentVisualizer from './InstrumentVisualizer';
 import InstrumentBaptismModal from './InstrumentBaptismModal';
+import { canValidateWorkshop } from '../../utils/permissionUtils';
 import { doc, writeBatch } from 'firebase/firestore';
 
 export default function InventoryProjectsView({ groupId, isAuthorized, profileData, t, inventoryParts, onCreateInstrument }) {
@@ -93,15 +94,7 @@ export default function InventoryProjectsView({ groupId, isAuthorized, profileDa
   };
 
   const isWorkshopValidator = useMemo(() => {
-    if (!profileData) return false;
-    if (profileData.isSystemAdmin) return true;
-    if (profileData.role === 'mestre' || profileData.role === 'super-admin') return true;
-    
-    const permissionsMatrice = settingsData?.permissionsMatrice || {};
-    const validatorTags = permissionsMatrice.canValidateWorkshopSteps || [];
-    const userTags = profileData.tags || [];
-    
-    return validatorTags.some(tagId => userTags.includes(tagId));
+    return canValidateWorkshop(profileData, settingsData?.permissionsMatrice, profileData?.tags);
   }, [profileData, settingsData]);
 
   const toggleSessionSlot = (slotId) => {
@@ -118,17 +111,19 @@ export default function InventoryProjectsView({ groupId, isAuthorized, profileDa
     e.preventDefault();
     if (!newProjectData.nom || !newProjectData.modelId) return;
     try {
-      const selectedMember = membersList.find(m => m.id === newProjectData.artisanId);
-      const artisanNom = selectedMember ? `${selectedMember.prenom || ''} ${selectedMember.nom || ''}`.trim() : null;
       await addProject({
-        ...newProjectData,
+        nom: newProjectData.nom,
+        modelId: newProjectData.modelId,
         artisanId: newProjectData.artisanId || null,
-        artisanNom: artisanNom || null
+        piecesAssignees: [],
+        slotsWorkflow: {},
+        status: 'En cours',
+        dateDebut: new Date().toISOString()
       });
-      setIsAdding(false);
       setNewProjectData({ nom: '', modelId: '', artisanId: '' });
+      setIsAdding(false);
     } catch (err) {
-      alert("Erreur lors de la création du projet.");
+      console.error("Erreur création projet d'assemblage :", err);
     }
   };
 
@@ -140,27 +135,31 @@ export default function InventoryProjectsView({ groupId, isAuthorized, profileDa
   };
 
   const handleAssignPart = async (projectId, modelPartId, inventoryPartId) => {
-    const project = projects.find(p => p.id === projectId);
-    if (!project) return;
-    
-    // Si on désassigne (inventoryPartId === '')
-    let newAssignees = [...(project.piecesAssignees || [])];
-    if (!inventoryPartId) {
-      newAssignees = newAssignees.filter(a => a.modelPartId !== modelPartId);
-    } else {
-      // Si on assigne
-      const existingIdx = newAssignees.findIndex(a => a.modelPartId === modelPartId);
-      if (existingIdx >= 0) {
-        newAssignees[existingIdx].inventoryPartId = inventoryPartId;
-      } else {
-        newAssignees.push({ modelPartId, inventoryPartId });
-      }
-    }
+    const currentProject = projects.find(p => p.id === projectId) || editingProject;
+    if (!currentProject) return;
 
     try {
-      await updateProject(projectId, { piecesAssignees: newAssignees });
+      const currentAssignees = currentProject.piecesAssignees || [];
+      let updatedAssignees;
+
+      if (!inventoryPartId) {
+        // Désassignation
+        updatedAssignees = currentAssignees.filter(a => a.modelPartId !== modelPartId);
+      } else {
+        // Assignation ou remplacement
+        const existingIdx = currentAssignees.findIndex(a => a.modelPartId === modelPartId);
+        if (existingIdx >= 0) {
+          updatedAssignees = [...currentAssignees];
+          updatedAssignees[existingIdx] = { modelPartId, inventoryPartId };
+        } else {
+          updatedAssignees = [...currentAssignees, { modelPartId, inventoryPartId }];
+        }
+      }
+
+      await updateProject(projectId, { piecesAssignees: updatedAssignees });
+      setEditingProject(prev => prev ? ({ ...prev, piecesAssignees: updatedAssignees }) : prev);
     } catch (err) {
-      alert("Erreur d'assignation.");
+      console.error("Erreur assignation pièce au projet :", err);
     }
   };
 
@@ -183,6 +182,30 @@ export default function InventoryProjectsView({ groupId, isAuthorized, profileDa
       };
 
       let updatedAssignees = [...(currentProject.piecesAssignees || [])];
+
+      // Identifier la pièce physique unitaire assignée à ce slot
+      const assignedMap = updatedAssignees.reduce((acc, curr) => {
+        acc[curr.modelPartId] = curr.inventoryPartId;
+        return acc;
+      }, {});
+      const assignedInvPartId = assignedMap[slotId] || (selectedWorkflowSlot?.slot?.slotId === slotId ? selectedWorkflowSlot?.invPart?.id : null);
+
+      // Double synchronisation Projet ➔ Stock unitaire (inventory_parts)
+      if (assignedInvPartId && updatePartWorkflow) {
+        try {
+          // Nettoyer les valeurs undefined pour garantir une écriture Firestore saine
+          const cleanUpdates = Object.entries(workflowUpdates || {}).reduce((acc, [k, v]) => {
+            if (v !== undefined) acc[k] = v;
+            return acc;
+          }, {});
+
+          if (Object.keys(cleanUpdates).length > 0) {
+            await updatePartWorkflow(assignedInvPartId, cleanUpdates);
+          }
+        } catch (syncErr) {
+          console.error("InventoryProjectsView - Erreur synchronisation unitaire inventory_parts :", syncErr);
+        }
+      }
       
       // Si la phase est terminée, propager automatiquement la pièce à la phase suivante si elle n'est pas assignée !
       if (isSlotFinished) {
@@ -425,7 +448,7 @@ export default function InventoryProjectsView({ groupId, isAuthorized, profileDa
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* Colonne gauche : Assemblage */}
           <div className="lg:col-span-2 flex flex-col gap-3">
-            <CordelCard variant="default" useExtremeBorder={true} className="p-4 bg-white/50">
+            <CordelCard data-tour="lutherie-project-slots" variant="default" useExtremeBorder={true} className="p-4 bg-white/50">
               <h4 className="text-xs font-bold text-encre-noire uppercase mb-3 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
                 <div className="flex items-center gap-2">
                   <span>Pièces & Phases requises</span>
@@ -493,6 +516,7 @@ export default function InventoryProjectsView({ groupId, isAuthorized, profileDa
                     🎉 {allSlotsFinished ? "Toutes les phases de fabrication sont validées !" : "Toutes les pièces sont assemblées !"}
                   </span>
                   <CordelButton 
+                    data-tour="lutherie-finalize-btn"
                     variant="vert" 
                     useExtremeBorder={true}
                     onClick={() => handleOpenBaptismModal(project, model)}
@@ -767,6 +791,7 @@ export default function InventoryProjectsView({ groupId, isAuthorized, profileDa
         </div>
         {isAuthorized && (
           <CordelButton 
+            data-tour="lutherie-new-project-btn"
             variant="vert" 
             onClick={() => setIsAdding(true)}
             className="text-xs shadow-md"

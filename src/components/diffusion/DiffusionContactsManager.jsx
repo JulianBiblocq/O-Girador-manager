@@ -4,19 +4,9 @@ import { db } from '../../firebase';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 import useConfirm from '../../hooks/useConfirm';
+import { isToRelance } from '../../utils/diffusionUtils.js';
 
-/**
- * Calculateur du badge d'alerte "À relancer" (relance dépassée ou prévue dans les 7 jours)
- */
-export const isToRelance = (dateRelanceStr) => {
-  if (!dateRelanceStr) return false;
-  const relanceDate = new Date(dateRelanceStr);
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const in7Days = new Date(today);
-  in7Days.setDate(in7Days.getDate() + 7);
-  return relanceDate <= in7Days;
-};
+export { isToRelance };
 
 /**
  * Composant de gestion du Carnet de Contacts (CRM Global) du Pôle Diffusion.
@@ -163,7 +153,7 @@ export default function DiffusionContactsManager({ groupId, associationSettings 
   return (
     <div className="flex flex-col gap-4 text-left select-none">
       {/* Barre d'outils et de recherche */}
-      <div className="flex flex-wrap items-center justify-between gap-3 bg-stone-50 p-3.5 rounded-lg border border-stone-200">
+      <div data-tour="contacts-filter-bar" className="flex flex-wrap items-center justify-between gap-3 bg-stone-50 p-3.5 rounded-lg border border-stone-200">
         <div className="flex flex-wrap items-center gap-2 flex-1">
           <input
             type="text"
@@ -191,6 +181,7 @@ export default function DiffusionContactsManager({ groupId, associationSettings 
         <CordelButton
           type="button"
           variant="vert"
+          data-tour="contacts-add-button"
           onClick={handleOpenCreate}
           className="text-xs font-extrabold flex items-center gap-1.5"
         >
@@ -204,7 +195,7 @@ export default function DiffusionContactsManager({ groupId, associationSettings 
           ⏳ Chargement du carnet de contacts...
         </div>
       ) : filteredContacts.length > 0 ? (
-        <div className="overflow-x-auto bg-white rounded-lg border border-stone-200 shadow-xs">
+        <div data-tour="contacts-table" className="overflow-x-auto bg-white rounded-lg border border-stone-200 shadow-xs">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-stone-100 border-b border-stone-200 text-[10px] font-extrabold uppercase text-cordel-wood">
@@ -292,7 +283,7 @@ export default function DiffusionContactsManager({ groupId, associationSettings 
           </table>
         </div>
       ) : (
-        <div className="py-12 px-6 rounded-lg border border-dashed border-stone-300 bg-white text-center flex flex-col items-center gap-3">
+        <div data-tour="contacts-table" className="py-12 px-6 rounded-lg border border-dashed border-stone-300 bg-white text-center flex flex-col items-center gap-3">
           <span className="text-3xl">📇</span>
           <p className="text-xs font-bold text-stone-700">
             Aucun contact trouvé dans le carnet de prospection.

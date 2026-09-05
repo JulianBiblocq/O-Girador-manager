@@ -51,7 +51,7 @@ service cloud.firestore {
 
     function canManageEvents() {
       return isAdminOrMestre() || hasAnyTag([
-        'Agenda', 'Agenda & Ã‰vÃ©nements', 'Bureau', 'PrÃ©sident', 'PrÃ©sidente', 'CA', 'Direction', 'Admin'
+        'Agenda', 'Agenda & Événements', 'Agenda & Evenements', 'Bureau', 'Président', 'President', 'Présidente', 'Presidente', 'CA', 'Direction', 'Admin'
       ]);
     }
 
@@ -60,20 +60,20 @@ service cloud.firestore {
         (getUserData().keys().hasAny(['hasAccessLogistique']) && getUserData().hasAccessLogistique == true) ||
         hasAnyTag([
           'Inventaire', 'Logistique', 'logistique', 'Logisticien', 'Logisticienne',
-          'Matériel', 'matériel', 'MatÃ©riel', 'Instruments', 'Commandes',
+          'Matériel', 'Materiel', 'matériel', 'materiel', 'Instruments', 'Commandes',
           'Bureau', 'CA', 'C.A', 'Direction', 'Atelier', 'Lutherie', 'Costumerie'
         ]);
     }
 
     function canManageTreasury() {
       return isAdminOrMestre() || hasAnyTag([
-        'TrÃ©sorerie', 'TrÃ©sorier', 'TrÃ©soriÃ¨re', 'Comptable', 'Finance', 'Bureau', 'CA', 'Direction'
+        'Trésorerie', 'Tresorerie', 'Trésorier', 'Tresorier', 'Trésorière', 'Tresoriere', 'Comptable', 'Finance', 'Bureau', 'CA', 'Direction'
       ]);
     }
 
     function canManageDocs() {
       return isAdminOrMestre() || hasAnyTag([
-        'SecrÃ©tariat', 'Comptes-Rendus', 'Studio', 'Communication', 'Bureau', 'CA', 'Direction'
+        'Secrétariat', 'Secretariat', 'Comptes-Rendus', 'Studio', 'Communication', 'Bureau', 'CA', 'Direction'
       ]);
     }
 
@@ -81,11 +81,17 @@ service cloud.firestore {
       return isAuthenticated() &&
         exists(/databases/$(database)/documents/users/$(request.auth.uid)) && (
           getUserData().role == 'mestre' || 
+          getUserData().role == 'Mestre' || 
           getUserData().role == 'super-admin' || 
+          getUserData().role == 'Super-admin' || 
+          getUserData().role == 'admin' || 
+          getUserData().role == 'Admin' || 
+          getUserData().role == 'bureau' || 
+          getUserData().role == 'Bureau' || 
           getUserData().isSystemAdmin == true ||
           getUserData().role == 'moderator' ||
           (getUserData().keys().hasAny(['tags']) && 
-           getUserData().tags.hasAny(['ModÃ©rateur', 'ModÃ©rateur Forum']))
+           getUserData().tags.hasAny(['Modérateur', 'Moderateur', 'Modérateur Forum', 'Bureau', 'Président', 'President', 'Présidente', 'Presidente', 'CA', 'Admin']))
         );
     }
 
@@ -216,6 +222,16 @@ service cloud.firestore {
         resource.data.managedBy == request.auth.uid &&
         resource.data.isDependent == true
       );
+
+      // Sous-collection parcours (auto-évaluations et demandes de révision de l'élève)
+      match /parcours/{parcoursId} {
+        allow read: if isAuthenticated();
+        allow write: if isAuthenticated() && (
+          request.auth.uid == userId ||
+          isAdminOrMestre() ||
+          (resource != null && resource.data.managedBy == request.auth.uid)
+        );
+      }
     }
 
     match /inventory/{item} {
@@ -255,8 +271,8 @@ service cloud.firestore {
 
     match /associations/{assocId} {
       allow read: if true;
-      allow create, delete: if isAdminOrMestre() || hasAnyTag(['Vitrine', 'Webmaster', 'Bureau', 'PrÃ©sident', 'PrÃ©sidente', 'CA']);
-      allow update: if isAdminOrMestre() || hasAnyTag(['Vitrine', 'Webmaster', 'Bureau', 'PrÃ©sident', 'PrÃ©sidente', 'CA']) || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['vitrineViews']);
+      allow create, delete: if isAdminOrMestre() || hasAnyTag(['Vitrine', 'Webmaster', 'Bureau', 'Président', 'President', 'Présidente', 'Presidente', 'CA']);
+      allow update: if isAdminOrMestre() || hasAnyTag(['Vitrine', 'Webmaster', 'Bureau', 'Président', 'President', 'Présidente', 'Presidente', 'CA']) || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['vitrineViews']);
 
       match /private_settings/credentials {
         allow read, write: if isAdminOrMestre() && getUserData().groupId == assocId;

@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
+import { db, auth } from '../firebase';
 import PrintConfigModal from './PrintConfigModal';
 import { getInstrumentStamp } from './InstrumentStampSVG';
 
@@ -19,7 +21,18 @@ import { getInstrumentStamp } from './InstrumentStampSVG';
  * }
  */
 
-export default function SongCard({ song, isPrintVersion = false, defaultRevisionMode = true, onPrintAll, printSections = null }) {
+export default function SongCard({ 
+  song, 
+  isPrintVersion = false, 
+  defaultRevisionMode = true, 
+  onPrintAll, 
+  printSections = null,
+  isRevisionRequested = null,
+  onToggleRevision = null,
+  profileData = null,
+  userId = null,
+  groupId = null
+}) {
   const [activePuxador, setActivePuxador] = useState(false);
   const [activeChoeur, setActiveChoeur] = useState(false);
   const [localReveals, setLocalReveals] = useState({});
@@ -28,6 +41,64 @@ export default function SongCard({ song, isPrintVersion = false, defaultRevision
   
   const isRevealedMode = isPrintVersion || !defaultRevisionMode;
   const [isPrinting, setIsPrinting] = useState(false);
+
+  // Gestion autonome ou contrôlée de la demande de révision 1-clic
+  const effectiveUserId = userId || profileData?.uid || profileData?.id || auth?.currentUser?.uid;
+  const effectiveGroupId = groupId || profileData?.groupId || song?.groupId;
+  const [internalRequested, setInternalRequested] = useState(false);
+
+  useEffect(() => {
+    if (isRevisionRequested !== null && isRevisionRequested !== undefined) {
+      setInternalRequested(isRevisionRequested);
+    } else if (effectiveUserId && effectiveGroupId && song?.id) {
+      const fetchReq = async () => {
+        try {
+          const pRef = doc(db, 'users', effectiveUserId, 'parcours', effectiveGroupId);
+          const snap = await getDoc(pRef);
+          if (snap.exists()) {
+            setInternalRequested(!!snap.data().revisionsDemandees?.[song.id]);
+          }
+        } catch (e) {
+          // Ignorer silencieusement
+        }
+      };
+      fetchReq();
+    }
+  }, [isRevisionRequested, effectiveUserId, effectiveGroupId, song?.id]);
+
+  const effectiveIsRequested = isRevisionRequested !== null && isRevisionRequested !== undefined ? isRevisionRequested : internalRequested;
+
+  const handleToggleClick = async (e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    if (onToggleRevision) {
+      onToggleRevision();
+      return;
+    }
+    if (!effectiveUserId || !effectiveGroupId || !song?.id) return;
+
+    const newVal = !effectiveIsRequested;
+    setInternalRequested(newVal);
+
+    try {
+      const pRef = doc(db, 'users', effectiveUserId, 'parcours', effectiveGroupId);
+      try {
+        await updateDoc(pRef, {
+          [`revisionsDemandees.${song.id}`]: newVal
+        });
+      } catch (err) {
+        await setDoc(pRef, {
+          revisionsDemandees: {
+            [song.id]: newVal
+          }
+        }, { merge: true });
+      }
+    } catch (err) {
+      console.error("SongCard - Erreur sauvegarde demande révision :", err);
+    }
+  };
 
   const getSectionVisibility = (section) => {
     if (!isPrintVersion) return true;
@@ -274,16 +345,33 @@ export default function SongCard({ song, isPrintVersion = false, defaultRevision
         className="bg-[#fdfaf2] dark:bg-[#1a1816] border-2 border-encre-noire rounded-lg shadow-[3px_3px_0px_0px_#181716] w-full max-w-[560px] min-h-[790px] mx-auto overflow-hidden flex flex-col print:shadow-none print:border-none print:max-w-full print:min-h-0 print:h-auto print:mx-0 print:overflow-visible relative"
       >
       
-      {/* Bouton d'impression uniquement */}
+      {/* Boutons d'actions fiche (Impression & Demande de révision 1-clic) */}
       {!isPrintVersion && (
         <div className="absolute top-3 left-3 z-20 print:hidden flex items-center gap-2">
           <button
+            type="button"
             onClick={() => setShowPrintModal(true)}
             title="Imprimer cette fiche"
-            className="flex items-center justify-center w-8 h-8 rounded-full border-2 border-cordel-master-dark/30 text-cordel-master-dark/60 hover:bg-neutral-100 transition-all hover:text-cordel-wood hover:border-cordel-wood"
+            className="flex items-center justify-center w-8 h-8 rounded-full border-2 border-cordel-master-dark/30 text-cordel-master-dark/60 hover:bg-neutral-100 transition-all hover:text-cordel-wood hover:border-cordel-wood cursor-pointer"
           >
             🖨️
           </button>
+
+          {song?.id && (
+            <button
+              type="button"
+              onClick={handleToggleClick}
+              className={`px-2.5 py-1 rounded text-[10px] font-black uppercase tracking-wider transition-all border shadow-xs flex items-center gap-1 cursor-pointer ${
+                effectiveIsRequested
+                  ? 'bg-[var(--color-cordel-vert,#2d6a4f)] text-white border-[#1b4332]'
+                  : 'bg-[#fdfaf2] text-cordel-master-dark hover:bg-white border-encre-noire/30'
+              }`}
+              title={effectiveIsRequested ? "Demande de révision active pour cette Toada" : "Signaler au Mestre le besoin de réviser ce chant"}
+            >
+              <span>🙋</span>
+              <span>{effectiveIsRequested ? 'Révision demandée ✓' : 'Demander à réviser'}</span>
+            </button>
+          )}
         </div>
       )}
 
@@ -310,6 +398,15 @@ export default function SongCard({ song, isPrintVersion = false, defaultRevision
                 </div>
                 
                 <hr className="border-t-4 border-[var(--color-cordel-ocre,#c05621)] mt-2 print:mt-1 mb-1 md:mb-2" />
+
+                {/* Lecteur Audio Témoin */}
+                {(song?.audioUrl || (song?.fileUrl && /\.(mp3|wav|ogg|m4a|aac)$/i.test(song.fileUrl))) && !isPrintVersion && (
+                  <div className="my-2 p-1.5 bg-[#f5f0e6]/70 dark:bg-[#201d1a] border border-cordel-wood/20 rounded flex items-center gap-2 shadow-xs">
+                    <span className="text-xs">🎵</span>
+                    <span className="text-[9px] font-black uppercase tracking-wider text-cordel-wood shrink-0">Audio témoin :</span>
+                    <audio controls src={song.audioUrl || song.fileUrl} className="w-full h-7" />
+                  </div>
+                )}
               </div>
             </td>
           </tr>

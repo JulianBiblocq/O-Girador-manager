@@ -10,6 +10,9 @@ import GigEventCreateModal from './GigEventCreateModal';
 import GigQuoteGeneratorModal from './GigQuoteGeneratorModal';
 import DiffusionContactsManager from './DiffusionContactsManager';
 import useConfirm from '../../hooks/useConfirm';
+import { matchesGigStatus } from '../../utils/diffusionUtils.js';
+
+export { matchesGigStatus };
 
 export default function GigsPipelineManager({ groupId, associationSettings: propAssocSettings = {}, onBack, initialTab = 'pipeline' }) {
   const { confirm } = useConfirm();
@@ -58,9 +61,9 @@ export default function GigsPipelineManager({ groupId, associationSettings: prop
   const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
   const [toastNotification, setToastNotification] = useState(null);
 
-  // Filtrage des dossiers
+  // Filtrage des dossiers avec tolérance des variantes de statut
   const filteredGigs = gigs.filter(gig => {
-    if (filterStatus !== 'all' && gig.status !== filterStatus) return false;
+    if (filterStatus !== 'all' && !matchesGigStatus(gig.status, filterStatus)) return false;
     return true;
   });
 
@@ -73,7 +76,7 @@ export default function GigsPipelineManager({ groupId, associationSettings: prop
   const relancesDuesCount = gigs.filter(g => {
     if (!g.nextRelanceDate) return false;
     const today = new Date().toISOString().split('T')[0];
-    return g.nextRelanceDate <= today && g.status !== '6_valide' && g.status !== '7_annule';
+    return g.nextRelanceDate <= today && g.status !== '6_paye' && g.status !== '6_valide' && g.status !== '7_annule';
   }).length;
 
   // Modales
@@ -125,6 +128,7 @@ export default function GigsPipelineManager({ groupId, associationSettings: prop
         <div className="flex justify-end items-center mb-1 select-none">
           <button
             type="button"
+            data-tour="gigs-add-button"
             onClick={handleOpenCreate}
             className="text-xs font-black uppercase bg-cordel-vert text-white border border-encre-noire px-3.5 py-1.5 rounded shadow-[1.5px_1.5px_0px_0px_#181716] hover:brightness-105 cursor-pointer flex items-center gap-1.5 shrink-0"
           >
@@ -213,18 +217,15 @@ export default function GigsPipelineManager({ groupId, associationSettings: prop
       ) : error ? (
         <div className="py-12 text-center text-xs font-bold text-red-600">{error}</div>
       ) : filteredGigs.length === 0 ? (
-        <div className="py-12 text-center text-xs italic text-stone-500 bg-white p-6 rounded border border-dashed">
+        <div className="py-12 text-center text-xs italic text-stone-500 bg-white p-6 rounded border border-dashed" data-tour="gigs-kanban-board">
           Aucun dossier de prestation trouvé. Cliquez sur "Nouveau dossier" pour démarrer.
         </div>
       ) : viewMode === 'kanban' ? (
         /* VUE KANBAN (COLONNES PAR ÉTAPE) */
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 overflow-x-auto pb-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 overflow-x-auto pb-4" data-tour="gigs-kanban-board">
           {GIG_STATUSES.filter(st => filterStatus === 'all' || filterStatus === st.id).map(statusObj => {
-            // Tolérance d'équivalence pour inclure 3_devis et 3_devis_envoye dans la même colonne
-            const statusGigs = gigs.filter(g => 
-              g.status === statusObj.id || 
-              (statusObj.id === '3_devis' && g.status === '3_devis_envoye')
-            );
+            // Tolérance d'équivalence multi-statuts via le helper matchesGigStatus
+            const statusGigs = gigs.filter(g => matchesGigStatus(g.status, statusObj.id));
 
             return (
               <div key={statusObj.id} className="flex flex-col gap-2 bg-stone-100/70 p-3 rounded-lg border border-stone-200 min-w-[240px]">
@@ -368,6 +369,7 @@ export default function GigsPipelineManager({ groupId, associationSettings: prop
         onSubmit={handleFormSubmit}
         initialData={editingGig}
         saving={saving}
+        groupId={groupId}
       />
 
       {/* Notification Toast interactive */}

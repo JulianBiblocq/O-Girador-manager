@@ -1,7 +1,7 @@
 /**
  * Utilitaires centralisés pour la vérification des permissions et droits d'accès de l'application.
  */
-import { getTagId, findTagObject } from './tagUtils';
+import { getTagId, findTagObject } from './tagUtils.js';
 
 /**
  * Vérifie si l'utilisateur possède les droits de gestion de l'Agenda (création, modification, suppression d'événements).
@@ -224,14 +224,76 @@ export function canAccessDiffusion(profileData, permissionsMatrice = null, effec
 }
 
 /**
+ * Vérifie si l'utilisateur possède les droits d'accès au Pôle Mestria (Direction artistique).
+ * 
+ * Sont autorisés immédiatement :
+ * 1. Les rôles système : isSystemAdmin === true, role === 'super-admin', role === 'admin', role === 'mestre'
+ * 2. Les porteurs des badges/étiquettes contenant les mots-clés : ['mestre', 'direction', 'artistique', 'chef de pupitre', 'mestria']
+ * 3. Les membres autorisés via la matrice de sécurité (clé 'mestre' ou sous-onglets artistiques)
+ * 
+ * @param {Object} profileData Profil de l'utilisateur
+ * @param {Object} permissionsMatrice Matrice des permissions de l'association
+ * @param {Array} effectiveUserTags Étiquettes effectives de l'utilisateur
+ * @returns {boolean} true si l'accès à la Mestria est accordé
+ */
+export function canAccessMestre(profileData, permissionsMatrice = null, effectiveUserTags = []) {
+  if (!profileData) return false;
+
+  // 1. Rôles système autorisés immédiatement
+  const systemRole = (profileData.role || '').toLowerCase();
+  if (
+    profileData.isSystemAdmin === true ||
+    systemRole === 'super-admin' ||
+    systemRole === 'admin' ||
+    systemRole === 'mestre'
+  ) {
+    return true;
+  }
+
+  // 2. Badges de l'utilisateur (insensible à la casse)
+  const userTagsList = (
+    effectiveUserTags && effectiveUserTags.length > 0
+      ? effectiveUserTags
+      : profileData.tags || []
+  ).map(t => (typeof t === 'string' ? t.toLowerCase() : (t.id || t.nomM || t.nomF || '').toLowerCase()));
+
+  // 3. Mots-clés de direction artistique autorisés d'office
+  const MESTRE_ALLOWED_KEYWORDS = ['mestre', 'direction', 'artistique', 'scène', 'scene', 'chef de pupitre', 'mestria'];
+  if (userTagsList.some(ut => MESTRE_ALLOWED_KEYWORDS.some(kw => ut.includes(kw)))) {
+    return true;
+  }
+
+  // 4. Matrice des permissions Firestore de l'association
+  if (permissionsMatrice && typeof permissionsMatrice === 'object') {
+    const mestreTags = [
+      ...(permissionsMatrice['mestre'] || []),
+      ...(permissionsMatrice['mestre-orientation'] || []),
+      ...(permissionsMatrice['mestre-stage-layout'] || []),
+      ...(permissionsMatrice['mestre-sequenceur'] || []),
+      ...(permissionsMatrice['mestre-events'] || []),
+      ...(permissionsMatrice['mestre-mot-mestre'] || [])
+    ].map(t => (typeof t === 'string' ? t.toLowerCase() : (t.id || t.nomF || t.nomM || '').toLowerCase()));
+
+    if (mestreTags.length > 0 && userTagsList.some(ut => mestreTags.includes(ut))) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+/**
  * Mots-clés d'étiquettes/badges autorisant les pôles d'administration par défaut.
  */
 const POLE_ALLOWED_KEYWORDS = {
   diffusion: ['diffusion', 'booking', 'communication'],
   tresorerie: ['trésorier', 'trésorière', 'trésorerie', 'comptable', 'finance'],
-  logistique: ['logistique', 'matériel', 'inventaire', 'instruments', 'commandes', 'vestiaire', 'costumes', 'couture'],
-  studio: ['studio', 'communication', 'secrétaire', 'porte-voix', 'newsletter'],
-  mestre: ['mestre', 'mestria', 'chef de pupitre', 'direction'],
+  secretariat: ['secrétariat', 'secretaire', 'bureau', 'ca', 'direction', 'admin'],
+  logistique: ['logistique', 'matériel', 'inventaire', 'instruments', 'commandes'],
+  lutherie: ['lutherie', 'atelier', 'artisan', 'fabrication', 'matériel'],
+  costumerie: ['costume', 'costumes', 'costumière', 'couture', 'couturier', 'tailleur', 'habillage', 'vestiaire'],
+  studio: ['studio', 'communication', 'porte-voix', 'newsletter'],
+  mestre: ['mestre', 'mestria', 'direction', 'artistique', 'scène', 'scene', 'chef de pupitre'],
   vitrine: ['vitrine', 'communication', 'webmaster'],
   pedagogie: ['mestre', 'pédagogie'],
   config: ['config', 'sécurité', 'secrétaire']
@@ -252,7 +314,16 @@ export function canAccessPole(poleId, profileData, permissionsMatrice = null, ef
   // Pôles publics Espace Membre : toujours déverrouillés
   if (poleId === 'accueil' || poleId === 'mon-espace') return true;
 
+  // Traitement spécifique Mestria
+  if (poleId === 'mestre') {
+    return canAccessMestre(profileData, permissionsMatrice, effectiveUserTags);
+  }
 
+  // Rôles système globaux autorisés d'office
+  const systemRole = (profileData.role || '').toLowerCase();
+  if (profileData.isSystemAdmin === true || systemRole === 'super-admin' || systemRole === 'admin') {
+    return true;
+  }
 
   const userTagsList = (
     effectiveUserTags && effectiveUserTags.length > 0
@@ -299,6 +370,13 @@ export function canAccessTabPermission(tabId, poleId, profileData, permissionsMa
   // Onglets publics Espace Membre : toujours autorisés
   if (['profil', 'agenda', 'materiel', 'vestiaire', 'trombinoscope', 'forum', 'dashboard', 'varal'].includes(tabId)) {
     return true;
+  }
+
+  // Si c'est le pôle mestre ou un onglet de direction artistique, vérifier canAccessMestre
+  if (poleId === 'mestre' || tabId.startsWith('mestre-')) {
+    if (canAccessMestre(profileData, permissionsMatrice, effectiveUserTags)) {
+      return true;
+    }
   }
 
   // 1. Si l'utilisateur possède les droits d'administration globaux sur le pôle parent, accorder l'accès
@@ -580,7 +658,76 @@ export function canUserReadForumChannel(
   return checkUserAccessToList(readList, userRole, userTags, tagsDisponibles);
 }
 
+/**
+ * Vérifie si l'utilisateur possède les droits de validation et de contrôle d'atelier (Pôle Lutherie).
+ * Permet de valider les étapes d'usinage sur l'établi ou de demander une retouche.
+ *
+ * Sont autorisés :
+ * 1. Les rôles système prioritaires : isSystemAdmin === true, 'mestre', 'super-admin', 'admin'.
+ * 2. Les membres dont un badge figure dans permissionsMatrice.canValidateWorkshopSteps.
+ * 3. À défaut de configuration explicite, les membres portant des badges artisanaux de secours :
+ *    ('maître d'atelier', 'maitre d'atelier', 'luthier', 'référent lutherie', 'referent lutherie', 'artisan').
+ *
+ * @param {Object} profileData Profil de l'utilisateur (role, isSystemAdmin, tags)
+ * @param {Object} permissionsMatrice Matrice des permissions de l'association
+ * @param {Array} effectiveUserTags Liste des étiquettes effectives du membre
+ * @returns {boolean} true si l'utilisateur est autorisé à valider les étapes d'atelier
+ */
+export function canValidateWorkshop(profileData, permissionsMatrice = null, effectiveUserTags = []) {
+  if (!profileData) return false;
 
+  // 1. Bypass pour les rôles système d'office
+  const systemRole = (profileData.role || '').toLowerCase();
+  if (
+    profileData.isSystemAdmin === true ||
+    systemRole === 'mestre' ||
+    systemRole === 'super-admin' ||
+    systemRole === 'admin'
+  ) {
+    return true;
+  }
 
+  // 2. Préparation de la liste des badges de l'utilisateur (identifiants et libellés en minuscules)
+  const userTagsList = (
+    effectiveUserTags && effectiveUserTags.length > 0
+      ? effectiveUserTags
+      : profileData.tags || []
+  ).flatMap(t => {
+    if (!t) return [];
+    if (typeof t === 'string') return [t.toLowerCase().trim()];
+    return [
+      t.id?.toLowerCase()?.trim(),
+      t.nomM?.toLowerCase()?.trim(),
+      t.nomF?.toLowerCase()?.trim()
+    ].filter(Boolean);
+  });
 
+  // 3. Vérification dans la matrice des permissions (clé 'canValidateWorkshopSteps')
+  if (permissionsMatrice && typeof permissionsMatrice === 'object') {
+    const configuredTags = (permissionsMatrice.canValidateWorkshopSteps || []).flatMap(t => {
+      if (!t) return [];
+      if (typeof t === 'string') return [t.toLowerCase().trim()];
+      return [
+        t.id?.toLowerCase()?.trim(),
+        t.nomM?.toLowerCase()?.trim(),
+        t.nomF?.toLowerCase()?.trim()
+      ].filter(Boolean);
+    });
 
+    if (configuredTags.length > 0) {
+      return userTagsList.some(ut => configuredTags.includes(ut));
+    }
+  }
+
+  // 4. Mots-clés de secours si aucune règle spécifique n'est configurée dans la matrice
+  const DEFAULT_WORKSHOP_KEYWORDS = [
+    "maître d'atelier",
+    "maitre d'atelier",
+    "luthier",
+    "référent lutherie",
+    "referent lutherie",
+    "artisan"
+  ];
+
+  return userTagsList.some(ut => DEFAULT_WORKSHOP_KEYWORDS.some(kw => ut.includes(kw)));
+}

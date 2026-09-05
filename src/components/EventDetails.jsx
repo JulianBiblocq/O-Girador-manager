@@ -1521,36 +1521,54 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
                   </span>
                 )}
 
-                {/* ENCART VISUEL : Dépôt Médias Externe (Framaspace, Drive...) */}
-                {event.lienDepotMedias && (
+                {/* ENCART VISUEL : Dépôt Médias Externe (Framaspace, Drive...) & Album Finalisé */}
+                {(event.lienDepotMedias || event.albumPhotosUrl) && (
                   <div className="mt-3 p-3.5 bg-cordel-bg-light/90 border-2 border-encre-noire rounded-[8px] shadow-[2.5px_2.5px_0px_0px_#181716] flex flex-col gap-2">
                     <div className="flex items-center gap-2">
                       <span className="text-sm">📸</span>
                       <h4 className="text-xs font-black uppercase tracking-wider text-cordel-wood">
-                        Partagez vos souvenirs de {event.titre || "l'événement"} !
+                        Souvenirs & Photos de {event.titre || "l'événement"} !
                       </h4>
                     </div>
                     <p className="text-[10.5px] text-cordel-master-dark/85 font-semibold leading-snug">
-                      Déposez vos photos et vidéos directement dans notre dossier partagé ou affichez le QR Code pour le faire scanner sur place.
+                      {event.albumPhotosUrl 
+                        ? "L'album photo officiel est disponible en ligne. Vous pouvez également déposer vos clichés personnels via le dossier partagé."
+                        : "Déposez vos photos et vidéos directement dans notre dossier partagé ou affichez le QR Code pour le faire scanner sur place."}
                     </p>
                     <div className="flex flex-wrap gap-2 mt-1">
-                      <button
-                        type="button"
-                        onClick={() => window.open(event.lienDepotMedias, '_blank', 'noopener,noreferrer')}
-                        className="px-3 py-1.5 bg-emerald-800 hover:bg-emerald-900 text-white font-extrabold text-xs uppercase tracking-wider rounded border border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none cursor-pointer flex items-center gap-1.5"
-                      >
-                        <span>📸</span>
-                        <span>Envoyer mes images</span>
-                      </button>
+                      {event.albumPhotosUrl && (
+                        <button
+                          type="button"
+                          onClick={() => window.open(event.albumPhotosUrl, '_blank', 'noopener,noreferrer')}
+                          className="px-3 py-1.5 bg-[#2d6a4f] hover:bg-emerald-800 text-white font-extrabold text-xs uppercase tracking-wider rounded border border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none cursor-pointer flex items-center gap-1.5"
+                          title="Consulter l'album photo finalisé de l'événement"
+                        >
+                          <span>🖼️</span>
+                          <span>Consulter l'album finalisé</span>
+                        </button>
+                      )}
 
-                      <button
-                        type="button"
-                        onClick={() => setShowMediaQrCodeModal(true)}
-                        className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white font-extrabold text-xs uppercase tracking-wider rounded border border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none cursor-pointer flex items-center gap-1.5"
-                      >
-                        <span>📱</span>
-                        <span>Afficher le QR Code</span>
-                      </button>
+                      {event.lienDepotMedias && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => window.open(event.lienDepotMedias, '_blank', 'noopener,noreferrer')}
+                            className="px-3 py-1.5 bg-emerald-800 hover:bg-emerald-900 text-white font-extrabold text-xs uppercase tracking-wider rounded border border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none cursor-pointer flex items-center gap-1.5"
+                          >
+                            <span>📸</span>
+                            <span>Envoyer mes images</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => setShowMediaQrCodeModal(true)}
+                            className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white font-extrabold text-xs uppercase tracking-wider rounded border border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none cursor-pointer flex items-center gap-1.5"
+                          >
+                            <span>📱</span>
+                            <span>Afficher le QR Code</span>
+                          </button>
+                        </>
+                      )}
                     </div>
                   </div>
                 )}

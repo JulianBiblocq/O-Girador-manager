@@ -4,7 +4,22 @@ import PermissionsGuideBox from '../PermissionsGuideBox';
 import { formatTagGender, getTagId } from '../../utils/tagUtils';
 
 const PERMISSION_POLES = [
-
+  {
+    id: 'secretariat',
+    label: '📋 Secrétariat',
+    desc: 'Gestion statutaire, annuaire, réunions, registre des dates et Varal administratif',
+    tabs: [
+      { id: 'export-annu', label: 'Annuaire', desc: 'Accès à la liste des adhérents et export CSV/Excel' },
+      { id: 'studio-events', label: 'Registre des dates', desc: 'Tableau d\'édition rapide et globale des événements' },
+      { id: 'reunion-manager', label: 'Réunions', desc: 'Ordres du jour et procès-verbaux de réunion' },
+      { id: 'varal-secretariat', label: 'Varal Secrétariat', desc: 'Documents administratifs et comptes-rendus officiels' },
+      { id: 'mestre-forum-channels', label: 'Porte-voix (Salons)', desc: 'Modération et configuration des salons du forum' },
+      { id: 'activity-reports', label: 'Rapports d\'activité', desc: 'Rédaction et archivage des bilans statutaires' },
+      { id: 'secretariat-reports', label: 'Rapports & Bilan AG', desc: 'Consolidation multi-pôles des indicateurs de la saison pour l\'Assemblée Générale' },
+      { id: 'secretariat-documents', label: 'Chartes & Santé', desc: 'Gestion des chartes, droit à l\'image et aptitudes médicales' },
+      { id: 'secretariat-lieux', label: 'Lieux & Types d\'événements', desc: 'Répertoire des salles habituelles et configuration des types d\'événements' }
+    ]
+  },
   {
     id: 'diffusion',
     label: '🎷 Diffusion',
@@ -29,30 +44,68 @@ const PERMISSION_POLES = [
   {
     id: 'logistique',
     label: '📦 Logistique',
-    desc: 'Inventaire du matériel et des commandes',
+    desc: 'Inventaire du matériel opérationnel, pupitres, kits et commandes',
     tabs: [
       { id: 'inventory', label: 'Instruments', desc: 'Gestion du parc d\'instruments et état du matériel' },
-      { id: 'canValidateWorkshopSteps', label: 'Maître d\'atelier', desc: 'Contrôle & Validation des étapes de fabrication' },
-      { id: 'orders-manager', label: 'Commandes', desc: 'Suivi des achats et commandes de matériel' },
-      { id: 'wardrobe-inventory', label: 'Costumes', desc: 'Gestion du catalogue et du stock des costumes' },
-      { id: 'wardrobe-couture', label: 'Atelier Couture', desc: 'Suivi de confection, réparations et tutoriels couture' },
-      { id: 'wardrobe-sizes', label: 'Mensurations', desc: 'Consultation des tailles et mensurations des membres' }
+      { id: 'logistics-pupitres', label: 'Pupitres', desc: 'Familles de pupitres, catalogue d\'instruments et attributions de couleurs' },
+      { id: 'logistics-kits', label: 'Accessoires & Kits', desc: 'Gestion des kits d\'accessoires et matériels par pupitre' },
+      { id: 'logistics-carpool', label: 'Covoiturage & Convois', desc: 'Point de départ convoi, barème km et règles de transport' },
+      { id: 'orders', label: 'Commandes', desc: 'Suivi des achats et commandes de matériel' }
+    ]
+  },
+  {
+    id: 'lutherie',
+    label: '🪚 Lutherie & Atelier',
+    desc: 'Artisanat, modèles d\'instruments, établi, pièces détachées et outillage',
+    tabs: [
+      { id: 'inventory-projects', label: 'Établi & chantiers', desc: 'Suivi des chantiers de fabrication et réparations lourdes' },
+      { id: 'instrument-models', label: 'Modèles d\'instruments', desc: 'Fiches techniques, nomenclatures et gabarits de fabrication' },
+      { id: 'inventory-parts', label: 'Pièces détachées', desc: 'Gestion des stocks de fûts, cercles, peaux et accastillage' },
+      { id: 'inventory-supplies', label: 'Matières premières', desc: 'Suivi des cordes, tirants, vernis et consommables' },
+      { id: 'workshop-tools', label: 'Outillage', desc: 'Inventaire des outils et machines de l\'atelier' },
+      { id: 'varal-lutherie', label: 'Varal Lutherie', desc: 'Tutoriels et plans de fabrication artisanale' },
+      { 
+        id: 'canValidateWorkshopSteps', 
+        label: "Validation d'atelier & Fiche suiveuse", 
+        desc: "Autorise à valider les étapes d'usinage et à demander des retouches sur l'établi",
+        labelKey: 'permCanValidateWorkshopSteps',
+        descKey: 'permCanValidateWorkshopStepsDesc'
+      }
+    ]
+  },
+  {
+    id: 'costumerie',
+    label: '🧵 Costumerie',
+    desc: 'Artisanat textile, confection des tenues, patrons, tissus et mensurations',
+    tabs: [
+      { id: 'wardrobe-projects', label: 'Établi de confection', desc: 'Suivi des projets et chantiers couture en cours' },
+      { id: 'wardrobe-models', label: 'Modèles & Patrons', desc: 'Gestion des modèles de costumes et pièces requises' },
+      { id: 'wardrobe-pieces', label: 'Vestiaire physique', desc: 'Stock unitaire des tenues, état et prêts aux membres' },
+      { id: 'wardrobe-supplies', label: 'Tissus & Mercerie', desc: 'Gestion des rouleaux de tissus, fils, boutons et consommables' },
+      { id: 'wardrobe-tools', label: 'Machines & Outils', desc: 'Inventaire des machines à coudre, surjeteuses et outils' },
+      { id: 'wardrobe-sizes', label: 'Tailles & Mensurations', desc: 'Tableau des tailles et mensurations des danseurs et musiciens' },
+      { id: 'varal-costumerie', label: 'Varal Costumerie', desc: 'Patrons de coupe et fiches techniques de couture' }
     ]
   },
   {
     id: 'studio',
     label: 'Studio',
-    desc: 'Communication, réunions, Varal et comptes-rendus',
+    desc: 'Communication externe, réseaux sociaux, newsletter et Varal photos',
     tabs: [
       { id: 'studio-social', label: 'Studio social', desc: 'Gestion et publication sur les réseaux sociaux' },
-      { id: 'agenda', label: '📅 Agenda & Événements', desc: 'Droits de création, modification et suppression des événements' },
-      { id: 'studio-events', label: 'Événements', desc: 'Tableau d\'édition rapide et globale des événements' },
-      { id: 'reunion-manager', label: 'Réunions', desc: 'Ordres du jour et compte-rendus de réunion' },
-      { id: 'mestre-forum-channels', label: 'Porte-voix', desc: 'Modération et configuration des salons du forum' },
       { id: 'newsletter', label: 'Newsletter', desc: 'Création et envoi de newsletters' },
-      { id: 'export-annu', label: 'Annuaire', desc: 'Accès à la liste des membres et à la génération des exports CSV/Excel' },
-      { id: 'activity-reports', label: 'Rapports', desc: 'Rédaction et archivage des bilans d\'activité' },
-      { id: 'varal-manager', label: 'Varal', desc: 'Gestion des dossiers et documents à afficher sur le Varal' }
+      { id: 'studio-communication', label: 'Communication & Brevo', desc: 'Clés Brevo API, DNS, newsletter et export des inscrits (CSV)' },
+      { id: 'varal-photos', label: 'Varal Photos', desc: 'Dépôts et albums photos partagés des prestations' }
+    ]
+  },
+  {
+    id: 'pedagogie',
+    label: '📚 Pédagogie',
+    desc: 'Transmission musicale, parcours et Varal pédagogique',
+    tabs: [
+      { id: 'varal-manager', label: 'Varal Pédagogique', desc: 'Toadas, fiches de culture et tutoriels vidéo' },
+      { id: 'mestre-pedagogy-qcm', label: 'QCM & Quiz', desc: 'Gestion des questionnaires et seuils de validation' },
+      { id: 'mestre-pedagogy-dashboard', label: 'Suivi & Analyse', desc: 'Visualisation de la progression et aisance des adhérents' }
     ]
   },
   {
@@ -64,7 +117,6 @@ const PERMISSION_POLES = [
       { id: 'mestre-events', label: 'Événements', desc: 'Vue mestre détaillée des événements et présences' },
       { id: 'mestre-stage-layout', label: 'Plan de Scène', desc: 'Création et disposition visuelle du placement scénique' },
       { id: 'mestre-sequenceur', label: 'Séquenceur', desc: 'Édition des séquences musicales et structures rhythm' },
-      { id: 'mestre-workshops', label: 'Ateliers', desc: 'Organisation des ateliers de transmission' },
       { id: 'mestre-mot-mestre', label: 'Annonces', desc: 'Publication des communications officielles du Mestre' }
     ]
   },
@@ -80,22 +132,13 @@ const PERMISSION_POLES = [
   {
     id: 'config',
     label: '⚙️ Configuration',
-    desc: 'Paramètres généraux de l\'association, identité, sécurité, modules et mise en page',
+    desc: 'Paramètres institutionnels de l\'association, identité, sécurité, modules et profils',
     tabs: [
-      { id: 'config-identity', label: 'Identité', desc: 'Nom, logo, réseaux et slogan de l\'association' },
-      { id: 'config-communication', label: 'Communication & Newsletter', desc: 'Clés Brevo API et export des inscrits newsletter (CSV)' },
-      { id: 'config-profile', label: 'Champs du Profil', desc: 'Gestion des champs personnalisés de profil des adhérents' },
-      { id: 'tag-manager', label: 'Badges', desc: 'Gestion de l\'ordre et des intitulés des badges/rôles' },
-      { id: 'instruments', label: 'Pupitres', desc: 'Association des instruments aux pupitres de la troupe' },
-      { id: 'config-security', label: 'Sécurité', desc: 'Matrice des permissions et journal d\'audit' },
-      { id: 'config-modules', label: 'Modules & Fonctionnalités', desc: 'Activation/Désactivation des modules' },
-      { id: 'config-logistics', label: 'Covoiturage & Matériel', desc: 'Règles de remboursement, options costumes et pièces de rechange' },
-      { id: 'config-automations', label: 'Automatisations', desc: 'Liaison des formulaires avec les types d\'événements' },
-      { id: 'config-documents', label: 'Chartes, Santé & Fils', desc: 'Gestion des documents administratifs et modèles' },
-      { id: 'config-finance', label: 'Trésorerie', desc: 'Configuration de la trésorerie et paiements HelloAsso' },
-      { id: 'config-agenda', label: 'Agenda & Calendrier', desc: 'Paramètres du calendrier et synchronisation' },
-      { id: 'config-lieux', label: 'Lieux & Salles', desc: 'Gestion du répertoire des lieux et salles habituels' },
-      { id: 'config-layout', label: 'Apparence & Thème', desc: 'Personnalisation du style visuel et thème Cordel' }
+      { id: 'config-identity', label: 'Identité légale', desc: 'SIRET, RNA, siège social et signatures officielles' },
+      { id: 'config-security', label: 'Badges & Permissions', desc: 'Matrice RBAC des rôles et permissions' },
+      { id: 'config-layout', label: 'Apparence', desc: 'Logo, identité visuelle et thème de base' },
+      { id: 'config-profile', label: 'Inscription & Profils', desc: 'Champs dynamiques requis pour les profils adhérents' },
+      { id: 'config-modules', label: 'Modules & Fonctionnalités', desc: 'Activation et désactivation des grands pôles métiers' }
     ]
   }
 ];
@@ -108,13 +151,14 @@ export default function TabSecurity({
 }) {
   const { permissionsMatrice = {}, tagsDisponibles = [] } = formData;
 
-  // Accordion state: open poles
+  // État local des accordéons de pôles
   const [openPoles, setOpenPoles] = useState({
-    troupe: true,
+    secretariat: true,
     tresorerie: false,
     logistique: false,
-    vestiaire: false,
+    lutherie: false,
     studio: false,
+    pedagogie: false,
     mestre: false,
     vitrine: false
   });
@@ -288,11 +332,11 @@ export default function TabSecurity({
                             <div className="flex justify-between items-center">
                               <div>
                                 <span className="text-[10.5px] font-extrabold text-encre-noire">
-                                  📑 {tab.label}
+                                  📑 {tab.labelKey && t ? (t(`poles.${tab.labelKey}`) || tab.label) : tab.label}
                                 </span>
-                                {tab.desc && (
+                                {(tab.descKey || tab.desc) && (
                                   <span className="text-[8.5px] text-cordel-master-dark/65 block font-medium">
-                                    {tab.desc}
+                                    {tab.descKey && t ? (t(`poles.${tab.descKey}`) || tab.desc) : tab.desc}
                                   </span>
                                 )}
                               </div>

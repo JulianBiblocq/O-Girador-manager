@@ -4,6 +4,7 @@ import CordelButton from '../CordelButton';
 import MemberTreasuryRow from '../MemberTreasuryRow';
 import { useTranslation } from '../LanguageContext';
 import CotisationsBlock from '../association-settings/blocks/CotisationsBlock';
+import FormulesManager from '../association-settings/FormulesManager';
 
 export default function TreasuryCotisations({
   members,
@@ -26,6 +27,7 @@ export default function TreasuryCotisations({
   const [formConfig, setFormConfig] = useState({
     montantAdhesion: 0,
     optionsCotisation: [],
+    formulesAdhesion: [],
     lienPaiementExterne: '',
     instructionsPaiement: '',
     demanderDroitImage: false,
@@ -43,6 +45,10 @@ export default function TreasuryCotisations({
   // Synchroniser settings values to form state when settings charger
   useEffect(() => {
     if (associationSettings) {
+      const existingFormules = Array.isArray(associationSettings.formulesAdhesion) && associationSettings.formulesAdhesion.length > 0
+        ? associationSettings.formulesAdhesion
+        : (Array.isArray(associationSettings.publicTheme?.formulesRecrutement) ? associationSettings.publicTheme.formulesRecrutement : []);
+
       setFormConfig({
         montantAdhesion: associationSettings.montantAdhesion !== undefined 
           ? associationSettings.montantAdhesion 
@@ -50,6 +56,7 @@ export default function TreasuryCotisations({
         optionsCotisation: Array.isArray(associationSettings.optionsCotisation) 
           ? [...associationSettings.optionsCotisation] 
           : [],
+        formulesAdhesion: existingFormules,
         lienPaiementExterne: associationSettings.lienPaiementExterne || '',
         instructionsPaiement: associationSettings.instructionsPaiement || '',
         demanderDroitImage: associationSettings.demanderDroitImage || false,
@@ -128,6 +135,8 @@ export default function TreasuryCotisations({
       const updates = {
         montantAdhesion: parseFloat(formConfig.montantAdhesion) || 0,
         optionsCotisation: formConfig.optionsCotisation,
+        formulesAdhesion: formConfig.formulesAdhesion,
+        "publicTheme.formulesRecrutement": formConfig.formulesAdhesion,
         lienPaiementExterne: formConfig.lienPaiementExterne,
         instructionsPaiement: formConfig.instructionsPaiement,
         demanderDroitImage: formConfig.demanderDroitImage,
@@ -252,6 +261,22 @@ export default function TreasuryCotisations({
               groupId={groupId} 
               handleSaveHelloAssoKey={() => handleSaveConfig({ preventDefault: () => {} })}
             />
+
+            {/* Gestionnaire des Cartes de Formules d'Adhésion (Percu, Danse, etc.) */}
+            <div className="pt-2 border-t border-dashed border-cordel-master-dark/20">
+              <FormulesManager 
+                formules={formConfig.formulesAdhesion}
+                onChangeFormules={(updatedList) => {
+                  setFormConfig(prev => ({
+                    ...prev,
+                    formulesAdhesion: updatedList
+                  }));
+                }}
+                saving={savingSettings}
+                groupId={groupId}
+              />
+            </div>
+
             <div className="flex justify-end mt-2 pt-3 border-t border-dashed border-cordel-master-dark/15">
               <CordelButton
                 type="submit"

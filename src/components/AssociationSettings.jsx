@@ -9,16 +9,9 @@ import TabIdentity from './association-settings/TabIdentity';
 import TabApparence from './association-settings/TabApparence';
 import TabOrganization from './association-settings/TabOrganization';
 import TabSecurity from './association-settings/TabSecurity';
-import TabLogistics from './association-settings/TabLogistics';
-import TabFinance from './association-settings/TabFinance';
-import TabDocuments from './association-settings/TabDocuments';
-import TabAgenda from './association-settings/TabAgenda';
 import TabModules from './association-settings/TabModules';
-import TabLieux from './association-settings/TabLieux';
-import TabAutomations from './association-settings/TabAutomations';
 import TabPublicContent from './association-settings/TabPublicContent';
 import TabPublicTheme from './association-settings/TabPublicTheme';
-import TabCommunication from './association-settings/TabCommunication';
 import { canEditVitrine } from '../utils/permissionUtils';
 
 import { useEffect } from 'react';
@@ -159,73 +152,12 @@ export default function AssociationSettings({
             t={t}
           />
         );
-      case 'logistics':
-        return (
-          <TabLogistics
-            formData={formData}
-            handleChange={handleChange}
-            saving={saving}
-            t={t}
-          />
-        );
-      case 'documents':
-        return (
-          <TabDocuments
-            formData={formData}
-            handleChange={handleChange}
-            droitImageFile={droitImageFile}
-            setDroitImageFile={setDroitImageFile}
-            aptitudeMedicaleFile={aptitudeMedicaleFile}
-            setAptitudeMedicaleFile={setAptitudeMedicaleFile}
-            saving={saving}
-            t={t}
-          />
-        );
-      case 'finance':
-        return (
-          <TabFinance
-            formData={formData}
-            handleChange={handleChange}
-            saving={saving}
-            groupId={groupId}
-            handleSaveHelloAssoKey={handleSaveHelloAssoKey}
-            t={t}
-            mode={mode}
-          />
-        );
-      case 'agenda':
-        return (
-          <>
-            <TabAgenda
-              formData={formData}
-              handleChange={handleChange}
-              saving={saving}
-              t={t}
-            />
-            <div className="mt-4">
-              <TabLieux
-                formData={formData}
-                handleChange={handleChange}
-                saving={saving}
-                t={t}
-              />
-            </div>
-          </>
-        );
       case 'modules':
         return (
           <TabModules
             formData={formData}
             handleChange={handleChange}
             saving={saving}
-            t={t}
-          />
-        );
-      case 'automatisations':
-        return (
-          <TabAutomations
-            groupId={groupId}
-            eventTypes={formData.eventTypes || ['prestation', 'repetition', 'stage', 'atelier', 'reunion']}
             t={t}
           />
         );
@@ -257,25 +189,6 @@ export default function AssociationSettings({
             saving={saving}
             t={t}
             contentSubTab={vitrineSubTab}
-          />
-        );
-      case 'communication':
-        return (
-          <TabCommunication
-            formData={formData}
-            handleChange={handleChange}
-            groupId={groupId}
-            saving={saving}
-            t={t}
-          />
-        );
-      case 'lieux':
-        return (
-          <TabLieux
-            formData={formData}
-            handleChange={handleChange}
-            saving={saving}
-            t={t}
           />
         );
       default:
@@ -331,7 +244,18 @@ export default function AssociationSettings({
                     : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
                 }`}
               >
-                🏢 Identité & Contacts
+                🏢 Identité légale
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveSettingsTab('security')}
+                className={`px-3 py-1.5 text-xs font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer ${
+                  activeSettingsTab === 'security'
+                    ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
+                    : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
+                }`}
+              >
+                🛡️ Badges & Permissions
               </button>
               <button
                 type="button"
@@ -357,72 +281,6 @@ export default function AssociationSettings({
               </button>
               <button
                 type="button"
-                onClick={() => setActiveSettingsTab('security')}
-                className={`px-3 py-1.5 text-xs font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer ${
-                  activeSettingsTab === 'security'
-                    ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
-                    : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
-                }`}
-              >
-                🛡️ Badges & Permissions
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveSettingsTab('logistics')}
-                className={`px-3 py-1.5 text-xs font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer ${
-                  activeSettingsTab === 'logistics'
-                    ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
-                    : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
-                }`}
-              >
-                🚗 Logistique & Vestiaire
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveSettingsTab('documents')}
-                className={`px-3 py-1.5 text-xs font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer ${
-                  activeSettingsTab === 'documents'
-                    ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
-                    : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
-                }`}
-              >
-                📋 Chartes, Santé & Fils
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveSettingsTab('finance')}
-                className={`px-3 py-1.5 text-xs font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer ${
-                  activeSettingsTab === 'finance'
-                    ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
-                    : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
-                }`}
-              >
-                🪙 Trésorerie
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveSettingsTab('communication')}
-                className={`px-3 py-1.5 text-xs font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer ${
-                  activeSettingsTab === 'communication'
-                    ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
-                    : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
-                }`}
-              >
-                📢 Communication & Newsletter
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveSettingsTab('agenda')}
-                className={`px-3 py-1.5 text-xs font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer ${
-                  activeSettingsTab === 'agenda'
-                    ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
-                    : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
-                }`}
-              >
-                📅 Agenda & Lieux
-              </button>
-              <button
-                type="button"
                 onClick={() => setActiveSettingsTab('modules')}
                 className={`px-3 py-1.5 text-xs font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer ${
                   activeSettingsTab === 'modules'
@@ -431,28 +289,6 @@ export default function AssociationSettings({
                 }`}
               >
                 🧩 Modules & Fonctionnalités
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveSettingsTab('automatisations')}
-                className={`px-3 py-1.5 text-xs font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer ${
-                  activeSettingsTab === 'automatisations'
-                    ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
-                    : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
-                }`}
-              >
-                🤖 Automatisations & Relances
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveSettingsTab('public-theme')}
-                className={`px-3 py-1.5 text-xs font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer ${
-                  activeSettingsTab === 'public-theme'
-                    ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
-                    : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
-                }`}
-              >
-                🎨 Identité Visuelle (Vitrine)
               </button>
             </div>
           )}

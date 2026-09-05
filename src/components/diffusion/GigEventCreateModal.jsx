@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { collection, addDoc, doc, updateDoc, serverTimestamp, onSnapshot } from 'firebase/firestore';
+import { collection, addDoc, doc, updateDoc, serverTimestamp, onSnapshot, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../../firebase';
 import CordelCard from '../CordelCard';
+import CordelButton from '../CordelButton';
 import EventCreateForm from '../agenda/EventCreateForm';
 import { useTranslation } from '../LanguageContext';
 
 /**
  * Modale d'intégration directe du formulaire officiel de création d'événement de l'Agenda (EventCreateForm)
- * pré-rempli depuis un dossier de prestation du Pôle Diffusion.
+ * pré-rempli depuis un dossier de prestation du Pôle Diffusion avec bouclier anti-doublon.
  */
 export default function GigEventCreateModal({
   isOpen,
@@ -24,6 +25,54 @@ export default function GigEventCreateModal({
   const [associationEventTypes, setAssociationEventTypes] = useState(['prestation', 'repetition', 'stage', 'atelier', 'reunion']);
   const [eventTypeConfigs, setEventTypeConfigs] = useState({});
   const [dressCodes, setDressCodes] = useState([]);
+
+  // État du bouclier anti-doublon
+  const [existingEventId, setExistingEventId] = useState(gig?.eventId || null);
+  const [checkingExisting, setCheckingExisting] = useState(false);
+
+  // Détection d'un événement existant pour éviter les doublons
+  useEffect(() => {
+    if (!isOpen || !gig) return;
+
+    if (gig.eventId) {
+      setExistingEventId(gig.eventId);
+      return;
+    }
+
+    let isMounted = true;
+    const checkExistingEvent = async () => {
+      if (!gig.id) return;
+      setCheckingExisting(true);
+      try {
+        const eventsRef = collection(db, 'events');
+        const q1 = query(eventsRef, where('gigId', '==', gig.id));
+        const snap1 = await getDocs(q1);
+        if (!snap1.empty && isMounted) {
+          const foundId = snap1.docs[0].id;
+          setExistingEventId(foundId);
+          // Raccordement rétroactif sur le document gigs_pipeline
+          await updateDoc(doc(db, 'gigs_pipeline', gig.id), { eventId: foundId });
+          return;
+        }
+
+        const q2 = query(eventsRef, where('createdFromGigId', '==', gig.id));
+        const snap2 = await getDocs(q2);
+        if (!snap2.empty && isMounted) {
+          const foundId = snap2.docs[0].id;
+          setExistingEventId(foundId);
+          // Raccordement rétroactif sur le document gigs_pipeline
+          await updateDoc(doc(db, 'gigs_pipeline', gig.id), { eventId: foundId });
+        }
+      } catch (err) {
+        console.warn("GigEventCreateModal - Erreur détection doublon :", err);
+      } finally {
+        if (isMounted) setCheckingExisting(false);
+      }
+    };
+
+    checkExistingEvent();
+    return () => { isMounted = false; };
+  }, [gig?.id, gig?.eventId, isOpen]);
 
   // Chargement de la configuration de l'association pour EventCreateForm
   useEffect(() => {
@@ -80,13 +129,20 @@ export default function GigEventCreateModal({
     if (gig) {
       const budgetVal = parseFloat(gig.amount) || 0;
 
+      // Concaténation des horaires logistiques s'ils existent sur la prestation
+      const horairesParts = [];
+      if (gig.heureArrivee) horairesParts.push(`Arrivée: ${gig.heureArrivee}`);
+      if (gig.heureBalances) horairesParts.push(`Balances: ${gig.heureBalances}`);
+      if (gig.heurePassage) horairesParts.push(`Passage: ${gig.heurePassage}`);
+      const horairesStr = horairesParts.join(' | ');
+
       setFormData({
         titre: `[OPTION] - ${gig.eventName || ''}`,
         type: 'prestation',
         date: gig.date || new Date().toISOString().split('T')[0],
         dateFin: '',
         lieu: gig.location || '',
-        horairesPassages: '',
+        horairesPassages: horairesStr,
         horaireCovoiturage: '',
         niveauRequis: 'tous',
         niveauDanseRequis: 'aucun',
@@ -163,19 +219,23 @@ export default function GigEventCreateModal({
         dateLimiteInscription: formData.dateLimiteInscription || '',
         description: formData.description?.trim() || '',
         inscriptions: [],
+        gigId: gig.id,
         createdFromGigId: gig.id,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
       };
 
-      await addDoc(collection(db, 'events'), newEventDoc);
+      const docRef = await addDoc(collection(db, 'events'), newEventDoc);
 
-      // 2. Passage automatique du dossier de prestation au statut 2_option ("Option posée")
+      // 2. Passage automatique du dossier de prestation au statut 2_option et mémorisation de eventId
       const gigRef = doc(db, 'gigs_pipeline', gig.id);
       await updateDoc(gigRef, {
+        eventId: docRef.id,
         status: '2_option',
         updatedAt: serverTimestamp()
       });
+
+      setExistingEventId(docRef.id);
 
       // 3. Notification & fermeture
       if (onSuccess) {
@@ -224,24 +284,61 @@ export default function GigEventCreateModal({
 
         {/* 2. Body (Défilable verticalement) */}
         <div className="flex-1 overflow-y-auto p-4">
-          <EventCreateForm
-            formData={formData}
-            setFormData={setFormData}
-            handleChange={handleChange}
-            handleSubmit={handleSubmit}
-            handleCloseForm={onClose}
-            saving={saving}
-            dressCodes={dressCodes}
-            createConfig={createConfig}
-            rawCreateConfig={eventTypeConfigs}
-            associationEventTypes={associationEventTypes}
-            adresseLocal={adresseLocal}
-            lieuxImportants={lieuxImportants}
-            defaultLocationsByEventType={defaultLocationsByEventType}
-            t={t}
-          />
+          {existingEventId ? (
+            /* Bouclier Anti-Doublon : Affichage du bandeau préventif */
+            <div className="flex flex-col items-center justify-center p-8 bg-amber-50/90 border-2 border-amber-400 rounded-lg text-center gap-4 my-6">
+              <div className="text-4xl">⚠️</div>
+              <div className="flex flex-col gap-1 max-w-lg">
+                <h4 className="text-base font-black uppercase text-amber-950">
+                  Option déjà posée dans l'Agenda
+                </h4>
+                <p className="text-xs text-stone-700 leading-relaxed">
+                  Une option est déjà enregistrée dans le Registre des dates pour ce dossier de prestation (Identifiant événement : <span className="font-mono font-bold text-amber-950">{existingEventId}</span>).
+                </p>
+              </div>
+              <div className="flex items-center gap-3 pt-2">
+                <CordelButton
+                  type="button"
+                  variant="ocre"
+                  onClick={() => {
+                    onClose();
+                    alert(`Option d'agenda active (ID: ${existingEventId}). Vous pouvez consulter et modifier cet événement directement dans l'onglet Agenda.`);
+                  }}
+                  className="text-xs font-black uppercase flex items-center gap-1.5"
+                >
+                  <span>📅</span>
+                  <span>Une option est déjà posée dans l'agenda. Voir l'événement ➜</span>
+                </CordelButton>
+                <CordelButton type="button" variant="default" onClick={onClose} className="text-xs">
+                  Fermer
+                </CordelButton>
+              </div>
+            </div>
+          ) : checkingExisting ? (
+            <div className="py-16 text-center text-xs font-bold text-stone-400 uppercase tracking-widest animate-pulse">
+              ⏳ Vérification de l'existence d'une option agenda...
+            </div>
+          ) : (
+            <EventCreateForm
+              formData={formData}
+              setFormData={setFormData}
+              handleChange={handleChange}
+              handleSubmit={handleSubmit}
+              handleCloseForm={onClose}
+              saving={saving}
+              dressCodes={dressCodes}
+              createConfig={createConfig}
+              rawCreateConfig={eventTypeConfigs}
+              associationEventTypes={associationEventTypes}
+              adresseLocal={adresseLocal}
+              lieuxImportants={lieuxImportants}
+              defaultLocationsByEventType={defaultLocationsByEventType}
+              t={t}
+            />
+          )}
         </div>
       </div>
     </div>
   );
 }
+

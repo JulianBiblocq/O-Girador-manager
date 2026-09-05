@@ -92,7 +92,7 @@ export default function MestreStageLayout({ groupId, user, profileData, selected
       </div>
 
       {activeEvent ? (
-        <div className="w-full">
+        <div data-tour="mestre-stage-grid" className="w-full">
           <EventStageLayoutSection
             event={activeEvent}
             user={user}
@@ -103,7 +103,7 @@ export default function MestreStageLayout({ groupId, user, profileData, selected
           />
         </div>
       ) : (
-        <CordelCard variant="default" useExtremeBorder={true} className="p-12 text-center">
+        <CordelCard data-tour="mestre-stage-grid" variant="default" useExtremeBorder={true} className="p-12 text-center">
           <p className="text-xs font-bold opacity-75">
             {t('mestre.noEventSelectedForStage') || "Veuillez sélectionner un événement ci-dessus ou depuis la liste des événements pour configurer le plan de scène."}
           </p>

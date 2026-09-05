@@ -17,13 +17,29 @@ const parseTagsList = (val) => {
   return [];
 };
 
-export default function DocumentUploadForm({ groupId, varalCategories = [], onClose, documentToEdit }) {
+export default function DocumentUploadForm({ 
+  groupId, 
+  varalCategories = [], 
+  onClose, 
+  documentToEdit,
+  initialCategoryId = null,
+  defaultCategory = null,
+  lockCategory = false
+}) {
   const { t } = useTranslation();
   const isEditMode = !!documentToEdit;
   
-  // Base fields
+  // Champs de base
   const [title, setTitle] = useState(documentToEdit ? documentToEdit.titre : '');
+  const targetCategory = initialCategoryId || defaultCategory;
   const [category, setCategory] = useState(() => {
+    if (targetCategory) {
+      const matchById = varalCategories.find(c => c.id === targetCategory);
+      if (matchById) return matchById.id;
+      const matchByName = varalCategories.find(c => c.nom === targetCategory);
+      if (matchByName) return matchByName.id;
+      return targetCategory;
+    }
     if (!documentToEdit) {
       return varalCategories && varalCategories.length > 0 ? varalCategories[0].id : 'Toadas';
     }
@@ -37,26 +53,52 @@ export default function DocumentUploadForm({ groupId, varalCategories = [], onCl
   const [isHidden, setIsHidden] = useState(documentToEdit ? (documentToEdit.isHidden || false) : false);
   const [excludeFromPedagogy, setExcludeFromPedagogy] = useState(documentToEdit ? (documentToEdit.excludeFromPedagogy || false) : false);
 
-  // Computed Type logic
+  // Logique de type calculé
   const [pvType, setPvType] = useState(documentToEdit && documentToEdit.type === 'web' ? 'web' : 'pdf');
   const [tutoFabType, setTutoFabType] = useState(documentToEdit && documentToEdit.type === 'web' ? 'web' : 'fabrication');
   const [cultureType, setCultureType] = useState(documentToEdit && documentToEdit.type === 'web' ? 'web' : 'culture_fiche');
 
   const computedType = (() => {
-    switch(category) {
-      case 'Toadas': return 'song';
-      case 'Culture': return cultureType;
-      case 'TutorielsVideo': return 'video';
-      case 'TutosFabrication': return tutoFabType;
-      case 'PhotosPrestations': return 'dossier_externe';
-      case 'Administratif': return 'pdf';
-      case 'ComptesRendus': return pvType;
-      default: return 'pdf';
+    const catLower = (category || '').toLowerCase();
+    if (category === 'Toadas' || catLower.includes('toada') || catLower.includes('chant') || catLower.includes('parole')) {
+      return 'song';
     }
+    if (category === 'Culture' || catLower.includes('culture')) {
+      return cultureType;
+    }
+    if (category === 'TutorielsVideo' || catLower.includes('video')) {
+      return 'video';
+    }
+    if (category === 'TutosFabrication' || catLower.includes('fabrication') || catLower.includes('lutherie') || catLower.includes('plan')) {
+      return tutoFabType;
+    }
+    if (category === 'PhotosPrestations' || catLower.includes('photo') || catLower.includes('media') || catLower.includes('presse')) {
+      return 'dossier_externe';
+    }
+    if (category === 'ComptesRendus' || catLower.includes('compte-rendu') || catLower.includes('reunion') || catLower.includes('pv')) {
+      return pvType;
+    }
+    if (category === 'Administratif' || catLower.includes('administratif')) {
+      return 'pdf';
+    }
+    return 'pdf';
   })();
 
   const [file, setFile] = useState(null);
   const [externalUrl, setExternalUrl] = useState(documentToEdit ? documentToEdit.fileUrl : '');
+
+  // Gestion Audio Témoin pour les chants (Toadas)
+  const [audioUploadType, setAudioUploadType] = useState('file'); // 'file' ou 'url'
+  const [audioFile, setAudioFile] = useState(null);
+  const [audioUrl, setAudioUrl] = useState(() => {
+    if (documentToEdit) {
+      if (documentToEdit.audioUrl) return documentToEdit.audioUrl;
+      if (documentToEdit.fileUrl && /\.(mp3|wav|ogg|m4a|aac)$/i.test(documentToEdit.fileUrl)) {
+        return documentToEdit.fileUrl;
+      }
+    }
+    return '';
+  });
 
   // Song / Culture fields
   const [nacao, setNacao] = useState(documentToEdit ? documentToEdit.nacao || '' : '');
@@ -541,7 +583,7 @@ export default function DocumentUploadForm({ groupId, varalCategories = [], onCl
     const isLinkType = computedType === 'video' || computedType === 'web' || computedType === 'dossier_externe';
     const isSongType = computedType === 'song';
     const isFabricationType = computedType === 'fabrication';
-    const isManualType = isSongType || isFabricationType;
+    const isManualType = isSongType || isFabricationType || computedType === 'culture_fiche';
 
     const processEtapesImages = async (etapesList) => {
       const processed = [];
@@ -624,6 +666,20 @@ export default function DocumentUploadForm({ groupId, varalCategories = [], onCl
           updateData.parolesPhonetiques = parolesPhonetiques;
           updateData.traduction = traduction;
           updateData.anecdote = anecdote;
+
+          let finalAudioUrl = audioUrl;
+          if (audioUploadType === 'file' && audioFile) {
+            const audioStoragePath = `documents/${groupId}/audio_${Date.now()}_${audioFile.name}`;
+            const audioRef = ref(storage, audioStoragePath);
+            const audioSnapshot = await uploadBytes(audioRef, audioFile);
+            finalAudioUrl = await getDownloadURL(audioSnapshot.ref);
+          }
+          if (finalAudioUrl) {
+            updateData.audioUrl = finalAudioUrl;
+            if (!updateData.fileUrl) {
+              updateData.fileUrl = finalAudioUrl;
+            }
+          }
         }
 
         if (computedType === 'fabrication') {
@@ -770,6 +826,20 @@ export default function DocumentUploadForm({ groupId, varalCategories = [], onCl
         newDoc.parolesPhonetiques = parolesPhonetiques;
         newDoc.traduction = traduction;
         newDoc.anecdote = anecdote;
+
+        let finalAudioUrl = audioUrl;
+        if (audioUploadType === 'file' && audioFile) {
+          const audioStoragePath = `documents/${groupId}/audio_${Date.now()}_${audioFile.name}`;
+          const audioRef = ref(storage, audioStoragePath);
+          const audioSnapshot = await uploadBytes(audioRef, audioFile);
+          finalAudioUrl = await getDownloadURL(audioSnapshot.ref);
+        }
+        if (finalAudioUrl) {
+          newDoc.audioUrl = finalAudioUrl;
+          if (!newDoc.fileUrl) {
+            newDoc.fileUrl = finalAudioUrl;
+          }
+        }
       }
 
       if (computedType === 'fabrication') {
@@ -844,34 +914,65 @@ export default function DocumentUploadForm({ groupId, varalCategories = [], onCl
 
   return (
     <CordelCard variant="default" useExtremeBorder={true} className="text-left py-6">
-      <h4 className="panel-title text-base font-bold mb-4 text-cordel-wood">
-        {isEditMode ? (t('documents.editDocTitle') || "Modifier le document") : t('documents.addDocTitle')}
-      </h4>
+      {/* En-tête avec bouton retour direct */}
+      <div className="flex justify-between items-center mb-4 pb-3 border-b border-dashed border-cordel-master-dark/20 select-none">
+        <button
+          type="button"
+          onClick={onClose}
+          className="text-[10px] font-black uppercase tracking-widest bg-cordel-bg border border-encre-noire px-3 py-1.5 rounded-[4px_6px_3px_5px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-95 cursor-pointer flex items-center gap-1.5 transition-all"
+          title="Annuler et revenir au Varal"
+        >
+          <span>⬅️</span>
+          <span>{t('common.back') || "Retour au Varal"}</span>
+        </button>
+
+        <h4 className="panel-title text-base font-bold text-cordel-wood m-0">
+          {isEditMode ? (t('documents.editDocTitle') || "Modifier le document") : t('documents.addDocTitle')}
+        </h4>
+
+        <button
+          type="button"
+          onClick={onClose}
+          className="w-7 h-7 flex items-center justify-center rounded-full bg-[var(--color-cordel-rouge,#8b2a1a)] text-white font-black text-xs hover:brightness-110 shadow-xs cursor-pointer transition-all"
+          title="Fermer"
+        >
+          ✕
+        </button>
+      </div>
       
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         
-        {/* Category Selector */}
+        {/* Corde Native (Fixe / Non modifiable, sans flèche de menu déroulant) */}
         <div className="flex flex-col gap-1">
           <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-            Corde Native
+            {t('documents.categoryLabel') || "Corde du Varal"}
           </label>
-          <select
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-            required
-            disabled={isUploading || isEditMode}
-            className="theme-input w-full disabled:opacity-50"
-          >
-            {varalCategories.map(cat => (
-              <option key={cat.id} value={cat.id}>
-                {cat.nom}
-              </option>
-            ))}
-          </select>
+          {lockCategory || targetCategory ? (
+            <div className="theme-input w-full bg-encre-noire/5 font-bold text-xs py-2 px-3 flex items-center justify-between select-none rounded border border-encre-noire/20 text-encre-noire">
+              <span className="flex items-center gap-1.5">
+                <span>🎗️</span>
+                <span>{varalCategories.find(c => c.id === category)?.nom || category}</span>
+              </span>
+              <span className="text-[9px] text-cordel-wood font-black uppercase tracking-wider bg-cordel-wood/10 px-2 py-0.5 rounded border border-cordel-wood/20">
+                🔒 Fixe
+              </span>
+            </div>
+          ) : (
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              disabled={isUploading}
+              className="theme-input w-full disabled:opacity-50 text-xs font-bold"
+            >
+              {varalCategories.map(cat => (
+                <option key={cat.id} value={cat.id}>{cat.nom}</option>
+              ))}
+            </select>
+          )}
         </div>
 
         {/* Mode Selector for Toadas / Culture / TutosFabrication */}
-        {!isEditMode && (category === 'Toadas' || category === 'Culture' || category === 'TutosFabrication') && (
+        {!isEditMode && (category === 'Toadas' || category === 'Culture' || category === 'TutosFabrication' || computedType === 'song' || computedType === 'culture_fiche' || computedType === 'fabrication') && (
           <div className="flex gap-2 p-1 bg-encre-noire/5 rounded w-fit">
             <button 
               type="button" 
@@ -1003,19 +1104,21 @@ export default function DocumentUploadForm({ groupId, varalCategories = [], onCl
                     disabled={isUploading}
                     className="theme-input w-full disabled:opacity-50"
                   >
-                    <option value="song">Créer une fiche (Saisie manuelle)</option>
+                    <option value="culture_fiche">Créer une fiche (Saisie manuelle)</option>
                     <option value="web">Lien URL externe (Vidéo YouTube, Article, etc.)</option>
                   </select>
                </div>
             )}
 
-
-
             {/* External URL Inputs */}
             {(computedType === 'video' || computedType === 'web' || computedType === 'dossier_externe') && (
               <div className="flex flex-col gap-1">
                 <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                  {computedType === 'dossier_externe' ? "Lien du dossier public (Drive, Framaspace...)" : "URL Externe (Lien de la vidéo, de la réunion, etc.)"}
+                  {computedType === 'dossier_externe' 
+                    ? "Lien du dossier public (Google Drive, Framaspace, Dropbox...)" 
+                    : computedType === 'video'
+                    ? "URL de la vidéo externe (YouTube, Vimeo...)"
+                    : "URL Externe (Lien web, etc.)"}
                 </label>
                 <input
                   type="url"
@@ -1023,7 +1126,13 @@ export default function DocumentUploadForm({ groupId, varalCategories = [], onCl
                   onChange={(e) => setExternalUrl(e.target.value)}
                   required
                   disabled={isUploading}
-                  placeholder="https://..."
+                  placeholder={
+                    computedType === 'dossier_externe' 
+                      ? "https://drive.google.com/drive/folders/... ou Dropbox, OneDrive" 
+                      : computedType === 'video'
+                      ? "https://www.youtube.com/watch?v=... ou https://vimeo.com/..."
+                      : "https://..."
+                  }
                   className="theme-input w-full disabled:opacity-50 text-xs font-semibold"
                 />
               </div>
@@ -1076,6 +1185,59 @@ export default function DocumentUploadForm({ groupId, varalCategories = [], onCl
                       className="theme-input w-full disabled:opacity-50 text-xs"
                     />
                   </div>
+                </div>
+
+                {/* Audio Témoin du Chant */}
+                <div className="flex flex-col gap-2 p-3 bg-cordel-wood/5 border border-cordel-wood/20 rounded-md">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark flex items-center gap-1">
+                      <span>🎵</span> Audio témoin (Enregistrement de référence)
+                    </label>
+                    <div className="flex gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => setAudioUploadType('file')}
+                        className={`text-[8px] uppercase font-extrabold px-2 py-0.5 rounded transition-all cursor-pointer ${
+                          audioUploadType === 'file' ? 'bg-cordel-wood text-[#fdfaf2] shadow-xs' : 'text-encre-noire hover:bg-encre-noire/10'
+                        }`}
+                      >
+                        Fichier audio
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setAudioUploadType('url')}
+                        className={`text-[8px] uppercase font-extrabold px-2 py-0.5 rounded transition-all cursor-pointer ${
+                          audioUploadType === 'url' ? 'bg-cordel-wood text-[#fdfaf2] shadow-xs' : 'text-encre-noire hover:bg-encre-noire/10'
+                        }`}
+                      >
+                        Lien URL
+                      </button>
+                    </div>
+                  </div>
+
+                  {audioUploadType === 'file' ? (
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="file"
+                        accept="audio/*,.mp3,.wav,.ogg,.m4a"
+                        onChange={(e) => setAudioFile(e.target.files[0])}
+                        disabled={isUploading}
+                        className="theme-input w-full text-xs py-1.5 file:mr-3 file:py-1 file:px-2 file:rounded file:border-0 file:text-[9px] file:font-bold file:bg-cordel-master-light file:text-encre-noire file:cursor-pointer"
+                      />
+                      {(audioUrl && !audioFile) && (
+                        <span className="text-[9px] text-cordel-vert font-bold whitespace-nowrap">✓ Audio actuel conservé</span>
+                      )}
+                    </div>
+                  ) : (
+                    <input
+                      type="url"
+                      value={audioUrl}
+                      onChange={(e) => setAudioUrl(e.target.value)}
+                      disabled={isUploading}
+                      placeholder="https://... (Lien direct vers fichier audio)"
+                      className="theme-input w-full text-xs font-semibold"
+                    />
+                  )}
                 </div>
 
                 <div className={`grid grid-cols-1 ${category === 'Toadas' ? 'md:grid-cols-2' : ''} gap-4`}>

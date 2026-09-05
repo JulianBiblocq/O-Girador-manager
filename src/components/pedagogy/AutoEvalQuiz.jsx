@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc, arrayUnion } from 'firebase/firestore';
 import { db } from '../../firebase';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
@@ -103,10 +103,33 @@ export default function AutoEvalQuiz({ sheetData, allSheetsData, profileData, on
     setIsFinished(true);
     const finalScore = score + (selectedChoice?.isCorrect && !showFeedback ? 1 : 0);
     const percentage = finalScore / questions.length;
-    
-    // Si bon score (>= 75%), on sauvegarde
+    const targetId = customQuizId || (isSong ? songData?.id : (instrumentModelData ? instrumentModelData.id : sheetData?.id));
+    const targetTitle = instrumentModelData?.nom || sheetData?.titre || songData?.titre || customQuizTitle || 'Atelier';
+
+    // 1. Enregistrement systématique de la tentative dans users/{uid}.quizHistory
+    if (profileData?.uid) {
+      try {
+        const userRef = doc(db, 'users', profileData.uid);
+        const historyEntry = {
+          date: new Date().toISOString(),
+          theme: instrumentModelData ? 'atelier' : (sheetData?.themeCulture || (isSong ? 'toadas' : 'pedagogie')),
+          difficulty: qcmGlobalConfig?.difficulty || 'medium',
+          score: finalScore,
+          total: questions.length,
+          targetId: targetId || null,
+          targetTitle: targetTitle,
+          type: instrumentModelData ? 'instrument_model' : (isSong ? 'song' : 'sheet'),
+          passed: percentage >= 0.75,
+          toadaId: isSong ? (songData?.id || null) : null
+        };
+        await setDoc(userRef, { quizHistory: arrayUnion(historyEntry) }, { merge: true });
+      } catch (err) {
+        console.error("Erreur lors de l'enregistrement dans quizHistory :", err);
+      }
+    }
+
+    // 2. Si bon score (>= 75%), on sauvegarde l'aisance dans le parcours
     if (percentage >= 0.75 && profileData?.uid && profileData?.groupId) {
-      const targetId = customQuizId || (isSong ? songData?.id : (instrumentModelData ? instrumentModelData.id : sheetData?.id));
       if (!targetId) return;
       setIsSaving(true);
       try {
@@ -127,7 +150,7 @@ export default function AutoEvalQuiz({ sheetData, allSheetsData, profileData, on
         await setDoc(parcoursRef, { evaluations: { ...currentEvals, [targetId]: newLevel } }, { merge: true });
         setSavedSuccess(true);
       } catch (err) {
-        console.error("Erreur de sauvegarde quiz :", err);
+        console.error("Erreur de sauvegarde parcours quiz :", err);
       } finally {
         setIsSaving(false);
       }

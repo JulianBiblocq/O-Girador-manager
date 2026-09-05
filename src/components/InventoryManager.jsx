@@ -22,6 +22,7 @@ import RepairDiagnosticModal from './inventory/RepairDiagnosticModal';
 import { useAssociationSettings } from '../hooks/useAssociationSettings';
 import InstrumentsCatalogBlock from './association-settings/blocks/InstrumentsCatalogBlock';
 import AccessoriesKitsBlock from './association-settings/blocks/AccessoriesKitsBlock';
+import CarpoolBlock from './association-settings/blocks/CarpoolBlock';
 
 
 const INSTRUMENT_TYPES = ['Alfaia', 'Caixa', 'Agbê', 'Gonguê', 'Mineiro', 'Apito', 'Timbal', 'Autre'];
@@ -38,9 +39,20 @@ const INSTRUMENT_ICONS = {
   Autre: 'favicon.svg'
 };
 
-export default function InventoryManager({ groupId, onBack, role, isSystemAdmin, hasAccessLogistique, profileData }) {
+export default function InventoryManager({ 
+  groupId, 
+  onBack, 
+  role, 
+  isSystemAdmin, 
+  hasAccessLogistique, 
+  hasAccessLutherie,
+  profileData,
+  activeTabProp,
+  hideSubTabs = false
+}) {
   const { t } = useTranslation();
   const { confirm } = useConfirm();
+  const shouldShowSubTabs = !hideSubTabs && !activeTabProp;
 
   const getInstrumentTypeLabel = (type) => {
     if (type === 'Autre') return t('inventory.other') || 'Autre';
@@ -56,8 +68,8 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin,
     }
   };
 
-  // Contrôle de sécurité : Mestre, Super-Admin, Admin Système ou Accès Logistique
-  const isAuthorized = role === 'mestre' || role === 'super-admin' || isSystemAdmin === true || hasAccessLogistique === true;
+  // Contrôle de sécurité : Mestre, Super-Admin, Admin Système, Accès Logistique ou Accès Lutherie
+  const isAuthorized = role === 'mestre' || role === 'super-admin' || isSystemAdmin === true || hasAccessLogistique === true || hasAccessLutherie === true;
 
   const { 
     formData: settings = {}, 
@@ -73,7 +85,14 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin,
   } = useSuppliesData(groupId, 'lutherie');
 
   const [showConfig, setShowConfig] = useState(false);
-  const [activeTab, setActiveTab] = useState('instruments'); // 'instruments' or 'parts'
+  const [activeTab, setActiveTab] = useState(activeTabProp || 'instruments');
+
+  React.useEffect(() => {
+    if (activeTabProp) {
+      setActiveTab(activeTabProp);
+    }
+  }, [activeTabProp]);
+
   const [diagnosticInstrument, setDiagnosticInstrument] = useState(null);
   const [newAccessoryText, setNewAccessoryText] = useState('');
 
@@ -427,162 +446,170 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin,
           </button>
           
           <h2 className="text-sm font-extrabold tracking-widest text-cordel-wood uppercase flex items-center gap-1">
-            <XiloCaixa size={14} /> {t('inventory.title')}
+            {activeTab === 'pupitres' ? (
+              <><XiloCaixa size={14} /> {t('tabLogisticsPupitres') || "Pupitres"}</>
+            ) : activeTab === 'kits' ? (
+              <>🎒 {t('tabLogisticsKits') || "Accessoires & Kits"}</>
+            ) : activeTab === 'carpool' ? (
+              <>🚗 {t('tabLogisticsCarpool') || "Covoiturage & Convois"}</>
+            ) : activeTab === 'projects' ? (
+              <><XiloChisel size={14} /> {t('tabInventoryProjects') || "Établi & Chantiers"}</>
+            ) : activeTab === 'parts' ? (
+              <><XiloChisel size={14} /> {t('tabInventoryParts') || "Pièces Détachées"}</>
+            ) : activeTab === 'supplies' ? (
+              <><XiloChisel size={14} /> {t('tabInventorySupplies') || "Matières Premières"}</>
+            ) : activeTab === 'tools' ? (
+              <><XiloChisel size={14} /> {t('tabWorkshopTools') || "Outillage"}</>
+            ) : (
+              <><XiloCaixa size={14} /> {t('tabInventory') || t('inventory.title') || "Instruments"}</>
+            )}
           </h2>
         </div>
 
-        {/* Configuration Section (Accordeon) */}
-        <CordelCard variant="default" useExtremeBorder={true} className="p-4 mb-2">
-          <div className="flex justify-between items-center cursor-pointer select-none" onClick={() => setShowConfig(!showConfig)}>
-            <h3 className="text-xs font-extrabold tracking-wider text-cordel-wood uppercase">
-              ⚙️ Paramètres & Configuration Logistique
-            </h3>
-            <span className="text-xs font-black">{showConfig ? '▲ Masquer' : '▼ Déployer'}</span>
-          </div>
-
-          {showConfig && (
-            <form onSubmit={(e) => { e.preventDefault(); handleSaveSettings(); }} className="flex flex-col gap-4 mt-4 pt-4 border-t border-dashed border-cordel-master-dark/20 text-left">
-              <InstrumentsCatalogBlock 
-                formData={settings}
-                handleChange={handleUpdateSetting}
-                saving={savingSettings}
-                t={t}
-              />
-              <AccessoriesKitsBlock 
-                formData={settings}
-                handleChange={handleUpdateSetting}
-                saving={savingSettings}
-                t={t}
-                groupId={groupId}
-                supplies={supplies}
-              />
-              <div className="flex justify-end mt-2 pt-3 border-t border-dashed border-cordel-master-dark/15">
-                <CordelButton
-                  type="submit"
-                  variant="ocre"
-                  useExtremeBorder={true}
-                  disabled={savingSettings}
-                  className="px-6 py-2 uppercase font-black tracking-wider text-xs shadow-[2px_2px_0px_0px_#181716]"
-                >
-                  {savingSettings ? "Enregistrement..." : "💾 Enregistrer Configuration"}
-                </CordelButton>
-              </div>
-            </form>
-          )}
-        </CordelCard>
-
-        {/* Mouvements en attente */}
-        {pendingMovements.length > 0 && (
-          <CordelCard variant="default" useExtremeBorder={true} className="p-4 mb-2 bg-cordel-ocre/10 border-cordel-ocre">
-            <h3 className="text-xs font-extrabold tracking-wider text-cordel-wood uppercase mb-3 flex items-center gap-2">
-              ⏳ Mouvements en attente ({pendingMovements.length})
-            </h3>
-            <div className="flex flex-col gap-3">
-              {pendingMovements.map(inst => {
-                const { type, fromUserId, toUserId, date, note } = inst.pendingMovement;
-                const fromName = usersMap[fromUserId] || 'Un membre';
-                const toName = toUserId ? (usersMap[toUserId] || 'un membre') : '';
-                
-                let message = '';
-                if (type === 'return_to_local') {
-                  message = `${fromName} déclare avoir rendu l'instrument au local.`;
-                } else if (type === 'transfer') {
-                  message = `${fromName} déclare avoir transmis l'instrument à ${toName}.`;
-                }
-
-                return (
-                  <div key={inst.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-white/50 border border-dashed border-cordel-master-dark/20 rounded">
-                    <div className="flex flex-col gap-1 text-left">
-                      <div className="text-xs font-bold text-encre-noire flex items-center gap-1.5">
-                        <img src={INSTRUMENT_ICONS[inst.type] || INSTRUMENT_ICONS['Autre']} alt={inst.type} className="w-4 h-4 object-contain opacity-70" />
-                        <span>{inst.nom}</span>
-                      </div>
-                      <div className="text-[10px] text-cordel-master-dark/80">{message}</div>
-                      {note && (
-                        <div className="text-[9px] italic text-cordel-wood bg-cordel-wood/5 p-1.5 rounded mt-1 border-l-2 border-cordel-wood">
-                          "{note}"
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <button 
-                        onClick={() => handleRejectMovement(inst)}
-                        className="p-1.5 bg-cordel-rouge/10 text-cordel-rouge rounded hover:bg-cordel-rouge/20 border border-cordel-rouge/30 transition-colors"
-                        title="Refuser"
-                      >
-                        <XiloClose size={12} />
-                      </button>
-                      <button 
-                        onClick={() => handleApproveMovement(inst)}
-                        className="px-3 py-1 bg-cordel-vert text-white rounded text-[10px] font-bold uppercase tracking-wider shadow-[1px_1px_0px_0px_#181716] hover:brightness-110 active:translate-y-[1px] active:shadow-none transition-all"
-                      >
-                        ✅ Valider
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
+        {/* Barre de sous-onglets interne (masquée en intégration de pôle ou si activeTabProp est fourni) */}
+        {shouldShowSubTabs && (
+          <div className="border-b-2 border-cordel-master-dark/20">
+            <div className="flex gap-1 overflow-x-auto">
+              <button
+                onClick={() => setActiveTab('instruments')}
+                className={`px-4 py-3 font-extrabold uppercase tracking-widest text-xs transition-colors rounded-t-lg border-b-2 ${
+                  activeTab === 'instruments'
+                    ? 'bg-cordel-bg text-cordel-wood border-cordel-wood'
+                    : 'text-cordel-master-dark hover:text-cordel-wood border-transparent hover:bg-white/30'
+                }`}
+              >
+                Instruments
+              </button>
+              <button
+                onClick={() => setActiveTab('pupitres')}
+                className={`px-4 py-3 font-extrabold uppercase tracking-widest text-[10px] transition-colors rounded-t-lg border-b-2 ${
+                  activeTab === 'pupitres'
+                    ? 'bg-cordel-bg text-cordel-wood border-cordel-wood'
+                    : 'text-cordel-master-dark hover:text-cordel-wood border-transparent hover:bg-white/30'
+                }`}
+              >
+                Pupitres
+              </button>
+              <button
+                onClick={() => setActiveTab('kits')}
+                className={`px-4 py-3 font-extrabold uppercase tracking-widest text-[10px] transition-colors rounded-t-lg border-b-2 ${
+                  activeTab === 'kits'
+                    ? 'bg-cordel-bg text-cordel-wood border-cordel-wood'
+                    : 'text-cordel-master-dark hover:text-cordel-wood border-transparent hover:bg-white/30'
+                }`}
+              >
+                Kits & Accessoires
+              </button>
+              <button
+                onClick={() => setActiveTab('carpool')}
+                className={`px-4 py-3 font-extrabold uppercase tracking-widest text-[10px] transition-colors rounded-t-lg border-b-2 ${
+                  activeTab === 'carpool'
+                    ? 'bg-cordel-bg text-cordel-wood border-cordel-wood'
+                    : 'text-cordel-master-dark hover:text-cordel-wood border-transparent hover:bg-white/30'
+                }`}
+              >
+                Covoiturage & Convois
+              </button>
+              <button
+                onClick={() => setActiveTab('parts')}
+                className={`px-4 py-3 font-extrabold uppercase tracking-widest text-[10px] transition-colors rounded-t-lg border-b-2 ${
+                  activeTab === 'parts'
+                    ? 'bg-cordel-bg text-cordel-wood border-cordel-wood'
+                    : 'text-cordel-master-dark hover:text-cordel-wood border-transparent hover:bg-white/30'
+                }`}
+              >
+                Pièces Détachées
+              </button>
+              <button
+                onClick={() => setActiveTab('projects')}
+                className={`px-4 py-3 font-extrabold uppercase tracking-widest text-[10px] transition-colors rounded-t-lg border-b-2 ${
+                  activeTab === 'projects'
+                    ? 'bg-cordel-bg text-cordel-wood border-cordel-wood'
+                    : 'text-cordel-master-dark hover:text-cordel-wood border-transparent hover:bg-white/30'
+                }`}
+              >
+                Projets
+              </button>
+              <button
+                onClick={() => setActiveTab('supplies')}
+                className={`px-4 py-3 font-extrabold uppercase tracking-widest text-[10px] transition-colors rounded-t-lg border-b-2 ${
+                  activeTab === 'supplies'
+                    ? 'bg-cordel-bg text-cordel-wood border-cordel-wood'
+                    : 'text-cordel-master-dark hover:text-cordel-wood border-transparent hover:bg-white/30'
+                }`}
+              >
+                Matières Premières
+              </button>
+              <button
+                onClick={() => setActiveTab('tools')}
+                className={`px-4 py-3 font-extrabold uppercase tracking-widest text-[10px] transition-colors rounded-t-lg border-b-2 ${
+                  activeTab === 'tools'
+                    ? 'bg-cordel-bg text-cordel-wood border-cordel-wood'
+                    : 'text-cordel-master-dark hover:text-cordel-wood border-transparent hover:bg-white/30'
+                }`}
+              >
+                Outillage
+              </button>
             </div>
-          </CordelCard>
+          </div>
         )}
 
-        {/* Tab Switcher */}
-        <div className="border-b-2 border-cordel-master-dark/20">
-          <div className="flex gap-1 overflow-x-auto">
-            <button
-              onClick={() => setActiveTab('instruments')}
-              className={`px-4 py-3 font-extrabold uppercase tracking-widest text-xs transition-colors rounded-t-lg border-b-2 ${
-                activeTab === 'instruments'
-                  ? 'bg-cordel-bg text-cordel-wood border-cordel-wood'
-                  : 'text-cordel-master-dark hover:text-cordel-wood border-transparent hover:bg-white/30'
-              }`}
-            >
-              Instruments
-            </button>
-            <button
-              onClick={() => setActiveTab('parts')}
-              className={`px-4 py-3 font-extrabold uppercase tracking-widest text-[10px] transition-colors rounded-t-lg border-b-2 ${
-                activeTab === 'parts'
-                  ? 'bg-cordel-bg text-cordel-wood border-cordel-wood'
-                  : 'text-cordel-master-dark hover:text-cordel-wood border-transparent hover:bg-white/30'
-              }`}
-            >
-              Pièces Détachées
-            </button>
-            <button
-              onClick={() => setActiveTab('projects')}
-              className={`px-4 py-3 font-extrabold uppercase tracking-widest text-[10px] transition-colors rounded-t-lg border-b-2 ${
-                activeTab === 'projects'
-                  ? 'bg-cordel-bg text-cordel-wood border-cordel-wood'
-                  : 'text-cordel-master-dark hover:text-cordel-wood border-transparent hover:bg-white/30'
-              }`}
-            >
-              Projets
-            </button>
-            <button
-              onClick={() => setActiveTab('supplies')}
-              className={`px-4 py-3 font-extrabold uppercase tracking-widest text-[10px] transition-colors rounded-t-lg border-b-2 ${
-                activeTab === 'supplies'
-                  ? 'bg-cordel-bg text-cordel-wood border-cordel-wood'
-                  : 'text-cordel-master-dark hover:text-cordel-wood border-transparent hover:bg-white/30'
-              }`}
-            >
-              Matières Premières
-            </button>
-            <button
-              onClick={() => setActiveTab('tools')}
-              className={`px-4 py-3 font-extrabold uppercase tracking-widest text-[10px] transition-colors rounded-t-lg border-b-2 ${
-                activeTab === 'tools'
-                  ? 'bg-cordel-bg text-cordel-wood border-cordel-wood'
-                  : 'text-cordel-master-dark hover:text-cordel-wood border-transparent hover:bg-white/30'
-              }`}
-            >
-              Outillage
-            </button>
-          </div>
-        </div>
-
+        {/* CONTENU ONGLET: INSTRUMENTS */}
         <div className={activeTab === 'instruments' ? 'block' : 'hidden'}>
+          {/* Mouvements en attente réservés aux instruments */}
+          {pendingMovements.length > 0 && (
+            <CordelCard variant="default" useExtremeBorder={true} className="p-4 mb-4 bg-cordel-ocre/10 border-cordel-ocre">
+              <h3 className="text-xs font-extrabold tracking-wider text-cordel-wood uppercase mb-3 flex items-center gap-2">
+                ⏳ Mouvements en attente ({pendingMovements.length})
+              </h3>
+              <div className="flex flex-col gap-3">
+                {pendingMovements.map(inst => {
+                  const { type, fromUserId, toUserId, date, note } = inst.pendingMovement;
+                  const fromName = usersMap[fromUserId] || 'Un membre';
+                  const toName = toUserId ? (usersMap[toUserId] || 'un membre') : '';
+                  
+                  let message = '';
+                  if (type === 'return_to_local') {
+                    message = `${fromName} déclare avoir rendu l'instrument au local.`;
+                  } else if (type === 'transfer') {
+                    message = `${fromName} déclare avoir transmis l'instrument à ${toName}.`;
+                  }
+
+                  return (
+                    <div key={inst.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-white/50 border border-dashed border-cordel-master-dark/20 rounded">
+                      <div className="flex flex-col gap-1 text-left">
+                        <div className="text-xs font-bold text-encre-noire flex items-center gap-1.5">
+                          <img src={INSTRUMENT_ICONS[inst.type] || INSTRUMENT_ICONS['Autre']} alt={inst.type} className="w-4 h-4 object-contain opacity-70" />
+                          <span>{inst.nom}</span>
+                        </div>
+                        <div className="text-[10px] text-cordel-master-dark/80">{message}</div>
+                        {note && (
+                          <div className="text-[9px] italic text-cordel-wood bg-cordel-wood/5 p-1.5 rounded mt-1 border-l-2 border-cordel-wood">
+                            "{note}"
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <button 
+                          onClick={() => handleRejectMovement(inst)}
+                          className="p-1.5 bg-cordel-rouge/10 text-cordel-rouge rounded hover:bg-cordel-rouge/20 border border-cordel-rouge/30 transition-colors"
+                          title="Refuser"
+                        >
+                          <XiloClose size={12} />
+                        </button>
+                        <button 
+                          onClick={() => handleApproveMovement(inst)}
+                          className="px-3 py-1 bg-cordel-vert text-white rounded text-[10px] font-bold uppercase tracking-wider shadow-[1px_1px_0px_0px_#181716] hover:brightness-110 active:translate-y-[1px] active:shadow-none transition-all"
+                        >
+                          ✅ Valider
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </CordelCard>
+          )}
           {/* Form view */}
         {isFormOpen ? (
           <CordelCard variant="default" useExtremeBorder={true} className="py-5 px-6 relative">
@@ -1385,6 +1412,106 @@ export default function InventoryManager({ groupId, onBack, role, isSystemAdmin,
               models={instrumentModels}
               membersList={usersList}
             />
+          </div>
+        )}
+
+        {/* TAB: GESTION DES PUPITRES ET CATALOGUE INSTRUMENTS */}
+        {activeTab === 'pupitres' && (
+          <div className="bg-cordel-bg p-5 rounded-b-lg border-2 border-encre-noire shadow-[4px_4px_0px_0px_#181716] flex flex-col gap-4 text-left">
+            <div>
+              <h3 className="text-xs uppercase font-extrabold tracking-wider text-cordel-wood mb-1">
+                🎺 Gestion des Pupitres & Catalogue des Instruments
+              </h3>
+              <p className="text-[10px] text-cordel-master-dark/75 leading-relaxed">
+                Configurez les familles de pupitres, les attributions de couleurs, les liens d'instruments et les modèles du parc instrumental.
+              </p>
+            </div>
+            <form onSubmit={(e) => { e.preventDefault(); handleSaveSettings(); }} className="flex flex-col gap-4">
+              <InstrumentsCatalogBlock 
+                formData={settings}
+                handleChange={handleUpdateSetting}
+                saving={savingSettings}
+                t={t}
+              />
+              <div className="flex justify-end pt-3 border-t border-dashed border-cordel-master-dark/15">
+                <CordelButton
+                  type="submit"
+                  variant="ocre"
+                  useExtremeBorder={true}
+                  disabled={savingSettings}
+                  className="px-6 py-2 uppercase font-black tracking-wider text-xs shadow-[2px_2px_0px_0px_#181716]"
+                >
+                  {savingSettings ? "Enregistrement..." : "💾 Enregistrer les Pupitres"}
+                </CordelButton>
+              </div>
+            </form>
+          </div>
+        )}
+
+        {/* TAB: KITS ET ACCESSOIRES LOGISTIQUE */}
+        {activeTab === 'kits' && (
+          <div className="bg-cordel-bg p-5 rounded-b-lg border-2 border-encre-noire shadow-[4px_4px_0px_0px_#181716] flex flex-col gap-4 text-left">
+            <div>
+              <h3 className="text-xs uppercase font-extrabold tracking-wider text-cordel-wood mb-1">
+                🎒 Gestion des Kits & Accessoires Logistiques
+              </h3>
+              <p className="text-[10px] text-cordel-master-dark/75 leading-relaxed">
+                Configurez les kits de transport, housses, mailloches, sangles et accessoires opérationnels par pupitre.
+              </p>
+            </div>
+            <form onSubmit={(e) => { e.preventDefault(); handleSaveSettings(); }} className="flex flex-col gap-4">
+              <AccessoriesKitsBlock 
+                formData={settings}
+                handleChange={handleUpdateSetting}
+                saving={savingSettings}
+                t={t}
+                groupId={groupId}
+                supplies={supplies}
+              />
+              <div className="flex justify-end pt-3 border-t border-dashed border-cordel-master-dark/15">
+                <CordelButton
+                  type="submit"
+                  variant="ocre"
+                  useExtremeBorder={true}
+                  disabled={savingSettings}
+                  className="px-6 py-2 uppercase font-black tracking-wider text-xs shadow-[2px_2px_0px_0px_#181716]"
+                >
+                  {savingSettings ? "Enregistrement..." : "💾 Enregistrer les Kits"}
+                </CordelButton>
+              </div>
+            </form>
+          </div>
+        )}
+
+        {/* TAB: COVOITURAGE & CONVOIS */}
+        {activeTab === 'carpool' && (
+          <div className="bg-cordel-bg p-5 rounded-b-lg border-2 border-encre-noire shadow-[4px_4px_0px_0px_#181716] flex flex-col gap-4 text-left">
+            <div>
+              <h3 className="text-xs uppercase font-extrabold tracking-wider text-cordel-wood mb-1">
+                🚗 Configuration Covoiturage & Convois
+              </h3>
+              <p className="text-[10px] text-cordel-master-dark/75 leading-relaxed">
+                Définissez le barème kilométrique, le point de rassemblement habituel pour les départs en convoi et les règles de calcul.
+              </p>
+            </div>
+            <form onSubmit={(e) => { e.preventDefault(); handleSaveSettings(); }} className="flex flex-col gap-4">
+              <CarpoolBlock 
+                formData={settings}
+                handleChange={handleUpdateSetting}
+                saving={savingSettings}
+              />
+              <div className="flex justify-end pt-3 border-t border-dashed border-cordel-master-dark/15">
+                <CordelButton
+                  type="submit"
+                  variant="ocre"
+                  useExtremeBorder={true}
+                  disabled={savingSettings}
+                  className="px-6 py-2 uppercase font-black tracking-wider text-xs shadow-[2px_2px_0px_0px_#181716]"
+                >
+                  {savingSettings ? "Enregistrement..." : "💾 Enregistrer les Paramètres Covoiturage"}
+                </CordelButton>
+              </div>
+            </form>
           </div>
         )}
 

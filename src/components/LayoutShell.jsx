@@ -19,7 +19,9 @@ import {
   XiloCalendar,
   XiloCompass,
   XiloHanger,
-  XiloCaixa
+  XiloCaixa,
+  XiloQuill,
+  XiloScissors
 } from './XiloIcons';
 import { useTranslation } from './LanguageContext';
 import { usePresence } from '../hooks/usePresence';
@@ -109,6 +111,7 @@ export default function LayoutShell({
   const onlineUserIds = React.useMemo(() => new Set(onlineMembers.map(m => m.id || m.uid)), [onlineMembers]);
   
   const isSystemOrSuperAdminOrMestre = profileData?.isSystemAdmin || profileData?.role === 'super-admin' || profileData?.role === 'mestre';
+  const isPrivileged = profileData?.isSystemAdmin === true || ['super-admin', 'admin', 'mestre'].includes(profileData?.role);
   const isMasterKeyActive = isSystemOrSuperAdminOrMestre && breakGlassActive;
   const userTags = resolveEffectiveUserTags(profileData?.tags || [], tagsDisponibles);
   const { hasPendingMembers, pendingCount } = usePendingMembersNotification(profileData);
@@ -121,6 +124,7 @@ export default function LayoutShell({
     if (poleId === 'tresorerie' && enabledModules.tresorerie === false) return false;
     if (poleId === 'logistique' && enabledModules.logistique === false && enabledModules.commandes === false) return false;
     if (poleId === 'vestiaire' && enabledModules.vestiaire === false) return false;
+    if (poleId === 'costumerie' && enabledModules.vestiaire === false && enabledModules.costumerie === false) return false;
     if (poleId === 'mestre' && enabledModules.mestre === false) return false;
 
     // Vérifier Tab-level module basculer
@@ -128,11 +132,11 @@ export default function LayoutShell({
     if (['dashboard-finance', 'cotisations', 'events-finances', 'operations-diverses', 'frais-km', 'reports-exports'].includes(tabId) && enabledModules.tresorerie === false) return false;
     if (tabId === 'inventory' && enabledModules.logistique === false) return false;
     if (tabId === 'orders-manager' && enabledModules.commandes === false) return false;
-    if (['vestiaire', 'wardrobe-inventory', 'wardrobe-couture', 'wardrobe-sizes'].includes(tabId) && enabledModules.vestiaire === false) return false;
+    if (['vestiaire', 'wardrobe-inventory', 'wardrobe-couture', 'wardrobe-sizes', 'wardrobe-projects', 'wardrobe-models', 'wardrobe-pieces', 'wardrobe-supplies', 'wardrobe-tools', 'varal-costumerie'].includes(tabId) && enabledModules.vestiaire === false && enabledModules.costumerie === false) return false;
     if (['studio-social', 'varal-manager'].includes(tabId) && enabledModules.studioSocial === false) return false;
     if (tabId === 'reunion-manager' && enabledModules.reunions === false) return false;
     if (['forum', 'mestre-forum-channels'].includes(tabId) && enabledModules.forum === false) return false;
-    if (['mestre-sante-troupe', 'mestre-pedagogy-manager', 'mestre-orientation', 'mestre-events', 'mestre-stage-layout', 'mestre-sequenceur', 'mestre-workshops', 'mestre-mot-mestre'].includes(tabId) && enabledModules.mestre === false) return false;
+    if (['mestre-sante-troupe', 'mestre-pedagogy-manager', 'mestre-orientation', 'mestre-events', 'mestre-stage-layout', 'mestre-sequenceur', 'mestre-mot-mestre'].includes(tabId) && enabledModules.mestre === false) return false;
 
     if (tabId === 'mon-parcours') {
       if (enabledModules.monParcoursGlobal === false) return false;
@@ -158,6 +162,7 @@ export default function LayoutShell({
 
     if (poleId === 'tresorerie' && enabledModules?.tresorerie === false) return false;
     if (poleId === 'logistique' && enabledModules?.logistique === false && enabledModules?.commandes === false) return false;
+    if (poleId === 'costumerie' && enabledModules?.vestiaire === false && enabledModules?.costumerie === false) return false;
 
     if (poleId === 'mestre' && enabledModules?.mestre === false) return false;
     if (poleId === 'pedagogie' && enabledModules?.mestre === false && enabledModules?.studioSocial === false) return false;
@@ -218,9 +223,14 @@ export default function LayoutShell({
         return <XiloMegaphone size={size} />;
       case 'tresorerie':
         return <XiloCoin size={size} />;
+      case 'secretariat':
+        return <XiloQuill size={size} />;
       case 'logistique':
         return <XiloBox size={size} />;
-
+      case 'lutherie':
+        return <XiloChisel size={size} />;
+      case 'costumerie':
+        return <XiloScissors size={size} />;
       case 'studio':
         return <XiloMegaphone size={size} />;
       case 'pedagogie':
@@ -503,6 +513,9 @@ export default function LayoutShell({
                   const isRestrictedTitle = t('common.accessRestricted') || "Accès restreint";
 
                   if (!isUnlocked) {
+                    // Masquage strict si l'utilisateur n'a pas de rôle privilégié (zéro cadenas, zéro bouton grisé)
+                    if (!isPrivileged) return null;
+
                     return (
                       <button
                         key={pole.id}
@@ -843,6 +856,9 @@ export default function LayoutShell({
                     const isRestrictedTitle = t('common.accessRestricted') || "Accès restreint";
 
                     if (!isUnlocked) {
+                      // Masquage strict si l'utilisateur n'a pas de rôle privilégié (zéro cadenas, zéro bouton grisé)
+                      if (!isPrivileged) return null;
+
                       return (
                         <button
                           key={pole.id}

@@ -793,7 +793,7 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
       </div>
 
       {/* 1. Jauges des Quotas (Bandeau visuel des pupitres) */}
-      <CordelCard variant="default" useExtremeBorder={false} className="flex flex-col gap-3">
+      <CordelCard data-tour="mestre-orientation-gauges" variant="default" useExtremeBorder={false} className="flex flex-col gap-3">
         <h3 className="font-bold text-xs uppercase tracking-wider text-cordel-wood border-b border-dashed border-cordel-master-dark/15 pb-1 flex items-center justify-between">
           <span>📊 Quotas & Effectifs par Pupitre (Instruments Principaux)</span>
           <span className="text-[9px] text-cordel-master-dark/70 font-semibold normal-case">
@@ -867,7 +867,7 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
       </CordelCard>
 
       {/* 2. Tableau d'Affectation */}
-      <CordelCard variant="default" useExtremeBorder={false} className="flex flex-col gap-3">
+      <CordelCard data-tour="mestre-orientation-table" variant="default" useExtremeBorder={false} className="flex flex-col gap-3">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-dashed border-cordel-master-dark/15 pb-2">
           <div className="flex items-center gap-2 flex-wrap">
             <h3 className="font-bold text-xs uppercase tracking-wider text-cordel-wood">
@@ -928,7 +928,7 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
               <tr className="border-b-2 border-dashed border-cordel-master-dark/20 text-[9.5px] uppercase tracking-wider font-extrabold text-cordel-wood">
                 <th className="py-2 px-2">Membre</th>
                 <th className="py-2 px-2">Inst. Maîtrisé (Historique)</th>
-                <th className="py-2 px-2">Orientation Saison & Vœux</th>
+                <th data-tour="mestre-orientation-assignment" className="py-2 px-2">Orientation Saison & Vœux</th>
                 <th className="py-2 px-2 text-right">Danse & Niveau</th>
               </tr>
             </thead>
@@ -1103,6 +1103,7 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
                               <div className="flex flex-wrap gap-1.5">
                                 {wishesList.map((wish, idx) => (
                                   <button
+                                    data-tour="mestre-orientation-assignment"
                                     key={`${wish}-${idx}`}
                                     type="button"
                                     onClick={() => handleQuickValidate(m, wish)}

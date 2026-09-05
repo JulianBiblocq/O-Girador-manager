@@ -225,6 +225,8 @@ const getCultureCategory = (fiche) => {
 export default function MonCarnetAisance({
   evaluations,
   handleSetEvaluation,
+  revisionsDemandees = {},
+  handleToggleRevisionDemandee = null,
   rhythms,
   rhythmsJsonData,
   rhythmsMetadata,
@@ -433,9 +435,30 @@ export default function MonCarnetAisance({
                 <CordelCard key={rhythm.id} className="p-5 flex flex-col gap-4">
                   <div className="flex justify-between items-start border-b border-dashed border-cordel-master-dark/20 pb-2">
                     <div className="flex flex-col gap-1">
-                      <h3 className="text-sm font-black uppercase tracking-wider text-encre-noire">
-                        {rhythm.titre}
-                      </h3>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h3 className="text-sm font-black uppercase tracking-wider text-encre-noire">
+                          {rhythm.titre}
+                        </h3>
+                        {handleToggleRevisionDemandee && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              handleToggleRevisionDemandee(rhythm.id);
+                            }}
+                            className={`text-[9px] font-black uppercase px-2 py-0.5 rounded border transition-all flex items-center gap-1 cursor-pointer ${
+                              revisionsDemandees[rhythm.id]
+                                ? 'bg-[var(--color-cordel-vert,#2d6a4f)] text-white border-[#1b4332] shadow-xs'
+                                : 'bg-[#fdfaf2] text-cordel-master-dark border-encre-noire/30 hover:bg-neutral-100'
+                            }`}
+                            title={revisionsDemandees[rhythm.id] ? "Demande de révision active pour ce rythme" : "Signaler au Mestre le besoin de réviser ce rythme"}
+                          >
+                            <span>🙋</span>
+                            <span>{revisionsDemandees[rhythm.id] ? 'Révision demandée ✓' : 'Demander à réviser'}</span>
+                          </button>
+                        )}
+                      </div>
                       {autoParsed.instrumentsPresents && autoParsed.instrumentsPresents.length > 0 && (
                         <div className="flex flex-wrap gap-1 mt-0.5">
                           {autoParsed.instrumentsPresents.map(inst => (
@@ -505,9 +528,30 @@ export default function MonCarnetAisance({
               <CordelCard key={rhythm.id} className="p-5 flex flex-col gap-4">
                 <div className="flex justify-between items-start border-b border-dashed border-cordel-master-dark/20 pb-2">
                   <div className="flex flex-col gap-1">
-                    <h3 className="text-sm font-black uppercase tracking-wider text-encre-noire">
-                      {rhythm.titre}
-                    </h3>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="text-sm font-black uppercase tracking-wider text-encre-noire">
+                        {rhythm.titre}
+                      </h3>
+                      {handleToggleRevisionDemandee && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleToggleRevisionDemandee(`danse_${rhythm.id}`);
+                          }}
+                          className={`text-[9px] font-black uppercase px-2 py-0.5 rounded border transition-all flex items-center gap-1 cursor-pointer ${
+                            revisionsDemandees[`danse_${rhythm.id}`]
+                              ? 'bg-[var(--color-cordel-vert,#2d6a4f)] text-white border-[#1b4332] shadow-xs'
+                              : 'bg-[#fdfaf2] text-cordel-master-dark border-encre-noire/30 hover:bg-neutral-100'
+                          }`}
+                          title={revisionsDemandees[`danse_${rhythm.id}`] ? "Demande de révision active pour cette danse" : "Signaler au Mestre le besoin de réviser cette danse"}
+                        >
+                          <span>🙋</span>
+                          <span>{revisionsDemandees[`danse_${rhythm.id}`] ? 'Révision demandée ✓' : 'Demander à réviser'}</span>
+                        </button>
+                      )}
+                    </div>
                   </div>
                   {/* Évaluation danse = préfixée danse_ pour différencier de la percussion */}
                   <ComfortBar itemId={`danse_${rhythm.id}`} evaluations={evaluations} handleSetEvaluation={handleSetEvaluation} comfortLevels={comfortLevels} />
@@ -549,7 +593,12 @@ export default function MonCarnetAisance({
           ) : (
             songs.map(songDoc => (
               <CordelCard key={songDoc.id} variant="default" className="relative p-5 flex flex-col gap-4">
-                <SongCard song={songDoc} />
+                <SongCard 
+                  song={songDoc} 
+                  profileData={profileData}
+                  isRevisionRequested={!!revisionsDemandees[songDoc.id]}
+                  onToggleRevision={handleToggleRevisionDemandee ? () => handleToggleRevisionDemandee(songDoc.id) : null}
+                />
                 {/* Barre d'aisance en overlay (émojis uniquement) */}
                 <div className="absolute top-4 right-4 flex gap-1 z-10 bg-white p-1 rounded border border-encre-noire/20 shadow-sm">
                   {comfortLevels.map(lvl => (
@@ -568,12 +617,26 @@ export default function MonCarnetAisance({
                     </button>
                   ))}
                 </div>
-                {/* Bouton Quiz ciblé sur cette Toada — pont vers AutoEvalQuizContainer */}
-                <div className="flex justify-end mt-1">
+                {/* Boutons d'action sous la carte du chant */}
+                <div className="flex flex-wrap items-center justify-between gap-2 mt-1">
+                  {handleToggleRevisionDemandee && (
+                    <button
+                      type="button"
+                      onClick={() => handleToggleRevisionDemandee(songDoc.id)}
+                      className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-1.5 rounded border transition-all flex items-center gap-1 cursor-pointer ${
+                        revisionsDemandees[songDoc.id]
+                          ? 'bg-[var(--color-cordel-vert,#2d6a4f)] text-white border-[#1b4332] shadow-xs'
+                          : 'bg-white text-cordel-master-dark border-encre-noire/30 hover:bg-neutral-100'
+                      }`}
+                    >
+                      <span>🙋</span>
+                      <span>{revisionsDemandees[songDoc.id] ? 'Révision demandée ✓' : 'Demander à réviser'}</span>
+                    </button>
+                  )}
                   <button
                     type="button"
                     onClick={() => setQuizToadaId(songDoc.id)}
-                    className="text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded border-2 border-dashed border-cordel-wood/40 text-cordel-wood bg-cordel-wood/5 hover:bg-cordel-wood/15 hover:border-cordel-wood/70 transition-all flex items-center gap-1.5"
+                    className="ml-auto text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded border-2 border-dashed border-cordel-wood/40 text-cordel-wood bg-cordel-wood/5 hover:bg-cordel-wood/15 hover:border-cordel-wood/70 transition-all flex items-center gap-1.5 cursor-pointer"
                   >
                     🎯 Quiz sur cette Toada
                   </button>

@@ -1057,6 +1057,59 @@ export const XiloPalette = ({ size = 16, className = '', ...props }) => (
   </svg>
 );
 
+// 🪶 Plume et Registre (Secrétariat & Statuts) - Style Xilogravura Cordel
+export const XiloQuill = ({ size = 16, className = '', ...props }) => (
+  <svg 
+    width={size} 
+    height={size} 
+    viewBox="0 0 24 24" 
+    fill="none" 
+    stroke="currentColor" 
+    strokeWidth="2.2" 
+    strokeLinecap="round" 
+    strokeLinejoin="round" 
+    className={`xilo-icon ${className}`} 
+    {...props}
+  >
+    {/* Corps de la plume de calligraphie */}
+    <path d="M20.5 3.5 C16 4 11 8 8.5 13 C8 14 7.8 15.5 8 16.5 L4 20.5 L6.5 21 L10 17.5 C11 17.7 12.5 17.5 13.5 17 C18.5 14.5 22.5 9.5 23 5 C23 4.2 21.8 3 20.5 3.5 Z" />
+    {/* Nervure centrale de la plume */}
+    <path d="M17.5 6.5 L8.5 15.5" strokeWidth="1.6" />
+    {/* Barbules et hachures de gravure */}
+    <path d="M14.5 5 C13 7.5 11 9 11 9" strokeWidth="1.3" />
+    <path d="M19 9.5 C16.5 11.5 15 13.5 15 13.5" strokeWidth="1.3" />
+    {/* Encre et ligne de registre */}
+    <path d="M2.5 21.5 C4 21.5 6 21 7.5 21" strokeWidth="2.4" />
+  </svg>
+);
+
+// ✂️ Ciseaux Tailleur (Costumerie & Confection textile) - Style Xilogravura Cordel
+export const XiloScissors = ({ size = 16, className = '', ...props }) => (
+  <svg 
+    width={size} 
+    height={size} 
+    viewBox="0 0 24 24" 
+    fill="none" 
+    stroke="currentColor" 
+    strokeWidth="2.2" 
+    strokeLinecap="round" 
+    strokeLinejoin="round" 
+    className={`xilo-icon ${className}`} 
+    {...props}
+  >
+    {/* Anneaux de préhension asymétriques Cordel */}
+    <circle cx="6" cy="6" r="3" strokeWidth="2.2" />
+    <circle cx="6" cy="18" r="3" strokeWidth="2.2" />
+    {/* Lames croisées affûtées */}
+    <path d="M20 4 L8.5 15.5" strokeWidth="2.2" />
+    <path d="M14.5 9.5 L20 15" strokeWidth="2.2" />
+    <path d="M8.5 8.5 L12 12" strokeWidth="2.2" />
+    {/* Vis de pivot de cisaille */}
+    <circle cx="12" cy="12" r="1" fill="currentColor" />
+  </svg>
+);
+
+
 
 
 

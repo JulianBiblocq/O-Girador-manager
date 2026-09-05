@@ -35,10 +35,11 @@ export function useEventFinance(event, groupId) {
         const list = [];
         snapshot.forEach((docSnap) => {
           const data = docSnap.data();
-          // Vérification du rattachement par eventId ou gigId
+          // Vérification du rattachement par eventId ou gigId (avec support rétrocompatible createdFromGigId)
+          const targetGigId = event.gigId || event.createdFromGigId;
           if (
             data.eventId === event.id ||
-            (event.gigId && data.gigId === event.gigId) ||
+            (targetGigId && data.gigId === targetGigId) ||
             (event.devisId && docSnap.id === event.devisId) ||
             (event.factureId && docSnap.id === event.factureId) ||
             (event.invoiceId && docSnap.id === event.invoiceId)
@@ -67,7 +68,7 @@ export function useEventFinance(event, groupId) {
       unsubscribeInvoices();
       unsubscribeAssoc();
     };
-  }, [groupId, event?.id, event?.gigId, event?.devisId, event?.factureId, event?.invoiceId]);
+  }, [groupId, event?.id, event?.gigId, event?.createdFromGigId, event?.devisId, event?.factureId, event?.invoiceId]);
 
   // 3. Détermination du document lié (Priorité Facture > Devis)
   const linkedInvoice = useMemo(() => {

@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { collection, onSnapshot } from 'firebase/firestore';
+import { db } from '../../firebase';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 
@@ -17,20 +19,42 @@ export default function GigFormModal({
   onClose,
   onSubmit,
   initialData = null,
-  saving = false
+  saving = false,
+  groupId
 }) {
   const [formData, setFormData] = useState({
     eventName: '',
     organizer: '',
+    contactId: null,
     contactEmail: '',
     contactPhone: '',
     date: '',
     location: '',
     amount: '',
+    heureArrivee: '',
+    heureBalances: '',
+    heurePassage: '',
     nextRelanceDate: '',
     status: '1_demande',
     notes: ''
   });
+
+  const [contacts, setContacts] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+
+  // Écoute en temps réel du carnet CRM pour autocomplétion
+  useEffect(() => {
+    if (!isOpen || !groupId) return;
+    const contactsRef = collection(db, 'associations', groupId, 'contacts_diffusion');
+    const unsub = onSnapshot(
+      contactsRef,
+      (snap) => {
+        setContacts(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      },
+      (err) => console.warn("GigFormModal - Erreur contacts CRM :", err)
+    );
+    return () => unsub();
+  }, [isOpen, groupId]);
 
   useEffect(() => {
     if (isOpen) {
@@ -38,11 +62,15 @@ export default function GigFormModal({
         setFormData({
           eventName: initialData.eventName || '',
           organizer: initialData.organizer || '',
+          contactId: initialData.contactId || null,
           contactEmail: initialData.contactEmail || '',
           contactPhone: initialData.contactPhone || '',
           date: initialData.date || '',
           location: initialData.location || '',
-          amount: initialData.amount || '',
+          amount: initialData.amount !== undefined ? initialData.amount : '',
+          heureArrivee: initialData.heureArrivee || '',
+          heureBalances: initialData.heureBalances || '',
+          heurePassage: initialData.heurePassage || '',
           nextRelanceDate: initialData.nextRelanceDate || '',
           status: initialData.status || '1_demande',
           notes: initialData.notes || ''
@@ -51,20 +79,57 @@ export default function GigFormModal({
         setFormData({
           eventName: '',
           organizer: '',
+          contactId: null,
           contactEmail: '',
           contactPhone: '',
           date: '',
           location: '',
           amount: '',
+          heureArrivee: '',
+          heureBalances: '',
+          heurePassage: '',
           nextRelanceDate: '',
           status: '1_demande',
           notes: ''
         });
       }
+      setShowSuggestions(false);
     }
   }, [isOpen, initialData]);
 
   if (!isOpen) return null;
+
+  const handleOrganizerChange = (e) => {
+    const val = e.target.value;
+    setFormData(prev => ({
+      ...prev,
+      organizer: val,
+      contactId: null // Réinitialise le lien strict en cas de modification libre
+    }));
+    setShowSuggestions(val.trim().length > 0);
+  };
+
+  const handleSelectContact = (contact) => {
+    const name = contact.nom_structure || contact.nom_contact || '';
+    setFormData(prev => ({
+      ...prev,
+      organizer: name,
+      contactId: contact.id,
+      contactEmail: contact.email || prev.contactEmail,
+      contactPhone: contact.telephone || prev.contactPhone
+    }));
+    setShowSuggestions(false);
+  };
+
+  const matchingContacts = contacts.filter(c => {
+    if (!formData.organizer || !formData.organizer.trim()) return false;
+    const term = formData.organizer.toLowerCase();
+    return (
+      (c.nom_structure && c.nom_structure.toLowerCase().includes(term)) ||
+      (c.nom_contact && c.nom_contact.toLowerCase().includes(term)) ||
+      (c.email && c.email.toLowerCase().includes(term))
+    );
+  }).slice(0, 5);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -116,15 +181,60 @@ export default function GigFormModal({
                 />
               </div>
 
-              <div className="flex flex-col gap-1">
-                <label className="text-[10px] font-bold uppercase text-stone-700">Organisateur / Client</label>
+              {/* Organisateur avec Autocomplétion CRM */}
+              <div className="flex flex-col gap-1 relative">
+                <div className="flex justify-between items-center">
+                  <label className="text-[10px] font-bold uppercase text-stone-700">Organisateur / Client</label>
+                  {formData.contactId && (
+                    <span className="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-900 border border-emerald-300 flex items-center gap-1">
+                      <span>📎 CRM lié</span>
+                      <button
+                        type="button"
+                        onClick={() => setFormData(p => ({ ...p, contactId: null }))}
+                        className="hover:text-red-700 font-bold ml-0.5 cursor-pointer"
+                        title="Détacher du carnet CRM"
+                      >
+                        ✕
+                      </button>
+                    </span>
+                  )}
+                </div>
                 <input
                   type="text"
                   value={formData.organizer}
-                  onChange={(e) => setFormData({ ...formData, organizer: e.target.value })}
+                  onChange={handleOrganizerChange}
+                  onFocus={() => formData.organizer && setShowSuggestions(true)}
+                  onBlur={() => setTimeout(() => setShowSuggestions(false), 250)}
                   placeholder="Mairie, Asso X..."
                   className="text-xs font-bold px-3 py-1.5 border border-stone-300 rounded bg-white"
+                  autoComplete="off"
                 />
+
+                {/* Suggestions CRM dynamiques */}
+                {showSuggestions && matchingContacts.length > 0 && (
+                  <div className="absolute top-full left-0 right-0 z-50 bg-white border-2 border-cordel-master-dark/30 rounded-md shadow-xl mt-1 max-h-48 overflow-y-auto">
+                    <div className="p-1 text-[9px] font-black uppercase text-cordel-wood bg-stone-100 border-b border-stone-200">
+                      Contacts trouvés dans le carnet CRM :
+                    </div>
+                    {matchingContacts.map((contact) => (
+                      <button
+                        key={contact.id}
+                        type="button"
+                        onMouseDown={() => handleSelectContact(contact)}
+                        className="w-full text-left p-2 hover:bg-amber-50 flex flex-col gap-0.5 border-b border-stone-100 last:border-b-0 cursor-pointer transition-colors"
+                      >
+                        <span className="font-extrabold text-xs text-stone-900">
+                          {contact.nom_structure || contact.nom_contact}
+                        </span>
+                        <div className="flex items-center gap-2 text-[10px] text-stone-500 font-mono">
+                          {contact.nom_contact && contact.nom_structure && <span>👤 {contact.nom_contact}</span>}
+                          {contact.email && <span>✉️ {contact.email}</span>}
+                          {contact.telephone && <span>📞 {contact.telephone}</span>}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -174,6 +284,42 @@ export default function GigFormModal({
                   placeholder="Lille, Place du Théâtre..."
                   className="text-xs px-3 py-1.5 border border-stone-300 rounded bg-white"
                 />
+              </div>
+            </div>
+
+            {/* Horaires logistiques de la prestation */}
+            <div className="flex flex-col gap-1.5 p-2.5 bg-stone-50 border border-stone-200 rounded">
+              <span className="text-[10px] font-extrabold uppercase text-stone-600 tracking-wider">
+                ⏰ Horaires logistiques (Optionnels) :
+              </span>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                <div className="flex flex-col gap-0.5">
+                  <label className="text-[9px] font-bold uppercase text-stone-600">🚗 Heure d'arrivée</label>
+                  <input
+                    type="time"
+                    value={formData.heureArrivee}
+                    onChange={(e) => setFormData({ ...formData, heureArrivee: e.target.value })}
+                    className="text-xs font-mono font-bold px-2 py-1 border border-stone-300 rounded bg-white"
+                  />
+                </div>
+                <div className="flex flex-col gap-0.5">
+                  <label className="text-[9px] font-bold uppercase text-stone-600">🎛️ Balances / Raccord</label>
+                  <input
+                    type="time"
+                    value={formData.heureBalances}
+                    onChange={(e) => setFormData({ ...formData, heureBalances: e.target.value })}
+                    className="text-xs font-mono font-bold px-2 py-1 border border-stone-300 rounded bg-white"
+                  />
+                </div>
+                <div className="flex flex-col gap-0.5">
+                  <label className="text-[9px] font-bold uppercase text-stone-600">🎷 Heure de passage</label>
+                  <input
+                    type="time"
+                    value={formData.heurePassage}
+                    onChange={(e) => setFormData({ ...formData, heurePassage: e.target.value })}
+                    className="text-xs font-mono font-bold px-2 py-1 border border-stone-300 rounded bg-white text-cordel-wood"
+                  />
+                </div>
               </div>
             </div>
 
@@ -242,3 +388,4 @@ export default function GigFormModal({
     </div>
   );
 }
+

@@ -416,6 +416,8 @@ export default function TabPublicSectionTexts({ formData, handleChange, saving }
               className="text-xs font-medium px-3 py-2 border border-encre-noire/30 rounded bg-white focus:border-cordel-vert outline-none resize-y"
             />
           </div>
+        </CordelCard>
+
         {/* 9. Section Contact & Réseaux Sociaux */}
         <CordelCard variant="default" className="p-5 flex flex-col gap-4 bg-white">
           <h4 className="text-xs font-black uppercase tracking-widest text-encre-noire border-b border-dashed border-cordel-master-dark/20 pb-2 flex items-center gap-1.5">

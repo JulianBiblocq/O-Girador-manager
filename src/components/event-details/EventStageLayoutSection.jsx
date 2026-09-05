@@ -477,7 +477,7 @@ export default function EventStageLayoutSection({
           {/* Main layout view: Grid and list */}
           <div className="flex flex-col lg:flex-row gap-5 items-start w-full">
             {/* The Visual Stage Layout Grid */}
-            <div className="flex-1 w-full overflow-x-auto pb-4">
+            <div data-tour="mestre-stage-grid" className="flex-1 w-full overflow-x-auto pb-4">
               <div className="w-full min-w-[500px] max-w-[560px] mx-auto flex flex-col items-center">
                             {(() => {
                 let marcante = 0; let meiao = 0; let repique = 0;
@@ -741,7 +741,7 @@ export default function EventStageLayoutSection({
 
             {/* List of present members to place (only visible in edit mode) */}
             {isEditingMode && (
-              <div className="w-full lg:w-80 lg:max-w-[320px] flex flex-col gap-3.5 bg-white/40 dark:bg-black/20 p-3.5 rounded border border-dashed border-encre-noire/15 text-xs self-stretch shrink-0">
+              <div data-tour="mestre-stage-roster" className="w-full lg:w-80 lg:max-w-[320px] flex flex-col gap-3.5 bg-white/40 dark:bg-black/20 p-3.5 rounded border border-dashed border-encre-noire/15 text-xs self-stretch shrink-0">
                 <span className="font-extrabold text-cordel-wood uppercase tracking-wider text-[10px] border-b border-dashed border-encre-noire/10 pb-1 flex justify-between">
                   <span>👥 {t('eventDetails.stageLayoutUnplaced') || "Membres à placer"}</span>
                   <span className="opacity-70 font-semibold">({unplacedMembers.length})</span>

@@ -1,7 +1,26 @@
 import React, { createContext, useContext } from 'react';
 import { useTranslation } from './LanguageContext';
 
-const TerminologyContext = createContext();
+// Valeurs par défaut sécurisées pour usage hors Provider
+const defaultTerminology = {
+  majoriteFeminine: false,
+  tPlural: (keyOrMasc, fem) => {
+    if (fem !== undefined) return keyOrMasc;
+    const entry = pluralsDictionary['fr']?.[keyOrMasc];
+    return entry ? entry.masc : keyOrMasc;
+  },
+  tRole: (roleKey, gender) => {
+    const normalizedRole = (roleKey || '').toLowerCase();
+    const normalizedGender = (gender || '').toLowerCase();
+    const entry = rolesDictionary['fr']?.[normalizedRole];
+    if (!entry) return roleKey;
+    if (normalizedGender === 'femme') return entry.femme;
+    if (normalizedGender === 'homme') return entry.homme;
+    return entry.autre;
+  }
+};
+
+const TerminologyContext = createContext(defaultTerminology);
 
 // Dictionnaire des pluriels standardisés
 export const pluralsDictionary = {
@@ -78,8 +97,5 @@ export function TerminologyProvider({ majoriteFeminine = false, children }) {
 
 export function useTerminologyContext() {
   const context = useContext(TerminologyContext);
-  if (!context) {
-    throw new Error('useTerminologyContext must be used within a TerminologyProvider');
-  }
-  return context;
+  return context || defaultTerminology;
 }

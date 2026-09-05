@@ -296,7 +296,7 @@ export default function MestreSequenceur({ groupId, sequenceurUrl }) {
       </div>
 
       {/* Configuration Section (Accordeon) */}
-      <CordelCard variant="default" useExtremeBorder={true} className="p-4 mb-2">
+      <CordelCard data-tour="mestre-sequenceur-metadata" variant="default" useExtremeBorder={true} className="p-4 mb-2">
         <div className="flex justify-between items-center cursor-pointer select-none" onClick={() => setShowConfig(!showConfig)}>
           <h3 className="text-xs font-extrabold tracking-wider text-cordel-wood uppercase">
             ⚙️ Configuration du Lien Séquenceur
@@ -380,7 +380,7 @@ export default function MestreSequenceur({ groupId, sequenceurUrl }) {
         </div>
 
         {/* List panel */}
-        <div className="col-span-1 md:col-span-2 flex flex-col gap-3">
+        <div data-tour="mestre-sequenceur-list" className="col-span-1 md:col-span-2 flex flex-col gap-3">
           <h3 className="text-xs uppercase font-extrabold tracking-wider text-cordel-master-dark/80 pl-1">
             📂 {translationFn('mestre.rhythmListTitle') !== 'mestre.rhythmListTitle' ? translationFn('mestre.rhythmListTitle') : "Rythmes & Fichiers Audio configurés"}
           </h3>
@@ -463,7 +463,7 @@ export default function MestreSequenceur({ groupId, sequenceurUrl }) {
       {/* Metadata Editor Modal */}
       {editingMetadataRhythm && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 select-none">
-          <CordelCard variant="default" useExtremeBorder={true} className="w-full max-w-md bg-cordel-bg p-5 relative">
+          <CordelCard data-tour="mestre-sequenceur-metadata" variant="default" useExtremeBorder={true} className="w-full max-w-md bg-cordel-bg p-5 relative">
             <h3 className="font-extrabold text-sm text-cordel-wood uppercase tracking-wider mb-3 border-b border-dashed border-cordel-master-dark/20 pb-2">
               ✏️ Métadonnées de Secours (Fallback)
             </h3>

@@ -12,7 +12,7 @@ import MoveReplyModal from './MoveReplyModal';
 import PollDisplay from './forum/PollDisplay';
 import { useForumModeration } from '../hooks/useForumModeration';
 import { getTagId, resolveEffectiveUserTags } from '../utils/tagUtils';
-import { isUserModeratorOrAdmin, canUserWriteInForumChannel, canUserReadForumChannel } from '../utils/permissionUtils';
+import { isUserModeratorOrAdmin, canUserWriteInForumChannel, canUserReadForumChannel, checkUserAccessToList } from '../utils/permissionUtils';
 import { usePresenceContext } from '../context/PresenceContext';
 import useConfirm from '../hooks/useConfirm';
 import EmojiPickerPopover, { EmojiQuickRow } from './forum/EmojiPickerPopover';

@@ -150,7 +150,7 @@ export default function InstrumentModelsManager({ groupId, isAuthorized, varalCa
           <span className="text-xs font-bold text-stone-500">Aucun modèle d'instrument défini pour le moment.</span>
         </CordelCard>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div data-tour="lutherie-models-grid" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {models.map(model => (
             <CordelCard key={model.id} variant="default" useExtremeBorder={true} className="p-4 flex flex-col gap-2 relative group hover:bg-[#faf8f5] transition-colors">
               <div className="flex justify-between items-start">
@@ -166,7 +166,7 @@ export default function InstrumentModelsManager({ groupId, isAuthorized, varalCa
                 {model.description || "Aucune description"}
               </p>
 
-              <div className="text-[10px] text-encre-noire font-bold bg-white/50 border border-dashed border-cordel-master-dark/20 rounded p-1.5 mt-auto">
+              <div data-tour="lutherie-model-blueprint" className="text-[10px] text-encre-noire font-bold bg-white/50 border border-dashed border-cordel-master-dark/20 rounded p-1.5 mt-auto">
                 {model.parts?.length || 0} Pièces à fabriquer
               </div>
 

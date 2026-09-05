@@ -84,11 +84,15 @@ export function useGigsPipeline(groupId) {
         groupId,
         eventName: gigForm.eventName?.trim() || 'Prestation sans nom',
         organizer: gigForm.organizer?.trim() || '',
+        contactId: gigForm.contactId || null,
         contactEmail: gigForm.contactEmail?.trim() || '',
         contactPhone: gigForm.contactPhone?.trim() || '',
         date: gigForm.date || '',
         location: gigForm.location?.trim() || '',
         amount: parseFloat(gigForm.amount) || 0,
+        heureArrivee: gigForm.heureArrivee || '',
+        heureBalances: gigForm.heureBalances || '',
+        heurePassage: gigForm.heurePassage || '',
         notes: gigForm.notes?.trim() || '',
         nextRelanceDate: gigForm.nextRelanceDate || '',
         status: gigForm.status || '1_demande',
@@ -166,17 +170,19 @@ export function useGigsPipeline(groupId) {
         isPublic: false,
         status: 'confirme',
         inscriptions: [],
+        gigId: gig.id,
         createdFromGigId: gig.id,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
       };
 
       // 1. Injection de l'événement dans la collection `events`
-      await addDoc(collection(db, 'events'), newEventDoc);
+      const eventDocRef = await addDoc(collection(db, 'events'), newEventDoc);
 
-      // 2. Passage automatique du statut du dossier à '2_option'
+      // 2. Passage automatique du statut du dossier à '2_option' et liaison bidirectionnelle eventId
       const gigRef = doc(db, 'gigs_pipeline', gig.id);
       await updateDoc(gigRef, {
+        eventId: eventDocRef.id,
         status: '2_option',
         updatedAt: serverTimestamp()
       });

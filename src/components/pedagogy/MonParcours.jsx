@@ -24,6 +24,7 @@ export default function MonParcours({ profileData, sequenceurUrl, enabledModules
   const [educationalSheets, setEducationalSheets] = useState([]);
   
   const [evaluations, setEvaluations] = useState({}); // { [docId]: 'level' }
+  const [revisionsDemandees, setRevisionsDemandees] = useState({});
   const [saving, setSaving] = useState(false);
   
   const [qcmGlobalConfig, setQcmGlobalConfig] = useState({});
@@ -50,11 +51,13 @@ export default function MonParcours({ profileData, sequenceurUrl, enabledModules
   useEffect(() => {
     if (!groupId || !userId) return;
 
-    // 1. Récupérer Evaluations
+    // 1. Récupérer Evaluations et Demandes de révision en temps réel
     const parcoursRef = doc(db, 'users', userId, 'parcours', groupId || 'default');
     const unsubEval = onSnapshot(parcoursRef, (docSnap) => {
       if (docSnap.exists()) {
-        setEvaluations(docSnap.data().evaluations || {});
+        const data = docSnap.data();
+        setEvaluations(data.evaluations || {});
+        setRevisionsDemandees(data.revisionsDemandees || {});
       }
     });
 
@@ -129,6 +132,32 @@ export default function MonParcours({ profileData, sequenceurUrl, enabledModules
     }
   };
 
+  // Bascule 1-clic de demande de révision par l'élève (atomique, sans boîte de dialogue)
+  const handleToggleRevisionDemandee = async (itemId) => {
+    try {
+      const currentVal = !!revisionsDemandees[itemId];
+      const newVal = !currentVal;
+      // Mise à jour optimiste locale immédiate
+      setRevisionsDemandees(prev => ({ ...prev, [itemId]: newVal }));
+      const parcoursRef = doc(db, 'users', userId, 'parcours', groupId || 'default');
+      const { updateDoc } = await import('firebase/firestore');
+      try {
+        await updateDoc(parcoursRef, {
+          [`revisionsDemandees.${itemId}`]: newVal
+        });
+      } catch (err) {
+        // Repli avec setDoc merge si le document n'est pas encore initialisé
+        await setDoc(parcoursRef, {
+          revisionsDemandees: {
+            [itemId]: newVal
+          }
+        }, { merge: true });
+      }
+    } catch (error) {
+      console.error("Erreur lors de la demande de révision :", error);
+    }
+  };
+
   return (
     <div className="flex flex-col gap-6 text-left select-none w-full max-w-5xl mx-auto p-4 md:p-8 force-light-theme">
       {/* En-tête */}
@@ -183,6 +212,8 @@ export default function MonParcours({ profileData, sequenceurUrl, enabledModules
           <MonCarnetAisance 
             evaluations={evaluations}
             handleSetEvaluation={handleSetEvaluation}
+            revisionsDemandees={revisionsDemandees}
+            handleToggleRevisionDemandee={handleToggleRevisionDemandee}
             rhythms={visibleRhythms}
             rhythmsJsonData={rhythmsJsonData}
             rhythmsMetadata={rhythmsMetadata}

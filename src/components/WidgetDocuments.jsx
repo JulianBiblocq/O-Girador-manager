@@ -18,6 +18,7 @@ import { createPortal } from 'react-dom';
 import { useTranslation } from './LanguageContext';
 import useConfirm from '../hooks/useConfirm';
 import ReunionViewModal from './ReunionViewModal';
+import { projectWorkshopBooklets, isWorkshopVirtualDoc } from '../utils/workshopProjectionUtils';
 
 export const DEFAULT_VARAL_CATEGORIES = [
   { id: 'Toadas', nom: 'Toadas', activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false },
@@ -28,6 +29,16 @@ export const DEFAULT_VARAL_CATEGORIES = [
   { id: 'ComptesRendus', nom: 'Comptes-rendus', activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: true },
   { id: 'Administratif', nom: 'Administratif', activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false }
 ];
+
+/**
+ * Table de correspondance par défaut reliant chaque pôle métier à ses cordes natives du Varal.
+ */
+export const DEFAULT_POLE_ROPES = {
+  pedagogie: ['Toadas', 'Culture', 'TutorielsVideo'],
+  secretariat: ['Administratif', 'ComptesRendus'],
+  studio: ['PhotosPrestations'],
+  lutherie: ['TutosFabrication']
+};
 
 const getDeterministicColor = (docId) => {
   if (!docId) return 'kraft';
@@ -138,7 +149,17 @@ const HangingRopeCurve = ({ className = "absolute top-[44px] left-0 right-0 h-8 
   </div>
 );
 
-export default function WidgetDocuments({ role, isSystemAdmin, groupId, user, profileData }) {
+export default function WidgetDocuments({ 
+  role, 
+  isSystemAdmin, 
+  groupId, 
+  user, 
+  profileData,
+  poleId = null,
+  userTags = null,
+  canWrite = false,
+  onNavigateToView = null
+}) {
   const { t } = useTranslation();
   const { confirm } = useConfirm();
 
@@ -151,6 +172,7 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId, user, pr
   const [varalCategories, setVaralCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
+  const [selectedCategoryForAdd, setSelectedCategoryForAdd] = useState(null);
   const [documentToEdit, setDocumentToEdit] = useState(null);
   const [eventsWithMedia, setEventsWithMedia] = useState([]);
   const [reunions, setReunions] = useState([]);
@@ -491,13 +513,10 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId, user, pr
     const qModels = query(modelsRef, where('groupId', '==', groupId));
     const unsubscribeModels = onSnapshot(qModels, (querySnapshot) => {
       const fetchedModels = [];
-      querySnapshot.forEach((doc) => {
+      querySnapshot.forEach((docSnap) => {
         fetchedModels.push({
-          id: doc.id,
-          ...doc.data(),
-          typeDoc: 'instrument_model', // Pour le différencier des documents classiques
-          titre: doc.data().nom, // Mapper nom vers titre pour l'affichage
-          categoryId: doc.data().categoryId || 'TutosFabrication'
+          id: docSnap.id,
+          ...docSnap.data()
         });
       });
       setInstrumentModels(fetchedModels);
@@ -522,7 +541,7 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId, user, pr
       const fetchedReunions = [];
       querySnapshot.forEach((doc) => {
         const data = doc.data();
-        if (data.lienDepotMedias) {
+        if (data.lienDepotMedias || data.albumPhotosUrl) {
           fetchedEvents.push({ id: doc.id, ...data });
         }
         if (data.type === 'reunion' && data.date) {
@@ -600,7 +619,7 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId, user, pr
   // Groupement des documents par catégorie en JavaScript
   const groupedDocs = useMemo(() => {
     const groups = {};
-    const allDocs = [...documents, ...instrumentModels];
+    const allDocs = [...documents];
 
     allDocs.forEach((docItem) => {
       // Recherche de la catégorie correspondante par priorité : categoryId d'abord, puis nom, puis id
@@ -634,18 +653,27 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId, user, pr
         groups['PhotosPrestations'] = [];
       }
       eventsWithMedia.forEach(ev => {
-        groups['PhotosPrestations'].push({
-          id: `event-media-${ev.id}`,
-          titre: `[Album] ${ev.titre || 'Événement'}`,
-          fileUrl: ev.lienDepotMedias,
-          categorie: 'PhotosPrestations',
-          categoryId: 'PhotosPrestations',
-          type: 'dossier_externe',
-          dateAjout: ev.dateDebut || ev.createdAt || new Date().toISOString(),
-          description: `Dossier partagé pour consulter et déposer des médias liés à l'événement du ${new Date(ev.dateDebut).toLocaleDateString('fr-FR')}.`,
-          isVirtualEventMedia: true,
-          eventId: ev.id,
-        });
+        // Éviter les doublons si un document Firestore réel existe déjà pour cet événement
+        const alreadyExists = groups['PhotosPrestations'].some(d => d.eventId === ev.id);
+        if (!alreadyExists) {
+          const targetUrl = ev.albumPhotosUrl || ev.lienDepotMedias;
+          if (targetUrl) {
+            groups['PhotosPrestations'].push({
+              id: `event-media-${ev.id}`,
+              titre: `[Album] ${ev.titre || 'Événement'}`,
+              fileUrl: targetUrl,
+              categorie: 'PhotosPrestations',
+              categoryId: 'PhotosPrestations',
+              type: 'dossier_externe',
+              dateAjout: ev.dateDebut || ev.createdAt || new Date().toISOString(),
+              description: ev.albumPhotosUrl
+                ? `Album photos finalisé de l'événement du ${new Date(ev.dateDebut || Date.now()).toLocaleDateString('fr-FR')}.`
+                : `Dossier partagé pour consulter et déposer des médias liés à l'événement du ${new Date(ev.dateDebut || Date.now()).toLocaleDateString('fr-FR')}.`,
+              isVirtualEventMedia: true,
+              eventId: ev.id,
+            });
+          }
+        }
       });
 
       // Retrier "PhotosPrestations" par date
@@ -704,9 +732,49 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId, user, pr
       });
     }
 
+    // Projection dynamique en mémoire des modèles d'atelier et de leurs pièces dans "TutosFabrication"
+    const workshopBooklets = projectWorkshopBooklets(instrumentModels);
+    if (workshopBooklets && workshopBooklets.length > 0) {
+      if (!groups['TutosFabrication']) {
+        groups['TutosFabrication'] = [];
+      }
+      workshopBooklets.forEach((booklet) => {
+        groups['TutosFabrication'].push(booklet);
+      });
+    }
+
     return groups;
   }, [documents, instrumentModels, varalCategories, eventsWithMedia, reunions]);
 
+  // Résolution des badges / étiquettes effectifs de l'utilisateur
+  const effectiveTags = useMemo(() => {
+    if (Array.isArray(userTags) && userTags.length > 0) return userTags;
+    if (Array.isArray(profileData?.tags)) return profileData.tags;
+    return [];
+  }, [userTags, profileData?.tags]);
+
+  // Filtrage des catégories selon le pôle actif et les autorisations de badges
+  const visibleCategories = useMemo(() => {
+    return varalCategories.filter((category) => {
+      // 1. Filtrage par pôle
+      if (poleId) {
+        const catPole = category.poleId || Object.keys(DEFAULT_POLE_ROPES).find(p => DEFAULT_POLE_ROPES[p].includes(category.id));
+        if (catPole !== poleId) return false;
+      }
+
+      // 2. Filtrage par badge / allowedTags (Bypass Super-Admin, Mestre et isSystemAdmin)
+      if (isAuthorized) return true;
+      if (!category.allowedTags || category.allowedTags.length === 0) return true;
+
+      return effectiveTags.some(userTag => {
+        const uTag = (typeof userTag === 'string' ? userTag : (userTag.id || userTag.nomM || userTag.nomF || '')).toLowerCase().trim();
+        return category.allowedTags.some(catTag => {
+          const cTag = (typeof catTag === 'string' ? catTag : (catTag.id || catTag.nomM || catTag.nomF || '')).toLowerCase().trim();
+          return uTag === cTag;
+        });
+      });
+    });
+  }, [varalCategories, poleId, isAuthorized, effectiveTags]);
 
   const categoryVariants = {
     'Partitions': 'ocre',
@@ -716,17 +784,60 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId, user, pr
     'DocumentsFixes': 'bleu'
   };
 
+  // Gestionnaire d'ouverture du dépôt direct sur une corde spécifique
+  const handleOpenAddForCategory = (cat) => {
+    setSelectedCategoryForAdd(cat);
+    setDocumentToEdit(null);
+    setIsAdding(true);
+  };
+
+  // Vérifie si l'utilisateur a les droits de dépôt/écriture sur une corde
+  const canDepositOnCategory = (category) => {
+    // 0. Si l'upload public est explicitement activé pour cette catégorie
+    if (category.activerUploadPublic) return true;
+
+    // 1. Bypass administrateurs et maîtres
+    if (isAuthorized) return true;
+
+    // 2. Si l'utilisateur possède l'accès en écriture au pôle (canWrite)
+    if (canWrite) {
+      if (!category.allowedTags || category.allowedTags.length === 0) return true;
+      return effectiveTags.some(uTag => {
+        return category.allowedTags.some(catTag => {
+          const cTag = (typeof catTag === 'string' ? catTag : (catTag.id || catTag.nomM || catTag.nomF || '')).toLowerCase().trim();
+          return uTag === cTag;
+        });
+      });
+    }
+
+    // 3. Si la catégorie possède des badges autorisés et que l'utilisateur en possède au moins un
+    if (category.allowedTags && category.allowedTags.length > 0) {
+      return effectiveTags.some(uTag => {
+        return category.allowedTags.some(catTag => {
+          const cTag = (typeof catTag === 'string' ? catTag : (catTag.id || catTag.nomM || catTag.nomF || '')).toLowerCase().trim();
+          return uTag === cTag;
+        });
+      });
+    }
+
+    return false;
+  };
+
   return (
     <div className="flex flex-col gap-3">
-      {/* Title & Action Bar */}
+      {/* Barre de titre et action globale */}
       <div className="flex justify-between items-center pl-1 pr-1">
         <h3 className="text-xs font-extrabold tracking-wider text-cordel-master-dark opacity-75 uppercase text-left">
           {t('widgetDocuments.title')}
         </h3>
-        {!loading && isAuthorized && !isAdding && (
+        {!loading && (isAuthorized || canWrite) && !isAdding && poleId !== 'secretariat' && poleId !== 'pedagogie' && (
           <CordelButton
             variant="default"
-            onClick={() => setIsAdding(true)}
+            onClick={() => {
+              setSelectedCategoryForAdd(null);
+              setDocumentToEdit(null);
+              setIsAdding(true);
+            }}
             className="text-[10px] px-2 py-1 uppercase tracking-widest font-black"
           >
             {t('widgetDocuments.uploadBtn')}
@@ -741,27 +852,49 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId, user, pr
         </div>
       )}
 
-      {/* Upload/Edit Form view */}
+      {/* Vue formulaire d'upload ou édition avec bouton retour en tête */}
       {!loading && (isAdding || documentToEdit) && (
-        <DocumentUploadForm
-          groupId={groupId}
-          varalCategories={varalCategories}
-          documentToEdit={documentToEdit}
-          onClose={() => {
-            setIsAdding(false);
-            setDocumentToEdit(null);
-          }}
-        />
+        <div className="flex flex-col gap-3">
+          <div className="flex justify-start select-none">
+            <button
+              type="button"
+              onClick={() => {
+                setIsAdding(false);
+                setDocumentToEdit(null);
+                setSelectedCategoryForAdd(null);
+              }}
+              className="text-[10px] font-black uppercase tracking-widest bg-cordel-bg border border-encre-noire px-3 py-1.5 rounded-[4px_6px_3px_5px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-95 cursor-pointer flex items-center gap-1.5 transition-all"
+            >
+              <span>⬅️</span>
+              <span>{t('common.back') || "Retour au Varal"}</span>
+            </button>
+          </div>
+
+          <DocumentUploadForm
+            groupId={groupId}
+            varalCategories={visibleCategories.length > 0 ? visibleCategories : varalCategories}
+            documentToEdit={documentToEdit}
+            initialCategoryId={selectedCategoryForAdd ? selectedCategoryForAdd.id : undefined}
+            lockCategory={!!selectedCategoryForAdd}
+            onClose={() => {
+              setIsAdding(false);
+              setDocumentToEdit(null);
+              setSelectedCategoryForAdd(null);
+            }}
+          />
+        </div>
       )}
 
       {/* Documents Clothesline View (grouped by category) */}
       {!loading && !isAdding && !documentToEdit && (
-        documents.length === 0 ? (
-          <CordelCard variant="default" useExtremeBorder={false} className="p-4 text-center">
-            <p className="text-xs opacity-75 font-semibold">Aucun document suspendu.</p>
+        visibleCategories.length === 0 ? (
+          <CordelCard variant="default" useExtremeBorder={false} className="p-6 text-center bg-cordel-bg">
+            <p className="text-xs font-bold text-cordel-master-dark opacity-75">
+              Aucun document ou corde accessible dans ce pôle.
+            </p>
           </CordelCard>
         ) : (<div className="flex flex-col gap-4 w-full">
-          {varalCategories.map((category) => {
+          {visibleCategories.map((category) => {
             let docList = groupedDocs[category.id] || [];
             const variant = categoryVariants[category.id] || 'default';
             const currentYear = new Date().getFullYear();
@@ -804,6 +937,31 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId, user, pr
                     <span className={`theme-stamp-badge theme-stamp-badge-${variant === 'ocre' || variant === 'vert' ? 'wood' : 'dark'} text-[8.5px] tracking-wider font-extrabold`}>
                       {getCategoryLabel(category.nom)}
                     </span>
+
+                    {/* Bouton "+ Déposer" compact par corde */}
+                    {canDepositOnCategory(category) && (
+                      <button
+                        type="button"
+                        onClick={() => handleOpenAddForCategory(category)}
+                        className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-[3px_5px_2px_4px] bg-[var(--color-cordel-vert,#2d6a4f)] text-[#FEF9E7] border border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-110 cursor-pointer select-none flex items-center gap-1 transition-all"
+                        title={`Déposer un document sur la corde ${category.nom}`}
+                      >
+                        <span className="text-[11px] leading-none">+</span>
+                        <span>{t('widgetDocuments.addShort') || "Déposer"}</span>
+                      </button>
+                    )}
+
+                    {(category.id === 'TutosFabrication' || category.nom === 'Tutos Fabrication') && onNavigateToView && (canWrite || isAuthorized) && (
+                      <button
+                        type="button"
+                        onClick={() => onNavigateToView('instrument-models')}
+                        className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-[3px_5px_2px_4px] bg-[var(--color-cordel-ocre,#c05621)] text-[#FEF9E7] border border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-110 cursor-pointer select-none flex items-center gap-1 transition-all"
+                        title="Ouvrir l'éditeur de gabarits et de pièces dans l'Atelier Lutherie"
+                      >
+                        <span>🛠️ Modèles d'Atelier</span>
+                        <span>➜</span>
+                      </button>
+                    )}
 
                     {isAuthorized && (
                       <button
@@ -887,9 +1045,10 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId, user, pr
                           drive: '📂',
                           report: '📜',
                           culture_fiche: '📖',
-                          instrument_model: '🛠️'
+                          instrument_model: '🛠️',
+                          instrument_part: '⚙️'
                         };
-                        const typeIcon = typeIcons[docType] || (docItem.typeDoc === 'instrument_model' ? '🛠️' : '📄');
+                        const typeIcon = typeIcons[docType] || (docItem.typeDoc === 'instrument_part' || docItem.type === 'instrument_part' ? '⚙️' : (docItem.typeDoc === 'instrument_model' || docItem.type === 'instrument_model' ? '🛠️' : '📄'));
 
                         const isDarkBg = colorClass === 'rouge' || colorClass === 'bleu-ardoise' || colorClass === 'bleu';
                         const textClass = isDarkBg ? 'text-[#FEF9E7]' : 'text-encre-noire';
@@ -916,8 +1075,11 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId, user, pr
                           <div
                             key={docItem.id}
                             onClick={() => {
-                              if (docItem.typeDoc === 'instrument_model') {
-                                setSelectedInstrumentModel(docItem);
+                              if (isWorkshopVirtualDoc(docItem) || docItem.typeDoc === 'instrument_model' || docItem.typeDoc === 'instrument_part') {
+                                setSelectedInstrumentModel({
+                                  ...(docItem.modelData || docItem),
+                                  focusedPartId: docItem.partId || null
+                                });
                               } else if (docType === 'report') {
                                 setSelectedReport(docItem);
                               } else if (docType === 'song') {
@@ -929,7 +1091,9 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId, user, pr
                               } else if (docType === 'reunion') {
                                 setSelectedReunion(docItem);
                               } else {
-                                window.open(docItem.fileUrl, '_blank');
+                                if (docItem.fileUrl) {
+                                  window.open(docItem.fileUrl, '_blank', 'noopener,noreferrer');
+                                }
                               }
                             }}
                             className={`
@@ -1150,7 +1314,7 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId, user, pr
                                 return null;
                               })()}
                               {/* Edit & Supprimer & Reorder Action Buttons */}
-                              {isAuthorized && !docItem.isVirtualEventMedia && (
+                              {isAuthorized && !docItem.isVirtualEventMedia && !isWorkshopVirtualDoc(docItem) && (
                                 <div className="absolute top-1.5 right-1.5 flex gap-1 z-40 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                                   {index > 0 && (
                                     <button
@@ -1212,21 +1376,34 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId, user, pr
                                   <span className="text-xs select-none">
                                     {typeIcon}
                                   </span>
-                                  {docItem.annee && (
-                                    <span className={`text-[8.5px] font-black px-1.5 py-0.5 rounded-sm ${yearBadgeClass}`}>
-                                      {docItem.annee}
+                                  {isWorkshopVirtualDoc(docItem) ? (
+                                    <span className="text-[7.5px] font-black uppercase px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-900 border border-amber-800/30">
+                                      {docItem.isPartStep ? `⚙️ ${docItem.etapesCount} ét.` : '📐 Modèle'}
                                     </span>
+                                  ) : (
+                                    docItem.annee && (
+                                      <span className={`text-[8.5px] font-black px-1.5 py-0.5 rounded-sm ${yearBadgeClass}`}>
+                                        {docItem.annee}
+                                      </span>
+                                    )
                                   )}
                                 </div>
                                 <h4 className={`font-black text-xs ${textClass} leading-snug mt-2 break-words line-clamp-3`}>
                                   {docItem.titre}
                                 </h4>
+                                {docItem.sousTitre && (
+                                  <span className={`text-[8px] font-bold uppercase tracking-wider opacity-75 mt-0.5 block truncate ${textClass}`}>
+                                    {docItem.sousTitre}
+                                  </span>
+                                )}
                               </div>
 
                               {/* Booklet Bottom */}
                               <div className="mt-auto select-none">
                                 <div className={`text-[8.5px] text-right font-black uppercase tracking-wider mt-1 ${textClass}`}>
-                                  {translate('documents.readBtn', "Lire ➜")}
+                                  {isWorkshopVirtualDoc(docItem)
+                                    ? (docItem.isPartStep ? "Usinage ➜" : "Nomenclature ➜")
+                                    : translate('documents.readBtn', "Lire ➜")}
                                 </div>
                               </div>
                             </div>
@@ -1456,7 +1633,12 @@ export default function WidgetDocuments({ role, isSystemAdmin, groupId, user, pr
       )}
 
       {selectedInstrumentModel && (
-        <InstrumentModelCard model={selectedInstrumentModel} onClose={() => setSelectedInstrumentModel(null)} />
+        <InstrumentModelCard 
+          model={selectedInstrumentModel} 
+          initialPartId={selectedInstrumentModel.focusedPartId}
+          profileData={profileData}
+          onClose={() => setSelectedInstrumentModel(null)} 
+        />
       )}
 
       {/* Bulk Print Hidden Container (Portaled to body to escape all parent layouts) */}

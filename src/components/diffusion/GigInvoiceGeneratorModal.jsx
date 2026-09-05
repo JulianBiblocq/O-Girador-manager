@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { collection, addDoc, doc, updateDoc, serverTimestamp, query, where, getDocs } from 'firebase/firestore';
+import { collection, addDoc, doc, getDoc, updateDoc, serverTimestamp, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../../firebase';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
@@ -86,14 +86,28 @@ export default function GigInvoiceGeneratorModal({
     // Croisement des données logistiques depuis l'Agenda
     const fetchLinkedEventData = async () => {
       try {
-        const eventsRef = collection(db, 'events');
-        const q = query(
-          eventsRef,
-          where('gigId', '==', gig.id)
-        );
-        const snap = await getDocs(q);
-        if (!snap.empty) {
-          const evtData = snap.docs[0].data();
+        let evtData = null;
+        if (gig.eventId) {
+          const evtSnap = await getDoc(doc(db, 'events', gig.eventId));
+          if (evtSnap.exists()) {
+            evtData = evtSnap.data();
+          }
+        }
+        if (!evtData) {
+          const eventsRef = collection(db, 'events');
+          const q1 = query(eventsRef, where('gigId', '==', gig.id));
+          const snap1 = await getDocs(q1);
+          if (!snap1.empty) {
+            evtData = snap1.docs[0].data();
+          } else {
+            const q2 = query(eventsRef, where('createdFromGigId', '==', gig.id));
+            const snap2 = await getDocs(q2);
+            if (!snap2.empty) {
+              evtData = snap2.docs[0].data();
+            }
+          }
+        }
+        if (evtData) {
           setLinkedEvent(evtData);
           if (evtData.description && !gig.notes) {
             setInvoiceMeta(prev => ({
@@ -191,13 +205,13 @@ export default function GigInvoiceGeneratorModal({
       const docRef = await addDoc(collection(db, 'invoices'), newInvoiceDoc);
       invoicePayload.id = docRef.id;
 
-      // 2. Mise à jour du statut du dossier gig dans Pôle Diffusion vers '5_facture_emise'
-      const gigRef = doc(db, 'associations', gig.groupId || groupId, 'gigs', gig.id);
+      // 2. Mise à jour du statut du dossier gig dans Pôle Diffusion vers '5_facture_emise' dans gigs_pipeline
+      const gigRef = doc(db, 'gigs_pipeline', gig.id);
       await updateDoc(gigRef, {
         status: '5_facture_emise',
-        invoiceNumber: invoiceMeta.numero,
+        invoiceNumber: invoiceMeta.numero || '',
         invoiceId: docRef.id,
-        amount: totalTTC,
+        amount: totalTTC || 0,
         updatedAt: serverTimestamp()
       });
 

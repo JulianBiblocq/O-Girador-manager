@@ -85,8 +85,7 @@ export default function GigRelanceEmailModal({
         const todayFormatted = new Date().toLocaleDateString('fr-FR');
         const historyEntry = `🔔 Relance expédiée par e-mail le ${todayFormatted} à ${recipientEmail}`;
 
-        const targetGroupId = gig.groupId || associationSettings.groupId || 'default';
-        const gigRef = doc(db, 'associations', targetGroupId, 'gigs', gig.id);
+        const gigRef = doc(db, 'gigs_pipeline', gig.id);
         await updateDoc(gigRef, {
           exchangeHistory: arrayUnion({
             type: 'relance',

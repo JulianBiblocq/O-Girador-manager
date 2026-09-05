@@ -223,7 +223,7 @@ export default function CostumesAdminManager({ groupId }) {
           </p>
         </CordelCard>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div data-tour="costumerie-models-cards" className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {costumes.map(costume => (
             <CordelCard key={costume.id} variant="default" useExtremeBorder={true} className="p-4 flex flex-col justify-between gap-3 bg-cordel-bg">
               <div>

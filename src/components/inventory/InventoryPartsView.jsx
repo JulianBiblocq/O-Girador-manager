@@ -489,7 +489,7 @@ export default function InventoryPartsView({
         </CordelCard>
       ) : (
         <div className="flex flex-col gap-4">
-          <div className="flex justify-between items-center bg-cordel-bg border-2 border-encre-noire p-2 rounded-[5px_4px_6px_3px] shadow-[2px_2px_0px_0px_#181716] flex-wrap gap-2">
+          <div data-tour="lutherie-parts-filters" className="flex justify-between items-center bg-cordel-bg border-2 border-encre-noire p-2 rounded-[5px_4px_6px_3px] shadow-[2px_2px_0px_0px_#181716] flex-wrap gap-2">
             <div className="flex items-center gap-3">
               <input
                 type="text"
@@ -511,6 +511,7 @@ export default function InventoryPartsView({
               </select>
             </div>
             <CordelButton
+              data-tour="lutherie-new-part-btn"
               variant="ocre"
               onClick={handleOpenPartAdd}
               className="text-xs px-3 py-1.5 font-bold shrink-0"
@@ -519,7 +520,7 @@ export default function InventoryPartsView({
             </CordelButton>
           </div>
 
-          <div className="w-full max-h-[calc(100vh-280px)] overflow-x-auto overflow-y-auto border-2 border-encre-noire rounded-[6px_4px_5px_3px] shadow-[2px_2px_0px_0px_#181716] bg-cordel-card-bg relative">
+          <div data-tour="lutherie-parts-table" className="w-full max-h-[calc(100vh-280px)] overflow-x-auto overflow-y-auto border-2 border-encre-noire rounded-[6px_4px_5px_3px] shadow-[2px_2px_0px_0px_#181716] bg-cordel-card-bg relative">
             <table className="w-full text-left text-xs border-collapse min-w-[650px]">
               <thead className="bg-cordel-bg-light border-b-2 border-encre-noire text-[10px] uppercase tracking-wider text-cordel-wood font-black select-none sticky top-0 z-20">
                 <tr>

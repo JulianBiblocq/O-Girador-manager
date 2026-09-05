@@ -14,12 +14,26 @@ import SuppliesListView from '../inventory/SuppliesListView';
 import WorkshopToolsListView from '../inventory/WorkshopToolsListView';
 import useConfirm from '../../hooks/useConfirm';
 
-export default function WardrobeManager({ groupId, role, isSystemAdmin, hasAccessLogistique, onBack, activeTab = 'inventory' }) {
+export default function WardrobeManager({ 
+  groupId, 
+  role, 
+  isSystemAdmin, 
+  hasAccessLogistique, 
+  hasAccessCostumerie,
+  onBack, 
+  activeTab, 
+  activeTabProp,
+  hideSubTabs = false 
+}) {
   const { t } = useTranslation();
   const { confirm } = useConfirm();
   const [allUsers, setAllUsers] = useState([]);
+  const [localTab, setLocalTab] = useState('inventory');
+
+  const currentActiveTab = activeTabProp || activeTab || localTab;
+  const shouldShowSubTabs = !hideSubTabs && !activeTab && !activeTabProp;
   
-  const isAuthorized = role === 'mestre' || role === 'super-admin' || isSystemAdmin === true || hasAccessLogistique === true;
+  const isAuthorized = role === 'mestre' || role === 'super-admin' || isSystemAdmin === true || hasAccessLogistique === true || hasAccessCostumerie === true;
   
   const {
     formData,
@@ -264,15 +278,64 @@ export default function WardrobeManager({ groupId, role, isSystemAdmin, hasAcces
           ← Retour
         </CordelButton>
         <span className="panel-title text-base font-extrabold tracking-wider text-cordel-wood uppercase">
-          👔 Gestion du Vestiaire
+          🧵 Gestion de la Costumerie
         </span>
         <div className="w-12"></div>
       </div>
 
-
+      {/* Navigation interne par onglets (masquée si hideSubTabs ou si pilotée par activeTab) */}
+      {shouldShowSubTabs && (
+        <div className="flex flex-wrap gap-2 border-b border-dashed border-cordel-master-dark/20 pb-2 select-none">
+          <button
+            type="button"
+            onClick={() => setLocalTab('couture')}
+            className={`px-3 py-1.5 text-xs font-black uppercase tracking-wider rounded border transition-all cursor-pointer ${
+              currentActiveTab === 'couture' ? 'theme-bg-ocre text-encre-noire border-encre-noire' : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire'
+            }`}
+          >
+            🧵 Établi de confection
+          </button>
+          <button
+            type="button"
+            onClick={() => setLocalTab('inventory')}
+            className={`px-3 py-1.5 text-xs font-black uppercase tracking-wider rounded border transition-all cursor-pointer ${
+              currentActiveTab === 'inventory' ? 'theme-bg-ocre text-encre-noire border-encre-noire' : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire'
+            }`}
+          >
+            📦 Stock & Prêts
+          </button>
+          <button
+            type="button"
+            onClick={() => setLocalTab('supplies')}
+            className={`px-3 py-1.5 text-xs font-black uppercase tracking-wider rounded border transition-all cursor-pointer ${
+              currentActiveTab === 'supplies' ? 'theme-bg-ocre text-encre-noire border-encre-noire' : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire'
+            }`}
+          >
+            🧶 Tissus & Mercerie
+          </button>
+          <button
+            type="button"
+            onClick={() => setLocalTab('tools')}
+            className={`px-3 py-1.5 text-xs font-black uppercase tracking-wider rounded border transition-all cursor-pointer ${
+              currentActiveTab === 'tools' ? 'theme-bg-ocre text-encre-noire border-encre-noire' : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire'
+            }`}
+          >
+            ✂️ Outillage
+          </button>
+          <button
+            type="button"
+            onClick={() => setLocalTab('sizes')}
+            className={`px-3 py-1.5 text-xs font-black uppercase tracking-wider rounded border transition-all cursor-pointer ${
+              currentActiveTab === 'sizes' ? 'theme-bg-ocre text-encre-noire border-encre-noire' : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire'
+            }`}
+          >
+            📏 Mensurations
+          </button>
+        </div>
+      )}
 
       {/* TAB 1: COSTUME INVENTORY */}
-      {activeTab === 'inventory' && (
+      {currentActiveTab === 'inventory' && (
         <div className="flex flex-col gap-6">
           <div className="mb-2">
             <form onSubmit={(e) => { e.preventDefault(); handleSave(); }} className="flex flex-col gap-2">
@@ -413,7 +476,7 @@ export default function WardrobeManager({ groupId, role, isSystemAdmin, hasAcces
           )}
 
           {/* Costume inventory table */}
-          <CordelCard variant="default" useExtremeBorder={true} className="p-0 overflow-hidden">
+          <CordelCard data-tour="costumerie-pieces-table" variant="default" useExtremeBorder={true} className="p-0 overflow-hidden">
             <div className="w-full max-w-full overflow-x-auto">
               <table className="w-full text-left text-xs font-semibold border-collapse">
                 <thead>
@@ -422,7 +485,7 @@ export default function WardrobeManager({ groupId, role, isSystemAdmin, hasAcces
                     <th className="py-2 px-2 md:py-2.5 md:px-4 text-center">{t('onboarding.tshirtSize')}</th>
                     <th className="py-2 px-2 md:py-2.5 md:px-4 text-center">{t('common.status')}</th>
                     <th className="py-2 px-2 md:py-2.5 md:px-4">{t('common.status')}</th>
-                    <th className="py-2 px-2 md:py-2.5 md:px-4">Emprunteur</th>
+                    <th data-tour="costumerie-pieces-assign" className="py-2 px-2 md:py-2.5 md:px-4">Emprunteur</th>
                     <th className="py-2 px-2 md:py-2.5 md:px-4 text-right">{t('common.actions')}</th>
                   </tr>
                 </thead>
@@ -487,13 +550,14 @@ export default function WardrobeManager({ groupId, role, isSystemAdmin, hasAcces
       )}
 
       {/* TAB 2: COUTURE WORKSHOP */}
-      {activeTab === 'couture' && (
+      {currentActiveTab === 'couture' && (
         <div className="flex flex-col gap-4">
           <div className="flex justify-between items-center bg-white/40 dark:bg-black/20 p-3 rounded border border-dashed border-encre-noire/15">
             <span className="text-xs font-bold text-cordel-master-dark">
               Projets couture : {projects.length} projet{projects.length > 1 ? 's' : ''} en cours
             </span>
             <button
+              data-tour="costumerie-new-project-btn"
               type="button"
               onClick={() => {
                 setEditingProject(null);
@@ -579,7 +643,7 @@ export default function WardrobeManager({ groupId, role, isSystemAdmin, hasAcces
           )}
 
           {/* Couture projects table list */}
-          <CordelCard variant="default" useExtremeBorder={true} className="p-0 overflow-hidden">
+          <CordelCard data-tour="costumerie-projects-grid" variant="default" useExtremeBorder={true} className="p-0 overflow-hidden">
             <div className="w-full max-w-full overflow-x-auto">
               <table className="w-full text-left text-xs font-semibold border-collapse">
                 <thead>
@@ -587,7 +651,7 @@ export default function WardrobeManager({ groupId, role, isSystemAdmin, hasAcces
                     <th className="py-2 px-2 md:py-2.5 md:px-4">Projet</th>
                     <th className="py-2 px-2 md:py-2.5 md:px-4">Besoins répertoriés</th>
                     <th className="py-2 px-2 md:py-2.5 md:px-4 text-center">Coût estimé</th>
-                    <th className="py-2 px-2 md:py-2.5 md:px-4">Statut</th>
+                    <th data-tour="costumerie-project-steps" className="py-2 px-2 md:py-2.5 md:px-4">Statut</th>
                     <th className="py-2 px-2 md:py-2.5 md:px-4 text-right">Actions</th>
                   </tr>
                 </thead>
@@ -638,7 +702,7 @@ export default function WardrobeManager({ groupId, role, isSystemAdmin, hasAcces
       )}
 
       {/* TAB 3: MEMBERS SIZES TABLE */}
-      {activeTab === 'sizes' && (
+      {currentActiveTab === 'sizes' && (
         <div className="w-full">
           <CostumeSizesTable
             allUsers={allUsers}
@@ -647,7 +711,7 @@ export default function WardrobeManager({ groupId, role, isSystemAdmin, hasAcces
         </div>
       )}
       {/* TAB 4: MATIERES PREMIERES */}
-      {activeTab === 'supplies' && (
+      {currentActiveTab === 'supplies' && (
         <div className="flex flex-col gap-6">
           <SuppliesListView 
             supplies={supplies} 
@@ -662,7 +726,7 @@ export default function WardrobeManager({ groupId, role, isSystemAdmin, hasAcces
       )}
 
       {/* TAB 5: OUTILLAGE */}
-      {activeTab === 'tools' && (
+      {currentActiveTab === 'tools' && (
         <div className="flex flex-col gap-6">
           <WorkshopToolsListView 
             tools={tools} 

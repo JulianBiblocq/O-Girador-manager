@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { collection, query, where, onSnapshot, doc, deleteDoc, updateDoc, addDoc, getDocs, getDoc, increment } from 'firebase/firestore';
 import { ref, deleteObject } from 'firebase/storage';
-import { db, storage } from '../firebase';
+import { db, storage, auth } from '../firebase';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
 import DocumentUploadForm from './DocumentUploadForm';
@@ -15,6 +15,8 @@ import useConfirm from '../hooks/useConfirm';
 import SeloAxeStamp from './SeloAxeStamp';
 import useHardwareBack from '../hooks/useHardwareBack';
 import InstrumentModelsManager from './varal/InstrumentModelsManager';
+import InstrumentModelCard from './InstrumentModelCard';
+import { projectWorkshopBooklets, isWorkshopVirtualDoc } from '../utils/workshopProjectionUtils';
 
 const DEFAULT_VARAL_CATEGORIES = [
   { id: 'Toadas', nom: 'Toadas', activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false },
@@ -26,10 +28,11 @@ const DEFAULT_VARAL_CATEGORIES = [
   { id: 'Administratif', nom: 'Administratif', activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false }
 ];
 
-export default function VaralManager({ groupId, onBack, role, isSystemAdmin, isEmbedded }) {
+export default function VaralManager({ groupId, onBack, role, isSystemAdmin, isEmbedded, onNavigateToView, profileData }) {
   const { t } = useTranslation();
   const { confirm } = useConfirm();
   const [documents, setDocuments] = useState([]);
+  const [instrumentModels, setInstrumentModels] = useState([]);
   const [varalCategories, setVaralCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
@@ -37,6 +40,7 @@ export default function VaralManager({ groupId, onBack, role, isSystemAdmin, isE
   const [selectedReport, setSelectedReport] = useState(null);
   const [selectedToada, setSelectedToada] = useState(null);
   const [selectedCultureCard, setSelectedCultureCard] = useState(null);
+  const [selectedInstrumentModel, setSelectedInstrumentModel] = useState(null);
   const [activeMainTab, setActiveMainTab] = useState('documents'); // 'documents' | 'models'
   
   // Sorting state per category
@@ -56,6 +60,7 @@ export default function VaralManager({ groupId, onBack, role, isSystemAdmin, isE
   useHardwareBack(!!selectedReport, () => setSelectedReport(null));
   useHardwareBack(!!selectedToada, () => setSelectedToada(null));
   useHardwareBack(!!selectedCultureCard, () => setSelectedCultureCard(null));
+  useHardwareBack(!!selectedInstrumentModel, () => setSelectedInstrumentModel(null));
   useHardwareBack(showBulkPrintModal, () => setShowBulkPrintModal(false));
 
   const toggleSongSelection = (id) => {
@@ -318,6 +323,28 @@ export default function VaralManager({ groupId, onBack, role, isSystemAdmin, isE
       setLoading(false);
     });
     return () => unsubscribe();
+  }, [groupId, isAuthorized]);
+
+  // 3. Charger les modèles d'instruments pour la projection dynamique dans l'Atelier
+  useEffect(() => {
+    if (!groupId || !isAuthorized) {
+      setInstrumentModels([]);
+      return;
+    }
+    const qModels = query(collection(db, 'instrument_models'), where('groupId', '==', groupId));
+    const unsubscribeModels = onSnapshot(qModels, (snap) => {
+      const fetchedModels = [];
+      snap.forEach((docSnap) => {
+        fetchedModels.push({
+          id: docSnap.id,
+          ...docSnap.data()
+        });
+      });
+      setInstrumentModels(fetchedModels);
+    }, (err) => {
+      console.error("VaralManager - Erreur écoute instrument_models :", err);
+    });
+    return () => unsubscribeModels();
   }, [groupId, isAuthorized]);
 
   // Identification globale du tout dernier document ajouté sur l'ensemble du Varal
@@ -807,6 +834,13 @@ export default function VaralManager({ groupId, onBack, role, isSystemAdmin, isE
                   if (!matchObj || matchObj.id !== category.id) return false;
                   return true;
                 });
+
+                // Projection dynamique en mémoire des modèles d'atelier et de leurs pièces pour TutosFabrication
+                const isTutoFabricationCat = category.id === 'TutosFabrication' || category.nom === 'Tutos Fabrication' || category.nom === 'TutosFabrication';
+                if (isTutoFabricationCat) {
+                  const projectedWorkshopDocs = projectWorkshopBooklets(instrumentModels);
+                  catDocs = [...catDocs, ...projectedWorkshopDocs];
+                }
                 
                 // Trier docs dynamically
                 if (sortMethod === 'date') {
@@ -825,12 +859,29 @@ export default function VaralManager({ groupId, onBack, role, isSystemAdmin, isE
 
                 return (
                   <div key={category.id} className="flex flex-col">
-                    {/* Header bar with sorting selector */}
+                    {/* Header bar with sorting selector & workshop shortcut */}
                     <div className="flex justify-between items-center bg-cordel-master-dark text-cordel-bg-light p-3 rounded-t border-t border-x border-encre-noire select-none">
                       <span className="font-extrabold uppercase tracking-wider text-xs flex items-center gap-1.5">
                         🎗️ {getCategoryLabel(category.nom)} ({catDocs.length})
                       </span>
                       <div className="flex items-center gap-2">
+                        {isTutoFabricationCat && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (onNavigateToView) {
+                                onNavigateToView('instrument-models');
+                              } else {
+                                setActiveMainTab('models');
+                              }
+                            }}
+                            className="text-[9px] font-black uppercase tracking-wider px-2 py-1 rounded bg-[var(--color-cordel-vert,#2d6a4f)] text-[#FEF9E7] border border-encre-noire shadow-xs hover:brightness-110 cursor-pointer flex items-center gap-1 select-none transition-all"
+                            title="Basculer vers l'éditeur de modèles de lutherie"
+                          >
+                            <span>🛠️ Éditeur Modèles Lutherie</span>
+                            <span>➜</span>
+                          </button>
+                        )}
                         <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-bg-light/80">{t('common.sort')} :</label>
                         <select
                           value={sortMethod}
@@ -896,64 +947,87 @@ export default function VaralManager({ groupId, onBack, role, isSystemAdmin, isE
                                         />
                                       )}
                                       <span>{docItem.titre}</span>
+                                      {isWorkshopVirtualDoc(docItem) && (
+                                        <span className="theme-stamp-badge text-[7.5px] font-black uppercase tracking-wider px-1.5 py-0.5 bg-amber-100 text-amber-900 border border-amber-800/40 rounded select-none shadow-xs">
+                                          {docItem.isPartStep ? `⚙️ Pièce Atelier (${docItem.etapesCount} ét.)` : "🛠️ Modèle d'Atelier"}
+                                        </span>
+                                      )}
                                       {docItem.id === newestDocumentId && (
                                         <span className="theme-stamp-badge theme-stamp-badge-wood text-[7.5px] font-black uppercase tracking-wider px-1.5 py-0.2 bg-[#d99f4d]/30 text-encre-noire border border-encre-noire animate-pulse select-none">
                                           {t('documents.newestBadge') || "✨ Nouveau"}
                                         </span>
                                       )}
                                     </div>
-                                    {docItem.sousCategorie && (
+                                    {docItem.sousTitre ? (
                                       <span className="block text-[8px] font-bold text-cordel-wood uppercase tracking-wider mt-0.5">
-                                        📁 {docItem.sousCategorie} ({docItem.annee})
+                                        📐 {docItem.sousTitre}
                                       </span>
+                                    ) : (
+                                      docItem.sousCategorie && (
+                                        <span className="block text-[8px] font-bold text-cordel-wood uppercase tracking-wider mt-0.5">
+                                          📁 {docItem.sousCategorie} ({docItem.annee})
+                                        </span>
+                                      )
                                     )}
                                   </td>
                                   <td className="py-2 px-2 md:py-2.5 md:px-3 text-center">
-                                    <div className="flex justify-center gap-1.5 select-none">
-                                      <button 
-                                        type="button"
-                                        onClick={() => handleToggleState(docItem, 'isHidden')}
-                                        className={`relative w-7 h-7 flex items-center justify-center rounded border ${!docItem.isHidden ? 'bg-cordel-vert/10 border-cordel-vert shadow-[1px_1px_0px_0px_var(--color-cordel-vert)] opacity-100' : 'bg-white border-encre-noire/20 opacity-40 grayscale hover:opacity-100 hover:grayscale-0 shadow-sm'} transition-all cursor-pointer`}
-                                        title={docItem.isHidden ? "Masqué du Varal. Cliquer pour rendre visible." : "Visible sur le Varal. Cliquer pour masquer."}
-                                      >
-                                        <span className="text-sm pointer-events-none">{docItem.isHidden ? '🙈' : '👁️'}</span>
-                                        {docItem.isHidden && <div className="absolute inset-0 m-auto w-[18px] h-[2.5px] bg-cordel-rouge -rotate-45 rounded-full pointer-events-none"></div>}
-                                      </button>
-                                      { (docItem.categorie === 'Toadas' || docItem.categorie === 'Culture' || (category.nom || '').toLowerCase().includes('toadas') || (category.nom || '').toLowerCase().includes('culture')) && (
+                                    {isWorkshopVirtualDoc(docItem) ? (
+                                      <span className="text-[8px] font-black uppercase px-1.5 py-0.5 rounded bg-amber-100 text-amber-900 border border-amber-800/30 select-none">
+                                        Projection
+                                      </span>
+                                    ) : (
+                                      <div className="flex justify-center gap-1.5 select-none">
                                         <button 
                                           type="button"
-                                          onClick={() => handleToggleState(docItem, 'excludeFromPedagogy')}
-                                          className={`relative w-7 h-7 flex items-center justify-center rounded border ${!docItem.excludeFromPedagogy ? 'bg-cordel-ocre/10 border-cordel-ocre shadow-[1px_1px_0px_0px_var(--color-cordel-ocre)] opacity-100' : 'bg-white border-encre-noire/20 opacity-40 grayscale hover:opacity-100 hover:grayscale-0 shadow-sm'} transition-all cursor-pointer`}
-                                          title={docItem.excludeFromPedagogy ? "Exclu du QCM/Carnet. Cliquer pour inclure." : "Inclus dans QCM/Carnet. Cliquer pour exclure."}
+                                          onClick={() => handleToggleState(docItem, 'isHidden')}
+                                          className={`relative w-7 h-7 flex items-center justify-center rounded border ${!docItem.isHidden ? 'bg-cordel-vert/10 border-cordel-vert shadow-[1px_1px_0px_0px_var(--color-cordel-vert)] opacity-100' : 'bg-white border-encre-noire/20 opacity-40 grayscale hover:opacity-100 hover:grayscale-0 shadow-sm'} transition-all cursor-pointer`}
+                                          title={docItem.isHidden ? "Masqué du Varal. Cliquer pour rendre visible." : "Visible sur le Varal. Cliquer pour masquer."}
                                         >
-                                          <span className="text-sm pointer-events-none">{docItem.excludeFromPedagogy ? '📕' : '📖'}</span>
+                                          <span className="text-sm pointer-events-none">{docItem.isHidden ? '🙈' : '👁️'}</span>
+                                          {docItem.isHidden && <div className="absolute inset-0 m-auto w-[18px] h-[2.5px] bg-cordel-rouge -rotate-45 rounded-full pointer-events-none"></div>}
                                         </button>
-                                      )}
-                                      <button 
-                                        type="button"
-                                        onClick={() => handleToggleState(docItem, 'isArchived')}
-                                        className={`relative w-7 h-7 flex items-center justify-center rounded border ${docItem.isArchived ? 'bg-cordel-wood/10 border-cordel-wood shadow-[1px_1px_0px_0px_var(--color-cordel-wood)] opacity-100' : 'bg-white border-encre-noire/20 opacity-40 grayscale hover:opacity-100 hover:grayscale-0 shadow-sm'} transition-all cursor-pointer`}
-                                        title={docItem.isArchived ? "Archivé (Carton fermé). Cliquer pour remettre sur le varal." : "Sur le Varal (Carton ouvert). Cliquer pour archiver."}
-                                      >
-                                        <span className="text-sm pointer-events-none">{docItem.isArchived ? '📦' : '📤'}</span>
-                                      </button>
-                                      {isAuthorized && (
+                                        { (docItem.categorie === 'Toadas' || docItem.categorie === 'Culture' || (category.nom || '').toLowerCase().includes('toadas') || (category.nom || '').toLowerCase().includes('culture')) && (
+                                          <button 
+                                            type="button"
+                                            onClick={() => handleToggleState(docItem, 'excludeFromPedagogy')}
+                                            className={`relative w-7 h-7 flex items-center justify-center rounded border ${!docItem.excludeFromPedagogy ? 'bg-cordel-ocre/10 border-cordel-ocre shadow-[1px_1px_0px_0px_var(--color-cordel-ocre)] opacity-100' : 'bg-white border-encre-noire/20 opacity-40 grayscale hover:opacity-100 hover:grayscale-0 shadow-sm'} transition-all cursor-pointer`}
+                                            title={docItem.excludeFromPedagogy ? "Exclu du QCM/Carnet. Cliquer pour inclure." : "Inclus dans QCM/Carnet. Cliquer pour exclure."}
+                                          >
+                                            <span className="text-sm pointer-events-none">{docItem.excludeFromPedagogy ? '📕' : '📖'}</span>
+                                          </button>
+                                        )}
                                         <button 
                                           type="button"
-                                          onClick={() => handleTogglePublic(docItem)}
-                                          className={`relative w-7 h-7 flex items-center justify-center rounded border ${docItem.isPublic ? 'bg-cordel-vert/10 border-cordel-vert shadow-[1px_1px_0px_0px_var(--color-cordel-vert)] opacity-100' : 'bg-cordel-ocre/10 border-cordel-ocre shadow-[1px_1px_0px_0px_var(--color-cordel-ocre)] opacity-100'} transition-all cursor-pointer`}
-                                          title={docItem.isPublic ? "Public dans le Terreiro. Cliquer pour dépublier." : "Privé. Cliquer pour publier dans le Terreiro."}
+                                          onClick={() => handleToggleState(docItem, 'isArchived')}
+                                          className={`relative w-7 h-7 flex items-center justify-center rounded border ${docItem.isArchived ? 'bg-cordel-wood/10 border-cordel-wood shadow-[1px_1px_0px_0px_var(--color-cordel-wood)] opacity-100' : 'bg-white border-encre-noire/20 opacity-40 grayscale hover:opacity-100 hover:grayscale-0 shadow-sm'} transition-all cursor-pointer`}
+                                          title={docItem.isArchived ? "Archivé (Carton fermé). Cliquer pour remettre sur le varal." : "Sur le Varal (Carton ouvert). Cliquer pour archiver."}
                                         >
-                                          <span className="text-sm pointer-events-none">{docItem.isPublic ? '🔓' : '🔒'}</span>
+                                          <span className="text-sm pointer-events-none">{docItem.isArchived ? '📦' : '📤'}</span>
                                         </button>
-                                      )}
-                                    </div>
+                                        {isAuthorized && (
+                                          <button 
+                                            type="button"
+                                            onClick={() => handleTogglePublic(docItem)}
+                                            className={`relative w-7 h-7 flex items-center justify-center rounded border ${docItem.isPublic ? 'bg-cordel-vert/10 border-cordel-vert shadow-[1px_1px_0px_0px_var(--color-cordel-vert)] opacity-100' : 'bg-cordel-ocre/10 border-cordel-ocre shadow-[1px_1px_0px_0px_var(--color-cordel-ocre)] opacity-100'} transition-all cursor-pointer`}
+                                            title={docItem.isPublic ? "Public dans le Terreiro. Cliquer pour dépublier." : "Privé. Cliquer pour publier dans le Terreiro."}
+                                          >
+                                            <span className="text-sm pointer-events-none">{docItem.isPublic ? '🔓' : '🔒'}</span>
+                                          </button>
+                                        )}
+                                      </div>
+                                    )}
                                   </td>
                                   <td className="py-2 px-2 md:py-2.5 md:px-3 font-semibold text-[10px]">
-                                    {getDocTypeBadge(docItem.type || 'pdf')}
+                                    {isWorkshopVirtualDoc(docItem) ? (
+                                      <span className="inline-flex items-center gap-1 font-bold text-amber-900">
+                                        {docItem.isPartStep ? '⚙️ Usinage' : '🛠️ Modèle'}
+                                      </span>
+                                    ) : (
+                                      getDocTypeBadge(docItem.type || 'pdf')
+                                    )}
                                   </td>
                                   <td className="py-2 px-2 md:py-2.5 md:px-3 text-center">
-                                    {sortMethod === 'order' ? (
+                                    {!isWorkshopVirtualDoc(docItem) && sortMethod === 'order' ? (
                                       <div className="flex justify-center gap-1 select-none">
                                         <button
                                           onClick={() => handleMoveUp(docItem, catDocs)}
@@ -978,39 +1052,71 @@ export default function VaralManager({ groupId, onBack, role, isSystemAdmin, isE
                                   </td>
                                   <td className="py-2 px-2 md:py-2.5 md:px-3 text-right">
                                     <div className="flex items-center justify-end gap-1.5">
-                                      {(docItem.fileUrl || docItem.type === 'report' || docItem.type === 'culture_fiche' || docItem.type === 'song' || (docItem.categorie || '').toLowerCase().includes('culture') || (docItem.categorie || '').toLowerCase().includes('toada')) && (
-                                        <button
-                                          onClick={() => {
-                                            const cat = (docItem.categorie || '').toLowerCase();
-                                            const inferredType = docItem.type || (cat.includes('toada') ? 'song' : (cat.includes('culture') || cat.includes('fiche') ? 'culture_fiche' : 'pdf'));
-                                            
-                                            if (inferredType === 'report') {
-                                              setSelectedReport(docItem);
-                                            } else if (inferredType === 'song') {
-                                              setSelectedToada(docItem);
-                                            } else if (inferredType === 'culture_fiche') {
-                                              setSelectedCultureCard(docItem);
-                                            } else {
-                                              window.open(docItem.fileUrl, '_blank');
-                                            }
-                                          }}
-                                          className="text-[9px] font-black uppercase bg-neutral-100 hover:bg-neutral-200 text-encre-noire border border-encre-noire/30 px-2.5 py-1 rounded"
-                                        >
-                                          Aperçu
-                                        </button>
+                                      {isWorkshopVirtualDoc(docItem) ? (
+                                        <>
+                                          <button
+                                            onClick={() => {
+                                              setSelectedInstrumentModel({
+                                                ...(docItem.modelData || docItem),
+                                                focusedPartId: docItem.partId || null
+                                              });
+                                            }}
+                                            className="text-[9px] font-black uppercase bg-neutral-100 hover:bg-neutral-200 text-encre-noire border border-encre-noire/30 px-2.5 py-1 rounded cursor-pointer"
+                                          >
+                                            Aperçu
+                                          </button>
+                                          <button
+                                            onClick={() => {
+                                              if (onNavigateToView) {
+                                                onNavigateToView('instrument-models');
+                                              } else {
+                                                setActiveMainTab('models');
+                                              }
+                                            }}
+                                            className="text-[9px] font-black uppercase bg-amber-200/80 hover:bg-amber-300 text-amber-900 border border-amber-800/30 px-2.5 py-1 rounded cursor-pointer flex items-center gap-1"
+                                            title="Modifier dans l'Atelier Lutherie"
+                                          >
+                                            <span>Éditer Atelier</span>
+                                            <span>➜</span>
+                                          </button>
+                                        </>
+                                      ) : (
+                                        <>
+                                          {(docItem.fileUrl || docItem.type === 'report' || docItem.type === 'culture_fiche' || docItem.type === 'song' || (docItem.categorie || '').toLowerCase().includes('culture') || (docItem.categorie || '').toLowerCase().includes('toada')) && (
+                                            <button
+                                              onClick={() => {
+                                                const cat = (docItem.categorie || '').toLowerCase();
+                                                const inferredType = docItem.type || (cat.includes('toada') ? 'song' : (cat.includes('culture') || cat.includes('fiche') ? 'culture_fiche' : 'pdf'));
+                                                
+                                                if (inferredType === 'report') {
+                                                  setSelectedReport(docItem);
+                                                } else if (inferredType === 'song') {
+                                                  setSelectedToada(docItem);
+                                                } else if (inferredType === 'culture_fiche') {
+                                                  setSelectedCultureCard(docItem);
+                                                } else {
+                                                  window.open(docItem.fileUrl, '_blank');
+                                                }
+                                              }}
+                                              className="text-[9px] font-black uppercase bg-neutral-100 hover:bg-neutral-200 text-encre-noire border border-encre-noire/30 px-2.5 py-1 rounded"
+                                            >
+                                              Aperçu
+                                            </button>
+                                          )}
+                                          <button
+                                            onClick={() => setDocumentToEdit(docItem)}
+                                            className="text-[9px] font-black uppercase bg-[#d99f4d]/80 hover:bg-[#d99f4d] text-encre-noire border border-encre-noire/30 px-2.5 py-1 rounded"
+                                          >
+                                            Modifier
+                                          </button>
+                                          <button
+                                            onClick={() => handleDelete(docItem)}
+                                            className="text-[9px] font-black uppercase bg-red-100 hover:bg-red-200 text-red-700 border border-red-300 px-2.5 py-1 rounded"
+                                          >
+                                            Supprimer
+                                          </button>
+                                        </>
                                       )}
-                                      <button
-                                        onClick={() => setDocumentToEdit(docItem)}
-                                        className="text-[9px] font-black uppercase bg-[#d99f4d]/80 hover:bg-[#d99f4d] text-encre-noire border border-encre-noire/30 px-2.5 py-1 rounded"
-                                      >
-                                        Modifier
-                                      </button>
-                                      <button
-                                        onClick={() => handleDelete(docItem)}
-                                        className="text-[9px] font-black uppercase bg-red-100 hover:bg-red-200 text-red-700 border border-red-300 px-2.5 py-1 rounded"
-                                      >
-                                        Supprimer
-                                      </button>
                                     </div>
                                   </td>
                                 </tr>
@@ -1149,6 +1255,16 @@ export default function VaralManager({ groupId, onBack, role, isSystemAdmin, isE
             </div>
           </div>
         </div>
+      )}
+
+      {/* Modale technique d'atelier (Modèle d'instrument ou pièce usinée) */}
+      {selectedInstrumentModel && (
+        <InstrumentModelCard
+          model={selectedInstrumentModel}
+          initialPartId={selectedInstrumentModel.focusedPartId}
+          profileData={profileData || { uid: auth?.currentUser?.uid, groupId, role, isSystemAdmin }}
+          onClose={() => setSelectedInstrumentModel(null)}
+        />
       )}
     </div>
 
