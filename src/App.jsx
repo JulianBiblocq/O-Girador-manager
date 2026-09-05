@@ -1531,7 +1531,7 @@ export default function App() {
               </span>
             </div>
           }>
-            <ErrorBoundary title={`Section ${currentTab || 'Principale'}`}>
+            <ErrorBoundary key={currentTab || 'principale'} resetKey={currentTab} title={`Section ${currentTab || 'Principale'}`}>
             {activeMestreEventDetails ? (
               <EventDetails 
                 event={activeMestreEventDetails}

@@ -30,6 +30,58 @@ const calculateCarStatus = (car, associationSettings) => {
   };
 };
 
+/**
+ * Convertit en toute sécurité une valeur hétérogène (Timestamp Firestore, objet {seconds},
+ * chaîne ISO, instance Date) en un objet Date JavaScript valide.
+ * Renvoie null en cas de valeur invalide sans jamais lever d'exception.
+ *
+ * @param {any} val - Valeur à convertir
+ * @returns {Date|null}
+ */
+export const toSafeDate = (val) => {
+  if (!val) return null;
+  if (val instanceof Date) return isNaN(val.getTime()) ? null : val;
+  if (typeof val.toDate === 'function') {
+    try {
+      const d = val.toDate();
+      return isNaN(d.getTime()) ? null : d;
+    } catch {
+      return null;
+    }
+  }
+  if (typeof val === 'object') {
+    const secs = val.seconds ?? val._seconds;
+    if (typeof secs === 'number' && !isNaN(secs)) {
+      const d = new Date(secs * 1000);
+      return isNaN(d.getTime()) ? null : d;
+    }
+  }
+  try {
+    const d = new Date(val);
+    return isNaN(d.getTime()) ? null : d;
+  } catch {
+    return null;
+  }
+};
+
+/**
+ * Résout la date effective d'une écriture comptable / transaction avec repli successif.
+ * Priorités : tx.date -> tx.createdAt -> tx.dateCreation -> tx.timestamp
+ *
+ * @param {Object} tx - Transaction comptable
+ * @returns {Date|null}
+ */
+export const getEffectiveTransactionDate = (tx) => {
+  if (!tx) return null;
+  return (
+    toSafeDate(tx.date) ||
+    toSafeDate(tx.createdAt) ||
+    toSafeDate(tx.dateCreation) ||
+    toSafeDate(tx.timestamp) ||
+    null
+  );
+};
+
 export function useTreasury(groupId) {
   const [members, setMembers] = useState([]);
   const [transactions, setTransactions] = useState([]);
@@ -288,15 +340,17 @@ export function useTreasury(groupId) {
   const calculateGlobalBalance = (startDateStr, endDateStr) => {
     const entries = []; // Each entry is { date, category, label, amount, type: 'recette' | 'depense' }
 
-    const start = startDateStr ? new Date(startDateStr) : null;
-    const end = endDateStr ? new Date(endDateStr) : null;
+    const startDateObj = toSafeDate(startDateStr);
+    const endDateObj = toSafeDate(endDateStr);
+    const normalizedStartStr = startDateObj ? startDateObj.toISOString().split('T')[0] : (startDateStr || '');
+    const normalizedEndStr = endDateObj ? endDateObj.toISOString().split('T')[0] : (endDateStr || '');
 
     const isWithinRange = (dateInput) => {
-      if (!dateInput) return false;
-      const dateVal = dateInput.toDate ? dateInput.toDate() : new Date(dateInput);
+      const dateVal = toSafeDate(dateInput);
+      if (!dateVal) return false;
       const dateStr = dateVal.toISOString().split('T')[0];
-      if (start && dateStr < startDateStr) return false;
-      if (end && dateStr > endDateStr) return false;
+      if (normalizedStartStr && dateStr < normalizedStartStr) return false;
+      if (normalizedEndStr && dateStr > normalizedEndStr) return false;
       return dateStr;
     };
 
@@ -315,11 +369,12 @@ export function useTreasury(groupId) {
 
       let paymentDateObj = null;
       if (member.dateSignatureDroitImage) {
-        paymentDateObj = member.dateSignatureDroitImage;
+        paymentDateObj = toSafeDate(member.dateSignatureDroitImage);
       } else if (member.dateSignatureAttestationSante) {
-        paymentDateObj = member.dateSignatureAttestationSante;
-      } else {
-        paymentDateObj = start ? start : new Date();
+        paymentDateObj = toSafeDate(member.dateSignatureAttestationSante);
+      }
+      if (!paymentDateObj) {
+        paymentDateObj = startDateObj ? startDateObj : new Date();
       }
 
       const dateStr = isWithinRange(paymentDateObj);
@@ -358,7 +413,8 @@ export function useTreasury(groupId) {
 
     // 3. Événements (Recettes et Dépenses)
     events.forEach(event => {
-      const dateStr = isWithinRange(event.date);
+      const eventDate = toSafeDate(event.date) || toSafeDate(event.dateDebut) || toSafeDate(event.createdAt);
+      const dateStr = isWithinRange(eventDate);
       if (!dateStr) return;
 
       const rec = Number(event.montantRecette) || 0;
@@ -397,7 +453,8 @@ export function useTreasury(groupId) {
 
     if (indemniteKilometrique > 0 && enableCarpoolReimbursement) {
       events.forEach(event => {
-        const dateStr = isWithinRange(event.date);
+        const eventDate = toSafeDate(event.date) || toSafeDate(event.dateDebut) || toSafeDate(event.createdAt);
+        const dateStr = isWithinRange(eventDate);
         if (!dateStr) return;
 
         const distance = event.distanceAllerRetourKm || 0;
@@ -458,7 +515,8 @@ export function useTreasury(groupId) {
 
     // 5. Opérations Diverses (Recettes et Dépenses)
     transactions.forEach(tx => {
-      const dateStr = isWithinRange(tx.date);
+      const effectiveDate = getEffectiveTransactionDate(tx);
+      const dateStr = isWithinRange(effectiveDate);
       if (!dateStr) return;
 
       const amount = Number(tx.montant) || 0;

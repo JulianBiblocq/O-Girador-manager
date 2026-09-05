@@ -5,7 +5,7 @@ import CordelButton from './CordelButton';
 export default class ErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
-    this.state = { hasError: false, error: null };
+    this.state = { hasError: false, error: null, errorInfo: null };
   }
 
   static getDerivedStateFromError(error) {
@@ -28,7 +28,7 @@ export default class ErrorBoundary extends React.Component {
         timestamp: new Date().toISOString()
       };
 
-      const hubUrl = import.meta.env.VITE_ECOSYSTEM_HUB_URL;
+      const hubUrl = import.meta.env.VITE_OGIRADOR_HUB_URL || import.meta.env.VITE_ECOSYSTEM_HUB_URL;
       if (!hubUrl) return;
 
       if (navigator.sendBeacon) {
@@ -69,7 +69,18 @@ export default class ErrorBoundary extends React.Component {
     window.removeEventListener('unhandledrejection', this.handleGlobalPromiseRejection);
   }
 
+  componentDidUpdate(prevProps) {
+    // Réinitialise automatiquement l'état d'erreur dès que la section ou la clé change
+    if (
+      this.state.hasError &&
+      (this.props.resetKey !== prevProps.resetKey || this.props.title !== prevProps.title)
+    ) {
+      this.setState({ hasError: false, error: null, errorInfo: null });
+    }
+  }
+
   componentDidCatch(error, errorInfo) {
+    this.setState({ errorInfo });
     console.error(`ErrorBoundary [${this.props.title || 'Global'}] a intercepté une erreur :`, error, errorInfo);
     
     // Télémétrie silencieuse
@@ -109,7 +120,7 @@ export default class ErrorBoundary extends React.Component {
   };
 
   handleReset = () => {
-    this.setState({ hasError: false, error: null });
+    this.setState({ hasError: false, error: null, errorInfo: null });
   };
 
   render() {

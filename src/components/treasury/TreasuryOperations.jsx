@@ -4,6 +4,7 @@ import CordelButton from '../CordelButton';
 import EmptyState from '../EmptyState';
 import Tooltip from '../Tooltip';
 import useConfirm from '../../hooks/useConfirm';
+import { getEffectiveTransactionDate } from '../../hooks/useTreasury';
 
 export default function TreasuryOperations({
   transactions,
@@ -266,7 +267,10 @@ export default function TreasuryOperations({
 
               {/* Rows */}
               {transactions.map(tx => {
-                const txDateStr = tx.date ? (tx.date.toDate ? tx.date.toDate().toISOString().split('T')[0] : String(tx.date).substring(0, 10)) : '';
+                const effectiveDate = getEffectiveTransactionDate(tx);
+                const txDateStr = effectiveDate
+                  ? effectiveDate.toISOString().split('T')[0]
+                  : (typeof tx.date === 'string' && tx.date && !tx.date.includes('[object') ? tx.date.substring(0, 10) : '—');
                 return (
                   <div key={tx.id} className="grid grid-cols-12 gap-2 items-center text-xs border-b border-dashed border-encre-noire/5 py-2 px-1 hover:bg-cordel-hover/10 rounded">
                     <div className="col-span-2 font-semibold text-left">{txDateStr}</div>
