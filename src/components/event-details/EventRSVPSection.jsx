@@ -4,6 +4,7 @@ import CordelButton from '../CordelButton';
 import XiloAvatar from '../XiloAvatar';
 import Tooltip from '../Tooltip';
 import { useInstrumentColor } from '../../hooks/useInstrumentColor';
+import EventTransportSelector from './EventTransportSelector';
 
 export default function EventRSVPSection({
   event,
@@ -499,31 +500,39 @@ export default function EventRSVPSection({
               </div>
             )}
 
-            {/* Instrument Transport Demand */}
+            {/* Déplacement & Transport convoi */}
             {status === 'present' && enableCarpool && (
-              <div className="flex flex-col gap-2 border-t border-dashed border-cordel-master-dark/20 pt-4 mt-2">
-                <h4 className="font-bold text-xs uppercase tracking-wider text-cordel-wood">
-                  🥁 Transport d'instrument encombrant
-                </h4>
-                <label className="flex items-start gap-2.5 cursor-pointer select-none p-2.5 rounded border border-dashed border-cordel-master-dark/15 bg-cordel-bg-light/50 hover:bg-cordel-bg-light transition-colors">
-                  <input
-                    type="checkbox"
-                    checked={besoinTransportInstrument}
-                    onChange={(e) => {
-                      const checked = e.target.checked;
-                      setBesoinTransportInstrument(checked);
-                      handleSave(null, status, { besoinTransportInstrument: checked });
-                    }}
-                    disabled={saving}
-                    className="w-4 h-4 border border-encre-noire bg-white rounded mt-0.5 shrink-0 accent-cordel-wood"
-                  />
-                  <span className="text-[11px] font-bold text-encre-noire leading-snug">
-                    J'ai besoin qu'on transporte mon Alfaia / instrument encombrant
-                    <span className="block text-[9px] font-semibold text-cordel-master-dark/70 mt-0.5">
-                      Coche cette case si tu as un gros fût (Alfaia) à faire transporter par un véhicule du convoi.
+              <div className="flex flex-col gap-3.5 border-t border-dashed border-cordel-master-dark/20 pt-4 mt-2">
+                <EventTransportSelector 
+                  value={transport}
+                  onChange={(newTransport) => {
+                    handleSave(null, status, { transport: newTransport });
+                  }}
+                  disabled={saving}
+                />
+
+                {/* Option transport d'instrument encombrant (accessible même si autonome) */}
+                <div className="flex flex-col gap-1">
+                  <label className="flex items-start gap-2.5 cursor-pointer select-none p-2.5 rounded border border-dashed border-cordel-master-dark/15 bg-cordel-bg-light/50 hover:bg-cordel-bg-light transition-colors">
+                    <input
+                      type="checkbox"
+                      checked={besoinTransportInstrument}
+                      onChange={(e) => {
+                        const checked = e.target.checked;
+                        setBesoinTransportInstrument(checked);
+                        handleSave(null, status, { besoinTransportInstrument: checked });
+                      }}
+                      disabled={saving}
+                      className="w-4 h-4 border border-encre-noire bg-white rounded mt-0.5 shrink-0 accent-cordel-wood"
+                    />
+                    <span className="text-[11px] font-bold text-encre-noire leading-snug">
+                      🥁 J'ai besoin qu'on transporte mon Alfaia / instrument encombrant dans le convoi
+                      <span className="block text-[9px] font-semibold text-cordel-master-dark/70 mt-0.5">
+                        Cochez cette case si vous vous déplacez par vos propres moyens ou cherchez une place mais devez confier un gros fût au convoi.
+                      </span>
                     </span>
-                  </span>
-                </label>
+                  </label>
+                </div>
               </div>
             )}
           </CordelCard>

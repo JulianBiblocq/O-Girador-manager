@@ -1,6 +1,6 @@
 import React from 'react';
 import CordelCard from '../CordelCard';
-import { calculateCarStatus } from '../../hooks/useEventCarpool';
+import { calculateCarStatus, calculateCarpoolGauge } from '../../hooks/useEventCarpool';
 
 export default function EventCarpoolSection({
   event,
@@ -33,12 +33,11 @@ export default function EventCarpoolSection({
   handleRemovePassenger
 }) {
   const voituresList = event.covoiturage?.voitures || [];
-  const hasCarWithAvailableSeats = voituresList.some(v => {
-    const status = calculateCarStatus(v, { enableCarpoolReimbursement, reimbursementRule });
-    return status.availableSeats > 0;
-  });
+  // Calcul de la jauge proportionnelle Demande vs Offre
+  const gauge = calculateCarpoolGauge(event, voituresList);
   const isUserChauffeurAnyCar = voituresList.some(v => v.chauffeurId === user?.uid);
-  const isProposerDisabled = !isUserChauffeurAnyCar && hasCarWithAvailableSeats;
+  // Bloqué uniquement pour les membres non-gestionnaires si la capacité nécessaire est déjà atteinte
+  const isProposerDisabled = !isUserChauffeurAnyCar && !isAuthorized && gauge.isCapacitySufficient;
 
   return (
     <>
@@ -124,6 +123,34 @@ export default function EventCarpoolSection({
             🚗 Convoi & Covoiturage (Départ du local)
           </h4>
 
+          {/* 📊 Bandeau Jauge Convoi (Demande vs Offre) */}
+          <div className="mb-4 p-2.5 rounded theme-inner-panel flex flex-col sm:flex-row items-center justify-between gap-2 text-xs border border-dashed border-cordel-master-dark/20 text-left">
+            <div className="flex items-center gap-2">
+              <span className="text-base">📊</span>
+              <div>
+                <span className="font-bold text-encre-noire block">
+                  Jauge convoi : {gauge.offreTransport} place{gauge.offreTransport > 1 ? 's' : ''} offerte{gauge.offreTransport > 1 ? 's' : ''} / {gauge.demandeTransport} demandée{gauge.demandeTransport > 1 ? 's' : ''}
+                </span>
+                <span className="text-[10px] text-encre-noire/70">
+                  {gauge.isCapacitySufficient 
+                    ? "Capacité suffisante pour les besoins actuels" 
+                    : gauge.demandeTransport > gauge.offreTransport
+                      ? `Besoin d'au moins ${gauge.demandeTransport - gauge.offreTransport} place(s) supplémentaire(s)`
+                      : "Véhicules prêts"}
+                </span>
+              </div>
+            </div>
+            <div className="flex items-center gap-1.5 shrink-0">
+              <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded border ${
+                gauge.isCapacitySufficient
+                  ? "bg-green-100 border-green-400 text-green-800"
+                  : "bg-amber-100 border-amber-400 text-amber-800"
+              }`}>
+                {gauge.isCapacitySufficient ? "✅ Équilibré" : "⏳ Places recherchées"}
+              </span>
+            </div>
+          </div>
+
           {/* Cars Grid */}
           <div className="flex flex-col gap-3">
             {(event.covoiturage?.voitures || []).length === 0 ? (
@@ -157,10 +184,25 @@ export default function EventCarpoolSection({
                           <span className="text-cordel-wood text-sm truncate pr-2">
                             👤 Chauffeur : {voiture.chauffeurNom}
                           </span>
-                          <span className="shrink-0 text-encre-noire whitespace-nowrap">
-                            🚗 Libres : {status.availableSeats}/{voiture.passengerSeats || 0}
-                          </span>
+                          <div className="shrink-0 text-right">
+                            <span className="text-encre-noire whitespace-nowrap font-bold">
+                              🚗 Libres : {status.availableSeats}/{voiture.passengerSeats || 0}
+                            </span>
+                            {Number(voiture.placesReserveesExternes) > 0 && (
+                              <span className="block text-[9px] font-semibold text-amber-900/80 dark:text-amber-300">
+                                ({Math.max(0, (Number(voiture.passengerSeats) || 0) - Number(voiture.placesReserveesExternes))} asso + {voiture.placesReserveesExternes} hors-asso)
+                              </span>
+                            )}
+                          </div>
                         </div>
+
+                        {/* Places réservées externes badge */}
+                        {Number(voiture.placesReserveesExternes) > 0 && (
+                          <div className="text-[10px] font-bold text-amber-800 dark:text-amber-300 bg-amber-50/80 dark:bg-amber-950/30 border border-dashed border-amber-300 px-2 py-0.5 rounded mb-2 flex items-center justify-between">
+                            <span>👤 {voiture.placesReserveesExternes} place{Number(voiture.placesReserveesExternes) > 1 ? 's' : ''} réservée{Number(voiture.placesReserveesExternes) > 1 ? 's' : ''} hors-asso</span>
+                            {voiture.motifReserveesExternes && <span className="italic font-normal">({voiture.motifReserveesExternes})</span>}
+                          </div>
+                        )}
 
                         {/* Eligibility badge */}
                         {enableCarpoolReimbursement && status.isEligibleForReimbursement && (
@@ -481,13 +523,13 @@ export default function EventCarpoolSection({
                       ? 'bg-neutral-200 text-neutral-500 border border-neutral-300 opacity-60 cursor-not-allowed shadow-none'
                       : 'theme-bg-ocre text-encre-noire hover:brightness-105 active:translate-x-[0.5px] active:translate-y-[0.5px] cursor-pointer'
                   }`}
-                  title={isProposerDisabled ? "Veuillez remplir les véhicules disponibles avant d'en proposer un nouveau." : "Proposer mon véhicule"}
+                  title={isProposerDisabled ? "Capacité de convoi suffisante pour les inscrits actuels." : "Proposer mon véhicule"}
                 >
                   🚗 Proposer ma voiture pour le trajet
                 </button>
                 {isProposerDisabled && (
                   <p className="text-[10px] italic font-bold text-amber-900 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 border border-dashed border-amber-300/80 p-2 rounded text-center leading-relaxed">
-                    ℹ️ Veuillez remplir les véhicules disponibles avant d'en proposer un nouveau.
+                    ℹ️ Capacité suffisante ({gauge.offreTransport} places offertes pour {gauge.demandeTransport} demandées). Veuillez compléter les véhicules existants avant d'en ouvrir un nouveau.
                   </p>
                 )}
               </>
@@ -500,7 +542,7 @@ export default function EventCarpoolSection({
                 <div className="grid grid-cols-2 gap-3">
                   <div className="flex flex-col gap-1">
                     <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                      Places passagers libres
+                      Places passagers totales
                     </label>
                     <input 
                       type="number"
@@ -531,7 +573,44 @@ export default function EventCarpoolSection({
                   </div>
                 </div>
 
-                <div className="flex flex-col gap-1">
+                {/* Places réservées hors association (caméraman, régisseur, conjoint...) */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 border-t border-dashed border-cordel-master-dark/15 pt-2">
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                      Places réservées hors-asso
+                    </label>
+                    <input 
+                      type="number"
+                      min="0"
+                      max={Math.max(0, (voitureForm.passengerSeats || 1) - 1)}
+                      value={voitureForm.placesReserveesExternes || 0}
+                      onChange={(e) => setVoitureForm(prev => ({ 
+                        ...prev, 
+                        placesReserveesExternes: Math.max(0, Math.min((prev.passengerSeats || 1) - 1, parseInt(e.target.value, 10) || 0)) 
+                      }))}
+                      disabled={submittingCovoit}
+                      className="theme-input text-xs font-bold py-1 text-center bg-cordel-bg-light"
+                    />
+                    <span className="text-[8px] text-cordel-master-dark/70">Ex: caméraman, photographe...</span>
+                  </div>
+
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                      Motif réservation externe
+                    </label>
+                    <input 
+                      type="text"
+                      placeholder="Ex: Caméraman officiel"
+                      value={voitureForm.motifReserveesExternes || ''}
+                      onChange={(e) => setVoitureForm(prev => ({ ...prev, motifReserveesExternes: e.target.value }))}
+                      disabled={submittingCovoit || !voitureForm.placesReserveesExternes}
+                      className="theme-input text-xs font-bold py-1 bg-cordel-bg-light disabled:opacity-50"
+                    />
+                    <span className="text-[8px] text-cordel-master-dark/70">Requis si places réservées &gt; 0</span>
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-1 border-t border-dashed border-cordel-master-dark/15 pt-2">
                   <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
                     Matériel collectif pris en charge
                   </label>

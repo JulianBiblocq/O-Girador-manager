@@ -70,7 +70,13 @@ export function useUserProfile(user, profileData, t) {
     publierDateNaissance: profileData?.afficherDateNaissance !== undefined ? profileData.afficherDateNaissance : (profileData?.publierDateNaissance !== undefined ? profileData.publierDateNaissance : false),
     dietaryRestrictions: Array.isArray(profileData?.dietaryRestrictions) ? profileData.dietaryRestrictions : [],
     allergies: profileData?.allergies || '',
-    niveauxParInstrument: profileData?.niveauxParInstrument || {}
+    niveauxParInstrument: profileData?.niveauxParInstrument || {},
+    hasVehicle: profileData?.hasVehicle || false,
+    vehicleType: profileData?.vehicleType || 'Berline',
+    defaultPassengerSeats: profileData?.defaultPassengerSeats !== undefined ? profileData.defaultPassengerSeats : 3,
+    defaultTrunkCapacity: profileData?.defaultTrunkCapacity !== undefined ? profileData.defaultTrunkCapacity : 1,
+    hasRoofBars: profileData?.hasRoofBars || false,
+    hasTowHitch: profileData?.hasTowHitch || false
   });
 
   const [saving, setSaving] = useState(false);
@@ -123,7 +129,13 @@ export function useUserProfile(user, profileData, t) {
       publierDateNaissance: profileData?.afficherDateNaissance !== undefined ? profileData.afficherDateNaissance : (profileData?.publierDateNaissance !== undefined ? profileData.publierDateNaissance : false),
       dietaryRestrictions: Array.isArray(profileData?.dietaryRestrictions) ? profileData.dietaryRestrictions : [],
       allergies: profileData?.allergies || '',
-      niveauxParInstrument: profileData?.niveauxParInstrument || {}
+      niveauxParInstrument: profileData?.niveauxParInstrument || {},
+      hasVehicle: profileData?.hasVehicle || false,
+      vehicleType: profileData?.vehicleType || 'Berline',
+      defaultPassengerSeats: profileData?.defaultPassengerSeats !== undefined ? profileData.defaultPassengerSeats : 3,
+      defaultTrunkCapacity: profileData?.defaultTrunkCapacity !== undefined ? profileData.defaultTrunkCapacity : 1,
+      hasRoofBars: profileData?.hasRoofBars || false,
+      hasTowHitch: profileData?.hasTowHitch || false
     });
     setIsEditing(true);
   };
@@ -473,7 +485,13 @@ export function useUserProfile(user, profileData, t) {
         publierDateNaissance: Boolean(formData.afficherDateNaissance),
         dietaryRestrictions: Array.isArray(formData.dietaryRestrictions) ? formData.dietaryRestrictions : [],
         allergies: formData.allergies ? formData.allergies.trim() : '',
-        niveauxParInstrument: formData.niveauxParInstrument || {}
+        niveauxParInstrument: formData.niveauxParInstrument || {},
+        hasVehicle: Boolean(formData.hasVehicle),
+        vehicleType: formData.hasVehicle ? (formData.vehicleType || 'Berline') : (profileData?.vehicleType || 'Berline'),
+        defaultPassengerSeats: formData.hasVehicle ? (parseInt(formData.defaultPassengerSeats, 10) || 0) : (profileData?.defaultPassengerSeats !== undefined ? profileData.defaultPassengerSeats : 3),
+        defaultTrunkCapacity: formData.hasVehicle ? (parseInt(formData.defaultTrunkCapacity, 10) || 0) : (profileData?.defaultTrunkCapacity !== undefined ? profileData.defaultTrunkCapacity : 1),
+        hasRoofBars: formData.hasVehicle ? Boolean(formData.hasRoofBars) : false,
+        hasTowHitch: formData.hasVehicle ? Boolean(formData.hasTowHitch) : false
       };
 
       if (demanderDroitImage) {

@@ -19,6 +19,7 @@ import {
 } from '../XiloIcons';
 
 import AddressAutocomplete from '../AddressAutocomplete';
+import ProfileVehicleSection from './ProfileVehicleSection';
 
 /**
  * ProfileEditForm component renders the profile editing form for the current user.
@@ -499,6 +500,13 @@ export default function ProfileEditForm({
           </div>
         </div>
       </CordelCard>
+
+      {/* SECTION : VÉHICULE & DÉPLACEMENTS ASSOCIATIFS */}
+      <ProfileVehicleSection
+        formData={formData}
+        handleChange={handleChange}
+        disabled={saving}
+      />
 
       {/* Actions Buttons */}
       <div className="flex gap-3 mt-2 select-none">

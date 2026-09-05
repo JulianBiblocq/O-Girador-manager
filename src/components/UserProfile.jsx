@@ -565,6 +565,57 @@ export default function UserProfile({ user, profileData, associationName, onBack
             </div>
           </CordelCard>
 
+          {/* CARTE 3 : VÉHICULE & DÉPLACEMENTS (si motorisé) */}
+          {profileData?.hasVehicle && (
+            <CordelCard variant="default" useExtremeBorder={false} className="flex flex-col gap-3 text-left">
+              <div className="flex items-center justify-between border-b border-dashed border-cordel-master-dark/15 pb-2">
+                <h4 className="font-black text-xs uppercase text-cordel-wood flex items-center gap-2">
+                  <span>🚗</span>
+                  <span>Véhicule Associatif</span>
+                </h4>
+                <span className="theme-stamp-badge theme-stamp-badge-wood text-[9px] px-2 py-0.5 font-black uppercase">
+                  Motorisé convoi
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 text-xs">
+                <div className="bg-cordel-bg-light/60 p-2 rounded border border-encre-noire/10 flex flex-col">
+                  <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70">Catégorie</span>
+                  <span className="font-extrabold text-encre-noire mt-0.5">{profileData.vehicleType || 'Berline'}</span>
+                </div>
+
+                <div className="bg-cordel-bg-light/60 p-2 rounded border border-encre-noire/10 flex flex-col">
+                  <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70">Places passagers</span>
+                  <span className="font-extrabold text-encre-noire mt-0.5">
+                    {profileData.defaultPassengerSeats !== undefined ? profileData.defaultPassengerSeats : 3} place(s) libre(s)
+                  </span>
+                </div>
+
+                <div className="bg-cordel-bg-light/60 p-2 rounded border border-encre-noire/10 flex flex-col">
+                  <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70">Coffre (Alfaias)</span>
+                  <span className="font-extrabold text-cordel-wood mt-0.5">
+                    ~{profileData.defaultTrunkCapacity !== undefined ? profileData.defaultTrunkCapacity : 1} fût(s) max
+                  </span>
+                </div>
+              </div>
+
+              {(profileData?.hasRoofBars || profileData?.hasTowHitch) && (
+                <div className="flex flex-wrap gap-2 pt-1 border-t border-dashed border-cordel-master-dark/15 text-[10px] font-bold">
+                  {profileData.hasRoofBars && (
+                    <span className="bg-white/80 px-2 py-0.5 rounded border border-encre-noire/15 flex items-center gap-1 text-encre-noire">
+                      📦 Barres de toit / Galerie
+                    </span>
+                  )}
+                  {profileData.hasTowHitch && (
+                    <span className="bg-white/80 px-2 py-0.5 rounded border border-encre-noire/15 flex items-center gap-1 text-encre-noire">
+                      🔗 Crochet d'attelage
+                    </span>
+                  )}
+                </div>
+              )}
+            </CordelCard>
+          )}
+
           {/* Edit Button */}
           <CordelButton 
             type="button" 

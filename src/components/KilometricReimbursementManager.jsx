@@ -20,8 +20,11 @@ const calculateCarStatus = (car, associationSettings) => {
   // Calcul des passagers physiques
   const physicalPassengers = passengers.reduce((sum, p) => sum + (p.isPassenger ? 1 : 0), 0);
   
+  // Prise en compte des places réservées hors-association (caméraman, accompagnateur...)
+  const placesReserveesExternes = Number(car.placesReserveesExternes) || 0;
+
   // Occupation totale et places restantes
-  const occupiedSeats = physicalPassengers + alfayasOnSeats;
+  const occupiedSeats = physicalPassengers + alfayasOnSeats + placesReserveesExternes;
   const availableSeats = (Number(car.passengerSeats) || 0) - occupiedSeats;
 
   // Statuts d'éligibilité et de blocage
@@ -204,17 +207,22 @@ export default function KilometricReimbursementManager({ groupId, onBack, role, 
         });
       }
 
-      // Extract individual drivers
+      // Extract individual drivers (exclut expressément le statut autonome)
       const convoiChauffeurIds = new Set(convoiDrivers.map(d => d.id));
       const individualDrivers = [];
       if (event.inscriptions) {
         event.inscriptions.forEach(ins => {
-          if (ins.status === 'present' && ins.transport === 'propre') {
+          if (
+            ins.status === 'present' &&
+            ins.transport !== 'autonome' &&
+            (ins.transport === 'propose_voiture' || ins.transport === 'propre') &&
+            ins.demandeRemboursementKm === true
+          ) {
             if (!convoiChauffeurIds.has(ins.userId)) {
               individualDrivers.push({
                 id: ins.userId,
                 nom: ins.userName || ins.nom || 'Membre',
-                isEligibleRefund: ins.demandeRemboursementKm === true,
+                isEligibleRefund: true,
                 type: 'individuel'
               });
             }

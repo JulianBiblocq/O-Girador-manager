@@ -11,7 +11,11 @@ export const calculateCarStatus = (car, associationSettings) => {
 
   const physicalPassengers = passengers.reduce((sum, p) => sum + (p.isPassenger ? 1 : 0), 0);
   
-  const occupiedSeats = physicalPassengers + alfayasOnSeats;
+  // Prise en compte des places réservées hors-association (caméraman, technicien...)
+  const placesReserveesExternes = Number(car.placesReserveesExternes) || 0;
+  const motifReserveesExternes = car.motifReserveesExternes || '';
+
+  const occupiedSeats = physicalPassengers + alfayasOnSeats + placesReserveesExternes;
   const availableSeats = (Number(car.passengerSeats) || 0) - occupiedSeats;
 
   const isFull = availableSeats === 0;
@@ -33,11 +37,59 @@ export const calculateCarStatus = (car, associationSettings) => {
     alfayasInTrunk,
     alfayasOnSeats,
     physicalPassengers,
+    placesReserveesExternes,
+    motifReserveesExternes,
     occupiedSeats,
     availableSeats,
     isFull,
     isEligibleForReimbursement,
     isOverbooked
+  };
+};
+
+/**
+ * Calcule la jauge de besoin en transport vs l'offre actuelle en convoi.
+ * Permet d'ouvrir plusieurs voitures proportionnellement au nombre d'inscrits en attente.
+ *
+ * @param {Object} event Événement Firestore
+ * @param {Array} voituresList Liste des voitures déclarées
+ * @returns {Object} { demandeTransport, offreTransport, hasCarWithAvailableSeats, isCapacitySufficient }
+ */
+export const calculateCarpoolGauge = (event, voituresList = []) => {
+  const presentInscriptions = (event?.inscriptions || []).filter(ins => ins.status === 'present');
+  
+  // Membres nécessitant une place en convoi
+  const seekersFromInscriptions = presentInscriptions.filter(ins => {
+    if (voituresList.some(v => v.chauffeurId === ins.userId)) return false;
+    if (ins.transport === 'autonome' || (ins.transport === 'propre' && !ins.demandeRemboursementKm)) return false;
+    return true;
+  }).length;
+
+  const inscriptionUserIds = new Set(presentInscriptions.map(ins => ins.userId));
+  const seekersFromQueue = (event?.covoiturage?.recherchePlace || []).filter(
+    p => !inscriptionUserIds.has(p.uid) && p.cherchePassager !== false
+  ).length;
+
+  const externalGuests = (event?.invitesExternes || []).length;
+  const demandeTransport = seekersFromInscriptions + seekersFromQueue + externalGuests;
+
+  // Offre totale nette en places passagers dans les voitures existantes
+  const offreTransport = voituresList.reduce((sum, v) => {
+    const seats = Number(v.passengerSeats) || 0;
+    const ext = Number(v.placesReserveesExternes) || 0;
+    return sum + Math.max(0, seats - ext);
+  }, 0);
+
+  const hasCarWithAvailableSeats = voituresList.some(v => {
+    const status = calculateCarStatus(v, { enableCarpoolReimbursement: event?.enableCarpoolReimbursement !== false });
+    return status.availableSeats > 0;
+  });
+
+  return {
+    demandeTransport,
+    offreTransport,
+    hasCarWithAvailableSeats,
+    isCapacitySufficient: offreTransport >= demandeTransport && hasCarWithAvailableSeats
   };
 };
 
@@ -51,12 +103,20 @@ export function useEventCarpool({
   reimbursementRule
 }) {
   const [showProposerForm, setShowProposerForm] = useState(false);
+  
+  // Pré-remplissage depuis le profil membre
+  const defaultSeats = profileData?.defaultPassengerSeats !== undefined ? profileData.defaultPassengerSeats : 3;
+  const defaultTrunk = profileData?.defaultTrunkCapacity !== undefined ? profileData.defaultTrunkCapacity : 1;
+
   const [voitureForm, setVoitureForm] = useState({
-    passengerSeats: 3,
-    trunkAlfayaCapacity: 0,
+    passengerSeats: defaultSeats,
+    trunkAlfayaCapacity: defaultTrunk,
+    placesReserveesExternes: 0,
+    motifReserveesExternes: '',
     materielCharge: '',
     materielTransporte: ''
   });
+
   const [joiningVoitureId, setJoiningVoitureId] = useState(null);
   const [joinForm, setJoinForm] = useState({
     isPassenger: true,
@@ -86,23 +146,26 @@ export function useEventCarpool({
           throw new Error("Vous proposez déjà une voiture pour cet événement.");
         }
 
-        const hasCarWithAvailableSeats = voitures.some(v => {
-          const status = calculateCarStatus(v, { enableCarpoolReimbursement: eventData.enableCarpoolReimbursement !== false });
-          return status.availableSeats > 0;
-        });
+        // Règle proportionnelle : vérifier si la capacité actuelle est déjà suffisante
+        const gauge = calculateCarpoolGauge(eventData, voitures);
+        const isUserAuthorized = profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.isSystemAdmin === true;
 
-        if (hasCarWithAvailableSeats) {
-          throw new Error("Veuillez remplir les véhicules disponibles avant d'en proposer un nouveau.");
+        if (!isUserAuthorized && gauge.isCapacitySufficient) {
+          throw new Error(
+            `Capacité suffisante pour les inscrits actuels (${gauge.offreTransport} places offertes pour ${gauge.demandeTransport} demandées). Veuillez compléter les véhicules existants avant d'en ouvrir un nouveau.`
+          );
         }
 
         const newVoiture = {
           id: `voiture_${user.uid}`,
           chauffeurId: user.uid,
           chauffeurNom: `${profileData?.prenom} ${profileData?.nom}`,
-          passengerSeats: parseInt(voitureForm.passengerSeats) || 0,
-          trunkAlfayaCapacity: parseInt(voitureForm.trunkAlfayaCapacity) || 0,
-          materielCharge: voitureForm.materielCharge.trim(),
-          materielTransporte: voitureForm.materielTransporte.trim(),
+          passengerSeats: parseInt(voitureForm.passengerSeats, 10) || 0,
+          trunkAlfayaCapacity: parseInt(voitureForm.trunkAlfayaCapacity, 10) || 0,
+          placesReserveesExternes: Math.max(0, parseInt(voitureForm.placesReserveesExternes, 10) || 0),
+          motifReserveesExternes: (voitureForm.motifReserveesExternes || '').trim(),
+          materielCharge: (voitureForm.materielCharge || '').trim(),
+          materielTransporte: (voitureForm.materielTransporte || '').trim(),
           passengers: []
         };
 
@@ -111,7 +174,7 @@ export function useEventCarpool({
         const currentInscriptions = eventData.inscriptions || [];
         const updatedInscriptions = currentInscriptions.map(ins => {
           if (ins.userId === user.uid) {
-            return { ...ins, transport: 'propre' };
+            return { ...ins, transport: 'propose_voiture' };
           }
           return ins;
         });
@@ -126,7 +189,14 @@ export function useEventCarpool({
       });
 
       setShowProposerForm(false);
-      setVoitureForm({ passengerSeats: 3, trunkAlfayaCapacity: 0, materielCharge: '', materielTransporte: '' });
+      setVoitureForm({
+        passengerSeats: defaultSeats,
+        trunkAlfayaCapacity: defaultTrunk,
+        placesReserveesExternes: 0,
+        motifReserveesExternes: '',
+        materielCharge: '',
+        materielTransporte: ''
+      });
       alert("Votre voiture a été ajoutée au convoi !");
     } catch (err) {
       console.error("EventDetails - Erreur handleProposerVoiture :", err);

@@ -13,8 +13,11 @@ export function useEventRSVP(event, user, profileData, allUsers, isMusicLevelRes
     : 'confirm');
   
   const getInitialTransport = () => {
-    if (!existingResponse) return 'propre';
-    return existingResponse.transport === 'propose' ? 'propre' : (existingResponse.transport || 'propre');
+    if (!existingResponse?.transport) return 'autonome';
+    const t = existingResponse.transport;
+    if (t === 'cherche' || t === 'cherche_place') return 'cherche_place';
+    if (t === 'propose' || t === 'propose_voiture') return 'propose_voiture';
+    return 'autonome';
   };
   const [transport, setTransport] = useState(getInitialTransport());
   const [demandeRemboursementKm, setDemandeRemboursementKm] = useState(existingResponse ? existingResponse.demandeRemboursementKm === true : false);
@@ -88,7 +91,16 @@ export function useEventRSVP(event, user, profileData, allUsers, isMusicLevelRes
     setStatus(resp 
       ? (resp.status === 'pending' || resp.status === 'refused' ? 'present' : resp.status) 
       : 'confirm');
-    setTransport(resp ? (resp.transport === 'propose' ? 'propre' : (resp.transport || 'propre')) : 'propre');
+    
+    if (resp?.transport) {
+      const t = resp.transport;
+      if (t === 'cherche' || t === 'cherche_place') setTransport('cherche_place');
+      else if (t === 'propose' || t === 'propose_voiture') setTransport('propose_voiture');
+      else setTransport('autonome');
+    } else {
+      setTransport('autonome');
+    }
+
     setDemandeRemboursementKm(resp ? resp.demandeRemboursementKm === true : false);
     setBesoinTransportInstrument(resp ? resp.besoinTransportInstrument === true : false);
     setInstrumentChoisi(resp?.instrumentChoisi || profileData?.instrument || profileData?.instrumentsJoues?.[0] || 'Autre');
@@ -140,16 +152,47 @@ export function useEventRSVP(event, user, profileData, allUsers, isMusicLevelRes
         instruments: "",
         instrumentChoisi: targetStatus === 'present' ? targetInstrument : null,
         instrumentImposeParMestre: targetStatus === 'present' ? isInstrumentLocked : false,
-        demandeRemboursementKm: (targetStatus === 'present' && targetTransport === 'propre') ? targetDemandeRemb : false,
+        demandeRemboursementKm: (targetStatus === 'present' && targetTransport === 'propose_voiture') ? targetDemandeRemb : false,
         besoinTransportInstrument: targetStatus === 'present' ? targetBesoinTransp : false
       };
 
       updatedInscriptions.push(newResponse);
 
-      const eventRef = doc(db, 'events', event.id);
-      await updateDoc(eventRef, {
+      const eventUpdates = {
         inscriptions: updatedInscriptions
-      });
+      };
+
+      // Si l'utilisateur est autonome ou absent, le retirer de la file d'attente recherchePlace s'il y était
+      if (event.covoiturage?.recherchePlace && (targetStatus !== 'present' || targetTransport === 'autonome')) {
+        const freshRecherche = (event.covoiturage.recherchePlace || []).filter(p => p.uid !== user.uid);
+        if (freshRecherche.length !== event.covoiturage.recherchePlace.length) {
+          eventUpdates.covoiturage = {
+            ...event.covoiturage,
+            recherchePlace: freshRecherche
+          };
+        }
+      }
+
+      // Si l'utilisateur choisit explicitement 'cherche_place', l'ajouter à la file d'attente recherchePlace
+      if (targetStatus === 'present' && targetTransport === 'cherche_place') {
+        const currentCovoit = eventUpdates.covoiturage || event.covoiturage || { voitures: [], recherchePlace: [] };
+        let recherchePlace = [...(currentCovoit.recherchePlace || [])];
+        if (!recherchePlace.some(p => p.uid === user.uid)) {
+          recherchePlace.push({
+            uid: user.uid,
+            nom: `${profileData.prenom} ${profileData.nom}`,
+            cherchePassager: true,
+            chercheInstrument: !!targetBesoinTransp
+          });
+          eventUpdates.covoiturage = {
+            ...currentCovoit,
+            recherchePlace
+          };
+        }
+      }
+
+      const eventRef = doc(db, 'events', event.id);
+      await updateDoc(eventRef, eventUpdates);
 
       if (setToastMessage) {
         let msg = "Inscription validée (Présent)";

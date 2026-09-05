@@ -149,7 +149,10 @@ function GoogleMapsPreview({ address }) {
   );
 }
 
-export default function CarpoolBlock({ formData = {}, handleChange, saving }) {
+import VehicleFleetSection from './VehicleFleetSection';
+
+export default function CarpoolBlock({ formData = {}, handleChange, saving, groupId }) {
+  const effectiveGroupId = groupId || formData.groupId || formData.id || '';
   const {
     indemniteKilometrique = 0,
     enableCarpoolReimbursement = true,
@@ -247,6 +250,11 @@ export default function CarpoolBlock({ formData = {}, handleChange, saving }) {
               </select>
             </div>
           </div>
+        )}
+
+        {/* Parc de véhicules de la troupe */}
+        {effectiveGroupId && (
+          <VehicleFleetSection groupId={effectiveGroupId} />
         )}
       </div>
     </CordelCard>

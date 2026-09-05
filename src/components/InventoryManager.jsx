@@ -1499,6 +1499,7 @@ export default function InventoryManager({
                 formData={settings}
                 handleChange={handleUpdateSetting}
                 saving={savingSettings}
+                groupId={groupId}
               />
               <div className="flex justify-end pt-3 border-t border-dashed border-cordel-master-dark/15">
                 <CordelButton
