@@ -1587,6 +1587,11 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
                       alt={event.titre} 
                       width={400} 
                       height={200} 
+                      onError={(e) => {
+                        if (e.currentTarget.parentElement) {
+                          e.currentTarget.parentElement.style.display = 'none';
+                        }
+                      }}
                       className="max-w-full max-h-[300px] object-contain" 
                     />
                     {(event.socialVideoUrl || event.videoUrl || event.socialThumbnailUrl) && (

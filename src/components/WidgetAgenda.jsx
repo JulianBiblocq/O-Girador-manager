@@ -982,17 +982,25 @@ export default function WidgetAgenda({
                               <img 
                                 src={thumbnailCandidate} 
                                 alt={t('common.visual')} 
+                                onError={(e) => {
+                                  e.currentTarget.style.display = 'none';
+                                  if (e.currentTarget.nextElementSibling) {
+                                    e.currentTarget.nextElementSibling.style.display = 'block';
+                                  }
+                                }}
                                 className="w-full h-full object-cover group-hover:scale-105 transition-transform" 
                               />
-                            ) : (
-                              <span className="text-lg opacity-40 grayscale select-none">
-                                {event.type === 'prestation' ? '🎭' :
-                                 event.type === 'repetition' ? '🥁' :
-                                 event.type === 'stage' ? '🎓' :
-                                 event.type === 'atelier' ? '🔨' :
-                                 event.type === 'reunion' ? '📅' : '📆'}
-                              </span>
-                            )}
+                            ) : null}
+                            <span 
+                              className="text-lg opacity-40 grayscale select-none"
+                              style={{ display: thumbnailCandidate ? 'none' : 'block' }}
+                            >
+                              {event.type === 'prestation' ? '🎭' :
+                               event.type === 'repetition' ? '🥁' :
+                               event.type === 'stage' ? '🎓' :
+                               event.type === 'atelier' ? '🔨' :
+                               event.type === 'reunion' ? '📅' : '📆'}
+                            </span>
 
                             {/* Icône Play (▶️) filigrane discrète superposée pour les événements avec vidéo */}
                             {isVideo && (
