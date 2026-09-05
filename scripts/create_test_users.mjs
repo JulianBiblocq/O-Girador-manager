@@ -166,9 +166,44 @@ async function main() {
   };
   await saveFirestoreUser(adminToken, camilaAuth.localId, camilaProfile);
 
-  console.log("\n=== Synchronisation réussie des deux profils de test ! ===");
-  console.log(`1. Tiago Rocha  (Membre): UID=${tiagoAuth.localId} / email=recette.membre@o-girador.test`);
-  console.log(`2. Camila Santos (Admin): UID=${camilaAuth.localId} / email=recette.admin@o-girador.test`);
+  // Étape 4 : Créer ou connecter Helena Ferreira (Présidente)
+  console.log("-> Initialisation de Helena Ferreira (recette.presidente@o-girador.test)...");
+  const helenaAuth = await authUser("recette.presidente@o-girador.test", "RecetteGirador2026!");
+  const helenaProfile = {
+    prenom: "Helena",
+    nom: "Ferreira",
+    surnom: "Présidente Helena",
+    email: "recette.presidente@o-girador.test",
+    groupId: "Samambaia",
+    role: "admin",
+    isSystemAdmin: false,
+    isNew: false,
+    onboardingCompleted: true,
+    tags: ["Présidente", "Bureau", "CA", "Direction", "Puxadora"],
+    instrument: "Agbê",
+    instrumentPrincipal: "Agbê",
+    instrumentSecondaire: "Mineiro",
+    pratiquePercussion: true,
+    pratiqueDanse: false,
+    cotisationStatut: "a_jour",
+    cotisationFormule: "Adhésion annuelle présidence",
+    droitImage: true,
+    aptitudeMedicale: true,
+    telephone: "06 11 22 33 44",
+    adresseRue: "10 rue du Maracatu",
+    adresseCP: "75010",
+    adresseVille: "Paris",
+    tailleTshirt: "M",
+    taillePantalon: "M",
+    genre: "femme",
+    lateralite: "droitier"
+  };
+  await saveFirestoreUser(adminToken, helenaAuth.localId, helenaProfile);
+
+  console.log("\n=== Synchronisation réussie des profils de test ! ===");
+  console.log(`1. Tiago Rocha      (Membre):     UID=${tiagoAuth.localId} / email=recette.membre@o-girador.test`);
+  console.log(`2. Camila Santos    (Admin):      UID=${camilaAuth.localId} / email=recette.admin@o-girador.test`);
+  console.log(`3. Helena Ferreira  (Présidente): UID=${helenaAuth.localId} / email=recette.presidente@o-girador.test`);
   process.exit(0);
 }
 
