@@ -763,13 +763,21 @@ export default function LayoutShell({
                     );
                   })}
                 </div>
-                <InfoPoleHelpButton currentPole={activePoleObj?.id || currentPole} currentTab={currentTab} />
+                <InfoPoleHelpButton 
+                  key={`help_btn_${activePoleObj?.id || currentPole}_${currentTab || 'default'}`}
+                  currentPole={activePoleObj?.id || currentPole} 
+                  currentTab={currentTab} 
+                />
               </div>
             )}
 
             <div className="w-full flex-1">
               <PresenceProvider value={{ onlineMembers, onlineCount, onlineUserIds, isPresenceEnabled }}>
-                <InfoPoleBanner currentPole={activePoleObj?.id || currentPole} currentTab={currentTab} />
+                <InfoPoleBanner 
+                  key={`help_banner_${activePoleObj?.id || currentPole}_${currentTab || 'default'}`}
+                  currentPole={activePoleObj?.id || currentPole} 
+                  currentTab={currentTab} 
+                />
                 <PageAccessBadgeIndicator 
                   currentTab={currentTab}
                   currentPole={activePoleObj?.id || currentPole}

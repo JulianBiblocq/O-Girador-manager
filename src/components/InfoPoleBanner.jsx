@@ -143,15 +143,15 @@ export function InfoPoleHelpButton({ currentPole, currentTab }) {
     <button
       type="button"
       onClick={toggleBanner}
-      className={`px-2.5 py-1 text-[10px] font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer flex items-center gap-1.5 shrink-0 ${
+      className={`w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center p-0 rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer shrink-0 ${
         isHidden
-          ? 'bg-amber-100/90 text-amber-900 border-amber-900/60 hover:bg-amber-200 shadow-[1.5px_1.5px_0px_0px_#181716]'
+          ? 'bg-amber-100/90 text-amber-900 border-amber-900/60 hover:bg-amber-200 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none'
           : 'bg-amber-300 text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
       }`}
-      title={isHidden ? "Afficher l'aide contextuelle de cet onglet" : "Masquer l'aide contextuelle"}
+      title={isHidden ? "💡 Afficher l'aide contextuelle de cet onglet" : "Masquer l'aide contextuelle"}
+      aria-label="Aide contextuelle"
     >
-      <span className="text-xs">💡</span>
-      <span>Aide du pôle</span>
+      <span className="text-sm select-none">💡</span>
     </button>
   );
 }

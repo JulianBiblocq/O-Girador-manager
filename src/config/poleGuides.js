@@ -934,6 +934,21 @@ export const POLE_GUIDES = {
       "Ajustez les dimensions de la scène et validez la configuration."
     ]
   },
+  'mestre-categories': {
+    titre: "🏷️ Catégories & Niveaux de Pratique",
+    title: "🏷️ Catégories & Niveaux de Pratique",
+    description: "Configuration des sections de pratique, niveaux et sous-groupes de la troupe (danse, percussions, ateliers débutants ou avancés).",
+    etapes: [
+      "Ajoutez une nouvelle section ou un niveau de pratique avec son code couleur.",
+      "Consultez et ajustez la liste des catégories actives pour les convocations.",
+      "Synchronisez les profils membres si nécessaire pour aligner les anciens libellés."
+    ],
+    steps: [
+      "Ajoutez une nouvelle section ou un niveau de pratique avec son code couleur.",
+      "Consultez et ajustez la liste des catégories actives pour les convocations.",
+      "Synchronisez les profils membres si nécessaire pour aligner les anciens libellés."
+    ]
+  },
   'mestre-sequenceur': {
     titre: "🎧 Séquenceur Rythmique Pédagogique",
     title: "🎧 Séquenceur Rythmique Pédagogique",
