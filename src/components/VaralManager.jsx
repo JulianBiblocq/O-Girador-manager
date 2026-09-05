@@ -1023,7 +1023,7 @@ export default function VaralManager({ groupId, onBack, role, isSystemAdmin, isE
                                   <td className="py-2 px-2 md:py-2.5 md:px-3 font-semibold text-[10px]">
                                     {isWorkshopVirtualDoc(docItem) ? (
                                       <span className="inline-flex items-center gap-1 font-bold text-amber-900">
-                                        {docItem.isPartStep ? '⚙️ Usinage' : '🛠️ Modèle'}
+                                        🛠️ Modèle ({docItem.partsCount || 0} p.)
                                       </span>
                                     ) : (
                                       getDocTypeBadge(docItem.type || 'pdf')
@@ -1059,10 +1059,7 @@ export default function VaralManager({ groupId, onBack, role, isSystemAdmin, isE
                                         <>
                                           <button
                                             onClick={() => {
-                                              setSelectedInstrumentModel({
-                                                ...(docItem.modelData || docItem),
-                                                focusedPartId: docItem.partId || null
-                                              });
+                                              setSelectedInstrumentModel(docItem.modelData || docItem);
                                             }}
                                             className="text-[9px] font-black uppercase bg-neutral-100 hover:bg-neutral-200 text-encre-noire border border-encre-noire/30 px-2.5 py-1 rounded cursor-pointer"
                                           >

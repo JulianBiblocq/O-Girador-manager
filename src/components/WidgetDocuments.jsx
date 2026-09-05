@@ -1386,7 +1386,7 @@ export default function WidgetDocuments({
                                   </span>
                                   {isWorkshopVirtualDoc(docItem) ? (
                                     <span className="text-[7.5px] font-black uppercase px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-900 border border-amber-800/30">
-                                      {docItem.isPartStep ? `⚙️ ${docItem.etapesCount} ét.` : '📐 Modèle'}
+                                      {docItem.partsCount ? `📐 ${docItem.partsCount} p.` : '📐 Modèle'}
                                     </span>
                                   ) : (
                                     docItem.annee && (
@@ -1410,7 +1410,7 @@ export default function WidgetDocuments({
                               <div className="mt-auto select-none">
                                 <div className={`text-[8.5px] text-right font-black uppercase tracking-wider mt-1 ${textClass}`}>
                                   {isWorkshopVirtualDoc(docItem)
-                                    ? (docItem.isPartStep ? "Usinage ➜" : "Nomenclature ➜")
+                                    ? "Fabrication ➜"
                                     : translate('documents.readBtn', "Lire ➜")}
                                 </div>
                               </div>

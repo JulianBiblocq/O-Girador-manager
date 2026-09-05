@@ -43,11 +43,13 @@ export function normalizePartSteps(part) {
 }
 
 /**
- * Projette dynamiquement en mémoire les modèles d'instruments et leurs pièces
+ * Projette dynamiquement en mémoire les modèles d'instruments
  * sous forme de livrets virtuels Cordel pour la corde 'TutosFabrication'.
  *
+ * Règle : Une seule fiche par instrument (modèle d'atelier).
+ *
  * @param {Array} models - Collection des modèles d'instruments issus de 'instrument_models'
- * @returns {Array} Liste des livrets virtuels normalisés (chapeaux de modèles et pièces d'usinage)
+ * @returns {Array} Liste des livrets virtuels normalisés (un livret par instrument)
  */
 export function projectWorkshopBooklets(models = []) {
   if (!Array.isArray(models)) return [];
@@ -62,12 +64,12 @@ export function projectWorkshopBooklets(models = []) {
     const modelAnnee = model.annee || (model.createdAt ? new Date(model.createdAt).getFullYear() : undefined);
     const instrumentLabel = model.type || model.nom;
 
-    // 1. Livret virtuel chapeau du modèle d'instrument (Nomenclature & gabarit)
-    const headerBooklet = {
+    // Une seule fiche par instrument
+    const modelBooklet = {
       id: `model_${model.id}`,
       modelId: model.id,
-      titre: `[Modèle] ${model.nom} — Nomenclature & gabarit`,
-      sousTitre: `${instrumentLabel} • Vue d'ensemble (${parts.length} pièces)`,
+      titre: model.nom,
+      sousTitre: `${parts.length} ${parts.length > 1 ? 'pièces' : 'pièce'}${model.type ? ' • ' + model.type : ''}`,
       instrument: instrumentLabel,
       familleInstrument: model.type || '',
       type: 'instrument_model',
@@ -76,55 +78,16 @@ export function projectWorkshopBooklets(models = []) {
       isWorkshopVirtual: true,
       isModelHeader: true,
       modelData: model,
+      partsCount: parts.length,
       categoryId: 'TutosFabrication',
       categorie: 'Tutos Fabrication',
       poleId: 'lutherie',
-      order: 0,
+      order: typeof model.order === 'number' ? model.order : 0,
       dateAjout: modelDate,
       annee: modelAnnee,
       description: model.description || ''
     };
-    projectedBooklets.push(headerBooklet);
-
-    // 2. Livrets virtuels autonomes par pièce disposant d'étapes d'usinage
-    parts.forEach((part, partIndex) => {
-      if (!part || !part.nom) return;
-
-      const normalizedSteps = normalizePartSteps(part);
-      const stepsCount = normalizedSteps.length;
-
-      // N'injecter que si la pièce dispose d'au moins une étape rédigée
-      if (stepsCount > 0) {
-        const partId = part.id || `part_${partIndex}`;
-        const partBooklet = {
-          id: `part_${model.id}_${partId}`,
-          modelId: model.id,
-          partId: partId,
-          titre: `${model.nom} — ${part.nom}`,
-          sousTitre: `${model.nom} • ${stepsCount} ${stepsCount > 1 ? 'étapes' : 'étape'}`,
-          instrument: instrumentLabel,
-          familleInstrument: model.type || '',
-          type: 'instrument_part',
-          typeDoc: 'instrument_part',
-          isVirtualAtelier: true,
-          isWorkshopVirtual: true,
-          isPartStep: true,
-          modelData: model,
-          partData: {
-            ...part,
-            chapitres: normalizedSteps
-          },
-          etapesCount: stepsCount,
-          categoryId: 'TutosFabrication',
-          categorie: 'Tutos Fabrication',
-          poleId: 'lutherie',
-          order: 0,
-          dateAjout: modelDate,
-          annee: modelAnnee
-        };
-        projectedBooklets.push(partBooklet);
-      }
-    });
+    projectedBooklets.push(modelBooklet);
   });
 
   return projectedBooklets;
