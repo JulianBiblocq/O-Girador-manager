@@ -77,6 +77,20 @@ service cloud.firestore {
       ]);
     }
 
+    function canManageRepertoire() {
+      return isAuthenticated() && (
+        isAdminOrMestre() ||
+        hasAnyTag([
+          'Mestre', 'mestre', 'Direction', 'Direction Artistique', 'Mestria', 'Chef de pupitre', 'Scène', 'Scene', 'CA', 'C.A', 'Admin', 'Bureau', 'Président', 'Présidente'
+        ]) ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && (
+          getUserData().get('role', '') in ['mestre', 'Mestre', 'admin', 'Admin', 'super-admin', 'Super-admin', 'bureau', 'Bureau', 'ca', 'CA'] ||
+          getUserData().get('isSystemAdmin', false) == true
+        )) ||
+        (request.auth.token != null && request.auth.token.get('admin', false) == true)
+      );
+    }
+
     function isModerator() {
       return isAuthenticated() &&
         exists(/databases/$(database)/documents/users/$(request.auth.uid)) && (
@@ -292,8 +306,8 @@ service cloud.firestore {
 
       // Classeur central du répertoire de la troupe (morceaux de la saison, chantiers, archives)
       match /repertoire/{pieceId} {
-        allow read: if isAuthenticated() && getUserData().groupId == assocId;
-        allow write: if isAdminOrMestre() && getUserData().groupId == assocId;
+        allow read: if isAuthenticated();
+        allow write: if canManageRepertoire();
       }
 
       // Règles d'automatisation et de relances d'agenda de l'association
