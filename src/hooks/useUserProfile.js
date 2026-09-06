@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { doc, updateDoc, collection, query, where, onSnapshot, arrayUnion, deleteField } from 'firebase/firestore';
+import { doc, setDoc, updateDoc, collection, query, where, onSnapshot, arrayUnion, deleteField } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { signOut } from 'firebase/auth';
 import { db, auth, storage, messaging } from '../firebase';
@@ -102,13 +102,21 @@ export function useUserProfile(user, profileData, t) {
       prenom: profileData?.prenom || '',
       nom: profileData?.nom || '',
       instrument: profileData?.instrument || '',
+      instrumentPrincipal: profileData?.instrumentPrincipal || profileData?.instrument || '',
       instrumentSecondaire: profileData?.instrumentSecondaire || '',
+      pratiquePercussion: profileData?.pratiquePercussion !== undefined ? profileData.pratiquePercussion : true,
+      pratiqueDanse: profileData?.pratiqueDanse !== undefined ? profileData.pratiqueDanse : (profileData?.instrument === 'Danse' || (Array.isArray(profileData?.instrumentsJoues) && profileData.instrumentsJoues.includes('Danse'))),
+      estAncienMembre: profileData?.estAncienMembre !== undefined ? profileData.estAncienMembre : Boolean(profileData?.instrument || profileData?.instrumentPrincipal),
+      voeuxInstruments: Array.isArray(profileData?.voeuxInstruments) ? profileData.voeuxInstruments : ([profileData?.voeuPrincipal, profileData?.voeuSecondaire, profileData?.voeuTertiaire].filter(Boolean)),
+      souhaiteChangerInstrument: profileData?.souhaiteChangerInstrument || false,
+      volontaireAncienInstrument: profileData?.volontaireAncienInstrument !== undefined ? profileData.volontaireAncienInstrument : (profileData?.accordRenfortAncienInstrument || false),
+      accordRenfortAncienInstrument: profileData?.volontaireAncienInstrument !== undefined ? profileData.volontaireAncienInstrument : (profileData?.accordRenfortAncienInstrument || false),
       voeuPrincipal: profileData?.voeuPrincipal || '',
       voeuSecondaire: profileData?.voeuSecondaire || '',
       voeuTertiaire: profileData?.voeuTertiaire || '',
-      accordRenfortAncienInstrument: profileData?.accordRenfortAncienInstrument || false,
       instrumentsJoues: profileData?.instrumentsJoues || ([profileData?.instrument, profileData?.instrumentSecondaire].filter(Boolean)),
-      telephone: profileData?.telephone || '',
+      telephone: profileData?.telephone || profileData?.phone || '',
+      phone: profileData?.phone || profileData?.telephone || '',
       adresse: getFullAddress(profileData),
       adresseRue: profileData?.adresseRue || profileData?.adresse || '',
       adresseCP: profileData?.adresseCP || profileData?.adresseCodePostal || '',
@@ -313,15 +321,15 @@ export function useUserProfile(user, profileData, t) {
     const missing = [];
     Object.keys(fieldsConfig).forEach(key => {
       if (!isFieldRequired(key)) return;
-      if (key === 'telephone' && (!formData.telephone || !formData.telephone.trim())) missing.push('telephone');
+      if (key === 'telephone' && (!formData.telephone || !formData.telephone.trim()) && (!formData.phone || !formData.phone.trim())) missing.push('telephone');
       if (key === 'surnom' && (!formData.surnom || !formData.surnom.trim())) missing.push('surnom');
       if (key === 'adresse' && (!formData.adresse || !formData.adresse.trim()) && (!formData.adresseRue || !formData.adresseRue.trim())) missing.push('adresse');
       if (key === 'tailleTshirt' && (!formData.tailleTshirt || !formData.tailleTshirt.trim())) missing.push('tailleTshirt');
       if (key === 'taillePantalon' && (!formData.taillePantalon || !formData.taillePantalon.trim())) missing.push('taillePantalon');
       if (key === 'lateralite' && (!formData.lateralite || !formData.lateralite.trim())) missing.push('lateralite');
       if (key === 'dateNaissance' && (!formData.dateNaissance || !formData.dateNaissance.trim())) missing.push('dateNaissance');
-      if (key === 'droitImage' && demanderDroitImage && !formData.droitImage) missing.push('droitImage');
-      if (key === 'aptitudeMedicale' && demanderAttestationSante && !formData.aptitudeMedicale) missing.push('aptitudeMedicale');
+      if (key === 'droitImage' && demanderDroitImage && (formData.droitImage === undefined || formData.droitImage === null)) missing.push('droitImage');
+      if (key === 'aptitudeMedicale' && demanderAttestationSante && (formData.aptitudeMedicale === undefined || formData.aptitudeMedicale === null)) missing.push('aptitudeMedicale');
     });
     return missing;
   };
@@ -385,46 +393,26 @@ export function useUserProfile(user, profileData, t) {
     if (e && e.preventDefault) e.preventDefault();
     if (!user?.uid) return;
 
-    const cleanVoeux = Array.isArray(formData.voeuxInstruments)
+    // Récupérer les vœux existants ou ceux transmis par le formulaire
+    const existingVoeux = Array.isArray(profileData?.voeuxInstruments)
+      ? profileData.voeuxInstruments.filter(Boolean)
+      : [profileData?.voeuPrincipal, profileData?.voeuSecondaire, profileData?.voeuTertiaire].filter(Boolean);
+
+    const cleanVoeux = (Array.isArray(formData.voeuxInstruments) && formData.voeuxInstruments.length > 0)
       ? formData.voeuxInstruments.filter(Boolean)
-      : [formData.voeuPrincipal, formData.voeuSecondaire, formData.voeuTertiaire].filter(Boolean);
-
-    const isDanse = Boolean(formData.pratiqueDanse);
-    const isAncien = Boolean(
-      formData.estAncienMembre ||
-      (profileData?.instrument || profileData?.instrumentPrincipal || formData.instrument || '').trim() !== '' ||
-      (profileData?.instrumentsJoues && profileData.instrumentsJoues.length > 0)
-    );
-
-    if (isDanse) {
-      if (cleanVoeux.length === 1) {
-        const errMsg = "En choisissant la Danse, merci de sélectionner soit 0 percussion (profil 100% Danse), soit au moins 2 vœux de percussions.";
-        setValidationError(errMsg);
-        alert(errMsg);
-        return;
-      }
-    } else {
-      if (!isAncien) {
-        if (cleanVoeux.length < 2 || cleanVoeux.length > 3) {
-          const errMsg = "Veuillez sélectionner entre 2 et 3 vœux d'instruments de percussion (ou cocher la Danse pour un profil 100% Danse).";
-          setValidationError(errMsg);
-          alert(errMsg);
-          return;
-        }
-      }
-    }
+      : existingVoeux;
 
     const missingRequired = Object.keys(fieldsConfig || {}).some(key => {
       if (!isFieldRequired(key)) return false;
-      if (key === 'telephone') return !formData.telephone || !formData.telephone.trim();
+      if (key === 'telephone') return (!formData.telephone || !formData.telephone.trim()) && (!formData.phone || !formData.phone.trim());
       if (key === 'surnom') return !formData.surnom || !formData.surnom.trim();
       if (key === 'adresse') return (!formData.adresse || !formData.adresse.trim()) && (!formData.adresseRue || !formData.adresseRue.trim());
       if (key === 'tailleTshirt') return !formData.tailleTshirt || !formData.tailleTshirt.trim();
       if (key === 'taillePantalon') return !formData.taillePantalon || !formData.taillePantalon.trim();
       if (key === 'lateralite') return !formData.lateralite || !formData.lateralite.trim();
       if (key === 'dateNaissance') return !formData.dateNaissance || !formData.dateNaissance.trim();
-      if (key === 'droitImage') return demanderDroitImage && !formData.droitImage;
-      if (key === 'aptitudeMedicale') return demanderAttestationSante && !formData.aptitudeMedicale;
+      if (key === 'droitImage') return demanderDroitImage && (formData.droitImage === undefined || formData.droitImage === null);
+      if (key === 'aptitudeMedicale') return demanderAttestationSante && (formData.aptitudeMedicale === undefined || formData.aptitudeMedicale === null);
       return false;
     });
 
@@ -437,19 +425,15 @@ export function useUserProfile(user, profileData, t) {
 
     setSaving(true);
     try {
-      const cleanVoeux = Array.isArray(formData.voeuxInstruments)
-        ? formData.voeuxInstruments.filter(Boolean)
-        : [formData.voeuPrincipal, formData.voeuSecondaire, formData.voeuTertiaire].filter(Boolean);
-
       const updatePayload = {
         prenom: formData.prenom,
         nom: formData.nom,
         instrument: profileData?.instrument || profileData?.instrumentPrincipal || formData.instrument || '',
         instrumentPrincipal: profileData?.instrumentPrincipal || profileData?.instrument || formData.instrument || '',
         instrumentSecondaire: profileData?.instrumentSecondaire || formData.instrumentSecondaire || '',
-        pratiquePercussion: Boolean(formData.pratiquePercussion),
+        pratiquePercussion: formData.pratiquePercussion !== undefined ? Boolean(formData.pratiquePercussion) : (profileData?.pratiquePercussion !== undefined ? profileData.pratiquePercussion : true),
         pratiqueDanse: Boolean(formData.pratiqueDanse),
-        estAncienMembre: Boolean(formData.estAncienMembre),
+        estAncienMembre: formData.estAncienMembre !== undefined ? Boolean(formData.estAncienMembre) : Boolean(profileData?.estAncienMembre),
         voeuxInstruments: cleanVoeux,
         souhaiteChangerInstrument: Boolean(formData.souhaiteChangerInstrument),
         volontaireAncienInstrument: Boolean(formData.volontaireAncienInstrument),
@@ -466,7 +450,8 @@ export function useUserProfile(user, profileData, t) {
           .map(i => i ? i.trim() : '')
           .filter(i => i && i.toLowerCase() !== 'autre' && i.toLowerCase() !== 'mestre' && i.toLowerCase() !== 'danse')
         )),
-        telephone: isFieldVisible('telephone') ? formData.telephone : (profileData?.telephone || ''),
+        telephone: isFieldVisible('telephone') ? (formData.telephone || formData.phone || '').trim() : (profileData?.telephone || profileData?.phone || ''),
+        phone: isFieldVisible('telephone') ? (formData.telephone || formData.phone || '').trim() : (profileData?.phone || profileData?.telephone || ''),
         adresse: isFieldVisible('adresse') ? (formData.adresse || formData.adresseRue || '') : (profileData?.adresse || ''),
         adresseRue: isFieldVisible('adresse') ? (formData.adresseRue || formData.adresse || '') : (profileData?.adresseRue || ''),
         adresseCP: isFieldVisible('adresse') ? (formData.adresseCP || formData.adresseCodePostal || '') : (profileData?.adresseCP || ''),
@@ -517,7 +502,7 @@ export function useUserProfile(user, profileData, t) {
       }
 
       const userRef = doc(db, 'users', user.uid);
-      await updateDoc(userRef, updatePayload);
+      await setDoc(userRef, updatePayload, { merge: true });
       alert(t('userProfile.successMsg'));
       setIsEditing(false);
     } catch (error) {
