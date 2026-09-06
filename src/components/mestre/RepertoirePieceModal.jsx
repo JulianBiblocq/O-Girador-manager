@@ -5,10 +5,13 @@ import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 import { useSequencerRhythms } from '../../hooks/useSequencerRhythms';
 import { useDancadorChoreographies } from '../../hooks/useDancadorData';
+import RepertoireVideosPicker from './RepertoireVideosPicker';
+import RepertoireSignalsPicker from './RepertoireSignalsPicker';
 
 /**
  * Modale de création et d'édition d'un morceau du répertoire musical.
- * Gère les métadonnées de saison, l'état de validation artistique
+ * Gère les métadonnées de saison, l'état de validation artistique,
+ * les vidéos libres personnalisables, les signes du Mestre associés
  * et les liaisons optionnelles transversales (Toada, Séquenceur, Dançador, Culture).
  *
  * @param {boolean} isOpen - Indique si la modale est affichée
@@ -29,6 +32,10 @@ export default function RepertoirePieceModal({
   const [statutSaison, setStatutSaison] = useState('saison'); // 'saison' | 'chantier' | 'archive'
   const [etatValidation, setEtatValidation] = useState('pret'); // 'pret' | 'a_faire'
   const [notes, setNotes] = useState('');
+
+  // Vidéos libres & Signes du Mestre
+  const [videos, setVideos] = useState([]);
+  const [signalIds, setSignalIds] = useState([]);
 
   // Liaisons optionnelles
   const [selectedToadaId, setSelectedToadaId] = useState('');
@@ -56,6 +63,8 @@ export default function RepertoirePieceModal({
       setStatutSaison(pieceToEdit.statutSaison || 'saison');
       setEtatValidation(pieceToEdit.etatValidation || 'pret');
       setNotes(pieceToEdit.notes || '');
+      setVideos(Array.isArray(pieceToEdit.videos) ? pieceToEdit.videos : []);
+      setSignalIds(Array.isArray(pieceToEdit.signalIds) ? pieceToEdit.signalIds : []);
       setSelectedToadaId(pieceToEdit.toadaDocId || '');
       setSelectedSeqUrl(pieceToEdit.sequenceurFileUrl || '');
       setSelectedChoreoId(pieceToEdit.dancadorChoreoId || '');
@@ -66,6 +75,8 @@ export default function RepertoirePieceModal({
       setStatutSaison('saison');
       setEtatValidation('pret');
       setNotes('');
+      setVideos([]);
+      setSignalIds([]);
       setSelectedToadaId('');
       setSelectedSeqUrl('');
       setSelectedChoreoId('');
@@ -132,12 +143,25 @@ export default function RepertoirePieceModal({
         if (found) matchedSeqId = found.id || null;
       }
 
+      // Nettoyage strict des vidéos et signaux
+      const cleanVideos = (videos || [])
+        .filter((v) => v && typeof v.url === 'string' && v.url.trim() !== '')
+        .map((v) => ({
+          id: v.id || `vid_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+          titre: (v.titre || '').trim(),
+          url: v.url.trim()
+        }));
+
+      const cleanSignalIds = (signalIds || []).filter(Boolean);
+
       // Construction de l'objet strictement assaini
       const pieceData = {
         titre: titre.trim(),
         statutSaison: statutSaison || 'saison',
         etatValidation: etatValidation || 'pret',
         notes: (notes || '').trim(),
+        videos: cleanVideos,
+        signalIds: cleanSignalIds,
         sequenceurId: matchedSeqId || null,
         sequenceurFileUrl: selectedSeqUrl || null,
         dancadorChoreoId: selectedChoreoId || null,
@@ -397,6 +421,18 @@ export default function RepertoirePieceModal({
               </div>
             </div>
           </div>
+
+          {/* Vidéos personnalisables du morceau */}
+          <RepertoireVideosPicker
+            videos={videos}
+            onChange={setVideos}
+          />
+
+          {/* Signes du Mestre associés */}
+          <RepertoireSignalsPicker
+            selectedSignalIds={signalIds}
+            onChange={setSignalIds}
+          />
 
           {/* Notes d'intention / mémo du Mestre */}
           <div className="flex flex-col gap-1">

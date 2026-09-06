@@ -80,14 +80,14 @@ service cloud.firestore {
     function canManageRepertoire() {
       return isAuthenticated() && (
         isAdminOrMestre() ||
-        hasAnyTag([
-          'Mestre', 'mestre', 'Direction', 'Direction Artistique', 'Mestria', 'Chef de pupitre', 'Scène', 'Scene', 'CA', 'C.A', 'Admin', 'Bureau', 'Président', 'Présidente'
-        ]) ||
         (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && (
-          getUserData().get('role', '') in ['mestre', 'Mestre', 'admin', 'Admin', 'super-admin', 'Super-admin', 'bureau', 'Bureau', 'ca', 'CA'] ||
+          getUserData().get('role', '') in ['mestre', 'Mestre', 'admin', 'Admin', 'super-admin', 'Super-admin'] ||
           getUserData().get('isSystemAdmin', false) == true
         )) ||
-        (request.auth.token != null && request.auth.token.get('admin', false) == true)
+        (request.auth.token != null && (
+          request.auth.token.get('admin', false) == true ||
+          request.auth.token.get('role', '') in ['mestre', 'admin', 'super-admin']
+        ))
       );
     }
 

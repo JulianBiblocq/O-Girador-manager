@@ -121,6 +121,12 @@ export default function ProgramPieceModal({
       if (piece.cultureDocId) {
         setlistItem.cultureDocId = piece.cultureDocId;
       }
+      if (Array.isArray(piece.videos) && piece.videos.length > 0) {
+        setlistItem.videos = piece.videos;
+      }
+      if (Array.isArray(piece.signalIds) && piece.signalIds.length > 0) {
+        setlistItem.signalIds = piece.signalIds;
+      }
 
       const updates = {
         setlist: arrayUnion(setlistItem)

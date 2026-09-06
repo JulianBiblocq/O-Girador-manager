@@ -5,7 +5,10 @@ import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 import RepertoirePieceModal from './RepertoirePieceModal';
 import ProgramPieceModal from './ProgramPieceModal';
+import RepertoireVideoModal from './RepertoireVideoModal';
+import SignalZoomModal from './SignalZoomModal';
 import useConfirm from '../../hooks/useConfirm';
+import useMestreSignals from '../../hooks/useMestreSignals';
 
 /**
  * Vue principale du Répertoire de la troupe (Mestria).
@@ -21,6 +24,10 @@ export default function MestreRepertoireView({ groupId, user, profileData, seque
   const [pieces, setPieces] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // Bibliothèque des Signes du Mestre
+  const { signals } = useMestreSignals();
+  const signalsMap = useMemo(() => new Map((signals || []).map((s) => [s.id, s])), [signals]);
+
   // Filtres
   const [seasonFilter, setSeasonFilter] = useState('saison'); // 'saison' | 'chantier' | 'archive' | 'all'
   const [searchQuery, setSearchQuery] = useState('');
@@ -30,6 +37,8 @@ export default function MestreRepertoireView({ groupId, user, profileData, seque
   const [pieceToEdit, setPieceToEdit] = useState(null);
   const [isProgramModalOpen, setIsProgramModalOpen] = useState(false);
   const [pieceToProgram, setPieceToProgram] = useState(null);
+  const [activeVideoToWatch, setActiveVideoToWatch] = useState(null);
+  const [activeSignalToZoom, setActiveSignalToZoom] = useState(null);
 
   // Notification toast
   const [toastMsg, setToastMsg] = useState(null);
@@ -381,6 +390,57 @@ export default function MestreRepertoireView({ groupId, user, profileData, seque
                       </span>
                     )}
                   </div>
+
+                  {/* Vidéos personnalisables du morceau */}
+                  {Array.isArray(piece.videos) && piece.videos.length > 0 && (
+                    <div className="flex items-center gap-1.5 flex-wrap pt-1">
+                      {piece.videos.map((vid, idx) => (
+                        <button
+                          key={vid.id || idx}
+                          type="button"
+                          onClick={() => setActiveVideoToWatch(vid)}
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 text-[9.5px] font-black uppercase rounded-[4px_6px_3px_5px] bg-red-50 hover:bg-red-100 text-red-900 border border-red-300 shadow-sm transition-all cursor-pointer"
+                          title={`Visionner la vidéo : ${vid.titre || 'Vidéo'}`}
+                        >
+                          <span>🎬</span>
+                          <span className="truncate max-w-[150px]">{vid.titre || `Vidéo #${idx + 1}`}</span>
+                          <span className="text-[8px] opacity-70">▶</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Signes du Mestre associés (vignettes avec zoom au clic) */}
+                  {Array.isArray(piece.signalIds) && piece.signalIds.length > 0 && (
+                    <div className="flex items-center gap-1.5 flex-wrap pt-1">
+                      <span className="text-[9px] font-black uppercase tracking-wider text-cordel-master-dark/70 mr-0.5">
+                        ✋ Signes :
+                      </span>
+                      {piece.signalIds.map((sigId) => {
+                        const sig = signalsMap.get(sigId);
+                        if (!sig) return null;
+                        return (
+                          <button
+                            key={sigId}
+                            type="button"
+                            onClick={() => setActiveSignalToZoom(sig)}
+                            className="inline-flex items-center gap-1.5 p-1 pr-2 rounded-[4px_6px_3px_5px] bg-amber-50 hover:bg-amber-100/80 text-amber-950 border border-amber-300 transition-all cursor-pointer shadow-sm select-none"
+                            title={`Agrandir le geste : ${sig.name}`}
+                          >
+                            <div className="w-5 h-5 rounded bg-stone-900 shrink-0 overflow-hidden flex items-center justify-center border border-encre-noire/20">
+                              {sig.imageUrl ? (
+                                <img src={sig.imageUrl} alt={sig.name} className="w-full h-full object-cover" />
+                              ) : (
+                                <span className="text-[9px]">✋</span>
+                              )}
+                            </div>
+                            <span className="text-[9.5px] font-extrabold truncate max-w-[100px]">{sig.name}</span>
+                            <span className="text-[8.5px] opacity-50">🔍</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
 
                 {/* Bas de la carte : Barre d'actions */}
@@ -463,6 +523,20 @@ export default function MestreRepertoireView({ groupId, user, profileData, seque
           const evName = event ? (event.titre || event.title || 'l\'événement') : 'l\'événement';
           showToast(`« ${item.titre} » programmé sur ${evName} !`);
         }}
+      />
+
+      {/* Modale de lecture vidéo Cordel */}
+      <RepertoireVideoModal
+        isOpen={Boolean(activeVideoToWatch)}
+        onClose={() => setActiveVideoToWatch(null)}
+        video={activeVideoToWatch}
+      />
+
+      {/* Modale de zoom sur le geste du Mestre */}
+      <SignalZoomModal
+        isOpen={Boolean(activeSignalToZoom)}
+        onClose={() => setActiveSignalToZoom(null)}
+        signal={activeSignalToZoom}
       />
     </div>
   );

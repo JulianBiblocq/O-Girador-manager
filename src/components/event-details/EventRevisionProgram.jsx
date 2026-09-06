@@ -1,9 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 import { useSequencerRhythms } from '../../hooks/useSequencerRhythms';
 import { useDancadorChoreographies, useDancadorSteps } from '../../hooks/useDancadorData';
 import { useSequencerFirestoreData } from '../../hooks/useSequencerFirestoreData';
+import useMestreSignals from '../../hooks/useMestreSignals';
+import RepertoireVideoModal from '../mestre/RepertoireVideoModal';
+import SignalZoomModal from '../mestre/SignalZoomModal';
 
 export default function EventRevisionProgram({
   setlist,
@@ -28,6 +31,12 @@ export default function EventRevisionProgram({
 }) {
   const [activeTab, setActiveTab] = useState('filConducteur'); // 'filConducteur' | 'danse'
   const [selectedChoreoToAdd, setSelectedChoreoToAdd] = useState('');
+  const [activeVideoToWatch, setActiveVideoToWatch] = useState(null);
+  const [activeSignalToZoom, setActiveSignalToZoom] = useState(null);
+
+  // Bibliothèque des Signes du Mestre
+  const { signals } = useMestreSignals();
+  const signalsMap = useMemo(() => new Map((signals || []).map((s) => [s.id, s])), [signals]);
 
   // Hooks pour le séquenceur
   const { catalogRhythms, loadingRhythms } = useSequencerRhythms(groupId);
@@ -188,6 +197,56 @@ export default function EventRevisionProgram({
                         <p className="text-[11px] text-encre-noire/80 bg-[#fdfaf2] p-2 rounded border border-dashed border-encre-noire/15 italic leading-snug">
                           💡 {morceau.notes}
                         </p>
+                      )}
+
+                      {/* Vidéos associées au morceau */}
+                      {Array.isArray(morceau.videos) && morceau.videos.length > 0 && (
+                        <div className="flex items-center gap-1.5 flex-wrap pt-1">
+                          {morceau.videos.map((vid, vIdx) => (
+                            <button
+                              key={vid.id || vIdx}
+                              type="button"
+                              onClick={() => setActiveVideoToWatch(vid)}
+                              className="inline-flex items-center gap-1.5 px-2.5 py-0.5 text-[9px] font-black uppercase rounded bg-red-50 hover:bg-red-100 text-red-900 border border-red-300 shadow-sm transition-all cursor-pointer"
+                              title={`Visionner la vidéo : ${vid.titre || 'Vidéo'}`}
+                            >
+                              <span>🎬</span>
+                              <span className="truncate max-w-[130px]">{vid.titre || `Vidéo #${vIdx + 1}`}</span>
+                              <span className="text-[7.5px] opacity-70">▶</span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Signes du Mestre associés (vignettes avec zoom au clic) */}
+                      {Array.isArray(morceau.signalIds) && morceau.signalIds.length > 0 && (
+                        <div className="flex items-center gap-1.5 flex-wrap pt-1">
+                          <span className="text-[8.5px] font-black uppercase text-cordel-master-dark/70">
+                            ✋ Signes :
+                          </span>
+                          {morceau.signalIds.map((sigId) => {
+                            const sig = signalsMap.get(sigId);
+                            if (!sig) return null;
+                            return (
+                              <button
+                                key={sigId}
+                                type="button"
+                                onClick={() => setActiveSignalToZoom(sig)}
+                                className="inline-flex items-center gap-1 p-0.5 pr-1.5 rounded bg-amber-50 hover:bg-amber-100 text-amber-950 border border-amber-300 transition-all cursor-pointer text-[9px] font-bold shadow-sm"
+                                title={`Agrandir le geste : ${sig.name}`}
+                              >
+                                <div className="w-4 h-4 rounded bg-stone-900 shrink-0 overflow-hidden flex items-center justify-center">
+                                  {sig.imageUrl ? (
+                                    <img src={sig.imageUrl} alt={sig.name} className="w-full h-full object-cover" />
+                                  ) : (
+                                    <span>✋</span>
+                                  )}
+                                </div>
+                                <span>{sig.name}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
                       )}
 
                       {/* Lecteur / Lien Séquenceur si disponible uniquement (tolérance propre pour les morceaux sans séquenceur) */}
@@ -482,6 +541,21 @@ export default function EventRevisionProgram({
           </div>
         )}
       </div>
+
+      {/* Modale de lecture vidéo Cordel */}
+      <RepertoireVideoModal
+        isOpen={Boolean(activeVideoToWatch)}
+        onClose={() => setActiveVideoToWatch(null)}
+        video={activeVideoToWatch}
+      />
+
+      {/* Modale de zoom sur le geste / signe du Mestre */}
+      <SignalZoomModal
+        isOpen={Boolean(activeSignalToZoom)}
+        onClose={() => setActiveSignalToZoom(null)}
+        signal={activeSignalToZoom}
+      />
     </CordelCard>
   );
 }
+

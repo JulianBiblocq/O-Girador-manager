@@ -81,3 +81,59 @@ export function getValidEventThumbnailUrl(event) {
 
   return null;
 }
+
+/**
+ * Résout une URL vidéo (YouTube, Vimeo, Google Drive, MP4 directe)
+ * en URL intégrable (iframe embed) ou URL brute pour lecteur vidéo HTML5.
+ *
+ * @param {string} url - URL d'origine de la vidéo
+ * @returns {{ type: 'youtube' | 'vimeo' | 'drive' | 'direct' | 'unknown', embedUrl: string | null }}
+ */
+export function getEmbedVideoUrl(url) {
+  if (!url || typeof url !== 'string') {
+    return { type: 'unknown', embedUrl: null };
+  }
+
+  const trimmed = url.trim();
+
+  // 1. YouTube
+  const ytId = extractYouTubeId(trimmed);
+  if (ytId) {
+    return {
+      type: 'youtube',
+      embedUrl: `https://www.youtube-nocookie.com/embed/${ytId}?autoplay=1&rel=0`
+    };
+  }
+
+  // 2. Vimeo
+  const vimeoMatch = trimmed.match(/(?:vimeo\.com\/)(\d+)/);
+  if (vimeoMatch && vimeoMatch[1]) {
+    return {
+      type: 'vimeo',
+      embedUrl: `https://player.vimeo.com/video/${vimeoMatch[1]}?autoplay=1`
+    };
+  }
+
+  // 3. Google Drive
+  const driveMatch = trimmed.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/);
+  if (driveMatch && driveMatch[1]) {
+    return {
+      type: 'drive',
+      embedUrl: `https://drive.google.com/file/d/${driveMatch[1]}/preview`
+    };
+  }
+
+  // 4. Fichier vidéo direct (MP4, WebM, OGG)
+  if (trimmed.match(/\.(mp4|webm|ogg)(\?.*)?$/i)) {
+    return {
+      type: 'direct',
+      embedUrl: trimmed
+    };
+  }
+
+  // 5. Autre URL web externe
+  return {
+    type: 'unknown',
+    embedUrl: trimmed
+  };
+}
