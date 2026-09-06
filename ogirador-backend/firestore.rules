@@ -315,6 +315,11 @@ service cloud.firestore {
         allow read: if isAuthenticated() && (getUserData().groupId == assocId || isAdminOrMestre());
         allow write: if isAuthenticated() && (isAdminOrMestre() || canManageEvents()) && (getUserData().groupId == assocId || request.auth.token.isSystemAdmin == true);
       }
+
+      // Traçabilité et historique des notifications de paiement HelloAsso
+      match /helloasso_logs/{logId} {
+        allow read: if isAdminOrMestre() && getUserData().groupId == assocId;
+      }
     }
 
     // Collection racine automation_rules (rétrocompatibilité)

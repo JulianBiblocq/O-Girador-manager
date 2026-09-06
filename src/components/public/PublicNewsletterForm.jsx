@@ -47,7 +47,8 @@ export default function PublicNewsletterForm({ groupId, variant = 'card', public
         dateInscription: new Date().toISOString(),
         createdAt: serverTimestamp(),
         source: 'vitrine',
-        groupId: groupId || ''
+        groupId: groupId || '',
+        brevoStatus: 'pending'
       });
 
       setSubmittedSuccess(true);

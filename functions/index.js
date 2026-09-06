@@ -592,6 +592,230 @@ exports.exportNewsletter = onRequest(
 );
 
 /**
+ * Récupère les identifiants Brevo pour une association donnée (clé API et ID de liste).
+ * Priorité : private_settings/credentials > associations.publicTheme > secret central.
+ */
+async function getBrevoCredentialsForGroup(db, groupId, defaultSecret) {
+  let apiKeyToUse = null;
+  let listIdToUse = null;
+
+  if (groupId) {
+    try {
+      const credsSnap = await db.collection("associations").doc(groupId).collection("private_settings").doc("credentials").get();
+      if (credsSnap.exists) {
+        const creds = credsSnap.data();
+        apiKeyToUse = creds.emailProviderApiKey || null;
+        listIdToUse = creds.brevoListId || null;
+      }
+    } catch (err) {
+      console.warn("getBrevoCredentialsForGroup - Erreur private_settings :", err.message);
+    }
+
+    if (!apiKeyToUse || !listIdToUse) {
+      try {
+        const assocSnap = await db.collection("associations").doc(groupId).get();
+        if (assocSnap.exists) {
+          const assocData = assocSnap.data();
+          if (!apiKeyToUse && assocData.publicTheme?.brevoApiKey) {
+            apiKeyToUse = assocData.publicTheme.brevoApiKey;
+          }
+          if (!listIdToUse && assocData.publicTheme?.brevoListId) {
+            listIdToUse = assocData.publicTheme.brevoListId;
+          }
+        }
+      } catch (err) {
+        console.warn("getBrevoCredentialsForGroup - Erreur publicTheme :", err.message);
+      }
+    }
+  }
+
+  if (!apiKeyToUse && defaultSecret && defaultSecret.value) {
+    apiKeyToUse = defaultSecret.value();
+  }
+
+  return { apiKeyToUse, listIdToUse };
+}
+
+/**
+ * Cloud Function Trigger : onNewsletterSubscriberCreated
+ * Écoute les créations de documents dans `newsletter_subscribers` et synchronise
+ * instantanément le contact avec la liste Brevo via l'API v3.
+ */
+exports.onNewsletterSubscriberCreated = onDocumentCreated(
+  { document: "newsletter_subscribers/{subscriberId}", secrets: [brevoApiKeySecret] },
+  async (event) => {
+    const snap = event.data;
+    if (!snap) return null;
+    const data = snap.data();
+    const email = (data.email || "").trim().toLowerCase();
+    const groupId = data.groupId;
+
+    if (!email || !email.includes("@")) return null;
+
+    const db = getFirestore();
+    const { apiKeyToUse, listIdToUse } = await getBrevoCredentialsForGroup(db, groupId, brevoApiKeySecret);
+
+    if (!apiKeyToUse) {
+      console.warn("onNewsletterSubscriberCreated - Aucune clé API Brevo configurée pour le groupe :", groupId);
+      await snap.ref.update({
+        brevoStatus: "not_configured",
+        updatedAt: FieldValue.serverTimestamp()
+      });
+      return null;
+    }
+
+    const parsedListId = listIdToUse ? parseInt(listIdToUse, 10) : null;
+    const brevoPayload = {
+      email: email,
+      updateEnabled: true
+    };
+    if (parsedListId && !isNaN(parsedListId)) {
+      brevoPayload.listIds = [parsedListId];
+    }
+
+    try {
+      const brevoRes = await fetch("https://api.brevo.com/v3/contacts", {
+        method: "POST",
+        headers: {
+          "accept": "application/json",
+          "content-type": "application/json",
+          "api-key": apiKeyToUse
+        },
+        body: JSON.stringify(brevoPayload)
+      });
+
+      const resData = await brevoRes.json().catch(() => ({}));
+
+      if (brevoRes.ok || brevoRes.status === 201 || brevoRes.status === 204) {
+        console.log("onNewsletterSubscriberCreated - Contact synchronisé avec Brevo :", email);
+        await snap.ref.update({
+          brevoStatus: "synced",
+          syncedAt: FieldValue.serverTimestamp(),
+          brevoListId: parsedListId || null,
+          brevoError: null
+        });
+      } else {
+        console.error("onNewsletterSubscriberCreated - Erreur Brevo :", brevoRes.status, resData);
+        await snap.ref.update({
+          brevoStatus: "error",
+          brevoError: resData.message || `Code HTTP ${brevoRes.status}`,
+          updatedAt: FieldValue.serverTimestamp()
+        });
+      }
+    } catch (err) {
+      console.error("onNewsletterSubscriberCreated - Exception réseau :", err);
+      await snap.ref.update({
+        brevoStatus: "error",
+        brevoError: err.message,
+        updatedAt: FieldValue.serverTimestamp()
+      });
+    }
+
+    return null;
+  }
+);
+
+/**
+ * Cloud Function HTTPS Callable : syncNewsletterSubscribersToBrevo
+ * Permet de synchroniser manuellement et en lot tous les abonnés newsletter d'une association.
+ */
+exports.syncNewsletterSubscribersToBrevo = onCall(
+  { secrets: [brevoApiKeySecret], cors: true },
+  async (request) => {
+    const authData = request.auth || (request.context && request.context.auth);
+    if (!authData || !authData.uid) {
+      throw new HttpsError("unauthenticated", "Vous devez être connecté pour exécuter cette action.");
+    }
+
+    const data = request.data || {};
+    const groupId = data.groupId;
+    if (!groupId) {
+      throw new HttpsError("invalid-argument", "Le paramètre groupId est requis.");
+    }
+
+    const db = getFirestore();
+    const { apiKeyToUse, listIdToUse } = await getBrevoCredentialsForGroup(db, groupId, brevoApiKeySecret);
+
+    if (!apiKeyToUse) {
+      throw new HttpsError("failed-precondition", "Aucune clé API Brevo n'est configurée pour cette association.");
+    }
+
+    const parsedListId = listIdToUse ? parseInt(listIdToUse, 10) : null;
+
+    const subscribersSnap = await db.collection("newsletter_subscribers")
+      .where("groupId", "==", groupId)
+      .get();
+
+    if (subscribersSnap.empty) {
+      return { success: true, count: 0, message: "Aucun abonné à synchroniser." };
+    }
+
+    let syncedCount = 0;
+    let errorCount = 0;
+
+    for (const docSnap of subscribersSnap.docs) {
+      const sub = docSnap.data();
+      const email = (sub.email || "").trim().toLowerCase();
+      if (!email || !email.includes("@")) continue;
+
+      const brevoPayload = {
+        email: email,
+        updateEnabled: true
+      };
+      if (parsedListId && !isNaN(parsedListId)) {
+        brevoPayload.listIds = [parsedListId];
+      }
+
+      try {
+        const brevoRes = await fetch("https://api.brevo.com/v3/contacts", {
+          method: "POST",
+          headers: {
+            "accept": "application/json",
+            "content-type": "application/json",
+            "api-key": apiKeyToUse
+          },
+          body: JSON.stringify(brevoPayload)
+        });
+
+        if (brevoRes.ok || brevoRes.status === 201 || brevoRes.status === 204) {
+          syncedCount++;
+          await docSnap.ref.update({
+            brevoStatus: "synced",
+            syncedAt: FieldValue.serverTimestamp(),
+            brevoListId: parsedListId || null,
+            brevoError: null
+          });
+        } else {
+          errorCount++;
+          const resData = await brevoRes.json().catch(() => ({}));
+          await docSnap.ref.update({
+            brevoStatus: "error",
+            brevoError: resData.message || `Code HTTP ${brevoRes.status}`,
+            updatedAt: FieldValue.serverTimestamp()
+          });
+        }
+      } catch (err) {
+        errorCount++;
+        await docSnap.ref.update({
+          brevoStatus: "error",
+          brevoError: err.message,
+          updatedAt: FieldValue.serverTimestamp()
+        });
+      }
+    }
+
+    return {
+      success: true,
+      total: subscribersSnap.size,
+      synced: syncedCount,
+      errors: errorCount,
+      message: `${syncedCount} abonné(s) synchronisé(s) avec succès dans Brevo.`
+    };
+  }
+);
+
+
+/**
  * Cloud Function HTTPS Callable : approveQrSession
  * Permet à un membre authentifié sur mobile d'approuver une session QR Code affichée sur PC.
  * Vérifie l'authentification et l'expiration de la session, génère un customToken Firebase via l'Admin SDK,
@@ -734,9 +958,25 @@ exports.helloAssoWebhook = onRequest(
       const payerFirstName = payer.firstName || (data.order && data.order.payer && data.order.payer.firstName) || "";
       const payerLastName = payer.lastName || (data.order && data.order.payer && data.order.payer.lastName) || "";
 
-      // Calcul résilient du montant (bannir tout risque de NaN pour les objets ou entiers)
-      const rawAmount = typeof data.amount === "object" ? (data.amount?.total || 0) : (data.amount || 0);
-      const amountEuros = rawAmount / 100;
+      // Calcul ultra-résilient du montant (bannir tout risque de NaN pour les objets, entiers ou sous-propriétés)
+      let rawAmount = 0;
+      if (typeof data.amount === "number") {
+        rawAmount = data.amount;
+      } else if (data.amount && typeof data.amount === "object") {
+        rawAmount = data.amount.total || data.amount.amount || 0;
+      } else if (data.order?.amount) {
+        rawAmount = typeof data.order.amount === "number" ? data.order.amount : (data.order.amount.total || 0);
+      }
+
+      // Si le montant n'a pas pu être extrait mais que des items sont présents
+      if ((!rawAmount || isNaN(rawAmount)) && Array.isArray(data.items) && data.items.length > 0) {
+        rawAmount = data.items.reduce((sum, item) => {
+          const itemVal = typeof item.amount === "number" ? item.amount : (item.amount?.total || 0);
+          return sum + (Number(itemVal) || 0);
+        }, 0);
+      }
+
+      const amountEuros = (!isNaN(rawAmount) && rawAmount > 0) ? (rawAmount / 100) : 0;
       const items = data.items || [];
       const helloAssoOrderId = data.id || data.order?.id || null;
       const paymentDate = data.date || new Date().toISOString();
@@ -761,7 +1001,7 @@ exports.helloAssoWebhook = onRequest(
 
         if (credsDoc.exists) {
           const storedKey = credsDoc.data().helloAssoSignatureKey || "";
-          const receivedKey = req.headers["x-helloasso-key"] || req.headers["x-helloasso-signature"] || "";
+          const receivedKey = req.headers["x-ha-signature"] || req.headers["x-helloasso-signature"] || req.headers["x-helloasso-key"] || "";
           if (storedKey && receivedKey) {
             const isDirectMatch = storedKey === receivedKey;
             let isHmacMatch = false;

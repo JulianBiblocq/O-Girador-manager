@@ -58,6 +58,41 @@ function newsletterApiPlugin() {
           }
         });
       });
+
+      server.middlewares.use('/api/newsletter/sync', async (req, res) => {
+        if (req.method !== 'POST') {
+          res.statusCode = 405;
+          res.setHeader('Content-Type', 'application/json');
+          res.end(JSON.stringify({ error: 'Méthode non autorisée. Utilisez POST.' }));
+          return;
+        }
+
+        let body = '';
+        req.on('data', (chunk) => {
+          body += chunk;
+        });
+
+        req.on('end', () => {
+          try {
+            const payload = JSON.parse(body || '{}');
+            console.log('[Newsletter API Sync Simulateur Local] Demande reçue :', payload);
+            res.statusCode = 200;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(
+              JSON.stringify({
+                success: true,
+                message: 'Synchronisation simulée avec succès en environnement local.',
+                synced: payload.count || 1,
+                total: payload.count || 1
+              })
+            );
+          } catch (err) {
+            res.statusCode = 400;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({ error: 'Format JSON invalide.' }));
+          }
+        });
+      });
     }
   };
 }

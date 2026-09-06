@@ -12,7 +12,7 @@ function MemberTreasuryRow({
   cautionData,
   onUpdateCaution
 }) {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const { tRole } = useTerminologie();
   const [showOptionsDropdown, setShowOptionsDropdown] = useState(false);
   const [showCautionPopover, setShowCautionPopover] = useState(false);
@@ -325,26 +325,43 @@ function MemberTreasuryRow({
       </div>
 
       {/* 6. Statut de Paiement de la Cotisation (Col span 2) */}
-      <div className="md:col-span-2 flex items-center md:justify-end gap-2 border-t md:border-t-0 border-dashed border-cordel-master-dark/10 pt-2 md:pt-0 justify-between w-full md:w-auto">
-        <span className="md:hidden text-[9px] font-extrabold uppercase tracking-wide text-cordel-master-dark">{t('widgetTreasury.statusLabel')} :</span>
-        <select
-          value={currentStatus}
-          onChange={(e) => handleUpdateStatus(e.target.value)}
-          className={`theme-input text-[8.5px] font-black py-1 px-2 bg-cordel-bg-light cursor-pointer rounded-[4px_6px_3px_5px] border-2 ${
-            currentStatus === 'paid' 
-              ? 'border-green-600/40 text-[#2d6a4f]' 
-              : currentStatus === 'partial' 
-                ? 'border-amber-600/40 text-[#c05621]' 
-                : currentStatus === 'exempted'
-                  ? 'border-blue-600/40 text-blue-700 dark:text-blue-400'
-                  : 'border-red-600/40 text-[#8b2a1a]'
-          }`}
-        >
-          <option value="unpaid">{t('widgetTreasury.statusUnpaid') || "Non payé"}</option>
-          <option value="partial">{t('widgetTreasury.statusPartial') || "Partiel"}</option>
-          <option value="paid">{t('widgetTreasury.statusPaid') || "À jour"}</option>
-          <option value="exempted">{t('widgetTreasury.statusExempted') || "Exonéré"}</option>
-        </select>
+      <div className="md:col-span-2 flex flex-col items-end justify-center gap-1 border-t md:border-t-0 border-dashed border-cordel-master-dark/10 pt-2 md:pt-0 justify-between w-full md:w-auto">
+        <div className="flex items-center justify-between md:justify-end gap-2 w-full">
+          <span className="md:hidden text-[9px] font-extrabold uppercase tracking-wide text-cordel-master-dark">{t('widgetTreasury.statusLabel')} :</span>
+          <select
+            value={currentStatus}
+            onChange={(e) => handleUpdateStatus(e.target.value)}
+            className={`theme-input text-[8.5px] font-black py-1 px-2 bg-cordel-bg-light cursor-pointer rounded-[4px_6px_3px_5px] border-2 ${
+              currentStatus === 'paid' 
+                ? 'border-green-600/40 text-[#2d6a4f]' 
+                : currentStatus === 'partial' 
+                  ? 'border-amber-600/40 text-[#c05621]' 
+                  : currentStatus === 'exempted'
+                    ? 'border-blue-600/40 text-blue-700 dark:text-blue-400'
+                    : 'border-red-600/40 text-[#8b2a1a]'
+            }`}
+          >
+            <option value="unpaid">{t('widgetTreasury.statusUnpaid') || "Non payé"}</option>
+            <option value="partial">{t('widgetTreasury.statusPartial') || "Partiel"}</option>
+            <option value="paid">{t('widgetTreasury.statusPaid') || "À jour"}</option>
+            <option value="exempted">{t('widgetTreasury.statusExempted') || "Exonéré"}</option>
+          </select>
+        </div>
+
+        {/* Badge informatif HelloAsso avec montant direct et date de validation */}
+        {member.helloAssoLastPayment && (
+          <div 
+            className="flex items-center gap-1 text-[7.5px] font-bold text-[#2d6a4f] dark:text-emerald-400 bg-[#2d6a4f]/10 dark:bg-emerald-950/30 px-1.5 py-0.5 rounded border border-[#2d6a4f]/30 dark:border-emerald-800/50 select-none"
+            title={`Paiement HelloAsso ${member.helloAssoLastPayment.orderId ? `(Réf: ${member.helloAssoLastPayment.orderId})` : ''} enregistré ${member.helloAssoLastPayment.date ? `le ${new Date(member.helloAssoLastPayment.date).toLocaleDateString(locale === 'pt' ? 'pt-BR' : 'fr-FR')}` : ''}`}
+          >
+            <span>💳</span>
+            <span>
+              {!isNaN(Number(member.helloAssoLastPayment.amount)) && Number(member.helloAssoLastPayment.amount) > 0
+                ? `${Number(member.helloAssoLastPayment.amount)} € (HelloAsso)`
+                : 'Paiement HelloAsso'}
+            </span>
+          </div>
+        )}
       </div>
 
     </div>
