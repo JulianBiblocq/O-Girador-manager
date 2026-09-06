@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { collection, query, where, getDocs, doc, getDoc, setDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, getDoc, setDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '../../firebase';
 import CordelCard from '../CordelCard';
 import MestrePedagogyNotepad from './MestrePedagogyNotepad';
 import MestreToadasAnalytics from '../pedagogy/MestreToadasAnalytics';
 import ProgramRehearsalModal from './ProgramRehearsalModal';
 import useConfirm from '../../hooks/useConfirm';
-import { useSequencerFirestoreData } from '../../hooks/useSequencerFirestoreData';
+import { useSequencerFirestoreData, isTestOrE2ESequence } from '../../hooks/useSequencerFirestoreData';
 import { calculateToadaScore } from '../../utils/toadaProgressEngine';
 import { normalizePupitreName } from '../../utils/secretariatMetrics';
 
@@ -20,6 +20,9 @@ export default function MestrePedagogyDashboard({ profileData }) {
   const [pinnedSuccessItem, setPinnedSuccessItem] = useState(null);
   const [itemToProgramDirect, setItemToProgramDirect] = useState(null);
   const [programDirectSuccess, setProgramDirectSuccess] = useState(null);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [purgingE2E, setPurgingE2E] = useState(false);
+  const [purgeSuccessMessage, setPurgeSuccessMessage] = useState(null);
 
   // 1. Branchement sur le catalogue complet du Séquenceur officiel
   const { rhythms: sequencerRhythms, loading: loadingSequencer } = useSequencerFirestoreData(groupId);
@@ -118,15 +121,16 @@ export default function MestrePedagogyDashboard({ profileData }) {
     };
 
     fetchData();
-  }, [groupId, isAuthorized]);
+  }, [groupId, isAuthorized, refreshTrigger]);
 
   // Construction unifiée et saine du catalogue de rythmes (Percussion et Danse)
   const unifiedRhythms = useMemo(() => {
     const map = new Map();
 
-    // 1. Morceaux issus du Séquenceur officiel
+    // 1. Morceaux issus du Séquenceur officiel (exclusion stricte des artefacts de tests E2E)
     (sequencerRhythms || []).forEach(r => {
       const cleanTitle = r.title || r.titre || r.name || r.id;
+      if (isTestOrE2ESequence(r) || isTestOrE2ESequence({ id: r.id, title: cleanTitle })) return;
       map.set(r.id, {
         id: r.id,
         titre: cleanTitle,
@@ -135,21 +139,24 @@ export default function MestrePedagogyDashboard({ profileData }) {
       });
     });
 
-    // 2. Métadonnées personnalisées du Mestre
+    // 2. Métadonnées personnalisées du Mestre (exclusion stricte des tests E2E)
     (rhythmMetaList || []).forEach(m => {
       const existing = map.get(m.id);
+      const cleanTitle = m.titre || m.title || existing?.titre || m.id;
+      if (isTestOrE2ESequence({ id: m.id, title: cleanTitle })) return;
       map.set(m.id, {
         id: m.id,
-        titre: m.titre || m.title || existing?.titre || m.id,
+        titre: cleanTitle,
         jsonUrl: m.jsonUrl || existing?.jsonUrl || null,
         source: 'metadata',
         ...m
       });
     });
 
-    // 3. Détection des clés existantes dans les évaluations (Dépollution stricte)
+    // 3. Détection des clés existantes dans les évaluations (Dépollution stricte et exclusion des clés E2E)
     Object.values(evaluationsMap).forEach(userEvals => {
       Object.keys(userEvals).forEach(key => {
+        if (isTestOrE2ESequence({ id: key, title: key })) return;
         // Exclure formellement les chants, fiches, clés administratives et le préfixe danse_
         if (
           !songs.find(s => s.id === key) &&
@@ -468,6 +475,121 @@ export default function MestrePedagogyDashboard({ profileData }) {
     }
   };
 
+  // Détecter combien d'éléments de test E2E subsistent encore dans la base de données
+  const detectedE2EItems = useMemo(() => {
+    const list = [];
+    (sequencerRhythms || []).forEach(r => {
+      if (isTestOrE2ESequence(r)) list.push({ ...r, source: 'sequencer' });
+    });
+    (rhythmMetaList || []).forEach(m => {
+      if (isTestOrE2ESequence(m)) list.push({ ...m, source: 'rhythmMetadata' });
+    });
+    Object.entries(evaluationsMap).forEach(([uid, uEvals]) => {
+      Object.keys(uEvals || {}).forEach(k => {
+        if (isTestOrE2ESequence({ id: k, title: k })) {
+          list.push({ id: k, titre: k, uid, source: 'parcours' });
+        }
+      });
+    });
+    return list;
+  }, [sequencerRhythms, rhythmMetaList, evaluationsMap]);
+
+  // Purge complète et définitive des séquences, motifs, presets et évaluations de test E2E
+  const handlePurgeE2ETests = async () => {
+    const ok = await confirm({
+      title: "Purger les données de test E2E ?",
+      message: "Cette action va supprimer définitivement de Firestore tous les motifs, sections, presets et évaluations créés lors des tests automatisés (E2E). Les vrais morceaux et adhérents resteront intacts.",
+      confirmText: "Purger définitivement",
+      cancelText: "Annuler",
+      variant: "danger"
+    });
+    if (!ok) return;
+
+    setPurgingE2E(true);
+    let deletedCount = 0;
+
+    try {
+      // 1. Suppression dans les collections du séquenceur (patterns, sections, presets, audio_masters)
+      const seqCollections = ['patterns', 'sections', 'presets', 'audio_masters'];
+      for (const colName of seqCollections) {
+        try {
+          const snap = await getDocs(collection(db, colName));
+          for (const d of snap.docs) {
+            const data = d.data();
+            if (isTestOrE2ESequence({ id: d.id, ...data })) {
+              await deleteDoc(d.ref);
+              deletedCount++;
+            }
+          }
+        } catch (e) {
+          console.warn(`Purge E2E non critique sur ${colName}:`, e);
+        }
+      }
+
+      // 2. Suppression dans rhythmMetadata de l'association
+      try {
+        const metaSnap = await getDocs(collection(db, 'associations', groupId, 'rhythmMetadata'));
+        for (const d of metaSnap.docs) {
+          const data = d.data();
+          if (isTestOrE2ESequence({ id: d.id, ...data })) {
+            await deleteDoc(d.ref);
+            deletedCount++;
+          }
+        }
+      } catch (e) {
+        console.warn("Purge E2E sur rhythmMetadata:", e);
+      }
+
+      // 3. Nettoyage des évaluations et révisions de test chez les adhérents
+      for (const u of usersData) {
+        try {
+          const parcoursRef = doc(db, 'users', u.id, 'parcours', groupId);
+          const pSnap = await getDoc(parcoursRef);
+          if (pSnap.exists()) {
+            const pData = pSnap.data();
+            let changed = false;
+            const newEvals = { ...(pData.evaluations || {}) };
+            const newRevs = { ...(pData.revisionsDemandees || {}) };
+
+            Object.keys(newEvals).forEach(k => {
+              if (isTestOrE2ESequence({ id: k, title: k })) {
+                delete newEvals[k];
+                changed = true;
+                deletedCount++;
+              }
+            });
+
+            Object.keys(newRevs).forEach(k => {
+              if (isTestOrE2ESequence({ id: k, title: k })) {
+                delete newRevs[k];
+                changed = true;
+              }
+            });
+
+            if (changed) {
+              await setDoc(parcoursRef, {
+                ...pData,
+                evaluations: newEvals,
+                revisionsDemandees: newRevs
+              });
+            }
+          }
+        } catch (e) {
+          console.warn(`Purge E2E sur parcours utilisateur ${u.id}:`, e);
+        }
+      }
+
+      setPurgeSuccessMessage(`${deletedCount} élément(s) de test E2E supprimé(s) définitivement de la base !`);
+      setTimeout(() => setPurgeSuccessMessage(null), 6000);
+      setRefreshTrigger(v => v + 1);
+    } catch (err) {
+      console.error("Erreur lors de la purge E2E :", err);
+      alert("Erreur lors de la suppression des données de test.");
+    } finally {
+      setPurgingE2E(false);
+    }
+  };
+
   if (!isAuthorized) {
     return (
       <div className="p-8 text-center text-xs font-black uppercase text-cordel-rouge">
@@ -506,6 +628,34 @@ export default function MestrePedagogyDashboard({ profileData }) {
           </div>
         )}
       </div>
+
+      {/* Alerte et action de nettoyage des données de test E2E */}
+      {detectedE2EItems.length > 0 && (
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3.5 bg-[var(--color-cordel-ocre,#c05621)]/10 border-2 border-dashed border-[var(--color-cordel-ocre,#c05621)]/50 rounded-[4px_6px_3px_5px] text-xs font-bold text-[var(--color-cordel-ocre,#c05621)] shadow-xs">
+          <div className="flex items-center gap-2">
+            <span className="text-base">🧹</span>
+            <span>
+              <strong>{detectedE2EItems.length} élément(s) de test E2E détecté(s) :</strong> Ces séquences issues des tests automatisés sont automatiquement masquées de vos pupitres et de la Danse.
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={handlePurgeE2ETests}
+            disabled={purgingE2E}
+            className="shrink-0 px-3.5 py-1.5 bg-[var(--color-cordel-rouge,#8b2a1a)] text-white text-[10px] font-black uppercase tracking-wider rounded border border-encre-noire shadow-xs hover:brightness-110 active:scale-95 transition-all cursor-pointer flex items-center gap-1.5"
+            title="Supprimer définitivement tous les artefacts de tests E2E de la base Firestore"
+          >
+            <span>{purgingE2E ? '⏳ Purge en cours...' : '🗑️ Purger de la base'}</span>
+          </button>
+        </div>
+      )}
+
+      {purgeSuccessMessage && (
+        <div className="animate-fadeIn bg-[var(--color-cordel-vert,#2d6a4f)] text-white text-xs font-black uppercase px-4 py-2.5 rounded-[4px_6px_3px_5px] border border-encre-noire shadow-xs flex items-center gap-2">
+          <span>✓</span>
+          <span>{purgeSuccessMessage}</span>
+        </div>
+      )}
 
       {/* ========================================================================= */}
       {/* ZONE 1 : BANDEAU SYNTHÈSE DES POINTS CHAUDS (< 60%)                       */}
@@ -796,22 +946,47 @@ export default function MestrePedagogyDashboard({ profileData }) {
 
             {/* VUE 4 : ADMINISTRATION SAISON */}
             {activeAnalyseTab === 'admin' && (
-              <CordelCard variant="default" className="p-8 border-cordel-rouge/30 bg-cordel-rouge/5">
-                <h3 className="text-lg font-black uppercase tracking-wider text-cordel-rouge mb-3 flex items-center gap-2">
-                  <span>⚠️</span>
-                  <span>Remise à zéro annuelle</span>
-                </h3>
-                <p className="text-xs md:text-sm font-bold text-encre-noire/80 mb-6 leading-relaxed">
-                  Pour préparer la nouvelle saison, vous pouvez remettre à zéro l'ensemble des évaluations de tous les membres (Rythmes, Chants, Danse...). Les membres conserveront leurs badges d'ancienneté et leurs comptes, mais devront repasser les tests et auto-évaluations pour remplir à nouveau leur parcours.
-                </p>
-                <button
-                  type="button"
-                  onClick={handleResetAllEvaluations}
-                  className="px-6 py-3 bg-[var(--color-cordel-rouge,#8b2a1a)] text-white font-black uppercase tracking-widest rounded shadow hover:brightness-110 active:scale-95 transition-all cursor-pointer"
-                >
-                  🔄 Réinitialiser les compteurs
-                </button>
-              </CordelCard>
+              <div className="flex flex-col gap-6">
+                <CordelCard variant="default" className="p-8 border-cordel-rouge/30 bg-cordel-rouge/5">
+                  <h3 className="text-lg font-black uppercase tracking-wider text-cordel-rouge mb-3 flex items-center gap-2">
+                    <span>⚠️</span>
+                    <span>Remise à zéro annuelle</span>
+                  </h3>
+                  <p className="text-xs md:text-sm font-bold text-encre-noire/80 mb-6 leading-relaxed">
+                    Pour préparer la nouvelle saison, vous pouvez remettre à zéro l'ensemble des évaluations de tous les membres (Rythmes, Chants, Danse...). Les membres conserveront leurs badges d'ancienneté et leurs comptes, mais devront repasser les tests et auto-évaluations pour remplir à nouveau leur parcours.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={handleResetAllEvaluations}
+                    className="px-6 py-3 bg-[var(--color-cordel-rouge,#8b2a1a)] text-white font-black uppercase tracking-widest rounded shadow hover:brightness-110 active:scale-95 transition-all cursor-pointer"
+                  >
+                    🔄 Réinitialiser les compteurs
+                  </button>
+                </CordelCard>
+
+                <CordelCard variant="default" className="p-8 border-[var(--color-cordel-ocre,#c05621)]/30 bg-[var(--color-cordel-ocre,#c05621)]/5">
+                  <h3 className="text-lg font-black uppercase tracking-wider text-[var(--color-cordel-ocre,#c05621)] mb-3 flex items-center gap-2">
+                    <span>🧹</span>
+                    <span>Dépollution des tests automatisés (E2E)</span>
+                  </h3>
+                  <p className="text-xs md:text-sm font-bold text-encre-noire/80 mb-6 leading-relaxed">
+                    Si des tests automatisés ont généré des séquences temporaires, des motifs de test ou des évaluations fictives (préfixe E2E ou fs_pattern/fs_section), vous pouvez purger définitivement ces données résiduelles de Firestore en un clic.
+                  </p>
+                  <div className="flex items-center gap-4">
+                    <button
+                      type="button"
+                      onClick={handlePurgeE2ETests}
+                      disabled={purgingE2E}
+                      className="px-6 py-3 bg-[var(--color-cordel-rouge,#8b2a1a)] text-white font-black uppercase tracking-widest rounded shadow hover:brightness-110 active:scale-95 transition-all cursor-pointer flex items-center gap-2"
+                    >
+                      <span>{purgingE2E ? '⏳ Purge en cours...' : '🗑️ Purger les artefacts E2E de Firestore'}</span>
+                    </button>
+                    <span className="text-xs font-bold text-encre-noire/60">
+                      {detectedE2EItems.length} élément(s) de test actuellement détecté(s)
+                    </span>
+                  </div>
+                </CordelCard>
+              </div>
             )}
 
           </div>

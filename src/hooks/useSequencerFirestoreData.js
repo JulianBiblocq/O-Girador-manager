@@ -4,6 +4,28 @@ import { db } from '../firebase';
 import LZString from 'lz-string';
 
 /**
+ * Vérifie si un morceau ou une séquence est un artefact issu de tests automatisés (E2E)
+ * pour éviter de polluer les catalogues et tableaux de bord de répétition.
+ */
+export function isTestOrE2ESequence(item) {
+  if (!item) return false;
+  const id = String(item.id || '').toLowerCase();
+  const title = String(item.title || item.titre || item.name || '').toLowerCase();
+  const combined = `${id} ${title}`;
+  return (
+    combined.includes('e2e test') ||
+    combined.includes('e2e_test') ||
+    combined.includes('teste2e') ||
+    combined.includes('test eleve') ||
+    combined.includes('test élève') ||
+    id.startsWith('fs_pattern_') ||
+    id.startsWith('fs_section_') ||
+    title.startsWith('fs_pattern_') ||
+    title.startsWith('fs_section_')
+  );
+}
+
+/**
  * Hook pour récupérer les morceaux (presets, patterns et sections) du Séquenceur
  * stockés dans Firestore, appartenant à l'association (groupId), 
  * peu importe quel membre du groupe les a créés.
@@ -62,7 +84,10 @@ export function useSequencerFirestoreData(groupId) {
             return titleA.localeCompare(titleB);
           });
 
-          setRhythms(merged);
+          // Exclusion automatique des séquences et motifs de test E2E
+          const cleanMerged = merged.filter(item => !isTestOrE2ESequence(item));
+
+          setRhythms(cleanMerged);
           setLoading(false);
         };
 
