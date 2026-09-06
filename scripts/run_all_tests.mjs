@@ -13,7 +13,8 @@ const testScripts = [
   'scripts/test_module_5.mjs',
   'scripts/test_module_6.mjs',
   'scripts/test_module_7.mjs',
-  'scripts/test_module_8.mjs'
+  'scripts/test_module_8.mjs',
+  'scripts/test_gouvernance_pole.mjs'
 ];
 
 console.log("===============================================================");

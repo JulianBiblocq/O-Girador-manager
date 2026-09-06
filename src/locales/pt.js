@@ -900,6 +900,12 @@ export const pt = {
   poles: {
     accueil: "Início",
     'mon-espace': "Espaço",
+    gouvernance: "Governança",
+    tabCaReunions: "Reuniões & Atas",
+    tabCaReports: "Relatórios da AG",
+    tabCaDocuments: "Registro & Estatutos",
+    tabCaFinances: "Síntese Financeira",
+    tabCaPrestations: "Apresentações & Contratos",
     troupe: "Elenco",
     diffusion: "Produção",
     tabGigsPipeline: "Pipeline de Shows",

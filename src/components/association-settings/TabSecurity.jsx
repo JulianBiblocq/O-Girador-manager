@@ -1,9 +1,21 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import CordelCard from '../CordelCard';
 import PermissionsGuideBox from '../PermissionsGuideBox';
 import { formatTagGender, getTagId } from '../../utils/tagUtils';
 
 const PERMISSION_POLES = [
+  {
+    id: 'gouvernance',
+    label: '🏛️ Gouvernance',
+    desc: 'Pilotage stratégique, réunions et délibérations du Conseil d\'Administration',
+    tabs: [
+      { id: 'ca-reunions', label: 'Réunions & PV', desc: 'Ordres du jour, délibérations et procès-verbaux de réunions' },
+      { id: 'ca-reports', label: 'Bilans & Rapports AG', desc: 'Consolidation multi-pôles et bilans pour l\'Assemblée Générale' },
+      { id: 'ca-documents', label: 'Registre & Statuts', desc: 'Documents officiels, statuts, règlement intérieur et PV officiels' },
+      { id: 'ca-finances', label: 'Synthèse Financière', desc: 'Aperçu global des comptes, trésorerie et synthèses financières' },
+      { id: 'ca-prestations', label: 'Dates & Engagements', desc: 'Suivi stratégique des prestations, devis et engagements' }
+    ]
+  },
   {
     id: 'secretariat',
     label: '📋 Secrétariat',
@@ -155,6 +167,7 @@ export default function TabSecurity({
 
   // État local des accordéons de pôles
   const [openPoles, setOpenPoles] = useState({
+    gouvernance: false,
     secretariat: true,
     tresorerie: false,
     logistique: false,
@@ -164,6 +177,33 @@ export default function TabSecurity({
     mestre: false,
     vitrine: false
   });
+
+  // Initialisation par défaut des permissions du Pôle Gouvernance si non encore configurées
+  useEffect(() => {
+    if (!tagsDisponibles || tagsDisponibles.length === 0) return;
+    const governanceTabs = ['ca-reunions', 'ca-reports', 'ca-documents', 'ca-finances', 'ca-prestations'];
+    const hasAnyGovConfig = governanceTabs.some(tabId => permissionsMatrice[tabId] !== undefined) || permissionsMatrice['gouvernance'] !== undefined;
+
+    if (!hasAnyGovConfig) {
+      // Badges prioritaires de gouvernance (CA, Bureau, Présidence, Direction, Conseil)
+      const defaultGovTagIds = tagsDisponibles
+        .filter(t => {
+          const str = (typeof t === 'string' ? t : (t.id || t.nomM || t.nomF || t.name || '')).toLowerCase();
+          return str.includes('ca') || str.includes('bureau') || str.includes('conseil') || str.includes('présid') || str.includes('direction');
+        })
+        .map(t => getTagId(t));
+
+      if (defaultGovTagIds.length > 0) {
+        const updated = { ...permissionsMatrice };
+        governanceTabs.forEach(tabId => {
+          if (updated[tabId] === undefined) {
+            updated[tabId] = defaultGovTagIds;
+          }
+        });
+        handleChange('permissionsMatrice', updated);
+      }
+    }
+  }, [tagsDisponibles, permissionsMatrice, handleChange]);
 
   const togglePoleAccordion = (poleId) => {
     setOpenPoles(prev => ({
@@ -207,42 +247,59 @@ export default function TabSecurity({
     });
   };
 
-  // Fonction utilitaire pour afficher badge checkboxes for a target (tabId or poleId)
-  const renderTagCheckboxes = (targetId) => {
+  // Fonction utilitaire pour afficher les cases à cocher de badges pour une cible (tabId ou poleId)
+  const renderTagCheckboxes = (targetId, parentPoleId = null) => {
     const assignedTags = permissionsMatrice[targetId] || [];
+    const poleLevelTags = parentPoleId ? (permissionsMatrice[parentPoleId] || []) : [];
 
     return tagsDisponibles.map(tag => {
       const tagId = getTagId(tag);
       const isChecked = assignedTags.includes(tagId) || (typeof tag === 'string' && assignedTags.includes(tag));
+      const isInheritedFromPole = Boolean(
+        parentPoleId && (poleLevelTags.includes(tagId) || (typeof tag === 'string' && poleLevelTags.includes(tag)))
+      );
       const formattedLabel = formatTagGender(tag, null, formData?.majoriteFeminine, tagsDisponibles);
 
       return (
         <label key={tagId} className="flex items-center gap-1.5 cursor-pointer text-[10px] font-bold select-none hover:opacity-85">
           <input 
             type="checkbox"
-            checked={isChecked}
+            checked={isChecked || isInheritedFromPole}
+            disabled={saving || isInheritedFromPole}
             onChange={(e) => handleTogglePermission(targetId, tagId, e.target.checked)}
-            disabled={saving}
-            className="rounded cursor-pointer w-3.5 h-3.5 accent-[var(--cordel-wood)]"
+            className="rounded cursor-pointer w-3.5 h-3.5 accent-[var(--cordel-wood)] disabled:opacity-60"
           />
-          <span className={`theme-stamp-badge theme-stamp-badge-wood text-[8.5px] py-0.5 normal-case tracking-normal ${isChecked ? 'bg-cordel-wood text-white border-encre-noire' : 'opacity-70'}`}>
-            {formattedLabel}
+          <span 
+            className={`theme-stamp-badge text-[8.5px] py-0.5 normal-case tracking-normal transition-all ${
+              isInheritedFromPole
+                ? 'bg-[var(--color-cordel-vert,#2d6a4f)] text-white border-encre-noire shadow-2xs font-extrabold'
+                : isChecked 
+                  ? 'theme-stamp-badge-wood bg-cordel-wood text-white border-encre-noire' 
+                  : 'theme-stamp-badge-wood opacity-70'
+            }`}
+            title={isInheritedFromPole ? "Ce badge bénéficie déjà d'un accès illimité via l'attribution globale au Pôle entier" : undefined}
+          >
+            {formattedLabel} {isInheritedFromPole && '✓ (Pôle)'}
           </span>
         </label>
       );
     });
   };
 
-  // Count assigned tabs in a pole
+  // Calcul du résumé des permissions assignées pour un pôle (global pôle + par onglet)
   const countAssignedTabsInPole = (pole) => {
-    let count = 0;
+    const poleAssigned = permissionsMatrice[pole.id] || [];
+    const poleAssignedCount = Array.isArray(poleAssigned) ? poleAssigned.length : 0;
+
+    let tabRestrictedCount = 0;
     pole.tabs.forEach(tab => {
-      const tabAssigned = permissionsMatrice[tab.id] || permissionsMatrice[pole.id] || [];
+      const tabAssigned = permissionsMatrice[tab.id] || [];
       if (Array.isArray(tabAssigned) && tabAssigned.length > 0) {
-        count++;
+        tabRestrictedCount++;
       }
     });
-    return count;
+
+    return { poleAssignedCount, tabRestrictedCount };
   };
 
   return (
@@ -253,7 +310,7 @@ export default function TabSecurity({
       <CordelCard variant="default" useExtremeBorder={true} className="py-4 px-5">
       <div className="flex justify-between items-center mb-3">
         <h3 className="text-xs uppercase font-extrabold tracking-wider text-cordel-wood text-left flex items-center gap-2">
-          <span>🪢</span> Matrice des Permissions (Par Onglet)
+          <span>🪢</span> Matrice des Permissions (Par Pôle & Par Onglet)
         </h3>
 
         {/* Accordion Global Controls */}
@@ -277,7 +334,7 @@ export default function TabSecurity({
       </div>
 
       <p className="text-[10px] text-cordel-master-dark/70 font-semibold leading-relaxed mb-4 text-left">
-        Attribuez l'accès aux onglets spécifiques pour chaque badge/rôle. Un membre verra uniquement les onglets correspondant aux badges attribués à son profil.
+        Attribuez l'accès global à un pôle entier (recommandé pour une gestion rapide) ou affinez les autorisations onglet par onglet pour chaque étiquette/rôle.
       </p>
 
       {tagsDisponibles.length === 0 ? (
@@ -288,7 +345,7 @@ export default function TabSecurity({
         <div className="flex flex-col gap-3 text-left">
           {PERMISSION_POLES.map((pole) => {
             const isOpen = !!openPoles[pole.id];
-            const activeTabsCount = countAssignedTabsInPole(pole);
+            const { poleAssignedCount, tabRestrictedCount } = countAssignedTabsInPole(pole);
 
             return (
               <div 
@@ -301,10 +358,20 @@ export default function TabSecurity({
                   onClick={() => togglePoleAccordion(pole.id)}
                   className="w-full px-3 py-2.5 bg-cordel-master-light/20 hover:bg-cordel-master-light/35 flex items-center justify-between cursor-pointer border-b border-encre-noire/15 select-none text-left"
                 >
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-xs font-black text-encre-noire">{pole.label}</span>
-                    <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-cordel-wood/15 text-cordel-wood border border-cordel-wood/30">
-                      {activeTabsCount} / {pole.tabs.length} onglet(s) restreint(s)
+
+                    {/* Badge indicateur d'accès global au pôle */}
+                    {poleAssignedCount > 0 && (
+                      <span className="text-[8.5px] font-extrabold px-2 py-0.5 rounded-full bg-[var(--color-cordel-vert,#2d6a4f)]/15 text-[var(--color-cordel-vert,#2d6a4f)] border border-[var(--color-cordel-vert,#2d6a4f)]/30 flex items-center gap-1">
+                        <span>🏛️</span>
+                        <span>{poleAssignedCount} badge(s) pôle entier</span>
+                      </span>
+                    )}
+
+                    {/* Badge indicateur d'onglets restreints */}
+                    <span className="text-[8.5px] font-bold px-2 py-0.5 rounded-full bg-cordel-wood/15 text-cordel-wood border border-cordel-wood/30">
+                      {tabRestrictedCount} / {pole.tabs.length} onglet(s) configuré(s)
                     </span>
                   </div>
 
@@ -317,15 +384,68 @@ export default function TabSecurity({
 
                 {/* Accordion Body */}
                 {isOpen && (
-                  <div className="p-3 bg-white/50 dark:bg-black/10 flex flex-col gap-3">
+                  <div className="p-3 bg-white/50 dark:bg-black/10 flex flex-col gap-3.5">
                     <p className="text-[9.5px] italic text-cordel-master-dark/60 font-medium">
                       {pole.desc}
                     </p>
 
-                    <div className="flex flex-col gap-2.5 mt-1">
-                      {pole.tabs.map((tab) => {
-                        const tabAssignedCount = (permissionsMatrice[tab.id] || []).length;
+                    {/* BLOC 1 : Accès Global au Pôle Entier */}
+                    <div className="p-3 border-2 border-stone-800/80 bg-amber-50/70 dark:bg-stone-900/60 rounded-[6px] flex flex-col gap-2.5 shadow-xs">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-sm">🏛️</span>
+                            <span className="text-xs font-black uppercase tracking-wider text-stone-900 dark:text-stone-100">
+                              Accès Global au Pôle Entier ({pole.label})
+                            </span>
+                          </div>
+                          <p className="text-[9px] text-stone-600 dark:text-stone-400 font-medium mt-0.5">
+                            Cochez une étiquette ici pour lui accorder l'accès d'office à l'ensemble du pôle et à tous ses onglets en une seule fois.
+                          </p>
+                        </div>
 
+                        {/* Actions rapides sur le pôle entier */}
+                        <div className="flex items-center gap-1.5 text-[8px] font-extrabold shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => handleToggleAllTabBadges(pole.id, true)}
+                            disabled={saving}
+                            className="px-2 py-1 rounded bg-[var(--color-cordel-vert,#2d6a4f)] text-white hover:brightness-110 active:scale-95 transition-all cursor-pointer shadow-2xs flex items-center gap-1"
+                            title="Accorder l'accès à tout le pôle pour toutes les étiquettes"
+                          >
+                            <span>✓</span>
+                            <span>Tout le Pôle</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleToggleAllTabBadges(pole.id, false)}
+                            disabled={saving}
+                            className="px-2 py-1 rounded bg-stone-200 text-stone-700 border border-stone-300 hover:bg-stone-300 active:scale-95 transition-all cursor-pointer"
+                            title="Retirer les accès globaux accordés à ce pôle"
+                          >
+                            Aucun
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Cases à cocher des badges au niveau du Pôle entier */}
+                      <div className="flex flex-wrap gap-2 pt-2 border-t border-dashed border-stone-400/30">
+                        {renderTagCheckboxes(pole.id)}
+                      </div>
+                    </div>
+
+                    {/* SÉPARATEUR : Onglets spécifiques */}
+                    <div className="flex items-center gap-2 pt-1 border-t border-dashed border-cordel-master-dark/15">
+                      <span className="text-[10px] font-black uppercase tracking-wider text-cordel-wood">
+                        📑 Restrictions par Onglet Spécifique
+                      </span>
+                      <span className="text-[8.5px] text-stone-500 italic hidden sm:inline">
+                        (Pour attribuer un accès partiel aux membres n'ayant pas l'accès global au pôle)
+                      </span>
+                    </div>
+
+                    <div className="flex flex-col gap-2.5">
+                      {pole.tabs.map((tab) => {
                         return (
                           <div 
                             key={tab.id}
@@ -364,9 +484,9 @@ export default function TabSecurity({
                               </div>
                             </div>
 
-                            {/* Badge checkboxes list */}
+                            {/* Badge checkboxes list avec indication d'héritage du pôle */}
                             <div className="flex flex-wrap gap-2 pt-1 border-t border-dashed border-cordel-master-dark/10">
-                              {renderTagCheckboxes(tab.id)}
+                              {renderTagCheckboxes(tab.id, pole.id)}
                             </div>
                           </div>
                         );

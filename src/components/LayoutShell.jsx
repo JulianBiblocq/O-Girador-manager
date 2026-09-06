@@ -21,7 +21,8 @@ import {
   XiloHanger,
   XiloCaixa,
   XiloQuill,
-  XiloScissors
+  XiloScissors,
+  XiloScale
 } from './XiloIcons';
 import { useTranslation } from './LanguageContext';
 import { usePresence } from '../hooks/usePresence';
@@ -120,6 +121,7 @@ export default function LayoutShell({
     if (!enabledModules) return true;
 
     // Vérifier Pole-level module basculer
+    if (poleId === 'gouvernance' && enabledModules?.gouvernance === false) return false;
     if (poleId === 'diffusion' && enabledModules.diffusion === false) return false;
     if (poleId === 'tresorerie' && enabledModules.tresorerie === false) return false;
     if (poleId === 'logistique' && enabledModules.logistique === false && enabledModules.commandes === false) return false;
@@ -134,7 +136,7 @@ export default function LayoutShell({
     if (tabId === 'orders-manager' && enabledModules.commandes === false) return false;
     if (['vestiaire', 'wardrobe-inventory', 'wardrobe-couture', 'wardrobe-sizes', 'wardrobe-projects', 'wardrobe-models', 'wardrobe-pieces', 'wardrobe-supplies', 'wardrobe-tools', 'varal-costumerie'].includes(tabId) && enabledModules.vestiaire === false && enabledModules.costumerie === false) return false;
     if (['studio-social', 'varal-manager'].includes(tabId) && enabledModules.studioSocial === false) return false;
-    if (tabId === 'reunion-manager' && enabledModules.reunions === false) return false;
+    if (['reunion-manager', 'ca-reunions'].includes(tabId) && enabledModules.reunions === false) return false;
     if (['forum', 'mestre-forum-channels'].includes(tabId) && enabledModules.forum === false) return false;
     if (['mestre-repertoire', 'mestre-sante-troupe', 'mestre-pedagogy-manager', 'mestre-orientation', 'mestre-events', 'mestre-stage-layout', 'mestre-sequenceur', 'mestre-mot-mestre'].includes(tabId) && enabledModules.mestre === false) return false;
 
@@ -160,6 +162,7 @@ export default function LayoutShell({
   const isPoleEnabled = (poleId) => {
     if (poleId === 'accueil' || poleId === 'mon-espace') return true;
 
+    if (poleId === 'gouvernance' && enabledModules?.gouvernance === false) return false;
     if (poleId === 'tresorerie' && enabledModules?.tresorerie === false) return false;
     if (poleId === 'logistique' && enabledModules?.logistique === false && enabledModules?.commandes === false) return false;
     if (poleId === 'costumerie' && enabledModules?.vestiaire === false && enabledModules?.costumerie === false) return false;
@@ -219,6 +222,8 @@ export default function LayoutShell({
       case 'mon-espace':
         return <XiloUser size={size} />;
 
+      case 'gouvernance':
+        return <XiloScale size={size} />;
       case 'diffusion':
         return <XiloMegaphone size={size} />;
       case 'tresorerie':

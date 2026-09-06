@@ -5,6 +5,12 @@ import { XiloMegaphone } from '../XiloIcons';
 
 const MODULES_CONFIG = [
   {
+    key: 'gouvernance',
+    icon: '🏛️',
+    title: 'Gouvernance & Conseil d\'Administration',
+    desc: 'Activer le pôle de pilotage stratégique : réunions de CA, bilans AG, registre des statuts, synthèse financière et contrats.'
+  },
+  {
     key: 'diffusion',
     icon: '🎷',
     title: 'Diffusion & Pipeline Prestations',

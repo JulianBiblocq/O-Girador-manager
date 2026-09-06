@@ -94,6 +94,19 @@ const POLES_CONFIG = [
     ]
   },
   {
+    id: 'gouvernance',
+    label: 'Gouvernance',
+    labelKey: 'poles.gouvernance',
+    defaultTab: 'ca-reunions',
+    tabs: [
+      { id: 'ca-reunions', label: 'Réunions & PV', labelKey: 'tabCaReunions' },
+      { id: 'ca-reports', label: 'Bilans & Rapports AG', labelKey: 'tabCaReports' },
+      { id: 'ca-documents', label: 'Registre & Statuts', labelKey: 'tabCaDocuments' },
+      { id: 'ca-finances', label: 'Synthèse Financière', labelKey: 'tabCaFinances' },
+      { id: 'ca-prestations', label: 'Dates & Engagements', labelKey: 'tabCaPrestations' }
+    ]
+  },
+  {
     id: 'secretariat',
     label: 'Secrétariat',
     labelKey: 'poles.secretariat',
@@ -1120,6 +1133,7 @@ export default function App() {
     if (!enabledModules) return true;
 
     // Vérifier Pôles activation
+    if (poleId === 'gouvernance' && enabledModules.gouvernance === false) return false;
     if (poleId === 'diffusion' && enabledModules.diffusion === false) return false;
     if (poleId === 'tresorerie' && enabledModules.tresorerie === false) return false;
     if (poleId === 'secretariat' && enabledModules.secretariat === false) return false;
@@ -1135,14 +1149,14 @@ export default function App() {
     if (tabId === 'varal-manager' && enabledModules.studioSocial === false) return false;
 
     // Vérifier Tab-level module basculer
-    if (tabId === 'gigs-pipeline' && enabledModules.diffusion === false) return false;
-    if (['dashboard-finance', 'cotisations', 'events-finances', 'operations-diverses', 'frais-km', 'reports-exports'].includes(tabId) && enabledModules.tresorerie === false) return false;
+    if (['gigs-pipeline', 'ca-prestations'].includes(tabId) && enabledModules.diffusion === false) return false;
+    if (['dashboard-finance', 'cotisations', 'events-finances', 'operations-diverses', 'frais-km', 'reports-exports', 'ca-finances'].includes(tabId) && enabledModules.tresorerie === false) return false;
     if (tabId === 'mon-parcours' && enabledModules.monParcoursGlobal === false) return false;
     if (tabId === 'inventory' && enabledModules.logistique === false) return false;
     if (['orders', 'orders-manager'].includes(tabId) && enabledModules.commandes === false) return false;
     if (['wardrobe-projects', 'wardrobe-models', 'wardrobe-pieces', 'wardrobe-supplies', 'wardrobe-tools', 'wardrobe-sizes', 'varal-costumerie', 'wardrobe', 'vestiaire', 'wardrobe-inventory', 'wardrobe-couture'].includes(tabId) && enabledModules.vestiaire === false && enabledModules.costumerie === false) return false;
     if (['studio-social', 'newsletter'].includes(tabId) && enabledModules.studioSocial === false) return false;
-    if (tabId === 'reunion-manager' && enabledModules.reunions === false) return false;
+    if (['reunion-manager', 'ca-reunions'].includes(tabId) && enabledModules.reunions === false) return false;
     if (['forum', 'mestre-forum-channels'].includes(tabId) && enabledModules.forum === false) return false;
     if (['mestre-repertoire', 'mestre-sante-troupe', 'mestre-pedagogy-dashboard', 'varal-manager', 'mestre-pedagogy-qcm', 'mestre-orientation', 'mestre-categories', 'mestre-events', 'mestre-stage-layout', 'mestre-mot-mestre', 'mestre-sequenceur'].includes(tabId) && enabledModules.mestre === false) return false;
 
@@ -1160,7 +1174,7 @@ export default function App() {
     return canAccessTabPermission(tabId, poleId, profileData, permissionsMatrice, userTags);
   };
 
-
+  const hasAccessGouvernance = isMasterKeyActive || canAccessPole('gouvernance', profileData, permissionsMatrice, userTags) || checkTabAccess('ca-reunions', 'gouvernance') || checkTabAccess('ca-reports', 'gouvernance') || checkTabAccess('ca-documents', 'gouvernance') || checkTabAccess('ca-finances', 'gouvernance') || checkTabAccess('ca-prestations', 'gouvernance');
   const hasAccessDiffusion = isMasterKeyActive || canAccessPole('diffusion', profileData, permissionsMatrice, userTags) || checkTabAccess('gigs-pipeline', 'diffusion');
   const hasAccessTresorerie = isMasterKeyActive || canAccessPole('tresorerie', profileData, permissionsMatrice, userTags) || checkTabAccess('dashboard-finance', 'tresorerie') || checkTabAccess('cotisations', 'tresorerie') || checkTabAccess('events-finances', 'tresorerie') || checkTabAccess('operations-diverses', 'tresorerie') || checkTabAccess('frais-km', 'tresorerie') || checkTabAccess('reports-exports', 'tresorerie');
   const hasAccessSecretariat = isMasterKeyActive || canAccessPole('secretariat', profileData, permissionsMatrice, userTags) || checkTabAccess('export-annu', 'secretariat') || checkTabAccess('reunion-manager', 'secretariat') || checkTabAccess('activity-reports', 'secretariat') || checkTabAccess('mestre-forum-channels', 'secretariat') || checkTabAccess('studio-events', 'secretariat') || checkTabAccess('varal-secretariat', 'secretariat') || checkTabAccess('secretariat-documents', 'secretariat') || checkTabAccess('secretariat-lieux', 'secretariat');
@@ -1937,6 +1951,52 @@ export default function App() {
                 branding={branding}
                 user={user}
                 profileData={profileData}
+                onBack={() => handleNavigateToPole('accueil')} 
+              />
+            // Pôle Gouvernance (Conseil d'Administration)
+            ) : (currentTab === 'ca-reunions' && hasAccessGouvernance) ? (
+              <ReunionManager 
+                groupId={profileData?.groupId}
+                user={user}
+                profileData={profileData}
+                onBack={() => handleNavigateToPole('accueil')} 
+              />
+            ) : (currentTab === 'ca-reports' && hasAccessGouvernance) ? (
+              <SecretariatReportsView 
+                groupId={profileData?.groupId} 
+                onBack={() => handleNavigateToPole('accueil')} 
+              />
+            ) : (currentTab === 'ca-documents' && hasAccessGouvernance) ? (
+              <div className="max-w-4xl mx-auto w-full">
+                <React.Suspense fallback={<div className="animate-pulse py-6 text-xs text-center opacity-65">Chargement du Registre & Statuts...</div>}>
+                  <WidgetDocuments 
+                    role={profileData?.role} 
+                    isSystemAdmin={profileData?.isSystemAdmin} 
+                    groupId={profileData?.groupId} 
+                    user={user}
+                    profileData={profileData}
+                    poleId="secretariat"
+                    userTags={userTags}
+                    canWrite={hasAccessGouvernance}
+                    onNavigateToView={handleNavigateToView}
+                  />
+                </React.Suspense>
+              </div>
+            ) : (currentTab === 'ca-finances' && hasAccessGouvernance) ? (
+              <TreasuryManager 
+                groupId={profileData?.groupId}
+                role={profileData?.role}
+                isSystemAdmin={profileData?.isSystemAdmin}
+                hasAccessTresorerie={hasAccessTresorerie || hasAccessGouvernance}
+                profileData={profileData}
+                initialTab="dashboard-finance"
+                onBack={() => handleNavigateToPole('accueil')} 
+              />
+            ) : (currentTab === 'ca-prestations' && hasAccessGouvernance) ? (
+              <GigsPipelineManager
+                groupId={profileData?.groupId}
+                initialTab="pipeline"
+                hasAccessDiffusion={hasAccessDiffusion || hasAccessGouvernance}
                 onBack={() => handleNavigateToPole('accueil')} 
               />
             ) : (currentTab === 'reunion-manager' && (hasAccessSecretariat || hasAccessStudio)) ? (

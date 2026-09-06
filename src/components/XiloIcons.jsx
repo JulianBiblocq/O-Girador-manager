@@ -1109,6 +1109,37 @@ export const XiloScissors = ({ size = 16, className = '', ...props }) => (
   </svg>
 );
 
+// ⚖️ Balance de Justice & Délibération (Gouvernance & Conseil d'Administration) - Style Xilogravura Cordel
+export const XiloScale = ({ size = 16, className = '', ...props }) => (
+  <svg 
+    width={size} 
+    height={size} 
+    viewBox="0 0 24 24" 
+    fill="none" 
+    stroke="currentColor" 
+    strokeWidth="2.2" 
+    strokeLinecap="round" 
+    strokeLinejoin="round" 
+    className={`xilo-icon ${className}`} 
+    {...props}
+  >
+    {/* Pieu central et socle de délibération */}
+    <line x1="12" y1="3" x2="12" y2="21" strokeWidth="2.4" />
+    <path d="M7 21h10" strokeWidth="2.5" />
+    <circle cx="12" cy="12" r="1.2" fill="currentColor" />
+    <circle cx="12" cy="3" r="1.5" fill="currentColor" />
+    {/* Fléau transversal asymétrique Cordel */}
+    <path d="M3.5 7.5 C8 6.5 16 6.5 20.5 7.5" strokeWidth="2.4" />
+    {/* Plateau gauche (Cordes et coupelle) */}
+    <path d="M3.5 7.5 L1.5 14.5 M3.5 7.5 L6.5 14.5" strokeWidth="1.6" />
+    <path d="M1 14.5 C1 17.5 7 17.5 7 14.5 Z" fill="currentColor" fillOpacity="0.15" strokeWidth="2" />
+    {/* Plateau droit (Cordes et coupelle) */}
+    <path d="M20.5 7.5 L17.5 14.5 M20.5 7.5 L22.5 14.5" strokeWidth="1.6" />
+    <path d="M17 14.5 C17 17.5 23 17.5 23 14.5 Z" fill="currentColor" fillOpacity="0.15" strokeWidth="2" />
+  </svg>
+);
+
+
 
 
 

@@ -289,7 +289,8 @@ export function canAccessMestre(profileData, permissionsMatrice = null, effectiv
 const POLE_ALLOWED_KEYWORDS = {
   diffusion: ['diffusion', 'booking', 'communication'],
   tresorerie: ['trésorier', 'trésorière', 'trésorerie', 'comptable', 'finance'],
-  secretariat: ['secrétariat', 'secretaire', 'bureau', 'ca', 'direction', 'admin'],
+  secretariat: ['secrétaire', 'secretaire', 'secrétariat', 'secretariat', 'bureau', 'admin', 'direction'],
+  gouvernance: ['gouvernance', 'ca', 'conseil', 'bureau', 'direction', 'admin'],
   logistique: ['logistique', 'matériel', 'inventaire', 'instruments', 'commandes'],
   lutherie: ['lutherie', 'atelier', 'artisan', 'fabrication', 'matériel'],
   costumerie: ['costume', 'costumes', 'costumière', 'couture', 'couturier', 'tailleur', 'habillage', 'vestiaire'],
@@ -376,6 +377,13 @@ export function canAccessTabPermission(tabId, poleId, profileData, permissionsMa
   // Si c'est le pôle mestre ou un onglet de direction artistique, vérifier canAccessMestre
   if (poleId === 'mestre' || tabId.startsWith('mestre-')) {
     if (canAccessMestre(profileData, permissionsMatrice, effectiveUserTags)) {
+      return true;
+    }
+  }
+
+  // Si c'est le pôle gouvernance ou un sous-onglet délibératif du CA
+  if (poleId === 'gouvernance' || tabId.startsWith('ca-')) {
+    if (canAccessPole('gouvernance', profileData, permissionsMatrice, effectiveUserTags)) {
       return true;
     }
   }

@@ -292,7 +292,7 @@ const brevoApiKeySecret = defineSecret("BREVO_API_KEY");
 const newsletterApiKeySecret = defineSecret("NEWSLETTER_API_KEY");
 
 exports.sendBrevoEmail = onRequest(
-  { secrets: [brevoApiKeySecret], cors: true },
+  { secrets: [brevoApiKeySecret], cors: true, invoker: 'public' },
   async (req, res) => {
     if (req.method !== "POST") {
       return res.status(405).json({ error: "Méthode non autorisée. Utilisez POST." });
@@ -314,9 +314,13 @@ exports.sendBrevoEmail = onRequest(
         },
         to: to,
         subject: subject,
-        htmlContent: htmlContent,
-        attachment: attachment || []
+        htmlContent: htmlContent
       };
+
+      // Brevo rejette la requête si 'attachment' est un tableau vide
+      if (Array.isArray(attachment) && attachment.length > 0) {
+        payload.attachment = attachment;
+      }
 
       const brevoRes = await fetch("https://api.brevo.com/v3/smtp/email", {
         method: "POST",
@@ -348,7 +352,7 @@ exports.sendBrevoEmail = onRequest(
  * Injecte le nom d'expéditeur (emailSenderName) et l'adresse de réponse (emailReplyTo) dans tous les e-mails système.
  */
 exports.sendAssociationEmail = onRequest(
-  { secrets: [brevoApiKeySecret], cors: true },
+  { secrets: [brevoApiKeySecret], cors: true, invoker: 'public' },
   async (req, res) => {
     if (req.method !== "POST") {
       return res.status(405).json({ error: "Méthode non autorisée. Utilisez POST." });
@@ -387,8 +391,9 @@ exports.sendAssociationEmail = onRequest(
             if (assocData.emailSenderName) emailSenderName = assocData.emailSenderName;
             else if (assocData.nom) emailSenderName = assocData.nom;
 
-            // On utilise systématiquement l'e-mail officiel de l'association pour les réponses
-            if (assocData.email) emailReplyTo = assocData.email;
+            // On utilise prioritairement l'adresse Reply-To personnalisée ou l'e-mail officiel
+            if (assocData.emailReplyTo) emailReplyTo = assocData.emailReplyTo;
+            else if (assocData.email) emailReplyTo = assocData.email;
 
             if (assocData.emailDeliveryMode) finalDeliveryMode = assocData.emailDeliveryMode;
             if (assocData.emailConnectionType) finalConnectionType = assocData.emailConnectionType;
@@ -503,9 +508,13 @@ exports.sendAssociationEmail = onRequest(
         },
         to: Array.isArray(to) ? to : [{ email: to }],
         subject: subject,
-        htmlContent: htmlContent,
-        attachment: attachment || []
+        htmlContent: htmlContent
       };
+
+      // Brevo rejette la requête si 'attachment' est un tableau vide
+      if (Array.isArray(attachment) && attachment.length > 0) {
+        payload.attachment = attachment;
+      }
 
       const brevoRes = await fetch("https://api.brevo.com/v3/smtp/email", {
         method: "POST",

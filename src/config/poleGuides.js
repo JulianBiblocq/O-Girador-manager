@@ -26,6 +26,108 @@ const EXCLUDED_MEMBER_KEYS = new Set([
 
 export const POLE_GUIDES = {
   // ==========================================
+  // PÔLE GOUVERNANCE & CONSEIL D'ADMINISTRATION
+  // ==========================================
+  gouvernance: {
+    titre: "🏛️ Pôle Gouvernance & Conseil d'Administration",
+    title: "🏛️ Pôle Gouvernance & Conseil d'Administration",
+    description: "Espace délibératif et de pilotage stratégique dédié aux élus du Conseil d'Administration et aux membres du Bureau.",
+    etapes: [
+      "Convoquez les réunions de CA et d'AG, préparez les ordres du jour et rédigez les procès-verbaux.",
+      "Consolidez les bilans moraux, financiers et artistiques en vue de l'Assemblée Générale.",
+      "Consultez les statuts, règlements intérieurs et documents officiels de l'association.",
+      "Supervisez la santé financière globale et le solde des comptes sans encombrement opérationnel.",
+      "Suivez les contrats et engagements de prestations négociés pour la troupe."
+    ],
+    steps: [
+      "Convoquez les réunions de CA et d'AG, préparez les ordres du jour et rédigez les procès-verbaux.",
+      "Consolidez les bilans moraux, financiers et artistiques en vue de l'Assemblée Générale.",
+      "Consultez les statuts, règlements intérieurs et documents officiels de l'association.",
+      "Supervisez la santé financière globale et le solde des comptes sans encombrement opérationnel.",
+      "Suivez les contrats et engagements de prestations négociés pour la troupe."
+    ]
+  },
+  'ca-reunions': {
+    titre: "📝 Réunions, Ordres du Jour & Procès-Verbaux",
+    title: "📝 Réunions, Ordres du Jour & Procès-Verbaux",
+    description: "Planifiez les séances du CA, préparez les ordres du jour, enregistrez les émargements et archivez les délibérations votées.",
+    etapes: [
+      "Créez une nouvelle séance (CA, Bureau restreint, AG Ordinaire ou Extraordinaire).",
+      "Ajoutez les points à l'ordre du jour et invitez les administrateurs concernés.",
+      "Saisissez les débats, décisions prises et résultats des votes en séance.",
+      "Exportez et signez le procès-verbal officiel pour archivage statutaire."
+    ],
+    steps: [
+      "Créez une nouvelle séance (CA, Bureau restreint, AG Ordinaire ou Extraordinaire).",
+      "Ajoutez les points à l'ordre du jour et invitez les administrateurs concernés.",
+      "Saisissez les débats, décisions prises et résultats des votes en séance.",
+      "Exportez et signez le procès-verbal officiel pour archivage statutaire."
+    ]
+  },
+  'ca-reports': {
+    titre: "📊 Bilans Consolidés & Rapports pour l'AG",
+    title: "📊 Bilans Consolidés & Rapports pour l'AG",
+    description: "Consolidez les indicateurs clés de la saison (moraux, artistiques, financiers, logistiques) pour présenter une synthèse limpide à l'Assemblée Générale.",
+    etapes: [
+      "Passez en revue les indicateurs consolidés d'adhésions, de répétitions et de concerts.",
+      "Rédigez le rapport moral du Président et le rapport d'activité annuel.",
+      "Vérifiez l'alignement des chiffres financiers avec le rapport du Trésorier.",
+      "Exportez le document de synthèse destiné à être voté par les adhérents en AG."
+    ],
+    steps: [
+      "Passez en revue les indicateurs consolidés d'adhésions, de répétitions et de concerts.",
+      "Rédigez le rapport moral du Président et le rapport d'activité annuel.",
+      "Vérifiez l'alignement des chiffres financiers avec le rapport du Trésorier.",
+      "Exportez le document de synthèse destiné à être voté par les adhérents en AG."
+    ]
+  },
+  'ca-documents': {
+    titre: "📂 Registre Statutaire, Statuts & Documents Officiels",
+    title: "📂 Registre Statutaire, Statuts & Documents Officiels",
+    description: "Consultez et déposez les documents juridiques fondamentaux de l'association : statuts déposés, règlement intérieur, attestations d'assurance et récépissés de préfecture.",
+    etapes: [
+      "Consultez les versions en vigueur des statuts et du règlement intérieur.",
+      "Vérifiez la validité des polices d'assurance Responsabilité Civile et des licences.",
+      "Déposez les comptes-rendus officiels et avenants adoptés en assemblée générale."
+    ],
+    steps: [
+      "Consultez les versions en vigueur des statuts et du règlement intérieur.",
+      "Vérifiez la validité des polices d'assurance Responsabilité Civile et des licences.",
+      "Déposez les comptes-rendus officiels et avenants adoptés en assemblée générale."
+    ]
+  },
+  'ca-finances': {
+    titre: "🪙 Synthèse Financière & Santé Budgétaire",
+    title: "🪙 Synthèse Financière & Santé Budgétaire",
+    description: "Vue synthétique de haut niveau sur la trésorerie de l'association, la répartition des charges, les soldes bancaires et le budget prévisionnel.",
+    etapes: [
+      "Consultez les soldes bancaires consolidés et l'état de la trésorerie disponible.",
+      "Analysez la ventilation des dépenses et recettes de la saison en cours.",
+      "Vérifiez le respect des grandes orientations budgétaires décidées par le Conseil."
+    ],
+    steps: [
+      "Consultez les soldes bancaires consolidés et l'état de la trésorerie disponible.",
+      "Analysez la ventilation des dépenses et recettes de la saison en cours.",
+      "Vérifiez le respect des grandes orientations budgétaires décidées par le Conseil."
+    ]
+  },
+  'ca-prestations': {
+    titre: "🎷 Dates & Engagements Stratégiques de la Troupe",
+    title: "🎷 Dates & Engagements Stratégiques de la Troupe",
+    description: "Supervisez le carnet de dates, les devis émis, les options retenues et les engagements contractuels pris au nom de l'association.",
+    etapes: [
+      "Consultez le calendrier des prestations confirmées et en cours de négociation.",
+      "Examinez les devis et propositions financières engagées avec les organisateurs.",
+      "Assurez-vous de la faisabilité logistique et humaine des engagements de la troupe."
+    ],
+    steps: [
+      "Consultez le calendrier des prestations confirmées et en cours de négociation.",
+      "Examinez les devis et propositions financières engagées avec les organisateurs.",
+      "Assurez-vous de la faisabilité logistique et humaine des engagements de la troupe."
+    ]
+  },
+
+  // ==========================================
   // 1. PÔLE TRÉSORERIE & FINANCES
   // ==========================================
   tresorerie: {

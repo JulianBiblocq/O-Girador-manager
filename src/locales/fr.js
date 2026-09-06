@@ -879,6 +879,12 @@ export const fr = {
   poles: {
     accueil: "Accueil",
     'mon-espace': "Espace",
+    gouvernance: "Gouvernance",
+    tabCaReunions: "Réunions & PV",
+    tabCaReports: "Bilans & Rapports AG",
+    tabCaDocuments: "Registre & Statuts",
+    tabCaFinances: "Synthèse Financière",
+    tabCaPrestations: "Dates & Engagements",
     troupe: "Troupe",
     diffusion: "Diffusion",
     tabGigsPipeline: "Suivi des Prestations",
