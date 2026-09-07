@@ -263,7 +263,7 @@ export default function MestreAutoEvalConfig({ profileData, isEmbedded }) {
       {!isEmbedded && (
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-2">
           <div>
-            <h1 className="text-3xl md:text-4xl font-cactus tracking-widest text-cordel-wood uppercase">
+            <h1 className="text-3xl md:text-4xl font-heading tracking-widest text-cordel-wood uppercase">
               📝 Auto-Évaluation
             </h1>
             <p className="text-xs md:text-sm text-cordel-master-dark opacity-80 max-w-2xl mt-2">

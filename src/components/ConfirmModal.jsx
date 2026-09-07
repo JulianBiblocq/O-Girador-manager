@@ -53,11 +53,11 @@ export default function ConfirmModal({
           <div className="flex items-center gap-2.5">
             <span className={`p-2 rounded border shadow-xs shrink-0 ${
               isSuccess
-                ? 'bg-[#2d6a4f]/15 text-[#2d6a4f] dark:text-emerald-400 border-[#2d6a4f]/30'
+                ? 'bg-[var(--color-cordel-vert)]/15 text-[var(--color-cordel-vert)] dark:text-emerald-400 border-[#2d6a4f]/30'
                 : isDanger 
-                ? 'bg-[#8b2a1a]/15 text-[#8b2a1a] dark:text-red-400 border-[#8b2a1a]/30' 
+                ? 'bg-[var(--theme-primary)]/15 text-[var(--theme-primary)] dark:text-red-400 border-[var(--theme-primary)]/30' 
                 : isWarning 
-                ? 'bg-[#c05621]/15 text-[#c05621] dark:text-amber-400 border-[#c05621]/30'
+                ? 'bg-[var(--color-cordel-ocre)]/15 text-[var(--color-cordel-ocre)] dark:text-amber-400 border-[#c05621]/30'
                 : 'bg-blue-100 dark:bg-blue-950/70 text-blue-800 dark:text-blue-300 border-blue-300 dark:border-blue-800'
             }`}>
               {isSuccess ? <XiloSparkles size={22} /> : <XiloShield size={22} />}
@@ -66,7 +66,7 @@ export default function ConfirmModal({
               <span className="text-[9px] font-black uppercase tracking-widest text-cordel-wood opacity-80">
                 {isSuccess ? '✨ Message de confirmation' : isDanger ? '⚠️ Action irréversible' : isWarning ? '📋 Attention' : 'ℹ️ Information'}
               </span>
-              <h3 className="font-cactus font-bold text-base uppercase tracking-wider text-encre-noire dark:text-cordel-bg">
+              <h3 className="font-heading font-bold text-base uppercase tracking-wider text-encre-noire dark:text-cordel-bg">
                 {title || (isSuccess ? 'Opération réussie' : isDanger ? 'Confirmation de suppression' : 'Information')}
               </h3>
             </div>
@@ -106,10 +106,10 @@ export default function ConfirmModal({
             onClick={onConfirm}
             className={`text-xs font-black uppercase tracking-wider px-5 py-2 rounded-[4px_6px_3px_5px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none transition-all border border-encre-noire cursor-pointer ${
               isSuccess
-                ? 'bg-[#2d6a4f] hover:brightness-110 text-white'
+                ? 'bg-[var(--color-cordel-vert)] hover:brightness-110 text-white'
                 : isDanger
-                ? 'bg-[#8b2a1a] hover:brightness-110 text-white'
-                : 'bg-[#c05621] hover:brightness-110 text-white'
+                ? 'bg-[var(--theme-primary)] hover:brightness-110 text-white'
+                : 'bg-[var(--color-cordel-ocre)] hover:brightness-110 text-white'
             }`}
           >
             {confirmText || (isAlert ? "OK" : "Confirmer")}

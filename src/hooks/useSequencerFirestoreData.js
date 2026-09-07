@@ -232,13 +232,12 @@ export function useSequencerFirestoreData(groupId) {
         unsubPresetsList.push(unsubTenant);
 
         // --- DIRECT STORAGE FALLBACK (exports_danse) ---
-        try {
-          const { ref, listAll, getDownloadURL } = await import('firebase/storage');
-          const { storage } = await import('../firebase');
-          const paths = [`exports_danse/tenant_local`, `exports_danse/${groupId}`];
-          for (const path of paths) {
+        if (groupId && groupId !== 'tenant_local' && groupId !== 'default') {
+          try {
+            const { ref, listAll, getDownloadURL } = await import('firebase/storage');
+            const { storage } = await import('../firebase');
             try {
-              const folderRef = ref(storage, path);
+              const folderRef = ref(storage, `exports_danse/${groupId}`);
               const res = await listAll(folderRef);
               for (const item of res.items) {
                 const baseName = item.name.split('.')[0];
@@ -254,17 +253,17 @@ export function useSequencerFirestoreData(groupId) {
                       audioUrl: url
                     });
                   } catch (itemErr) {
-                    console.warn('Skipping item due to error:', item.name, itemErr);
+                    // Ignorer les éléments individuels en erreur
                   }
                 }
               }
               mergeAndSet();
-            } catch (e) {
-               // Ignore folder not found
+            } catch (_) {
+              // Dossier exports_danse vide ou inexistant pour cette association : ignorer
             }
+          } catch (_) {
+            // Module storage non disponible
           }
-        } catch (e) {
-          console.warn("Storage direct fetch failed", e);
         }
 
       } catch (err) {

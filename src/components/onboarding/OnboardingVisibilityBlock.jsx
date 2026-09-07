@@ -40,7 +40,7 @@ export default function OnboardingVisibilityBlock({
           <span className="p-1.5 rounded bg-amber-100 dark:bg-amber-950/60 text-cordel-wood border border-cordel-wood/40">
             <XiloEye size={20} />
           </span>
-          <h3 className="font-cactus font-bold text-sm uppercase tracking-wider text-cordel-wood">
+          <h3 className="font-heading font-bold text-sm uppercase tracking-wider text-cordel-wood">
             Visibilité & Partage (Trombinoscope)
           </h3>
         </div>

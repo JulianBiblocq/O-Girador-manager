@@ -8,8 +8,8 @@ import useMestreSignals from '../../hooks/useMestreSignals';
  * @param {Array} selectedSignalIds - Identifiants des signaux sélectionnés
  * @param {Function} onChange - Callback de mise à jour des identifiants
  */
-export default function RepertoireSignalsPicker({ selectedSignalIds = [], onChange }) {
-  const { signals, loading, error } = useMestreSignals();
+export default function RepertoireSignalsPicker({ selectedSignalIds = [], onChange, groupId = null }) {
+  const { signals, loading, error } = useMestreSignals(groupId);
 
   const handleToggle = (signalId) => {
     if (selectedSignalIds.includes(signalId)) {

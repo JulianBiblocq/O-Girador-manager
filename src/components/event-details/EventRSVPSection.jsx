@@ -172,7 +172,7 @@ export default function EventRSVPSection({
             {existingResponse && (
               <div className="text-xs font-bold text-encre-noire mb-2 text-left">
                 Votre réponse enregistrée : <span className={`px-2 py-0.5 rounded text-[10px] uppercase font-black ${
-                  existingResponse.status === 'present' ? 'bg-[#2d6a4f] text-white' :
+                  existingResponse.status === 'present' ? 'bg-[var(--color-cordel-vert)] text-white' :
                   existingResponse.status === 'absent' ? 'bg-cordel-wood text-white' :
                   existingResponse.status === 'confirm' ? 'bg-orange-500 text-white' : 'bg-neutral-200'
                 }`}>{
@@ -920,7 +920,7 @@ export default function EventRSVPSection({
                             <button
                               type="button"
                               onClick={() => handleValidatePending(i.userId, 'present')}
-                              className="text-[#2d6a4f] hover:text-white text-[10px] font-black cursor-pointer px-1.5 py-0.5 bg-[#2d6a4f]/10 hover:bg-[#2d6a4f] border border-[#2d6a4f]/30 rounded transition-colors"
+                              className="text-[var(--color-cordel-vert)] hover:text-white text-[10px] font-black cursor-pointer px-1.5 py-0.5 bg-[var(--color-cordel-vert)]/10 hover:bg-[var(--color-cordel-vert)] border border-[#2d6a4f]/30 rounded transition-colors"
                               title="Valider l'inscription"
                             >
                               ✓
@@ -928,7 +928,7 @@ export default function EventRSVPSection({
                             <button
                               type="button"
                               onClick={() => handleValidatePending(i.userId, 'refused')}
-                              className="text-[#8b2a1a] hover:text-white text-[10px] font-black cursor-pointer px-1.5 py-0.5 bg-[#8b2a1a]/10 hover:bg-[#8b2a1a] border border-[#8b2a1a]/30 rounded transition-colors"
+                              className="text-[var(--theme-primary)] hover:text-white text-[10px] font-black cursor-pointer px-1.5 py-0.5 bg-[var(--theme-primary)]/10 hover:bg-[var(--theme-primary)] border border-[var(--theme-primary)]/30 rounded transition-colors"
                               title="Refuser l'inscription"
                             >
                               ✗
@@ -936,7 +936,7 @@ export default function EventRSVPSection({
                             <button
                               type="button"
                               onClick={() => handleManualUnregister(i.userId)}
-                              className="text-[#8b2a1a] hover:text-red-900 text-[10px] font-black cursor-pointer ml-1 pl-1 border-l border-encre-noire/15"
+                              className="text-[var(--theme-primary)] hover:text-red-900 text-[10px] font-black cursor-pointer ml-1 pl-1 border-l border-encre-noire/15"
                               title="Désinscrire ce membre"
                             >
                               ✕
@@ -969,7 +969,7 @@ export default function EventRSVPSection({
                             <button
                               type="button"
                               onClick={() => handleValidatePending(i.userId, 'present')}
-                              className="text-[#2d6a4f] hover:text-white text-[10px] font-black cursor-pointer px-1.5 py-0.5 bg-[#2d6a4f]/10 hover:bg-[#2d6a4f] border border-[#2d6a4f]/30 rounded transition-colors"
+                              className="text-[var(--color-cordel-vert)] hover:text-white text-[10px] font-black cursor-pointer px-1.5 py-0.5 bg-[var(--color-cordel-vert)]/10 hover:bg-[var(--color-cordel-vert)] border border-[#2d6a4f]/30 rounded transition-colors"
                               title="Valider/Rétablir l'inscription"
                             >
                               ✓
@@ -977,7 +977,7 @@ export default function EventRSVPSection({
                             <button
                               type="button"
                               onClick={() => handleManualUnregister(i.userId)}
-                              className="text-[#8b2a1a] hover:text-red-900 text-[10px] font-black cursor-pointer ml-1.5 border-l border-encre-noire/15 pl-1.5 font-black"
+                              className="text-[var(--theme-primary)] hover:text-red-900 text-[10px] font-black cursor-pointer ml-1.5 border-l border-encre-noire/15 pl-1.5 font-black"
                               title="Désinscrire ce membre"
                             >
                               ✕

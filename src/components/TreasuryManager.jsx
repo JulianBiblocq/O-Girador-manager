@@ -14,7 +14,9 @@ import ReportsExports from './ReportsExports';
 export default function TreasuryManager({ groupId, onBack, role, isSystemAdmin, hasAccessTresorerie, profileData, initialTab }) {
   const { t } = useTranslation();
 
-  const isAuthorized = role === 'mestre' || role === 'super-admin' || isSystemAdmin === true || hasAccessTresorerie === true;
+  const isAuthorized = hasAccessTresorerie !== undefined 
+    ? hasAccessTresorerie === true 
+    : (role === 'mestre' || role === 'tresorier');
 
   const [activeTab, setActiveTab] = useState(initialTab || 'dashboard-finance');
 

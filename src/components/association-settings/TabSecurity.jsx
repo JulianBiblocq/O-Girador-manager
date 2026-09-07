@@ -161,7 +161,8 @@ export default function TabSecurity({
   formData,
   handleChange,
   saving,
-  t
+  t,
+  onNavigateToTagManager
 }) {
   const { permissionsMatrice = {}, tagsDisponibles = [] } = formData;
 
@@ -304,8 +305,31 @@ export default function TabSecurity({
 
   return (
     <div className="flex flex-col gap-4">
+      {/* Raccourci vers le Gestionnaire d'Étiquettes et sa Vue Inversée */}
+      {onNavigateToTagManager && (
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3 bg-cordel-bg-light border-2 border-encre-noire rounded-[6px_10px_7px_9px] shadow-[2px_2px_0px_0px_#181716] select-none text-left">
+          <div className="flex flex-col">
+            <span className="text-xs font-black text-encre-noire flex items-center gap-1.5">
+              <span>🏷️</span>
+              <span>Gestionnaire d'Étiquettes & Vue Inversée</span>
+            </span>
+            <span className="text-[10px] text-cordel-master-dark/80 font-medium mt-0.5">
+              Créer ou modifier les rôles (ex. Trésorier, CA), auditer les membres porteurs et dissocier les étiquettes.
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={onNavigateToTagManager}
+            className="px-3.5 py-1.5 bg-cordel-wood text-cordel-bg-light border-2 border-encre-noire rounded-[4px_7px_5px_6px] font-black text-[10px] uppercase tracking-wider shadow-[1.5px_1.5px_0px_0px_#181716] hover:brightness-110 active:scale-95 cursor-pointer shrink-0 flex items-center gap-1.5 transition-transform"
+          >
+            <span>🏷️</span>
+            <span>Ouvrir les Badges & Vue Inversée →</span>
+          </button>
+        </div>
+      )}
+
       {/* Permanent Explanatory Guide Box */}
-      <PermissionsGuideBox defaultOpen={true} />
+      <PermissionsGuideBox defaultOpen={true} onNavigateToTagManager={onNavigateToTagManager} />
 
       <CordelCard variant="default" useExtremeBorder={true} className="py-4 px-5">
       <div className="flex justify-between items-center mb-3">

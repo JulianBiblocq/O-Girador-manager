@@ -19,7 +19,7 @@ export default function InstrumentReminderBanner({ onNavigateToView }) {
             <XiloDrum size={26} />
           </span>
           <div className="flex flex-col gap-0.5">
-            <span className="font-cactus font-bold text-xs uppercase tracking-wider text-cordel-wood flex items-center gap-1.5">
+            <span className="font-heading font-bold text-xs uppercase tracking-wider text-cordel-wood flex items-center gap-1.5">
               <span>Roda de Maracatu</span>
               <span className="theme-stamp-badge theme-stamp-badge-wood text-[8px] px-2 py-0.2 rotate-1">
                 Période d'essai

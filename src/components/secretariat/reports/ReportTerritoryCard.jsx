@@ -51,19 +51,19 @@ export default function ReportTerritoryCard({ territorialStats = {}, className =
         {/* Adhérents de la commune du siège */}
         <div className="p-2.5 bg-cordel-bg/80 border border-encre-noire/20 rounded-[4px_6px_3px_5px] flex flex-col items-center text-center">
           <span className="text-[9px] font-black uppercase text-encre-noire/60">Commune siège</span>
-          <span className="text-lg font-black text-[#2d6a4f]">
+          <span className="text-lg font-black text-[var(--color-cordel-vert)]">
             {communeMembersCount} <span className="text-xs font-bold text-encre-noire/60">({communeMembersPercent}%)</span>
           </span>
-          <span className="text-[8.5px] text-[#2d6a4f] font-bold mt-0.5">Critère subvention</span>
+          <span className="text-[8.5px] text-[var(--color-cordel-vert)] font-bold mt-0.5">Critère subvention</span>
         </div>
 
         {/* Adhérents extérieurs */}
         <div className="p-2.5 bg-cordel-bg/80 border border-encre-noire/20 rounded-[4px_6px_3px_5px] flex flex-col items-center text-center">
           <span className="text-[9px] font-black uppercase text-encre-noire/60">Communes extérieures</span>
-          <span className="text-lg font-black text-[#8b2a1a]">
+          <span className="text-lg font-black text-[var(--theme-primary)]">
             {externalMembersCount} <span className="text-xs font-bold text-encre-noire/60">({externalMembersPercent}%)</span>
           </span>
-          <span className="text-[8.5px] text-[#8b2a1a] font-bold mt-0.5">Rayonnement extra-communal</span>
+          <span className="text-[8.5px] text-[var(--theme-primary)] font-bold mt-0.5">Rayonnement extra-communal</span>
         </div>
 
         {/* Total adhérents audités */}
@@ -79,24 +79,24 @@ export default function ReportTerritoryCard({ territorialStats = {}, className =
       {/* Barre proportionnelle bicolore Cordel */}
       <div className="flex flex-col gap-1.5 pt-1 border-t border-dashed border-cordel-master-dark/15">
         <div className="flex justify-between items-center text-[10px] font-bold">
-          <span className="text-[#2d6a4f] flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-[#2d6a4f]" />
+          <span className="text-[var(--color-cordel-vert)] flex items-center gap-1">
+            <span className="w-2 h-2 rounded-full bg-[var(--color-cordel-vert)]" />
             Commune ({communeMembersPercent}%)
           </span>
-          <span className="text-[#8b2a1a] flex items-center gap-1">
+          <span className="text-[var(--theme-primary)] flex items-center gap-1">
             Extérieurs ({externalMembersPercent}%)
-            <span className="w-2 h-2 rounded-full bg-[#8b2a1a]" />
+            <span className="w-2 h-2 rounded-full bg-[var(--theme-primary)]" />
           </span>
         </div>
 
         <div className="w-full h-3 bg-cordel-bg border border-encre-noire/30 rounded-full overflow-hidden flex shadow-inner">
           <div
-            className="h-full bg-[#2d6a4f] transition-all duration-500"
+            className="h-full bg-[var(--color-cordel-vert)] transition-all duration-500"
             style={{ width: `${communeMembersPercent}%` }}
             title={`Commune : ${communeMembersCount} adhérent(s)`}
           />
           <div
-            className="h-full bg-[#8b2a1a] transition-all duration-500"
+            className="h-full bg-[var(--theme-primary)] transition-all duration-500"
             style={{ width: `${externalMembersPercent}%` }}
             title={`Extérieurs : ${externalMembersCount} adhérent(s)`}
           />

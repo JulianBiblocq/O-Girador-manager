@@ -25,7 +25,7 @@ export default function MestreRepertoireView({ groupId, user, profileData, seque
   const [loading, setLoading] = useState(true);
 
   // Bibliothèque des Signes du Mestre
-  const { signals } = useMestreSignals();
+  const { signals } = useMestreSignals(groupId);
   const signalsMap = useMemo(() => new Map((signals || []).map((s) => [s.id, s])), [signals]);
 
   // Filtres

@@ -44,7 +44,7 @@ export default function ReportVolunteerCard({ volunteeringStats = {}, className 
       {/* Compteur géant du total bénévole Cerfa */}
       <div className="p-4 bg-emerald-50/90 border-2 border-[#2d6a4f]/50 rounded-[4px_8px_5px_7px] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-inner">
         <div className="flex flex-col">
-          <span className="text-[10px] font-black uppercase tracking-widest text-[#2d6a4f]">
+          <span className="text-[10px] font-black uppercase tracking-widest text-[var(--color-cordel-vert)]">
             Volume Global Valorisable Cerfa
           </span>
           <span className="text-xs font-semibold text-emerald-950/80">
@@ -53,10 +53,10 @@ export default function ReportVolunteerCard({ volunteeringStats = {}, className 
         </div>
 
         <div className="flex items-baseline gap-1.5 self-end sm:self-center shrink-0">
-          <span className="text-2xl sm:text-3xl font-black text-[#2d6a4f] tracking-tight">
+          <span className="text-2xl sm:text-3xl font-black text-[var(--color-cordel-vert)] tracking-tight">
             {totalCerfaVolunteerHours.toLocaleString('fr-FR')}
           </span>
-          <span className="text-xs font-black uppercase text-[#2d6a4f]">heures</span>
+          <span className="text-xs font-black uppercase text-[var(--color-cordel-vert)]">heures</span>
         </div>
       </div>
 
@@ -98,11 +98,11 @@ export default function ReportVolunteerCard({ volunteeringStats = {}, className 
             <span className="text-[9px] font-black uppercase text-encre-noire/60 block">
               Forfaits bureau & atelier
             </span>
-            <span className="text-base font-black text-[#c05621] mt-0.5 block">
+            <span className="text-base font-black text-[var(--color-cordel-ocre)] mt-0.5 block">
               {forfaitHeuresAdmin + forfaitHeuresArtisanat} h
             </span>
           </div>
-          <span className="text-[8.5px] text-[#c05621] font-medium mt-1">
+          <span className="text-[8.5px] text-[var(--color-cordel-ocre)] font-medium mt-1">
             {forfaitHeuresAdmin}h gestion + {forfaitHeuresArtisanat}h lutherie/couture
           </span>
         </div>

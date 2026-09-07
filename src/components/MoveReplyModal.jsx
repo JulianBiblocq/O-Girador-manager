@@ -57,7 +57,7 @@ export default function MoveReplyModal({
             <span className="text-[8px] font-black uppercase text-cordel-wood tracking-widest block">
               ➡️ Modération Porte-voix
             </span>
-            <h3 className="font-cactus font-black text-base text-encre-noire tracking-wider uppercase mt-0.5">
+            <h3 className="font-heading font-black text-base text-encre-noire tracking-wider uppercase mt-0.5">
               Déplacer le message
             </h3>
           </div>

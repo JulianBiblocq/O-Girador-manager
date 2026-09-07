@@ -65,7 +65,7 @@ export default function ImageLightboxModal({ isOpen, photoURL, name, onClose }) 
           />
           {name && (
             <div className="mt-3 text-center">
-              <span className="font-cactus font-black text-lg uppercase tracking-wider text-cordel-wood block">
+              <span className="font-heading font-black text-lg uppercase tracking-wider text-cordel-wood block">
                 {name}
               </span>
               <span className="text-[10px] uppercase tracking-widest font-extrabold text-cordel-master-dark/60 block mt-0.5">

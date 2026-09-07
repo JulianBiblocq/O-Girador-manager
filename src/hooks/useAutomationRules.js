@@ -62,7 +62,8 @@ export function useAutomationRules(groupId) {
         typeEvenementCible: ruleData.typeEvenementCible || 'tous',
         publicCible: ruleData.publicCible || 'tous',
         joursAvant: parseInt(ruleData.joursAvant, 10) || 1,
-        pointDeReference: ruleData.pointDeReference || 'registrationDeadline', // 'registrationDeadline' ou 'eventDate'
+        joursApres: ruleData.joursApres !== undefined ? (parseInt(ruleData.joursApres, 10) || 1) : (parseInt(ruleData.joursAvant, 10) || 1),
+        pointDeReference: ruleData.pointDeReference || 'registrationDeadline', // 'registrationDeadline', 'eventDate', ou 'after_event'
         titreNotification: ruleData.titreNotification || 'Rappel Événement',
         messageNotification: ruleData.messageNotification || 'N’oubliez pas de répondre pour {{nomEvenement}} !',
         isActive: ruleData.isActive !== false,
@@ -86,6 +87,7 @@ export function useAutomationRules(groupId) {
         typeEvenementCible: ruleData.typeEvenementCible || 'tous',
         publicCible: ruleData.publicCible || 'tous',
         joursAvant: parseInt(ruleData.joursAvant, 10) || 1,
+        joursApres: ruleData.joursApres !== undefined ? (parseInt(ruleData.joursApres, 10) || 1) : (parseInt(ruleData.joursAvant, 10) || 1),
         pointDeReference: ruleData.pointDeReference,
         titreNotification: ruleData.titreNotification,
         messageNotification: ruleData.messageNotification,

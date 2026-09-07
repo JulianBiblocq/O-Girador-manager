@@ -883,7 +883,11 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
       // Synchronisation automatique par lot (batch mettre à jour) si l'événement fait partie d'un sondage (pollGroupId)
       if (event.pollGroupId) {
         try {
-          const pollQuery = query(collection(db, 'events'), where('pollGroupId', '==', event.pollGroupId));
+          const pollConstraints = [where('pollGroupId', '==', event.pollGroupId)];
+          if (event.groupId) {
+            pollConstraints.push(where('groupId', '==', event.groupId));
+          }
+          const pollQuery = query(collection(db, 'events'), ...pollConstraints);
           const pollSnapshot = await getDocs(pollQuery);
           if (!pollSnapshot.empty) {
             const batch = writeBatch(db);

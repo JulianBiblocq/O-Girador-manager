@@ -32,10 +32,10 @@ export default function InventoryItemCard({ item, usersMap, onEdit, onDelete, on
 
   const getEtatBadgeClass = (etat) => {
     switch (etat) {
-      case 'Neuf': return 'bg-[#2d6a4f]/15 text-[#2d6a4f] border-[#2d6a4f]/30 font-black';
-      case 'Bon': return 'bg-[#2d6a4f]/10 text-[#2d6a4f] border-[#2d6a4f]/20 font-bold';
-      case 'Moyen': return 'bg-[#c05621]/15 text-[#c05621] border-[#c05621]/30 font-bold';
-      case 'À réparer': return 'bg-[#8b2a1a]/15 text-[#8b2a1a] border-[#8b2a1a]/30 font-black';
+      case 'Neuf': return 'bg-[var(--color-cordel-vert)]/15 text-[var(--color-cordel-vert)] border-[#2d6a4f]/30 font-black';
+      case 'Bon': return 'bg-[var(--color-cordel-vert)]/10 text-[var(--color-cordel-vert)] border-[#2d6a4f]/20 font-bold';
+      case 'Moyen': return 'bg-[var(--color-cordel-ocre)]/15 text-[var(--color-cordel-ocre)] border-[#c05621]/30 font-bold';
+      case 'À réparer': return 'bg-[var(--theme-primary)]/15 text-[var(--theme-primary)] border-[var(--theme-primary)]/30 font-black';
       default: return 'bg-gray-100 text-gray-800 border-gray-300';
     }
   };
@@ -103,11 +103,11 @@ export default function InventoryItemCard({ item, usersMap, onEdit, onDelete, on
       {/* Statut d'emprunt */}
       <div className="pt-2 border-t border-dashed border-cordel-master-dark/20 text-xs flex items-center justify-between gap-2">
         {isBorrowed ? (
-          <span className="text-[#c05621] bg-[#c05621]/10 px-2 py-1 rounded border border-[#c05621]/30 font-extrabold text-[10.5px]">
+          <span className="text-[var(--color-cordel-ocre)] bg-[var(--color-cordel-ocre)]/10 px-2 py-1 rounded border border-[#c05621]/30 font-extrabold text-[10.5px]">
             🤝 Emprunté par : <strong>{borrowerName}</strong>
           </span>
         ) : (
-          <span className="text-[#2d6a4f] bg-[#2d6a4f]/10 px-2 py-1 rounded border border-[#2d6a4f]/30 font-bold text-[10.5px]">
+          <span className="text-[var(--color-cordel-vert)] bg-[var(--color-cordel-vert)]/10 px-2 py-1 rounded border border-[#2d6a4f]/30 font-bold text-[10.5px]">
             ✅ En stock
           </span>
         )}
@@ -135,7 +135,7 @@ export default function InventoryItemCard({ item, usersMap, onEdit, onDelete, on
           <button
             type="button"
             onClick={() => onDelete(item.id)}
-            className="p-1 px-2 text-xs font-bold bg-[#8b2a1a]/10 hover:bg-[#8b2a1a] text-[#8b2a1a] hover:text-white border border-[#8b2a1a]/40 rounded cursor-pointer transition-colors"
+            className="p-1 px-2 text-xs font-bold bg-[var(--theme-primary)]/10 hover:bg-[var(--theme-primary)] text-[var(--theme-primary)] hover:text-white border border-[var(--theme-primary)]/40 rounded cursor-pointer transition-colors"
             title="Supprimer"
           >
             🗑️

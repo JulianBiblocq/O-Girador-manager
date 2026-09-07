@@ -14,7 +14,14 @@ const testScripts = [
   'scripts/test_module_6.mjs',
   'scripts/test_module_7.mjs',
   'scripts/test_module_8.mjs',
-  'scripts/test_gouvernance_pole.mjs'
+  'scripts/test_gouvernance_pole.mjs',
+  'scripts/test_break_glass.mjs',
+  'scripts/test_automation_present_only.mjs',
+  'scripts/test_costume_return_automation.mjs',
+  'scripts/test_tag_audit_reverse_view.mjs',
+  'scripts/test_view_simulator.mjs',
+  'scripts/test_saas_multi_tenant_isolation.mjs',
+  'scripts/test_saas_license_guard.mjs'
 ];
 
 console.log("===============================================================");

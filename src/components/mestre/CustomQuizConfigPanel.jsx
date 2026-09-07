@@ -150,15 +150,15 @@ export default function CustomQuizConfigPanel({
               onChange={handleTogglePublishQuiz}
               className="accent-cordel-wood w-4 h-4"
             />
-            <span className={`text-xs font-bold ${isQuizPublished ? 'text-[#2d6a4f]' : 'text-encre-noire'}`}>
+            <span className={`text-xs font-bold ${isQuizPublished ? 'text-[var(--color-cordel-vert)]' : 'text-encre-noire'}`}>
               {isQuizPublished ? '✅ Publié' : 'Brouillon'}
             </span>
           </label>
         </div>
 
         {itemType === 'rhythm' && (
-          <div className="flex justify-between items-center bg-[#fdfaf2] p-3 border-2 border-dashed border-[#8b2a1a]/30 rounded mt-1">
-            <span className="text-[10px] font-black uppercase tracking-widest text-[#8b2a1a]">
+          <div className="flex justify-between items-center bg-[#fdfaf2] p-3 border-2 border-dashed border-[var(--theme-primary)]/30 rounded mt-1">
+            <span className="text-[10px] font-black uppercase tracking-widest text-[var(--theme-primary)]">
               Signal du Maître Associé
             </span>
             <select
@@ -192,7 +192,7 @@ export default function CustomQuizConfigPanel({
                     <span>🎵</span> Audio attaché
                   </div>
                 )}
-                <span className="text-[10px] text-[#2d6a4f] font-bold">✓ {q.bonneReponse}</span>
+                <span className="text-[10px] text-[var(--color-cordel-vert)] font-bold">✓ {q.bonneReponse}</span>
                 <div className="flex flex-wrap gap-1 mt-1">
                   {q.mauvaisesReponses?.map((mr, i) => (
                     <span key={i} className="text-[9px] bg-neutral-100 text-encre-noire/60 px-1.5 py-0.5 rounded line-through">
@@ -216,7 +216,7 @@ export default function CustomQuizConfigPanel({
 
       <form onSubmit={handleAddQuestion} className="flex flex-col gap-3 bg-[#fdfaf2] p-4 rounded border-2 border-encre-noire/10 relative">
         {showValidation && (
-          <div className="absolute -top-3 right-4 bg-[#2d6a4f] text-white text-[10px] font-bold px-3 py-1 rounded shadow-md animate-fadeIn z-10">
+          <div className="absolute -top-3 right-4 bg-[var(--color-cordel-vert)] text-white text-[10px] font-bold px-3 py-1 rounded shadow-md animate-fadeIn z-10">
             ✓ Question ajoutée !
           </div>
         )}
@@ -228,7 +228,7 @@ export default function CustomQuizConfigPanel({
             <button 
               type="button" 
               onClick={handleGenerateAutoQuestion}
-              className="text-[9px] font-bold text-[#2d6a4f] bg-[#2d6a4f]/10 px-2 py-1 rounded hover:bg-[#2d6a4f]/20 transition-colors"
+              className="text-[9px] font-bold text-[var(--color-cordel-vert)] bg-[var(--color-cordel-vert)]/10 px-2 py-1 rounded hover:bg-[var(--color-cordel-vert)]/20 transition-colors"
             >
               ⚡ Générer auto.
             </button>
@@ -266,7 +266,7 @@ export default function CustomQuizConfigPanel({
           value={newQuestionCorrect}
           onChange={(e) => setNewQuestionCorrect(e.target.value)}
           placeholder="La BONNE réponse"
-          className="p-2 border-2 border-[#2d6a4f]/50 bg-[#2d6a4f]/5 rounded text-xs font-bold text-[#2d6a4f] mt-2"
+          className="p-2 border-2 border-[#2d6a4f]/50 bg-[var(--color-cordel-vert)]/5 rounded text-xs font-bold text-[var(--color-cordel-vert)] mt-2"
           required
         />
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">

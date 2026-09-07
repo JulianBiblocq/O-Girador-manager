@@ -38,6 +38,11 @@ import { useTenantContext } from '../context/TenantContext';
 import { getVitrineUrl } from '../utils/urlUtils';
 import { httpsCallable } from 'firebase/functions';
 import { auth, functions } from '../firebase';
+import { useViewSimulator } from '../context/ViewSimulatorContext';
+import SimulationBanner from './navigation/SimulationBanner';
+import ViewSimulatorSelector from './navigation/ViewSimulatorSelector';
+import useLicenseGuard from '../hooks/useLicenseGuard';
+import SubscriptionBanner from './SubscriptionBanner';
 
 export default function LayoutShell({ 
   logoUrl, 
@@ -72,6 +77,8 @@ export default function LayoutShell({
   const [combinedLogoUrl, setCombinedLogoUrl] = useState(null);
   const [launchingAppKey, setLaunchingAppKey] = useState(null);
 
+  const licenseInfo = useLicenseGuard(associationData);
+
   React.useEffect(() => {
     // Vérifie si le logo combiné a déjà été généré par App.jsx
     const favicon = document.querySelector('link#favicon') || document.querySelector('link[rel="icon"]');
@@ -105,17 +112,37 @@ export default function LayoutShell({
     if (onNavigateToTab) onNavigateToTab('dashboard');
   };
   
+  // Consommation du simulateur de vue
+  const {
+    isSimulating,
+    simulationTarget,
+    effectiveProfile: simulatedProfile,
+    effectiveUserTags: simulatedTags,
+    stopSimulation
+  } = useViewSimulator();
+
+  // Profil actif pour le rendu et les permissions (adopte la vue simulée si active)
+  const currentProfile = isSimulating && simulatedProfile ? simulatedProfile : profileData;
+
+  // Garde-fou 1 : Isolation du Break-Glass (forcé à false en mode simulation pour ne pas fausser le test)
+  const effectiveBreakGlassActive = isSimulating ? false : breakGlassActive;
+
   const isPresenceEnabled = activerPresenceEnLigne !== false;
-  const currentUserId = profileData?.uid;
-  const currentGroupId = profileData?.groupId;
+  const currentUserId = currentProfile?.uid;
+  const currentGroupId = currentProfile?.groupId;
   const { onlineMembers, onlineCount } = usePresence(currentUserId, currentGroupId, isPresenceEnabled);
   const onlineUserIds = React.useMemo(() => new Set(onlineMembers.map(m => m.id || m.uid)), [onlineMembers]);
   
-  const isSystemOrSuperAdminOrMestre = profileData?.isSystemAdmin || profileData?.role === 'super-admin' || profileData?.role === 'mestre';
-  const isPrivileged = profileData?.isSystemAdmin === true || ['super-admin', 'admin', 'mestre'].includes(profileData?.role);
-  const isMasterKeyActive = isSystemOrSuperAdminOrMestre && breakGlassActive;
-  const userTags = resolveEffectiveUserTags(profileData?.tags || [], tagsDisponibles);
-  const { hasPendingMembers, pendingCount } = usePendingMembersNotification(profileData);
+  const isSuperAdmin = Boolean(currentProfile?.isSystemAdmin === true || (currentProfile?.role || '').toLowerCase() === 'super-admin');
+  const isSystemOrSuperAdminOrMestre = isSuperAdmin || currentProfile?.role === 'mestre';
+  const isMasterKeyActive = isSuperAdmin && effectiveBreakGlassActive;
+  // isPrivileged contrôle l'affichage des boutons inaccessibles avec un cadenas (🔒).
+  // Si le mode intervention est inactif ou en simulation, le super-admin subit le même masquage propre que les autres membres.
+  const isPrivileged = isMasterKeyActive;
+  const userTags = (isSimulating && simulatedTags && simulatedTags.length > 0)
+    ? simulatedTags
+    : resolveEffectiveUserTags(currentProfile?.tags || [], tagsDisponibles);
+  const { hasPendingMembers, pendingCount } = usePendingMembersNotification(currentProfile);
 
   const isModuleEnabled = (tabId, poleId) => {
     if (!enabledModules) return true;
@@ -154,7 +181,7 @@ export default function LayoutShell({
     // Master Key Bypass ONLY if Break-Glass Technical Intervention Mode is ACTIVE
     if (isMasterKeyActive) return true;
 
-    return canAccessTabPermission(tabId, poleId, profileData, permissionsMatrice, userTags);
+    return canAccessTabPermission(tabId, poleId, currentProfile, permissionsMatrice, userTags, effectiveBreakGlassActive);
   };
 
 
@@ -178,22 +205,22 @@ export default function LayoutShell({
     if (poleId === 'accueil' || poleId === 'mon-espace') return true;
     if (isMasterKeyActive) return true;
 
-    if (canAccessPole(poleId, profileData, permissionsMatrice, userTags)) return true;
+    if (canAccessPole(poleId, currentProfile, permissionsMatrice, userTags, effectiveBreakGlassActive)) return true;
 
     const activePoleObj = polesList.find(p => p.id === poleId);
     if (activePoleObj && activePoleObj.tabs) {
-      return activePoleObj.tabs.some(tab => canAccessTabPermission(tab.id, poleId, profileData, permissionsMatrice, userTags));
+      return activePoleObj.tabs.some(tab => canAccessTabPermission(tab.id, poleId, currentProfile, permissionsMatrice, userTags, effectiveBreakGlassActive));
     }
 
     return false;
   };
 
-  const isAdministrativeUser = isSystemOrSuperAdminOrMestre || 
-                               profileData?.role === 'bureau' || 
-                               profileData?.role === 'ca' || 
+  const isAdministrativeUser = isMasterKeyActive || 
+                               currentProfile?.role === 'bureau' || 
+                               currentProfile?.role === 'ca' || 
                                polesList.some(pole => pole.id !== 'accueil' && pole.id !== 'mon-espace' && isPoleUnlocked(pole.id));
 
-  const canSendFeedback = profileData?.role === 'admin' || profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.role === 'bureau' || profileData?.isSystemAdmin;
+  const canSendFeedback = currentProfile?.role === 'admin' || currentProfile?.role === 'mestre' || currentProfile?.role === 'super-admin' || currentProfile?.role === 'bureau' || currentProfile?.isSystemAdmin;
 
   const allMemberMenuItems = [
     { id: 'accueil', label: 'Accueil', icon: <XiloHome size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('accueil'); onNavigateToTab && onNavigateToTab('dashboard'); } },
@@ -214,6 +241,20 @@ export default function LayoutShell({
     const activePole = currentPole || 'accueil';
     return checkTabAccess(tabId, activePole);
   };
+
+  // Garde-fou 2 : Redirection automatique de sécurité lors du passage en mode simulation
+  // Si le pôle actif ou l'onglet courant devient inaccessible pour le profil simulé, redirection immédiate vers l'accueil/dashboard
+  React.useEffect(() => {
+    if (isSimulating) {
+      const isCurrentPoleAccessible = !currentPole || currentPole === 'accueil' || currentPole === 'mon-espace' || isPoleUnlocked(currentPole);
+      const isCurrentTabAccessible = !currentTab || currentTab === 'dashboard' || hasAccessToTab(currentTab);
+
+      if (!isCurrentPoleAccessible || !isCurrentTabAccessible) {
+        if (onNavigateToPole) onNavigateToPole('accueil');
+        if (onNavigateToTab) onNavigateToTab('dashboard');
+      }
+    }
+  }, [isSimulating, simulationTarget, currentPole, currentTab]);
 
   const getPoleIcon = (poleId, size = 12) => {
     switch (poleId) {
@@ -382,7 +423,11 @@ export default function LayoutShell({
   };
 
   return (
-    <div className={`min-h-screen lg:h-screen w-full ${forceLight ? 'bg-cordel-bg-light' : 'bg-cordel-bg-dark'} ${isBirthdayMonth ? 'theme-birthday-month' : ''} flex lg:items-stretch lg:justify-stretch lg:p-0 p-4 md:p-6`}>
+    <div className={`min-h-screen lg:h-screen w-full ${forceLight ? 'bg-cordel-bg-light' : 'bg-cordel-bg-dark'} ${isBirthdayMonth ? 'theme-birthday-month' : ''} flex flex-col lg:items-stretch lg:justify-stretch lg:p-0 p-4 md:p-6`}>
+      <SubscriptionBanner licenseInfo={licenseInfo} profileData={currentProfile} />
+      {/* Bannière persistante d'avertissement du mode simulation */}
+      <SimulationBanner />
+
       {/* Responsive board container */}
       <div className="w-full h-screen lg:h-screen lg:max-w-none lg:border-none lg:rounded-none lg:shadow-none overflow-hidden flex flex-col lg:flex-row relative bg-cordel-bg-light text-encre-noire">
         
@@ -415,7 +460,7 @@ export default function LayoutShell({
               </div>
             </div>
             <div className="flex items-center gap-2">
-              {isSystemOrSuperAdminOrMestre && (
+              {isSuperAdmin && (
                 <button
                   type="button"
                   onClick={onToggleBreakGlass}
@@ -429,6 +474,7 @@ export default function LayoutShell({
                   <span className="text-sm">{breakGlassActive ? '🔓' : '🔒'}</span>
                 </button>
               )}
+              <ViewSimulatorSelector />
               {renderAppLauncher(true)}
             </div>
           </div>
@@ -492,8 +538,9 @@ export default function LayoutShell({
                   O Girador
                 </span>
               </div>
-              <div className="mt-2 mb-1">
+              <div className="mt-2 mb-1 flex items-center gap-1.5 justify-center flex-wrap">
                 {renderAppLauncher(false)}
+                <ViewSimulatorSelector />
               </div>
               {associationName && (
                 <span className="font-black text-xs uppercase tracking-wider text-cordel-wood mt-0.5 leading-tight text-center break-words max-w-[160px]">
@@ -663,7 +710,7 @@ export default function LayoutShell({
 
 
             
-            {isSystemOrSuperAdminOrMestre && (
+            {isSuperAdmin && (
               <button
                 type="button"
                 onClick={onToggleBreakGlass}
@@ -692,7 +739,7 @@ export default function LayoutShell({
               <button
                 type="button"
                 onClick={() => setIsFeedbackModalOpen(true)}
-                className="w-full py-1.5 text-center text-[8px] font-black uppercase tracking-widest bg-[#2d6a4f] text-white border-2 border-encre-noire rounded-[8px_12px_9px_11px] shadow-[2px_2px_0px_0px_#181716] hover:brightness-110 active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none transition-all cursor-pointer flex items-center justify-center gap-1 mt-1"
+                className="w-full py-1.5 text-center text-[8px] font-black uppercase tracking-widest bg-[var(--color-cordel-vert)] text-white border-2 border-encre-noire rounded-[8px_12px_9px_11px] shadow-[2px_2px_0px_0px_#181716] hover:brightness-110 active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none transition-all cursor-pointer flex items-center justify-center gap-1 mt-1"
                 title="Signaler un bug ou soumettre une idée"
               >
                 💡 Feedback
@@ -710,7 +757,7 @@ export default function LayoutShell({
           <div className="flex flex-col gap-5 w-full flex-1">
             
             {/* Break-Glass Active Warning Banner */}
-            {breakGlassActive && isSystemOrSuperAdminOrMestre && (
+            {breakGlassActive && isSuperAdmin && (
               <div className="w-full mb-1 px-3.5 py-2 bg-amber-400 text-encre-noire border-2 border-encre-noire rounded-[5px_8px_4px_7px] shadow-[2px_2px_0px_0px_#181716] text-[10px] font-black uppercase tracking-wider flex items-center justify-between z-20 select-none animate-fade-in shrink-0">
                 <span className="flex items-center gap-2 truncate">
                   🔓 {t('breakGlass.activeBanner') || "Mode Intervention Technique Actif (Passe-partout complet)"}
@@ -768,11 +815,14 @@ export default function LayoutShell({
                     );
                   })}
                 </div>
-                <InfoPoleHelpButton 
-                  key={`help_btn_${activePoleObj?.id || currentPole}_${currentTab || 'default'}`}
-                  currentPole={activePoleObj?.id || currentPole} 
-                  currentTab={currentTab} 
-                />
+                <div className="flex items-center gap-2">
+                  <ViewSimulatorSelector />
+                  <InfoPoleHelpButton 
+                    key={`help_btn_${activePoleObj?.id || currentPole}_${currentTab || 'default'}`}
+                    currentPole={activePoleObj?.id || currentPole} 
+                    currentTab={currentTab} 
+                  />
+                </div>
               </div>
             )}
 
@@ -1052,7 +1102,7 @@ export default function LayoutShell({
                       setIsFeedbackModalOpen(true);
                       setIsDrawerOpen(false);
                     }}
-                    className="w-full py-1.5 text-center text-[9px] font-black uppercase tracking-widest bg-[#2d6a4f] text-white border border-encre-noire rounded-[6px_9px_7px_8px] shadow-[1.5px_1.5px_0px_0px_#181716] hover:brightness-110 active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none transition-all cursor-pointer flex items-center justify-center gap-1.5 mt-1"
+                    className="w-full py-1.5 text-center text-[9px] font-black uppercase tracking-widest bg-[var(--color-cordel-vert)] text-white border border-encre-noire rounded-[6px_9px_7px_8px] shadow-[1.5px_1.5px_0px_0px_#181716] hover:brightness-110 active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none transition-all cursor-pointer flex items-center justify-center gap-1.5 mt-1"
                   >
                     💡 Feedback
                   </button>

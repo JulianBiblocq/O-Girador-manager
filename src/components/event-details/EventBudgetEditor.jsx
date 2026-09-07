@@ -62,9 +62,9 @@ export default function EventBudgetEditor({
     <div className="flex flex-col gap-5 text-left w-full">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Colonne 1 : Revenus */}
-        <div className="flex flex-col gap-2 p-3 bg-[#2d6a4f]/5 border border-dashed border-[#2d6a4f]/30 rounded-[var(--theme-border-radius,6px)]">
+        <div className="flex flex-col gap-2 p-3 bg-[var(--color-cordel-vert)]/5 border border-dashed border-[#2d6a4f]/30 rounded-[var(--theme-border-radius,6px)]">
           <div className="flex justify-between items-center mb-1">
-            <span className="text-[11px] uppercase font-bold text-[#2d6a4f] dark:text-emerald-400">
+            <span className="text-[11px] uppercase font-bold text-[var(--color-cordel-vert)] dark:text-emerald-400">
               📈 Revenus {hasLinkedInvoice ? '(Lecture seule)' : ''}
             </span>
           </div>
@@ -75,7 +75,7 @@ export default function EventBudgetEditor({
             </span>
             {hasLinkedInvoice ? (
               <>
-                <span className="text-base font-extrabold text-[#2d6a4f] dark:text-emerald-400 block">
+                <span className="text-base font-extrabold text-[var(--color-cordel-vert)] dark:text-emerald-400 block">
                   {totalRecettes.toFixed(2)} €
                 </span>
                 <p className="text-[10px] text-stone-500 italic mt-1">
@@ -94,7 +94,7 @@ export default function EventBudgetEditor({
                   value={montantRecette || ''}
                   onChange={(e) => onChangeRecette && onChangeRecette(e.target.value)}
                   disabled={disabled}
-                  className="theme-input w-full p-2 text-base font-extrabold text-[#2d6a4f] bg-stone-50 dark:bg-stone-900 border border-stone-300 dark:border-stone-600 rounded"
+                  className="theme-input w-full p-2 text-base font-extrabold text-[var(--color-cordel-vert)] bg-stone-50 dark:bg-stone-900 border border-stone-300 dark:border-stone-600 rounded"
                   placeholder="0.00"
                 />
               </div>
@@ -103,16 +103,16 @@ export default function EventBudgetEditor({
         </div>
 
         {/* Colonne 2 : Dépenses Hybrides (Covoiturage Auto + Frais Annexes Manuels) */}
-        <div className="flex flex-col gap-3 p-3 bg-[#8b2a1a]/5 border border-dashed border-[#8b2a1a]/30 rounded-[var(--theme-border-radius,6px)]">
+        <div className="flex flex-col gap-3 p-3 bg-[var(--theme-primary)]/5 border border-dashed border-[var(--theme-primary)]/30 rounded-[var(--theme-border-radius,6px)]">
           <div className="flex justify-between items-center mb-1">
-            <span className="text-[11px] uppercase font-bold text-[#8b2a1a] dark:text-rose-400">
+            <span className="text-[11px] uppercase font-bold text-[var(--theme-primary)] dark:text-rose-400">
               📉 Dépenses Hybrides
             </span>
             <CordelButton
               type="button"
               onClick={addDepense}
               disabled={disabled}
-              className="text-[10px] font-bold uppercase bg-[#2d6a4f] hover:bg-[#23533e] text-white px-2.5 py-1 rounded cursor-pointer disabled:opacity-50"
+              className="text-[10px] font-bold uppercase bg-[var(--color-cordel-vert)] hover:bg-[#23533e] text-white px-2.5 py-1 rounded cursor-pointer disabled:opacity-50"
             >
               ➕ Ajouter un frais annexe
             </CordelButton>
@@ -124,7 +124,7 @@ export default function EventBudgetEditor({
               <span className="font-semibold text-stone-700 dark:text-stone-300 flex items-center gap-1.5">
                 <span>🚗</span> Frais kilométriques (Covoiturage auto)
               </span>
-              <span className="font-bold text-[#8b2a1a] dark:text-rose-400">
+              <span className="font-bold text-[var(--theme-primary)] dark:text-rose-400">
                 {covoiturageAmount.toFixed(2)} €
               </span>
             </div>
@@ -159,7 +159,7 @@ export default function EventBudgetEditor({
                     type="button"
                     onClick={() => removeDepense(item.id)}
                     disabled={disabled}
-                    className="text-[10px] font-bold uppercase bg-[#8b2a1a] text-white p-1.5 rounded cursor-pointer hover:bg-rose-800 disabled:opacity-50"
+                    className="text-[10px] font-bold uppercase bg-[var(--theme-primary)] text-white p-1.5 rounded cursor-pointer hover:bg-rose-800 disabled:opacity-50"
                     title="Supprimer cette dépense"
                   >
                     ✕
@@ -176,13 +176,13 @@ export default function EventBudgetEditor({
         <div className="flex flex-wrap gap-5 font-bold">
           <div>
             <span className="text-stone-500">Total Revenus : </span>
-            <span className="text-[#2d6a4f] dark:text-emerald-400 font-extrabold">
+            <span className="text-[var(--color-cordel-vert)] dark:text-emerald-400 font-extrabold">
               {totalRecettes.toFixed(2)} €
             </span>
           </div>
           <div>
             <span className="text-stone-500">Total Sorties (Auto + Manuel) : </span>
-            <span className="text-[#8b2a1a] dark:text-rose-400 font-extrabold">
+            <span className="text-[var(--theme-primary)] dark:text-rose-400 font-extrabold">
               {totalDepenses.toFixed(2)} €
             </span>
           </div>
@@ -193,8 +193,8 @@ export default function EventBudgetEditor({
           <span
             className={`font-black px-2.5 py-1 rounded text-xs border ${
               soldeNet >= 0
-                ? 'bg-[#2d6a4f]/15 border-[#2d6a4f] text-[#2d6a4f] dark:text-emerald-400'
-                : 'bg-[#8b2a1a]/15 border-[#8b2a1a] text-[#8b2a1a] dark:text-rose-400'
+                ? 'bg-[var(--color-cordel-vert)]/15 border-[#2d6a4f] text-[var(--color-cordel-vert)] dark:text-emerald-400'
+                : 'bg-[var(--theme-primary)]/15 border-[var(--theme-primary)] text-[var(--theme-primary)] dark:text-rose-400'
             }`}
           >
             {soldeNet >= 0 ? '+' : ''}{soldeNet.toFixed(2)} €

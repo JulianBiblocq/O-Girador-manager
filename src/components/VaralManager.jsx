@@ -639,7 +639,7 @@ export default function VaralManager({ groupId, onBack, role, isSystemAdmin, isE
                         setSelectedFichesIds([]);
                       }
                     }}
-                    className={`text-xs px-4 py-2 font-bold whitespace-nowrap ${selectionMode ? 'bg-[#c05621] text-white border-[#c05621] hover:brightness-110' : ''}`}
+                    className={`text-xs px-4 py-2 font-bold whitespace-nowrap ${selectionMode ? 'bg-[var(--color-cordel-ocre)] text-white border-[#c05621] hover:brightness-110' : ''}`}
                   >
                     {selectionMode 
                       ? (selectedFichesIds.length > 0 ? `📦 Exporter Pack (${selectedFichesIds.length})` : 'Annuler Sélection')
@@ -1215,7 +1215,7 @@ export default function VaralManager({ groupId, onBack, role, isSystemAdmin, isE
               <button
                 type="button"
                 onClick={() => setSelectedToada(null)}
-                className="bg-[#8b2a1a] text-white w-7 h-7 rounded font-black flex items-center justify-center shadow hover:bg-red-700 transition-colors border border-white cursor-pointer"
+                className="bg-[var(--theme-primary)] text-white w-7 h-7 rounded font-black flex items-center justify-center shadow hover:bg-red-700 transition-colors border border-white cursor-pointer"
                 title="Fermer"
               >
                 X
@@ -1241,7 +1241,7 @@ export default function VaralManager({ groupId, onBack, role, isSystemAdmin, isE
               <button
                 type="button"
                 onClick={() => setSelectedCultureCard(null)}
-                className="bg-[#8b2a1a] text-white w-7 h-7 rounded font-black flex items-center justify-center shadow hover:bg-red-700 transition-colors border border-white cursor-pointer"
+                className="bg-[var(--theme-primary)] text-white w-7 h-7 rounded font-black flex items-center justify-center shadow hover:bg-red-700 transition-colors border border-white cursor-pointer"
                 title="Fermer"
               >
                 X

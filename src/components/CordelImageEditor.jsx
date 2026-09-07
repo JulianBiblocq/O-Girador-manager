@@ -42,7 +42,7 @@ export default function CordelImageEditor({ imageSrc, lang = 'fr', onComplete, o
   return (
     <div className="flex flex-col gap-2 p-2 bg-[var(--cordel-bg)] cordel-border-sm text-[var(--cordel-text)] font-sans text-xs max-w-sm w-full mx-auto">
       <div className="flex flex-col items-center gap-0.5 mb-1 text-center">
-        <span className="font-cactus font-bold uppercase tracking-wider text-[10px]">
+        <span className="font-heading font-bold uppercase tracking-wider text-[10px]">
           {lang === 'fr' ? 'Éditeur Xylogravure' : 'Editor Xilogravura'}
         </span>
         <span className="text-[9px] font-semibold text-cordel-master-dark opacity-75">
@@ -59,7 +59,7 @@ export default function CordelImageEditor({ imageSrc, lang = 'fr', onComplete, o
         {isProcessing && (
           <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center text-white z-10">
             <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin mb-1" />
-            <span className="text-[10px] font-cactus font-bold uppercase tracking-wider">
+            <span className="text-[10px] font-heading font-bold uppercase tracking-wider">
               {lang === 'fr' ? 'Traitement...' : 'Processando...'}
             </span>
           </div>
@@ -177,14 +177,14 @@ export default function CordelImageEditor({ imageSrc, lang = 'fr', onComplete, o
         <button
           onClick={handleApply}
           disabled={isProcessing}
-          className={`flex-1 py-1.5 bg-black text-white cordel-border-sm text-[10px] font-bold uppercase tracking-wider font-cactus ${isProcessing ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-800 cursor-pointer'}`}
+          className={`flex-1 py-1.5 bg-black text-white cordel-border-sm text-[10px] font-bold uppercase tracking-wider font-heading ${isProcessing ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-800 cursor-pointer'}`}
         >
           {lang === 'fr' ? 'Valider' : 'Aplicar'}
         </button>
         <button
           onClick={onCancel}
           disabled={isProcessing}
-          className={`flex-1 py-1.5 bg-gray-300 text-black cordel-border-sm text-[10px] font-bold uppercase tracking-wider font-cactus ${isProcessing ? 'opacity-50 cursor-not-allowed' : 'hover:opacity-85 cursor-pointer'}`}
+          className={`flex-1 py-1.5 bg-gray-300 text-black cordel-border-sm text-[10px] font-bold uppercase tracking-wider font-heading ${isProcessing ? 'opacity-50 cursor-not-allowed' : 'hover:opacity-85 cursor-pointer'}`}
         >
           {lang === 'fr' ? 'Annuler' : 'Cancelar'}
         </button>

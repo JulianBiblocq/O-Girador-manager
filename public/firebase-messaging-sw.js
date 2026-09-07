@@ -71,9 +71,27 @@ firebase.initializeApp({
 const messaging = firebase.messaging();
 
 messaging.onBackgroundMessage((payload) => {
-  console.log('[firebase-messaging-sw.js] Received background message ', payload);
-  // On ne fait PAS de self.registration.showNotification() ici
-  // car Firebase s'en occupe déjà automatiquement quand on envoie un objet "notification".
-  // L'appeler ici provoquerait une notification en double !
+  console.log('[firebase-messaging-sw.js] Message d\'arrière-plan reçu :', payload);
+
+  const title = payload.notification?.title || payload.data?.title || "O Girador";
+  const body = payload.notification?.body || payload.data?.body || "";
+  const icon = payload.notification?.icon || payload.data?.icon || 'https://organizador.o-girador.com/icon-192.png';
+  const badge = 'https://organizador.o-girador.com/favicon.svg';
+
+  // Tag clair et contextualisé pour regrouper proprement les alertes et garantir l'affichage natif
+  const tag = payload.data?.tag || payload.notification?.tag || (payload.data?.eventId ? `event-${payload.data.eventId}` : `ogirador-${Date.now()}`);
+
+  const notificationData = Object.assign({}, payload.data, {
+    url: payload.data?.url || payload.fcmOptions?.link || '/agenda'
+  });
+
+  return self.registration.showNotification(title, {
+    body: body,
+    icon: icon,
+    badge: badge,
+    tag: tag,
+    data: notificationData
+  });
 });
+
 

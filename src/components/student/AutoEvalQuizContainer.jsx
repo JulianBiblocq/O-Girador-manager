@@ -391,7 +391,7 @@ const startQuiz = (theme, specificToadaId = null) => {
            </button>
         )}
         <div className="text-center flex flex-col gap-2">
-          <h2 className="text-2xl md:text-3xl font-cactus uppercase text-cordel-wood tracking-widest">
+          <h2 className="text-2xl md:text-3xl font-heading uppercase text-cordel-wood tracking-widest">
             Auto-évaluation
           </h2>
           <p className="text-sm text-cordel-master-dark opacity-80 max-w-lg mx-auto mb-2">
@@ -532,7 +532,7 @@ const startQuiz = (theme, specificToadaId = null) => {
               let btnClass = "bg-white border-encre-noire/20 text-encre-noire hover:bg-neutral-100 hover:border-cordel-wood/50";
               if (showFeedback) {
                 if (c.isCorrect) {
-                  btnClass = "bg-[#2d6a4f] text-white border-[#1b4332] shadow-[2px_2px_0px_0px_#1b4332] scale-[1.02] z-10";
+                  btnClass = "bg-[var(--color-cordel-vert)] text-white border-[#1b4332] shadow-[2px_2px_0px_0px_#1b4332] scale-[1.02] z-10";
                 } else if (selectedChoice?.text === c.text) {
                   btnClass = "bg-cordel-rouge text-white border-[#5c1c11] shadow-none opacity-90";
                 } else {
@@ -594,13 +594,13 @@ const startQuiz = (theme, specificToadaId = null) => {
       <div className="flex flex-col gap-6 w-full max-w-2xl mx-auto p-4 select-none">
         <CordelCard className="p-8 flex flex-col gap-6 items-center text-center">
           <div className="text-5xl">{emoji}</div>
-          <h2 className="text-3xl font-cactus uppercase text-cordel-wood tracking-widest">
+          <h2 className="text-3xl font-heading uppercase text-cordel-wood tracking-widest">
             Bilan du Quiz
           </h2>
           <p className="text-xl font-bold text-encre-noire">
             {finalScoreDisplay} / {questions.length}
           </p>
-          <p className="text-sm font-black text-[#2d6a4f] uppercase tracking-wider">
+          <p className="text-sm font-black text-[var(--color-cordel-vert)] uppercase tracking-wider">
             {message}
           </p>
 
@@ -614,7 +614,7 @@ const startQuiz = (theme, specificToadaId = null) => {
               {wrongAnswers.map((w, i) => (
                 <div key={i} className="text-xs border-b border-cordel-rouge/10 pb-2 last:border-0 last:pb-0">
                   <p className="font-bold text-encre-noire/80 mb-1">{w.prompt}</p>
-                  <p className="text-[#2d6a4f] font-black">➔ {w.correct}</p>
+                  <p className="text-[var(--color-cordel-vert)] font-black">➔ {w.correct}</p>
                 </div>
               ))}
             </div>

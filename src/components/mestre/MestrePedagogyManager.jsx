@@ -175,7 +175,7 @@ export default function MestrePedagogyManager({ profileData, sequenceurUrl }) {
     <div className="flex flex-col gap-6 w-full max-w-6xl mx-auto text-left select-none p-4 md:p-8 force-light-theme relative">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-2">
         <div>
-          <h1 className="text-3xl md:text-4xl font-cactus tracking-widest text-cordel-wood uppercase">
+          <h1 className="text-3xl md:text-4xl font-heading tracking-widest text-cordel-wood uppercase">
             ⚙️ Gestionnaire QCM
           </h1>
           <p className="text-xs md:text-sm text-cordel-master-dark opacity-80 max-w-2xl mt-2">
@@ -261,12 +261,12 @@ export default function MestrePedagogyManager({ profileData, sequenceurUrl }) {
                               />
                               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
                                 <div className="flex flex-col">
-                                  <span className="text-[9px] font-black text-[#2d6a4f] uppercase mb-1">Bonne réponse</span>
+                                  <span className="text-[9px] font-black text-[var(--color-cordel-vert)] uppercase mb-1">Bonne réponse</span>
                                   <input 
                                     type="text" 
                                     value={inspectorEditForm.correctAnswer} 
                                     onChange={(e) => setInspectorEditForm({...inspectorEditForm, correctAnswer: e.target.value})}
-                                    className="p-1.5 border-2 border-[#2d6a4f]/50 bg-[#2d6a4f]/5 rounded text-xs font-bold w-full"
+                                    className="p-1.5 border-2 border-[#2d6a4f]/50 bg-[var(--color-cordel-vert)]/5 rounded text-xs font-bold w-full"
                                   />
                                 </div>
                                 <div className="flex flex-col">
@@ -311,7 +311,7 @@ export default function MestrePedagogyManager({ profileData, sequenceurUrl }) {
                               <p className="text-sm font-bold text-encre-noire">{q.questionText}</p>
                               <div className="flex flex-col gap-1 mt-1">
                                 {q.choices.map((c, i) => (
-                                  <div key={i} className={`text-xs px-2 py-1 rounded border ${c.isCorrect ? 'bg-[#2d6a4f]/10 border-[#2d6a4f]/30 font-bold text-[#2d6a4f]' : 'bg-neutral-50 border-encre-noire/10 text-encre-noire/70'}`}>
+                                  <div key={i} className={`text-xs px-2 py-1 rounded border ${c.isCorrect ? 'bg-[var(--color-cordel-vert)]/10 border-[#2d6a4f]/30 font-bold text-[var(--color-cordel-vert)]' : 'bg-neutral-50 border-encre-noire/10 text-encre-noire/70'}`}>
                                     {c.isCorrect ? '✓' : '✗'} {c.text}
                                   </div>
                                 ))}

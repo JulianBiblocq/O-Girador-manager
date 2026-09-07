@@ -76,7 +76,7 @@ export default function TreasuryEventsRow({ evt, groupId, lieuxImportants = [] }
         <div className="font-bold text-stone-900 dark:text-stone-100 truncate" title={evt.titre}>
           {evt.titre}
         </div>
-        <span className="text-[9px] font-bold uppercase text-[#2d6a4f] dark:text-emerald-400">
+        <span className="text-[9px] font-bold uppercase text-[var(--color-cordel-vert)] dark:text-emerald-400">
           {evt.type}
         </span>
       </div>
@@ -99,7 +99,7 @@ export default function TreasuryEventsRow({ evt, groupId, lieuxImportants = [] }
             className="w-16 text-right text-xs p-1 border border-[#2d6a4f] rounded outline-none"
           />
         ) : (
-          <div className="font-bold text-[#2d6a4f] dark:text-emerald-400">
+          <div className="font-bold text-[var(--color-cordel-vert)] dark:text-emerald-400">
             {totalRecettes.toFixed(2)} €
           </div>
         )}
@@ -121,11 +121,11 @@ export default function TreasuryEventsRow({ evt, groupId, lieuxImportants = [] }
               onChange={(e) => setEditDepense(e.target.value)}
               disabled={isSaving}
               title="Dépenses annexes (hors covoiturage)"
-              className="w-16 text-right text-xs p-1 border border-[#8b2a1a] rounded outline-none"
+              className="w-16 text-right text-xs p-1 border border-[var(--theme-primary)] rounded outline-none"
             />
           </div>
         ) : (
-          <div className="font-bold text-[#8b2a1a] dark:text-rose-400">
+          <div className="font-bold text-[var(--theme-primary)] dark:text-rose-400">
             {totalDepenses.toFixed(2)} €
           </div>
         )}
@@ -141,8 +141,8 @@ export default function TreasuryEventsRow({ evt, groupId, lieuxImportants = [] }
             <span
               className={`inline-block px-1.5 py-0.5 rounded text-[10px] border ${
                 soldeNet >= 0
-                  ? 'bg-[#2d6a4f]/15 border-[#2d6a4f] text-[#2d6a4f] dark:text-emerald-400'
-                  : 'bg-[#8b2a1a]/15 border-[#8b2a1a] text-[#8b2a1a] dark:text-rose-400'
+                  ? 'bg-[var(--color-cordel-vert)]/15 border-[#2d6a4f] text-[var(--color-cordel-vert)] dark:text-emerald-400'
+                  : 'bg-[var(--theme-primary)]/15 border-[var(--theme-primary)] text-[var(--theme-primary)] dark:text-rose-400'
               }`}
             >
               {soldeNet >= 0 ? '+' : ''}{soldeNet.toFixed(0)}€
@@ -163,7 +163,7 @@ export default function TreasuryEventsRow({ evt, groupId, lieuxImportants = [] }
             <button
               onClick={handleSave}
               disabled={isSaving}
-              className="text-[9px] bg-[#2d6a4f] text-white px-2 py-0.5 rounded hover:brightness-110 disabled:opacity-50"
+              className="text-[9px] bg-[var(--color-cordel-vert)] text-white px-2 py-0.5 rounded hover:brightness-110 disabled:opacity-50"
             >
               {isSaving ? '...' : 'OK'}
             </button>

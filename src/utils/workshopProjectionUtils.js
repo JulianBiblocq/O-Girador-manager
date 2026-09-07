@@ -29,7 +29,7 @@ export function isWorkshopVirtualDoc(docItem) {
  */
 export function normalizePartSteps(part) {
   if (!part) return [];
-  const rawSteps = part.chapitres || part.steps || part.etapesFabrication || [];
+  const rawSteps = part.chapitres || part.steps || part.etapesFabrication || part.etapes || [];
   if (!Array.isArray(rawSteps)) return [];
 
   return rawSteps.map((step, idx) => ({

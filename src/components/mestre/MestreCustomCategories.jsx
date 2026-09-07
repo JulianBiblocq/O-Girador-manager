@@ -141,7 +141,7 @@ export default function MestreCustomCategories({ groupId, onBack }) {
           <div className="flex items-center gap-2 text-[10px] font-bold text-cordel-master-dark uppercase tracking-wider mb-1">
             <span>Mestria</span>
             <span>›</span>
-            <span className="text-[#2d6a4f] dark:text-emerald-400">Catégories de pratique</span>
+            <span className="text-[var(--color-cordel-vert)] dark:text-emerald-400">Catégories de pratique</span>
           </div>
           <h2 className="text-xl font-black text-cordel-wood uppercase flex items-center gap-2">
             <span>🏷️</span> Catégories & Niveaux de Pratique
@@ -281,7 +281,7 @@ export default function MestreCustomCategories({ groupId, onBack }) {
                   type="button"
                   onClick={() => handleRemoveCategory(cat.id, cat.name)}
                   disabled={saving}
-                  className="text-xs text-[#8b2a1a] hover:bg-red-100 dark:hover:bg-red-950/40 p-1 rounded font-bold cursor-pointer transition-colors shrink-0"
+                  className="text-xs text-[var(--theme-primary)] hover:bg-red-100 dark:hover:bg-red-950/40 p-1 rounded font-bold cursor-pointer transition-colors shrink-0"
                   title="Supprimer cette catégorie"
                 >
                   ✕
@@ -296,7 +296,7 @@ export default function MestreCustomCategories({ groupId, onBack }) {
           <div className="text-[10px] text-cordel-master-dark/70 max-w-md">
             <span>🔄 Mettre à jour rétroactivement les anciens profils membres qui utilisent encore les intitulés par défaut.</span>
             {migrationStatus && (
-              <p className="font-bold text-[#2d6a4f] mt-1">{migrationStatus}</p>
+              <p className="font-bold text-[var(--color-cordel-vert)] mt-1">{migrationStatus}</p>
             )}
           </div>
           <CordelButton

@@ -22,7 +22,7 @@ export function useDancadorSteps(groupId) {
     setLoading(true);
     const q = query(
       collection(db, 'steps'),
-      where('groupId', '==', groupId)
+      where('tenantId', '==', groupId)
     );
 
     const unsubscribe = onSnapshot(
@@ -37,8 +37,9 @@ export function useDancadorSteps(groupId) {
         setLoading(false);
       },
       (err) => {
-        console.error("useDancadorSteps - Erreur de lecture :", err);
+        console.warn("useDancadorSteps - Lecture non disponible pour ce groupe :", err?.message || err);
         setError(err);
+        setSteps([]);
         setLoading(false);
       }
     );
@@ -70,7 +71,7 @@ export function useDancadorChoreographies(groupId) {
     setLoading(true);
     const q = query(
       collection(db, 'choreographies'),
-      where('groupId', '==', groupId),
+      where('tenantId', '==', groupId),
       where('isPublished', '==', true)
     );
 
@@ -85,8 +86,9 @@ export function useDancadorChoreographies(groupId) {
         setLoading(false);
       },
       (err) => {
-        console.error("useDancadorChoreographies - Erreur de lecture :", err);
+        console.warn("useDancadorChoreographies - Lecture non disponible pour ce groupe :", err?.message || err);
         setError(err);
+        setChoreographies([]);
         setLoading(false);
       }
     );

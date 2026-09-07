@@ -95,7 +95,7 @@ export default function FabricationCard({ fabrication, onClose }) {
             <span className="text-[10px] uppercase font-black tracking-widest text-[var(--color-cordel-wood)] mb-1">
               🧵 Atelier de Fabrication (Varal)
             </span>
-            <h2 className="font-cactus font-black text-2xl sm:text-3xl text-black leading-none">
+            <h2 className="font-heading font-black text-2xl sm:text-3xl text-black leading-none">
               {fabrication.titre}
             </h2>
             {fabrication.instrumentConcerne && (
@@ -134,7 +134,7 @@ export default function FabricationCard({ fabrication, onClose }) {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {allMateriels.length > 0 && (
                   <div className="bg-[#fdfaf2] border-[var(--theme-border-width)] border-[var(--theme-border-style)] border-black p-4 shadow-[2px_2px_0px_0px_#181716] rounded-sm transform -rotate-[0.5deg]">
-                    <h4 className="font-cactus font-black text-lg text-[var(--color-cordel-wood)] mb-2 border-b-[var(--theme-border-width)] border-dashed border-[var(--color-cordel-wood)] pb-1 opacity-80 flex items-center justify-between">
+                    <h4 className="font-heading font-black text-lg text-[var(--color-cordel-wood)] mb-2 border-b-[var(--theme-border-width)] border-dashed border-[var(--color-cordel-wood)] pb-1 opacity-80 flex items-center justify-between">
                       Matériel Requis
                       {selectedEtapeId !== null && <span className="text-[9px] font-sans uppercase font-bold tracking-widest text-black/50 bg-black/5 px-2 py-1 rounded">Étape Filtrée</span>}
                     </h4>
@@ -163,7 +163,7 @@ export default function FabricationCard({ fabrication, onClose }) {
                 )}
                 {allOutils.length > 0 && (
                   <div className="bg-[#fdfaf2] border-[var(--theme-border-width)] border-[var(--theme-border-style)] border-black p-4 shadow-[2px_2px_0px_0px_#181716] rounded-sm transform rotate-[0.5deg]">
-                    <h4 className="font-cactus font-black text-lg text-[var(--color-cordel-wood)] mb-2 border-b-[var(--theme-border-width)] border-dashed border-[var(--color-cordel-wood)] pb-1 opacity-80 flex items-center justify-between">
+                    <h4 className="font-heading font-black text-lg text-[var(--color-cordel-wood)] mb-2 border-b-[var(--theme-border-width)] border-dashed border-[var(--color-cordel-wood)] pb-1 opacity-80 flex items-center justify-between">
                       Outils Nécessaires
                       {selectedEtapeId !== null && <span className="text-[9px] font-sans uppercase font-bold tracking-widest text-black/50 bg-black/5 px-2 py-1 rounded">Étape Filtrée</span>}
                     </h4>
@@ -205,7 +205,7 @@ export default function FabricationCard({ fabrication, onClose }) {
             {/* Matrice Multi-tailles pour Alfaia */}
             {fabrication.instrumentConcerne && fabrication.instrumentConcerne.toLowerCase().includes('alfaia') && (
               <div className="bg-cordel-master-dark/5 p-4 rounded-md border-[var(--theme-border-width)] border-[var(--theme-border-style)] border-[var(--color-cordel-wood)]/50 shadow-sm">
-                <h4 className="font-cactus font-black text-xl text-[var(--color-cordel-wood)] mb-3 text-center">
+                <h4 className="font-heading font-black text-xl text-[var(--color-cordel-wood)] mb-3 text-center">
                   Tableau Mémo des Tailles d'Alfaia
                 </h4>
                 <div className="overflow-x-auto">
@@ -247,7 +247,7 @@ export default function FabricationCard({ fabrication, onClose }) {
             {/* Étapes pas à pas */}
             {hasEtapes && (
               <div className="flex flex-col gap-6">
-                <h3 className="font-cactus font-black text-2xl text-center text-black mt-4">
+                <h3 className="font-heading font-black text-2xl text-center text-black mt-4">
                   Étapes de Fabrication
                 </h3>
                 
@@ -263,7 +263,7 @@ export default function FabricationCard({ fabrication, onClose }) {
                         onClick={() => setSelectedEtapeId(prev => prev === etapeId ? null : etapeId)}
                       >
                         {/* Numéro de l'étape */}
-                        <div className={`absolute left-0 top-0 w-8 h-8 sm:w-14 sm:h-14 border-[var(--theme-border-width)] border-[var(--theme-border-style)] rounded-full flex items-center justify-center z-10 text-white font-cactus font-black text-lg sm:text-2xl transform -rotate-6 transition-all ${
+                        <div className={`absolute left-0 top-0 w-8 h-8 sm:w-14 sm:h-14 border-[var(--theme-border-width)] border-[var(--theme-border-style)] rounded-full flex items-center justify-center z-10 text-white font-heading font-black text-lg sm:text-2xl transform -rotate-6 transition-all ${
                           isSelected ? 'bg-[var(--color-cordel-wood)] border-black shadow-[3px_3px_0px_0px_var(--color-cordel-wood)] scale-110' : 'bg-[var(--color-cordel-vert)] border-black shadow-[2px_2px_0px_0px_#181716] group-hover:scale-105'
                         }`}>
                           {idx + 1}

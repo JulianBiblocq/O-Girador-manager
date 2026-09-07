@@ -14,7 +14,7 @@ export default function BrevoIntegrationBlock({ formData = {}, handleChange, sav
         </span>
       </h4>
 
-      <p className="text-xs text-stone-800 font-medium leading-relaxed bg-[#2d6a4f]/10 p-4 rounded-md border border-[#2d6a4f]/30">
+      <p className="text-xs text-stone-800 font-medium leading-relaxed bg-[var(--color-cordel-vert)]/10 p-4 rounded-md border border-[#2d6a4f]/30">
         🛡️ <strong>Sérénité garantie :</strong> Le routage de vos e-mails est automatiquement géré et sécurisé par les serveurs O Girador. Les réponses à vos devis arriveront directement sur votre boîte mail officielle.
       </p>
 

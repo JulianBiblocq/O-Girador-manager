@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { doc, onSnapshot, setDoc } from 'firebase/firestore';
+import React, { useState, useEffect, useMemo } from 'react';
+import { doc, onSnapshot, setDoc, collection, query, where } from 'firebase/firestore';
 import { db } from '../firebase';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
 import PermissionsGuideBox from './PermissionsGuideBox';
+import TagMembersAuditModal from './tags/TagMembersAuditModal';
 import { useTranslation } from './LanguageContext';
 import { normalizeTag, getTagId } from '../utils/tagUtils';
 import useConfirm from '../hooks/useConfirm';
@@ -27,6 +28,10 @@ export default function TagManager({ groupId, onBack, role, isSystemAdmin }) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
+  // État pour la vue inverse et l'audit des porteurs de badges
+  const [members, setMembers] = useState([]);
+  const [auditingTag, setAuditingTag] = useState(null);
+
   // Drag and Drop State
   const [draggedIndex, setDraggedIndex] = useState(null);
   const [dragOverIndex, setDragOverIndex] = useState(null);
@@ -40,9 +45,9 @@ export default function TagManager({ groupId, onBack, role, isSystemAdmin }) {
       return;
     }
 
-    // Real-time listener for the association's custom tags
+    // Écoute en temps réel des étiquettes personnalisées de l'association
     const assocRef = doc(db, 'associations', groupId);
-    const unsubscribe = onSnapshot(assocRef, (docSnap) => {
+    const unsubscribeAssoc = onSnapshot(assocRef, (docSnap) => {
       if (docSnap.exists()) {
         const data = docSnap.data();
         if (Array.isArray(data.tagsDisponibles)) {
@@ -51,15 +56,52 @@ export default function TagManager({ groupId, onBack, role, isSystemAdmin }) {
       }
       setLoading(false);
     }, (error) => {
-      console.error("TagManager - Erreur onSnapshot :", error);
+      console.error("TagManager - Erreur onSnapshot étiquettes :", error);
       setLoading(false);
     });
 
-    return () => unsubscribe();
+    // Écoute en temps réel des membres actifs du groupe pour le comptage et l'audit inversé
+    const usersRef = collection(db, 'users');
+    const qUsers = query(usersRef, where('groupId', '==', groupId));
+    const unsubscribeUsers = onSnapshot(qUsers, (querySnapshot) => {
+      const fetched = [];
+      querySnapshot.forEach((docSnap) => {
+        const u = { id: docSnap.id, ...docSnap.data() };
+        if (u.statutActuel !== 'archived') {
+          fetched.push(u);
+        }
+      });
+      setMembers(fetched);
+    }, (error) => {
+      console.warn("TagManager - Erreur onSnapshot membres :", error);
+    });
+
+    return () => {
+      unsubscribeAssoc();
+      unsubscribeUsers();
+    };
   }, [groupId, isAuthorized]);
 
-  // Normalize all tags for presentation
+  // Normalisation de l'ensemble des étiquettes pour l'affichage
   const tagsList = rawTags.map(t => normalizeTag(t));
+
+  // Vérifie si un membre possède l'étiquette donnée (par identifiant ou variantes de genre)
+  const isMemberCarrierOfTag = (member, tag) => {
+    if (!member?.tags || !Array.isArray(member.tags) || !tag) return false;
+    const targetId = (tag.id || '').toLowerCase().trim();
+    const targetNomM = (tag.nomM || '').toLowerCase().trim();
+    const targetNomF = (tag.nomF || '').toLowerCase().trim();
+
+    return member.tags.some((t) => {
+      const tStr = typeof t === 'string'
+        ? t.toLowerCase().trim()
+        : (t?.id || t?.nomM || t?.nom || '').toLowerCase().trim();
+
+      return (targetId && tStr === targetId) ||
+             (targetNomM && tStr === targetNomM) ||
+             (targetNomF && tStr === targetNomF);
+    });
+  };
 
   // Move tag up/down
   const handleMoveTagOrder = async (index, direction) => {
@@ -468,6 +510,26 @@ export default function TagManager({ groupId, onBack, role, isSystemAdmin }) {
                     )}
                   </div>
 
+                  {/* Pastille interactive d'audit des membres porteurs */}
+                  {(() => {
+                    const assignedCount = members.filter(m => isMemberCarrierOfTag(m, tag)).length;
+                    return (
+                      <button
+                        type="button"
+                        onClick={() => setAuditingTag(tag)}
+                        className={`text-[9.5px] font-black px-2.5 py-1 rounded-full border flex items-center gap-1.5 transition-all cursor-pointer shrink-0 select-none active:scale-95 ${
+                          assignedCount > 0
+                            ? 'bg-emerald-100/90 text-[var(--color-cordel-vert)] border-[#2d6a4f]/50 hover:bg-emerald-200 hover:border-[#2d6a4f] shadow-xs'
+                            : 'bg-cordel-bg-light/60 text-cordel-master-dark/50 border-cordel-master-dark/20 hover:bg-white hover:text-cordel-master-dark'
+                        }`}
+                        title={`Voir les ${assignedCount} membre(s) portant l'étiquette "${tag.nomM}"`}
+                      >
+                        <span className="text-xs">👥</span>
+                        <span>{assignedCount} {assignedCount > 1 ? 'membres' : 'membre'}</span>
+                      </button>
+                    );
+                  })()}
+
                   {/* Actions */}
                   <div className="flex items-center gap-1 shrink-0">
                     <button
@@ -507,7 +569,7 @@ export default function TagManager({ groupId, onBack, role, isSystemAdmin }) {
           <div className="relative w-full max-w-md max-h-[90vh] flex flex-col rounded-lg bg-cordel-bg border-2 border-cordel-master-dark/40 shadow-2xl overflow-hidden text-left">
             {/* 1. Header (Fixe) */}
             <div className="flex-shrink-0 p-4 border-b-2 border-dashed border-cordel-master-dark/25 flex justify-between items-start bg-cordel-bg">
-              <h3 className="font-cactus font-black text-base text-encre-noire tracking-wider uppercase">
+              <h3 className="font-heading font-black text-base text-encre-noire tracking-wider uppercase">
                 ✏️ Modifier l'étiquette
               </h3>
               <button
@@ -618,6 +680,15 @@ export default function TagManager({ groupId, onBack, role, isSystemAdmin }) {
             </form>
           </div>
         </div>
+      )}
+      {/* Modale d'audit inversé des membres porteurs */}
+      {auditingTag && (
+        <TagMembersAuditModal
+          tag={auditingTag}
+          members={members}
+          groupId={groupId}
+          onClose={() => setAuditingTag(null)}
+        />
       )}
     </div>
   );

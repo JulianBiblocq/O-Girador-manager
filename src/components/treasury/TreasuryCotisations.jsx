@@ -257,20 +257,20 @@ export default function TreasuryCotisations({
           <div className="text-xl font-black text-encre-noire">{totalActive}</div>
         </div>
         <div className="border border-encre-noire/25 p-2 bg-green-100/35 dark:bg-green-950/15 rounded">
-          <div className="text-[10px] uppercase font-bold text-[#2d6a4f] opacity-80">{t('widgetTreasury.upToDate') || "À jour"}</div>
-          <div className="text-xl font-black text-[#2d6a4f]">{countPaid}</div>
+          <div className="text-[10px] uppercase font-bold text-[var(--color-cordel-vert)] opacity-80">{t('widgetTreasury.upToDate') || "À jour"}</div>
+          <div className="text-xl font-black text-[var(--color-cordel-vert)]">{countPaid}</div>
         </div>
         <div className="border border-encre-noire/25 p-2 bg-amber-100/35 dark:bg-amber-950/15 rounded">
-          <div className="text-[10px] uppercase font-bold text-[#c05621] opacity-80">{t('widgetTreasury.partial') || "Partiel"}</div>
-          <div className="text-xl font-black text-[#c05621]">{countPartial}</div>
+          <div className="text-[10px] uppercase font-bold text-[var(--color-cordel-ocre)] opacity-80">{t('widgetTreasury.partial') || "Partiel"}</div>
+          <div className="text-xl font-black text-[var(--color-cordel-ocre)]">{countPartial}</div>
         </div>
         <div className="border border-encre-noire/25 p-2 bg-blue-100/35 dark:bg-blue-950/15 rounded">
           <div className="text-[10px] uppercase font-bold text-blue-700 dark:text-blue-400 opacity-80">{t('widgetTreasury.exempted') || "Exonéré"}</div>
           <div className="text-xl font-black text-blue-700 dark:text-blue-400">{countExempted}</div>
         </div>
         <div className="border border-encre-noire/25 p-2 bg-red-100/35 dark:bg-red-950/15 rounded">
-          <div className="text-[10px] uppercase font-bold text-[#8b2a1a] opacity-80">{t('widgetTreasury.unpaid') || "Non payé"}</div>
-          <div className="text-xl font-black text-[#8b2a1a]">{countUnpaid}</div>
+          <div className="text-[10px] uppercase font-bold text-[var(--theme-primary)] opacity-80">{t('widgetTreasury.unpaid') || "Non payé"}</div>
+          <div className="text-xl font-black text-[var(--theme-primary)]">{countUnpaid}</div>
         </div>
       </div>
 

@@ -219,7 +219,7 @@ const MemberCard = React.memo(({
                     <span key={inst} className="font-semibold text-encre-noire text-[9.5px] leading-snug flex items-center gap-1 bg-black/5 px-1.5 py-0.5 rounded">
                       {instName} 
                       {isNiveauxEnabled && instNiveau && instNiveau !== 'aucun' && (
-                        <span className={`text-[8px] uppercase tracking-wider font-extrabold px-1 py-0.5 rounded ${instNiveau === 'confirme' ? 'bg-[#2d6a4f]/20 text-[#2d6a4f]' : 'bg-cordel-wood/20 text-cordel-wood'}`}>
+                        <span className={`text-[8px] uppercase tracking-wider font-extrabold px-1 py-0.5 rounded ${instNiveau === 'confirme' ? 'bg-[var(--color-cordel-vert)]/20 text-[var(--color-cordel-vert)]' : 'bg-cordel-wood/20 text-cordel-wood'}`}>
                           {niveauLabel}
                         </span>
                       )}

@@ -39,7 +39,7 @@ export default function StudioCommunication({ groupId, onBack }) {
           <div className="flex items-center gap-2 text-[10px] font-bold text-cordel-master-dark uppercase tracking-wider mb-1">
             <span>Studio</span>
             <span>›</span>
-            <span className="text-[#2d6a4f] dark:text-emerald-400">Communication & Brevo</span>
+            <span className="text-[var(--color-cordel-vert)] dark:text-emerald-400">Communication & Brevo</span>
           </div>
           <h2 className="text-xl font-black text-cordel-wood uppercase flex items-center gap-2">
             <span>📢</span> Configuration de la Communication & Envois

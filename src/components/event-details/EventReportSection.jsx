@@ -1195,7 +1195,7 @@ export default function EventReportSection({ event, user, profileData, associati
                       <div className="flex flex-col gap-1">
                         <span className="font-extrabold text-[var(--color-cordel-vert,#2d6a4f)]">✅ Ont approuvé :</span>
                         <div className="flex flex-wrap gap-1">
-                          {votersApproved.map(ins => <span key={ins.userId} className="px-1.5 py-0.5 bg-[#2d6a4f]/10 text-[var(--color-cordel-vert,#2d6a4f)] rounded">{ins.userName}</span>)}
+                          {votersApproved.map(ins => <span key={ins.userId} className="px-1.5 py-0.5 bg-[var(--color-cordel-vert)]/10 text-[var(--color-cordel-vert,#2d6a4f)] rounded">{ins.userName}</span>)}
                         </div>
                       </div>
                     )}
@@ -1203,7 +1203,7 @@ export default function EventReportSection({ event, user, profileData, associati
                       <div className="flex flex-col gap-1">
                         <span className="font-extrabold text-[var(--color-cordel-rouge,#8b2a1a)]">❌ Ont demandé une modification :</span>
                         <div className="flex flex-wrap gap-1">
-                          {votersRejected.map(ins => <span key={ins.userId} className="px-1.5 py-0.5 bg-[#8b2a1a]/10 text-[var(--color-cordel-rouge,#8b2a1a)] rounded">{ins.userName}</span>)}
+                          {votersRejected.map(ins => <span key={ins.userId} className="px-1.5 py-0.5 bg-[var(--theme-primary)]/10 text-[var(--color-cordel-rouge,#8b2a1a)] rounded">{ins.userName}</span>)}
                         </div>
                       </div>
                     )}
@@ -1211,7 +1211,7 @@ export default function EventReportSection({ event, user, profileData, associati
                       <div className="flex flex-col gap-1">
                         <span className="font-extrabold text-[var(--color-cordel-ocre,#c05621)]">⏳ N'ont pas encore voté :</span>
                         <div className="flex flex-wrap gap-1">
-                          {votersPending.map(ins => <span key={ins.userId} className="px-1.5 py-0.5 bg-[#c05621]/10 text-[var(--color-cordel-ocre,#c05621)] rounded">{ins.userName}</span>)}
+                          {votersPending.map(ins => <span key={ins.userId} className="px-1.5 py-0.5 bg-[var(--color-cordel-ocre)]/10 text-[var(--color-cordel-ocre,#c05621)] rounded">{ins.userName}</span>)}
                         </div>
                       </div>
                     )}
@@ -1302,7 +1302,11 @@ export default function EventReportSection({ event, user, profileData, associati
 
             // Synchronisation si événement faisant partie d'un sondage
             if (event.pollGroupId) {
-              const pollQuery = query(collection(db, 'events'), where('pollGroupId', '==', event.pollGroupId));
+              const pollConstraints = [where('pollGroupId', '==', event.pollGroupId)];
+              if (event.groupId) {
+                pollConstraints.push(where('groupId', '==', event.groupId));
+              }
+              const pollQuery = query(collection(db, 'events'), ...pollConstraints);
               const pollSnapshot = await getDocs(pollQuery);
               if (!pollSnapshot.empty) {
                 const batch = writeBatch(db);

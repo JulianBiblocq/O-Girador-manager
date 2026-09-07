@@ -30,7 +30,7 @@ export default function OnboardingPublicBlock({
           <XiloTrombinoscope size={20} />
         </span>
         <div>
-          <h3 className="font-cactus font-bold text-sm uppercase tracking-wider text-cordel-wood flex items-center gap-1.5">
+          <h3 className="font-heading font-bold text-sm uppercase tracking-wider text-cordel-wood flex items-center gap-1.5">
             Ton Profil Public <span className="text-[10px] lowercase font-normal opacity-80">(Trombinoscope)</span>
           </h3>
           <p className="text-[10px] text-cordel-master-dark/80 font-medium">
@@ -166,7 +166,7 @@ export default function OnboardingPublicBlock({
               className="w-4 h-4 accent-cordel-wood cursor-pointer shrink-0 mt-0.5"
             />
             <div className="flex flex-col gap-0.5">
-              <span className="font-cactus font-bold text-xs uppercase text-cordel-wood flex items-center gap-1">
+              <span className="font-heading font-bold text-xs uppercase text-cordel-wood flex items-center gap-1">
                 🥁 Percussion
               </span>
               <span className="text-[10px] text-cordel-master-dark/80 font-medium">
@@ -190,7 +190,7 @@ export default function OnboardingPublicBlock({
               className="w-4 h-4 accent-cordel-wood cursor-pointer shrink-0 mt-0.5"
             />
             <div className="flex flex-col gap-0.5">
-              <span className="font-cactus font-bold text-xs uppercase text-cordel-wood flex items-center gap-1">
+              <span className="font-heading font-bold text-xs uppercase text-cordel-wood flex items-center gap-1">
                 💃 Danse
               </span>
               <span className="text-[10px] text-cordel-master-dark/80 font-medium">
@@ -217,7 +217,7 @@ export default function OnboardingPublicBlock({
         /* Formulaire Ancien Élève (Si Percussion est cochée) */
         formData.pratiquePercussion && (
           <div className="flex flex-col gap-3 p-3 rounded bg-white/60 dark:bg-black/20 border border-cordel-master-dark/15 text-left">
-            <span className="font-cactus font-bold text-xs uppercase text-cordel-wood flex items-center gap-1.5">
+            <span className="font-heading font-bold text-xs uppercase text-cordel-wood flex items-center gap-1.5">
               🥁 Orientation Percussions (Ancien Membre)
             </span>
 

@@ -4,6 +4,8 @@ import { db } from '../../../firebase';
 import CordelCard from '../../CordelCard';
 import EventCarpoolSection from '../EventCarpoolSection';
 import EventRSVPSection from '../EventRSVPSection';
+import EventWardrobeSummaryCard from '../EventWardrobeSummaryCard';
+import { isEventStrictlyPassed } from '../../../utils/dateUtils';
 
 /**
  * Onglet 2 : Convoi, Véhicules & Présences (TabLogistics)
@@ -107,9 +109,31 @@ export default function TabLogistics({
   const presentsCount = ((event.inscriptions || []).filter(ins => ins.status === 'present').length) + ((event.invitesExternes || []).length);
   const voituresCount = (event.covoiturage?.voitures || []).length;
 
+  // Calcul fiable du franchissement de l'événement avec reconstitution du timestamp exact
+  const isEventPassed = isEventStrictlyPassed(event);
+
+  // L'événement comporte des tenues de scène ou est une sortie/prestation
+  const hasCostumes = Boolean(
+    event.tenueRequise ||
+    event.dressCodePercussion ||
+    event.dressCodeDanse ||
+    event.costumeId ||
+    ['prestation', 'concert', 'sortie'].includes(event.type)
+  );
+
   return (
     <div className="flex flex-col gap-4 text-left">
-            {/* 1. Module de Covoiturage & Logistique Convoi */}
+      {/* 0. Cockpit Bilan du Vestiaire Post-Événement (Si événement passé) */}
+      {isEventPassed && hasCostumes && (
+        <EventWardrobeSummaryCard
+          event={event}
+          user={user}
+          profileData={profileData}
+          isAuthorized={isAuthorized}
+        />
+      )}
+
+      {/* 1. Module de Covoiturage & Logistique Convoi */}
       {currentConfig?.agendaEnableCarpool && event.enableCarpool !== false ? (
         <div>
           <EventCarpoolSection

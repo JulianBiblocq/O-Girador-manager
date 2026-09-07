@@ -91,7 +91,7 @@ export default function WizardStepIdentity({ wizardData, updateWizardData, logoF
           required
           value={nom}
           onChange={(e) => updateWizardData('nom', e.target.value)}
-          placeholder="Ex: Samambaia Maracatu, Estrela Brilhante..."
+          placeholder="Ex: Association Musicale, Collectif Artistique..."
           className="text-xs px-3.5 py-2.5 border-2 border-stone-300 rounded-lg bg-white font-bold text-stone-900 focus:border-[var(--color-cordel-vert,#2d6a4f)] outline-none shadow-xs"
         />
       </div>

@@ -2,6 +2,8 @@ import React from 'react';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 import LegalInfoBlock from './blocks/LegalInfoBlock';
+import { httpsCallable } from 'firebase/functions';
+import { functions } from '../../firebase';
 
 export default function TabIdentity({
   formData,
@@ -17,6 +19,29 @@ export default function TabIdentity({
 }) {
   // Gestion de la liste dynamique du Bureau Officiel
   const bureauMembres = Array.isArray(formData.bureauMembres) ? formData.bureauMembres : [];
+  const [portalLoading, setPortalLoading] = React.useState(false);
+
+  const handleOpenStripePortal = async () => {
+    setPortalLoading(true);
+    try {
+      const createPortalSession = httpsCallable(functions, 'createStripePortalSession');
+      const result = await createPortalSession({
+        groupId,
+        returnUrl: window.location.href
+      });
+      if (result.data && result.data.url) {
+        window.location.href = result.data.url;
+      }
+    } catch (err) {
+      console.error("Erreur lors de l'accès au portail Stripe:", err);
+      alert("Impossible d'accéder au portail de paiement.");
+    } finally {
+      setPortalLoading(false);
+    }
+  };
+
+  const subscription = formData.subscription || { status: 'exempt', plan: 'exempt' };
+  const { status: subStatus, plan: subPlan } = subscription;
 
   const handleAddBureauMembre = () => {
     const newMember = { id: `bureau_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`, role: '', nom: '' };
@@ -96,6 +121,44 @@ export default function TabIdentity({
         </CordelCard>
       )}
 
+      {/* 💳 Abonnement & Licence */}
+      <CordelCard variant="default" useExtremeBorder={true} className="py-4 px-5 mt-4 mb-4">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-xs uppercase font-extrabold tracking-wider text-cordel-wood flex items-center gap-1.5">
+            💳 Abonnement & Licence O Girador
+          </h3>
+        </div>
+
+        <div className="flex flex-col gap-2 text-left text-[10px] text-cordel-master-dark">
+          <p className="font-semibold">
+            Plan actuel : <span className="font-black text-cordel-wood uppercase ml-1">{subPlan}</span>
+          </p>
+          <p className="font-semibold">
+            Statut : 
+            <span className={`font-black uppercase ml-2 px-2 py-0.5 rounded ${
+              subStatus === 'active' || subStatus === 'exempt' ? 'bg-green-100 text-green-800' :
+              subStatus === 'past_due' ? 'bg-red-100 text-red-800' :
+              subStatus === 'trial' ? 'bg-orange-100 text-orange-800' :
+              'bg-neutral-200 text-neutral-800'
+            }`}>
+              {subStatus}
+            </span>
+          </p>
+          <div className="mt-3">
+            <CordelButton
+              type="button"
+              variant="ocre"
+              useExtremeBorder={true}
+              onClick={handleOpenStripePortal}
+              disabled={portalLoading}
+              className="py-2 px-4 text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 cursor-pointer w-full sm:w-auto"
+            >
+              {portalLoading ? 'Ouverture...' : '⚙️ Gérer mon abonnement (Factures & Paiement)'}
+            </CordelButton>
+          </div>
+        </div>
+      </CordelCard>
+
       {/* Informations Légales */}
       <LegalInfoBlock 
         formData={formData} 
@@ -172,7 +235,7 @@ export default function TabIdentity({
                     type="button"
                     onClick={() => handleRemoveBureauMembre(membre.id)}
                     disabled={saving}
-                    className="w-6 h-6 rounded bg-[#8b2a1a] text-white text-xs font-bold flex items-center justify-center hover:bg-[#8b2a1a]/80 cursor-pointer"
+                    className="w-6 h-6 rounded bg-[var(--theme-primary)] text-white text-xs font-bold flex items-center justify-center hover:bg-[var(--theme-primary)]/80 cursor-pointer"
                   >
                     ✕
                   </button>
@@ -256,7 +319,7 @@ export default function TabIdentity({
                     type="button"
                     onClick={() => handleRemoveMestre(mestre.id)}
                     disabled={saving}
-                    className="w-6 h-6 rounded bg-[#8b2a1a] text-white text-xs font-bold flex items-center justify-center hover:bg-[#8b2a1a]/80 cursor-pointer"
+                    className="w-6 h-6 rounded bg-[var(--theme-primary)] text-white text-xs font-bold flex items-center justify-center hover:bg-[var(--theme-primary)]/80 cursor-pointer"
                   >
                     ✕
                   </button>

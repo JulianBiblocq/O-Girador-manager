@@ -76,7 +76,7 @@ export default function NewsletterPage({ groupId, onBack }) {
           <div className="flex items-center gap-2 text-xs font-semibold text-stone-500 uppercase tracking-wider mb-1">
             <span>Studio</span>
             <span>›</span>
-            <span className="text-[#2d6a4f] dark:text-emerald-400">Export Newsletter</span>
+            <span className="text-[var(--color-cordel-vert)] dark:text-emerald-400">Export Newsletter</span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-stone-900 dark:text-stone-100 flex items-center gap-2">
             <span>📰</span> Module Newsletter
@@ -98,7 +98,7 @@ export default function NewsletterPage({ groupId, onBack }) {
 
       {/* Message d'erreur Firestore éventuel */}
       {error && (
-        <div className="p-4 rounded-[var(--theme-border-radius,6px)] bg-[#8b2a1a]/15 border border-[#8b2a1a] text-[#8b2a1a] dark:text-rose-400 text-sm font-semibold">
+        <div className="p-4 rounded-[var(--theme-border-radius,6px)] bg-[var(--theme-primary)]/15 border border-[var(--theme-primary)] text-[var(--theme-primary)] dark:text-rose-400 text-sm font-semibold">
           {error}
         </div>
       )}

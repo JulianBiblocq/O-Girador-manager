@@ -5,6 +5,8 @@ import CordelCard from '../../CordelCard';
 import EventBudgetSection from '../EventBudgetSection';
 import ReunionAgendaManager from '../../ReunionAgendaManager';
 import EventReportSection from '../EventReportSection';
+import EventWardrobeSummaryCard from '../EventWardrobeSummaryCard';
+import { isEventStrictlyPassed } from '../../../utils/dateUtils';
 
 /**
  * Onglet 4 : Gestion, Budget & Bilan (TabAdmin)
@@ -28,6 +30,18 @@ export default function TabAdmin({
 }) {
   const [updatingPublic, setUpdatingPublic] = useState(false);
   const [updatingField, setUpdatingField] = useState(null);
+
+  // Calcul fiable du franchissement de l'événement avec reconstitution du timestamp exact
+  const isEventPassed = isEventStrictlyPassed(event);
+
+  // L'événement comporte des tenues de scène ou est une sortie/prestation
+  const hasCostumes = Boolean(
+    event.tenueRequise ||
+    event.dressCodePercussion ||
+    event.dressCodeDanse ||
+    event.costumeId ||
+    ['prestation', 'concert', 'sortie'].includes(event.type)
+  );
 
   const handleToggleEventField = async (fieldName, currentValue) => {
     if (!event.id || updatingField) return;
@@ -255,6 +269,16 @@ export default function TabAdmin({
           )}
         </div>
       </CordelCard>
+
+      {/* 1b. Cockpit Bilan du Vestiaire Post-Événement */}
+      {isEventPassed && hasCostumes && (
+        <EventWardrobeSummaryCard
+          event={event}
+          user={user}
+          profileData={profileData}
+          isAuthorized={isAuthorized}
+        />
+      )}
 
       {/* 2. Trésorerie & Bilan Financier de l'Événement */}
       {(isAuthorized || hasFinanceAccess) && (

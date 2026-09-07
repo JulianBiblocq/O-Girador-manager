@@ -27,7 +27,11 @@ export default function WidgetForum({ groupId, profileData, breakGlassActive = f
       snap.forEach(d => list.push({ id: d.id, ...d.data() }));
       setChannels(list);
     }, (err) => {
-      console.error("WidgetForum - Erreur chargement salons :", err);
+      if (err.code === 'permission-denied') {
+        console.warn("WidgetForum - Accès aux salons non autorisé ou en attente d'initialisation.");
+      } else {
+        console.error("WidgetForum - Erreur chargement salons :", err);
+      }
     });
     return () => unsub();
   }, [groupId]);
@@ -76,7 +80,12 @@ export default function WidgetForum({ groupId, profileData, breakGlassActive = f
       }
       setLoading(false);
     }, (error) => {
-      console.error("WidgetForum - Erreur onSnapshot :", error);
+      const isPermissionErr = error?.code === 'permission-denied' || error?.message?.toLowerCase().includes('permission');
+      if (isPermissionErr) {
+        console.warn("WidgetForum - Accès aux fils de discussion restreint ou en attente d'initialisation.");
+      } else {
+        console.error("WidgetForum - Erreur onSnapshot :", error);
+      }
       setLoading(false);
     });
 

@@ -31,7 +31,7 @@ export default function Step1MessageAccueil({
         {/* Champ : Titre de la campagne */}
         <div>
           <label className="block text-sm font-semibold text-stone-800 dark:text-stone-200 mb-1">
-            Titre de la campagne <span className="text-[#8b2a1a]">*</span>
+            Titre de la campagne <span className="text-[var(--theme-primary)]">*</span>
           </label>
           <input
             type="text"
@@ -62,7 +62,7 @@ export default function Step1MessageAccueil({
         <CordelButton
           onClick={onNext}
           disabled={!titreCampagne.trim()}
-          className="bg-[#2d6a4f] hover:bg-[#23533e] text-white px-6 py-2.5 font-semibold rounded-[var(--theme-border-radius,6px)] flex items-center gap-2"
+          className="bg-[var(--color-cordel-vert)] hover:bg-[#23533e] text-white px-6 py-2.5 font-semibold rounded-[var(--theme-border-radius,6px)] flex items-center gap-2"
         >
           Suivant : Prochaines dates ➔
         </CordelButton>

@@ -422,7 +422,7 @@ export default function ForumChannelsManager({ groupId, role, isSystemAdmin, onB
               <div className="relative w-full max-w-lg max-h-[90vh] flex flex-col rounded-lg bg-cordel-bg shadow-2xl border-2 border-cordel-master-dark/40 overflow-hidden">
                 {/* 1. Header (Fixe en haut) */}
                 <div className="flex-shrink-0 p-4 border-b-2 border-dashed border-cordel-master-dark/25 flex justify-between items-center bg-cordel-bg">
-                  <h3 className="font-cactus font-black text-base text-encre-noire tracking-wider uppercase">
+                  <h3 className="font-heading font-black text-base text-encre-noire tracking-wider uppercase">
                     {editingChannelId ? '✏️ Modifier le salon' : '➕ Nouveau Salon / Sous-dossier'}
                   </h3>
                   <button

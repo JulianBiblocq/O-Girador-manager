@@ -72,7 +72,7 @@ export default function InfoPoleBanner({ currentPole, currentTab, forceShow = fa
             <button
               type="button"
               onClick={handleHide}
-              className="px-3 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 border-emerald-900 bg-[#2d6a4f] text-white hover:bg-emerald-800 transition-all cursor-pointer shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none flex items-center gap-1.5 shrink-0"
+              className="px-3 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 border-emerald-900 bg-[var(--color-cordel-vert)] text-white hover:bg-emerald-800 transition-all cursor-pointer shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none flex items-center gap-1.5 shrink-0"
               title="Masquer ce guide pour cet onglet (réouvrable via le bouton 💡 Aide du pôle)"
             >
               <span>✓</span>

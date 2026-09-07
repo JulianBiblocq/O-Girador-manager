@@ -307,7 +307,7 @@ export default function ForumModerationPanel({ groupId, channels = [] }) {
           <div className="relative w-full max-w-md">
             <CordelCard variant="default" useExtremeBorder={true} className="p-5 flex flex-col gap-4 text-left bg-cordel-bg">
               <div className="flex justify-between items-start border-b-2 border-dashed border-cordel-master-dark/25 pb-2">
-                <h3 className="font-cactus font-black text-base text-encre-noire tracking-wider uppercase">
+                <h3 className="font-heading font-black text-base text-encre-noire tracking-wider uppercase">
                   ✏️ Modifier la discussion
                 </h3>
                 <button

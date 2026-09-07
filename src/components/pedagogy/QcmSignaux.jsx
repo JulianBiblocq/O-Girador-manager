@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { collection, getDocs } from 'firebase/firestore';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../../firebase';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 
-export default function QcmSignaux({ onExit, rhythms = [], rhythmsMetadata = {} }) {
+export default function QcmSignaux({ onExit, rhythms = [], rhythmsMetadata = {}, groupId = null }) {
   const [signals, setSignals] = useState([]);
   const [loading, setLoading] = useState(true);
   
@@ -16,18 +16,62 @@ export default function QcmSignaux({ onExit, rhythms = [], rhythmsMetadata = {} 
   const [showFeedback, setShowFeedback] = useState(false);
   const [selectedChoice, setSelectedChoice] = useState(null);
 
-  // Fetch signals on mount
+  // Récupération des signaux au montage filtrés par groupId avec repli global
   useEffect(() => {
     const fetchSignals = async () => {
       try {
-        const querySnapshot = await getDocs(collection(db, 'mestre_signals'));
-        const data = [];
-        querySnapshot.forEach((d) => {
-          data.push({ id: d.id, ...d.data() });
-        });
+        setLoading(true);
+        const signalsMap = new Map();
+
+        if (groupId) {
+          // 1. Signaux spécifiques au groupe
+          const qGroup = query(
+            collection(db, 'mestre_signals'),
+            where('groupId', '==', groupId)
+          );
+          const snapGroup = await getDocs(qGroup);
+          snapGroup.forEach((d) => {
+            signalsMap.set(d.id, { id: d.id, ...d.data() });
+          });
+
+          // 2. Repli / complément avec les signaux globaux
+          try {
+            const qGlobal = query(
+              collection(db, 'mestre_signals'),
+              where('groupId', '==', 'global')
+            );
+            const snapGlobal = await getDocs(qGlobal);
+            snapGlobal.forEach((d) => {
+              if (!signalsMap.has(d.id)) {
+                signalsMap.set(d.id, { id: d.id, ...d.data() });
+              }
+            });
+          } catch (globalErr) {
+            console.warn("Signaux globaux non disponibles :", globalErr);
+          }
+
+          // 3. Repli si la base n'a pas encore de champ groupId sur les données historiques
+          if (signalsMap.size === 0) {
+            const snapAll = await getDocs(collection(db, 'mestre_signals'));
+            snapAll.forEach((d) => {
+              const val = d.data();
+              if (!val.groupId || val.groupId === 'global' || val.groupId === groupId) {
+                if (!signalsMap.has(d.id)) {
+                  signalsMap.set(d.id, { id: d.id, ...val });
+                }
+              }
+            });
+          }
+        } else {
+          // Sans groupId spécifié
+          const querySnapshot = await getDocs(collection(db, 'mestre_signals'));
+          querySnapshot.forEach((d) => {
+            signalsMap.set(d.id, { id: d.id, ...d.data() });
+          });
+        }
         
-        // Only keep signals that have an image and a name
-        const validSignals = data.filter(s => s.imageUrl && s.name);
+        // Conserver uniquement les signaux avec image et nom
+        const validSignals = Array.from(signalsMap.values()).filter(s => s.imageUrl && s.name);
         setSignals(validSignals);
       } catch (err) {
         console.error("Erreur lors de la récupération des signaux :", err);
@@ -37,7 +81,7 @@ export default function QcmSignaux({ onExit, rhythms = [], rhythmsMetadata = {} 
     };
     
     fetchSignals();
-  }, []);
+  }, [groupId]);
 
   // Generate questions once signals are loaded
   useEffect(() => {
@@ -132,8 +176,8 @@ export default function QcmSignaux({ onExit, rhythms = [], rhythmsMetadata = {} 
   if (signals.length < 4) {
     return (
       <div className="flex flex-col items-center gap-4 mt-8">
-        <CordelCard className="p-6 text-center max-w-md w-full border-[#8b2a1a] bg-[#fdfaf2]">
-          <h3 className="text-lg font-black text-[#8b2a1a] uppercase mb-2">Attention</h3>
+        <CordelCard className="p-6 text-center max-w-md w-full border-[var(--theme-primary)] bg-[#fdfaf2]">
+          <h3 className="text-lg font-black text-[var(--theme-primary)] uppercase mb-2">Attention</h3>
           <p className="text-xs font-bold text-encre-noire/70 mb-4">
             Il n'y a pas assez de signaux configurés avec une image. 
             Il en faut au minimum 4 pour générer un quiz.
@@ -151,9 +195,9 @@ export default function QcmSignaux({ onExit, rhythms = [], rhythmsMetadata = {} 
       <div className="flex flex-col items-center gap-4 mt-8 animate-[fadeIn_0.5s_ease-out]">
         <CordelCard className="p-8 text-center max-w-md w-full border-cordel-wood">
           <div className="text-6xl mb-4">🏆</div>
-          <h2 className="text-2xl font-cactus text-cordel-wood uppercase mb-2">Entraînement Terminé !</h2>
+          <h2 className="text-2xl font-heading text-cordel-wood uppercase mb-2">Entraînement Terminé !</h2>
           <p className="text-sm font-bold text-encre-noire/80 mb-6">
-            Ton score : <span className="text-xl text-[#2d6a4f]">{score}</span> / {questions.length}
+            Ton score : <span className="text-xl text-[var(--color-cordel-vert)]">{score}</span> / {questions.length}
           </p>
           <div className="flex justify-center gap-4">
             <CordelButton variant="outline" onClick={onExit} className="text-xs px-4 py-2 uppercase font-black border-2 border-encre-noire">
@@ -206,8 +250,8 @@ export default function QcmSignaux({ onExit, rhythms = [], rhythmsMetadata = {} 
               {currentQ.choices.map((choice, idx) => {
                 let btnStyle = "bg-white border-black/20 text-black hover:bg-neutral-100";
                 if (showFeedback) {
-                  if (choice.isCorrect) btnStyle = "bg-[#2d6a4f] text-white border-[#2d6a4f] shadow-md";
-                  else if (selectedChoice === choice) btnStyle = "bg-[#8b2a1a] text-white border-[#8b2a1a] shadow-md opacity-80";
+                  if (choice.isCorrect) btnStyle = "bg-[var(--color-cordel-vert)] text-white border-[#2d6a4f] shadow-md";
+                  else if (selectedChoice === choice) btnStyle = "bg-[var(--theme-primary)] text-white border-[var(--theme-primary)] shadow-md opacity-80";
                   else btnStyle = "bg-white border-black/10 text-black/40 opacity-50";
                 }
 
@@ -238,7 +282,7 @@ export default function QcmSignaux({ onExit, rhythms = [], rhythmsMetadata = {} 
                 </>
               ) : (
                 <h3 className="text-lg font-extrabold text-[var(--cordel-wood)] uppercase tracking-wider text-center">
-                  Lequel correspond à : <span className="text-[#8b2a1a]">"{currentQ.correctSignal.name}"</span> ?
+                  Lequel correspond à : <span className="text-[var(--theme-primary)]">"{currentQ.correctSignal.name}"</span> ?
                 </h3>
               )}
             </div>
@@ -250,11 +294,11 @@ export default function QcmSignaux({ onExit, rhythms = [], rhythmsMetadata = {} 
                 
                 if (showFeedback) {
                   if (choice.isCorrect) {
-                    cardStyle = "border-[#2d6a4f] bg-[#2d6a4f]/10 shadow-md";
+                    cardStyle = "border-[#2d6a4f] bg-[var(--color-cordel-vert)]/10 shadow-md";
                     overlay = <div className="absolute inset-0 border-4 border-[#2d6a4f] rounded-lg pointer-events-none"></div>;
                   } else if (selectedChoice === choice) {
-                    cardStyle = "border-[#8b2a1a] bg-[#8b2a1a]/10 shadow-md opacity-80";
-                    overlay = <div className="absolute inset-0 border-4 border-[#8b2a1a] rounded-lg pointer-events-none"></div>;
+                    cardStyle = "border-[var(--theme-primary)] bg-[var(--theme-primary)]/10 shadow-md opacity-80";
+                    overlay = <div className="absolute inset-0 border-4 border-[var(--theme-primary)] rounded-lg pointer-events-none"></div>;
                   } else {
                     cardStyle = "border-black/10 opacity-50 bg-white";
                   }

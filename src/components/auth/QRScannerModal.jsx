@@ -167,14 +167,14 @@ export default function QRScannerModal({ isOpen, onClose }) {
 
           {/* Message de succès (Toast Vert Validation) */}
           {successMessage && (
-            <div className="w-full bg-[#2d6a4f] text-white p-3 rounded-md border-2 border-encre-noire shadow-[2px_2px_0px_0px_#181716] font-bold text-xs uppercase tracking-wider animate-bounce">
+            <div className="w-full bg-[var(--color-cordel-vert)] text-white p-3 rounded-md border-2 border-encre-noire shadow-[2px_2px_0px_0px_#181716] font-bold text-xs uppercase tracking-wider animate-bounce">
               ✅ {successMessage}
             </div>
           )}
 
           {/* Message d'erreur */}
           {errorMessage && (
-            <div className="w-full bg-[#8b2a1a] text-white p-3 rounded-md border-2 border-encre-noire shadow-[2px_2px_0px_0px_#181716] font-bold text-xs text-left">
+            <div className="w-full bg-[var(--theme-primary)] text-white p-3 rounded-md border-2 border-encre-noire shadow-[2px_2px_0px_0px_#181716] font-bold text-xs text-left">
               ⚠️ {errorMessage}
             </div>
           )}
@@ -216,7 +216,7 @@ export default function QRScannerModal({ isOpen, onClose }) {
             variant="default"
             useExtremeBorder={true}
             onClick={onClose}
-            className="flex-1 py-2 text-xs font-bold uppercase tracking-wider !bg-[#8b2a1a] !text-white"
+            className="flex-1 py-2 text-xs font-bold uppercase tracking-wider !bg-[var(--theme-primary)] !text-white"
           >
             ✕ Fermer
           </CordelButton>

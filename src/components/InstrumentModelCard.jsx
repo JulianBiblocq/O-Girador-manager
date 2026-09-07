@@ -120,7 +120,7 @@ export default function InstrumentModelCard({ model, initialPartId = null, onClo
               )}
             </div>
 
-            <h2 className="font-cactus font-black text-2xl sm:text-3xl text-black leading-none mt-1">
+            <h2 className="font-heading font-black text-2xl sm:text-3xl text-black leading-none mt-1">
               {model.nom}
             </h2>
 
@@ -224,7 +224,7 @@ export default function InstrumentModelCard({ model, initialPartId = null, onClo
                     <span className="text-[10px] font-black uppercase tracking-widest text-[var(--color-cordel-wood)] block mb-0.5">
                       Fiche d'usinage détaillée
                     </span>
-                    <h3 className="font-cactus font-black text-2xl text-black leading-tight">
+                    <h3 className="font-heading font-black text-2xl text-black leading-tight">
                       {activePart.nom}
                     </h3>
                     {activePart.quantiteRequise && (
@@ -263,7 +263,7 @@ export default function InstrumentModelCard({ model, initialPartId = null, onClo
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {activePart.materiels && activePart.materiels.length > 0 && (
                       <div className="bg-[#fdfaf2] border-[var(--theme-border-width)] border-[var(--theme-border-style)] border-black p-4 shadow-[2px_2px_0px_0px_#181716] rounded-sm">
-                        <h4 className="font-cactus font-black text-base text-[var(--color-cordel-wood)] mb-2 border-b-[var(--theme-border-width)] border-dashed border-[var(--color-cordel-wood)] pb-1 opacity-85">
+                        <h4 className="font-heading font-black text-base text-[var(--color-cordel-wood)] mb-2 border-b-[var(--theme-border-width)] border-dashed border-[var(--color-cordel-wood)] pb-1 opacity-85">
                           🪵 Matières Premières Nécessaires
                         </h4>
                         <ul className="list-disc pl-5 text-sm font-semibold text-black/90 space-y-1">
@@ -276,7 +276,7 @@ export default function InstrumentModelCard({ model, initialPartId = null, onClo
 
                     {activePart.outils && activePart.outils.length > 0 && (
                       <div className="bg-[#fdfaf2] border-[var(--theme-border-width)] border-[var(--theme-border-style)] border-black p-4 shadow-[2px_2px_0px_0px_#181716] rounded-sm">
-                        <h4 className="font-cactus font-black text-base text-[var(--color-cordel-wood)] mb-2 border-b-[var(--theme-border-width)] border-dashed border-[var(--color-cordel-wood)] pb-1 opacity-85">
+                        <h4 className="font-heading font-black text-base text-[var(--color-cordel-wood)] mb-2 border-b-[var(--theme-border-width)] border-dashed border-[var(--color-cordel-wood)] pb-1 opacity-85">
                           🔨 Outils Nécessaires
                         </h4>
                         <ul className="list-disc pl-5 text-sm font-semibold text-black/90 space-y-1">
@@ -302,7 +302,7 @@ export default function InstrumentModelCard({ model, initialPartId = null, onClo
 
                   return (
                     <div className="flex flex-col gap-5">
-                      <h4 className="font-cactus font-black text-xl text-black border-b-[var(--theme-border-width)] border-dashed border-black/20 pb-2">
+                      <h4 className="font-heading font-black text-xl text-black border-b-[var(--theme-border-width)] border-dashed border-black/20 pb-2">
                         Étapes d'usinage & fabrication ({steps.length})
                       </h4>
 
@@ -372,7 +372,7 @@ export default function InstrumentModelCard({ model, initialPartId = null, onClo
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {globalMaterials.length > 0 && (
                       <div className="bg-[#fdfaf2] border-[var(--theme-border-width)] border-[var(--theme-border-style)] border-black p-4 shadow-[2px_2px_0px_0px_#181716] rounded-sm transform -rotate-[0.5deg]">
-                        <h4 className="font-cactus font-black text-lg text-[var(--color-cordel-wood)] mb-2 border-b-[var(--theme-border-width)] border-dashed border-[var(--color-cordel-wood)] pb-1 opacity-80">
+                        <h4 className="font-heading font-black text-lg text-[var(--color-cordel-wood)] mb-2 border-b-[var(--theme-border-width)] border-dashed border-[var(--color-cordel-wood)] pb-1 opacity-80">
                           Nomenclature : Matériel Requis
                         </h4>
                         <ul className="list-disc pl-5 text-sm font-semibold text-black/90 space-y-1">
@@ -384,7 +384,7 @@ export default function InstrumentModelCard({ model, initialPartId = null, onClo
                     )}
                     {globalTools.length > 0 && (
                       <div className="bg-[#fdfaf2] border-[var(--theme-border-width)] border-[var(--theme-border-style)] border-black p-4 shadow-[2px_2px_0px_0px_#181716] rounded-sm transform rotate-[0.5deg]">
-                        <h4 className="font-cactus font-black text-lg text-[var(--color-cordel-wood)] mb-2 border-b-[var(--theme-border-width)] border-dashed border-[var(--color-cordel-wood)] pb-1 opacity-80">
+                        <h4 className="font-heading font-black text-lg text-[var(--color-cordel-wood)] mb-2 border-b-[var(--theme-border-width)] border-dashed border-[var(--color-cordel-wood)] pb-1 opacity-80">
                           Outils Nécessaires
                         </h4>
                         <ul className="list-disc pl-5 text-sm font-semibold text-black/90 space-y-1">
@@ -400,7 +400,7 @@ export default function InstrumentModelCard({ model, initialPartId = null, onClo
                 {/* Liste de toutes les pièces */}
                 {model.parts && model.parts.length > 0 && (
                   <div data-tour="lutherie-model-blueprint" className="flex flex-col gap-6">
-                    <h3 className="font-cactus font-black text-2xl text-black border-b-[var(--theme-border-width)] border-dashed border-black/20 pb-2 text-center mt-2">
+                    <h3 className="font-heading font-black text-2xl text-black border-b-[var(--theme-border-width)] border-dashed border-black/20 pb-2 text-center mt-2">
                       Nomenclature des Pièces à Fabriquer ({model.parts.length})
                     </h3>
 
@@ -515,7 +515,7 @@ export default function InstrumentModelCard({ model, initialPartId = null, onClo
 
         {/* Pied de page Cordel */}
         <div className="flex-shrink-0 p-2.5 bg-[#fdfaf2] border-t-[var(--theme-border-width)] border-dashed border-[var(--color-cordel-wood)] text-center">
-          <span className="font-cactus text-xs text-[var(--color-cordel-wood)] opacity-75">
+          <span className="font-heading text-xs text-[var(--color-cordel-wood)] opacity-75">
             O Girador - Pôle Lutherie & Modèles d'Atelier
           </span>
         </div>

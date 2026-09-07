@@ -3,6 +3,7 @@ import { doc, setDoc } from 'firebase/firestore';
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 import imageCompression from 'browser-image-compression';
 import { db, storage } from '../../firebase';
+import { seedNewTenant } from '../../services/seedTenantService';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 
@@ -34,9 +35,7 @@ export default function OnboardingWizard({
       logoUrl: '',
       colors: { primary: '#d99f4d', secondary: '#84967a', background: '#f4ecd8', text: '#1a1a1a' }
     },
-    instrumentsDisponibles: associationSettings.instrumentsDisponibles || [
-      "Alfaia", "Caixa", "Tarol", "Gonguê", "Agbê", "Mineiro", "Timbal", "Chant", "Danse"
-    ],
+    instrumentsDisponibles: associationSettings.instrumentsDisponibles || [],
     majoriteFeminine: Boolean(associationSettings.majoriteFeminine),
     montantAdhesion: associationSettings.montantAdhesion !== undefined ? associationSettings.montantAdhesion : 10,
     optionsCotisation: associationSettings.optionsCotisation || [
@@ -54,9 +53,7 @@ export default function OnboardingWizard({
           logoUrl: '',
           colors: { primary: '#d99f4d', secondary: '#84967a', background: '#f4ecd8', text: '#1a1a1a' }
         },
-        instrumentsDisponibles: associationSettings.instrumentsDisponibles || [
-          "Alfaia", "Caixa", "Tarol", "Gonguê", "Agbê", "Mineiro", "Timbal", "Chant", "Danse"
-        ],
+        instrumentsDisponibles: associationSettings.instrumentsDisponibles || [],
         majoriteFeminine: Boolean(associationSettings.majoriteFeminine),
         montantAdhesion: associationSettings.montantAdhesion !== undefined ? associationSettings.montantAdhesion : 10,
         optionsCotisation: associationSettings.optionsCotisation || [
@@ -119,7 +116,7 @@ export default function OnboardingWizard({
 
       const assocRef = doc(db, 'associations', groupId);
       await setDoc(assocRef, {
-        nom: wizardData.nom || associationSettings.nom || 'Samambaia Maracatu',
+        nom: wizardData.nom || associationSettings.nom || '',
         branding: {
           logoUrl: finalLogoUrl,
           colors: wizardData.branding?.colors || { primary: '#d99f4d', secondary: '#84967a', background: '#f4ecd8', text: '#1a1a1a' }
@@ -132,6 +129,9 @@ export default function OnboardingWizard({
         onboardingCompleted: true,
         onboardingCompletedAt: new Date().toISOString()
       }, { merge: true });
+
+      // Appel du service de provisionnement initial
+      await seedNewTenant(groupId, associationSettings);
 
       if (onCompleteSuccess) {
         onCompleteSuccess(isSkipped);

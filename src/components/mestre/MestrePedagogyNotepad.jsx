@@ -133,7 +133,7 @@ export default function MestrePedagogyNotepad({ groupId }) {
   return (
     <CordelCard variant="default" className="flex flex-col h-full bg-[#fdfaf2] border-2 border-encre-noire relative overflow-hidden">
       <div className="bg-cordel-wood text-[#fdfaf2] p-4 text-center border-b-2 border-encre-noire">
-        <h3 className="font-cactus text-2xl tracking-widest uppercase">
+        <h3 className="font-heading text-2xl tracking-widest uppercase">
           📌 Bloc-Notes
         </h3>
         <p className="text-[10px] font-black uppercase tracking-widest opacity-80 mt-1">

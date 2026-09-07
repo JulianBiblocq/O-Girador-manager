@@ -244,7 +244,7 @@ export default function MestreToadasAnalytics({
                   // Heatmap color
                   let bgColor = 'bg-[#fdfaf2]';
                   let textColor = 'text-encre-noire';
-                  if (score > 75) { bgColor = 'bg-[#2d6a4f]'; textColor = 'text-white'; }
+                  if (score > 75) { bgColor = 'bg-[var(--color-cordel-vert)]'; textColor = 'text-white'; }
                   else if (score >= 50) { bgColor = 'bg-cordel-ocre'; textColor = 'text-white'; }
                   else { bgColor = 'bg-cordel-rouge'; textColor = 'text-white'; }
                   

@@ -141,7 +141,7 @@ const ForumThreadCard = React.memo(({
                 e.stopPropagation();
                 onDeleteThread(thread);
               }}
-              className="text-[9px] font-bold px-1.5 py-0.5 bg-[#8b2a1a]/10 hover:bg-[#8b2a1a] text-[#8b2a1a] hover:text-white border border-[#8b2a1a]/30 rounded cursor-pointer transition-colors"
+              className="text-[9px] font-bold px-1.5 py-0.5 bg-[var(--theme-primary)]/10 hover:bg-[var(--theme-primary)] text-[var(--theme-primary)] hover:text-white border border-[var(--theme-primary)]/30 rounded cursor-pointer transition-colors"
               title="Supprimer le sujet"
             >
               🗑️

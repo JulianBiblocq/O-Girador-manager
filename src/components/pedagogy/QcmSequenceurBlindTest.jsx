@@ -59,7 +59,7 @@ export default function QcmSequenceurBlindTest({ patternId, patternData, audioUr
           <audio key={audioUrl} controls src={audioUrl} className="w-full max-w-sm rounded outline-none shadow-md" />
         </div>
       ) : (
-        <div className="text-center p-4 text-[#8b2a1a] font-bold border-2 border-dashed border-[#8b2a1a]/50 rounded bg-[#8b2a1a]/10">
+        <div className="text-center p-4 text-[var(--theme-primary)] font-bold border-2 border-dashed border-[var(--theme-primary)]/50 rounded bg-[var(--theme-primary)]/10">
           Aucun fichier audio disponible pour ce rythme.
         </div>
       )}
@@ -69,9 +69,9 @@ export default function QcmSequenceurBlindTest({ patternId, patternData, audioUr
           let btnStyle = "bg-white border-black/20 text-black hover:bg-neutral-100";
           if (showFeedback) {
             if (choice.isCorrect) {
-              btnStyle = "bg-[#2d6a4f] text-white border-[#2d6a4f] shadow-md"; // Vert Validation
+              btnStyle = "bg-[var(--color-cordel-vert)] text-white border-[#2d6a4f] shadow-md"; // Vert Validation
             } else if (selectedChoice === choice) {
-              btnStyle = "bg-[#8b2a1a] text-white border-[#8b2a1a] shadow-md opacity-80"; // Rouge Terre Cuite
+              btnStyle = "bg-[var(--theme-primary)] text-white border-[var(--theme-primary)] shadow-md opacity-80"; // Rouge Terre Cuite
             } else {
               btnStyle = "bg-white border-black/10 text-black/40 opacity-50";
             }

@@ -1,4 +1,5 @@
-import { extractTranslationsForQuiz } from './translationExtractor';
+import { extractTranslationsForQuiz } from './translationExtractor.js';
+import { sanitizeQuizQuestions } from './quizSanitizer.js';
 
 // Mélange un tableau (Fisher-Yates)
 const shuffleArray = (array) => {
@@ -169,17 +170,22 @@ export const generateTranslationQuiz = (config = {}) => {
       ...selectedDistractors.map(d => ({ text: d, isCorrect: false }))
     ]);
 
+    const promptText = `Traduis : "${prompt}"`;
+
     return {
       id: `trans_${pair.key}_${index}`,
       type: 'translation',
-      prompt: `Traduis : "${prompt}"`,
+      prompt: promptText,
+      questionText: promptText,
+      instruction: currentDirection === 'FR_PT' ? "Traduction Français ➔ Portugais" : "Traduction Portugais ➔ Français",
       correctAnswer: correctAnswer,
-      options: options.map(o => o.text), // Retourne juste les textes si l'UI n'a pas besoin de savoir qui est true, mais pour valider on peut garder l'objet complet
-      choices: options, // Formater compatible avec AutoEvalQuiz existant
+      options: options.map(o => o.text),
+      choices: options,
       direction: currentDirection,
-      category: pair.category
+      category: pair.category,
+      feedback: `"${prompt}" correspond bien à "${correctAnswer}".`
     };
   });
 
-  return quiz;
+  return sanitizeQuizQuestions(quiz);
 };

@@ -132,7 +132,7 @@ export default function StudioPhotoQrPrintModal({
       {/* Carte Modale Principale */}
       <div 
         onClick={(e) => e.stopPropagation()}
-        className="relative w-full max-w-lg max-h-[92vh] flex flex-col rounded-[6px_14px_8px_12px] bg-[#f4ecd8] text-encre-noire border-2 border-encre-noire shadow-[4px_4px_0px_0px_#181716] overflow-hidden"
+        className="relative w-full max-w-lg max-h-[92vh] flex flex-col rounded-[6px_14px_8px_12px] bg-[var(--theme-bg)] text-encre-noire border-2 border-encre-noire shadow-[4px_4px_0px_0px_#181716] overflow-hidden"
       >
         {/* En-tête de la modale */}
         <div className="flex items-center justify-between p-3.5 sm:p-4 border-b-2 border-dashed border-cordel-master-dark/25 bg-amber-100/60 no-print">
@@ -159,7 +159,7 @@ export default function StudioPhotoQrPrintModal({
             
             {/* Liseré Cordel et Titre */}
             <div className="flex flex-col items-center gap-1">
-              <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-[#8b2a1a]">
+              <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-[var(--theme-primary)]">
                 {isDepot ? "✨ Partagez vos clichés de la Roda ! ✨" : "✨ Album Photos Officiel de la Roda ✨"}
               </span>
               <h2 className="text-base sm:text-lg font-black uppercase tracking-wider text-encre-noire max-w-sm leading-snug">
@@ -218,7 +218,7 @@ export default function StudioPhotoQrPrintModal({
           <button
             type="button"
             onClick={handlePrint}
-            className="px-3 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 border-emerald-950 bg-[#2d6a4f] text-white hover:bg-emerald-800 shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none cursor-pointer flex items-center gap-1.5"
+            className="px-3 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 border-emerald-950 bg-[var(--color-cordel-vert)] text-white hover:bg-emerald-800 shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none cursor-pointer flex items-center gap-1.5"
             title="Lancer l'impression formatée A4 prête pour affichage sur place"
           >
             <span>🖨️</span>

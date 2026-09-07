@@ -50,7 +50,7 @@ export default function StudentToadasProgress({ profileData, allSongs = [], allS
       
       {/* HEADER & JAUGE GLOBALE */}
       <CordelCard className="p-6 md:p-8 flex flex-col gap-6 text-center border-2 border-dashed border-cordel-wood/30">
-        <h2 className="text-2xl md:text-3xl font-cactus uppercase text-cordel-wood tracking-widest">
+        <h2 className="text-2xl md:text-3xl font-heading uppercase text-cordel-wood tracking-widest">
           Maîtrise de la Nação
         </h2>
         <p className="text-xs text-cordel-master-dark opacity-80 mb-2">

@@ -13,8 +13,8 @@ import TreasuryEventsRow from './TreasuryEventsRow';
 export default function TreasuryEvents({ events = [], groupId, lieuxImportants = [] }) {
   return (
     <div className="flex flex-col gap-3 w-full text-left">
-      <div className="text-xs text-stone-700 dark:text-stone-300 border border-dashed border-[#2d6a4f]/30 p-3 rounded-[var(--theme-border-radius,6px)] bg-[#2d6a4f]/5 leading-relaxed space-y-1">
-        <div className="font-bold text-[#2d6a4f] dark:text-emerald-400 flex items-center gap-1.5">
+      <div className="text-xs text-stone-700 dark:text-stone-300 border border-dashed border-[#2d6a4f]/30 p-3 rounded-[var(--theme-border-radius,6px)] bg-[var(--color-cordel-vert)]/5 leading-relaxed space-y-1">
+        <div className="font-bold text-[var(--color-cordel-vert)] dark:text-emerald-400 flex items-center gap-1.5">
           <span>💡</span> Nouveau modèle financier unifié des événements
         </div>
         <p className="text-[11px] text-stone-600 dark:text-stone-400">

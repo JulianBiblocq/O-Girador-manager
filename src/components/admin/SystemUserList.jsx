@@ -236,7 +236,7 @@ export default function SystemUserList({
                       type="button"
                       onClick={() => handleValidateNewMember(userItem.id)}
                       disabled={savingId === userItem.id}
-                      className="text-[9px] font-black uppercase bg-[#2d6a4f] hover:bg-[#2d6a4f]/90 text-white border border-encre-noire px-2.5 py-1 rounded shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] cursor-pointer animate-pulse"
+                      className="text-[9px] font-black uppercase bg-[var(--color-cordel-vert)] hover:bg-[var(--color-cordel-vert)]/90 text-white border border-encre-noire px-2.5 py-1 rounded shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] cursor-pointer animate-pulse"
                       title="Valider l'inscription de ce nouveau membre"
                     >
                       {savingId === userItem.id ? "..." : "✅ Valider l'inscription"}
@@ -248,7 +248,7 @@ export default function SystemUserList({
                       type="button"
                       onClick={() => handleToggleArchive(userItem.id, true)}
                       disabled={savingId === userItem.id}
-                      className="text-[9px] font-black uppercase bg-[#2d6a4f]/10 hover:bg-[#2d6a4f] text-[#2d6a4f] hover:text-white border border-[#2d6a4f]/40 px-2.5 py-1 rounded shadow-xs active:translate-x-[0.5px] active:translate-y-[0.5px] cursor-pointer transition-colors"
+                      className="text-[9px] font-black uppercase bg-[var(--color-cordel-vert)]/10 hover:bg-[var(--color-cordel-vert)] text-[var(--color-cordel-vert)] hover:text-white border border-[#2d6a4f]/40 px-2.5 py-1 rounded shadow-xs active:translate-x-[0.5px] active:translate-y-[0.5px] cursor-pointer transition-colors"
                     >
                       Désarchiver
                     </button>
@@ -258,7 +258,7 @@ export default function SystemUserList({
                         type="button"
                         onClick={() => handleToggleArchive(userItem.id, false)}
                         disabled={savingId === userItem.id}
-                        className="text-[9px] font-black uppercase bg-[#8b2a1a]/10 hover:bg-[#8b2a1a] text-[#8b2a1a] hover:text-white border border-[#8b2a1a]/40 px-2 py-1 rounded shadow-xs active:translate-x-[0.5px] active:translate-y-[0.5px] cursor-pointer transition-colors"
+                        className="text-[9px] font-black uppercase bg-[var(--theme-primary)]/10 hover:bg-[var(--theme-primary)] text-[var(--theme-primary)] hover:text-white border border-[var(--theme-primary)]/40 px-2 py-1 rounded shadow-xs active:translate-x-[0.5px] active:translate-y-[0.5px] cursor-pointer transition-colors"
                         title="Masquer le membre de l'annuaire actif"
                       >
                         Archiver

@@ -101,6 +101,7 @@ export default function AtelierEntrainement({
         onExit={handleExitQuiz} 
         rhythms={rhythms} 
         rhythmsMetadata={rhythmsMetadata} 
+        groupId={profileData?.groupId}
       />
     );
   }
@@ -116,7 +117,7 @@ export default function AtelierEntrainement({
             ← Retour à l'Atelier
           </button>
           
-          <h2 className="text-2xl font-cactus text-cordel-wood uppercase">Choisis ton mode</h2>
+          <h2 className="text-2xl font-heading text-cordel-wood uppercase">Choisis ton mode</h2>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-2xl">
             <CordelCard className="p-6 flex flex-col items-center gap-4 text-center hover:scale-105 transition-transform cursor-pointer" onClick={() => handleStartRhythmMode('BLIND_TEST')}>
@@ -144,7 +145,7 @@ export default function AtelierEntrainement({
           >
             ← Changer de mode
           </button>
-          <div className="text-center p-4 text-[#8b2a1a] font-bold bg-[#8b2a1a]/10 border-2 border-dashed border-[#8b2a1a]/50 rounded">
+          <div className="text-center p-4 text-[var(--theme-primary)] font-bold bg-[var(--theme-primary)]/10 border-2 border-dashed border-[var(--theme-primary)]/50 rounded">
             Aucun rythme disponible pour ce mode (nécessite des fichiers audio{rhythmMode === 'ASSOCIATION' ? ' et des données JSON' : ''}).
           </div>
         </div>
@@ -200,7 +201,7 @@ export default function AtelierEntrainement({
   return (
     <div className="flex flex-col gap-6">
       <div className="text-center mb-4">
-        <h2 className="text-2xl font-cactus text-cordel-wood uppercase">L'Atelier d'Entraînement</h2>
+        <h2 className="text-2xl font-heading text-cordel-wood uppercase">L'Atelier d'Entraînement</h2>
         <p className="text-sm font-bold text-cordel-master-dark opacity-80 max-w-xl mx-auto mt-2">
           Ici, tu peux lancer des jeux et des quiz interactifs pour tester tes connaissances en musique, danse et culture.
         </p>

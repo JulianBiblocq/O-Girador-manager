@@ -25,7 +25,7 @@ export default function PrintConfigModal({ onClose, onConfirm, title = "Impressi
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-2 sm:p-4 print:hidden backdrop-blur-sm">
       <div className="bg-[#fdfaf2] dark:bg-[#1a1816] rounded-xl shadow-2xl max-w-md w-full border-2 border-encre-noire overflow-hidden flex flex-col max-h-[95vh]">
         <div className="bg-[#f5f0e6] dark:bg-[#2a2622] p-4 border-b-2 border-encre-noire flex justify-between items-center shrink-0">
-          <h2 className="font-cactus tracking-widest text-xl text-encre-noire dark:text-stone-200">
+          <h2 className="font-heading tracking-widest text-xl text-encre-noire dark:text-stone-200">
             🖨️ {title}
           </h2>
           <button onClick={onClose} className="text-encre-noire hover:text-cordel-rouge font-black text-xl">

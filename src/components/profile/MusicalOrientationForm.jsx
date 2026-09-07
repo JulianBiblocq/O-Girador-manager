@@ -87,7 +87,7 @@ export default function MusicalOrientationForm({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           {/* Percussion */}
           <div className="p-2.5 rounded bg-amber-50 dark:bg-amber-950/30 border border-cordel-wood/30 flex items-center justify-between gap-2">
-            <span className="font-cactus font-bold text-xs uppercase text-cordel-wood flex items-center gap-1.5">
+            <span className="font-heading font-bold text-xs uppercase text-cordel-wood flex items-center gap-1.5">
               🥁 Percussion
             </span>
             <input
@@ -102,7 +102,7 @@ export default function MusicalOrientationForm({
 
           {/* Danse */}
           <div className="p-2.5 rounded bg-amber-50 dark:bg-amber-950/30 border border-cordel-wood/30 flex items-center justify-between gap-2">
-            <span className="font-cactus font-bold text-xs uppercase text-cordel-wood flex items-center gap-1.5">
+            <span className="font-heading font-bold text-xs uppercase text-cordel-wood flex items-center gap-1.5">
               💃 Danse
             </span>
             <input

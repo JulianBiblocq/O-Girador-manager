@@ -176,11 +176,13 @@ export default function EventPollSection({ event, user, profileData, onNavigateT
         requiresValidation: false
       });
 
-      // 3. Recherche et suppression de tous les autres créneaux du même pollGroupId
-      if (winningOptionEvent.pollGroupId) {
+      // 3. Recherche et suppression de tous les autres créneaux du même pollGroupId (cloisonné par groupId)
+      const targetGroupId = event?.groupId;
+      if (winningOptionEvent.pollGroupId && targetGroupId) {
         const pollQuery = query(
           collection(db, 'events'),
-          where('pollGroupId', '==', winningOptionEvent.pollGroupId)
+          where('pollGroupId', '==', winningOptionEvent.pollGroupId),
+          where('groupId', '==', targetGroupId)
         );
         const snapshot = await getDocs(pollQuery);
         snapshot.forEach((docSnap) => {

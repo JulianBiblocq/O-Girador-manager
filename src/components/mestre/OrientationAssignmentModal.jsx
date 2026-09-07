@@ -77,7 +77,7 @@ export default function OrientationAssignmentModal({
       <div className="relative w-full max-w-md max-h-[90vh] flex flex-col rounded-lg bg-cordel-bg border-2 border-cordel-master-dark/40 shadow-2xl overflow-hidden text-left">
         {/* 1. Header (Fixe) */}
         <div className="flex-shrink-0 p-4 border-b border-dashed border-cordel-master-dark/20 flex justify-between items-center bg-cordel-bg">
-          <h3 className="font-cactus font-black text-lg text-cordel-wood uppercase tracking-wider">
+          <h3 className="font-heading font-black text-lg text-cordel-wood uppercase tracking-wider">
             🎯 Affectation d'Instrument
           </h3>
           <button

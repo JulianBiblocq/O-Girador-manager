@@ -9,7 +9,13 @@ import { resolveCategory, isUserCategoryMatchingEvent } from './categoryUtils';
 function isUserEligibleForRule(uData, rulePublicCible, event, customCategories, eventInscriptions = []) {
   if (uData.statutActuel === 'archived') return false;
 
-  // 1. Filtrage "inscrits"
+  // 1. Filtrage "present_only" (strictement les inscrits ayant le statut "present")
+  if (rulePublicCible === 'present_only') {
+    const isPresent = eventInscriptions.some(ins => ins.userId === uData.id && ins.status === 'present');
+    if (!isPresent) return false;
+  }
+
+  // 1b. Filtrage "inscrits" (tous les statuts d'inscription confondus)
   if (rulePublicCible === 'inscrits') {
     const isRegistered = eventInscriptions.some(ins => ins.userId === uData.id);
     if (!isRegistered) return false;
@@ -106,9 +112,10 @@ export async function runAutomationEngine(groupId, isSimulation = false) {
 
     eventsSnapshot.forEach((docSnap) => {
       const evData = docSnap.data();
-      const evDate = new Date(evData.date);
-      // Ignorer les événements passés depuis plus de 2 jours
-      if (!isNaN(evDate.getTime()) && evDate >= new Date(now.getTime() - 48 * 3600 * 1000)) {
+      const evEndDateStr = evData.dateFin || evData.date;
+      const evEndDate = new Date(evEndDateStr);
+      // Conserver les événements futurs et récents passés (jusqu'à 30 jours pour relances post-événement)
+      if (!isNaN(evEndDate.getTime()) && evEndDate >= new Date(now.getTime() - 30 * 24 * 3600 * 1000)) {
         eventsList.push({
           id: docSnap.id,
           ...evData
@@ -139,9 +146,10 @@ export async function runAutomationEngine(groupId, isSimulation = false) {
       }
     });
 
-    // 5. Exécution de l'analyse Règle par Règle / Événement par Événement
+    // 5. Évaluation des règles
     for (const rule of activeRules) {
       const rulePublicCible = rule.publicCible || 'tous';
+      const isAfterEvent = rule.pointDeReference === 'after_event';
 
       for (const ev of eventsList) {
         // Vérification de la correspondance du type d'événement
@@ -151,56 +159,98 @@ export async function runAutomationEngine(groupId, isSimulation = false) {
 
         if (!matchesType) continue;
 
-        // Calcul du Point de Référence dynamique (registrationDeadline vs eventDate)
+        // Calcul du Point de Référence dynamique (registrationDeadline, after_event ou eventDate)
         let referenceDateStr = '';
         if (rule.pointDeReference === 'registrationDeadline') {
           referenceDateStr = ev.dateLimiteInscription || ev.date;
+        } else if (isAfterEvent) {
+          referenceDateStr = ev.dateFin || ev.date;
         } else {
           referenceDateStr = ev.date;
         }
 
         if (!referenceDateStr) continue;
 
-        const refDate = new Date(referenceDateStr);
-        if (isNaN(refDate.getTime())) continue;
+        // Extraction de la composante jour YYYY-MM-DD
+        const refDayStr = referenceDateStr.split('T')[0];
+        const [rYear, rMonth, rDay] = refDayStr.split('-').map(Number);
+        if (!rYear || !rMonth || !rDay) continue;
 
-        // Date de déclenchement = Date de référence - (joursAvant jours)
-        const triggerDate = new Date(refDate);
-        triggerDate.setDate(triggerDate.getDate() - (parseInt(rule.joursAvant, 10) || 0));
+        // Calcul de la date cible à midi UTC pour neutraliser tout décalage d'heure d'hiver/été
+        const triggerDate = new Date(Date.UTC(rYear, rMonth - 1, rDay, 12, 0, 0));
+        if (isAfterEvent) {
+          const delayAfter = parseInt(rule.joursApres || rule.joursAvant, 10) || 1;
+          triggerDate.setUTCDate(triggerDate.getUTCDate() + delayAfter);
+        } else {
+          const delayBefore = parseInt(rule.joursAvant, 10) || 0;
+          triggerDate.setUTCDate(triggerDate.getUTCDate() - delayBefore);
+        }
         const triggerDateStr = triggerDate.toISOString().split('T')[0];
 
         // Est-ce que la date de déclenchement correspond à aujourd'hui ?
         if (triggerDateStr === todayStr) {
-          // Identification des utilisateurs qui n'ont pas encore répondu à l'événement
-          // ET qui sont éligibles pour cette règle
+          // Identification des utilisateurs ciblés par la règle
           const inscriptions = Array.isArray(ev.inscriptions) ? ev.inscriptions : [];
-          const usersPending = activeUsers.filter((u) => {
-            const userResp = inscriptions.find(ins => ins.userId === u.id);
-            if (userResp && userResp.status !== 'pending') return false; // A déjà répondu
+          let targetUsers = [];
 
-            // S'il n'a pas répondu (ou est en pending), on vérifie s'il est éligible pour recevoir la relance
-            return isUserEligibleForRule(u, rulePublicCible, ev, customCategories, inscriptions);
-          });
+          if (isAfterEvent) {
+            // Relance retour des costumes post-prestation :
+            // Strictement les participants confirmés (status === 'present')
+            // qui n'ont pas encore renseigné leur déclaration de tenue pour cette sortie
+            targetUsers = activeUsers.filter((u) => {
+              const userIns = inscriptions.find(ins => ins.userId === u.id || (ins.email && ins.email === u.email));
+              if (!userIns || userIns.status !== 'present') return false;
+              // S'il a déjà déclaré son costume, on l'exclut (idempotence)
+              if (userIns.costumeStatus || userIns.costumeDeclaration) return false;
+              return true;
+            });
+          } else if (rulePublicCible === 'present_only') {
+            // Pour 'present_only' (ex: feuille de route la veille de l'événement),
+            // on cible STRICTEMENT les participants ayant confirmé leur présence (status === 'present')
+            targetUsers = activeUsers.filter((u) => {
+              return isUserEligibleForRule(u, rulePublicCible, ev, customCategories, inscriptions);
+            });
+          } else {
+            // Pour les relances de validation habituelles, on cible les membres n'ayant pas encore répondu (ou en attente)
+            targetUsers = activeUsers.filter((u) => {
+              const userResp = inscriptions.find(ins => ins.userId === u.id);
+              if (userResp && userResp.status !== 'pending') return false; // A déjà répondu
 
-          if (usersPending.length > 0) {
+              return isUserEligibleForRule(u, rulePublicCible, ev, customCategories, inscriptions);
+            });
+          }
+
+          if (targetUsers.length > 0) {
             const eventName = ev.titre || ev.nom || 'Événement';
-            const bodyMessage = (rule.messageNotification || '')
+            const bodyMessage = (rule.messageNotification || (isAfterEvent ? "Merci d'indiquer l'état de ton costume (rendu, à laver ou retouche)." : ''))
               .replace(/\{\{nomEvenement\}\}/g, eventName);
 
+            const actionLabel = isAfterEvent 
+              ? 'notifié(s) (retour des costumes)' 
+              : (rulePublicCible === 'present_only' ? 'notifié(s) (feuille de route / confirmés)' : 'relancé(s)');
+
+            const timingDesc = isAfterEvent
+              ? `${rule.joursApres || rule.joursAvant || 1}j après événement`
+              : `${rule.joursAvant}j avant ${rule.pointDeReference === 'registrationDeadline' ? 'clôture' : 'événement'}`;
+
             details.push(
-              `🔔 [Règle "${rule.titre}"] : ${usersPending.length} membre(s) relancé(s) pour "${eventName}" (${rule.joursAvant}j avant ${rule.pointDeReference === 'registrationDeadline' ? 'clôture' : 'événement'})`
+              `🔔 [Règle "${rule.titre}"] : ${targetUsers.length} membre(s) ${actionLabel} pour "${eventName}" (${timingDesc})`
             );
 
-            // Génération des notifications
-            for (const targetUser of usersPending) {
+            // Deep Linking direct : vers Mon Vestiaire pour les tenues, vers la fiche événement sinon
+            const targetUrl = isAfterEvent ? `/mon-vestiaire?eventId=${ev.id}` : `/events/${ev.id}`;
+            const notifTitle = rule.titreNotification || (isAfterEvent ? `🎭 Tenues : ${eventName}` : 'Rappel Événement');
+
+            for (const targetUser of targetUsers) {
               triggeredCount++;
               if (!isSimulation) {
                 await addDoc(collection(db, 'notifications_queue'), {
                   groupId: groupId,
                   recipientId: targetUser.id,
-                  title: rule.titreNotification || 'Rappel Événement',
+                  title: notifTitle,
                   body: bodyMessage,
                   eventId: ev.id,
+                  url: targetUrl,
                   createdAt: new Date().toISOString()
                 });
               }
@@ -317,6 +367,7 @@ export async function triggerEventStatusAutomation(groupId, event, triggerType) 
           title: rule.titreNotification || defaultTitle,
           body: bodyMessage,
           eventId: event.id,
+          url: `/events/${event.id}`,
           createdAt: new Date().toISOString()
         });
       }

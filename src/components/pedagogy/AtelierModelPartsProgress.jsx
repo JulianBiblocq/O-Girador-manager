@@ -113,7 +113,7 @@ export default function AtelierModelPartsProgress({
                           }}
                           className={`text-[8.5px] font-black uppercase px-2 py-0.5 rounded border transition-all cursor-pointer ${
                             isSelected
-                              ? 'bg-[var(--color-cordel-wood,#8b2a1a)] text-white border-[#181716] shadow-[1px_1px_0px_0px_#181716]'
+                              ? 'bg-[var(--color-cordel-wood,#8b2a1a)] text-white border-[var(--theme-ink)] shadow-[1px_1px_0px_0px_#181716]'
                               : 'bg-stone-50 text-encre-noire/80 border-stone-300 hover:bg-stone-100'
                           }`}
                           title={`Définir l'aisance sur ${part.nom} : ${lvl.label}`}

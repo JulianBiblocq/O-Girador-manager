@@ -173,7 +173,7 @@ export default function UserProfile({ user, profileData, associationName, onBack
 
         {/* User Name & Main Role */}
         <div className="flex flex-col items-center gap-1 w-full text-center">
-          <h2 className="font-cactus font-black text-2xl uppercase tracking-wider text-encre-noire">
+          <h2 className="font-heading font-black text-2xl uppercase tracking-wider text-encre-noire">
             {fullName}
           </h2>
           <span className="text-xs font-black uppercase tracking-widest text-cordel-wood">

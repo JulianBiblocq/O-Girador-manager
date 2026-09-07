@@ -48,7 +48,7 @@ export default function Step2ProchainesDates({
                 onClick={() => toggleUpcomingEvent(evt.id)}
                 className={`p-4 rounded-[var(--theme-border-radius,6px)] border cursor-pointer transition-all duration-150 flex items-start gap-4 ${
                   isSelected
-                    ? 'border-[#2d6a4f] bg-[#2d6a4f]/10 shadow-sm'
+                    ? 'border-[#2d6a4f] bg-[var(--color-cordel-vert)]/10 shadow-sm'
                     : 'border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 hover:border-stone-400'
                 }`}
               >
@@ -66,7 +66,7 @@ export default function Step2ProchainesDates({
                     <h3 className="font-bold text-stone-900 dark:text-stone-100 text-base">
                       {title}
                     </h3>
-                    <span className="inline-flex items-center text-xs font-semibold px-2.5 py-1 rounded-full bg-[#2d6a4f]/15 text-[#2d6a4f] dark:text-emerald-300">
+                    <span className="inline-flex items-center text-xs font-semibold px-2.5 py-1 rounded-full bg-[var(--color-cordel-vert)]/15 text-[var(--color-cordel-vert)] dark:text-emerald-300">
                       📆 {date}
                     </span>
                   </div>
@@ -101,7 +101,7 @@ export default function Step2ProchainesDates({
 
         <CordelButton
           onClick={onNext}
-          className="bg-[#2d6a4f] hover:bg-[#23533e] text-white px-6 py-2.5 font-semibold rounded-[var(--theme-border-radius,6px)] flex items-center gap-2"
+          className="bg-[var(--color-cordel-vert)] hover:bg-[#23533e] text-white px-6 py-2.5 font-semibold rounded-[var(--theme-border-radius,6px)] flex items-center gap-2"
         >
           Suivant : Retour en images ➔
         </CordelButton>

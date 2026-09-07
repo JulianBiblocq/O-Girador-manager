@@ -30,7 +30,7 @@ export default function OnboardingPrivateBlock({
           <span className="p-1.5 rounded bg-red-100 dark:bg-red-950/60 text-red-700 dark:text-red-300 border border-red-300 dark:border-red-700">
             <XiloLock size={20} />
           </span>
-          <h3 className="font-cactus font-bold text-sm uppercase tracking-wider text-cordel-wood flex items-center gap-1.5">
+          <h3 className="font-heading font-bold text-sm uppercase tracking-wider text-cordel-wood flex items-center gap-1.5">
             🔒 Informations Confidentielles <span className="text-[10px] lowercase font-normal opacity-80">(Réservé au Bureau)</span>
           </h3>
         </div>

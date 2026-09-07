@@ -327,7 +327,13 @@ export default function WidgetAgenda({
   useEffect(() => {
     const handlePopState = () => {
       const searchParams = new URLSearchParams(window.location.search);
-      const targetEventId = searchParams.get('eventId');
+      let targetEventId = searchParams.get('eventId');
+      if (!targetEventId && window.location.pathname) {
+        const match = window.location.pathname.match(/\/events\/([^/?#]+)/);
+        if (match) {
+          targetEventId = match[1];
+        }
+      }
       
       if (targetEventId) {
         if (events.length > 0) {
@@ -629,6 +635,9 @@ export default function WidgetAgenda({
           onClose={() => {
             const newUrl = new URL(window.location);
             newUrl.searchParams.delete('eventId');
+            if (newUrl.pathname.includes('/events/')) {
+              newUrl.pathname = '/app';
+            }
             window.history.replaceState({ ...window.history.state, eventId: null }, '', newUrl.toString());
             setSelectedEvent(null);
             if (onFocusModeChange) {

@@ -267,7 +267,7 @@ export default function PoleTourOverlay({ guide, tabId, isOpen, onClose, onCompl
       <div
         ref={popoverRef}
         style={popoverStyle}
-        className={`bg-[#f4ecd8] text-[#120e0c] border-2 border-[#120e0c] rounded-[6px_14px_8px_12px] shadow-[3.5px_3.5px_0px_0px_#120e0c] p-4 sm:p-5 flex flex-col gap-3.5 transition-all duration-200 animate-fade-in ${placementClass}`}
+        className={`bg-[var(--theme-bg)] text-[#120e0c] border-2 border-[#120e0c] rounded-[6px_14px_8px_12px] shadow-[3.5px_3.5px_0px_0px_#120e0c] p-4 sm:p-5 flex flex-col gap-3.5 transition-all duration-200 animate-fade-in ${placementClass}`}
         role="dialog"
         aria-modal="true"
         aria-label={guideTitle}
@@ -275,11 +275,11 @@ export default function PoleTourOverlay({ guide, tabId, isOpen, onClose, onCompl
         {/* En-tête Cordel : titre de la visite, jauge d'étape et bouton fermer */}
         <div className="flex items-center justify-between gap-2 border-b-2 border-dashed border-[#120e0c]/20 pb-2.5">
           <div className="flex items-center gap-2 overflow-hidden">
-            <span className="w-5 h-5 rounded-full bg-[#8b2a1a] text-[#f4ecd8] text-[10px] font-black flex items-center justify-center shrink-0">
+            <span className="w-5 h-5 rounded-full bg-[var(--theme-primary)] text-[var(--theme-bg)] text-[10px] font-black flex items-center justify-center shrink-0">
               {currentStepIndex + 1}
             </span>
             <div className="truncate">
-              <span className="text-[9px] font-black uppercase tracking-widest text-[#8b2a1a] block leading-none">
+              <span className="text-[9px] font-black uppercase tracking-widest text-[var(--theme-primary)] block leading-none">
                 Étape {currentStepIndex + 1} sur {totalSteps}
               </span>
               <h4 className="text-xs font-black uppercase tracking-wide text-[#120e0c] truncate mt-0.5">
@@ -291,7 +291,7 @@ export default function PoleTourOverlay({ guide, tabId, isOpen, onClose, onCompl
           <button
             type="button"
             onClick={onClose}
-            className="w-6 h-6 rounded border border-[#120e0c]/40 hover:border-[#120e0c] bg-[#f4ecd8] hover:bg-amber-100 text-[#120e0c] text-xs font-black flex items-center justify-center cursor-pointer transition-all shrink-0"
+            className="w-6 h-6 rounded border border-[#120e0c]/40 hover:border-[#120e0c] bg-[var(--theme-bg)] hover:bg-amber-100 text-[#120e0c] text-xs font-black flex items-center justify-center cursor-pointer transition-all shrink-0"
             title="Fermer la visite (Échap)"
           >
             ✕
@@ -319,7 +319,7 @@ export default function PoleTourOverlay({ guide, tabId, isOpen, onClose, onCompl
 
           {/* Message informatif si la cible visuelle n'est pas encore présente à l'écran */}
           {!targetFound && (
-            <span className="text-[10px] text-[#8b2a1a] font-medium italic">
+            <span className="text-[10px] text-[var(--theme-primary)] font-medium italic">
               ℹ️ Vue d'ensemble du module
             </span>
           )}
@@ -335,9 +335,9 @@ export default function PoleTourOverlay({ guide, tabId, isOpen, onClose, onCompl
                 onClick={() => setCurrentStepIndex(idx)}
                 className={`h-1.5 rounded-full transition-all cursor-pointer ${
                   idx === currentStepIndex
-                    ? 'w-5 bg-[#c05621]'
+                    ? 'w-5 bg-[var(--color-cordel-ocre)]'
                     : idx < currentStepIndex
-                    ? 'w-2 bg-[#2d6a4f]'
+                    ? 'w-2 bg-[var(--color-cordel-vert)]'
                     : 'w-2 bg-[#120e0c]/20'
                 }`}
                 title={`Aller à l'étape ${idx + 1}`}
@@ -363,7 +363,7 @@ export default function PoleTourOverlay({ guide, tabId, isOpen, onClose, onCompl
             className={`px-3 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all flex items-center gap-1 ${
               isFirstStep
                 ? 'opacity-40 cursor-not-allowed border-[#120e0c]/20 text-[#120e0c]/40'
-                : 'bg-[#f4ecd8] hover:bg-amber-100 text-[#120e0c] border-[#120e0c] shadow-[1.5px_1.5px_0px_0px_#120e0c] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none cursor-pointer'
+                : 'bg-[var(--theme-bg)] hover:bg-amber-100 text-[#120e0c] border-[#120e0c] shadow-[1.5px_1.5px_0px_0px_#120e0c] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none cursor-pointer'
             }`}
           >
             <span>←</span>
@@ -374,7 +374,7 @@ export default function PoleTourOverlay({ guide, tabId, isOpen, onClose, onCompl
             <button
               type="button"
               onClick={handleFinish}
-              className="px-4 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 border-emerald-950 bg-[#2d6a4f] hover:bg-emerald-800 text-white shadow-[1.5px_1.5px_0px_0px_#120e0c] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none cursor-pointer flex items-center gap-1.5 animate-pulse"
+              className="px-4 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 border-emerald-950 bg-[var(--color-cordel-vert)] hover:bg-emerald-800 text-white shadow-[1.5px_1.5px_0px_0px_#120e0c] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none cursor-pointer flex items-center gap-1.5 animate-pulse"
             >
               <span>Terminer</span>
               <span>✓</span>

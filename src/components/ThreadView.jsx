@@ -55,7 +55,7 @@ const ReactionBar = ({ reactions = {}, currentUserId, onToggle, allUsers = [] })
             onClick={() => onToggle(emoji)}
             className={`flex items-center gap-1.5 px-2.5 py-0.5 rounded-[12px] text-[13px] font-black border transition-all cursor-pointer shadow-xs active:translate-y-[0.5px] ${
               hasReacted 
-                ? 'bg-[#c05621]/15 border-[#c05621]/40 text-[#c05621]' 
+                ? 'bg-[var(--color-cordel-ocre)]/15 border-[#c05621]/40 text-[var(--color-cordel-ocre)]' 
                 : 'bg-white/90 border-encre-noire/30 text-encre-noire/80 hover:bg-stone-100'
             }`}
             title={tooltipText}
@@ -858,7 +858,7 @@ export default function ThreadView({
                   type="button"
                   onClick={handleDeleteThread}
                   disabled={actionLoading}
-                  className="text-[#8b2a1a] hover:text-white text-[9px] font-black cursor-pointer border border-[#8b2a1a]/30 bg-[#8b2a1a]/10 hover:bg-[#8b2a1a] rounded px-1.5 py-0.5 shadow-xs transition-colors"
+                  className="text-[var(--theme-primary)] hover:text-white text-[9px] font-black cursor-pointer border border-[var(--theme-primary)]/30 bg-[var(--theme-primary)]/10 hover:bg-[var(--theme-primary)] rounded px-1.5 py-0.5 shadow-xs transition-colors"
                   title={t('common.delete') || "Supprimer"}
                 >
                   🗑️
@@ -925,7 +925,7 @@ export default function ThreadView({
                             type="button"
                             onClick={() => handleRemovePollOptionFromExisting(idx)}
                             disabled={savingNewPoll}
-                            className="text-[#8b2a1a] hover:text-white text-xs font-black px-2 py-1 rounded bg-[#8b2a1a]/10 hover:bg-[#8b2a1a] border border-[#8b2a1a]/30 cursor-pointer transition-colors"
+                            className="text-[var(--theme-primary)] hover:text-white text-xs font-black px-2 py-1 rounded bg-[var(--theme-primary)]/10 hover:bg-[var(--theme-primary)] border border-[var(--theme-primary)]/30 cursor-pointer transition-colors"
                           >
                             ✕
                           </button>
@@ -1007,11 +1007,11 @@ export default function ThreadView({
                         ref={unreadSeparatorRef}
                         className="flex items-center my-3 gap-2 select-none w-full"
                       >
-                        <div className="flex-1 h-[1.5px] bg-[#8b2a1a]/40"></div>
-                        <span className="text-[10px] font-black uppercase tracking-wider text-[#8b2a1a] bg-cordel-bg px-2.5 py-0.5 rounded border border-[#8b2a1a]/40 shadow-xs">
+                        <div className="flex-1 h-[1.5px] bg-[var(--theme-primary)]/40"></div>
+                        <span className="text-[10px] font-black uppercase tracking-wider text-[var(--theme-primary)] bg-cordel-bg px-2.5 py-0.5 rounded border border-[var(--theme-primary)]/40 shadow-xs">
                           ── Nouveaux messages ──
                         </span>
-                        <div className="flex-1 h-[1.5px] bg-[#8b2a1a]/40"></div>
+                        <div className="flex-1 h-[1.5px] bg-[var(--theme-primary)]/40"></div>
                       </div>
                     )}
 
@@ -1306,7 +1306,7 @@ export default function ThreadView({
               <div className="relative w-full max-w-md">
                 <CordelCard variant="default" useExtremeBorder={true} className="p-5 flex flex-col gap-4 text-left bg-cordel-bg">
                   <div className="flex justify-between items-start border-b-2 border-dashed border-cordel-master-dark/25 pb-2">
-                    <h3 className="font-cactus font-black text-base text-encre-noire tracking-wider uppercase">
+                    <h3 className="font-heading font-black text-base text-encre-noire tracking-wider uppercase">
                       ✏️ Éditer le message
                     </h3>
                     <button

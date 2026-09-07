@@ -12,7 +12,7 @@ export function useFamilyMembers(user, groupId) {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    if (!user?.uid) {
+    if (!user?.uid || !groupId) {
       setDependents([]);
       setLoading(false);
       return;
@@ -20,11 +20,14 @@ export function useFamilyMembers(user, groupId) {
 
     setLoading(true);
     const usersRef = collection(db, 'users');
-    const q = query(
-      usersRef,
+    const constraints = [
       where('managedBy', '==', user.uid),
       where('isDependent', '==', true)
-    );
+    ];
+    if (groupId) {
+      constraints.push(where('groupId', '==', groupId));
+    }
+    const q = query(usersRef, ...constraints);
 
     const unsubscribe = onSnapshot(
       q,
@@ -41,14 +44,20 @@ export function useFamilyMembers(user, groupId) {
         setError(null);
       },
       (err) => {
-        console.error("useFamilyMembers - Erreur chargement dépendants :", err);
+        const isPermErr = err?.code === 'permission-denied' || err?.message?.toLowerCase().includes('permission');
+        if (isPermErr) {
+          console.warn("useFamilyMembers - Accès restreint ou en attente d'initialisation des dépendants.");
+        } else {
+          console.error("useFamilyMembers - Erreur chargement dépendants :", err);
+        }
+        setDependents([]);
         setError(err);
         setLoading(false);
       }
     );
 
     return () => unsubscribe();
-  }, [user?.uid]);
+  }, [user?.uid, groupId]);
 
   const addDependent = async (dependentData) => {
     if (!user?.uid) throw new Error("Utilisateur non connecté");

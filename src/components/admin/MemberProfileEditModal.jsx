@@ -188,7 +188,7 @@ export default function MemberProfileEditModal({
                 type="button"
                 onClick={() => onValidateNewMember(userItem.id)}
                 disabled={saving}
-                className="text-[10px] font-black uppercase tracking-wider bg-[#2d6a4f] hover:bg-[#2d6a4f]/90 text-white border border-encre-noire px-3 py-1.5 rounded shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] cursor-pointer flex items-center gap-1.5 animate-pulse"
+                className="text-[10px] font-black uppercase tracking-wider bg-[var(--color-cordel-vert)] hover:bg-[var(--color-cordel-vert)]/90 text-white border border-encre-noire px-3 py-1.5 rounded shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] cursor-pointer flex items-center gap-1.5 animate-pulse"
                 title="Valider l'inscription de ce nouveau membre"
               >
                 ✅ Valider la nouvelle inscription

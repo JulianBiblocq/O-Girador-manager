@@ -61,7 +61,12 @@ export function useForumThreads(groupId, profileData, t) {
         setLoading(false);
       },
       (error) => {
-        console.error("useForumThreads - Erreur snapshot forum_threads :", error);
+        const isPermErr = error?.code === 'permission-denied' || error?.message?.toLowerCase().includes('permission');
+        if (isPermErr) {
+          console.warn("useForumThreads - Accès aux discussions restreint ou en attente d'initialisation.");
+        } else {
+          console.error("useForumThreads - Erreur snapshot forum_threads :", error);
+        }
         setLoading(false);
       }
     );

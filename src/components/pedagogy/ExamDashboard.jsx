@@ -101,7 +101,7 @@ export default function ExamDashboard({ profileData, allSongs = [], allSheets = 
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
-        <p className="text-cordel-master-dark font-cactus text-xl animate-pulse">Chargement de vos diplômes...</p>
+        <p className="text-cordel-master-dark font-heading text-xl animate-pulse">Chargement de vos diplômes...</p>
       </div>
     );
   }
@@ -110,7 +110,7 @@ export default function ExamDashboard({ profileData, allSongs = [], allSheets = 
   if (activeExam) {
     return (
       <div className="w-full relative">
-        <div className="bg-cordel-rouge text-[#fdfaf2] text-center font-bold p-2 uppercase tracking-widest font-cactus text-xl">
+        <div className="bg-cordel-rouge text-[#fdfaf2] text-center font-bold p-2 uppercase tracking-widest font-heading text-xl">
           MODE EXAMEN STRICT
         </div>
         <AutoEvalQuizContainer
@@ -136,7 +136,7 @@ export default function ExamDashboard({ profileData, allSongs = [], allSheets = 
             color={examResult.passed ? '#2d6a4f' : '#8b2a1a'} 
             size="lg" 
           />
-          <h2 className={`text-3xl font-black uppercase font-cactus tracking-widest mt-4 ${examResult.passed ? 'text-cordel-vert' : 'text-cordel-rouge'}`}>
+          <h2 className={`text-3xl font-black uppercase font-heading tracking-widest mt-4 ${examResult.passed ? 'text-cordel-vert' : 'text-cordel-rouge'}`}>
             {examResult.passed ? "Examen Réussi !" : "Examen Échoué"}
           </h2>
           <p className="text-cordel-master-dark text-lg font-bold">
@@ -166,7 +166,7 @@ export default function ExamDashboard({ profileData, allSongs = [], allSheets = 
   return (
     <div className="w-full max-w-4xl mx-auto flex flex-col gap-6">
       <div className="text-center">
-        <h2 className="text-2xl font-black uppercase font-cactus text-cordel-wood tracking-widest">
+        <h2 className="text-2xl font-black uppercase font-heading text-cordel-wood tracking-widest">
           Certifications & Examens
         </h2>
         <p className="text-sm opacity-80 mt-2">
@@ -186,7 +186,7 @@ export default function ExamDashboard({ profileData, allSongs = [], allSheets = 
               )}
               
               <div className="p-4 flex-grow flex flex-col gap-3">
-                <h3 className="font-cactus text-xl text-cordel-wood font-bold uppercase leading-tight">
+                <h3 className="font-heading text-xl text-cordel-wood font-bold uppercase leading-tight">
                   {exam.title}
                 </h3>
                 <p className="text-sm opacity-80 text-justify">

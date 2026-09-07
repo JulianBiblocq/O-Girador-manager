@@ -165,8 +165,8 @@ const InlineQuiz = ({ fiche, allSheets, allSongs, allModels }) => {
         <span className="text-[9px] font-black uppercase text-cordel-wood tracking-wider">
           Q{currentIdx + 1}/{questions.length}
         </span>
-        <span className="text-[9px] font-bold text-[#2d6a4f]">⭐ {score}</span>
-        <button type="button" onClick={() => setIsStarted(false)} className="text-[9px] font-bold text-encre-noire/40 hover:text-[#8b2a1a] transition-colors">✕</button>
+        <span className="text-[9px] font-bold text-[var(--color-cordel-vert)]">⭐ {score}</span>
+        <button type="button" onClick={() => setIsStarted(false)} className="text-[9px] font-bold text-encre-noire/40 hover:text-[var(--theme-primary)] transition-colors">✕</button>
       </div>
       {/* Instruction */}
       {q.instruction && (
@@ -181,8 +181,8 @@ const InlineQuiz = ({ fiche, allSheets, allSongs, allModels }) => {
         {choices.map((c, i) => {
           let btnCls = "bg-white border-encre-noire/20 text-encre-noire hover:bg-neutral-50";
           if (showFeedback) {
-            if (c.isCorrect) btnCls = "bg-[#2d6a4f] text-white border-[#1b4332]";
-            else if (selectedChoice?.text === c.text) btnCls = "bg-[#8b2a1a] text-white border-[#5c1c11] opacity-80";
+            if (c.isCorrect) btnCls = "bg-[var(--color-cordel-vert)] text-white border-[#1b4332]";
+            else if (selectedChoice?.text === c.text) btnCls = "bg-[var(--theme-primary)] text-white border-[#5c1c11] opacity-80";
             else btnCls = "bg-white border-encre-noire/10 text-encre-noire/30 opacity-40";
           }
           return (
@@ -200,7 +200,7 @@ const InlineQuiz = ({ fiche, allSheets, allSongs, allModels }) => {
       </div>
       {/* Feedback après réponse */}
       {showFeedback && (
-        <p className={`text-[10px] font-bold italic ${selectedChoice?.isCorrect ? 'text-[#2d6a4f]' : 'text-[#c05621]'}`}>
+        <p className={`text-[10px] font-bold italic ${selectedChoice?.isCorrect ? 'text-[var(--color-cordel-vert)]' : 'text-[var(--color-cordel-ocre)]'}`}>
           {selectedChoice?.isCorrect ? '✅ Correct !' : `🌱 ${q.feedback || 'La bonne réponse : ' + (choices.find(c => c.isCorrect)?.text || '')}`}
         </p>
       )}
@@ -489,7 +489,7 @@ export default function MonCarnetAisance({
                         href={getSequencerUrl(rhythm, bpm)}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-[9px] font-bold bg-[#f4ecd8] border border-encre-noire/50 px-2.5 py-1 rounded hover:bg-[#ebdcc0] shadow-[1px_1px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none transition-all"
+                        className="text-[9px] font-bold bg-[var(--theme-bg)] border border-encre-noire/50 px-2.5 py-1 rounded hover:bg-[#ebdcc0] shadow-[1px_1px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none transition-all"
                       >
                         {bpm} BPM
                       </a>
@@ -517,7 +517,7 @@ export default function MonCarnetAisance({
       {/* ================================================================ */}
       {activeSubTab === 'danse' && (
         <div className="flex flex-col gap-4">
-          <div className="bg-[#c05621]/10 border-l-4 border-[#c05621] p-3 mb-2 rounded-r">
+          <div className="bg-[var(--color-cordel-ocre)]/10 border-l-4 border-[#c05621] p-3 mb-2 rounded-r">
             <p className="text-xs font-bold text-cordel-master-dark">
               💃 Évalue ton aisance chorégraphique sur chacun des rythmes (toadas, pas de base, variations).
               Les pas du Dançador seront bientôt intégrés ici pour t'entraîner visuellement.
@@ -573,7 +573,7 @@ export default function MonCarnetAisance({
                       href={getSequencerUrl(rhythm, bpm)}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-[9px] font-bold bg-[#f4ecd8] border border-encre-noire/50 px-2.5 py-1 rounded hover:bg-[#ebdcc0] shadow-[1px_1px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none transition-all"
+                      className="text-[9px] font-bold bg-[var(--theme-bg)] border border-encre-noire/50 px-2.5 py-1 rounded hover:bg-[#ebdcc0] shadow-[1px_1px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none transition-all"
                     >
                       {bpm} BPM
                     </a>

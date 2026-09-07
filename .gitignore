@@ -32,3 +32,6 @@ dist-ssr
 
 # Firebase cache
 .firebase/
+
+# Scratch & temporary scripts
+scratch/

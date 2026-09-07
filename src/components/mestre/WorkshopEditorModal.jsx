@@ -165,7 +165,7 @@ export default function WorkshopEditorModal({ groupId, workshop, onClose, onSave
             <span className="theme-stamp-badge theme-stamp-badge-wood text-[8px] uppercase tracking-wider mb-1 inline-block">
               🧵 Éditeur de Tutoriel Atelier Couture
             </span>
-            <h3 className="font-cactus font-black text-lg text-encre-noire tracking-wide">
+            <h3 className="font-heading font-black text-lg text-encre-noire tracking-wide">
               {workshop ? "Modifier le Tutoriel" : "+ Créer un Tutoriel Multimédia"}
             </h3>
           </div>

@@ -357,7 +357,7 @@ export default function WardrobeManager({
 
           {/* Section 2: Physical Items Inventory */}
           <div className="pt-4 border-t-2 border-dashed border-cordel-master-dark/20 flex flex-col gap-4">
-            <h3 className="font-cactus font-black text-sm text-cordel-wood uppercase tracking-wider text-left">
+            <h3 className="font-heading font-black text-sm text-cordel-wood uppercase tracking-wider text-left">
               📦 Stock physique & Emprunts de pièces
             </h3>
             <div className="flex justify-between items-center bg-white/40 dark:bg-black/20 p-3 rounded border border-dashed border-encre-noire/15">
@@ -507,9 +507,9 @@ export default function WardrobeManager({
                         </td>
                         <td className="py-2 px-2 md:py-2.5 md:px-4 text-center">
                           <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
-                            piece.etat === 'Neuf' ? 'bg-[#2d6a4f]/15 text-[#2d6a4f] border border-[#2d6a4f]/30 font-black' :
-                            piece.etat === 'Bon' ? 'bg-[#2d6a4f]/10 text-[#2d6a4f] border border-[#2d6a4f]/20' :
-                            piece.etat === 'Moyen' ? 'bg-[#c05621]/15 text-[#c05621] border border-[#c05621]/30 font-bold' : 'bg-[#8b2a1a]/15 text-[#8b2a1a] border border-[#8b2a1a]/30 font-black'
+                            piece.etat === 'Neuf' ? 'bg-[var(--color-cordel-vert)]/15 text-[var(--color-cordel-vert)] border border-[#2d6a4f]/30 font-black' :
+                            piece.etat === 'Bon' ? 'bg-[var(--color-cordel-vert)]/10 text-[var(--color-cordel-vert)] border border-[#2d6a4f]/20' :
+                            piece.etat === 'Moyen' ? 'bg-[var(--color-cordel-ocre)]/15 text-[var(--color-cordel-ocre)] border border-[#c05621]/30 font-bold' : 'bg-[var(--theme-primary)]/15 text-[var(--theme-primary)] border border-[var(--theme-primary)]/30 font-black'
                           }`}>
                             {piece.etat}
                           </span>

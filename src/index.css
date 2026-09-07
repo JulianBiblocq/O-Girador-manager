@@ -23,6 +23,8 @@
   --title-text-shadow: none;
   --title-drop-shadow: none;
   --encre-noire: #1a1a1a;
+  
+  --font-heading: var(--font-cactus, 'Cactus', monospace);
 
   /* Code couleur sémantique officiel Cordel */
   --color-cordel-vert: #2d6a4f; /* Vert validation / Présent */
@@ -210,8 +212,8 @@ svg.xilo-icon {
   filter: var(--title-drop-shadow);
 }
 
-.font-cactus {
-  font-family: "Cactus", "Cinzel Decorative", "Courier New", Georgia, serif !important;
+.font-heading {
+  font-family: var(--font-heading, monospace) !important;
 }
 
 /* Custom Web Audio Recorder glow pulse keyframe */
@@ -1027,7 +1029,7 @@ body.eco-mode #center-afficheur {
   font-size: 8px;
   font-weight: 900;
   line-height: 1;
-  font-family: var(--font-cactus, monospace);
+  font-family: var(--font-heading, monospace);
   color: inherit;
   pointer-events: none;
   user-select: none;
@@ -1158,7 +1160,7 @@ body.eco-mode #center-afficheur {
   color: var(--cordel-bg, #f4ecd8);
   border: 3px solid var(--cordel-border, #1a1a1a);
   border-radius: 4px 6px 3px 5px / 5px 3px 6px 4px;
-  font-family: var(--font-cactus, monospace);
+  font-family: var(--font-heading, monospace);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -1354,7 +1356,7 @@ body.eco-mode #center-afficheur {
   color: var(--cordel-bg, #f4ecd8);
   border: 3px solid var(--cordel-border, #1a1a1a);
   border-radius: 4px 6px 3px 5px / 5px 3px 6px 4px;
-  font-family: var(--font-cactus, monospace);
+  font-family: var(--font-heading, monospace);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;

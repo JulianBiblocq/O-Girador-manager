@@ -72,10 +72,10 @@ export default function ReportAudienceCard({ audienceStats = {}, className = '' 
           <span className="text-[9px] font-black uppercase text-encre-noire/60">
             Concrétisations
           </span>
-          <span className="text-xl font-black text-[#2d6a4f] mt-0.5">
+          <span className="text-xl font-black text-[var(--color-cordel-vert)] mt-0.5">
             {vitrineRequestsConverted} <span className="text-xs font-bold text-encre-noire/60">({conversionRate}%)</span>
           </span>
-          <span className="text-[8.5px] text-[#2d6a4f] font-bold mt-0.5">
+          <span className="text-[8.5px] text-[var(--color-cordel-vert)] font-bold mt-0.5">
             Devis, contrats ou dates confirmées
           </span>
         </div>
@@ -87,14 +87,14 @@ export default function ReportAudienceCard({ audienceStats = {}, className = '' 
           <span className="text-encre-noire/80">
             Taux de concrétisation des demandes du site web :
           </span>
-          <span className="font-black text-[#2d6a4f]">
+          <span className="font-black text-[var(--color-cordel-vert)]">
             {conversionRate}%
           </span>
         </div>
 
         <div className="w-full h-2.5 bg-cordel-bg border border-encre-noire/30 rounded-full overflow-hidden">
           <div
-            className="h-full bg-[#2d6a4f] transition-all duration-500"
+            className="h-full bg-[var(--color-cordel-vert)] transition-all duration-500"
             style={{ width: `${Math.min(100, Math.max(0, conversionRate))}%` }}
           />
         </div>

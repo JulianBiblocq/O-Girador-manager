@@ -540,13 +540,13 @@ export default function UserMateriel({ user, profileData, onBack }) {
                     const compatibleParts = allInventoryParts.filter(p => p.status === 'En stock' && p.typePiece === typePiece);
                     if (compatibleParts.length > 0) {
                       return (
-                        <div className="bg-[#2d6a4f]/10 border border-[#2d6a4f]/30 p-2 rounded text-[10px] text-[#2d6a4f]">
+                        <div className="bg-[var(--color-cordel-vert)]/10 border border-[#2d6a4f]/30 p-2 rounded text-[10px] text-[var(--color-cordel-vert)]">
                           <span className="font-black">Bonne nouvelle :</span> L'atelier dispose de {compatibleParts.length} pièce(s) de type "{typePiece}" en stock pour un remplacement éventuel.
                         </div>
                       );
                     } else {
                       return (
-                        <div className="bg-[#8b2a1a]/10 border border-[#8b2a1a]/30 p-2 rounded text-[10px] text-[#8b2a1a]">
+                        <div className="bg-[var(--theme-primary)]/10 border border-[var(--theme-primary)]/30 p-2 rounded text-[10px] text-[var(--theme-primary)]">
                           <span className="font-black">Information :</span> L'atelier n'a actuellement aucune pièce de type "{typePiece}" en stock. Le responsable logistique sera notifié.
                         </div>
                       );

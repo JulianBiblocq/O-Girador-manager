@@ -99,7 +99,7 @@ export default function StudioCloudHeader({ groupId, canWrite = false }) {
                   <strong className="text-emerald-900 font-mono">{displayHost}</strong>
                 </>
               ) : (
-                <span className="italic text-[#c05621]">Aucun dossier Cloud racine configuré</span>
+                <span className="italic text-[var(--color-cordel-ocre)]">Aucun dossier Cloud racine configuré</span>
               )}
             </p>
           </div>
@@ -111,7 +111,7 @@ export default function StudioCloudHeader({ groupId, canWrite = false }) {
             <button
               type="button"
               onClick={() => window.open(cloudUrl, '_blank', 'noopener,noreferrer')}
-              className="px-3.5 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 border-emerald-950 bg-[#2d6a4f] text-white hover:bg-emerald-800 transition-all cursor-pointer shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none flex items-center gap-1.5"
+              className="px-3.5 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 border-emerald-950 bg-[var(--color-cordel-vert)] text-white hover:bg-emerald-800 transition-all cursor-pointer shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none flex items-center gap-1.5"
               title="Ouvrir le dossier Cloud racine dans un nouvel onglet sécurisé"
             >
               <span>☁️</span>
@@ -153,7 +153,7 @@ export default function StudioCloudHeader({ groupId, canWrite = false }) {
               <button
                 type="submit"
                 disabled={saving}
-                className="px-4 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 border-emerald-950 bg-[#2d6a4f] text-white hover:bg-emerald-800 transition-all cursor-pointer shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none flex items-center gap-1"
+                className="px-4 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 border-emerald-950 bg-[var(--color-cordel-vert)] text-white hover:bg-emerald-800 transition-all cursor-pointer shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none flex items-center gap-1"
               >
                 {saving ? (
                   <span>⏳ Enregistrement...</span>

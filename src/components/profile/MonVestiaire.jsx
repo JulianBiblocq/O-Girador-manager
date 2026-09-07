@@ -6,6 +6,7 @@ import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 import PieceTutorialModal from './PieceTutorialModal';
 import CostumeVisualizer from './CostumeVisualizer';
+import PostEventCostumeReturnModal from './PostEventCostumeReturnModal';
 
 /**
  * MonVestiaire Component
@@ -13,7 +14,7 @@ import CostumeVisualizer from './CostumeVisualizer';
  * Displays costumes with a Mannequin Silhouette visualizer, pieces checklist, fabrication progress,
  * validation status, and access to Atelier Couture tutorials.
  */
-export default function MonVestiaire({ userId, groupId, userChecklist = {}, userSection = '', onBack }) {
+export default function MonVestiaire({ userId, groupId, userChecklist = {}, userSection = '', userEmail = '', onBack }) {
   const { t } = useTranslation();
   const [costumes, setCostumes] = useState([]);
   const [workshops, setWorkshops] = useState([]);
@@ -25,6 +26,37 @@ export default function MonVestiaire({ userId, groupId, userChecklist = {}, user
   const [activeTutorialWorkshop, setActiveTutorialWorkshop] = useState(null);
   const [actionPiece, setActionPiece] = useState(null);
   const [updatingPiece, setUpdatingPiece] = useState(null);
+
+  // État pour la modale de déclaration de retour de costume post-événement
+  const [returnEvent, setReturnEvent] = useState(null);
+  const [showReturnModal, setShowReturnModal] = useState(false);
+
+  // Détection du paramètre eventId dans l'URL pour la déclaration post-prestation
+  useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    const eventIdFromUrl = searchParams.get('eventId');
+
+    if (!eventIdFromUrl) {
+      setReturnEvent(null);
+      setShowReturnModal(false);
+      return;
+    }
+
+    const eventRef = doc(db, 'events', eventIdFromUrl);
+    const unsub = onSnapshot(eventRef, (docSnap) => {
+      if (docSnap.exists()) {
+        setReturnEvent({ id: docSnap.id, ...docSnap.data() });
+        setShowReturnModal(true);
+      } else {
+        console.warn(`MonVestiaire - Événement ${eventIdFromUrl} introuvable.`);
+        setShowReturnModal(false);
+      }
+    }, (err) => {
+      console.error("MonVestiaire - Erreur écoute événement pour tenue :", err);
+    });
+
+    return () => unsub();
+  }, []);
 
   // 1. Récupérer costumes from Firestore
   useEffect(() => {
@@ -104,7 +136,7 @@ export default function MonVestiaire({ userId, groupId, userChecklist = {}, user
       {/* Header Bar */}
       <div className="flex justify-between items-center pb-2 border-b-2 border-dashed border-cordel-master-dark/30 gap-3">
         <div>
-          <h2 className="text-base font-cactus font-black tracking-wider text-cordel-wood uppercase">
+          <h2 className="text-base font-heading font-black tracking-wider text-cordel-wood uppercase">
             🎭 Mon Vestiaire & Garde-Robe
           </h2>
           <p className="text-[10px] text-cordel-master-dark opacity-75">
@@ -226,7 +258,7 @@ export default function MonVestiaire({ userId, groupId, userChecklist = {}, user
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-dashed border-cordel-master-dark/15 pb-2.5">
                   <div className="flex flex-col text-left">
                     <div className="flex items-center gap-2">
-                      <h3 className="font-cactus font-black text-sm text-encre-noire uppercase tracking-wider">
+                      <h3 className="font-heading font-black text-sm text-encre-noire uppercase tracking-wider">
                         🎭 {costume.title}
                       </h3>
                       <span className="theme-stamp-badge theme-stamp-badge-wood text-[8px] uppercase">
@@ -357,7 +389,7 @@ export default function MonVestiaire({ userId, groupId, userChecklist = {}, user
                 <span className="theme-stamp-badge theme-stamp-badge-wood text-[8px] uppercase tracking-wider mb-1 inline-block">
                   📌 Élément de costume
                 </span>
-                <h3 className="font-cactus font-black text-base text-encre-noire tracking-wide">
+                <h3 className="font-heading font-black text-base text-encre-noire tracking-wide">
                   {actionPiece.name}
                 </h3>
               </div>
@@ -444,6 +476,19 @@ export default function MonVestiaire({ userId, groupId, userChecklist = {}, user
           onClose={() => {
             setActiveTutorialPiece(null);
             setActiveTutorialWorkshop(null);
+          }}
+        />
+      )}
+
+      {/* Modale de déclaration de retour de costume post-événement */}
+      {showReturnModal && returnEvent && (
+        <PostEventCostumeReturnModal
+          event={returnEvent}
+          userId={userId}
+          userEmail={userEmail}
+          onClose={() => setShowReturnModal(false)}
+          onSuccess={(newStatus) => {
+            console.log(`[MonVestiaire] Déclaration costume enregistrée : ${newStatus}`);
           }}
         />
       )}

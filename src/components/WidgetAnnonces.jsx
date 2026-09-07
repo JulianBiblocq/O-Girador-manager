@@ -7,6 +7,7 @@ import CordelButton from './CordelButton';
 import { XiloMegaphone, XiloClose } from './XiloIcons';
 import { useTranslation } from './LanguageContext';
 import { formatTagGender, getTagId } from '../utils/tagUtils';
+import { showPushActivationConfirmation } from '../utils/pushNotificationHelper';
 import useConfirm from '../hooks/useConfirm';
 
 export default function WidgetAnnonces({ groupId, profileData, role, isSystemAdmin, user, onNavigateToView }) {
@@ -63,6 +64,10 @@ export default function WidgetAnnonces({ groupId, profileData, role, isSystemAdm
           await updateDoc(userRef, {
             fcmTokens: arrayUnion(token)
           });
+          
+          // Déclencher immédiatement la notification de confirmation via le Service Worker
+          await showPushActivationConfirmation(registration);
+
           alert("Notifications activées avec succès !");
           setShowBanner(false);
         } else {

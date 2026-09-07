@@ -114,7 +114,7 @@ export default function FeedbackModal({
               <span className="text-[9px] font-black uppercase tracking-widest text-cordel-wood opacity-80">
                 Support / Feedback
               </span>
-              <h3 className="font-cactus font-bold text-base uppercase tracking-wider text-encre-noire dark:text-cordel-bg">
+              <h3 className="font-heading font-bold text-base uppercase tracking-wider text-encre-noire dark:text-cordel-bg">
                 Un problème ? Une idée ?
               </h3>
             </div>
@@ -132,9 +132,9 @@ export default function FeedbackModal({
         </div>
 
         {success ? (
-          <div className="bg-[#2d6a4f]/10 p-4 rounded border border-[#2d6a4f]/30 text-center flex flex-col items-center gap-2">
+          <div className="bg-[var(--color-cordel-vert)]/10 p-4 rounded border border-[#2d6a4f]/30 text-center flex flex-col items-center gap-2">
             <span className="text-3xl">✅</span>
-            <h4 className="font-black text-[#2d6a4f] dark:text-emerald-400 uppercase tracking-wider text-sm">Message Envoyé</h4>
+            <h4 className="font-black text-[var(--color-cordel-vert)] dark:text-emerald-400 uppercase tracking-wider text-sm">Message Envoyé</h4>
             <p className="text-xs font-semibold text-encre-noire dark:text-cordel-bg opacity-80">
               Merci pour votre retour ! L'équipe technique va l'étudier.
             </p>
@@ -142,7 +142,7 @@ export default function FeedbackModal({
         ) : (
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             {errorMsg && (
-              <div className="bg-[#8b2a1a]/10 p-2 rounded border border-[#8b2a1a]/30 text-xs font-bold text-[#8b2a1a] dark:text-red-400">
+              <div className="bg-[var(--theme-primary)]/10 p-2 rounded border border-[var(--theme-primary)]/30 text-xs font-bold text-[var(--theme-primary)] dark:text-red-400">
                 ⚠️ {errorMsg}
               </div>
             )}
@@ -155,7 +155,7 @@ export default function FeedbackModal({
                   onClick={() => setType('bug')}
                   className={`py-2 px-1 text-[10px] font-black uppercase tracking-wider rounded border-2 transition-all ${
                     type === 'bug' 
-                      ? 'bg-[#8b2a1a] text-white border-[#8b2a1a]' 
+                      ? 'bg-[var(--theme-primary)] text-white border-[var(--theme-primary)]' 
                       : 'bg-transparent border-cordel-master-dark/20 text-encre-noire dark:text-cordel-bg hover:border-cordel-master-dark/50'
                   }`}
                 >
@@ -166,7 +166,7 @@ export default function FeedbackModal({
                   onClick={() => setType('idea')}
                   className={`py-2 px-1 text-[10px] font-black uppercase tracking-wider rounded border-2 transition-all ${
                     type === 'idea' 
-                      ? 'bg-[#2d6a4f] text-white border-[#2d6a4f]' 
+                      ? 'bg-[var(--color-cordel-vert)] text-white border-[#2d6a4f]' 
                       : 'bg-transparent border-cordel-master-dark/20 text-encre-noire dark:text-cordel-bg hover:border-cordel-master-dark/50'
                   }`}
                 >
@@ -177,7 +177,7 @@ export default function FeedbackModal({
                   onClick={() => setType('help')}
                   className={`py-2 px-1 text-[10px] font-black uppercase tracking-wider rounded border-2 transition-all ${
                     type === 'help' 
-                      ? 'bg-[#c05621] text-white border-[#c05621]' 
+                      ? 'bg-[var(--color-cordel-ocre)] text-white border-[#c05621]' 
                       : 'bg-transparent border-cordel-master-dark/20 text-encre-noire dark:text-cordel-bg hover:border-cordel-master-dark/50'
                   }`}
                 >
@@ -228,7 +228,7 @@ export default function FeedbackModal({
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className={`text-xs font-black uppercase tracking-wider px-5 py-2 rounded-[4px_6px_3px_5px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none transition-all border border-encre-noire cursor-pointer bg-[#c05621] hover:brightness-110 text-white disabled:opacity-70 disabled:cursor-wait`}
+                className={`text-xs font-black uppercase tracking-wider px-5 py-2 rounded-[4px_6px_3px_5px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none transition-all border border-encre-noire cursor-pointer bg-[var(--color-cordel-ocre)] hover:brightness-110 text-white disabled:opacity-70 disabled:cursor-wait`}
               >
                 {isSubmitting ? 'Envoi...' : 'Envoyer'}
               </button>

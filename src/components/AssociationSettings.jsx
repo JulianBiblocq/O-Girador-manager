@@ -29,7 +29,8 @@ export default function AssociationSettings({
   profileData,
   permissionsMatrice,
   effectiveUserTags = [],
-  onReopenOnboarding
+  onReopenOnboarding,
+  onNavigateToView
 }) {
   const { t } = useTranslation();
   const hasVitrinePermission = canEditVitrine(
@@ -150,6 +151,7 @@ export default function AssociationSettings({
             handleChange={handleChange}
             saving={saving}
             t={t}
+            onNavigateToTagManager={() => onNavigateToView && onNavigateToView('tag-manager')}
           />
         );
       case 'modules':

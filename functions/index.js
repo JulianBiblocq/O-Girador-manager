@@ -8,6 +8,7 @@
 const functions = require("firebase-functions");
 const { onRequest, onCall, HttpsError } = require("firebase-functions/v2/https");
 const { onDocumentCreated } = require("firebase-functions/v2/firestore");
+const { onSchedule } = require("firebase-functions/v2/scheduler");
 const { defineSecret } = require("firebase-functions/params");
 
 const { getApps, initializeApp } = require("firebase-admin/app");
@@ -105,21 +106,37 @@ async function sendPushToUsers(db, { groupId, recipientId, cibles, title, body, 
     try {
       // Données de navigation transmises au service worker pour le deep linking
       const resolvedData = dataPayload || { url: "/app", click_action: "/app" };
+      const eventUrl = resolvedData.url || "/app";
 
       const multicastMessage = {
         notification: { title: finalTitle, body: truncatedBody },
+        android: {
+          priority: 'high'
+        },
+        apns: {
+          headers: {
+            'apns-priority': '10'
+          }
+        },
         webpush: {
           notification: {
             icon: 'https://organizador.o-girador.com/icon-192.png',
             badge: 'https://organizador.o-girador.com/favicon.svg',
             // Données injectées dans l'objet notification pour le handler notificationclick du SW
-            data: resolvedData
+            data: {
+              ...resolvedData,
+              url: eventUrl
+            }
+          },
+          // Deep Linking FCM WebPush standardisé pour ouvrir l'URL cible
+          fcmOptions: {
+            link: eventUrl
           }
-          // IMPORTANT : PAS de fcmOptions.link ici !
-          // fcmOptions.link court-circuite le listener notificationclick custom du SW,
-          // ce qui empêche l'ouverture de l'app au clic sur la notification mobile.
         },
-        data: resolvedData,
+        data: {
+          ...resolvedData,
+          url: eventUrl
+        },
         tokens: batchTokenStrings
       };
 
@@ -130,7 +147,13 @@ async function sendPushToUsers(db, { groupId, recipientId, cibles, title, body, 
         response.responses.forEach((resp, idx) => {
           if (!resp.success) {
             const errorCode = resp.error?.code || "";
-            if (errorCode === "messaging/invalid-registration-token" || errorCode === "messaging/registration-token-not-registered") {
+            if (
+              errorCode === "messaging/invalid-registration-token" ||
+              errorCode === "messaging/registration-token-not-registered" ||
+              errorCode === "messaging/mismatched-credential" ||
+              errorCode.includes("not-registered") ||
+              errorCode.includes("invalid-registration-token")
+            ) {
               tokensToRemove.push(batch[idx]);
             }
           }
@@ -153,6 +176,7 @@ async function sendPushToUsers(db, { groupId, recipientId, cibles, title, body, 
         await db.collection("users").doc(userId).update({
           fcmTokens: FieldValue.arrayRemove(...invalidTokens)
         });
+        console.log(`sendPushToUsers - Nettoyage automatique : ${invalidTokens.length} token(s) obsolète(s) retiré(s) pour l'utilisateur ${userId}`);
       } catch (err) {
         console.error(`sendPushToUsers - Erreur nettoyage tokens pour ${userId}:`, err);
       }
@@ -259,9 +283,9 @@ exports.onNotificationQueued = onDocumentCreated(
     const notifId = event.params.notifId;
     
     let targetUrl = "/app";
-    if (data.eventId) targetUrl = `/app/events/${data.eventId}`;
+    if (data.url) targetUrl = data.url;
+    else if (data.eventId) targetUrl = `/events/${data.eventId}`;
     else if (data.threadId) targetUrl = `/app/forum/${data.threadId}`;
-    else if (data.url) targetUrl = data.url;
 
     const cibles = data.targetTag ? [data.targetTag] : ["Tous"];
     
@@ -1748,3 +1772,393 @@ exports.telemetry = onRequest({ cors: true }, async (req, res) => {
     return res.status(500).json({ error: 'Internal Server Error' });
   }
 });
+
+/**
+ * Logique d'exécution du cron de relance automatique.
+ * Évalue les règles d'automatisation actives de chaque association,
+ * cible les événements correspondants et expédie les notifications push FCM
+ * avec filtrage strict 'present_only' et deep linking /events/:id.
+ * 
+ * @param {Object} db Instance Firestore Admin SDK
+ * @returns {Promise<Object>} Rapport d'exécution
+ */
+async function runRelanceAutomations(db) {
+  const report = { processedAssociations: 0, triggeredCount: 0, details: [] };
+  const now = new Date();
+  // Date courante normalisée sur le fuseau 'Europe/Paris' (format YYYY-MM-DD)
+  const todayParisStr = new Intl.DateTimeFormat('fr-CA', {
+    timeZone: 'Europe/Paris',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  }).format(now);
+
+  try {
+    const associationsSnap = await db.collection("associations").get();
+    report.processedAssociations = associationsSnap.size;
+
+    for (const assocDoc of associationsSnap.docs) {
+      const groupId = assocDoc.id;
+
+      // 1. Récupération des règles actives sous associations/{groupId}/automation_rules
+      const rulesSnap = await db.collection("associations").doc(groupId)
+        .collection("automation_rules")
+        .where("isActive", "==", true)
+        .get();
+
+      if (rulesSnap.empty) continue;
+
+      // 2. Récupération des événements pour cette association (à venir et passés récents jusqu'à 30 jours)
+      const eventsSnap = await db.collection("events")
+        .where("groupId", "==", groupId)
+        .get();
+
+      if (eventsSnap.empty) continue;
+
+      const eventsList = [];
+      eventsSnap.forEach((evDoc) => {
+        const ev = { id: evDoc.id, ...evDoc.data() };
+        const evEndDateStr = ev.dateFin || ev.date;
+        const evEndDate = new Date(evEndDateStr);
+        // Conserver les événements futurs et passés récents jusqu'à 30 jours pour les relances post-événement
+        if (!isNaN(evEndDate.getTime()) && evEndDate >= new Date(now.getTime() - 30 * 24 * 3600 * 1000)) {
+          eventsList.push(ev);
+        }
+      });
+
+      if (eventsList.length === 0) continue;
+
+      // 3. Récupération des membres actifs de l'association
+      const usersSnap = await db.collection("users")
+        .where("groupId", "==", groupId)
+        .get();
+
+      const activeUsers = [];
+      usersSnap.forEach((uDoc) => {
+        const u = { id: uDoc.id, ...uDoc.data() };
+        if (u.statutActuel !== "archived") {
+          activeUsers.push(u);
+        }
+      });
+
+      // 4. Évaluation règle par règle et événement par événement
+      for (const ruleDoc of rulesSnap.docs) {
+        const rule = ruleDoc.data();
+        const rulePublicCible = rule.publicCible || "tous";
+        const isAfterEvent = rule.pointDeReference === "after_event";
+
+        for (const ev of eventsList) {
+          // Correspondance du type d'événement
+          const matchesType = !rule.typeEvenementCible ||
+                              rule.typeEvenementCible === "tous" ||
+                              rule.typeEvenementCible === ev.type;
+          if (!matchesType) continue;
+
+          // Date de référence (registrationDeadline, after_event ou eventDate)
+          let referenceDateStr = "";
+          if (rule.pointDeReference === "registrationDeadline") {
+            referenceDateStr = ev.dateLimiteInscription || ev.date;
+          } else if (isAfterEvent) {
+            referenceDateStr = ev.dateFin || ev.date;
+          } else {
+            referenceDateStr = ev.date;
+          }
+
+          if (!referenceDateStr) continue;
+
+          // Extraction de la composante jour YYYY-MM-DD
+          const refDayStr = referenceDateStr.split("T")[0];
+          const [rYear, rMonth, rDay] = refDayStr.split("-").map(Number);
+          if (!rYear || !rMonth || !rDay) continue;
+
+          // Calcul de triggerDate à midi UTC pour neutraliser tout décalage d'heure d'hiver/été
+          const triggerDate = new Date(Date.UTC(rYear, rMonth - 1, rDay, 12, 0, 0));
+          if (isAfterEvent) {
+            const delayAfter = parseInt(rule.joursApres || rule.joursAvant, 10) || 1;
+            triggerDate.setUTCDate(triggerDate.getUTCDate() + delayAfter);
+          } else {
+            const delayBefore = parseInt(rule.joursAvant, 10) || 0;
+            triggerDate.setUTCDate(triggerDate.getUTCDate() - delayBefore);
+          }
+          const triggerDateStr = triggerDate.toISOString().split("T")[0];
+
+          if (triggerDateStr === todayParisStr) {
+            const inscriptions = Array.isArray(ev.inscriptions) ? ev.inscriptions : [];
+            let targetUserIds = [];
+
+            if (isAfterEvent) {
+              // Relance retour des costumes post-prestation :
+              // Strictement les participants confirmés (status === 'present')
+              // n'ayant pas encore renseigné leur déclaration de tenue (idempotence)
+              targetUserIds = inscriptions
+                .filter((ins) => {
+                  if (ins.status !== "present" || !ins.userId) return false;
+                  if (ins.costumeStatus || ins.costumeDeclaration) return false;
+                  const isUserActive = activeUsers.some((u) => u.id === ins.userId);
+                  return isUserActive;
+                })
+                .map((ins) => ins.userId);
+            } else if (rulePublicCible === "present_only") {
+              // Filtrage strict : uniquement les inscriptions ayant status === 'present'
+              targetUserIds = inscriptions
+                .filter((ins) => ins.status === "present" && ins.userId)
+                .map((ins) => ins.userId);
+            } else if (rulePublicCible === "inscrits") {
+              // Tous les inscrits
+              targetUserIds = inscriptions
+                .filter((ins) => ins.userId)
+                .map((ins) => ins.userId);
+            } else {
+              // Relances classiques : membres qui n'ont pas encore répondu (ou status === 'pending')
+              const answeredUserIds = new Set(
+                inscriptions
+                  .filter((ins) => ins.status && ins.status !== "pending")
+                  .map((ins) => ins.userId)
+              );
+              targetUserIds = activeUsers
+                .filter((u) => !answeredUserIds.has(u.id))
+                .map((u) => u.id);
+            }
+
+            if (targetUserIds.length > 0) {
+              const eventName = ev.titre || ev.nom || "Événement";
+              const notifTitle = rule.titreNotification || (isAfterEvent ? `🎭 Tenues : ${eventName}` : "Rappel Événement");
+              const notifBody = (rule.messageNotification || (isAfterEvent ? "Merci d'indiquer l'état de ton costume (rendu, à laver ou retouche)." : "Information concernant {{nomEvenement}}"))
+                .replace(/\{\{nomEvenement\}\}/g, eventName);
+              const deepLinkUrl = isAfterEvent ? `/mon-vestiaire?eventId=${ev.id}` : `/events/${ev.id}`;
+
+              for (const recipientId of targetUserIds) {
+                report.triggeredCount++;
+                await sendPushToUsers(db, {
+                  groupId: groupId,
+                  recipientId: recipientId,
+                  title: notifTitle,
+                  body: notifBody,
+                  dataPayload: { url: deepLinkUrl, click_action: deepLinkUrl }
+                });
+              }
+
+              const ruleActionLabel = isAfterEvent ? "retour costumes" : rulePublicCible;
+              report.details.push(
+                `[${groupId}] Règle "${rule.titre}" : ${targetUserIds.length} notification(s) envoyée(s) pour "${eventName}" (${ruleActionLabel})`
+              );
+            }
+          }
+        }
+      }
+    }
+  } catch (err) {
+    console.error("runRelanceAutomations - Erreur globale :", err);
+    report.error = err.message;
+  }
+
+  return report;
+}
+
+/**
+ * Cloud Function Cron planifiée pour l'exécution quotidienne des relances.
+ * Déclenchée chaque matin à 08:00 (fuseau Europe/Paris).
+ */
+exports.cronRelances = onSchedule(
+  {
+    schedule: "0 8 * * *",
+    timeZone: "Europe/Paris",
+    memory: "512MiB",
+    timeoutSeconds: 300
+  },
+  async (event) => {
+    console.log("cronRelances - Démarrage du traitement planifié des relances...");
+    const db = getFirestore();
+    const result = await runRelanceAutomations(db);
+    console.log("cronRelances - Bilan :", result);
+    return result;
+  }
+);
+
+/**
+ * Cloud Function HTTPS / OnCall permettant de déclencher manuellement le moteur de relances.
+ * Utile pour les tests d'intégration et le forçage administrateur.
+ */
+exports.triggerRelancesManual = onCall(async (request) => {
+  if (!request.auth) {
+    throw new HttpsError("unauthenticated", "Authentification requise pour déclencher les relances.");
+  }
+  const db = getFirestore();
+  return await runRelanceAutomations(db);
+});
+
+// ==========================================
+// PHASE 4 SaaS - STRIPE BILLING
+// ==========================================
+const stripeSecret = defineSecret("STRIPE_SECRET_KEY");
+const stripeWebhookSecret = defineSecret("STRIPE_WEBHOOK_SECRET");
+
+/**
+ * Cloud Function HTTPS : Webhook Stripe
+ * Écoute les événements Stripe pour mettre à jour l'abonnement du locataire (tenant).
+ */
+exports.stripeWebhook = onRequest(
+  { secrets: [stripeSecret, stripeWebhookSecret], cors: true },
+  async (req, res) => {
+    // Vérification de la méthode
+    if (req.method !== "POST") {
+      return res.status(405).send("Method Not Allowed");
+    }
+
+    const stripe = require("stripe")(stripeSecret.value());
+    const endpointSecret = stripeWebhookSecret.value();
+    const sig = req.headers["stripe-signature"];
+
+    let event;
+
+    try {
+      // Utilisation du rawBody fourni par Firebase
+      event = stripe.webhooks.constructEvent(req.rawBody, sig, endpointSecret);
+    } catch (err) {
+      console.error(`⚠️ Webhook signature verification failed: ${err.message}`);
+      return res.status(400).send(`Webhook Error: ${err.message}`);
+    }
+
+    const db = getFirestore();
+    const dataObject = event.data.object;
+
+    try {
+      switch (event.type) {
+        case "checkout.session.completed":
+          // Lors de la souscription initiale, on récupère le groupId depuis client_reference_id ou metadata
+          const groupId = dataObject.client_reference_id || (dataObject.metadata && dataObject.metadata.groupId);
+          if (groupId) {
+            await db.collection("associations").doc(groupId).set({
+              subscription: {
+                status: "active",
+                plan: dataObject.metadata?.plan || "standard",
+                stripeCustomerId: dataObject.customer,
+                stripeSubscriptionId: dataObject.subscription,
+                currentPeriodEnd: null,
+                trialEndsAt: null
+              }
+            }, { merge: true });
+            console.log(`✅ Subscription created for group ${groupId}`);
+          }
+          break;
+
+        case "customer.subscription.updated":
+          // Mise à jour de l'abonnement
+          const subId = dataObject.id;
+          const status = dataObject.status; // 'active', 'past_due', 'canceled', etc.
+          const currentPeriodEnd = new Date(dataObject.current_period_end * 1000).toISOString();
+          
+          // Trouver l'association correspondant à cet abonnement
+          const assocSnapshot = await db.collection("associations")
+            .where("subscription.stripeSubscriptionId", "==", subId)
+            .get();
+            
+          if (!assocSnapshot.empty) {
+            const assocDoc = assocSnapshot.docs[0];
+            await assocDoc.ref.update({
+              "subscription.status": status,
+              "subscription.currentPeriodEnd": currentPeriodEnd
+            });
+            console.log(`✅ Subscription ${subId} updated for group ${assocDoc.id} (Status: ${status})`);
+          }
+          break;
+
+        case "customer.subscription.deleted":
+          const deletedSubId = dataObject.id;
+          const delAssocSnapshot = await db.collection("associations")
+            .where("subscription.stripeSubscriptionId", "==", deletedSubId)
+            .get();
+            
+          if (!delAssocSnapshot.empty) {
+            const assocDoc = delAssocSnapshot.docs[0];
+            await assocDoc.ref.update({
+              "subscription.status": "expired"
+            });
+            console.log(`❌ Subscription ${deletedSubId} deleted (expired) for group ${assocDoc.id}`);
+          }
+          break;
+
+        case "invoice.payment_failed":
+          const customerId = dataObject.customer;
+          const failAssocSnapshot = await db.collection("associations")
+            .where("subscription.stripeCustomerId", "==", customerId)
+            .get();
+            
+          if (!failAssocSnapshot.empty) {
+            const assocDoc = failAssocSnapshot.docs[0];
+            await assocDoc.ref.update({
+              "subscription.status": "past_due"
+            });
+            console.log(`⚠️ Payment failed for customer ${customerId}, group ${assocDoc.id} set to past_due`);
+          }
+          break;
+          
+        default:
+          console.log(`Unhandled event type ${event.type}`);
+      }
+      
+      res.json({ received: true });
+    } catch (err) {
+      console.error("Error processing webhook:", err);
+      res.status(500).send("Internal Server Error");
+    }
+  }
+);
+
+/**
+ * Cloud Function Callable : createStripePortalSession
+ * Génère une URL pour le portail client Stripe (Customer Portal).
+ */
+exports.createStripePortalSession = onCall(
+  { secrets: [stripeSecret], cors: true },
+  async (request) => {
+    // Vérification de l'authentification
+    if (!request.auth) {
+      throw new HttpsError("unauthenticated", "Vous devez être connecté.");
+    }
+    
+    const db = getFirestore();
+    const data = request.data || {};
+    const groupId = data.groupId;
+    const returnUrl = data.returnUrl;
+    
+    if (!groupId) {
+      throw new HttpsError("invalid-argument", "Le paramètre groupId est requis.");
+    }
+
+    // Vérifier les droits du demandeur (Doit être admin ou super-admin du groupe)
+    const userDoc = await db.collection("users").doc(request.auth.uid).get();
+    if (!userDoc.exists) {
+      throw new HttpsError("permission-denied", "Utilisateur introuvable.");
+    }
+    const userData = userDoc.data();
+    if (userData.groupId !== groupId || !["admin", "super-admin", "mestre"].includes(userData.role)) {
+      throw new HttpsError("permission-denied", "Accès refusé. Vous devez être administrateur du groupe.");
+    }
+    
+    // Récupérer le Customer ID
+    const assocDoc = await db.collection("associations").doc(groupId).get();
+    if (!assocDoc.exists) {
+      throw new HttpsError("not-found", "Association introuvable.");
+    }
+    const assocData = assocDoc.data();
+    const customerId = assocData.subscription?.stripeCustomerId;
+    
+    if (!customerId) {
+      throw new HttpsError("failed-precondition", "Aucun compte de facturation actif n'est lié à cette association.");
+    }
+    
+    try {
+      const stripe = require("stripe")(stripeSecret.value());
+      const session = await stripe.billingPortal.sessions.create({
+        customer: customerId,
+        return_url: returnUrl || "https://organizador.o-girador.com/settings",
+      });
+      
+      return { url: session.url };
+    } catch (err) {
+      console.error("Erreur createStripePortalSession:", err);
+      throw new HttpsError("internal", "Impossible de générer la session du portail.", err.message);
+    }
+  }
+);

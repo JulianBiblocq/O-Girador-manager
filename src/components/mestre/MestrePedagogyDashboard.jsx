@@ -294,14 +294,14 @@ export default function MestrePedagogyDashboard({ profileData }) {
     }
 
     const pct = Math.round((okCount / total) * 100);
-    let color = 'text-[#8b2a1a]';
-    let bg = 'bg-[#8b2a1a]/10';
+    let color = 'text-[var(--theme-primary)]';
+    let bg = 'bg-[var(--theme-primary)]/10';
     if (pct >= 75) {
-      color = 'text-[#2d6a4f]';
-      bg = 'bg-[#2d6a4f]/20';
+      color = 'text-[var(--color-cordel-vert)]';
+      bg = 'bg-[var(--color-cordel-vert)]/20';
     } else if (pct >= 50) {
-      color = 'text-[#c05621]';
-      bg = 'bg-[#c05621]/20';
+      color = 'text-[var(--color-cordel-ocre)]';
+      bg = 'bg-[var(--color-cordel-ocre)]/20';
     }
 
     return { pct, total, okCount, color, bg, text: `${pct}% (${okCount}/${total})` };
@@ -608,7 +608,7 @@ export default function MestrePedagogyDashboard({ profileData }) {
       {/* ========================================================================= */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b-2 border-dashed border-cordel-master-dark/20 pb-3">
         <div>
-          <h1 className="text-3xl md:text-4xl font-cactus tracking-widest text-cordel-wood uppercase">
+          <h1 className="text-3xl md:text-4xl font-heading tracking-widest text-cordel-wood uppercase">
             📊 Cockpit Pédagogique
           </h1>
           <p className="text-xs md:text-sm text-cordel-master-dark opacity-80 mt-1">

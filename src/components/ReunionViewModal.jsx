@@ -14,7 +14,7 @@ export default function ReunionViewModal({ event, user, profileData, onClose }) 
       <div className="relative w-full max-w-4xl max-h-[90vh] overflow-y-auto varal-scrollbar bg-[var(--cordel-bg)] text-[var(--cordel-text)] rounded-xl shadow-2xl animate-scale-up border-2 border-cordel-master-dark">
         {/* Header */}
         <div className="sticky top-0 z-20 flex items-center justify-between p-4 border-b-2 border-cordel-master-dark bg-[var(--cordel-bg)]">
-          <h2 className="text-2xl font-bold font-cactus tracking-wider text-cordel-master-dark">
+          <h2 className="text-2xl font-bold font-heading tracking-wider text-cordel-master-dark">
             {event.title || event.titre || 'Réunion'} - {new Date(event.date).toLocaleDateString('fr-FR')}
           </h2>
           <button

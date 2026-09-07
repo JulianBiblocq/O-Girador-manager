@@ -1162,7 +1162,7 @@ export default function WidgetDocuments({
                               {/* Draft/Waiting Stamp for Reunions */}
                               {docItem.type === 'reunion' && !docItem.isPublished && (
                                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10 rotate-[10deg] opacity-90">
-                                  <span className="border-[3px] border-[#c05621] text-[#c05621] px-2 py-1 text-[9px] font-black uppercase tracking-widest shadow-[2px_2px_0px_0px_#181716] bg-cordel-bg-light/95 rotate-[-5deg] text-center leading-tight whitespace-pre-line">
+                                  <span className="border-[3px] border-[#c05621] text-[var(--color-cordel-ocre)] px-2 py-1 text-[9px] font-black uppercase tracking-widest shadow-[2px_2px_0px_0px_#181716] bg-cordel-bg-light/95 rotate-[-5deg] text-center leading-tight whitespace-pre-line">
                                     {docItem.isPast ? "En attente\nde CA" : "ODJ\nen cours"}
                                   </span>
                                 </div>
@@ -1622,7 +1622,7 @@ export default function WidgetDocuments({
             <button
               type="button"
               onClick={() => setSelectedToada(null)}
-              className="absolute -top-3 -right-3 z-50 bg-[#8b2a1a] text-white w-8 h-8 rounded-full font-black flex items-center justify-center shadow-lg hover:bg-red-700 transition-colors border-2 border-white cursor-pointer"
+              className="absolute -top-3 -right-3 z-50 bg-[var(--theme-primary)] text-white w-8 h-8 rounded-full font-black flex items-center justify-center shadow-lg hover:bg-red-700 transition-colors border-2 border-white cursor-pointer"
               title="Fermer"
             >
               X
@@ -1650,7 +1650,7 @@ export default function WidgetDocuments({
             <button
               type="button"
               onClick={() => setSelectedCultureCard(null)}
-              className="absolute -top-3 -right-3 z-50 bg-[#8b2a1a] text-white w-8 h-8 rounded-full font-black flex items-center justify-center shadow-lg hover:bg-red-700 transition-colors border-2 border-white cursor-pointer"
+              className="absolute -top-3 -right-3 z-50 bg-[var(--theme-primary)] text-white w-8 h-8 rounded-full font-black flex items-center justify-center shadow-lg hover:bg-red-700 transition-colors border-2 border-white cursor-pointer"
               title="Fermer"
             >
               X

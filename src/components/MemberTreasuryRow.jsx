@@ -144,7 +144,7 @@ function MemberTreasuryRow({
             onChange={handleToggleBaseAdhesion}
             className="theme-checkbox h-3.5 w-3.5 text-cordel-wood focus:ring-cordel-wood border-encre-noire rounded cursor-pointer"
           />
-          <span className={`text-[9px] font-bold ${hasBaseAdhesion ? 'text-[#2d6a4f] font-extrabold' : 'text-neutral-400'}`}>
+          <span className={`text-[9px] font-bold ${hasBaseAdhesion ? 'text-[var(--color-cordel-vert)] font-extrabold' : 'text-neutral-400'}`}>
             {hasBaseAdhesion ? `${baseAdhesionAmount}€` : (t('widgetTreasury.disabledStatus') || 'Non')}
           </span>
         </label>
@@ -231,7 +231,7 @@ function MemberTreasuryRow({
             <button
               type="button"
               onClick={() => setShowCautionPopover(!showCautionPopover)}
-              className="text-[8px] font-black uppercase tracking-wider bg-[#2d6a4f]/15 text-[#2d6a4f] border border-[#2d6a4f]/40 hover:bg-[#2d6a4f]/25 px-2 py-0.5 rounded-[4px_5px_3px_4px] cursor-pointer transition-all flex items-center gap-1 select-none"
+              className="text-[8px] font-black uppercase tracking-wider bg-[var(--color-cordel-vert)]/15 text-[var(--color-cordel-vert)] border border-[#2d6a4f]/40 hover:bg-[var(--color-cordel-vert)]/25 px-2 py-0.5 rounded-[4px_5px_3px_4px] cursor-pointer transition-all flex items-center gap-1 select-none"
               title="Cliquer pour voir ou modifier la caution"
             >
               ✓ Reçue ({caution.totalCaution} €)
@@ -240,7 +240,7 @@ function MemberTreasuryRow({
             <button
               type="button"
               onClick={() => setShowCautionPopover(!showCautionPopover)}
-              className="text-[8px] font-black uppercase tracking-wider bg-[#c05621]/15 text-[#c05621] border border-[#c05621]/40 hover:bg-[#c05621]/25 px-2 py-0.5 rounded-[4px_5px_3px_4px] cursor-pointer transition-all flex items-center gap-1 select-none"
+              className="text-[8px] font-black uppercase tracking-wider bg-[var(--color-cordel-ocre)]/15 text-[var(--color-cordel-ocre)] border border-[#c05621]/40 hover:bg-[var(--color-cordel-ocre)]/25 px-2 py-0.5 rounded-[4px_5px_3px_4px] cursor-pointer transition-all flex items-center gap-1 select-none"
               title="Cliquer pour valider la réception du chèque de caution"
             >
               ⏳ En attente ({caution.totalCaution} €)
@@ -280,7 +280,7 @@ function MemberTreasuryRow({
 
                     <div className="flex items-center justify-between text-[8px] text-cordel-master-dark/70">
                       <span>Type : <strong>{inst.typeGarantie || 'Chèque'}</strong></span>
-                      <span className={`font-black ${isRecue ? 'text-[#2d6a4f]' : 'text-[#c05621]'}`}>
+                      <span className={`font-black ${isRecue ? 'text-[var(--color-cordel-vert)]' : 'text-[var(--color-cordel-ocre)]'}`}>
                         {isRecue ? '✓ Reçue' : '⏳ En attente'}
                       </span>
                     </div>
@@ -302,7 +302,7 @@ function MemberTreasuryRow({
                         <button
                           type="button"
                           onClick={() => handleToggleInstrumentCaution(inst, 'non_recue')}
-                          className="text-[7.5px] font-black uppercase px-2 py-0.5 rounded bg-red-100 text-[#8b2a1a] hover:bg-red-200 border border-[#8b2a1a]/30"
+                          className="text-[7.5px] font-black uppercase px-2 py-0.5 rounded bg-red-100 text-[var(--theme-primary)] hover:bg-red-200 border border-[var(--theme-primary)]/30"
                         >
                           Annuler réception
                         </button>
@@ -310,7 +310,7 @@ function MemberTreasuryRow({
                         <button
                           type="button"
                           onClick={() => handleToggleInstrumentCaution(inst, 'recue')}
-                          className="text-[7.5px] font-black uppercase px-2 py-0.5 rounded bg-[#2d6a4f] text-white hover:bg-[#24543f] shadow-[1px_1px_0px_0px_#181716]"
+                          className="text-[7.5px] font-black uppercase px-2 py-0.5 rounded bg-[var(--color-cordel-vert)] text-white hover:bg-[#24543f] shadow-[1px_1px_0px_0px_#181716]"
                         >
                           ✓ Valider chèque reçu
                         </button>
@@ -333,12 +333,12 @@ function MemberTreasuryRow({
             onChange={(e) => handleUpdateStatus(e.target.value)}
             className={`theme-input text-[8.5px] font-black py-1 px-2 bg-cordel-bg-light cursor-pointer rounded-[4px_6px_3px_5px] border-2 ${
               currentStatus === 'paid' 
-                ? 'border-green-600/40 text-[#2d6a4f]' 
+                ? 'border-green-600/40 text-[var(--color-cordel-vert)]' 
                 : currentStatus === 'partial' 
-                  ? 'border-amber-600/40 text-[#c05621]' 
+                  ? 'border-amber-600/40 text-[var(--color-cordel-ocre)]' 
                   : currentStatus === 'exempted'
                     ? 'border-blue-600/40 text-blue-700 dark:text-blue-400'
-                    : 'border-red-600/40 text-[#8b2a1a]'
+                    : 'border-red-600/40 text-[var(--theme-primary)]'
             }`}
           >
             <option value="unpaid">{t('widgetTreasury.statusUnpaid') || "Non payé"}</option>
@@ -351,7 +351,7 @@ function MemberTreasuryRow({
         {/* Badge informatif HelloAsso avec montant direct et date de validation */}
         {member.helloAssoLastPayment && (
           <div 
-            className="flex items-center gap-1 text-[7.5px] font-bold text-[#2d6a4f] dark:text-emerald-400 bg-[#2d6a4f]/10 dark:bg-emerald-950/30 px-1.5 py-0.5 rounded border border-[#2d6a4f]/30 dark:border-emerald-800/50 select-none"
+            className="flex items-center gap-1 text-[7.5px] font-bold text-[var(--color-cordel-vert)] dark:text-emerald-400 bg-[var(--color-cordel-vert)]/10 dark:bg-emerald-950/30 px-1.5 py-0.5 rounded border border-[#2d6a4f]/30 dark:border-emerald-800/50 select-none"
             title={`Paiement HelloAsso ${member.helloAssoLastPayment.orderId ? `(Réf: ${member.helloAssoLastPayment.orderId})` : ''} enregistré ${member.helloAssoLastPayment.date ? `le ${new Date(member.helloAssoLastPayment.date).toLocaleDateString(locale === 'pt' ? 'pt-BR' : 'fr-FR')}` : ''}`}
           >
             <span>💳</span>

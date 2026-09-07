@@ -383,16 +383,16 @@ export default function SongCard({
               <div className="flex flex-col gap-1 md:gap-2 mt-2 md:mt-0">
                 <div className="flex flex-col items-center justify-center relative w-full">
                   {/* En-tête titre centralisé */}
-                  <h1 className="text-2xl md:text-4xl font-cactus tracking-widest text-[var(--color-cordel-ocre,#c05621)] text-center mt-1 print:mt-0 print:text-3xl relative z-20">
+                  <h1 className="text-2xl md:text-4xl font-heading tracking-widest text-[var(--color-cordel-ocre,#c05621)] text-center mt-1 print:mt-0 print:text-3xl relative z-20">
                     {song?.titre || "Titre Inconnu"}
                   </h1>
                 </div>
                 
                 <div className="flex justify-between items-center mt-1 text-[10px] md:text-sm font-extrabold uppercase tracking-widest text-cordel-master-dark opacity-80">
-                  <div className="text-left font-cactus text-base md:text-xl lowercase tracking-wider capitalize print:text-base">
+                  <div className="text-left font-heading text-base md:text-xl lowercase tracking-wider capitalize print:text-base">
                     {song?.nacao ? renderFlashcard('nacao', <span>{song.nacao}</span>) : null}
                   </div>
-                  <div className="text-right font-cactus text-base md:text-xl lowercase tracking-wider capitalize print:text-base">
+                  <div className="text-right font-heading text-base md:text-xl lowercase tracking-wider capitalize print:text-base">
                     {song?.rythme ? renderFlashcard('rythme', <span>{song.rythme}</span>) : null}
                   </div>
                 </div>
@@ -445,7 +445,7 @@ export default function SongCard({
           {/* Colonne Originale */}
           {getSectionVisibility('originale') && (
             <div className="flex flex-col">
-              <h3 className="bg-[#f5f0e6] dark:bg-[#2a2622] text-encre-noire dark:text-stone-200 text-center py-1 md:py-1.5 px-2 rounded font-cactus tracking-widest text-sm md:text-lg border border-encre-noire/10 mb-2 lowercase capitalize print:text-sm">
+              <h3 className="bg-[#f5f0e6] dark:bg-[#2a2622] text-encre-noire dark:text-stone-200 text-center py-1 md:py-1.5 px-2 rounded font-heading tracking-widest text-sm md:text-lg border border-encre-noire/10 mb-2 lowercase capitalize print:text-sm">
                 Version Originale
               </h3>
               <div className="font-medium text-[11px] md:text-[13px] leading-normal print:leading-snug print:text-[11px] text-encre-noire px-1 md:px-2">
@@ -457,7 +457,7 @@ export default function SongCard({
           {/* Colonne Phonétique */}
           {getSectionVisibility('phonetique') && (
             <div className="flex flex-col">
-              <h3 className="bg-[#f5f0e6] dark:bg-[#2a2622] text-encre-noire dark:text-stone-200 text-center py-1 md:py-1.5 px-2 rounded font-cactus tracking-widest text-sm md:text-lg border border-encre-noire/10 mb-2 lowercase capitalize print:text-sm">
+              <h3 className="bg-[#f5f0e6] dark:bg-[#2a2622] text-encre-noire dark:text-stone-200 text-center py-1 md:py-1.5 px-2 rounded font-heading tracking-widest text-sm md:text-lg border border-encre-noire/10 mb-2 lowercase capitalize print:text-sm">
                 Version Phonétique
               </h3>
               <div className="font-medium text-[11px] md:text-[13px] leading-normal print:leading-snug print:text-[11px] text-encre-noire/80 px-1 md:px-2">
@@ -476,7 +476,7 @@ export default function SongCard({
             {/* Section Traduction */}
             {song?.traduction && getSectionVisibility('traduction') && (
               <div className="mb-4">
-                <h3 className="text-lg md:text-2xl font-cactus tracking-widest text-[var(--color-cordel-ocre,#c05621)] mb-1 lowercase capitalize print:text-lg">
+                <h3 className="text-lg md:text-2xl font-heading tracking-widest text-[var(--color-cordel-ocre,#c05621)] mb-1 lowercase capitalize print:text-lg">
                   Traduction en français
                 </h3>
                 <div className="font-medium text-[11px] md:text-[13px] leading-normal print:leading-snug print:text-[11px] text-encre-noire px-1 md:px-2 italic">

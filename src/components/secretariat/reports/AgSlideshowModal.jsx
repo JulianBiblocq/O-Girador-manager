@@ -146,7 +146,7 @@ export default function AgSlideshowModal({
           <div className="flex flex-col gap-6 w-full text-left">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b-2 border-encre-noire pb-4">
               <div>
-                <span className="text-xs font-black uppercase tracking-widest text-[#2d6a4f] block mb-1">
+                <span className="text-xs font-black uppercase tracking-widest text-[var(--color-cordel-vert)] block mb-1">
                   Assemblée Générale Ordinaire
                 </span>
                 <h1 className="text-2xl sm:text-4xl font-black uppercase text-encre-noire tracking-tight">
@@ -172,7 +172,7 @@ export default function AgSlideshowModal({
                 <span className="text-xs font-black uppercase tracking-wider text-cordel-wood flex items-center gap-1.5">
                   <span>📜</span> Constat officiel du Quorum & Émargement
                 </span>
-                <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded bg-[#2d6a4f] text-white">
+                <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded bg-[var(--color-cordel-vert)] text-white">
                   Quorum Atteint
                 </span>
               </div>
@@ -188,7 +188,7 @@ export default function AgSlideshowModal({
                 </div>
                 <div className="p-3 bg-white border border-encre-noire/20 rounded flex flex-col items-center text-center">
                   <span className="text-[10px] font-black uppercase text-encre-noire/60">Cotisations à jour</span>
-                  <span className="text-2xl font-black text-[#2d6a4f] mt-0.5">
+                  <span className="text-2xl font-black text-[var(--color-cordel-vert)] mt-0.5">
                     {indicators.cotisationsUpToDate} <span className="text-xs font-bold text-encre-noire/50">
                       ({indicators.totalMembers ? Math.round((indicators.cotisationsUpToDate / indicators.totalMembers) * 100) : 0}%)
                     </span>
@@ -216,7 +216,7 @@ export default function AgSlideshowModal({
           <div className="flex flex-col gap-5 w-full text-left">
             <div className="border-b-2 border-encre-noire pb-2.5 flex items-center justify-between">
               <div>
-                <span className="text-xs font-black uppercase tracking-widest text-[#2d6a4f]">
+                <span className="text-xs font-black uppercase tracking-widest text-[var(--color-cordel-vert)]">
                   Orientation & Vision
                 </span>
                 <h2 className="text-xl sm:text-2xl font-black uppercase text-encre-noire">
@@ -232,7 +232,7 @@ export default function AgSlideshowModal({
                   Bilan d'activité & Perspectives associatives
                 </span>
                 {savingField === 'motPresidence' && (
-                  <span className="text-[10px] font-bold text-[#2d6a4f] animate-pulse">
+                  <span className="text-[10px] font-bold text-[var(--color-cordel-vert)] animate-pulse">
                     ✓ Sauvegardé
                   </span>
                 )}
@@ -275,7 +275,7 @@ export default function AgSlideshowModal({
           <div className="flex flex-col gap-5 w-full text-left">
             <div className="border-b-2 border-encre-noire pb-2.5 flex items-center justify-between">
               <div>
-                <span className="text-xs font-black uppercase tracking-widest text-[#2d6a4f]">
+                <span className="text-xs font-black uppercase tracking-widest text-[var(--color-cordel-vert)]">
                   Territoire & Bénévolat
                 </span>
                 <h2 className="text-xl sm:text-2xl font-black uppercase text-encre-noire">
@@ -311,12 +311,12 @@ export default function AgSlideshowModal({
                 {/* Jauge territoriale */}
                 <div className="bg-[#fcf7ed] border-2 border-encre-noire rounded-[6px_10px_7px_9px] p-4 shadow-[2px_2px_0px_0px_#181716] flex flex-col gap-2.5">
                   <div className="flex justify-between items-center text-xs font-black uppercase">
-                    <span className="text-[#2d6a4f]">Commune siège : {territorial.communeMembersPercent}%</span>
-                    <span className="text-[#8b2a1a]">Extérieurs : {territorial.externalMembersPercent}%</span>
+                    <span className="text-[var(--color-cordel-vert)]">Commune siège : {territorial.communeMembersPercent}%</span>
+                    <span className="text-[var(--theme-primary)]">Extérieurs : {territorial.externalMembersPercent}%</span>
                   </div>
                   <div className="w-full h-3 bg-white border border-encre-noire/30 rounded-full overflow-hidden flex">
-                    <div className="h-full bg-[#2d6a4f]" style={{ width: `${territorial.communeMembersPercent}%` }} />
-                    <div className="h-full bg-[#8b2a1a]" style={{ width: `${territorial.externalMembersPercent}%` }} />
+                    <div className="h-full bg-[var(--color-cordel-vert)]" style={{ width: `${territorial.communeMembersPercent}%` }} />
+                    <div className="h-full bg-[var(--theme-primary)]" style={{ width: `${territorial.externalMembersPercent}%` }} />
                   </div>
                   <span className="text-[10px] text-encre-noire/70 font-semibold">
                     Commune du siège : <strong>{territorial.siegeVille || 'Non renseignée'}</strong> ({territorial.communeMembersCount} résidents)
@@ -326,10 +326,10 @@ export default function AgSlideshowModal({
                 {/* Bénévolat Cerfa 12156 */}
                 <div className="bg-emerald-50/90 border-2 border-[#2d6a4f] rounded-[6px_10px_7px_9px] p-4 shadow-[2px_2px_0px_0px_#181716] flex flex-col gap-2">
                   <div className="flex justify-between items-center">
-                    <span className="text-xs font-black uppercase text-[#2d6a4f]">
+                    <span className="text-xs font-black uppercase text-[var(--color-cordel-vert)]">
                       Total Bénévolat Valorisable (Cerfa)
                     </span>
-                    <span className="text-xl font-black text-[#2d6a4f]">
+                    <span className="text-xl font-black text-[var(--color-cordel-vert)]">
                       {volunteering.totalCerfaVolunteerHours} h
                     </span>
                   </div>
@@ -351,7 +351,7 @@ export default function AgSlideshowModal({
           <div className="flex flex-col gap-5 w-full text-left">
             <div className="border-b-2 border-encre-noire pb-2.5 flex items-center justify-between">
               <div>
-                <span className="text-xs font-black uppercase tracking-widest text-[#2d6a4f]">
+                <span className="text-xs font-black uppercase tracking-widest text-[var(--color-cordel-vert)]">
                   Diffusion & Scène
                 </span>
                 <h2 className="text-xl sm:text-2xl font-black uppercase text-encre-noire">
@@ -407,8 +407,8 @@ export default function AgSlideshowModal({
                 </div>
 
                 <div className="p-2.5 bg-white border border-encre-noire/20 rounded text-center">
-                  <span className="text-[9px] font-bold text-[#2d6a4f] uppercase block">Concrétisations</span>
-                  <span className="text-lg font-black text-[#2d6a4f]">
+                  <span className="text-[9px] font-bold text-[var(--color-cordel-vert)] uppercase block">Concrétisations</span>
+                  <span className="text-lg font-black text-[var(--color-cordel-vert)]">
                     {audience.vitrineRequestsConverted} ({audience.conversionRate}%)
                   </span>
                 </div>
@@ -425,7 +425,7 @@ export default function AgSlideshowModal({
           <div className="flex flex-col gap-5 w-full text-left">
             <div className="border-b-2 border-encre-noire pb-2.5 flex items-center justify-between">
               <div>
-                <span className="text-xs font-black uppercase tracking-widest text-[#2d6a4f]">
+                <span className="text-xs font-black uppercase tracking-widest text-[var(--color-cordel-vert)]">
                   Finances & Bilan Comptable
                 </span>
                 <h2 className="text-xl sm:text-2xl font-black uppercase text-encre-noire">
@@ -439,7 +439,7 @@ export default function AgSlideshowModal({
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="p-3.5 bg-emerald-50 border-2 border-emerald-800/40 rounded-[6px_10px_7px_9px] shadow-[2px_2px_0px_0px_#181716] flex flex-col">
                 <span className="text-[10px] font-black uppercase text-emerald-900">Recettes Consolidées</span>
-                <span className="text-xl font-black text-[#2d6a4f] mt-1">
+                <span className="text-xl font-black text-[var(--color-cordel-vert)] mt-1">
                   +{indicators.recettesGlobales?.toLocaleString('fr-FR', { minimumFractionDigits: 2 })} €
                 </span>
                 <span className="text-[9px] text-emerald-900/70 mt-1">Cotisations, billetterie, subventions</span>
@@ -447,7 +447,7 @@ export default function AgSlideshowModal({
 
               <div className="p-3.5 bg-red-50 border-2 border-red-800/40 rounded-[6px_10px_7px_9px] shadow-[2px_2px_0px_0px_#181716] flex flex-col">
                 <span className="text-[10px] font-black uppercase text-red-900">Dépenses Consolidées</span>
-                <span className="text-xl font-black text-[#8b2a1a] mt-1">
+                <span className="text-xl font-black text-[var(--theme-primary)] mt-1">
                   -{indicators.depensesGlobales?.toLocaleString('fr-FR', { minimumFractionDigits: 2 })} €
                 </span>
                 <span className="text-[9px] text-red-900/70 mt-1">Déplacements, matériels, achats</span>
@@ -455,10 +455,10 @@ export default function AgSlideshowModal({
 
               <div className={`p-3.5 border-2 rounded-[6px_10px_7px_9px] shadow-[2px_2px_0px_0px_#181716] flex flex-col justify-between ${
                 indicators.soldeNet > 0
-                  ? 'bg-emerald-100 border-[#2d6a4f] text-[#2d6a4f]'
+                  ? 'bg-emerald-100 border-[#2d6a4f] text-[var(--color-cordel-vert)]'
                   : indicators.soldeNet < 0
-                  ? 'bg-red-100 border-[#8b2a1a] text-[#8b2a1a]'
-                  : 'bg-amber-100 border-[#c05621] text-[#c05621]'
+                  ? 'bg-red-100 border-[var(--theme-primary)] text-[var(--theme-primary)]'
+                  : 'bg-amber-100 border-[#c05621] text-[var(--color-cordel-ocre)]'
               }`}>
                 <div>
                   <span className="text-[10px] font-black uppercase">Résultat Net d'Exercice</span>
@@ -480,7 +480,7 @@ export default function AgSlideshowModal({
                   Commentaire du Trésorier & Affectation du résultat
                 </span>
                 {savingField === 'motTresorier' && (
-                  <span className="text-[10px] font-bold text-[#2d6a4f] animate-pulse">✓ Sauvegardé</span>
+                  <span className="text-[10px] font-bold text-[var(--color-cordel-vert)] animate-pulse">✓ Sauvegardé</span>
                 )}
               </div>
 
@@ -514,7 +514,7 @@ export default function AgSlideshowModal({
           <div className="flex flex-col gap-5 w-full text-left">
             <div className="border-b-2 border-encre-noire pb-2.5 flex items-center justify-between">
               <div>
-                <span className="text-xs font-black uppercase tracking-widest text-[#2d6a4f]">
+                <span className="text-xs font-black uppercase tracking-widest text-[var(--color-cordel-vert)]">
                   Clôture & Avenir
                 </span>
                 <h2 className="text-xl sm:text-2xl font-black uppercase text-encre-noire">
@@ -532,19 +532,19 @@ export default function AgSlideshowModal({
                 </span>
                 <div className="flex justify-between text-xs font-semibold">
                   <span>Costumes confectionnés :</span>
-                  <span className="font-black text-[#2d6a4f]">{indicators.coutureFinished}</span>
+                  <span className="font-black text-[var(--color-cordel-vert)]">{indicators.coutureFinished}</span>
                 </div>
                 <div className="flex justify-between text-xs font-semibold">
                   <span>Chantiers en cours :</span>
-                  <span className="font-black text-[#c05621]">{indicators.coutureInProgress}</span>
+                  <span className="font-black text-[var(--color-cordel-ocre)]">{indicators.coutureInProgress}</span>
                 </div>
                 <div className="flex justify-between text-xs font-semibold border-t border-dashed border-encre-noire/15 pt-1">
                   <span>Instruments opérationnels en service :</span>
-                  <span className="font-black text-[#2d6a4f]">{indicators.instrumentsInService}</span>
+                  <span className="font-black text-[var(--color-cordel-vert)]">{indicators.instrumentsInService}</span>
                 </div>
                 <div className="flex justify-between text-xs font-semibold">
                   <span>Instruments en maintenance / réparation :</span>
-                  <span className="font-black text-[#8b2a1a]">{indicators.instrumentsMaintenance}</span>
+                  <span className="font-black text-[var(--theme-primary)]">{indicators.instrumentsMaintenance}</span>
                 </div>
               </div>
 
@@ -573,7 +573,7 @@ export default function AgSlideshowModal({
 
             {/* Remerciements officiels */}
             <div className="p-4 bg-emerald-50/80 border-2 border-[#2d6a4f] rounded-[6px_10px_7px_9px] text-center flex flex-col items-center gap-1">
-              <span className="text-xs font-black uppercase tracking-widest text-[#2d6a4f]">
+              <span className="text-xs font-black uppercase tracking-widest text-[var(--color-cordel-vert)]">
                 Clôture de l'Assemblée Générale
               </span>
               <p className="text-xs text-emerald-950/80 font-medium leading-relaxed max-w-xl">
@@ -589,7 +589,7 @@ export default function AgSlideshowModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-[#181716] flex flex-col justify-between select-none overflow-y-auto">
+    <div className="fixed inset-0 z-50 bg-[var(--theme-ink)] flex flex-col justify-between select-none overflow-y-auto">
       {/* ========================================================================= */}
       {/* STYLES D'IMPRESSION LIVRET A4 MULTI-PAGES & FORMAT PLEIN ÉCRAN            */}
       {/* ========================================================================= */}
@@ -665,7 +665,7 @@ export default function AgSlideshowModal({
           <button
             type="button"
             onClick={() => window.print()}
-            className="px-3 py-1.5 text-[10px] font-black uppercase tracking-wider bg-[#2d6a4f] hover:bg-emerald-700 border border-emerald-500 rounded text-white cursor-pointer flex items-center gap-1.5 transition-all shadow-xs"
+            className="px-3 py-1.5 text-[10px] font-black uppercase tracking-wider bg-[var(--color-cordel-vert)] hover:bg-emerald-700 border border-emerald-500 rounded text-white cursor-pointer flex items-center gap-1.5 transition-all shadow-xs"
             title="Imprimer le livret A4 d'AG ou exporter en PDF"
           >
             <span>🖨️</span>
@@ -675,7 +675,7 @@ export default function AgSlideshowModal({
           <button
             type="button"
             onClick={onClose}
-            className="w-8 h-8 rounded bg-[#8b2a1a] hover:bg-red-800 text-white font-black text-sm flex items-center justify-center cursor-pointer transition-all ml-1"
+            className="w-8 h-8 rounded bg-[var(--theme-primary)] hover:bg-red-800 text-white font-black text-sm flex items-center justify-center cursor-pointer transition-all ml-1"
             title="Fermer la présentation (Échap)"
           >
             ✕
@@ -688,7 +688,7 @@ export default function AgSlideshowModal({
       {/* ========================================================================= */}
       <div className="screen-only flex-1 flex items-center justify-center p-4 sm:p-8 w-full max-w-5xl mx-auto">
         <div 
-          className="w-full bg-[#f4ecd8] text-[#1a1a1a] border-3 border-encre-noire rounded-[8px_16px_9px_14px] p-6 sm:p-10 shadow-[6px_6px_0px_0px_#181716] min-h-[520px] flex flex-col justify-between animate-fade-in"
+          className="w-full bg-[var(--theme-bg)] text-[#1a1a1a] border-3 border-encre-noire rounded-[8px_16px_9px_14px] p-6 sm:p-10 shadow-[6px_6px_0px_0px_#181716] min-h-[520px] flex flex-col justify-between animate-fade-in"
           style={{ backgroundColor: 'var(--cordel-card-bg, #f4ecd8)', color: 'var(--cordel-text, #1a1a1a)' }}
         >
           {renderSlideContent(currentSlide, false)}
@@ -739,7 +739,7 @@ export default function AgSlideshowModal({
           type="button"
           onClick={() => setCurrentSlide(prev => Math.min(totalSlides, prev + 1))}
           disabled={currentSlide === totalSlides}
-          className="px-4 py-2 text-xs font-black uppercase tracking-wider bg-[#2d6a4f] hover:bg-emerald-700 border border-emerald-500 rounded text-white disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer flex items-center gap-2"
+          className="px-4 py-2 text-xs font-black uppercase tracking-wider bg-[var(--color-cordel-vert)] hover:bg-emerald-700 border border-emerald-500 rounded text-white disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer flex items-center gap-2"
         >
           <span>Suivant ➡️</span>
         </button>

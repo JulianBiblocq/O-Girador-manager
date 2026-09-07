@@ -1051,7 +1051,7 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
               />
               {!selectedEvent && (
                 <div className="absolute inset-0 flex items-center justify-center bg-black/10 backdrop-blur-xs select-none">
-                  <span className="text-xs font-cactus font-black uppercase tracking-wider text-center p-4">
+                  <span className="text-xs font-heading font-black uppercase tracking-wider text-center p-4">
                     Veuillez sélectionner un événement pour générer le visuel
                   </span>
                 </div>

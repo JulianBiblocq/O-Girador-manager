@@ -87,7 +87,7 @@ export default function QcmSequenceurAssociation({ patternId, patternData, audio
           <audio key={audioUrl} controls src={audioUrl} className="w-full max-w-sm rounded outline-none shadow-md" />
         </div>
       ) : (
-        <div className="text-center p-4 text-[#8b2a1a] font-bold border-2 border-dashed border-[#8b2a1a]/50 rounded bg-[#8b2a1a]/10">
+        <div className="text-center p-4 text-[var(--theme-primary)] font-bold border-2 border-dashed border-[var(--theme-primary)]/50 rounded bg-[var(--theme-primary)]/10">
           Aucun fichier audio disponible pour ce rythme.
         </div>
       )}
@@ -100,10 +100,10 @@ export default function QcmSequenceurAssociation({ patternId, patternData, audio
           if (showFeedback) {
             if (choice.isCorrect) {
               containerStyle = "border-[#2d6a4f] shadow-lg z-10 ring-2 ring-[#2d6a4f]"; // Vert
-              bgStyle = "bg-[#2d6a4f]/10";
+              bgStyle = "bg-[var(--color-cordel-vert)]/10";
             } else if (selectedChoice === choice) {
-              containerStyle = "border-[#8b2a1a] shadow-md opacity-80 ring-2 ring-[#8b2a1a]"; // Rouge
-              bgStyle = "bg-[#8b2a1a]/10";
+              containerStyle = "border-[var(--theme-primary)] shadow-md opacity-80 ring-2 ring-[#8b2a1a]"; // Rouge
+              bgStyle = "bg-[var(--theme-primary)]/10";
             } else {
               containerStyle = "border-black/10 opacity-50 grayscale";
             }

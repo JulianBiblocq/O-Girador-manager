@@ -195,7 +195,7 @@ export default function CostumesAdminManager({ groupId }) {
       {/* Top Controls */}
       <div className="flex justify-between items-center pb-2 border-b border-dashed border-cordel-master-dark/15">
         <div>
-          <h3 className="font-cactus font-black text-sm text-cordel-wood uppercase tracking-wider">
+          <h3 className="font-heading font-black text-sm text-cordel-wood uppercase tracking-wider">
             🎭 Gestion des Costumes & Pièces
           </h3>
           <p className="text-[10px] text-cordel-master-dark opacity-75">
@@ -300,7 +300,7 @@ export default function CostumesAdminManager({ groupId }) {
           <div className="relative w-full max-w-2xl max-h-[90vh] flex flex-col rounded-lg bg-cordel-bg shadow-2xl border-2 border-cordel-master-dark/40 overflow-hidden text-left">
             {/* 1. Header (Fixe) */}
             <div className="flex-shrink-0 p-4 border-b-2 border-dashed border-cordel-master-dark/25 flex justify-between items-center bg-cordel-bg">
-              <h3 className="font-cactus font-black text-base text-encre-noire tracking-wider uppercase">
+              <h3 className="font-heading font-black text-base text-encre-noire tracking-wider uppercase">
                 {editingCostume ? '✏️ Modifier le Costume' : '➕ Créer un nouveau Costume'}
               </h3>
               <button

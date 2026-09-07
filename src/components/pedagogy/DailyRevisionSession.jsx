@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../../firebase';
 import AutoEvalQuizContainer from '../student/AutoEvalQuizContainer';
@@ -24,9 +24,15 @@ export default function DailyRevisionSession({ profileData, allSongs = [], allSh
       try {
         // 1. Récupérer l'historique Spaced Repetition de l'utilisateur
         const groupId = profileData?.groupId || 'default';
-        const srRef = doc(db, 'users', profileData.uid, 'spaced_repetition', groupId);
-        const srSnap = await getDoc(srRef);
-        const srData = srSnap.exists() ? srSnap.data() : {};
+        let srData = {};
+        try {
+          const srRef = doc(db, 'users', profileData.uid, 'spaced_repetition', groupId);
+          const srSnap = await getDoc(srRef);
+          srData = srSnap.exists() ? srSnap.data() : {};
+        } catch (_) {
+          // Historique non encore créé ou en attente d'initialisation : repli silencieux
+          srData = {};
+        }
 
         // 2. Générer TOUTES les questions possibles (virtuellement)
         // Note: Pour optimiser à grande échelle, on pourrait le faire par petits lots, 
@@ -62,7 +68,7 @@ export default function DailyRevisionSession({ profileData, allSongs = [], allSh
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
-        <p className="text-cordel-master-dark font-cactus text-xl animate-pulse">Préparation de ta session...</p>
+        <p className="text-cordel-master-dark font-heading text-xl animate-pulse">Préparation de ta session...</p>
       </div>
     );
   }
@@ -75,7 +81,7 @@ export default function DailyRevisionSession({ profileData, allSongs = [], allSh
             <SeloAxeStamp type="orixa" color="#c05621" size="lg" />
           </div>
           
-          <h2 className="text-3xl font-black uppercase font-cactus text-cordel-wood tracking-widest mt-4">
+          <h2 className="text-3xl font-black uppercase font-heading text-cordel-wood tracking-widest mt-4">
             Révision du Jour
           </h2>
           

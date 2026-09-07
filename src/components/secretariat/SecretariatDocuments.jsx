@@ -46,7 +46,7 @@ export default function SecretariatDocuments({ groupId, onBack, initialSubTab = 
           <div className="flex items-center gap-2 text-[10px] font-bold text-cordel-master-dark uppercase tracking-wider mb-1">
             <span>Secrétariat</span>
             <span>›</span>
-            <span className="text-[#2d6a4f] dark:text-emerald-400">Ressources & Liens</span>
+            <span className="text-[var(--color-cordel-vert)] dark:text-emerald-400">Ressources & Liens</span>
           </div>
           <h2 className="text-xl font-black text-cordel-wood uppercase flex items-center gap-2">
             <span>📁</span> Ressources & Liens Partagés
@@ -74,7 +74,7 @@ export default function SecretariatDocuments({ groupId, onBack, initialSubTab = 
           onClick={() => setSubTab('chartes')}
           className={`px-3 py-1.5 text-xs font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer ${
             subTab === 'chartes'
-              ? 'bg-[#2d6a4f] text-white border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
+              ? 'bg-[var(--color-cordel-vert)] text-white border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
               : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
           }`}
         >
@@ -85,7 +85,7 @@ export default function SecretariatDocuments({ groupId, onBack, initialSubTab = 
           onClick={() => setSubTab('liens')}
           className={`px-3 py-1.5 text-xs font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer ${
             subTab === 'liens'
-              ? 'bg-[#2d6a4f] text-white border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
+              ? 'bg-[var(--color-cordel-vert)] text-white border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
               : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
           }`}
         >

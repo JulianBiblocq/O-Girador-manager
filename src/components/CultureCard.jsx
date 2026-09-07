@@ -64,7 +64,7 @@ export default function CultureCard({ culture, isPrintVersion = false }) {
                 {/* Main Title */}
                 <div className="flex flex-col items-center justify-center relative w-full">
                   {/* En-tête titre centralisé */}
-                  <h1 className="text-2xl md:text-4xl font-cactus tracking-widest text-[var(--color-cordel-ocre,#c05621)] text-center mt-1 print:mt-0 print:text-3xl relative z-20">
+                  <h1 className="text-2xl md:text-4xl font-heading tracking-widest text-[var(--color-cordel-ocre,#c05621)] text-center mt-1 print:mt-0 print:text-3xl relative z-20">
                     {culture.titre || "Titre Inconnu"}
                   </h1>
                 </div>
@@ -72,7 +72,7 @@ export default function CultureCard({ culture, isPrintVersion = false }) {
                 {/* Sub-info */}
                 <div className="flex flex-col sm:flex-row justify-center items-center gap-1 sm:gap-4 mt-1 text-[10px] md:text-xs font-extrabold uppercase tracking-widest text-cordel-master-dark opacity-80 text-center">
                   {culture.personnageOrisha && (
-                    <span className="font-cactus text-base md:text-xl lowercase tracking-wider capitalize print:text-base text-encre-noire">
+                    <span className="font-heading text-base md:text-xl lowercase tracking-wider capitalize print:text-base text-encre-noire">
                       {culture.personnageOrisha}
                     </span>
                   )}
@@ -80,7 +80,7 @@ export default function CultureCard({ culture, isPrintVersion = false }) {
                     <span className="hidden sm:inline opacity-50">•</span>
                   )}
                   {culture.villeRegion && (
-                    <span className="font-cactus text-base md:text-xl lowercase tracking-wider capitalize print:text-base">
+                    <span className="font-heading text-base md:text-xl lowercase tracking-wider capitalize print:text-base">
                       📍 {culture.villeRegion}
                     </span>
                   )}
@@ -132,7 +132,7 @@ export default function CultureCard({ culture, isPrintVersion = false }) {
                     {culture.chapitres.map((chap, idx) => (
                       <div key={chap.id || idx} className="flex flex-col gap-2 print:break-inside-avoid">
                         {chap.sousTitre && (
-                          <h3 className="bg-[#f5f0e6] dark:bg-[#2a2622] text-encre-noire dark:text-stone-200 py-1.5 px-3 rounded font-cactus tracking-widest text-lg md:text-xl border border-encre-noire/10 lowercase capitalize print:text-lg inline-block w-fit">
+                          <h3 className="bg-[#f5f0e6] dark:bg-[#2a2622] text-encre-noire dark:text-stone-200 py-1.5 px-3 rounded font-heading tracking-widest text-lg md:text-xl border border-encre-noire/10 lowercase capitalize print:text-lg inline-block w-fit">
                             {chap.sousTitre}
                           </h3>
                         )}
@@ -147,7 +147,7 @@ export default function CultureCard({ culture, isPrintVersion = false }) {
                 {/* Danse & Gestuelle */}
                 {culture.danseData && (culture.danseData.nomDuGeste || culture.danseData.descriptionGeste) && (
                   <div className="mt-4 flex flex-col gap-3 print:break-inside-avoid bg-cordel-wood/5 p-4 rounded-md border border-cordel-wood/20">
-                    <h3 className="bg-[var(--color-cordel-vert,#2d6a4f)] text-[#fdfaf2] py-1.5 px-3 rounded font-cactus tracking-widest text-lg md:text-xl lowercase capitalize inline-block w-fit">
+                    <h3 className="bg-[var(--color-cordel-vert,#2d6a4f)] text-[#fdfaf2] py-1.5 px-3 rounded font-heading tracking-widest text-lg md:text-xl lowercase capitalize inline-block w-fit">
                       {culture.danseData.nomDuGeste || "Gestuelle"}
                     </h3>
                     

@@ -64,7 +64,7 @@ export default function Step3RetourImages({
                   key={evt.id}
                   className={`p-4 rounded-[var(--theme-border-radius,6px)] border transition-all ${
                     isSelected
-                      ? 'border-[#2d6a4f] bg-[#2d6a4f]/5'
+                      ? 'border-[#2d6a4f] bg-[var(--color-cordel-vert)]/5'
                       : 'border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800'
                   }`}
                 >
@@ -123,8 +123,8 @@ export default function Step3RetourImages({
           <span
             className={`text-xs font-bold px-3 py-1 rounded-full ${
               isPhotoCountValid
-                ? 'bg-[#2d6a4f]/15 text-[#2d6a4f] dark:text-emerald-400'
-                : 'bg-[#c05621]/15 text-[#c05621] dark:text-amber-400'
+                ? 'bg-[var(--color-cordel-vert)]/15 text-[var(--color-cordel-vert)] dark:text-emerald-400'
+                : 'bg-[var(--color-cordel-ocre)]/15 text-[var(--color-cordel-ocre)] dark:text-amber-400'
             }`}
           >
             {photoCount} / 4 photos sélectionnées (2 à 4 requis)
@@ -164,7 +164,7 @@ export default function Step3RetourImages({
                   <div
                     className={`absolute top-2 right-2 w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs shadow-md transition-all ${
                       isSelected
-                        ? 'bg-[#2d6a4f] text-white scale-110'
+                        ? 'bg-[var(--color-cordel-vert)] text-white scale-110'
                         : 'bg-black/50 text-white opacity-70 group-hover:opacity-100'
                     }`}
                   >
@@ -178,7 +178,7 @@ export default function Step3RetourImages({
 
         {/* Message d'avertissement sémantique Ocre si nombre invalide */}
         {!isPhotoCountValid && (
-          <p className="mt-2 text-xs font-semibold text-[#c05621] dark:text-amber-400 flex items-center gap-1">
+          <p className="mt-2 text-xs font-semibold text-[var(--color-cordel-ocre)] dark:text-amber-400 flex items-center gap-1">
             <span>⚠️</span> Veuillez sélectionner entre 2 et 4 photos pour finaliser la mise en page de la newsletter.
           </p>
         )}
@@ -195,7 +195,7 @@ export default function Step3RetourImages({
 
         <CordelButton
           onClick={onNext}
-          className="bg-[#2d6a4f] hover:bg-[#23533e] text-white px-6 py-2.5 font-semibold rounded-[var(--theme-border-radius,6px)] flex items-center gap-2"
+          className="bg-[var(--color-cordel-vert)] hover:bg-[#23533e] text-white px-6 py-2.5 font-semibold rounded-[var(--theme-border-radius,6px)] flex items-center gap-2"
         >
           Suivant : Récapitulatif ➔
         </CordelButton>

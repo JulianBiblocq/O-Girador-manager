@@ -5,6 +5,7 @@ import { signOut } from 'firebase/auth';
 import { db, auth, storage, messaging } from '../firebase';
 import { getToken } from 'firebase/messaging';
 import { forceUpdateAndClearCache } from '../utils/pwaUtils';
+import { showPushActivationConfirmation } from '../utils/pushNotificationHelper';
 import useConfirm from './useConfirm';
 
 export const DEFAULT_FIELDS_CONFIG = {
@@ -175,6 +176,10 @@ export function useUserProfile(user, profileData, t) {
           await updateDoc(userRef, {
             fcmTokens: arrayUnion(token)
           });
+          
+          // Déclencher immédiatement la notification de confirmation via le Service Worker
+          await showPushActivationConfirmation(registration);
+
           alert("Notifications activées avec succès !");
         } else {
           console.error("FCM Token not generated.");

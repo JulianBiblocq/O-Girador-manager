@@ -35,7 +35,7 @@ export default function EventRevisionProgram({
   const [activeSignalToZoom, setActiveSignalToZoom] = useState(null);
 
   // Bibliothèque des Signes du Mestre
-  const { signals } = useMestreSignals();
+  const { signals } = useMestreSignals(groupId);
   const signalsMap = useMemo(() => new Map((signals || []).map((s) => [s.id, s])), [signals]);
 
   // Hooks pour le séquenceur

@@ -118,7 +118,7 @@ export default function QuizDistractorManager({ profileData }) {
     <div className="bg-[#fdfaf2] min-h-full">
       <div className="p-4 sm:p-6 bg-white border-b-2 border-encre-noire/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="font-cactus text-3xl font-bold text-encre-noire tracking-wide">Banque de Leurres</h2>
+          <h2 className="font-heading text-3xl font-bold text-encre-noire tracking-wide">Banque de Leurres</h2>
           <p className="text-sm text-encre-noire/70 mt-1">
             Gérez les fausses réponses (distracteurs) injectées dans vos quiz pédagogiques. 
             Une liste riche garantit des QCM variés !

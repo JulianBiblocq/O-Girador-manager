@@ -13,7 +13,7 @@ import useMestreSignals from '../../hooks/useMestreSignals';
 
 export default function AutoEvalQuiz({ sheetData, allSheetsData, profileData, onClose, customQuizData, customQuizId, customQuizTitle, songData, allSongsData, instrumentModelData, allModelsData, qcmGlobalConfig, isSong, rhythms, sequenceurUrl, parsedSequencerJson, targetPartId = null, targetStepIndex = null }) {
   const { t } = useTranslation();
-  const { signals: mestreSignals } = useMestreSignals();
+  const { signals: mestreSignals } = useMestreSignals(profileData?.groupId);
   const [questions, setQuestions] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [score, setScore] = useState(0);
@@ -375,7 +375,7 @@ export default function AutoEvalQuiz({ sheetData, allSheetsData, profileData, on
           </div>
         ) : (
           <div className="flex flex-col items-center gap-4 py-6 text-center">
-            <h3 className="text-2xl font-cactus text-cordel-wood uppercase tracking-widest">
+            <h3 className="text-2xl font-heading text-cordel-wood uppercase tracking-widest">
               Résultat du Quiz
             </h3>
             
@@ -388,19 +388,19 @@ export default function AutoEvalQuiz({ sheetData, allSheetsData, profileData, on
             </p>
 
             {isSuccess ? (
-              <div className="bg-[#2d6a4f]/10 p-4 rounded-lg border border-[#2d6a4f]/30 flex flex-col gap-2 w-full mt-2">
-                <p className="text-xs font-bold text-[#2d6a4f]">
+              <div className="bg-[var(--color-cordel-vert)]/10 p-4 rounded-lg border border-[#2d6a4f]/30 flex flex-col gap-2 w-full mt-2">
+                <p className="text-xs font-bold text-[var(--color-cordel-vert)]">
                   Superbe ! Ton niveau de confort sur ce sujet augmente !
                 </p>
                 <div className="flex justify-center items-center gap-2 text-lg">
                   <span className="opacity-50 blur-[1px]">🌱</span> ➔ <span>🌿</span> ➔ <span className="opacity-50 blur-[1px]">🌳</span>
                 </div>
                 {isSaving && <span className="text-[9px] animate-pulse">Sauvegarde en cours...</span>}
-                {savedSuccess && <span className="text-[10px] font-black uppercase text-[#2d6a4f]">Progression enregistrée ✅</span>}
+                {savedSuccess && <span className="text-[10px] font-black uppercase text-[var(--color-cordel-vert)]">Progression enregistrée ✅</span>}
               </div>
             ) : (
-              <div className="bg-[#c05621]/10 p-4 rounded-lg border border-[#c05621]/30 flex flex-col gap-2 w-full mt-2">
-                <p className="text-xs font-bold text-[#c05621]">
+              <div className="bg-[var(--color-cordel-ocre)]/10 p-4 rounded-lg border border-[#c05621]/30 flex flex-col gap-2 w-full mt-2">
+                <p className="text-xs font-bold text-[var(--color-cordel-ocre)]">
                   Tu y es presque ! N'hésite pas à relire la fiche et à retenter ta chance.
                 </p>
               </div>

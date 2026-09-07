@@ -28,7 +28,7 @@ export default function NewsletterStepper({ currentStep, onSelectStep }) {
                 onClick={() => onSelectStep(step.number)}
                 className={`w-full text-left p-3.5 rounded-[var(--theme-border-radius,8px)] border transition-all duration-200 flex items-center space-x-3 cursor-pointer ${
                   isActive
-                    ? 'border-[#2d6a4f] bg-[#2d6a4f]/10 shadow-sm ring-1 ring-[#2d6a4f]'
+                    ? 'border-[#2d6a4f] bg-[var(--color-cordel-vert)]/10 shadow-sm ring-1 ring-[#2d6a4f]'
                     : isCompleted
                     ? 'border-[#2d6a4f]/50 bg-stone-100 dark:bg-stone-800 opacity-90'
                     : 'border-stone-300 dark:border-stone-700 bg-stone-50 dark:bg-stone-900 opacity-60 hover:opacity-100'
@@ -38,9 +38,9 @@ export default function NewsletterStepper({ currentStep, onSelectStep }) {
                 <div
                   className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm select-none shrink-0 ${
                     isActive
-                      ? 'bg-[#2d6a4f] text-white'
+                      ? 'bg-[var(--color-cordel-vert)] text-white'
                       : isCompleted
-                      ? 'bg-[#2d6a4f]/80 text-white'
+                      ? 'bg-[var(--color-cordel-vert)]/80 text-white'
                       : 'bg-stone-300 dark:bg-stone-700 text-stone-700 dark:text-stone-300'
                   }`}
                 >
@@ -52,7 +52,7 @@ export default function NewsletterStepper({ currentStep, onSelectStep }) {
                   <span
                     className={`font-semibold text-sm truncate ${
                       isActive
-                        ? 'text-[#2d6a4f] dark:text-emerald-400'
+                        ? 'text-[var(--color-cordel-vert)] dark:text-emerald-400'
                         : 'text-stone-800 dark:text-stone-200'
                     }`}
                   >

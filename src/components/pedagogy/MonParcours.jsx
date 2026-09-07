@@ -162,7 +162,7 @@ export default function MonParcours({ profileData, sequenceurUrl, enabledModules
     <div className="flex flex-col gap-6 text-left select-none w-full max-w-5xl mx-auto p-4 md:p-8 force-light-theme">
       {/* En-tête */}
       <div className="flex flex-col items-center gap-2 mb-4">
-        <h1 className="text-3xl md:text-4xl font-cactus tracking-widest text-cordel-wood uppercase flex items-center gap-3">
+        <h1 className="text-3xl md:text-4xl font-heading tracking-widest text-cordel-wood uppercase flex items-center gap-3">
           <XiloCompass size={36} /> Mon Parcours
         </h1>
         <p className="text-xs md:text-sm text-cordel-master-dark opacity-80 text-center max-w-2xl">
@@ -197,7 +197,7 @@ export default function MonParcours({ profileData, sequenceurUrl, enabledModules
           onClick={() => setMainView('ATELIER')}
           className={`px-6 py-3 text-sm md:text-base font-black uppercase tracking-widest rounded-lg transition-all border-2 ${
             mainView === 'ATELIER'
-              ? 'border-[#8b2a1a] bg-[#8b2a1a] text-[#fdfaf2] shadow-[4px_4px_0px_0px_#181716] scale-105' 
+              ? 'border-[var(--theme-primary)] bg-[var(--theme-primary)] text-[#fdfaf2] shadow-[4px_4px_0px_0px_#181716] scale-105' 
               : 'border-encre-noire/20 text-encre-noire/60 bg-white hover:border-encre-noire/50 hover:text-encre-noire'
           }`}
         >

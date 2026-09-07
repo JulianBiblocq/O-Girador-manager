@@ -50,11 +50,11 @@ export default function EventBudgetSection({ event, groupId, onCreateQuote }) {
         <div className="flex flex-col justify-between p-4 rounded-[var(--theme-border-radius,6px)] bg-emerald-50/50 dark:bg-emerald-950/20 border border-dashed border-[#2d6a4f]/30">
           <div>
             <div className="flex items-center justify-between mb-3">
-              <span className="text-xs font-bold uppercase tracking-wider text-[#2d6a4f] dark:text-emerald-400 flex items-center gap-1.5">
+              <span className="text-xs font-bold uppercase tracking-wider text-[var(--color-cordel-vert)] dark:text-emerald-400 flex items-center gap-1.5">
                 <span>📈</span> Revenus (Entrées)
               </span>
               {hasLinkedInvoice && (
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#2d6a4f]/15 text-[#2d6a4f] dark:text-emerald-300">
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[var(--color-cordel-vert)]/15 text-[var(--color-cordel-vert)] dark:text-emerald-300">
                   {linkedInvoice.type === 'facture' ? 'Facturé' : 'Devisé'}
                 </span>
               )}
@@ -65,7 +65,7 @@ export default function EventBudgetSection({ event, groupId, onCreateQuote }) {
               <div className="space-y-1.5 p-3 rounded bg-white/70 dark:bg-stone-800/70 border border-stone-200 dark:border-stone-700">
                 <div className="flex items-center justify-between text-xs font-semibold">
                   <span className="text-stone-700 dark:text-stone-300">{documentStatusLabel}</span>
-                  <span className="font-bold text-[#2d6a4f] dark:text-emerald-400 text-sm">
+                  <span className="font-bold text-[var(--color-cordel-vert)] dark:text-emerald-400 text-sm">
                     {totalRecettes.toFixed(2)} €
                   </span>
                 </div>
@@ -78,10 +78,10 @@ export default function EventBudgetSection({ event, groupId, onCreateQuote }) {
             ) : isLegacyRevenue ? (
               /* Affichage rétrocompatible pour les archives historiques */
               <div className="p-3 rounded bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/50 space-y-1">
-                <span className="text-[11px] font-semibold text-[#c05621] block">
+                <span className="text-[11px] font-semibold text-[var(--color-cordel-ocre)] block">
                   {documentStatusLabel}
                 </span>
-                <span className="font-bold text-[#2d6a4f] dark:text-emerald-400 text-sm block">
+                <span className="font-bold text-[var(--color-cordel-vert)] dark:text-emerald-400 text-sm block">
                   {totalRecettes.toFixed(2)} €
                 </span>
               </div>
@@ -94,7 +94,7 @@ export default function EventBudgetSection({ event, groupId, onCreateQuote }) {
                 {onCreateQuote && (
                   <CordelButton
                     onClick={() => onCreateQuote(event)}
-                    className="bg-[#2d6a4f] hover:bg-[#23533e] text-white px-4 py-2 text-xs font-bold rounded-[var(--theme-border-radius,6px)] flex items-center justify-center gap-2 mx-auto cursor-pointer shadow-sm"
+                    className="bg-[var(--color-cordel-vert)] hover:bg-[#23533e] text-white px-4 py-2 text-xs font-bold rounded-[var(--theme-border-radius,6px)] flex items-center justify-center gap-2 mx-auto cursor-pointer shadow-sm"
                   >
                     <span>📜</span> Créer un devis pour cet événement
                   </CordelButton>
@@ -105,20 +105,20 @@ export default function EventBudgetSection({ event, groupId, onCreateQuote }) {
 
           <div className="mt-4 pt-3 border-t border-dashed border-[#2d6a4f]/20 flex justify-between items-center text-xs font-bold">
             <span className="text-stone-600 dark:text-stone-400">Total Revenus :</span>
-            <span className="text-[#2d6a4f] dark:text-emerald-400 font-extrabold text-sm">
+            <span className="text-[var(--color-cordel-vert)] dark:text-emerald-400 font-extrabold text-sm">
               {totalRecettes.toFixed(2)} €
             </span>
           </div>
         </div>
 
         {/* Section 2 : Dépenses (Sorties d'argent hybrides) */}
-        <div className="flex flex-col justify-between p-4 rounded-[var(--theme-border-radius,6px)] bg-rose-50/50 dark:bg-rose-950/20 border border-dashed border-[#8b2a1a]/30">
+        <div className="flex flex-col justify-between p-4 rounded-[var(--theme-border-radius,6px)] bg-rose-50/50 dark:bg-rose-950/20 border border-dashed border-[var(--theme-primary)]/30">
           <div>
             <div className="flex items-center justify-between mb-3">
-              <span className="text-xs font-bold uppercase tracking-wider text-[#8b2a1a] dark:text-rose-400 flex items-center gap-1.5">
+              <span className="text-xs font-bold uppercase tracking-wider text-[var(--theme-primary)] dark:text-rose-400 flex items-center gap-1.5">
                 <span>📉</span> Dépenses (Sorties Hybrides)
               </span>
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#8b2a1a]/15 text-[#8b2a1a] dark:text-rose-300">
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[var(--theme-primary)]/15 text-[var(--theme-primary)] dark:text-rose-300">
                 Automatique + Manuel
               </span>
             </div>
@@ -135,7 +135,7 @@ export default function EventBudgetSection({ event, groupId, onCreateQuote }) {
                     <span className="text-[10px] text-stone-500">Calcul automatique conducteurs</span>
                   </div>
                 </div>
-                <span className="font-bold text-[#8b2a1a] dark:text-rose-400">
+                <span className="font-bold text-[var(--theme-primary)] dark:text-rose-400">
                   {covoiturageAmount.toFixed(2)} €
                 </span>
               </div>
@@ -154,7 +154,7 @@ export default function EventBudgetSection({ event, groupId, onCreateQuote }) {
                       className="p-2 rounded bg-white/50 dark:bg-stone-800/50 flex justify-between items-center text-xs"
                     >
                       <span className="text-stone-700 dark:text-stone-300">{item.intitule || 'Dépense'}</span>
-                      <span className="font-semibold text-[#8b2a1a] dark:text-rose-400">
+                      <span className="font-semibold text-[var(--theme-primary)] dark:text-rose-400">
                         {(parseFloat(item.montant) || 0).toFixed(2)} €
                       </span>
                     </div>
@@ -164,9 +164,9 @@ export default function EventBudgetSection({ event, groupId, onCreateQuote }) {
             </div>
           </div>
 
-          <div className="mt-4 pt-3 border-t border-dashed border-[#8b2a1a]/20 flex justify-between items-center text-xs font-bold">
+          <div className="mt-4 pt-3 border-t border-dashed border-[var(--theme-primary)]/20 flex justify-between items-center text-xs font-bold">
             <span className="text-stone-600 dark:text-stone-400">Total Sorties :</span>
-            <span className="text-[#8b2a1a] dark:text-rose-400 font-extrabold text-sm">
+            <span className="text-[var(--theme-primary)] dark:text-rose-400 font-extrabold text-sm">
               {totalDepenses.toFixed(2)} €
             </span>
           </div>
@@ -178,14 +178,14 @@ export default function EventBudgetSection({ event, groupId, onCreateQuote }) {
         <div className="flex flex-wrap items-center gap-6 text-xs font-bold">
           <div>
             <span className="text-stone-500 uppercase tracking-wider block text-[10px]">Total Rentrées</span>
-            <span className="text-[#2d6a4f] dark:text-emerald-400 text-base font-extrabold">
+            <span className="text-[var(--color-cordel-vert)] dark:text-emerald-400 text-base font-extrabold">
               {totalRecettes.toFixed(2)} €
             </span>
           </div>
 
           <div>
             <span className="text-stone-500 uppercase tracking-wider block text-[10px]">Total Sorties</span>
-            <span className="text-[#8b2a1a] dark:text-rose-400 text-base font-extrabold">
+            <span className="text-[var(--theme-primary)] dark:text-rose-400 text-base font-extrabold">
               {totalDepenses.toFixed(2)} €
             </span>
           </div>
@@ -198,8 +198,8 @@ export default function EventBudgetSection({ event, groupId, onCreateQuote }) {
           <span
             className={`inline-block px-3 py-1 text-sm font-extrabold rounded-md border ${
               soldeNet >= 0
-                ? 'bg-[#2d6a4f]/15 border-[#2d6a4f] text-[#2d6a4f] dark:text-emerald-400'
-                : 'bg-[#8b2a1a]/15 border-[#8b2a1a] text-[#8b2a1a] dark:text-rose-400'
+                ? 'bg-[var(--color-cordel-vert)]/15 border-[#2d6a4f] text-[var(--color-cordel-vert)] dark:text-emerald-400'
+                : 'bg-[var(--theme-primary)]/15 border-[var(--theme-primary)] text-[var(--theme-primary)] dark:text-rose-400'
             }`}
           >
             {soldeNet >= 0 ? '+' : ''}{soldeNet.toFixed(2)} €

@@ -33,7 +33,7 @@ export default function PieceTutorialModal({ piece, workshop, onClose }) {
             <span className="theme-stamp-badge theme-stamp-badge-wood text-[8px] uppercase tracking-wider mb-1 inline-block">
               🧵 Fiche Livret Atelier Couture
             </span>
-            <h3 className="font-cactus font-black text-lg text-encre-noire tracking-wide flex items-center gap-2 flex-wrap">
+            <h3 className="font-heading font-black text-lg text-encre-noire tracking-wide flex items-center gap-2 flex-wrap">
               {title}
               {cost > 0 && (
                 <span className="theme-stamp-badge theme-stamp-badge-wood text-[9px] font-black uppercase">
@@ -87,7 +87,7 @@ export default function PieceTutorialModal({ piece, workshop, onClose }) {
           {/* Section A: Matériel Nécessaire */}
           {materiel && (
             <div className="bg-amber-50/70 dark:bg-amber-950/30 p-3.5 rounded border border-dashed border-amber-600/30 flex flex-col gap-1 text-xs">
-              <h4 className="font-cactus font-black text-xs text-cordel-wood uppercase tracking-wider flex items-center gap-1.5">
+              <h4 className="font-heading font-black text-xs text-cordel-wood uppercase tracking-wider flex items-center gap-1.5">
                 🧵 Matériel Nécessaire
               </h4>
               <div className="whitespace-pre-wrap font-medium opacity-90 pl-1">
@@ -99,7 +99,7 @@ export default function PieceTutorialModal({ piece, workshop, onClose }) {
           {/* Section B: Étapes de Fabrication */}
           {content && (
             <div className="flex flex-col gap-1 text-xs">
-              <h4 className="font-cactus font-black text-xs text-cordel-wood uppercase tracking-wider flex items-center gap-1.5">
+              <h4 className="font-heading font-black text-xs text-cordel-wood uppercase tracking-wider flex items-center gap-1.5">
                 📜 Étapes de Fabrication pas à pas
               </h4>
               <div className="bg-white/60 dark:bg-black/30 p-4 rounded border border-dashed border-cordel-master-dark/20 whitespace-pre-wrap leading-relaxed">
@@ -111,7 +111,7 @@ export default function PieceTutorialModal({ piece, workshop, onClose }) {
           {/* Section C: Lecteur Vidéo */}
           {embedVideo && (
             <div className="flex flex-col gap-2">
-              <h4 className="font-cactus font-black text-xs text-cordel-wood uppercase tracking-wider flex items-center gap-1.5">
+              <h4 className="font-heading font-black text-xs text-cordel-wood uppercase tracking-wider flex items-center gap-1.5">
                 🎬 Vidéo de démonstration pas à pas
               </h4>
               <div className="relative aspect-video w-full rounded border-2 border-encre-noire overflow-hidden bg-black shadow-md">
@@ -129,7 +129,7 @@ export default function PieceTutorialModal({ piece, workshop, onClose }) {
           {/* Section D: Galerie de Schémas & Photos */}
           {images.length > 0 && (
             <div className="flex flex-col gap-2">
-              <h4 className="font-cactus font-black text-xs text-cordel-wood uppercase tracking-wider flex items-center gap-1.5">
+              <h4 className="font-heading font-black text-xs text-cordel-wood uppercase tracking-wider flex items-center gap-1.5">
                 🖼️ Photos & Schémas de Montage ({images.length})
               </h4>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -154,7 +154,7 @@ export default function PieceTutorialModal({ piece, workshop, onClose }) {
           {/* Section E: PDF Files */}
           {pdfFiles.length > 0 && (
             <div className="flex flex-col gap-2">
-              <h4 className="font-cactus font-black text-xs text-cordel-wood uppercase tracking-wider flex items-center gap-1.5">
+              <h4 className="font-heading font-black text-xs text-cordel-wood uppercase tracking-wider flex items-center gap-1.5">
                 📄 Documents Joints (PDF)
               </h4>
               <div className="flex flex-wrap gap-2">

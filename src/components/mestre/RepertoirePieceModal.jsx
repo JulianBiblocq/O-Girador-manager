@@ -432,6 +432,7 @@ export default function RepertoirePieceModal({
           <RepertoireSignalsPicker
             selectedSignalIds={signalIds}
             onChange={setSignalIds}
+            groupId={groupId}
           />
 
           {/* Notes d'intention / mémo du Mestre */}

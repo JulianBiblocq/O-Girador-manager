@@ -9,6 +9,44 @@
  * @param {Object} event
  * @returns {boolean} true si l'événement est passé
  */
+/**
+ * Vérifie avec précision si un événement est strictement terminé dans le temps.
+ * Reconstitue le timestamp exact (${event.dateFin || event.date}T${event.heureFin || '23:59'})
+ * afin d'éviter qu'un événement du jour ne soit considéré comme passé dès minuit.
+ *
+ * @param {Object} event - L'événement à tester
+ * @param {Date} [referenceDate=new Date()] - Date de comparaison (défaut: maintenant)
+ * @returns {boolean} true si l'événement est strictement passé
+ */
+export const isEventStrictlyPassed = (event, referenceDate = new Date()) => {
+  if (!event) return false;
+  const baseDate = event.dateFin || event.date;
+  if (!baseDate) return false;
+
+  // Si la chaîne ISO contient déjà une heure
+  if (baseDate.includes('T')) {
+    const parsed = new Date(baseDate);
+    return !isNaN(parsed.getTime()) && parsed < referenceDate;
+  }
+
+  // Sinon, reconstitution avec heureFin ou par défaut 23:59:59
+  const timeEnd = event.heureFin || '23:59';
+  const fullEndIso = `${baseDate}T${timeEnd.length === 5 ? timeEnd + ':00' : timeEnd}`;
+  const parsedEnd = new Date(fullEndIso);
+  if (!isNaN(parsedEnd.getTime())) {
+    return parsedEnd < referenceDate;
+  }
+
+  return new Date(baseDate) < referenceDate;
+};
+
+/**
+ * Vérifie si un événement est passé (antérieur à aujourd'hui 00:00:00).
+ * Utilise dateFin si présent, sinon date.
+ * 
+ * @param {Object} event
+ * @returns {boolean} true si l'événement est passé
+ */
 export const isPastEvent = (event) => {
   if (!event || (!event.date && !event.dateFin)) return false;
   

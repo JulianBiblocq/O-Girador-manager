@@ -174,7 +174,7 @@ export default function AtelierCouture({ groupId, activePiece, onClearActivePiec
       {/* Header */}
       <div className="flex justify-between items-center pb-2 border-b-2 border-dashed border-cordel-master-dark/30 gap-3 flex-wrap">
         <div>
-          <h2 className="text-base font-cactus font-black tracking-wider text-cordel-wood uppercase">
+          <h2 className="text-base font-heading font-black tracking-wider text-cordel-wood uppercase">
             🧵 Atelier Couture & Bibliothèque de Tutoriels
           </h2>
           <p className="text-[10px] text-cordel-master-dark opacity-75">
@@ -233,7 +233,7 @@ export default function AtelierCouture({ groupId, activePiece, onClearActivePiec
                 >
                   <div className="flex flex-col gap-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <h3 className="font-cactus font-black text-sm text-encre-noire flex items-center gap-2">
+                      <h3 className="font-heading font-black text-sm text-encre-noire flex items-center gap-2">
                         📖 {ws.titre}
                       </h3>
                       {ws.cost > 0 && (
@@ -290,7 +290,7 @@ export default function AtelierCouture({ groupId, activePiece, onClearActivePiec
                     {/* Section A: Matériel Nécessaire */}
                     {ws.materiel && (
                       <div className="bg-amber-50/70 dark:bg-amber-950/30 p-3.5 rounded border border-dashed border-amber-600/30 flex flex-col gap-1.5">
-                        <h4 className="font-cactus font-black text-xs text-cordel-wood uppercase tracking-wider flex items-center gap-1.5">
+                        <h4 className="font-heading font-black text-xs text-cordel-wood uppercase tracking-wider flex items-center gap-1.5">
                           🧵 Matériel Nécessaire
                         </h4>
                         <div className="whitespace-pre-wrap font-medium opacity-90 pl-1">
@@ -302,7 +302,7 @@ export default function AtelierCouture({ groupId, activePiece, onClearActivePiec
                     {/* Section B: Étapes de Fabrication */}
                     {ws.content && (
                       <div className="flex flex-col gap-1.5">
-                        <h4 className="font-cactus font-black text-xs text-cordel-wood uppercase tracking-wider flex items-center gap-1.5">
+                        <h4 className="font-heading font-black text-xs text-cordel-wood uppercase tracking-wider flex items-center gap-1.5">
                           📜 Étapes de Fabrication pas à pas
                         </h4>
                         <div className="bg-white/60 dark:bg-black/30 p-4 rounded border border-dashed border-cordel-master-dark/20 whitespace-pre-wrap leading-relaxed">
@@ -314,7 +314,7 @@ export default function AtelierCouture({ groupId, activePiece, onClearActivePiec
                     {/* Section C: Video Embed */}
                     {embedVideo && (
                       <div className="flex flex-col gap-2">
-                        <h4 className="font-cactus font-black text-xs text-cordel-wood uppercase tracking-wider flex items-center gap-1.5">
+                        <h4 className="font-heading font-black text-xs text-cordel-wood uppercase tracking-wider flex items-center gap-1.5">
                           🎬 Tutoriel Vidéo de démonstration
                         </h4>
                         <div className="relative w-full aspect-video rounded-lg overflow-hidden border-2 border-encre-noire shadow-md bg-black">
@@ -332,7 +332,7 @@ export default function AtelierCouture({ groupId, activePiece, onClearActivePiec
                     {/* Section D: Images & Patrons Gallery */}
                     {ws.images && ws.images.length > 0 && (
                       <div className="flex flex-col gap-2">
-                        <h4 className="font-cactus font-black text-xs text-cordel-wood uppercase tracking-wider flex items-center gap-1.5">
+                        <h4 className="font-heading font-black text-xs text-cordel-wood uppercase tracking-wider flex items-center gap-1.5">
                           🎨 Patrons & Images de démonstration ({ws.images.length})
                         </h4>
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -355,7 +355,7 @@ export default function AtelierCouture({ groupId, activePiece, onClearActivePiec
                     {/* Section E: PDF Documents */}
                     {ws.pdfFiles && ws.pdfFiles.length > 0 && (
                       <div className="flex flex-col gap-2">
-                        <h4 className="font-cactus font-black text-xs text-cordel-wood uppercase tracking-wider flex items-center gap-1.5">
+                        <h4 className="font-heading font-black text-xs text-cordel-wood uppercase tracking-wider flex items-center gap-1.5">
                           📄 Documents Joints (PDF / Patrons à imprimer)
                         </h4>
                         <div className="flex flex-wrap gap-2">
@@ -402,7 +402,7 @@ export default function AtelierCouture({ groupId, activePiece, onClearActivePiec
                   onClick={() => toggleExpand(key)}
                 >
                   <div className="flex flex-col gap-1 min-w-0">
-                    <h3 className="font-cactus font-black text-sm text-encre-noire flex items-center gap-2">
+                    <h3 className="font-heading font-black text-sm text-encre-noire flex items-center gap-2">
                       {value.titre}
                     </h3>
                     <p className="text-xs text-cordel-master-dark font-medium italic opacity-90">
@@ -417,7 +417,7 @@ export default function AtelierCouture({ groupId, activePiece, onClearActivePiec
                 {isExpanded && (
                   <div className="mt-4 pt-4 border-t-2 border-dashed border-cordel-master-dark/20 flex flex-col gap-4 text-xs text-encre-noire leading-relaxed">
                     <div className="bg-amber-50/70 p-3.5 rounded border border-dashed border-amber-600/30 flex flex-col gap-1.5">
-                      <h4 className="font-cactus font-black text-xs text-cordel-wood uppercase tracking-wider">
+                      <h4 className="font-heading font-black text-xs text-cordel-wood uppercase tracking-wider">
                         🧵 Matériel Nécessaire
                       </h4>
                       <div className="whitespace-pre-wrap font-medium opacity-90 pl-1">
@@ -426,7 +426,7 @@ export default function AtelierCouture({ groupId, activePiece, onClearActivePiec
                     </div>
 
                     <div className="flex flex-col gap-1.5">
-                      <h4 className="font-cactus font-black text-xs text-cordel-wood uppercase tracking-wider">
+                      <h4 className="font-heading font-black text-xs text-cordel-wood uppercase tracking-wider">
                         📜 Étapes de Fabrication pas à pas
                       </h4>
                       <div className="bg-white/60 p-4 rounded border border-dashed border-cordel-master-dark/20 whitespace-pre-wrap leading-relaxed">

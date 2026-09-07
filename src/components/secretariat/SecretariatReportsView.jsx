@@ -500,7 +500,7 @@ export default function SecretariatReportsView({ groupId, onBack }) {
             type="button"
             onClick={() => setIsSlideshowOpen(true)}
             disabled={loading}
-            className="px-3.5 py-1.5 text-[10px] font-black uppercase tracking-wider bg-[#2d6a4f] text-white hover:bg-emerald-800 border-2 border-emerald-950 rounded-[4px_6px_3px_5px] shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none cursor-pointer flex items-center gap-1.5"
+            className="px-3.5 py-1.5 text-[10px] font-black uppercase tracking-wider bg-[var(--color-cordel-vert)] text-white hover:bg-emerald-800 border-2 border-emerald-950 rounded-[4px_6px_3px_5px] shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none cursor-pointer flex items-center gap-1.5"
             title="Lancer la projection grand écran et le livret imprimable d'Assemblée Générale"
           >
             <span>📽️</span>
@@ -653,11 +653,11 @@ export default function SecretariatReportsView({ groupId, onBack }) {
               </div>
               <div className="p-2.5 bg-cordel-bg/80 border border-encre-noire/20 rounded-[4px_6px_3px_5px] flex flex-col items-center text-center">
                 <span className="text-[9px] font-black uppercase text-encre-noire/60">À jour</span>
-                <span className="text-lg font-black text-[#2d6a4f]">{indicators.cotisationsUpToDate}</span>
+                <span className="text-lg font-black text-[var(--color-cordel-vert)]">{indicators.cotisationsUpToDate}</span>
               </div>
               <div className="p-2.5 bg-cordel-bg/80 border border-encre-noire/20 rounded-[4px_6px_3px_5px] flex flex-col items-center text-center">
                 <span className="text-[9px] font-black uppercase text-encre-noire/60">En attente</span>
-                <span className="text-lg font-black text-[#c05621]">{indicators.cotisationsPending}</span>
+                <span className="text-lg font-black text-[var(--color-cordel-ocre)]">{indicators.cotisationsPending}</span>
               </div>
             </div>
 
@@ -791,11 +791,11 @@ export default function SecretariatReportsView({ groupId, onBack }) {
                 </span>
                 <div className="flex justify-between items-center text-xs">
                   <span className="text-encre-noire/80">Costumes confectionnés :</span>
-                  <span className="font-black text-[#2d6a4f]">{indicators.coutureFinished}</span>
+                  <span className="font-black text-[var(--color-cordel-vert)]">{indicators.coutureFinished}</span>
                 </div>
                 <div className="flex justify-between items-center text-xs">
                   <span className="text-encre-noire/80">Chantiers en cours :</span>
-                  <span className="font-black text-[#c05621]">{indicators.coutureInProgress}</span>
+                  <span className="font-black text-[var(--color-cordel-ocre)]">{indicators.coutureInProgress}</span>
                 </div>
                 <div className="flex justify-between items-center text-xs border-t border-dashed border-encre-noire/15 pt-1">
                   <span className="text-encre-noire/80 font-bold">Total projets suivis :</span>
@@ -810,11 +810,11 @@ export default function SecretariatReportsView({ groupId, onBack }) {
                 </span>
                 <div className="flex justify-between items-center text-xs">
                   <span className="text-encre-noire/80">Instruments en service :</span>
-                  <span className="font-black text-[#2d6a4f]">{indicators.instrumentsInService}</span>
+                  <span className="font-black text-[var(--color-cordel-vert)]">{indicators.instrumentsInService}</span>
                 </div>
                 <div className="flex justify-between items-center text-xs">
                   <span className="text-encre-noire/80">En maintenance / HS :</span>
-                  <span className="font-black text-[#8b2a1a]">{indicators.instrumentsMaintenance}</span>
+                  <span className="font-black text-[var(--theme-primary)]">{indicators.instrumentsMaintenance}</span>
                 </div>
                 <div className="flex justify-between items-center text-xs border-t border-dashed border-encre-noire/15 pt-1">
                   <span className="text-encre-noire/80 font-bold">Pièces suivies en stock :</span>
@@ -846,7 +846,7 @@ export default function SecretariatReportsView({ groupId, onBack }) {
                 <span className="text-[10px] font-black uppercase text-emerald-900">
                   {t('secretariatReports.totalRecettes') || "Recettes consolidées"}
                 </span>
-                <span className="text-xl font-black text-[#2d6a4f] mt-1">
+                <span className="text-xl font-black text-[var(--color-cordel-vert)] mt-1">
                   +{indicators.recettesGlobales.toLocaleString('fr-FR', { minimumFractionDigits: 2 })} €
                 </span>
                 <span className="text-[9.5px] text-emerald-900/70 mt-1">Cotisations, billetterie, dons</span>
@@ -856,7 +856,7 @@ export default function SecretariatReportsView({ groupId, onBack }) {
                 <span className="text-[10px] font-black uppercase text-red-900">
                   {t('secretariatReports.totalDepenses') || "Dépenses consolidées"}
                 </span>
-                <span className="text-xl font-black text-[#8b2a1a] mt-1">
+                <span className="text-xl font-black text-[var(--theme-primary)] mt-1">
                   -{indicators.depensesGlobales.toLocaleString('fr-FR', { minimumFractionDigits: 2 })} €
                 </span>
                 <span className="text-[9.5px] text-red-900/70 mt-1">Frais, déplacements, achats</span>
@@ -866,10 +866,10 @@ export default function SecretariatReportsView({ groupId, onBack }) {
             {/* Solde net avec indicateur sémantique Cordel */}
             <div className={`p-3 rounded border-2 flex items-center justify-between ${
               indicators.soldeNet > 0
-                ? 'bg-emerald-100 border-[#2d6a4f] text-[#2d6a4f]'
+                ? 'bg-emerald-100 border-[#2d6a4f] text-[var(--color-cordel-vert)]'
                 : indicators.soldeNet < 0
-                ? 'bg-red-100 border-[#8b2a1a] text-[#8b2a1a]'
-                : 'bg-amber-100 border-[#c05621] text-[#c05621]'
+                ? 'bg-red-100 border-[var(--theme-primary)] text-[var(--theme-primary)]'
+                : 'bg-amber-100 border-[#c05621] text-[var(--color-cordel-ocre)]'
             }`}>
               <div className="flex flex-col">
                 <span className="text-[10px] font-black uppercase tracking-wider">

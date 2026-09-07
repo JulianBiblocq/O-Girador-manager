@@ -40,7 +40,7 @@ export default function Step4Recapitulatif({
 
       {/* Message de succès d'exportation */}
       {exportResult && exportResult.success && (
-        <div className="p-4 rounded-[var(--theme-border-radius,6px)] bg-[#2d6a4f]/15 border border-[#2d6a4f] text-[#2d6a4f] dark:text-emerald-300 space-y-1">
+        <div className="p-4 rounded-[var(--theme-border-radius,6px)] bg-[var(--color-cordel-vert)]/15 border border-[#2d6a4f] text-[var(--color-cordel-vert)] dark:text-emerald-300 space-y-1">
           <div className="font-bold flex items-center gap-2">
             <span>✅</span> Brouillon généré avec succès !
           </div>
@@ -57,7 +57,7 @@ export default function Step4Recapitulatif({
 
       {/* Message d'erreur d'exportation */}
       {exportResult && !exportResult.success && (
-        <div className="p-4 rounded-[var(--theme-border-radius,6px)] bg-[#8b2a1a]/15 border border-[#8b2a1a] text-[#8b2a1a] dark:text-rose-400 space-y-1">
+        <div className="p-4 rounded-[var(--theme-border-radius,6px)] bg-[var(--theme-primary)]/15 border border-[var(--theme-primary)] text-[var(--theme-primary)] dark:text-rose-400 space-y-1">
           <div className="font-bold flex items-center gap-2">
             <span>❌</span> Échec de génération du brouillon
           </div>
@@ -133,7 +133,7 @@ export default function Step4Recapitulatif({
           <button
             type="button"
             onClick={handleCopyJSON}
-            className="text-xs font-semibold text-[#2d6a4f] dark:text-emerald-400 hover:underline flex items-center gap-1"
+            className="text-xs font-semibold text-[var(--color-cordel-vert)] dark:text-emerald-400 hover:underline flex items-center gap-1"
           >
             {copied ? '✓ Copié !' : '📋 Copier le JSON'}
           </button>
@@ -156,7 +156,7 @@ export default function Step4Recapitulatif({
         <CordelButton
           onClick={onSubmit}
           disabled={exporting}
-          className="bg-[#2d6a4f] hover:bg-[#23533e] text-white px-7 py-3 font-bold text-base rounded-[var(--theme-border-radius,6px)] flex items-center gap-2 shadow-md transition-transform active:scale-95 disabled:opacity-50 cursor-pointer"
+          className="bg-[var(--color-cordel-vert)] hover:bg-[#23533e] text-white px-7 py-3 font-bold text-base rounded-[var(--theme-border-radius,6px)] flex items-center gap-2 shadow-md transition-transform active:scale-95 disabled:opacity-50 cursor-pointer"
         >
           {exporting ? (
             <>

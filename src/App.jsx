@@ -7,6 +7,8 @@ import Dashboard from './components/Dashboard';
 import LayoutShell from './components/LayoutShell';
 import { TerminologyProvider } from './components/TerminologyContext';
 import { useTranslation } from './components/LanguageContext';
+import { LicenseProvider } from './context/LicenseContext';
+import { ViewSimulatorProvider } from './context/ViewSimulatorContext';
 import ReloadPrompt from './components/ReloadPrompt';
 import ErrorBoundary from './components/ErrorBoundary';
 import PublicHome from './components/PublicHome';
@@ -1449,10 +1451,6 @@ export default function App() {
         setCurrentPole('accueil');
         setCurrentTab('agenda');
         break;
-      case 'varal':
-        setCurrentPole('accueil');
-        setCurrentTab('varal');
-        break;
       case 'mestre-categories':
         setCurrentPole('mestre');
         setCurrentTab('mestre-categories');
@@ -1502,767 +1500,775 @@ export default function App() {
 
   return (
     <TerminologyProvider majoriteFeminine={majoriteFeminine}>
-      <div style={brandingStyle} className="min-h-screen flex flex-col w-full relative">
-        {accessDeniedToast && (
-          <div className="fixed top-4 right-4 z-50 bg-amber-900 text-amber-100 font-extrabold text-xs px-4 py-3 rounded-[6px_10px_8px_12px] border-2 border-amber-600 shadow-[3px_3px_0px_0px_#181716] flex items-center gap-2 animate-bounce">
-            <span>🔒</span> Accès restreint : vous n'avez pas les droits nécessaires pour accéder à cet espace.
-          </div>
-        )}
-        <LayoutShell 
-          logoUrl={branding?.logoUrl} 
-          associationName={associationName}
-          associationData={associationData}
-          sequenceurUrl={sequenceurUrl}
-          currentPole={currentPole}
-          onNavigateToPole={handleNavigateToPole}
-          currentTab={currentTab}
-          onNavigateToTab={(tab) => {
-            if (tab !== 'forum') {
-              cleanUrlParams(['threadId']);
-            }
-            if (tab !== 'agenda' && tab !== 'studio-events') {
-              cleanUrlParams(['eventId']);
-            }
-            setCurrentTab(tab);
-          }}
-          onOpenPrivateMessages={handleOpenPrivateMessages}
-          polesList={POLES_CONFIG}
-          profileData={profileData}
-          onSignOut={handleSignOut}
-          unreadPrivateMessagesCount={unreadPrivateMessagesCount}
-          permissionsMatrice={permissionsMatrice}
-          enabledModules={enabledModules}
-          activerPresenceEnLigne={activerPresenceEnLigne}
-          breakGlassActive={breakGlassActive}
-          onToggleBreakGlass={handleToggleBreakGlass}
-          tagsDisponibles={tagsDisponibles}
-          isBirthdayMonth={isUserBirthdayMonth}
-          enableIndividualProgression={associationData?.enableIndividualProgression || false}
-        >
-          <React.Suspense fallback={
-            <div className="flex-1 flex flex-col justify-center items-center py-12">
-              <div className="animate-spin text-4xl mb-4 select-none">⏳</div>
-              <span className="font-bold text-xs uppercase tracking-widest text-cordel-master-dark opacity-75">
-                {t('dashboard.loadingPage')}
-              </span>
-            </div>
-          }>
-            <ErrorBoundary key={currentTab || 'principale'} resetKey={currentTab} title={`Section ${currentTab || 'Principale'}`}>
-            {activeMestreEventDetails ? (
-              <EventDetails 
-                event={activeMestreEventDetails}
-                user={user}
-                profileData={profileData}
-                onNavigateToView={handleNavigateToView}
-                onClose={() => setActiveMestreEventDetails(null)}
-                onGoToStageLayoutEditor={handleGoToStageLayoutEditor}
-              />
-            ) : currentTab === 'profil' ? (
-              <UserProfile 
-                user={user} 
-                profileData={profileData} 
-                associationName={associationName}
-                onBack={() => handleNavigateToPole('accueil')} 
-              />
-            ) : currentTab === 'mon-parcours' ? (
-              <MonParcours 
-                profileData={profileData}
-                sequenceurUrl={sequenceurUrl}
-                enabledModules={enabledModules}
-              />
-            ) : currentTab === 'agenda' ? (
-              <WidgetAgenda 
-                role={profileData?.role} 
-                isSystemAdmin={profileData?.isSystemAdmin} 
-                groupId={profileData?.groupId} 
-                user={user} 
-                profileData={profileData} 
-                onNavigateToView={handleNavigateToView} 
-                isFullPage={true}
-              />
-            ) : currentTab === 'atelier' ? (
-              <MonAtelier 
-                user={user} 
-                profileData={profileData} 
-                onBack={() => handleNavigateToPole('accueil')} 
-              />
-            ) : currentTab === 'materiel' ? (
-              <UserMateriel 
-                user={user} 
-                profileData={profileData} 
-                onBack={() => handleNavigateToPole('accueil')} 
-              />
-            ) : currentTab === 'vestiaire' ? (
-              <MonVestiaire 
-                userId={user?.uid} 
-                groupId={profileData?.groupId} 
-                userChecklist={profileData?.userCostumeChecklist || {}} 
-                userSection={profileData?.instrument || ''} 
-                onBack={() => handleNavigateToPole('accueil')} 
-              />
-            ) : currentTab === 'trombinoscope' ? (
-              <Trombinoscope 
-                user={user} 
-                profileData={profileData} 
-                onBack={() => handleNavigateToPole('accueil')} 
-                onContactUser={(otherUserId) => {
-                  setActivePrivateChatUserId(otherUserId);
-                  handleNavigateToView('forum');
-                }}
-              />
-            ) : currentTab === 'forum' ? (
-              <Forum 
-                user={user} 
-                profileData={profileData} 
-                onBack={() => handleNavigateToPole('accueil')} 
-                activePrivateChatUserId={activePrivateChatUserId}
-                initialPrivateMessage={initialPrivateMessage}
-                initialTab={forumInitialTab}
-                onClearActivePrivateChat={() => {
-                  setActivePrivateChatUserId(null);
-                  setInitialPrivateMessage('');
-                }}
-                onOpenStudioForum={() => setCurrentTab('mestre-forum-channels')}
-                breakGlassActive={breakGlassActive}
-              />
-            ) : currentTab === 'atelier-couture' ? (
-              <AtelierCouture
-                groupId={profileData?.groupId}
-                activePiece={activeTutorialPiece}
-                onClearActivePiece={() => setActiveTutorialPiece(null)}
-                onBack={() => handleNavigateToPole('accueil')}
-              />
-            ) : (currentTab === 'export-annu' && (hasAccessSecretariat || hasAccessStudio)) ? (
-              <AdminExport 
-                user={user}
-                profileData={profileData}
-                onBack={() => handleNavigateToPole('accueil')} 
-              />
-            ) : (currentTab === 'system-admin' && hasAccessConfig) ? (
-              <SystemAdminPanel 
-                user={user} 
-                profileData={profileData} 
-                associationName={associationName}
-                onBack={() => handleNavigateToPole('accueil')} 
-                onNavigateToView={handleNavigateToView}
-              />
-            ) : (currentTab === 'tag-manager' && hasAccessConfig) ? (
-              <TagManager 
-                groupId={profileData?.groupId}
-                role={profileData?.role}
-                isSystemAdmin={profileData?.isSystemAdmin}
-                onBack={() => setCurrentTab('export-annu')} 
-              />
-            ) : (currentTab === 'instruments' && hasAccessConfig) ? (
-              <AssociationSettings 
-                groupId={profileData?.groupId}
-                role={profileData?.role}
-                isSystemAdmin={profileData?.isSystemAdmin}
-                mode="instruments-only"
-                activeTabProp="organisation"
-                onBack={() => handleNavigateToPole('accueil')}
-              />
-            ) : (['gigs-pipeline', 'diffusion-contacts'].includes(currentTab) && hasAccessDiffusion) ? (
-              <GigsPipelineManager
-                groupId={profileData?.groupId}
-                initialTab={currentTab === 'diffusion-contacts' ? 'contacts' : 'pipeline'}
-                onBack={() => handleNavigateToPole('accueil')}
-              />
-            ) : (currentTab === 'dashboard-finance' && hasAccessTresorerie) ? (
-              <TreasuryManager 
-                groupId={profileData?.groupId}
-                role={profileData?.role}
-                isSystemAdmin={profileData?.isSystemAdmin}
-                hasAccessTresorerie={hasAccessTresorerie}
-                profileData={profileData}
-                initialTab="dashboard-finance"
-                onBack={() => handleNavigateToPole('accueil')} 
-              />
-            ) : (currentTab === 'cotisations' && hasAccessTresorerie) ? (
-              <TreasuryManager 
-                groupId={profileData?.groupId}
-                role={profileData?.role}
-                isSystemAdmin={profileData?.isSystemAdmin}
-                hasAccessTresorerie={hasAccessTresorerie}
-                profileData={profileData}
-                initialTab="cotisations"
-                onBack={() => handleNavigateToPole('accueil')} 
-              />
-            ) : (currentTab === 'events-finances' && hasAccessTresorerie) ? (
-              <TreasuryManager 
-                groupId={profileData?.groupId}
-                role={profileData?.role}
-                isSystemAdmin={profileData?.isSystemAdmin}
-                hasAccessTresorerie={hasAccessTresorerie}
-                profileData={profileData}
-                initialTab="events-finances"
-                onBack={() => handleNavigateToPole('accueil')} 
-              />
-            ) : (currentTab === 'operations-diverses' && hasAccessTresorerie) ? (
-              <TreasuryManager 
-                groupId={profileData?.groupId}
-                role={profileData?.role}
-                isSystemAdmin={profileData?.isSystemAdmin}
-                hasAccessTresorerie={hasAccessTresorerie}
-                profileData={profileData}
-                initialTab="operations-diverses"
-                onBack={() => handleNavigateToPole('accueil')} 
-              />
-            ) : (currentTab === 'frais-km' && hasAccessTresorerie) ? (
-              <TreasuryManager 
-                groupId={profileData?.groupId}
-                role={profileData?.role}
-                isSystemAdmin={profileData?.isSystemAdmin}
-                hasAccessTresorerie={hasAccessTresorerie}
-                profileData={profileData}
-                initialTab="frais-km"
-                onBack={() => handleNavigateToPole('accueil')} 
-              />
-            ) : (currentTab === 'reports-exports' && hasAccessTresorerie) ? (
-              <TreasuryManager 
-                groupId={profileData?.groupId}
-                role={profileData?.role}
-                isSystemAdmin={profileData?.isSystemAdmin}
-                hasAccessTresorerie={hasAccessTresorerie}
-                profileData={profileData}
-                initialTab="reports-exports"
-                onBack={() => handleNavigateToPole('accueil')} 
-              />
-            ) : (currentTab === 'inventory' && hasAccessLogistique) ? (
-              <InventoryManager 
-                groupId={profileData?.groupId}
-                role={profileData?.role}
-                isSystemAdmin={profileData?.isSystemAdmin}
-                hasAccessLogistique={hasAccessLogistique}
-                hasAccessLutherie={hasAccessLutherie}
-                profileData={profileData}
-                activeTabProp="instruments"
-                hideSubTabs={true}
-                onBack={() => handleNavigateToPole('accueil')} 
-              />
-            ) : (currentTab === 'logistics-pupitres' && hasAccessLogistique) ? (
-              <InventoryManager 
-                groupId={profileData?.groupId}
-                role={profileData?.role}
-                isSystemAdmin={profileData?.isSystemAdmin}
-                hasAccessLogistique={hasAccessLogistique}
-                hasAccessLutherie={hasAccessLutherie}
-                profileData={profileData}
-                activeTabProp="pupitres"
-                hideSubTabs={true}
-                onBack={() => handleNavigateToPole('accueil')} 
-              />
-            ) : (currentTab === 'logistics-kits' && hasAccessLogistique) ? (
-              <InventoryManager 
-                groupId={profileData?.groupId}
-                role={profileData?.role}
-                isSystemAdmin={profileData?.isSystemAdmin}
-                hasAccessLogistique={hasAccessLogistique}
-                hasAccessLutherie={hasAccessLutherie}
-                profileData={profileData}
-                activeTabProp="kits"
-                hideSubTabs={true}
-                onBack={() => handleNavigateToPole('accueil')} 
-              />
-            ) : (currentTab === 'logistics-carpool' && hasAccessLogistique) ? (
-              <InventoryManager 
-                groupId={profileData?.groupId}
-                role={profileData?.role}
-                isSystemAdmin={profileData?.isSystemAdmin}
-                hasAccessLogistique={hasAccessLogistique}
-                hasAccessLutherie={hasAccessLutherie}
-                profileData={profileData}
-                activeTabProp="carpool"
-                hideSubTabs={true}
-                onBack={() => handleNavigateToPole('accueil')} 
-              />
-            ) : (['orders', 'orders-manager'].includes(currentTab) && hasAccessLogistique) ? (
-              <OrdersManager 
-                groupId={profileData?.groupId}
-                role={profileData?.role}
-                isSystemAdmin={profileData?.isSystemAdmin}
-                hasAccessLogistique={hasAccessLogistique}
-                onBack={() => handleNavigateToPole('accueil')} 
-              />
-            ) : (currentTab === 'inventory-projects' && hasAccessLutherie) ? (
-              <InventoryManager 
-                groupId={profileData?.groupId}
-                role={profileData?.role}
-                isSystemAdmin={profileData?.isSystemAdmin}
-                hasAccessLogistique={hasAccessLogistique}
-                hasAccessLutherie={hasAccessLutherie}
-                profileData={profileData}
-                activeTabProp="projects"
-                hideSubTabs={true}
-                onBack={() => handleNavigateToPole('accueil')} 
-                onNavigateToView={handleNavigateToView}
-              />
-            ) : (currentTab === 'instrument-models' && hasAccessLutherie) ? (
-              <div className="max-w-4xl mx-auto w-full">
-                <React.Suspense fallback={<div className="animate-pulse py-6 text-xs text-center opacity-65">Chargement des modèles...</div>}>
-                  <InstrumentModelsManager 
+      <ViewSimulatorProvider
+        realProfileData={profileData}
+        tagsDisponibles={tagsDisponibles}
+        groupId={profileData?.groupId}
+      >
+        <LicenseProvider groupId={profileData?.groupId} associationSettings={associationData}>
+          <div style={brandingStyle} className="min-h-screen flex flex-col w-full relative">
+            {accessDeniedToast && (
+              <div className="fixed top-4 right-4 z-50 bg-amber-900 text-amber-100 font-extrabold text-xs px-4 py-3 rounded-[6px_10px_8px_12px] border-2 border-amber-600 shadow-[3px_3px_0px_0px_#181716] flex items-center gap-2 animate-bounce">
+                <span>🔒</span> Accès restreint : vous n'avez pas les droits nécessaires pour accéder à cet espace.
+              </div>
+            )}
+            <LayoutShell 
+              logoUrl={branding?.logoUrl} 
+              associationName={associationName}
+              associationData={associationData}
+              sequenceurUrl={sequenceurUrl}
+              currentPole={currentPole}
+              onNavigateToPole={handleNavigateToPole}
+              currentTab={currentTab}
+              onNavigateToTab={(tab) => {
+                if (tab !== 'forum') {
+                  cleanUrlParams(['threadId']);
+                }
+                if (tab !== 'agenda' && tab !== 'studio-events') {
+                  cleanUrlParams(['eventId']);
+                }
+                setCurrentTab(tab);
+              }}
+              onOpenPrivateMessages={handleOpenPrivateMessages}
+              polesList={POLES_CONFIG}
+              profileData={profileData}
+              onSignOut={handleSignOut}
+              unreadPrivateMessagesCount={unreadPrivateMessagesCount}
+              permissionsMatrice={permissionsMatrice}
+              enabledModules={enabledModules}
+              activerPresenceEnLigne={activerPresenceEnLigne}
+              breakGlassActive={breakGlassActive}
+              onToggleBreakGlass={handleToggleBreakGlass}
+              tagsDisponibles={tagsDisponibles}
+              isBirthdayMonth={isUserBirthdayMonth}
+              enableIndividualProgression={associationData?.enableIndividualProgression || false}
+            >
+              <React.Suspense fallback={
+                <div className="flex-1 flex flex-col justify-center items-center py-12">
+                  <div className="animate-spin text-4xl mb-4 select-none">⏳</div>
+                  <span className="font-bold text-xs uppercase tracking-widest text-cordel-master-dark opacity-75">
+                    {t('dashboard.loadingPage')}
+                  </span>
+                </div>
+              }>
+                <ErrorBoundary key={currentTab || 'principale'} resetKey={currentTab} title={`Section ${currentTab || 'Principale'}`}>
+                {activeMestreEventDetails ? (
+                  <EventDetails 
+                    event={activeMestreEventDetails}
+                    user={user}
+                    profileData={profileData}
+                    onNavigateToView={handleNavigateToView}
+                    onClose={() => setActiveMestreEventDetails(null)}
+                    onGoToStageLayoutEditor={handleGoToStageLayoutEditor}
+                  />
+                ) : currentTab === 'profil' ? (
+                  <UserProfile 
+                    user={user} 
+                    profileData={profileData} 
+                    associationName={associationName}
+                    onBack={() => handleNavigateToPole('accueil')} 
+                  />
+                ) : currentTab === 'mon-parcours' ? (
+                  <MonParcours 
+                    profileData={profileData}
+                    sequenceurUrl={sequenceurUrl}
+                    enabledModules={enabledModules}
+                  />
+                ) : currentTab === 'agenda' ? (
+                  <WidgetAgenda 
+                    role={profileData?.role} 
+                    isSystemAdmin={profileData?.isSystemAdmin} 
+                    groupId={profileData?.groupId} 
+                    user={user} 
+                    profileData={profileData} 
+                    onNavigateToView={handleNavigateToView} 
+                    isFullPage={true}
+                  />
+                ) : currentTab === 'atelier' ? (
+                  <MonAtelier 
+                    user={user} 
+                    profileData={profileData} 
+                    onBack={() => handleNavigateToPole('accueil')} 
+                  />
+                ) : currentTab === 'materiel' ? (
+                  <UserMateriel 
+                    user={user} 
+                    profileData={profileData} 
+                    onBack={() => handleNavigateToPole('accueil')} 
+                  />
+                ) : currentTab === 'vestiaire' ? (
+                  <MonVestiaire 
+                    userId={user?.uid} 
+                    groupId={profileData?.groupId} 
+                    userChecklist={profileData?.userCostumeChecklist || {}} 
+                    userSection={profileData?.instrument || ''} 
+                    onBack={() => handleNavigateToPole('accueil')} 
+                  />
+                ) : currentTab === 'trombinoscope' ? (
+                  <Trombinoscope 
+                    user={user} 
+                    profileData={profileData} 
+                    onBack={() => handleNavigateToPole('accueil')} 
+                    onContactUser={(otherUserId) => {
+                      setActivePrivateChatUserId(otherUserId);
+                      handleNavigateToView('forum');
+                    }}
+                  />
+                ) : currentTab === 'forum' ? (
+                  <Forum 
+                    user={user} 
+                    profileData={profileData} 
+                    onBack={() => handleNavigateToPole('accueil')} 
+                    activePrivateChatUserId={activePrivateChatUserId}
+                    initialPrivateMessage={initialPrivateMessage}
+                    initialTab={forumInitialTab}
+                    onClearActivePrivateChat={() => {
+                      setActivePrivateChatUserId(null);
+                      setInitialPrivateMessage('');
+                    }}
+                    onOpenStudioForum={() => setCurrentTab('mestre-forum-channels')}
+                    breakGlassActive={breakGlassActive}
+                  />
+                ) : currentTab === 'atelier-couture' ? (
+                  <AtelierCouture
                     groupId={profileData?.groupId}
-                    isAuthorized={hasAccessLutherie}
-                    varalCategories={DEFAULT_VARAL_CATEGORIES}
-                  />
-                </React.Suspense>
-              </div>
-            ) : (currentTab === 'inventory-parts' && hasAccessLutherie) ? (
-              <InventoryManager 
-                groupId={profileData?.groupId}
-                role={profileData?.role}
-                isSystemAdmin={profileData?.isSystemAdmin}
-                hasAccessLogistique={hasAccessLogistique}
-                hasAccessLutherie={hasAccessLutherie}
-                profileData={profileData}
-                activeTabProp="parts"
-                hideSubTabs={true}
-                onBack={() => handleNavigateToPole('accueil')} 
-              />
-            ) : (currentTab === 'inventory-supplies' && hasAccessLutherie) ? (
-              <InventoryManager 
-                groupId={profileData?.groupId}
-                role={profileData?.role}
-                isSystemAdmin={profileData?.isSystemAdmin}
-                hasAccessLogistique={hasAccessLogistique}
-                hasAccessLutherie={hasAccessLutherie}
-                profileData={profileData}
-                activeTabProp="supplies"
-                hideSubTabs={true}
-                onBack={() => handleNavigateToPole('accueil')} 
-              />
-            ) : (currentTab === 'workshop-tools' && hasAccessLutherie) ? (
-              <InventoryManager 
-                groupId={profileData?.groupId}
-                role={profileData?.role}
-                isSystemAdmin={profileData?.isSystemAdmin}
-                hasAccessLogistique={hasAccessLogistique}
-                hasAccessLutherie={hasAccessLutherie}
-                profileData={profileData}
-                activeTabProp="tools"
-                hideSubTabs={true}
-                onBack={() => handleNavigateToPole('accueil')} 
-              />
-            ) : (currentTab === 'varal-lutherie' && hasAccessLutherie) ? (
-              <div className="max-w-4xl mx-auto w-full">
-                <React.Suspense fallback={<div className="animate-pulse py-6 text-xs text-center opacity-65">Chargement du Varal Lutherie...</div>}>
-                  <WidgetDocuments 
-                    role={profileData?.role} 
-                    isSystemAdmin={profileData?.isSystemAdmin} 
-                    groupId={profileData?.groupId} 
-                    user={user}
-                    profileData={profileData}
-                    poleId="lutherie"
-                    userTags={userTags}
-                    canWrite={hasAccessLutherie}
-                    onNavigateToView={handleNavigateToView}
-                  />
-                </React.Suspense>
-              </div>
-            ) : (['wardrobe-projects', 'wardrobe-couture'].includes(currentTab) && hasAccessCostumerie) ? (
-              <WardrobeManager 
-                groupId={profileData?.groupId}
-                role={profileData?.role}
-                isSystemAdmin={profileData?.isSystemAdmin}
-                hasAccessCostumerie={hasAccessCostumerie}
-                hasAccessLogistique={hasAccessLogistique}
-                activeTabProp="couture"
-                hideSubTabs={true}
-                onBack={() => handleNavigateToPole('accueil')}
-              />
-            ) : (currentTab === 'wardrobe-models' && hasAccessCostumerie) ? (
-              <div className="max-w-5xl mx-auto w-full">
-                <React.Suspense fallback={<div className="animate-pulse py-6 text-xs text-center opacity-65">Chargement des modèles de costumes...</div>}>
-                  <CostumesAdminManager groupId={profileData?.groupId} />
-                </React.Suspense>
-              </div>
-            ) : (['wardrobe-pieces', 'wardrobe-inventory', 'wardrobe'].includes(currentTab) && hasAccessCostumerie) ? (
-              <WardrobeManager 
-                groupId={profileData?.groupId}
-                role={profileData?.role}
-                isSystemAdmin={profileData?.isSystemAdmin}
-                hasAccessCostumerie={hasAccessCostumerie}
-                hasAccessLogistique={hasAccessLogistique}
-                activeTabProp="inventory"
-                hideSubTabs={true}
-                onBack={() => handleNavigateToPole('accueil')}
-              />
-            ) : (['wardrobe-supplies', 'costumerie-supplies'].includes(currentTab) && hasAccessCostumerie) ? (
-              <WardrobeManager 
-                groupId={profileData?.groupId}
-                role={profileData?.role}
-                isSystemAdmin={profileData?.isSystemAdmin}
-                hasAccessCostumerie={hasAccessCostumerie}
-                hasAccessLogistique={hasAccessLogistique}
-                activeTabProp="supplies"
-                hideSubTabs={true}
-                onBack={() => handleNavigateToPole('accueil')}
-              />
-            ) : (['wardrobe-tools', 'costumerie-tools'].includes(currentTab) && hasAccessCostumerie) ? (
-              <WardrobeManager 
-                groupId={profileData?.groupId}
-                role={profileData?.role}
-                isSystemAdmin={profileData?.isSystemAdmin}
-                hasAccessCostumerie={hasAccessCostumerie}
-                hasAccessLogistique={hasAccessLogistique}
-                activeTabProp="tools"
-                hideSubTabs={true}
-                onBack={() => handleNavigateToPole('accueil')}
-              />
-            ) : (['wardrobe-sizes', 'costumerie-sizes'].includes(currentTab) && hasAccessCostumerie) ? (
-              <WardrobeManager 
-                groupId={profileData?.groupId}
-                role={profileData?.role}
-                isSystemAdmin={profileData?.isSystemAdmin}
-                hasAccessCostumerie={hasAccessCostumerie}
-                hasAccessLogistique={hasAccessLogistique}
-                activeTabProp="sizes"
-                hideSubTabs={true}
-                onBack={() => handleNavigateToPole('accueil')}
-              />
-            ) : (currentTab === 'varal-costumerie' && hasAccessCostumerie) ? (
-              <div className="max-w-4xl mx-auto w-full">
-                <React.Suspense fallback={<div className="animate-pulse py-6 text-xs text-center opacity-65">Chargement du Varal Costumerie...</div>}>
-                  <WidgetDocuments 
-                    role={profileData?.role} 
-                    isSystemAdmin={profileData?.isSystemAdmin} 
-                    groupId={profileData?.groupId} 
-                    user={user}
-                    profileData={profileData}
-                    poleId="costumerie"
-                    userTags={userTags}
-                    canWrite={hasAccessCostumerie}
-                    onNavigateToView={handleNavigateToView}
-                  />
-                </React.Suspense>
-              </div>
-            ) : (currentTab === 'studio-events' && (hasAccessSecretariat || hasAccessStudio)) ? (
-              <StudioEventsManager 
-                groupId={profileData?.groupId}
-                user={user}
-                profileData={profileData}
-                onBack={() => handleNavigateToPole('accueil')} 
-              />
-            ) : (currentTab === 'studio-social' && hasAccessStudio) ? (
-              <StudioSocial 
-                groupId={profileData?.groupId}
-                role={profileData?.role}
-                isSystemAdmin={profileData?.isSystemAdmin}
-                branding={branding}
-                user={user}
-                profileData={profileData}
-                onBack={() => handleNavigateToPole('accueil')} 
-              />
-            // Pôle Gouvernance (Conseil d'Administration)
-            ) : (currentTab === 'ca-reunions' && hasAccessGouvernance) ? (
-              <ReunionManager 
-                groupId={profileData?.groupId}
-                user={user}
-                profileData={profileData}
-                onBack={() => handleNavigateToPole('accueil')} 
-              />
-            ) : (currentTab === 'ca-reports' && hasAccessGouvernance) ? (
-              <SecretariatReportsView 
-                groupId={profileData?.groupId} 
-                onBack={() => handleNavigateToPole('accueil')} 
-              />
-            ) : (currentTab === 'ca-documents' && hasAccessGouvernance) ? (
-              <div className="max-w-4xl mx-auto w-full">
-                <React.Suspense fallback={<div className="animate-pulse py-6 text-xs text-center opacity-65">Chargement du Registre & Statuts...</div>}>
-                  <WidgetDocuments 
-                    role={profileData?.role} 
-                    isSystemAdmin={profileData?.isSystemAdmin} 
-                    groupId={profileData?.groupId} 
-                    user={user}
-                    profileData={profileData}
-                    poleId="secretariat"
-                    userTags={userTags}
-                    canWrite={hasAccessGouvernance}
-                    onNavigateToView={handleNavigateToView}
-                  />
-                </React.Suspense>
-              </div>
-            ) : (currentTab === 'ca-finances' && hasAccessGouvernance) ? (
-              <TreasuryManager 
-                groupId={profileData?.groupId}
-                role={profileData?.role}
-                isSystemAdmin={profileData?.isSystemAdmin}
-                hasAccessTresorerie={hasAccessTresorerie || hasAccessGouvernance}
-                profileData={profileData}
-                initialTab="dashboard-finance"
-                onBack={() => handleNavigateToPole('accueil')} 
-              />
-            ) : (currentTab === 'ca-prestations' && hasAccessGouvernance) ? (
-              <GigsPipelineManager
-                groupId={profileData?.groupId}
-                initialTab="pipeline"
-                hasAccessDiffusion={hasAccessDiffusion || hasAccessGouvernance}
-                onBack={() => handleNavigateToPole('accueil')} 
-              />
-            ) : (currentTab === 'reunion-manager' && (hasAccessSecretariat || hasAccessStudio)) ? (
-              <ReunionManager 
-                groupId={profileData?.groupId}
-                user={user}
-                profileData={profileData}
-                onBack={() => handleNavigateToPole('accueil')} 
-              />
-            ) : (currentTab === 'newsletter' && hasAccessStudio) ? (
-              <NewsletterPage
-                groupId={profileData?.groupId}
-                onBack={() => handleNavigateToPole('accueil')}
-              />
-            ) : (currentTab === 'studio-communication' && hasAccessStudio) ? (
-              <StudioCommunication 
-                groupId={profileData?.groupId}
-                onBack={() => handleNavigateToPole('accueil')} 
-              />
-            ) : (currentTab === 'activity-reports' && (hasAccessSecretariat || hasAccessStudio)) ? (
-              <ActivityReports 
-                groupId={profileData?.groupId}
-                onBack={() => handleNavigateToPole('accueil')} 
-              />
-            ) : (currentTab === 'secretariat-reports' && hasAccessSecretariat) ? (
-              <SecretariatReportsView 
-                groupId={profileData?.groupId} 
-                onBack={() => handleNavigateToPole('accueil')} 
-              />
-            ) : (currentTab === 'secretariat-documents' && hasAccessSecretariat) ? (
-              <SecretariatDocuments 
-                groupId={profileData?.groupId}
-                onBack={() => handleNavigateToPole('accueil')} 
-              />
-            ) : (currentTab === 'secretariat-lieux' && hasAccessSecretariat) ? (
-              <SecretariatAgendaLieux 
-                groupId={profileData?.groupId}
-                onBack={() => handleNavigateToPole('accueil')} 
-              />
-            ) : (currentTab === 'mestre-forum-channels' && (hasAccessSecretariat || hasAccessStudio || hasAccessMestre || hasAccessForumMod)) ? (
-              <ForumChannelsManager 
-                groupId={profileData?.groupId}
-                role={profileData?.role}
-                isSystemAdmin={profileData?.isSystemAdmin}
-                onBack={() => handleNavigateToPole('accueil')} 
-              />
-            ) : (currentTab === 'varal-secretariat' && (hasAccessSecretariat || hasAccessStudio)) ? (
-              <div className="max-w-4xl mx-auto w-full">
-                <React.Suspense fallback={<div className="animate-pulse py-6 text-xs text-center opacity-65">Chargement du Varal Secrétariat...</div>}>
-                  <WidgetDocuments 
-                    role={profileData?.role} 
-                    isSystemAdmin={profileData?.isSystemAdmin} 
-                    groupId={profileData?.groupId} 
-                    user={user}
-                    profileData={profileData}
-                    poleId="secretariat"
-                    userTags={userTags}
-                    canWrite={hasAccessSecretariat}
-                    onNavigateToView={handleNavigateToView}
-                  />
-                </React.Suspense>
-              </div>
-            ) : (currentTab === 'varal-photos' && hasAccessStudio) ? (
-              <div className="max-w-5xl mx-auto w-full">
-                <React.Suspense fallback={<div className="animate-pulse py-6 text-xs text-center opacity-65">Chargement du Studio Photos...</div>}>
-                  <StudioPhotosView 
-                    groupId={profileData?.groupId} 
-                    user={user}
-                    profileData={profileData}
-                    role={profileData?.role} 
-                    isSystemAdmin={profileData?.isSystemAdmin} 
-                    userTags={userTags}
-                    canWrite={hasAccessStudio}
-                    onNavigateToView={handleNavigateToView}
+                    activePiece={activeTutorialPiece}
+                    onClearActivePiece={() => setActiveTutorialPiece(null)}
                     onBack={() => handleNavigateToPole('accueil')}
                   />
-                </React.Suspense>
-              </div>
-            ) : (currentTab === 'mestre-pedagogy-dashboard' && hasAccessPedagogie) ? (
-              <MestrePedagogyDashboard 
-                profileData={profileData}
-                sequenceurUrl={sequenceurUrl}
-              />
-            ) : (currentTab === 'mestre-pedagogy-manager' && hasAccessPedagogie) ? (
-              <MestrePedagogyManager 
-                profileData={profileData}
-                sequenceurUrl={sequenceurUrl}
-              />
-            ) : (currentTab === 'mestre-pedagogy-qcm' && hasAccessPedagogie) ? (
-              <MestreAutoEvalConfig 
-                profileData={profileData}
-              />
-            ) : (['varal-manager', 'varal-pedagogy'].includes(currentTab) && hasAccessPedagogie) ? (
-              <div className="max-w-4xl mx-auto w-full">
-                <React.Suspense fallback={<div className="animate-pulse py-6 text-xs text-center opacity-65">Chargement du Varal Pédagogique...</div>}>
-                  <WidgetDocuments 
-                    role={profileData?.role} 
-                    isSystemAdmin={profileData?.isSystemAdmin} 
+                ) : (currentTab === 'export-annu' && (hasAccessSecretariat || hasAccessStudio)) ? (
+                  <AdminExport 
+                    user={user}
+                    profileData={profileData}
+                    onBack={() => handleNavigateToPole('accueil')} 
+                  />
+                ) : (currentTab === 'system-admin' && hasAccessConfig) ? (
+                  <SystemAdminPanel 
+                    user={user} 
+                    profileData={profileData} 
+                    associationName={associationName}
+                    onBack={() => handleNavigateToPole('accueil')} 
+                    onNavigateToView={handleNavigateToView}
+                  />
+                ) : (currentTab === 'tag-manager' && hasAccessConfig) ? (
+                  <TagManager 
+                    groupId={profileData?.groupId}
+                    role={profileData?.role}
+                    isSystemAdmin={profileData?.isSystemAdmin}
+                    onBack={() => setCurrentTab('export-annu')} 
+                  />
+                ) : (currentTab === 'instruments' && hasAccessConfig) ? (
+                  <AssociationSettings 
+                    groupId={profileData?.groupId}
+                    role={profileData?.role}
+                    isSystemAdmin={profileData?.isSystemAdmin}
+                    mode="instruments-only"
+                    activeTabProp="organisation"
+                    onBack={() => handleNavigateToPole('accueil')}
+                  />
+                ) : (['gigs-pipeline', 'diffusion-contacts'].includes(currentTab) && hasAccessDiffusion) ? (
+                  <GigsPipelineManager
+                    groupId={profileData?.groupId}
+                    initialTab={currentTab === 'diffusion-contacts' ? 'contacts' : 'pipeline'}
+                    onBack={() => handleNavigateToPole('accueil')}
+                  />
+                ) : (currentTab === 'dashboard-finance' && hasAccessTresorerie) ? (
+                  <TreasuryManager 
+                    groupId={profileData?.groupId}
+                    role={profileData?.role}
+                    isSystemAdmin={profileData?.isSystemAdmin}
+                    hasAccessTresorerie={hasAccessTresorerie}
+                    profileData={profileData}
+                    initialTab="dashboard-finance"
+                    onBack={() => handleNavigateToPole('accueil')} 
+                  />
+                ) : (currentTab === 'cotisations' && hasAccessTresorerie) ? (
+                  <TreasuryManager 
+                    groupId={profileData?.groupId}
+                    role={profileData?.role}
+                    isSystemAdmin={profileData?.isSystemAdmin}
+                    hasAccessTresorerie={hasAccessTresorerie}
+                    profileData={profileData}
+                    initialTab="cotisations"
+                    onBack={() => handleNavigateToPole('accueil')} 
+                  />
+                ) : (currentTab === 'events-finances' && hasAccessTresorerie) ? (
+                  <TreasuryManager 
+                    groupId={profileData?.groupId}
+                    role={profileData?.role}
+                    isSystemAdmin={profileData?.isSystemAdmin}
+                    hasAccessTresorerie={hasAccessTresorerie}
+                    profileData={profileData}
+                    initialTab="events-finances"
+                    onBack={() => handleNavigateToPole('accueil')} 
+                  />
+                ) : (currentTab === 'operations-diverses' && hasAccessTresorerie) ? (
+                  <TreasuryManager 
+                    groupId={profileData?.groupId}
+                    role={profileData?.role}
+                    isSystemAdmin={profileData?.isSystemAdmin}
+                    hasAccessTresorerie={hasAccessTresorerie}
+                    profileData={profileData}
+                    initialTab="operations-diverses"
+                    onBack={() => handleNavigateToPole('accueil')} 
+                  />
+                ) : (currentTab === 'frais-km' && hasAccessTresorerie) ? (
+                  <TreasuryManager 
+                    groupId={profileData?.groupId}
+                    role={profileData?.role}
+                    isSystemAdmin={profileData?.isSystemAdmin}
+                    hasAccessTresorerie={hasAccessTresorerie}
+                    profileData={profileData}
+                    initialTab="frais-km"
+                    onBack={() => handleNavigateToPole('accueil')} 
+                  />
+                ) : (currentTab === 'reports-exports' && hasAccessTresorerie) ? (
+                  <TreasuryManager 
+                    groupId={profileData?.groupId}
+                    role={profileData?.role}
+                    isSystemAdmin={profileData?.isSystemAdmin}
+                    hasAccessTresorerie={hasAccessTresorerie}
+                    profileData={profileData}
+                    initialTab="reports-exports"
+                    onBack={() => handleNavigateToPole('accueil')} 
+                  />
+                ) : (currentTab === 'inventory' && hasAccessLogistique) ? (
+                  <InventoryManager 
+                    groupId={profileData?.groupId}
+                    role={profileData?.role}
+                    isSystemAdmin={profileData?.isSystemAdmin}
+                    hasAccessLogistique={hasAccessLogistique}
+                    hasAccessLutherie={hasAccessLutherie}
+                    profileData={profileData}
+                    activeTabProp="instruments"
+                    hideSubTabs={true}
+                    onBack={() => handleNavigateToPole('accueil')} 
+                  />
+                ) : (currentTab === 'logistics-pupitres' && hasAccessLogistique) ? (
+                  <InventoryManager 
+                    groupId={profileData?.groupId}
+                    role={profileData?.role}
+                    isSystemAdmin={profileData?.isSystemAdmin}
+                    hasAccessLogistique={hasAccessLogistique}
+                    hasAccessLutherie={hasAccessLutherie}
+                    profileData={profileData}
+                    activeTabProp="pupitres"
+                    hideSubTabs={true}
+                    onBack={() => handleNavigateToPole('accueil')} 
+                  />
+                ) : (currentTab === 'logistics-kits' && hasAccessLogistique) ? (
+                  <InventoryManager 
+                    groupId={profileData?.groupId}
+                    role={profileData?.role}
+                    isSystemAdmin={profileData?.isSystemAdmin}
+                    hasAccessLogistique={hasAccessLogistique}
+                    hasAccessLutherie={hasAccessLutherie}
+                    profileData={profileData}
+                    activeTabProp="kits"
+                    hideSubTabs={true}
+                    onBack={() => handleNavigateToPole('accueil')} 
+                  />
+                ) : (currentTab === 'logistics-carpool' && hasAccessLogistique) ? (
+                  <InventoryManager 
+                    groupId={profileData?.groupId}
+                    role={profileData?.role}
+                    isSystemAdmin={profileData?.isSystemAdmin}
+                    hasAccessLogistique={hasAccessLogistique}
+                    hasAccessLutherie={hasAccessLutherie}
+                    profileData={profileData}
+                    activeTabProp="carpool"
+                    hideSubTabs={true}
+                    onBack={() => handleNavigateToPole('accueil')} 
+                  />
+                ) : (['orders', 'orders-manager'].includes(currentTab) && hasAccessLogistique) ? (
+                  <OrdersManager 
+                    groupId={profileData?.groupId}
+                    role={profileData?.role}
+                    isSystemAdmin={profileData?.isSystemAdmin}
+                    hasAccessLogistique={hasAccessLogistique}
+                    onBack={() => handleNavigateToPole('accueil')} 
+                  />
+                ) : (currentTab === 'inventory-projects' && hasAccessLutherie) ? (
+                  <InventoryManager 
+                    groupId={profileData?.groupId}
+                    role={profileData?.role}
+                    isSystemAdmin={profileData?.isSystemAdmin}
+                    hasAccessLogistique={hasAccessLogistique}
+                    hasAccessLutherie={hasAccessLutherie}
+                    profileData={profileData}
+                    activeTabProp="projects"
+                    hideSubTabs={true}
+                    onBack={() => handleNavigateToPole('accueil')} 
+                    onNavigateToView={handleNavigateToView}
+                  />
+                ) : (currentTab === 'instrument-models' && hasAccessLutherie) ? (
+                  <div className="max-w-4xl mx-auto w-full">
+                    <React.Suspense fallback={<div className="animate-pulse py-6 text-xs text-center opacity-65">Chargement des modèles...</div>}>
+                      <InstrumentModelsManager 
+                        groupId={profileData?.groupId}
+                        isAuthorized={hasAccessLutherie}
+                        varalCategories={DEFAULT_VARAL_CATEGORIES}
+                      />
+                    </React.Suspense>
+                  </div>
+                ) : (currentTab === 'inventory-parts' && hasAccessLutherie) ? (
+                  <InventoryManager 
+                    groupId={profileData?.groupId}
+                    role={profileData?.role}
+                    isSystemAdmin={profileData?.isSystemAdmin}
+                    hasAccessLogistique={hasAccessLogistique}
+                    hasAccessLutherie={hasAccessLutherie}
+                    profileData={profileData}
+                    activeTabProp="parts"
+                    hideSubTabs={true}
+                    onBack={() => handleNavigateToPole('accueil')} 
+                  />
+                ) : (currentTab === 'inventory-supplies' && hasAccessLutherie) ? (
+                  <InventoryManager 
+                    groupId={profileData?.groupId}
+                    role={profileData?.role}
+                    isSystemAdmin={profileData?.isSystemAdmin}
+                    hasAccessLogistique={hasAccessLogistique}
+                    hasAccessLutherie={hasAccessLutherie}
+                    profileData={profileData}
+                    activeTabProp="supplies"
+                    hideSubTabs={true}
+                    onBack={() => handleNavigateToPole('accueil')} 
+                  />
+                ) : (currentTab === 'workshop-tools' && hasAccessLutherie) ? (
+                  <InventoryManager 
+                    groupId={profileData?.groupId}
+                    role={profileData?.role}
+                    isSystemAdmin={profileData?.isSystemAdmin}
+                    hasAccessLogistique={hasAccessLogistique}
+                    hasAccessLutherie={hasAccessLutherie}
+                    profileData={profileData}
+                    activeTabProp="tools"
+                    hideSubTabs={true}
+                    onBack={() => handleNavigateToPole('accueil')} 
+                  />
+                ) : (currentTab === 'varal-lutherie' && hasAccessLutherie) ? (
+                  <div className="max-w-4xl mx-auto w-full">
+                    <React.Suspense fallback={<div className="animate-pulse py-6 text-xs text-center opacity-65">Chargement du Varal Lutherie...</div>}>
+                      <WidgetDocuments 
+                        role={profileData?.role} 
+                        isSystemAdmin={profileData?.isSystemAdmin} 
+                        groupId={profileData?.groupId} 
+                        user={user}
+                        profileData={profileData}
+                        poleId="lutherie"
+                        userTags={userTags}
+                        canWrite={hasAccessLutherie}
+                        onNavigateToView={handleNavigateToView}
+                      />
+                    </React.Suspense>
+                  </div>
+                ) : (['wardrobe-projects', 'wardrobe-couture'].includes(currentTab) && hasAccessCostumerie) ? (
+                  <WardrobeManager 
+                    groupId={profileData?.groupId}
+                    role={profileData?.role}
+                    isSystemAdmin={profileData?.isSystemAdmin}
+                    hasAccessCostumerie={hasAccessCostumerie}
+                    hasAccessLogistique={hasAccessLogistique}
+                    activeTabProp="couture"
+                    hideSubTabs={true}
+                    onBack={() => handleNavigateToPole('accueil')}
+                  />
+                ) : (currentTab === 'wardrobe-models' && hasAccessCostumerie) ? (
+                  <div className="max-w-5xl mx-auto w-full">
+                    <React.Suspense fallback={<div className="animate-pulse py-6 text-xs text-center opacity-65">Chargement des modèles de costumes...</div>}>
+                      <CostumesAdminManager groupId={profileData?.groupId} />
+                    </React.Suspense>
+                  </div>
+                ) : (['wardrobe-pieces', 'wardrobe-inventory', 'wardrobe'].includes(currentTab) && hasAccessCostumerie) ? (
+                  <WardrobeManager 
+                    groupId={profileData?.groupId}
+                    role={profileData?.role}
+                    isSystemAdmin={profileData?.isSystemAdmin}
+                    hasAccessCostumerie={hasAccessCostumerie}
+                    hasAccessLogistique={hasAccessLogistique}
+                    activeTabProp="inventory"
+                    hideSubTabs={true}
+                    onBack={() => handleNavigateToPole('accueil')}
+                  />
+                ) : (['wardrobe-supplies', 'costumerie-supplies'].includes(currentTab) && hasAccessCostumerie) ? (
+                  <WardrobeManager 
+                    groupId={profileData?.groupId}
+                    role={profileData?.role}
+                    isSystemAdmin={profileData?.isSystemAdmin}
+                    hasAccessCostumerie={hasAccessCostumerie}
+                    hasAccessLogistique={hasAccessLogistique}
+                    activeTabProp="supplies"
+                    hideSubTabs={true}
+                    onBack={() => handleNavigateToPole('accueil')}
+                  />
+                ) : (['wardrobe-tools', 'costumerie-tools'].includes(currentTab) && hasAccessCostumerie) ? (
+                  <WardrobeManager 
+                    groupId={profileData?.groupId}
+                    role={profileData?.role}
+                    isSystemAdmin={profileData?.isSystemAdmin}
+                    hasAccessCostumerie={hasAccessCostumerie}
+                    hasAccessLogistique={hasAccessLogistique}
+                    activeTabProp="tools"
+                    hideSubTabs={true}
+                    onBack={() => handleNavigateToPole('accueil')}
+                  />
+                ) : (['wardrobe-sizes', 'costumerie-sizes'].includes(currentTab) && hasAccessCostumerie) ? (
+                  <WardrobeManager 
+                    groupId={profileData?.groupId}
+                    role={profileData?.role}
+                    isSystemAdmin={profileData?.isSystemAdmin}
+                    hasAccessCostumerie={hasAccessCostumerie}
+                    hasAccessLogistique={hasAccessLogistique}
+                    activeTabProp="sizes"
+                    hideSubTabs={true}
+                    onBack={() => handleNavigateToPole('accueil')}
+                  />
+                ) : (currentTab === 'varal-costumerie' && hasAccessCostumerie) ? (
+                  <div className="max-w-4xl mx-auto w-full">
+                    <React.Suspense fallback={<div className="animate-pulse py-6 text-xs text-center opacity-65">Chargement du Varal Costumerie...</div>}>
+                      <WidgetDocuments 
+                        role={profileData?.role} 
+                        isSystemAdmin={profileData?.isSystemAdmin} 
+                        groupId={profileData?.groupId} 
+                        user={user}
+                        profileData={profileData}
+                        poleId="costumerie"
+                        userTags={userTags}
+                        canWrite={hasAccessCostumerie}
+                        onNavigateToView={handleNavigateToView}
+                      />
+                    </React.Suspense>
+                  </div>
+                ) : (currentTab === 'studio-events' && (hasAccessSecretariat || hasAccessStudio)) ? (
+                  <StudioEventsManager 
+                    groupId={profileData?.groupId}
+                    user={user}
+                    profileData={profileData}
+                    onBack={() => handleNavigateToPole('accueil')} 
+                  />
+                ) : (currentTab === 'studio-social' && hasAccessStudio) ? (
+                  <StudioSocial 
+                    groupId={profileData?.groupId}
+                    role={profileData?.role}
+                    isSystemAdmin={profileData?.isSystemAdmin}
+                    branding={branding}
+                    user={user}
+                    profileData={profileData}
+                    onBack={() => handleNavigateToPole('accueil')} 
+                  />
+                // Pôle Gouvernance (Conseil d'Administration)
+                ) : (currentTab === 'ca-reunions' && hasAccessGouvernance) ? (
+                  <ReunionManager 
+                    groupId={profileData?.groupId}
+                    user={user}
+                    profileData={profileData}
+                    onBack={() => handleNavigateToPole('accueil')} 
+                  />
+                ) : (currentTab === 'ca-reports' && hasAccessGouvernance) ? (
+                  <SecretariatReportsView 
+                    groupId={profileData?.groupId} 
+                    onBack={() => handleNavigateToPole('accueil')} 
+                  />
+                ) : (currentTab === 'ca-documents' && hasAccessGouvernance) ? (
+                  <div className="max-w-4xl mx-auto w-full">
+                    <React.Suspense fallback={<div className="animate-pulse py-6 text-xs text-center opacity-65">Chargement du Registre & Statuts...</div>}>
+                      <WidgetDocuments 
+                        role={profileData?.role} 
+                        isSystemAdmin={profileData?.isSystemAdmin} 
+                        groupId={profileData?.groupId} 
+                        user={user}
+                        profileData={profileData}
+                        poleId="secretariat"
+                        userTags={userTags}
+                        canWrite={hasAccessGouvernance}
+                        onNavigateToView={handleNavigateToView}
+                      />
+                    </React.Suspense>
+                  </div>
+                ) : (currentTab === 'ca-finances' && hasAccessGouvernance) ? (
+                  <TreasuryManager 
+                    groupId={profileData?.groupId}
+                    role={profileData?.role}
+                    isSystemAdmin={profileData?.isSystemAdmin}
+                    hasAccessTresorerie={hasAccessTresorerie || hasAccessGouvernance}
+                    profileData={profileData}
+                    initialTab="dashboard-finance"
+                    onBack={() => handleNavigateToPole('accueil')} 
+                  />
+                ) : (currentTab === 'ca-prestations' && hasAccessGouvernance) ? (
+                  <GigsPipelineManager
+                    groupId={profileData?.groupId}
+                    initialTab="pipeline"
+                    hasAccessDiffusion={hasAccessDiffusion || hasAccessGouvernance}
+                    onBack={() => handleNavigateToPole('accueil')} 
+                  />
+                ) : (currentTab === 'reunion-manager' && (hasAccessSecretariat || hasAccessStudio)) ? (
+                  <ReunionManager 
+                    groupId={profileData?.groupId}
+                    user={user}
+                    profileData={profileData}
+                    onBack={() => handleNavigateToPole('accueil')} 
+                  />
+                ) : (currentTab === 'newsletter' && hasAccessStudio) ? (
+                  <NewsletterPage
+                    groupId={profileData?.groupId}
+                    onBack={() => handleNavigateToPole('accueil')}
+                  />
+                ) : (currentTab === 'studio-communication' && hasAccessStudio) ? (
+                  <StudioCommunication 
+                    groupId={profileData?.groupId}
+                    onBack={() => handleNavigateToPole('accueil')} 
+                  />
+                ) : (currentTab === 'activity-reports' && (hasAccessSecretariat || hasAccessStudio)) ? (
+                  <ActivityReports 
+                    groupId={profileData?.groupId}
+                    onBack={() => handleNavigateToPole('accueil')} 
+                  />
+                ) : (currentTab === 'secretariat-reports' && hasAccessSecretariat) ? (
+                  <SecretariatReportsView 
+                    groupId={profileData?.groupId} 
+                    onBack={() => handleNavigateToPole('accueil')} 
+                  />
+                ) : (currentTab === 'secretariat-documents' && hasAccessSecretariat) ? (
+                  <SecretariatDocuments 
+                    groupId={profileData?.groupId}
+                    onBack={() => handleNavigateToPole('accueil')} 
+                  />
+                ) : (currentTab === 'secretariat-lieux' && hasAccessSecretariat) ? (
+                  <SecretariatAgendaLieux 
+                    groupId={profileData?.groupId}
+                    onBack={() => handleNavigateToPole('accueil')} 
+                  />
+                ) : (currentTab === 'mestre-forum-channels' && (hasAccessSecretariat || hasAccessStudio || hasAccessMestre || hasAccessForumMod)) ? (
+                  <ForumChannelsManager 
+                    groupId={profileData?.groupId}
+                    role={profileData?.role}
+                    isSystemAdmin={profileData?.isSystemAdmin}
+                    onBack={() => handleNavigateToPole('accueil')} 
+                  />
+                ) : (currentTab === 'varal-secretariat' && (hasAccessSecretariat || hasAccessStudio)) ? (
+                  <div className="max-w-4xl mx-auto w-full">
+                    <React.Suspense fallback={<div className="animate-pulse py-6 text-xs text-center opacity-65">Chargement du Varal Secrétariat...</div>}>
+                      <WidgetDocuments 
+                        role={profileData?.role} 
+                        isSystemAdmin={profileData?.isSystemAdmin} 
+                        groupId={profileData?.groupId} 
+                        user={user}
+                        profileData={profileData}
+                        poleId="secretariat"
+                        userTags={userTags}
+                        canWrite={hasAccessSecretariat}
+                        onNavigateToView={handleNavigateToView}
+                      />
+                    </React.Suspense>
+                  </div>
+                ) : (currentTab === 'varal-photos' && hasAccessStudio) ? (
+                  <div className="max-w-5xl mx-auto w-full">
+                    <React.Suspense fallback={<div className="animate-pulse py-6 text-xs text-center opacity-65">Chargement du Studio Photos...</div>}>
+                      <StudioPhotosView 
+                        groupId={profileData?.groupId} 
+                        user={user}
+                        profileData={profileData}
+                        role={profileData?.role} 
+                        isSystemAdmin={profileData?.isSystemAdmin} 
+                        userTags={userTags}
+                        canWrite={hasAccessStudio}
+                        onNavigateToView={handleNavigateToView}
+                        onBack={() => handleNavigateToPole('accueil')}
+                      />
+                    </React.Suspense>
+                  </div>
+                ) : (currentTab === 'mestre-pedagogy-dashboard' && hasAccessPedagogie) ? (
+                  <MestrePedagogyDashboard 
+                    profileData={profileData}
+                    sequenceurUrl={sequenceurUrl}
+                  />
+                ) : (currentTab === 'mestre-pedagogy-manager' && hasAccessPedagogie) ? (
+                  <MestrePedagogyManager 
+                    profileData={profileData}
+                    sequenceurUrl={sequenceurUrl}
+                  />
+                ) : (currentTab === 'mestre-pedagogy-qcm' && hasAccessPedagogie) ? (
+                  <MestreAutoEvalConfig 
+                    profileData={profileData}
+                  />
+                ) : (['varal-manager', 'varal-pedagogy'].includes(currentTab) && hasAccessPedagogie) ? (
+                  <div className="max-w-4xl mx-auto w-full">
+                    <React.Suspense fallback={<div className="animate-pulse py-6 text-xs text-center opacity-65">Chargement du Varal Pédagogique...</div>}>
+                      <WidgetDocuments 
+                        role={profileData?.role} 
+                        isSystemAdmin={profileData?.isSystemAdmin} 
+                        groupId={profileData?.groupId} 
+                        user={user}
+                        profileData={profileData}
+                        poleId="pedagogie"
+                        userTags={userTags}
+                        canWrite={hasAccessPedagogie}
+                        onNavigateToView={handleNavigateToView}
+                      />
+                    </React.Suspense>
+                  </div>
+                ) : (currentTab === 'mestre-repertoire' && hasAccessMestre) ? (
+                  <MestreRepertoireView 
                     groupId={profileData?.groupId} 
                     user={user}
                     profileData={profileData}
-                    poleId="pedagogie"
-                    userTags={userTags}
-                    canWrite={hasAccessPedagogie}
-                    onNavigateToView={handleNavigateToView}
+                    sequenceurUrl={sequenceurUrl}
                   />
-                </React.Suspense>
-              </div>
-            ) : (currentTab === 'mestre-repertoire' && hasAccessMestre) ? (
-              <MestreRepertoireView 
-                groupId={profileData?.groupId} 
-                user={user}
-                profileData={profileData}
-                sequenceurUrl={sequenceurUrl}
-              />
-            ) : (currentTab === 'mestre-categories' && hasAccessMestre) ? (
-              <MestreCustomCategories 
-                groupId={profileData?.groupId} 
-                onBack={() => setCurrentTab('mestre-orientation')}
-              />
-            ) : (currentTab === 'mestre-orientation' && hasAccessMestre) ? (
-              <MestreOrientationCasting 
-                user={user}
-                profileData={profileData}
-                onNavigateToMember={(mId) => {
-                  setCurrentTab('trombinoscope');
-                }}
-              />
-            ) : ((currentTab === 'mestre-stage-layout' || currentTab === 'mestre-events') && hasAccessMestre) ? (
-              <MestreStageLayout 
-                groupId={profileData?.groupId} 
-                user={user}
-                profileData={profileData}
-                selectedEventId={selectedMestreEventId}
-                onSelectEventId={setSelectedMestreEventId}
-                onOpenDetails={(evt) => setActiveMestreEventDetails(evt)}
-              />
-            ) : (currentTab === 'mestre-sequenceur' && (hasAccessMestre || hasAccessPedagogie)) ? (
-              <MestreSequenceur 
-                groupId={profileData?.groupId}
-                sequenceurUrl={sequenceurUrl}
-              />
-            ) : (currentTab === 'mestre-mot-mestre' && hasAccessMestre) ? (
-              <MestreMotMestre 
-                groupId={profileData?.groupId}
-                profileData={profileData}
-              />
-            ) : (currentTab === 'config-identity' && checkTabAccess('config-identity', 'config')) ? (
-              <AssociationSettings 
-                groupId={profileData?.groupId}
-                role={profileData?.role}
-                isSystemAdmin={profileData?.isSystemAdmin}
-                activeTabProp="identity"
-                mode="identity-only"
-                onBack={() => handleNavigateToPole('accueil')} 
-                onReopenOnboarding={() => setShowOnboardingWizard(true)}
-              />
-            ) : (currentTab === 'config-security' && checkTabAccess('config-security', 'config')) ? (
-              <AssociationSettings 
-                groupId={profileData?.groupId}
-                role={profileData?.role}
-                isSystemAdmin={profileData?.isSystemAdmin}
-                activeTabProp="security"
-                mode="security-only"
-                onBack={() => handleNavigateToPole('accueil')} 
-              />
-            ) : (currentTab === 'config-layout' && checkTabAccess('config-layout', 'config')) ? (
-              <AssociationSettings 
-                groupId={profileData?.groupId}
-                role={profileData?.role}
-                isSystemAdmin={profileData?.isSystemAdmin}
-                activeTabProp="apparence"
-                mode="apparence-only"
-                onBack={() => handleNavigateToPole('accueil')} 
-              />
-            ) : (currentTab === 'config-profile' && checkTabAccess('config-profile', 'config')) ? (
-              <AssociationSettings 
-                groupId={profileData?.groupId}
-                role={profileData?.role}
-                isSystemAdmin={profileData?.isSystemAdmin}
-                mode="profile-fields-only"
-                activeTabProp="organisation"
-                onBack={() => handleNavigateToPole('accueil')} 
-              />
-            ) : (currentTab === 'config-modules' && checkTabAccess('config-modules', 'config')) ? (
-              <AssociationSettings 
-                groupId={profileData?.groupId}
-                role={profileData?.role}
-                isSystemAdmin={profileData?.isSystemAdmin}
-                activeTabProp="modules"
-                mode="modules-only"
-                onBack={() => handleNavigateToPole('accueil')} 
-              />
-            ) : (['vitrine-editor', 'vitrine-general', 'vitrine-presentation', 'vitrine-organisateur', 'vitrine-galerie', 'vitrine-recrutement', 'vitrine-reseaux', 'vitrine-apparence'].includes(currentTab) && checkTabAccess('vitrine-editor', 'vitrine')) ? (
-              <AssociationSettings 
-                groupId={profileData?.groupId}
-                role={profileData?.role}
-                isSystemAdmin={profileData?.isSystemAdmin}
-                profileData={profileData}
-                permissionsMatrice={permissionsMatrice}
-                effectiveUserTags={userTags}
-                mode="public-theme-only"
-                activeTabProp="public-theme"
-                vitrineSubTabProp={currentTab ? currentTab.replace('vitrine-', '') : 'general'}
-                onBack={() => handleNavigateToPole('accueil')} 
-              />
-            ) : currentTab === 'agenda' ? (
-              <div className="max-w-4xl mx-auto w-full">
-                <WidgetAgenda 
-                  role={profileData?.role} 
-                  isSystemAdmin={profileData?.isSystemAdmin} 
-                  groupId={profileData?.groupId} 
-                  user={user} 
-                  profileData={profileData} 
-                  onFocusModeChange={(isFocused) => {
-                    if (!isFocused) handleNavigateToView('dashboard');
-                  }}
-                  onNavigateToView={handleNavigateToView}
-                />
-              </div>
-            ) : currentTab === 'varal' ? (
-              <div className="max-w-4xl mx-auto w-full">
-                <React.Suspense fallback={<div className="animate-pulse py-6 text-xs text-center opacity-65">Chargement du Varal...</div>}>
-                  <WidgetDocuments 
-                    role={profileData?.role} 
-                    isSystemAdmin={profileData?.isSystemAdmin} 
+                ) : (currentTab === 'mestre-categories' && hasAccessMestre) ? (
+                  <MestreCustomCategories 
+                    groupId={profileData?.groupId} 
+                    onBack={() => setCurrentTab('mestre-orientation')}
+                  />
+                ) : (currentTab === 'mestre-orientation' && hasAccessMestre) ? (
+                  <MestreOrientationCasting 
+                    user={user}
+                    profileData={profileData}
+                    onNavigateToMember={(mId) => {
+                      setCurrentTab('trombinoscope');
+                    }}
+                  />
+                ) : ((currentTab === 'mestre-stage-layout' || currentTab === 'mestre-events') && hasAccessMestre) ? (
+                  <MestreStageLayout 
                     groupId={profileData?.groupId} 
                     user={user}
                     profileData={profileData}
-                    userTags={userTags}
-                    canWrite={profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.isSystemAdmin === true}
-                    onNavigateToView={handleNavigateToView}
+                    selectedEventId={selectedMestreEventId}
+                    onSelectEventId={setSelectedMestreEventId}
+                    onOpenDetails={(evt) => setActiveMestreEventDetails(evt)}
                   />
-                </React.Suspense>
-              </div>
-            ) : (
-              <Dashboard 
-                key={dashboardKey}
-                user={user} 
-                profileData={profileData} 
-                onNavigateToTrombi={() => handleNavigateToView('trombinoscope')} 
-                onNavigateToView={handleNavigateToView}
-                onSignOut={handleSignOut} 
-                installPromptAvailable={installPromptAvailable}
-                onTriggerInstall={triggerInstallPrompt}
-                permissionsMatrice={permissionsMatrice}
-                breakGlassActive={breakGlassActive}
-                tagsDisponibles={tagsDisponibles}
-              />
-            )}
-            </ErrorBoundary>
-          </React.Suspense>
+                ) : (currentTab === 'mestre-sequenceur' && (hasAccessMestre || hasAccessPedagogie)) ? (
+                  <MestreSequenceur 
+                    groupId={profileData?.groupId}
+                    sequenceurUrl={sequenceurUrl}
+                  />
+                ) : (currentTab === 'mestre-mot-mestre' && hasAccessMestre) ? (
+                  <MestreMotMestre 
+                    groupId={profileData?.groupId}
+                    profileData={profileData}
+                  />
+                ) : (currentTab === 'config-identity' && checkTabAccess('config-identity', 'config')) ? (
+                  <AssociationSettings 
+                    groupId={profileData?.groupId}
+                    role={profileData?.role}
+                    isSystemAdmin={profileData?.isSystemAdmin}
+                    activeTabProp="identity"
+                    mode="identity-only"
+                    onBack={() => handleNavigateToPole('accueil')} 
+                    onReopenOnboarding={() => setShowOnboardingWizard(true)}
+                  />
+                ) : (currentTab === 'config-security' && checkTabAccess('config-security', 'config')) ? (
+                  <AssociationSettings 
+                    groupId={profileData?.groupId}
+                    role={profileData?.role}
+                    isSystemAdmin={profileData?.isSystemAdmin}
+                    activeTabProp="security"
+                    mode="security-only"
+                    onBack={() => handleNavigateToPole('accueil')} 
+                  />
+                ) : (currentTab === 'config-layout' && checkTabAccess('config-layout', 'config')) ? (
+                  <AssociationSettings 
+                    groupId={profileData?.groupId}
+                    role={profileData?.role}
+                    isSystemAdmin={profileData?.isSystemAdmin}
+                    activeTabProp="apparence"
+                    mode="apparence-only"
+                    onBack={() => handleNavigateToPole('accueil')} 
+                  />
+                ) : (currentTab === 'config-profile' && checkTabAccess('config-profile', 'config')) ? (
+                  <AssociationSettings 
+                    groupId={profileData?.groupId}
+                    role={profileData?.role}
+                    isSystemAdmin={profileData?.isSystemAdmin}
+                    mode="profile-fields-only"
+                    activeTabProp="organisation"
+                    onBack={() => handleNavigateToPole('accueil')} 
+                  />
+                ) : (currentTab === 'config-modules' && checkTabAccess('config-modules', 'config')) ? (
+                  <AssociationSettings 
+                    groupId={profileData?.groupId}
+                    role={profileData?.role}
+                    isSystemAdmin={profileData?.isSystemAdmin}
+                    activeTabProp="modules"
+                    mode="modules-only"
+                    onBack={() => handleNavigateToPole('accueil')} 
+                  />
+                ) : (['vitrine-editor', 'vitrine-general', 'vitrine-presentation', 'vitrine-organisateur', 'vitrine-galerie', 'vitrine-recrutement', 'vitrine-reseaux', 'vitrine-apparence'].includes(currentTab) && checkTabAccess('vitrine-editor', 'vitrine')) ? (
+                  <AssociationSettings 
+                    groupId={profileData?.groupId}
+                    role={profileData?.role}
+                    isSystemAdmin={profileData?.isSystemAdmin}
+                    profileData={profileData}
+                    permissionsMatrice={permissionsMatrice}
+                    effectiveUserTags={userTags}
+                    mode="public-theme-only"
+                    activeTabProp="public-theme"
+                    vitrineSubTabProp={currentTab ? currentTab.replace('vitrine-', '') : 'general'}
+                    onBack={() => handleNavigateToPole('accueil')} 
+                  />
+                ) : currentTab === 'agenda' ? (
+                  <div className="max-w-4xl mx-auto w-full">
+                    <WidgetAgenda 
+                      role={profileData?.role} 
+                      isSystemAdmin={profileData?.isSystemAdmin} 
+                      groupId={profileData?.groupId} 
+                      user={user} 
+                      profileData={profileData} 
+                      onFocusModeChange={(isFocused) => {
+                        if (!isFocused) handleNavigateToView('dashboard');
+                      }}
+                      onNavigateToView={handleNavigateToView}
+                    />
+                  </div>
+                ) : currentTab === 'varal' ? (
+                  <div className="max-w-4xl mx-auto w-full">
+                    <React.Suspense fallback={<div className="animate-pulse py-6 text-xs text-center opacity-65">Chargement du Varal...</div>}>
+                      <WidgetDocuments 
+                        role={profileData?.role} 
+                        isSystemAdmin={profileData?.isSystemAdmin} 
+                        groupId={profileData?.groupId} 
+                        user={user}
+                        profileData={profileData}
+                        userTags={userTags}
+                        canWrite={profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.isSystemAdmin === true}
+                        onNavigateToView={handleNavigateToView}
+                      />
+                    </React.Suspense>
+                  </div>
+                ) : (
+                  <Dashboard 
+                    key={dashboardKey}
+                    user={user} 
+                    profileData={profileData} 
+                    onNavigateToTrombi={() => handleNavigateToView('trombinoscope')} 
+                    onNavigateToView={handleNavigateToView}
+                    onSignOut={handleSignOut} 
+                    installPromptAvailable={installPromptAvailable}
+                    onTriggerInstall={triggerInstallPrompt}
+                    permissionsMatrice={permissionsMatrice}
+                    breakGlassActive={breakGlassActive}
+                    tagsDisponibles={tagsDisponibles}
+                  />
+                )}
+                </ErrorBoundary>
+              </React.Suspense>
 
-          {/* Assistant de Premier Démarrage (Wizard Onboarding Mestre/Bureau) */}
-          <React.Suspense fallback={null}>
-            <OnboardingWizard
-              isOpen={showOnboardingWizard}
-              onClose={() => setShowOnboardingWizard(false)}
-              groupId={profileData?.groupId || (new URLSearchParams(window.location.search).get('groupe'))}
-              associationSettings={associationData || {}}
-              onCompleteSuccess={() => setShowOnboardingWizard(false)}
-            />
-          </React.Suspense>
-        </LayoutShell>
-        <ReloadPrompt />
-      </div>
+              {/* Assistant de Premier Démarrage (Wizard Onboarding Mestre/Bureau) */}
+              <React.Suspense fallback={null}>
+                <OnboardingWizard
+                  isOpen={showOnboardingWizard}
+                  onClose={() => setShowOnboardingWizard(false)}
+                  groupId={profileData?.groupId || (new URLSearchParams(window.location.search).get('groupe'))}
+                  associationSettings={associationData || {}}
+                  onCompleteSuccess={() => setShowOnboardingWizard(false)}
+                />
+              </React.Suspense>
+            </LayoutShell>
+            <ReloadPrompt />
+          </div>
+        </LicenseProvider>
+      </ViewSimulatorProvider>
     </TerminologyProvider>
   );
 }

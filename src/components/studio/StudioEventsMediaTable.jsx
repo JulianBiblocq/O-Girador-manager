@@ -444,7 +444,7 @@ export default function StudioEventsMediaTable({ groupId, canWrite = false }) {
                           type="button"
                           onClick={() => handleSaveDepot(ev.id)}
                           disabled={rowState.savingDepot}
-                          className="px-2.5 py-1 text-[9.5px] font-black uppercase tracking-wider rounded border border-emerald-950 bg-[#2d6a4f] text-white hover:bg-emerald-800 cursor-pointer shrink-0 shadow-xs"
+                          className="px-2.5 py-1 text-[9.5px] font-black uppercase tracking-wider rounded border border-emerald-950 bg-[var(--color-cordel-vert)] text-white hover:bg-emerald-800 cursor-pointer shrink-0 shadow-xs"
                         >
                           {rowState.savingDepot ? '⏳' : rowState.savedDepot ? '✓' : 'Sauver'}
                         </button>
@@ -505,7 +505,7 @@ export default function StudioEventsMediaTable({ groupId, canWrite = false }) {
                           type="button"
                           onClick={() => handleSaveAlbum(ev)}
                           disabled={rowState.savingAlbum}
-                          className="px-2.5 py-1 text-[9.5px] font-black uppercase tracking-wider rounded border border-emerald-950 bg-[#2d6a4f] text-white hover:bg-emerald-800 cursor-pointer shrink-0 shadow-xs"
+                          className="px-2.5 py-1 text-[9.5px] font-black uppercase tracking-wider rounded border border-emerald-950 bg-[var(--color-cordel-vert)] text-white hover:bg-emerald-800 cursor-pointer shrink-0 shadow-xs"
                         >
                           {rowState.savingAlbum ? '⏳' : rowState.savedAlbum ? '✓ Sync' : 'Sync Varal'}
                         </button>

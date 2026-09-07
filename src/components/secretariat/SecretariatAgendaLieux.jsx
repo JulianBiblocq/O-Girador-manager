@@ -41,7 +41,7 @@ export default function SecretariatAgendaLieux({ groupId, onBack, initialSubTab 
           <div className="flex items-center gap-2 text-[10px] font-bold text-cordel-master-dark uppercase tracking-wider mb-1">
             <span>Secrétariat</span>
             <span>›</span>
-            <span className="text-[#2d6a4f] dark:text-emerald-400">Lieux, Types & Relances</span>
+            <span className="text-[var(--color-cordel-vert)] dark:text-emerald-400">Lieux, Types & Relances</span>
           </div>
           <h2 className="text-xl font-black text-cordel-wood uppercase flex items-center gap-2">
             <span>📍</span> Salles, Lieux, Types & Relances
@@ -69,7 +69,7 @@ export default function SecretariatAgendaLieux({ groupId, onBack, initialSubTab 
           onClick={() => setSubTab('lieux')}
           className={`px-3 py-1.5 text-xs font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer ${
             subTab === 'lieux'
-              ? 'bg-[#2d6a4f] text-white border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
+              ? 'bg-[var(--color-cordel-vert)] text-white border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
               : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
           }`}
         >
@@ -80,7 +80,7 @@ export default function SecretariatAgendaLieux({ groupId, onBack, initialSubTab 
           onClick={() => setSubTab('agenda')}
           className={`px-3 py-1.5 text-xs font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer ${
             subTab === 'agenda'
-              ? 'bg-[#2d6a4f] text-white border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
+              ? 'bg-[var(--color-cordel-vert)] text-white border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
               : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
           }`}
         >
@@ -91,7 +91,7 @@ export default function SecretariatAgendaLieux({ groupId, onBack, initialSubTab 
           onClick={() => setSubTab('relances')}
           className={`px-3 py-1.5 text-xs font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer ${
             subTab === 'relances'
-              ? 'bg-[#2d6a4f] text-white border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
+              ? 'bg-[var(--color-cordel-vert)] text-white border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
               : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
           }`}
         >
