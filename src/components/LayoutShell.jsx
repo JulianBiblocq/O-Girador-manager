@@ -219,15 +219,15 @@ export default function LayoutShell({
   const canSendFeedback = currentProfile?.role === 'admin' || currentProfile?.role === 'mestre' || currentProfile?.role === 'super-admin' || currentProfile?.role === 'bureau' || currentProfile?.isSystemAdmin;
 
   const allMemberMenuItems = [
-    { id: 'accueil', label: 'Accueil', icon: <XiloHome size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('accueil'); onNavigateToTab && onNavigateToTab('dashboard'); } },
-    { id: 'profil', label: 'Profil', icon: <XiloUser size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('mon-espace'); onNavigateToTab && onNavigateToTab('profil'); } },
-    { id: 'mon-parcours', label: 'Mon Parcours', icon: <XiloCompass size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('mon-espace'); onNavigateToTab && onNavigateToTab('mon-parcours'); } },
-    { id: 'agenda', label: 'Agenda', icon: <XiloCalendar size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('mon-espace'); onNavigateToTab && onNavigateToTab('agenda'); } },
-    { id: 'atelier', label: 'Atelier', icon: <XiloChisel size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('mon-espace'); onNavigateToTab && onNavigateToTab('atelier'); } },
-    { id: 'materiel', label: 'Matériel', icon: <XiloCaixa size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('mon-espace'); onNavigateToTab && onNavigateToTab('materiel'); } },
-    { id: 'vestiaire', label: 'Vestiaire', icon: <XiloHanger size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('mon-espace'); onNavigateToTab && onNavigateToTab('vestiaire'); } },
-    { id: 'trombinoscope', label: 'Trombinoscope', icon: <XiloPeople size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('mon-espace'); onNavigateToTab && onNavigateToTab('trombinoscope'); } },
-    { id: 'forum', label: 'Porte-voix', icon: <XiloMegaphone size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('mon-espace'); onNavigateToTab && onNavigateToTab('forum'); } },
+    { id: 'accueil', label: 'Accueil', icon: <XiloHome size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('accueil', 'dashboard'); onNavigateToTab && onNavigateToTab('dashboard'); } },
+    { id: 'profil', label: 'Profil', icon: <XiloUser size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('mon-espace', 'profil'); onNavigateToTab && onNavigateToTab('profil'); } },
+    { id: 'mon-parcours', label: 'Mon Parcours', icon: <XiloCompass size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('mon-espace', 'mon-parcours'); onNavigateToTab && onNavigateToTab('mon-parcours'); } },
+    { id: 'agenda', label: 'Agenda', icon: <XiloCalendar size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('mon-espace', 'agenda'); onNavigateToTab && onNavigateToTab('agenda'); } },
+    { id: 'atelier', label: 'Atelier', icon: <XiloChisel size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('mon-espace', 'atelier'); onNavigateToTab && onNavigateToTab('atelier'); } },
+    { id: 'materiel', label: 'Matériel', icon: <XiloCaixa size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('mon-espace', 'materiel'); onNavigateToTab && onNavigateToTab('materiel'); } },
+    { id: 'vestiaire', label: 'Vestiaire', icon: <XiloHanger size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('mon-espace', 'vestiaire'); onNavigateToTab && onNavigateToTab('vestiaire'); } },
+    { id: 'trombinoscope', label: 'Trombinoscope', icon: <XiloPeople size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('mon-espace', 'trombinoscope'); onNavigateToTab && onNavigateToTab('trombinoscope'); } },
+    { id: 'forum', label: 'Porte-voix', icon: <XiloMegaphone size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('mon-espace', 'forum'); onNavigateToTab && onNavigateToTab('forum'); } },
     { id: 'varal', label: 'Varal', icon: <XiloScroll size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('mon-espace', 'varal'); onNavigateToTab && onNavigateToTab('varal'); } }
   ];
 
@@ -606,7 +606,7 @@ export default function LayoutShell({
                             if (onOpenPrivateMessages) {
                               onOpenPrivateMessages();
                             } else {
-                              if (onNavigateToPole) onNavigateToPole('mon-espace');
+                              if (onNavigateToPole) onNavigateToPole('mon-espace', 'forum');
                               if (onNavigateToTab) onNavigateToTab('forum');
                             }
                           }}
@@ -652,7 +652,7 @@ export default function LayoutShell({
                             if (onOpenPrivateMessages) {
                               onOpenPrivateMessages();
                             } else {
-                              if (onNavigateToPole) onNavigateToPole('mon-espace');
+                              if (onNavigateToPole) onNavigateToPole('mon-espace', 'forum');
                               if (onNavigateToTab) onNavigateToTab('forum');
                             }
                           }}
@@ -963,7 +963,7 @@ export default function LayoutShell({
                               if (onOpenPrivateMessages) {
                                 onOpenPrivateMessages();
                               } else {
-                                if (onNavigateToPole) onNavigateToPole('mon-espace');
+                                if (onNavigateToPole) onNavigateToPole('mon-espace', 'forum');
                                 if (onNavigateToTab) onNavigateToTab('forum');
                               }
                               setIsDrawerOpen(false);
@@ -1014,7 +1014,7 @@ export default function LayoutShell({
                               if (onOpenPrivateMessages) {
                                 onOpenPrivateMessages();
                               } else {
-                                if (onNavigateToPole) onNavigateToPole('mon-espace');
+                                if (onNavigateToPole) onNavigateToPole('mon-espace', 'forum');
                                 if (onNavigateToTab) onNavigateToTab('forum');
                               }
                               setIsDrawerOpen(false);

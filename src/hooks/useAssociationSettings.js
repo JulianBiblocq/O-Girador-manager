@@ -36,6 +36,7 @@ export const DEFAULT_ENABLED_MODULES = {
   covoiturage: true,
   studioSocial: true,
   reunions: true,
+  forum: true,
   mestre: true,
   monParcoursGlobal: true,
   monParcoursPercussion: true,

@@ -16,6 +16,7 @@ import { resolveEffectiveUserTags } from '../utils/tagUtils'; // Utilitaires pou
 import { isUserModeratorOrAdmin, canUserWriteInForumChannel, canUserReadForumChannel, checkUserAccessToList } from '../utils/permissionUtils';
 import { countThreadUnreadMessages, getAllChannelsUnreadStats } from '../utils/forumUnreadUtils';
 import ForumThreadCard from './forum/ForumThreadCard';
+import NewPrivateChatModal from './forum/NewPrivateChatModal';
 import useHardwareBack from '../hooks/useHardwareBack';
 
 function ChannelTreeItem({ 
@@ -220,10 +221,14 @@ export default function Forum({
   const [newChannelName, setNewChannelName] = useState('');
   const [newChannelParentId, setNewChannelParentId] = useState('');
   const [savingChannel, setSavingChannel] = useState(false);
+  
+  // État d'ouverture de la modale de nouvelle discussion privée
+  const [isNewPrivateChatModalOpen, setIsNewPrivateChatModalOpen] = useState(false);
 
   useHardwareBack(isAdding, () => setIsAdding(false));
   useHardwareBack(!!movingThreadModal, () => setMovingThreadModal(null));
   useHardwareBack(isCreatingChannel, () => setIsCreatingChannel(false));
+  useHardwareBack(isNewPrivateChatModalOpen, () => setIsNewPrivateChatModalOpen(false));
 
   const handleCreateChannelSubmit = async (e) => {
     e.preventDefault();
@@ -361,17 +366,28 @@ export default function Forum({
           { id: `${profileData.groupId}_ca`, name: "CA", readRoles: ["ca"], writeRoles: ["ca"], isTransparent: false },
           { id: `${profileData.groupId}_bureau`, name: "Bureau", readRoles: ["bureau"], writeRoles: ["bureau"], isTransparent: false }
         ];
-        for (const ch of defaults) {
-          try {
-            await setDoc(doc(db, 'forum_channels', ch.id), {
-              groupId: profileData.groupId,
-              name: ch.name,
-              readRoles: ch.readRoles,
-              writeRoles: ch.writeRoles,
-              isTransparent: ch.isTransparent
-            }, { merge: true });
-          } catch (e) {
-            console.error(`Channel seeding failed for: ${ch.name}`, e);
+
+        // Rendre immédiatement les salons par défaut disponibles localement pour ne pas bloquer l'adhérent
+        const allowedDefaults = defaults.filter(ch => canUserReadForumChannel(ch, profileData, tagsDisponibles, effectiveUserTags, breakGlassActive));
+        setChannels(allowedDefaults);
+        if (allowedDefaults.length > 0) {
+          setActiveChannelId(allowedDefaults[0].id);
+        }
+
+        // Tenter d'enregistrer les salons par défaut dans Firestore si l'utilisateur est admin/mestre
+        if (isUserModeratorOrAdmin(profileData)) {
+          for (const ch of defaults) {
+            try {
+              await setDoc(doc(db, 'forum_channels', ch.id), {
+                groupId: profileData.groupId,
+                name: ch.name,
+                readRoles: ch.readRoles,
+                writeRoles: ch.writeRoles,
+                isTransparent: ch.isTransparent
+              }, { merge: true });
+            } catch (e) {
+              console.error(`Channel seeding failed for: ${ch.name}`, e);
+            }
           }
         }
       } else {
@@ -755,13 +771,35 @@ export default function Forum({
       {activeTab === 'inbox' ? (
         /* Liste des discussions privées */
         <div className="flex flex-col gap-4">
-          <h2 className="panel-title text-sm font-extrabold text-cordel-master-dark opacity-80 uppercase px-1 select-none">
-            {translate('forum.privateConversationsTitle', "Mes Discussions Privées")}
-          </h2>
+          <div className="flex justify-between items-center px-1 select-none flex-wrap gap-2">
+            <h2 className="panel-title text-sm font-extrabold text-cordel-master-dark opacity-80 uppercase">
+              {translate('forum.privateConversationsTitle', "Mes Discussions Privées")}
+            </h2>
+            <CordelButton
+              variant="vert"
+              onClick={() => setIsNewPrivateChatModalOpen(true)}
+              className="text-xs px-3 py-1.5 font-black uppercase tracking-wider flex items-center gap-1.5 shadow-sm cursor-pointer"
+              title="Démarrer une nouvelle discussion privée avec un membre"
+            >
+              <span>➕</span>
+              <span>Nouvelle discussion</span>
+            </CordelButton>
+          </div>
 
           {conversations.length === 0 ? (
-            <CordelCard variant="default" useExtremeBorder={false} className="p-8 text-center bg-cordel-bg select-none">
-              <p className="text-xs opacity-75 font-semibold">{translate('forum.noPrivateConversations', "Aucune discussion privée pour le moment. Allez dans le Trombinoscope pour contacter un membre !")}</p>
+            <CordelCard variant="default" useExtremeBorder={false} className="p-8 text-center bg-cordel-bg select-none flex flex-col items-center gap-3">
+              <span className="text-3xl">✉️</span>
+              <p className="text-xs opacity-75 font-semibold max-w-sm">
+                {translate('forum.noPrivateConversations', "Aucune discussion privée pour le moment. Vous pouvez démarrer un échange direct avec n'importe quel membre de l'association !")}
+              </p>
+              <CordelButton
+                variant="vert"
+                onClick={() => setIsNewPrivateChatModalOpen(true)}
+                className="mt-1 text-xs px-4 py-2 font-black uppercase tracking-wider flex items-center gap-1.5 shadow-xs cursor-pointer"
+              >
+                <span>➕</span>
+                <span>Démarrer une discussion</span>
+              </CordelButton>
             </CordelCard>
           ) : (
             <div className="flex flex-col gap-3">
@@ -1080,6 +1118,16 @@ export default function Forum({
           </CordelCard>
         </div>
       )}
+
+      {/* Modale de sélection pour nouvelle discussion privée */}
+      <NewPrivateChatModal
+        isOpen={isNewPrivateChatModalOpen}
+        onClose={() => setIsNewPrivateChatModalOpen(false)}
+        onSelectUser={(userId) => setActiveChatUserId(userId)}
+        members={Object.values(usersMap)}
+        currentUserId={user?.uid}
+        existingChatUserIds={new Set(conversations.map(c => c.otherId))}
+      />
     </div>
   );
 }
