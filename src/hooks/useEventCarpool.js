@@ -3,20 +3,20 @@ import { doc, runTransaction } from 'firebase/firestore';
 import { db } from '../firebase';
 
 export const calculateCarStatus = (car, associationSettings) => {
-  const passengers = car.passengers || [];
+  const passengers = (car?.passengers || car?.passagers || []);
 
-  const totalAlfayas = passengers.reduce((sum, p) => sum + (Number(p.alfayasCount) || 0), 0);
-  const alfayasInTrunk = Math.min(totalAlfayas, Number(car.trunkAlfayaCapacity) || 0);
+  const totalAlfayas = passengers.reduce((sum, p) => sum + (Number(p?.alfayasCount) || 0), 0);
+  const alfayasInTrunk = Math.min(totalAlfayas, Number(car?.trunkAlfayaCapacity) || 0);
   const alfayasOnSeats = totalAlfayas - alfayasInTrunk;
 
-  const physicalPassengers = passengers.reduce((sum, p) => sum + (p.isPassenger ? 1 : 0), 0);
+  const physicalPassengers = passengers.reduce((sum, p) => sum + (p?.isPassenger ? 1 : 0), 0);
   
   // Prise en compte des places réservées hors-association (caméraman, technicien...)
-  const placesReserveesExternes = Number(car.placesReserveesExternes) || 0;
-  const motifReserveesExternes = car.motifReserveesExternes || '';
+  const placesReserveesExternes = Number(car?.placesReserveesExternes) || 0;
+  const motifReserveesExternes = car?.motifReserveesExternes || '';
 
   const occupiedSeats = physicalPassengers + alfayasOnSeats + placesReserveesExternes;
-  const availableSeats = (Number(car.passengerSeats) || 0) - occupiedSeats;
+  const availableSeats = (Number(car?.passengerSeats) || 0) - occupiedSeats;
 
   const isFull = availableSeats === 0;
   
@@ -56,11 +56,12 @@ export const calculateCarStatus = (car, associationSettings) => {
  * @returns {Object} { demandeTransport, offreTransport, hasCarWithAvailableSeats, isCapacitySufficient }
  */
 export const calculateCarpoolGauge = (event, voituresList = []) => {
+  const safeVoitures = Array.isArray(voituresList) ? voituresList : [];
   const presentInscriptions = (event?.inscriptions || []).filter(ins => ins.status === 'present');
   
   // Membres nécessitant une place en convoi
   const seekersFromInscriptions = presentInscriptions.filter(ins => {
-    if (voituresList.some(v => v.chauffeurId === ins.userId)) return false;
+    if (safeVoitures.some(v => v.chauffeurId === ins.userId)) return false;
     if (ins.transport === 'autonome' || (ins.transport === 'propre' && !ins.demandeRemboursementKm)) return false;
     return true;
   }).length;
@@ -74,13 +75,13 @@ export const calculateCarpoolGauge = (event, voituresList = []) => {
   const demandeTransport = seekersFromInscriptions + seekersFromQueue + externalGuests;
 
   // Offre totale nette en places passagers dans les voitures existantes
-  const offreTransport = voituresList.reduce((sum, v) => {
+  const offreTransport = safeVoitures.reduce((sum, v) => {
     const seats = Number(v.passengerSeats) || 0;
     const ext = Number(v.placesReserveesExternes) || 0;
     return sum + Math.max(0, seats - ext);
   }, 0);
 
-  const hasCarWithAvailableSeats = voituresList.some(v => {
+  const hasCarWithAvailableSeats = safeVoitures.some(v => {
     const status = calculateCarStatus(v, { enableCarpoolReimbursement: event?.enableCarpoolReimbursement !== false });
     return status.availableSeats > 0;
   });

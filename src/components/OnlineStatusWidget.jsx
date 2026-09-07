@@ -1,8 +1,70 @@
 import React, { useState } from 'react';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
-import { XiloPeople } from './XiloIcons';
 import { usePresenceContext } from '../context/PresenceContext';
+
+// Carte membre en ligne mémoïsée pour éviter les re-renders inutiles
+const OnlineMemberItem = React.memo(({ member }) => {
+  const fullName = `${member.prenom || ''} ${member.nom || ''}`.trim() || 'Batuqueiro';
+  const userInstruments = Array.isArray(member.instrumentsJoues) && member.instrumentsJoues.length > 0
+    ? member.instrumentsJoues
+    : [member.instrument].filter(Boolean);
+
+  return (
+    <div className="p-2.5 border-2 border-encre-noire rounded-[6px_9px_5px_7px] bg-white shadow-[2px_2px_0px_0px_#181716] flex items-center justify-between gap-3">
+      <div className="flex items-center gap-3 min-w-0">
+        {/* Avatar with status indicator */}
+        <div className="relative shrink-0">
+          {member.photoURL ? (
+            <img
+              src={member.photoURL}
+              alt={fullName}
+              loading="lazy"
+              decoding="async"
+              className="w-10 h-10 rounded-[6px_4px_7px_5px] border border-encre-noire object-cover grayscale contrast-[120%] sepia-[30%]"
+            />
+          ) : (
+            <div className="w-10 h-10 rounded-[6px_4px_7px_5px] border border-encre-noire bg-cordel-bg flex items-center justify-center font-black text-xs text-cordel-wood">
+              {member.prenom ? member.prenom[0].toUpperCase() : '🥁'}
+            </div>
+          )}
+          {/* Online Green Badge */}
+          <span className="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-emerald-500 border-2 border-white rounded-full flex items-center justify-center">
+            <span className="w-1.5 h-1.5 bg-white rounded-full"></span>
+          </span>
+        </div>
+
+        <div className="min-w-0 flex-1">
+          <h4 className="text-xs font-black text-encre-noire truncate flex items-center gap-1.5">
+            <span>{fullName}</span>
+            {member.surnom && (
+              <span className="text-[9px] font-bold text-cordel-wood italic">
+                "{member.surnom}"
+              </span>
+            )}
+          </h4>
+
+          {userInstruments.length > 0 && (
+            <div className="flex flex-wrap gap-1 mt-1">
+              {userInstruments.map(inst => (
+                <span 
+                  key={inst}
+                  className="text-[8px] font-extrabold uppercase px-1.5 py-0.2 rounded bg-cordel-bg-light border border-encre-noire/30 text-encre-noire"
+                >
+                  🎵 {inst}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      <span className="text-[8px] font-extrabold text-emerald-700 bg-emerald-100 border border-emerald-600/30 px-2 py-0.5 rounded-full uppercase tracking-wider shrink-0">
+        Actif
+      </span>
+    </div>
+  );
+});
 
 export default function OnlineStatusWidget({ onlineMembers = [], onlineCount = 0, className = "", isPresenceEnabled: propIsEnabled }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -62,73 +124,14 @@ export default function OnlineStatusWidget({ onlineMembers = [], onlineCount = 0
 
               {/* Members List */}
               <div className="overflow-y-auto flex-1 pr-1 flex flex-col gap-2.5 scrollbar-thin">
-                {onlineMembers.length === 0 ? (
+                {(onlineMembers || []).length === 0 ? (
                   <div className="py-8 text-center text-cordel-master-dark/60 text-xs font-bold">
                     Aucun membre actuellement en ligne.
                   </div>
                 ) : (
-                  onlineMembers.map((member) => {
-                    const fullName = `${member.prenom || ''} ${member.nom || ''}`.trim() || 'Batuqueiro';
-                    const userInstruments = Array.isArray(member.instrumentsJoues) && member.instrumentsJoues.length > 0
-                      ? member.instrumentsJoues
-                      : [member.instrument].filter(Boolean);
-
-                    return (
-                      <div 
-                        key={member.id || member.uid}
-                        className="p-2.5 border-2 border-encre-noire rounded-[6px_9px_5px_7px] bg-white shadow-[2px_2px_0px_0px_#181716] flex items-center justify-between gap-3"
-                      >
-                        <div className="flex items-center gap-3 min-w-0">
-                          {/* Avatar with status indicator */}
-                          <div className="relative shrink-0">
-                            {member.photoURL ? (
-                              <img
-                                src={member.photoURL}
-                                alt={fullName}
-                                className="w-10 h-10 rounded-[6px_4px_7px_5px] border border-encre-noire object-cover grayscale contrast-[120%] sepia-[30%]"
-                              />
-                            ) : (
-                              <div className="w-10 h-10 rounded-[6px_4px_7px_5px] border border-encre-noire bg-cordel-bg flex items-center justify-center font-black text-xs text-cordel-wood">
-                                {member.prenom ? member.prenom[0].toUpperCase() : '🥁'}
-                              </div>
-                            )}
-                            {/* Online Green Badge */}
-                            <span className="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-emerald-500 border-2 border-white rounded-full flex items-center justify-center">
-                              <span className="w-1.5 h-1.5 bg-white rounded-full"></span>
-                            </span>
-                          </div>
-
-                          <div className="min-w-0 flex-1">
-                            <h4 className="text-xs font-black text-encre-noire truncate flex items-center gap-1.5">
-                              <span>{fullName}</span>
-                              {member.surnom && (
-                                <span className="text-[9px] font-bold text-cordel-wood italic">
-                                  "{member.surnom}"
-                                </span>
-                              )}
-                            </h4>
-
-                            {userInstruments.length > 0 && (
-                              <div className="flex flex-wrap gap-1 mt-1">
-                                {userInstruments.map(inst => (
-                                  <span 
-                                    key={inst}
-                                    className="text-[8px] font-extrabold uppercase px-1.5 py-0.2 rounded bg-cordel-bg-light border border-encre-noire/30 text-encre-noire"
-                                  >
-                                    🎵 {inst}
-                                  </span>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-
-                        <span className="text-[8px] font-extrabold text-emerald-700 bg-emerald-100 border border-emerald-600/30 px-2 py-0.5 rounded-full uppercase tracking-wider shrink-0">
-                          Actif
-                        </span>
-                      </div>
-                    );
-                  })
+                  (onlineMembers || []).map((member) => (
+                    <OnlineMemberItem key={member.id || member.uid} member={member} />
+                  ))
                 )}
               </div>
 

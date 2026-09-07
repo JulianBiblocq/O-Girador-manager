@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 import { generateContractPDF, downloadContractPDF } from '../../utils/contractPdfGenerator';
 import { updateContactLastDate } from '../../utils/updateContactLastDate';
@@ -81,7 +80,6 @@ export default function GigSendContractModal({
 
     try {
       // 1. Génération du Contrat PDF en mémoire et conversion en Base64 pure
-      console.log("GigSendContractModal - Génération du Contrat PDF en mémoire...");
       const pdfDoc = await generateContractPDF(gig, associationSettings);
       const pdfBase64 = pdfDoc.output('base64');
       const filename = `Contrat_${(gig.eventName || 'prestation').replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
@@ -106,7 +104,6 @@ export default function GigSendContractModal({
         ]
       };
 
-      console.log("GigSendContractModal - Transmission via sendAssociationEmail...");
       const result = await sendAssociationEmail(emailParams, associationSettings);
 
       if (result.success) {

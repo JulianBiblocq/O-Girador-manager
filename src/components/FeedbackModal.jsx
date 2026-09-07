@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import CordelButton from './CordelButton';
 import { XiloClose, XiloMegaphone } from './XiloIcons';
-import { db } from '../firebase';
 
 export default function FeedbackModal({
   isOpen,

@@ -1,7 +1,7 @@
 import React, { createContext, useContext } from 'react';
 import useTenantResolver from '../hooks/useTenantResolver';
 
-const TenantContext = createContext(null);
+export const TenantContext = createContext(null);
 
 export function TenantProvider({ children }) {
   const tenantState = useTenantResolver();

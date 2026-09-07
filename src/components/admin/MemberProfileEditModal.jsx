@@ -1,10 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import CordelCard from '../CordelCard';
+import React, { useState } from 'react';
 import CordelButton from '../CordelButton';
 import { formatTagGender, getTagId } from '../../utils/tagUtils';
 import { VALID_SYSTEM_ROLES } from '../../utils/roleMigration';
 import { DEFAULT_CUSTOM_CATEGORIES } from '../../utils/categoryUtils';
-import { XiloUser, XiloLock, XiloShirt, XiloPhone, XiloHome, XiloBirthday, XiloSparkles, XiloShield, XiloTag } from '../XiloIcons';
+import { XiloUser, XiloShirt, XiloPhone, XiloSparkles, XiloTag } from '../XiloIcons';
 
 /**
  * Modale MemberProfileEditModal
@@ -23,43 +22,44 @@ export default function MemberProfileEditModal({
   onValidateNewMember,
   saving = false
 }) {
-  if (!userItem) return null;
-
   // État local pour le formulaire d'édition du profil
-  const [formData, setFormData] = useState({
-    prenom: userItem.prenom || '',
-    nom: userItem.nom || '',
-    surnom: userItem.surnom || '',
-    genre: userItem.genre || 'femme',
-    telephone: userItem.telephone || '',
-    adresseRue: userItem.adresseRue || userItem.adresse || '',
-    adresseCP: userItem.adresseCP || '',
-    adresseVille: userItem.adresseVille || '',
-    dateNaissance: userItem.dateNaissance || '',
-    tailleTshirt: userItem.tailleTshirt || 'M',
-    taillePantalon: userItem.taillePantalon || 'M',
-    lateralite: userItem.lateralite || 'droitier',
-    droitImage: userItem.droitImage !== false,
-    aptitudeMedicale: userItem.aptitudeMedicale === true,
-    role: userItem.role || 'membre',
-    niveau: userItem.niveau || userItem.niveauMusique || 'aucun',
-    niveauDanse: userItem.niveauDanse || 'aucun',
-    instrument: userItem.instrument || userItem.instrumentPrincipal || '',
-    instrumentSecondaire: userItem.instrumentSecondaire || '',
-    voeuPrincipal: userItem.voeuPrincipal || '',
-    voeuSecondaire: userItem.voeuSecondaire || '',
-    voeuTertiaire: userItem.voeuTertiaire || '',
-    pratiquePercussion: userItem.pratiquePercussion !== false,
-    pratiqueDanse: userItem.pratiqueDanse === true,
-    estAncienMembre: userItem.estAncienMembre === true,
-    souhaiteChangerInstrument: userItem.souhaiteChangerInstrument === true,
-    accordRenfortAncienInstrument: userItem.accordRenfortAncienInstrument === true,
-    dietaryRestrictionsText: Array.isArray(userItem.dietaryRestrictions) ? userItem.dietaryRestrictions.join(', ') : (userItem.dietaryRestrictions || ''),
-    allergies: userItem.allergies || '',
-    tags: Array.isArray(userItem.tags) ? [...userItem.tags] : [],
-    instrumentsJoues: Array.isArray(userItem.instrumentsJoues) ? [...userItem.instrumentsJoues] : (userItem.instrument ? [userItem.instrument] : []),
-    niveauxParInstrument: userItem.niveauxParInstrument || {}
-  });
+  const [formData, setFormData] = useState(() => ({
+    prenom: userItem?.prenom || '',
+    nom: userItem?.nom || '',
+    surnom: userItem?.surnom || '',
+    genre: userItem?.genre || 'femme',
+    telephone: userItem?.telephone || '',
+    adresseRue: userItem?.adresseRue || userItem?.adresse || '',
+    adresseCP: userItem?.adresseCP || '',
+    adresseVille: userItem?.adresseVille || '',
+    dateNaissance: userItem?.dateNaissance || '',
+    tailleTshirt: userItem?.tailleTshirt || 'M',
+    taillePantalon: userItem?.taillePantalon || 'M',
+    lateralite: userItem?.lateralite || 'droitier',
+    droitImage: userItem?.droitImage !== false,
+    aptitudeMedicale: userItem?.aptitudeMedicale === true,
+    role: userItem?.role || 'membre',
+    niveau: userItem?.niveau || userItem?.niveauMusique || 'aucun',
+    niveauDanse: userItem?.niveauDanse || 'aucun',
+    instrument: userItem?.instrument || userItem?.instrumentPrincipal || '',
+    instrumentSecondaire: userItem?.instrumentSecondaire || '',
+    voeuPrincipal: userItem?.voeuPrincipal || '',
+    voeuSecondaire: userItem?.voeuSecondaire || '',
+    voeuTertiaire: userItem?.voeuTertiaire || '',
+    pratiquePercussion: userItem?.pratiquePercussion !== false,
+    pratiqueDanse: userItem?.pratiqueDanse === true,
+    estAncienMembre: userItem?.estAncienMembre === true,
+    souhaiteChangerInstrument: userItem?.souhaiteChangerInstrument === true,
+    accordRenfortAncienInstrument: userItem?.accordRenfortAncienInstrument === true,
+    dietaryRestrictionsText: Array.isArray(userItem?.dietaryRestrictions) ? userItem.dietaryRestrictions.join(', ') : (userItem?.dietaryRestrictions || ''),
+    allergies: userItem?.allergies || '',
+    tags: Array.isArray(userItem?.tags) ? [...userItem.tags] : [],
+    instrumentsJoues: Array.isArray(userItem?.instrumentsJoues) ? [...userItem.instrumentsJoues] : (userItem?.instrument ? [userItem.instrument] : []),
+    niveauxParInstrument: userItem?.niveauxParInstrument || {}
+  }));
+
+  // Clause de garde placée impérativement après tous les hooks (Rules of Hooks)
+  if (!userItem) return null;
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -88,7 +88,7 @@ export default function MemberProfileEditModal({
       if (isChecked) {
         return { ...prev, instrumentsJoues: [...currentInsts, inst] };
       } else {
-        const { [inst]: removed, ...restNiveaux } = currentNiveaux;
+        const { [inst]: _removed, ...restNiveaux } = currentNiveaux;
         return { 
           ...prev, 
           instrumentsJoues: currentInsts.filter(i => i !== inst),

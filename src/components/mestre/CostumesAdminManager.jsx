@@ -105,15 +105,16 @@ export default function CostumesAdminManager({ groupId }) {
     };
 
     setCostumeForm(prev => {
+      const safePieces = Array.isArray(prev.pieces) ? prev.pieces : [];
       if (pieceForm.id) {
         return {
           ...prev,
-          pieces: prev.pieces.map(p => p.id === pieceForm.id ? newPiece : p)
+          pieces: safePieces.map(p => p.id === pieceForm.id ? newPiece : p)
         };
       } else {
         return {
           ...prev,
-          pieces: [...prev.pieces, newPiece]
+          pieces: [...safePieces, newPiece]
         };
       }
     });
@@ -135,7 +136,7 @@ export default function CostumesAdminManager({ groupId }) {
   const handleRemovePieceFromCostume = (pieceId) => {
     setCostumeForm(prev => ({
       ...prev,
-      pieces: prev.pieces.filter(p => p.id !== pieceId)
+      pieces: (prev.pieces || []).filter(p => p.id !== pieceId)
     }));
   };
 
@@ -374,10 +375,10 @@ export default function CostumesAdminManager({ groupId }) {
 
                   {/* List of existing pieces in form */}
                   <div className="flex flex-col gap-2 max-h-48 overflow-y-auto pr-1">
-                    {costumeForm.pieces.length === 0 ? (
+                    {(costumeForm.pieces || []).length === 0 ? (
                       <span className="text-[10px] italic opacity-60">Aucune pièce ajoutée pour le moment.</span>
                     ) : (
-                      costumeForm.pieces.map((piece, index) => (
+                      (costumeForm.pieces || []).map((piece, index) => (
                         <div key={piece.id || index} className="p-2.5 bg-white/40 border border-dashed border-cordel-master-dark/20 rounded flex justify-between items-center text-xs">
                           <div className="flex flex-col">
                             <span className="font-bold text-encre-noire">

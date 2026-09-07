@@ -1,8 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { doc, onSnapshot, setDoc, getDoc } from 'firebase/firestore';
-import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
-import imageCompression from 'browser-image-compression';
-import { db, storage } from '../firebase';
+import { db } from '../firebase';
 import { DEFAULT_CUSTOM_CATEGORIES, batchMigrateUserCategories } from '../utils/categoryUtils';
 
 export const DEFAULT_FIELDS_CONFIG = {
@@ -108,7 +106,6 @@ export const DEFAULT_VITRINE_TEXTS = {
 };
 
 export const DEFAULT_PUBLIC_THEME = {
-  isPublished: false,
   primaryColor: '#D32F2F',
   secondaryColor: '#1976D2',
   backgroundColor: '#FAF6EE',

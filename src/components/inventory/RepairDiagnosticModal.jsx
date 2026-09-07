@@ -9,8 +9,7 @@ export default function RepairDiagnosticModal({
   instrument,
   inventoryParts,
   instrumentModels = [],
-  onClose,
-  t
+  onClose
 }) {
   const [replacingPartId, setReplacingPartId] = useState(null);
   const [selectedReplacementId, setSelectedReplacementId] = useState('');

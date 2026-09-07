@@ -18,7 +18,6 @@ export async function updateContactLastDate(groupId, contactIdOrEmail) {
         date_dernier_contact: todayStr,
         updatedAt: serverTimestamp()
       });
-      console.log(`updateContactLastDate - Mis à jour par ID : ${contactIdOrEmail}`);
       return;
     }
 
@@ -35,7 +34,6 @@ export async function updateContactLastDate(groupId, contactIdOrEmail) {
             updatedAt: serverTimestamp()
           });
         });
-        console.log(`updateContactLastDate - Mis à jour par Email : ${contactIdOrEmail}`);
       }
     }
   } catch (err) {

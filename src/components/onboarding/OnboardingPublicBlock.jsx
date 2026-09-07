@@ -1,5 +1,5 @@
 import React from 'react';
-import { XiloTrombinoscope, XiloEye } from '../XiloIcons';
+import { XiloTrombinoscope } from '../XiloIcons';
 import { filterPublicPercussionInstruments } from '../../utils/tagUtils';
 
 /**

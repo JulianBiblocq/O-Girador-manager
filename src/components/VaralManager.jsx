@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { collection, query, where, onSnapshot, doc, deleteDoc, updateDoc, addDoc, getDocs, getDoc, increment } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, doc, deleteDoc, updateDoc, addDoc, getDoc, increment, limit } from 'firebase/firestore';
 import { ref, deleteObject } from 'firebase/storage';
 import { db, storage, auth } from '../firebase';
 import CordelCard from './CordelCard';
@@ -33,6 +33,8 @@ export default function VaralManager({ groupId, onBack, role, isSystemAdmin, isE
   const { t } = useTranslation();
   const { confirm } = useConfirm();
   const [documents, setDocuments] = useState([]);
+  const [docLimit, setDocLimit] = useState(40);
+  const [hasMoreDocs, setHasMoreDocs] = useState(false);
   const [instrumentModels, setInstrumentModels] = useState([]);
   const [varalCategories, setVaralCategories] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -297,14 +299,15 @@ export default function VaralManager({ groupId, onBack, role, isSystemAdmin, isE
     return () => unsubscribe();
   }, [groupId]);
 
-  // 2. Charger tous les documents du groupe
+  // 2. Charger les documents du groupe bornés à docLimit pour optimiser les quotas
   useEffect(() => {
     if (!groupId || !isAuthorized) {
       setLoading(false);
       return;
     }
-    const q = query(collection(db, 'documents'), where('groupId', '==', groupId));
+    const q = query(collection(db, 'documents'), where('groupId', '==', groupId), limit(docLimit));
     const unsubscribe = onSnapshot(q, (snap) => {
+      setHasMoreDocs(snap.size >= docLimit);
       const fetched = [];
       snap.forEach((docSnap) => {
         fetched.push({
@@ -326,7 +329,7 @@ export default function VaralManager({ groupId, onBack, role, isSystemAdmin, isE
       setLoading(false);
     });
     return () => unsubscribe();
-  }, [groupId, isAuthorized]);
+  }, [groupId, isAuthorized, docLimit]);
 
   // 3. Charger les modèles d'instruments pour la projection dynamique dans l'Atelier
   useEffect(() => {
@@ -1129,6 +1132,18 @@ export default function VaralManager({ groupId, onBack, role, isSystemAdmin, isE
                   </div>
                 );
               })}
+
+              {hasMoreDocs && (
+                <div className="flex justify-center p-4">
+                  <CordelButton
+                    variant="default"
+                    onClick={() => setDocLimit(prev => prev + 40)}
+                    className="text-xs px-4 py-2 font-bold uppercase tracking-wider"
+                  >
+                    📜 {t('documents.loadMore', "Charger plus de documents (+40)")}
+                  </CordelButton>
+                </div>
+              )}
             </div>
           )}
         </div>

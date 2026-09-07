@@ -1,6 +1,5 @@
 import React from 'react';
 import CordelCard from '../CordelCard';
-import CordelButton from '../CordelButton';
 
 const INSTRUMENT_ICONS = {
   Alfaia: 'icones/alfaia.svg',
@@ -27,7 +26,7 @@ const INSTRUMENT_ICONS = {
  * @param {string} props.kitCompletionText Texte formaté du statut du kit
  * @param {Function} props.t Fonction de traduction
  */
-export default function InventoryItemCard({ item, usersMap, onEdit, onDelete, onToggleBorrow, onDiagnose, inventoryParts, kitCompletionText, t }) {
+export default function InventoryItemCard({ item, usersMap, onEdit, onDelete, _onToggleBorrow, onDiagnose, inventoryParts, kitCompletionText, _t }) {
   const iconPath = INSTRUMENT_ICONS[item.type] || 'favicon.svg';
 
   const getEtatBadgeClass = (etat) => {

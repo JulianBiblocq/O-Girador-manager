@@ -109,7 +109,7 @@ export default function EventHeaderCard({ event, onClose, onPrev, onNext, t }) {
       {/* Visuel principal (Affiche ou Miniature Vidéo) */}
       {thumbnailCandidate && (
         <div 
-          className="mt-2 relative rounded-[8px] overflow-hidden border-2 border-encre-noire bg-black/5 shadow-[2px_2px_0px_0px_rgba(26,26,26,0.15)] group cursor-pointer max-h-[320px] flex items-center justify-center"
+          className="mt-2 relative rounded-[8px] overflow-hidden border-2 border-encre-noire bg-black/5 shadow-[2px_2px_0px_0px_rgba(26,26,26,0.15)] group cursor-pointer max-h-[320px] aspect-video min-h-[160px] flex items-center justify-center"
           onClick={() => {
             if (videoUrl) {
               window.open(videoUrl, '_blank', 'noopener,noreferrer');
@@ -120,6 +120,8 @@ export default function EventHeaderCard({ event, onClose, onPrev, onNext, t }) {
           <img 
             src={thumbnailCandidate} 
             alt={event.titre} 
+            loading="lazy"
+            decoding="async"
             className="w-full h-full object-contain max-h-[320px]" 
           />
           {isVideo && (

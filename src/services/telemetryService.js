@@ -26,8 +26,6 @@ export const telemetryService = {
         timestamp: serverTimestamp(),
         resolved: false
       });
-      
-      console.log('Télémétrie : Erreur remontée à l\'Orquestrador.');
     } catch (err) {
       console.error('Échec de l\'envoi de la télémétrie:', err);
     }

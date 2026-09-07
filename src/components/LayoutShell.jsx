@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { 
   XiloHome, 
   XiloUser, 
@@ -9,13 +9,10 @@ import {
   XiloBox, 
   XiloDrum, 
   XiloChisel, 
-  XiloTag, 
   XiloConsole, 
   XiloSignOut,
   XiloEQ,
-  XiloGlobe,
   XiloScroll,
-  XiloCar,
   XiloCalendar,
   XiloCompass,
   XiloHanger,
@@ -28,7 +25,7 @@ import { useTranslation } from './LanguageContext';
 import { usePresence } from '../hooks/usePresence';
 import { PresenceProvider } from '../context/PresenceContext';
 import OnlineStatusWidget from './OnlineStatusWidget';
-import { canEditVitrine, canAccessPole, canAccessTabPermission } from '../utils/permissionUtils';
+import { canAccessPole, canAccessTabPermission } from '../utils/permissionUtils';
 import { usePendingMembersNotification } from '../hooks/usePendingMembersNotification';
 import { resolveEffectiveUserTags } from '../utils/tagUtils'; // Utilitaire de résolution des étiquettes effectives
 import InfoPoleBanner, { InfoPoleHelpButton } from './InfoPoleBanner';
@@ -62,7 +59,7 @@ export default function LayoutShell({
   permissionsMatrice,
   enabledModules = {},
   activerPresenceEnLigne = true,
-  enableIndividualProgression = false,
+  enableIndividualProgression: _enableIndividualProgression = false,
   breakGlassActive = false,
   onToggleBreakGlass,
   tagsDisponibles = [],
@@ -117,8 +114,7 @@ export default function LayoutShell({
     isSimulating,
     simulationTarget,
     effectiveProfile: simulatedProfile,
-    effectiveUserTags: simulatedTags,
-    stopSimulation
+    effectiveUserTags: simulatedTags
   } = useViewSimulator();
 
   // Profil actif pour le rendu et les permissions (adopte la vue simulée si active)

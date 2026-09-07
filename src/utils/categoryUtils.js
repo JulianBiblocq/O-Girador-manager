@@ -129,8 +129,6 @@ export async function batchMigrateUserCategories(db, groupId, newCategories = DE
     if (count % BATCH_SIZE !== 0) {
       await currentBatch.commit();
     }
-
-    console.log(`Migration Firestore batch complétée : ${count} profils membres mis à jour avec les catégories.`);
   } catch (err) {
     console.error("Erreur lors de la migration batch des catégories membres dans Firestore :", err);
   }

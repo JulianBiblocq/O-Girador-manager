@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { storage } from '../../firebase';
-import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 
 /**

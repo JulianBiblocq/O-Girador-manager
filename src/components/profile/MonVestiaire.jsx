@@ -126,9 +126,9 @@ export default function MonVestiaire({ userId, groupId, userChecklist = {}, user
   };
 
   // Filtrer costumes based on target category
-  const filteredCostumes = costumes.filter(c => {
+  const filteredCostumes = (costumes || []).filter(c => {
     if (selectedFilter === 'tous') return true;
-    return (c.targetCategory || 'Tous').toLowerCase() === selectedFilter.toLowerCase() || (c.targetCategory || 'Tous') === 'Tous';
+    return (c?.targetCategory || 'Tous').toLowerCase() === selectedFilter.toLowerCase() || (c?.targetCategory || 'Tous') === 'Tous';
   });
 
   return (
@@ -487,9 +487,7 @@ export default function MonVestiaire({ userId, groupId, userChecklist = {}, user
           userId={userId}
           userEmail={userEmail}
           onClose={() => setShowReturnModal(false)}
-          onSuccess={(newStatus) => {
-            console.log(`[MonVestiaire] Déclaration costume enregistrée : ${newStatus}`);
-          }}
+          onSuccess={() => {}}
         />
       )}
     </div>

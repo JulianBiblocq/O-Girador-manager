@@ -1,6 +1,5 @@
 import React, { useState, useMemo } from 'react';
 import CordelCard from './CordelCard';
-import CordelButton from './CordelButton';
 import EventDisciplineBadges from './agenda/EventDisciplineBadges';
 
 export default function CalendarGrid({ events = [], onSelectEvent, t }) {

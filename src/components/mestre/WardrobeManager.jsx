@@ -455,7 +455,7 @@ export default function WardrobeManager({
                       className="theme-input font-bold py-1.5 px-2 bg-cordel-bg-light"
                     >
                       <option value="" disabled>Sélectionner un membre...</option>
-                      {allUsers.map(u => (
+                      {(allUsers || []).map(u => (
                         <option key={u.id} value={u.id}>{u.prenom} {u.nom}</option>
                       ))}
                     </select>
@@ -490,14 +490,14 @@ export default function WardrobeManager({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-encre-noire/10">
-                  {costumes.length === 0 ? (
+                  {(costumes || []).length === 0 ? (
                     <tr>
                       <td colSpan="6" className="py-8 text-center italic opacity-60">
                         L'inventaire des costumes est vide.
                       </td>
                     </tr>
                   ) : (
-                    costumes.map((piece) => (
+                    (costumes || []).map((piece) => (
                       <tr key={piece.id} className="hover:bg-white/20 transition-colors">
                         <td className="py-2 px-2 md:py-2.5 md:px-4 font-bold">{piece.type}</td>
                         <td className="py-2 px-2 md:py-2.5 md:px-4 text-center font-black">

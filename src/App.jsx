@@ -2256,13 +2256,15 @@ export default function App() {
 
               {/* Assistant de Premier Démarrage (Wizard Onboarding Mestre/Bureau) */}
               <React.Suspense fallback={null}>
-                <OnboardingWizard
-                  isOpen={showOnboardingWizard}
-                  onClose={() => setShowOnboardingWizard(false)}
-                  groupId={profileData?.groupId || (new URLSearchParams(window.location.search).get('groupe'))}
-                  associationSettings={associationData || {}}
-                  onCompleteSuccess={() => setShowOnboardingWizard(false)}
-                />
+                <ErrorBoundary compact title="Onboarding">
+                  <OnboardingWizard
+                    isOpen={showOnboardingWizard}
+                    onClose={() => setShowOnboardingWizard(false)}
+                    groupId={profileData?.groupId || (new URLSearchParams(window.location.search).get('groupe'))}
+                    associationSettings={associationData || {}}
+                    onCompleteSuccess={() => setShowOnboardingWizard(false)}
+                  />
+                </ErrorBoundary>
               </React.Suspense>
             </LayoutShell>
             <ReloadPrompt />

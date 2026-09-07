@@ -1,5 +1,4 @@
 import React from 'react';
-import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 import { downloadInvoicePDF } from '../../utils/invoicePdfGenerator';
 import useConfirm from '../../hooks/useConfirm';

@@ -26,19 +26,22 @@ const handleStaleChunkError = (reason) => {
 window.addEventListener('error', (e) => handleStaleChunkError(e?.error || e?.message));
 window.addEventListener('unhandledrejection', (e) => handleStaleChunkError(e?.reason));
 
-const BUILD_TIME = String(Date.now());
-const storedBuildTime = localStorage.getItem('app_build_timestamp');
+// Purge ciblée du cache du Service Worker uniquement en cas de montée de version réelle
+const CURRENT_VERSION = import.meta.env.VITE_APP_VERSION || '1.0.0';
+const storedVersion = localStorage.getItem('app_build_version');
 
-if (storedBuildTime !== BUILD_TIME) {
-  localStorage.setItem('app_build_timestamp', BUILD_TIME);
+if (storedVersion && storedVersion !== CURRENT_VERSION) {
   if ('caches' in window) {
     caches.keys().then((names) => {
       names.forEach((name) => {
         caches.delete(name);
       });
-    }).catch(err => console.error("Error clearing cache:", err));
+    }).catch(err => console.error("Erreur vidage cache PWA :", err));
   }
 }
+localStorage.setItem('app_build_version', CURRENT_VERSION);
+localStorage.removeItem('app_build_timestamp');
+
 
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'

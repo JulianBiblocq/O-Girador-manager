@@ -39,8 +39,6 @@ export default function StudioPhotoQrPrintModal({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [onClose]);
 
-  if (!qrUrl) return null;
-
   // Formatage lisible de la date
   const formattedDate = React.useMemo(() => {
     if (!eventDate) return '';
@@ -57,6 +55,9 @@ export default function StudioPhotoQrPrintModal({
       return eventDate;
     }
   }, [eventDate]);
+
+  // Clause de garde placée impérativement après tous les hooks (Rules of Hooks)
+  if (!qrUrl) return null;
 
   // Copie de l'URL dans le presse-papier
   const handleCopyLink = async () => {

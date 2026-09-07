@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, query, orderBy } from 'firebase/firestore';
 import { db } from '../../firebase';
-import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 import useConfirm from '../../hooks/useConfirm';
 import { isToRelance } from '../../utils/diffusionUtils.js';

@@ -64,13 +64,6 @@ export function formatAssociationEmailPayload(params, associationSettings = {}) 
 export async function sendAssociationEmail(emailParams, associationSettings = {}) {
   const payload = formatAssociationEmailPayload(emailParams, associationSettings);
 
-  console.log("emailService - Routage d'envoi d'e-mail SaaS :", {
-    sender: payload.sender,
-    replyTo: payload.replyTo,
-    deliveryMode: payload.deliveryConfig.deliveryMode,
-    apiProvider: payload.deliveryConfig.apiProvider
-  });
-
   try {
     // Si la Cloud Function centrale est configurée sur Firebase (utilisation du projet par défaut si l'URL n'est pas définie)
     const projectId = import.meta.env.VITE_FIREBASE_PROJECT_ID;

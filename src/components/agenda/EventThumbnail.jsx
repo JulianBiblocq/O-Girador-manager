@@ -55,7 +55,7 @@ export default function EventThumbnail({ event, onSelect, className = '' }) {
   return (
     <div
       className={`
-        w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 shrink-0 rounded-[6px_8px_5px_7px] border border-encre-noire/30 bg-[#fdfaf2] dark:bg-[#1f1b18] 
+        w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 shrink-0 aspect-square min-w-[48px] min-h-[48px] rounded-[6px_8px_5px_7px] border border-encre-noire/30 bg-[#fdfaf2] dark:bg-[#1f1b18] 
         overflow-hidden flex items-center justify-center select-none shadow-[1px_1px_0px_0px_#181716] relative group cursor-pointer
         ${className}
       `}
@@ -66,6 +66,10 @@ export default function EventThumbnail({ event, onSelect, className = '' }) {
         <img
           src={thumbnailUrl}
           alt={event.title || "Visuel"}
+          width="64"
+          height="64"
+          loading="lazy"
+          decoding="async"
           onError={() => setHasError(true)}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform"
         />

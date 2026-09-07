@@ -4,7 +4,7 @@ import { db } from '../firebase';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
 import { useTranslation } from './LanguageContext';
-import { XiloCar, XiloCoin } from './XiloIcons';
+import { XiloCar } from './XiloIcons';
 
 import AddressAutocomplete from './AddressAutocomplete';
 

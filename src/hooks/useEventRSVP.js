@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useFamilyMembers } from './useFamilyMembers';
@@ -6,7 +6,29 @@ import useConfirm from './useConfirm';
 
 export function useEventRSVP(event, user, profileData, allUsers, isMusicLevelRestricted, setToastMessage) {
   const { confirm } = useConfirm();
-  const existingResponse = (event.inscriptions || []).find(ins => ins.userId === user?.uid);
+  const existingResponse = (event?.inscriptions || []).find(ins => ins.userId === user?.uid);
+
+  // Référence pour le timer d'alerte toast et nettoyage au démontage
+  const toastTimeoutRef = useRef(null);
+  useEffect(() => {
+    return () => {
+      if (toastTimeoutRef.current) {
+        clearTimeout(toastTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  // Déclencheur sécurisé des notifications toast
+  const triggerToast = (msg) => {
+    if (!setToastMessage) return;
+    if (toastTimeoutRef.current) {
+      clearTimeout(toastTimeoutRef.current);
+    }
+    setToastMessage(msg);
+    toastTimeoutRef.current = setTimeout(() => {
+      setToastMessage(null);
+    }, 3000);
+  };
 
   const [status, setStatus] = useState(() => existingResponse 
     ? (existingResponse.status === 'pending' || existingResponse.status === 'refused' ? 'present' : existingResponse.status) 
@@ -66,8 +88,8 @@ export function useEventRSVP(event, user, profileData, allUsers, isMusicLevelRes
 
   useEffect(() => {
     const initial = {};
-    familyMembers.forEach(m => {
-      const resp = (event.inscriptions || []).find(ins => ins.userId === m.id);
+    (familyMembers || []).forEach(m => {
+      const resp = (event?.inscriptions || []).find(ins => ins.userId === m.id);
       const isSelected = !!resp && resp.status !== 'absent';
       const mStatus = resp 
         ? (resp.status === 'pending' || resp.status === 'refused' ? 'present' : resp.status) 
@@ -83,11 +105,11 @@ export function useEventRSVP(event, user, profileData, allUsers, isMusicLevelRes
       };
     });
     setFamilyResponses(initial);
-  }, [event.id, event.inscriptions, familyMembers]);
+  }, [event?.id, event?.inscriptions, familyMembers, status]);
 
   // Synchroniser state with event/user changes for main parent
   useEffect(() => {
-    const resp = (event.inscriptions || []).find(ins => ins.userId === user?.uid);
+    const resp = (event?.inscriptions || []).find(ins => ins.userId === user?.uid);
     setStatus(resp 
       ? (resp.status === 'pending' || resp.status === 'refused' ? 'present' : resp.status) 
       : 'confirm');
@@ -104,14 +126,15 @@ export function useEventRSVP(event, user, profileData, allUsers, isMusicLevelRes
     setDemandeRemboursementKm(resp ? resp.demandeRemboursementKm === true : false);
     setBesoinTransportInstrument(resp ? resp.besoinTransportInstrument === true : false);
     setInstrumentChoisi(resp?.instrumentChoisi || profileData?.instrument || profileData?.instrumentsJoues?.[0] || 'Autre');
-  }, [event.id, user?.uid, profileData?.instrument, profileData?.instrumentsJoues, event.inscriptions]);
+  }, [event?.id, user?.uid, profileData?.instrument, profileData?.instrumentsJoues, event?.inscriptions]);
 
   const handleSave = async (e, overrideStatus = null, overrideOptions = {}) => {
     if (e && e.preventDefault) e.preventDefault();
-    if (event.status === 'annule') {
+    if (event?.status === 'annule') {
       alert("Les inscriptions sont désactivées car l'événement est annulé.");
       return;
     }
+    if (!event?.id) return;
     setSaving(true);
 
     const isRegistrationDeadlinePassed = event.dateLimiteInscription
@@ -145,7 +168,7 @@ export function useEventRSVP(event, user, profileData, allUsers, isMusicLevelRes
       const finalStatus = (targetStatus === 'present' && event.requiresValidation) ? 'pending' : targetStatus;
       const newResponse = {
         userId: user.uid,
-        userName: `${profileData.prenom} ${profileData.nom}`,
+        userName: `${profileData?.prenom || ''} ${profileData?.nom || ''}`.trim() || user?.displayName || 'Membre',
         status: finalStatus,
         transport: targetStatus === 'present' ? targetTransport : null,
         places: 0,
@@ -180,7 +203,7 @@ export function useEventRSVP(event, user, profileData, allUsers, isMusicLevelRes
         if (!recherchePlace.some(p => p.uid === user.uid)) {
           recherchePlace.push({
             uid: user.uid,
-            nom: `${profileData.prenom} ${profileData.nom}`,
+            nom: `${profileData?.prenom || ''} ${profileData?.nom || ''}`.trim() || user?.displayName || 'Membre',
             cherchePassager: true,
             chercheInstrument: !!targetBesoinTransp
           });
@@ -194,16 +217,11 @@ export function useEventRSVP(event, user, profileData, allUsers, isMusicLevelRes
       const eventRef = doc(db, 'events', event.id);
       await updateDoc(eventRef, eventUpdates);
 
-      if (setToastMessage) {
-        let msg = "Inscription validée (Présent)";
-        if (finalStatus === 'pending') msg = "Inscription en attente de validation";
-        else if (finalStatus === 'absent') msg = "Inscription enregistrée (Absent)";
-        else if (finalStatus === 'confirm') msg = "Inscription enregistrée (À confirmer)";
-        setToastMessage(msg);
-        setTimeout(() => {
-          setToastMessage(null);
-        }, 3000);
-      }
+      let msg = "Inscription validée (Présent)";
+      if (finalStatus === 'pending') msg = "Inscription en attente de validation";
+      else if (finalStatus === 'absent') msg = "Inscription enregistrée (Absent)";
+      else if (finalStatus === 'confirm') msg = "Inscription enregistrée (À confirmer)";
+      triggerToast(msg);
     } catch (error) {
       console.error("EventDetails - Erreur lors de la sauvegarde RSVP :", error);
       alert("Erreur lors de l'enregistrement de votre inscription.");
@@ -265,13 +283,14 @@ export function useEventRSVP(event, user, profileData, allUsers, isMusicLevelRes
   // Sauvegarder les réponses d'inscription de tous les membres de la famille dans Firestore
   const handleFamilySave = async (e) => {
     if (e && e.preventDefault) e.preventDefault();
-    if (event.status === 'annule') {
+    if (event?.status === 'annule') {
       alert("Les inscriptions sont désactivées car l'événement est annulé.");
       return;
     }
+    if (!event?.id) return;
     setSaving(true);
 
-    const isRegistrationDeadlinePassed = event.dateLimiteInscription
+    const isRegistrationDeadlinePassed = event?.dateLimiteInscription
       ? new Date(event.dateLimiteInscription) < new Date()
       : false;
     const isAuthorized = profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.isSystemAdmin === true;
@@ -302,7 +321,7 @@ export function useEventRSVP(event, user, profileData, allUsers, isMusicLevelRes
 
         updatedInscriptions.push({
           userId: m.id,
-          userName: `${m.prenom} ${m.nom}`.trim(),
+          userName: `${m.prenom || ''} ${m.nom || ''}`.trim() || 'Membre',
           status: finalStatus,
           transport: m.isParent && mStatus === 'present' ? transport : null,
           places: 0,
@@ -319,12 +338,7 @@ export function useEventRSVP(event, user, profileData, allUsers, isMusicLevelRes
         inscriptions: updatedInscriptions
       });
 
-      if (setToastMessage) {
-        setToastMessage("Inscriptions de la famille enregistrées !");
-        setTimeout(() => {
-          setToastMessage(null);
-        }, 3000);
-      }
+      triggerToast("Inscriptions de la famille enregistrées !");
     } catch (error) {
       console.error("EventDetails - Erreur lors de la sauvegarde RSVP famille :", error);
       alert("Erreur lors de l'enregistrement de votre inscription.");
@@ -349,12 +363,7 @@ export function useEventRSVP(event, user, profileData, allUsers, isMusicLevelRes
         inscriptions: updatedInscriptions
       });
 
-      if (setToastMessage) {
-        setToastMessage(targetStatus === 'present' ? "Inscription validée" : "Inscription refusée");
-        setTimeout(() => {
-          setToastMessage(null);
-        }, 3000);
-      }
+      triggerToast(targetStatus === 'present' ? "Inscription validée" : "Inscription refusée");
     } catch (error) {
       console.error("EventDetails - Erreur de validation d'inscription :", error);
       alert("Erreur lors de la validation de l'inscription.");
@@ -383,7 +392,7 @@ export function useEventRSVP(event, user, profileData, allUsers, isMusicLevelRes
       const chosenInstrument = selectedManualInstrument || targetUser.instrument || 'Autre';
       const newResponse = {
         userId: targetUser.id,
-        userName: `${targetUser.prenom} ${targetUser.nom}`,
+        userName: `${targetUser.prenom || ''} ${targetUser.nom || ''}`.trim() || 'Membre',
         status: 'present',
         transport: null,
         places: 0,
@@ -403,12 +412,7 @@ export function useEventRSVP(event, user, profileData, allUsers, isMusicLevelRes
       setSelectedManualUserId('');
       setSelectedManualInstrument('');
       setIsManualRegisterOpen(false);
-      if (setToastMessage) {
-        setToastMessage("Membre inscrit avec succès !");
-        setTimeout(() => {
-          setToastMessage(null);
-        }, 3000);
-      }
+      triggerToast("Membre inscrit avec succès !");
     } catch (error) {
       console.error("EventDetails - Erreur inscription manuelle :", error);
       alert("Erreur lors de l'inscription du membre.");
@@ -428,12 +432,7 @@ export function useEventRSVP(event, user, profileData, allUsers, isMusicLevelRes
         inscriptions: updatedInscriptions
       });
 
-      if (setToastMessage) {
-        setToastMessage("Inscription retirée");
-        setTimeout(() => {
-          setToastMessage(null);
-        }, 3000);
-      }
+      triggerToast("Inscription retirée");
     } catch (error) {
       console.error("EventDetails - Erreur désinscription manuelle :", error);
       alert("Erreur lors du retrait de l'inscription.");
@@ -456,12 +455,7 @@ export function useEventRSVP(event, user, profileData, allUsers, isMusicLevelRes
         inscriptions: updatedInscriptions
       });
 
-      if (setToastMessage) {
-        setToastMessage("Statut mis à jour");
-        setTimeout(() => {
-          setToastMessage(null);
-        }, 3000);
-      }
+      triggerToast("Statut mis à jour");
     } catch (error) {
       console.error("EventDetails - Erreur mise à jour statut :", error);
       alert("Erreur lors de la mise à jour du statut.");
@@ -484,12 +478,7 @@ export function useEventRSVP(event, user, profileData, allUsers, isMusicLevelRes
         inscriptions: updatedInscriptions
       });
 
-      if (setToastMessage) {
-        setToastMessage("Instrument mis à jour");
-        setTimeout(() => {
-          setToastMessage(null);
-        }, 3000);
-      }
+      triggerToast("Instrument mis à jour");
     } catch (error) {
       console.error("EventDetails - Erreur mise à jour instrument :", error);
       alert("Erreur lors de la mise à jour de l'instrument.");
@@ -515,12 +504,7 @@ export function useEventRSVP(event, user, profileData, allUsers, isMusicLevelRes
         invitesExternes: updatedInvites
       });
 
-      if (setToastMessage) {
-        setToastMessage("Invité externe ajouté !");
-        setTimeout(() => {
-          setToastMessage(null);
-        }, 3000);
-      }
+      triggerToast("Invité externe ajouté !");
     } catch (error) {
       console.error("Erreur lors de l'ajout de l'invité externe :", error);
       alert("Erreur lors de l'ajout de l'invité externe.");
@@ -544,12 +528,7 @@ export function useEventRSVP(event, user, profileData, allUsers, isMusicLevelRes
       await updateDoc(eventRef, {
         invitesExternes: updatedInvites
       });
-      if (setToastMessage) {
-        setToastMessage("Invité externe retiré !");
-        setTimeout(() => {
-          setToastMessage(null);
-        }, 3000);
-      }
+      triggerToast("Invité externe retiré !");
     } catch (error) {
       console.error("Erreur lors du retrait de l'invité externe :", error);
       alert("Erreur lors du retrait de l'invité externe.");

@@ -21,8 +21,6 @@ import { getInstrumentStamp } from './InstrumentStampSVG';
  * }
  */
 export default function FabricationCard({ fabrication, onClose }) {
-  if (!fabrication) return null;
-
   const renderMedia = (url) => {
     if (!url) return null;
     const isVideo = url.toLowerCase().includes('.mp4') || url.toLowerCase().includes('video');
@@ -56,7 +54,7 @@ export default function FabricationCard({ fabrication, onClose }) {
     );
   };
 
-  const hasEtapes = fabrication.etapesFabrication && fabrication.etapesFabrication.length > 0;
+  const hasEtapes = Boolean(fabrication?.etapesFabrication && fabrication.etapesFabrication.length > 0);
   
   const normalizeTags = (val) => {
     if (!val) return [];
@@ -67,10 +65,14 @@ export default function FabricationCard({ fabrication, onClose }) {
     return [];
   };
 
-  const allMateriels = useMemo(() => normalizeTags(fabrication.materielRequis), [fabrication.materielRequis]);
-  const allOutils = useMemo(() => normalizeTags(fabrication.outilsNecessaires), [fabrication.outilsNecessaires]);
+  const allMateriels = useMemo(() => normalizeTags(fabrication?.materielRequis), [fabrication?.materielRequis]);
+  const allOutils = useMemo(() => normalizeTags(fabrication?.outilsNecessaires), [fabrication?.outilsNecessaires]);
 
   const [selectedEtapeId, setSelectedEtapeId] = useState(null);
+
+  // Clause de garde placée impérativement après tous les hooks (Rules of Hooks)
+  if (!fabrication) return null;
+
   const activeEtape = (fabrication.etapesFabrication || []).find((e, idx) => {
     const etapeId = e.id || idx;
     return etapeId === selectedEtapeId;

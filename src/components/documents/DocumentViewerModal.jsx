@@ -1,5 +1,4 @@
 import React from 'react';
-import { useTranslation } from '../LanguageContext';
 
 /**
  * Utilitaires pour analyser les URLs vidéo (YouTube, Vimeo, fichiers directs).
@@ -20,7 +19,7 @@ function getMediaEmbedInfo(url) {
   }
 
   // 2. Vidéo YouTube standard (watch?v=...) ou courte (youtu.be/...)
-  const ytMatch = cleanUrl.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i);
+  const ytMatch = cleanUrl.match(/(?:youtube\.com\/(?:[^/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?/\s]{11})/i);
   if (ytMatch) {
     return {
       type: 'youtube-video',
@@ -30,7 +29,7 @@ function getMediaEmbedInfo(url) {
   }
 
   // 3. Vidéo Vimeo (ex: vimeo.com/123456789)
-  const vimeoMatch = cleanUrl.match(/vimeo\.com\/(?:channels\/(?:\w+\/)?|groups\/([^\/]*)\/videos\/|album\/(\d+)\/video\/|)(\d+)/i);
+  const vimeoMatch = cleanUrl.match(/vimeo\.com\/(?:channels\/(?:\w+\/)?|groups\/([^/]*)\/videos\/|album\/(\d+)\/video\/|)(\d+)/i);
   if (vimeoMatch) {
     const vimeoId = vimeoMatch[3] || vimeoMatch[1];
     return {
@@ -97,8 +96,6 @@ function getMediaEmbedInfo(url) {
  * Résout le problème des documents non cliquables (PDF, vidéos, dossiers partagés, comptes-rendus).
  */
 export default function DocumentViewerModal({ document: docItem, onClose }) {
-  const { t } = useTranslation();
-
   if (!docItem) return null;
 
   const targetUrl = docItem.fileUrl || docItem.url || docItem.link || '';
@@ -240,6 +237,8 @@ export default function DocumentViewerModal({ document: docItem, onClose }) {
               <img 
                 src={targetUrl} 
                 alt={docItem.titre} 
+                loading="lazy"
+                decoding="async"
                 className="max-h-[68vh] w-auto object-contain rounded shadow" 
               />
             </div>

@@ -17,7 +17,7 @@ export default function EventTabsNav({
   setActiveTab,
   canAccessAdminTab,
   attendeesCount = 0,
-  carsCount = 0,
+  _carsCount = 0,
   hasProgram = false
 }) {
   const tabs = [
@@ -51,9 +51,9 @@ export default function EventTabsNav({
   }
 
   return (
-    <div className="w-full border-b-2 border-dashed border-cordel-master-dark/20 pb-2 mb-3">
+    <div className="w-full border-b-2 border-dashed border-cordel-master-dark/20 pb-2 mb-3 overflow-visible">
       <nav
-        className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar select-none"
+        className="flex items-center gap-1.5 overflow-x-auto pt-2 pb-1.5 px-0.5 no-scrollbar select-none"
         aria-label="Navigation de l'événement"
       >
         {tabs.map((tab) => {

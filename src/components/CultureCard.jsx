@@ -2,7 +2,6 @@ import React from 'react';
 import { extractYouTubeId } from '../utils/videoUtils';
 import { QRCodeSVG } from 'qrcode.react';
 import SeloAxeStamp from './SeloAxeStamp';
-import { getInstrumentStamp } from './InstrumentStampSVG';
 
 const renderHTMLorText = (content, extraClass = "") => {
   if (!content) return null;
@@ -14,7 +13,7 @@ const renderHTMLorText = (content, extraClass = "") => {
   return <div className={`whitespace-pre-wrap ${extraClass}`}>{safeContent}</div>;
 };
 
-export default function CultureCard({ culture, isPrintVersion = false }) {
+function CultureCard({ culture, isPrintVersion: _isPrintVersion = false }) {
   if (!culture) return null;
 
   const primaryColor = culture.hexPrimary || (culture.couleurs && culture.couleurs[0]) || (culture.couleursTheme && culture.couleursTheme[0]) || 'var(--encre-noire)';
@@ -103,6 +102,8 @@ export default function CultureCard({ culture, isPrintVersion = false }) {
                       <img 
                         src={culture.fileUrl} 
                         alt={culture.legendeImage || culture.titre} 
+                        loading="lazy"
+                        decoding="async"
                         className="max-h-[300px] object-contain"
                       />
                     </div>
@@ -277,3 +278,5 @@ export default function CultureCard({ culture, isPrintVersion = false }) {
     </div>
   );
 }
+
+export default React.memo(CultureCard);

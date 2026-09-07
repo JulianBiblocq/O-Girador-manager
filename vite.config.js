@@ -107,7 +107,7 @@ export default defineConfig({
     tailwindcss(),
     newsletterApiPlugin(),
     VitePWA({
-      registerType: 'autoUpdate',
+      registerType: 'prompt',
       injectRegister: 'auto',
       includeAssets: ['favicon.svg', 'icon-192.png', 'icon-512.png', 'og-image.png', 'manifest.json'],
       manifest: false,
@@ -118,24 +118,62 @@ export default defineConfig({
         navigateFallbackDenylist: [/^\/__/, /^\/robots\.txt$/, /^\/sitemap\.xml$/],
         importScripts: ['/firebase-messaging-sw.js'],
         cleanupOutdatedCaches: true,
-        skipWaiting: true,
-        clientsClaim: true
+        skipWaiting: false,
+        clientsClaim: false
       }
     })
   ],
   build: {
     rollupOptions: {
       output: {
-        entryFileNames: 'assets/[name]-[hash]-' + Date.now() + '.js',
-        chunkFileNames: 'assets/[name]-[hash]-' + Date.now() + '.js',
-        assetFileNames: 'assets/[name]-[hash]-' + Date.now() + '.[ext]',
+        entryFileNames: 'assets/[name]-[hash].js',
+        chunkFileNames: 'assets/[name]-[hash].js',
+        assetFileNames: 'assets/[name]-[hash].[ext]',
         manualChunks(id) {
           if (id.includes('node_modules')) {
-            if (id.includes('firebase')) {
-              return 'firebase';
+            const normalizedId = id.replace(/\\/g, '/');
+            if (
+              normalizedId.includes('/react/') ||
+              normalizedId.includes('/react-dom/') ||
+              normalizedId.includes('/scheduler/') ||
+              normalizedId.includes('/react-helmet-async/') ||
+              normalizedId.includes('/use-sync-external-store/')
+            ) {
+              return 'vendor-react';
             }
-            if (id.includes('react')) {
-              return 'react';
+            if (normalizedId.includes('/firebase/') || normalizedId.includes('/@firebase/')) {
+              return 'vendor-firebase';
+            }
+            if (
+              normalizedId.includes('/jspdf/') ||
+              normalizedId.includes('/fflate/') ||
+              normalizedId.includes('/html2canvas/') ||
+              normalizedId.includes('/canvg/') ||
+              normalizedId.includes('/stackblur-canvas/') ||
+              normalizedId.includes('/rgbcolor/') ||
+              normalizedId.includes('/svg-pathdata/') ||
+              normalizedId.includes('/fast-png/') ||
+              normalizedId.includes('/iobuffer/')
+            ) {
+              return 'vendor-pdf';
+            }
+            if (
+              normalizedId.includes('/@tiptap/') ||
+              normalizedId.includes('/prosemirror') ||
+              normalizedId.includes('/orderedmap/') ||
+              normalizedId.includes('/rope-sequence/') ||
+              normalizedId.includes('/w3c-keyname/')
+            ) {
+              return 'vendor-editor';
+            }
+            if (
+              normalizedId.includes('/jszip/') ||
+              normalizedId.includes('/pako/') ||
+              normalizedId.includes('/html5-qrcode/') ||
+              normalizedId.includes('/browser-image-compression/') ||
+              normalizedId.includes('/qrcode.react/')
+            ) {
+              return 'vendor-tools';
             }
             return 'vendor';
           }

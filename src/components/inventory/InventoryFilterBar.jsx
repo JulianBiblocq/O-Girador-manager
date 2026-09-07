@@ -22,7 +22,8 @@ export default function InventoryFilterBar({
   viewMode,
   setViewMode,
   onOpenAdd,
-  t
+  onExportCSV,
+  t: _t
 }) {
   return (
     <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 p-3 bg-cordel-bg border-2 border-encre-noire rounded-[6px] shadow-[2px_2px_0px_0px_#181716] select-none">
@@ -104,6 +105,17 @@ export default function InventoryFilterBar({
             🎴 Cartes
           </button>
         </div>
+
+        {onExportCSV && (
+          <button
+            type="button"
+            onClick={onExportCSV}
+            className="px-2.5 py-1.5 bg-cordel-bg text-encre-noire border border-encre-noire rounded text-xs font-bold hover:bg-neutral-100 shadow-xs cursor-pointer flex items-center gap-1"
+            title="Exporter l'inventaire au format CSV"
+          >
+            📥 CSV
+          </button>
+        )}
 
         <CordelButton variant="vert" onClick={onOpenAdd} className="px-3 py-1.5 text-xs font-black">
           ➕ Ajouter un instrument

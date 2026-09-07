@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { collection, query, where, getDocs, doc, setDoc, updateDoc, arrayUnion, arrayRemove, getDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, setDoc, updateDoc, getDoc } from 'firebase/firestore';
 import { ref, listAll, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '../../firebase';
 import CordelCard from '../CordelCard';
-import CordelButton from '../CordelButton';
 import MestreQuizConfigManager from '../pedagogy/MestreQuizConfigManager';
 import QuizDistractorManager from '../pedagogy/QuizDistractorManager';
 import MestreSignalsManager from '../pedagogy/MestreSignalsManager';

@@ -1,7 +1,6 @@
 import React from 'react';
-import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
-import { XiloDrum, XiloMandacaru } from '../XiloIcons';
+import { XiloDrum } from '../XiloIcons';
 
 /**
  * InstrumentReminderBanner - Bannière d'invitation pédagogique sur le Dashboard

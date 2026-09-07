@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { doc, addDoc, updateDoc, collection } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '../../firebase';
-import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 import { XiloClose } from '../XiloIcons';
 

@@ -117,6 +117,8 @@ export function useTreasury(groupId) {
 
   // Synchronisation des données en temps réel depuis Firestore
   useEffect(() => {
+    let isMounted = true;
+
     if (!groupId || !currentUser) {
       setLoadingStates({
         members: false,
@@ -150,18 +152,12 @@ export function useTreasury(groupId) {
     });
 
     // 2. Transactions
-    const txRef = collection(db, 'transactions');
-    const qTx = query(txRef, where('groupId', '==', groupId));
+    const txRef = collection(db, 'associations', groupId, 'transactions');
+    const qTx = query(txRef, orderBy('date', 'desc'));
     const unsubTx = onSnapshot(qTx, (snap) => {
       const fetched = [];
       snap.forEach((docSnap) => {
         fetched.push({ id: docSnap.id, ...docSnap.data() });
-      });
-      // Trier chronologically desc
-      fetched.sort((a, b) => {
-        const dateA = a.date?.toDate ? a.date.toDate() : new Date(a.date);
-        const dateB = b.date?.toDate ? b.date.toDate() : new Date(b.date);
-        return dateB - dateA;
       });
       setTransactions(fetched);
       setLoadingStates(prev => ({ ...prev, transactions: false }));
@@ -171,7 +167,7 @@ export function useTreasury(groupId) {
       setLoadingStates(prev => ({ ...prev, transactions: false }));
     });
 
-    // 3. Events
+    // 3. Events (for event-linked costs/revenues)
     const eventsRef = collection(db, 'events');
     const qEvents = query(eventsRef, where('groupId', '==', groupId));
     const unsubEvents = onSnapshot(qEvents, (snap) => {
@@ -179,8 +175,6 @@ export function useTreasury(groupId) {
       snap.forEach((docSnap) => {
         fetched.push({ id: docSnap.id, ...docSnap.data() });
       });
-      // Trier chronologically desc
-      fetched.sort((a, b) => new Date(b.date) - new Date(a.date));
       setEvents(fetched);
       setLoadingStates(prev => ({ ...prev, events: false }));
     }, (err) => {
@@ -189,11 +183,18 @@ export function useTreasury(groupId) {
       setLoadingStates(prev => ({ ...prev, events: false }));
     });
 
-    // 4. Association Settings
-    const assocRef = doc(db, 'associations', groupId);
-    const unsubSettings = onSnapshot(assocRef, (snap) => {
-      if (snap.exists()) {
-        setAssociationSettings(snap.data());
+    // 4. Association Settings (cotisation amount, etc.)
+    const settingsRef = doc(db, 'associations', groupId);
+    const unsubSettings = onSnapshot(settingsRef, (docSnap) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        setAssociationSettings(data);
+        if (data.cotisationAnnuelleMontant !== undefined) {
+          setCotisationAmount(data.cotisationAnnuelleMontant);
+        }
+        if (data.activeFiscalYear !== undefined) {
+          setActiveFiscalYear(data.activeFiscalYear);
+        }
       }
       setLoadingStates(prev => ({ ...prev, settings: false }));
     }, (err) => {
@@ -202,9 +203,7 @@ export function useTreasury(groupId) {
       setLoadingStates(prev => ({ ...prev, settings: false }));
     });
 
-
-
-    // 5. Inventaire du matériel (pour le suivi des prêts et cautions)
+    // 5. Inventaire du matériel
     const invRef = collection(db, 'inventory');
     const qInv = query(invRef, where('groupId', '==', groupId));
     const unsubInv = onSnapshot(qInv, (snap) => {
@@ -219,19 +218,22 @@ export function useTreasury(groupId) {
       setLoadingStates(prev => ({ ...prev, inventory: false }));
     });
 
-    // 6. HelloAsso Credentials
+    // 6. HelloAsso Credentials (sécurisé par le drapeau isMounted)
     const credentialsRef = doc(db, 'associations', groupId, 'private_settings', 'credentials');
     getDoc(credentialsRef).then((docSnap) => {
+      if (!isMounted) return;
       if (docSnap.exists()) {
         setHelloAssoSignatureKey(docSnap.data().helloAssoSignatureKey || '');
       }
       setLoadingStates(prev => ({ ...prev, credentials: false }));
     }).catch(err => {
+      if (!isMounted) return;
       console.error("useTreasury - Error fetching credentials :", err);
       setLoadingStates(prev => ({ ...prev, credentials: false }));
     });
 
     return () => {
+      isMounted = false;
       unsubMembers();
       unsubTx();
       unsubEvents();

@@ -7,7 +7,7 @@
  * 3. Tiago Rocha     - Membre Standard (recette.membre@o-girador.test)
  */
 
-import { canManageEvents, canAccessPole, canAccessTabPermission } from '../src/utils/permissionUtils.js';
+import { canManageEvents, canAccessTabPermission } from '../src/utils/permissionUtils.js';
 
 const API_KEY = "AIzaSyCTvRPj2p3zdIfEjftXoSvRJ43Uy0EfPMY";
 const PROJECT_ID = "o-girador-7828c";

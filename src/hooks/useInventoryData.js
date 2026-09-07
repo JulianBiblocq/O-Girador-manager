@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { collection, query, where, onSnapshot, doc, addDoc, updateDoc, deleteDoc, writeBatch } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, doc, addDoc, updateDoc, deleteDoc, writeBatch, increment } from 'firebase/firestore';
 import { db } from '../firebase';
 import useConfirm from './useConfirm';
 
@@ -52,7 +52,9 @@ export function useInventoryData(groupId, isAuthorized, t) {
     etuiFourni: false,
     kit: '',
     modelId: '',
-    brokenParts: []
+    brokenParts: [],
+    kitChecklist: [],
+    nomenclature: []
   });
 
   // Synchronisation en temps réel de la liste des membres du groupe
@@ -171,7 +173,9 @@ export function useInventoryData(groupId, isAuthorized, t) {
       borrowedBy: '',
       etuiFourni: false,
       kit: '',
-      nomenclature: []
+      modelId: '',
+      nomenclature: [],
+      kitChecklist: []
     });
     setEditingId(null);
     setIsFormOpen(true);
@@ -189,7 +193,9 @@ export function useInventoryData(groupId, isAuthorized, t) {
       borrowedBy: inst.borrowedBy || '',
       etuiFourni: inst.etuiFourni || false,
       kit: inst.kit || '',
-      nomenclature: inst.nomenclature || []
+      modelId: inst.modelId || '',
+      nomenclature: inst.nomenclature || [],
+      kitChecklist: inst.kitChecklist || []
     });
     setEditingId(inst.id);
     setIsFormOpen(true);
@@ -207,12 +213,14 @@ export function useInventoryData(groupId, isAuthorized, t) {
         etat: formData.etat,
         proprietaire: formData.proprietaire,
         localisationPhysique: formData.localisationPhysique,
-        assignations: formData.assignations,
+        assignations: formData.assignations || [],
         status: formData.status || 'En stock',
-        borrowedBy: formData.borrowedBy || null,
+        borrowedBy: formData.status === 'Emprunté' ? (formData.borrowedBy || null) : null,
         etuiFourni: formData.etuiFourni || false,
         kit: formData.kit || '',
+        modelId: formData.modelId || '',
         nomenclature: formData.nomenclature || [],
+        kitChecklist: formData.kitChecklist || [],
         groupId: groupId
       };
 
@@ -514,6 +522,212 @@ export function useInventoryData(groupId, isAuthorized, t) {
     }
   }, []);
 
+  // Modification rapide d'un champ inline
+  const handleInlineFieldChange = useCallback(async (instId, fieldName, value) => {
+    if (!instId || !fieldName) return;
+    try {
+      const docRef = doc(db, 'inventory', instId);
+      await updateDoc(docRef, {
+        [fieldName]: value
+      });
+    } catch (error) {
+      console.error(`useInventoryData - Erreur mise à jour ${fieldName}:`, error);
+      alert((t && t('common.saveError')) || "Erreur lors de la sauvegarde.");
+    }
+  }, [t]);
+
+  // Affectation rapide d'un emprunteur
+  const handleAssignBorrower = useCallback(async (instId, borrowerId) => {
+    if (!instId || !borrowerId) return;
+    try {
+      const docRef = doc(db, 'inventory', instId);
+      await updateDoc(docRef, {
+        status: 'Emprunté',
+        borrowedBy: borrowerId
+      });
+    } catch (error) {
+      console.error("useInventoryData - Erreur assignation emprunteur :", error);
+      alert((t && t('common.saveError')) || "Erreur lors de l'assignation de l'emprunteur.");
+    }
+  }, [t]);
+
+  // Restitution rapide d'un instrument au local
+  const handleReturnInstrument = useCallback(async (instId) => {
+    if (!instId) return;
+    try {
+      const docRef = doc(db, 'inventory', instId);
+      await updateDoc(docRef, {
+        status: 'En stock',
+        borrowedBy: null
+      });
+    } catch (error) {
+      console.error("useInventoryData - Erreur restitution instrument :", error);
+      alert((t && t('common.saveError')) || "Erreur lors de la restitution.");
+    }
+  }, [t]);
+
+  // Sauvegarde avec synchronisation atomique et résiliente des stocks de consommables/fournitures
+  const handleSaveWithSupplies = useCallback(async (e, supplies = []) => {
+    if (e && e.preventDefault) e.preventDefault();
+    if (!groupId || !formData.nom.trim()) return;
+
+    setSaving(true);
+    try {
+      const isEdit = Boolean(editingId);
+      const oldInst = isEdit ? instruments.find(i => i.id === editingId) : null;
+      const oldChecklist = oldInst?.kitChecklist || [];
+      const newChecklist = formData.kitChecklist || [];
+
+      const payload = {
+        nom: formData.nom.trim(),
+        type: formData.type,
+        etat: formData.etat,
+        proprietaire: formData.proprietaire,
+        localisationPhysique: formData.localisationPhysique,
+        assignations: formData.assignations || [],
+        status: formData.status || 'En stock',
+        borrowedBy: formData.status === 'Emprunté' ? (formData.borrowedBy || null) : null,
+        etuiFourni: formData.etuiFourni || false,
+        kit: formData.kit || '',
+        modelId: formData.modelId || '',
+        nomenclature: formData.nomenclature || [],
+        kitChecklist: newChecklist,
+        groupId: groupId
+      };
+
+      if (editingId) {
+        await updateDoc(doc(db, 'inventory', editingId), payload);
+      } else {
+        await addDoc(collection(db, 'inventory'), payload);
+      }
+
+      // Synchronisation atomique et isolée des stocks d'accessoires de kit
+      if (Array.isArray(supplies) && supplies.length > 0) {
+        const addedItems = newChecklist.filter(item => !oldChecklist.includes(item));
+        const removedItems = oldChecklist.filter(item => !newChecklist.includes(item));
+
+        const supplyUpdates = [];
+        for (const supplyId of addedItems) {
+          if (supplies.some(s => s.id === supplyId)) {
+            supplyUpdates.push(
+              updateDoc(doc(db, 'inventory_supplies', supplyId), {
+                quantiteStock: increment(-1)
+              }).catch(err => console.warn("Erreur decrement supply :", err))
+            );
+          }
+        }
+        for (const supplyId of removedItems) {
+          if (supplies.some(s => s.id === supplyId)) {
+            supplyUpdates.push(
+              updateDoc(doc(db, 'inventory_supplies', supplyId), {
+                quantiteStock: increment(1)
+              }).catch(err => console.warn("Erreur increment supply :", err))
+            );
+          }
+        }
+        if (supplyUpdates.length > 0) {
+          await Promise.allSettled(supplyUpdates);
+        }
+      }
+
+      setIsFormOpen(false);
+    } catch (err) {
+      console.error("useInventoryData - Erreur sauvegarde inventaire :", err);
+      alert((t && t('common.saveError')) || "Erreur lors de la sauvegarde du matériel.");
+    } finally {
+      setSaving(false);
+    }
+  }, [groupId, formData, editingId, instruments, t]);
+
+  // Suppression avec restitution automatique des stocks de consommables
+  const handleDeleteWithSupplies = useCallback(async (id, supplies = []) => {
+    const ok = await confirm({
+      title: (t && t('common.deleteConfirmTitle')) || "Supprimer l'élément",
+      message: (t && t('common.deleteConfirmMessage')) || "Êtes-vous sûr de vouloir supprimer cet élément de l'inventaire ?",
+      confirmText: (t && t('common.delete')) || "Supprimer",
+      cancelText: (t && t('common.cancel')) || "Annuler",
+      variant: "danger"
+    });
+
+    if (!ok) return;
+
+    try {
+      const inst = instruments.find(i => i.id === id);
+      const oldChecklist = inst?.kitChecklist || [];
+
+      await deleteDoc(doc(db, 'inventory', id));
+      setIsFormOpen(false);
+
+      if (Array.isArray(supplies) && supplies.length > 0 && oldChecklist.length > 0) {
+        const supplyRestores = [];
+        for (const supplyId of oldChecklist) {
+          if (supplies.some(s => s.id === supplyId)) {
+            supplyRestores.push(
+              updateDoc(doc(db, 'inventory_supplies', supplyId), {
+                quantiteStock: increment(1)
+              }).catch(err => console.warn("Erreur restore supply :", err))
+            );
+          }
+        }
+        if (supplyRestores.length > 0) {
+          await Promise.allSettled(supplyRestores);
+        }
+      }
+    } catch (err) {
+      console.error("useInventoryData - Erreur suppression inventaire :", err);
+      alert((t && t('common.deleteError')) || "Erreur lors de la suppression du matériel.");
+    }
+  }, [confirm, instruments, t]);
+
+  // Export CSV complet encodé UTF-8 BOM avec séparateur point-virgule
+  const handleExportCSV = useCallback((items = instruments, uMap = usersMap) => {
+    if (!items || items.length === 0) return;
+
+    const headers = [
+      "Nom de l'instrument",
+      "Famille/Pupitre",
+      "État",
+      "Statut",
+      "Emprunteur",
+      "Localisation"
+    ];
+
+    const rows = items.map((inst) => {
+      const nom = inst.nom || "";
+      const type = inst.type || "";
+      const etat = inst.etat || "";
+      
+      let statusStr = "Au local";
+      if (inst.status === "Emprunté") {
+        statusStr = "Emprunté";
+      } else if (inst.status === "En réparation") {
+        statusStr = "En réparation";
+      }
+      
+      const borrowerName = inst.borrowedBy ? (uMap[inst.borrowedBy] || "Inconnu") : "";
+      const localisation = inst.localisationPhysique || "Local";
+
+      return [nom, type, etat, statusStr, borrowerName, localisation];
+    });
+
+    const csvContent = "\uFEFF" + [headers, ...rows]
+      .map(row => row.map(val => `"${String(val).replace(/"/g, '""')}"`).join(";"))
+      .join("\n");
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+
+    const dateStr = new Date().toISOString().split('T')[0];
+    link.setAttribute("download", `O_Girador_Inventaire_${dateStr}.csv`);
+
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }, [instruments, usersMap]);
+
   return {
     instruments,
     instrumentModels,
@@ -533,6 +747,12 @@ export function useInventoryData(groupId, isAuthorized, t) {
     handleToggleBorrowStatus,
     handleApproveMovement,
     handleRejectMovement,
+    handleInlineFieldChange,
+    handleAssignBorrower,
+    handleReturnInstrument,
+    handleSaveWithSupplies,
+    handleDeleteWithSupplies,
+    handleExportCSV,
 
     // Parts
     inventoryParts,

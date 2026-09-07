@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { collection, onSnapshot } from 'firebase/firestore';
 import { db } from '../../firebase';
-import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 
 export const GIG_STATUSES = [

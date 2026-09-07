@@ -5,7 +5,7 @@
  */
 
 import assert from 'assert';
-import { canAccessPole, canAccessTabPermission, isSuperAdminProfile } from '../src/utils/permissionUtils.js';
+import { canAccessPole, isSuperAdminProfile } from '../src/utils/permissionUtils.js';
 import { resolveEffectiveUserTags } from '../src/utils/tagUtils.js';
 
 console.log("===============================================================");

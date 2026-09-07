@@ -4,7 +4,6 @@ import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage
 import imageCompression from 'browser-image-compression';
 import { db, storage } from '../../firebase';
 import { seedNewTenant } from '../../services/seedTenantService';
-import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 
 import WizardProgressBar from './wizard/WizardProgressBar';

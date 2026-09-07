@@ -9,7 +9,6 @@ import {
   XiloEyeOff, 
   XiloLock, 
   XiloShield, 
-  XiloTrombinoscope, 
   XiloPhone, 
   XiloHome, 
   XiloBirthday, 
@@ -23,7 +22,6 @@ import {
 import { useTerminologie } from '../hooks/useTerminologie';
 import { useTranslation } from './LanguageContext';
 import ProfileEditForm from './profile/ProfileEditForm';
-import CostumeChecklist from './profile/CostumeChecklist';
 import ImageLightboxModal from './ImageLightboxModal';
 import FamilyMembersManager from './profile/FamilyMembersManager';
 import NotificationDiagnostic from './profile/NotificationDiagnostic';

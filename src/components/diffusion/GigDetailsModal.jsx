@@ -1,10 +1,8 @@
 import React, { useState } from 'react';
 import { runTransaction, doc, collection, query, where, getDocs, Timestamp, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../firebase';
-import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 import { GIG_STATUSES } from './GigFormModal';
-import { downloadContractPDF } from '../../utils/contractPdfGenerator';
 import GigSendContractModal from './GigSendContractModal';
 import GigInvoiceGeneratorModal from './GigInvoiceGeneratorModal';
 import GigRelanceEmailModal from './GigRelanceEmailModal';

@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { collection, addDoc, doc, updateDoc, serverTimestamp, onSnapshot, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../../firebase';
-import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 import EventCreateForm from '../agenda/EventCreateForm';
 import { useTranslation } from '../LanguageContext';

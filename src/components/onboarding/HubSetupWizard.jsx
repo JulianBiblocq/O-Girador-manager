@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { doc, setDoc, updateDoc } from 'firebase/firestore';
+import React, { useState } from 'react';
+import { doc, setDoc } from 'firebase/firestore';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 import imageCompression from 'browser-image-compression';

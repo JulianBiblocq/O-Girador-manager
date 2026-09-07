@@ -4,10 +4,8 @@ import CordelButton from '../CordelButton';
 import MusicalOrientationForm from './MusicalOrientationForm';
 import { 
   XiloEye, 
-  XiloEyeOff, 
   XiloLock, 
   XiloShield, 
-  XiloTrombinoscope, 
   XiloPhone, 
   XiloHome, 
   XiloBirthday, 

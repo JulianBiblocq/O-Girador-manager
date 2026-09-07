@@ -71,7 +71,7 @@ export default function ImportModelWizardModal({ groupId, file, suppliesList = [
                 });
               }
               setLoading(false);
-            } catch (err) {
+            } catch (_err) {
               setError("Fichier JSON invalide.");
               setLoading(false);
             }

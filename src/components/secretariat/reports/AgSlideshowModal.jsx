@@ -1,7 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { doc, setDoc } from 'firebase/firestore';
 import { db } from '../../../firebase';
-import { XiloScroll } from '../../XiloIcons';
 
 /**
  * Composant : AgSlideshowModal

@@ -27,7 +27,7 @@ const MemberCard = React.memo(({
   genre,
   tags = [],
   telephone,
-  adresseRue,
+  adresseRue: _adresseRue,
   adresseCP,
   adresseVille,
   adresse,
@@ -44,7 +44,7 @@ const MemberCard = React.memo(({
   instrumentsJoues = [],
   instrument,
   isCurrentUser,
-  isViewerAdmin,
+  isViewerAdmin: _isViewerAdmin,
   fieldsConfig,
   onContactUser,
   onEditPhoto,
@@ -89,7 +89,7 @@ const MemberCard = React.memo(({
           return parts[1].trim().replace(/^,/, '').trim();
         }
       }
-      const match = fullAddr.match(/(?:\d{5}|\d{4})\s+([A-Za-zÀ-ÿ\s\-]+)/);
+      const match = fullAddr.match(/(?:\d{5}|\d{4})\s+([A-Za-zÀ-ÿ\s-]+)/);
       if (match && match[1]) return match[1].trim();
     }
     return null;
@@ -830,7 +830,7 @@ export default function Trombinoscope({ user, profileData, onBack, onContactUser
                       case 'chant_danse': iconPath = '/icones/micro.svg'; break;
                       default: iconPath = '/favicon.svg'; break;
                    }
-                   return <img src={iconPath} alt={key} className="w-5 h-5 object-contain inline-block dark:invert" />;
+                   return <img src={iconPath} alt={key} loading="lazy" decoding="async" className="w-5 h-5 object-contain inline-block dark:invert" />;
                  };
 
                  const getTranslationKey = (key) => {

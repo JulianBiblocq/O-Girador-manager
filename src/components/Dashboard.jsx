@@ -13,7 +13,7 @@ const WidgetDocuments = lazyWithRetry(() => import('./WidgetDocuments'));
 const WidgetTreasury = lazyWithRetry(() => import('./WidgetTreasury'));
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
-import { XiloSettings, XiloCaixa, XiloBox, XiloPeople, XiloConsole, XiloMandacaru } from './XiloIcons';
+import { XiloPeople, XiloMandacaru } from './XiloIcons';
 import { useTranslation } from './LanguageContext';
 import { useTerminologie } from '../hooks/useTerminologie';
 import InstrumentReminderBanner from './dashboard/InstrumentReminderBanner';
@@ -24,31 +24,32 @@ export default function Dashboard({
   profileData, 
   onNavigateToTrombi, 
   onNavigateToView, 
-  onSignOut, 
+  onSignOut: _onSignOut, 
   installPromptAvailable, 
   onTriggerInstall, 
-  permissionsMatrice,
+  permissionsMatrice: _permissionsMatrice,
   breakGlassActive = false,
   tagsDisponibles = []
 }) {
   const { tRole } = useTerminologie();
   const { locale, toggleLanguage, t } = useTranslation();
   const { isPresenceEnabled } = usePresenceContext();
+
+  // Détection des rôles privilégiés (Système, Super-Admin ou Mestre)
+  const isSystemOrSuperAdminOrMestre = Boolean(
+    profileData?.isSystemAdmin || 
+    profileData?.role === 'super-admin' || 
+    profileData?.role === 'mestre'
+  );
+
   const [layout, setLayout] = useState(["motMestre", "annonces", "agenda", "commandes", "forum", "documents", "tresorerie", "anniversaires"]);
-  const [sequenceurUrl, setSequenceurUrl] = useState('');
   const [agendaFocusMode, setAgendaFocusMode] = useState(false);
   const [selectedEventForAgenda, setSelectedEventForAgenda] = useState(null);
-
-  const isSystemOrSuperAdminOrMestre = profileData?.isSystemAdmin || profileData?.role === 'super-admin' || profileData?.role === 'mestre';
-  const userTags = profileData?.tags || [];
 
   const handleOpenEvent = (event) => {
     setAgendaFocusMode(true);
     setSelectedEventForAgenda(event);
   };
-
-  const hasAccessTroupe = isSystemOrSuperAdminOrMestre || userTags.some(t => permissionsMatrice?.troupe?.includes(t));
-  const hasAccessLogistique = isSystemOrSuperAdminOrMestre || userTags.some(t => permissionsMatrice?.logistique?.includes(t));
 
   const getWidgetSpan = (id) => {
     switch (id) {
@@ -103,7 +104,6 @@ export default function Dashboard({
         }
 
         setLayout(activeLayout);
-        setSequenceurUrl(data.sequenceurUrl || '');
         setMotDuMestre(data.motDuMestre || '');
       }
     }, (error) => {

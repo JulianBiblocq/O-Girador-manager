@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 
 /**
  * CordelAccordion component for progressive disclosure in forms and details views.

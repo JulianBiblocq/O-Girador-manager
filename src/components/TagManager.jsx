@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { doc, onSnapshot, setDoc, collection, query, where } from 'firebase/firestore';
 import { db } from '../firebase';
 import CordelCard from './CordelCard';

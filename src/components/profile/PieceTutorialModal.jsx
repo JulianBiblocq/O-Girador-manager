@@ -1,5 +1,4 @@
 import React from 'react';
-import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 import { getEmbedVideoUrl } from './AtelierCouture';
 import { XiloClose } from '../XiloIcons';

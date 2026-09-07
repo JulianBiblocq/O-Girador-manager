@@ -1,6 +1,5 @@
 import React from 'react';
 import CordelCard from '../CordelCard';
-import XiloAvatar from '../XiloAvatar';
 import { usePresenceContext } from '../../context/PresenceContext';
 import { countThreadUnreadMessages } from '../../utils/forumUnreadUtils';
 

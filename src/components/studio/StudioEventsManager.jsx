@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { collection, query, where, onSnapshot, doc, updateDoc } from 'firebase/firestore';
 import { db } from '../../firebase';
 import CordelCard from '../CordelCard';
-import CordelButton from '../CordelButton';
 import EventsDataGrid from './EventsDataGrid';
 import { useTranslation } from '../LanguageContext';
 import { isPastEvent } from '../../utils/dateUtils';

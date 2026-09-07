@@ -1,5 +1,4 @@
 import React, { useEffect, useRef, useState } from 'react';
-import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 import { loadGoogleMaps } from '../../utils/googleMaps';
 

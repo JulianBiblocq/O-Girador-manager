@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { getFunctions, httpsCallable } from 'firebase/functions';
-import { app, functions } from '../../firebase';
-import CordelCard from '../CordelCard';
+import { httpsCallable } from 'firebase/functions';
+import { functions } from '../../firebase';
 import CordelButton from '../CordelButton';
 
 /**
@@ -16,8 +15,6 @@ import CordelButton from '../CordelButton';
  * @param {string} props.groupId - Identifiant de l'association
  */
 export default function SendContractModal({ isOpen, onClose, event, groupId }) {
-  if (!isOpen) return null;
-
   // Initialisation des champs du formulaire avec les valeurs de l'événement s'il existe
   const [recipientEmail, setRecipientEmail] = useState(event?.contactEmail || event?.organisateurEmail || '');
   const [recipientName, setRecipientName] = useState(event?.organisateurNom || event?.organisateur || '');
@@ -43,6 +40,9 @@ export default function SendContractModal({ isOpen, onClose, event, groupId }) {
       setContractPdfUrl(event.contractPdfUrl || event.devisUrl || '');
     }
   }, [event]);
+
+  // Clause de garde placée impérativement après tous les hooks (Rules of Hooks)
+  if (!isOpen) return null;
 
   // Déclenchement de l'envoi du contrat via la Cloud Function Firebase
   const handleSubmitSend = async (e) => {

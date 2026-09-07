@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 import { updateContactLastDate } from '../../utils/updateContactLastDate';
 import { downloadInvoicePDF } from '../../utils/invoicePdfGenerator';
@@ -103,7 +102,6 @@ export default function GigSendEmailModal({
         ]
       };
 
-      console.log("GigSendEmailModal - Envoi via sendAssociationEmail...");
       const result = await sendAssociationEmail(emailParams, associationSettings);
 
       if (result.success) {

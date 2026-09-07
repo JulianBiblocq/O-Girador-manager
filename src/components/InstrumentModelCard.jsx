@@ -83,6 +83,8 @@ export default function InstrumentModelCard({ model, initialPartId = null, onClo
         <img
           src={url}
           alt="Visuel technique"
+          loading="lazy"
+          decoding="async"
           className="w-full h-auto object-cover rounded-[var(--theme-border-radius)] block"
         />
       </div>

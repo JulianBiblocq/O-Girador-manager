@@ -58,7 +58,6 @@ export const fr = {
     treasury: "Gestion des Cotisations",
     orders: "Commandes",
     inventory: "Instruments",
-    layoutEditor: "Apparence",
     tags: "Badges",
     systemAdmin: "Système",
     adminHeader: "Administration",
@@ -149,7 +148,6 @@ export const fr = {
     forum: "Le Porte-Voix",
     documents: "Varal",
     quickActions: "Actions Rapides",
-    layoutEditor: "Organiser l'accueil (Mise en page)",
     inventory: "Inventaire du parc (Matériel)",
     ordersManager: "Achats groupés (Commandes)",
     profile: "Mon Profil",
@@ -318,8 +316,6 @@ export const fr = {
     viewListTooltip: "Affichage en liste",
     viewGrid: "Grille",
     viewGridTooltip: "Affichage en calendrier (Grille)",
-    title: "Agenda",
-    addBtn: "+ Ajouter",
     createTitle: "Créer un événement",
     eventTitleLabel: "Titre de l'événement",
     eventTitlePlaceholder: "Ex : Carnaval ou Répétition",
@@ -589,37 +585,6 @@ export const fr = {
     saveBtn: "Ajouter à l'inventaire",
     noInstruments: "Aucun matériel enregistré dans le parc.",
     saving: "Sauvegarde..."
-  },
-  layoutEditor: {
-    title: "Organiser l'accueil",
-    helpDesc: "Faites glisser les widgets pour réorganiser l'ordre d'affichage des élèves sur leur tableau de bord.",
-    saveBtn: "Enregistrer la mise en page",
-    successMsg: "Mise en page enregistrée avec succès !",
-    errorMsg: "Erreur lors de l'enregistrement de la disposition.",
-    accessDenied: "Accès refusé",
-    accessDeniedDesc: "Vous n'avez pas les autorisations nécessaires pour modifier la mise en page.",
-    dragToMove: "Glisser pour déplacer",
-    saving: "Enregistrement...",
-    widgetMotMestre: "Le Mot du Mestre",
-    descMotMestre: "Le mot et la vision du Mestre",
-    widgetMegaphone: "Le Mégaphone",
-    descMegaphone: "Dernières annonces et actualités du groupe",
-    widgetAgenda: "Agenda",
-    descAgenda: "Agenda des répétitions, prestations et ateliers",
-    widgetOrders: "Achats de Matériel",
-    descOrders: "Commandes de matériel et boutique",
-    widgetForum: "Le Porte-Voix",
-    descForum: "Discussions et salons du forum",
-    widgetDocuments: "Varal",
-    descDocuments: "Documents, partitions et ressources de l'association",
-    widgetTreasury: "Adhésion & cotisation",
-    descTreasury: "Aperçu des cotisations et trésorerie",
-    widgetBirthdays: "Anniversaires du mois 🎂",
-    descBirthdays: "Affiche les membres qui fêtent leur anniversaire durant le mois en cours.",
-    birthdayPositionTitle: "Emplacement du bloc Anniversaires",
-    birthdayPositionHelp: "Choisissez si le widget des anniversaires s'affiche en haut du tableau de bord (sous le Mégaphone) ou tout en bas.",
-    birthdayPositionTop: "En haut du tableau de bord",
-    birthdayPositionBottom: "En bas du tableau de bord"
   },
   tagManager: {
     title: "Gestion des Étiquettes",
@@ -912,7 +877,6 @@ export const fr = {
     poleWardrobe: "Vestiaire",
     tabWardrobeInventory: "Costumes",
     tabWardrobeCouture: "Atelier Couture",
-    tabWardrobeSizes: "Mensurations",
     studio: "Studio",
     mestre: "Mestria",
     pedagogie: "Pédagogie",
@@ -963,7 +927,6 @@ export const fr = {
     tabMestreEvents: "Événements",
     tabMestreStage: "Plan de Scène",
     tabMestreSequenceur: "Séquenceur",
-    tabMestreWorkshops: "Ateliers",
     tabMestreMotMestre: "Annonces",
     tabMestreSanteTroupe: "Évaluations",
     tabMestrePedagogyQcm: "QCM & Quiz",
@@ -991,6 +954,128 @@ export const fr = {
     tabVitrineEditor: "Vitrine"
   },
   mestre: {
+    header: {
+      title: "O GIRADOR",
+      subtitle: "Écosystème",
+      tagline: "Le Hub Central des Percussions Brésiliennes",
+      universeLabel: "Univers",
+      changeUniverse: "Changer d'Univers Culturel",
+      nav: {
+        home: "Accueil",
+        triptyque: "Le Triptyque",
+        tarifs: "Tarifs & Synergie",
+        tutos: "Tutoriels",
+        creator: "Créateur",
+        admin: "Back-Office /admin",
+        login: "Connexion"
+      }
+    },
+    hero: {
+      badge: "Le Hub Central — Univers",
+      title: "L'Écosystème Numérique de la",
+      titleHighlight: "Percussion Brésilienne",
+      subtitle: "Un triptyque d'applications interconnectées pour composer sur le Séquenceur interactif, administrer votre Bloco avec le Manager, et rayonner grâce à votre Vitrine publique.",
+      exploreTriptyque: "Explorer le Triptyque",
+      discoverTarifs: "Découvrir les Tarifs",
+      watchDemos: "Voir les démos vidéo",
+      metrics: {
+        sequenceur: "🥁 Séquenceur Roda",
+        sequenceurSub: "Micro-timing, Tone.js & Toadas",
+        manager: "📋 Manager Bloco",
+        managerSub: "Agenda, Trésorerie & Varal",
+        vitrine: "🌟 Vitrine Publique",
+        vitrineSub: "Identité Cordel & Recrutement"
+      }
+    },
+    triptyque: {
+      badge: "Le Coeur de l'Écosystème",
+      title: "Le Triptyque O Girador",
+      subtitle: "Trois piliers complémentaires conçus sur mesure pour les besoins de la percussion et des associations brésiliennes.",
+      sequenceur: {
+        badge: "Studio & Rythmes",
+        title: "O Girador — Séquenceur",
+        description: "Le séquenceur interactif de rythmes de Maracatu dans votre navigateur. Simulez un bloco complet avec la Roda circulaire.",
+        feat1: "Roda Circulaire & Baguette rotative : Visualisation en temps réel du cercle de jeu.",
+        feat2: "Sculpture sonore pas-à-pas : Micro-timing, swing Maracatu et contrôle du decay.",
+        feat3: "Toadas & Syllabes Karaoké : Suivi dynamique des textes pour Puxador & Coro.",
+        feat4: "Mode Song & Rampes BPM : Accélérations fluides d'un compasso à l'autre.",
+        repo: "Dépôt Séquenceur"
+      },
+      manager: {
+        badge: "Gestion d'Association",
+        title: "O Girador — Manager",
+        description: "La suite administrative dédiée aux responsables de Bloco : gérez les membres, les répétitions et les finances sereinement.",
+        feat1: "Agenda & Convocations : Gestion des présences aux concerts et répétitions.",
+        feat2: "Trésorerie & Cotisations : Remboursements kilométriques et suivi des règlements.",
+        feat3: "Varal d'Annonces & Forum : Espace communautaires et trombinoscope du groupe.",
+        feat4: "Gestion du Matériel : Parc d'instruments (Alfaias, Caisses, Gonguês) et prêts.",
+        repo: "Dépôt Manager"
+      },
+      vitrine: {
+        badge: "Rayonnement Public",
+        title: "O Girador — Vitrine",
+        description: "Le site web public clé en main pour votre association : faites rayonner votre Bloco et attirez de nouveaux adhérents.",
+        feat1: "Identité Cordel Personnalisée : Affichez l'histoire et les couleurs de votre groupe.",
+        feat2: "Calendrier des Prestations : Dates de concerts ouvertes au grand public.",
+        feat3: "Formulaire de Contact & Adhésion : Inscription directe des nouveaux percussionnistes.",
+        feat4: "Galerie Médias & Toadas : Écoute des extraits sonores et vidéos de concerts.",
+        note: "Intégration directe Manager"
+      }
+    },
+    tarifs: {
+      badge: "Tarifs Transparents & Engagement Assos",
+      title: "Une Formule Adaptée à chaque Pratique",
+      subtitle: "Du curieux individuel au grand Bloco de Maracatu, profitez des outils de l'écosystème avec des options de paiement adaptées aux associations.",
+      annual: "Facturation Annuelle",
+      monthly: "Facturation Mensuelle",
+      annualBadge: "2 mois offerts (~20% d'économie)",
+      monthlyBadge: "Sans engagement",
+      synergy: {
+        badge: "La Puissance de la Synergie",
+        title: "Pourquoi associer le Manager & la Vitrine Publique ?",
+        description: "Fini la double saisie ! Lorsque vous créez une répétition publique, un concert ou un événement sur l'Agenda du Manager, les informations sont automatiquement publiées et synchronisées sur votre Vitrine Publique.",
+        feat1Title: "Centralisation Unique",
+        feat1Text: "Une seule base de données Firebase pour la gestion interne et la visibilité externe.",
+        feat2Title: "Recrutement & Adhésions",
+        feat2Text: "Les formulaires d'adhésion de la Vitrine alimentent directement le Trombinoscope du Manager.",
+        boxTitle: "Duo Gagnant Bloco",
+        boxText: "Inclus dans les offres Bloco & Association et Écosystème Mestre.",
+        demoBtn: "Demander une démo Assos"
+      }
+    },
+    newsletter: {
+      badge: "Restez Connecté au Baque Virado",
+      title: "Abonnez-vous à la Newsletter O Girador",
+      subtitle: "Recevez les nouveaux toadas, les mises à jour du Séquenceur, les fiches conseils pour Bloco et les annonces des prochains univers (Capoeira & Samba).",
+      placeholder: "votre.email@exemple.com",
+      button: "S'inscrire",
+      sending: "Envoi...",
+      successTitle: "Inscription Validée !",
+      successText: "Merci ! Votre adresse a été ajoutée à notre liste de diffusion.",
+      another: "Inscrire une autre adresse"
+    },
+    creator: {
+      badge: "Créateur & Concepteur",
+      name: "Julian Biblocq",
+      tagline: "Passionné de Maracatu de Baque Virado, Percussionniste & Développeur Web",
+      back: "Retour au Hub Écosystème",
+      title: "Projets Personnels & Musicaux",
+      subtitle: "Une vue d'ensemble des réalisations en cours dans l'univers O Girador et au-delà."
+    },
+    admin: {
+      badge: "Back-Office Administrateur Privé",
+      title: "Gestion des Structures & Droits (Soft Lock)",
+      subtitle: "Supervision des associations abonnées, matrice d'accès aux cartes UI et statut des échéances.",
+      newBtn: "Nouveau Bloco / Asso",
+      tabs: {
+        list: "📋 Liste des Assos & Abonnements",
+        matrix: "🎛️ Matrice d'Accès Toggles",
+        simulator: "🧪 Simulateur Soft Lock",
+        bugs: "🐞 Bugs & Stabilité",
+        analytics: "📊 Métriques"
+      }
+    },
+    uploading: "Téléversement...",
     eventsTitle: "Direction Musicale - Liste des Événements",
     eventDate: "Date",
     eventTitle: "Événement",
@@ -1137,159 +1222,6 @@ export const fr = {
       "error": "Une erreur est survenue",
       "success": "Opération réussie"
     }
-  },
-  mestre: {
-    "header": {
-      "title": "O GIRADOR",
-      "subtitle": "Écosystème",
-      "tagline": "Le Hub Central des Percussions Brésiliennes",
-      "universeLabel": "Univers",
-      "changeUniverse": "Changer d'Univers Culturel",
-      "nav": {
-        "home": "Accueil",
-        "triptyque": "Le Triptyque",
-        "tarifs": "Tarifs & Synergie",
-        "tutos": "Tutoriels",
-        "creator": "Créateur",
-        "admin": "Back-Office /admin",
-        "login": "Connexion"
-      }
-    },
-    "hero": {
-      "badge": "Le Hub Central — Univers",
-      "title": "L'Écosystème Numérique de la",
-      "titleHighlight": "Percussion Brésilienne",
-      "subtitle": "Un triptyque d'applications interconnectées pour composer sur le Séquenceur interactif, administrer votre Bloco avec le Manager, et rayonner grâce à votre Vitrine publique.",
-      "exploreTriptyque": "Explorer le Triptyque",
-      "discoverTarifs": "Découvrir les Tarifs",
-      "watchDemos": "Voir les démos vidéo",
-      "metrics": {
-        "sequenceur": "🥁 Séquenceur Roda",
-        "sequenceurSub": "Micro-timing, Tone.js & Toadas",
-        "manager": "📋 Manager Bloco",
-        "managerSub": "Agenda, Trésorerie & Varal",
-        "vitrine": "🌟 Vitrine Publique",
-        "vitrineSub": "Identité Cordel & Recrutement"
-      }
-    },
-    "triptyque": {
-      "badge": "Le Coeur de l'Écosystème",
-      "title": "Le Triptyque O Girador",
-      "subtitle": "Trois piliers complémentaires conçus sur mesure pour les besoins de la percussion et des associations brésiliennes.",
-      "sequenceur": {
-        "badge": "Studio & Rythmes",
-        "title": "O Girador — Séquenceur",
-        "description": "Le séquenceur interactif de rythmes de Maracatu dans votre navigateur. Simulez un bloco complet avec la Roda circulaire.",
-        "feat1": "Roda Circulaire & Baguette rotative : Visualisation en temps réel du cercle de jeu.",
-        "feat2": "Sculpture sonore pas-à-pas : Micro-timing, swing Maracatu et contrôle du decay.",
-        "feat3": "Toadas & Syllabes Karaoké : Suivi dynamique des textes pour Puxador & Coro.",
-        "feat4": "Mode Song & Rampes BPM : Accélérations fluides d'un compasso à l'autre.",
-        "repo": "Dépôt Séquenceur"
-      },
-      "manager": {
-        "badge": "Gestion d'Association",
-        "title": "O Girador — Manager",
-        "description": "La suite administrative dédiée aux responsables de Bloco : gérez les membres, les répétitions et les finances sereinement.",
-        "feat1": "Agenda & Convocations : Gestion des présences aux concerts et répétitions.",
-        "feat2": "Trésorerie & Cotisations : Remboursements kilométriques et suivi des règlements.",
-        "feat3": "Varal d'Annonces & Forum : Espace communautaires et trombinoscope du groupe.",
-        "feat4": "Gestion du Matériel : Parc d'instruments (Alfaias, Caisses, Gonguês) et prêts.",
-        "repo": "Dépôt Manager"
-      },
-      "vitrine": {
-        "badge": "Rayonnement Public",
-        "title": "O Girador — Vitrine",
-        "description": "Le site web public clé en main pour votre association : faites rayonner votre Bloco et attirez de nouveaux adhérents.",
-        "feat1": "Identité Cordel Personnalisée : Affichez l'histoire et les couleurs de votre groupe.",
-        "feat2": "Calendrier des Prestations : Dates de concerts ouvertes au grand public.",
-        "feat3": "Formulaire de Contact & Adhésion : Inscription directe des nouveaux percussionnistes.",
-        "feat4": "Galerie Médias & Toadas : Écoute des extraits sonores et vidéos de concerts.",
-        "note": "Intégration directe Manager"
-      }
-    },
-    "tarifs": {
-      "badge": "Tarifs Transparents & Engagement Assos",
-      "title": "Une Formule Adaptée à chaque Pratique",
-      "subtitle": "Du curieux individuel au grand Bloco de Maracatu, profitez des outils de l'écosystème avec des options de paiement adaptées aux associations.",
-      "annual": "Facturation Annuelle",
-      "monthly": "Facturation Mensuelle",
-      "annualBadge": "2 mois offerts (~20% d'économie)",
-      "monthlyBadge": "Sans engagement",
-      "synergy": {
-        "badge": "La Puissance de la Synergie",
-        "title": "Pourquoi associer le Manager & la Vitrine Publique ?",
-        "description": "Fini la double saisie ! Lorsque vous créez une répétition publique, un concert ou un événement sur l'Agenda du Manager, les informations sont automatiquement publiées et synchronisées sur votre Vitrine Publique.",
-        "feat1Title": "Centralisation Unique",
-        "feat1Text": "Une seule base de données Firebase pour la gestion interne et la visibilité externe.",
-        "feat2Title": "Recrutement & Adhésions",
-        "feat2Text": "Les formulaires d'adhésion de la Vitrine alimentent directement le Trombinoscope du Manager.",
-        "boxTitle": "Duo Gagnant Bloco",
-        "boxText": "Inclus dans les offres Bloco & Association et Écosystème Mestre.",
-        "demoBtn": "Demander une démo Assos"
-      }
-    },
-    "newsletter": {
-      "badge": "Restez Connecté au Baque Virado",
-      "title": "Abonnez-vous à la Newsletter O Girador",
-      "subtitle": "Recevez les nouveaux toadas, les mises à jour du Séquenceur, les fiches conseils pour Bloco et les annonces des prochains univers (Capoeira & Samba).",
-      "placeholder": "votre.email@exemple.com",
-      "button": "S'inscrire",
-      "sending": "Envoi...",
-      "successTitle": "Inscription Validée !",
-      "successText": "Merci ! Votre adresse a été ajoutée à notre liste de diffusion.",
-      "another": "Inscrire une autre adresse"
-    },
-    "creator": {
-      "badge": "Créateur & Concepteur",
-      "name": "Julian Biblocq",
-      "tagline": "Passionné de Maracatu de Baque Virado, Percussionniste & Développeur Web",
-      "back": "Retour au Hub Écosystème",
-      "title": "Projets Personnels & Musicaux",
-      "subtitle": "Une vue d'ensemble des réalisations en cours dans l'univers O Girador et au-delà."
-    },
-    "admin": {
-      "badge": "Back-Office Administrateur Privé",
-      "title": "Gestion des Structures & Droits (Soft Lock)",
-      "subtitle": "Supervision des associations abonnées, matrice d'accès aux cartes UI et statut des échéances.",
-      "newBtn": "Nouveau Bloco / Asso",
-      "tabs": {
-        "list": "📋 Liste des Assos & Abonnements",
-        "matrix": "🎛️ Matrice d'Accès Toggles",
-        "simulator": "🧪 Simulateur Soft Lock",
-        "bugs": "🐞 Bugs & Stabilité",
-        "analytics": "📊 Métriques"
-      }
-    },
-    "seqTitle": "Gestionnaire de Rythmes & Fichiers Audio",
-    "addRhythmTitle": "Ajouter un fichier (.json ou audio)",
-    "rhythmName": "Nom de la séquence / Titre",
-    "jsonFileLabel": "Fichier Séquenceur (.json) ou Audio",
-    "addRhythmBtn": "Ajouter le fichier",
-    "uploading": "Téléversement...",
-    "rhythmListTitle": "Rythmes & Fichiers Audio configurés",
-    "noRhythms": "Aucun fichier trouvé dans votre dossier de stockage.",
-    "rhythmDeleteConfirm": "Voulez-vous vraiment supprimer ce fichier ?",
-    "eventsTitle": "Direction Musicale - Liste des Événements",
-    "noEvents": "Aucune prestation, répétition ou atelier trouvé.",
-    "eventDate": "Date",
-    "eventTitle": "Événement",
-    "eventType": "Type",
-    "eventLocation": "Lieu",
-    "eventInscriptions": "Inscriptions",
-    "actionStageLayout": "Plan de scène",
-    "actionDetails": "Détails",
-    "stageTitle": "Plan de Scène Actif",
-    "selectEventPrompt": "Sélectionnez un événement :",
-    "noEventSelectedForStage": "Veuillez sélectionner un événement ci-dessus ou depuis la liste des événements pour configurer le plan de scène.",
-    "workshopDeleteConfirm": "Voulez-vous vraiment supprimer cette fiche d'atelier ?",
-    "workshopsTitle": "Fiches Pédagogiques des Ateliers",
-    "addWorkshopBtn": "Créer une fiche",
-    "workshopTitle": "Titre de l'atelier",
-    "workshopContent": "Contenu pédagogique / Descriptif",
-    "workshopPlaceholder": "Décrivez le contenu ici...",
-    "saveWorkshopBtn": "Enregistrer la fiche",
-    "noWorkshops": "Aucune fiche pédagogique d'atelier disponible.",
-    "editWorkshopBtn": "Modifier"
   },
   baquemix: {
     "loading": "Chargement des voix...",

@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
-import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 
 /**

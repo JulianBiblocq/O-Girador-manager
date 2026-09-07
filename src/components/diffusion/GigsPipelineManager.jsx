@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '../../firebase';
 import CordelCard from '../CordelCard';
-import CordelButton from '../CordelButton';
 import { useGigsPipeline } from '../../hooks/useGigsPipeline';
 import GigFormModal, { GIG_STATUSES } from './GigFormModal';
 import GigDetailsModal from './GigDetailsModal';

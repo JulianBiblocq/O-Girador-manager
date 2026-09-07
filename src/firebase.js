@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, setPersistence, browserLocalPersistence } from 'firebase/auth';
-import { initializeFirestore } from 'firebase/firestore';
+import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 import { getFunctions } from 'firebase/functions';
 
@@ -23,9 +23,13 @@ setPersistence(auth, browserLocalPersistence)
   });
 
 export const googleProvider = new GoogleAuthProvider();
+
+// Configuration Firestore avec persistance locale IndexedDB multi-onglets et tolérance aux champs undefined
 export const db = initializeFirestore(app, {
   experimentalForceLongPolling: true,
-  useFetchStreams: false
+  useFetchStreams: false,
+  ignoreUndefinedProperties: true,
+  localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
 });
 export const storage = getStorage(app);
 export const functions = getFunctions(app);

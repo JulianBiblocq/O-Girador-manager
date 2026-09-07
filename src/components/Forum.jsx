@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { collection, query, where, onSnapshot, or, and, doc, setDoc, addDoc, updateDoc } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, or, doc, setDoc, addDoc, updateDoc, limit, orderBy } from 'firebase/firestore';
 import { db } from '../firebase';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
@@ -10,16 +10,12 @@ import CreateThreadForm from './CreateThreadForm';
 import { useForumModeration } from '../hooks/useForumModeration';
 import { useTranslation } from './LanguageContext';
 import XiloAvatar from './XiloAvatar';
-import { usePresenceContext } from '../context/PresenceContext';
 import { XiloMegaphone } from './XiloIcons';
 import useConfirm from '../hooks/useConfirm';
-import { resolveEffectiveUserTags, getTagId, findTagObject } from '../utils/tagUtils'; // Utilitaires pour la gestion et la résolution des étiquettes
+import { resolveEffectiveUserTags } from '../utils/tagUtils'; // Utilitaires pour la gestion et la résolution des étiquettes
 import { isUserModeratorOrAdmin, canUserWriteInForumChannel, canUserReadForumChannel, checkUserAccessToList } from '../utils/permissionUtils';
-import { useForumThreads } from '../hooks/useForumThreads';
 import { countThreadUnreadMessages, getAllChannelsUnreadStats } from '../utils/forumUnreadUtils';
-import ForumChannelHeader from './forum/ForumChannelHeader';
 import ForumThreadCard from './forum/ForumThreadCard';
-import NewThreadModal from './forum/NewThreadModal';
 import useHardwareBack from '../hooks/useHardwareBack';
 
 function ChannelTreeItem({ 
@@ -208,11 +204,10 @@ export default function Forum({
     return val === key ? fallback : val;
   };
 
-  const getCategoryLabel = useCallback((cat) => {
-    return t(`forum.${cat}`) || cat;
-  }, [t]);
 
   const [threads, setThreads] = useState([]);
+  const [threadLimit, setThreadLimit] = useState(30);
+  const [hasMoreThreads, setHasMoreThreads] = useState(false);
   const [channels, setChannels] = useState([]);
   const [activeChannelId, setActiveChannelId] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -266,7 +261,6 @@ export default function Forum({
     }
   }, [initialTab]);
   const [mobileView, setMobileView] = useState('channels'); // 'channels' (Écran 1) ou 'discussion' (Écran 2)
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [privateMessages, setPrivateMessages] = useState([]);
   const [usersMap, setUsersMap] = useState({});
   const [activeChatUserId, setActiveChatUserId] = useState(null);
@@ -340,10 +334,7 @@ export default function Forum({
     return resolveEffectiveUserTags(profileData?.tags || [], tagsDisponibles);
   }, [profileData?.tags, tagsDisponibles]);
 
-  // Fonction utilitaire de vérification des droits d'accès déléguée à permissionUtils
-  const checkUserAccess = useCallback((allowedList, userRole, userTags = [], tagsAvailable = []) => {
-    return checkUserAccessToList(allowedList, userRole, userTags, tagsAvailable);
-  }, []);
+
 
   // Real-time synchronization of channels (salons)
   useEffect(() => {
@@ -353,9 +344,7 @@ export default function Forum({
     }
 
     const channelsRef = collection(db, 'forum_channels');
-    const userRole = profileData?.role || 'membre';
-    const userTags = effectiveUserTags;
-    const isMestreOrAdmin = profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.role === 'admin' || profileData?.isSystemAdmin;
+
 
     // Charger les salons de l'association (le filtrage étanche des accès est assuré ci-dessous par canUserReadForumChannel)
     const q = query(channelsRef, where('groupId', '==', profileData.groupId));
@@ -425,7 +414,7 @@ export default function Forum({
     return () => unsubscribe();
   }, [profileData?.groupId, profileData?.role, effectiveUserTags, profileData?.isSystemAdmin, breakGlassActive, tagsDisponibles, checkUserAccessToList]);
 
-  // Synchronisation de toutes les discussions pour l'association
+  // Synchronisation des discussions récentes pour l'association (bornée à threadLimit pour préserver les quotas)
   useEffect(() => {
     if (!profileData?.groupId) {
       setThreads([]);
@@ -437,10 +426,12 @@ export default function Forum({
     const forumRef = collection(db, 'forum');
     const q = query(
       forumRef, 
-      where('groupId', '==', profileData.groupId)
+      where('groupId', '==', profileData.groupId),
+      limit(threadLimit)
     );
 
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
+      setHasMoreThreads(querySnapshot.size >= threadLimit);
       const fetchedThreads = [];
       querySnapshot.forEach((doc) => {
         fetchedThreads.push({
@@ -449,11 +440,13 @@ export default function Forum({
         });
       });
 
-      // Trier d'abord les sujets épinglés, puis par dernière modification
+      // Trier d'abord les sujets épinglés, puis par dernière activité / modification chronologique inversée
       const sorted = fetchedThreads.sort((a, b) => {
         if (a.isPinned && !b.isPinned) return -1;
         if (!a.isPinned && b.isPinned) return 1;
-        return new Date(b.derniereModification || b.dateCreation) - new Date(a.derniereModification || a.dateCreation);
+        const dateB = new Date(b.lastActivity || b.derniereModification || b.dateCreation || 0);
+        const dateA = new Date(a.lastActivity || a.derniereModification || a.dateCreation || 0);
+        return dateB - dateA;
       });
 
       setThreads(sorted);
@@ -464,7 +457,7 @@ export default function Forum({
     });
 
     return () => unsubscribe();
-  }, [profileData?.groupId]);
+  }, [profileData?.groupId, threadLimit]);
 
   // Référence pour mémoriser le salon d'origine avant ouverture d'un sujet
   const previousChannelRef = useRef(null);
@@ -491,7 +484,7 @@ export default function Forum({
 
   // Synchronisation de l'URL et de l'historique pour le routage des discussions
   useEffect(() => {
-    const handlePopState = (event) => {
+    const handlePopState = () => {
       const searchParams = new URLSearchParams(window.location.search);
       const targetThreadId = searchParams.get('threadId');
       
@@ -571,13 +564,6 @@ export default function Forum({
       console.error("Erreur lors de l'acquittement global :", err);
     }
   }, [user?.uid, accessibleThreads, activeChannelId, channels]);
-
-  const categoryBadges = useMemo(() => ({
-    Général: 'ocre',
-    Costumes: 'vert',
-    Covoiturage: 'bleu',
-    Autre: 'kraft'
-  }), []);
 
   // Grouper les messages par interlocuteur privé avec useMemo
   const conversations = useMemo(() => {
@@ -975,21 +961,35 @@ export default function Forum({
                     <p className="text-xs opacity-75 font-semibold">{translate('forum.noThreads', "Aucune discussion lancée dans ce salon. Soyez le premier !")}</p>
                   </CordelCard>
                 ) : (
-                  <div className="flex flex-col gap-3">
-                    {activeChannelThreads.map((thread) => (
-                      <ForumThreadCard
-                        key={thread.id}
-                        thread={thread}
-                        profileData={profileData}
-                        onClick={handleSelectThread}
-                        isModeratorOrAdmin={isModeratorOrAdmin}
-                        onTogglePin={(id, currentStatus) => togglePinThread(id, currentStatus)}
-                        onMoveThread={setMovingThreadModal}
-                        onDeleteThread={handleDeleteThreadPrompt}
-                        t={t}
-                      />
-                    ))}
-                  </div>
+                  <>
+                    <div className="flex flex-col gap-3">
+                      {activeChannelThreads.map((thread) => (
+                        <ForumThreadCard
+                          key={thread.id}
+                          thread={thread}
+                          profileData={profileData}
+                          onClick={handleSelectThread}
+                          isModeratorOrAdmin={isModeratorOrAdmin}
+                          onTogglePin={(id, currentStatus) => togglePinThread(id, currentStatus)}
+                          onMoveThread={setMovingThreadModal}
+                          onDeleteThread={handleDeleteThreadPrompt}
+                          t={t}
+                        />
+                      ))}
+                    </div>
+
+                    {hasMoreThreads && (
+                      <div className="flex justify-center p-3">
+                        <CordelButton
+                          variant="default"
+                          onClick={() => setThreadLimit(prev => prev + 30)}
+                          className="text-xs px-4 py-2 font-bold uppercase tracking-wider"
+                        >
+                          💬 {translate('forum.loadMoreThreads', "Charger les discussions précédentes (+30)")}
+                        </CordelButton>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             )}

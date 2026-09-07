@@ -5,7 +5,6 @@ import AutoEvalQuizContainer from '../student/AutoEvalQuizContainer';
 import QcmSequenceurBlindTest from './QcmSequenceurBlindTest';
 import QcmSequenceurAssociation from './QcmSequenceurAssociation';
 import QcmSignaux from './QcmSignaux';
-import { parseSequencerJson } from '../../utils/sequencerParser';
 
 export default function AtelierEntrainement({
   profileData,

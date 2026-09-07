@@ -1,45 +1,27 @@
 import React, { useState, useEffect } from 'react';
-import { doc, updateDoc, deleteDoc, collection, query, where, onSnapshot, writeBatch, getDocs, getDoc } from 'firebase/firestore';
+import { doc, updateDoc, collection, query, where, onSnapshot, writeBatch, getDocs, getDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '../firebase';
-import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
-import CordelAccordion, { CordelAccordionGroup } from './CordelAccordion';
-import ReunionAgendaManager from './ReunionAgendaManager';
 import { useTranslation } from './LanguageContext';
-import { XiloCalendar, XiloMegaphone } from './XiloIcons';
-import XiloAvatar from './XiloAvatar';
-import AddressAutocomplete from './AddressAutocomplete';
-import { calculateRoadDistance } from '../utils/googleMaps';
 
 import { useEventRSVP } from '../hooks/useEventRSVP';
 import { useEventCarpool, calculateCarStatus } from '../hooks/useEventCarpool';
 import { useEventSetlist } from '../hooks/useEventSetlist';
 import useConfirm from '../hooks/useConfirm';
 
-import EventRSVPSection from './event-details/EventRSVPSection';
-import EventCarpoolSection from './event-details/EventCarpoolSection';
-import EventRevisionProgram from './event-details/EventRevisionProgram';
-import EventWorkshopProgram from './event-details/EventWorkshopProgram';
-import EventReportSection from './event-details/EventReportSection';
-import EventStageLayoutSection from './event-details/EventStageLayoutSection';
-import EventVolunteerSection from './event-details/EventVolunteerSection';
 import { DEFAULT_CUSTOM_CATEGORIES, resolveCategory, isUserCategoryMatchingEvent } from '../utils/categoryUtils';
 import { resolveEffectiveUserTags, findTagObject, getTagId } from '../utils/tagUtils';
 import { canManageEvents } from '../utils/permissionUtils';
-import EventBudgetEditor from './event-details/EventBudgetEditor';
-import EventBudgetSection from './event-details/EventBudgetSection';
 import EventEditForm from './event-details/EventEditForm';
 import EventPollSection from './event-details/EventPollSection';
 import { useEventDetailsController } from '../hooks/useEventDetailsController';
-import EventHeaderCard from './event-details/EventHeaderCard';
-import EventQuickActionsBar from './event-details/EventQuickActionsBar';
-import EventLocationMapBox from './event-details/EventLocationMapBox';
 import EventCommentsSection from './event-details/EventCommentsSection';
 import SendContractModal from './studio/SendContractModal';
 import EventPublicQrCodeModal from './event-details/EventPublicQrCodeModal';
 import EventMediaQrCodeModal from './event-details/EventMediaQrCodeModal';
 import EventTabsNav from './event-details/EventTabsNav';
+import EventDisciplineBadges from './agenda/EventDisciplineBadges';
 import TabRsvp from './event-details/tabs/TabRsvp';
 import TabLogistics from './event-details/tabs/TabLogistics';
 import TabProgram from './event-details/tabs/TabProgram';
@@ -47,7 +29,7 @@ import TabAdmin from './event-details/tabs/TabAdmin';
 import useHardwareBack from '../hooks/useHardwareBack';
 import { triggerEventStatusAutomation } from '../utils/automationEngine';
 
-export default function EventDetails({ event, user, profileData, onNavigateToView, onClose, onPrev, onNext, viewMode, setViewMode, onGoToStageLayoutEditor }) {
+export default function EventDetails({ event, user, profileData, onNavigateToView, onClose, onPrev, onNext, viewMode: _viewMode, setViewMode: _setViewMode, onGoToStageLayoutEditor }) {
   const { t } = useTranslation();
   const { confirm } = useConfirm();
 
@@ -65,7 +47,6 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
     toggleEditing,
     toastMessage,
     setToastMessage,
-    showToast,
     savingEvent,
     setSavingEvent,
     handleDeleteEvent
@@ -126,26 +107,23 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
   const [showMediaQrCodeModal, setShowMediaQrCodeModal] = useState(false);
   const [isSendContractModalOpen, setIsSendContractModalOpen] = useState(false);
   const [isHeaderCalendarMenuOpen, setIsHeaderCalendarMenuOpen] = useState(false);
+  const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
 
   useHardwareBack(isEditingEvent, () => { if (typeof toggleEditing === 'function') toggleEditing(); else setIsEditingEvent(false); });
   useHardwareBack(showQrCodeModal, () => setShowQrCodeModal(false));
   useHardwareBack(showMediaQrCodeModal, () => setShowMediaQrCodeModal(false));
   useHardwareBack(isSendContractModalOpen, () => setIsSendContractModalOpen(false));
+  useHardwareBack(isHeaderCalendarMenuOpen, () => setIsHeaderCalendarMenuOpen(false));
+  useHardwareBack(isMoreMenuOpen, () => setIsMoreMenuOpen(false));
 
   const {
-    morceauxSelectionnes,
-    showMorceauxList,
-    setShowMorceauxList,
     setlist,
-    setSetlist,
     newMorceauTitre,
     setNewMorceauTitre,
     selectedCatalogRhythmUrl,
     setSelectedCatalogRhythmUrl,
-    newMorceauJsonFile,
     setNewMorceauJsonFile,
     fileInputKey,
-    setFileInputKey,
     newMorceauNotes,
     setNewMorceauNotes,
     updatingSetlist,
@@ -201,7 +179,6 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
     status,
     setStatus,
     transport,
-    setTransport,
     demandeRemboursementKm,
     setDemandeRemboursementKm,
     besoinTransportInstrument,
@@ -223,7 +200,6 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
     handleValidatePending,
     handleManualRegister,
     handleManualUnregister,
-    handleUpdateStatus,
     handleUpdateMemberInstrument,
     handleAddInviteExterne,
     handleRemoveInviteExterne,
@@ -543,17 +519,6 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
   const effectiveUserTags = React.useMemo(() => {
     return resolveEffectiveUserTags(profileData?.tags || [], tagsDisponibles);
   }, [profileData?.tags, tagsDisponibles]);
-
-  const userDiscipline = React.useMemo(() => {
-    const insts = (profileData?.instrumentsJoues || []).map(i => String(i).toLowerCase());
-    const discipline = (profileData?.discipline || '').toLowerCase();
-    const isDanse = insts.some(i => i.includes('danse')) || discipline === 'danse';
-    const isPercu = insts.some(i => !i.includes('danse')) || discipline === 'percussion';
-
-    if (isDanse && !isPercu) return 'danse';
-    if (isPercu && !isDanse) return 'percussion';
-    return 'both';
-  }, [profileData?.instrumentsJoues, profileData?.discipline]);
 
   const [isMemberViewSimulation, setIsMemberViewSimulation] = useState(false);
 
@@ -1015,45 +980,9 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
   }
 
   // Date parsing for visual header
-  const dateObj = new Date(event.date);
-  const formattedDate = isNaN(dateObj.getTime()) 
-    ? 'Date inconnue' 
-    : dateObj.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-  const formattedTime = isNaN(dateObj.getTime())
-    ? ''
-    : dateObj.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
-
-  const dateFinObj = event.dateFin ? new Date(event.dateFin) : null;
-  const hasDateFin = dateFinObj && !isNaN(dateFinObj.getTime());
-  const formattedDateFin = hasDateFin
-    ? dateFinObj.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
-    : '';
-  const formattedTimeFin = hasDateFin
-    ? dateFinObj.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
-    : '';
-
-  const dateLimiteObj = event.dateLimiteInscription ? new Date(event.dateLimiteInscription) : null;
-  const hasDateLimite = dateLimiteObj && !isNaN(dateLimiteObj.getTime());
-  const formattedDateLimite = hasDateLimite
-    ? dateLimiteObj.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
-    : '';
-  const formattedTimeLimite = hasDateLimite
-    ? dateLimiteObj.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
-    : '';
-
   const isRegistrationDeadlinePassed = event.dateLimiteInscription
     ? new Date(event.dateLimiteInscription) < new Date()
     : false;
-
-  const typeVariants = {
-    prestation: 'ocre',
-    repetition: 'vert',
-    stage: 'bleu',
-    reunion: 'kraft',
-    atelier: 'jaune'
-  };
-
-  const currentVariant = typeVariants[event.type] || 'default';
 
   const eventType = event.type || 'repetition';
   const rawCurrentConfig = eventTypeConfigs[eventType] || {};
@@ -1093,173 +1022,309 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
     .filter(u => u.prenom && !(event.inscriptions || []).some(ins => ins.userId === u.id))
     .sort((a, b) => `${a.prenom} ${a.nom}`.localeCompare(`${b.prenom} ${b.nom}`));
 
+  const formatEventHeaderDate = (startDateStr, endDateStr, horaires) => {
+    if (!startDateStr) return '';
+    const dStart = new Date(startDateStr);
+    if (isNaN(dStart.getTime())) return startDateStr;
+
+    const dateFormatted = new Intl.DateTimeFormat('fr-FR', {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    }).format(dStart);
+
+    let result = dateFormatted.charAt(0).toUpperCase() + dateFormatted.slice(1);
+
+    const hasTime = startDateStr.includes('T') && !startDateStr.includes('T00:00:00');
+    if (hasTime) {
+      const timeFormatted = new Intl.DateTimeFormat('fr-FR', { hour: '2-digit', minute: '2-digit' }).format(dStart);
+      result += ` • ${timeFormatted}`;
+    }
+
+    if (endDateStr && endDateStr !== startDateStr) {
+      const dEnd = new Date(endDateStr);
+      if (!isNaN(dEnd.getTime())) {
+        const isSameDay = dStart.toDateString() === dEnd.toDateString();
+        if (isSameDay) {
+          const hasEndTime = endDateStr.includes('T') && !endDateStr.includes('T00:00:00');
+          if (hasEndTime) {
+            const endTimeFormatted = new Intl.DateTimeFormat('fr-FR', { hour: '2-digit', minute: '2-digit' }).format(dEnd);
+            result += ` ➔ ${endTimeFormatted}`;
+          }
+        } else {
+          const endFormatted = new Intl.DateTimeFormat('fr-FR', {
+            weekday: 'long',
+            day: 'numeric',
+            month: 'long'
+          }).format(dEnd);
+          result += ` ➔ ${endFormatted.charAt(0).toUpperCase() + endFormatted.slice(1)}`;
+        }
+      }
+    }
+
+    if (horaires) {
+      result += ` (${horaires})`;
+    }
+
+    return result;
+  };
+
+  const getTypeBadgeInfo = (type) => {
+    switch (type) {
+      case 'prestation':
+        return {
+          label: t('widgetAgenda.typePrestation') || 'Prestation',
+          className: 'bg-[var(--color-cordel-vert,#2d6a4f)] text-white border-encre-noire'
+        };
+      case 'repetition':
+        return {
+          label: t('widgetAgenda.typeRepetition') || 'Répétition',
+          className: 'bg-[var(--color-cordel-ocre,#c05621)] text-white border-encre-noire'
+        };
+      case 'stage':
+        return {
+          label: t('widgetAgenda.typeStage') || 'Stage',
+          className: 'bg-cordel-wood text-white border-encre-noire'
+        };
+      case 'atelier':
+        return {
+          label: t('widgetAgenda.typeAtelier') || 'Atelier',
+          className: 'bg-[#2b4c6f] text-white border-encre-noire'
+        };
+      case 'reunion':
+        return {
+          label: t('widgetAgenda.typeReunion') || 'Réunion',
+          className: 'bg-[var(--color-cordel-rouge,#8b2a1a)] text-white border-encre-noire'
+        };
+      default:
+        return {
+          label: type || 'Événement',
+          className: 'bg-cordel-master-dark text-white border-encre-noire'
+        };
+    }
+  };
+
+  const typeInfo = getTypeBadgeInfo(event.type);
+
+  const hasMoreOptions = Boolean(
+    rawIsAuthorized ||
+    lienGoogleFormRecoltePhotos ||
+    event.lienDepotMedias ||
+    isAuthorized
+  );
+
   return (
-    <div className="flex flex-col gap-4 text-left max-w-3xl mx-auto w-full relative">
+    <div className="flex flex-col gap-3 text-left max-w-3xl mx-auto w-full relative">
       {toastMessage && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[9999] bg-[#84967a] text-encre-noire border-2 border-encre-noire px-5 py-3 rounded-[8px_12px_9px_11px] shadow-[4px_4px_0px_0px_#181716] font-bold text-xs uppercase tracking-wider animate-bounce select-none">
           {toastMessage}
         </div>
       )}
-      {/* Header with back button, modifier button & navigation arrows */}
-      <div className="flex flex-col md:flex-row md:justify-between md:items-start border-b-2 border-dashed border-cordel-master-dark/30 pb-2.5 select-none gap-3">
-        {/* Navigation & Back buttons */}
-        <div className="flex items-center justify-between w-full md:w-auto gap-2 pt-1">
-          <div className="flex items-center gap-1.5">
-            <CordelButton variant="default" onClick={onClose} className="px-3 py-1 text-xs font-black">
-              ← {t('common.back')}
-            </CordelButton>
-            {onPrev && (
-              <button
-                type="button"
-                onClick={onPrev}
-                className="text-[10px] font-black uppercase bg-cordel-bg border border-encre-noire px-2.5 py-1.5 rounded shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:bg-neutral-100 cursor-pointer flex items-center justify-center select-none"
-                title="Événement précédent"
-              >
-                ◀
-              </button>
-            )}
-            {onNext && (
-              <button
-                type="button"
-                onClick={onNext}
-                className="text-[10px] font-black uppercase bg-cordel-bg border border-encre-noire px-2.5 py-1.5 rounded shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:bg-neutral-100 cursor-pointer flex items-center justify-center select-none"
-                title="Événement suivant"
-              >
-                ▶
-              </button>
-            )}
-          </div>
 
-          {/* Title on mobile */}
-          <span className="panel-title text-xs font-extrabold tracking-wider text-cordel-wood uppercase flex items-center gap-1 md:hidden">
-            <XiloCalendar size={12} /> {t('eventDetails.title')}
-          </span>
+      {/* Barre supérieure : Retour, Navigation temporelle et Actions prioritaires */}
+      <div className="flex justify-between items-center border-b-2 border-dashed border-cordel-master-dark/30 pb-2 select-none gap-2">
+        {/* Navigation & Retour */}
+        <div className="flex items-center gap-1.5">
+          <CordelButton variant="default" onClick={onClose} className="px-3 py-1 text-xs font-black">
+            ← {t('common.back')}
+          </CordelButton>
+          {onPrev && (
+            <button
+              type="button"
+              onClick={onPrev}
+              className="text-[10px] font-black uppercase bg-cordel-bg border border-encre-noire px-2.5 py-1.5 rounded shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:bg-neutral-100 cursor-pointer flex items-center justify-center select-none"
+              title="Événement précédent"
+            >
+              ◀
+            </button>
+          )}
+          {onNext && (
+            <button
+              type="button"
+              onClick={onNext}
+              className="text-[10px] font-black uppercase bg-cordel-bg border border-encre-noire px-2.5 py-1.5 rounded shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:bg-neutral-100 cursor-pointer flex items-center justify-center select-none"
+              title="Événement suivant"
+            >
+              ▶
+            </button>
+          )}
         </div>
 
-        {/* Title on desktop */}
-        <span className="panel-title text-sm font-extrabold tracking-wider text-cordel-wood uppercase hidden md:flex items-center gap-1 pt-1">
-          <XiloCalendar size={14} /> {t('eventDetails.title')}
-        </span>
+        {/* Barre d'actions rationalisée */}
+        {!isEditingEvent ? (
+          <div className="flex items-center gap-2 relative">
+            {/* 1. Bouton prioritaire : ✏️ Modifier (si Mestre/Admin) */}
+            {isAuthorized && (
+              <button
+                type="button"
+                onClick={() => setIsEditingEvent(true)}
+                className="text-[10px] font-black uppercase bg-cordel-bg border border-encre-noire px-2.5 sm:px-3 py-1.5 rounded shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-95 cursor-pointer flex items-center gap-1 transition-colors"
+                title="Modifier les détails de l'événement"
+              >
+                <span>✏️</span>
+                <span className="hidden sm:inline">Modifier</span>
+              </button>
+            )}
 
-        {/* Action buttons (QR Code Public, Publication, Modify, Supprimer) */}
-        {!isEditingEvent && (
-          <div className="flex gap-2 w-full md:w-auto flex-wrap justify-end md:max-w-[60%] xl:max-w-[50%]">
+            {/* 2. Bouton prioritaire : 📅 Ajouter à mon agenda (avec dropdown Google/ICS) */}
             <div className="relative">
               <button
                 type="button"
-                onClick={() => setIsHeaderCalendarMenuOpen(!isHeaderCalendarMenuOpen)}
-                className="text-[10px] font-black uppercase bg-blue-100 text-blue-900 border border-blue-900 px-3 py-1.5 rounded shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:bg-blue-200 cursor-pointer flex items-center gap-1 flex-1 lg:flex-none justify-center transition-colors"
+                onClick={() => {
+                  setIsHeaderCalendarMenuOpen(!isHeaderCalendarMenuOpen);
+                  setIsMoreMenuOpen(false);
+                }}
+                className="text-[10px] font-black uppercase bg-blue-100 text-blue-900 border border-blue-900 px-2.5 sm:px-3 py-1.5 rounded shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:bg-blue-200 cursor-pointer flex items-center gap-1 transition-colors"
                 title="Ajouter cet événement à votre agenda personnel"
               >
-                📅 Ajouter à mon agenda
+                <span>📅</span>
+                <span className="hidden sm:inline">Ajouter à mon agenda</span>
               </button>
+
               {isHeaderCalendarMenuOpen && (
                 <>
-                  <div 
-                    className="fixed inset-0 z-40" 
+                  <div
+                    className="fixed inset-0 z-40"
                     onClick={() => setIsHeaderCalendarMenuOpen(false)}
                   />
-                  <div className="absolute right-0 top-full mt-2 w-full min-w-[180px] bg-cordel-bg-light border-2 border-encre-noire rounded-[6px_10px_8px_12px] shadow-[3px_3px_0px_0px_#181716] py-1.5 z-50 flex flex-col text-left">
+                  <div className="absolute right-0 top-full mt-2 w-48 bg-cordel-bg-light border-2 border-encre-noire rounded-[6px_10px_8px_12px] shadow-[3px_3px_0px_0px_#181716] py-1.5 z-50 flex flex-col text-left">
                     <button
-                       type="button"
-                       onClick={() => {
-                         handleAddToGoogleCalendar();
-                         setIsHeaderCalendarMenuOpen(false);
-                       }}
-                       className="w-full px-4 py-2 text-[10px] font-black uppercase tracking-wider text-encre-noire hover:bg-cordel-hover cursor-pointer text-left"
+                      type="button"
+                      onClick={() => {
+                        handleAddToGoogleCalendar();
+                        setIsHeaderCalendarMenuOpen(false);
+                      }}
+                      className="w-full px-3.5 py-2 text-[10px] font-black uppercase tracking-wider text-encre-noire hover:bg-cordel-hover cursor-pointer text-left flex items-center gap-2"
                     >
-                       🔵 Google Agenda
+                      <span>🔵</span> <span>Google Agenda</span>
                     </button>
                     <div className="border-t border-dashed border-encre-noire/15 my-0.5" />
                     <button
-                       type="button"
-                       onClick={() => {
-                         handleDownloadIcs();
-                         setIsHeaderCalendarMenuOpen(false);
-                       }}
-                       className="w-full px-4 py-2 text-[10px] font-black uppercase tracking-wider text-encre-noire hover:bg-cordel-hover cursor-pointer text-left"
+                      type="button"
+                      onClick={() => {
+                        handleDownloadIcs();
+                        setIsHeaderCalendarMenuOpen(false);
+                      }}
+                      className="w-full px-3.5 py-2 text-[10px] font-black uppercase tracking-wider text-encre-noire hover:bg-cordel-hover cursor-pointer text-left flex items-center gap-2"
                     >
-                       🍏 Apple / Outlook (.ics)
+                      <span>🍏</span> <span>Apple / Outlook (.ics)</span>
                     </button>
                   </div>
                 </>
               )}
             </div>
 
-            {rawIsAuthorized && (
-              <button
-                type="button"
-                onClick={() => setIsMemberViewSimulation(!isMemberViewSimulation)}
-                className={`text-[10px] font-black uppercase border px-3 py-1.5 rounded shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none cursor-pointer flex items-center gap-1 flex-1 lg:flex-none justify-center transition-colors ${
-                  isMemberViewSimulation 
-                    ? 'bg-amber-600 text-white border-amber-800' 
-                    : 'bg-stone-200 text-stone-800 border-stone-400 hover:bg-stone-300'
-                }`}
-                title="Aperçu Vue Adhérent"
-              >
-                👁️ {isMemberViewSimulation ? 'Quitter la vue adhérent' : 'Aperçu Vue Adhérent'}
-              </button>
-            )}
+            {/* 3. Menu Déroulant ••• (Plus d'actions) */}
+            {hasMoreOptions && (
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsMoreMenuOpen(!isMoreMenuOpen);
+                    setIsHeaderCalendarMenuOpen(false);
+                  }}
+                  className="text-[11px] font-black bg-cordel-bg-light border border-encre-noire px-2.5 py-1.5 rounded shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:bg-neutral-100 cursor-pointer flex items-center gap-1 select-none transition-colors"
+                  title="Plus d'actions"
+                  aria-expanded={isMoreMenuOpen}
+                >
+                  <span>•••</span>
+                  <span className="hidden md:inline text-[9px] font-bold uppercase tracking-wider ml-0.5">Actions</span>
+                </button>
 
-            {lienGoogleFormRecoltePhotos && (
-              <button
-                type="button"
-                onClick={() => setShowQrCodeModal(true)}
-                className="text-[10px] font-black uppercase bg-amber-600 text-white border border-encre-noire px-3 py-1.5 rounded shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:bg-amber-700 cursor-pointer flex items-center gap-1.5 flex-1 lg:flex-none justify-center transition-colors"
-                title="Afficher le QR Code pour récolter les photos et vidéos des spectateurs"
-              >
-                📷 QR Code Récolte Photos
-              </button>
-            )}
+                {isMoreMenuOpen && (
+                  <>
+                    <div
+                      className="fixed inset-0 z-40"
+                      onClick={() => setIsMoreMenuOpen(false)}
+                    />
+                    <div className="absolute right-0 top-full mt-2 w-56 bg-cordel-bg-light border-2 border-encre-noire rounded-[8px_12px_9px_11px] shadow-[4px_4px_0px_0px_#181716] py-1.5 z-50 flex flex-col text-left">
+                      {rawIsAuthorized && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsMemberViewSimulation(!isMemberViewSimulation);
+                            setIsMoreMenuOpen(false);
+                          }}
+                          className="w-full px-3.5 py-2 text-[10px] font-black uppercase tracking-wider text-encre-noire hover:bg-amber-100 cursor-pointer text-left flex items-center gap-2"
+                        >
+                          <span>👁️</span>
+                          <span>{isMemberViewSimulation ? 'Quitter la vue adhérent' : 'Aperçu vue adhérent'}</span>
+                        </button>
+                      )}
 
-            {isAuthorized && (
-              <>
-                <button
-                  type="button"
-                  onClick={() => setIsSendContractModalOpen(true)}
-                  className="text-[10px] font-black uppercase bg-cordel-vert text-white border border-encre-noire px-3 py-1.5 rounded shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-105 cursor-pointer flex items-center gap-1 flex-1 lg:flex-none justify-center transition-colors"
-                  title="Envoyer un contrat ou devis par email via l'API Brevo"
-                >
-                  📝 Envoyer un contrat (Brevo)
-                </button>
-                <button
-                  type="button"
-                  onClick={handlePreparePublication}
-                  className="text-[10px] font-black uppercase bg-cordel-ocre text-black border border-encre-noire px-3 py-1.5 rounded shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-95 cursor-pointer flex items-center gap-1 flex-1 lg:flex-none justify-center"
-                >
-                  <XiloMegaphone size={12} /> Préparer la publication
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setIsEditingEvent(true)}
-                  className="text-[10px] font-black uppercase bg-cordel-bg border border-encre-noire px-3 py-1.5 rounded shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-95 cursor-pointer flex-1 lg:flex-none justify-center"
-                >
-                  ✏️ Modifier
-                </button>
-                <CordelButton
-                  type="button"
-                  variant="rouge"
-                  onClick={handleDeleteEvent}
-                  className="text-[10px] px-3 py-1.5 uppercase font-black flex items-center gap-1 flex-1 lg:flex-none justify-center"
-                >
-                  🗑️ Supprimer
-                </CordelButton>
-              </>
+                      {(lienGoogleFormRecoltePhotos || event.lienDepotMedias) && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowQrCodeModal(true);
+                            setIsMoreMenuOpen(false);
+                          }}
+                          className="w-full px-3.5 py-2 text-[10px] font-black uppercase tracking-wider text-encre-noire hover:bg-amber-100 cursor-pointer text-left flex items-center gap-2"
+                        >
+                          <span>📷</span>
+                          <span>QR Code récolte photos</span>
+                        </button>
+                      )}
+
+                      {isAuthorized && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setIsSendContractModalOpen(true);
+                              setIsMoreMenuOpen(false);
+                            }}
+                            className="w-full px-3.5 py-2 text-[10px] font-black uppercase tracking-wider text-encre-noire hover:bg-emerald-50 cursor-pointer text-left flex items-center gap-2"
+                          >
+                            <span>📄</span>
+                            <span>Envoyer un contrat (Brevo)</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              handlePreparePublication();
+                              setIsMoreMenuOpen(false);
+                            }}
+                            className="w-full px-3.5 py-2 text-[10px] font-black uppercase tracking-wider text-encre-noire hover:bg-orange-50 cursor-pointer text-left flex items-center gap-2"
+                          >
+                            <span>📢</span>
+                            <span>Préparer la publication</span>
+                          </button>
+                        </>
+                      )}
+
+                      {isAuthorized && (
+                        <>
+                          <div className="border-t border-dashed border-encre-noire/20 my-1" />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setIsMoreMenuOpen(false);
+                              handleDeleteEvent();
+                            }}
+                            className="w-full px-3.5 py-2 text-[10px] font-black uppercase tracking-wider text-[var(--color-cordel-rouge,#8b2a1a)] hover:bg-red-50 cursor-pointer text-left flex items-center gap-2"
+                          >
+                            <span>🗑️</span>
+                            <span>Supprimer l'événement</span>
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
             )}
           </div>
-        )}
-
-        {/* Cancel button if editing */}
-        {isAuthorized && isEditingEvent && (
-          <div className="flex w-full md:w-auto justify-end">
-            <button
-              type="button"
-              onClick={() => setIsEditingEvent(false)}
-              className="text-[10px] font-black uppercase bg-neutral-200 border border-encre-noire px-3 py-1.5 rounded w-full md:w-auto text-center"
-            >
-              Annuler
-            </button>
-          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setIsEditingEvent(false)}
+            className="text-[10px] font-black uppercase bg-neutral-200 border border-encre-noire px-3 py-1.5 rounded"
+          >
+            Annuler
+          </button>
         )}
       </div>
 
@@ -1303,7 +1368,7 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
           )}
 
           {isMemberViewSimulation && (
-            <div className="w-full mb-3 px-3.5 py-2 bg-amber-400 text-encre-noire border-2 border-encre-noire rounded shadow-[2px_2px_0px_0px_#181716] text-[10px] font-black uppercase tracking-wider flex items-center justify-between z-20 select-none animate-fade-in shrink-0">
+            <div className="w-full mb-1 px-3.5 py-2 bg-amber-400 text-encre-noire border-2 border-encre-noire rounded shadow-[2px_2px_0px_0px_#181716] text-[10px] font-black uppercase tracking-wider flex items-center justify-between z-20 select-none animate-fade-in shrink-0">
               <span className="flex items-center gap-2">
                 ⚠️ Mode Simulation Adhérent Actif
               </span>
@@ -1316,6 +1381,60 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
               </button>
             </div>
           )}
+
+          {/* Bandeau d'Identification de l'Événement (Nom, Date & Lieu) */}
+          <div className="w-full bg-cordel-bg-light/90 border-2 border-encre-noire rounded-[8px_12px_7px_10px] p-3.5 sm:p-4 shadow-[2.5px_2.5px_0px_0px_#181716] flex flex-col gap-2 relative overflow-hidden">
+            <div className="flex flex-wrap items-center gap-2 select-none">
+              {/* Badge Type d'événement */}
+              <span className={`text-[9.5px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-[4px_6px_3px_5px] border shadow-xs ${typeInfo.className}`}>
+                {typeInfo.label}
+              </span>
+
+              {/* Badges Disciplines (Percu / Danse) */}
+              <EventDisciplineBadges includesPercussion={event.includesPercussion} includesDance={event.includesDance} size="normal" />
+
+              {/* Badges de Statut */}
+              {event.status === 'a_confirmer' && (
+                <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded bg-[var(--color-cordel-ocre,#c05621)] text-white border border-encre-noire shadow-xs">
+                  ⚠️ À confirmer
+                </span>
+              )}
+              {event.status === 'annule' && (
+                <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded bg-[var(--color-cordel-rouge,#8b2a1a)] text-white border border-encre-noire shadow-xs">
+                  🚫 Annulé
+                </span>
+              )}
+              {event.status === 'confirme' && event.wasConfirmedLater && (
+                <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded bg-[var(--color-cordel-vert,#2d6a4f)] text-white border border-encre-noire shadow-xs">
+                  ✓ Validé
+                </span>
+              )}
+              {event.niveauRequis === 'confirme' && (
+                <span className="text-[9px] font-extrabold uppercase px-2 py-0.5 bg-amber-200 text-amber-900 border border-amber-400 rounded">
+                  ⭐ Confirmés
+                </span>
+              )}
+            </div>
+
+            {/* Titre en grand style Cordel */}
+            <h2 className="text-lg sm:text-xl md:text-2xl font-black text-encre-noire leading-snug break-words">
+              {event.titre || event.title || t('eventDetails.unnamedEvent') || "Événement"}
+            </h2>
+
+            {/* Date & Heure et Lieu */}
+            <div className="flex flex-col sm:flex-row sm:flex-wrap items-start sm:items-center gap-x-4 gap-y-1 text-xs font-bold text-cordel-master-dark/90 pt-0.5">
+              <div className="flex items-center gap-1.5 text-cordel-wood font-extrabold">
+                <span>📅</span>
+                <span>{formatEventHeaderDate(event.date || event.dateDebut, event.dateFin, event.horairesPassages)}</span>
+              </div>
+              {event.lieu && (
+                <div className="flex items-center gap-1.5 text-encre-noire">
+                  <span>📍</span>
+                  <span className="truncate max-w-md" title={event.lieu}>{event.lieu}</span>
+                </div>
+              )}
+            </div>
+          </div>
 
           {/* Navigation par Onglets Thématiques Cordel */}
           <EventTabsNav

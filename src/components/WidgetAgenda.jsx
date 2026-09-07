@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { collection, query, where, onSnapshot, addDoc, doc } from 'firebase/firestore';
 import { db } from '../firebase';
-import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
+import ErrorBoundary from './ErrorBoundary';
 const EventDetails = React.lazy(() => import('./EventDetails'));
 import CalendarGrid from './CalendarGrid';
 import EventCreateForm from './agenda/EventCreateForm';
@@ -10,7 +10,7 @@ import EmptyState from './EmptyState';
 import AgendaFilterBar from './agenda/AgendaFilterBar';
 import EventDisciplineBadges from './agenda/EventDisciplineBadges';
 import { useTranslation } from './LanguageContext';
-import { XiloCalendar, XiloEye, XiloEyeOff } from './XiloIcons';
+import { XiloCalendar } from './XiloIcons';
 import { splitEventsByTime } from '../utils/dateUtils';
 import EventThumbnail from './agenda/EventThumbnail';
 import { canManageEvents } from '../utils/permissionUtils';
@@ -194,19 +194,8 @@ export default function WidgetAgenda({
   };
 
   const filteredUpcoming = upcomingEvents.filter(filterFn);
-  const filteredPast = pastEvents.filter(filterFn);  // Affichage par défaut : événements à venir uniquement. Si l'historique est activé, inclure les événements passés.
-  const displayEvents = useMemo(() => {
-    if (showPastHistory) {
-      return events;
-    }
-    return events.filter(ev => {
-      if (!ev.date) return false;
-      const evDate = new Date(ev.date);
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      return evDate >= today;
-    });
-  }, [events, showPastHistory]);
+  const filteredPast = pastEvents.filter(filterFn);
+
 
   const activeFilteredEvents = showPastHistory
     ? [...filteredUpcoming, ...filteredPast]
@@ -300,6 +289,8 @@ export default function WidgetAgenda({
 
     setLoading(true);
     const eventsRef = collection(db, 'events');
+    
+    // Requête filtrée par groupe sans contrainte d'inégalité pour ne pas exiger d'index composite Firestore
     const q = query(eventsRef, where('groupId', '==', groupId));
 
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
@@ -311,8 +302,20 @@ export default function WidgetAgenda({
         });
       });
 
-      // Local sorting in JavaScript chronologically to avoid needing index composites on Firestore
-      const sortedEvents = fetchedEvents.sort((a, b) => new Date(a.date) - new Date(b.date));
+      // Filtrage temporel par défaut : du 1er jour du mois précédent aux événements futurs
+      // Si l'utilisateur demande explicitement l'historique complet (showPastHistory), tout le stock est conservé
+      let eventsToDisplay = fetchedEvents;
+      if (!showPastHistory) {
+        const now = new Date();
+        const dateLimiteBasse = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString().split('T')[0];
+        eventsToDisplay = fetchedEvents.filter((ev) => {
+          const evDate = ev.date || ev.dateDebut || '';
+          return !evDate || evDate >= dateLimiteBasse;
+        });
+      }
+
+      // Tri local chronologique en JavaScript pour gérer harmonieusement les dates ISO
+      const sortedEvents = eventsToDisplay.sort((a, b) => new Date(a.date || a.dateDebut || 0) - new Date(b.date || b.dateDebut || 0));
       setEvents(sortedEvents);
       setLoading(false);
     }, (error) => {
@@ -321,7 +324,7 @@ export default function WidgetAgenda({
     });
 
     return () => unsubscribe();
-  }, [groupId]);
+  }, [groupId, showPastHistory]);
 
   // Synchronisation de l'URL et de l'historique pour le routage des événements
   useEffect(() => {
@@ -492,6 +495,7 @@ export default function WidgetAgenda({
           titre: formData.titre,
           type: formData.type,
           date: dateVal,
+          dateDebut: dateVal,
           dateFin: formData.dateFin || '',
           groupId: groupId,
           inscriptions: [],
@@ -572,23 +576,24 @@ export default function WidgetAgenda({
 
   // Find the currently selected event inside the synchronized events state 
   // to feed the child component with real-time Firestore updates
+  const safeEvents = Array.isArray(events) ? events : [];
   const activeEvent = selectedEvent 
-    ? events.find(e => e.id === selectedEvent.id) || selectedEvent 
+    ? safeEvents.find(e => e.id === selectedEvent.id) || selectedEvent 
     : null;
 
-  const currentIndex = activeEvent ? events.findIndex(e => e.id === activeEvent.id) : -1;
+  const currentIndex = activeEvent ? safeEvents.findIndex(e => e.id === activeEvent.id) : -1;
   const hasPrev = currentIndex > 0;
-  const hasNext = currentIndex >= 0 && currentIndex < events.length - 1;
+  const hasNext = currentIndex >= 0 && currentIndex < safeEvents.length - 1;
 
   const handlePrevEvent = () => {
     if (hasPrev) {
-      setSelectedEvent(events[currentIndex - 1]);
+      setSelectedEvent(safeEvents[currentIndex - 1]);
     }
   };
 
   const handleNextEvent = () => {
     if (hasNext) {
-      setSelectedEvent(events[currentIndex + 1]);
+      setSelectedEvent(safeEvents[currentIndex + 1]);
     }
   };
 
@@ -619,34 +624,36 @@ export default function WidgetAgenda({
           </span>
         </div>
       }>
-        <EventDetails 
-          event={activeEvent}
-          user={user}
-          profileData={profileData}
-          onNavigateToView={onNavigateToView}
-          viewMode={viewMode}
-          setViewMode={(mode) => {
-            setViewMode(mode);
-            setSelectedEvent(null);
-            if (onFocusModeChange) {
-              onFocusModeChange(false);
-            }
-          }}
-          onClose={() => {
-            const newUrl = new URL(window.location);
-            newUrl.searchParams.delete('eventId');
-            if (newUrl.pathname.includes('/events/')) {
-              newUrl.pathname = '/app';
-            }
-            window.history.replaceState({ ...window.history.state, eventId: null }, '', newUrl.toString());
-            setSelectedEvent(null);
-            if (onFocusModeChange) {
-              onFocusModeChange(false);
-            }
-          }}
-          onPrev={hasPrev ? handlePrevEvent : null}
-          onNext={hasNext ? handleNextEvent : null}
-        />
+        <ErrorBoundary compact title="Détails de l'événement">
+          <EventDetails 
+            event={activeEvent}
+            user={user}
+            profileData={profileData}
+            onNavigateToView={onNavigateToView}
+            viewMode={viewMode}
+            setViewMode={(mode) => {
+              setViewMode(mode);
+              setSelectedEvent(null);
+              if (onFocusModeChange) {
+                onFocusModeChange(false);
+              }
+            }}
+            onClose={() => {
+              const newUrl = new URL(window.location);
+              newUrl.searchParams.delete('eventId');
+              if (newUrl.pathname.includes('/events/')) {
+                newUrl.pathname = '/app';
+              }
+              window.history.replaceState({ ...window.history.state, eventId: null }, '', newUrl.toString());
+              setSelectedEvent(null);
+              if (onFocusModeChange) {
+                onFocusModeChange(false);
+              }
+            }}
+            onPrev={hasPrev ? handlePrevEvent : null}
+            onNext={hasNext ? handleNextEvent : null}
+          />
+        </ErrorBoundary>
       </React.Suspense>
     );
   }

@@ -47,6 +47,7 @@ export default function XiloAvatar({ src, name, size = 80 }) {
         width={size}
         height={size}
         loading="lazy"
+        decoding="async"
         onError={() => setError(true)}
         className="w-full h-full object-cover grayscale contrast-[130%] sepia-[40%] mix-blend-multiply brightness-[95%]"
       />

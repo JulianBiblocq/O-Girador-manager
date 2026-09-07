@@ -1,5 +1,4 @@
 import React from 'react';
-import CordelCard from './CordelCard';
 import EventReportSection from './event-details/EventReportSection';
 
 export default function ReunionViewModal({ event, user, profileData, onClose }) {

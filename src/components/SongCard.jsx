@@ -3,7 +3,6 @@ import { createPortal } from 'react-dom';
 import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 import { db, auth } from '../firebase';
 import PrintConfigModal from './PrintConfigModal';
-import { getInstrumentStamp } from './InstrumentStampSVG';
 
 /**
  * Modèle de données attendu pour une chanson (Fiche de Chant)
@@ -21,7 +20,7 @@ import { getInstrumentStamp } from './InstrumentStampSVG';
  * }
  */
 
-export default function SongCard({ 
+function SongCard({ 
   song, 
   isPrintVersion = false, 
   defaultRevisionMode = true, 
@@ -58,7 +57,7 @@ export default function SongCard({
           if (snap.exists()) {
             setInternalRequested(!!snap.data().revisionsDemandees?.[song.id]);
           }
-        } catch (e) {
+        } catch {
           // Ignorer silencieusement
         }
       };
@@ -88,7 +87,7 @@ export default function SongCard({
         await updateDoc(pRef, {
           [`revisionsDemandees.${song.id}`]: newVal
         });
-      } catch (err) {
+      } catch {
         await setDoc(pRef, {
           revisionsDemandees: {
             [song.id]: newVal
@@ -551,3 +550,5 @@ export default function SongCard({
     </>
   );
 }
+
+export default React.memo(SongCard);

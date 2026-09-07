@@ -17,7 +17,7 @@ import InstrumentBaptismModal from './InstrumentBaptismModal';
 import { canValidateWorkshop } from '../../utils/permissionUtils';
 import { doc, writeBatch } from 'firebase/firestore';
 
-export default function InventoryProjectsView({ groupId, isAuthorized, profileData, t, inventoryParts, onCreateInstrument, onNavigateToView }) {
+export default function InventoryProjectsView({ groupId, isAuthorized, profileData, _t, inventoryParts, _onCreateInstrument, onNavigateToView }) {
   const { projects, loading: pLoading, addProject, updateProject, deleteProject } = useInventoryProjects(groupId);
   const { models, loading: mLoading } = useInstrumentModels(groupId);
   const { updatePartWorkflow } = useInventoryData(groupId);
@@ -163,7 +163,7 @@ export default function InventoryProjectsView({ groupId, isAuthorized, profileDa
     }
   };
 
-  const handleOpenBaptismModal = (project, model) => {
+  const handleOpenBaptismModal = (_project, _model) => {
     setShowBaptismModal(true);
   };
 
@@ -372,7 +372,6 @@ export default function InventoryProjectsView({ groupId, isAuthorized, profileDa
       const assignedInvId = assignedMap[slot.slotId];
       const invPart = inventoryParts.find(p => p.id === assignedInvId);
       const totalSteps = slot.chapitres?.length || 0;
-      const currentStep = slotWf?.currentStepIndex !== undefined ? slotWf.currentStepIndex : (invPart?.currentStepIndex || 0);
       const statutEtape = slotWf?.statutEtape || invPart?.statutEtape || 'en_cours';
       return !!assignedInvId && (statutEtape === 'terminee' || totalSteps === 0);
     }).length;

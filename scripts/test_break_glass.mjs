@@ -23,8 +23,7 @@ import {
   canEditVitrine,
   canUserReadForumChannel,
   canUserWriteInForumChannel,
-  matchesAllowedKeyword,
-  isSuperAdminProfile
+  matchesAllowedKeyword
 } from '../src/utils/permissionUtils.js';
 
 let passed = 0;

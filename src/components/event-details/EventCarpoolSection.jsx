@@ -5,12 +5,12 @@ import { calculateCarStatus, calculateCarpoolGauge } from '../../hooks/useEventC
 export default function EventCarpoolSection({
   event,
   user,
-  profileData,
+  profileData: _profileData,
   isAuthorized,
   enableCarpoolReimbursement,
   indemniteKilometrique,
   convoiDrivers,
-  individualDrivers,
+  individualDrivers: _individualDrivers,
   submittingCovoit,
   joiningVoitureId,
   setJoiningVoitureId,
@@ -67,13 +67,13 @@ export default function EventCarpoolSection({
             {/* 1. Catégorie : Convoi / Covoiturage */}
             <div className="mt-2">
               <strong className="text-cordel-wood uppercase text-[10px] tracking-wider block border-b border-dashed border-cordel-master-dark/10 pb-0.5 mb-1.5">
-                🚗 Chauffeurs du Convoi ({convoiDrivers.length})
+                🚗 Chauffeurs du Convoi ({(convoiDrivers || []).length})
               </strong>
-              {convoiDrivers.length === 0 ? (
+              {(convoiDrivers || []).length === 0 ? (
                 <p className="text-[11px] italic opacity-60 pl-2">Aucun conducteur déclaré dans le convoi.</p>
               ) : (
                 <div className="flex flex-col gap-1.5 pl-2">
-                  {convoiDrivers.map(driver => {
+                  {(convoiDrivers || []).map(driver => {
                     const refund = driver.isEligibleRefund ? (event.distanceAllerRetourKm || 0) * indemniteKilometrique : 0;
                     return (
                       <div key={driver.id} className="flex flex-col gap-0.5 border-b border-dashed border-encre-noire/5 pb-1 mb-1 last:border-none">
@@ -105,7 +105,7 @@ export default function EventCarpoolSection({
                     <div className="border-t border-double border-encre-noire/25 pt-2 mt-3 flex justify-between items-center font-black text-xs text-encre-noire">
                       <span>Total Général (Convoi) :</span>
                       <span className="text-cordel-wood">
-                        {(convoiDrivers.filter(d => d.isEligibleRefund).length * event.distanceAllerRetourKm * indemniteKilometrique).toFixed(2)} €
+                        {((convoiDrivers || []).filter(d => d.isEligibleRefund).length * event.distanceAllerRetourKm * indemniteKilometrique).toFixed(2)} €
                       </span>
                     </div>
                   )}
@@ -157,7 +157,7 @@ export default function EventCarpoolSection({
               <p className="text-[11px] italic opacity-60">Aucun chauffeur ne s'est encore déclaré pour cet événement.</p>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                {(event.covoiturage.voitures).map((voiture) => {
+                {(event.covoiturage?.voitures || []).map((voiture) => {
                   const status = calculateCarStatus(voiture, { enableCarpoolReimbursement, reimbursementRule });
                   const isUserChauffeur = voiture.chauffeurId === user.uid;
                   const isUserPassager = (voiture.passengers || voiture.passagers || []).some(p => p.uid === user.uid);
@@ -492,7 +492,7 @@ export default function EventCarpoolSection({
               <p className="text-[11px] italic opacity-60">Aucun membre en recherche de place actuellement.</p>
             ) : (
               <div className="flex flex-wrap gap-1.5">
-                {(event.covoiturage.recherchePlace).map((p) => {
+                {(event.covoiturage?.recherchePlace || []).map((p) => {
                   const icons = [
                     (p.cherchePassager !== false) ? '🚗' : null,
                     p.chercheInstrument ? '🥁' : null

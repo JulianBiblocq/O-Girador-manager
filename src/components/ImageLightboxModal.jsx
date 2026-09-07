@@ -61,6 +61,8 @@ export default function ImageLightboxModal({ isOpen, photoURL, name, onClose }) 
           <img
             src={photoURL}
             alt={name || "Photo agrandie"}
+            loading="lazy"
+            decoding="async"
             className="max-h-[72vh] max-w-[85vw] object-contain rounded-sm border-2 border-encre-noire/30 shadow-md"
           />
           {name && (

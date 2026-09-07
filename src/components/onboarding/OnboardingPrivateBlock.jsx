@@ -1,5 +1,5 @@
 import React from 'react';
-import { XiloShield, XiloLock, XiloInfo, XiloHanger } from '../XiloIcons';
+import { XiloShield, XiloLock, XiloHanger } from '../XiloIcons';
 
 /**
  * OnboardingPrivateBlock - Bloc 3 : Informations Confidentielles (Réservé au Bureau)
