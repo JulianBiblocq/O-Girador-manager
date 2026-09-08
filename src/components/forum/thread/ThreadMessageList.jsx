@@ -26,7 +26,8 @@ import ThreadMessageItem from './ThreadMessageItem';
  * @param {Function} props.t Fonction de traduction
  */
 export default function ThreadMessageList({
-  reponses = [],
+  thread,
+  reponses: passedReponses,
   firstUnreadIdx = -1,
   userId,
   profileData,
@@ -45,6 +46,15 @@ export default function ThreadMessageList({
   onToggleReaction,
   t
 }) {
+  // Prise en charge résiliente : prop direct reponses, champ thread.reponses ou repli thread.message
+  const reponses = passedReponses || thread?.reponses || (thread?.message ? [{
+    auteurId: thread.auteurId,
+    auteurNom: thread.auteurNom || 'Auteur',
+    message: thread.message,
+    dateCreation: thread.dateCreation,
+    targetTag: thread.targetTag || null
+  }] : []);
+
   return (
     <div className="relative flex flex-col flex-1 min-h-0">
       <div
@@ -52,17 +62,22 @@ export default function ThreadMessageList({
         onScroll={onScroll}
         className="flex flex-col gap-3 overflow-y-auto max-h-[460px] min-h-[220px] p-3 bg-cordel-bg-light border-2 border-dashed border-cordel-master-dark/20 rounded-md select-text"
       >
-        {reponses.map((reply, index) => {
-          const isFirstUnread = index === firstUnreadIdx;
-          const dateMsg = new Date(reply.dateCreation);
-          const formattedTime = isNaN(dateMsg.getTime())
-            ? ''
-            : ((t && t('forum.atTime')) || "{time} le {date}")
-                .replace('{time}', dateMsg.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' }))
-                .replace('{date}', dateMsg.toLocaleDateString(undefined, { day: 'numeric', month: 'short' }));
+        {reponses.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-full min-h-[160px] text-center text-xs opacity-60 font-semibold italic select-none py-8">
+            <span>📭 {(t && t('forum.noReplies')) || "Aucun message dans cette discussion pour le moment."}</span>
+          </div>
+        ) : (
+          reponses.map((reply, index) => {
+            const isFirstUnread = index === firstUnreadIdx;
+            const dateMsg = new Date(reply.dateCreation);
+            const formattedTime = isNaN(dateMsg.getTime())
+              ? ''
+              : ((t && t('forum.atTime')) || "{time} le {date}")
+                  .replace('{time}', dateMsg.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' }))
+                  .replace('{date}', dateMsg.toLocaleDateString(undefined, { day: 'numeric', month: 'short' }));
 
-          return (
-            <React.Fragment key={`${reply.dateCreation}-${index}`}>
+            return (
+              <React.Fragment key={`${reply.dateCreation}-${index}`}>
               {/* Ligne de repère de nouveaux messages */}
               {isFirstUnread && (
                 <div
@@ -94,7 +109,8 @@ export default function ThreadMessageList({
               />
             </React.Fragment>
           );
-        })}
+        })
+      )}
         <div ref={messagesEndRef} />
       </div>
 

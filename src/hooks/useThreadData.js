@@ -137,18 +137,26 @@ export function useThreadData({
     return !canUserWriteInForumChannel(threadChannel, profileData, activeEffectiveUserTags);
   }, [threadChannel, breakGlassActive, profileData, activeEffectiveUserTags]);
 
-  // Récupération des étiquettes du groupe
+  // Réinitialisation des références d'affichage au changement de sujet
+  useEffect(() => {
+    hasScrolledInitialRef.current = false;
+    initialSetRef.current = false;
+  }, [threadId]);
+
+  // Récupération des étiquettes de l'association
   useEffect(() => {
     if (!profileData?.groupId || (tagsDisponibles && tagsDisponibles.length > 0)) return;
 
     const fetchTags = async () => {
       try {
-        const groupRef = doc(db, 'groups', profileData.groupId);
-        const groupSnap = await getDoc(groupRef);
-        if (groupSnap.exists()) {
-          const gData = groupSnap.data();
-          if (Array.isArray(gData.tags) && gData.tags.length > 0) {
-            setInternalTagsDisponibles(gData.tags);
+        const assocRef = doc(db, 'associations', profileData.groupId);
+        const assocSnap = await getDoc(assocRef);
+        if (assocSnap.exists()) {
+          const aData = assocSnap.data();
+          if (Array.isArray(aData.tagsDisponibles) && aData.tagsDisponibles.length > 0) {
+            setInternalTagsDisponibles(aData.tagsDisponibles);
+          } else if (Array.isArray(aData.tags) && aData.tags.length > 0) {
+            setInternalTagsDisponibles(aData.tags);
           }
         }
       } catch (err) {
@@ -184,16 +192,16 @@ export function useThreadData({
     return list;
   }, [profileData?.instrumentsParametrables, activeTagsDisponibles]);
 
-  // Lien de dépôt configuré sur le groupe
+  // Lien de dépôt configuré sur l'association
   useEffect(() => {
     if (!profileData?.groupId) return;
     const fetchLienDepot = async () => {
       try {
-        const groupSnap = await getDoc(doc(db, 'groups', profileData.groupId));
-        if (groupSnap.exists()) {
-          const gData = groupSnap.data();
-          if (gData.lienDepotForum) {
-            setLienDepotForum(gData.lienDepotForum);
+        const assocSnap = await getDoc(doc(db, 'associations', profileData.groupId));
+        if (assocSnap.exists()) {
+          const aData = assocSnap.data();
+          if (aData.lienDepotForum) {
+            setLienDepotForum(aData.lienDepotForum);
           }
         }
       } catch (err) {

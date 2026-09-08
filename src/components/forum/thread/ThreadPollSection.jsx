@@ -20,13 +20,21 @@ import PollDisplay from '../PollDisplay';
 export default function ThreadPollSection({
   thread,
   userId,
+  user,
   allUsers = [],
   isAuthorOrAdmin = false,
   isAddPollOpen = false,
   setIsAddPollOpen,
+  onCloseAddPoll,
   onCreatePoll,
   savingPoll = false
 }) {
+  const effectiveUserId = userId || user?.uid;
+  const handleClose = () => {
+    if (setIsAddPollOpen) setIsAddPollOpen(false);
+    if (onCloseAddPoll) onCloseAddPoll();
+  };
+
   const [newPollQuestion, setNewPollQuestion] = useState('');
   const [newPollOptions, setNewPollOptions] = useState(['', '']);
   const [newPollAllowMultiple, setNewPollAllowMultiple] = useState(false);
@@ -75,7 +83,7 @@ export default function ThreadPollSection({
         <PollDisplay
           poll={thread.poll}
           threadId={thread.id}
-          userId={userId}
+          userId={effectiveUserId}
           allUsers={allUsers}
           isAuthorOrAdmin={isAuthorOrAdmin}
         />
@@ -166,7 +174,7 @@ export default function ThreadPollSection({
                 <CordelButton
                   type="button"
                   variant="default"
-                  onClick={() => setIsAddPollOpen && setIsAddPollOpen(false)}
+                  onClick={handleClose}
                   disabled={savingPoll}
                   className="px-3 py-1.5 text-xs font-bold"
                 >

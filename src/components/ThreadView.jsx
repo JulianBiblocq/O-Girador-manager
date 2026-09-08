@@ -106,8 +106,12 @@ export default function ThreadView({
           {/* Section sondage interactif & modale d'ajout */}
           <ThreadPollSection
             thread={threadData.thread}
+            userId={user?.uid}
             user={user}
+            allUsers={allUsers}
+            isAuthorOrAdmin={threadData.isModeratorOrAdmin || user?.uid === threadData.thread?.auteurId}
             isAddPollOpen={threadData.isAddPollOpen}
+            setIsAddPollOpen={threadData.setIsAddPollOpen}
             onCloseAddPoll={() => threadData.setIsAddPollOpen(false)}
             onCreatePoll={threadData.handleCreatePoll}
             savingPoll={threadData.savingNewPoll}
@@ -117,6 +121,7 @@ export default function ThreadView({
           {/* Liste déroulante des messages avec repère des non-lus */}
           <ThreadMessageList
             thread={threadData.thread}
+            reponses={threadData.thread?.reponses || []}
             userId={user?.uid}
             profileData={profileData}
             isModeratorOrAdmin={threadData.isModeratorOrAdmin}
