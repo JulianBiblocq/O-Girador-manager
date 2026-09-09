@@ -84,13 +84,13 @@ export default function CordelImageEditor({ imageSrc, lang = 'fr', onComplete, o
 
         <div className="flex flex-col gap-1">
           <div className="flex justify-between items-center text-[10px]">
-            <label>🔍 {lang === 'fr' ? 'Zoom' : 'Zoom'}: {options.zoom}%</label>
+            <label>🔍 {lang === 'fr' ? 'Zoom' : 'Zoom'}: {Math.max(100, options.zoom || 100)}%</label>
           </div>
           <input 
             type="range" 
-            min="50" 
-            max="180" 
-            value={options.zoom} 
+            min="100" 
+            max="250" 
+            value={Math.max(100, options.zoom || 100)} 
             onChange={e => handleOptionChange('zoom', parseInt(e.target.value))} 
             className="w-full accent-[var(--cordel-text)] cursor-pointer" 
           />

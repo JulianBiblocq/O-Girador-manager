@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 
 import { generateImageCharterPDF, generateMedicalAttestationPDF } from '../../utils/pdfGenerator';
-import { formatTagGender, getTagId } from '../../utils/tagUtils';
+import { formatTagGender, getTagId, computePupitresList } from '../../utils/tagUtils';
 import { getMigratedRoleAndTags, VALID_SYSTEM_ROLES } from '../../utils/roleMigration';
 import { DEFAULT_CUSTOM_CATEGORIES } from '../../utils/categoryUtils';
 import MemberProfileEditModal from './MemberProfileEditModal';
@@ -26,6 +26,8 @@ export default function SystemUserList({
   savingId,
   availableTags,
   customCategories = DEFAULT_CUSTOM_CATEGORIES,
+  instrumentsDisponibles = [],
+  linkedInstruments = [],
   fieldsConfig,
   associationName,
   handleRoleChange,
@@ -43,6 +45,13 @@ export default function SystemUserList({
   const [modalUser, setModalUser] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedUsers, setExpandedUsers] = useState({});
+
+  const pupitresList = useMemo(() => {
+    const base = (Array.isArray(instrumentsDisponibles) && instrumentsDisponibles.length > 0)
+      ? instrumentsDisponibles
+      : ["Alfaia", "Caixa", "Tarol", "Gonguê", "Agbê", "Mineiro", "Chant"];
+    return computePupitresList(base, linkedInstruments);
+  }, [instrumentsDisponibles, linkedInstruments]);
 
   const handleOpenModal = (userItem) => {
     setModalUser(userItem);
@@ -199,6 +208,22 @@ export default function SystemUserList({
                 <span className="text-[9px] font-bold text-cordel-master-dark opacity-60 leading-none break-all mt-1">
                   {userItem.email}
                 </span>
+                <div className="flex items-center gap-1.5 flex-wrap mt-1.5">
+                  {(userItem.instrument || userItem.instrumentPrincipal) ? (
+                    <span className="theme-stamp-badge theme-stamp-badge-wood text-[8px] px-1.5 py-0.2 normal-case tracking-normal">
+                      🥁 {userItem.instrument || userItem.instrumentPrincipal}
+                    </span>
+                  ) : (userItem.voeuPrincipal || userItem.voeuxInstruments?.[0]) ? (
+                    <span className="text-[8px] font-bold text-amber-800 bg-amber-100 dark:bg-amber-950/40 px-1.5 py-0.5 rounded border border-amber-400/40">
+                      ⏳ Vœu : {userItem.voeuPrincipal || userItem.voeuxInstruments?.[0]}
+                    </span>
+                  ) : null}
+                  {userItem.pratiqueDanse === true && (
+                    <span className="theme-stamp-badge theme-stamp-badge-wood text-[8px] px-1.5 py-0.2 normal-case tracking-normal">
+                      💃 Danse
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
           );
@@ -341,6 +366,120 @@ export default function SystemUserList({
                         <option key={cat} value={cat}>{cat}</option>
                       ))}
                     </select>
+                  </div>
+                </div>
+              )}
+
+              {/* Pupitres & Orientation Musicale */}
+              {!isArchived && (
+                <div className="flex flex-col gap-2 border-t border-dashed border-cordel-master-dark/10 pt-3 text-left">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[9px] font-black uppercase tracking-wider text-cordel-wood flex items-center gap-1">
+                      🥁 Pupitres & Orientation
+                    </span>
+                    {userItem.pratiqueDanse === true && (
+                      <span className="text-[8px] font-bold uppercase px-1.5 py-0.5 rounded bg-amber-100 text-amber-900 border border-amber-300">
+                        💃 Pratique la danse ({userItem.niveauDanse || 'aucun'})
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Sélecteurs rapides de pupitre attribué */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <div className="flex flex-col gap-0.5">
+                      <label className="text-[8px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                        Pupitre Principal (Attribué)
+                      </label>
+                      <select
+                        value={userDraft.instrument !== undefined ? userDraft.instrument : (userItem.instrument || userItem.instrumentPrincipal || '')}
+                        onChange={(e) => handleFieldChange(userItem.id, 'instrument', e.target.value)}
+                        disabled={savingId === userItem.id}
+                        className="theme-input text-[10px] font-bold py-1 px-1.5 bg-cordel-bg-light"
+                      >
+                        <option value="">-- Non attribué --</option>
+                        {(userItem.instrument || userItem.instrumentPrincipal) && !pupitresList.includes(userItem.instrument || userItem.instrumentPrincipal) && (
+                          <option value={userItem.instrument || userItem.instrumentPrincipal}>
+                            {userItem.instrument || userItem.instrumentPrincipal}
+                          </option>
+                        )}
+                        {pupitresList.map(pup => (
+                          <option key={`p-${pup}`} value={pup}>{pup}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="flex flex-col gap-0.5">
+                      <label className="text-[8px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                        Pupitre Secondaire
+                      </label>
+                      <select
+                        value={userDraft.instrumentSecondaire !== undefined ? userDraft.instrumentSecondaire : (userItem.instrumentSecondaire || '')}
+                        onChange={(e) => handleFieldChange(userItem.id, 'instrumentSecondaire', e.target.value)}
+                        disabled={savingId === userItem.id}
+                        className="theme-input text-[10px] font-bold py-1 px-1.5 bg-cordel-bg-light"
+                      >
+                        <option value="">-- Aucun --</option>
+                        {userItem.instrumentSecondaire && !pupitresList.includes(userItem.instrumentSecondaire) && (
+                          <option value={userItem.instrumentSecondaire}>{userItem.instrumentSecondaire}</option>
+                        )}
+                        {pupitresList.map(pup => (
+                          <option key={`s-${pup}`} value={pup}>{pup}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Vœux et intentions formulés par le membre */}
+                  <div className="p-2 rounded bg-cordel-bg-light/60 border border-cordel-master-dark/15 flex flex-col gap-1.5 text-xs">
+                    <div className="flex flex-wrap items-center justify-between gap-1 text-[9px] font-bold">
+                      <span className="text-cordel-master-dark uppercase opacity-75">Vœux d'orientation :</span>
+                      {userItem.souhaiteChangerInstrument && (
+                        <span className="text-[8px] font-bold text-amber-800 bg-amber-200/60 px-1.5 py-0.2 rounded">
+                          🔄 Souhaite changer d'instrument
+                        </span>
+                      )}
+                      {userItem.accordRenfortAncienInstrument && (
+                        <span className="text-[8px] font-bold text-emerald-800 bg-emerald-100 px-1.5 py-0.2 rounded">
+                          🤝 Renfort ancien instrument OK
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-1.5 text-[9px]">
+                      <div className="bg-white/80 dark:bg-black/20 p-1 rounded border border-cordel-master-dark/10">
+                        <span className="block text-[7px] uppercase opacity-60 font-bold">Vœu 1</span>
+                        <span className="font-black text-cordel-wood truncate block">
+                          {userItem.voeuPrincipal || userItem.voeuxInstruments?.[0] || '—'}
+                        </span>
+                      </div>
+                      <div className="bg-white/80 dark:bg-black/20 p-1 rounded border border-cordel-master-dark/10">
+                        <span className="block text-[7px] uppercase opacity-60 font-bold">Vœu 2</span>
+                        <span className="font-bold text-cordel-master-dark truncate block">
+                          {userItem.voeuSecondaire || userItem.voeuxInstruments?.[1] || '—'}
+                        </span>
+                      </div>
+                      <div className="bg-white/80 dark:bg-black/20 p-1 rounded border border-cordel-master-dark/10">
+                        <span className="block text-[7px] uppercase opacity-60 font-bold">Vœu 3</span>
+                        <span className="font-bold text-cordel-master-dark truncate block">
+                          {userItem.voeuTertiaire || userItem.voeuxInstruments?.[2] || '—'}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Instruments joués déclarés */}
+                    {Array.isArray(userItem.instrumentsJoues) && userItem.instrumentsJoues.length > 0 && (
+                      <div className="flex flex-wrap items-center gap-1 pt-1 border-t border-dashed border-cordel-master-dark/10">
+                        <span className="text-[8px] font-bold uppercase opacity-60">Pratique déclarée :</span>
+                        {userItem.instrumentsJoues.map((inst) => {
+                          const niv = userItem.niveauxParInstrument?.[inst];
+                          return (
+                            <span key={inst} className="theme-stamp-badge theme-stamp-badge-wood text-[8px] px-1.5 py-0.2 normal-case tracking-normal">
+                              {inst}{niv ? ` (${niv})` : ''}
+                            </span>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -620,6 +759,8 @@ export default function SystemUserList({
           userItem={modalUser}
           availableTags={availableTags}
           customCategories={customCategories}
+          instrumentsDisponibles={instrumentsDisponibles}
+          linkedInstruments={linkedInstruments}
           onClose={handleCloseModal}
           onSave={handleSaveFromModal}
           onValidateNewMember={handleValidateNewMember}

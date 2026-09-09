@@ -29,7 +29,7 @@ export default function ImageLightboxModal({ isOpen, photoURL, name, onClose }) 
     <div 
       tabIndex={-1}
       onKeyDown={(e) => e.key === 'Escape' && onClose()}
-      className="fixed inset-0 z-50 bg-black/85 backdrop-blur-xs flex flex-col items-center justify-center p-4 sm:p-6 select-none outline-none animate-fade-in cursor-pointer"
+      className="fixed inset-0 z-[200] bg-black/85 backdrop-blur-xs flex flex-col items-center justify-center p-4 sm:p-6 select-none outline-none animate-fade-in cursor-pointer"
       onClick={onClose}
       role="dialog"
       aria-modal="true"

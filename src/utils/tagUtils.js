@@ -188,3 +188,43 @@ export function resolveEffectiveUserTags(userTags = [], tagsDisponibles = []) {
 
   return Array.from(effectiveTagIds);
 }
+
+/**
+ * Calcule la liste consolidée des Pupitres pour l'association.
+ * Regroupe les instruments liés (ex: "Agbê & Mineiro", "Caixa & Tarol") et inclut
+ * les instruments autonomes non liés configurés dans instrumentsDisponibles.
+ *
+ * @param {Array<string>} instrumentsDisponibles - Liste des instruments actifs
+ * @param {Array<Object>} linkedInstruments - Liste des liaisons de pupitres
+ * @returns {Array<string>} Liste des noms de pupitres sélectionnables
+ */
+export function computePupitresList(instrumentsDisponibles = [], linkedInstruments = []) {
+  const result = [];
+  const usedInstruments = new Set();
+  const EXCLUDED_KEYWORDS = ['mestre', 'direction', 'chef de bateria', 'danse'];
+
+  // 1. Groupes d'instruments liés configurés (ex: "Agbê & Mineiro")
+  (linkedInstruments || []).forEach(group => {
+    const groupInsts = Array.isArray(group.instruments)
+      ? group.instruments
+      : (Array.isArray(group) ? group : [group.inst1, group.inst2].filter(Boolean));
+    if (groupInsts.length > 0) {
+      const name = group.name && group.name.trim() ? group.name.trim() : groupInsts.join(' + ');
+      const lowerName = name.toLowerCase().trim();
+      if (!EXCLUDED_KEYWORDS.some(k => lowerName === k)) {
+        result.push(name);
+        groupInsts.forEach(i => usedInstruments.add(String(i).toLowerCase().trim()));
+      }
+    }
+  });
+
+  // 2. Instruments autonomes configurés (non inclus dans un groupe lié et hors mots-clés réservés)
+  (instrumentsDisponibles || []).forEach(inst => {
+    const lower = String(inst).toLowerCase().trim();
+    if (!usedInstruments.has(lower) && !EXCLUDED_KEYWORDS.some(k => lower === k)) {
+      result.push(inst);
+    }
+  });
+
+  return result;
+}

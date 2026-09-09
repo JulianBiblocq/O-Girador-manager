@@ -1,18 +1,18 @@
 export interface CordelOptions {
-  zoom: number; // 50 to 180
-  detail: number; // 10 to 150
-  shadow: number; // 50 to 220
+  zoom: number; // 100 à 250
+  detail: number; // 10 à 150
+  shadow: number; // 50 à 220
   isMirror: boolean;
   isFrame: boolean;
-  posX: number; // -100 to 100
-  posY: number; // -100 to 100
-  intensity: number; // 0 to 100
+  posX: number; // -100 à 100
+  posY: number; // -100 à 100
+  intensity: number; // 0 à 100
 }
 
 export const defaultCordelOptions: CordelOptions = {
-  zoom: 120,
-  detail: 45,  // Softer lines by default (down from 60)
-  shadow: 95,   // Softer shadows by default (down from 130)
+  zoom: 100, // 100% = couverture intégrale du cadre sans bandes blanches
+  detail: 45,  // Lignes plus douces par défaut
+  shadow: 95,  // Ombres équilibrées
   isMirror: true,
   isFrame: false,
   posX: 0,
@@ -40,7 +40,7 @@ export const processCordelEffectBase64 = (base64Img: string, options: CordelOpti
 };
 
 export const processCordelEffect = (img: HTMLImageElement, options: CordelOptions, outSize: number = 200): string => {
-  // Pre-center detection based on luminance
+  // 1. Pré-détection de centrage automatique basée sur la luminance
   const smallCanvas = document.createElement('canvas');
   const scale = 100 / Math.max(img.width, img.height);
   smallCanvas.width = img.width * scale; 
@@ -74,20 +74,41 @@ export const processCordelEffect = (img: HTMLImageElement, options: CordelOption
   minX /= scale; maxX /= scale; minY /= scale; maxY /= scale;
   if (minX > maxX) { minX = 0; maxX = img.width; minY = 0; maxY = img.height; }
 
-  let boxSize = Math.max(maxX - minX, maxY - minY);
-  if(boxSize === 0) boxSize = Math.min(img.width, img.height);
+  // 2. Calcul du recadrage carré sécurisé (Zéro bande blanche)
+  // La dimension maximale de recadrage carré sans jamais déborder est le plus petit côté de l'image
+  const maxCropDimension = Math.min(img.width, img.height);
 
-  const cx = (minX + maxX) / 2;
-  const cy = (minY + maxY) / 2;
+  // Le zoom minimum est verrouillé à 100% (couverture intégrale du cadre carré)
+  const effectiveZoom = Math.max(100, options.zoom || 100);
+  const cropSize = Math.max(1, maxCropDimension / (effectiveZoom / 100));
 
-  const zoomVal = options.zoom;
-  const cropSize = (boxSize * 1.3) / (zoomVal / 100); 
-  
-  const shiftX = (options.isMirror ? 1 : -1) * (options.posX / 100) * (cropSize / 2);
-  const shiftY = - (options.posY / 100) * (cropSize / 2);
+  // Centre initial privilégiant la détection de visage si cohérente, sinon centre géométrique
+  let cx = img.width / 2;
+  let cy = img.height / 2;
+  if (minX < maxX && minY < maxY) {
+    const detectedCx = (minX + maxX) / 2;
+    const detectedCy = (minY + maxY) / 2;
+    if (!isNaN(detectedCx) && !isNaN(detectedCy)) {
+      cx = detectedCx;
+      cy = detectedCy;
+    }
+  }
 
-  const sX = cx - cropSize / 2 + shiftX;
-  const sY = cy - cropSize / 2 + shiftY;
+  // Marge de manœuvre maximale sur chaque axe pour rester à 100% dans la photo
+  const maxSlackX = Math.max(0, (img.width - cropSize) / 2);
+  const maxSlackY = Math.max(0, (img.height - cropSize) / 2);
+
+  // Déplacement proportionnel aux marges réelles disponibles
+  const shiftX = (options.isMirror ? 1 : -1) * (options.posX / 100) * maxSlackX;
+  const shiftY = - (options.posY / 100) * maxSlackY;
+
+  // Calcul du coin supérieur gauche de la zone de recadrage
+  let sX = cx - cropSize / 2 + shiftX;
+  let sY = cy - cropSize / 2 + shiftY;
+
+  // Verrouillage strict : la zone échantillonnée ne sort JAMAIS de l'image (anti-bandes blanches)
+  sX = Math.max(0, Math.min(Math.max(0, img.width - cropSize), sX));
+  sY = Math.max(0, Math.min(Math.max(0, img.height - cropSize), sY));
 
   const finalCanvas = document.createElement('canvas');
   finalCanvas.width = outSize; finalCanvas.height = outSize;

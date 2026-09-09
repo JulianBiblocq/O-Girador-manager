@@ -388,8 +388,8 @@ service cloud.firestore {
 
       // Classeur central du répertoire de la troupe (morceaux de la saison, chantiers, archives)
       match /repertoire/{pieceId} {
-        allow read: if canReadGroupData();
-        allow write: if canManageRepertoire();
+        allow read: if isAuthenticated() && (isSystemAdmin() || getUserData().groupId == assocId);
+        allow write: if (isSystemAdmin() || getUserData().groupId == assocId) && canManageRepertoire();
       }
 
       // Règles d'automatisation et de relances d'agenda de l'association

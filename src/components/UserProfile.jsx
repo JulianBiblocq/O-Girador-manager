@@ -62,6 +62,7 @@ export default function UserProfile({ user, profileData, associationName, onBack
     myInstruments,
     loadingInst,
     instrumentsDisponibles,
+    linkedInstruments,
     tagsDisponibles,
     demanderDroitImage,
     demanderAttestationSante,
@@ -147,15 +148,15 @@ export default function UserProfile({ user, profileData, associationName, onBack
         </div>
       )}
 
-      {/* Avatar Container in Center */}
-      <div className="flex flex-col items-center gap-3 py-4 select-none w-full">
+      {/* Bloc d'identité utilisateur et photo de profil (Carte Cordel avec fond opaque) */}
+      <CordelCard variant="default" useExtremeBorder={false} className="flex flex-col items-center gap-3 py-4 select-none w-full">
         <div 
           className="relative cursor-pointer group hover:scale-105 transition-transform" 
           onClick={() => (profileData?.photoURL || user?.photoURL) && setLightboxOpen(true)}
           title="Cliquer pour agrandir la photo"
         >
           <XiloAvatar src={profileData?.photoURL || user?.photoURL} name={fullName} size={110} />
-          {/* Decorative stamp on avatar */}
+          {/* Sceaux décoratifs sur l'avatar */}
           <div className="absolute -bottom-1 -right-2 z-20 flex flex-col gap-1 items-end select-none">
             <span className="theme-stamp-badge theme-stamp-badge-wood text-[8px] rotate-12">
               {tRole(profileData?.role || 'membre', profileData?.genre)}
@@ -169,7 +170,7 @@ export default function UserProfile({ user, profileData, associationName, onBack
           </div>
         </div>
 
-        {/* User Name & Main Role */}
+        {/* Nom de l'utilisateur et rôle principal */}
         <div className="flex flex-col items-center gap-1 w-full text-center">
           <h2 className="font-heading font-black text-2xl uppercase tracking-wider text-encre-noire">
             {fullName}
@@ -179,7 +180,7 @@ export default function UserProfile({ user, profileData, associationName, onBack
           </span>
         </div>
 
-        {/* Roles & Instruments Badges */}
+        {/* Badges de rôles et d'instruments */}
         <div className="flex flex-wrap gap-2.5 justify-center items-center w-full px-2 max-w-2xl border-b border-dashed border-cordel-master-dark/10 pb-4">
           {profileData?.tags && profileData.tags.length > 0 && (
             <div className="flex flex-wrap gap-1.5 justify-center">
@@ -227,7 +228,7 @@ export default function UserProfile({ user, profileData, associationName, onBack
           )}
         </div>
 
-        {/* Upload picture button */}
+        {/* Boutons d'import et de prise de photo */}
         <div className="flex flex-col items-center gap-2 mt-1 w-full max-w-md">
           <div className="bg-cordel-bg-light/90 border border-dashed border-cordel-master-dark/25 p-2.5 rounded-[6px] text-center w-full shadow-sm">
             <p className="text-[10px] text-cordel-master-dark font-semibold leading-relaxed">
@@ -262,7 +263,7 @@ export default function UserProfile({ user, profileData, associationName, onBack
             {user.email}
           </span>
         </div>
-      </div>
+      </CordelCard>
 
       {/* Profile Details in 3 Reassuring Cards */}
       {!isEditing ? (
@@ -640,6 +641,7 @@ export default function UserProfile({ user, profileData, associationName, onBack
           demanderDroitImage={demanderDroitImage}
           demanderAttestationSante={demanderAttestationSante}
           instrumentsDisponibles={instrumentsDisponibles}
+          linkedInstruments={linkedInstruments}
           t={t}
         />
       )}

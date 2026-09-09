@@ -38,7 +38,6 @@ export default function WidgetDocuments({
 
   // Consommation du custom hook centralisant les flux Firestore et les mutations du Varal
   const {
-    hasMoreDocs,
     varalCategories,
     loading,
     isAuthorized,
@@ -50,7 +49,6 @@ export default function WidgetDocuments({
     handleMoveLeft,
     handleMoveRight,
     saveCategory,
-    loadMoreDocs,
     getDocType
   } = useVaralData({
     groupId,
@@ -242,18 +240,6 @@ export default function WidgetDocuments({
                 onDeleteDoc={handleDelete}
               />
             ))}
-
-            {hasMoreDocs && (
-              <div className="flex justify-center p-4">
-                <CordelButton
-                  variant="default"
-                  onClick={loadMoreDocs}
-                  className="text-xs px-4 py-2 font-bold uppercase tracking-wider"
-                >
-                  📜 {t('documents.loadMore', "Charger plus de documents (+40)")}
-                </CordelButton>
-              </div>
-            )}
           </div>
         )
       )}

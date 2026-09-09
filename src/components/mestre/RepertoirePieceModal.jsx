@@ -156,6 +156,7 @@ export default function RepertoirePieceModal({
 
       // Construction de l'objet strictement assaini
       const pieceData = {
+        groupId: groupId,
         titre: titre.trim(),
         statutSaison: statutSaison || 'saison',
         etatValidation: etatValidation || 'pret',

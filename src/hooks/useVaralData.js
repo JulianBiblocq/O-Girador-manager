@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { collection, query, where, onSnapshot, doc, deleteDoc, updateDoc, limit, writeBatch } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, doc, deleteDoc, updateDoc, writeBatch } from 'firebase/firestore';
 import { ref, deleteObject } from 'firebase/storage';
 import { db, storage } from '../firebase';
 import { projectWorkshopBooklets } from '../utils/workshopProjectionUtils';
@@ -68,8 +68,6 @@ export default function useVaralData({
   const { confirm } = useConfirm();
 
   const [documents, setDocuments] = useState([]);
-  const [docLimit, setDocLimit] = useState(40);
-  const [hasMoreDocs, setHasMoreDocs] = useState(false);
   const [varalCategories, setVaralCategories] = useState(DEFAULT_VARAL_CATEGORIES);
   const [loading, setLoading] = useState(true);
   const [eventsWithMedia, setEventsWithMedia] = useState([]);
@@ -78,15 +76,14 @@ export default function useVaralData({
 
   const isAuthorized = role === 'mestre' || role === 'super-admin' || isSystemAdmin === true;
 
-  // 1. Écouteur Firestore pour les documents réels de l'association
+  // 1. Écouteur Firestore pour tous les documents réels de l'association (sans troncature)
   useEffect(() => {
     if (!groupId) return;
 
     const docsRef = collection(db, 'documents');
-    const q = query(docsRef, where('groupId', '==', groupId), limit(docLimit));
+    const q = query(docsRef, where('groupId', '==', groupId));
 
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
-      setHasMoreDocs(querySnapshot.size >= docLimit);
       const fetchedDocs = [];
       querySnapshot.forEach((docSnap) => {
         fetchedDocs.push({
@@ -112,7 +109,7 @@ export default function useVaralData({
     });
 
     return () => unsubscribe();
-  }, [groupId, docLimit]);
+  }, [groupId]);
 
   // 2. Écouteur Firestore pour les modèles d'instruments de l'atelier lutherie
   useEffect(() => {
@@ -487,15 +484,8 @@ export default function useVaralData({
     }
   };
 
-  // 13. Pagination : chargement de documents supplémentaires
-  const loadMoreDocs = () => {
-    setDocLimit(prev => prev + 40);
-  };
-
   return {
     documents,
-    docLimit,
-    hasMoreDocs,
     varalCategories,
     loading,
     eventsWithMedia,
@@ -512,7 +502,6 @@ export default function useVaralData({
     handleMoveRight,
     updateDocumentsOrder,
     saveCategory,
-    loadMoreDocs,
     getDocType
   };
 }

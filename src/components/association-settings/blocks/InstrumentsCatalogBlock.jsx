@@ -55,6 +55,11 @@ export default function InstrumentsCatalogBlock({ formData = {}, handleChange, s
   const handleAddInstrument = () => {
     const trimmed = newInstrument.trim();
     if (!trimmed) return;
+    const lower = trimmed.toLowerCase();
+    if (lower === 'danse' || lower === 'mestre' || lower === 'direction') {
+      alert("La Danse est gérée nativement comme discipline autonome et Mestre comme rôle de direction. Ils n'ont pas besoin d'être ajoutés comme instruments physiques du parc.");
+      return;
+    }
     if (instrumentsDisponibles.includes(trimmed)) {
       alert("Cet instrument existe déjà !");
       return;
@@ -91,8 +96,10 @@ export default function InstrumentsCatalogBlock({ formData = {}, handleChange, s
       return;
     }
     
+    const defaultName = sortedGroup.join(' & ');
     const pupitreObj = {
-      name: newPupitreName.trim(),
+      id: `pupitre_${Date.now()}`,
+      name: newPupitreName.trim() || defaultName,
       instruments: sortedGroup
     };
     
@@ -133,6 +140,9 @@ export default function InstrumentsCatalogBlock({ formData = {}, handleChange, s
               + Ajouter
             </CordelButton>
           </div>
+          <p className="text-[10px] text-cordel-master-dark/70 italic mt-0.5">
+            💡 <strong>Précision</strong> : Configurez uniquement les instruments physiques de votre parc musical (Alfaia, Caixa, Agbê...). La <strong>Danse</strong> (discipline autonome) et le <strong>Mestre</strong> (rôle de direction) sont gérés nativement par le système et ne doivent pas être ajoutés ici.
+          </p>
         </div>
 
         {/* Instruments list */}

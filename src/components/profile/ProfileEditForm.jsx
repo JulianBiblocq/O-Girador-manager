@@ -49,6 +49,7 @@ export default function ProfileEditForm({
   demanderDroitImage = true,
   demanderAttestationSante = true,
   instrumentsDisponibles,
+  linkedInstruments = [],
   t
 }) {
   const translate = (key, fallback) => {
@@ -170,6 +171,7 @@ export default function ProfileEditForm({
           handleChange={handleChange}
           saving={saving}
           instrumentsDisponibles={instrumentsDisponibles}
+          linkedInstruments={linkedInstruments}
           isAncien={isAncien}
           t={t}
         />

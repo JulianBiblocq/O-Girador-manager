@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import CordelButton from '../CordelButton';
-import { formatTagGender, getTagId } from '../../utils/tagUtils';
+import { formatTagGender, getTagId, computePupitresList } from '../../utils/tagUtils';
 import { VALID_SYSTEM_ROLES } from '../../utils/roleMigration';
 import { DEFAULT_CUSTOM_CATEGORIES } from '../../utils/categoryUtils';
 import { XiloUser, XiloShirt, XiloPhone, XiloSparkles, XiloTag } from '../XiloIcons';
@@ -16,12 +16,34 @@ export default function MemberProfileEditModal({
   userItem,
   availableTags = [],
   customCategories = DEFAULT_CUSTOM_CATEGORIES,
-  instrumentsDisponibles = ["Alfaia", "Caixa", "Tarol", "Gonguê", "Agbê", "Mineiro", "Timbal", "Chant"],
+  instrumentsDisponibles = [],
+  linkedInstruments = [],
   onClose,
   onSave,
   onValidateNewMember,
   saving = false
 }) {
+  // Liste des instruments de base et calcul dynamique des pupitres consolidés
+  const baseInstruments = (Array.isArray(instrumentsDisponibles) && instrumentsDisponibles.length > 0)
+    ? instrumentsDisponibles
+    : ["Alfaia", "Caixa", "Tarol", "Gonguê", "Agbê", "Mineiro", "Chant"];
+
+  const pupitresList = useMemo(() => {
+    return computePupitresList(baseInstruments, linkedInstruments);
+  }, [baseInstruments, linkedInstruments]);
+
+  // Récupère les instruments constitutifs d'un pupitre (groupe lié ou instrument unique)
+  const getPupitreConstituents = (pupitreName) => {
+    const group = (linkedInstruments || []).find(g => {
+      const gName = g.name && g.name.trim() ? g.name.trim() : (Array.isArray(g.instruments) ? g.instruments.join(' + ') : '');
+      return gName.toLowerCase() === (pupitreName || '').toLowerCase();
+    });
+    if (group && Array.isArray(group.instruments) && group.instruments.length > 0) {
+      return group.instruments;
+    }
+    return [pupitreName];
+  };
+
   // État local pour le formulaire d'édition du profil
   const [formData, setFormData] = useState(() => ({
     prenom: userItem?.prenom || '',
@@ -80,32 +102,64 @@ export default function MemberProfileEditModal({
     });
   };
 
-  const handleInstrumentToggle = (inst, isChecked) => {
+  // Vérifie si un pupitre est sélectionné (par nom direct ou par composant lié)
+  const isPupitreChecked = (pupitreName) => {
+    const currentJoues = formData.instrumentsJoues || [];
+    if (currentJoues.includes(pupitreName)) return true;
+    const constituents = getPupitreConstituents(pupitreName);
+    return constituents.some(inst => currentJoues.includes(inst));
+  };
+
+  // Gestion du basculement d'un pupitre
+  const handlePupitreToggle = (pupitreName, isChecked) => {
+    const constituents = getPupitreConstituents(pupitreName);
     setFormData(prev => {
-      const currentInsts = prev.instrumentsJoues || [];
+      const currentJoues = prev.instrumentsJoues || [];
       const currentNiveaux = prev.niveauxParInstrument || {};
-      
+
       if (isChecked) {
-        return { ...prev, instrumentsJoues: [...currentInsts, inst] };
+        const nextJoues = currentJoues.filter(i => i !== pupitreName && !constituents.includes(i));
+        nextJoues.push(pupitreName);
+
+        const existingNiveau = currentNiveaux[pupitreName] || constituents.map(c => currentNiveaux[c]).find(Boolean) || 'debutant';
+
+        return {
+          ...prev,
+          instrumentsJoues: nextJoues,
+          niveauxParInstrument: {
+            ...currentNiveaux,
+            [pupitreName]: existingNiveau
+          }
+        };
       } else {
-        const { [inst]: _removed, ...restNiveaux } = currentNiveaux;
-        return { 
-          ...prev, 
-          instrumentsJoues: currentInsts.filter(i => i !== inst),
-          niveauxParInstrument: restNiveaux
+        const nextJoues = currentJoues.filter(i => i !== pupitreName && !constituents.includes(i));
+        const nextNiveaux = { ...currentNiveaux };
+        delete nextNiveaux[pupitreName];
+        constituents.forEach(c => delete nextNiveaux[c]);
+
+        return {
+          ...prev,
+          instrumentsJoues: nextJoues,
+          niveauxParInstrument: nextNiveaux
         };
       }
     });
   };
 
-  const handleNiveauInstrumentChange = (inst, niveau) => {
-    setFormData(prev => ({
-      ...prev,
-      niveauxParInstrument: {
-        ...(prev.niveauxParInstrument || {}),
-        [inst]: niveau
-      }
-    }));
+  // Modification du niveau associé à un pupitre
+  const handleNiveauPupitreChange = (pupitreName, niveau) => {
+    const constituents = getPupitreConstituents(pupitreName);
+    setFormData(prev => {
+      const nextNiveaux = { ...(prev.niveauxParInstrument || {}) };
+      nextNiveaux[pupitreName] = niveau;
+      constituents.forEach(c => {
+        if (c !== pupitreName) delete nextNiveaux[c];
+      });
+      return {
+        ...prev,
+        niveauxParInstrument: nextNiveaux
+      };
+    });
   };
 
   const handleSubmit = (e) => {
@@ -115,6 +169,15 @@ export default function MemberProfileEditModal({
     const cleanRestrictions = formData.dietaryRestrictionsText
       ? formData.dietaryRestrictionsText.split(',').map(s => s.trim()).filter(Boolean)
       : [];
+
+    // Consolidation propre des pupitres joués et de leurs niveaux (sans intrus obsolètes)
+    const activeSelectedPupitres = pupitresList.filter(isPupitreChecked);
+    const finalNiveaux = {};
+    activeSelectedPupitres.forEach(pup => {
+      finalNiveaux[pup] = formData.niveauxParInstrument[pup] ||
+        getPupitreConstituents(pup).map(c => formData.niveauxParInstrument[c]).find(Boolean) ||
+        'debutant';
+    });
 
     const updatedPayload = {
       prenom: formData.prenom.trim(),
@@ -148,12 +211,14 @@ export default function MemberProfileEditModal({
       dietaryRestrictions: cleanRestrictions,
       allergies: formData.allergies.trim(),
       tags: formData.tags,
-      instrumentsJoues: formData.instrumentsJoues,
-      niveauxParInstrument: formData.niveauxParInstrument
+      instrumentsJoues: activeSelectedPupitres,
+      niveauxParInstrument: finalNiveaux
     };
 
     onSave(userItem.id, updatedPayload);
   };
+
+  const activeSelectedPupitres = pupitresList.filter(isPupitreChecked);
 
   return (
     <div
@@ -188,17 +253,17 @@ export default function MemberProfileEditModal({
                 type="button"
                 onClick={() => onValidateNewMember(userItem.id)}
                 disabled={saving}
-                className="text-[10px] font-black uppercase tracking-wider bg-[var(--color-cordel-vert)] hover:bg-[var(--color-cordel-vert)]/90 text-white border border-encre-noire px-3 py-1.5 rounded shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] cursor-pointer flex items-center gap-1.5 animate-pulse"
-                title="Valider l'inscription de ce nouveau membre"
+                className="theme-button bg-cordel-vert text-white border-2 border-encre-noire font-black text-xs uppercase px-3 py-1.5 rounded-[4px_7px_3px_6px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none hover:brightness-105 cursor-pointer flex items-center gap-1.5"
+                title="Valider définitivement l'inscription du nouveau membre"
               >
-                ✅ Valider la nouvelle inscription
+                ✅ Valider le membre
               </button>
             )}
             <button
               type="button"
               onClick={onClose}
-              className="text-xs font-black bg-cordel-bg hover:bg-neutral-200 border border-encre-noire px-2.5 py-1 rounded shadow-[1.5px_1.5px_0px_0px_#181716] cursor-pointer"
-              title="Fermer (Échap)"
+              disabled={saving}
+              className="text-cordel-master-dark hover:text-cordel-wood p-1 font-black text-lg cursor-pointer"
             >
               ✕
             </button>
@@ -384,14 +449,14 @@ export default function MemberProfileEditModal({
             </div>
           </div>
 
-          {/* Section 4 : Discipline, Instruments & Niveaux */}
+          {/* Section 4 : Discipline, Pupitres & Niveaux */}
           <div className="border border-dashed border-cordel-master-dark/20 p-4 rounded bg-white/40 flex flex-col gap-3">
             <h4 className="font-extrabold uppercase text-cordel-wood text-[11px] flex items-center gap-1.5">
-              <XiloSparkles size={14} /> 4. Discipline, Instruments & Niveaux Musique/Danse
+              <XiloSparkles size={14} /> 4. Discipline, Pupitres & Niveaux Musique/Danse
             </h4>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
-                <label className="block text-[9px] uppercase font-bold text-cordel-master-dark mb-0.5">Instrument Principal (Statut/Mestre)</label>
+                <label className="block text-[9px] uppercase font-bold text-cordel-master-dark mb-0.5">Pupitre Principal (Statut/Mestre)</label>
                 <select
                   name="instrument"
                   value={formData.instrument}
@@ -399,13 +464,16 @@ export default function MemberProfileEditModal({
                   className="theme-input text-xs font-bold w-full py-1 px-2 bg-cordel-bg-light"
                 >
                   <option value="">-- Non attribué --</option>
-                  {instrumentsDisponibles.map(inst => (
-                    <option key={`p-${inst}`} value={inst}>{inst}</option>
+                  {formData.instrument && !pupitresList.includes(formData.instrument) && (
+                    <option value={formData.instrument}>{formData.instrument}</option>
+                  )}
+                  {pupitresList.map(pup => (
+                    <option key={`p-${pup}`} value={pup}>{pup}</option>
                   ))}
                 </select>
               </div>
               <div>
-                <label className="block text-[9px] uppercase font-bold text-cordel-master-dark mb-0.5">Instrument Secondaire</label>
+                <label className="block text-[9px] uppercase font-bold text-cordel-master-dark mb-0.5">Pupitre Secondaire</label>
                 <select
                   name="instrumentSecondaire"
                   value={formData.instrumentSecondaire}
@@ -413,51 +481,59 @@ export default function MemberProfileEditModal({
                   className="theme-input text-xs font-bold w-full py-1 px-2 bg-cordel-bg-light"
                 >
                   <option value="">-- Aucun --</option>
-                  {instrumentsDisponibles.map(inst => (
-                    <option key={`s-${inst}`} value={inst}>{inst}</option>
+                  {formData.instrumentSecondaire && !pupitresList.includes(formData.instrumentSecondaire) && (
+                    <option value={formData.instrumentSecondaire}>{formData.instrumentSecondaire}</option>
+                  )}
+                  {pupitresList.map(pup => (
+                    <option key={`s-${pup}`} value={pup}>{pup}</option>
                   ))}
                 </select>
               </div>
               <div className="sm:col-span-3 mt-1">
                 <label className="block text-[9px] uppercase font-bold text-cordel-master-dark mb-1">
-                  Tous les instruments joués (sélection multiple)
+                  Tous les pupitres joués (sélection multiple)
                 </label>
                 <div className="flex flex-wrap gap-2">
-                  {instrumentsDisponibles.map((inst) => (
-                    <label key={`check-${inst}`} className="flex items-center gap-1.5 text-xs cursor-pointer select-none bg-cordel-bg-light/60 border border-cordel-master-dark/20 px-2 py-1 rounded">
+                  {pupitresList.map((pup) => (
+                    <label key={`check-${pup}`} className="flex items-center gap-1.5 text-xs cursor-pointer select-none bg-cordel-bg-light/60 border border-cordel-master-dark/20 px-2.5 py-1.5 rounded hover:bg-black/5">
                       <input
                         type="checkbox"
-                        checked={formData.instrumentsJoues.includes(inst)}
-                        onChange={(e) => handleInstrumentToggle(inst, e.target.checked)}
-                        className="rounded text-cordel-wood focus:ring-0"
+                        checked={isPupitreChecked(pup)}
+                        onChange={(e) => handlePupitreToggle(pup, e.target.checked)}
+                        className="rounded text-cordel-wood focus:ring-0 cursor-pointer"
                       />
-                      <span>{inst}</span>
+                      <span>{pup}</span>
                     </label>
                   ))}
                 </div>
               </div>
               
-              {formData.instrumentsJoues.length > 0 && (
+              {activeSelectedPupitres.length > 0 && (
                 <div className="sm:col-span-3 bg-amber-50 dark:bg-amber-950/30 border border-cordel-wood/30 p-2.5 rounded mt-1">
                   <label className="block text-[9px] uppercase font-bold text-cordel-master-dark mb-1">
-                    Niveaux par instrument joué
+                    Niveaux par pupitre joué
                   </label>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-                    {formData.instrumentsJoues.map((inst) => (
-                      <div key={`niv-${inst}`} className="flex flex-col gap-1">
-                        <span className="text-xs font-bold text-cordel-wood">{inst}</span>
-                        <select
-                          value={formData.niveauxParInstrument[inst] || 'debutant'}
-                          onChange={(e) => handleNiveauInstrumentChange(inst, e.target.value)}
-                          className="theme-input text-xs font-bold py-1 px-1.5 bg-white"
-                        >
-                          <option value="debutant">Débutant</option>
-                          {customCategories.filter(cat => cat.toLowerCase() !== 'debutant').map(cat => (
-                            <option key={`cat-${inst}-${cat}`} value={cat}>{cat}</option>
-                          ))}
-                        </select>
-                      </div>
-                    ))}
+                    {activeSelectedPupitres.map((pup) => {
+                      const currentNiveau = formData.niveauxParInstrument[pup] ||
+                        getPupitreConstituents(pup).map(c => formData.niveauxParInstrument[c]).find(Boolean) ||
+                        'debutant';
+                      return (
+                        <div key={`niv-${pup}`} className="flex flex-col gap-1">
+                          <span className="text-xs font-bold text-cordel-wood">{pup}</span>
+                          <select
+                            value={currentNiveau}
+                            onChange={(e) => handleNiveauPupitreChange(pup, e.target.value)}
+                            className="theme-input text-xs font-bold py-1 px-1.5 bg-white"
+                          >
+                            <option value="debutant">Débutant</option>
+                            {customCategories.filter(cat => cat.toLowerCase() !== 'debutant').map(cat => (
+                              <option key={`cat-${pup}-${cat}`} value={cat}>{cat}</option>
+                            ))}
+                          </select>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               )}
@@ -499,8 +575,11 @@ export default function MemberProfileEditModal({
                   className="theme-input text-xs font-bold w-full py-1 px-2 bg-cordel-bg-light"
                 >
                   <option value="">-- Aucun --</option>
-                  {instrumentsDisponibles.map(inst => (
-                    <option key={inst} value={inst}>{inst}</option>
+                  {formData.voeuPrincipal && !pupitresList.includes(formData.voeuPrincipal) && (
+                    <option value={formData.voeuPrincipal}>{formData.voeuPrincipal}</option>
+                  )}
+                  {pupitresList.map(pup => (
+                    <option key={`v1-${pup}`} value={pup}>{pup}</option>
                   ))}
                 </select>
               </div>
@@ -513,8 +592,11 @@ export default function MemberProfileEditModal({
                   className="theme-input text-xs font-bold w-full py-1 px-2 bg-cordel-bg-light"
                 >
                   <option value="">-- Aucun --</option>
-                  {instrumentsDisponibles.map(inst => (
-                    <option key={inst} value={inst}>{inst}</option>
+                  {formData.voeuSecondaire && !pupitresList.includes(formData.voeuSecondaire) && (
+                    <option value={formData.voeuSecondaire}>{formData.voeuSecondaire}</option>
+                  )}
+                  {pupitresList.map(pup => (
+                    <option key={`v2-${pup}`} value={pup}>{pup}</option>
                   ))}
                 </select>
               </div>

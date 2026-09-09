@@ -44,6 +44,8 @@ export default function SystemAdminPanel({ profileData, associationName: propAss
   const [draftAppRights, setDraftAppRights] = useState({}); // { [userId]: { sequenciador: boolean, dansador: boolean, orchestrador: boolean } }
   const [quotas, setQuotas] = useState({}); // { sequenciador: number, dansador: number, orchestrador: number }
   const [fieldsConfig, setFieldsConfig] = useState(null);
+  const [instrumentsDisponibles, setInstrumentsDisponibles] = useState([]);
+  const [linkedInstruments, setLinkedInstruments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState(null);
   const [associationName, setAssociationName] = useState(propAssociationName || '');
@@ -70,28 +72,43 @@ export default function SystemAdminPanel({ profileData, associationName: propAss
       const fetchedUsers = [];
       querySnapshot.forEach((docSnap) => {
         const uData = docSnap.data();
-        const migration = getMigratedRoleAndTags(uData);
-        if (migration.needsMigration) {
-          const uRef = doc(db, 'users', docSnap.id);
-          updateDoc(uRef, {
-            role: migration.newRole,
-            tags: migration.newTags
-          }).catch(err => {
-            console.error("SystemAdminPanel - Erreur migration utilisateur :", err);
-            telemetryService.logError(err, 'SystemAdminPanel_Migration', profileData?.groupId);
-          });
+        if (docSnap.id.startsWith('draft_') || uData.isNewDraft === true) {
+          return;
+        }
 
+        const isArchived = uData.isArchived === true || uData.statutActuel === 'inactive';
+        if (isArchived) {
           fetchedUsers.push({
             id: docSnap.id,
             ...uData,
-            role: migration.newRole,
-            tags: migration.newTags
+            role: 'inactif',
+            tags: [],
+            isArchived: true
           });
         } else {
-          fetchedUsers.push({
-            id: docSnap.id,
-            ...uData
-          });
+          const migration = getMigratedRoleAndTags(uData);
+          if (migration.needsMigration) {
+            const uRef = doc(db, 'users', docSnap.id);
+            updateDoc(uRef, {
+              role: migration.newRole,
+              tags: migration.newTags
+            }).catch(err => {
+              console.error("SystemAdminPanel - Erreur migration utilisateur :", err);
+              telemetryService.logError(err, 'SystemAdminPanel_Migration', profileData?.groupId);
+            });
+
+            fetchedUsers.push({
+              id: docSnap.id,
+              ...uData,
+              role: migration.newRole,
+              tags: migration.newTags
+            });
+          } else {
+            fetchedUsers.push({
+              id: docSnap.id,
+              ...uData
+            });
+          }
         }
       });
 
@@ -122,6 +139,12 @@ export default function SystemAdminPanel({ profileData, associationName: propAss
         }
         if (Array.isArray(data.tagsDisponibles)) {
           setAvailableTags(data.tagsDisponibles);
+        }
+        if (Array.isArray(data.instrumentsDisponibles)) {
+          setInstrumentsDisponibles(data.instrumentsDisponibles);
+        }
+        if (Array.isArray(data.linkedInstruments)) {
+          setLinkedInstruments(data.linkedInstruments);
         }
         if (data.fieldsConfig) {
           setFieldsConfig({ ...DEFAULT_FIELDS_CONFIG, ...data.fieldsConfig });
@@ -236,6 +259,14 @@ export default function SystemAdminPanel({ profileData, associationName: propAss
     }
     if (appRights.orchestrador !== undefined) {
       updatePayload.canWriteOrchestrador = appRights.orchestrador;
+    }
+
+    if (userDraft.instrument !== undefined) {
+      updatePayload.instrument = userDraft.instrument;
+      updatePayload.instrumentPrincipal = userDraft.instrument;
+    }
+    if (userDraft.instrumentSecondaire !== undefined) {
+      updatePayload.instrumentSecondaire = userDraft.instrumentSecondaire;
     }
 
     if (isEnabled('telephone')) {
@@ -529,6 +560,8 @@ export default function SystemAdminPanel({ profileData, associationName: propAss
                 availableTags={availableTags}
                 fieldsConfig={fieldsConfig}
                 associationName={associationName}
+                instrumentsDisponibles={instrumentsDisponibles}
+                linkedInstruments={linkedInstruments}
                 handleRoleChange={handleRoleChange}
                 handleTagToggle={handleTagToggle}
                 handleLevelChange={handleLevelChange}
