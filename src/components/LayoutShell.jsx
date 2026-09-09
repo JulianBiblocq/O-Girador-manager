@@ -309,25 +309,25 @@ export default function LayoutShell({
         key: 'vitrine',
         url: getVitrineUrl(urls, associationData),
         img: '/ecosystem/logo-mostrador.png',
-        label: 'Vitrine (Site Public)'
+        label: 'Mostrador (Site Public)'
       },
       {
         key: 'sequenciador',
         url: isLocal ? 'http://localhost:5174' : 'https://sequenciador.o-girador.com',
         img: '/ecosystem/favicon.svg',
-        label: 'O Girador Séquenceur'
+        label: 'Sequenciador'
       },
       {
         key: 'dancador',
         url: isLocal ? 'http://localhost:5175' : 'https://dancador.o-girador.com',
         img: '/ecosystem/dancador-logo.png',
-        label: 'O Girador Dançador'
+        label: 'Dancador'
       },
       {
         key: 'hub',
         url: isLocal ? 'http://localhost:5176' : 'https://o-girador.com',
         img: '/ecosystem/hub-logo.png',
-        label: 'Hub Orchestrador'
+        label: 'Orquestrador'
       }
     ];
 
