@@ -6,6 +6,8 @@ import CordelButton from '../CordelButton';
 import XiloAvatar from '../XiloAvatar';
 import { useInstrumentColor } from '../../hooks/useInstrumentColor';
 import useConfirm from '../../hooks/useConfirm';
+import { useGroupNomenclature } from '../../hooks/useGroupNomenclature';
+import { getVoiceLabel } from '../../constants/nomenclature';
 
 export default function EventStageLayoutSection({
   event,
@@ -19,6 +21,7 @@ export default function EventStageLayoutSection({
 }) {
   const { confirm } = useConfirm();
   const { getColorForInstrument } = useInstrumentColor(profileData?.groupId);
+  const { nomenclature: groupNomenclature } = useGroupNomenclature(profileData?.groupId || event?.groupId);
   // Vérifier if a layout exists
   const hasLayout = event.stageLayout?.placements && Object.keys(event.stageLayout.placements).length > 0;
 
@@ -633,10 +636,11 @@ export default function EventStageLayoutSection({
                             </span>
                             <div className="flex gap-4">
                               {[
-                                { key: 'marcante', label: 'Marcante' },
-                                { key: 'meião', label: 'Meião' },
-                                { key: 'repique', label: 'Repique' }
-                              ].map(({ key, label }) => {
+                                { key: 'marcante' },
+                                { key: 'meião' },
+                                { key: 'repique' }
+                              ].map(({ key }) => {
+                                const label = getVoiceLabel(key, groupNomenclature);
                                 const isCompetent = competences.includes(key);
                                 const isSelectedVoice = currentVoice === key;
                                 return (
@@ -677,7 +681,7 @@ export default function EventStageLayoutSection({
                   const m = presentMembers.find(x => x.id === uid);
                   if (m && m.instrument.toLowerCase().includes('alfaia')) {
                     if (pos.voice === 'marcante') marcante++;
-                    else if (pos.voice === 'meião') meiao++;
+                    else if (pos.voice === 'meião' || pos.voice === 'meiao' || pos.voice === 'meian') meiao++;
                     else if (pos.voice === 'repique') repique++;
                   }
                 });
@@ -687,11 +691,11 @@ export default function EventStageLayoutSection({
                     <div className="w-full flex justify-center mb-4">
                       <div className="bg-cordel-wood/10 border border-cordel-wood text-cordel-wood text-[10px] font-black px-3 py-1.5 rounded-full uppercase tracking-wider shadow-sm flex items-center gap-2">
                         <span>🥁 Alfaias affectés :</span>
-                        <span>{marcante} Marc.</span>
+                        <span>{marcante} {getVoiceLabel('marcante', groupNomenclature, true)}</span>
                         <span className="opacity-50">|</span>
-                        <span>{meiao} Meio.</span>
+                        <span>{meiao} {getVoiceLabel('meião', groupNomenclature, true)}</span>
                         <span className="opacity-50">|</span>
-                        <span>{repique} Rep.</span>
+                        <span>{repique} {getVoiceLabel('repique', groupNomenclature, true)}</span>
                         <span className="opacity-50">|</span>
                         <span>(Total : {total})</span>
                       </div>
@@ -846,7 +850,7 @@ export default function EventStageLayoutSection({
                             {formatMemberName(mestreMember.name)}
                           </span>
                           <span className="text-[7px] opacity-75 font-semibold leading-none mt-0.5 uppercase truncate max-w-full">
-                            {mestreMember.instrument.split(' ')[0]}{mestreMember.instrument.toLowerCase().includes('alfaia') && activePlacements[mestreMember.id]?.voice ? ` (${activePlacements[mestreMember.id].voice.toLowerCase().startsWith('mei') ? 'Meio.' : activePlacements[mestreMember.id].voice.toLowerCase().startsWith('rep') ? 'Rep.' : 'Marc.'})` : ''}
+                            {mestreMember.instrument.split(' ')[0]}{mestreMember.instrument.toLowerCase().includes('alfaia') && activePlacements[mestreMember.id]?.voice ? ` (${getVoiceLabel(activePlacements[mestreMember.id].voice, groupNomenclature, true)})` : ''}
                           </span>
                           
                           {/* Admin retirer placement button */}
@@ -928,7 +932,7 @@ export default function EventStageLayoutSection({
                             {formatMemberName(member.name)}
                           </span>
                           <span className="text-[7px] sm:text-[8px] opacity-75 font-semibold leading-none mt-0.5 uppercase truncate max-w-full">
-                            {member.instrument.split(' ')[0]}{member.instrument.toLowerCase().includes('alfaia') && activePlacements[member.id]?.voice ? ` (${activePlacements[member.id].voice.toLowerCase().startsWith('mei') ? 'Meio.' : activePlacements[member.id].voice.toLowerCase().startsWith('rep') ? 'Rep.' : 'Marc.'})` : ''}
+                            {member.instrument.split(' ')[0]}{member.instrument.toLowerCase().includes('alfaia') && activePlacements[member.id]?.voice ? ` (${getVoiceLabel(activePlacements[member.id].voice, groupNomenclature, true)})` : ''}
                           </span>
                           
                           {/* Admin retirer placement cross button */}

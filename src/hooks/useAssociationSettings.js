@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { doc, onSnapshot, setDoc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { DEFAULT_CUSTOM_CATEGORIES, batchMigrateUserCategories } from '../utils/categoryUtils';
+import { DEFAULT_MARACATU_NOMENCLATURE, normalizeGroupNomenclature } from '../constants/nomenclature';
 
 export const DEFAULT_FIELDS_CONFIG = {
   telephone: { key: "telephone", label: "Téléphone", enabled: true, filledBy: "member", isRequired: false },
@@ -224,6 +225,10 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
     agendaEnableFinance: true,
     agendaEnableInscriptions: true,
     pupitresColors: { Mestre: '#8b2a1a' },
+    nomenclature: {
+      maracatu: { ...DEFAULT_MARACATU_NOMENCLATURE }
+    },
+    nomenclaturePreset: 'traditional_baque_virado',
     eventTypes: ['prestation', 'repetition', 'stage', 'atelier', 'reunion'],
     eventTypeConfigs: {},
     enabledModules: DEFAULT_ENABLED_MODULES,
@@ -492,6 +497,13 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
           agendaEnableFinance: data.agendaEnableFinance !== false,
           agendaEnableInscriptions: data.agendaEnableInscriptions !== false,
           pupitresColors: data.pupitresColors || { Mestre: '#8b2a1a' },
+          nomenclature: {
+            maracatu: {
+              ...DEFAULT_MARACATU_NOMENCLATURE,
+              ...normalizeGroupNomenclature(data.nomenclature, 'maracatu')
+            }
+          },
+          nomenclaturePreset: data.nomenclaturePreset || 'traditional_baque_virado',
           eventTypes: Array.isArray(data.eventTypes) && data.eventTypes.length > 0 
             ? data.eventTypes 
             : ['prestation', 'repetition', 'stage', 'atelier', 'reunion'],
@@ -736,6 +748,10 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
         instructionsPaiement: formData.instructionsPaiement,
         permissionsMatrice: formData.permissionsMatrice,
         pupitresColors: formData.pupitresColors || {},
+        nomenclature: {
+          maracatu: formData.nomenclature?.maracatu || formData.nomenclature || DEFAULT_MARACATU_NOMENCLATURE
+        },
+        nomenclaturePreset: formData.nomenclaturePreset || 'traditional_baque_virado',
         agendaEnableInscriptions: formData.agendaEnableInscriptions !== undefined ? formData.agendaEnableInscriptions : true,
         agendaEnableCarpool: formData.agendaEnableCarpool !== undefined ? formData.agendaEnableCarpool : true,
         agendaEnableFinance: formData.agendaEnableFinance !== undefined ? formData.agendaEnableFinance : true,

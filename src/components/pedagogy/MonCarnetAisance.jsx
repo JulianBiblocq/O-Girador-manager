@@ -4,6 +4,8 @@ import SongCard from '../SongCard';
 import { parseSequencerJson } from '../../utils/sequencerParser';
 import { generateQuizFromSheet, generateQuizFromInstrumentModel } from '../../utils/quizGenerator';
 import { useInstrumentModels } from '../../hooks/useInstrumentModels';
+import { useGroupNomenclature } from '../../hooks/useGroupNomenclature';
+import { getInstrumentLabel } from '../../constants/nomenclature';
 import AutoEvalQuizContainer from '../student/AutoEvalQuizContainer';
 import AutoEvalQuiz from './AutoEvalQuiz';
 import AtelierModelPartsProgress from './AtelierModelPartsProgress';
@@ -238,6 +240,8 @@ export default function MonCarnetAisance({
   enabledModules = {},
   profileData
 }) {
+  const { nomenclature: groupNomenclature } = useGroupNomenclature(profileData?.groupId);
+
   // Niveaux de confort (barème à 4 paliers)
   const comfortLevels = [
     { level: 'decouverte', label: '🌱 En découverte' },
@@ -468,7 +472,7 @@ export default function MonCarnetAisance({
                         <div className="flex flex-wrap gap-1 mt-0.5">
                           {autoParsed.instrumentsPresents.map(inst => (
                             <span key={inst} className="text-[8px] font-black uppercase tracking-wider bg-[#d99f4d]/20 text-cordel-wood border border-[#d99f4d]/50 px-1.5 py-0.5 rounded">
-                              {inst}
+                              {getInstrumentLabel(inst, groupNomenclature) || inst}
                             </span>
                           ))}
                         </div>

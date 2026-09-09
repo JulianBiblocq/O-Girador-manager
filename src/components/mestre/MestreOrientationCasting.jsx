@@ -6,6 +6,7 @@ import CordelButton from '../CordelButton';
 import XiloAvatar from '../XiloAvatar';
 import { filterPublicPercussionInstruments } from '../../utils/tagUtils';
 import { DEFAULT_CUSTOM_CATEGORIES, resolveCategory } from '../../utils/categoryUtils';
+import { getVoiceLabel, normalizeGroupNomenclature } from '../../constants/nomenclature';
 
 const DEFAULT_INSTRUMENTS = [
   "Alfaia",
@@ -115,6 +116,7 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
   const [searchTerm, setSearchTerm] = useState('');
   const [showPendingOnly, setShowPendingOnly] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [groupNomenclature, setGroupNomenclature] = useState({});
 
   const groupId = profileData?.groupId || null;
 
@@ -175,6 +177,10 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
           setCustomCategories(data.customCategories);
         } else {
           setCustomCategories(DEFAULT_CUSTOM_CATEGORIES);
+        }
+
+        if (data.nomenclature) {
+          setGroupNomenclature(normalizeGroupNomenclature(data.nomenclature, 'maracatu'));
         }
       }
     }, (error) => {
@@ -727,19 +733,20 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
           Voix Alfaia :
         </span>
         <div className="flex gap-2">
-          {['Marcante', 'Meião', 'Repique'].map(voice => {
-            const isActive = currentList.includes(voice.toLowerCase());
+          {['marcante', 'meião', 'repique'].map(voiceKey => {
+            const isActive = currentList.includes(voiceKey);
+            const label = getVoiceLabel(voiceKey, groupNomenclature);
             return (
-              <label key={`voice-${context}-${voice}-${member.id}`} className="flex items-center gap-1 cursor-pointer">
+              <label key={`voice-${context}-${voiceKey}-${member.id}`} className="flex items-center gap-1 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={isActive}
-                  onChange={() => handleToggleAlfaiaCompetence(member, voice)}
+                  onChange={() => handleToggleAlfaiaCompetence(member, voiceKey)}
                   disabled={saving}
                   className="w-2.5 h-2.5 accent-cordel-wood cursor-pointer"
                 />
                 <span className={`text-[9px] uppercase font-bold ${isActive ? 'text-cordel-wood' : 'text-cordel-master-dark/60'}`}>
-                  {voice}
+                  {label}
                 </span>
               </label>
             );

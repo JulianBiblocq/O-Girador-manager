@@ -10,6 +10,7 @@ import TabApparence from './association-settings/TabApparence';
 import TabOrganization from './association-settings/TabOrganization';
 import TabSecurity from './association-settings/TabSecurity';
 import TabModules from './association-settings/TabModules';
+import TabTambours from './association-settings/TabTambours';
 import TabPublicContent from './association-settings/TabPublicContent';
 import TabPublicTheme from './association-settings/TabPublicTheme';
 import { canEditVitrine } from '../utils/permissionUtils';
@@ -163,6 +164,14 @@ export default function AssociationSettings({
             t={t}
           />
         );
+      case 'tambours':
+        return (
+          <TabTambours
+            formData={formData}
+            handleChange={handleChange}
+            saving={saving}
+          />
+        );
       case 'public-theme':
         return vitrineSubTab === 'apparence' ? (
           <TabPublicTheme
@@ -291,6 +300,17 @@ export default function AssociationSettings({
                 }`}
               >
                 🧩 Modules & Fonctionnalités
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveSettingsTab('tambours')}
+                className={`px-3 py-1.5 text-xs font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer ${
+                  activeSettingsTab === 'tambours'
+                    ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
+                    : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
+                }`}
+              >
+                🥁 Les Tambours
               </button>
             </div>
           )}
