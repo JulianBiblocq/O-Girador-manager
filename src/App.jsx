@@ -242,7 +242,8 @@ const POLES_CONFIG = [
       { id: 'config-security', label: 'Badges & Permissions', labelKey: 'tabConfigSecurity' },
       { id: 'config-layout', label: 'Apparence', labelKey: 'tabConfigLayout' },
       { id: 'config-profile', label: 'Inscription & Profils', labelKey: 'tabConfigProfile' },
-      { id: 'config-modules', label: 'Modules & Fonctionnalités', labelKey: 'tabConfigModules' }
+      { id: 'config-modules', label: 'Modules & Fonctionnalités', labelKey: 'tabConfigModules' },
+      { id: 'config-tambours', label: 'Les Tambours', labelKey: 'tabConfigTambours' }
     ]
   }
 ];
@@ -1192,7 +1193,7 @@ export default function App() {
     canAccessMestre(profileData, permissionsMatrice, userTags);
   const hasAccessPedagogie = isMasterKeyActive || canAccessPole('pedagogie', profileData, permissionsMatrice, userTags) || checkTabAccess('mestre-pedagogy-dashboard', 'pedagogie') || checkTabAccess('varal-manager', 'pedagogie') || checkTabAccess('mestre-pedagogy-qcm', 'pedagogie');
   const hasAccessVitrine = isMasterKeyActive || checkTabAccess('vitrine-general', 'vitrine') || checkTabAccess('vitrine-editor', 'vitrine');
-  const hasAccessConfig = isMasterKeyActive || checkTabAccess('config-identity', 'config') || checkTabAccess('config-security', 'config') || checkTabAccess('config-layout', 'config') || checkTabAccess('config-profile', 'config') || checkTabAccess('config-modules', 'config');
+  const hasAccessConfig = isMasterKeyActive || checkTabAccess('config-identity', 'config') || checkTabAccess('config-security', 'config') || checkTabAccess('config-layout', 'config') || checkTabAccess('config-profile', 'config') || checkTabAccess('config-modules', 'config') || checkTabAccess('config-tambours', 'config');
   const hasAccessForumMod = isMasterKeyActive || userTags.some(t => ['Modérateur', 'Modérateur Forum', 'Gestionnaire Porte-voix', 'Porte-voix'].includes(t));
 
   // Fonction utilitaire pour nettoyer les paramètres d'URL (ex: threadId, eventId) lors des navigations
@@ -2192,6 +2193,15 @@ export default function App() {
                     isSystemAdmin={profileData?.isSystemAdmin}
                     activeTabProp="modules"
                     mode="modules-only"
+                    onBack={() => handleNavigateToPole('accueil')} 
+                  />
+                ) : (currentTab === 'config-tambours' && checkTabAccess('config-tambours', 'config')) ? (
+                  <AssociationSettings 
+                    groupId={profileData?.groupId}
+                    role={profileData?.role}
+                    isSystemAdmin={profileData?.isSystemAdmin}
+                    activeTabProp="tambours"
+                    mode="tambours-only"
                     onBack={() => handleNavigateToPole('accueil')} 
                   />
                 ) : (['vitrine-editor', 'vitrine-general', 'vitrine-presentation', 'vitrine-organisateur', 'vitrine-galerie', 'vitrine-recrutement', 'vitrine-reseaux', 'vitrine-apparence'].includes(currentTab) && checkTabAccess('vitrine-editor', 'vitrine')) ? (

@@ -152,7 +152,8 @@ const PERMISSION_POLES = [
       { id: 'config-security', label: 'Badges & Permissions', desc: 'Matrice RBAC des rôles et permissions' },
       { id: 'config-layout', label: 'Apparence', desc: 'Logo, identité visuelle et thème de base' },
       { id: 'config-profile', label: 'Inscription & Profils', desc: 'Champs dynamiques requis pour les profils adhérents' },
-      { id: 'config-modules', label: 'Modules & Fonctionnalités', desc: 'Activation et désactivation des grands pôles métiers' }
+      { id: 'config-modules', label: 'Modules & Fonctionnalités', desc: 'Activation et désactivation des grands pôles métiers' },
+      { id: 'config-tambours', label: 'Les Tambours', desc: 'Nomenclature des pupitres et présélections traditionnelles' }
     ]
   }
 ];

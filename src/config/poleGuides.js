@@ -1304,6 +1304,21 @@ export const POLE_GUIDES = {
       "Enregistrez la grille des modules pour l'ensemble des membres."
     ]
   },
+  'config-tambours': {
+    titre: "🥁 Les Tambours & Nomenclature des Pupitres",
+    title: "🥁 Les Tambours & Nomenclature des Pupitres",
+    description: "Personnalisation des dénominations des instruments pour toute l'association (Séquenciad'Or, plans de scène, carnets d'aisance).",
+    etapes: [
+      "Choisissez une présélection rapide (Baque Virado Recife, Ketu / Tambores, Universel).",
+      "Ajustez individuellement les dénominations des 13 rôles techniques d'instruments.",
+      "Enregistrez pour appliquer la nomenclature modulable à toute votre structure."
+    ],
+    steps: [
+      "Choisissez une présélection rapide (Baque Virado Recife, Ketu / Tambores, Universel).",
+      "Ajustez individuellement les dénominations des 13 rôles techniques d'instruments.",
+      "Enregistrez pour appliquer la nomenclature modulable à toute votre structure."
+    ]
+  },
   'config-layout': {
     titre: "🎨 Thèmes Visuels & Apparence Cordel",
     title: "🎨 Thèmes Visuels & Apparence Cordel",
