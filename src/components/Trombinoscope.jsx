@@ -339,6 +339,17 @@ const MemberCard = React.memo(({
 
 const SECTION_ORDER = ['mestre', 'agbe', 'gongue', 'caixa_tarol', 'alfaia', 'chant_danse', 'autres'];
 
+// Détection inclusive d'un membre pratiquant la danse
+const isDanseMember = (m) => {
+  if (!m) return false;
+  if (m.pratiqueDanse === true) return true;
+  if (m.niveauDanse && m.niveauDanse !== 'aucun') return true;
+  const userInstruments = (Array.isArray(m.instrumentsJoues) && m.instrumentsJoues.length > 0)
+    ? m.instrumentsJoues
+    : [m.instrumentPrincipal || m.instrument || m.instrumentSecondaire].filter(Boolean);
+  return userInstruments.some(inst => String(inst).toLowerCase().includes('danse'));
+};
+
 const getSectionForSingleInstrument = (instName, member) => {
   if (!instName) return 'autres';
   const name = String(instName).toLowerCase().trim();
@@ -575,6 +586,8 @@ export default function Trombinoscope({ user, profileData, onBack, onContactUser
       if (!matchesInstrument) {
         if (filterInstrument === 'Autre') {
           matchesInstrument = userInstruments.some(inst => getSectionForSingleInstrument(inst, member) === 'autres');
+        } else if (filterInstrument.toLowerCase().includes('danse')) {
+          matchesInstrument = isDanseMember(member);
         } else {
           matchesInstrument = userInstruments.some(inst => {
             const instLower = String(inst).toLowerCase().trim();
@@ -612,11 +625,23 @@ export default function Trombinoscope({ user, profileData, onBack, onContactUser
         ? member.instrumentsJoues
         : [member.instrumentPrincipal || member.instrument || member.instrumentSecondaire].filter(Boolean);
 
-      const primaryInst = member.instrumentPrincipal || member.instrument || rawInstruments[0] || '';
-      const primarySection = getSectionForSingleInstrument(primaryInst, member);
+      const isDancer = isDanseMember(member);
+      const primaryInst = member.instrumentPrincipal || member.instrument || (rawInstruments.length > 0 ? rawInstruments[0] : (isDancer ? 'Danse' : ''));
+      const primarySection = isDancer && (!primaryInst || String(primaryInst).toLowerCase().includes('danse'))
+        ? 'chant_danse'
+        : getSectionForSingleInstrument(primaryInst, member);
 
-      // Membre sans instrument spécifié
+      // Membre sans instrument de percussion spécifié
       if (rawInstruments.length === 0) {
+        if (isDancer) {
+          groups.chant_danse.push({
+            ...member,
+            isGhost: false,
+            primaryInstrumentName: 'Danse',
+            cardKey: `${member.id}-chant_danse-main`
+          });
+          return;
+        }
         groups.autres.push({
           ...member,
           isGhost: false,
@@ -629,8 +654,19 @@ export default function Trombinoscope({ user, profileData, onBack, onContactUser
       // Ensemble des sections déjà attribuées au membre pour éviter les doublons au sein du même pupitre
       const addedSections = new Set();
 
-      // Si un filtre d'instrument spécifique est actif (ex: "Caixa"), placer uniquement dans le(s) pupitre(s) de l'instrument filtré
+      // Si un filtre d'instrument spécifique est actif (ex: "Caixa" ou "Danse")
       if (filterInstrument !== 'all') {
+        if (filterInstrument.toLowerCase().includes('danse') && isDancer) {
+          const isMainForMember = primarySection === 'chant_danse' || String(primaryInst).toLowerCase().includes('danse');
+          groups.chant_danse.push({
+            ...member,
+            isGhost: !isMainForMember,
+            primaryInstrumentName: primaryInst || 'Danse',
+            cardKey: `${member.id}-chant_danse-${isMainForMember ? 'main' : 'ghost'}`
+          });
+          return;
+        }
+
         rawInstruments.forEach((inst) => {
           const instLower = String(inst).toLowerCase().trim();
           const filterLower = String(filterInstrument).toLowerCase().trim();
@@ -677,6 +713,17 @@ export default function Trombinoscope({ user, profileData, onBack, onContactUser
           });
         }
       });
+
+      // 3. Carte Fantôme pour la Danse si le membre pratique la danse et n'a pas Danse comme pupitre principal
+      if (isDancer && !addedSections.has('chant_danse')) {
+        addedSections.add('chant_danse');
+        groups.chant_danse.push({
+          ...member,
+          isGhost: true,
+          primaryInstrumentName: primaryInst || 'Danse',
+          cardKey: `${member.id}-chant_danse-ghost`
+        });
+      }
     });
 
     return groups;
@@ -746,6 +793,9 @@ export default function Trombinoscope({ user, profileData, onBack, onContactUser
                 {instrumentsDisponibles.map((inst) => (
                   <option key={inst} value={inst}>{inst}</option>
                 ))}
+                {!instrumentsDisponibles.some(i => String(i).toLowerCase().includes('danse')) && (
+                  <option value="Danse">Danse</option>
+                )}
                 <option value="Autre">{t('trombinoscope.other')}</option>
               </select>
             </div>
@@ -915,30 +965,28 @@ export default function Trombinoscope({ user, profileData, onBack, onContactUser
         </div>
       )}
 
-      {/* Editor Modal Overlay */}
-      {showEditor && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-[var(--cordel-bg)] max-w-md w-full rounded-lg shadow-xl overflow-hidden relative border-4 border-encre-noire max-h-[90vh] overflow-y-auto">
-            <div className="p-4">
-              <React.Suspense fallback={
-                <div className="flex flex-col justify-center items-center py-12">
-                  <div className="animate-spin text-4xl mb-4 select-none">⏳</div>
-                  <span className="font-bold text-xs uppercase tracking-widest text-cordel-master-dark opacity-75">
-                    Chargement de l'éditeur...
-                  </span>
-                </div>
-              }>
-                <CordelImageEditor 
-                  imageSrc={selectedImage}
-                  lang={locale || 'fr'}
-                  onComplete={handleEditorComplete}
-                  onCancel={() => {
-                    setShowEditor(false);
-                    setSelectedImage(null);
-                  }}
-                />
-              </React.Suspense>
-            </div>
+      {/* Editeur Photo Cordel / Xylogravure */}
+      {showEditor && selectedImage && (
+        <div className="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="max-w-md w-full max-h-[95vh] overflow-y-auto">
+            <React.Suspense fallback={
+              <CordelCard variant="default" useExtremeBorder={true} className="p-8 flex flex-col items-center justify-center bg-cordel-bg">
+                <div className="animate-spin text-4xl mb-4 select-none">⏳</div>
+                <span className="font-bold text-xs uppercase tracking-widest text-cordel-master-dark opacity-75">
+                  Chargement de l'éditeur...
+                </span>
+              </CordelCard>
+            }>
+              <CordelImageEditor 
+                imageSrc={selectedImage}
+                lang={locale || 'fr'}
+                onComplete={handleEditorComplete}
+                onCancel={() => {
+                  setShowEditor(false);
+                  setSelectedImage(null);
+                }}
+              />
+            </React.Suspense>
           </div>
         </div>
       )}

@@ -9,6 +9,7 @@ import useConfirm from '../../hooks/useConfirm';
 import { useSequencerFirestoreData, isTestOrE2ESequence } from '../../hooks/useSequencerFirestoreData';
 import { calculateToadaScore } from '../../utils/toadaProgressEngine';
 import { normalizePupitreName } from '../../utils/secretariatMetrics';
+import XiloAvatar from '../XiloAvatar';
 
 export default function MestrePedagogyDashboard({ profileData }) {
   const { confirm } = useConfirm();
@@ -181,12 +182,15 @@ export default function MestrePedagogyDashboard({ profileData }) {
     return list;
   }, [sequencerRhythms, rhythmMetaList, evaluationsMap, songs, fiches]);
 
-  // Détection des membres Danse (pratiqueDanse ou instrument danse ou voeu danse)
+  // Détection exhaustive des membres Danse (pratiqueDanse, niveauDanse ou instrument danse ou voeu danse)
   const isDanseMember = (u) => {
     if (!u) return false;
     if (u.pratiqueDanse === true) return true;
+    if (u.niveauDanse && u.niveauDanse !== 'aucun') return true;
     const inst = (u.instrument || u.instrumentPrincipal || u.pupitre || '').toLowerCase().trim();
-    if (inst.includes('danse')) return true;
+    const secInst = (u.instrumentSecondaire || '').toLowerCase().trim();
+    if (inst.includes('danse') || secInst.includes('danse')) return true;
+    if (Array.isArray(u.instrumentsJoues) && u.instrumentsJoues.some(i => typeof i === 'string' && i.toLowerCase().includes('danse'))) return true;
     if (Array.isArray(u.voeuxInstruments) && u.voeuxInstruments.some(w => typeof w === 'string' && w.toLowerCase().includes('danse'))) return true;
     return false;
   };
@@ -889,7 +893,42 @@ export default function MestrePedagogyDashboard({ profileData }) {
                     Aucun profil Danse enregistré dans les adhérents actifs.
                   </p>
                 ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+                  <>
+                    {/* Trombinoscope et composition nominative de l'Équipe Danse */}
+                    <div className="p-3 bg-white/80 border border-dashed border-encre-noire/20 rounded flex flex-col gap-2 shadow-xs">
+                      <span className="text-[10px] font-black uppercase text-cordel-wood tracking-wider">
+                        Effectif Danseurs & Danseuses ({danseUsers.length}) :
+                      </span>
+                      <div className="flex flex-wrap gap-2 items-center">
+                        {danseUsers.map(u => {
+                          const name = `${u.prenom || ''} ${u.nom || ''}`.trim() || 'Sans Nom';
+                          const danseLevel = (u.niveauDanse && u.niveauDanse !== 'aucun') ? u.niveauDanse : 'Inscrit(e)';
+                          const mainInst = u.instrumentPrincipal || u.instrument;
+                          const isPoly = mainInst && mainInst.toLowerCase() !== 'danse' && mainInst !== 'En attente';
+
+                          return (
+                            <div 
+                              key={u.id}
+                              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-[#fdfaf2] border border-encre-noire/20 shadow-xs text-xs font-bold"
+                            >
+                              <XiloAvatar src={u.photoURL} name={name} size={22} />
+                              <span className="text-encre-noire font-extrabold">{name}</span>
+                              {u.surnom && <span className="text-cordel-wood text-[10px] italic font-semibold">"{u.surnom}"</span>}
+                              <span className="text-[8.5px] font-black uppercase px-1.5 py-0.5 rounded bg-pink-100 text-pink-900 border border-pink-300">
+                                💃 {danseLevel}
+                              </span>
+                              {isPoly && (
+                                <span className="text-[8.5px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-900 border border-amber-300" title={`Polyvalent • Joue aussi en percussion : ${mainInst}`}>
+                                  🥁 {mainInst}
+                                </span>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
                     {unifiedRhythms.map(rhythm => {
                       const stats = getStatsForItem(rhythm.id, danseUsers, true);
                       const revCount = revisionsCountMap[`danse_${rhythm.id}`] || 0;
@@ -928,7 +967,8 @@ export default function MestrePedagogyDashboard({ profileData }) {
                       );
                     })}
                   </div>
-                )}
+                </>
+              )}
               </CordelCard>
             )}
 

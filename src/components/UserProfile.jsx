@@ -690,30 +690,28 @@ export default function UserProfile({ user, profileData, associationName, onBack
         onClose={() => setShowQrScanner(false)}
       />
 
-      {/* Editor Modal Overlay */}
-      {showEditor && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-[var(--cordel-bg)] max-w-md w-full rounded-lg shadow-xl overflow-hidden relative border-4 border-encre-noire max-h-[90vh] overflow-y-auto">
-            <div className="p-4">
-              <React.Suspense fallback={
-                <div className="flex flex-col justify-center items-center py-12">
-                  <div className="animate-spin text-4xl mb-4 select-none">⏳</div>
-                  <span className="font-bold text-xs uppercase tracking-widest text-cordel-master-dark opacity-75">
-                    Chargement de l'éditeur...
-                  </span>
-                </div>
-              }>
-                <CordelImageEditor 
-                  imageSrc={selectedImage}
-                  lang={locale}
-                  onComplete={handleEditorComplete}
-                  onCancel={() => {
-                    setShowEditor(false);
-                    setSelectedImage(null);
-                  }}
-                />
-              </React.Suspense>
-            </div>
+      {/* Modale Éditeur Photo Cordel / Xylogravure */}
+      {showEditor && selectedImage && (
+        <div className="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="max-w-md w-full max-h-[95vh] overflow-y-auto">
+            <React.Suspense fallback={
+              <CordelCard variant="default" useExtremeBorder={true} className="p-8 flex flex-col items-center justify-center bg-cordel-bg">
+                <div className="animate-spin text-4xl mb-4 select-none">⏳</div>
+                <span className="font-bold text-xs uppercase tracking-widest text-cordel-master-dark opacity-75">
+                  Chargement de l'éditeur...
+                </span>
+              </CordelCard>
+            }>
+              <CordelImageEditor 
+                imageSrc={selectedImage}
+                lang={locale}
+                onComplete={handleEditorComplete}
+                onCancel={() => {
+                  setShowEditor(false);
+                  setSelectedImage(null);
+                }}
+              />
+            </React.Suspense>
           </div>
         </div>
       )}

@@ -218,9 +218,9 @@ export default function SystemUserList({
                       ⏳ Vœu : {userItem.voeuPrincipal || userItem.voeuxInstruments?.[0]}
                     </span>
                   ) : null}
-                  {userItem.pratiqueDanse === true && (
+                  {(userItem.pratiqueDanse === true || (userItem.niveauDanse && userItem.niveauDanse !== 'aucun')) && (
                     <span className="theme-stamp-badge theme-stamp-badge-wood text-[8px] px-1.5 py-0.2 normal-case tracking-normal">
-                      💃 Danse
+                      💃 Danse {userItem.niveauDanse && userItem.niveauDanse !== 'aucun' ? `(${userItem.niveauDanse})` : ''}
                     </span>
                   )}
                 </div>
@@ -377,9 +377,9 @@ export default function SystemUserList({
                     <span className="text-[9px] font-black uppercase tracking-wider text-cordel-wood flex items-center gap-1">
                       🥁 Pupitres & Orientation
                     </span>
-                    {userItem.pratiqueDanse === true && (
+                    {(userItem.pratiqueDanse === true || (userItem.niveauDanse && userItem.niveauDanse !== 'aucun')) && (
                       <span className="text-[8px] font-bold uppercase px-1.5 py-0.5 rounded bg-amber-100 text-amber-900 border border-amber-300">
-                        💃 Pratique la danse ({userItem.niveauDanse || 'aucun'})
+                        💃 Pratique la danse ({userItem.niveauDanse || 'Inscrit'})
                       </span>
                     )}
                   </div>

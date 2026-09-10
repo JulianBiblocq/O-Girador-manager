@@ -117,6 +117,7 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
   const [showPendingOnly, setShowPendingOnly] = useState(false);
   const [saving, setSaving] = useState(false);
   const [groupNomenclature, setGroupNomenclature] = useState({});
+  const [selectedPupitreFilter, setSelectedPupitreFilter] = useState(null);
 
   const groupId = profileData?.groupId || null;
 
@@ -179,8 +180,8 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
           setCustomCategories(DEFAULT_CUSTOM_CATEGORIES);
         }
 
-        if (data.nomenclature) {
-          setGroupNomenclature(normalizeGroupNomenclature(data.nomenclature, 'maracatu'));
+        if (data.groupNomenclature) {
+          setGroupNomenclature(normalizeGroupNomenclature(data.groupNomenclature));
         }
       }
     }, (error) => {
@@ -189,6 +190,19 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
 
     return () => unsubscribeAssoc();
   }, [groupId]);
+
+  // Détection exhaustive et sémantique d'un membre pratiquant la Danse
+  const isDanseMember = (m) => {
+    if (!m) return false;
+    if (m.pratiqueDanse === true) return true;
+    if (m.niveauDanse && m.niveauDanse !== 'aucun') return true;
+    const inst = (m.instrument || m.instrumentPrincipal || '').toLowerCase().trim();
+    const secInst = (m.instrumentSecondaire || '').toLowerCase().trim();
+    if (inst.includes('danse') || secInst.includes('danse')) return true;
+    if (Array.isArray(m.instrumentsJoues) && m.instrumentsJoues.some(i => typeof i === 'string' && i.toLowerCase().includes('danse'))) return true;
+    if (Array.isArray(m.voeuxInstruments) && m.voeuxInstruments.some(w => typeof w === 'string' && w.toLowerCase().includes('danse'))) return true;
+    return false;
+  };
 
   // Détermine si un membre pratique ou souhaite pratiquer la percussion (exclut les danseurs 100% Danse sans percussion)
   const isPercussionistMember = (m) => {
@@ -214,6 +228,11 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
   const activeMembers = useMemo(() => {
     return members.filter(m => m.statutActuel !== 'inactive');
   }, [members]);
+
+  // Décompte global en temps réel des danseurs actifs
+  const dancersCount = useMemo(() => {
+    return activeMembers.filter(isDanseMember).length;
+  }, [activeMembers]);
 
   // Pupitres combinés (groupes liés + instruments configurés seuls + Danse tout au bout)
   const displayPupitres = useMemo(() => {
@@ -275,8 +294,14 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
 
       displayPupitres.forEach(pupitre => {
         if (pupitre.name.toLowerCase() === 'danse') {
-          if (member.pratiqueDanse === true || mainInst === 'danse') {
+          if (isDanseMember(member)) {
+            // primary : total de tous les membres inscrits à la danse
             counts[pupitre.id].primary += 1;
+            // secondary : décompte des polyvalents (ceux qui jouent également un instrument de percussion)
+            const isPolyvalent = isPercussionistMember(member) && mainInst !== 'danse' && mainInst !== '';
+            if (isPolyvalent) {
+              counts[pupitre.id].secondary += 1;
+            }
           }
         } else {
           const matchMain = pupitre.instruments.some(i => {
@@ -350,16 +375,42 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
     });
   }, [activeMembers]);
 
-  // Membres filtrés selon la recherche et le filtre de vœux en attente
+  // Membres filtrés selon la recherche, le pupitre cliqué et le filtre de vœux en attente
   const filteredMembers = useMemo(() => {
     let list = sortedMembers;
 
+    // 1. Filtrage sur vœux en attente uniquement
     if (showPendingOnly) {
       list = list.filter(m => {
         return isUnassignedForMestre(m) || hasPendingWishForMestre(m);
       });
     }
 
+    // 2. Filtrage par pupitre sélectionné (y compris Danse)
+    if (selectedPupitreFilter) {
+      if (selectedPupitreFilter === 'single-Danse' || selectedPupitreFilter.toLowerCase() === 'danse') {
+        list = list.filter(isDanseMember);
+      } else {
+        const targetPupitre = displayPupitres.find(p => p.id === selectedPupitreFilter || p.name.toLowerCase() === selectedPupitreFilter.toLowerCase());
+        if (targetPupitre) {
+          list = list.filter(m => {
+            const mainInst = (m.instrument || m.instrumentPrincipal || '').toLowerCase().trim();
+            const secInst = (m.instrumentSecondaire || '').toLowerCase().trim();
+            const matchMain = targetPupitre.instruments.some(i => {
+              const clean = i.toLowerCase().trim();
+              return clean === mainInst || (mainInst && (mainInst.includes(clean) || clean.includes(mainInst)));
+            });
+            const matchSec = targetPupitre.instruments.some(i => {
+              const clean = i.toLowerCase().trim();
+              return clean === secInst || (secInst && (secInst.includes(clean) || clean.includes(secInst)));
+            });
+            return matchMain || matchSec;
+          });
+        }
+      }
+    }
+
+    // 3. Recherche textuelle inclusive (reconnaît noms, instruments, danse et niveaux)
     if (!searchTerm.trim()) return list;
     const term = searchTerm.toLowerCase().trim();
     return list.filter(m => {
@@ -370,9 +421,14 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
       const v1 = (m.voeuPrincipal || '').toLowerCase();
       const v2 = (m.voeuSecondaire || '').toLowerCase();
       const v3 = (m.voeuTertiaire || '').toLowerCase();
-      return fullName.includes(term) || surnom.includes(term) || inst.includes(term) || secInst.includes(term) || v1.includes(term) || v2.includes(term) || v3.includes(term);
+      
+      const isDanse = isDanseMember(m);
+      const danseNiv = (m.niveauDanse || '').toLowerCase();
+      const matchesDanse = isDanse && (term.includes('dans') || danseNiv.includes(term) || (term.includes('debut') && danseNiv.includes('debut')) || (term.includes('confirm') && danseNiv.includes('confirm')));
+
+      return fullName.includes(term) || surnom.includes(term) || inst.includes(term) || secInst.includes(term) || v1.includes(term) || v2.includes(term) || v3.includes(term) || matchesDanse;
     });
-  }, [sortedMembers, searchTerm, showPendingOnly]);
+  }, [sortedMembers, searchTerm, showPendingOnly, selectedPupitreFilter, displayPupitres]);
 
   // Fonctions de sauvegarde inline
   const handleUpdateMainInstrument = async (memberId, newInstrument) => {
@@ -599,6 +655,8 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
         payload = { pratiqueDanse: true, niveauDanse: value };
       }
       await updateDoc(userRef, payload);
+      // Mise à jour immédiate du state local pour synchronisation instantanée sans rechargement
+      setMembers(prev => prev.map(m => m.id === memberId ? { ...m, ...payload } : m));
     } catch (err) {
       console.error(err);
       alert("Erreur de sauvegarde");
@@ -628,14 +686,37 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
   };
 
   // Validation directe à 1-clic d'un vœu d'instrument par le Mestre
-  const handleQuickValidate = async (memberTarget, validatedInstrument) => {
-    await handleUpdateMainInstrument(memberTarget.id, validatedInstrument);
-    alert(`✅ Vœu validé ! ${memberTarget.prenom || 'Le membre'} est à présent affecté(e) à ${validatedInstrument}.`);
+  const handleQuickValidate = async (member, wishInstrument) => {
+    if (!wishInstrument) return;
+    setSaving(true);
+    try {
+      const userRef = doc(db, 'users', member.id);
+      
+      const updatePayload = {
+        instrument: wishInstrument,
+        instrumentPrincipal: wishInstrument,
+        souhaiteChangerInstrument: false,
+        voeuPrincipal: '',
+        voeuSecondaire: '',
+        voeuTertiaire: '',
+        voeuxInstruments: []
+      };
+
+      const secInst = member.instrumentSecondaire || '';
+      updatePayload.instrumentsJoues = Array.from(new Set([wishInstrument, secInst].filter(Boolean)));
+
+      await updateDoc(userRef, updatePayload);
+    } catch (err) {
+      console.error("MestreOrientationCasting - Erreur de validation rapide du vœu :", err);
+      alert("Erreur lors de la validation de l'orientation.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   // Exporter en CSV les affectations et vœux des membres
   const handleExportCSV = () => {
-    const listToExport = filteredMembers;
+    const listToExport = filteredMembers.length > 0 ? filteredMembers : activeMembers;
     if (listToExport.length === 0) {
       alert("Aucun membre à exporter.");
       return;
@@ -646,6 +727,7 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
       "Nom",
       "Surnom",
       "Disciplines",
+      "Niveau Danse",
       "Ancienneté",
       "Instrument Actuel / Validé",
       "Statut Affectation",
@@ -662,10 +744,13 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
       const surnom = (m.surnom || '').replace(/"/g, '""');
 
       const isPerc = isPercussionistMember(m);
+      const isDanse = isDanseMember(m);
       const disciplinesList = [];
       if (isPerc) disciplinesList.push("Percussion");
-      if (m.pratiqueDanse) disciplinesList.push("Danse");
+      if (isDanse) disciplinesList.push("Danse");
       const disciplinesStr = disciplinesList.join(' + ');
+
+      const niveauDanseStr = (m.niveauDanse && m.niveauDanse !== 'aucun') ? m.niveauDanse : (isDanse ? 'Non spécifié' : 'Aucun');
 
       const ancienneteStr = m.estAncienMembre ? 'Ancien' : 'Nouveau';
 
@@ -690,6 +775,7 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
         `"${nom}"`,
         `"${surnom}"`,
         `"${disciplinesStr}"`,
+        `"${niveauDanseStr}"`,
         `"${ancienneteStr}"`,
         `"${currentInst}"`,
         `"${statutAffectation}"`,
@@ -771,24 +857,24 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
   const wishCount = activeMembers.filter(m => hasPendingWishForMestre(m)).length;
 
   return (
-    <div className="flex flex-col gap-5 text-left max-w-5xl mx-auto w-full select-none">
-      {/* Page Title & Stats Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b-2 border-dashed border-cordel-master-dark/30 pb-3 gap-2">
+    <div className="flex flex-col gap-5 text-left select-none">
+      {/* En-tête Cordel */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b-2 border-dashed border-cordel-master-dark/30 pb-3">
         <div>
-          <h2 className="panel-title text-xl font-extrabold tracking-wider text-cordel-wood uppercase">
-            🎯 Orientation & Casting
+          <h2 className="panel-title text-xl font-black uppercase tracking-wider text-cordel-wood flex items-center gap-2">
+            <span>🎭</span>
+            <span>Orientation, Casting & Pupitres</span>
           </h2>
           <p className="text-xs font-semibold text-cordel-master-dark/80 mt-0.5">
-            Gestion des pupitres, validation des souhaits d'évolution et affectation des rôles.
+            Tableau de bord de répartition des pupitres et validation directe des vœux par la Mestria.
           </p>
         </div>
-        <div className="flex gap-2 text-xs">
-          <span className="theme-stamp-badge theme-stamp-badge-wood text-[9px]">
-            👥 {activeMembers.length} Actifs
-          </span>
+
+        {/* Badges d'état rapide */}
+        <div className="flex items-center gap-2 flex-wrap">
           {unassignedCount > 0 && (
-            <span className="theme-stamp-badge theme-stamp-badge-ocre text-[9px] animate-pulse">
-              ⚠️ {unassignedCount} À attribuer
+            <span className="theme-stamp-badge theme-stamp-badge-wood text-[9px]">
+              ⚠️ {unassignedCount} Non affecté{unassignedCount > 1 ? 's' : ''}
             </span>
           )}
           {wishCount > 0 && (
@@ -799,12 +885,12 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
         </div>
       </div>
 
-      {/* 1. Jauges des Quotas (Bandeau visuel des pupitres) */}
+      {/* 1. Jauges des Quotas (Bandeau visuel interactif des pupitres) */}
       <CordelCard data-tour="mestre-orientation-gauges" variant="default" useExtremeBorder={false} className="flex flex-col gap-3">
         <h3 className="font-bold text-xs uppercase tracking-wider text-cordel-wood border-b border-dashed border-cordel-master-dark/15 pb-1 flex items-center justify-between">
-          <span>📊 Quotas & Effectifs par Pupitre (Instruments Principaux)</span>
+          <span>📊 Quotas & Effectifs par Pupitre (Cliquez pour filtrer)</span>
           <span className="text-[9px] text-cordel-master-dark/70 font-semibold normal-case">
-            Calculé en temps réel sur les membres actifs
+            {selectedPupitreFilter ? 'Filtre actif • Cliquez à nouveau pour réinitialiser' : 'Calculé en temps réel sur les membres actifs'}
           </span>
         </h3>
 
@@ -813,15 +899,24 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
             const quota = quotasByPupitre[pupitre.id] || { primary: 0, secondary: 0 };
             const isLow = quota.primary === 0;
             const iconInst = pupitre.instruments[0] || pupitre.name;
+            const isDanse = pupitre.name.toLowerCase() === 'danse';
+            const isSelected = selectedPupitreFilter === pupitre.id;
 
             return (
               <div
                 key={`quota-${pupitre.id}`}
-                className={`p-2.5 rounded border flex flex-col justify-between transition-all ${
-                  isLow
-                    ? 'bg-amber-50 dark:bg-amber-950/30 border-dashed border-amber-400/80 text-amber-950 dark:text-amber-200'
-                    : 'bg-white/50 dark:bg-black/20 border-dashed border-cordel-master-dark/20 text-cordel-master-dark'
+                onClick={() => {
+                  setSelectedPupitreFilter(prev => prev === pupitre.id ? null : pupitre.id);
+                  setShowPendingOnly(false);
+                }}
+                className={`p-2.5 rounded border flex flex-col justify-between transition-all cursor-pointer select-none hover:scale-[1.02] active:scale-[0.98] ${
+                  isSelected
+                    ? 'ring-2 ring-cordel-wood bg-amber-100/90 dark:bg-amber-900/50 border-cordel-wood shadow-md'
+                    : isLow
+                      ? 'bg-amber-50 dark:bg-amber-950/30 border-dashed border-amber-400/80 text-amber-950 dark:text-amber-200'
+                      : 'bg-white/50 dark:bg-black/20 border-dashed border-cordel-master-dark/20 text-cordel-master-dark'
                 }`}
+                title={`Cliquer pour filtrer la liste sur ${pupitre.name}`}
               >
                 <div>
                   <div className="flex items-center justify-between gap-1 mb-1">
@@ -840,6 +935,11 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
                         🔗 Lié
                       </span>
                     )}
+                    {isSelected && (
+                      <span className="text-[7.5px] bg-cordel-wood text-white px-1 rounded font-black">
+                        Actif
+                      </span>
+                    )}
                   </div>
                   {pupitre.subTitle && (
                     <span className="text-[8.5px] font-semibold text-cordel-wood block truncate mb-1" title={pupitre.subTitle}>
@@ -852,12 +952,12 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
                   <div className="flex items-baseline gap-1">
                     <span className="font-black text-lg text-cordel-wood">{quota.primary}</span>
                     <span className="text-[8px] font-extrabold uppercase opacity-70">
-                      princ.
+                      {isDanse ? 'danseurs' : 'princ.'}
                     </span>
                   </div>
                   {quota.secondary > 0 && (
                     <span className="text-[9px] font-bold text-cordel-master-dark/80 bg-white/60 dark:bg-black/30 px-1 py-0.5 rounded border border-cordel-master-dark/15">
-                      +{quota.secondary} sec.
+                      +{quota.secondary} {isDanse ? 'polyv.' : 'sec.'}
                     </span>
                   )}
                 </div>
@@ -880,18 +980,24 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
             <h3 className="font-bold text-xs uppercase tracking-wider text-cordel-wood">
               📋 Tableau d'Affectation
             </h3>
-            {/* Filtre Tous / Vœux en attente */}
-            <div className="flex items-center gap-1.5 text-xs">
+            {/* Filtre Tous / Vœux en attente / Section Danse */}
+            <div className="flex items-center gap-1.5 text-xs flex-wrap">
               <button
                 type="button"
-                onClick={() => setShowPendingOnly(false)}
-                className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all cursor-pointer ${!showPendingOnly ? 'bg-cordel-wood text-white shadow-xs' : 'bg-white/60 dark:bg-black/20 text-cordel-master-dark border border-cordel-master-dark/20'}`}
+                onClick={() => {
+                  setShowPendingOnly(false);
+                  setSelectedPupitreFilter(null);
+                }}
+                className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all cursor-pointer ${!showPendingOnly && !selectedPupitreFilter ? 'bg-cordel-wood text-white shadow-xs' : 'bg-white/60 dark:bg-black/20 text-cordel-master-dark border border-cordel-master-dark/20'}`}
               >
                 Tous ({activeMembers.length})
               </button>
               <button
                 type="button"
-                onClick={() => setShowPendingOnly(true)}
+                onClick={() => {
+                  setShowPendingOnly(true);
+                  setSelectedPupitreFilter(null);
+                }}
                 className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all cursor-pointer flex items-center gap-1 ${showPendingOnly ? 'bg-amber-600 text-white shadow-xs' : 'bg-amber-100 text-amber-900 border border-amber-300'}`}
               >
                 <span>⏳ Vœux en attente</span>
@@ -900,6 +1006,19 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
                     {unassignedCount + wishCount}
                   </span>
                 )}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedPupitreFilter(prev => prev === 'single-Danse' ? null : 'single-Danse');
+                  setShowPendingOnly(false);
+                }}
+                className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all cursor-pointer flex items-center gap-1 ${selectedPupitreFilter === 'single-Danse' ? 'bg-[var(--color-cordel-vert,#2d6a4f)] text-white shadow-xs' : 'bg-emerald-50 text-emerald-900 border border-emerald-300'}`}
+              >
+                <span>💃 Section Danse</span>
+                <span className="bg-emerald-700 text-white text-[8px] px-1.5 py-0.2 rounded-full font-black">
+                  {dancersCount}
+                </span>
               </button>
             </div>
           </div>
@@ -1207,10 +1326,10 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
                       {/* 4. Danse & Niveau */}
                       <td className="py-2.5 px-2 text-right">
                         <select
-                          value={m.pratiqueDanse ? (m.niveauDanse && m.niveauDanse !== 'aucun' ? m.niveauDanse : 'debutant') : 'aucun'}
+                          value={(m.pratiqueDanse || (m.niveauDanse && m.niveauDanse !== 'aucun')) ? (m.niveauDanse && m.niveauDanse !== 'aucun' ? m.niveauDanse : 'debutant') : 'aucun'}
                           onChange={(e) => handleUpdateDanseStatusAndLevel(m.id, e.target.value)}
                           disabled={saving}
-                          className="theme-input text-[10px] py-1 bg-white font-bold text-amber-900 border-amber-300"
+                          className={`theme-input text-[10px] py-1 bg-white font-bold ${(m.pratiqueDanse || (m.niveauDanse && m.niveauDanse !== 'aucun')) ? 'text-amber-900 border-amber-400 bg-amber-50/50' : 'text-cordel-master-dark/60 border-cordel-master-dark/20'}`}
                         >
                           <option value="aucun">Non inscrit(e)</option>
                           <option value="debutant">💃 Débutant</option>
