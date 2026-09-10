@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { collection, query, where, onSnapshot, doc, updateDoc, addDoc } from 'firebase/firestore';
 import { db } from '../../firebase';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 import XiloAvatar from '../XiloAvatar';
-import { filterPublicPercussionInstruments } from '../../utils/tagUtils';
+import { filterPublicPercussionInstruments, computePupitresList } from '../../utils/tagUtils';
 import { DEFAULT_CUSTOM_CATEGORIES, resolveCategory } from '../../utils/categoryUtils';
 import { getVoiceLabel, normalizeGroupNomenclature } from '../../constants/nomenclature';
 
@@ -234,14 +234,53 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
     return activeMembers.filter(isDanseMember).length;
   }, [activeMembers]);
 
+  // Liste des percussions de base configurées dans l'association (hors Danse, Mestre)
+  const basePercussions = useMemo(() => {
+    const raw = (Array.isArray(instrumentsDisponibles) && instrumentsDisponibles.length > 0)
+      ? instrumentsDisponibles
+      : DEFAULT_INSTRUMENTS;
+    return filterPublicPercussionInstruments(raw);
+  }, [instrumentsDisponibles]);
+
+  // Liste consolidée des pupitres de l'association (lie Agbê & Mineiro, Caixa & Tarol...)
+  const pupitresList = useMemo(() => {
+    return computePupitresList(basePercussions, linkedInstruments);
+  }, [basePercussions, linkedInstruments]);
+
+  // Résout le nom du pupitre associé à un instrument (gère les liaisons et équivalences)
+  const resolvePupitreForInstrument = useCallback((instName) => {
+    if (!instName || instName === 'En attente') return '';
+    const cleanInst = String(instName).trim();
+    if (pupitresList.includes(cleanInst)) return cleanInst;
+
+    // Vérifier si cet instrument fait partie d'un groupe lié
+    const matchingGroup = (linkedInstruments || []).find(group => {
+      const groupInsts = Array.isArray(group.instruments)
+        ? group.instruments
+        : (Array.isArray(group) ? group : [group.inst1, group.inst2].filter(Boolean));
+      return groupInsts.some(i => String(i).toLowerCase().trim() === cleanInst.toLowerCase());
+    });
+
+    if (matchingGroup) {
+      const gName = matchingGroup.name && matchingGroup.name.trim()
+        ? matchingGroup.name.trim()
+        : (Array.isArray(matchingGroup.instruments) ? matchingGroup.instruments.join(' + ') : '');
+      if (pupitresList.includes(gName)) return gName;
+    }
+
+    return cleanInst;
+  }, [pupitresList, linkedInstruments]);
+
   // Pupitres combinés (groupes liés + instruments configurés seuls + Danse tout au bout)
   const displayPupitres = useMemo(() => {
     const result = [];
     const usedInstruments = new Set();
 
-    // 1. Groupes d'instruments liés configurés (exclut Danse)
+    // 1. Groupes d'instruments liés configurés (ex: "Agbê & Mineiro", "Caixa & Tarol")
     (linkedInstruments || []).forEach((group, idx) => {
-      const groupInsts = Array.isArray(group.instruments) ? group.instruments : [];
+      const groupInsts = Array.isArray(group.instruments)
+        ? group.instruments
+        : (Array.isArray(group) ? group : [group.inst1, group.inst2].filter(Boolean));
       if (groupInsts.length > 0) {
         const name = group.name && group.name.trim() ? group.name.trim() : groupInsts.join(' + ');
         result.push({
@@ -251,14 +290,14 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
           isGroup: true,
           instruments: groupInsts
         });
-        groupInsts.forEach(i => usedInstruments.add(i.toLowerCase().trim()));
+        groupInsts.forEach(i => usedInstruments.add(String(i).toLowerCase().trim()));
       }
     });
 
     // 2. Instruments autonomes configurés dans l'association (exclut Danse et rôle Mestre)
-    (instrumentsDisponibles || []).forEach(inst => {
-      const lower = inst.toLowerCase().trim();
-      if (lower !== 'danse' && lower !== 'mestre' && lower !== 'direction' && !usedInstruments.has(lower)) {
+    (basePercussions || []).forEach(inst => {
+      const lower = String(inst).toLowerCase().trim();
+      if (!usedInstruments.has(lower)) {
         result.push({
           id: `single-${inst}`,
           name: inst,
@@ -279,7 +318,7 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
     });
 
     return result;
-  }, [linkedInstruments, instrumentsDisponibles]);
+  }, [linkedInstruments, basePercussions]);
 
   // Calcul en temps réel des quotas d'effectifs par pupitre
   const quotasByPupitre = useMemo(() => {
@@ -289,8 +328,13 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
     });
 
     activeMembers.forEach(member => {
-      const mainInst = (member.instrument || member.instrumentPrincipal || '').toLowerCase().trim();
-      const secInst = (member.instrumentSecondaire || '').toLowerCase().trim();
+      const rawMain = member.instrument || member.instrumentPrincipal || '';
+      const resolvedMain = resolvePupitreForInstrument(rawMain).toLowerCase().trim();
+      const mainInst = rawMain.toLowerCase().trim();
+
+      const rawSec = member.instrumentSecondaire || '';
+      const resolvedSec = resolvePupitreForInstrument(rawSec).toLowerCase().trim();
+      const secInst = rawSec.toLowerCase().trim();
 
       displayPupitres.forEach(pupitre => {
         if (pupitre.name.toLowerCase() === 'danse') {
@@ -304,13 +348,14 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
             }
           }
         } else {
-          const matchMain = pupitre.instruments.some(i => {
+          const pupNameLower = pupitre.name.toLowerCase().trim();
+          const matchMain = (pupNameLower === resolvedMain) || (pupNameLower === mainInst) || pupitre.instruments.some(i => {
             const clean = i.toLowerCase().trim();
-            return clean === mainInst || (mainInst && (mainInst.includes(clean) || clean.includes(mainInst)));
+            return clean === mainInst || clean === resolvedMain || (mainInst && (mainInst.includes(clean) || clean.includes(mainInst)));
           });
-          const matchSec = pupitre.instruments.some(i => {
+          const matchSec = (pupNameLower === resolvedSec) || (pupNameLower === secInst) || pupitre.instruments.some(i => {
             const clean = i.toLowerCase().trim();
-            return clean === secInst || (secInst && (secInst.includes(clean) || clean.includes(secInst)));
+            return clean === secInst || clean === resolvedSec || (secInst && (secInst.includes(clean) || clean.includes(secInst)));
           });
 
           if (matchMain) {
@@ -324,7 +369,7 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
     });
 
     return counts;
-  }, [activeMembers, displayPupitres]);
+  }, [activeMembers, displayPupitres, resolvePupitreForInstrument]);
 
   // Détermine si un membre a un vœu réellement EN ATTENTE de traitement par le Mestre
   const hasPendingWishForMestre = (m) => {
@@ -394,15 +439,22 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
         const targetPupitre = displayPupitres.find(p => p.id === selectedPupitreFilter || p.name.toLowerCase() === selectedPupitreFilter.toLowerCase());
         if (targetPupitre) {
           list = list.filter(m => {
-            const mainInst = (m.instrument || m.instrumentPrincipal || '').toLowerCase().trim();
-            const secInst = (m.instrumentSecondaire || '').toLowerCase().trim();
-            const matchMain = targetPupitre.instruments.some(i => {
+            const rawMain = m.instrument || m.instrumentPrincipal || '';
+            const resolvedMain = resolvePupitreForInstrument(rawMain).toLowerCase().trim();
+            const mainInst = rawMain.toLowerCase().trim();
+
+            const rawSec = m.instrumentSecondaire || '';
+            const resolvedSec = resolvePupitreForInstrument(rawSec).toLowerCase().trim();
+            const secInst = rawSec.toLowerCase().trim();
+
+            const targetNameLower = targetPupitre.name.toLowerCase().trim();
+            const matchMain = (targetNameLower === resolvedMain) || (targetNameLower === mainInst) || targetPupitre.instruments.some(i => {
               const clean = i.toLowerCase().trim();
-              return clean === mainInst || (mainInst && (mainInst.includes(clean) || clean.includes(mainInst)));
+              return clean === mainInst || clean === resolvedMain || (mainInst && (mainInst.includes(clean) || clean.includes(mainInst)));
             });
-            const matchSec = targetPupitre.instruments.some(i => {
+            const matchSec = (targetNameLower === resolvedSec) || (targetNameLower === secInst) || targetPupitre.instruments.some(i => {
               const clean = i.toLowerCase().trim();
-              return clean === secInst || (secInst && (secInst.includes(clean) || clean.includes(secInst)));
+              return clean === secInst || clean === resolvedSec || (secInst && (secInst.includes(clean) || clean.includes(secInst)));
             });
             return matchMain || matchSec;
           });
@@ -428,7 +480,7 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
 
       return fullName.includes(term) || surnom.includes(term) || inst.includes(term) || secInst.includes(term) || v1.includes(term) || v2.includes(term) || v3.includes(term) || matchesDanse;
     });
-  }, [sortedMembers, searchTerm, showPendingOnly, selectedPupitreFilter, displayPupitres]);
+  }, [sortedMembers, searchTerm, showPendingOnly, selectedPupitreFilter, displayPupitres, resolvePupitreForInstrument]);
 
   // Fonctions de sauvegarde inline
   const handleUpdateMainInstrument = async (memberId, newInstrument) => {
@@ -448,6 +500,7 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
       }
 
       await updateDoc(userRef, updatePayload);
+      setMembers(prev => prev.map(m => m.id === memberId ? { ...m, ...updatePayload } : m));
     } catch (err) {
       console.error(err);
       alert("Erreur de sauvegarde");
@@ -461,6 +514,7 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
     try {
       const userRef = doc(db, 'users', memberId);
       await updateDoc(userRef, { niveauMusique: newLevel, niveau: newLevel });
+      setMembers(prev => prev.map(m => m.id === memberId ? { ...m, niveauMusique: newLevel, niveau: newLevel } : m));
     } catch (err) {
       console.error(err);
       alert("Erreur de sauvegarde");
@@ -489,6 +543,11 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
       }
 
       await updateDoc(userRef, updatePayload);
+      setMembers(prev => prev.map(m => m.id === memberId ? { 
+        ...m, 
+        ...updatePayload,
+        niveauxParInstrument: { ...(m.niveauxParInstrument || {}), ...(newInstrument ? { [newInstrument]: updatePayload[`niveauxParInstrument.${newInstrument}`] } : {}) }
+      } : m));
     } catch (err) {
       console.error(err);
       alert("Erreur de sauvegarde");
@@ -505,6 +564,10 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
       await updateDoc(userRef, {
         [`niveauxParInstrument.${instName}`]: newLevel
       });
+      setMembers(prev => prev.map(m => m.id === memberId ? {
+        ...m,
+        niveauxParInstrument: { ...(m.niveauxParInstrument || {}), [instName]: newLevel }
+      } : m));
     } catch (err) {
       console.error(err);
       alert("Erreur de sauvegarde");
@@ -521,10 +584,13 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
       const secInst = member?.instrumentSecondaire || '';
       
       const userRef = doc(db, 'users', memberId);
-      await updateDoc(userRef, {
+      const updatePayload = {
         instrumentSaison: newInstrument,
         instrumentsJoues: Array.from(new Set([mainInst, secInst, newInstrument].filter(Boolean)))
-      });
+      };
+
+      await updateDoc(userRef, updatePayload);
+      setMembers(prev => prev.map(m => m.id === memberId ? { ...m, ...updatePayload } : m));
     } catch (err) {
       console.error(err);
       alert("Erreur de sauvegarde");
@@ -541,6 +607,10 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
       await updateDoc(userRef, {
         [`niveauxParInstrument.${instName}`]: newLevel
       });
+      setMembers(prev => prev.map(m => m.id === memberId ? {
+        ...m,
+        niveauxParInstrument: { ...(m.niveauxParInstrument || {}), [instName]: newLevel }
+      } : m));
     } catch (err) {
       console.error(err);
       alert("Erreur de sauvegarde");
@@ -691,10 +761,11 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
     setSaving(true);
     try {
       const userRef = doc(db, 'users', member.id);
+      const targetPupitre = resolvePupitreForInstrument(wishInstrument) || wishInstrument;
       
       const updatePayload = {
-        instrument: wishInstrument,
-        instrumentPrincipal: wishInstrument,
+        instrument: targetPupitre,
+        instrumentPrincipal: targetPupitre,
         souhaiteChangerInstrument: false,
         voeuPrincipal: '',
         voeuSecondaire: '',
@@ -703,9 +774,10 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
       };
 
       const secInst = member.instrumentSecondaire || '';
-      updatePayload.instrumentsJoues = Array.from(new Set([wishInstrument, secInst].filter(Boolean)));
+      updatePayload.instrumentsJoues = Array.from(new Set([targetPupitre, secInst].filter(Boolean)));
 
       await updateDoc(userRef, updatePayload);
+      setMembers(prev => prev.map(m => m.id === member.id ? { ...m, ...updatePayload } : m));
     } catch (err) {
       console.error("MestreOrientationCasting - Erreur de validation rapide du vœu :", err);
       alert("Erreur lors de la validation de l'orientation.");
@@ -754,7 +826,7 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
 
       const ancienneteStr = m.estAncienMembre ? 'Ancien' : 'Nouveau';
 
-      const currentInst = (m.instrumentPrincipal || m.instrument || 'En attente').replace(/"/g, '""');
+      const currentInst = (resolvePupitreForInstrument(m.instrumentPrincipal || m.instrument) || 'En attente').replace(/"/g, '""');
       const isAssigned = m.instrument && m.instrument.trim() !== '' && m.instrument !== 'En attente';
       const statutAffectation = isAssigned ? 'Validé' : 'En attente';
 
@@ -1120,17 +1192,25 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
                           <div className="flex flex-col gap-1">
                             <span className="text-[9px] font-black uppercase text-cordel-master-dark opacity-60">Inst. Principal</span>
                             <div className="flex items-center gap-1">
-                              <select
-                                value={(m.instrumentPrincipal || m.instrument) && (m.instrumentPrincipal || m.instrument) !== 'En attente' ? (m.instrumentPrincipal || m.instrument) : ''}
-                                onChange={(e) => handleUpdateMainInstrument(m.id, e.target.value)}
-                                disabled={saving}
-                                className="theme-input text-[10px] py-1 bg-white w-[110px] font-bold"
-                              >
-                                <option value="">-- Aucun --</option>
-                                {filterPublicPercussionInstruments(instrumentsDisponibles || []).map(inst => (
-                                  <option key={`main-${inst}`} value={inst}>{inst}</option>
-                                ))}
-                              </select>
+                              {(() => {
+                                const resolvedMain = resolvePupitreForInstrument(m.instrumentPrincipal || m.instrument);
+                                return (
+                                  <select
+                                    value={resolvedMain}
+                                    onChange={(e) => handleUpdateMainInstrument(m.id, e.target.value)}
+                                    disabled={saving}
+                                    className="theme-input text-[10px] py-1 bg-white min-w-[130px] font-bold"
+                                  >
+                                    <option value="">-- Aucun --</option>
+                                    {resolvedMain && !pupitresList.includes(resolvedMain) && (
+                                      <option value={resolvedMain}>{resolvedMain}</option>
+                                    )}
+                                    {pupitresList.map(pup => (
+                                      <option key={`main-${pup}`} value={pup}>{pup}</option>
+                                    ))}
+                                  </select>
+                                );
+                              })()}
                               
                               {(m.instrumentPrincipal || m.instrument) && (m.instrumentPrincipal || m.instrument) !== 'En attente' && (
                                 <select
@@ -1170,17 +1250,25 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
                           <div className="flex flex-col gap-1 pt-1 border-t border-dashed border-cordel-master-dark/10">
                             <span className="text-[9px] font-black uppercase text-cordel-master-dark opacity-60">2ème Inst. Historique</span>
                             <div className="flex items-center gap-1">
-                              <select
-                                value={m.instrumentSecondaire && m.instrumentSecondaire !== 'En attente' ? m.instrumentSecondaire : ''}
-                                onChange={(e) => handleUpdateSecondaryInstrument(m.id, e.target.value)}
-                                disabled={saving}
-                                className="theme-input text-[10px] py-1 bg-white w-[110px]"
-                              >
-                                <option value="">-- Aucun --</option>
-                                {filterPublicPercussionInstruments(instrumentsDisponibles || []).map(inst => (
-                                  <option key={`sec-hist-${inst}`} value={inst}>{inst}</option>
-                                ))}
-                              </select>
+                              {(() => {
+                                const resolvedSec = resolvePupitreForInstrument(m.instrumentSecondaire);
+                                return (
+                                  <select
+                                    value={resolvedSec}
+                                    onChange={(e) => handleUpdateSecondaryInstrument(m.id, e.target.value)}
+                                    disabled={saving}
+                                    className="theme-input text-[10px] py-1 bg-white min-w-[130px]"
+                                  >
+                                    <option value="">-- Aucun --</option>
+                                    {resolvedSec && !pupitresList.includes(resolvedSec) && (
+                                      <option value={resolvedSec}>{resolvedSec}</option>
+                                    )}
+                                    {pupitresList.map(pup => (
+                                      <option key={`sec-hist-${pup}`} value={pup}>{pup}</option>
+                                    ))}
+                                  </select>
+                                );
+                              })()}
                               {m.instrumentSecondaire && m.instrumentSecondaire !== 'En attente' && (
                                 <select
                                   value={m.niveauxParInstrument?.[m.instrumentSecondaire] || 'aucun'}
@@ -1274,17 +1362,25 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
                               <span className="text-[9px] font-black uppercase text-cordel-master-dark opacity-60">
                                 Apprentissage Saison :
                               </span>
-                              <select
-                                value={m.instrumentSaison || ''}
-                                onChange={(e) => handleUpdateSaisonInstrument(m.id, e.target.value)}
-                                disabled={saving}
-                                className="theme-input text-[10px] py-1 bg-white w-full"
-                              >
-                                <option value="">-- Aucun --</option>
-                                {filterPublicPercussionInstruments(instrumentsDisponibles || []).map(inst => (
-                                  <option key={`saison-${inst}`} value={inst}>{inst}</option>
-                                ))}
-                              </select>
+                              {(() => {
+                                const resolvedSaison = resolvePupitreForInstrument(m.instrumentSaison);
+                                return (
+                                  <select
+                                    value={resolvedSaison}
+                                    onChange={(e) => handleUpdateSaisonInstrument(m.id, e.target.value)}
+                                    disabled={saving}
+                                    className="theme-input text-[10px] py-1 bg-white w-full"
+                                  >
+                                    <option value="">-- Aucun --</option>
+                                    {resolvedSaison && !pupitresList.includes(resolvedSaison) && (
+                                      <option value={resolvedSaison}>{resolvedSaison}</option>
+                                    )}
+                                    {pupitresList.map(pup => (
+                                      <option key={`saison-${pup}`} value={pup}>{pup}</option>
+                                    ))}
+                                  </select>
+                                );
+                              })()}
                               
                               {m.instrumentSaison && (
                                 <select
