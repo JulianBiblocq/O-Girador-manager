@@ -560,6 +560,62 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // Gestion des conversations privées (échanges 1-à-1 et boucles de discussion multi-membres)
+    match /conversations/{conversationId} {
+      allow read: if isAuthenticated() && (
+        (resource != null && request.auth.uid in resource.data.participantIds) || 
+        isAdminOrMestre()
+      );
+      allow create: if isAuthenticated() && 
+        request.auth.uid in request.resource.data.participantIds &&
+        (
+          !request.resource.data.keys().hasAny(['groupId']) ||
+          request.resource.data.groupId == getUserData().get('groupId', '') ||
+          isSystemAdmin()
+        );
+      allow update: if isAuthenticated() && (
+        // 1. Modification des métadonnées (titre, participants) restreinte aux admins du groupe ou admins de l'association
+        (
+          request.auth.uid in resource.data.get('adminIds', [resource.data.createdBy]) || 
+          isAdminOrMestre()
+        ) ||
+        // 2. Mise à jour des activités de discussion (dernier message, statut de lecture, date de mise à jour) par un participant
+        (
+          request.auth.uid in resource.data.participantIds &&
+          request.resource.data.diff(resource.data).affectedKeys().hasAny(['readStatus', 'lastMessage', 'updatedAt'])
+        ) ||
+        // 3. Un participant qui quitte volontairement la boucle de discussion
+        (
+          request.auth.uid in resource.data.participantIds &&
+          !(request.auth.uid in request.resource.data.participantIds)
+        )
+      );
+      allow delete: if isAuthenticated() && (
+        resource.data.createdBy == request.auth.uid || 
+        isAdminOrMestre()
+      );
+    }
+
+    // Messages échangés au sein d'une conversation (directe ou groupe)
+    match /conversation_messages/{messageId} {
+      allow read: if isAuthenticated() && (
+        (resource != null && request.auth.uid in resource.data.participantIds) || 
+        isAdminOrMestre()
+      );
+      allow create: if isAuthenticated() && 
+        request.resource.data.senderId == request.auth.uid &&
+        request.auth.uid in request.resource.data.participantIds;
+      allow update: if isAuthenticated() && (
+        // Permettre l'ajout ou le retrait de réactions emojis par les participants
+        request.auth.uid in resource.data.participantIds &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reactions'])
+      );
+      allow delete: if isAuthenticated() && (
+        resource.data.senderId == request.auth.uid || 
+        isAdminOrMestre()
+      );
+    }
+
     match /invoices/{invoice} {
       allow read: if canReadGroupData();
       allow write: if canManageTreasury();

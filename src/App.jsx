@@ -241,6 +241,7 @@ const POLES_CONFIG = [
       { id: 'config-identity', label: 'Identité', labelKey: 'tabConfigIdentity' },
       { id: 'config-security', label: 'Badges & Permissions', labelKey: 'tabConfigSecurity' },
       { id: 'config-layout', label: 'Apparence', labelKey: 'tabConfigLayout' },
+      { id: 'config-member-layout', label: 'Vue Membre & Vidéo', labelKey: 'tabConfigMemberLayout' },
       { id: 'config-profile', label: 'Inscription & Profils', labelKey: 'tabConfigProfile' },
       { id: 'config-modules', label: 'Modules & Fonctionnalités', labelKey: 'tabConfigModules' },
       { id: 'config-tambours', label: 'Les Tambours', labelKey: 'tabConfigTambours' }
@@ -812,34 +813,102 @@ export default function App() {
     };
   }, [user, profileData]);
 
-  // Synchroniser unread private messages count et identifier le dernier expéditeur
+  // Synchroniser le compteur de messages non lus (conversations modernes et messages directs historiques)
   useEffect(() => {
     if (!user?.uid) {
       setUnreadPrivateMessagesCount(0);
       setLatestUnreadSenderId(null);
       return;
     }
+
+    let unreadLegacyCount = 0;
+    let unreadConvCount = 0;
+    let latestSender = null;
+
+    const updateCombinedUnread = (legacyCount, convCount, senderId) => {
+      setUnreadPrivateMessagesCount(legacyCount + convCount);
+      if (senderId) {
+        setLatestUnreadSenderId(senderId);
+      }
+    };
+
+    // 1. Écoute des messages directs legacy
     const messagesRef = collection(db, 'private_messages');
-    const q = query(
+    const qLegacy = query(
       messagesRef, 
       where('recipientId', '==', user.uid), 
       where('read', '==', false)
     );
-    const unsubscribe = onSnapshot(q, (snap) => {
-      setUnreadPrivateMessagesCount(snap.size);
+    const unsubLegacy = onSnapshot(qLegacy, (snap) => {
+      unreadLegacyCount = snap.size;
       if (!snap.empty) {
-        // Trier pour identifier l'expéditeur du message non lu le plus récent
         const docs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
         docs.sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0));
-        setLatestUnreadSenderId(docs[0]?.senderId || null);
-      } else {
-        setLatestUnreadSenderId(null);
+        latestSender = docs[0]?.senderId || null;
       }
-    }, (error) => {
-      console.error("App - Error syncing unread messages:", error);
+      updateCombinedUnread(unreadLegacyCount, unreadConvCount, latestSender);
+    }, (err) => {
+      console.error("App - Erreur écoute messages privés legacy :", err);
     });
-    return () => unsubscribe();
-  }, [user?.uid]);
+
+    // 2. Écoute des conversations modernes (groupes et directes) avec isolation multi-tenant
+    let unsubConv = () => {};
+    if (profileData?.groupId) {
+      try {
+        const convRef = collection(db, 'conversations');
+        const qConv = query(
+          convRef,
+          where('groupId', '==', profileData.groupId),
+          where('participantIds', 'array-contains', user.uid)
+        );
+
+        unsubConv = onSnapshot(qConv, (snap) => {
+          let count = 0;
+          let newestConvTime = 0;
+          let newestSender = null;
+
+          snap.forEach(docSnap => {
+            const data = docSnap.data();
+            const lastMsg = data.lastMessage;
+            const lastReadIso = data.readStatus?.[user.uid];
+
+            let isUnread = false;
+            if (lastMsg && lastMsg.senderId !== user.uid) {
+              if (!lastReadIso) {
+                isUnread = true;
+              } else {
+                isUnread = new Date(lastMsg.timestamp) > new Date(lastReadIso);
+              }
+            }
+
+            if (isUnread) {
+              count += 1;
+              const msgTime = new Date(lastMsg.timestamp || 0).getTime();
+              if (msgTime > newestConvTime) {
+                newestConvTime = msgTime;
+                newestSender = lastMsg.senderId;
+              }
+            }
+          });
+
+          unreadConvCount = count;
+          if (newestSender) {
+            latestSender = newestSender;
+          }
+          updateCombinedUnread(unreadLegacyCount, unreadConvCount, latestSender);
+        }, (err) => {
+          console.warn("App - Écoute conversations non autorisée ou non configurée (repli legacy actif) :", err?.message || err);
+        });
+      } catch (e) {
+        console.warn("App - Impossible d'initialiser l'écoute des conversations :", e?.message || e);
+      }
+    }
+
+    return () => {
+      unsubLegacy();
+      unsubConv();
+    };
+  }, [user?.uid, profileData?.groupId]);
 
   useEffect(() => {
     let unsubscribeProfile = null;
@@ -1193,7 +1262,7 @@ export default function App() {
     canAccessMestre(profileData, permissionsMatrice, userTags);
   const hasAccessPedagogie = isMasterKeyActive || canAccessPole('pedagogie', profileData, permissionsMatrice, userTags) || checkTabAccess('mestre-pedagogy-dashboard', 'pedagogie') || checkTabAccess('varal-manager', 'pedagogie') || checkTabAccess('mestre-pedagogy-qcm', 'pedagogie');
   const hasAccessVitrine = isMasterKeyActive || checkTabAccess('vitrine-general', 'vitrine') || checkTabAccess('vitrine-editor', 'vitrine');
-  const hasAccessConfig = isMasterKeyActive || checkTabAccess('config-identity', 'config') || checkTabAccess('config-security', 'config') || checkTabAccess('config-layout', 'config') || checkTabAccess('config-profile', 'config') || checkTabAccess('config-modules', 'config') || checkTabAccess('config-tambours', 'config');
+  const hasAccessConfig = isMasterKeyActive || checkTabAccess('config-identity', 'config') || checkTabAccess('config-security', 'config') || checkTabAccess('config-layout', 'config') || checkTabAccess('config-member-layout', 'config') || checkTabAccess('config-profile', 'config') || checkTabAccess('config-modules', 'config') || checkTabAccess('config-tambours', 'config');
   const hasAccessForumMod = isMasterKeyActive || userTags.some(t => ['Modérateur', 'Modérateur Forum', 'Gestionnaire Porte-voix', 'Porte-voix'].includes(t));
 
   // Fonction utilitaire pour nettoyer les paramètres d'URL (ex: threadId, eventId) lors des navigations
@@ -1428,8 +1497,9 @@ export default function App() {
         setCurrentTab('config-identity');
         break;
       case 'layout-editor':
+      case 'member-layout':
         setCurrentPole('config');
-        setCurrentTab('config-layout');
+        setCurrentTab('config-member-layout');
         break;
       case 'studio-social':
         setCurrentPole('studio');
@@ -2175,6 +2245,15 @@ export default function App() {
                     isSystemAdmin={profileData?.isSystemAdmin}
                     activeTabProp="apparence"
                     mode="apparence-only"
+                    onBack={() => handleNavigateToPole('accueil')} 
+                  />
+                ) : (currentTab === 'config-member-layout' && checkTabAccess('config-member-layout', 'config')) ? (
+                  <AssociationSettings 
+                    groupId={profileData?.groupId}
+                    role={profileData?.role}
+                    isSystemAdmin={profileData?.isSystemAdmin}
+                    activeTabProp="member-layout"
+                    mode="member-layout-only"
                     onBack={() => handleNavigateToPole('accueil')} 
                   />
                 ) : (currentTab === 'config-profile' && checkTabAccess('config-profile', 'config')) ? (

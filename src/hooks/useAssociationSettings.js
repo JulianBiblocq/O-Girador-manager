@@ -257,7 +257,13 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
     smtpPassword: '',
     smtpSecure: 'tls',
     customEmailDomain: '',
-    logisticsKits: []
+    logisticsKits: [],
+    // Configuration de la vidéo à la une sur le tableau de bord (Accueil)
+    videoALaUne: {
+      url: '',
+      titre: '',
+      active: false
+    }
   });
 
   const [logoFile, setLogoFile] = useState(null);
@@ -358,6 +364,9 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
         if (creds.emailProviderApiKey !== undefined) handleChange('emailProviderApiKey', creds.emailProviderApiKey);
         if (creds.brevoListId !== undefined) handleChange('brevoListId', creds.brevoListId);
         if (creds.smtpPassword !== undefined) handleChange('smtpPassword', creds.smtpPassword);
+        if (creds.framaspaceUrl !== undefined) handleChange('framaspaceUrl', creds.framaspaceUrl);
+        if (creds.framaspaceUsername !== undefined) handleChange('framaspaceUsername', creds.framaspaceUsername);
+        if (creds.framaspaceAppPassword !== undefined) handleChange('framaspaceAppPassword', creds.framaspaceAppPassword);
       }
     }).catch(err => {
       console.error("AssociationSettings - Erreur de lecture des credentials :", err);
@@ -534,7 +543,17 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
           smtpPort: data.smtpPort || 587,
           smtpUser: data.smtpUser || '',
           smtpSecure: data.smtpSecure || 'tls',
-          customEmailDomain: data.customEmailDomain || ''
+          customEmailDomain: data.customEmailDomain || '',
+          // Vidéo à la une pour le Dashboard
+          videoALaUne: data.videoALaUne ? {
+            url: data.videoALaUne.url || '',
+            titre: data.videoALaUne.titre || '',
+            active: Boolean(data.videoALaUne.active)
+          } : {
+            url: '',
+            titre: '',
+            active: false
+          }
         }));
       }
       setLoading(false);
@@ -783,7 +802,13 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
         smtpPort: formData.smtpPort || 587,
         smtpUser: formData.smtpUser || '',
         smtpSecure: formData.smtpSecure || 'tls',
-        customEmailDomain: formData.customEmailDomain || ''
+        customEmailDomain: formData.customEmailDomain || '',
+        // Sauvegarde de la vidéo à la une du Dashboard
+        videoALaUne: {
+          url: formData.videoALaUne?.url || '',
+          titre: formData.videoALaUne?.titre || '',
+          active: Boolean(formData.videoALaUne?.active)
+        }
       }, { merge: true });
 
       const credentialsRef = doc(db, 'associations', groupId, 'private_settings', 'credentials');
@@ -791,7 +816,10 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
         helloAssoSignatureKey: formData.helloAssoSignatureKey || '',
         emailProviderApiKey: formData.emailProviderApiKey || '',
         brevoListId: formData.brevoListId || '',
-        smtpPassword: formData.smtpPassword || ''
+        smtpPassword: formData.smtpPassword || '',
+        framaspaceUrl: formData.framaspaceUrl || '',
+        framaspaceUsername: formData.framaspaceUsername || '',
+        framaspaceAppPassword: formData.framaspaceAppPassword || ''
       }, { merge: true });
 
       // Migration automatique en lot des catégories historiques 'debutant' / 'confirme' des profils membres dans Firestore

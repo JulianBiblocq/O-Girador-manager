@@ -2,12 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { doc, onSnapshot, updateDoc } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { useTranslation } from '../LanguageContext';
+import FramaspaceIntegrationBlock from '../association-settings/blocks/FramaspaceIntegrationBlock';
 
 /**
  * Composant : StudioCloudHeader
  * 
  * En-tête de paramétrage de l'espace Cloud racine de l'association (Framaspace, Drive, Dropbox).
- * Permet aux responsables du studio de configurer le point d'accès central aux archives médias
+ * Permet aux responsables du studio de configurer le point d'accès central aux archives médias,
+ * de piloter les identifiants d'automatisation Framaspace Nextcloud
  * et d'ouvrir directement l'espace dans un nouvel onglet sécurisé.
  * 
  * @param {string} groupId Identifiant de l'association
@@ -18,6 +20,7 @@ export default function StudioCloudHeader({ groupId, canWrite = false }) {
   const [cloudUrl, setCloudUrl] = useState('');
   const [editingUrl, setEditingUrl] = useState('');
   const [isEditing, setIsEditing] = useState(false);
+  const [showFramaspaceSettings, setShowFramaspaceSettings] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [error, setError] = useState(null);
@@ -120,17 +123,38 @@ export default function StudioCloudHeader({ groupId, canWrite = false }) {
           )}
 
           {canWrite && (
-            <button
-              type="button"
-              onClick={() => setIsEditing(!isEditing)}
-              className="px-3 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 border-encre-noire bg-cordel-bg text-encre-noire hover:bg-amber-100 transition-all cursor-pointer shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none flex items-center gap-1.5"
-            >
-              <span>⚙️</span>
-              <span>{isEditing ? (t('common.close') || "Fermer") : (t('studioPhotos.editCloud') || "Paramétrer l'URL")}</span>
-            </button>
+            <>
+              <button
+                type="button"
+                onClick={() => setShowFramaspaceSettings(!showFramaspaceSettings)}
+                className={`px-3 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 border-encre-noire transition-all cursor-pointer shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none flex items-center gap-1.5 ${
+                  showFramaspaceSettings ? 'bg-[var(--color-cordel-vert)] text-white border-emerald-950' : 'bg-cordel-bg text-encre-noire hover:bg-amber-100'
+                }`}
+                title="Configurer les identifiants API Framaspace pour l'automatisation des dossiers"
+              >
+                <span>⚡</span>
+                <span>{showFramaspaceSettings ? "Masquer API Framaspace" : "Automatisation Framaspace"}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setIsEditing(!isEditing)}
+                className="px-3 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 border-encre-noire bg-cordel-bg text-encre-noire hover:bg-amber-100 transition-all cursor-pointer shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none flex items-center gap-1.5"
+              >
+                <span>⚙️</span>
+                <span>{isEditing ? (t('common.close') || "Fermer") : (t('studioPhotos.editCloud') || "Paramétrer l'URL")}</span>
+              </button>
+            </>
           )}
         </div>
       </div>
+
+      {/* Bloc de configuration et test API Framaspace */}
+      {showFramaspaceSettings && canWrite && (
+        <div className="pt-2 animate-fade-in">
+          <FramaspaceIntegrationBlock groupId={groupId} isStandalone={true} />
+        </div>
+      )}
 
       {/* Formulaire de configuration dépliable */}
       {isEditing && canWrite && (

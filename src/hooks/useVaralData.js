@@ -144,7 +144,8 @@ export default function useVaralData({
       const fetchedReunions = [];
       querySnapshot.forEach((docSnap) => {
         const data = docSnap.data();
-        if (data.lienDepotMedias || data.albumPhotosUrl) {
+        // N'alimenter le Varal Photos que si la publication sur le Varal a été explicitement activée
+        if ((data.lienDepotMedias || data.albumPhotosUrl) && data.publierSurVaral === true) {
           fetchedEvents.push({ id: docSnap.id, ...data });
         }
         if (data.type === 'reunion' && data.date) {
@@ -253,9 +254,9 @@ export default function useVaralData({
         groups['PhotosPrestations'] = [];
       }
       eventsWithMedia.forEach(ev => {
-        // Éviter les doublons si un document Firestore réel existe déjà pour cet événement
+        // Éviter les doublons et vérifier que la publication sur le Varal est bien autorisée
         const alreadyExists = groups['PhotosPrestations'].some(d => d.eventId === ev.id);
-        if (!alreadyExists) {
+        if (!alreadyExists && ev.publierSurVaral === true) {
           const targetUrl = ev.albumPhotosUrl || ev.lienDepotMedias;
           if (targetUrl) {
             const eventDateFormatted = ev.dateDebut ? new Date(ev.dateDebut).toLocaleDateString('fr-FR') : '';
@@ -272,6 +273,7 @@ export default function useVaralData({
                 : `Dossier partagé pour consulter et déposer des médias liés à l'événement${eventDateFormatted ? ` du ${eventDateFormatted}` : ''}.`,
               isVirtualEventMedia: true,
               eventId: ev.id,
+              groupId: ev.groupId || groupId,
             });
           }
         }

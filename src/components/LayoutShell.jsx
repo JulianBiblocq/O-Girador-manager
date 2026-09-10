@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   XiloHome, 
   XiloUser, 
@@ -31,6 +31,7 @@ import { resolveEffectiveUserTags } from '../utils/tagUtils'; // Utilitaire de r
 import InfoPoleBanner, { InfoPoleHelpButton } from './InfoPoleBanner';
 import PageAccessBadgeIndicator from './common/PageAccessBadgeIndicator';
 import FeedbackModal from './FeedbackModal';
+import CommandPaletteModal from './common/CommandPaletteModal';
 import { useTenantContext } from '../context/TenantContext';
 import { getVitrineUrl } from '../utils/urlUtils';
 import { httpsCallable } from 'firebase/functions';
@@ -73,6 +74,7 @@ export default function LayoutShell({
   const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
   const [combinedLogoUrl, setCombinedLogoUrl] = useState(null);
   const [launchingAppKey, setLaunchingAppKey] = useState(null);
+  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
 
   const licenseInfo = useLicenseGuard(associationData);
 
@@ -139,6 +141,33 @@ export default function LayoutShell({
     ? simulatedTags
     : resolveEffectiveUserTags(currentProfile?.tags || [], tagsDisponibles);
   const { hasPendingMembers, pendingCount } = usePendingMembersNotification(currentProfile);
+
+  // Condition stricte d'accès à la palette de commande (réservée aux porteurs de badges et rôles administratifs/mestre)
+  const hasBadgeOrRole = Boolean(
+    (userTags && userTags.length > 0) ||
+    (currentProfile?.tags && currentProfile.tags.length > 0) ||
+    currentProfile?.role === 'mestre' ||
+    currentProfile?.role === 'admin' ||
+    currentProfile?.role === 'super-admin' ||
+    currentProfile?.isSystemAdmin === true ||
+    isMasterKeyActive
+  );
+
+  // Écouteur global pour ouvrir/fermer la palette de commande universelle (Ctrl + K / Cmd + K)
+  useEffect(() => {
+    if (!hasBadgeOrRole) return;
+
+    const handleKeyDown = (e) => {
+      if ((e.metaKey || e.ctrlKey) && (e.key === 'k' || e.key === 'K')) {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsCommandPaletteOpen((prev) => !prev);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [hasBadgeOrRole]);
 
   const isModuleEnabled = (tabId, poleId) => {
     if (!enabledModules) return true;
@@ -470,6 +499,17 @@ export default function LayoutShell({
                   <span className="text-sm">{breakGlassActive ? '🔓' : '🔒'}</span>
                 </button>
               )}
+              {hasBadgeOrRole && (
+                <button
+                  type="button"
+                  onClick={() => setIsCommandPaletteOpen(true)}
+                  className="p-2 border-2 border-encre-noire bg-cordel-bg hover:bg-white text-encre-noire rounded-[4px_6px_3px_5px] shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] cursor-pointer flex items-center justify-center transition-all"
+                  title="Recherche rapide (Ctrl + K)"
+                  aria-label="Palette de commande"
+                >
+                  <span className="text-sm">🔍</span>
+                </button>
+              )}
               <ViewSimulatorSelector />
               {renderAppLauncher(true)}
             </div>
@@ -536,6 +576,18 @@ export default function LayoutShell({
               </div>
               <div className="mt-2 mb-1 flex items-center gap-1.5 justify-center flex-wrap">
                 {renderAppLauncher(false)}
+                {hasBadgeOrRole && (
+                  <button
+                    type="button"
+                    onClick={() => setIsCommandPaletteOpen(true)}
+                    className="px-2 py-1 border-2 border-encre-noire bg-cordel-bg hover:bg-white text-encre-noire rounded-[4px_6px_3px_5px] shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] cursor-pointer flex items-center gap-1 transition-all text-[11px] font-bold"
+                    title="Palette de commande universelle (Ctrl + K)"
+                    aria-label="Palette de commande"
+                  >
+                    <span>🔍</span>
+                    <span className="text-[9px] font-mono opacity-60 bg-encre-noire/10 px-1 py-0.5 rounded">Ctrl K</span>
+                  </button>
+                )}
                 <ViewSimulatorSelector />
               </div>
               {associationName && (
@@ -812,6 +864,19 @@ export default function LayoutShell({
                   })}
                 </div>
                 <div className="flex items-center gap-2">
+                  {hasBadgeOrRole && (
+                    <button
+                      type="button"
+                      onClick={() => setIsCommandPaletteOpen(true)}
+                      className="px-2.5 py-1.5 border-2 border-encre-noire bg-cordel-bg hover:bg-white text-encre-noire rounded-[4px_6px_3px_5px] shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] cursor-pointer flex items-center gap-1.5 transition-all text-xs font-black uppercase tracking-wider"
+                      title="Recherche rapide de réglages (Ctrl + K)"
+                      aria-label="Recherche rapide"
+                    >
+                      <span className="text-sm">🔍</span>
+                      <span className="hidden xl:inline text-[10px] font-normal normal-case">Recherche</span>
+                      <span className="hidden sm:inline text-[9px] font-mono opacity-60 bg-encre-noire/10 px-1 py-0.5 rounded border border-encre-noire/20">Ctrl K</span>
+                    </button>
+                  )}
                   <ViewSimulatorSelector />
                   <InfoPoleHelpButton 
                     key={`help_btn_${activePoleObj?.id || currentPole}_${currentTab || 'default'}`}
@@ -902,6 +967,20 @@ export default function LayoutShell({
                     }`}
                   >
                     <span>{breakGlassActive ? '🔓 Mode Intervention Actif' : '🔒 Mode Intervention'}</span>
+                  </button>
+                )}
+
+                {/* Bouton Palette de Commande Mobile dans le Drawer */}
+                {hasBadgeOrRole && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsDrawerOpen(false);
+                      setIsCommandPaletteOpen(true);
+                    }}
+                    className="mt-2 w-full py-1.5 px-2 rounded-[6px_9px_5px_8px] text-[9px] font-black uppercase tracking-wider border-2 border-encre-noire bg-cordel-bg hover:bg-white text-encre-noire transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-[1.5px_1.5px_0px_0px_#181716]"
+                  >
+                    <span>🔍 Recherche rapide (Ctrl + K)</span>
                   </button>
                 )}
               </div>
@@ -1116,6 +1195,25 @@ export default function LayoutShell({
 
       </div>
       
+      {hasBadgeOrRole && (
+        <CommandPaletteModal
+          isOpen={isCommandPaletteOpen}
+          onClose={() => setIsCommandPaletteOpen(false)}
+          onNavigate={(poleId, tabId) => {
+            if (onNavigateToPole) {
+              onNavigateToPole(poleId, tabId);
+            }
+            if (onNavigateToTab && tabId) {
+              onNavigateToTab(tabId);
+            }
+          }}
+          profileData={currentProfile}
+          permissionsMatrice={permissionsMatrice}
+          userTags={userTags}
+          breakGlassActive={effectiveBreakGlassActive}
+        />
+      )}
+
       <FeedbackModal 
         isOpen={isFeedbackModalOpen}
         onClose={() => setIsFeedbackModalOpen(false)}

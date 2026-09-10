@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { collection, query, where, onSnapshot, doc, updateDoc, getDocs, addDoc, deleteDoc } from 'firebase/firestore';
-import { db } from '../../firebase';
+import { httpsCallable } from 'firebase/functions';
+import { db, functions } from '../../firebase';
 import { useTranslation } from '../LanguageContext';
 import StudioPhotoQrPrintModal from './StudioPhotoQrPrintModal';
 
@@ -21,10 +22,13 @@ export default function StudioEventsMediaTable({ groupId, canWrite = false }) {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [filterType, setFilterType] = useState('all'); // 'all', 'prestation', 'past', 'future'
+  const [filterType, setFilterType] = useState('recolte_active'); // 'recolte_active' (défaut), 'prestation', 'varal', 'past', 'future', 'all'
   
   // États de saisie locale par événement { [eventId]: { lienDepotMedias, albumPhotosUrl, savingDepot, savingAlbum, savedDepot, savedAlbum } }
   const [rowStates, setRowStates] = useState({});
+
+  // États du provisionnement automatique Framaspace { [eventId]: { loading: boolean, error: string|null, success: boolean } }
+  const [provisioningMap, setProvisioningMap] = useState({});
 
   // Modale QR-Code active
   const [activeQrModal, setActiveQrModal] = useState(null); // { qrUrl, eventTitle, eventDate, eventLocation, mode }
@@ -163,10 +167,13 @@ export default function StudioEventsMediaTable({ groupId, canWrite = false }) {
     }));
 
     try {
+      const isVaralPublished = event.publierSurVaral === true || (event.publierSurVaral !== false && cleanUrl);
+
       // A. Mise à jour de l'événement dans 'events'
       const eventRef = doc(db, 'events', eventId);
       await updateDoc(eventRef, {
-        albumPhotosUrl: cleanUrl
+        albumPhotosUrl: cleanUrl,
+        ...(cleanUrl && event.publierSurVaral === undefined ? { publierSurVaral: true } : {})
       });
 
       // B. Synchronisation dans la collection 'documents' pour le Varal Photos
@@ -179,7 +186,7 @@ export default function StudioEventsMediaTable({ groupId, canWrite = false }) {
       );
       const existingSnap = await getDocs(qDoc);
 
-      if (cleanUrl) {
+      if (cleanUrl && isVaralPublished) {
         // Si l'album existe déjà dans documents, mettre à jour le lien
         if (!existingSnap.empty) {
           const docItem = existingSnap.docs[0];
@@ -203,7 +210,7 @@ export default function StudioEventsMediaTable({ groupId, canWrite = false }) {
           });
         }
       } else {
-        // Si l'URL a été vidée, supprimer le document associé s'il existait
+        // Si l'URL a été vidée ou si publierSurVaral est désactivé, supprimer le document associé s'il existait
         if (!existingSnap.empty) {
           for (const d of existingSnap.docs) {
             await deleteDoc(doc(db, 'documents', d.id));
@@ -237,7 +244,165 @@ export default function StudioEventsMediaTable({ groupId, canWrite = false }) {
     }
   }, [groupId, canWrite, rowStates]);
 
-  // 5. Filtrage des événements
+  // 5. Bascule instantanée des options booléennes de récolte et de publication Varal
+  const handleToggleEventField = useCallback(async (ev, fieldName, currentValue) => {
+    if (!groupId || !canWrite || !ev?.id) return;
+    const nextValue = !currentValue;
+
+    try {
+      const eventRef = doc(db, 'events', ev.id);
+      await updateDoc(eventRef, {
+        [fieldName]: nextValue
+      });
+
+      // Si on désactive la publication Varal, nettoyer documents
+      if (fieldName === 'publierSurVaral' && nextValue === false) {
+        const docsRef = collection(db, 'documents');
+        const qDoc = query(
+          docsRef,
+          where('groupId', '==', groupId),
+          where('eventId', '==', ev.id),
+          where('categoryId', '==', 'PhotosPrestations')
+        );
+        const existingSnap = await getDocs(qDoc);
+        for (const d of existingSnap.docs) {
+          await deleteDoc(doc(db, 'documents', d.id));
+        }
+      } else if (fieldName === 'publierSurVaral' && nextValue === true && ev.albumPhotosUrl) {
+        // Si on active et qu'un album existe déjà, s'assurer que documents est synchronisé
+        const docsRef = collection(db, 'documents');
+        const qDoc = query(
+          docsRef,
+          where('groupId', '==', groupId),
+          where('eventId', '==', ev.id),
+          where('categoryId', '==', 'PhotosPrestations')
+        );
+        const existingSnap = await getDocs(qDoc);
+        if (existingSnap.empty) {
+          await addDoc(docsRef, {
+            groupId,
+            eventId: ev.id,
+            titre: `[Album] ${ev.titre || 'Événement'}`,
+            fileUrl: ev.albumPhotosUrl,
+            categorie: 'PhotosPrestations',
+            categoryId: 'PhotosPrestations',
+            type: 'dossier_externe',
+            dateAjout: ev.dateDebut || ev.date || new Date().toISOString(),
+            description: `Album photos officiel de l'événement "${ev.titre || ''}" du ${new Date(ev.dateDebut || ev.date || Date.now()).toLocaleDateString('fr-FR')}.`
+          });
+        }
+      }
+    } catch (err) {
+      console.error(`Erreur mise à jour ${fieldName} pour l'événement ${ev.id} :`, err);
+      alert(`Erreur lors de la mise à jour : ${err.message}`);
+    }
+  }, [groupId, canWrite]);
+
+  // 6. Réinitialisation complète / Délier les dossiers Cloud et retirer du Varal
+  const handleResetCloudMedia = useCallback(async (ev) => {
+    if (!groupId || !canWrite || !ev?.id) return;
+    const confirmMsg = `Êtes-vous sûr de vouloir délier les dossiers Cloud et retirer "${ev.titre || 'cet événement'}" du Varal Photos ?`;
+    if (!window.confirm(confirmMsg)) return;
+
+    try {
+      // A. Réinitialisation des champs Cloud de l'événement
+      const eventRef = doc(db, 'events', ev.id);
+      await updateDoc(eventRef, {
+        lienDepotMedias: '',
+        albumPhotosUrl: '',
+        publierSurVaral: false,
+        framaspaceFolder: null,
+        framaspaceProvisionedAt: null
+      });
+
+      // B. Suppression du livret associé sur la corde PhotosPrestations du Varal
+      const docsRef = collection(db, 'documents');
+      const qDoc = query(
+        docsRef,
+        where('groupId', '==', groupId),
+        where('eventId', '==', ev.id),
+        where('categoryId', '==', 'PhotosPrestations')
+      );
+      const existingSnap = await getDocs(qDoc);
+      for (const d of existingSnap.docs) {
+        await deleteDoc(doc(db, 'documents', d.id));
+      }
+
+      // C. Réinitialisation de l'état local d'édition
+      setRowStates((prev) => ({
+        ...prev,
+        [ev.id]: {
+          ...prev[ev.id],
+          lienDepotMedias: '',
+          albumPhotosUrl: '',
+          savedDepot: false,
+          savedAlbum: false
+        }
+      }));
+    } catch (err) {
+      console.error("Erreur lors de la réinitialisation Cloud :", err);
+      alert("Erreur lors de la réinitialisation Cloud : " + err.message);
+    }
+  }, [groupId, canWrite]);
+
+  // 7. Provisionnement automatique Framaspace (Création dossiers WebDAV & Liens OCS)
+  const handleProvisionFramaspace = async (ev) => {
+    if (!groupId || !canWrite || !ev?.id) return;
+
+    setProvisioningMap((prev) => ({
+      ...prev,
+      [ev.id]: { loading: true, error: null, success: false }
+    }));
+
+    try {
+      const provisionFn = httpsCallable(functions, 'provisionFramaspaceEventFolders');
+      const res = await provisionFn({
+        eventId: ev.id,
+        groupId
+      });
+
+      const data = res?.data;
+      if (data && data.success) {
+        setProvisioningMap((prev) => ({
+          ...prev,
+          [ev.id]: { loading: false, error: null, success: true }
+        }));
+
+        // Mise à jour immédiate de l'affichage local si nouveaux liens reçus
+        if (data.lienDepotMedias || data.albumPhotosUrl) {
+          setRowStates((prev) => ({
+            ...prev,
+            [ev.id]: {
+              ...prev[ev.id],
+              lienDepotMedias: data.lienDepotMedias || prev[ev.id]?.lienDepotMedias || '',
+              albumPhotosUrl: data.albumPhotosUrl || prev[ev.id]?.albumPhotosUrl || '',
+              savedDepot: Boolean(data.lienDepotMedias),
+              savedAlbum: Boolean(data.albumPhotosUrl)
+            }
+          }));
+        }
+
+        // Réinitialisation du statut de succès après 3.5 secondes
+        setTimeout(() => {
+          setProvisioningMap((prev) => ({
+            ...prev,
+            [ev.id]: { loading: false, error: null, success: false }
+          }));
+        }, 3500);
+      } else {
+        throw new Error(data?.error || "Échec du provisionnement Framaspace.");
+      }
+    } catch (err) {
+      console.error("Erreur lors du provisionnement Framaspace :", err);
+      const errMsg = err?.message || "Erreur de connexion avec Framaspace.";
+      setProvisioningMap((prev) => ({
+        ...prev,
+        [ev.id]: { loading: false, error: errMsg, success: false }
+      }));
+    }
+  };
+
+  // 8. Filtrage des événements (Prestations & Récoltes actives par défaut)
   const filteredEvents = useMemo(() => {
     const todayStr = new Date().toISOString().split('T')[0];
 
@@ -250,16 +415,26 @@ export default function StudioEventsMediaTable({ groupId, canWrite = false }) {
         if (!titreMatch && !lieuMatch) return false;
       }
 
-      // Filtre de type / chronologie
+      // Filtre de type / chronologie / statut média
       const evDate = (ev.dateDebut || ev.date || '').split('T')[0];
-      if (filterType === 'prestation') {
-        return ev.type === 'prestation' || ev.isPrestation;
+      const isTargetPresta = ev.type === 'prestation' || ev.type === 'concert' || ev.type === 'spectacle' || ev.isPrestation;
+      const hasRecolte = ev.activerRecolteMedias === true || (isTargetPresta && ev.activerRecolteMedias !== false);
+      const hasCloudMedia = Boolean((ev.lienDepotMedias || '').trim()) || Boolean((ev.albumPhotosUrl || '').trim());
+
+      if (filterType === 'recolte_active') {
+        // Par défaut : prestations et événements avec boîte photos activée ou médias existants
+        return hasRecolte || hasCloudMedia;
+      } else if (filterType === 'prestation') {
+        return isTargetPresta;
+      } else if (filterType === 'varal') {
+        return ev.publierSurVaral === true;
       } else if (filterType === 'past') {
         return evDate && evDate < todayStr;
       } else if (filterType === 'future') {
         return evDate && evDate >= todayStr;
       }
 
+      // 'all' : toutes les dates sans exception
       return true;
     });
   }, [events, searchQuery, filterType]);
@@ -295,25 +470,25 @@ export default function StudioEventsMediaTable({ groupId, canWrite = false }) {
         <div className="flex items-center gap-1.5 flex-wrap">
           <button
             type="button"
-            onClick={() => setFilterType('all')}
+            onClick={() => setFilterType('recolte_active')}
             className={`px-2.5 py-1 text-[9.5px] font-black uppercase tracking-wider rounded-[3px_5px_4px_4px] border transition-all cursor-pointer ${
-              filterType === 'all'
+              filterType === 'recolte_active'
                 ? 'bg-amber-300 text-encre-noire border-encre-noire shadow-none'
                 : 'bg-cordel-bg text-encre-noire/80 border-encre-noire/40 hover:border-encre-noire'
             }`}
           >
-            Toutes les dates ({events.length})
+            📸 Prestations & Récoltes actives
           </button>
           <button
             type="button"
-            onClick={() => setFilterType('prestation')}
+            onClick={() => setFilterType('varal')}
             className={`px-2.5 py-1 text-[9.5px] font-black uppercase tracking-wider rounded-[3px_5px_4px_4px] border transition-all cursor-pointer ${
-              filterType === 'prestation'
+              filterType === 'varal'
                 ? 'bg-amber-300 text-encre-noire border-encre-noire shadow-none'
                 : 'bg-cordel-bg text-encre-noire/80 border-encre-noire/40 hover:border-encre-noire'
             }`}
           >
-            🎭 Prestations
+            🪢 Sur le Varal
           </button>
           <button
             type="button"
@@ -328,14 +503,14 @@ export default function StudioEventsMediaTable({ groupId, canWrite = false }) {
           </button>
           <button
             type="button"
-            onClick={() => setFilterType('past')}
+            onClick={() => setFilterType('all')}
             className={`px-2.5 py-1 text-[9.5px] font-black uppercase tracking-wider rounded-[3px_5px_4px_4px] border transition-all cursor-pointer ${
-              filterType === 'past'
+              filterType === 'all'
                 ? 'bg-amber-300 text-encre-noire border-encre-noire shadow-none'
                 : 'bg-cordel-bg text-encre-noire/80 border-encre-noire/40 hover:border-encre-noire'
             }`}
           >
-            🌾 Passées
+            📋 Toutes les dates ({events.length})
           </button>
         </div>
       </div>
@@ -387,8 +562,17 @@ export default function StudioEventsMediaTable({ groupId, canWrite = false }) {
                     )}
                   </div>
 
-                  {/* Badges de statut récapitulatifs */}
-                  <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-auto">
+                  {/* Badges de statut récapitulatifs & Actions Framaspace */}
+                  <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-auto flex-wrap">
+                    {ev.framaspaceFolder && (
+                      <span 
+                        className="px-2 py-0.5 rounded text-[8.5px] font-bold font-mono bg-amber-50 text-amber-950 border border-amber-300 truncate max-w-[160px]"
+                        title={`Dossier Nextcloud : Prestations/${ev.framaspaceFolder}`}
+                      >
+                        📁 {ev.framaspaceFolder}
+                      </span>
+                    )}
+
                     {hasDepot && (
                       <span className="px-2 py-0.5 rounded-full text-[8.5px] font-black uppercase tracking-widest bg-emerald-100 text-emerald-900 border border-emerald-800/40">
                         📸 Dépôt actif
@@ -399,7 +583,96 @@ export default function StudioEventsMediaTable({ groupId, canWrite = false }) {
                         🪢 Varal relié
                       </span>
                     )}
+
+                    {/* Déclencheur manuel Framaspace Nextcloud */}
+                    {canWrite && (
+                      <button
+                        type="button"
+                        onClick={() => handleProvisionFramaspace(ev)}
+                        disabled={provisioningMap[ev.id]?.loading}
+                        className={`px-2.5 py-1 text-[9px] font-black uppercase tracking-wider rounded-[3px_5px_4px_4px] border-2 border-encre-noire transition-all cursor-pointer flex items-center gap-1 shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none ${
+                          hasDepot
+                            ? 'bg-cordel-bg text-encre-noire hover:bg-amber-100'
+                            : 'bg-[var(--color-cordel-vert)] text-white hover:bg-emerald-800 border-emerald-950'
+                        }`}
+                        title={
+                          hasDepot
+                            ? "Re-générer ou vérifier les dossiers et partages Framaspace"
+                            : "Générer automatiquement le dossier Framaspace, le dépôt public et le lien album"
+                        }
+                      >
+                        {provisioningMap[ev.id]?.loading ? (
+                          <>
+                            <span className="animate-spin">⏳</span>
+                            <span>Framaspace...</span>
+                          </>
+                        ) : provisioningMap[ev.id]?.success ? (
+                          <>
+                            <span>✓</span>
+                            <span>Créé !</span>
+                          </>
+                        ) : (
+                          <>
+                            <span>⚡</span>
+                            <span>{hasDepot ? "Re-sync Cloud" : "Créer sur Framaspace"}</span>
+                          </>
+                        )}
+                      </button>
+                    )}
                   </div>
+                </div>
+
+                {/* Message d'erreur éventuel sur le provisionnement Framaspace */}
+                {provisioningMap[ev.id]?.error && (
+                  <div className="text-[10px] font-bold text-[var(--color-cordel-rouge)] bg-red-50 p-2 rounded border border-red-300">
+                    ⚠️ Erreur Framaspace : {provisioningMap[ev.id].error}
+                  </div>
+                )}
+
+                {/* Bandeau de contrôle : Boîte à photos, Publication Varal & Nettoyage Cloud */}
+                <div className="flex flex-wrap items-center justify-between gap-2.5 p-2.5 rounded-[4px_6px_3px_5px] bg-amber-50/60 dark:bg-amber-950/20 border border-encre-noire/20">
+                  <div className="flex flex-wrap items-center gap-4">
+                    {/* Toggle 1 : Activer la boîte à photos / QR Code */}
+                    <label className="flex items-center gap-2 cursor-pointer select-none" title="Conditionne la génération des QR-Codes de dépôt et le provisionnement automatique">
+                      <input
+                        type="checkbox"
+                        checked={ev.activerRecolteMedias !== undefined ? Boolean(ev.activerRecolteMedias) : isPresta}
+                        onChange={() => handleToggleEventField(ev, 'activerRecolteMedias', ev.activerRecolteMedias !== undefined ? Boolean(ev.activerRecolteMedias) : isPresta)}
+                        disabled={!canWrite}
+                        className="w-4 h-4 accent-amber-600 rounded cursor-pointer"
+                      />
+                      <span className="text-[10px] font-black uppercase tracking-wider text-cordel-master-dark">
+                        📸 Activer la boîte à photos / QR Code
+                      </span>
+                    </label>
+
+                    {/* Toggle 2 : Afficher sur le Varal Photos */}
+                    <label className="flex items-center gap-2 cursor-pointer select-none" title="Si désactivé, le livret ne sera pas visible sur la corde Photos du Varal">
+                      <input
+                        type="checkbox"
+                        checked={Boolean(ev.publierSurVaral)}
+                        onChange={() => handleToggleEventField(ev, 'publierSurVaral', Boolean(ev.publierSurVaral))}
+                        disabled={!canWrite}
+                        className="w-4 h-4 accent-emerald-600 rounded cursor-pointer"
+                      />
+                      <span className="text-[10px] font-black uppercase tracking-wider text-cordel-master-dark">
+                        🪢 Afficher sur le Varal Photos
+                      </span>
+                    </label>
+                  </div>
+
+                  {/* Bouton d'action Délier / Réinitialiser Cloud */}
+                  {canWrite && (hasDepot || hasAlbum || ev.framaspaceFolder) && (
+                    <button
+                      type="button"
+                      onClick={() => handleResetCloudMedia(ev)}
+                      className="px-2.5 py-1 text-[9px] font-black uppercase tracking-wider rounded border border-[var(--color-cordel-rouge)] text-[var(--color-cordel-rouge)] bg-white hover:bg-red-50 cursor-pointer flex items-center gap-1 shadow-xs transition-all active:scale-95 shrink-0"
+                      title="Vider les liens Cloud de cet événement et supprimer son livret du Varal Photos"
+                    >
+                      <span>🗑️</span>
+                      <span>Délier / Réinitialiser Cloud</span>
+                    </button>
+                  )}
                 </div>
 
                 {/* Formulaires d'édition directe des liens */}

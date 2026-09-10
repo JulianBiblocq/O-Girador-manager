@@ -9,6 +9,8 @@ import WidgetCommandes from './WidgetCommandes';
 import WidgetForum from './WidgetForum';
 import WidgetAnniversaires from './WidgetAnniversaires';
 import WidgetValidations from './dashboard/WidgetValidations';
+import WidgetVideoALaUne from './dashboard/WidgetVideoALaUne';
+import { extractYouTubeVideoId } from './common/LiteYouTubeEmbed';
 const WidgetDocuments = lazyWithRetry(() => import('./WidgetDocuments'));
 const WidgetTreasury = lazyWithRetry(() => import('./WidgetTreasury'));
 import CordelCard from './CordelCard';
@@ -55,6 +57,7 @@ export default function Dashboard({
     switch (id) {
       case 'motMestre':
       case 'annonces':
+      case 'videoALaUne':
       case 'documents':
       case 'agenda':
       case 'forum':
@@ -65,8 +68,9 @@ export default function Dashboard({
     }
   };
 
-  // Synchronisation en temps réel de l'ordre d'affichage des widgets élèves et de motDuMestre
+  // Synchronisation en temps réel de l'ordre d'affichage des widgets élèves, de motDuMestre et de la vidéo à la une
   const [motDuMestre, setMotDuMestre] = useState('');
+  const [videoALaUne, setVideoALaUne] = useState(null);
   const [hasActiveAnnouncements, setHasActiveAnnouncements] = useState(false);
   const [hasOpenCampaign, setHasOpenCampaign] = useState(false);
 
@@ -103,15 +107,38 @@ export default function Dashboard({
           activeLayout.push("anniversaires");
         }
 
+        // Insertion prioritaire de la "vidéo à la une" si active et valide (ou pour les administrateurs/Mestres)
+        const isVideoActive = data.videoALaUne?.active === true && Boolean(extractYouTubeVideoId(data.videoALaUne?.url));
+        const shouldShowVideoWidget = isVideoActive || isSystemOrSuperAdminOrMestre;
+        if (shouldShowVideoWidget && !activeLayout.includes("videoALaUne")) {
+          let videoIndex = 0;
+          const annoncesIdx = activeLayout.indexOf("annonces");
+          const motMestreIdx = activeLayout.indexOf("motMestre");
+          const agendaIdx = activeLayout.indexOf("agenda");
+          if (annoncesIdx !== -1) {
+            videoIndex = annoncesIdx + 1;
+          } else if (motMestreIdx !== -1) {
+            videoIndex = motMestreIdx + 1;
+          } else if (agendaIdx !== -1) {
+            videoIndex = agendaIdx;
+          }
+          activeLayout.splice(videoIndex, 0, "videoALaUne");
+        } else if (!shouldShowVideoWidget) {
+          const vIdx = activeLayout.indexOf("videoALaUne");
+          if (vIdx !== -1) activeLayout.splice(vIdx, 1);
+        }
+
         setLayout(activeLayout);
         setMotDuMestre(data.motDuMestre || '');
+        setVideoALaUne(data.videoALaUne || null);
       }
     }, (error) => {
       console.error("Dashboard - Erreur onSnapshot association :", error);
     });
 
     return () => unsubscribe();
-  }, [profileData?.groupId]);
+  }, [profileData?.groupId, isSystemOrSuperAdminOrMestre]);
+
 
   // Real-time vérifier for active announcements targeting the user
   useEffect(() => {
@@ -373,6 +400,15 @@ export default function Dashboard({
                 />
               );
               break;
+            case 'videoALaUne':
+              widgetContent = (
+                <WidgetVideoALaUne 
+                  videoALaUne={videoALaUne} 
+                  groupId={profileData?.groupId}
+                  isAuthorized={isSystemOrSuperAdminOrMestre}
+                />
+              );
+              break;
             case 'commandes':
               if (!hasOpenCampaign) break;
               widgetContent = (
@@ -454,6 +490,11 @@ export default function Dashboard({
             if (widgetId === 'commandes' && !hasOpenCampaign) {
               return null;
             }
+          }
+
+          // Masquage strict de la vidéo à la une si inactive ou URL invalide pour les simples membres
+          if (widgetId === 'videoALaUne' && !isSystemOrSuperAdminOrMestre && (!videoALaUne?.active || !extractYouTubeVideoId(videoALaUne?.url))) {
+            return null;
           }
 
           if (!widgetContent) return null;

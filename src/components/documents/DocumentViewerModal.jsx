@@ -1,4 +1,5 @@
 import React from 'react';
+import FramaspaceGalleryViewer from '../studio/FramaspaceGalleryViewer';
 
 /**
  * Utilitaires pour analyser les URLs vidéo (YouTube, Vimeo, fichiers directs).
@@ -75,8 +76,17 @@ function getMediaEmbedInfo(url) {
     };
   }
 
-  // 8. Dossier externe / Cloud Drive (Drive, Dropbox, Nextcloud, etc.)
-  if (cleanUrl.includes('drive.google.com') || cleanUrl.includes('dropbox.com') || cleanUrl.includes('onedrive') || cleanUrl.includes('framaspace')) {
+  // 8. Dossier partagé Framaspace / Nextcloud (/s/TOKEN)
+  if (cleanUrl.includes('frama.space') || cleanUrl.includes('framaspace.org') || /\/s\/[a-zA-Z0-9_-]+/i.test(cleanUrl)) {
+    return {
+      type: 'framaspace-gallery',
+      embedUrl: null,
+      directUrl: cleanUrl
+    };
+  }
+
+  // 9. Dossier externe / Cloud Drive (Drive, Dropbox, OneDrive, etc.)
+  if (cleanUrl.includes('drive.google.com') || cleanUrl.includes('dropbox.com') || cleanUrl.includes('onedrive')) {
     return {
       type: 'cloud-drive',
       embedUrl: null,
@@ -101,12 +111,20 @@ export default function DocumentViewerModal({ document: docItem, onClose }) {
   const targetUrl = docItem.fileUrl || docItem.url || docItem.link || '';
   const mediaInfo = getMediaEmbedInfo(targetUrl);
 
+  const isFramaspaceShare = (mediaInfo && mediaInfo.type === 'framaspace-gallery') || Boolean(
+    targetUrl && (
+      /\/s\/[a-zA-Z0-9_-]+/i.test(targetUrl) ||
+      targetUrl.includes('frama.space') ||
+      targetUrl.includes('framaspace.org')
+    )
+  );
+
   const docType = docItem.type || docItem.typeDoc || mediaInfo?.type || 'pdf';
-  const isPdf = docType === 'pdf' || (mediaInfo && mediaInfo.type === 'pdf') || targetUrl.toLowerCase().includes('.pdf');
-  const isVideo = docType === 'video' || (mediaInfo && ['youtube-playlist', 'youtube-video', 'vimeo', 'video-file'].includes(mediaInfo.type));
-  const isAudio = docType === 'audio' || (mediaInfo && mediaInfo.type === 'audio-file');
-  const isImage = docType === 'image' || (mediaInfo && mediaInfo.type === 'image');
-  const isCloudDrive = docType === 'dossier_externe' || docType === 'drive' || (mediaInfo && mediaInfo.type === 'cloud-drive');
+  const isPdf = !isFramaspaceShare && (docType === 'pdf' || (mediaInfo && mediaInfo.type === 'pdf') || targetUrl.toLowerCase().includes('.pdf'));
+  const isVideo = !isFramaspaceShare && (docType === 'video' || (mediaInfo && ['youtube-playlist', 'youtube-video', 'vimeo', 'video-file'].includes(mediaInfo.type)));
+  const isAudio = !isFramaspaceShare && (docType === 'audio' || (mediaInfo && mediaInfo.type === 'audio-file'));
+  const isImage = !isFramaspaceShare && (docType === 'image' || (mediaInfo && mediaInfo.type === 'image'));
+  const isCloudDrive = !isFramaspaceShare && (docType === 'dossier_externe' || docType === 'drive' || (mediaInfo && mediaInfo.type === 'cloud-drive'));
   const isReport = docType === 'report';
 
   // Formatage de la date
@@ -138,10 +156,10 @@ export default function DocumentViewerModal({ document: docItem, onClose }) {
           <div className="flex flex-col gap-1 min-w-0">
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-sm select-none">
-                {isVideo ? '🎥' : isPdf ? '📄' : isAudio ? '🎵' : isImage ? '📷' : isCloudDrive ? '📂' : '📜'}
+                {isFramaspaceShare ? '📸' : isVideo ? '🎥' : isPdf ? '📄' : isAudio ? '🎵' : isImage ? '📷' : isCloudDrive ? '📂' : '📜'}
               </span>
               <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded bg-[var(--color-cordel-ocre,#c05621)] text-[#FEF9E7] border border-encre-noire shadow-[1px_1px_0px_0px_#181716]">
-                {docItem.categorie || docItem.categoryId || (isPdf ? "Document PDF" : isVideo ? "Vidéo / Tutoriel" : "Document")}
+                {isFramaspaceShare ? "Galerie Photos & Vidéos" : docItem.categorie || docItem.categoryId || (isPdf ? "Document PDF" : isVideo ? "Vidéo / Tutoriel" : "Document")}
               </span>
               {docItem.annee && (
                 <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-encre-noire/10 text-encre-noire">
@@ -244,29 +262,40 @@ export default function DocumentViewerModal({ document: docItem, onClose }) {
             </div>
           )}
 
-          {/* 5. CAS DOSSIER EXTERNE / CLOUD (Google Drive, Dropbox, Album Photos) */}
-          {(isCloudDrive || (!isVideo && !isPdf && !isAudio && !isImage && targetUrl)) && (
-            <div className="p-6 sm:p-8 bg-amber-50/70 border-2 border-dashed border-cordel-master-dark/30 rounded-[6px_10px_4px_8px] text-center flex flex-col items-center gap-4 my-auto">
-              <span className="text-5xl">📂</span>
-              <div className="max-w-md">
-                <h4 className="font-extrabold text-base text-cordel-wood uppercase">
-                  Dépôt Externe & Galerie Partagée
-                </h4>
-                <p className="text-xs text-stone-600 mt-1">
-                  Ce livret est relié à un espace de stockage externe (Google Drive, Dropbox ou serveur cloud dédié).
-                </p>
-              </div>
-
-              <a
-                href={targetUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="px-5 py-2.5 text-xs font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] bg-[var(--color-cordel-vert,#2d6a4f)] text-white border-2 border-encre-noire shadow-[3px_3px_0px_0px_#181716] hover:brightness-110 active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none cursor-pointer flex items-center gap-2 transition-all mt-2"
-              >
-                <span>Accéder au dossier en ligne</span>
-                <span>➜</span>
-              </a>
+          {/* 5. CAS GALERIE NATIVE FRAMASPACE (Nextcloud WebDAV) OU DOSSIER EXTERNE */}
+          {isFramaspaceShare ? (
+            <div className="w-full flex flex-col my-auto">
+              <FramaspaceGalleryViewer
+                albumUrl={targetUrl}
+                eventId={docItem.eventId}
+                groupId={docItem.groupId}
+                title={docItem.titre}
+              />
             </div>
+          ) : (
+            (isCloudDrive || (!isVideo && !isPdf && !isAudio && !isImage && targetUrl)) && (
+              <div className="p-6 sm:p-8 bg-amber-50/70 border-2 border-dashed border-cordel-master-dark/30 rounded-[6px_10px_4px_8px] text-center flex flex-col items-center gap-4 my-auto">
+                <span className="text-5xl">📂</span>
+                <div className="max-w-md">
+                  <h4 className="font-extrabold text-base text-cordel-wood uppercase">
+                    Dépôt Externe & Galerie Partagée
+                  </h4>
+                  <p className="text-xs text-stone-600 mt-1">
+                    Ce livret est relié à un espace de stockage externe (Google Drive, Dropbox ou serveur cloud dédié).
+                  </p>
+                </div>
+
+                <a
+                  href={targetUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-5 py-2.5 text-xs font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] bg-[var(--color-cordel-vert,#2d6a4f)] text-white border-2 border-encre-noire shadow-[3px_3px_0px_0px_#181716] hover:brightness-110 active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none cursor-pointer flex items-center gap-2 transition-all mt-2"
+                >
+                  <span>Accéder au dossier en ligne</span>
+                  <span>➜</span>
+                </a>
+              </div>
+            )
           )}
 
           {/* 6. CAS COMPTE-RENDU TEXTUEL OU MIXTE AVEC PDF */}
@@ -338,7 +367,7 @@ export default function DocumentViewerModal({ document: docItem, onClose }) {
 
           <div className="flex flex-wrap items-center gap-2">
             {/* Bouton ouvrir dans un nouvel onglet */}
-            {targetUrl && (
+            {targetUrl && !isFramaspaceShare && (
               <a
                 href={targetUrl}
                 target="_blank"
@@ -352,7 +381,7 @@ export default function DocumentViewerModal({ document: docItem, onClose }) {
             )}
 
             {/* Bouton de téléchargement pour les fichiers téléchargeables */}
-            {targetUrl && (isPdf || mediaInfo?.type === 'video-file' || mediaInfo?.type === 'audio-file' || isImage) && (
+            {targetUrl && !isFramaspaceShare && (isPdf || mediaInfo?.type === 'video-file' || mediaInfo?.type === 'audio-file' || isImage) && (
               <a
                 href={targetUrl}
                 download={docItem.titre || "document"}

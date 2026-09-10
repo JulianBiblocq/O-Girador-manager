@@ -80,7 +80,7 @@ export default function StudioCommunication({ groupId, onBack }) {
             disabled={saving}
             className="px-6 py-2.5 uppercase font-black tracking-wider text-xs shadow-[2px_2px_0px_0px_#181716]"
           >
-            {saving ? "Enregistrement..." : "💾 Enregistrer la Configuration Brevo"}
+            {saving ? "Enregistrement..." : "💾 Enregistrer toutes les modifications"}
           </CordelButton>
         </div>
       </div>

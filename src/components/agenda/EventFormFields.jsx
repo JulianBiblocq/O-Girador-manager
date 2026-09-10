@@ -103,6 +103,15 @@ export default function EventFormFields({
         }
       }
 
+      // Par défaut : prestations/concerts/spectacles ont la boîte à photos et le Varal activés
+      const isTargetPrestation = ['prestation', 'concert', 'spectacle'].includes(newType);
+      if (updated.activerRecolteMedias === undefined) {
+        updated.activerRecolteMedias = isTargetPrestation;
+      }
+      if (updated.publierSurVaral === undefined) {
+        updated.publierSurVaral = isTargetPrestation;
+      }
+
       return updated;
     });
   };
@@ -413,6 +422,40 @@ export default function EventFormFields({
             <span>🔒</span>
             <span>Validation</span>
             <span className="ml-auto text-[10px]">{Boolean(formData.requiresValidation) ? 'ON' : 'OFF'}</span>
+          </button>
+
+          {/* 7. Boîte à photos / QR Code (activerRecolteMedias) */}
+          <button
+            type="button"
+            onClick={() => toggleBooleanField('activerRecolteMedias', formData.activerRecolteMedias !== false)}
+            disabled={saving}
+            className={`flex items-center justify-center gap-2 p-2 rounded text-xs font-black uppercase tracking-wider border transition-all cursor-pointer ${
+              formData.activerRecolteMedias !== false
+                ? 'bg-amber-100 dark:bg-amber-950/40 text-amber-950 dark:text-amber-200 border-amber-500 shadow-xs'
+                : 'bg-neutral-100 dark:bg-neutral-800/40 text-neutral-400 border-neutral-300 dark:border-neutral-700'
+            }`}
+            title="Activer la boîte à photos / QR Code et le stockage Framaspace"
+          >
+            <span>📸</span>
+            <span>Boîte Photos</span>
+            <span className="ml-auto text-[10px]">{formData.activerRecolteMedias !== false ? 'ON' : 'OFF'}</span>
+          </button>
+
+          {/* 8. Publication Varal Photos (publierSurVaral) */}
+          <button
+            type="button"
+            onClick={() => toggleBooleanField('publierSurVaral', Boolean(formData.publierSurVaral))}
+            disabled={saving}
+            className={`flex items-center justify-center gap-2 p-2 rounded text-xs font-black uppercase tracking-wider border transition-all cursor-pointer ${
+              Boolean(formData.publierSurVaral)
+                ? 'bg-emerald-100 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-200 border-emerald-500 shadow-xs'
+                : 'bg-neutral-100 dark:bg-neutral-800/40 text-neutral-400 border-neutral-300 dark:border-neutral-700'
+            }`}
+            title="Afficher sur le Varal Photos des membres"
+          >
+            <span>🪢</span>
+            <span>Varal Photos</span>
+            <span className="ml-auto text-[10px]">{Boolean(formData.publierSurVaral) ? 'ON' : 'OFF'}</span>
           </button>
         </div>
 

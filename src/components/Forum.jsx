@@ -16,7 +16,10 @@ import { resolveEffectiveUserTags } from '../utils/tagUtils'; // Utilitaires pou
 import { isUserModeratorOrAdmin, canUserWriteInForumChannel, canUserReadForumChannel, checkUserAccessToList } from '../utils/permissionUtils';
 import { countThreadUnreadMessages, getAllChannelsUnreadStats } from '../utils/forumUnreadUtils';
 import ForumThreadCard from './forum/ForumThreadCard';
-import NewPrivateChatModal from './forum/NewPrivateChatModal';
+import ConversationCard from './forum/ConversationCard';
+import NewDirectMessageModal from './forum/NewDirectMessageModal';
+import NewGroupModal from './forum/NewGroupModal';
+import { useConversations } from '../hooks/useConversations';
 import useHardwareBack from '../hooks/useHardwareBack';
 
 function ChannelTreeItem({ 
@@ -222,13 +225,16 @@ export default function Forum({
   const [newChannelParentId, setNewChannelParentId] = useState('');
   const [savingChannel, setSavingChannel] = useState(false);
   
-  // État d'ouverture de la modale de nouvelle discussion privée
-  const [isNewPrivateChatModalOpen, setIsNewPrivateChatModalOpen] = useState(false);
+  // États d'ouverture des modales dédiées (message direct 1-à-1 et groupe privé)
+  const [isNewDirectModalOpen, setIsNewDirectModalOpen] = useState(false);
+  const [isNewGroupModalOpen, setIsNewGroupModalOpen] = useState(false);
+  const [activeConversationId, setActiveConversationId] = useState(null);
 
   useHardwareBack(isAdding, () => setIsAdding(false));
   useHardwareBack(!!movingThreadModal, () => setMovingThreadModal(null));
   useHardwareBack(isCreatingChannel, () => setIsCreatingChannel(false));
-  useHardwareBack(isNewPrivateChatModalOpen, () => setIsNewPrivateChatModalOpen(false));
+  useHardwareBack(isNewDirectModalOpen, () => setIsNewDirectModalOpen(false));
+  useHardwareBack(isNewGroupModalOpen, () => setIsNewGroupModalOpen(false));
 
   const handleCreateChannelSubmit = async (e) => {
     e.preventDefault();
@@ -257,12 +263,18 @@ export default function Forum({
     }
   };
   
-  const [activeTab, setActiveTab] = useState(initialTab || 'discussions'); // 'discussions' ou 'inbox'
+  // Normalisation de l'onglet actif : 'discussions', 'direct' (repli sur 'inbox' historique), 'groups'
+  const resolveTab = (tab) => {
+    if (tab === 'inbox') return 'direct';
+    if (tab === 'groups') return 'groups';
+    return tab || 'discussions';
+  };
+  const [activeTab, setActiveTab] = useState(resolveTab(initialTab));
   
   // Synchronisation de l'onglet actif si initialTab est passé en navigation directe
   useEffect(() => {
     if (initialTab) {
-      setActiveTab(initialTab);
+      setActiveTab(resolveTab(initialTab));
     }
   }, [initialTab]);
   const [mobileView, setMobileView] = useState('channels'); // 'channels' (Écran 1) ou 'discussion' (Écran 2)
@@ -277,6 +289,18 @@ export default function Forum({
   }, []);
 
   const isModeratorOrAdmin = isUserModeratorOrAdmin(profileData);
+
+  // Hook de gestion des discussions privées et des groupes multi-membres
+  const {
+    conversations: modernConversations,
+    createDirectConversation,
+    createGroupConversation,
+    markConversationAsRead,
+    addParticipantsToGroup,
+    removeParticipantFromGroup,
+    leaveGroup,
+    renameGroup
+  } = useConversations(user, profileData?.groupId, profileData);
 
   // Synchronisation des membres de l'association pour la recherche de nom/avatar
   useEffect(() => {
@@ -293,7 +317,7 @@ export default function Forum({
     return () => unsub();
   }, [profileData?.groupId]);
 
-  // Synchronisation temps réel des messages privés
+  // Synchronisation temps réel des messages privés historiques
   useEffect(() => {
     if (!user?.uid) return;
     const messagesRef = collection(db, 'private_messages');
@@ -316,11 +340,19 @@ export default function Forum({
   // Ouverture automatique d'une discussion privée en cas de rédirection depuis le Trombinoscope
   useEffect(() => {
     if (activePrivateChatUserId) {
-      setActiveChatUserId(activePrivateChatUserId);
-      setActiveTab('inbox');
-      onClearActivePrivateChat();
+      const initDirect = async () => {
+        const convId = await createDirectConversation(activePrivateChatUserId, initialPrivateMessage);
+        if (convId) {
+          setActiveConversationId(convId);
+        } else {
+          setActiveChatUserId(activePrivateChatUserId);
+        }
+        setActiveTab('direct');
+        if (onClearActivePrivateChat) onClearActivePrivateChat();
+      };
+      initDirect();
     }
-  }, [activePrivateChatUserId, onClearActivePrivateChat]);
+  }, [activePrivateChatUserId, createDirectConversation, initialPrivateMessage, onClearActivePrivateChat]);
 
   const [tagsDisponibles, setTagsDisponibles] = useState([]);
 
@@ -581,38 +613,78 @@ export default function Forum({
     }
   }, [user?.uid, accessibleThreads, activeChannelId, channels]);
 
-  // Grouper les messages par interlocuteur privé avec useMemo
-  const conversations = useMemo(() => {
-    const conversationsMap = {};
-    privateMessages.forEach(msg => {
-      const otherId = msg.senderId === user.uid ? msg.recipientId : msg.senderId;
-      if (!conversationsMap[otherId]) {
-        conversationsMap[otherId] = {
-          otherId,
-          messages: [],
-          unreadCount: 0,
-          lastMessage: null
-        };
+  // Fusion transparente des conversations modernes (directes & groupes) et des discussions legacy
+  const allInboxConversations = useMemo(() => {
+    const existingDirectOtherIds = new Set();
+    modernConversations.forEach((c) => {
+      if (c.type === 'direct' && Array.isArray(c.participantIds)) {
+        const other = c.participantIds.find((id) => id !== user?.uid);
+        if (other) existingDirectOtherIds.add(other);
       }
-      conversationsMap[otherId].messages.push(msg);
     });
 
-    Object.values(conversationsMap).forEach(conv => {
-      conv.messages.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-      conv.lastMessage = conv.messages[conv.messages.length - 1];
-      conv.unreadCount = conv.messages.filter(m => m.recipientId === user.uid && !m.read).length;
+    const legacyMap = {};
+    privateMessages.forEach((msg) => {
+      const otherId = msg.senderId === user?.uid ? msg.recipientId : msg.senderId;
+      if (!existingDirectOtherIds.has(otherId)) {
+        if (!legacyMap[otherId]) {
+          legacyMap[otherId] = {
+            id: `legacy_${otherId}`,
+            isLegacy: true,
+            type: 'direct',
+            participantIds: [user?.uid, otherId],
+            lastMessage: null,
+            isUnread: false,
+            updatedAt: msg.timestamp
+          };
+        }
+        if (!legacyMap[otherId].lastMessage || new Date(msg.timestamp) > new Date(legacyMap[otherId].lastMessage.timestamp)) {
+          legacyMap[otherId].lastMessage = {
+            content: msg.content,
+            senderId: msg.senderId,
+            timestamp: msg.timestamp
+          };
+          legacyMap[otherId].updatedAt = msg.timestamp;
+        }
+        if (msg.recipientId === user?.uid && !msg.read) {
+          legacyMap[otherId].isUnread = true;
+        }
+      }
     });
 
-    return Object.values(conversationsMap).sort((a, b) => {
-      const timeA = a.lastMessage ? new Date(a.lastMessage.timestamp) : 0;
-      const timeB = b.lastMessage ? new Date(b.lastMessage.timestamp) : 0;
+    const combined = [...modernConversations, ...Object.values(legacyMap)];
+    combined.sort((a, b) => {
+      const timeA = new Date(a.updatedAt || a.lastMessage?.timestamp || 0).getTime();
+      const timeB = new Date(b.updatedAt || b.lastMessage?.timestamp || 0).getTime();
       return timeB - timeA;
     });
-  }, [privateMessages, user?.uid]);
+    return combined;
+  }, [modernConversations, privateMessages, user?.uid]);
 
-  const unreadInboxCount = useMemo(() => {
-    return privateMessages.filter(m => m.recipientId === user.uid && !m.read).length;
-  }, [privateMessages, user?.uid]);
+  // Ventilation étanche et rétrocompatible des discussions directes (1-à-1) et de groupes
+  const directConversations = useMemo(() => {
+    return allInboxConversations.filter((c) => {
+      // Règle de rétrocompatibilité : toute conversation sans type 'group' est considérée comme 'direct'
+      const convType = c.type === 'group' ? 'group' : 'direct';
+      return convType === 'direct';
+    });
+  }, [allInboxConversations]);
+
+  const groupConversations = useMemo(() => {
+    return allInboxConversations.filter((c) => {
+      // Règle de rétrocompatibilité : seule une conversation avec type 'group' est considérée comme un groupe
+      const convType = c.type === 'group' ? 'group' : 'direct';
+      return convType === 'group';
+    });
+  }, [allInboxConversations]);
+
+  const unreadDirectCount = useMemo(() => {
+    return directConversations.filter((c) => c.isUnread).length;
+  }, [directConversations]);
+
+  const unreadGroupsCount = useMemo(() => {
+    return groupConversations.filter((c) => c.isUnread).length;
+  }, [groupConversations]);
 
   // Retrouver la discussion sélectionnée dans l'état synchronisé pour avoir les messages en temps réel
   const activeThread = selectedThread
@@ -667,21 +739,32 @@ export default function Forum({
     }
   };
 
-  // Si une discussion privée est active, afficher la vue de chat en pleine page
-  if (activeChatUserId) {
+  // Si une discussion privée (directe ou groupe) est active, afficher la vue de chat en pleine page
+  if (activeConversationId || activeChatUserId) {
+    const activeConv = modernConversations.find((c) => c.id === activeConversationId);
+
     return (
       <PrivateChatView
         user={user}
+        conversation={activeConv}
         profileData={profileData}
         recipientId={activeChatUserId}
         otherUser={usersMap[activeChatUserId] || { id: activeChatUserId }}
         usersMap={usersMap}
         initialText={initialPrivateMessage}
+        onMarkAsRead={markConversationAsRead}
+        onAddParticipants={addParticipantsToGroup}
+        onRemoveParticipant={removeParticipantFromGroup}
+        onRenameGroup={renameGroup}
+        onLeaveGroup={leaveGroup}
+        isSystemAdmin={isModeratorOrAdmin}
         onClose={() => {
+          setActiveConversationId(null);
           setActiveChatUserId(null);
           if (onClearActivePrivateChat) onClearActivePrivateChat();
         }}
         onBack={() => {
+          setActiveConversationId(null);
           setActiveChatUserId(null);
           if (onClearActivePrivateChat) onClearActivePrivateChat();
         }}
@@ -731,127 +814,188 @@ export default function Forum({
         )}
       </div>
 
-      {/* Main Tab Navigation (Discussions vs Messages Privés) */}
-      <div className="flex items-center gap-2 border-b border-dashed border-cordel-master-dark/20 pb-2">
+      {/* Barre de navigation principale (3 onglets racine : Discussions / Messages Privés / Groupes) */}
+      <div className="flex items-center gap-1.5 sm:gap-2 border-b border-dashed border-cordel-master-dark/20 pb-2 w-full select-none">
+        {/* Onglet 1 : Discussions */}
         <button
           type="button"
           onClick={() => {
             setActiveTab('discussions');
             setIsAdding(false);
           }}
-          className={`px-3 py-1.5 text-xs font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer ${
+          className={`flex-1 min-w-0 flex items-center justify-center gap-1 px-1.5 sm:px-3 py-1.5 text-[11px] sm:text-xs font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer text-center ${
             activeTab === 'discussions'
               ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
               : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
           }`}
         >
-          💬 {translate('forum.discussionsTab', "Discussions")}
+          <span className="shrink-0">💬</span>
+          <span className="truncate">{translate('forum.discussionsTab', "Discussions")}</span>
         </button>
+
+        {/* Onglet 2 : Messages Privés (1-à-1) */}
         <button
           type="button"
           onClick={() => {
-            setActiveTab('inbox');
+            setActiveTab('direct');
             setIsAdding(false);
           }}
-          className={`px-3 py-1.5 text-xs font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer relative ${
-            activeTab === 'inbox'
+          className={`flex-1 min-w-0 flex items-center justify-center gap-1 px-1.5 sm:px-3 py-1.5 text-[11px] sm:text-xs font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer relative text-center ${
+            activeTab === 'direct'
               ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
               : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
           }`}
         >
-          ✉️ {translate('forum.inboxTab', "Messages Privés")}
-          {unreadInboxCount > 0 && (
-            <span className="absolute -top-1.5 -right-1.5 w-3.5 h-3.5 bg-red-600 text-white text-[7px] font-black rounded-full flex items-center justify-center animate-pulse">
-              {unreadInboxCount}
+          <span className="shrink-0">✉️</span>
+          <span className="truncate">Messages privés</span>
+          {unreadDirectCount > 0 && (
+            <span className="absolute -top-1.5 -right-1 min-w-[14px] h-3.5 px-1 bg-red-600 text-white text-[7px] font-black rounded-full flex items-center justify-center animate-pulse shadow-xs">
+              {unreadDirectCount}
+            </span>
+          )}
+        </button>
+
+        {/* Onglet 3 : Groupes */}
+        <button
+          type="button"
+          onClick={() => {
+            setActiveTab('groups');
+            setIsAdding(false);
+          }}
+          className={`flex-1 min-w-0 flex items-center justify-center gap-1 px-1.5 sm:px-3 py-1.5 text-[11px] sm:text-xs font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer relative text-center ${
+            activeTab === 'groups'
+              ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
+              : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
+          }`}
+        >
+          <span className="shrink-0">👥</span>
+          <span className="truncate">Groupes</span>
+          {unreadGroupsCount > 0 && (
+            <span className="absolute -top-1.5 -right-1 min-w-[14px] h-3.5 px-1 bg-red-600 text-white text-[7px] font-black rounded-full flex items-center justify-center animate-pulse shadow-xs">
+              {unreadGroupsCount}
             </span>
           )}
         </button>
       </div>
 
-      {activeTab === 'inbox' ? (
-        /* Liste des discussions privées */
+      {activeTab === 'direct' && (
+        /* Liste des messages privés (1-à-1) */
         <div className="flex flex-col gap-4">
           <div className="flex justify-between items-center px-1 select-none flex-wrap gap-2">
             <h2 className="panel-title text-sm font-extrabold text-cordel-master-dark opacity-80 uppercase">
-              {translate('forum.privateConversationsTitle', "Mes Discussions Privées")}
+              ✉️ Messages privés (1-à-1)
             </h2>
             <CordelButton
               variant="vert"
-              onClick={() => setIsNewPrivateChatModalOpen(true)}
+              onClick={() => setIsNewDirectModalOpen(true)}
               className="text-xs px-3 py-1.5 font-black uppercase tracking-wider flex items-center gap-1.5 shadow-sm cursor-pointer"
-              title="Démarrer une nouvelle discussion privée avec un membre"
+              title="Démarrer un nouveau message direct"
             >
               <span>➕</span>
-              <span>Nouvelle discussion</span>
+              <span>Nouveau message</span>
             </CordelButton>
           </div>
 
-          {conversations.length === 0 ? (
+          {directConversations.length === 0 ? (
             <CordelCard variant="default" useExtremeBorder={false} className="p-8 text-center bg-cordel-bg select-none flex flex-col items-center gap-3">
               <span className="text-3xl">✉️</span>
               <p className="text-xs opacity-75 font-semibold max-w-sm">
-                {translate('forum.noPrivateConversations', "Aucune discussion privée pour le moment. Vous pouvez démarrer un échange direct avec n'importe quel membre de l'association !")}
+                Aucun message privé pour le moment. Vous pouvez démarrer un échange en tête-à-tête avec n'importe quel membre actif de l'association !
               </p>
               <CordelButton
                 variant="vert"
-                onClick={() => setIsNewPrivateChatModalOpen(true)}
+                onClick={() => setIsNewDirectModalOpen(true)}
                 className="mt-1 text-xs px-4 py-2 font-black uppercase tracking-wider flex items-center gap-1.5 shadow-xs cursor-pointer"
               >
                 <span>➕</span>
-                <span>Démarrer une discussion</span>
+                <span>Démarrer un message</span>
               </CordelButton>
             </CordelCard>
           ) : (
             <div className="flex flex-col gap-3">
-              {conversations.map((conv) => {
-                const partner = usersMap[conv.otherId] || { id: conv.otherId };
-                const partnerFullName = `${partner.prenom || ''} ${partner.nom || ''}`.trim() || partner.email || "Membre";
-                const dateObj = new Date(conv.lastMessage?.timestamp);
-                const formattedTime = isNaN(dateObj.getTime())
-                  ? ''
-                  : dateObj.toLocaleDateString(undefined, { day: 'numeric', month: 'short' }) + ' ' + dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-                const isLastMessageFromMe = conv.lastMessage?.senderId === user.uid;
-                const isUnread = conv.unreadCount > 0;
-
-                return (
-                  <CordelCard 
-                    key={conv.otherId} 
-                    variant="default" 
-                    useExtremeBorder={false} 
-                    className="hover:scale-[1.01] transition-all relative pr-20 cursor-pointer flex items-center gap-3 bg-cordel-bg"
-                    onClick={() => setActiveChatUserId(conv.otherId)}
-                  >
-                    <XiloAvatar src={partner.photoURL} name={partnerFullName} size={40} />
-                    <div className="flex flex-col gap-0.5 items-start text-left flex-grow min-w-0 pr-6 select-none">
-                      <span className="font-extrabold text-xs text-encre-noire">
-                        {partnerFullName}
-                      </span>
-                      <p className={`text-[11px] truncate max-w-full text-cordel-master-dark ${
-                        isUnread ? 'font-black text-encre-noire' : 'font-semibold opacity-75'
-                      }`}>
-                        {isLastMessageFromMe ? `${translate('common.you', "Vous")} : ` : ""}{conv.lastMessage?.content}
-                      </p>
-                      <span className="text-[8px] font-black uppercase tracking-wider opacity-50 mt-0.5">
-                        {formattedTime}
-                      </span>
-                    </div>
-
-                    {/* Badge de messages non lus */}
-                    {isUnread && (
-                      <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center justify-center select-none">
-                        <span className="w-5 h-5 bg-red-600 text-white flex items-center justify-center font-black text-[9px] rounded-full shadow-[1.5px_1.5px_0px_0px_#181716]">
-                          {conv.unreadCount}
-                        </span>
-                      </div>
-                    )}
-                  </CordelCard>
-                );
-              })}
+              {directConversations.map((conv) => (
+                <ConversationCard 
+                  key={conv.id} 
+                  conversation={conv}
+                  currentUserId={user?.uid}
+                  usersMap={usersMap}
+                  onClick={async () => {
+                    if (conv.isLegacy) {
+                      const otherId = conv.participantIds?.find((id) => id !== user?.uid);
+                      try {
+                        const convId = await createDirectConversation(otherId);
+                        if (convId) {
+                          setActiveConversationId(convId);
+                        } else {
+                          setActiveChatUserId(otherId);
+                        }
+                      } catch (err) {
+                        console.warn("Forum - Erreur ouverture conversation (repli legacy actif) :", err);
+                        setActiveChatUserId(otherId);
+                      }
+                    } else {
+                      setActiveConversationId(conv.id);
+                    }
+                  }}
+                />
+              ))}
             </div>
           )}
         </div>
-      ) : (
+      )}
+
+      {activeTab === 'groups' && (
+        /* Liste des groupes de discussion multi-membres */
+        <div className="flex flex-col gap-4">
+          <div className="flex justify-between items-center px-1 select-none flex-wrap gap-2">
+            <h2 className="panel-title text-sm font-extrabold text-cordel-master-dark opacity-80 uppercase">
+              👥 Groupes de discussion
+            </h2>
+            <CordelButton
+              variant="vert"
+              onClick={() => setIsNewGroupModalOpen(true)}
+              className="text-xs px-3 py-1.5 font-black uppercase tracking-wider flex items-center gap-1.5 shadow-sm cursor-pointer"
+              title="Créer une nouvelle boucle de discussion de groupe"
+            >
+              <span>➕</span>
+              <span>Nouveau groupe</span>
+            </CordelButton>
+          </div>
+
+          {groupConversations.length === 0 ? (
+            <CordelCard variant="default" useExtremeBorder={false} className="p-8 text-center bg-cordel-bg select-none flex flex-col items-center gap-3">
+              <span className="text-3xl">👥</span>
+              <p className="text-xs opacity-75 font-semibold max-w-sm">
+                Aucun groupe de discussion pour le moment. Fondez une boucle d'échange pour un projet, un événement, une section ou un covoiturage !
+              </p>
+              <CordelButton
+                variant="vert"
+                onClick={() => setIsNewGroupModalOpen(true)}
+                className="mt-1 text-xs px-4 py-2 font-black uppercase tracking-wider flex items-center gap-1.5 shadow-xs cursor-pointer"
+              >
+                <span>➕</span>
+                <span>Créer un groupe</span>
+              </CordelButton>
+            </CordelCard>
+          ) : (
+            <div className="flex flex-col gap-3">
+              {groupConversations.map((conv) => (
+                <ConversationCard 
+                  key={conv.id} 
+                  conversation={conv}
+                  currentUserId={user?.uid}
+                  usersMap={usersMap}
+                  onClick={() => {
+                    setActiveConversationId(conv.id);
+                  }}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {activeTab === 'discussions' && (
         /* Onglet Discussions avec barre latérale des salons / vue des discussions */
         <div className="flex flex-col md:flex-row gap-4">
           {/* Colonne 1 : Liste des salons (Écran 1 sur Mobile, Barre latérale gauche sur PC) */}
@@ -1119,14 +1263,44 @@ export default function Forum({
         </div>
       )}
 
-      {/* Modale de sélection pour nouvelle discussion privée */}
-      <NewPrivateChatModal
-        isOpen={isNewPrivateChatModalOpen}
-        onClose={() => setIsNewPrivateChatModalOpen(false)}
-        onSelectUser={(userId) => setActiveChatUserId(userId)}
+      {/* Modale dédiée pour démarrer un nouveau message direct (1-à-1) */}
+      <NewDirectMessageModal
+        isOpen={isNewDirectModalOpen}
+        onClose={() => setIsNewDirectModalOpen(false)}
+        onStartDirectChat={async (targetUserId) => {
+          try {
+            const convId = await createDirectConversation(targetUserId);
+            if (convId) {
+              setActiveConversationId(convId);
+            } else {
+              setActiveChatUserId(targetUserId);
+            }
+          } catch (err) {
+            console.warn("Forum - Erreur démarrage message direct (repli legacy actif) :", err);
+            setActiveChatUserId(targetUserId);
+          }
+        }}
         members={Object.values(usersMap)}
         currentUserId={user?.uid}
-        existingChatUserIds={new Set(conversations.map(c => c.otherId))}
+        existingDirectUserIds={new Set(
+          directConversations
+            .map((c) => (c.participantIds || []).find((id) => id !== user?.uid))
+            .filter(Boolean)
+        )}
+      />
+
+      {/* Modale dédiée à la création d'une boucle de discussion de groupe */}
+      <NewGroupModal
+        isOpen={isNewGroupModalOpen}
+        onClose={() => setIsNewGroupModalOpen(false)}
+        onCreateGroupChat={async ({ name, participantIds, initialMessage }) => {
+          const convId = await createGroupConversation({ name, participantIds, initialMessage });
+          if (convId) {
+            setActiveConversationId(convId);
+          }
+        }}
+        members={Object.values(usersMap)}
+        currentUserId={user?.uid}
       />
     </div>
   );

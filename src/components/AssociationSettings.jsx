@@ -7,6 +7,7 @@ import { XiloSettings } from './XiloIcons';
 
 import TabIdentity from './association-settings/TabIdentity';
 import TabApparence from './association-settings/TabApparence';
+import TabMemberLayout from './association-settings/TabMemberLayout';
 import TabOrganization from './association-settings/TabOrganization';
 import TabSecurity from './association-settings/TabSecurity';
 import TabModules from './association-settings/TabModules';
@@ -133,6 +134,12 @@ export default function AssociationSettings({
             setLogoFile={setLogoFile}
             uploadingLogo={uploadingLogo}
             saving={saving}
+          />
+        );
+      case 'member-layout':
+        return (
+          <TabMemberLayout
+            groupId={groupId}
           />
         );
       case 'organisation':
@@ -281,6 +288,17 @@ export default function AssociationSettings({
               </button>
               <button
                 type="button"
+                onClick={() => setActiveSettingsTab('member-layout')}
+                className={`px-3 py-1.5 text-xs font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer ${
+                  activeSettingsTab === 'member-layout'
+                    ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
+                    : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
+                }`}
+              >
+                🪢 Vue Membre & Vidéo
+              </button>
+              <button
+                type="button"
                 onClick={() => setActiveSettingsTab('organisation')}
                 className={`px-3 py-1.5 text-xs font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer ${
                   activeSettingsTab === 'organisation'
@@ -318,23 +336,25 @@ export default function AssociationSettings({
           <div className="flex flex-col gap-3">
             {renderActiveTab()}
 
-            {/* Spacer to emp�cher content from being hidden behind the fixed footer */}
-            <div className="h-24"></div>
+            {/* Spacer pour éviter que le contenu ne soit masqué par le footer fixe */}
+            {activeSettingsTab !== 'member-layout' && <div className="h-24"></div>}
 
             {/* Validation */}
-            <div className="fixed bottom-0 left-0 lg:left-60 right-0 z-50 bg-[var(--cordel-bg)] py-4 border-t-2 border-encre-noire shadow-[0_-4px_10px_rgba(0,0,0,0.05)] flex justify-center">
-              <div className="max-w-3xl w-full px-5 sm:px-6 md:px-8">
-                <CordelButton
-                  variant="ocre"
-                  useExtremeBorder={true}
-                  onClick={handleSave}
-                  disabled={saving}
-                  className="w-full py-3 font-bold uppercase tracking-widest text-xs"
-                >
-                  {saving ? "Enregistrement..." : "Enregistrer la configuration"}
-                </CordelButton>
+            {activeSettingsTab !== 'member-layout' && (
+              <div className="fixed bottom-0 left-0 lg:left-60 right-0 z-50 bg-[var(--cordel-bg)] py-4 border-t-2 border-encre-noire shadow-[0_-4px_10px_rgba(0,0,0,0.05)] flex justify-center">
+                <div className="max-w-3xl w-full px-5 sm:px-6 md:px-8">
+                  <CordelButton
+                    variant="ocre"
+                    useExtremeBorder={true}
+                    onClick={handleSave}
+                    disabled={saving}
+                    className="w-full py-3 font-bold uppercase tracking-widest text-xs"
+                  >
+                    {saving ? "Enregistrement..." : "Enregistrer la configuration"}
+                  </CordelButton>
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
       )}

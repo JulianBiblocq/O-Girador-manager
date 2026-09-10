@@ -121,7 +121,7 @@ export default function VaralBookletCover({
         ${opacityClass}
       `}
       style={cardAnimationStyle}
-      title={`${t('common.open') || "Ouvrir"} ${docItem.titre} ${isArchived ? '(' + (t('documents.archiveTag') || "Archive") + ')' : ''}`}
+      title={`${docItem.titre || ''}${docItem.sousTitre ? ' - ' + docItem.sousTitre : ''}${isArchived ? ' (' + (t('documents.archiveTag') || "Archive") + ')' : ''}`}
     >
       {/* Badge "✨ Nouveau" exclusif au tout dernier document global */}
       {isLatestDoc && (
