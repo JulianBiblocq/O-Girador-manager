@@ -441,6 +441,8 @@ export default function WidgetAgenda({
       enableCarpool: typeCfg.enableCarpool !== false,
       isPublic: Boolean(typeCfg.isPublic),
       enableInscriptions: true,
+      activerRecolteMedias: typeCfg.activerRecolteMedias !== undefined ? Boolean(typeCfg.activerRecolteMedias) : true,
+      publierSurVaral: typeCfg.publierSurVaral !== undefined ? Boolean(typeCfg.publierSurVaral) : true,
       description: '',
       linkedPatterns: [],
       specialiteAtelier: 'general',
@@ -487,7 +489,8 @@ export default function WidgetAgenda({
       agendaEnableOrdreDuJour: rawConfig.agendaEnableOrdreDuJour !== undefined ? rawConfig.agendaEnableOrdreDuJour : (activeType === 'reunion'),
       agendaEnableAdresse: rawConfig.agendaEnableAdresse !== false,
       agendaEnableUrl: rawConfig.agendaEnableUrl !== false,
-      agendaEnableVolunteerShifts: rawConfig.agendaEnableVolunteerShifts !== undefined ? rawConfig.agendaEnableVolunteerShifts : (agendaEnableVolunteerShifts && (activeType === 'prestation' || activeType === 'stage'))
+      agendaEnableVolunteerShifts: rawConfig.agendaEnableVolunteerShifts !== undefined ? rawConfig.agendaEnableVolunteerShifts : (agendaEnableVolunteerShifts && (activeType === 'prestation' || activeType === 'stage')),
+      activerRecolteMedias: rawConfig.activerRecolteMedias !== undefined ? rawConfig.activerRecolteMedias : (activeType === 'prestation' || activeType === 'concert' || activeType === 'spectacle' || activeType === 'festival')
     };
 
     setSaving(true);
@@ -539,8 +542,8 @@ export default function WidgetAgenda({
           enableCarpool: formData.enableCarpool !== false,
           isPublic: Boolean(formData.isPublic),
           enableInscriptions: formData.enableInscriptions !== false,
-          activerRecolteMedias: formData.activerRecolteMedias !== false,
-          publierSurVaral: formData.publierSurVaral !== undefined ? Boolean(formData.publierSurVaral) : true,
+          activerRecolteMedias: formData.activerRecolteMedias !== undefined ? Boolean(formData.activerRecolteMedias) : Boolean(activeConfig.activerRecolteMedias),
+          publierSurVaral: formData.publierSurVaral !== undefined ? Boolean(formData.publierSurVaral) : (formData.activerRecolteMedias !== false),
           sendPushNotification: Boolean(formData.sendPushNotification),
           description: formData.description || '',
           latitude: formData.latitude ? Number(formData.latitude) : null,

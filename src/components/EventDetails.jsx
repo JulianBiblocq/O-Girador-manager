@@ -80,8 +80,12 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
     includesDance: event.includesDance !== false,
     enableCarpool: event.enableCarpool !== false,
     enableInscriptions: event.enableInscriptions !== false,
-    activerRecolteMedias: event.activerRecolteMedias !== false,
-    publierSurVaral: event.publierSurVaral !== false,
+    activerRecolteMedias: event.activerRecolteMedias !== undefined 
+      ? Boolean(event.activerRecolteMedias) 
+      : ['prestation', 'concert', 'spectacle', 'festival'].includes(event.type),
+    publierSurVaral: event.publierSurVaral !== undefined 
+      ? Boolean(event.publierSurVaral) 
+      : ['prestation', 'concert', 'spectacle', 'festival'].includes(event.type),
     description: event.description || '',
     linkedPatterns: event.linkedPatterns || [],
     specialiteAtelier: event.specialiteAtelier || 'general',
@@ -840,8 +844,12 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
         includesDance: editForm.includesDance || false,
         enableCarpool: editForm.enableCarpool !== false,
         enableInscriptions: editForm.enableInscriptions !== false,
-        activerRecolteMedias: editForm.activerRecolteMedias !== false,
-        publierSurVaral: editForm.publierSurVaral !== false,
+        activerRecolteMedias: editForm.activerRecolteMedias !== undefined 
+          ? Boolean(editForm.activerRecolteMedias) 
+          : ['prestation', 'concert', 'spectacle', 'festival'].includes(editForm.type),
+        publierSurVaral: editForm.publierSurVaral !== undefined 
+          ? Boolean(editForm.publierSurVaral) 
+          : (editForm.activerRecolteMedias !== false),
         description: updatedDescription,
         latitude: editForm.latitude ? Number(editForm.latitude) : null,
         longitude: editForm.longitude ? Number(editForm.longitude) : null,
@@ -1113,9 +1121,15 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
   const typeInfo = getTypeBadgeInfo(event.type);
 
   // Priorité absolue au lien de dépôt Framaspace direct de l'événement, avec repli sur le Google Form asso
+  // Uniquement si la récolte de médias / QR Code est activée pour cet événement
+  const isTargetPrestation = ['prestation', 'concert', 'spectacle', 'festival'].includes(event?.type);
+  const isRecolteActive = (activeEvent?.activerRecolteMedias !== undefined 
+    ? Boolean(activeEvent.activerRecolteMedias) 
+    : (event?.activerRecolteMedias !== undefined ? Boolean(event.activerRecolteMedias) : isTargetPrestation));
+
   const currentLienDepot = ((activeEvent?.lienDepotMedias || event.lienDepotMedias || '')).trim();
-  const effectiveQrUrl = currentLienDepot || (lienGoogleFormRecoltePhotos || '').trim();
-  const hasQrCode = Boolean(effectiveQrUrl);
+  const effectiveQrUrl = isRecolteActive ? (currentLienDepot || (lienGoogleFormRecoltePhotos || '').trim()) : '';
+  const hasQrCode = isRecolteActive && Boolean(effectiveQrUrl);
 
   // Gestionnaire d'ouverture unifié de la modale QR Code avec priorité au dépôt Framaspace
   const handleOpenQrCodeModal = () => {

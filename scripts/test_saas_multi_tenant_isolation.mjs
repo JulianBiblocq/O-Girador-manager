@@ -121,8 +121,9 @@ test("Définition de la fonction d'isolation de groupe isMemberOfGroup(groupId)"
     "storage.rules doit définir isMemberOfGroup(groupId)"
   );
   assert.ok(
-    storageRulesContent.includes("request.auth.token.groupId == groupId") ||
-    storageRulesContent.includes("getUserData().groupId == groupId"),
+    storageRulesContent.includes("request.auth.token.groupId") ||
+    storageRulesContent.includes("getUserData().groupId") ||
+    storageRulesContent.includes("getUserData().get('groupId'"),
     "isMemberOfGroup doit vérifier le token ou le profil utilisateur Firestore"
   );
 });

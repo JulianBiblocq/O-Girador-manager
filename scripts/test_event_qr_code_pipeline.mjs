@@ -178,6 +178,112 @@ assert(eventDetailsCode.includes('handleOpenQrCodeModal'), "EventDetails doit av
 assert(eventDetailsCode.includes('currentLienDepot'), "EventDetails doit évaluer prioritairement currentLienDepot");
 console.log("  ✅ [PASS] Bouton direct et aiguillage unifié confirmés dans EventDetails.jsx\n");
 
+
+// --- MODULE 6 : Configuration par Type d'Événement & Masquage Conditionnel ---
+console.log("▶️ Module 6 : Configuration par Type d'Événement & Masquage QR Code");
+
+// 1. Logique de résolution conforme à EventDetails.jsx
+function resolveEventQrVisibility(event, activeEvent, associationLienGoogleForm) {
+  const isTargetPrestation = ['prestation', 'concert', 'spectacle', 'festival'].includes(event?.type);
+  const isRecolteActive = (activeEvent?.activerRecolteMedias !== undefined 
+    ? Boolean(activeEvent.activerRecolteMedias) 
+    : (event?.activerRecolteMedias !== undefined ? Boolean(event.activerRecolteMedias) : isTargetPrestation));
+
+  const currentLienDepot = ((activeEvent?.lienDepotMedias || event?.lienDepotMedias || '')).trim();
+  const effectiveQrUrl = isRecolteActive ? (currentLienDepot || (associationLienGoogleForm || '').trim()) : '';
+  const hasQrCode = isRecolteActive && Boolean(effectiveQrUrl);
+
+  return { isRecolteActive, currentLienDepot, effectiveQrUrl, hasQrCode };
+}
+
+// Cas A : Réunion sans champ explicite (type non scénique) -> QR Code masqué même avec Google Form
+const resReunionDefaut = resolveEventQrVisibility(
+  { type: 'reunion' },
+  null,
+  "https://forms.google.com/r/asso-photos"
+);
+assert.strictEqual(resReunionDefaut.isRecolteActive, false, "Récolte inactive par défaut pour réunion");
+assert.strictEqual(resReunionDefaut.hasQrCode, false, "QR Code MASQUÉ pour réunion");
+console.log("  ✅ [PASS] Réunion sans option explicite : QR Code masqué");
+
+// Cas B : Prestation sans champ explicite (type scénique) -> QR Code affiché avec Google Form
+const resPrestaDefaut = resolveEventQrVisibility(
+  { type: 'prestation' },
+  null,
+  "https://forms.google.com/r/asso-photos"
+);
+assert.strictEqual(resPrestaDefaut.isRecolteActive, true, "Récolte active par défaut pour prestation");
+assert.strictEqual(resPrestaDefaut.hasQrCode, true, "QR Code affiché pour prestation");
+console.log("  ✅ [PASS] Prestation sans option explicite : QR Code actif");
+
+// Cas C : Événement avec activerRecolteMedias: false explicite -> QR Code strictement masqué
+const resPrestaDesactivee = resolveEventQrVisibility(
+  { type: 'prestation', activerRecolteMedias: false, lienDepotMedias: "https://asso.framaspace.org/s/test" },
+  null,
+  "https://forms.google.com/r/asso-photos"
+);
+assert.strictEqual(resPrestaDesactivee.isRecolteActive, false, "Récolte désactivée explicitement");
+assert.strictEqual(resPrestaDesactivee.hasQrCode, false, "QR Code MASQUÉ lorsque activerRecolteMedias est faux");
+console.log("  ✅ [PASS] Prestation désactivée explicitement : QR Code strictement masqué");
+
+// Cas D : Réunion avec activerRecolteMedias: true (activation personnalisée) -> QR Code affiché
+const resReunionActivee = resolveEventQrVisibility(
+  { type: 'reunion', activerRecolteMedias: true },
+  null,
+  "https://forms.google.com/r/asso-photos"
+);
+assert.strictEqual(resReunionActivee.isRecolteActive, true, "Récolte activée explicitement sur réunion");
+assert.strictEqual(resReunionActivee.hasQrCode, true, "QR Code affiché pour réunion si activé");
+console.log("  ✅ [PASS] Réunion avec récolte activée : QR Code bien affiché");
+
+// 2. Simulation de propagation du typePreset dans le formulaire
+function simulateTypeChange(newType, eventTypeConfigs, currentFormData, isEdit = false) {
+  const typePresets = eventTypeConfigs?.[newType];
+  const updated = { ...currentFormData, type: newType };
+  const isTargetPrestation = ['prestation', 'concert', 'spectacle', 'festival'].includes(newType);
+
+  if (typePresets?.activerRecolteMedias !== undefined) {
+    updated.activerRecolteMedias = Boolean(typePresets.activerRecolteMedias);
+  } else if (!isEdit || updated.activerRecolteMedias === undefined) {
+    updated.activerRecolteMedias = isTargetPrestation;
+  }
+
+  return updated;
+}
+
+const customConfigs = {
+  reunion: { activerRecolteMedias: false },
+  festival: { activerRecolteMedias: true },
+  autre: { activerRecolteMedias: true }
+};
+
+const formSwitchedToReunion = simulateTypeChange('reunion', customConfigs, { titre: "CA", type: "prestation", activerRecolteMedias: true });
+assert.strictEqual(formSwitchedToReunion.activerRecolteMedias, false, "Le passage à réunion doit appliquer le preset désactivé");
+
+const formSwitchedToFestival = simulateTypeChange('festival', customConfigs, { titre: "Festival", type: "reunion", activerRecolteMedias: false });
+assert.strictEqual(formSwitchedToFestival.activerRecolteMedias, true, "Le passage à festival doit appliquer le preset activé");
+
+console.log("  ✅ [PASS] Propagation réactive des presets de types d'événements validée");
+
+// 3. Intégrité des composants modifiés
+const tabAgendaPath = path.resolve('src/components/association-settings/TabAgenda.jsx');
+const eventFormFieldsPath = path.resolve('src/components/agenda/EventFormFields.jsx');
+const widgetAgendaPath = path.resolve('src/components/WidgetAgenda.jsx');
+const tabAdminPath = path.resolve('src/components/event-details/tabs/TabAdmin.jsx');
+
+const tabAgendaCode = fs.readFileSync(tabAgendaPath, 'utf-8');
+const eventFormFieldsCode = fs.readFileSync(eventFormFieldsPath, 'utf-8');
+const widgetAgendaCode = fs.readFileSync(widgetAgendaPath, 'utf-8');
+const tabAdminCode = fs.readFileSync(tabAdminPath, 'utf-8');
+
+assert(tabAgendaCode.includes('activerRecolteMedias'), "TabAgenda.jsx doit contenir l'option activerRecolteMedias");
+assert(tabAgendaCode.includes('Boîte Photos (QR Code)'), "TabAgenda.jsx doit afficher la case 'Boîte Photos (QR Code)'");
+assert(eventFormFieldsCode.includes('typePresets?.activerRecolteMedias'), "EventFormFields.jsx doit lire typePresets.activerRecolteMedias");
+assert(widgetAgendaCode.includes('activerRecolteMedias: typeCfg.activerRecolteMedias'), "WidgetAgenda.jsx doit initialiser activerRecolteMedias");
+assert(tabAdminCode.includes('📸 Boîte Photos'), "TabAdmin.jsx doit proposer l'interrupteur '📸 Boîte Photos'");
+console.log("  ✅ [PASS] Intégrité de la chaîne TabAgenda -> Formulaire -> WidgetAgenda -> Vue Détails confirmée\n");
+
 console.log("===============================================================");
 console.log("🏆 SUCCÈS TOTAL : TOUTES LES ASSERTIONS QR CODE SONT VALIDÉES !");
 console.log("===============================================================");
+

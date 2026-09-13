@@ -245,6 +245,31 @@ export default function TabAdmin({
               <span className="flex items-center gap-1.5">🔒 Validation</span>
               <span className="text-[10px] font-black">{Boolean(event.requiresValidation) ? 'ON' : 'OFF'}</span>
             </button>
+
+            {/* 6. Boîte à photos / QR Code */}
+            {(() => {
+              const isTargetPrestation = ['prestation', 'concert', 'spectacle', 'festival'].includes(event.type);
+              const isRecolteActive = event.activerRecolteMedias !== undefined 
+                ? Boolean(event.activerRecolteMedias) 
+                : isTargetPrestation;
+
+              return (
+                <button
+                  type="button"
+                  disabled={updatingField === 'activerRecolteMedias'}
+                  onClick={() => handleToggleEventField('activerRecolteMedias', isRecolteActive)}
+                  className={`flex items-center justify-between p-2 rounded text-xs font-bold uppercase border transition-all cursor-pointer ${
+                    isRecolteActive
+                      ? 'bg-amber-100 text-amber-950 border-amber-500 shadow-xs'
+                      : 'bg-neutral-100 text-neutral-400 border-neutral-300'
+                  }`}
+                  title="Activer ou désactiver la boîte à photos et le QR Code pour cet événement"
+                >
+                  <span className="flex items-center gap-1.5">📸 Boîte Photos</span>
+                  <span className="text-[10px] font-black">{isRecolteActive ? 'ON' : 'OFF'}</span>
+                </button>
+              );
+            })()}
           </div>
         </div>
 
@@ -291,15 +316,32 @@ export default function TabAdmin({
             <span>📸</span>
             <span>Récolte Photos & Espace Cloud de l'événement</span>
           </h4>
-          {event.lienDepotMedias ? (
-            <span className="theme-stamp-badge theme-stamp-badge-vert text-[9px] uppercase tracking-wider font-black">
-              ✓ Dossier Cloud Actif
-            </span>
-          ) : (
-            <span className="theme-stamp-badge theme-stamp-badge-ocre text-[9px] uppercase tracking-wider font-bold">
-              En attente de liaison
-            </span>
-          )}
+          {(() => {
+            const isTargetPrestation = ['prestation', 'concert', 'spectacle', 'festival'].includes(event.type);
+            const isRecolteActive = event.activerRecolteMedias !== undefined 
+              ? Boolean(event.activerRecolteMedias) 
+              : isTargetPrestation;
+
+            if (!isRecolteActive) {
+              return (
+                <span className="theme-stamp-badge theme-stamp-badge-rouge text-[9px] uppercase tracking-wider font-bold">
+                  ✕ Récolte Désactivée
+                </span>
+              );
+            }
+            if (event.lienDepotMedias) {
+              return (
+                <span className="theme-stamp-badge theme-stamp-badge-vert text-[9px] uppercase tracking-wider font-black">
+                  ✓ Dossier Cloud Actif
+                </span>
+              );
+            }
+            return (
+              <span className="theme-stamp-badge theme-stamp-badge-ocre text-[9px] uppercase tracking-wider font-bold">
+                En attente de liaison
+              </span>
+            );
+          })()}
         </div>
 
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3 bg-cordel-bg-light rounded-[6px] border border-dashed border-cordel-master-dark/20">

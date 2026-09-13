@@ -103,13 +103,17 @@ export default function EventFormFields({
         }
       }
 
-      // Par défaut : prestations/concerts/spectacles ont la boîte à photos et le Varal activés
-      const isTargetPrestation = ['prestation', 'concert', 'spectacle'].includes(newType);
-      if (updated.activerRecolteMedias === undefined) {
+      // Gestion de la récolte photos / QR code (activerRecolteMedias) :
+      // Priorité au preset explicite du type, sinon repli selon la nature de l'événement
+      const isTargetPrestation = ['prestation', 'concert', 'spectacle', 'festival'].includes(newType);
+      if (typePresets?.activerRecolteMedias !== undefined) {
+        updated.activerRecolteMedias = Boolean(typePresets.activerRecolteMedias);
+      } else if (!isEdit || updated.activerRecolteMedias === undefined) {
         updated.activerRecolteMedias = isTargetPrestation;
       }
+
       if (updated.publierSurVaral === undefined) {
-        updated.publierSurVaral = isTargetPrestation;
+        updated.publierSurVaral = updated.activerRecolteMedias !== false;
       }
 
       return updated;

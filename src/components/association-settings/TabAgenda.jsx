@@ -315,7 +315,8 @@ export default function TabAgenda({
                 includesPercussion: rawConfig.includesPercussion !== undefined ? rawConfig.includesPercussion : (type !== 'reunion'),
                 includesDance: rawConfig.includesDance !== undefined ? rawConfig.includesDance : (type === 'prestation' || type === 'repetition' || type === 'stage'),
                 enableCarpool: rawConfig.enableCarpool !== undefined ? rawConfig.enableCarpool : (type !== 'reunion' && type !== 'atelier'),
-                isPublic: rawConfig.isPublic !== undefined ? rawConfig.isPublic : (type === 'prestation')
+                isPublic: rawConfig.isPublic !== undefined ? rawConfig.isPublic : (type === 'prestation'),
+                activerRecolteMedias: rawConfig.activerRecolteMedias !== undefined ? rawConfig.activerRecolteMedias : (type === 'prestation' || type === 'concert' || type === 'spectacle' || type === 'festival')
               };
 
               const handleToggleOption = (optionKey, isChecked) => {
@@ -499,6 +500,15 @@ export default function TabAgenda({
                         className="scale-95"
                       />
                       🌍 Public (Vitrine)
+                    </label>
+                    <label className="flex items-center gap-1.5 cursor-pointer select-none">
+                      <input 
+                        type="checkbox" 
+                        checked={config.activerRecolteMedias}
+                        onChange={(e) => handleToggleOption('activerRecolteMedias', e.target.checked)}
+                        className="scale-95"
+                      />
+                      📸 Boîte Photos (QR Code)
                     </label>
                   </div>
                 </div>
