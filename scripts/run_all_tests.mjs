@@ -22,7 +22,8 @@ const testScripts = [
   'scripts/test_view_simulator.mjs',
   'scripts/test_saas_multi_tenant_isolation.mjs',
   'scripts/test_saas_license_guard.mjs',
-  'scripts/test_pupitre_instrument_rules.mjs'
+  'scripts/test_pupitre_instrument_rules.mjs',
+  'scripts/test_event_qr_code_pipeline.mjs'
 ];
 
 console.log("===============================================================");
