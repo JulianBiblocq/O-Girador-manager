@@ -10,6 +10,7 @@ import PatternVisualizer from './PatternVisualizer';
 import FirestoreMediaRenderer from '../student/FirestoreMediaRenderer';
 import { useTranslation } from '../LanguageContext';
 import useMestreSignals from '../../hooks/useMestreSignals';
+import { launchCrossApp } from '../../utils/crossAppAuth';
 
 export default function AutoEvalQuiz({ sheetData, allSheetsData, profileData, onClose, customQuizData, customQuizId, customQuizTitle, songData, allSongsData, instrumentModelData, allModelsData, qcmGlobalConfig, isSong, rhythms, sequenceurUrl, parsedSequencerJson, targetPartId = null, targetStepIndex = null }) {
   const { t } = useTranslation();
@@ -411,15 +412,16 @@ export default function AutoEvalQuiz({ sheetData, allSheetsData, profileData, on
                 {isSuccess ? "Fermer" : (isSong ? "Relire le chant" : "Relire la fiche")}
               </CordelButton>
               {seqUrl && (
-                <a 
-                  href={seqUrl} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  onClick={onClose}
-                  className="px-6 py-2 text-xs font-black uppercase tracking-widest bg-cordel-vert text-white rounded border border-[#1b4332] shadow-[2px_2px_0px_0px_#1b4332] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none transition-all flex items-center justify-center"
+                <button 
+                  type="button"
+                  onClick={() => {
+                    onClose();
+                    launchCrossApp(seqUrl, { appLabel: 'le Séquenceur' });
+                  }}
+                  className="px-6 py-2 text-xs font-black uppercase tracking-widest bg-[var(--color-cordel-vert,#2d6a4f)] text-white rounded border border-[#1b4332] shadow-[2px_2px_0px_0px_#1b4332] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none transition-all flex items-center justify-center cursor-pointer"
                 >
                   🎧 S'entraîner sur le Séquenceur
-                </a>
+                </button>
               )}
             </div>
           </div>

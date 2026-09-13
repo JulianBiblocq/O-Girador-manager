@@ -4,7 +4,7 @@ import { db } from '../../firebase';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 import XiloAvatar from '../XiloAvatar';
-import { filterPublicPercussionInstruments, computePupitresList } from '../../utils/tagUtils';
+import { filterPublicPercussionInstruments, computePupitresList, resolvePupitreForInstrument as resolvePupitreCanonical } from '../../utils/tagUtils';
 import { DEFAULT_CUSTOM_CATEGORIES, resolveCategory } from '../../utils/categoryUtils';
 import { getVoiceLabel, normalizeGroupNomenclature } from '../../constants/nomenclature';
 
@@ -249,26 +249,7 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
 
   // Résout le nom du pupitre associé à un instrument (gère les liaisons et équivalences)
   const resolvePupitreForInstrument = useCallback((instName) => {
-    if (!instName || instName === 'En attente') return '';
-    const cleanInst = String(instName).trim();
-    if (pupitresList.includes(cleanInst)) return cleanInst;
-
-    // Vérifier si cet instrument fait partie d'un groupe lié
-    const matchingGroup = (linkedInstruments || []).find(group => {
-      const groupInsts = Array.isArray(group.instruments)
-        ? group.instruments
-        : (Array.isArray(group) ? group : [group.inst1, group.inst2].filter(Boolean));
-      return groupInsts.some(i => String(i).toLowerCase().trim() === cleanInst.toLowerCase());
-    });
-
-    if (matchingGroup) {
-      const gName = matchingGroup.name && matchingGroup.name.trim()
-        ? matchingGroup.name.trim()
-        : (Array.isArray(matchingGroup.instruments) ? matchingGroup.instruments.join(' + ') : '');
-      if (pupitresList.includes(gName)) return gName;
-    }
-
-    return cleanInst;
+    return resolvePupitreCanonical(instName, pupitresList, linkedInstruments);
   }, [pupitresList, linkedInstruments]);
 
   // Pupitres combinés (groupes liés + instruments configurés seuls + Danse tout au bout)
@@ -914,6 +895,60 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
     );
   };
 
+  // Rendu modulaire du choix d'instrument pour le pupitre Caixas (Caixa ou Tarol)
+  const handleUpdateCaixasAttribution = async (member, instChoice) => {
+    setSaving(true);
+    try {
+      const userRef = doc(db, 'users', member.id);
+      const payload = {
+        sousInstrument: instChoice,
+        attributionCaixa: instChoice
+      };
+      await updateDoc(userRef, payload);
+      setMembers(prev => prev.map(m => m.id === member.id ? { ...m, ...payload } : m));
+    } catch (err) {
+      console.error("MestreOrientationCasting - Erreur attribution Caixas :", err);
+      alert("Erreur de sauvegarde de l'attribution Caixas");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const renderCaixasAttribution = (member, context = 'default') => {
+    const currentAssigned = member.sousInstrument || member.attributionCaixa || (
+      (member.instrumentPrincipal || member.instrument || '').toLowerCase().includes('tarol') ? 'Tarol' : 'Caixa'
+    );
+
+    return (
+      <div className="flex flex-col gap-1 mt-1 bg-black/5 dark:bg-white/5 p-1.5 rounded border border-dashed border-cordel-master-dark/15 w-max">
+        <span className="text-[8px] font-black uppercase text-cordel-master-dark opacity-80">
+          Attribution Caixas :
+        </span>
+        <div className="flex gap-2.5">
+          {['Caixa', 'Tarol'].map(instChoice => {
+            const isSelected = currentAssigned.toLowerCase() === instChoice.toLowerCase();
+            return (
+              <label key={`caixa-${context}-${instChoice}-${member.id}`} className="flex items-center gap-1 cursor-pointer">
+                <input
+                  type="radio"
+                  name={`caixa-choice-${context}-${member.id}`}
+                  checked={isSelected}
+                  onChange={() => handleUpdateCaixasAttribution(member, instChoice)}
+                  disabled={saving}
+                  className="w-2.5 h-2.5 accent-cordel-wood cursor-pointer"
+                />
+                <span className={`text-[9px] uppercase font-bold ${isSelected ? 'text-cordel-wood' : 'text-cordel-master-dark/60'}`}>
+                  {instChoice}
+                </span>
+              </label>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
+
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center p-8 gap-3">
@@ -1245,6 +1280,9 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
 
                             {/* Voix Alfaia pour l'instrument principal */}
                             {(mainInst || '').toLowerCase().includes('alfaia') && renderAlfaiaVoices(m, 'main')}
+
+                            {/* Attribution Caixa / Tarol pour le pupitre Caixas */}
+                            {((mainInst || '').toLowerCase().includes('caixa') || (mainInst || '').toLowerCase().includes('tarol')) && renderCaixasAttribution(m, 'main')}
                           </div>
 
                           <div className="flex flex-col gap-1 pt-1 border-t border-dashed border-cordel-master-dark/10">
@@ -1302,6 +1340,9 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
 
                             {/* Voix Alfaia pour le 2ème instrument historique */}
                             {(m.instrumentSecondaire || '').toLowerCase().includes('alfaia') && renderAlfaiaVoices(m, 'sec')}
+
+                            {/* Attribution Caixa / Tarol pour le 2ème instrument historique */}
+                            {((m.instrumentSecondaire || '').toLowerCase().includes('caixa') || (m.instrumentSecondaire || '').toLowerCase().includes('tarol')) && renderCaixasAttribution(m, 'sec')}
                           </div>
                         </div>
                       </td>
@@ -1353,6 +1394,8 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
                                 </label>
                                 {/* Voix Alfaia si la poursuite concerne l'Alfaia */}
                                 {m.poursuiteInstrumentPrincipal !== false && (mainInst || '').toLowerCase().includes('alfaia') && renderAlfaiaVoices(m, 'poursuite')}
+                                {/* Attribution Caixas si la poursuite concerne les Caixas */}
+                                {m.poursuiteInstrumentPrincipal !== false && ((mainInst || '').toLowerCase().includes('caixa') || (mainInst || '').toLowerCase().includes('tarol')) && renderCaixasAttribution(m, 'poursuite')}
                               </div>
                             ) : null
                           )}
@@ -1414,6 +1457,9 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
 
                               {/* Voix Alfaia pour l'apprentissage de la saison */}
                               {(m.instrumentSaison || '').toLowerCase().includes('alfaia') && renderAlfaiaVoices(m, 'saison')}
+
+                              {/* Attribution Caixas pour l'apprentissage de la saison */}
+                              {((m.instrumentSaison || '').toLowerCase().includes('caixa') || (m.instrumentSaison || '').toLowerCase().includes('tarol')) && renderCaixasAttribution(m, 'saison')}
                             </div>
                           )}
                         </div>

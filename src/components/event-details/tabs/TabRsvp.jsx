@@ -59,7 +59,9 @@ export default function TabRsvp({
   handleFamilyMemberInstrumentChange,
   handleFamilySave,
   handleAddToGoogleCalendar,
-  handleDownloadIcs
+  handleDownloadIcs,
+  onOpenQrCodeModal,
+  hasQrCode
 }) {
   return (
     <div className="flex flex-col gap-4 text-left">
@@ -151,6 +153,35 @@ export default function TabRsvp({
           </h4>
           <div className="whitespace-pre-line text-xs font-medium text-encre-noire/90 leading-relaxed bg-cordel-bg-light/60 p-3 rounded-[6px] border border-dashed border-cordel-master-dark/15">
             {event.description}
+          </div>
+        </CordelCard>
+      )}
+
+      {/* 3. Boîte à Photos & Vidéos (Partage Souvenirs) */}
+      {hasQrCode && onOpenQrCodeModal && (
+        <CordelCard variant="default" useExtremeBorder={true} className="py-3.5 px-5">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <span className="text-xl">📸</span>
+              <div className="flex flex-col text-left">
+                <span className="font-black text-xs uppercase tracking-wide text-cordel-wood">
+                  Boîte à Souvenirs & Vidéos
+                </span>
+                <span className="text-[11px] text-encre-noire/70">
+                  Partagez vos photos de la prestation ou faites flasher le QR Code aux spectateurs !
+                </span>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={onOpenQrCodeModal}
+              className="text-[10px] font-black uppercase bg-amber-300 hover:bg-amber-200 text-encre-noire border border-encre-noire px-3 py-1.5 rounded shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] cursor-pointer flex items-center gap-1 shrink-0 select-none"
+              title="Afficher le QR Code de dépôt de médias"
+            >
+              <span>📱</span>
+              <span>Voir le QR Code</span>
+            </button>
           </div>
         </CordelCard>
       )}

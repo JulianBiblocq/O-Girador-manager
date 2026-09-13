@@ -21,7 +21,8 @@ const testScripts = [
   'scripts/test_tag_audit_reverse_view.mjs',
   'scripts/test_view_simulator.mjs',
   'scripts/test_saas_multi_tenant_isolation.mjs',
-  'scripts/test_saas_license_guard.mjs'
+  'scripts/test_saas_license_guard.mjs',
+  'scripts/test_pupitre_instrument_rules.mjs'
 ];
 
 console.log("===============================================================");

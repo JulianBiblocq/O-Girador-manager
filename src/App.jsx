@@ -921,6 +921,7 @@ export default function App() {
     let isSSOPending = Boolean(ssoToken);
 
     if (ssoToken) {
+      // Nettoyage immédiat de l'URL pour la sécurité et la propreté de la navigation
       const cleanUrl = new URL(window.location.href);
       cleanUrl.searchParams.delete('ssoToken');
       window.history.replaceState({}, document.title, cleanUrl.toString());
@@ -934,17 +935,24 @@ export default function App() {
         }
       } catch (_) {}
 
+      // Si l'utilisateur actuel correspond déjà au token, pas besoin de réauthentification
       if (auth.currentUser && tokenUid && auth.currentUser.uid === tokenUid) {
         isSSOPending = false;
       } else {
         setLoading(true);
         signInWithCustomToken(auth, ssoToken)
+          .then((cred) => {
+            console.log("[Organizad'Or SSO] Authentification SSO réussie pour :", cred.user.uid);
+          })
           .catch((err) => {
             console.warn("[Organizad'Or SSO] Erreur custom token :", err);
-            setLoading(false);
           })
           .finally(() => {
             isSSOPending = false;
+            // Si aucun utilisateur n'est connecté à l'issue, libérer le loader pour afficher le formulaire
+            if (isMounted && !auth.currentUser) {
+              setLoading(false);
+            }
           });
       }
     }
@@ -953,6 +961,12 @@ export default function App() {
       if (!isMounted) return;
 
       unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
+        // Si une opération SSO est activement en cours d'échange de jeton et que l'utilisateur est temporairement null,
+        // on évite de flasher l'état déconnecté.
+        if (!currentUser && isSSOPending) {
+          return;
+        }
+
         setUser(currentUser);
         
         // Clean up previous profile listener if any
@@ -1172,7 +1186,11 @@ export default function App() {
   }
 
   // 4. Utilisateur connecté mais profil Firestore manquant ou incomplet -> Onboarding
-  const isProfileComplete = profileData?.onboardingCompleted === true || (profileData?.telephone && profileData?.adresseRue);
+  const isProfileComplete = 
+    profileData?.onboardingCompleted === true || 
+    profileData?.isNew === false ||
+    Boolean(profileData?.telephone && (profileData?.adresseRue || profileData?.adresse)) ||
+    Boolean(profileData?.prenom && profileData?.nom && (profileData?.instrument || profileData?.instrumentPrincipal || profileData?.pratiqueDanse || profileData?.role));
 
   if (!profileExists || !profileData || (!isProfileComplete && !isSystemOrSuperAdminOrMestre)) {
     return (

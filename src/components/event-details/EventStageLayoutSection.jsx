@@ -86,7 +86,7 @@ export default function EventStageLayoutSection({
       .filter((ins) => ins.status === 'present')
       .map((ins) => {
         const userInfo = allUsers.find((u) => u.id === ins.userId) || {};
-        const instrument = ins.instrumentChoisi || userInfo.instrument || 'Autre';
+        const instrument = ins.instrumentChoisi || userInfo.instrument || userInfo.instrumentPrincipal || 'Autre';
         return {
           id: ins.userId,
           name: ins.userName || `${userInfo.prenom} ${userInfo.nom}`,
@@ -152,14 +152,31 @@ export default function EventStageLayoutSection({
     return inst.includes('alfaia');
   };
 
-  // Résolution de la voix initiale par défaut ou enregistrée pour une Alfaia
+  // Détection du pupitre Caixas pour l'attribution Caixa vs Tarol
+  const isCaixas = (member) => {
+    if (!member) return false;
+    const inst = (member.instrument || '').toLowerCase();
+    return inst.includes('caixa') || inst.includes('tarol');
+  };
+
+  // Résolution de la voix/sous-instrument initial par défaut ou enregistré
   const getInitialVoiceForMember = (memberId) => {
     if (activePlacements[memberId]?.voice) {
       return activePlacements[memberId].voice.toLowerCase();
     }
     const member = presentMembers.find(m => m.id === memberId);
     const fullUserInfo = allUsers.find(u => u.id === memberId);
-    const combinedStr = `${member?.instrument || ''} ${fullUserInfo?.instrument || ''}`.toLowerCase();
+    const combinedStr = `${member?.instrument || ''} ${fullUserInfo?.instrument || ''} ${fullUserInfo?.instrumentPrincipal || ''}`.toLowerCase();
+
+    // Caixas : Caixa vs Tarol
+    if (combinedStr.includes('caixa') || combinedStr.includes('tarol')) {
+      if (fullUserInfo?.sousInstrument) return fullUserInfo.sousInstrument.toLowerCase();
+      if (fullUserInfo?.attributionCaixa) return fullUserInfo.attributionCaixa.toLowerCase();
+      if (combinedStr.includes('tarol')) return 'tarol';
+      return 'caixa';
+    }
+
+    // Alfaias : Marcante, Meião, Repique
     if (combinedStr.includes('repique')) return 'repique';
     if (combinedStr.includes('meiao') || combinedStr.includes('meião') || combinedStr.includes('meian')) return 'meião';
     if (fullUserInfo?.competencesAlfaia && fullUserInfo.competencesAlfaia.length > 0) {
@@ -236,7 +253,8 @@ export default function EventStageLayoutSection({
       const newPlacements = { ...activePlacements };
       const selectedMember = presentMembers.find(m => m.id === selectedMemberId);
       const isMemberAlfaia = isAlfaia(selectedMember);
-      const voiceToAssign = isMemberAlfaia
+      const isMemberCaixas = isCaixas(selectedMember);
+      const voiceToAssign = (isMemberAlfaia || isMemberCaixas)
         ? (pendingVoice || activePlacements[selectedMemberId]?.voice || getInitialVoiceForMember(selectedMemberId))
         : undefined;
 
@@ -313,7 +331,8 @@ export default function EventStageLayoutSection({
 
     const member = presentMembers.find(m => m.id === memberId);
     const isMemberAlfaia = isAlfaia(member);
-    const voiceToAssign = isMemberAlfaia
+    const isMemberCaixas = isCaixas(member);
+    const voiceToAssign = (isMemberAlfaia || isMemberCaixas)
       ? (activePlacements[memberId]?.voice || pendingVoice || getInitialVoiceForMember(memberId))
       : undefined;
 
@@ -662,6 +681,43 @@ export default function EventStageLayoutSection({
                           </div>
                         );
                       }
+                      if (selectedUser && isCaixas(selectedUser)) {
+                        const fullUserInfo = allUsers.find(u => u.id === selectedMemberId);
+                        const defaultSousInst = fullUserInfo?.sousInstrument || fullUserInfo?.attributionCaixa || (
+                          (selectedUser.instrument || '').toLowerCase().includes('tarol') ? 'tarol' : 'caixa'
+                        );
+                        const currentVoice = activePlacements[selectedMemberId]?.voice || pendingVoice || defaultSousInst.toLowerCase();
+
+                        return (
+                          <div className="flex flex-col gap-1.5 bg-white/60 dark:bg-black/40 p-2.5 rounded border border-dashed border-cordel-master-dark/20 mt-1">
+                            <span className="text-[10px] font-black uppercase text-cordel-master-dark">
+                              Instrument attribué pour la scène :
+                            </span>
+                            <div className="flex gap-4">
+                              {[
+                                { key: 'caixa', label: 'Caixa' },
+                                { key: 'tarol', label: 'Tarol' }
+                              ].map(({ key, label }) => {
+                                const isSelected = (currentVoice || '').toLowerCase() === key;
+                                return (
+                                  <label key={key} className="flex items-center gap-1.5 cursor-pointer">
+                                    <input
+                                      type="radio"
+                                      name={`caixa-voice-${selectedMemberId}`}
+                                      checked={isSelected}
+                                      onChange={() => handleVoiceChange(key)}
+                                      className="w-3.5 h-3.5 accent-cordel-wood cursor-pointer"
+                                    />
+                                    <span className="text-[11px] font-bold text-cordel-master-dark">
+                                      {label}
+                                    </span>
+                                  </label>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        );
+                      }
                       return null;
                     })()}
                   </div>
@@ -677,6 +733,7 @@ export default function EventStageLayoutSection({
               <div className="w-full min-w-[500px] max-w-[560px] mx-auto flex flex-col items-center">
                             {(() => {
                 let marcante = 0; let meiao = 0; let repique = 0;
+                let caixaCount = 0; let tarolCount = 0;
                 Object.entries(activePlacements).forEach(([uid, pos]) => {
                   const m = presentMembers.find(x => x.id === uid);
                   if (m && m.instrument.toLowerCase().includes('alfaia')) {
@@ -684,21 +741,38 @@ export default function EventStageLayoutSection({
                     else if (pos.voice === 'meião' || pos.voice === 'meiao' || pos.voice === 'meian') meiao++;
                     else if (pos.voice === 'repique') repique++;
                   }
+                  if (m && (m.instrument.toLowerCase().includes('caixa') || m.instrument.toLowerCase().includes('tarol'))) {
+                    if (pos.voice === 'tarol') tarolCount++;
+                    else caixaCount++;
+                  }
                 });
-                const total = marcante + meiao + repique;
-                if (total > 0) {
+                const totalAlfaia = marcante + meiao + repique;
+                const totalCaixas = caixaCount + tarolCount;
+                if (totalAlfaia > 0 || totalCaixas > 0) {
                   return (
-                    <div className="w-full flex justify-center mb-4">
-                      <div className="bg-cordel-wood/10 border border-cordel-wood text-cordel-wood text-[10px] font-black px-3 py-1.5 rounded-full uppercase tracking-wider shadow-sm flex items-center gap-2">
-                        <span>🥁 Alfaias affectés :</span>
-                        <span>{marcante} {getVoiceLabel('marcante', groupNomenclature, true)}</span>
-                        <span className="opacity-50">|</span>
-                        <span>{meiao} {getVoiceLabel('meião', groupNomenclature, true)}</span>
-                        <span className="opacity-50">|</span>
-                        <span>{repique} {getVoiceLabel('repique', groupNomenclature, true)}</span>
-                        <span className="opacity-50">|</span>
-                        <span>(Total : {total})</span>
-                      </div>
+                    <div className="w-full flex flex-wrap justify-center gap-2 mb-4">
+                      {totalAlfaia > 0 && (
+                        <div className="bg-cordel-wood/10 border border-cordel-wood text-cordel-wood text-[10px] font-black px-3 py-1.5 rounded-full uppercase tracking-wider shadow-sm flex items-center gap-2">
+                          <span>🥁 Alfaias :</span>
+                          <span>{marcante} {getVoiceLabel('marcante', groupNomenclature, true)}</span>
+                          <span className="opacity-50">|</span>
+                          <span>{meiao} {getVoiceLabel('meião', groupNomenclature, true)}</span>
+                          <span className="opacity-50">|</span>
+                          <span>{repique} {getVoiceLabel('repique', groupNomenclature, true)}</span>
+                          <span className="opacity-50">|</span>
+                          <span>(Total : {totalAlfaia})</span>
+                        </div>
+                      )}
+                      {totalCaixas > 0 && (
+                        <div className="bg-[#2d6a4f]/10 border border-[#2d6a4f] text-[#2d6a4f] text-[10px] font-black px-3 py-1.5 rounded-full uppercase tracking-wider shadow-sm flex items-center gap-2">
+                          <span>🥁 Caixas :</span>
+                          <span>{caixaCount} Caixa{caixaCount > 1 ? 's' : ''}</span>
+                          <span className="opacity-50">|</span>
+                          <span>{tarolCount} Tarol{tarolCount > 1 ? 's' : ''}</span>
+                          <span className="opacity-50">|</span>
+                          <span>(Total : {totalCaixas})</span>
+                        </div>
+                      )}
                     </div>
                   );
                 }
@@ -850,7 +924,19 @@ export default function EventStageLayoutSection({
                             {formatMemberName(mestreMember.name)}
                           </span>
                           <span className="text-[7px] opacity-75 font-semibold leading-none mt-0.5 uppercase truncate max-w-full">
-                            {mestreMember.instrument.split(' ')[0]}{mestreMember.instrument.toLowerCase().includes('alfaia') && activePlacements[mestreMember.id]?.voice ? ` (${getVoiceLabel(activePlacements[mestreMember.id].voice, groupNomenclature, true)})` : ''}
+                            {(() => {
+                              const isAlf = mestreMember.instrument.toLowerCase().includes('alfaia');
+                              const isCx = mestreMember.instrument.toLowerCase().includes('caixa') || mestreMember.instrument.toLowerCase().includes('tarol');
+                              const assignedVoice = activePlacements[mestreMember.id]?.voice;
+
+                              if (isAlf && assignedVoice) {
+                                return `${mestreMember.instrument.split(' ')[0]} (${getVoiceLabel(assignedVoice, groupNomenclature, true)})`;
+                              }
+                              if (isCx && assignedVoice) {
+                                return assignedVoice.toLowerCase() === 'tarol' ? 'Tarol' : 'Caixa';
+                              }
+                              return mestreMember.instrument.split(' ')[0];
+                            })()}
                           </span>
                           
                           {/* Admin retirer placement button */}
@@ -932,7 +1018,19 @@ export default function EventStageLayoutSection({
                             {formatMemberName(member.name)}
                           </span>
                           <span className="text-[7px] sm:text-[8px] opacity-75 font-semibold leading-none mt-0.5 uppercase truncate max-w-full">
-                            {member.instrument.split(' ')[0]}{member.instrument.toLowerCase().includes('alfaia') && activePlacements[member.id]?.voice ? ` (${getVoiceLabel(activePlacements[member.id].voice, groupNomenclature, true)})` : ''}
+                            {(() => {
+                              const isAlf = member.instrument.toLowerCase().includes('alfaia');
+                              const isCx = member.instrument.toLowerCase().includes('caixa') || member.instrument.toLowerCase().includes('tarol');
+                              const assignedVoice = activePlacements[member.id]?.voice;
+
+                              if (isAlf && assignedVoice) {
+                                return `${member.instrument.split(' ')[0]} (${getVoiceLabel(assignedVoice, groupNomenclature, true)})`;
+                              }
+                              if (isCx && assignedVoice) {
+                                return assignedVoice.toLowerCase() === 'tarol' ? 'Tarol' : 'Caixa';
+                              }
+                              return member.instrument.split(' ')[0];
+                            })()}
                           </span>
                           
                           {/* Admin retirer placement cross button */}

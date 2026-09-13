@@ -157,6 +157,8 @@ export default function ThreadView({
             thread={threadData.thread}
             user={user}
             isModeratorOrAdmin={threadData.isModeratorOrAdmin}
+            replyingTo={threadData.replyingTo}
+            onCancelReply={threadData.cancelReply}
             onOpenAddPoll={() => threadData.setIsAddPollOpen(true)}
             t={t}
           />

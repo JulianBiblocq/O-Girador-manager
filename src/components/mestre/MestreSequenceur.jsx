@@ -9,6 +9,7 @@ import useConfirm from '../../hooks/useConfirm';
 import { useAssociationSettings } from '../../hooks/useAssociationSettings';
 import SequenceurLinkBlock from '../association-settings/blocks/SequenceurLinkBlock';
 import { useSequencerFirestoreData } from '../../hooks/useSequencerFirestoreData';
+import { launchCrossApp } from '../../utils/crossAppAuth';
 
 export default function MestreSequenceur({ groupId, sequenceurUrl }) {
   const { t } = useTranslation();
@@ -169,14 +170,13 @@ export default function MestreSequenceur({ groupId, sequenceurUrl }) {
 
       <div className="flex gap-2 mt-2 w-full">
         {rhythm.isJson && (
-          <a
-            href={getSequencerPlayUrl(rhythm)}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="theme-btn theme-bg-ocre text-encre-noire px-3 py-2 text-[10px] font-black rounded-[4px_6px_3px_5px] shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,0.15)] flex items-center justify-center gap-1.5 hover:brightness-105 active:translate-x-[0.5px] active:translate-y-[0.5px] w-full text-center select-none"
+          <button
+            type="button"
+            onClick={() => launchCrossApp(getSequencerPlayUrl(rhythm), { appLabel: 'le Séquenceur' })}
+            className="theme-btn theme-bg-ocre text-encre-noire px-3 py-2 text-[10px] font-black rounded-[4px_6px_3px_5px] shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,0.15)] flex items-center justify-center gap-1.5 hover:brightness-105 active:translate-x-[0.5px] active:translate-y-[0.5px] w-full text-center select-none cursor-pointer"
           >
             🎹 Lancer Séquenceur
-          </a>
+          </button>
         )}
         <button
           type="button"

@@ -424,6 +424,11 @@ export const POLE_GUIDES = {
       "Affectez un instrument à un adhérent ou à un lieu de stockage.",
       "Renseignez les numéros de série et photographies d'identification."
     ],
+    targets: [
+      "inventory-filter-bar",
+      "inventory-table-view",
+      "inventory-add-btn"
+    ],
     steps: [
       "Consultez l'état matériel de chaque équipement (En service, Maintenance, HS).",
       "Affectez un instrument à un adhérent ou à un lieu de stockage.",

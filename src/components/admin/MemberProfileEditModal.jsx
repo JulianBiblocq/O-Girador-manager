@@ -77,7 +77,10 @@ export default function MemberProfileEditModal({
     allergies: userItem?.allergies || '',
     tags: Array.isArray(userItem?.tags) ? [...userItem.tags] : [],
     instrumentsJoues: Array.isArray(userItem?.instrumentsJoues) ? [...userItem.instrumentsJoues] : (userItem?.instrument ? [userItem.instrument] : []),
-    niveauxParInstrument: userItem?.niveauxParInstrument || {}
+    niveauxParInstrument: userItem?.niveauxParInstrument || {},
+    competencesAlfaia: Array.isArray(userItem?.competencesAlfaia) ? userItem.competencesAlfaia : ['marcante'],
+    sousInstrument: userItem?.sousInstrument || userItem?.attributionCaixa || '',
+    attributionCaixa: userItem?.attributionCaixa || userItem?.sousInstrument || ''
   }));
 
   // Clause de garde placée impérativement après tous les hooks (Rules of Hooks)
@@ -200,6 +203,9 @@ export default function MemberProfileEditModal({
       instrument: formData.instrument,
       instrumentPrincipal: formData.instrument,
       instrumentSecondaire: formData.instrumentSecondaire,
+      competencesAlfaia: formData.competencesAlfaia || [],
+      sousInstrument: formData.sousInstrument || '',
+      attributionCaixa: formData.attributionCaixa || formData.sousInstrument || '',
       voeuPrincipal: formData.voeuPrincipal,
       voeuSecondaire: formData.voeuSecondaire,
       voeuTertiaire: formData.voeuTertiaire,
@@ -471,6 +477,73 @@ export default function MemberProfileEditModal({
                     <option key={`p-${pup}`} value={pup}>{pup}</option>
                   ))}
                 </select>
+
+                {/* Voix Alfaia si le pupitre principal est Alfaia */}
+                {(formData.instrument || '').toLowerCase().includes('alfaia') && (
+                  <div className="mt-1.5 p-2 bg-cordel-bg-light/60 rounded border border-dashed border-cordel-master-dark/20">
+                    <span className="block text-[8.5px] font-black uppercase text-cordel-master-dark mb-1">
+                      Voix Alfaia (Compétences) :
+                    </span>
+                    <div className="flex flex-wrap gap-2">
+                      {['marcante', 'meião', 'repique'].map((voiceKey) => {
+                        const currentList = Array.isArray(formData.competencesAlfaia) ? formData.competencesAlfaia : ['marcante'];
+                        const isChecked = currentList.includes(voiceKey);
+                        return (
+                          <label key={`modal-alfaia-${voiceKey}`} className="flex items-center gap-1 text-[10px] font-bold cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={(e) => {
+                                const updated = e.target.checked
+                                  ? [...currentList, voiceKey]
+                                  : currentList.filter(v => v !== voiceKey);
+                                setFormData(prev => ({
+                                  ...prev,
+                                  competencesAlfaia: updated.length > 0 ? updated : ['marcante']
+                                }));
+                              }}
+                              className="w-3 h-3 rounded accent-cordel-wood"
+                            />
+                            <span className="capitalize">{voiceKey}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Attribution Caixa vs Tarol si le pupitre principal est Caixas */}
+                {((formData.instrument || '').toLowerCase().includes('caixa') || (formData.instrument || '').toLowerCase().includes('tarol')) && (
+                  <div className="mt-1.5 p-2 bg-cordel-bg-light/60 rounded border border-dashed border-cordel-master-dark/20">
+                    <span className="block text-[8.5px] font-black uppercase text-cordel-master-dark mb-1">
+                      Attribution Caixas :
+                    </span>
+                    <div className="flex gap-3">
+                      {['Caixa', 'Tarol'].map((instChoice) => {
+                        const currentChoice = formData.sousInstrument || formData.attributionCaixa || (
+                          (formData.instrument || '').toLowerCase().includes('tarol') ? 'Tarol' : 'Caixa'
+                        );
+                        return (
+                          <label key={`modal-caixa-${instChoice}`} className="flex items-center gap-1 text-[10px] font-bold cursor-pointer">
+                            <input
+                              type="radio"
+                              name="sousInstrument"
+                              value={instChoice}
+                              checked={currentChoice.toLowerCase() === instChoice.toLowerCase()}
+                              onChange={() => setFormData(prev => ({
+                                ...prev,
+                                sousInstrument: instChoice,
+                                attributionCaixa: instChoice
+                              }))}
+                              className="w-3 h-3 accent-cordel-wood"
+                            />
+                            <span>{instChoice}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
               <div>
                 <label className="block text-[9px] uppercase font-bold text-cordel-master-dark mb-0.5">Pupitre Secondaire</label>

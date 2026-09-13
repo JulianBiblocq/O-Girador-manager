@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { collection, query, where, onSnapshot, doc, addDoc, updateDoc, deleteDoc, writeBatch, increment } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, doc, addDoc, updateDoc, deleteDoc, writeBatch, increment, arrayUnion } from 'firebase/firestore';
 import { db } from '../firebase';
 import useConfirm from './useConfirm';
 
@@ -195,7 +195,8 @@ export function useInventoryData(groupId, isAuthorized, t) {
       kit: inst.kit || '',
       modelId: inst.modelId || '',
       nomenclature: inst.nomenclature || [],
-      kitChecklist: inst.kitChecklist || []
+      kitChecklist: inst.kitChecklist || [],
+      historiqueMouvements: inst.historiqueMouvements || []
     });
     setEditingId(inst.id);
     setIsFormOpen(true);
@@ -488,22 +489,32 @@ export function useInventoryData(groupId, isAuthorized, t) {
     try {
       const { type, toUserId } = inst.pendingMovement;
       let payload = {};
+      const logEntry = {
+        date: new Date().toISOString(),
+        action: type === 'return_to_local' ? 'Restitution au local validée' : 'Transfert validé',
+        fromUserId: inst.pendingMovement?.fromUserId || null,
+        toUserId: inst.pendingMovement?.toUserId || null,
+        note: inst.pendingMovement?.note || ''
+      };
+
       if (type === 'return_to_local') {
         payload = {
           status: 'En stock',
           borrowedBy: null,
           localisationPhysique: 'Local',
-          pendingMovement: null
+          pendingMovement: null,
+          historiqueMouvements: arrayUnion(logEntry)
         };
       } else if (type === 'transfer' && toUserId) {
         payload = {
           status: 'Emprunté',
           borrowedBy: toUserId,
           localisationPhysique: toUserId,
-          pendingMovement: null
+          pendingMovement: null,
+          historiqueMouvements: arrayUnion(logEntry)
         };
       } else {
-        payload = { pendingMovement: null };
+        payload = { pendingMovement: null, historiqueMouvements: arrayUnion(logEntry) };
       }
       await updateDoc(doc(db, 'inventory', inst.id), payload);
     } catch (err) {
@@ -543,7 +554,12 @@ export function useInventoryData(groupId, isAuthorized, t) {
       const docRef = doc(db, 'inventory', instId);
       await updateDoc(docRef, {
         status: 'Emprunté',
-        borrowedBy: borrowerId
+        borrowedBy: borrowerId,
+        historiqueMouvements: arrayUnion({
+          date: new Date().toISOString(),
+          action: 'Emprunt direct',
+          toUserId: borrowerId
+        })
       });
     } catch (error) {
       console.error("useInventoryData - Erreur assignation emprunteur :", error);
@@ -558,7 +574,12 @@ export function useInventoryData(groupId, isAuthorized, t) {
       const docRef = doc(db, 'inventory', instId);
       await updateDoc(docRef, {
         status: 'En stock',
-        borrowedBy: null
+        borrowedBy: null,
+        localisationPhysique: 'Local',
+        historiqueMouvements: arrayUnion({
+          date: new Date().toISOString(),
+          action: 'Retour direct au local'
+        })
       });
     } catch (error) {
       console.error("useInventoryData - Erreur restitution instrument :", error);

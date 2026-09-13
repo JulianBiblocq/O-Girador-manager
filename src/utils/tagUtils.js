@@ -10,7 +10,8 @@
  */
 export function filterPublicPercussionInstruments(list = []) {
   if (!Array.isArray(list)) return [];
-  const EXCLUDED_KEYWORDS = ['mestre', 'direction', 'chef de bateria', 'danse'];
+  // Exclut les rôles de direction, la danse et les sous-voix spécifiques d'Alfaia des choix publics
+  const EXCLUDED_KEYWORDS = ['mestre', 'direction', 'chef de bateria', 'danse', 'marcante', 'meião', 'meiao', 'repique'];
   return list.filter(item => {
     if (!item || typeof item !== 'string') return false;
     const lower = item.toLowerCase().trim();
@@ -201,9 +202,10 @@ export function resolveEffectiveUserTags(userTags = [], tagsDisponibles = []) {
 export function computePupitresList(instrumentsDisponibles = [], linkedInstruments = []) {
   const result = [];
   const usedInstruments = new Set();
-  const EXCLUDED_KEYWORDS = ['mestre', 'direction', 'chef de bateria', 'danse'];
+  // Exclut les rôles de direction, la danse et les sous-voix d'Alfaia (Marcante, Meião, Repique) des pupitres
+  const EXCLUDED_KEYWORDS = ['mestre', 'direction', 'chef de bateria', 'danse', 'marcante', 'meião', 'meiao', 'repique'];
 
-  // 1. Groupes d'instruments liés configurés (ex: "Agbê & Mineiro")
+  // 1. Groupes d'instruments liés configurés (ex: "Agbê & Mineiro", "Caixa & Tarol", "Caixas")
   (linkedInstruments || []).forEach(group => {
     const groupInsts = Array.isArray(group.instruments)
       ? group.instruments
@@ -218,7 +220,20 @@ export function computePupitresList(instrumentsDisponibles = [], linkedInstrumen
     }
   });
 
-  // 2. Instruments autonomes configurés (non inclus dans un groupe lié et hors mots-clés réservés)
+  // 2. Consolidation automatique du pupitre "Caixas" si Caixa et Tarol sont présents sans groupe lié explicite
+  const lowerInsts = (instrumentsDisponibles || []).map(i => String(i).toLowerCase().trim());
+  const hasCaixa = lowerInsts.includes('caixa');
+  const hasTarol = lowerInsts.includes('tarol');
+  const caixaUsed = usedInstruments.has('caixa');
+  const tarolUsed = usedInstruments.has('tarol');
+
+  if (hasCaixa && hasTarol && !caixaUsed && !tarolUsed) {
+    result.push('Caixas');
+    usedInstruments.add('caixa');
+    usedInstruments.add('tarol');
+  }
+
+  // 3. Instruments autonomes configurés (non inclus dans un groupe lié et hors mots-clés réservés)
   (instrumentsDisponibles || []).forEach(inst => {
     const lower = String(inst).toLowerCase().trim();
     if (!usedInstruments.has(lower) && !EXCLUDED_KEYWORDS.some(k => lower === k)) {
@@ -226,5 +241,61 @@ export function computePupitresList(instrumentsDisponibles = [], linkedInstrumen
     }
   });
 
+  // 4. Si "Alfaia" n'est pas déjà présent mais que des voix d'Alfaia étaient fournies, assurer la présence du pupitre "Alfaia"
+  const hasAlfaia = result.some(r => r.toLowerCase().trim() === 'alfaia');
+  const hadAlfaiaSubvoice = lowerInsts.some(k => ['marcante', 'meião', 'meiao', 'repique'].includes(k));
+  if (!hasAlfaia && hadAlfaiaSubvoice) {
+    result.unshift('Alfaia');
+  }
+
   return result;
 }
+
+/**
+ * Résout le pupitre canonique correspondant à un nom d'instrument ou sous-voix.
+ * Mappe notamment Marcante/Meião/Repique vers Alfaia, et Caixa/Tarol vers Caixas.
+ *
+ * @param {string} instName - Nom de l'instrument ou de la voix
+ * @param {Array<string>} pupitresList - Liste des pupitres disponibles
+ * @param {Array<Object>} linkedInstruments - Groupes liés de l'association
+ * @returns {string} Nom du pupitre canonique résolu
+ */
+export function resolvePupitreForInstrument(instName, pupitresList = [], linkedInstruments = []) {
+  if (!instName || instName === 'En attente') return '';
+  const cleanInst = String(instName).trim();
+  const lower = cleanInst.toLowerCase();
+
+  // 1. Si c'est déjà exactement un pupitre reconnu dans pupitresList
+  const exactMatch = (pupitresList || []).find(p => p.toLowerCase() === lower);
+  if (exactMatch) return exactMatch;
+
+  // 2. Sous-voix d'Alfaia -> Pupitre Alfaia
+  if (lower === 'marcante' || lower === 'meião' || lower === 'meiao' || lower === 'repique') {
+    const alfaiaPupitre = (pupitresList || []).find(p => p.toLowerCase().includes('alfaia'));
+    return alfaiaPupitre || 'Alfaia';
+  }
+
+  // 3. Caixa ou Tarol -> Pupitre Caixas (ou groupe lié correspondant)
+  if (lower === 'caixa' || lower === 'tarol' || lower === 'caisse') {
+    const caixasPupitre = (pupitresList || []).find(p => p.toLowerCase().includes('caixa') || p.toLowerCase().includes('tarol'));
+    if (caixasPupitre) return caixasPupitre;
+  }
+
+  // 4. Groupes d'instruments liés configurés (ex: "Agbê & Mineiro")
+  const matchingGroup = (linkedInstruments || []).find(group => {
+    const groupInsts = Array.isArray(group.instruments)
+      ? group.instruments
+      : (Array.isArray(group) ? group : [group.inst1, group.inst2].filter(Boolean));
+    return groupInsts.some(i => String(i).toLowerCase().trim() === lower);
+  });
+
+  if (matchingGroup) {
+    const gName = matchingGroup.name && matchingGroup.name.trim()
+      ? matchingGroup.name.trim()
+      : (Array.isArray(matchingGroup.instruments) ? matchingGroup.instruments.join(' + ') : '');
+    if ((pupitresList || []).includes(gName)) return gName;
+  }
+
+  return cleanInst;
+}
+

@@ -152,12 +152,18 @@ export function useTreasury(groupId) {
     });
 
     // 2. Transactions
-    const txRef = collection(db, 'associations', groupId, 'transactions');
-    const qTx = query(txRef, orderBy('date', 'desc'));
+    const txRef = collection(db, 'transactions');
+    const qTx = query(txRef, where('groupId', '==', groupId));
     const unsubTx = onSnapshot(qTx, (snap) => {
       const fetched = [];
       snap.forEach((docSnap) => {
         fetched.push({ id: docSnap.id, ...docSnap.data() });
+      });
+      // Tri chronologique décroissant en mémoire (évite l'exigence d'un index composite Firestore)
+      fetched.sort((a, b) => {
+        const dateA = a.date?.toDate ? a.date.toDate() : new Date(a.date || 0);
+        const dateB = b.date?.toDate ? b.date.toDate() : new Date(b.date || 0);
+        return dateB - dateA;
       });
       setTransactions(fetched);
       setLoadingStates(prev => ({ ...prev, transactions: false }));

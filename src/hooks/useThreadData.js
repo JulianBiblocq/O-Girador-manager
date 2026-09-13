@@ -55,6 +55,7 @@ export function useThreadData({
   const [thread, setThread] = useState(null);
   const [loading, setLoading] = useState(Boolean(threadId));
   const [replyText, setReplyText] = useState('');
+  const [replyingTo, setReplyingTo] = useState(null);
   const [sending, setSending] = useState(false);
   const [internalTagsDisponibles, setInternalTagsDisponibles] = useState([]);
   const [selectedTarget, setSelectedTarget] = useState('');
@@ -312,8 +313,13 @@ export function useThreadData({
       const now = new Date().toISOString();
       const detectedMentionIds = extractMentionedUserIds(replyText, allUsers);
 
+      const quoteHeader = replyingTo 
+        ? `<blockquote><strong>@${replyingTo.authorName}</strong> a écrit :<br /><em>"${replyingTo.snippet}"</em></blockquote><p></p>`
+        : '';
+      const finalMessage = `${quoteHeader}${replyText.trim()}`;
+
       const newReply = {
-        message: replyText.trim(),
+        message: finalMessage,
         auteurId: user?.uid || 'anonyme',
         auteurNom: `${profileData?.prenom || ''} ${profileData?.nom || ''}`.trim() || user?.email || 'Membre',
         dateCreation: now,
@@ -327,6 +333,8 @@ export function useThreadData({
         derniereModification: now,
         nombreReponses: (thread?.nombreReponses || 0) + 1
       });
+
+      setReplyingTo(null);
 
       // Notification pour les utilisateurs ciblés ou mentionnés
       try {
@@ -483,9 +491,16 @@ export function useThreadData({
     if (!reply) return;
     const authorName = reply.auteurNom || 'Membre';
     const cleanText = (reply.message || '').replace(/<[^>]*>?/gm, '').trim();
-    const snippet = cleanText.length > 80 ? `${cleanText.slice(0, 80)}...` : cleanText;
-    const quoteHtml = `<blockquote><strong>@${authorName}</strong> a écrit :<br /><em>"${snippet}"</em></blockquote><p></p>`;
-    setReplyText((prev) => (prev ? `${prev}<br />${quoteHtml}` : quoteHtml));
+    const snippet = cleanText.length > 90 ? `${cleanText.slice(0, 90)}...` : cleanText;
+    setReplyingTo({
+      authorName,
+      snippet,
+      replyId: reply.id || null
+    });
+  }, []);
+
+  const cancelReply = useCallback(() => {
+    setReplyingTo(null);
   }, []);
 
   // Ajout d'un sondage sur le sujet existant
@@ -566,6 +581,8 @@ export function useThreadData({
     handleToggleReaction,
     handleDeleteThread,
     handleReplyToMessage,
+    replyingTo,
+    cancelReply,
     handleCreatePoll,
     getCategoryLabel,
 

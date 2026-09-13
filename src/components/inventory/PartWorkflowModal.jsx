@@ -3,6 +3,7 @@ import { XiloClose } from '../XiloIcons';
 import CordelButton from '../CordelButton';
 import { getStepSignal, getStepProgressRatio } from '../../utils/workshopProjectionUtils';
 import AutoEvalQuiz from '../pedagogy/AutoEvalQuiz';
+import PartHistoryLogs from './PartHistoryLogs';
 
 export default function PartWorkflowModal({
   isOpen,
@@ -355,6 +356,9 @@ export default function PartWorkflowModal({
               Cette pièce est prête et terminée !
             </div>
           )}
+
+          {/* Journal des contrôles et logs de la pièce */}
+          <PartHistoryLogs historique={slotWf.historiqueControles || invPart.historiqueControles || []} />
 
         </div>
       </div>

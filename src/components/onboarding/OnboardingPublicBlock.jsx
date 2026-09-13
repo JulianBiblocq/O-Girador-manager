@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { XiloTrombinoscope } from '../XiloIcons';
-import { filterPublicPercussionInstruments } from '../../utils/tagUtils';
+import { computePupitresList } from '../../utils/tagUtils';
 
 /**
  * OnboardingPublicBlock - Bloc 1 : Ton Profil Public (Trombinoscope)
@@ -14,9 +14,13 @@ export default function OnboardingPublicBlock({
   isFieldVisible,
   isFieldRequired,
   instrumentsDisponibles = [],
+  linkedInstruments = [],
   nomAssociation = '',
   t
 }) {
+  const pupitresList = useMemo(() => {
+    return computePupitresList(instrumentsDisponibles || [], linkedInstruments || []);
+  }, [instrumentsDisponibles, linkedInstruments]);
   const translate = (key, fallback) => {
     const val = t(key);
     return val === key ? fallback : val;
@@ -221,10 +225,10 @@ export default function OnboardingPublicBlock({
               🥁 Orientation Percussions (Ancien Membre)
             </span>
 
-            {/* Sélecteur d'instrument actuel (Indispensable pour la première année d'inscription) */}
+            {/* Sélecteur de pupitre actuel (Indispensable pour la première année d'inscription) */}
             <div className="flex flex-col gap-1 text-left">
               <label className="text-[10.5px] uppercase font-black tracking-wider text-cordel-wood flex items-center gap-1">
-                <span>Mon instrument actuel</span>
+                <span>Mon pupitre actuel</span>
                 <span className="text-red-500 font-bold">*</span>
               </label>
               <select
@@ -241,17 +245,17 @@ export default function OnboardingPublicBlock({
                 disabled={submitting}
                 className="theme-input w-full text-xs font-bold bg-cordel-bg-light"
               >
-                <option value="">-- Sélectionner mon instrument actuel --</option>
-                {filterPublicPercussionInstruments(instrumentsDisponibles || []).map(inst => (
-                  <option key={inst} value={inst}>{inst}</option>
+                <option value="">-- Sélectionner mon pupitre actuel --</option>
+                {pupitresList.map(pup => (
+                  <option key={pup} value={pup}>{pup}</option>
                 ))}
               </select>
             </div>
 
-            {/* Question de réorientation : Souhaites-tu apprendre un nouvel instrument ? */}
+            {/* Question de réorientation : Souhaites-tu apprendre un nouveau pupitre ? */}
             <div className="flex flex-col gap-1 text-left pt-1 border-t border-dashed border-cordel-master-dark/20">
               <label className="text-[10.5px] uppercase font-black tracking-wider text-cordel-wood">
-                Souhaites-tu apprendre un nouvel instrument cette année ?
+                Souhaites-tu apprendre un nouveau pupitre cette année ?
               </label>
               <select
                 name="souhaiteChangerInstrument"
@@ -263,15 +267,15 @@ export default function OnboardingPublicBlock({
                 disabled={submitting}
                 className="theme-input w-full text-xs font-bold bg-cordel-bg-light"
               >
-                <option value="non">Non, je souhaite conserver mon instrument actuel</option>
-                <option value="oui">Oui, je souhaite formuler des vœux pour un nouvel instrument</option>
+                <option value="non">Non, je souhaite conserver mon pupitre actuel</option>
+                <option value="oui">Oui, je souhaite formuler des vœux pour un nouveau pupitre</option>
               </select>
             </div>
 
             {formData.souhaiteChangerInstrument && (
               <div className="flex flex-col gap-3 pt-2 border-t border-dashed border-cordel-master-dark/20">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {/* Vœu 1 : Filtre l'instrument déjà choisi en Vœu 2 */}
+                  {/* Vœu 1 : Filtre le pupitre déjà choisi en Vœu 2 */}
                   <div className="flex flex-col gap-1">
                     <span className="text-[9px] font-black uppercase text-cordel-master-dark opacity-80">
                       Vœu 1 (Nouveau choix principal)
@@ -289,16 +293,16 @@ export default function OnboardingPublicBlock({
                       disabled={submitting}
                       className="theme-input w-full text-xs font-semibold bg-cordel-bg-light"
                     >
-                      <option value="">-- Choisir --</option>
-                      {filterPublicPercussionInstruments(instrumentsDisponibles || [])
-                        .filter(inst => inst !== (formData.voeuxInstruments || [])[1])
-                        .map(inst => (
-                          <option key={inst} value={inst}>{inst}</option>
+                      <option value="">-- Choisir un pupitre --</option>
+                      {pupitresList
+                        .filter(pup => pup !== (formData.voeuxInstruments || [])[1])
+                        .map(pup => (
+                          <option key={pup} value={pup}>{pup}</option>
                         ))}
                     </select>
                   </div>
 
-                  {/* Vœu 2 : Filtre l'instrument déjà choisi en Vœu 1 */}
+                  {/* Vœu 2 : Filtre le pupitre déjà choisi en Vœu 1 */}
                   <div className="flex flex-col gap-1">
                     <span className="text-[9px] font-black uppercase text-cordel-master-dark opacity-80">
                       Vœu 2 (Nouveau choix secondaire)
@@ -317,10 +321,10 @@ export default function OnboardingPublicBlock({
                       className="theme-input w-full text-xs font-semibold bg-cordel-bg-light"
                     >
                       <option value="">-- Optionnel --</option>
-                      {filterPublicPercussionInstruments(instrumentsDisponibles || [])
-                        .filter(inst => inst !== (formData.voeuxInstruments || [])[0])
-                        .map(inst => (
-                          <option key={inst} value={inst}>{inst}</option>
+                      {pupitresList
+                        .filter(pup => pup !== (formData.voeuxInstruments || [])[0])
+                        .map(pup => (
+                          <option key={pup} value={pup}>{pup}</option>
                         ))}
                     </select>
                   </div>
@@ -337,7 +341,7 @@ export default function OnboardingPublicBlock({
                     className="w-4 h-4 accent-cordel-wood cursor-pointer shrink-0 mt-0.5"
                   />
                   <label htmlFor="volontaireAncienInstrument" className="font-bold text-encre-noire cursor-pointer select-none">
-                    🤝 <strong>Renfort en prestation :</strong> J'accepte de jouer mon ancien instrument ({formData.instrumentPrincipal || 'actuel'}) lors des prestations si le groupe en a besoin.
+                    🤝 <strong>Renfort en prestation :</strong> J'accepte de jouer mon ancien pupitre ({formData.instrumentPrincipal || 'actuel'}) lors des prestations si le groupe en a besoin.
                   </label>
                 </div>
               </div>

@@ -14,6 +14,7 @@ import VaralCategoryRope from './documents/varal/VaralCategoryRope';
 import useVaralData, { DEFAULT_VARAL_CATEGORIES, DEFAULT_POLE_ROPES } from '../hooks/useVaralData';
 import { isWorkshopVirtualDoc } from '../utils/workshopProjectionUtils';
 import { useTranslation } from './LanguageContext';
+import useHardwareBack from '../hooks/useHardwareBack';
 
 // Réexport des constantes pour garantir une compatibilité descendante absolue
 export { DEFAULT_VARAL_CATEGORIES, DEFAULT_POLE_ROPES };
@@ -74,6 +75,20 @@ export default function WidgetDocuments({
   const [selectedInstrumentModel, setSelectedInstrumentModel] = useState(null);
   const [selectedReunion, setSelectedReunion] = useState(null);
   const [selectedDocumentView, setSelectedDocumentView] = useState(null);
+
+  // Gestion du retour matériel (Android / Navigateur) pour fermer les modales ouvertes
+  useHardwareBack(
+    Boolean(selectedToada || selectedCultureCard || selectedReport || selectedFabrication || selectedInstrumentModel || selectedReunion || selectedDocumentView),
+    () => {
+      if (selectedToada) setSelectedToada(null);
+      else if (selectedCultureCard) setSelectedCultureCard(null);
+      else if (selectedReport) setSelectedReport(null);
+      else if (selectedFabrication) setSelectedFabrication(null);
+      else if (selectedInstrumentModel) setSelectedInstrumentModel(null);
+      else if (selectedReunion) setSelectedReunion(null);
+      else if (selectedDocumentView) setSelectedDocumentView(null);
+    }
+  );
 
   // États de l'impression groupée du livret de toadas
   const [showBulkPrintModal, setShowBulkPrintModal] = useState(false);
@@ -323,8 +338,16 @@ export default function WidgetDocuments({
 
       {/* Modale de consultation d'un compte-rendu textuel ou archivé */}
       {selectedReport && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 select-none animate-fadeIn">
-          <CordelCard variant="default" useExtremeBorder={true} className="w-full max-w-2xl p-6 text-left relative bg-cordel-bg shadow-xl max-h-[85vh] flex flex-col">
+        <div 
+          className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-3 sm:p-4 select-none animate-fadeIn"
+          onClick={() => setSelectedReport(null)}
+        >
+          <CordelCard 
+            variant="default" 
+            useExtremeBorder={true} 
+            className="w-full max-w-2xl p-4 sm:p-6 text-left relative bg-cordel-bg shadow-xl max-h-[85vh] flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex justify-between items-start border-b-2 border-dashed border-cordel-master-dark/20 pb-3 mb-4 shrink-0">
               <div>
                 <span className="theme-stamp-badge theme-stamp-badge-wood text-[8px] tracking-wider mb-1 inline-block">
@@ -413,13 +436,21 @@ export default function WidgetDocuments({
 
       {/* Modale de consultation d'une Toada (Carnet de chants) */}
       {selectedToada && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 sm:p-6 md:p-12 animate-fadeIn overflow-hidden">
-          <div className="relative w-full max-w-[560px] max-h-full flex flex-col items-center">
+        <div 
+          className="fixed inset-0 bg-black/80 backdrop-blur-xs flex items-center justify-center z-50 p-2 sm:p-6 md:p-12 animate-fadeIn overflow-hidden"
+          onClick={() => setSelectedToada(null)}
+        >
+          <div 
+            className="relative w-full max-w-[560px] max-h-[92vh] flex flex-col items-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Bouton de fermeture tactile ergonomique et toujours accessible */}
             <button
               type="button"
               onClick={() => setSelectedToada(null)}
-              className="absolute -top-3 -right-3 z-50 bg-[var(--theme-primary)] text-white w-8 h-8 rounded-full font-black flex items-center justify-center shadow-lg hover:bg-red-700 transition-colors border-2 border-white cursor-pointer"
-              title="Fermer"
+              className="absolute top-2.5 right-2.5 z-50 bg-[var(--color-cordel-rouge,#8b2a1a)] text-white w-9 h-9 sm:w-10 sm:h-10 rounded-full font-black flex items-center justify-center shadow-lg hover:brightness-110 active:scale-95 transition-all border-2 border-white cursor-pointer"
+              title={t('common.close') || "Fermer"}
+              aria-label={t('common.close') || "Fermer"}
             >
               ✕
             </button>
@@ -441,13 +472,21 @@ export default function WidgetDocuments({
 
       {/* Modale de consultation d'une fiche Culture */}
       {selectedCultureCard && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 sm:p-6 md:p-12 animate-fadeIn overflow-hidden">
-          <div className="relative w-full max-w-[560px] max-h-full flex flex-col items-center">
+        <div 
+          className="fixed inset-0 bg-black/80 backdrop-blur-xs flex items-center justify-center z-50 p-2 sm:p-6 md:p-12 animate-fadeIn overflow-hidden"
+          onClick={() => setSelectedCultureCard(null)}
+        >
+          <div 
+            className="relative w-full max-w-[560px] max-h-[92vh] flex flex-col items-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Bouton de fermeture tactile ergonomique et toujours accessible */}
             <button
               type="button"
               onClick={() => setSelectedCultureCard(null)}
-              className="absolute -top-3 -right-3 z-50 bg-[var(--theme-primary)] text-white w-8 h-8 rounded-full font-black flex items-center justify-center shadow-lg hover:bg-red-700 transition-colors border-2 border-white cursor-pointer"
-              title="Fermer"
+              className="absolute top-2.5 right-2.5 z-50 bg-[var(--color-cordel-rouge,#8b2a1a)] text-white w-9 h-9 sm:w-10 sm:h-10 rounded-full font-black flex items-center justify-center shadow-lg hover:brightness-110 active:scale-95 transition-all border-2 border-white cursor-pointer"
+              title={t('common.close') || "Fermer"}
+              aria-label={t('common.close') || "Fermer"}
             >
               ✕
             </button>

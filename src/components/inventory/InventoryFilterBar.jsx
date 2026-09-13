@@ -26,7 +26,7 @@ export default function InventoryFilterBar({
   t: _t
 }) {
   return (
-    <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 p-3 bg-cordel-bg border-2 border-encre-noire rounded-[6px] shadow-[2px_2px_0px_0px_#181716] select-none">
+    <div data-tour="inventory-filter-bar" className="flex flex-col md:flex-row md:items-center justify-between gap-3 p-3 bg-cordel-bg border-2 border-encre-noire rounded-[6px] shadow-[2px_2px_0px_0px_#181716] select-none">
       {/* Recherche textuelle & Onglets de filtrage */}
       <div className="flex flex-wrap items-center gap-2 flex-1">
         <input
@@ -117,8 +117,8 @@ export default function InventoryFilterBar({
           </button>
         )}
 
-        <CordelButton variant="vert" onClick={onOpenAdd} className="px-3 py-1.5 text-xs font-black">
-          ➕ Ajouter un instrument
+        <CordelButton variant="vert" data-tour="inventory-add-btn" onClick={onOpenAdd} className="px-3 py-1.5 text-xs font-black">
+          + Nouveau Matériel
         </CordelButton>
       </div>
     </div>

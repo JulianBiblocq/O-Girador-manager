@@ -68,9 +68,12 @@ async function sendPushToUsers(db, { groupId, recipientId, cibles, title, body, 
       if (!matchesCible) return;
     }
 
-    userTokens.forEach((token) => {
-      if (typeof token === "string" && token.trim()) {
-        allTokens.push({ token: token.trim(), userId });
+    // Dédoublonner les jetons de l'utilisateur pour éviter les envois multiples au même token
+    const uniqueUserTokens = Array.from(new Set((userTokens || []).filter(t => typeof t === "string" && t.trim()).map(t => t.trim())));
+    uniqueUserTokens.forEach((token) => {
+      // Dédoublonner globalement dans allTokens
+      if (!allTokens.some((item) => item.token === token)) {
+        allTokens.push({ token, userId });
       }
     });
   });
@@ -108,10 +111,16 @@ async function sendPushToUsers(db, { groupId, recipientId, cibles, title, body, 
       const resolvedData = dataPayload || { url: "/app", click_action: "/app" };
       const eventUrl = resolvedData.url || "/app";
 
+      // Tag déterministe pour que le navigateur et l'OS fusionnent tout doublon
+      const notifTag = resolvedData.tag || (resolvedData.eventId ? `event-${resolvedData.eventId}` : (resolvedData.announcementId ? `annonce-${resolvedData.announcementId}` : (resolvedData.threadId ? `forum-${resolvedData.threadId}` : undefined)));
+
       const multicastMessage = {
         notification: { title: finalTitle, body: truncatedBody },
         android: {
-          priority: 'high'
+          priority: 'high',
+          notification: {
+            ...(notifTag ? { tag: notifTag } : {})
+          }
         },
         apns: {
           headers: {
@@ -122,10 +131,12 @@ async function sendPushToUsers(db, { groupId, recipientId, cibles, title, body, 
           notification: {
             icon: 'https://organizador.o-girador.com/icon-192.png',
             badge: 'https://organizador.o-girador.com/favicon.svg',
+            ...(notifTag ? { tag: notifTag } : {}),
             // Données injectées dans l'objet notification pour le handler notificationclick du SW
             data: {
               ...resolvedData,
-              url: eventUrl
+              url: eventUrl,
+              ...(notifTag ? { tag: notifTag } : {})
             }
           },
           // Deep Linking FCM WebPush standardisé pour ouvrir l'URL cible
@@ -135,7 +146,8 @@ async function sendPushToUsers(db, { groupId, recipientId, cibles, title, body, 
         },
         data: {
           ...resolvedData,
-          url: eventUrl
+          url: eventUrl,
+          ...(notifTag ? { tag: notifTag } : {})
         },
         tokens: batchTokenStrings
       };
@@ -200,12 +212,13 @@ exports.onAnnouncementCreated = onDocumentCreated(
     const db = getFirestore();
     const cibles = Array.isArray(data.cibles) ? data.cibles : ["Tous"];
     
+    const announcementId = event.params.announcementId;
     await sendPushToUsers(db, {
       groupId: data.groupId,
       cibles: cibles,
       title: data.titre || "Nouvelle annonce",
       body: data.message || "",
-      dataPayload: { url: "/app", click_action: "/app" }
+      dataPayload: { url: "/app", click_action: "/app", announcementId, tag: `annonce-${announcementId}` }
     });
     return null;
   }
@@ -233,7 +246,7 @@ exports.onEventCreated = onDocumentCreated(
       cibles: cibles,
       title: `📅 Nouvel événement : ${data.titre || data.nom || "Événement"}`,
       body: data.description || "Un nouvel événement a été ajouté à l'agenda.",
-      dataPayload: { url: `/app/events/${eventId}`, click_action: `/app/events/${eventId}` }
+      dataPayload: { url: `/app/events/${eventId}`, click_action: `/app/events/${eventId}`, eventId, tag: `event-${eventId}` }
     });
     return null;
   }
@@ -260,7 +273,7 @@ exports.onForumThreadCreated = onDocumentCreated(
       cibles: cibles,
       title: `💬 Nouveau sujet : ${data.titre}`,
       body: `Posté par ${data.auteurNom || "Un membre"}`,
-      dataPayload: { url: `/app/forum/${threadId}`, click_action: `/app/forum/${threadId}` }
+      dataPayload: { url: `/app/forum/${threadId}`, click_action: `/app/forum/${threadId}`, threadId, tag: `forum-${threadId}` }
     });
     return null;
   }
@@ -295,7 +308,7 @@ exports.onNotificationQueued = onDocumentCreated(
       cibles: cibles,
       title: data.title || "Notification O Girador",
       body: data.body || "",
-      dataPayload: { url: targetUrl, click_action: targetUrl }
+      dataPayload: { url: targetUrl, click_action: targetUrl, notifId, tag: `queue-${notifId}` }
     });
 
     // Optionnel : on peut supprimer la notification de la queue après l'envoi

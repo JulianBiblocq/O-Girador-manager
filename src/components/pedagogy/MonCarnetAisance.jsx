@@ -12,6 +12,7 @@ import AtelierModelPartsProgress from './AtelierModelPartsProgress';
 import QcmSequenceurBlindTest from './QcmSequenceurBlindTest';
 import DailyRevisionSession from './DailyRevisionSession';
 import ExamDashboard from './ExamDashboard';
+import { launchCrossApp } from '../../utils/crossAppAuth';
 
 // Icône catégorielle pour les fiches culture (xilo-gravure SVG)
 export const CultureCategoryIcon = ({ docItem }) => {
@@ -488,15 +489,14 @@ export default function MonCarnetAisance({
                       ⏱️ Entraînement :
                     </span>
                     {[80, 100, 120].map(bpm => (
-                      <a
+                      <button
                         key={bpm}
-                        href={getSequencerUrl(rhythm, bpm)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-[9px] font-bold bg-[var(--theme-bg)] border border-encre-noire/50 px-2.5 py-1 rounded hover:bg-[#ebdcc0] shadow-[1px_1px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none transition-all"
+                        type="button"
+                        onClick={() => launchCrossApp(getSequencerUrl(rhythm, bpm), { appLabel: 'le Séquenceur' })}
+                        className="text-[9px] font-bold bg-[var(--theme-bg)] border border-encre-noire/50 px-2.5 py-1 rounded hover:bg-[#ebdcc0] shadow-[1px_1px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none transition-all cursor-pointer"
                       >
                         {bpm} BPM
-                      </a>
+                      </button>
                     ))}
                     {/* Bouton Blind Test inline — pont vers le séquenceur */}
                     {(rhythm.isJson || rhythm.isAudio) && (
@@ -572,15 +572,14 @@ export default function MonCarnetAisance({
                     ⏱️ Entraînement :
                   </span>
                   {[80, 100, 120].map(bpm => (
-                    <a
+                    <button
                       key={bpm}
-                      href={getSequencerUrl(rhythm, bpm)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-[9px] font-bold bg-[var(--theme-bg)] border border-encre-noire/50 px-2.5 py-1 rounded hover:bg-[#ebdcc0] shadow-[1px_1px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none transition-all"
+                      type="button"
+                      onClick={() => launchCrossApp(getSequencerUrl(rhythm, bpm), { appLabel: 'le Séquenceur' })}
+                      className="text-[9px] font-bold bg-[var(--theme-bg)] border border-encre-noire/50 px-2.5 py-1 rounded hover:bg-[#ebdcc0] shadow-[1px_1px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none transition-all cursor-pointer"
                     >
                       {bpm} BPM
-                    </a>
+                    </button>
                   ))}
                 </div>
               </CordelCard>

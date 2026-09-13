@@ -260,7 +260,7 @@ export default function UserProfile({ user, profileData, associationName, onBack
             </label>
           </div>
           <span className="text-[9px] font-bold tracking-widest text-cordel-master-dark opacity-60 break-all px-4 text-center">
-            {user.email}
+            {user?.email}
           </span>
         </div>
       </CordelCard>
@@ -305,15 +305,27 @@ export default function UserProfile({ user, profileData, associationName, onBack
 
               <div>
                 <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70 block">
-                  {translate('onboarding.instrument', "Instrument Principal")}
+                  {translate('onboarding.pupitre', "Pupitre Principal")}
                 </span>
-                <span className="font-extrabold text-cordel-wood">{profileData?.instrument || <span className="italic">En attente de validation</span>}</span>
+                <span className="font-extrabold text-cordel-wood flex items-center gap-1.5 flex-wrap">
+                  {profileData?.instrument || <span className="italic font-normal opacity-60">En attente de validation</span>}
+                  {profileData?.sousInstrument && (
+                    <span className="text-[10px] font-bold text-cordel-master-dark/80 bg-black/5 dark:bg-white/10 px-1.5 py-0.5 rounded border border-cordel-master-dark/15">
+                      Attribution : {profileData.sousInstrument}
+                    </span>
+                  )}
+                  {profileData?.instrument?.toLowerCase().includes('alfaia') && Array.isArray(profileData?.competencesAlfaia) && profileData.competencesAlfaia.length > 0 && (
+                    <span className="text-[10px] font-bold text-cordel-master-dark/80 bg-black/5 dark:bg-white/10 px-1.5 py-0.5 rounded border border-cordel-master-dark/15">
+                      Voix : {profileData.competencesAlfaia.join(', ')}
+                    </span>
+                  )}
+                </span>
               </div>
 
               {profileData?.instrumentSecondaire && (
                 <div>
                   <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70 block">
-                    Instrument Secondaire
+                    Pupitre Secondaire
                   </span>
                   <span className="font-bold">{profileData.instrumentSecondaire}</span>
                 </div>

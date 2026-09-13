@@ -24,8 +24,8 @@ const DEFAULT_FIELDS_CONFIG = {
 
 export default function Onboarding({ user, branding, onComplete, profileData }) {
   const { t } = useTranslation();
-  // Split the Google Auth display name into a first name and a last name
-  const nameParts = user.displayName ? user.displayName.split(' ') : [];
+  // Séparation du nom d'affichage en prénom et nom de famille
+  const nameParts = user?.displayName ? user.displayName.split(' ') : [];
   const initialFirstName = profileData?.prenom || nameParts[0] || '';
   const initialLastName = profileData?.nom || nameParts.slice(1).join(' ') || '';
 
@@ -64,6 +64,7 @@ export default function Onboarding({ user, branding, onComplete, profileData }) 
   const [fieldsConfig, setFieldsConfig] = useState(null);
   const [nomAssociation, setNomAssociation] = useState(branding?.nomAssociation || branding?.nom || branding?.name || '');
   const [instrumentsDisponibles, setInstrumentsDisponibles] = useState(["Alfaia", "Caixa", "Tarol", "Gonguê", "Agbê", "Mineiro", "Timbal", "Chant"]);
+  const [linkedInstruments, setLinkedInstruments] = useState([]);
   const [submitting, setSubmitting] = useState(false);
   const [droitImageDocUrl, setDroitImageDocUrl] = useState('');
   const [aptitudeMedicaleDocUrl, setAptitudeMedicaleDocUrl] = useState('');
@@ -94,6 +95,9 @@ export default function Onboarding({ user, branding, onComplete, profileData }) 
           setDemanderAttestationSante(data.demanderAttestationSante || false);
           if (Array.isArray(data.instrumentsDisponibles) && data.instrumentsDisponibles.length > 0) {
             setInstrumentsDisponibles(data.instrumentsDisponibles);
+          }
+          if (Array.isArray(data.linkedInstruments)) {
+            setLinkedInstruments(data.linkedInstruments);
           }
           if (data.fieldsConfig) {
             setFieldsConfig({ ...DEFAULT_FIELDS_CONFIG, ...data.fieldsConfig });
@@ -193,10 +197,19 @@ export default function Onboarding({ user, branding, onComplete, profileData }) 
       const currentInstVal = isAncien ? (formData.instrumentPrincipal || "") : (isPercussion ? "En attente" : "");
 
       // Construction de la fiche utilisateur Firestore
+      const isExistingMember = Boolean(
+        isAncien ||
+        profileData?.estAncienMembre ||
+        profileData?.instrument ||
+        profileData?.instrumentPrincipal ||
+        (Array.isArray(profileData?.instrumentsJoues) && profileData.instrumentsJoues.length > 0) ||
+        (profileData?.role && profileData.role !== 'nouveau')
+      );
+
       const userDoc = {
         nom: formData.lastName,
         prenom: formData.firstName,
-        email: user.email,
+        email: user?.email || "",
         telephone: isFieldVisible('telephone') ? formData.phone : "",
         adresseRue: isFieldVisible('adresse') ? formData.adresseRue : "",
         adresseCP: isFieldVisible('adresse') ? formData.adresseCP : "",
@@ -226,7 +239,7 @@ export default function Onboarding({ user, branding, onComplete, profileData }) 
         instrumentsJoues: cleanVoeux,
         genre: formData.genre,
         role: profileData?.role || "membre",
-        isNew: profileData?.isNew !== undefined ? profileData.isNew : true,
+        isNew: profileData?.isNew !== undefined ? profileData.isNew : (!isExistingMember),
         statutActuel: profileData?.statutActuel || "active",
         groupId: (profileData?.groupId || groupId)?.toLowerCase() === 'samambaia' ? 'Samambaia' : (profileData?.groupId || groupId),
         tags: profileData?.tags || [],
@@ -255,7 +268,7 @@ export default function Onboarding({ user, branding, onComplete, profileData }) 
             };
 
             // Rapatrier la transaction financière avec son UID si transactionId existe
-            if (pendingData.transactionId) {
+            if (pendingData.transactionId && user?.uid) {
               try {
                 await updateDoc(doc(db, 'transactions', pendingData.transactionId), {
                   userId: user.uid
@@ -271,6 +284,10 @@ export default function Onboarding({ user, branding, onComplete, profileData }) 
         } catch (pendingErr) {
           console.warn("Onboarding - Erreur vérification sas pending_payments :", pendingErr);
         }
+      }
+
+      if (!user?.uid) {
+        throw new Error("Identifiant utilisateur manquant. Veuillez vous reconnecter.");
       }
 
       // Enregistrement de la fiche adhérent dans Firestore avec l'UID Auth comme identifiant
@@ -325,6 +342,7 @@ export default function Onboarding({ user, branding, onComplete, profileData }) 
                 isFieldVisible={isFieldVisible}
                 isFieldRequired={isFieldRequired}
                 instrumentsDisponibles={instrumentsDisponibles}
+                linkedInstruments={linkedInstruments}
                 nomAssociation={nomAssociation}
                 t={t}
               />

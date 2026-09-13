@@ -73,16 +73,25 @@ const messaging = firebase.messaging();
 messaging.onBackgroundMessage((payload) => {
   console.log('[firebase-messaging-sw.js] Message d\'arrière-plan reçu :', payload);
 
-  const title = payload.notification?.title || payload.data?.title || "O Girador";
-  const body = payload.notification?.body || payload.data?.body || "";
-  const icon = payload.notification?.icon || payload.data?.icon || 'https://organizador.o-girador.com/icon-192.png';
+  // IMPORTANT : Si le message contient déjà une section 'notification',
+  // le SDK Firebase WebPush affiche DÉJÀ automatiquement la notification système.
+  // Déclencher self.registration.showNotification ici créerait un doublon strict !
+  if (payload.notification) {
+    console.log('[firebase-messaging-sw.js] Notification déjà affichée automatiquement par Firebase SDK.');
+    return;
+  }
+
+  // Cas des messages de type "data-only" (sans section notification native) :
+  const title = payload.data?.title || "O Girador";
+  const body = payload.data?.body || "";
+  const icon = payload.data?.icon || 'https://organizador.o-girador.com/icon-192.png';
   const badge = 'https://organizador.o-girador.com/favicon.svg';
 
-  // Tag clair et contextualisé pour regrouper proprement les alertes et garantir l'affichage natif
-  const tag = payload.data?.tag || payload.notification?.tag || (payload.data?.eventId ? `event-${payload.data.eventId}` : `ogirador-${Date.now()}`);
+  // Tag stable et contextualisé pour regrouper proprement les alertes et écraser tout doublon éventuel
+  const tag = payload.data?.tag || (payload.data?.eventId ? `event-${payload.data.eventId}` : (payload.data?.announcementId ? `annonce-${payload.data.announcementId}` : (payload.data?.threadId ? `forum-${payload.data.threadId}` : 'ogirador-general')));
 
   const notificationData = Object.assign({}, payload.data, {
-    url: payload.data?.url || payload.fcmOptions?.link || '/agenda'
+    url: payload.data?.url || payload.fcmOptions?.link || '/app'
   });
 
   return self.registration.showNotification(title, {

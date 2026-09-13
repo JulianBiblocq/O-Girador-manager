@@ -104,10 +104,6 @@ export function useFamilyMembers(user, groupId) {
       niveauxParInstrument: dependentData.niveauxParInstrument || {}
     };
 
-    if (groupId) {
-      payload.groupId = groupId;
-    }
-
     const depRef = doc(db, 'users', dependentId);
     await updateDoc(depRef, payload);
   };

@@ -79,6 +79,9 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
     includesPercussion: event.includesPercussion !== false,
     includesDance: event.includesDance !== false,
     enableCarpool: event.enableCarpool !== false,
+    enableInscriptions: event.enableInscriptions !== false,
+    activerRecolteMedias: event.activerRecolteMedias !== false,
+    publierSurVaral: event.publierSurVaral !== false,
     description: event.description || '',
     linkedPatterns: event.linkedPatterns || [],
     specialiteAtelier: event.specialiteAtelier || 'general',
@@ -837,6 +840,8 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
         includesDance: editForm.includesDance || false,
         enableCarpool: editForm.enableCarpool !== false,
         enableInscriptions: editForm.enableInscriptions !== false,
+        activerRecolteMedias: editForm.activerRecolteMedias !== false,
+        publierSurVaral: editForm.publierSurVaral !== false,
         description: updatedDescription,
         latitude: editForm.latitude ? Number(editForm.latitude) : null,
         longitude: editForm.longitude ? Number(editForm.longitude) : null,
@@ -1107,10 +1112,24 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
 
   const typeInfo = getTypeBadgeInfo(event.type);
 
+  // Priorité absolue au lien de dépôt Framaspace direct de l'événement, avec repli sur le Google Form asso
+  const currentLienDepot = ((activeEvent?.lienDepotMedias || event.lienDepotMedias || '')).trim();
+  const effectiveQrUrl = currentLienDepot || (lienGoogleFormRecoltePhotos || '').trim();
+  const hasQrCode = Boolean(effectiveQrUrl);
+
+  // Gestionnaire d'ouverture unifié de la modale QR Code avec priorité au dépôt Framaspace
+  const handleOpenQrCodeModal = () => {
+    if (currentLienDepot) {
+      setShowMediaQrCodeModal(true);
+    } else if (lienGoogleFormRecoltePhotos) {
+      setShowQrCodeModal(true);
+    }
+    setIsMoreMenuOpen(false);
+  };
+
   const hasMoreOptions = Boolean(
     rawIsAuthorized ||
-    lienGoogleFormRecoltePhotos ||
-    event.lienDepotMedias ||
+    hasQrCode ||
     isAuthorized
   );
 
@@ -1164,6 +1183,19 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
               >
                 <span>✏️</span>
                 <span className="hidden sm:inline">Modifier</span>
+              </button>
+            )}
+
+            {/* 2. Bouton d'action directe : 📷 QR Code (priorité dépôt direct Framaspace) */}
+            {hasQrCode && (
+              <button
+                type="button"
+                onClick={handleOpenQrCodeModal}
+                className="text-[10px] font-black uppercase bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-900 px-2.5 sm:px-3 py-1.5 rounded shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none cursor-pointer flex items-center gap-1 transition-colors select-none"
+                title={currentLienDepot ? "Afficher le QR Code du dossier photos/vidéos de l'événement" : "Afficher le QR Code de récolte photos"}
+              >
+                <span>📷</span>
+                <span className="hidden sm:inline">QR Code</span>
               </button>
             )}
 
@@ -1253,17 +1285,14 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
                         </button>
                       )}
 
-                      {(lienGoogleFormRecoltePhotos || event.lienDepotMedias) && (
+                      {hasQrCode && (
                         <button
                           type="button"
-                          onClick={() => {
-                            setShowQrCodeModal(true);
-                            setIsMoreMenuOpen(false);
-                          }}
+                          onClick={handleOpenQrCodeModal}
                           className="w-full px-3.5 py-2 text-[10px] font-black uppercase tracking-wider text-encre-noire hover:bg-amber-100 cursor-pointer text-left flex items-center gap-2"
                         >
                           <span>📷</span>
-                          <span>QR Code récolte photos</span>
+                          <span>{currentLienDepot ? 'QR Code dépôt médias' : 'QR Code récolte photos'}</span>
                         </button>
                       )}
 
@@ -1506,6 +1535,8 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
                 handleFamilySave={handleFamilySave}
                 handleAddToGoogleCalendar={handleAddToGoogleCalendar}
                 handleDownloadIcs={handleDownloadIcs}
+                onOpenQrCodeModal={handleOpenQrCodeModal}
+                hasQrCode={hasQrCode}
               />
             )}
 
@@ -1629,6 +1660,8 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
                 setIsSendContractModalOpen={setIsSendContractModalOpen}
                 handlePreparePublication={handlePreparePublication}
                 currentConfig={currentConfig}
+                onOpenQrCodeModal={handleOpenQrCodeModal}
+                hasQrCode={hasQrCode}
               />
             )}
           </div>
@@ -1644,21 +1677,23 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
         />
       </div>
 
-      {/* MODALE : QR Code Public Récolte Photos */}
-      {showQrCodeModal && lienGoogleFormRecoltePhotos && (
-        <EventPublicQrCodeModal
-          qrUrl={lienGoogleFormRecoltePhotos}
-          eventTitle={event.titre}
-          onClose={() => setShowQrCodeModal(false)}
+      {/* MODALE : QR Code Dépôt Médias Événement (Framaspace, Drive...) */}
+      {showMediaQrCodeModal && (currentLienDepot || effectiveQrUrl) && (
+        <EventMediaQrCodeModal
+          qrUrl={currentLienDepot || effectiveQrUrl}
+          eventTitle={(activeEvent || event).titre}
+          eventDate={(activeEvent || event).date}
+          eventLocation={(activeEvent || event).lieu}
+          onClose={() => setShowMediaQrCodeModal(false)}
         />
       )}
 
-      {/* MODALE : QR Code Dépôt Médias Événement (Framaspace, Drive...) */}
-      {showMediaQrCodeModal && event.lienDepotMedias && (
-        <EventMediaQrCodeModal
-          qrUrl={event.lienDepotMedias}
-          eventTitle={event.titre}
-          onClose={() => setShowMediaQrCodeModal(false)}
+      {/* MODALE : QR Code Public Récolte Photos (Google Form Asso) */}
+      {showQrCodeModal && lienGoogleFormRecoltePhotos && (
+        <EventPublicQrCodeModal
+          qrUrl={lienGoogleFormRecoltePhotos}
+          eventTitle={(activeEvent || event).titre}
+          onClose={() => setShowQrCodeModal(false)}
         />
       )}
 

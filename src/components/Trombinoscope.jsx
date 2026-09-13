@@ -596,11 +596,11 @@ export default function Trombinoscope({ user, profileData, onBack, onContactUser
   useEffect(() => {
     if (!profileData?.groupId) {
       setMembers([{
-        id: user.uid,
+        id: user?.uid || 'temp',
         prenom: profileData?.prenom || 'Vous',
         nom: profileData?.nom || '',
-        email: user.email,
-        photoURL: profileData?.photoURL || user.photoURL,
+        email: user?.email || '',
+        photoURL: profileData?.photoURL || user?.photoURL || null,
         role: profileData?.role || 'membre',
         tags: profileData?.tags || [],
         statutActuel: profileData?.statutActuel || 'active'
@@ -617,10 +617,11 @@ export default function Trombinoscope({ user, profileData, onBack, onContactUser
 
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
       const fetchedMembers = [];
+      const currentUserId = user?.uid;
       querySnapshot.forEach((doc) => {
         const data = doc.data();
         const cleanData = { ...data };
-        if (!isViewerAdmin && doc.id !== user.uid) {
+        if (!isViewerAdmin && doc.id !== currentUserId) {
           delete cleanData.adresse;
           delete cleanData.adresseRue;
           delete cleanData.adresseCP;
@@ -629,17 +630,17 @@ export default function Trombinoscope({ user, profileData, onBack, onContactUser
         fetchedMembers.push({
           id: doc.id,
           ...cleanData,
-          photoURL: doc.id === user.uid ? (cleanData.photoURL || user.photoURL) : cleanData.photoURL || null
+          photoURL: (currentUserId && doc.id === currentUserId) ? (cleanData.photoURL || user?.photoURL) : cleanData.photoURL || null
         });
       });
 
       if (fetchedMembers.length === 0) {
         fetchedMembers.push({
-          id: user.uid,
+          id: user?.uid || 'temp',
           prenom: profileData?.prenom || 'Vous',
           nom: profileData?.nom || '',
-          email: user.email,
-          photoURL: profileData?.photoURL || user.photoURL,
+          email: user?.email || '',
+          photoURL: profileData?.photoURL || user?.photoURL || null,
           role: profileData?.role || 'membre',
           tags: profileData?.tags || [],
           statutActuel: profileData?.statutActuel || 'active'
@@ -904,9 +905,9 @@ export default function Trombinoscope({ user, profileData, onBack, onContactUser
   }, [onContactUser]);
 
   const handleEditPhoto = useCallback((photoURL) => {
-    setSelectedImage(photoURL || user.photoURL);
+    setSelectedImage(photoURL || user?.photoURL);
     setShowEditor(true);
-  }, [user.photoURL]);
+  }, [user?.photoURL]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -1087,7 +1088,7 @@ export default function Trombinoscope({ user, profileData, onBack, onContactUser
                           niveauxParInstrument={member.niveauxParInstrument}
                           instrumentsJoues={member.instrumentsJoues}
                           instrument={member.instrument}
-                          isCurrentUser={member.id === user.uid}
+                          isCurrentUser={Boolean(user?.uid && member.id === user.uid)}
                           isViewerAdmin={isViewerAdmin}
                           fieldsConfig={fieldsConfig}
                           onContactUser={handleContactUser}

@@ -26,6 +26,8 @@ export default function ThreadReplyBar({
   thread,
   user,
   isModeratorOrAdmin = false,
+  replyingTo = null,
+  onCancelReply,
   onOpenAddPoll,
   t
 }) {
@@ -50,6 +52,33 @@ export default function ThreadReplyBar({
       onSubmit={onSubmit}
       className="sticky bottom-0 bg-cordel-bg z-10 pt-2 pb-1 border-t border-dashed border-cordel-master-dark/20 flex flex-col gap-2 select-none"
     >
+      {/* Bandeau contextuel élégant de réponse / citation */}
+      {replyingTo && (
+        <div className="flex items-center justify-between gap-2 p-1.5 px-3 bg-amber-500/15 border-l-4 border-cordel-wood rounded-r text-left animate-fade-in shadow-xs">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="text-xs shrink-0">↩️</span>
+            <div className="flex flex-col min-w-0">
+              <span className="text-[9px] font-black uppercase tracking-wider text-cordel-wood truncate">
+                En réponse à @{replyingTo.authorName}
+              </span>
+              <span className="text-[10px] text-stone-700 dark:text-stone-300 truncate italic">
+                "{replyingTo.snippet}"
+              </span>
+            </div>
+          </div>
+          {onCancelReply && (
+            <button
+              type="button"
+              onClick={onCancelReply}
+              className="text-stone-500 hover:text-cordel-rouge p-1 text-xs font-black cursor-pointer shrink-0 transition-colors"
+              title="Annuler la citation"
+            >
+              ✕
+            </button>
+          )}
+        </div>
+      )}
+
       {!isReplyExpanded ? (
         /* Barre compacte fixée avec ligne d'émoticônes */
         <div className="flex flex-col gap-1">

@@ -440,6 +440,7 @@ export function useUserProfile(user, profileData, t) {
       const updatePayload = {
         prenom: formData.prenom,
         nom: formData.nom,
+        onboardingCompleted: true,
         instrument: profileData?.instrument || profileData?.instrumentPrincipal || formData.instrument || '',
         instrumentPrincipal: profileData?.instrumentPrincipal || profileData?.instrument || formData.instrument || '',
         instrumentSecondaire: profileData?.instrumentSecondaire || formData.instrumentSecondaire || '',

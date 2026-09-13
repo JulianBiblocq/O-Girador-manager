@@ -26,7 +26,9 @@ export default function TabAdmin({
   onNavigateToView,
   setIsSendContractModalOpen,
   handlePreparePublication,
-  currentConfig
+  currentConfig,
+  onOpenQrCodeModal,
+  hasQrCode
 }) {
   const [updatingPublic, setUpdatingPublic] = useState(false);
   const [updatingField, setUpdatingField] = useState(null);
@@ -267,6 +269,82 @@ export default function TabAdmin({
               📢 Préparer la publication
             </button>
           )}
+
+          {hasQrCode && onOpenQrCodeModal && (
+            <button
+              type="button"
+              onClick={onOpenQrCodeModal}
+              className="text-[10px] font-black uppercase bg-amber-200 text-amber-950 border border-encre-noire px-3 py-1.5 rounded shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] hover:bg-amber-300 cursor-pointer flex items-center gap-1"
+              title="Afficher et imprimer le QR Code de récolte de photos et vidéos"
+            >
+              <span>📷</span>
+              <span>QR Code Médias & Affiche</span>
+            </button>
+          )}
+        </div>
+      </CordelCard>
+
+      {/* 1b. Module Récolte Médias & Dossier Cloud Framaspace */}
+      <CordelCard variant="default" useExtremeBorder={true} className="py-4 px-5">
+        <div className="flex items-center justify-between border-b border-dashed border-cordel-master-dark/20 pb-1.5 mb-3">
+          <h4 className="font-bold text-xs uppercase tracking-wider text-cordel-wood flex items-center gap-1.5">
+            <span>📸</span>
+            <span>Récolte Photos & Espace Cloud de l'événement</span>
+          </h4>
+          {event.lienDepotMedias ? (
+            <span className="theme-stamp-badge theme-stamp-badge-vert text-[9px] uppercase tracking-wider font-black">
+              ✓ Dossier Cloud Actif
+            </span>
+          ) : (
+            <span className="theme-stamp-badge theme-stamp-badge-ocre text-[9px] uppercase tracking-wider font-bold">
+              En attente de liaison
+            </span>
+          )}
+        </div>
+
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3 bg-cordel-bg-light rounded-[6px] border border-dashed border-cordel-master-dark/20">
+          <div className="flex flex-col gap-1 text-xs">
+            <span className="font-extrabold text-encre-noire flex items-center gap-1.5">
+              <span>{event.lienDepotMedias ? '📂' : '📁'}</span>
+              <span>Dossier de dépôt public (File drop)</span>
+            </span>
+            <p className="text-[11px] text-encre-noire/70">
+              {event.lienDepotMedias 
+                ? "Ce lien alimente automatiquement le QR-Code et permet aux spectateurs de déposer leurs souvenirs." 
+                : "Aucun dossier Framaspace créé pour le moment. Vous pouvez le déclencher depuis le Studio Photos."}
+            </p>
+            {event.lienDepotMedias && (
+              <span className="text-[10px] font-mono text-cordel-wood break-all">
+                {event.lienDepotMedias}
+              </span>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            {hasQrCode && onOpenQrCodeModal && (
+              <button
+                type="button"
+                onClick={onOpenQrCodeModal}
+                className="text-[10px] font-black uppercase bg-amber-300 hover:bg-amber-200 text-encre-noire border border-encre-noire px-3 py-1.5 rounded shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] cursor-pointer flex items-center gap-1"
+                title="Afficher et imprimer le QR-Code pour la scène"
+              >
+                <span>📱</span>
+                <span>Fiche QR Code</span>
+              </button>
+            )}
+
+            {event.lienDepotMedias && (
+              <button
+                type="button"
+                onClick={() => window.open(event.lienDepotMedias, '_blank', 'noopener,noreferrer')}
+                className="text-[10px] font-black uppercase bg-cordel-bg hover:bg-neutral-100 text-encre-noire border border-encre-noire px-2.5 py-1.5 rounded shadow-[1px_1px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] cursor-pointer flex items-center gap-1"
+                title="Ouvrir le dossier Cloud dans un nouvel onglet"
+              >
+                <span>↗</span>
+                <span>Ouvrir</span>
+              </button>
+            )}
+          </div>
         </div>
       </CordelCard>
 

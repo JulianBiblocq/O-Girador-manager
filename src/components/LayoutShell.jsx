@@ -36,6 +36,7 @@ import { useTenantContext } from '../context/TenantContext';
 import { getVitrineUrl } from '../utils/urlUtils';
 import { httpsCallable } from 'firebase/functions';
 import { auth, functions } from '../firebase';
+import { launchCrossApp } from '../utils/crossAppAuth';
 import { useViewSimulator } from '../context/ViewSimulatorContext';
 import SimulationBanner from './navigation/SimulationBanner';
 import ViewSimulatorSelector from './navigation/ViewSimulatorSelector';
@@ -371,30 +372,8 @@ export default function LayoutShell({
       }
 
       setLaunchingAppKey(app.key);
-      // Pré-ouverture synchrone pour éviter le blocage pop-up du navigateur
-      const newTab = window.open('', '_blank');
-
       try {
-        const getSSOToken = httpsCallable(functions, 'getCrossAppAuthToken');
-        const res = await getSSOToken();
-        const customToken = res.data?.customToken;
-
-        if (customToken) {
-          const targetUrl = new URL(app.url);
-          targetUrl.searchParams.set('ssoToken', customToken);
-          if (newTab) {
-            newTab.location.href = targetUrl.toString();
-          } else {
-            window.open(targetUrl.toString(), '_blank', 'noopener,noreferrer');
-          }
-        } else {
-          if (newTab) newTab.location.href = app.url;
-          else window.open(app.url, '_blank', 'noopener,noreferrer');
-        }
-      } catch (error) {
-        console.warn("[SSO Launcher] Erreur obtention token, fallback direct :", error);
-        if (newTab) newTab.location.href = app.url;
-        else window.open(app.url, '_blank', 'noopener,noreferrer');
+        await launchCrossApp(app.url, { appLabel: app.label });
       } finally {
         setLaunchingAppKey(null);
       }

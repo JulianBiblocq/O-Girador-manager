@@ -387,6 +387,31 @@ export default function InstrumentEditModal({
               </div>
             </div>
 
+            {/* Historique des mouvements et prêts de l'instrument */}
+            {formData.historiqueMouvements && formData.historiqueMouvements.length > 0 && (
+              <div className="flex flex-col gap-1 border-t border-dashed border-cordel-master-dark/15 pt-2">
+                <label className="text-[8px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                  📜 Historique des mouvements &amp; prêts ({formData.historiqueMouvements.length})
+                </label>
+                <div className="max-h-28 overflow-y-auto border border-dashed border-encre-noire/25 rounded p-2 flex flex-col gap-1.5 bg-[#fdfaf2] dark:bg-[#201d1a]">
+                  {formData.historiqueMouvements.slice().reverse().map((mvt, mIdx) => {
+                    const fromUser = usersList.find(u => u.id === mvt.fromUserId);
+                    const toUser = usersList.find(u => u.id === mvt.toUserId);
+                    const dateStr = mvt.date ? new Date(mvt.date).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '';
+                    return (
+                      <div key={mIdx} className="text-[9px] flex items-center justify-between gap-1 p-1 bg-white/70 dark:bg-stone-800 rounded border border-encre-noire/10">
+                        <span className="font-bold text-cordel-wood">{mvt.action || 'Mouvement'}</span>
+                        <span className="text-stone-600 truncate max-w-[200px]">
+                          {toUser ? `${toUser.prenom} ${toUser.nom}` : fromUser ? `De ${fromUser.prenom} ${fromUser.nom}` : ''}
+                        </span>
+                        <span className="text-[8px] text-stone-400 font-mono shrink-0">{dateStr}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             {/* Pied du formulaire : Boutons d'action */}
             <div className="flex justify-between items-center mt-2 border-t border-dashed border-cordel-master-dark/10 pt-3">
               {editingId ? (

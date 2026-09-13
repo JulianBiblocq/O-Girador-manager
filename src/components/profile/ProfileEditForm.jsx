@@ -522,7 +522,7 @@ export default function ProfileEditForm({
         </CordelButton>
         <CordelButton 
           type="submit"
-          variant="ocre" 
+          variant="vert" 
           useExtremeBorder={true}
           disabled={saving}
           className="flex-1 py-3 text-xs uppercase font-extrabold opacity-100 disabled:opacity-50"
