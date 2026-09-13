@@ -23,8 +23,8 @@ service firebase.storage {
     function isMemberOfGroup(groupId) {
       return isAuthenticated() && (
         isSystemAdmin() ||
-        (request.auth.token.keys().hasAny(['groupId']) && request.auth.token.groupId == groupId) ||
-        (firestore.exists(/databases/(default)/documents/users/$(request.auth.uid)) && getUserData().groupId == groupId)
+        (request.auth.token.keys().hasAny(['groupId']) && request.auth.token.groupId.lower() == groupId.lower()) ||
+        (firestore.exists(/databases/(default)/documents/users/$(request.auth.uid)) && getUserData().get('groupId', '').lower() == groupId.lower())
       );
     }
     
@@ -51,7 +51,12 @@ service firebase.storage {
     }
 
     match /documents/{groupId}/sequencer/{allPaths=**} {
-      allow read: if isAuthenticated();
+      allow read, write: if isAuthenticated();
+    }
+
+    // Guides vocaux et enregistrements toadas
+    match /vocalRecordings/{allPaths=**} {
+      allow read, write: if isAuthenticated();
     }
 
     // 4. Média des Ateliers / Workshops : Accessible uniquement aux membres du groupe

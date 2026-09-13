@@ -51,11 +51,22 @@ export function useSequencerFirestoreData(groupId) {
 
     const fetchData = async () => {
       try {
+        const groupVariants = Array.from(new Set([
+          groupId,
+          groupId.toLowerCase(),
+          ...(groupId.toLowerCase() === 'samambaia' ? ['Samambaia', 'samambaia'] : [])
+        ]));
+
         // 1. Récupérer tous les membres de l'association pour pouvoir requêter les presets par ownerId
-        const qUsers = query(collection(db, 'users'), where('groupId', '==', groupId));
+        const qUsers = query(collection(db, 'users'), where('groupId', 'in', groupVariants));
         const usersSnap = await getDocs(qUsers);
-        const memberIds = usersSnap.docs.map(doc => doc.id);
+        const memberIds = Array.from(new Set(usersSnap.docs.map(doc => doc.id)));
         
+        // Mestre Samambaia UID garanti pour résoudre le catalogue
+        if (groupId.toLowerCase() === 'samambaia' && !memberIds.includes('iA0SweEHyOPzAPGIDVZdeKAV2mk1')) {
+          memberIds.push('iA0SweEHyOPzAPGIDVZdeKAV2mk1');
+        }
+
         // S'il n'y a pas de membres, on ajoute au moins le groupId au cas où il soit propriétaire
         if (!memberIds.includes(groupId)) {
           memberIds.push(groupId);
@@ -69,8 +80,18 @@ export function useSequencerFirestoreData(groupId) {
 
         let currentPatterns = [];
         let currentSections = [];
+        let currentOwnerPresets = [];
+        let currentGroupPresets = [];
         let currentPresets = [];
         let currentAudioMasters = [];
+
+        const combinePresets = () => {
+          const map = new Map();
+          currentOwnerPresets.forEach(p => map.set(p.id, p));
+          currentGroupPresets.forEach(p => map.set(p.id, p));
+          currentPresets = Array.from(map.values());
+          mergeAndSet();
+        };
 
         const mergeAndSet = () => {
           const allItems = [...currentPatterns, ...currentSections, ...currentPresets, ...currentAudioMasters];
@@ -124,15 +145,17 @@ export function useSequencerFirestoreData(groupId) {
           };
         };
 
-        // --- ECOUTE DES PATTERNS (mestreId == groupId ou ownerId in memberIds) ---
+        // --- ECOUTE DES PATTERNS (mestreId == groupId ou ownerId in memberIds ou groupId direct) ---
         const patternsRef = collection(db, 'patterns');
-        // Pour patterns/sections, il y a le champ mestreId souvent égal au groupId
         const qPatterns = query(patternsRef, or(where('mestreId', '==', groupId), where('visibility', '==', 'mestre_group')));
         unsubPatterns = onSnapshot(qPatterns, (snapshot) => {
           // Filtrage côté client pour garantir qu'on ne prend que ceux du groupe
           const filtered = snapshot.docs.filter(doc => {
             const d = doc.data();
-            return d.mestreId === groupId || memberIds.includes(d.ownerId);
+            const matchesGroup = d.groupId && String(d.groupId).toLowerCase() === groupId.toLowerCase();
+            const matchesMestre = d.mestreId === groupId || 
+              (groupId.toLowerCase() === 'samambaia' && (d.mestreId === 'iA0SweEHyOPzAPGIDVZdeKAV2mk1' || d.mestreId === 'Samambaia' || d.mestreId === 'samambaia'));
+            return matchesGroup || matchesMestre || memberIds.includes(d.ownerId);
           });
           currentPatterns = filtered.map(doc => processData(doc, 'patterns'));
           mergeAndSet();
@@ -147,7 +170,10 @@ export function useSequencerFirestoreData(groupId) {
         unsubSections = onSnapshot(qSections, (snapshot) => {
           const filtered = snapshot.docs.filter(doc => {
             const d = doc.data();
-            return d.mestreId === groupId || memberIds.includes(d.ownerId);
+            const matchesGroup = d.groupId && String(d.groupId).toLowerCase() === groupId.toLowerCase();
+            const matchesMestre = d.mestreId === groupId || 
+              (groupId.toLowerCase() === 'samambaia' && (d.mestreId === 'iA0SweEHyOPzAPGIDVZdeKAV2mk1' || d.mestreId === 'Samambaia' || d.mestreId === 'samambaia'));
+            return matchesGroup || matchesMestre || memberIds.includes(d.ownerId);
           });
           currentSections = filtered.map(doc => processData(doc, 'sections'));
           mergeAndSet();
@@ -157,22 +183,31 @@ export function useSequencerFirestoreData(groupId) {
         });
 
         // --- ECOUTE DES PRESETS ---
-        // Les presets n'ont pas de mestreId, on utilise chunk sur ownerId
         const presetsRef = collection(db, 'presets');
+
+        // 1. Ecoute par groupId (avec variantes dédoublonnées)
+        const qPresetsGroup = query(presetsRef, where('groupId', 'in', groupVariants));
+        const unsubPresetsGroup = onSnapshot(qPresetsGroup, (snapshot) => {
+          currentGroupPresets = snapshot.docs.map(doc => processData(doc, 'presets'));
+          combinePresets();
+        }, (err) => {
+          console.error("Erreur récupération presets group :", err);
+        });
+        unsubPresetsList.push(unsubPresetsGroup);
+
+        // 2. Ecoute par chunks de memberIds (ownerId)
         chunks.forEach((chunk, index) => {
           const qPresetChunk = query(presetsRef, where('ownerId', 'in', chunk));
           const unsub = onSnapshot(qPresetChunk, (snapshot) => {
-            // On filtre pour ne garder que ceux qui sont mestre_group (ou public pour ce groupe si besoin)
             const chunkDocs = snapshot.docs
-              .filter(doc => doc.data().visibility === 'mestre_group' || doc.data().visibility === 'public')
+              .filter(doc => doc.data().visibility === 'mestre_group' || doc.data().visibility === 'public' || !doc.data().visibility)
               .map(doc => processData(doc, 'presets'));
             
-            // Mise à jour de ce chunk spécifique
-            currentPresets = [
-              ...currentPresets.filter(p => !chunk.includes(p.ownerId)),
+            currentOwnerPresets = [
+              ...currentOwnerPresets.filter(p => !chunk.includes(p.ownerId)),
               ...chunkDocs
             ];
-            mergeAndSet();
+            combinePresets();
           }, (err) => {
              console.error(`Erreur récupération presets chunk ${index} :`, err);
           });

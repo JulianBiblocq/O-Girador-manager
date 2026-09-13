@@ -25,10 +25,10 @@ service cloud.firestore {
         exists(/databases/$(database)/documents/users/$(request.auth.uid)) && (
           resource == null ? (
             !request.resource.data.keys().hasAny(['groupId']) || 
-            request.resource.data.groupId == getUserData().get('groupId', '')
+            request.resource.data.get('groupId', '').lower() == getUserData().get('groupId', '').lower()
           ) : (
             !resource.data.keys().hasAny(['groupId']) || 
-            resource.data.groupId == getUserData().get('groupId', '')
+            resource.data.get('groupId', '').lower() == getUserData().get('groupId', '').lower()
           )
         )
       );
@@ -41,7 +41,10 @@ service cloud.firestore {
         resource == null || 
         (
           exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-          resource.data.get('groupId', '') == getUserData().get('groupId', '')
+          (
+            resource.data.get('groupId', '').lower() == getUserData().get('groupId', '').lower() ||
+            (getUserData().get('groupId', '').lower() == 'samambaia' && resource.data.get('groupId', '').lower() == 'samambaia')
+          )
         )
       );
     }
@@ -78,7 +81,13 @@ service cloud.firestore {
         docMestreId != null &&
         docMestreId != '' &&
         exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-        getUserData().get('mestreId', '') == docMestreId;
+        (
+          getUserData().get('mestreId', '') == docMestreId ||
+          (
+            getUserData().get('groupId', '').lower() == 'samambaia' &&
+            (docMestreId == 'iA0SweEHyOPzAPGIDVZdeKAV2mk1' || docMestreId == 'Samambaia' || docMestreId == 'samambaia' || docMestreId.lower() == 'samambaia')
+          )
+        );
     }
 
     function canManageEvents() {
@@ -388,9 +397,9 @@ service cloud.firestore {
 
       // Classeur central du répertoire de la troupe (morceaux de la saison, chantiers, archives)
       match /repertoire/{pieceId} {
-        allow read: if isAuthenticated() && (isSystemAdmin() || getUserData().groupId == assocId);
-        allow write: if (isSystemAdmin() || getUserData().groupId == assocId) && canManageRepertoire();
-      }
+          allow read: if isAuthenticated() && (isSystemAdmin() || getUserData().get('groupId', '').lower() == assocId.lower());
+          allow write: if (isSystemAdmin() || getUserData().get('groupId', '').lower() == assocId.lower()) && canManageRepertoire();
+        }
 
       // Règles d'automatisation et de relances d'agenda de l'association
       match /automation_rules/{ruleId} {
