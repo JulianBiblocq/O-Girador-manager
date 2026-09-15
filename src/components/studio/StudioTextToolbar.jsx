@@ -13,8 +13,10 @@ import StudioWritingGuide from './StudioWritingGuide';
  * @param {string} props.text Texte actuel
  * @param {Function} props.onChange Callback de modification du texte
  * @param {boolean} [props.disabled=false] Indique si la barre d'outils est désactivée
- * @param {Array<string>} [props.lexique] Liste personnalisée de termes du lexique
- * @param {Array<string>} [props.mentions] Liste personnalisée de mentions
+ * @param {Array<string|Object>} [props.lexique] Liste personnalisée de termes du lexique
+ * @param {Array<string|Object>} [props.mentions] Liste personnalisée de mentions
+ * @param {Array<Object>} [props.equivalences] Liste personnalisée d'équivalences culturelles
+ * @param {Function} [props.onNavigateToLexique] Callback de navigation vers l'onglet studio-lexique
  */
 export default function StudioTextToolbar({
   textareaRef,
@@ -22,7 +24,9 @@ export default function StudioTextToolbar({
   onChange,
   disabled = false,
   lexique,
-  mentions
+  mentions,
+  equivalences,
+  onNavigateToLexique
 }) {
   const [feedbackMessage, setFeedbackMessage] = useState('');
 
@@ -159,12 +163,14 @@ export default function StudioTextToolbar({
         onInsertWord={handleInsertWord}
         lexique={lexique}
         mentions={mentions}
+        onNavigateToLexique={onNavigateToLexique}
         disabled={disabled}
       />
 
       {/* 3. Accordéon rétractable : Guide de rédaction et équivalences culturelles */}
       <StudioWritingGuide
         onInsertTerm={handleInsertWord}
+        equivalences={equivalences}
       />
     </div>
   );

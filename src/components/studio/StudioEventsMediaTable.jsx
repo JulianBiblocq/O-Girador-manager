@@ -261,8 +261,7 @@ export default function StudioEventsMediaTable({ groupId, canWrite = false }) {
         const qDoc = query(
           docsRef,
           where('groupId', '==', groupId),
-          where('eventId', '==', ev.id),
-          where('categoryId', '==', 'PhotosPrestations')
+          where('eventId', '==', ev.id)
         );
         const existingSnap = await getDocs(qDoc);
         for (const d of existingSnap.docs) {
@@ -320,8 +319,7 @@ export default function StudioEventsMediaTable({ groupId, canWrite = false }) {
       const qDoc = query(
         docsRef,
         where('groupId', '==', groupId),
-        where('eventId', '==', ev.id),
-        where('categoryId', '==', 'PhotosPrestations')
+        where('eventId', '==', ev.id)
       );
       const existingSnap = await getDocs(qDoc);
       for (const d of existingSnap.docs) {
@@ -662,7 +660,7 @@ export default function StudioEventsMediaTable({ groupId, canWrite = false }) {
                   </div>
 
                   {/* Bouton d'action Délier / Réinitialiser Cloud */}
-                  {canWrite && (hasDepot || hasAlbum || ev.framaspaceFolder) && (
+                  {canWrite && (hasDepot || hasAlbum || ev.framaspaceFolder || Boolean(ev.publierSurVaral)) && (
                     <button
                       type="button"
                       onClick={() => handleResetCloudMedia(ev)}

@@ -41,6 +41,7 @@ const CostumesAdminManager = lazyWithRetry(() => import('./components/mestre/Cos
 const AssociationSettings = lazyWithRetry(() => import('./components/AssociationSettings'));
 const TreasuryManager = lazyWithRetry(() => import('./components/TreasuryManager'));
 const StudioSocial = lazyWithRetry(() => import('./components/StudioSocial'));
+const StudioLexiqueManager = lazyWithRetry(() => import('./components/studio/StudioLexiqueManager'));
 const StudioEventsManager = lazyWithRetry(() => import('./components/studio/StudioEventsManager'));
 const NewsletterPage = lazyWithRetry(() => import('./components/studio/NewsletterPage'));
 const AdminExport = lazyWithRetry(() => import('./components/AdminExport'));
@@ -191,6 +192,7 @@ const POLES_CONFIG = [
     labelKey: 'poles.studio',
     tabs: [
       { id: 'studio-social', label: 'Studio social', labelKey: 'tabStudioSocial' },
+      { id: 'studio-lexique', label: 'Lexique', labelKey: 'tabStudioLexique' },
       { id: 'newsletter', label: 'Newsletter', labelKey: 'tabNewsletter' },
       { id: 'studio-communication', label: 'Communication & Brevo', labelKey: 'tabStudioCommunication' },
       { id: 'varal-photos', label: 'Varal Photos', labelKey: 'tabVaralPhotos' }
@@ -1249,7 +1251,7 @@ export default function App() {
     if (tabId === 'inventory' && enabledModules.logistique === false) return false;
     if (['orders', 'orders-manager'].includes(tabId) && enabledModules.commandes === false) return false;
     if (['wardrobe-projects', 'wardrobe-models', 'wardrobe-pieces', 'wardrobe-supplies', 'wardrobe-tools', 'wardrobe-sizes', 'varal-costumerie', 'wardrobe', 'vestiaire', 'wardrobe-inventory', 'wardrobe-couture'].includes(tabId) && enabledModules.vestiaire === false && enabledModules.costumerie === false) return false;
-    if (['studio-social', 'newsletter'].includes(tabId) && enabledModules.studioSocial === false) return false;
+    if (['studio-social', 'studio-lexique', 'newsletter'].includes(tabId) && enabledModules.studioSocial === false) return false;
     if (['reunion-manager', 'ca-reunions'].includes(tabId) && enabledModules.reunions === false) return false;
     if (['forum', 'mestre-forum-channels'].includes(tabId) && enabledModules.forum === false) return false;
     if (['mestre-repertoire', 'mestre-sante-troupe', 'mestre-pedagogy-dashboard', 'varal-manager', 'mestre-pedagogy-qcm', 'mestre-orientation', 'mestre-categories', 'mestre-events', 'mestre-stage-layout', 'mestre-mot-mestre', 'mestre-sequenceur'].includes(tabId) && enabledModules.mestre === false) return false;
@@ -1275,7 +1277,7 @@ export default function App() {
   const hasAccessLogistique = isMasterKeyActive || canAccessPole('logistique', profileData, permissionsMatrice, userTags) || checkTabAccess('inventory', 'logistique') || checkTabAccess('logistics-pupitres', 'logistique') || checkTabAccess('logistics-kits', 'logistique') || checkTabAccess('logistics-carpool', 'logistique') || checkTabAccess('orders', 'logistique') || checkTabAccess('orders-manager', 'logistique');
   const hasAccessLutherie = isMasterKeyActive || canAccessPole('lutherie', profileData, permissionsMatrice, userTags) || checkTabAccess('instrument-models', 'lutherie') || checkTabAccess('inventory-projects', 'lutherie') || checkTabAccess('inventory-parts', 'lutherie') || checkTabAccess('inventory-supplies', 'lutherie') || checkTabAccess('workshop-tools', 'lutherie') || checkTabAccess('varal-lutherie', 'lutherie');
   const hasAccessCostumerie = isMasterKeyActive || canAccessPole('costumerie', profileData, permissionsMatrice, userTags) || checkTabAccess('wardrobe-projects', 'costumerie') || checkTabAccess('wardrobe-models', 'costumerie') || checkTabAccess('wardrobe-pieces', 'costumerie') || checkTabAccess('wardrobe-supplies', 'costumerie') || checkTabAccess('wardrobe-tools', 'costumerie') || checkTabAccess('wardrobe-sizes', 'costumerie') || checkTabAccess('varal-costumerie', 'costumerie');
-  const hasAccessStudio = isMasterKeyActive || canAccessPole('studio', profileData, permissionsMatrice, userTags) || checkTabAccess('studio-social', 'studio') || checkTabAccess('newsletter', 'studio') || checkTabAccess('studio-communication', 'studio') || checkTabAccess('varal-photos', 'studio');
+  const hasAccessStudio = isMasterKeyActive || canAccessPole('studio', profileData, permissionsMatrice, userTags) || checkTabAccess('studio-social', 'studio') || checkTabAccess('studio-lexique', 'studio') || checkTabAccess('newsletter', 'studio') || checkTabAccess('studio-communication', 'studio') || checkTabAccess('varal-photos', 'studio');
   const hasAccessMestre = isMasterKeyActive || 
     profileData?.role === 'mestre' || 
     profileData?.role === 'super-admin' || 
@@ -1526,6 +1528,10 @@ export default function App() {
       case 'studio-social':
         setCurrentPole('studio');
         setCurrentTab('studio-social');
+        break;
+      case 'studio-lexique':
+        setCurrentPole('studio');
+        setCurrentTab('studio-lexique');
         break;
       case 'newsletter':
         setCurrentPole('studio');
@@ -2049,6 +2055,17 @@ export default function App() {
                     user={user}
                     profileData={profileData}
                     onBack={() => handleNavigateToPole('accueil')} 
+                    onNavigateToView={handleNavigateToView}
+                  />
+                ) : (currentTab === 'studio-lexique' && hasAccessStudio) ? (
+                  <StudioLexiqueManager 
+                    groupId={profileData?.groupId}
+                    role={profileData?.role}
+                    isSystemAdmin={profileData?.isSystemAdmin}
+                    user={user}
+                    profileData={profileData}
+                    onBack={() => handleNavigateToPole('accueil')} 
+                    onNavigateToView={handleNavigateToView}
                   />
                 // Pôle Gouvernance (Conseil d'Administration)
                 ) : (currentTab === 'ca-reunions' && hasAccessGouvernance) ? (

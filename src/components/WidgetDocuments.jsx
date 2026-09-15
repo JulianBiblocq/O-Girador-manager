@@ -50,6 +50,7 @@ export default function WidgetDocuments({
     handleMoveLeft,
     handleMoveRight,
     saveCategory,
+    deleteCategory,
     getDocType
   } = useVaralData({
     groupId,
@@ -310,26 +311,39 @@ export default function WidgetDocuments({
                 </div>
               )}
 
-              <div className="flex justify-end gap-3 mt-4 border-t border-dashed border-cordel-master-dark/20 pt-4">
-                <CordelButton
+              <div className="flex justify-between items-center mt-4 border-t border-dashed border-cordel-master-dark/20 pt-4 flex-wrap gap-2">
+                <button
                   type="button"
-                  variant="default"
-                  onClick={() => setEditingCategory(null)}
-                  className="text-[10px] px-3 py-1.5 uppercase font-bold"
-                >
-                  Annuler
-                </CordelButton>
-                <CordelButton
-                  type="button"
-                  variant="ocre"
                   onClick={async () => {
-                    await saveCategory(editingCategory);
+                    await deleteCategory(editingCategory.id);
                     setEditingCategory(null);
                   }}
-                  className="text-[10px] px-3 py-1.5 uppercase font-bold"
+                  className="text-[10px] font-black uppercase text-[var(--color-cordel-rouge,#8b2a1a)] hover:underline flex items-center gap-1 cursor-pointer"
                 >
-                  Enregistrer
-                </CordelButton>
+                  <span>🗑️</span>
+                  <span>Supprimer cette corde</span>
+                </button>
+                <div className="flex gap-2">
+                  <CordelButton
+                    type="button"
+                    variant="default"
+                    onClick={() => setEditingCategory(null)}
+                    className="text-[10px] px-3 py-1.5 uppercase font-bold"
+                  >
+                    Annuler
+                  </CordelButton>
+                  <CordelButton
+                    type="button"
+                    variant="ocre"
+                    onClick={async () => {
+                      await saveCategory(editingCategory);
+                      setEditingCategory(null);
+                    }}
+                    className="text-[10px] px-3 py-1.5 uppercase font-bold"
+                  >
+                    Enregistrer
+                  </CordelButton>
+                </div>
               </div>
             </div>
           </CordelCard>

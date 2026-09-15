@@ -9,9 +9,16 @@ export { CULTURAL_EQUIVALENCES };
  *
  * @param {Object} props
  * @param {Function} [props.onInsertTerm] Optionnel : permet d'insérer directement le terme recommandé au clic
+ * @param {Array} [props.equivalences] Liste optionnelle d'équivalences personnalisées
  */
-export default function StudioWritingGuide({ onInsertTerm }) {
+export default function StudioWritingGuide({
+  onInsertTerm,
+  equivalences = CULTURAL_EQUIVALENCES
+}) {
   const [isOpen, setIsOpen] = useState(false);
+  const effectiveEquivalences = Array.isArray(equivalences) && equivalences.length > 0
+    ? equivalences
+    : CULTURAL_EQUIVALENCES;
 
   return (
     <div className="flex flex-col border-t border-dashed border-cordel-master-dark/20 pt-1.5 mt-1.5">
@@ -49,34 +56,46 @@ export default function StudioWritingGuide({ onInsertTerm }) {
                 </tr>
               </thead>
               <tbody className="divide-y divide-cordel-master-dark/10">
-                {CULTURAL_EQUIVALENCES.map((item, idx) => (
-                  <tr key={idx} className="hover:bg-white/60 transition-colors">
-                    <td className="py-1 px-2 whitespace-nowrap">
-                      {onInsertTerm ? (
-                        <button
-                          type="button"
-                          onMouseDown={(e) => e.preventDefault()}
-                          onClick={() => onInsertTerm(item.recommande)}
-                          className="font-bold text-[var(--color-cordel-vert,#2d6a4f)] hover:underline cursor-pointer flex items-center gap-0.5"
-                          title={`Insérer "${item.recommande}"`}
-                        >
-                          <span>✓</span>
-                          <span>{item.recommande}</span>
-                        </button>
-                      ) : (
-                        <span className="font-bold text-[var(--color-cordel-vert,#2d6a4f)]">
-                          ✓ {item.recommande}
-                        </span>
-                      )}
-                    </td>
-                    <td className="py-1 px-2 text-[var(--color-cordel-rouge,#8b2a1a)] font-semibold line-through opacity-85 whitespace-nowrap">
-                      {item.aEviter}
-                    </td>
-                    <td className="py-1 px-2 text-[10px] text-cordel-master-dark opacity-90 leading-tight">
-                      {item.contexte}
-                    </td>
-                  </tr>
-                ))}
+                {effectiveEquivalences.map((item, idx) => {
+                  const preferred = item.preferred || item.recommande || '';
+                  const avoid = item.avoid || item.aEviter || '';
+                  const context = item.context || item.contexte || '';
+
+                  return (
+                    <tr key={item.id || idx} className="hover:bg-white/60 transition-colors">
+                      <td className="py-1 px-2 whitespace-nowrap">
+                        {onInsertTerm ? (
+                          <button
+                            type="button"
+                            onMouseDown={(e) => e.preventDefault()}
+                            onClick={() => onInsertTerm(preferred)}
+                            className="font-bold text-[var(--color-cordel-vert,#2d6a4f)] hover:underline cursor-pointer flex items-center gap-0.5"
+                            title={`Insérer "${preferred}" au curseur`}
+                          >
+                            <span>✨</span>
+                            <span>{preferred}</span>
+                          </button>
+                        ) : (
+                          <span className="font-bold text-[var(--color-cordel-vert,#2d6a4f)]">
+                            {preferred}
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-1 px-2 whitespace-nowrap">
+                        {avoid ? (
+                          <span className="line-through text-[var(--color-cordel-rouge,#8b2a1a)] opacity-85 font-medium">
+                            {avoid}
+                          </span>
+                        ) : (
+                          <span className="text-neutral-400">-</span>
+                        )}
+                      </td>
+                      <td className="py-1 px-2 text-[10px] text-cordel-master-dark/85 leading-tight">
+                        {context}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

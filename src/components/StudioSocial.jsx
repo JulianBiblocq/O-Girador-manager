@@ -11,7 +11,7 @@ import { getSocialVideoThumbnail } from '../utils/videoUtils';
 import StudioTextToolbar from './studio/StudioTextToolbar';
 import { DEFAULT_STUDIO_LEXIQUE, DEFAULT_STUDIO_MENTIONS } from './studio/StudioQuickChips';
 
-export default function StudioSocial({ groupId, branding, onBack, role, isSystemAdmin, user, profileData }) {
+export default function StudioSocial({ groupId, branding, onBack, role, isSystemAdmin, user, profileData, onNavigateToView }) {
   const { t } = useTranslation();
   const { confirm } = useConfirm();
   const [events, setEvents] = useState([]);
@@ -45,9 +45,10 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
   const [editingTagIdx, setEditingTagIdx] = useState(null);
   const [editingTagValue, setEditingTagValue] = useState('');
 
-  // États pour les chips de vocabulaire et mentions personnalisables de l'association
+  // États pour les chips de vocabulaire, mentions et équivalences de l'association
   const [studioLexique, setStudioLexique] = useState(DEFAULT_STUDIO_LEXIQUE);
   const [studioMentions, setStudioMentions] = useState(DEFAULT_STUDIO_MENTIONS);
+  const [studioEquivalences, setStudioEquivalences] = useState([]);
   const [newLexiqueTerm, setNewLexiqueTerm] = useState('');
   const [newMention, setNewMention] = useState('');
 
@@ -58,12 +59,35 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
     const unsubscribe = onSnapshot(assocRef, (docSnap) => {
       if (docSnap.exists()) {
         const data = docSnap.data();
-        setAvailableSocialTags(data.studioSocialTags || []);
-        if (Array.isArray(data.studioLexique) && data.studioLexique.length > 0) {
-          setStudioLexique(data.studioLexique);
-        }
-        if (Array.isArray(data.studioMentions) && data.studioMentions.length > 0) {
-          setStudioMentions(data.studioMentions);
+
+        // 1. Si la configuration structurée studioLexiqueConfig existe
+        if (data.studioLexiqueConfig) {
+          const cfg = data.studioLexiqueConfig;
+          if (Array.isArray(cfg.mentions) && cfg.mentions.length > 0) {
+            setStudioMentions(cfg.mentions);
+          }
+          if (Array.isArray(cfg.equivalences) && cfg.equivalences.length > 0) {
+            setStudioEquivalences(cfg.equivalences);
+            const activeChips = cfg.equivalences
+              .filter((eq) => eq.activeChip !== false)
+              .map((eq) => eq.preferred || eq.recommande)
+              .filter(Boolean);
+            if (activeChips.length > 0) {
+              setStudioLexique(activeChips);
+            }
+          }
+          if (Array.isArray(cfg.hashtags) && cfg.hashtags.length > 0) {
+            setAvailableSocialTags(cfg.hashtags);
+          }
+        } else {
+          // 2. Repli rétrocompatible sur les champs individuels
+          setAvailableSocialTags(data.studioSocialTags || []);
+          if (Array.isArray(data.studioLexique) && data.studioLexique.length > 0) {
+            setStudioLexique(data.studioLexique);
+          }
+          if (Array.isArray(data.studioMentions) && data.studioMentions.length > 0) {
+            setStudioMentions(data.studioMentions);
+          }
         }
       }
     }, (err) => {
@@ -126,22 +150,57 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
     }
   }, [events]);
 
-  // 2. Récupérer Varal Images
+  // 2. Récupérer Varal Images (Tous les médias visuels du Varal et des galeries d'événements)
   useEffect(() => {
     if (!groupId) return;
     const docsRef = collection(db, 'documents');
-    const q = query(docsRef, where('groupId', '==', groupId), where('type', '==', 'image'));
+    const q = query(docsRef, where('groupId', '==', groupId));
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
       const fetchedDocs = [];
       querySnapshot.forEach((docSnap) => {
-        fetchedDocs.push({ id: docSnap.id, ...docSnap.data() });
+        const data = docSnap.data();
+        const candidateUrl = data.fileUrl || data.url || data.imageUrl || data.photoUrl || data.visuelAnimeUrl || '';
+        
+        // Détecter si le document est une image ou contient une URL d'image exploitable
+        const isExplicitImage = data.type === 'image' || data.typeDoc === 'image';
+        const hasImageExt = /\.(jpg|jpeg|png|gif|webp|svg)(\?.*)?$/i.test(candidateUrl);
+        const isStorageImage = candidateUrl.includes('firebasestorage.googleapis.com') && 
+          !candidateUrl.includes('.pdf') && 
+          !candidateUrl.includes('.mp3') && 
+          !candidateUrl.includes('.wav') && 
+          !candidateUrl.includes('.mp4');
+
+        if (candidateUrl && (isExplicitImage || hasImageExt || isStorageImage)) {
+          fetchedDocs.push({
+            id: docSnap.id,
+            titre: data.titre || data.nom || 'Photo Varal',
+            fileUrl: candidateUrl,
+            categorie: data.categorie || data.categoryId || 'Varal',
+            dateAjout: data.dateAjout || data.date || ''
+          });
+        }
       });
+
+      // Compléter avec les affiches et visuels des événements
+      events.forEach((ev) => {
+        if (ev.imageUrl && !fetchedDocs.some(d => d.fileUrl === ev.imageUrl)) {
+          fetchedDocs.push({
+            id: `evt-img-${ev.id}`,
+            titre: `Affiche : ${ev.titre || 'Événement'}`,
+            fileUrl: ev.imageUrl,
+            categorie: 'Événements',
+            dateAjout: ev.dateDebut || ev.date || ''
+          });
+        }
+      });
+
+      fetchedDocs.sort((a, b) => new Date(b.dateAjout || 0) - new Date(a.dateAjout || 0));
       setVaralImages(fetchedDocs);
     }, (err) => {
       console.error("StudioSocial - Erreur snapshot images varal :", err);
     });
     return () => unsubscribe();
-  }, [groupId]);
+  }, [groupId, events]);
 
   // 3. Gérer Event selection change
   const handleEventChange = (e) => {
@@ -415,9 +474,10 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
     }
   };
 
-  // 6. Gérer Varal image selection (auto-enregistrer to Firestore)
+  // 6. Gérer Varal image selection (associer à l'événement et à la publication)
   const handleVaralImageChange = async (e) => {
-    const url = e.target.value;
+    const url = typeof e === 'string' ? e : e?.target?.value;
+    if (!url) return;
     setSelectedVaralImage(url);
     setBackgroundImageUrl(url);
 
@@ -425,13 +485,9 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
       try {
         const eventRef = doc(db, 'events', selectedEvent.id);
         await updateDoc(eventRef, { imageUrl: url });
-        
         setSelectedEvent(prev => ({ ...prev, imageUrl: url }));
-        setBackgroundSource('event');
-        alert("Image du Varal associée à l'événement !");
       } catch (err) {
         console.error("StudioSocial - Erreur liaison image Varal :", err);
-        alert("Erreur lors de l'association de l'image du Varal.");
       }
     }
   };
@@ -954,7 +1010,7 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
                 {/* Champ optionnel : Lien Vidéo (YouTube...) */}
                 <div className="flex flex-col gap-1.5 p-3 bg-cordel-bg-light border border-dashed border-cordel-master-dark/20 rounded-[5px]">
                   <label className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-master-dark flex items-center justify-between">
-                    <span>🎬 {t('studioSocial.videoUrlLabel') || "Lien de la vidéo (YouTube, Vimeo...)"}</span>
+                    <span>🎬 {t('studioSocial.videoUrlLabel') || "Vidéo"}</span>
                     {socialVideoUrl && getSocialVideoThumbnail(socialVideoUrl) && (
                       <span className="text-[9px] text-green-700 font-extrabold px-1.5 py-0.5 bg-green-100 border border-green-400 rounded select-none">
                         ✓ Miniature YouTube détectée
@@ -1031,29 +1087,64 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
 
                 {/* Suboptions conditional on Source */}
                 {backgroundSource === 'varal' && (
-                  <div className="flex flex-col gap-1 p-2 bg-cordel-bg border border-dashed border-cordel-master-dark/30 rounded">
-                    <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark mb-1">
-                      {t('studioSocial.selectVaral') || "Sélectionner une photo du Varal"}
-                    </label>
+                  <div className="flex flex-col gap-2 p-2.5 bg-cordel-bg border border-dashed border-cordel-master-dark/30 rounded">
+                    <div className="flex items-center justify-between">
+                      <label className="text-[9.5px] uppercase font-black tracking-wider text-cordel-master-dark">
+                        {t('studioSocial.selectVaral') || "Sélectionner une photo du Varal"}
+                      </label>
+                      <span className="text-[9px] font-bold text-cordel-wood">
+                        {varalImages.length} photo(s) disponible(s)
+                      </span>
+                    </div>
+
                     {varalImages.length === 0 ? (
                       <span className="text-[10px] italic opacity-60">
                         {t('studioSocial.noVaralImages') || "Aucune image trouvée dans le Varal."}
                       </span>
                     ) : (
-                      <select
-                        value={selectedVaralImage}
-                        onChange={handleVaralImageChange}
-                        className="theme-input w-full bg-cordel-bg-light text-xs font-semibold"
-                      >
-                        <option value="" disabled>
-                          -- Choisir une photo --
-                        </option>
-                        {varalImages.map((img) => (
-                          <option key={img.id} value={img.fileUrl}>
-                            {img.titre}
+                      <>
+                        <select
+                          value={selectedVaralImage}
+                          onChange={handleVaralImageChange}
+                          className="theme-input w-full bg-cordel-bg-light text-xs font-bold py-1.5"
+                        >
+                          <option value="" disabled>
+                            -- Choisir une photo du Varal --
                           </option>
-                        ))}
-                      </select>
+                          {varalImages.map((img) => (
+                            <option key={img.id} value={img.fileUrl}>
+                              {img.titre} ({img.categorie})
+                            </option>
+                          ))}
+                        </select>
+
+                        {/* Aperçus miniatures rapides */}
+                        <div className="flex items-center gap-1.5 overflow-x-auto py-1">
+                          {varalImages.slice(0, 8).map((img) => {
+                            const isSelected = selectedVaralImage === img.fileUrl;
+                            return (
+                              <button
+                                key={img.id}
+                                type="button"
+                                onClick={() => handleVaralImageChange(img.fileUrl)}
+                                className={`w-12 h-12 rounded border-2 shrink-0 overflow-hidden cursor-pointer transition-all ${
+                                  isSelected
+                                    ? 'border-encre-noire ring-2 ring-cordel-wood scale-105 shadow-md'
+                                    : 'border-stone-300 opacity-80 hover:opacity-100 hover:border-encre-noire'
+                                }`}
+                                title={img.titre}
+                              >
+                                <img
+                                  src={img.fileUrl}
+                                  alt={img.titre}
+                                  className="w-full h-full object-cover"
+                                  loading="lazy"
+                                />
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </>
                     )}
                   </div>
                 )}
@@ -1287,6 +1378,8 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
                 onChange={setPublicationText}
                 lexique={studioLexique}
                 mentions={studioMentions}
+                equivalences={studioEquivalences}
+                onNavigateToLexique={onNavigateToView ? () => onNavigateToView('studio-lexique') : undefined}
               />
 
               <textarea

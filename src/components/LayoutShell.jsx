@@ -188,7 +188,7 @@ export default function LayoutShell({
     if (tabId === 'inventory' && enabledModules.logistique === false) return false;
     if (tabId === 'orders-manager' && enabledModules.commandes === false) return false;
     if (['vestiaire', 'wardrobe-inventory', 'wardrobe-couture', 'wardrobe-sizes', 'wardrobe-projects', 'wardrobe-models', 'wardrobe-pieces', 'wardrobe-supplies', 'wardrobe-tools', 'varal-costumerie'].includes(tabId) && enabledModules.vestiaire === false && enabledModules.costumerie === false) return false;
-    if (['studio-social', 'varal-manager'].includes(tabId) && enabledModules.studioSocial === false) return false;
+    if (['studio-social', 'studio-lexique', 'varal-manager'].includes(tabId) && enabledModules.studioSocial === false) return false;
     if (['reunion-manager', 'ca-reunions'].includes(tabId) && enabledModules.reunions === false) return false;
     if (['forum', 'mestre-forum-channels'].includes(tabId) && enabledModules.forum === false) return false;
     if (['mestre-repertoire', 'mestre-sante-troupe', 'mestre-pedagogy-manager', 'mestre-orientation', 'mestre-events', 'mestre-stage-layout', 'mestre-sequenceur', 'mestre-mot-mestre'].includes(tabId) && enabledModules.mestre === false) return false;

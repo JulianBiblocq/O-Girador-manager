@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { collection, query, where, onSnapshot, doc, deleteDoc, updateDoc, writeBatch } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, doc, deleteDoc, updateDoc, writeBatch, getDocs } from 'firebase/firestore';
 import { ref, deleteObject } from 'firebase/storage';
 import { db, storage } from '../firebase';
 import { projectWorkshopBooklets } from '../utils/workshopProjectionUtils';
@@ -74,7 +74,8 @@ export default function useVaralData({
   const [reunions, setReunions] = useState([]);
   const [instrumentModels, setInstrumentModels] = useState([]);
 
-  const isAuthorized = role === 'mestre' || role === 'super-admin' || isSystemAdmin === true;
+  // Les droits d'administration couvrent les mestres, super-admins et utilisateurs ayant les droits d'écriture sur le pôle
+  const isAuthorized = role === 'mestre' || role === 'super-admin' || isSystemAdmin === true || canWrite === true;
 
   // 1. Écouteur Firestore pour tous les documents réels de l'association (sans troncature)
   useEffect(() => {
@@ -453,6 +454,7 @@ export default function useVaralData({
     if (!isOk) return;
 
     try {
+      // Nettoyage Storage si fichier hébergé sur Firebase Storage
       if (docItem.fileUrl && docItem.fileUrl.includes('firebasestorage.googleapis.com')) {
         try {
           const fileRef = ref(storage, docItem.fileUrl);
@@ -462,8 +464,43 @@ export default function useVaralData({
         }
       }
 
-      const docRef = doc(db, 'documents', docItem.id);
-      await deleteDoc(docRef);
+      // Si le document provient d'un événement ou est relié à un événement :
+      // retirer la publication Varal et réinitialiser les liens Cloud sur l'événement
+      if (docItem.eventId) {
+        try {
+          const eventRef = doc(db, 'events', docItem.eventId);
+          await updateDoc(eventRef, {
+            publierSurVaral: false,
+            albumPhotosUrl: '',
+            lienDepotMedias: '',
+            framaspaceFolder: null
+          });
+        } catch (eventErr) {
+          console.error("useVaralData - Erreur mise à jour événement lors de la suppression :", eventErr);
+        }
+
+        // Nettoyer tous les documents physiques synchronisés avec cet événement dans la collection 'documents'
+        try {
+          const docsRef = collection(db, 'documents');
+          const qDoc = query(
+            docsRef,
+            where('groupId', '==', groupId),
+            where('eventId', '==', docItem.eventId)
+          );
+          const existingSnap = await getDocs(qDoc);
+          for (const d of existingSnap.docs) {
+            await deleteDoc(doc(db, 'documents', d.id));
+          }
+        } catch (delErr) {
+          console.error("useVaralData - Erreur nettoyage documents liés :", delErr);
+        }
+      }
+
+      // Si c'est un document physique dans Firestore (non virtuel 'event-media-...')
+      if (docItem.id && !docItem.id.startsWith('event-media-') && !docItem.isVirtualEventMedia) {
+        const docRef = doc(db, 'documents', docItem.id);
+        await deleteDoc(docRef);
+      }
     } catch (error) {
       console.error("useVaralData - Erreur de suppression document :", error);
       alert(t('documents.deleteError') || "Erreur lors de la suppression du document.");
@@ -486,6 +523,29 @@ export default function useVaralData({
     }
   };
 
+  // 13. Suppression d'une catégorie / corde personnalisée du Varal
+  const deleteCategory = async (categoryId) => {
+    const cat = varalCategories.find(c => c.id === categoryId);
+    const catName = cat?.nom || categoryId;
+    const isOk = await confirm({
+      title: "Supprimer la corde / catégorie",
+      message: `Êtes-vous sûr de vouloir supprimer la corde "${catName}" du Varal ?`,
+      confirmText: t('common.yesDelete') || "Oui, supprimer",
+      cancelText: t('common.cancel') || "Annuler",
+      variant: "danger"
+    });
+    if (!isOk) return;
+
+    try {
+      const assocRef = doc(db, 'associations', groupId);
+      const updatedCategories = varalCategories.filter(c => c.id !== categoryId);
+      await updateDoc(assocRef, { varalCategories: updatedCategories });
+    } catch (err) {
+      console.error("useVaralData - Erreur suppression catégorie :", err);
+      alert("Erreur lors de la suppression de la catégorie.");
+    }
+  };
+
   return {
     documents,
     varalCategories,
@@ -504,6 +564,7 @@ export default function useVaralData({
     handleMoveRight,
     updateDocumentsOrder,
     saveCategory,
+    deleteCategory,
     getDocType
   };
 }
