@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { collection, query, where, or, onSnapshot, addDoc, doc, updateDoc } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, addDoc, doc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import CordelButton from './CordelButton';
 import XiloAvatar from './XiloAvatar';
@@ -79,44 +79,76 @@ export default function PrivateChatView({
     conversation?.participantIds || []
   );
 
-  // 3. Fallback pour les messages privés historiques (1-à-1 legacy) si pas de conversationId
+  // 3. Récupération résiliente des messages privés historiques (1-à-1 legacy)
   const [legacyMessages, setLegacyMessages] = useState([]);
   useEffect(() => {
-    if (conversationId || !user?.uid || !effectiveOtherUser?.id) return;
+    // Si c'est un groupe ou si les identifiants d'interlocuteurs sont indisponibles, ignorer l'historique direct 1-à-1
+    if (isGroup || !user?.uid || !effectiveOtherUser?.id) {
+      setLegacyMessages([]);
+      return;
+    }
 
     const messagesRef = collection(db, 'private_messages');
-    const q = query(
-      messagesRef,
-      or(
-        where('senderId', '==', user.uid),
-        where('recipientId', '==', user.uid)
-      )
-    );
+    let sentList = [];
+    let receivedList = [];
 
-    const unsubscribe = onSnapshot(q, (querySnapshot) => {
-      const fetched = [];
-      querySnapshot.forEach((docSnap) => {
-        const data = docSnap.data();
-        const isBetweenUs = (data.senderId === user.uid && data.recipientId === effectiveOtherUser.id) ||
-                            (data.senderId === effectiveOtherUser.id && data.recipientId === user.uid);
-        if (isBetweenUs) {
-          fetched.push({ id: docSnap.id, ...data });
-        }
-      });
+    const syncCombinedLegacy = () => {
+      const map = new Map();
+      sentList.forEach((m) => map.set(m.id, m));
+      receivedList.forEach((m) => map.set(m.id, m));
+      const list = Array.from(map.values());
+      list.sort((a, b) => new Date(a.timestamp || 0).getTime() - new Date(b.timestamp || 0).getTime());
+      setLegacyMessages(list);
 
-      fetched.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-      setLegacyMessages(fetched);
-
-      // Acquittement des messages reçus
-      fetched.forEach((msg) => {
+      // Acquittement des messages reçus non lus
+      list.forEach((msg) => {
         if (msg.recipientId === user.uid && msg.senderId === effectiveOtherUser.id && !msg.read) {
           updateDoc(doc(db, 'private_messages', msg.id), { read: true }).catch(() => {});
         }
       });
-    });
+    };
 
-    return () => unsubscribe();
-  }, [conversationId, user?.uid, effectiveOtherUser?.id]);
+    // Écoute des messages envoyés par l'utilisateur connecté à cet interlocuteur
+    const qSent = query(
+      messagesRef,
+      where('senderId', '==', user.uid),
+      where('recipientId', '==', effectiveOtherUser.id)
+    );
+    const unsubSent = onSnapshot(
+      qSent,
+      (snap) => {
+        sentList = [];
+        snap.forEach((d) => sentList.push({ id: d.id, ...d.data() }));
+        syncCombinedLegacy();
+      },
+      (error) => {
+        console.warn('PrivateChatView - Erreur écoute messages historiques envoyés :', error);
+      }
+    );
+
+    // Écoute des messages reçus par l'utilisateur connecté depuis cet interlocuteur
+    const qRecv = query(
+      messagesRef,
+      where('recipientId', '==', user.uid),
+      where('senderId', '==', effectiveOtherUser.id)
+    );
+    const unsubRecv = onSnapshot(
+      qRecv,
+      (snap) => {
+        receivedList = [];
+        snap.forEach((d) => receivedList.push({ id: d.id, ...d.data() }));
+        syncCombinedLegacy();
+      },
+      (error) => {
+        console.warn('PrivateChatView - Erreur écoute messages historiques reçus :', error);
+      }
+    );
+
+    return () => {
+      unsubSent();
+      unsubRecv();
+    };
+  }, [isGroup, user?.uid, effectiveOtherUser?.id]);
 
   // Acquittement de lecture de la conversation moderne
   useEffect(() => {
@@ -125,8 +157,46 @@ export default function PrivateChatView({
     }
   }, [conversationId, convMessages.length, onMarkAsRead]);
 
-  // Messages effectifs affichés
-  const activeMessages = conversationId ? convMessages : legacyMessages;
+  // 4. Fusion unifiée des messages modernes et historiques (sans doublons, tri chronologique)
+  const activeMessages = useMemo(() => {
+    if (isGroup) {
+      return convMessages;
+    }
+
+    // Pour une discussion 1-à-1, combiner les messages de conversation_messages et private_messages
+    const combined = [...convMessages];
+    const modernLegacyIds = new Set(
+      convMessages.map((m) => m.legacyMessageId || m.id).filter(Boolean)
+    );
+    const modernSignatures = new Set(
+      convMessages.map((m) => `${m.senderId}_${m.timestamp}_${m.content}`)
+    );
+
+    legacyMessages.forEach((legacyMsg) => {
+      const sig = `${legacyMsg.senderId}_${legacyMsg.timestamp}_${legacyMsg.content}`;
+      if (!modernLegacyIds.has(legacyMsg.id) && !modernSignatures.has(sig)) {
+        combined.push({
+          ...legacyMsg,
+          isLegacy: true,
+          senderName:
+            legacyMsg.senderName ||
+            (legacyMsg.senderId === user?.uid
+              ? (profileData?.prenom ? `${profileData.prenom} ${profileData.nom || ''}`.trim() : user.displayName || 'Membre')
+              : (effectiveOtherUser?.prenom
+                  ? `${effectiveOtherUser.prenom} ${effectiveOtherUser.nom || ''}`.trim()
+                  : effectiveOtherUser?.email || 'Membre')),
+          senderAvatar:
+            legacyMsg.senderAvatar ||
+            (legacyMsg.senderId === user?.uid
+              ? (profileData?.photoURL || user.photoURL || '')
+              : (effectiveOtherUser?.photoURL || ''))
+        });
+      }
+    });
+
+    combined.sort((a, b) => new Date(a.timestamp || 0).getTime() - new Date(b.timestamp || 0).getTime());
+    return combined;
+  }, [isGroup, convMessages, legacyMessages, user?.uid, profileData, effectiveOtherUser]);
 
   // Défilement automatique vers le bas
   useEffect(() => {

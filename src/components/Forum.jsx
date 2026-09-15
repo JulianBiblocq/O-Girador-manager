@@ -634,44 +634,95 @@ export default function Forum({
 
   // Fusion transparente des conversations modernes (directes & groupes) et des discussions legacy
   const allInboxConversations = useMemo(() => {
-    const existingDirectOtherIds = new Set();
-    modernConversations.forEach((c) => {
-      if (c.type === 'direct' && Array.isArray(c.participantIds)) {
-        const other = c.participantIds.find((id) => id !== user?.uid);
-        if (other) existingDirectOtherIds.add(other);
-      }
-    });
-
-    const legacyMap = {};
+    // 1. Indexer tous les messages historiques par interlocuteur
+    const legacyByPartner = {};
     privateMessages.forEach((msg) => {
       const otherId = msg.senderId === user?.uid ? msg.recipientId : msg.senderId;
-      if (!existingDirectOtherIds.has(otherId)) {
-        if (!legacyMap[otherId]) {
-          legacyMap[otherId] = {
-            id: `legacy_${otherId}`,
-            isLegacy: true,
-            type: 'direct',
-            participantIds: [user?.uid, otherId],
-            lastMessage: null,
-            isUnread: false,
-            updatedAt: msg.timestamp
-          };
-        }
-        if (!legacyMap[otherId].lastMessage || new Date(msg.timestamp) > new Date(legacyMap[otherId].lastMessage.timestamp)) {
-          legacyMap[otherId].lastMessage = {
-            content: msg.content,
-            senderId: msg.senderId,
-            timestamp: msg.timestamp
-          };
-          legacyMap[otherId].updatedAt = msg.timestamp;
-        }
-        if (msg.recipientId === user?.uid && !msg.read) {
-          legacyMap[otherId].isUnread = true;
-        }
+      if (!otherId) return;
+      if (!legacyByPartner[otherId]) {
+        legacyByPartner[otherId] = {
+          latestMsg: null,
+          hasUnread: false,
+          messages: []
+        };
+      }
+      legacyByPartner[otherId].messages.push(msg);
+      if (
+        !legacyByPartner[otherId].latestMsg ||
+        new Date(msg.timestamp || 0) > new Date(legacyByPartner[otherId].latestMsg.timestamp || 0)
+      ) {
+        legacyByPartner[otherId].latestMsg = msg;
+      }
+      if (msg.recipientId === user?.uid && !msg.read) {
+        legacyByPartner[otherId].hasUnread = true;
       }
     });
 
-    const combined = [...modernConversations, ...Object.values(legacyMap)];
+    const coveredPartnerIds = new Set();
+
+    // 2. Traiter les conversations modernes et les enrichir avec l'historique legacy
+    const enrichedModern = modernConversations.map((c) => {
+      if (c.type === 'direct' && Array.isArray(c.participantIds)) {
+        const otherId = c.participantIds.find((id) => id !== user?.uid);
+        if (otherId) {
+          coveredPartnerIds.add(otherId);
+          const legacyInfo = legacyByPartner[otherId];
+          if (legacyInfo && legacyInfo.latestMsg) {
+            const hasModernLastMsg = Boolean(c.lastMessage?.content || c.lastMessage?.imageUrl);
+            const modernTime = hasModernLastMsg ? new Date(c.lastMessage.timestamp || 0).getTime() : 0;
+            const legacyTime = new Date(legacyInfo.latestMsg.timestamp || 0).getTime();
+
+            // Si la conversation moderne n'a pas de dernier message ou que le dernier message legacy est plus récent
+            const effectiveLastMessage =
+              !hasModernLastMsg || legacyTime > modernTime
+                ? {
+                    content: legacyInfo.latestMsg.content,
+                    senderId: legacyInfo.latestMsg.senderId,
+                    timestamp: legacyInfo.latestMsg.timestamp
+                  }
+                : c.lastMessage;
+
+            const effectiveUpdatedAt =
+              !c.updatedAt || legacyTime > new Date(c.updatedAt || 0).getTime()
+                ? legacyInfo.latestMsg.timestamp || c.updatedAt
+                : c.updatedAt;
+
+            const effectiveIsUnread = c.isUnread || legacyInfo.hasUnread;
+
+            return {
+              ...c,
+              lastMessage: effectiveLastMessage,
+              updatedAt: effectiveUpdatedAt,
+              isUnread: effectiveIsUnread
+            };
+          }
+        }
+      }
+      return c;
+    });
+
+    // 3. Ajouter les conversations purement legacy pour lesquelles aucune conversation moderne n'existe encore
+    const legacyOnlyConvs = [];
+    Object.entries(legacyByPartner).forEach(([otherId, info]) => {
+      if (!coveredPartnerIds.has(otherId) && info.latestMsg) {
+        legacyOnlyConvs.push({
+          id: `legacy_${otherId}`,
+          isLegacy: true,
+          type: 'direct',
+          participantIds: [user?.uid, otherId],
+          lastMessage: {
+            content: info.latestMsg.content,
+            senderId: info.latestMsg.senderId,
+            timestamp: info.latestMsg.timestamp
+          },
+          isUnread: info.hasUnread,
+          updatedAt: info.latestMsg.timestamp,
+          createdAt: info.latestMsg.timestamp
+        });
+      }
+    });
+
+    const combined = [...enrichedModern, ...legacyOnlyConvs];
     combined.sort((a, b) => {
       const timeA = new Date(a.updatedAt || a.lastMessage?.timestamp || 0).getTime();
       const timeB = new Date(b.updatedAt || b.lastMessage?.timestamp || 0).getTime();
@@ -761,14 +812,20 @@ export default function Forum({
   // Si une discussion privée (directe ou groupe) est active, afficher la vue de chat en pleine page
   if (activeConversationId || activeChatUserId) {
     const activeConv = modernConversations.find((c) => c.id === activeConversationId);
+    const resolvedOtherId =
+      activeChatUserId ||
+      (activeConv?.type === 'direct' ? activeConv?.participantIds?.find((id) => id !== user?.uid) : null);
+    const resolvedOtherUser = resolvedOtherId
+      ? usersMap[resolvedOtherId] || { id: resolvedOtherId }
+      : null;
 
     return (
       <PrivateChatView
         user={user}
         conversation={activeConv}
         profileData={profileData}
-        recipientId={activeChatUserId}
-        otherUser={usersMap[activeChatUserId] || { id: activeChatUserId }}
+        recipientId={resolvedOtherId}
+        otherUser={resolvedOtherUser}
         usersMap={usersMap}
         initialText={initialPrivateMessage}
         onMarkAsRead={markConversationAsRead}

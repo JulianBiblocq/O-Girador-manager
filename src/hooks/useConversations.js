@@ -7,6 +7,7 @@ import {
   doc, 
   addDoc, 
   updateDoc, 
+  getDocs,
   arrayUnion, 
   arrayRemove 
 } from 'firebase/firestore';
@@ -210,6 +211,30 @@ export function useConversations(user, groupId, profileData) {
             senderName: senderFullName,
             timestamp: nowIso
           };
+        } else {
+          // Récupérer le dernier message historique pour initialiser l'aperçu de la conversation
+          try {
+            const pmRef = collection(db, 'private_messages');
+            const [snapSent, snapRecv] = await Promise.all([
+              getDocs(query(pmRef, where('senderId', '==', user.uid), where('recipientId', '==', targetUserId))),
+              getDocs(query(pmRef, where('recipientId', '==', user.uid), where('senderId', '==', targetUserId)))
+            ]);
+            const allPms = [];
+            snapSent.forEach((d) => allPms.push(d.data()));
+            snapRecv.forEach((d) => allPms.push(d.data()));
+            if (allPms.length > 0) {
+              allPms.sort((a, b) => new Date(b.timestamp || 0).getTime() - new Date(a.timestamp || 0).getTime());
+              const latest = allPms[0];
+              newConvData.lastMessage = {
+                content: latest.content || '',
+                senderId: latest.senderId,
+                timestamp: latest.timestamp || nowIso
+              };
+              newConvData.updatedAt = latest.timestamp || nowIso;
+            }
+          } catch (e) {
+            console.warn("useConversations - Impossible de charger le dernier message historique :", e);
+          }
         }
 
         const convRef = await addDoc(collection(db, 'conversations'), newConvData);
