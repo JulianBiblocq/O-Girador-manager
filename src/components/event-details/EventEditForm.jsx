@@ -31,7 +31,8 @@ export default function EventEditForm({
   customCategories = DEFAULT_CUSTOM_CATEGORIES,
   eventTypeConfigs = {},
   t,
-  groupId
+  groupId,
+  defaultDropUrl = ''
 }) {
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
@@ -98,6 +99,7 @@ export default function EventEditForm({
           customCategories={customCategories}
           createConfig={editConfig}
           groupId={groupId}
+          defaultDropUrl={defaultDropUrl}
           t={t}
         />
 

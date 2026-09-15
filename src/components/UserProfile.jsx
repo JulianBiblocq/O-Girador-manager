@@ -703,7 +703,7 @@ export default function UserProfile({ user, profileData, associationName, onBack
       />
 
       {/* Modale Éditeur Photo Cordel / Xylogravure */}
-      {showEditor && selectedImage && (
+      {showEditor && (
         <div className="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="max-w-md w-full max-h-[95vh] overflow-y-auto">
             <React.Suspense fallback={

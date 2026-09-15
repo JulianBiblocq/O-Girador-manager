@@ -408,7 +408,7 @@ export default function RichTextEditor({
         />
       </div>
 
-      {/* Modale d'insertion d'image (Upload Firebase Storage ou Lien Externe) */}
+      {/* Modale d'insertion d'image (Upload Framaspace ou Lien Externe) */}
       <ForumImageInsertModal
         isOpen={isImageModalOpen}
         onClose={() => setIsImageModalOpen(false)}
@@ -417,7 +417,7 @@ export default function RichTextEditor({
         groupId={groupId}
         onInsertImage={(url) => {
           if (editor && url) {
-            editor.chain().focus().setImage({ src: url, alt: 'Image forum' }).run();
+            editor.chain().focus().setImage({ src: url }).run();
           }
         }}
       />

@@ -258,6 +258,7 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
     smtpSecure: 'tls',
     customEmailDomain: '',
     logisticsKits: [],
+    defaultDropUrl: '',
     // Configuration de la vidéo à la une sur le tableau de bord (Accueil)
     videoALaUne: {
       url: '',
@@ -544,6 +545,7 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
           smtpUser: data.smtpUser || '',
           smtpSecure: data.smtpSecure || 'tls',
           customEmailDomain: data.customEmailDomain || '',
+          defaultDropUrl: data.defaultDropUrl || '',
           // Vidéo à la une pour le Dashboard
           videoALaUne: data.videoALaUne ? {
             url: data.videoALaUne.url || '',
@@ -803,6 +805,7 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
         smtpUser: formData.smtpUser || '',
         smtpSecure: formData.smtpSecure || 'tls',
         customEmailDomain: formData.customEmailDomain || '',
+        defaultDropUrl: formData.defaultDropUrl ? formData.defaultDropUrl.trim() : '',
         // Sauvegarde de la vidéo à la une du Dashboard
         videoALaUne: {
           url: formData.videoALaUne?.url || '',

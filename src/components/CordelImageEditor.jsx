@@ -1,45 +1,76 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { defaultCordelOptions, processCordelEffectBase64 } from '../utils/cordelEffect';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
+import { useAvatarUpload } from '../hooks/useAvatarUpload';
 
 /**
  * Éditeur d'effet xylogravure respectant la charte esthétique Cordel.
  * Stylisé sous forme de cadre Cordel asymétrique avec boutons sémantiques.
+ * Permet également de remplacer ou charger une nouvelle photo directement.
  */
 export default function CordelImageEditor({ imageSrc, lang = 'fr', onComplete, onCancel }) {
+  const [currentImage, setCurrentImage] = useState(imageSrc || null);
   const [options, setOptions] = useState(defaultCordelOptions);
   const [previewBase64, setPreviewBase64] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [previewError, setPreviewError] = useState(false);
 
-  // Génération de la prévisualisation réactive à chaque ajustement
+  const fileInputRef = useRef(null);
+  const { compressAndPrepareFile, isCompressing } = useAvatarUpload();
+
+  // Synchronisation si la prop imageSrc change
+  useEffect(() => {
+    if (imageSrc) {
+      setCurrentImage(imageSrc);
+    }
+  }, [imageSrc]);
+
+  // Génération de la prévisualisation réactive à chaque ajustement d'effet
   useEffect(() => {
     let active = true;
+    if (!currentImage) {
+      setPreviewBase64(null);
+      return;
+    }
+
+    setPreviewError(false);
     const timeout = setTimeout(async () => {
-      if (!imageSrc) return;
       try {
         // Prévisualisation en 256px pour un rendu fluide et précis
-        const preview = await processCordelEffectBase64(imageSrc, options, 256);
-        if (active) setPreviewBase64(preview);
+        const preview = await processCordelEffectBase64(currentImage, options, 256);
+        if (active) {
+          setPreviewBase64(preview);
+          setPreviewError(false);
+        }
       } catch (err) {
         console.error("Xylogravure - Erreur de prévisualisation :", err);
+        if (active) setPreviewError(true);
       }
     }, 50);
+
     return () => {
       active = false;
       clearTimeout(timeout);
     };
-  }, [imageSrc, options]);
+  }, [currentImage, options]);
 
   // Validation et application finale de la gravure
   const handleApply = async () => {
+    if (!currentImage) return;
     setIsProcessing(true);
     try {
-      const finalImg = await processCordelEffectBase64(imageSrc, options, 256);
+      const finalImg = await processCordelEffectBase64(currentImage, options, 256);
       onComplete(finalImg);
     } catch (err) {
       console.error("Xylogravure - Erreur de traitement final :", err);
-      setIsProcessing(false);
+      // En cas d'erreur de traitement canvas, renvoyer l'image originale optimisée
+      if (currentImage.startsWith('data:image')) {
+        onComplete(currentImage);
+      } else {
+        setIsProcessing(false);
+        alert(lang === 'fr' ? "Erreur lors du traitement de l'image." : "Erro ao processar a imagem.");
+      }
     }
   };
 
@@ -48,12 +79,39 @@ export default function CordelImageEditor({ imageSrc, lang = 'fr', onComplete, o
     setOptions(prev => ({ ...prev, [key]: value }));
   };
 
+  // Gestion du remplacement de fichier image depuis l'éditeur
+  const handleFileChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const preparedBase64 = await compressAndPrepareFile(file);
+      if (preparedBase64) {
+        setCurrentImage(preparedBase64);
+      }
+    } catch (err) {
+      console.error("Xylogravure - Erreur chargement nouveau fichier :", err);
+    } finally {
+      // Réinitialiser la valeur pour permettre la sélection du même fichier
+      if (e.target) e.target.value = '';
+    }
+  };
+
   return (
     <CordelCard 
       variant="default" 
       useExtremeBorder={true} 
       className="p-4 sm:p-5 flex flex-col gap-3.5 text-left relative bg-cordel-bg w-full shadow-[5px_5px_0px_0px_#181716] select-none"
     >
+      {/* Input de sélection de fichier masqué */}
+      <input 
+        type="file" 
+        ref={fileInputRef} 
+        accept="image/*" 
+        onChange={handleFileChange} 
+        className="hidden" 
+      />
+
       {/* En-tête Cordel */}
       <div className="flex flex-col items-center gap-1 text-center border-b border-dashed border-cordel-master-dark/20 pb-2.5">
         <h3 className="font-heading font-black text-sm uppercase tracking-wider text-cordel-wood flex items-center gap-1.5">
@@ -66,16 +124,45 @@ export default function CordelImageEditor({ imageSrc, lang = 'fr', onComplete, o
       
       {/* Cadre de prévisualisation stylisé type gravure trombinoscope */}
       <div className="relative aspect-square w-full max-w-[260px] mx-auto bg-cordel-master-dark/5 border-2 border-dashed border-cordel-wood/60 rounded-[var(--theme-border-radius)] p-1.5 shadow-[2px_2px_0px_0px_rgba(24,23,22,0.25)]">
-        <div className="relative w-full h-full rounded overflow-hidden flex items-center justify-center bg-black/10">
-          {previewBase64 ? (
+        <div 
+          className="relative w-full h-full rounded overflow-hidden flex items-center justify-center bg-black/10 cursor-pointer group"
+          onClick={() => fileInputRef.current?.click()}
+          title={lang === 'fr' ? 'Cliquer pour changer de photo' : 'Clique para trocar a foto'}
+        >
+          {isCompressing ? (
+            <div className="flex flex-col items-center justify-center gap-2 p-4 text-center">
+              <div className="w-7 h-7 border-2 border-[var(--color-cordel-ocre)] border-t-transparent rounded-full animate-spin" />
+              <span className="text-[10px] font-bold text-cordel-master-dark">
+                {lang === 'fr' ? 'Optimisation de la photo...' : 'Otimizando foto...'}
+              </span>
+            </div>
+          ) : previewBase64 ? (
             <img 
               src={previewBase64} 
               alt="Prévisualisation xylographique" 
               className="w-full h-full object-cover select-none" 
             />
-          ) : (
+          ) : currentImage ? (
             <div className="w-7 h-7 border-2 border-cordel-wood border-t-transparent rounded-full animate-spin" />
+          ) : (
+            <div className="flex flex-col items-center justify-center p-4 text-center gap-2">
+              <span className="text-3xl">📷</span>
+              <span className="text-xs font-black uppercase tracking-wider text-cordel-wood">
+                {lang === 'fr' ? 'Choisir une photo' : 'Escolher foto'}
+              </span>
+              <span className="text-[9px] text-cordel-master-dark/70 font-semibold">
+                {lang === 'fr' ? 'Cliquez pour sélectionner un fichier' : 'Clique para selecionar'}
+              </span>
+            </div>
           )}
+
+          {/* Calque de survol pour indiquer le changement d'image */}
+          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+            <span className="text-white text-[11px] font-black uppercase tracking-wider bg-black/60 px-2 py-1 rounded">
+              📷 {lang === 'fr' ? 'Changer la photo' : 'Trocar foto'}
+            </span>
+          </div>
+
           {isProcessing && (
             <div className="absolute inset-0 bg-black/65 backdrop-blur-xs flex flex-col items-center justify-center text-white z-10 select-none">
               <div className="w-7 h-7 border-2 border-white border-t-transparent rounded-full animate-spin mb-2" />
@@ -86,6 +173,23 @@ export default function CordelImageEditor({ imageSrc, lang = 'fr', onComplete, o
           )}
         </div>
       </div>
+
+      {/* Bouton secondaire pour changer de photo sur mobile */}
+      <div className="flex justify-center -mt-1">
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          className="text-[10px] font-bold text-cordel-wood hover:underline flex items-center gap-1 cursor-pointer bg-transparent border-0 p-1"
+        >
+          🔄 {lang === 'fr' ? 'Choisir une autre photo de votre appareil' : 'Escolher outra foto'}
+        </button>
+      </div>
+
+      {previewError && (
+        <div className="text-[10px] text-red-700 bg-red-50 border border-dashed border-red-300 p-2 rounded text-center font-bold">
+          ⚠️ {lang === 'fr' ? "Impossible de traiter cette image. Cliquez sur le bouton ci-dessus pour en choisir une autre." : "Não foi possível carregar a imagem. Escolha outra."}
+        </div>
+      )}
 
       {/* Paramètres de réglages xylographiques */}
       <div className="flex flex-col gap-2.5 font-bold">
@@ -212,8 +316,8 @@ export default function CordelImageEditor({ imageSrc, lang = 'fr', onComplete, o
           type="button"
           variant="vert"
           onClick={handleApply}
-          disabled={isProcessing}
-          className={`flex-1 py-2 text-xs font-black uppercase tracking-wider font-heading ${isProcessing ? 'opacity-50 cursor-not-allowed' : ''}`}
+          disabled={isProcessing || !currentImage}
+          className={`flex-1 py-2 text-xs font-black uppercase tracking-wider font-heading ${isProcessing || !currentImage ? 'opacity-50 cursor-not-allowed' : ''}`}
         >
           {lang === 'fr' ? '✓ Valider' : '✓ Aplicar'}
         </CordelButton>
@@ -230,3 +334,4 @@ export default function CordelImageEditor({ imageSrc, lang = 'fr', onComplete, o
     </CordelCard>
   );
 }
+

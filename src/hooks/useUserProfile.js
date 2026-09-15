@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { doc, setDoc, updateDoc, collection, query, where, onSnapshot, arrayUnion } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { signOut } from 'firebase/auth';
-import { db, auth, storage, messaging } from '../firebase';
+import { db, auth, messaging } from '../firebase';
+import { useAvatarUpload } from './useAvatarUpload';
 import { getToken } from 'firebase/messaging';
 import { forceUpdateAndClearCache } from '../utils/pwaUtils';
 import { showPushActivationConfirmation } from '../utils/pushNotificationHelper';
@@ -81,7 +81,7 @@ export function useUserProfile(user, profileData, t) {
   });
 
   const [saving, setSaving] = useState(false);
-  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const { uploadAvatar, compressAndPrepareFile, isCompressing, isUploading } = useAvatarUpload();
   const [myInstruments, setMyInstruments] = useState([]);
   const [loadingInst, setLoadingInst] = useState(true);
   const [droitImageDocUrl, setDroitImageDocUrl] = useState('');
@@ -346,16 +346,22 @@ export function useUserProfile(user, profileData, t) {
     return missing;
   };
 
-  const handlePhotoSelected = (e) => {
+  const handlePhotoSelected = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      setSelectedImage(event.target.result);
-      setShowEditor(true);
-    };
-    reader.readAsDataURL(file);
+    try {
+      const base64 = await compressAndPrepareFile(file);
+      if (base64) {
+        setSelectedImage(base64);
+        setShowEditor(true);
+      }
+    } catch (err) {
+      console.error("UserProfile - Erreur sélection photo :", err);
+      alert(t('common.saveError') || "Erreur lors du traitement de l'image.");
+    } finally {
+      if (e.target) e.target.value = '';
+    }
   };
 
   const handleEditorComplete = async (processedBase64) => {
@@ -363,36 +369,12 @@ export function useUserProfile(user, profileData, t) {
     setSelectedImage(null);
     if (!user?.uid) return;
 
-    setUploadingPhoto(true);
-
     try {
-      const base64ToBlob = (base64, mimeType = 'image/jpeg') => {
-        const byteString = atob(base64.split(',')[1]);
-        const ab = new ArrayBuffer(byteString.length);
-        const ia = new Uint8Array(ab);
-        for (let i = 0; i < byteString.length; i++) {
-          ia[i] = byteString.charCodeAt(i);
-        }
-        return new Blob([ab], { type: mimeType });
-      };
-
-      const blob = base64ToBlob(processedBase64);
-
-      const storageRef = ref(storage, `avatars/${user.uid}/profile_pic_${Date.now()}.jpg`);
-      const snapshot = await uploadBytes(storageRef, blob);
-      const downloadURL = await getDownloadURL(snapshot.ref);
-
-      const userRef = doc(db, 'users', user.uid);
-      await updateDoc(userRef, {
-        photoURL: downloadURL
-      });
-
+      await uploadAvatar(user.uid, processedBase64);
       alert(t('common.saveSuccess'));
     } catch (err) {
       console.error("UserProfile - Erreur d'upload de photo :", err);
       alert(t('common.saveError'));
-    } finally {
-      setUploadingPhoto(false);
     }
   };
 
@@ -590,7 +572,7 @@ export function useUserProfile(user, profileData, t) {
     formData,
     setFormData,
     saving,
-    uploadingPhoto,
+    uploadingPhoto: isUploading || isCompressing,
     myInstruments,
     loadingInst,
     droitImageDocUrl,

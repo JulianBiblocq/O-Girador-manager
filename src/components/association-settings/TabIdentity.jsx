@@ -94,6 +94,33 @@ export default function TabIdentity({
     handleChange('directionArtistique', updated);
   };
 
+  // Gestion de la création automatique du dossier général de dépôt de vidéos Framaspace
+  const [generalDropLoading, setGeneralDropLoading] = React.useState(false);
+  const [generalDropMsg, setGeneralDropMsg] = React.useState(null);
+
+  const handleProvisionGeneralDrop = async () => {
+    setGeneralDropLoading(true);
+    setGeneralDropMsg(null);
+    try {
+      const provisionFn = httpsCallable(functions, 'provisionFramaspaceGeneralDropFolder');
+      const res = await provisionFn({ groupId });
+      if (res.data?.defaultDropUrl) {
+        handleChange('defaultDropUrl', res.data.defaultDropUrl);
+        setGeneralDropMsg({ type: 'success', text: "Dossier général Framaspace créé et configuré avec succès !" });
+      } else {
+        throw new Error("Lien non généré.");
+      }
+    } catch (err) {
+      console.error("Erreur création dossier général Framaspace :", err);
+      setGeneralDropMsg({
+        type: 'error',
+        text: err.message || "Erreur lors de la création automatique sur Framaspace."
+      });
+    } finally {
+      setGeneralDropLoading(false);
+    }
+  };
+
   return (
     <>
       {/* Carte d'action : Relancer l'assistant de premier démarrage */}
@@ -170,7 +197,74 @@ export default function TabIdentity({
         setSignatureTresorierFile={setSignatureTresorierFile}
       />
 
+      {/* Section Dépôt Vidéos & Captations par défaut */}
+      <CordelCard variant="default" useExtremeBorder={true} className="py-4 px-5 mt-4 mb-4">
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="text-xs uppercase font-extrabold tracking-wider text-cordel-wood flex items-center gap-1.5">
+            <span>📹</span>
+            <span>Dépôt Vidéos par défaut (Ateliers & Répétitions)</span>
+          </h3>
+          <span className="text-[9px] text-cordel-master-dark/70 font-semibold italic">
+            Repli ateliers & événements
+          </span>
+        </div>
 
+        <div className="flex flex-col gap-2.5 text-left">
+          <p className="text-[10px] text-cordel-master-dark/70 font-semibold leading-relaxed">
+            Lien du dossier de dépôt de fichiers par défaut (Framaspace / Nextcloud File Drop). Ce lien sera proposé automatiquement aux adhérents pour déposer leurs vidéos brutes lors des ateliers et répétitions si l'événement n'a pas de dossier spécifique configuré.
+          </p>
+
+          <div className="flex flex-col gap-1.5">
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <label className="text-[10.5px] font-black uppercase tracking-wider text-cordel-master-dark">
+                🔗 Lien du dossier de dépôt par défaut (Framaspace / Nextcloud)
+              </label>
+              <button
+                type="button"
+                onClick={handleProvisionGeneralDrop}
+                disabled={generalDropLoading || saving}
+                className="px-2.5 py-1 bg-cordel-vert text-white text-[9px] font-black uppercase rounded hover:brightness-110 active:scale-95 transition-all flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                title="Créer automatiquement le dossier /Depot_Videos sur votre Framaspace"
+              >
+                {generalDropLoading ? (
+                  <>
+                    <span className="inline-block animate-spin">⏳</span>
+                    <span>Création...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>⚡</span>
+                    <span>Créer automatiquement sur Framaspace</span>
+                  </>
+                )}
+              </button>
+            </div>
+
+            {generalDropMsg && (
+              <div className={`p-2 rounded text-[10px] font-bold ${
+                generalDropMsg.type === 'success' ? 'bg-emerald-100 text-emerald-900 border border-emerald-300' : 'bg-red-100 text-red-900 border border-red-300'
+              }`}>
+                {generalDropMsg.text}
+              </div>
+            )}
+
+            <input
+              type="url"
+              name="defaultDropUrl"
+              value={formData.defaultDropUrl || ''}
+              onChange={(e) => handleChange('defaultDropUrl', e.target.value)}
+              disabled={saving || generalDropLoading}
+              placeholder="https://mon-instance.framaspace.org/s/..."
+              className="text-xs px-3 py-2 border border-cordel-master-dark/30 rounded bg-cordel-bg-light font-bold text-encre-noire focus:outline-none focus:border-cordel-wood"
+            />
+            <span className="text-[9px] text-encre-noire/60">
+              {formData.defaultDropUrl 
+                ? "Ce lien est actif et sera utilisé automatiquement pour tous les ateliers et répétitions."
+                : "Cliquez sur « Créer automatiquement sur Framaspace » pour générer ce dossier en 1 clic sans saisie manuelle."}
+            </span>
+          </div>
+        </div>
+      </CordelCard>
 
       {/* 🏛️ Bureau Officiel Juridique */}
       <CordelCard variant="default" useExtremeBorder={true} className="py-4 px-5 mt-4">

@@ -48,7 +48,8 @@ export default function TabAgenda({
       includesPercussion: cleanType !== 'reunion',
       includesDance: cleanType === 'prestation' || cleanType === 'repetition' || cleanType === 'stage',
       enableCarpool: cleanType !== 'reunion' && cleanType !== 'atelier',
-      isPublic: cleanType === 'prestation'
+      isPublic: cleanType === 'prestation',
+      enableVideoDrop: cleanType === 'atelier' || cleanType === 'repetition' || cleanType === 'stage'
     };
 
     const updatedConfigs = {
@@ -316,7 +317,8 @@ export default function TabAgenda({
                 includesDance: rawConfig.includesDance !== undefined ? rawConfig.includesDance : (type === 'prestation' || type === 'repetition' || type === 'stage'),
                 enableCarpool: rawConfig.enableCarpool !== undefined ? rawConfig.enableCarpool : (type !== 'reunion' && type !== 'atelier'),
                 isPublic: rawConfig.isPublic !== undefined ? rawConfig.isPublic : (type === 'prestation'),
-                activerRecolteMedias: rawConfig.activerRecolteMedias !== undefined ? rawConfig.activerRecolteMedias : (type === 'prestation' || type === 'concert' || type === 'spectacle' || type === 'festival')
+                activerRecolteMedias: rawConfig.activerRecolteMedias !== undefined ? rawConfig.activerRecolteMedias : (type === 'prestation' || type === 'concert' || type === 'spectacle' || type === 'festival'),
+                enableVideoDrop: rawConfig.enableVideoDrop !== undefined ? rawConfig.enableVideoDrop : (type === 'atelier' || type === 'repetition' || type === 'stage')
               };
 
               const handleToggleOption = (optionKey, isChecked) => {
@@ -509,6 +511,15 @@ export default function TabAgenda({
                         className="scale-95"
                       />
                       📸 Boîte Photos (QR Code)
+                    </label>
+                    <label className="flex items-center gap-1.5 cursor-pointer select-none">
+                      <input 
+                        type="checkbox" 
+                        checked={config.enableVideoDrop}
+                        onChange={(e) => handleToggleOption('enableVideoDrop', e.target.checked)}
+                        className="scale-95"
+                      />
+                      📹 Dépôt de vidéos (Framaspace / Drive)
                     </label>
                   </div>
                 </div>

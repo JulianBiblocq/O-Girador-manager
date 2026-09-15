@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { doc, updateDoc, collection, query, where, onSnapshot, writeBatch, getDocs, getDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '../firebase';
@@ -22,6 +22,7 @@ import EventPublicQrCodeModal from './event-details/EventPublicQrCodeModal';
 import EventMediaQrCodeModal from './event-details/EventMediaQrCodeModal';
 import EventTabsNav from './event-details/EventTabsNav';
 import EventDisciplineBadges from './agenda/EventDisciplineBadges';
+import EventMediaCaptureSection from './event-details/EventMediaCaptureSection';
 import TabRsvp from './event-details/tabs/TabRsvp';
 import TabLogistics from './event-details/tabs/TabLogistics';
 import TabProgram from './event-details/tabs/TabProgram';
@@ -53,44 +54,58 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
   } = useEventDetailsController(event, onClose, t);
 
   const [allUsers, setAllUsers] = useState([]);
-  const [editForm, setEditForm] = useState({
-    titre: event.titre || '',
-    type: event.type || 'repetition',
-    date: event.date || '',
-    dateFin: event.dateFin || '',
-    lieu: event.lieu || '',
-    horairesPassages: event.horairesPassages || '',
-    horaireCovoiturage: event.horaireCovoiturage || '',
-    niveauRequis: event.niveauRequis || 'tous',
-    niveauDanseRequis: event.niveauDanseRequis || 'aucun',
-    lienDocument: event.lienDocument || '',
-    lienDepotMedias: event.lienDepotMedias || '',
-    distanceAllerRetourKm: event.distanceAllerRetourKm || '',
-    lienSocial: event.lienSocial || '',
-    imageUrl: event.imageUrl || '',
-    requiresValidation: event.requiresValidation || false,
-    montantRecette: event.montantRecette !== undefined ? event.montantRecette.toString() : '',
-    montantDepense: event.montantDepense !== undefined ? event.montantDepense.toString() : '',
-    budgetRecettes: event.budgetRecettes || [],
-    budgetDepenses: event.budgetDepenses || [],
-    dateLimiteInscription: event.dateLimiteInscription || '',
-    tenueRequise: event.tenueRequise || '',
-    volunteerShifts: event.volunteerShifts || [],
-    includesPercussion: event.includesPercussion !== false,
-    includesDance: event.includesDance !== false,
-    enableCarpool: event.enableCarpool !== false,
-    enableInscriptions: event.enableInscriptions !== false,
-    activerRecolteMedias: event.activerRecolteMedias !== undefined 
-      ? Boolean(event.activerRecolteMedias) 
-      : ['prestation', 'concert', 'spectacle', 'festival'].includes(event.type),
-    publierSurVaral: event.publierSurVaral !== undefined 
-      ? Boolean(event.publierSurVaral) 
-      : ['prestation', 'concert', 'spectacle', 'festival'].includes(event.type),
-    description: event.description || '',
-    linkedPatterns: event.linkedPatterns || [],
-    specialiteAtelier: event.specialiteAtelier || 'general',
-    programmeFabrication: event.programmeFabrication || null
-  });
+
+  // Construction standardisée de l'état du formulaire à partir d'un événement
+  const buildEditFormFromEvent = useCallback((evt) => ({
+    titre: evt?.titre || '',
+    type: evt?.type || 'repetition',
+    date: evt?.date || '',
+    dateFin: evt?.dateFin || '',
+    lieu: evt?.lieu || '',
+    horairesPassages: evt?.horairesPassages || '',
+    horaireCovoiturage: evt?.horaireCovoiturage || '',
+    niveauRequis: evt?.niveauRequis || 'tous',
+    niveauDanseRequis: evt?.niveauDanseRequis || 'aucun',
+    lienDocument: evt?.lienDocument || '',
+    lienDepotMedias: (evt?.dropUrl || evt?.lienDepotMedias || ''),
+    dropUrl: (evt?.dropUrl || evt?.lienDepotMedias || ''),
+    videoUrl: evt?.videoUrl || '',
+    enableVideoDrop: evt?.enableVideoDrop !== undefined
+      ? Boolean(evt.enableVideoDrop)
+      : ['atelier', 'repetition', 'stage'].includes(evt?.type),
+    distanceAllerRetourKm: evt?.distanceAllerRetourKm || '',
+    lienSocial: evt?.lienSocial || '',
+    imageUrl: evt?.imageUrl || '',
+    requiresValidation: evt?.requiresValidation || false,
+    montantRecette: evt?.montantRecette !== undefined ? evt.montantRecette.toString() : '',
+    montantDepense: evt?.montantDepense !== undefined ? evt.montantDepense.toString() : '',
+    budgetRecettes: evt?.budgetRecettes || [],
+    budgetDepenses: evt?.budgetDepenses || [],
+    dateLimiteInscription: evt?.dateLimiteInscription || '',
+    tenueRequise: evt?.tenueRequise || '',
+    dressCodePercussion: evt?.dressCodePercussion || '',
+    dressCodeDanse: evt?.dressCodeDanse || '',
+    volunteerShifts: evt?.volunteerShifts || [],
+    includesPercussion: evt?.includesPercussion !== false,
+    includesDance: evt?.includesDance !== false,
+    enableCarpool: evt?.enableCarpool !== false,
+    enableInscriptions: evt?.enableInscriptions !== false,
+    activerRecolteMedias: evt?.activerRecolteMedias !== undefined 
+      ? Boolean(evt.activerRecolteMedias) 
+      : ['prestation', 'concert', 'spectacle', 'festival'].includes(evt?.type),
+    publierSurVaral: evt?.publierSurVaral !== undefined 
+      ? Boolean(evt.publierSurVaral) 
+      : ['prestation', 'concert', 'spectacle', 'festival'].includes(evt?.type),
+    description: evt?.description || '',
+    linkedPatterns: evt?.linkedPatterns || [],
+    specialiteAtelier: evt?.specialiteAtelier || 'general',
+    programmeFabrication: evt?.programmeFabrication || null,
+    latitude: evt?.latitude || null,
+    longitude: evt?.longitude || null,
+    isPublic: Boolean(evt?.isPublic)
+  }), []);
+
+  const [editForm, setEditForm] = useState(() => buildEditFormFromEvent(activeEvent));
 
   const [uploadingImage, setUploadingImage] = useState(false);
   const [imageMode, setImageMode] = useState(() => {
@@ -155,6 +170,7 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
   const [associationName, setAssociationName] = useState('');
   const [dressCodes, setDressCodes] = useState([]);
   const [customCategories, setCustomCategories] = useState(DEFAULT_CUSTOM_CATEGORIES);
+  const [defaultDropUrl, setDefaultDropUrl] = useState('');
 
   // 1. Vérification du Niveau Musique / Catégorie de pratique
   const eventRequiredPublic = resolveCategory(event.niveauRequis || event.publicCible, customCategories);
@@ -253,44 +269,32 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
 
   useEffect(() => {
     setIsEditingEvent(false);
-    setEditForm({
-      titre: event.titre || '',
-      type: event.type || 'repetition',
-      date: event.date || '',
-      dateFin: event.dateFin || '',
-      lieu: event.lieu || '',
-      horairesPassages: event.horairesPassages || '',
-      horaireCovoiturage: event.horaireCovoiturage || '',
-      niveauRequis: event.niveauRequis || 'tous',
-      niveauDanseRequis: event.niveauDanseRequis || 'aucun',
-      lienDocument: event.lienDocument || '',
-      distanceAllerRetourKm: event.distanceAllerRetourKm || '',
-      lienSocial: event.lienSocial || '',
-      imageUrl: event.imageUrl || '',
-      requiresValidation: event.requiresValidation || false,
-      isPublic: event.isPublic || false,
-      montantRecette: event.montantRecette !== undefined ? event.montantRecette.toString() : '',
-      montantDepense: event.montantDepense !== undefined ? event.montantDepense.toString() : '',
-      budgetRecettes: event.budgetRecettes || [],
-      budgetDepenses: event.budgetDepenses || [],
-      dateLimiteInscription: event.dateLimiteInscription || '',
-      dressCodePercussion: event.dressCodePercussion || '',
-      dressCodeDanse: event.dressCodeDanse || '',
-      tenueRequise: event.tenueRequise || '',
-      volunteerShifts: event.volunteerShifts || [],
-      includesPercussion: event.includesPercussion !== false,
-      includesDance: event.includesDance !== false,
-      enableCarpool: event.enableCarpool !== false,
-      enableInscriptions: event.enableInscriptions !== false,
-      description: event.description || '',
-      latitude: event.latitude || null,
-      longitude: event.longitude || null,
-      linkedPatterns: event.linkedPatterns || []
-    });
-    const url = event.imageUrl;
+    setEditForm(buildEditFormFromEvent(activeEvent));
+    const url = activeEvent.imageUrl;
     setImageMode(url && (url.startsWith('http://') || url.startsWith('https://')) && !url.includes('firebasestorage') ? 'url' : 'upload');
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [event.id, event.type, event.montantRecette, event.montantDepense, JSON.stringify(event.budgetRecettes), JSON.stringify(event.budgetDepenses), event.dateLimiteInscription, event.tenueRequise, event.volunteerShifts, event.imageUrl, event.includesPercussion, event.includesDance, event.enableCarpool, event.description]);
+  }, [
+    activeEvent.id,
+    activeEvent.type,
+    activeEvent.titre,
+    activeEvent.enableVideoDrop,
+    activeEvent.dropUrl,
+    activeEvent.videoUrl,
+    activeEvent.lienDepotMedias,
+    activeEvent.montantRecette,
+    activeEvent.montantDepense,
+    JSON.stringify(activeEvent.budgetRecettes),
+    JSON.stringify(activeEvent.budgetDepenses),
+    activeEvent.dateLimiteInscription,
+    activeEvent.tenueRequise,
+    activeEvent.volunteerShifts,
+    activeEvent.imageUrl,
+    activeEvent.includesPercussion,
+    activeEvent.includesDance,
+    activeEvent.enableCarpool,
+    activeEvent.description,
+    buildEditFormFromEvent
+  ]);
 
   // Charger association settings
   useEffect(() => {
@@ -306,6 +310,7 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
         setAdresseLocal(data.adresseLocal || '');
         setAssocSequenceurUrl(data.sequenceurUrl || '');
         setLienGoogleFormRecoltePhotos(data.lienGoogleFormRecoltePhotos || '');
+        setDefaultDropUrl(data.defaultDropUrl || '');
         setEnableCarpoolReimbursement(data.enableCarpoolReimbursement !== false);
         setReimbursementRule(data.reimbursementRule || 'full_cars_only');
         setAgendaRequireInstrument(data.agendaRequireInstrument || false);
@@ -808,6 +813,14 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
         return;
       }
 
+      const savedEnableVideoDrop = editForm.enableVideoDrop !== undefined
+        ? Boolean(editForm.enableVideoDrop)
+        : (rawEditConfig.enableVideoDrop !== undefined
+            ? Boolean(rawEditConfig.enableVideoDrop)
+            : ['atelier', 'repetition', 'stage'].includes(editForm.type));
+      const savedDropUrl = (editForm.dropUrl || editForm.lienDepotMedias || '').trim();
+      const savedVideoUrl = (editForm.videoUrl || '').trim();
+
       await updateDoc(eventRef, {
         titre: editForm.titre,
         type: editForm.type,
@@ -821,7 +834,10 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
         niveauRequis: (editForm.type === 'prestation' || editForm.type === 'stage' || editForm.type === 'repetition' || editForm.type === 'atelier') ? editForm.niveauRequis || 'tous' : 'tous',
         niveauDanseRequis: (editForm.type === 'prestation' || editForm.type === 'stage' || editForm.type === 'repetition' || editForm.type === 'atelier') ? editForm.niveauDanseRequis || 'aucun' : 'aucun',
         lienDocument: updatedLienDocument,
-        lienDepotMedias: editForm.lienDepotMedias || '',
+        lienDepotMedias: savedDropUrl,
+        dropUrl: savedDropUrl,
+        videoUrl: savedVideoUrl,
+        enableVideoDrop: savedEnableVideoDrop,
         distanceAllerRetourKm: editConfig.agendaEnableCarpool ? (parseFloat(editForm.distanceAllerRetourKm) || 0) : 0,
         lienSocial: editConfig.agendaEnableUrl ? editForm.lienSocial || '' : '',
         imageUrl: editConfig.agendaEnableImage ? editForm.imageUrl || '' : '',
@@ -857,6 +873,14 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
         specialiteAtelier: (editForm.type === 'atelier' || editForm.type === 'stage') ? (editForm.specialiteAtelier || 'general') : null,
         programmeFabrication: (editForm.type === 'atelier' || editForm.type === 'stage') && editForm.specialiteAtelier === 'fabrication' ? (editForm.programmeFabrication || null) : null
       });
+
+      setEditForm(prev => ({
+        ...prev,
+        enableVideoDrop: savedEnableVideoDrop,
+        dropUrl: savedDropUrl,
+        videoUrl: savedVideoUrl,
+        lienDepotMedias: savedDropUrl
+      }));
 
       // Synchronisation automatique par lot (batch mettre à jour) si l'événement fait partie d'un sondage (pollGroupId)
       if (event.pollGroupId) {
@@ -1191,7 +1215,10 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
             {isAuthorized && (
               <button
                 type="button"
-                onClick={() => setIsEditingEvent(true)}
+                onClick={() => {
+                  setEditForm(buildEditFormFromEvent(activeEvent));
+                  setIsEditingEvent(true);
+                }}
                 className="text-[10px] font-black uppercase bg-cordel-bg border border-encre-noire px-2.5 sm:px-3 py-1.5 rounded shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-95 cursor-pointer flex items-center gap-1 transition-colors"
                 title="Modifier les détails de l'événement"
               >
@@ -1391,6 +1418,7 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
           setImageMode={setImageMode}
           uploadingImage={uploadingImage}
           handleImageUpload={handleImageUpload}
+          defaultDropUrl={defaultDropUrl}
           t={t}
           groupId={event.groupId}
         />
@@ -1478,6 +1506,12 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
               )}
             </div>
           </div>
+
+          {/* Section Médias & Captations (Dépôt Vidéo Adhérent & Restitution YouTube) */}
+          <EventMediaCaptureSection
+            event={activeEvent || event}
+            defaultDropUrl={defaultDropUrl}
+          />
 
           {/* Navigation par Onglets Thématiques Cordel */}
           <EventTabsNav

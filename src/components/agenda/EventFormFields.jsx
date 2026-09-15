@@ -7,6 +7,7 @@ import LocationSelector from '../LocationSelector';
 import WorkshopProgramSelector from './WorkshopProgramSelector';
 import { useSequencerFirestoreData } from '../../hooks/useSequencerFirestoreData';
 import { DEFAULT_CUSTOM_CATEGORIES } from '../../utils/categoryUtils';
+import EventMediaFields from './EventMediaFields';
 
 /**
  * EventFormFields - Composant unifié pour les champs de formulaire d'événement
@@ -30,6 +31,7 @@ export default function EventFormFields({
   customCategories = DEFAULT_CUSTOM_CATEGORIES,
   createConfig = {},
   groupId,
+  defaultDropUrl = '',
   t
 }) {
   const [isMapModalOpen, setIsMapModalOpen] = useState(false);
@@ -110,6 +112,17 @@ export default function EventFormFields({
         updated.activerRecolteMedias = Boolean(typePresets.activerRecolteMedias);
       } else if (!isEdit || updated.activerRecolteMedias === undefined) {
         updated.activerRecolteMedias = isTargetPrestation;
+      }
+
+      // Gestion de l'autorisation de dépôt de vidéos (enableVideoDrop) :
+      // En mode édition, conserver la valeur existante si elle est déjà définie
+      const defaultVideoDrop = ['atelier', 'repetition', 'stage'].includes(newType);
+      if (!isEdit || prev.enableVideoDrop === undefined) {
+        if (typePresets?.enableVideoDrop !== undefined) {
+          updated.enableVideoDrop = Boolean(typePresets.enableVideoDrop);
+        } else {
+          updated.enableVideoDrop = defaultVideoDrop;
+        }
       }
 
       if (updated.publierSurVaral === undefined) {
@@ -638,21 +651,15 @@ export default function EventFormFields({
             )}
           </div>
 
-          {/* Lien Dépôt Médias Externe */}
-          <div className="flex flex-col gap-1">
-            <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark flex items-center gap-1.5">
-              📸 Lien dépôt photos/vidéos (Drive, Framaspace...)
-            </label>
-            <input
-              type="url"
-              name="lienDepotMedias"
-              value={formData.lienDepotMedias || ''}
-              onChange={handleChange}
-              disabled={saving}
-              placeholder="https://drive.google.com/... ou Framaspace"
-              className="theme-input w-full text-xs bg-white"
-            />
-          </div>
+          {/* Section Médias & Captations (Dépôt Framaspace & Restitution YouTube) */}
+          <EventMediaFields
+            formData={formData}
+            setFormData={setFormData}
+            handleChange={handleChange}
+            saving={saving}
+            defaultDropUrl={defaultDropUrl}
+            groupId={groupId}
+          />
 
           {/* Notification Push (Création uniquement) */}
           {!isEdit && (

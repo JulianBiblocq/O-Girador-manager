@@ -69,6 +69,11 @@ export default function FormattedMessageContent({ content, className = '' }) {
       return `${prefix}<span class="inline-flex items-center px-1.5 py-0.5 rounded font-black text-cordel-wood bg-amber-500/15 border border-amber-600/30 text-[11px] select-all shadow-xs">@${name}</span>`;
     });
 
+    // Normalisation automatique des liens d'images Framaspace / Nextcloud
+    html = html.replace(/(https?:\/\/[^\/]+)\/index\.php\/apps\/files_sharing\/publicpreview\?token=([a-zA-Z0-9_-]+)[^"'\s]*/gi, (match, domain, token) => {
+      return `${domain}/s/${token}/preview`;
+    });
+
     // Sanitize with DOMPurify
     return DOMPurify.sanitize(html, {
       ADD_TAGS: ['iframe', 'img', 'span'],

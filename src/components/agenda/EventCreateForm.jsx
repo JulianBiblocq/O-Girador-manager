@@ -26,7 +26,8 @@ export default function EventCreateForm({
   customCategories = DEFAULT_CUSTOM_CATEGORIES,
   eventTypeConfigs = {},
   t,
-  groupId
+  groupId,
+  defaultDropUrl = ''
 }) {
   const translate = (key, fallback) => {
     if (!t) return fallback;
@@ -85,6 +86,7 @@ export default function EventCreateForm({
           customCategories={customCategories}
           createConfig={createConfig}
           groupId={groupId}
+          defaultDropUrl={defaultDropUrl}
           t={t}
         />
 

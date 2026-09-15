@@ -78,6 +78,7 @@ export default function WidgetAgenda({
   const [agendaEnableVolunteerShifts, setAgendaEnableVolunteerShifts] = useState(true);
   const [eventTypeConfigs, setEventTypeConfigs] = useState({});
   const [dressCodes, setDressCodes] = useState([]);
+  const [defaultDropUrl, setDefaultDropUrl] = useState('');
 
   // Synchronisation des paramètres de l'association pour l'adresse locale et le tarif kilométrique par défaut
   useEffect(() => {
@@ -100,6 +101,7 @@ export default function WidgetAgenda({
         setTagsDisponibles(Array.isArray(data.tagsDisponibles) ? data.tagsDisponibles : []);
         setLieuxImportants(Array.isArray(data.lieuxImportants) ? data.lieuxImportants : []);
         setDefaultLocationsByEventType(data.defaultLocationsByEventType && typeof data.defaultLocationsByEventType === 'object' ? data.defaultLocationsByEventType : {});
+        setDefaultDropUrl(data.defaultDropUrl || '');
       }
     }, (err) => {
       console.error("WidgetAgenda - Erreur snapshot assocRef :", err);
@@ -217,6 +219,9 @@ export default function WidgetAgenda({
     niveauDanseRequis: 'aucun',
     lienDocument: '',
     lienDepotMedias: '',
+    dropUrl: '',
+    videoUrl: '',
+    enableVideoDrop: undefined,
     distanceAllerRetourKm: '',
     lienSocial: '',
     imageUrl: '',
@@ -443,6 +448,11 @@ export default function WidgetAgenda({
       enableInscriptions: true,
       activerRecolteMedias: typeCfg.activerRecolteMedias !== undefined ? Boolean(typeCfg.activerRecolteMedias) : true,
       publierSurVaral: typeCfg.publierSurVaral !== undefined ? Boolean(typeCfg.publierSurVaral) : true,
+      dropUrl: '',
+      videoUrl: '',
+      enableVideoDrop: typeCfg.enableVideoDrop !== undefined
+        ? Boolean(typeCfg.enableVideoDrop)
+        : ['atelier', 'repetition', 'stage'].includes(defaultType),
       description: '',
       linkedPatterns: [],
       specialiteAtelier: 'general',
@@ -510,7 +520,14 @@ export default function WidgetAgenda({
           niveauRequis: formData.type === 'prestation' ? formData.niveauRequis || 'tous' : 'tous',
           niveauDanseRequis: (formData.type === 'prestation' || formData.type === 'stage' || formData.type === 'repetition' || formData.type === 'atelier') ? formData.niveauDanseRequis || 'aucun' : 'aucun',
           lienDocument: activeConfig.agendaEnableOrdreDuJour ? formData.lienDocument || '' : '',
-          lienDepotMedias: formData.lienDepotMedias || '',
+          lienDepotMedias: (formData.dropUrl || formData.lienDepotMedias || '').trim(),
+          dropUrl: (formData.dropUrl || formData.lienDepotMedias || '').trim(),
+          videoUrl: (formData.videoUrl || '').trim(),
+          enableVideoDrop: formData.enableVideoDrop !== undefined
+            ? Boolean(formData.enableVideoDrop)
+            : (activeConfig.enableVideoDrop !== undefined
+                ? Boolean(activeConfig.enableVideoDrop)
+                : ['atelier', 'repetition', 'stage'].includes(formData.type)),
           distanceAllerRetourKm: activeConfig.agendaEnableCarpool ? (parseFloat(formData.distanceAllerRetourKm) || 0) : 0,
           status: isPollMode ? 'sondage' : 'confirme',
           ...(isPollMode ? {
@@ -798,6 +815,7 @@ export default function WidgetAgenda({
           lieuxImportants={lieuxImportants}
           defaultLocationsByEventType={defaultLocationsByEventType}
           eventTypeConfigs={eventTypeConfigs}
+          defaultDropUrl={defaultDropUrl}
           t={t}
           groupId={groupId}
         />

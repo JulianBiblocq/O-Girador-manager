@@ -1,29 +1,7 @@
 import React, { useState } from 'react';
 
-/**
- * Extrait strictement l'identifiant YouTube de 11 caractères à partir de divers formats d'URL :
- * - youtube.com/watch?v=ID (avec ou sans paramètres supplémentaires : ?si=..., &t=..., &feature=shared)
- * - youtu.be/ID (liens courts de partage)
- * - youtube.com/shorts/ID (YouTube Shorts)
- * - youtube.com/embed/ID
- * 
- * @param {string} url - URL YouTube brute
- * @returns {string|null} - Identifiant unique de 11 caractères ou null si invalide
- */
-export function extractYouTubeVideoId(url) {
-  if (!url || typeof url !== 'string') return null;
-  const cleanUrl = url.trim();
-
-  // Cas 1 : Saisie directe d'un identifiant YouTube de 11 caractères
-  if (/^[a-zA-Z0-9_-]{11}$/.test(cleanUrl)) {
-    return cleanUrl;
-  }
-
-  // Cas 2 : Analyse des différents formats d'URL et partages (classique, live, shorts, embed, v, youtu.be)
-  const regExp = /(?:youtube(?:-nocookie)?\.com\/(?:watch\?(?:.*&)?v=|shorts\/|live\/|embed\/|v\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
-  const match = cleanUrl.match(regExp);
-  return match ? match[1] : null;
-}
+import { extractYouTubeVideoId } from '../../utils/mediaUrlUtils';
+export { extractYouTubeVideoId };
 
 
 /**

@@ -1,7 +1,6 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { collection, query, where, onSnapshot, doc, getDoc, updateDoc } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { db, storage } from '../firebase';
+import { db } from '../firebase';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
 import XiloAvatar from './XiloAvatar';
@@ -13,6 +12,7 @@ import ImageLightboxModal from './ImageLightboxModal';
 import { formatTagGender, getTagId, filterPublicPercussionInstruments, computePupitresList } from '../utils/tagUtils';
 import { usePresenceContext } from '../context/PresenceContext';
 import useHardwareBack from '../hooks/useHardwareBack';
+import { useAvatarUpload } from '../hooks/useAvatarUpload';
 const CordelImageEditor = React.lazy(() => import('./CordelImageEditor'));
 
 // Memoized MemberCard subcomponent
@@ -148,8 +148,14 @@ const MemberCard = React.memo(({
         {/* Avatar with Xylogravure Filtrer */}
         <div 
           className="mb-3 relative group cursor-pointer"
-          onClick={() => photoURL && onOpenLightbox && onOpenLightbox(photoURL, fullName)}
-          title="Cliquer pour agrandir la photo"
+          onClick={() => {
+            if (photoURL && onOpenLightbox) {
+              onOpenLightbox(photoURL, fullName);
+            } else if (isCurrentUser && onEditPhoto) {
+              onEditPhoto(null);
+            }
+          }}
+          title={photoURL ? "Cliquer pour agrandir la photo" : (isCurrentUser ? "Cliquer pour ajouter votre photo" : fullName)}
         >
           <XiloAvatar src={photoURL} name={fullName} size={72} />
           {isPresenceEnabled !== false && isOnline && (
@@ -167,12 +173,16 @@ const MemberCard = React.memo(({
                 e.stopPropagation();
                 onEditPhoto(photoURL);
               }}
-              className="absolute -bottom-1 -right-1 bg-encre-noire text-cordel-bg-light hover:bg-cordel-wood rounded-full p-1 border border-encre-noire shadow-[1px_1px_0px_0px_#181716] cursor-pointer z-30 transition-all hover:scale-105 active:scale-95 flex items-center justify-center select-none"
-              title="Éditer la photo (Filtre Xylogravure)"
+              className="absolute -bottom-1 -right-1 bg-encre-noire text-cordel-bg-light hover:bg-cordel-wood rounded-full p-1.5 border border-encre-noire shadow-[1px_1px_0px_0px_#181716] cursor-pointer z-30 transition-all hover:scale-110 active:scale-95 flex items-center justify-center select-none"
+              title={photoURL ? "Modifier ma photo (Filtre Xylogravure)" : "Ajouter ma photo de profil"}
             >
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-              </svg>
+              {photoURL ? (
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                </svg>
+              ) : (
+                <span className="text-[11px] leading-none">📸</span>
+              )}
             </button>
           )}
         </div>
@@ -391,6 +401,9 @@ export default function Trombinoscope({ user, profileData, onBack, onContactUser
   const [showEditor, setShowEditor] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null);
   const [lightboxPhoto, setLightboxPhoto] = useState(null);
+
+  const fileInputRef = useRef(null);
+  const { uploadAvatar, compressAndPrepareFile, isCompressing, isUploading: isUploadingPhoto } = useAvatarUpload();
 
   useHardwareBack(showEditor, () => setShowEditor(false));
   useHardwareBack(!!lightboxPhoto, () => setLightboxPhoto(null));
@@ -658,43 +671,36 @@ export default function Trombinoscope({ user, profileData, onBack, onContactUser
     return () => unsubscribe();
   }, [profileData, user, isViewerAdmin, t]);
 
+  const handleFileSelected = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const base64 = await compressAndPrepareFile(file);
+      if (base64) {
+        setSelectedImage(base64);
+        setShowEditor(true);
+      }
+    } catch (err) {
+      console.error("Trombinoscope - Erreur sélection photo :", err);
+      alert(t('common.saveError') || "Erreur lors de la lecture de la photo.");
+    } finally {
+      if (e.target) e.target.value = '';
+    }
+  };
+
   const handleEditorComplete = async (processedBase64) => {
     setShowEditor(false);
     setSelectedImage(null);
     if (!user?.uid) return;
 
-    setUploadingPhoto(true);
-
     try {
-      const base64ToBlob = (base64, mimeType = 'image/jpeg') => {
-        const byteString = atob(base64.split(',')[1]);
-        const ab = new ArrayBuffer(byteString.length);
-        const ia = new Uint8Array(ab);
-        for (let i = 0; i < byteString.length; i++) {
-          ia[i] = byteString.charCodeAt(i);
-        }
-        return new Blob([ab], { type: mimeType });
-      };
-
-      const blob = base64ToBlob(processedBase64);
-
-      const storageRef = ref(storage, `avatars/${user.uid}/profile_pic_${Date.now()}.jpg`);
-      const snapshot = await uploadBytes(storageRef, blob);
-      const downloadURL = await getDownloadURL(snapshot.ref);
-
-      const userRef = doc(db, 'users', user.uid);
-      await updateDoc(userRef, {
-        photoURL: downloadURL
-      });
-
+      const downloadURL = await uploadAvatar(user.uid, processedBase64);
       setMembers(prev => prev.map(m => m.id === user.uid ? { ...m, photoURL: downloadURL } : m));
-
       alert(t('common.saveSuccess') || "Photo mise à jour !");
     } catch (err) {
       console.error("Trombinoscope - Erreur d'upload de photo :", err);
       alert(t('common.saveError') || "Erreur lors de la sauvegarde.");
-    } finally {
-      setUploadingPhoto(false);
     }
   };
 
@@ -905,9 +911,17 @@ export default function Trombinoscope({ user, profileData, onBack, onContactUser
   }, [onContactUser]);
 
   const handleEditPhoto = useCallback((photoURL) => {
-    setSelectedImage(photoURL || user?.photoURL);
+    const currentPhoto = photoURL || profileData?.photoURL || user?.photoURL;
+    if (!currentPhoto) {
+      // Si le membre n'a pas encore de photo, déclencher directement le sélecteur de fichier
+      if (fileInputRef.current) {
+        fileInputRef.current.click();
+        return;
+      }
+    }
+    setSelectedImage(currentPhoto || null);
     setShowEditor(true);
-  }, [user?.photoURL]);
+  }, [profileData?.photoURL, user?.photoURL]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -928,6 +942,32 @@ export default function Trombinoscope({ user, profileData, onBack, onContactUser
           {t('trombinoscope.group')}{profileData?.groupId || t('trombinoscope.noGroup')}
         </span>
       </div>
+
+      {/* Bannière incitative si l'adhérent connecté n'a pas encore de photo */}
+      {user?.uid && !profileData?.photoURL && !user?.photoURL && (
+        <div className="bg-amber-100 dark:bg-amber-950/40 border-2 border-dashed border-amber-600 text-amber-900 dark:text-amber-200 p-3 rounded-[var(--theme-border-radius)] flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs text-left shadow-sm select-none">
+          <div className="flex items-center gap-2.5">
+            <span className="text-2xl shrink-0">📸</span>
+            <div>
+              <span className="font-black uppercase tracking-wider text-amber-800 dark:text-amber-300 text-[10px] block">
+                Votre photo est manquante dans le Trombinoscope
+              </span>
+              <span className="font-bold text-[11px] leading-tight">
+                Ajoutez votre portrait pour permettre aux autres membres du groupe de vous reconnaître facilement !
+              </span>
+            </div>
+          </div>
+          <CordelButton
+            type="button"
+            variant="vert"
+            useExtremeBorder={true}
+            onClick={() => fileInputRef.current?.click()}
+            className="text-[10px] py-1.5 px-3 uppercase font-black shrink-0 flex items-center justify-center gap-1"
+          >
+            📸 {isCompressing ? "Chargement..." : "Ajouter ma photo"}
+          </CordelButton>
+        </div>
+      )}
 
       {/* Dynamic Search & Filters Toolbar */}
       {!loading && !error && (
@@ -1115,7 +1155,7 @@ export default function Trombinoscope({ user, profileData, onBack, onContactUser
       )}
 
       {/* Editeur Photo Cordel / Xylogravure */}
-      {showEditor && selectedImage && (
+      {showEditor && (
         <div className="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="max-w-md w-full max-h-[95vh] overflow-y-auto">
             <React.Suspense fallback={
@@ -1139,6 +1179,16 @@ export default function Trombinoscope({ user, profileData, onBack, onContactUser
           </div>
         </div>
       )}
+
+      {/* Input de sélection de fichier masqué pour le Trombinoscope */}
+      <input 
+        type="file"
+        ref={fileInputRef}
+        accept="image/*"
+        onChange={handleFileSelected}
+        className="hidden"
+      />
+
       {/* Lightbox Photo Modal */}
       <ImageLightboxModal 
         isOpen={!!lightboxPhoto}

@@ -2254,33 +2254,37 @@ async function provisionFramaspaceForEvent(eventId, eventData, options = {}) {
   // Vérifier le type d'événement et le consentement de récolte
   const typeEv = (eventData.type || eventData.typeEvenement || "").toLowerCase();
   const isTargetPrestation = ["prestation", "concert", "spectacle"].includes(typeEv) || eventData.isPrestation === true;
-  const isExcludedType = ["repetition", "reunion", "atelier", "stage"].includes(typeEv);
+  const isAtelierOrRepet = ["repetition", "atelier", "stage"].includes(typeEv);
+  const isExcludedType = ["reunion"].includes(typeEv);
 
-  // Conditionnement strict :
-  // 1. Ne JAMAIS déclencher automatiquement pour repetition, reunion, atelier ou stage sauf si activerRecolteMedias === true
+  // Conditionnement de déclenchement :
+  // 1. Pour les ateliers, répétitions et stages : déclenché si enableVideoDrop === true ou activerRecolteMedias === true
   // 2. Pour prestation, concert, spectacle : autorisé sauf si activerRecolteMedias === false
-  // 3. Pour tout autre type : uniquement si activerRecolteMedias === true
+  // 3. Pour réunion ou autres : uniquement si explicitement demandé
   let isEligibleForAuto = false;
   if (isExcludedType) {
-    isEligibleForAuto = eventData.activerRecolteMedias === true;
+    isEligibleForAuto = eventData.activerRecolteMedias === true || eventData.enableVideoDrop === true;
+  } else if (isAtelierOrRepet) {
+    isEligibleForAuto = eventData.enableVideoDrop === true || eventData.activerRecolteMedias === true;
   } else if (isTargetPrestation) {
-    isEligibleForAuto = eventData.activerRecolteMedias !== false;
+    isEligibleForAuto = eventData.activerRecolteMedias !== false || eventData.enableVideoDrop === true;
   } else {
-    isEligibleForAuto = eventData.activerRecolteMedias === true;
+    isEligibleForAuto = eventData.activerRecolteMedias === true || eventData.enableVideoDrop === true;
   }
 
   if (!options.force && !isEligibleForAuto) {
-    console.log(`provisionFramaspaceForEvent - L'événement ${eventId} n'est pas ciblé pour le provisionnement automatique (type: ${typeEv}, activerRecolteMedias: ${eventData.activerRecolteMedias}).`);
+    console.log(`provisionFramaspaceForEvent - L'événement ${eventId} n'est pas ciblé pour le provisionnement automatique (type: ${typeEv}, enableVideoDrop: ${eventData.enableVideoDrop}).`);
     return { success: false, reason: "filtered-out" };
   }
 
   // Si déjà provisionné et pas en mode forcé
-  if (!options.force && eventData.lienDepotMedias && eventData.albumPhotosUrl) {
+  if (!options.force && (eventData.dropUrl || eventData.lienDepotMedias) && eventData.albumPhotosUrl) {
     console.log(`provisionFramaspaceForEvent - L'événement ${eventId} possède déjà ses liens Framaspace.`);
     return { 
       success: true, 
       alreadyProvisioned: true, 
-      lienDepotMedias: eventData.lienDepotMedias, 
+      dropUrl: eventData.dropUrl || eventData.lienDepotMedias,
+      lienDepotMedias: eventData.dropUrl || eventData.lienDepotMedias, 
       albumPhotosUrl: eventData.albumPhotosUrl 
     };
   }
@@ -2296,12 +2300,12 @@ async function provisionFramaspaceForEvent(eventId, eventData, options = {}) {
   const cleanUrl = framaspaceUrl.replace(/\/+$/, "");
   const basicAuth = Buffer.from(`${framaspaceUsername}:${framaspaceAppPassword}`).toString("base64");
 
-  // Formatage du répertoire : Prestations/AAAA-MM-JJ_titre-slug
+  // Formatage du répertoire : Ateliers/AAAA-MM-JJ_titre-slug ou Prestations/AAAA-MM-JJ_titre-slug
   const eventDate = eventData.date || eventData.dateDebut || "sans-date";
-  const rawTitle = eventData.titre || eventData.nom || "prestation";
+  const rawTitle = eventData.titre || eventData.nom || (isAtelierOrRepet ? "atelier" : "prestation");
   const slugTitle = slugifyWebdav(rawTitle) || "evenement";
   const folderName = `${eventDate}_${slugTitle}`;
-  const parentFolder = "Prestations";
+  const parentFolder = isAtelierOrRepet ? "Ateliers" : "Prestations";
   const folderPath = `${parentFolder}/${folderName}`;
 
   console.log(`provisionFramaspaceForEvent - Début du provisionnement de ${folderPath} sur ${cleanUrl}`);
@@ -2426,18 +2430,22 @@ async function provisionFramaspaceForEvent(eventId, eventData, options = {}) {
     throw albumErr;
   }
 
-  // 4. Mise à jour atomique de l'événement dans Firestore
-  await db.collection("events").doc(eventId).update({
-    lienDepotMedias: urlFileDrop,
-    albumPhotosUrl: urlLectureSeule,
-    framaspaceFolder: folderPath,
-    framaspaceProvisionedAt: new Date().toISOString()
-  });
+  // 4. Mise à jour atomique de l'événement dans Firestore si eventId existe
+  if (eventId) {
+    await db.collection("events").doc(eventId).update({
+      lienDepotMedias: urlFileDrop,
+      dropUrl: urlFileDrop,
+      albumPhotosUrl: urlLectureSeule,
+      framaspaceFolder: folderPath,
+      framaspaceProvisionedAt: new Date().toISOString()
+    });
+  }
 
-  console.log(`provisionFramaspaceForEvent - Événement ${eventId} enrichi avec succès !`);
+  console.log(`provisionFramaspaceForEvent - Événement ${eventId || "nouveau"} enrichi avec succès !`);
 
   return {
     success: true,
+    dropUrl: urlFileDrop,
     lienDepotMedias: urlFileDrop,
     albumPhotosUrl: urlLectureSeule,
     framaspaceFolder: folderPath
@@ -2486,22 +2494,34 @@ exports.onPrestationCreatedProvisionCloud = onDocumentCreated(
 
 /**
  * Fonction Cloud appelable (OnCall) permettant à un administrateur de déclencher manuellement
- * le provisionnement d'un dossier Framaspace pour un événement existant depuis le Studio.
+ * le provisionnement d'un dossier Framaspace pour un événement (existant ou nouveau).
  */
 exports.provisionFramaspaceEventFolders = onCall(
+  {
+    timeoutSeconds: 60,
+    cors: true
+  },
   async (request) => {
     if (!request.auth) {
       throw new HttpsError("unauthenticated", "Vous devez être authentifié pour exécuter cette action.");
     }
 
     const data = request.data || {};
-    const { eventId, groupId } = data;
-
-    if (!eventId) {
-      throw new HttpsError("invalid-argument", "Le paramètre eventId est obligatoire.");
-    }
+    let { eventId, groupId, eventData } = data;
 
     const db = getFirestore();
+
+    // Résolution du groupId
+    if (!groupId) {
+      const userDoc = await db.collection("users").doc(request.auth.uid).get();
+      if (userDoc.exists) {
+        groupId = userDoc.data()?.groupId || null;
+      }
+    }
+
+    if (!groupId) {
+      throw new HttpsError("invalid-argument", "L'identifiant du groupe (association) est obligatoire.");
+    }
 
     // Vérifier les droits administrateur ou mestre
     const userDoc = await db.collection("users").doc(request.auth.uid).get();
@@ -2510,25 +2530,203 @@ exports.provisionFramaspaceEventFolders = onCall(
     }
 
     const userData = userDoc.data();
-    const userRole = userData.role || "";
-    const isAuthorized = ["admin", "super-admin", "mestre"].includes(userRole) || userData.isSystemAdmin === true;
+    const userRole = (userData.role || "").toLowerCase();
+    const userTags = Array.isArray(userData.tags) ? userData.tags : [];
+    const isAuthorized = ["admin", "super-admin", "mestre", "bureau", "ca"].includes(userRole) || 
+                         userData.isSystemAdmin === true ||
+                         userTags.some(t => ["Bureau", "Président", "Présidente", "CA", "Direction", "Admin"].includes(t));
 
     if (!isAuthorized && userData.groupId !== groupId) {
       throw new HttpsError("permission-denied", "Accès refusé. Droits administrateurs requis.");
     }
 
-    const eventDoc = await db.collection("events").doc(eventId).get();
-    if (!eventDoc.exists) {
-      throw new HttpsError("not-found", "Événement introuvable.");
+    let payload = eventData || {};
+    if (eventId) {
+      const eventDoc = await db.collection("events").doc(eventId).get();
+      if (eventDoc.exists) {
+        payload = { ...eventDoc.data(), ...payload };
+      }
     }
 
+    if (!payload.titre && !payload.nom) {
+      payload.titre = "Atelier";
+    }
+    payload.groupId = groupId;
+
     try {
-      const result = await provisionFramaspaceForEvent(eventId, eventDoc.data(), { force: true });
+      const result = await provisionFramaspaceForEvent(eventId || null, payload, { force: true });
       return result;
     } catch (err) {
       console.error("provisionFramaspaceEventFolders - Erreur :", err);
       throw new HttpsError("internal", err.message || "Erreur lors du provisionnement Framaspace.");
     }
+  }
+);
+
+/**
+ * Fonction Cloud appelable (OnCall) pour générer en 1 clic le dossier général de dépôt de vidéos
+ * pour toute l'association (ex: /Depot_Videos) et l'enregistrer comme defaultDropUrl.
+ */
+exports.provisionFramaspaceGeneralDropFolder = onCall(
+  {
+    timeoutSeconds: 60,
+    cors: true
+  },
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError("unauthenticated", "Vous devez être authentifié pour exécuter cette action.");
+    }
+
+    const data = request.data || {};
+    let { groupId } = data;
+
+    const db = getFirestore();
+
+    // 1. Résolution du groupId si non fourni dans la requête
+    if (!groupId) {
+      try {
+        const userDoc = await db.collection("users").doc(request.auth.uid).get();
+        if (userDoc.exists) {
+          groupId = userDoc.data()?.groupId || null;
+        }
+      } catch (userErr) {
+        console.warn("provisionFramaspaceGeneralDropFolder - Erreur lecture utilisateur :", userErr.message);
+      }
+    }
+
+    if (!groupId) {
+      throw new HttpsError("invalid-argument", "L'identifiant du groupe (association) est introuvable.");
+    }
+
+    // 2. Vérification des droits administrateur ou mestre
+    const userDoc = await db.collection("users").doc(request.auth.uid).get();
+    if (!userDoc.exists) {
+      throw new HttpsError("permission-denied", "Utilisateur introuvable.");
+    }
+
+    const userData = userDoc.data();
+    const userRole = (userData.role || "").toLowerCase();
+    const userTags = Array.isArray(userData.tags) ? userData.tags : [];
+    const isAuthorized = ["admin", "super-admin", "mestre", "bureau", "ca"].includes(userRole) || 
+                         userData.isSystemAdmin === true ||
+                         userTags.some(t => ["Bureau", "Président", "Présidente", "CA", "Direction", "Admin"].includes(t));
+
+    if (!isAuthorized && userData.groupId !== groupId) {
+      throw new HttpsError("permission-denied", "Accès refusé. Droits administrateurs requis.");
+    }
+
+    // 3. Récupération des identifiants Framaspace
+    const { framaspaceUrl, framaspaceUsername, framaspaceAppPassword } = await getFramaspaceCredentialsForGroup(db, groupId);
+
+    if (!framaspaceUrl || !framaspaceUsername || !framaspaceAppPassword) {
+      throw new HttpsError(
+        "failed-precondition",
+        "Les identifiants Framaspace (Nextcloud) ne sont pas configurés pour cette association."
+      );
+    }
+
+    const cleanUrl = String(framaspaceUrl).trim().replace(/\/+$/, "");
+    const cleanUsername = String(framaspaceUsername).trim();
+    const cleanPassword = String(framaspaceAppPassword).trim();
+    const basicAuth = Buffer.from(`${cleanUsername}:${cleanPassword}`).toString("base64");
+    const targetFolder = "Depot_Videos";
+
+    // 4. Création WebDAV du dossier '/Depot_Videos'
+    try {
+      const folderDavUrl = `${cleanUrl}/remote.php/dav/files/${encodeURIComponent(cleanUsername)}/${encodeURIComponent(targetFolder)}`;
+      const mkcolRes = await fetch(folderDavUrl, {
+        method: "MKCOL",
+        headers: {
+          Authorization: `Basic ${basicAuth}`
+        },
+        signal: AbortSignal.timeout(10000)
+      });
+      if (mkcolRes.status === 201 || mkcolRes.status === 405) {
+        console.log(`provisionFramaspaceGeneralDropFolder - Dossier '${targetFolder}' opérationnel (HTTP ${mkcolRes.status}).`);
+      } else {
+        console.warn(`provisionFramaspaceGeneralDropFolder - Statut inattendu MKCOL : ${mkcolRes.status}`);
+      }
+    } catch (mkcolErr) {
+      console.warn("provisionFramaspaceGeneralDropFolder - Exception MKCOL :", mkcolErr.message);
+    }
+
+    // 5. Création ou récupération du partage OCS public File Drop (permissions: 4)
+    const ocsEndpoint = `${cleanUrl}/ocs/v2.php/apps/files_sharing/api/v1/shares?format=json`;
+    let urlFileDrop = null;
+
+    try {
+      const bodyParams = new URLSearchParams();
+      bodyParams.append("path", `/${targetFolder}`);
+      bodyParams.append("shareType", "3"); // 3 = Lien public
+      bodyParams.append("permissions", "4"); // 4 = File drop (dépôt seul)
+
+      const ocsRes = await fetch(ocsEndpoint, {
+        method: "POST",
+        headers: {
+          "OCS-APIRequest": "true",
+          Authorization: `Basic ${basicAuth}`,
+          "Content-Type": "application/x-www-form-urlencoded",
+          Accept: "application/json"
+        },
+        body: bodyParams.toString(),
+        signal: AbortSignal.timeout(10000)
+      });
+
+      const ocsJson = await ocsRes.json().catch(() => ({}));
+      if (ocsRes.ok && ocsJson.ocs?.data?.url) {
+        urlFileDrop = ocsJson.ocs.data.url;
+      }
+    } catch (ocsErr) {
+      console.warn("provisionFramaspaceGeneralDropFolder - Erreur OCS POST :", ocsErr.message);
+    }
+
+    // Si le partage existe déjà ou conflit, inspection des partages existants
+    if (!urlFileDrop) {
+      try {
+        const listEndpoint = `${cleanUrl}/ocs/v2.php/apps/files_sharing/api/v1/shares?path=${encodeURIComponent('/' + targetFolder)}&format=json`;
+        const listRes = await fetch(listEndpoint, {
+          method: "GET",
+          headers: {
+            "OCS-APIRequest": "true",
+            Authorization: `Basic ${basicAuth}`,
+            Accept: "application/json"
+          },
+          signal: AbortSignal.timeout(10000)
+        });
+        const listJson = await listRes.json().catch(() => ({}));
+        const shares = listJson.ocs?.data;
+        if (Array.isArray(shares) && shares.length > 0) {
+          const match = shares.find(s => Number(s.share_type) === 3 && Number(s.permissions) === 4) ||
+                        shares.find(s => Number(s.share_type) === 3);
+          if (match && match.url) {
+            urlFileDrop = match.url;
+          }
+        }
+      } catch (listErr) {
+        console.warn("provisionFramaspaceGeneralDropFolder - Erreur OCS GET :", listErr.message);
+      }
+    }
+
+    if (!urlFileDrop) {
+      throw new HttpsError(
+        "internal",
+        "Impossible de générer le lien de dépôt public Framaspace. Vérifiez les autorisations de partage par lien dans l'administration Nextcloud."
+      );
+    }
+
+    // 6. Mise à jour automatique de defaultDropUrl dans l'association
+    await db.collection("associations").doc(groupId).set(
+      { defaultDropUrl: urlFileDrop },
+      { merge: true }
+    );
+
+    console.log(`provisionFramaspaceGeneralDropFolder - Association ${groupId} configurée avec defaultDropUrl : ${urlFileDrop}`);
+
+    return {
+      success: true,
+      defaultDropUrl: urlFileDrop,
+      folder: targetFolder
+    };
   }
 );
 
@@ -2864,3 +3062,220 @@ exports.getFramaspaceAlbumMedia = onCall(
     };
   }
 );
+
+/**
+ * Cloud Function appelable (OnCall) pour téléverser une image du forum vers Framaspace (Nextcloud).
+ * Dépose le fichier dans le dossier 'Forum' via WebDAV PUT et génère un partage public OCS en lecture seule.
+ * 
+ * Paramètres attendus :
+ * - fileBase64 {string} : Données de l'image encodées en base64 (avec ou sans préfixe data:...)
+ * - fileName {string} : Nom original du fichier image
+ * - mimeType {string} : Type MIME de l'image (ex: image/jpeg, image/png, image/webp)
+ * - groupId {string} : Identifiant de l'association (optionnel si présent dans le profil utilisateur)
+ * 
+ * @returns {Promise<{ success: boolean, directUrl: string, fileName: string, token: string }>}
+ */
+exports.uploadForumImageToFramaspace = onCall(
+  {
+    timeoutSeconds: 30,
+    cors: true
+  },
+  async (request) => {
+    // 1. Vérification de l'authentification
+    if (!request.auth) {
+      throw new HttpsError("unauthenticated", "Vous devez être connecté pour téléverser une image.");
+    }
+
+    const data = request.data || {};
+    let { fileBase64, fileName, mimeType, groupId } = data;
+
+    if (!fileBase64 || typeof fileBase64 !== "string") {
+      throw new HttpsError("invalid-argument", "Le contenu de l'image en base64 est requis.");
+    }
+
+    if (!fileName || typeof fileName !== "string") {
+      fileName = "image.jpg";
+    }
+
+    const db = getFirestore();
+
+    // 2. Résolution du groupId si non fourni dans la requête
+    if (!groupId) {
+      try {
+        const userDoc = await db.collection("users").doc(request.auth.uid).get();
+        if (userDoc.exists) {
+          groupId = userDoc.data()?.groupId || null;
+        }
+      } catch (userErr) {
+        console.warn("uploadForumImageToFramaspace - Erreur lecture utilisateur :", userErr.message);
+      }
+    }
+
+    if (!groupId) {
+      throw new HttpsError("invalid-argument", "L'identifiant du groupe (association) est introuvable.");
+    }
+
+    // 3. Récupération des identifiants Framaspace
+    const { framaspaceUrl, framaspaceUsername, framaspaceAppPassword } = await getFramaspaceCredentialsForGroup(db, groupId);
+
+    if (!framaspaceUrl || !framaspaceUsername || !framaspaceAppPassword) {
+      throw new HttpsError(
+        "failed-precondition",
+        "Les identifiants Framaspace (Nextcloud) ne sont pas configurés pour cette association."
+      );
+    }
+
+    const cleanUrl = String(framaspaceUrl).trim().replace(/\/+$/, "");
+    const cleanUsername = String(framaspaceUsername).trim();
+    const cleanPassword = String(framaspaceAppPassword).trim();
+    const basicAuth = Buffer.from(`${cleanUsername}:${cleanPassword}`).toString("base64");
+
+    // 4. Nettoyage du préfixe data:image/...;base64, et décodage en Buffer
+    const cleanBase64 = fileBase64.replace(/^data:[^;]+;base64,/, "");
+    const fileBuffer = Buffer.from(cleanBase64, "base64");
+
+    if (!fileBuffer || fileBuffer.length === 0) {
+      throw new HttpsError("invalid-argument", "Le fichier image fourni est vide ou corrompu.");
+    }
+
+    // 5. Nettoyage et formatage du nom de fichier
+    const extMatch = String(fileName).match(/\.([a-zA-Z0-9]+)$/);
+    const ext = extMatch ? extMatch[1].toLowerCase() : (mimeType === "image/png" ? "png" : mimeType === "image/webp" ? "webp" : "jpg");
+    const rawBaseName = String(fileName).replace(/\.[a-zA-Z0-9]+$/, "");
+    const slugBase = slugifyWebdav(rawBaseName) || "forum-image";
+    const savedName = `${Date.now()}_${slugBase}.${ext}`;
+    const parentFolder = "Forum";
+
+    console.log(`uploadForumImageToFramaspace - Préparation upload vers ${cleanUrl} dans /${parentFolder}/${savedName} (${fileBuffer.length} octets)`);
+
+    // 6. Vérification / Création WebDAV du dossier parent 'Forum' (MKCOL)
+    try {
+      const forumDavUrl = `${cleanUrl}/remote.php/dav/files/${encodeURIComponent(cleanUsername)}/${encodeURIComponent(parentFolder)}`;
+      const mkcolRes = await fetch(forumDavUrl, {
+        method: "MKCOL",
+        headers: {
+          Authorization: `Basic ${basicAuth}`
+        },
+        signal: AbortSignal.timeout(10000)
+      });
+
+      // 201 = Créé avec succès, 405 = Existe déjà
+      if (mkcolRes.status === 201 || mkcolRes.status === 405) {
+        console.log(`uploadForumImageToFramaspace - Dossier parent '${parentFolder}' opérationnel (HTTP ${mkcolRes.status}).`);
+      } else {
+        console.warn(`uploadForumImageToFramaspace - Dossier parent '${parentFolder}' statut inattendu : ${mkcolRes.status}`);
+      }
+    } catch (mkcolErr) {
+      console.warn("uploadForumImageToFramaspace - Exception lors du MKCOL dossier 'Forum' :", mkcolErr.message);
+    }
+
+    // 7. Dépose WebDAV du fichier via PUT
+    const targetFileUrl = `${cleanUrl}/remote.php/dav/files/${encodeURIComponent(cleanUsername)}/${encodeURIComponent(parentFolder)}/${encodeURIComponent(savedName)}`;
+    try {
+      const putRes = await fetch(targetFileUrl, {
+        method: "PUT",
+        headers: {
+          Authorization: `Basic ${basicAuth}`,
+          "Content-Type": mimeType || "image/jpeg",
+          "Content-Length": String(fileBuffer.length)
+        },
+        body: fileBuffer,
+        signal: AbortSignal.timeout(10000)
+      });
+
+      if (putRes.status !== 201 && putRes.status !== 204 && putRes.status !== 200) {
+        const errorText = await putRes.text().catch(() => "");
+        console.error(`uploadForumImageToFramaspace - Échec PUT WebDAV (${putRes.status}) :`, errorText);
+        throw new HttpsError("internal", `Échec du dépôt de l'image sur Framaspace (HTTP ${putRes.status}).`);
+      }
+
+      console.log(`uploadForumImageToFramaspace - Fichier ${savedName} déposé avec succès (HTTP ${putRes.status}).`);
+    } catch (putErr) {
+      console.error("uploadForumImageToFramaspace - Erreur lors de l'envoi WebDAV PUT :", putErr.message);
+      if (putErr instanceof HttpsError) throw putErr;
+      throw new HttpsError("internal", `Erreur réseau lors du téléversement WebDAV : ${putErr.message}`);
+    }
+
+    // 8. Génération du partage public en lecture seule via l'API OCS (shareType: 3, permissions: 1)
+    const ocsEndpoint = `${cleanUrl}/ocs/v2.php/apps/files_sharing/api/v1/shares?format=json`;
+    const targetPath = `/${parentFolder}/${savedName}`;
+    let token = null;
+
+    try {
+      const bodyParams = new URLSearchParams();
+      bodyParams.append("path", targetPath);
+      bodyParams.append("shareType", "3"); // 3 = Lien public
+      bodyParams.append("permissions", "1"); // 1 = Lecture seule
+
+      const ocsRes = await fetch(ocsEndpoint, {
+        method: "POST",
+        headers: {
+          "OCS-APIRequest": "true",
+          Authorization: `Basic ${basicAuth}`,
+          "Content-Type": "application/x-www-form-urlencoded",
+          Accept: "application/json"
+        },
+        body: bodyParams.toString(),
+        signal: AbortSignal.timeout(10000)
+      });
+
+      const ocsJson = await ocsRes.json().catch(() => ({}));
+      const statusCode = ocsJson.ocs?.meta?.statuscode;
+      const isOk = ocsRes.ok && (ocsJson.ocs?.meta?.status === "ok" || statusCode === 100 || statusCode === 200);
+
+      if (isOk && ocsJson.ocs?.data) {
+        token = ocsJson.ocs.data.token || null;
+        if (!token && ocsJson.ocs.data.url) {
+          const tokenMatch = String(ocsJson.ocs.data.url).match(/\/s\/([a-zA-Z0-9_-]+)/);
+          if (tokenMatch) token = tokenMatch[1];
+        }
+      }
+
+      // Si le partage existe déjà ou conflit, inspection de la liste des partages existants
+      if (!token) {
+        console.warn(`uploadForumImageToFramaspace - OCS POST status=${statusCode}, recherche des partages existants sur ${targetPath}...`);
+        const listEndpoint = `${cleanUrl}/ocs/v2.php/apps/files_sharing/api/v1/shares?path=${encodeURIComponent(targetPath)}&format=json`;
+        const listRes = await fetch(listEndpoint, {
+          method: "GET",
+          headers: {
+            "OCS-APIRequest": "true",
+            Authorization: `Basic ${basicAuth}`,
+            Accept: "application/json"
+          },
+          signal: AbortSignal.timeout(10000)
+        });
+        const listJson = await listRes.json().catch(() => ({}));
+        const shares = listJson.ocs?.data;
+        if (Array.isArray(shares) && shares.length > 0) {
+          const match = shares.find(s => Number(s.share_type) === 3);
+          if (match) {
+            token = match.token || (match.url && match.url.match(/\/s\/([a-zA-Z0-9_-]+)/)?.[1]) || null;
+          }
+        }
+      }
+    } catch (ocsErr) {
+      console.error("uploadForumImageToFramaspace - Erreur lors de l'appel OCS :", ocsErr.message);
+    }
+
+    if (!token) {
+      console.error("uploadForumImageToFramaspace - Impossible de générer le token public de partage pour :", targetPath);
+      throw new HttpsError(
+        "internal",
+        "L'image a été déposée sur Framaspace mais la création du lien public a échoué. Vérifiez que le partage public par lien est autorisé dans l'administration Nextcloud."
+      );
+    }
+
+    // 9. Construction de l'URL directe d'affichage Nextcloud (mode aperçu inline optimisé)
+    const directUrl = `${cleanUrl}/s/${token}/preview`;
+
+    console.log(`uploadForumImageToFramaspace - Succès ! Image accessible via : ${directUrl}`);
+
+    return {
+      success: true,
+      directUrl,
+      fileName: savedName,
+      token
+    };
+  }
+);
+

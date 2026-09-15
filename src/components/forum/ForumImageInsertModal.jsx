@@ -1,39 +1,62 @@
-import React, { useState } from 'react';
-import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { storage } from '../../firebase';
+import React, { useState, useRef, useEffect } from 'react';
+import { doc, getDoc } from 'firebase/firestore';
+import imageCompression from 'browser-image-compression';
+import { httpsCallable } from 'firebase/functions';
+import { db, functions } from '../../firebase';
 import CordelButton from '../CordelButton';
 
 /**
- * Modale d'insertion d'image pour le Forum.
- * Permet soit l'upload direct vers Firebase Storage (dossier forum_images/),
- * soit l'insertion via un lien web externe.
+ * Modale d'insertion directe d'image pour le Forum.
+ * Téléversement automatique et transparent vers l'instance Framaspace (Nextcloud)
+ * via Cloud Function, avec compression côté client et insertion TipTap.
  * 
  * @param {Object} props
  * @param {boolean} props.isOpen - État d'ouverture de la modale
  * @param {Function} props.onClose - Annulation / Fermeture
- * @param {Function} props.onInsertImage - Callback qui reçoit l'URL d'image validée
- * @param {string} [props.lienDepotForum=''] - Lien externe configuré par l'administrateur
- * @param {string} [props.groupId=''] - Identifiant du groupe/association pour organiser les fichiers
+ * @param {Function} props.onInsertImage - Callback qui reçoit l'URL directe d'affichage validée
+ * @param {string} [props.groupId=''] - Identifiant de l'association pour cibler Framaspace
  */
 export default function ForumImageInsertModal({ 
   isOpen, 
   onClose, 
   onInsertImage, 
-  lienDepotForum = '', 
-  consignesDepotForum = '',
   groupId = '' 
 }) {
-  const hasExternalLink = Boolean(lienDepotForum);
-  const [activeTab, setActiveTab] = useState('upload'); // 'upload' | 'external'
   const [selectedFile, setSelectedFile] = useState(null);
   const [filePreview, setFilePreview] = useState(null);
-  const [imageUrl, setImageUrl] = useState('');
   const [isUploading, setIsUploading] = useState(false);
+  const [isConfigMissing, setIsConfigMissing] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const fileInputRef = useRef(null);
+
+  // Vérification proactive si l'association a configuré son espace cloud
+  useEffect(() => {
+    if (!isOpen || !groupId) return;
+    let isMounted = true;
+
+    const checkAssociationCloud = async () => {
+      try {
+        const assocRef = doc(db, 'associations', groupId);
+        const snap = await getDoc(assocRef);
+        if (snap.exists() && isMounted) {
+          const data = snap.data();
+          // Si aucune URL cloud n'est enregistrée
+          if (!data.cloudRootUrl && !data.framaspaceUrl) {
+            setIsConfigMissing(true);
+          } else {
+            setIsConfigMissing(false);
+          }
+        }
+      } catch (err) {
+        // En cas d'erreur de lecture réseau, on ne bloque pas prématurément
+      }
+    };
+
+    checkAssociationCloud();
+    return () => { isMounted = false; };
+  }, [isOpen, groupId]);
 
   if (!isOpen) return null;
-
-  const targetUploadUrl = lienDepotForum || 'https://framaspace.org';
 
   // Gestion du choix d'un fichier image local
   const handleFileChange = (e) => {
@@ -45,8 +68,8 @@ export default function ForumImageInsertModal({
         setFilePreview(null);
         return;
       }
-      if (file.size > 10 * 1024 * 1024) {
-        setErrorMsg("L'image est trop volumineuse (maximum 10 Mo).");
+      if (file.size > 25 * 1024 * 1024) {
+        setErrorMsg("L'image est trop volumineuse (maximum 25 Mo avant compression).");
         setSelectedFile(null);
         setFilePreview(null);
         return;
@@ -62,63 +85,92 @@ export default function ForumImageInsertModal({
     if (isUploading) return;
     setSelectedFile(null);
     setFilePreview(null);
-    setImageUrl('');
     setErrorMsg('');
     setIsUploading(false);
     onClose();
   };
 
-  const compressImage = (file) => {
+  /**
+   * Compresse l'image côté client (max 1280px, qualité 0.8)
+   * Utilise browser-image-compression avec repli Canvas de secours.
+   */
+  const compressImage = async (file) => {
+    const compressionOptions = {
+      maxSizeMB: 1.5,
+      maxWidthOrHeight: 1280,
+      initialQuality: 0.8,
+      useWebWorker: true,
+      fileType: file.type === 'image/png' ? 'image/png' : 'image/jpeg'
+    };
+
+    try {
+      const compressed = await imageCompression(file, compressionOptions);
+      return compressed;
+    } catch (err) {
+      console.warn("Échec compression via worker, bascule sur canvas :", err);
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = (event) => {
+          const img = new Image();
+          img.src = event.target.result;
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            let width = img.width;
+            let height = img.height;
+            const MAX_DIM = 1280;
+
+            if (width > MAX_DIM || height > MAX_DIM) {
+              if (width > height) {
+                height = Math.round((height * MAX_DIM) / width);
+                width = MAX_DIM;
+              } else {
+                width = Math.round((width * MAX_DIM) / height);
+                height = MAX_DIM;
+              }
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+
+            const mime = file.type === 'image/png' ? 'image/png' : 'image/jpeg';
+            canvas.toBlob(
+              (blob) => {
+                if (blob) {
+                  const newFile = new File([blob], file.name, { type: blob.type });
+                  resolve(newFile);
+                } else {
+                  resolve(file);
+                }
+              },
+              mime,
+              0.8
+            );
+          };
+          img.onerror = () => resolve(file);
+        };
+        reader.onerror = () => resolve(file);
+      });
+    }
+  };
+
+  /**
+   * Convertit un Blob/File en chaîne Base64 pour l'envoi via Cloud Function.
+   */
+  const fileToBase64 = (fileOrBlob) => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = (event) => {
-        const img = new Image();
-        img.src = event.target.result;
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          let width = img.width;
-          let height = img.height;
-          const MAX_WIDTH = 1200;
-          const MAX_HEIGHT = 1200;
-          
-          if (width > height) {
-            if (width > MAX_WIDTH) {
-              height *= MAX_WIDTH / width;
-              width = MAX_WIDTH;
-            }
-          } else {
-            if (height > MAX_HEIGHT) {
-              width *= MAX_HEIGHT / height;
-              height = MAX_HEIGHT;
-            }
-          }
-          
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(img, 0, 0, width, height);
-          
-          canvas.toBlob((blob) => {
-            if (blob) {
-              const originalName = file.name.split('.').slice(0, -1).join('.') || 'image';
-              const ext = blob.type === 'image/webp' ? 'webp' : 'jpg';
-              const newFile = new File([blob], `${originalName}.${ext}`, { type: blob.type });
-              resolve(newFile);
-            } else {
-              resolve(file);
-            }
-          }, 'image/webp', 0.75);
-        };
-        img.onerror = (err) => reject(err);
-      };
-      reader.onerror = (err) => reject(err);
+      reader.readAsDataURL(fileOrBlob);
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = (error) => reject(error);
     });
   };
 
-  // Téléversement direct du fichier vers Firebase Storage dans forum_images/
+  // Téléversement transparent du fichier vers Framaspace via Cloud Function
   const handleUploadAndInsert = async (e) => {
-    e.preventDefault();
+    if (e) e.preventDefault();
     if (!selectedFile) {
       setErrorMsg("Veuillez sélectionner un fichier image sur votre appareil.");
       return;
@@ -128,57 +180,47 @@ export default function ForumImageInsertModal({
       setIsUploading(true);
       setErrorMsg('');
 
-      // Compression de l'image (pour économiser le stockage Firebase)
+      // 1. Compression à la volée côté navigateur (max 1280px, qualité 0.8)
       const compressedFile = await compressImage(selectedFile);
 
-      // Nom de fichier unique et sécurisé
-      const cleanFileName = compressedFile.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-      const folderPath = groupId ? `forum_images/${groupId}` : 'forum_images/public';
-      const fileStoragePath = `${folderPath}/${Date.now()}_${cleanFileName}`;
+      // 2. Conversion en Base64
+      const fileBase64 = await fileToBase64(compressedFile);
 
-      const fileRef = storageRef(storage, fileStoragePath);
-
-      // Upload du fichier vers Firebase Storage
-      const snapshot = await uploadBytes(fileRef, compressedFile, {
-        contentType: compressedFile.type || 'image/jpeg'
+      // 3. Appel de la Cloud Function uploadForumImageToFramaspace
+      const uploadForumImageFn = httpsCallable(functions, 'uploadForumImageToFramaspace');
+      const response = await uploadForumImageFn({
+        fileBase64,
+        fileName: selectedFile.name || 'image.jpg',
+        mimeType: compressedFile.type || selectedFile.type || 'image/jpeg',
+        groupId: groupId || undefined
       });
 
-      // Récupération de l'URL publique de téléchargement
-      const downloadUrl = await getDownloadURL(snapshot.ref);
-
-      if (onInsertImage) {
-        onInsertImage(downloadUrl);
+      const data = response.data;
+      if (data?.success && data?.directUrl) {
+        // Insertion automatique dans l'éditeur TipTap
+        if (onInsertImage) {
+          onInsertImage(data.directUrl);
+        }
+        // Fermeture automatique de la modale
+        handleClose();
+      } else {
+        throw new Error(data?.error || "Réponse inattendue du serveur Framaspace.");
       }
-
-      handleClose();
     } catch (err) {
-      console.error("Erreur lors du téléversement de l'image dans forum_images/ :", err);
-      setErrorMsg("Échec du téléversement. Vérifiez votre connexion ou essayez via l'onglet Lien externe.");
+      console.error("Erreur lors du téléversement de l'image vers Framaspace :", err);
+      const isPreconditionErr = err.message?.includes("failed-precondition") || err.code === "failed-precondition";
+      if (isPreconditionErr) {
+        setIsConfigMissing(true);
+      }
+      const friendlyMsg = isPreconditionErr
+        ? "L'espace de stockage externe (Drive) n'est pas encore configuré pour votre association."
+        : err.message?.includes("unauthenticated")
+        ? "Vous devez être connecté pour insérer une image."
+        : `Échec du téléversement : ${err.message || 'Erreur réseau'}.`;
+      setErrorMsg(friendlyMsg);
     } finally {
       setIsUploading(false);
     }
-  };
-
-  // Validation et insertion via URL externe
-  const handleExternalInsert = (e) => {
-    e.preventDefault();
-    const trimmedUrl = imageUrl.trim();
-
-    if (!trimmedUrl) {
-      setErrorMsg("Veuillez coller le lien de votre image.");
-      return;
-    }
-
-    if (!trimmedUrl.startsWith('http://') && !trimmedUrl.startsWith('https://')) {
-      setErrorMsg("L'adresse de l'image doit commencer par http:// ou https://");
-      return;
-    }
-
-    setErrorMsg('');
-    if (onInsertImage) {
-      onInsertImage(trimmedUrl);
-    }
-    handleClose();
   };
 
   return (
@@ -195,7 +237,7 @@ export default function ForumImageInsertModal({
               <span>🖼️ Insérer une photo dans le forum</span>
             </h3>
             <p className="text-[11px] text-cordel-master-dark/80 font-medium">
-              Choisissez d'envoyer un fichier ou d'utiliser un lien externe.
+              Choisissez une image sur votre appareil pour l'insérer directement.
             </p>
           </div>
           <button
@@ -208,223 +250,132 @@ export default function ForumImageInsertModal({
           </button>
         </div>
 
-        {/* Onglets d'action (Fixes sous le header) */}
-        <div className="flex-shrink-0 px-4 pt-3 pb-2 border-b border-encre-noire/15 bg-cordel-bg flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => { if (!isUploading) { setActiveTab('upload'); setErrorMsg(''); } }}
-              className={`px-3 py-1.5 text-xs font-bold uppercase tracking-wider rounded transition-all cursor-pointer ${
-                activeTab === 'upload'
-                  ? 'bg-cordel-wood text-white border border-encre-noire shadow-xs'
-                  : 'bg-white/60 text-encre-noire border border-encre-noire/20 hover:bg-white'
-              }`}
-            >
-              📤 Importer un fichier
-            </button>
-          <button
-            type="button"
-            onClick={() => { if (!isUploading) { setActiveTab('external'); setErrorMsg(''); } }}
-            className={`px-3 py-1.5 text-xs font-bold uppercase tracking-wider rounded transition-all cursor-pointer ${
-              activeTab === 'external'
-                ? 'bg-cordel-wood text-white border border-encre-noire shadow-xs'
-                : 'bg-white/60 text-encre-noire border border-encre-noire/20 hover:bg-white'
-            }`}
-          >
-            🔗 Lien externe
-          </button>
-        </div>
-
-        {/* Option 1 : Upload de fichier local */}
-        {activeTab === 'upload' && (
-          <div className="flex flex-col flex-1 overflow-hidden">
-            {/* 2. Body (Défilable verticalement) */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4">
-              <div className="flex flex-col gap-2 p-3 bg-white border border-encre-noire/20 rounded-[4px_6px_3px_5px]">
-                <label htmlFor="forumImageFileInput" className="text-xs font-bold uppercase tracking-wider text-cordel-wood">
-                  Choisir une image sur votre appareil
-                </label>
-                
-                <input
-                  id="forumImageFileInput"
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFileChange}
-                  disabled={isUploading}
-                  className="block w-full text-xs text-stone-700 file:mr-3 file:py-1.5 file:px-3 file:rounded file:border-2 file:border-encre-noire file:text-xs file:font-bold file:uppercase file:bg-cordel-bg file:text-encre-noire hover:file:bg-amber-100 cursor-pointer"
-                />
-
-                {/* Aperçu */}
-                {filePreview && (
-                  <div className="mt-2 flex items-center gap-3 p-2 bg-stone-50 border border-stone-200 rounded">
-                    <img 
-                      src={filePreview} 
-                      alt="Aperçu" 
-                      className="w-14 h-14 object-cover rounded border border-encre-noire/30 shadow-xs" 
-                    />
-                    <div className="flex flex-col text-[11px] font-medium text-stone-700 truncate">
-                      <span className="font-bold truncate">{selectedFile?.name}</span>
-                      <span className="text-stone-500">{(selectedFile?.size / 1024).toFixed(1)} Ko</span>
-                    </div>
-                  </div>
-                )}
+        {/* 2. Body (Sélection, avertissements et prévisualisation) */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          {/* Alerte explicative pour les associations n'ayant pas encore configuré leur Drive */}
+          {isConfigMissing && (
+            <div className="p-3.5 bg-amber-50 dark:bg-amber-950/40 border-2 border-amber-600/40 rounded-[4px_6px_3px_5px] flex flex-col gap-2.5 shadow-xs">
+              <div className="flex items-start gap-2.5">
+                <span className="text-xl shrink-0">☁️</span>
+                <div className="flex flex-col gap-1 text-left">
+                  <h4 className="text-xs font-black uppercase tracking-wide text-amber-900 dark:text-amber-200">
+                    Espace Cloud (Drive) non configuré
+                  </h4>
+                  <p className="text-[11px] leading-relaxed text-stone-700 dark:text-stone-300">
+                    Pour préserver les ressources et stocker les photos des discussions sans limite, votre association doit connecter son drive externe (Framaspace, Nextcloud...).
+                  </p>
+                </div>
               </div>
 
-              {errorMsg && (
-                <span className="text-[11px] font-bold text-red-600 block">
-                  ⚠️ {errorMsg}
+              <div className="pt-2 border-t border-dashed border-amber-600/30 flex flex-col gap-1 text-[10.5px] text-stone-700 dark:text-stone-300">
+                <span className="font-bold uppercase tracking-wider text-amber-900 dark:text-amber-200">
+                  Comment l'activer ?
                 </span>
-              )}
-            </div>
-
-            {/* 3. Footer (Fixe en bas) */}
-            <div className="flex-shrink-0 p-4 border-t border-dashed border-cordel-master-dark/15 flex justify-end gap-2 bg-cordel-bg">
-              <button
-                type="button"
-                onClick={handleClose}
-                disabled={isUploading}
-                className="px-4 py-2 text-xs font-bold uppercase tracking-wider text-stone-600 hover:text-stone-900 cursor-pointer disabled:opacity-50"
-              >
-                Annuler
-              </button>
-
-              <CordelButton
-                type="button"
-                onClick={handleUploadAndInsert}
-                variant="vert"
-                useExtremeBorder={true}
-                disabled={isUploading || !selectedFile}
-                className="px-5 py-2 text-xs font-bold uppercase tracking-wider cursor-pointer flex items-center gap-2"
-              >
-                {isUploading ? (
-                  <>
-                    <span className="inline-block animate-spin">⏳</span>
-                    <span>Envoi en cours...</span>
-                  </>
-                ) : (
-                  <span>Téléverser & Insérer</span>
-                )}
-              </CordelButton>
-            </div>
-          </div>
-        )}
-
-        {/* Option 2 : Lien d'image externe */}
-        {activeTab === 'external' && (
-          <div className="flex flex-col flex-1 overflow-hidden">
-            {/* 2. Body (Défilable verticalement) */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4">
-              <div className="flex flex-col gap-2 p-3 bg-white border border-encre-noire/20 rounded-[4px_6px_3px_5px]">
-                <label htmlFor="forumImageLinkInput" className="text-xs font-bold uppercase tracking-wider text-cordel-wood">
-                  Coller l'URL d'une image en ligne
-                </label>
-                <input
-                  id="forumImageLinkInput"
-                  type="url"
-                  value={imageUrl}
-                  onChange={(e) => setImageUrl(e.target.value)}
-                  placeholder="Ex : https://domaine.com/image.jpg"
-                  className="theme-input text-xs font-bold py-2 w-full border border-encre-noire/30 rounded px-2"
-                />
-                <p className="text-[10px] text-stone-500 font-medium mt-1">
-                  L'image doit être hébergée publiquement sur le Web.
+                <p className="leading-snug">
+                  Un responsable de votre association doit renseigner les accès dans :<br/>
+                  <span className="font-black text-amber-950 dark:text-amber-100">
+                    Paramètres de l'association ➔ Onglet Communication ➔ Intégration Framaspace / Drive
+                  </span>.
                 </p>
               </div>
+            </div>
+          )}
 
-              {targetUploadUrl && (
-                <div className="flex flex-col gap-2 p-3 bg-stone-50 border border-stone-200 rounded">
-                  <span className="text-[10px] font-bold uppercase text-stone-600">
-                    Dépôt externe partagé de l'association :
-                  </span>
-                  
-                  <div className="text-[10px] text-stone-600 mb-1 space-y-1">
-                    <p className="font-bold">Comment faire ?</p>
-                    {consignesDepotForum ? (
-                      <div className="whitespace-pre-wrap leading-relaxed border-l-2 border-stone-300 pl-2 ml-1 text-stone-700 bg-white/50 p-1.5 rounded-r">
-                        {consignesDepotForum}
-                      </div>
-                    ) : (() => {
-                      const lowerUrl = targetUploadUrl.toLowerCase();
-                      if (lowerUrl.includes('framaspace') || lowerUrl.includes('nextcloud')) {
-                        return (
-                          <ol className="list-decimal pl-4 space-y-0.5">
-                            <li>Ouvrez l'espace via le bouton ci-dessous.</li>
-                            <li>Glissez-déposez (ou envoyez) votre photo.</li>
-                            <li>Cliquez sur les <strong className="font-bold">trois points (...)</strong> à côté du fichier ajouté.</li>
-                            <li>Choisissez <strong className="font-bold">"Copier le lien"</strong> (ou "Lien de téléchargement").</li>
-                            <li>Collez ce lien dans le champ au-dessus !</li>
-                          </ol>
-                        );
-                      }
-                      if (lowerUrl.includes('dropbox')) {
-                        return (
-                          <ol className="list-decimal pl-4 space-y-0.5">
-                            <li>Ouvrez le dossier Dropbox via le bouton ci-dessous.</li>
-                            <li>Ajoutez votre photo.</li>
-                            <li>Survolez la photo et cliquez sur le bouton <strong className="font-bold">"Copier le lien"</strong>.</li>
-                            <li>Collez ce lien dans le champ au-dessus.</li>
-                          </ol>
-                        );
-                      }
-                      if (lowerUrl.includes('drive.google')) {
-                        return (
-                          <ol className="list-decimal pl-4 space-y-0.5">
-                            <li>Ouvrez le Google Drive via le bouton ci-dessous.</li>
-                            <li>Déposez votre photo.</li>
-                            <li>Faites un clic droit sur la photo, choisissez <strong className="font-bold">"Obtenir le lien"</strong> (lien public).</li>
-                            <li>Collez ce lien dans le champ au-dessus.</li>
-                          </ol>
-                        );
-                      }
-                      return (
-                        <ol className="list-decimal pl-4 space-y-0.5">
-                          <li>Ouvrez l'espace via le bouton ci-dessous et envoyez votre photo.</li>
-                          <li>Récupérez le <strong className="font-bold">lien direct public</strong> de l'image.</li>
-                          <li>Collez ce lien dans le champ au-dessus !</li>
-                        </ol>
-                      );
-                    })()}
-                  </div>
+          {/* Sélecteur de fichier */}
+          <div className="flex flex-col gap-2 p-3 bg-white border border-encre-noire/20 rounded-[4px_6px_3px_5px]">
+            <label htmlFor="forumImageFileInput" className="text-xs font-bold uppercase tracking-wider text-cordel-wood">
+              Image depuis votre appareil
+            </label>
+            
+            <input
+              ref={fileInputRef}
+              id="forumImageFileInput"
+              type="file"
+              accept="image/*"
+              onChange={handleFileChange}
+              disabled={isUploading}
+              className="block w-full text-xs text-stone-700 file:mr-3 file:py-1.5 file:px-3 file:rounded file:border-2 file:border-encre-noire file:text-xs file:font-bold file:uppercase file:bg-cordel-bg file:text-encre-noire hover:file:bg-amber-100 cursor-pointer"
+            />
 
+            {/* Note informative de stockage Cloud */}
+            <p className="text-[10px] text-stone-500 font-medium">
+              💡 Vos photos sont automatiquement hébergées sur le drive externe de votre association pour un affichage rapide et illimité.
+            </p>
+
+            {/* Aperçu du fichier sélectionné */}
+            {filePreview && (
+              <div className="mt-2 flex items-center gap-3 p-2 bg-stone-50 border border-stone-200 rounded">
+                <img 
+                  src={filePreview} 
+                  alt="Aperçu" 
+                  className="w-14 h-14 object-cover rounded border border-encre-noire/30 shadow-xs shrink-0" 
+                />
+                <div className="flex flex-col text-[11px] font-medium text-stone-700 truncate min-w-0 flex-1">
+                  <span className="font-bold truncate">{selectedFile?.name}</span>
+                  <span className="text-stone-500">{(selectedFile?.size / 1024).toFixed(1)} Ko</span>
+                </div>
+                {!isUploading && (
                   <button
                     type="button"
-                    onClick={() => window.open(targetUploadUrl, '_blank', 'noopener,noreferrer')}
-                    className="mt-1 py-1.5 px-3 text-[11px] font-bold bg-white text-encre-noire border border-encre-noire/40 rounded hover:bg-stone-100 transition-all cursor-pointer flex items-center justify-center gap-1"
+                    onClick={() => {
+                      setSelectedFile(null);
+                      setFilePreview(null);
+                      if (fileInputRef.current) fileInputRef.current.value = '';
+                    }}
+                    className="text-xs text-stone-400 hover:text-red-600 p-1 font-bold cursor-pointer"
+                    title="Changer d'image"
                   >
-                    <span>Ouvrir l'espace de stockage externe ↗</span>
+                    ✕
                   </button>
-                </div>
-              )}
-
-              {errorMsg && (
-                <span className="text-[11px] font-bold text-red-600 block">
-                  ⚠️ {errorMsg}
-                </span>
-              )}
-            </div>
-
-            {/* 3. Footer (Fixe en bas) */}
-            <div className="flex-shrink-0 p-4 border-t border-dashed border-cordel-master-dark/15 flex justify-end gap-2 bg-cordel-bg">
-              <button
-                type="button"
-                onClick={handleClose}
-                className="px-4 py-2 text-xs font-bold uppercase tracking-wider text-stone-600 hover:text-stone-900 cursor-pointer"
-              >
-                Annuler
-              </button>
-
-              <CordelButton
-                type="button"
-                onClick={handleExternalInsert}
-                variant="vert"
-                useExtremeBorder={true}
-                disabled={!imageUrl.trim()}
-                className="px-5 py-2 text-xs font-bold uppercase tracking-wider cursor-pointer"
-              >
-                Insérer l'image
-              </CordelButton>
-            </div>
+                )}
+              </div>
+            )}
           </div>
-        )}
+
+          {/* Feedback visuel explicite pendant le téléversement */}
+          {isUploading && (
+            <div className="flex items-center gap-2 p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-500/40 rounded text-amber-900 dark:text-amber-200 text-xs font-semibold animate-pulse">
+              <span className="inline-block animate-spin text-sm">⏳</span>
+              <span>Téléversement de l'image vers Framaspace...</span>
+            </div>
+          )}
+
+          {errorMsg && !isConfigMissing && (
+            <span className="text-[11px] font-bold text-red-600 block">
+              ⚠️ {errorMsg}
+            </span>
+          )}
+        </div>
+
+        {/* 3. Footer (Boutons d'action) */}
+        <div className="flex-shrink-0 p-4 border-t border-dashed border-cordel-master-dark/15 flex justify-end gap-2 bg-cordel-bg">
+          <button
+            type="button"
+            onClick={handleClose}
+            disabled={isUploading}
+            className="px-4 py-2 text-xs font-bold uppercase tracking-wider text-stone-600 hover:text-stone-900 cursor-pointer disabled:opacity-50"
+          >
+            Annuler
+          </button>
+
+          <CordelButton
+            type="button"
+            onClick={handleUploadAndInsert}
+            variant="vert"
+            useExtremeBorder={true}
+            disabled={isUploading || !selectedFile || isConfigMissing}
+            className="px-5 py-2 text-xs font-bold uppercase tracking-wider cursor-pointer flex items-center gap-2 disabled:opacity-50"
+          >
+            {isUploading ? (
+              <>
+                <span className="inline-block animate-spin">⏳</span>
+                <span>Téléversement...</span>
+              </>
+            ) : (
+              <span>Téléverser & Insérer</span>
+            )}
+          </CordelButton>
+        </div>
       </div>
     </div>
   );
