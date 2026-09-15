@@ -1562,5 +1562,25 @@ export const fr = {
     syncVaralBtn: "Sync Varal",
     depotActiveBadge: "Dépôt actif",
     varalLinkedBadge: "Varal relié"
+  },
+  studioSocial: {
+    title: "Studio Réseaux Sociaux",
+    hashtagsLabel: "Hashtags",
+    textTitle: "Texte de la publication",
+    copySuccess: "Copié !",
+    copyBtn: "Copier le texte",
+    previewTitle: "Prévisualisation du Visuel",
+    downloadBtn: "Télécharger",
+    shareBtn: "Partager",
+    selectVaral: "Sélectionner une photo du Varal",
+    noVaralImages: "Aucune image trouvée dans le Varal.",
+    uploadAvol: "Sélectionner un fichier local",
+    guideTitle: "Lexique & Recommandations de rédaction",
+    lexiqueLabel: "Lexique :",
+    mentionsLabel: "Mentions :",
+    catNature: "Éléments & Nature",
+    catRythme: "Rythme & Danse",
+    catFete: "Fête & Cortège",
+    catPratique: "Infos pratiques"
   }
 };

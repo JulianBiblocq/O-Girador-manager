@@ -9,6 +9,7 @@ import { XiloMegaphone } from './XiloIcons';
 import useConfirm from '../hooks/useConfirm';
 import { getSocialVideoThumbnail } from '../utils/videoUtils';
 import StudioTextToolbar from './studio/StudioTextToolbar';
+import { DEFAULT_STUDIO_LEXIQUE, DEFAULT_STUDIO_MENTIONS } from './studio/StudioQuickChips';
 
 export default function StudioSocial({ groupId, branding, onBack, role, isSystemAdmin, user, profileData }) {
   const { t } = useTranslation();
@@ -44,7 +45,13 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
   const [editingTagIdx, setEditingTagIdx] = useState(null);
   const [editingTagValue, setEditingTagValue] = useState('');
 
-  // Récupérer social tags from Firestore associations/{groupId}
+  // États pour les chips de vocabulaire et mentions personnalisables de l'association
+  const [studioLexique, setStudioLexique] = useState(DEFAULT_STUDIO_LEXIQUE);
+  const [studioMentions, setStudioMentions] = useState(DEFAULT_STUDIO_MENTIONS);
+  const [newLexiqueTerm, setNewLexiqueTerm] = useState('');
+  const [newMention, setNewMention] = useState('');
+
+  // Récupérer social tags, lexique et mentions from Firestore associations/{groupId}
   useEffect(() => {
     if (!groupId) return;
     const assocRef = doc(db, 'associations', groupId);
@@ -52,6 +59,12 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
       if (docSnap.exists()) {
         const data = docSnap.data();
         setAvailableSocialTags(data.studioSocialTags || []);
+        if (Array.isArray(data.studioLexique) && data.studioLexique.length > 0) {
+          setStudioLexique(data.studioLexique);
+        }
+        if (Array.isArray(data.studioMentions) && data.studioMentions.length > 0) {
+          setStudioMentions(data.studioMentions);
+        }
       }
     }, (err) => {
       console.error("StudioSocial - Erreur snapshot tags :", err);
@@ -267,6 +280,75 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
     } catch (err) {
       console.error("Error deleting social tag:", err);
       alert("Erreur lors de la suppression du tag.");
+    }
+  };
+
+  // Gestion des mots-clés du lexique pour l'administrateur
+  const handleAddLexiqueTerm = async (e) => {
+    e.preventDefault();
+    const term = newLexiqueTerm.trim().toLowerCase();
+    if (!term || !groupId) return;
+    if (studioLexique.includes(term)) {
+      alert("Ce mot existe déjà dans le lexique.");
+      return;
+    }
+    const updated = [...studioLexique, term];
+    try {
+      const assocRef = doc(db, 'associations', groupId);
+      await updateDoc(assocRef, { studioLexique: updated });
+      setStudioLexique(updated);
+      setNewLexiqueTerm('');
+    } catch (err) {
+      console.error("Erreur ajout terme lexique :", err);
+      alert("Erreur lors de l'ajout du terme.");
+    }
+  };
+
+  const handleDeleteLexiqueTerm = async (termToDelete) => {
+    if (!groupId) return;
+    const updated = studioLexique.filter((t) => t !== termToDelete);
+    try {
+      const assocRef = doc(db, 'associations', groupId);
+      await updateDoc(assocRef, { studioLexique: updated });
+      setStudioLexique(updated);
+    } catch (err) {
+      console.error("Erreur suppression terme lexique :", err);
+    }
+  };
+
+  // Gestion des mentions sociales pour l'administrateur
+  const handleAddMention = async (e) => {
+    e.preventDefault();
+    let mention = newMention.trim();
+    if (!mention || !groupId) return;
+    if (!mention.startsWith('@')) {
+      mention = '@' + mention;
+    }
+    if (studioMentions.includes(mention)) {
+      alert("Cette mention existe déjà.");
+      return;
+    }
+    const updated = [...studioMentions, mention];
+    try {
+      const assocRef = doc(db, 'associations', groupId);
+      await updateDoc(assocRef, { studioMentions: updated });
+      setStudioMentions(updated);
+      setNewMention('');
+    } catch (err) {
+      console.error("Erreur ajout mention :", err);
+      alert("Erreur lors de l'ajout de la mention.");
+    }
+  };
+
+  const handleDeleteMention = async (mentionToDelete) => {
+    if (!groupId) return;
+    const updated = studioMentions.filter((m) => m !== mentionToDelete);
+    try {
+      const assocRef = doc(db, 'associations', groupId);
+      await updateDoc(assocRef, { studioMentions: updated });
+      setStudioMentions(updated);
+    } catch (err) {
+      console.error("Erreur suppression mention :", err);
     }
   };
 
@@ -1010,94 +1092,175 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
                   />
                 </div>
 
-                {/* Interface de Gestion des Tags pour l'Administrateur */}
+                {/* Interface de Gestion des Tags, Lexique et Mentions pour l'Administrateur */}
                 {isAuthorized && (
-                  <div className="mt-2 pt-3.5 border-t border-dashed border-cordel-master-dark/15 flex flex-col gap-2">
-                    <span className="text-[10px] uppercase font-bold tracking-wider text-cordel-wood">
-                      ⚙️ Gérer les tags par défaut de l'association (Admin)
-                    </span>
-                    
-                    <div className="flex gap-1.5 flex-wrap items-center">
-                      <span className="bg-neutral-200 border border-encre-noire/30 px-2 py-0.5 rounded text-[11px] font-semibold text-neutral-600 select-none">
-                        #OGirador (Fixe)
+                  <div className="mt-2 pt-3.5 border-t border-dashed border-cordel-master-dark/15 flex flex-col gap-3">
+                    {/* 1. Gestion des hashtags */}
+                    <div className="flex flex-col gap-1.5">
+                      <span className="text-[10px] uppercase font-bold tracking-wider text-cordel-wood">
+                        ⚙️ Hashtags par défaut de l'association (Admin)
                       </span>
-                      {availableSocialTags.map((tag, idx) => {
-                        const isEditing = editingTagIdx === idx;
-                        return (
-                          <div key={idx} className="flex items-center gap-1 bg-cordel-bg-light border border-encre-noire/35 px-2 py-0.5 rounded text-[11px]">
-                            {isEditing ? (
-                              <div className="flex items-center gap-1 select-none">
-                                <input
-                                  type="text"
-                                  value={editingTagValue}
-                                  onChange={(e) => setEditingTagValue(e.target.value)}
-                                  className="border border-encre-noire px-1 py-0.5 rounded text-[10px] w-24 bg-white"
-                                />
-                                <button
-                                  type="button"
-                                  onClick={() => handleUpdateSocialTag(idx, tag)}
-                                  className="text-green-700 hover:text-green-900 font-extrabold"
-                                  title="Enregistrer"
-                                >
-                                  ✓
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setEditingTagIdx(null);
-                                    setEditingTagValue('');
-                                  }}
-                                  className="text-neutral-500 hover:text-neutral-700 font-bold"
-                                  title="Annuler"
-                                >
-                                  ✕
-                                </button>
-                              </div>
-                            ) : (
-                              <>
-                                <span className="font-bold text-encre-noire">{tag}</span>
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setEditingTagIdx(idx);
-                                    setEditingTagValue(tag);
-                                  }}
-                                  className="text-cordel-wood hover:brightness-75 font-semibold ml-1 cursor-pointer"
-                                  title="Modifier"
-                                >
-                                  ✏️
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => handleDeleteSocialTag(tag)}
-                                  className="text-red-600 hover:text-red-800 font-bold ml-0.5 cursor-pointer"
-                                  title="Supprimer"
-                                >
-                                  ✕
-                                </button>
-                              </>
-                            )}
-                          </div>
-                        );
-                      })}
+                      
+                      <div className="flex gap-1.5 flex-wrap items-center">
+                        <span className="bg-neutral-200 border border-encre-noire/30 px-2 py-0.5 rounded text-[11px] font-semibold text-neutral-600 select-none">
+                          #OGirador (Fixe)
+                        </span>
+                        {availableSocialTags.map((tag, idx) => {
+                          const isEditing = editingTagIdx === idx;
+                          return (
+                            <div key={idx} className="flex items-center gap-1 bg-cordel-bg-light border border-encre-noire/35 px-2 py-0.5 rounded text-[11px]">
+                              {isEditing ? (
+                                <div className="flex items-center gap-1 select-none">
+                                  <input
+                                    type="text"
+                                    value={editingTagValue}
+                                    onChange={(e) => setEditingTagValue(e.target.value)}
+                                    className="border border-encre-noire px-1 py-0.5 rounded text-[10px] w-24 bg-white"
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => handleUpdateSocialTag(idx, tag)}
+                                    className="text-green-700 hover:text-green-900 font-extrabold"
+                                    title="Enregistrer"
+                                  >
+                                    ✓
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setEditingTagIdx(null);
+                                      setEditingTagValue('');
+                                    }}
+                                    className="text-neutral-500 hover:text-neutral-700 font-bold"
+                                    title="Annuler"
+                                  >
+                                    ✕
+                                  </button>
+                                </div>
+                              ) : (
+                                <>
+                                  <span className="font-bold text-encre-noire">{tag}</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setEditingTagIdx(idx);
+                                      setEditingTagValue(tag);
+                                    }}
+                                    className="text-cordel-wood hover:brightness-75 font-semibold ml-1 cursor-pointer"
+                                    title="Modifier"
+                                  >
+                                    ✏️
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeleteSocialTag(tag)}
+                                    className="text-red-600 hover:text-red-800 font-bold ml-0.5 cursor-pointer"
+                                    title="Supprimer"
+                                  >
+                                    ✕
+                                  </button>
+                                </>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      <form onSubmit={handleAddSocialTag} className="flex gap-2 mt-1 items-center">
+                        <input
+                          type="text"
+                          placeholder="Nouveau tag (ex: #musique)"
+                          value={newSocialTag}
+                          onChange={(e) => setNewSocialTag(e.target.value)}
+                          className="theme-input text-xs py-1 px-2 flex-1"
+                        />
+                        <button
+                          type="submit"
+                          disabled={!newSocialTag.trim()}
+                          className="text-[10px] font-black uppercase tracking-wider bg-cordel-secondary text-white px-3 py-1.5 rounded-[4px] border border-encre-noire cursor-pointer hover:brightness-95 disabled:opacity-50"
+                        >
+                          Ajouter tag
+                        </button>
+                      </form>
                     </div>
 
-                    <form onSubmit={handleAddSocialTag} className="flex gap-2 mt-1 items-center">
-                      <input
-                        type="text"
-                        placeholder="Nouveau tag (ex: #musique)"
-                        value={newSocialTag}
-                        onChange={(e) => setNewSocialTag(e.target.value)}
-                        className="theme-input text-xs py-1 px-2 flex-1"
-                      />
-                      <button
-                        type="submit"
-                        disabled={!newSocialTag.trim()}
-                        className="text-[10px] font-black uppercase tracking-wider bg-cordel-secondary text-white px-3 py-1.5 rounded-[4px] border border-encre-noire cursor-pointer hover:brightness-95 disabled:opacity-50"
-                      >
-                        Ajouter
-                      </button>
-                    </form>
+                    {/* 2. Gestion des mots-clés du lexique rapide */}
+                    <div className="flex flex-col gap-1.5 pt-2 border-t border-dashed border-cordel-master-dark/10">
+                      <span className="text-[10px] uppercase font-bold tracking-wider text-amber-900">
+                        📖 Lexique d'insertion rapide personnalisable (Admin)
+                      </span>
+                      <div className="flex gap-1.5 flex-wrap items-center">
+                        {studioLexique.map((term) => (
+                          <div key={term} className="flex items-center gap-1 bg-amber-50 border border-amber-900/30 px-2 py-0.5 rounded text-[11px]">
+                            <span className="font-bold text-amber-950">{term}</span>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteLexiqueTerm(term)}
+                              className="text-red-600 hover:text-red-800 font-bold ml-0.5 cursor-pointer"
+                              title={`Supprimer "${term}" du lexique`}
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+
+                      <form onSubmit={handleAddLexiqueTerm} className="flex gap-2 mt-0.5 items-center">
+                        <input
+                          type="text"
+                          placeholder="Nouveau mot (ex: maracatu)"
+                          value={newLexiqueTerm}
+                          onChange={(e) => setNewLexiqueTerm(e.target.value)}
+                          className="theme-input text-xs py-1 px-2 flex-1"
+                        />
+                        <button
+                          type="submit"
+                          disabled={!newLexiqueTerm.trim()}
+                          className="text-[10px] font-black uppercase tracking-wider bg-amber-800 text-white px-3 py-1.5 rounded-[4px] border border-encre-noire cursor-pointer hover:brightness-95 disabled:opacity-50"
+                        >
+                          Ajouter mot
+                        </button>
+                      </form>
+                    </div>
+
+                    {/* 3. Gestion des mentions sociales */}
+                    <div className="flex flex-col gap-1.5 pt-2 border-t border-dashed border-cordel-master-dark/10">
+                      <span className="text-[10px] uppercase font-bold tracking-wider text-blue-900">
+                        @ Mentions de comptes personnalisables (Admin)
+                      </span>
+                      <div className="flex gap-1.5 flex-wrap items-center">
+                        {studioMentions.map((mention) => (
+                          <div key={mention} className="flex items-center gap-1 bg-blue-50 border border-blue-900/30 px-2 py-0.5 rounded text-[11px]">
+                            <span className="font-bold text-blue-950">{mention}</span>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteMention(mention)}
+                              className="text-red-600 hover:text-red-800 font-bold ml-0.5 cursor-pointer"
+                              title={`Supprimer "${mention}" des mentions`}
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+
+                      <form onSubmit={handleAddMention} className="flex gap-2 mt-0.5 items-center">
+                        <input
+                          type="text"
+                          placeholder="Nouvelle mention (ex: @nom_partenaire)"
+                          value={newMention}
+                          onChange={(e) => setNewMention(e.target.value)}
+                          className="theme-input text-xs py-1 px-2 flex-1"
+                        />
+                        <button
+                          type="submit"
+                          disabled={!newMention.trim()}
+                          className="text-[10px] font-black uppercase tracking-wider bg-blue-900 text-white px-3 py-1.5 rounded-[4px] border border-encre-noire cursor-pointer hover:brightness-95 disabled:opacity-50"
+                        >
+                          Ajouter mention
+                        </button>
+                      </form>
+                    </div>
                   </div>
                 )}
               </>
@@ -1117,11 +1280,13 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
                 )}
               </div>
 
-              {/* Barre d'outils typographique Unicode & Palette d'émoticônes */}
+              {/* Barre d'outils typographique Unicode, Palette d'émoticônes & Guide */}
               <StudioTextToolbar
                 textareaRef={textareaRef}
                 text={publicationText}
                 onChange={setPublicationText}
+                lexique={studioLexique}
+                mentions={studioMentions}
               />
 
               <textarea

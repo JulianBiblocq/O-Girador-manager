@@ -1,20 +1,29 @@
 import React, { useState } from 'react';
 import { applyUnicodeTransformation, insertTextAtCursor } from '../../utils/unicodeUtils';
+import StudioEmojiPicker from './StudioEmojiPicker';
+import StudioQuickChips from './StudioQuickChips';
+import StudioWritingGuide from './StudioWritingGuide';
 
 /**
- * Barre d'outils typographique et palette d'émoticônes pour le Studio Social.
- *
- * Permet d'enrichir la légende avec des caractères gras et italiques Unicode
- * (compatibles avec toutes les plateformes comme Instagram, Facebook, WhatsApp)
- * et d'insérer rapidement les émoticônes courantes de l'association.
+ * Barre d'outils typographique, palette d'émoticônes catégorisée,
+ * chips de vocabulaire rapide et guide rédactionnel pour le Studio Social.
  *
  * @param {Object} props
  * @param {React.RefObject<HTMLTextAreaElement>} props.textareaRef Référence du champ textarea
  * @param {string} props.text Texte actuel
  * @param {Function} props.onChange Callback de modification du texte
  * @param {boolean} [props.disabled=false] Indique si la barre d'outils est désactivée
+ * @param {Array<string>} [props.lexique] Liste personnalisée de termes du lexique
+ * @param {Array<string>} [props.mentions] Liste personnalisée de mentions
  */
-export default function StudioTextToolbar({ textareaRef, text = '', onChange, disabled = false }) {
+export default function StudioTextToolbar({
+  textareaRef,
+  text = '',
+  onChange,
+  disabled = false,
+  lexique,
+  mentions
+}) {
   const [feedbackMessage, setFeedbackMessage] = useState('');
 
   const showFeedback = (msg) => {
@@ -44,7 +53,6 @@ export default function StudioTextToolbar({ textareaRef, text = '', onChange, di
 
     if (applied) {
       onChange(newText);
-      // Repositionner la sélection sur la tranche transformée après mise à jour du rendu
       setTimeout(() => {
         if (textareaRef.current) {
           textareaRef.current.focus();
@@ -55,7 +63,7 @@ export default function StudioTextToolbar({ textareaRef, text = '', onChange, di
   };
 
   /**
-   * Insère une émoticône à l'emplacement exact du curseur
+   * Insère une émoticône à l'emplacement exact du curseur sans perdre le focus
    */
   const handleInsertEmoji = (emoji) => {
     const textarea = textareaRef?.current;
@@ -65,7 +73,6 @@ export default function StudioTextToolbar({ textareaRef, text = '', onChange, di
     const { newText, newCursorPos } = insertTextAtCursor(text, start, end, emoji);
     onChange(newText);
 
-    // Repositionner le curseur juste après l'émoticône insérée
     setTimeout(() => {
       if (textareaRef?.current) {
         textareaRef.current.focus();
@@ -74,67 +81,91 @@ export default function StudioTextToolbar({ textareaRef, text = '', onChange, di
     }, 0);
   };
 
-  const emojiList = [
-    { emoji: '📅', label: 'Date' },
-    { emoji: '📍', label: 'Lieu' },
-    { emoji: '🥁', label: 'Percussion / Musique' },
-    { emoji: '⏰', label: 'Horaires' },
-    { emoji: '🎟️', label: 'Billetterie / Entrée' },
-    { emoji: '✨', label: 'Étoiles / Éclat' }
-  ];
+  /**
+   * Insère un mot-clé ou une mention au curseur avec un espacement adapté
+   */
+  const handleInsertWord = (word) => {
+    const textarea = textareaRef?.current;
+    const start = textarea ? textarea.selectionStart : text.length;
+    const end = textarea ? textarea.selectionEnd : text.length;
+
+    // Ajouter un espace avant et après si nécessaire pour que le mot s'insère naturellement
+    const beforeChar = start > 0 ? text[start - 1] : '';
+    const afterChar = end < text.length ? text[end] : '';
+    const prefix = beforeChar && beforeChar !== ' ' && beforeChar !== '\n' ? ' ' : '';
+    const suffix = afterChar && afterChar !== ' ' && afterChar !== '\n' ? ' ' : ' ';
+    const textToInsert = `${prefix}${word}${suffix}`;
+
+    const { newText, newCursorPos } = insertTextAtCursor(text, start, end, textToInsert);
+    onChange(newText);
+
+    setTimeout(() => {
+      if (textareaRef?.current) {
+        textareaRef.current.focus();
+        textareaRef.current.setSelectionRange(newCursorPos, newCursorPos);
+      }
+    }, 0);
+  };
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-1.5 p-1.5 bg-cordel-bg-light border border-b-0 border-encre-noire/30 rounded-t select-none text-xs">
-      {/* Outils de mise en forme typographique */}
-      <div className="flex items-center gap-1">
-        <button
-          type="button"
-          disabled={disabled}
-          onMouseDown={(e) => e.preventDefault()}
-          onClick={() => handleFormat('bold')}
-          className="px-2 py-1 bg-white hover:bg-neutral-100 active:bg-neutral-200 border border-encre-noire/30 rounded font-serif font-black text-sm tracking-wide transition-all shadow-xs cursor-pointer disabled:opacity-40"
-          title="Mettre en gras (Unicode Mathematical Bold)"
-        >
-          𝐁
-        </button>
-
-        <button
-          type="button"
-          disabled={disabled}
-          onMouseDown={(e) => e.preventDefault()}
-          onClick={() => handleFormat('italic')}
-          className="px-2 py-1 bg-white hover:bg-neutral-100 active:bg-neutral-200 border border-encre-noire/30 rounded font-serif italic font-bold text-sm tracking-wide transition-all shadow-xs cursor-pointer disabled:opacity-40"
-          title="Mettre en italique (Unicode Mathematical Italic)"
-        >
-          𝐼
-        </button>
-
-        <div className="w-[1px] h-5 bg-cordel-master-dark/20 mx-1" />
-
-        {/* Palette d'émoticônes rapides */}
-        <div className="flex items-center gap-1">
-          {emojiList.map(({ emoji, label }) => (
+    <div className="flex flex-col gap-2 p-2 bg-cordel-bg-light border border-b-0 border-encre-noire/30 rounded-t select-none text-xs">
+      {/* 1. Rangée supérieure : Outils typographiques, sélecteur d'émoticônes et rétroaction */}
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Outils Gras / Italique */}
+          <div className="flex items-center gap-1">
             <button
-              key={emoji}
               type="button"
               disabled={disabled}
               onMouseDown={(e) => e.preventDefault()}
-              onClick={() => handleInsertEmoji(emoji)}
-              className="p-1 text-sm hover:scale-115 active:scale-95 transition-transform cursor-pointer rounded hover:bg-white/60 disabled:opacity-40"
-              title={`Insérer ${emoji} (${label})`}
+              onClick={() => handleFormat('bold')}
+              className="px-2 py-1 bg-white hover:bg-neutral-100 active:bg-neutral-200 border border-encre-noire/30 rounded font-serif font-black text-sm tracking-wide transition-all shadow-xs cursor-pointer disabled:opacity-40"
+              title="Mettre en gras (Unicode Mathematical Bold)"
             >
-              {emoji}
+              𝐁
             </button>
-          ))}
+
+            <button
+              type="button"
+              disabled={disabled}
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => handleFormat('italic')}
+              className="px-2 py-1 bg-white hover:bg-neutral-100 active:bg-neutral-200 border border-encre-noire/30 rounded font-serif italic font-bold text-sm tracking-wide transition-all shadow-xs cursor-pointer disabled:opacity-40"
+              title="Mettre en italique (Unicode Mathematical Italic)"
+            >
+              𝐼
+            </button>
+          </div>
+
+          <div className="w-[1px] h-6 bg-cordel-master-dark/20 hidden sm:block" />
+
+          {/* Palette d'émoticônes catégorisée (4 catégories compactes) */}
+          <StudioEmojiPicker
+            onSelectEmoji={handleInsertEmoji}
+            disabled={disabled}
+          />
         </div>
+
+        {/* Message d'aide / rétroaction discrète */}
+        {feedbackMessage && (
+          <span className="text-[10px] font-bold text-cordel-wood animate-fade-in pr-1">
+            ℹ️ {feedbackMessage}
+          </span>
+        )}
       </div>
 
-      {/* Message d'aide / rétroaction discrète */}
-      {feedbackMessage && (
-        <span className="text-[10px] font-bold text-cordel-wood animate-fade-in pr-1">
-          ℹ️ {feedbackMessage}
-        </span>
-      )}
+      {/* 2. Rangée intermédiaire : Chips de mots-clés et mentions rapides */}
+      <StudioQuickChips
+        onInsertWord={handleInsertWord}
+        lexique={lexique}
+        mentions={mentions}
+        disabled={disabled}
+      />
+
+      {/* 3. Accordéon rétractable : Guide de rédaction et équivalences culturelles */}
+      <StudioWritingGuide
+        onInsertTerm={handleInsertWord}
+      />
     </div>
   );
 }
