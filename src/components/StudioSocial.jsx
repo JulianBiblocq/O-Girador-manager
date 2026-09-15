@@ -284,10 +284,13 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
     const updatedTags = [...availableSocialTags, tag];
     try {
       const assocRef = doc(db, 'associations', groupId);
-      await updateDoc(assocRef, { studioSocialTags: updatedTags });
+      await updateDoc(assocRef, {
+        studioSocialTags: updatedTags,
+        'studioLexiqueConfig.hashtags': updatedTags
+      });
       setNewSocialTag('');
     } catch (err) {
-      console.error("Error adding social tag:", err);
+      console.error("Erreur ajout tag social :", err);
       alert("Erreur lors de l'ajout du tag.");
     }
   };
@@ -302,7 +305,11 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
       alert("Le tag #OGirador est fixe et ne peut pas être modifié.");
       return;
     }
-    if (availableSocialTags.includes(tag) && tag !== oldTag) {
+    const tagMatches = availableSocialTags.some((t, i) => {
+      const existing = typeof t === 'string' ? t : (t?.tag || t?.label || '');
+      return i !== idx && existing.toLowerCase() === tag.toLowerCase();
+    });
+    if (tagMatches) {
       alert("Ce tag existe déjà.");
       return;
     }
@@ -310,34 +317,44 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
     updatedTags[idx] = tag;
     try {
       const assocRef = doc(db, 'associations', groupId);
-      await updateDoc(assocRef, { studioSocialTags: updatedTags });
+      await updateDoc(assocRef, {
+        studioSocialTags: updatedTags,
+        'studioLexiqueConfig.hashtags': updatedTags
+      });
       setEditingTagIdx(null);
       setEditingTagValue('');
     } catch (err) {
-      console.error("Error updating social tag:", err);
+      console.error("Erreur modification tag social :", err);
       alert("Erreur lors de la modification du tag.");
     }
   };
 
   const handleDeleteSocialTag = async (tagToDelete) => {
-    if (tagToDelete.toLowerCase() === '#ogirador') {
+    const tagStr = typeof tagToDelete === 'string' ? tagToDelete : (tagToDelete?.tag || tagToDelete?.label || '');
+    if (tagStr.toLowerCase() === '#ogirador') {
       alert("Le tag #OGirador est fixe et ne peut pas être supprimé.");
       return;
     }
     const ok = await confirm({
       title: "Supprimer le tag",
-      message: `Voulez-vous supprimer le tag ${tagToDelete} ?`,
+      message: `Voulez-vous supprimer le tag ${tagStr} ?`,
       confirmText: "Oui, supprimer",
       cancelText: "Annuler",
       variant: "danger"
     });
     if (!ok) return;
-    const updatedTags = availableSocialTags.filter(t => t !== tagToDelete);
+    const updatedTags = availableSocialTags.filter((t) => {
+      const current = typeof t === 'string' ? t : (t?.tag || t?.label || '');
+      return current !== tagStr;
+    });
     try {
       const assocRef = doc(db, 'associations', groupId);
-      await updateDoc(assocRef, { studioSocialTags: updatedTags });
+      await updateDoc(assocRef, {
+        studioSocialTags: updatedTags,
+        'studioLexiqueConfig.hashtags': updatedTags
+      });
     } catch (err) {
-      console.error("Error deleting social tag:", err);
+      console.error("Erreur suppression tag social :", err);
       alert("Erreur lors de la suppression du tag.");
     }
   };
@@ -347,7 +364,11 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
     e.preventDefault();
     const term = newLexiqueTerm.trim().toLowerCase();
     if (!term || !groupId) return;
-    if (studioLexique.includes(term)) {
+    const alreadyExists = studioLexique.some((t) => {
+      const label = typeof t === 'string' ? t : (t?.preferred || t?.recommande || t?.term || '');
+      return label.toLowerCase() === term;
+    });
+    if (alreadyExists) {
       alert("Ce mot existe déjà dans le lexique.");
       return;
     }
@@ -365,7 +386,13 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
 
   const handleDeleteLexiqueTerm = async (termToDelete) => {
     if (!groupId) return;
-    const updated = studioLexique.filter((t) => t !== termToDelete);
+    const targetLabel = typeof termToDelete === 'string'
+      ? termToDelete
+      : (termToDelete?.preferred || termToDelete?.recommande || termToDelete?.term || '');
+    const updated = studioLexique.filter((t) => {
+      const label = typeof t === 'string' ? t : (t?.preferred || t?.recommande || t?.term || '');
+      return label !== targetLabel;
+    });
     try {
       const assocRef = doc(db, 'associations', groupId);
       await updateDoc(assocRef, { studioLexique: updated });
@@ -383,14 +410,27 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
     if (!mention.startsWith('@')) {
       mention = '@' + mention;
     }
-    if (studioMentions.includes(mention)) {
+    const alreadyExists = studioMentions.some((m) => {
+      const h = typeof m === 'object' && m !== null ? m.handle : m;
+      return h?.toLowerCase() === mention.toLowerCase();
+    });
+    if (alreadyExists) {
       alert("Cette mention existe déjà.");
       return;
     }
-    const updated = [...studioMentions, mention];
+
+    const hasObjects = studioMentions.some((m) => typeof m === 'object' && m !== null);
+    const newEntry = hasObjects
+      ? { id: `m_${Date.now()}`, handle: mention, label: mention.replace(/^@/, '') }
+      : mention;
+
+    const updated = [...studioMentions, newEntry];
     try {
       const assocRef = doc(db, 'associations', groupId);
-      await updateDoc(assocRef, { studioMentions: updated });
+      await updateDoc(assocRef, {
+        studioMentions: updated,
+        'studioLexiqueConfig.mentions': updated
+      });
       setStudioMentions(updated);
       setNewMention('');
     } catch (err) {
@@ -401,10 +441,21 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
 
   const handleDeleteMention = async (mentionToDelete) => {
     if (!groupId) return;
-    const updated = studioMentions.filter((m) => m !== mentionToDelete);
+    const targetKey = typeof mentionToDelete === 'object' && mentionToDelete !== null
+      ? (mentionToDelete.id || mentionToDelete.handle)
+      : mentionToDelete;
+
+    const updated = studioMentions.filter((m) => {
+      const key = typeof m === 'object' && m !== null ? (m.id || m.handle) : m;
+      return key !== targetKey;
+    });
+
     try {
       const assocRef = doc(db, 'associations', groupId);
-      await updateDoc(assocRef, { studioMentions: updated });
+      await updateDoc(assocRef, {
+        studioMentions: updated,
+        'studioLexiqueConfig.mentions': updated
+      });
       setStudioMentions(updated);
     } catch (err) {
       console.error("Erreur suppression mention :", err);
@@ -1186,6 +1237,26 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
                 {/* Interface de Gestion des Tags, Lexique et Mentions pour l'Administrateur */}
                 {isAuthorized && (
                   <div className="mt-2 pt-3.5 border-t border-dashed border-cordel-master-dark/15 flex flex-col gap-3">
+                    {/* Raccourci vers le gestionnaire complet du Lexique */}
+                    {onNavigateToView && (
+                      <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 bg-amber-50/80 border border-amber-800/30 rounded text-xs">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-base">⚙️</span>
+                          <span className="font-bold text-amber-950">
+                            Gestion complète du Lexique, Mentions et Hashtags
+                          </span>
+                        </div>
+                        <CordelButton
+                          variant="ocre"
+                          size="small"
+                          onClick={() => onNavigateToView('studio-lexique')}
+                          className="text-[10px] font-black uppercase tracking-wider py-1 px-2.5"
+                        >
+                          Ouvrir l'onglet Lexique →
+                        </CordelButton>
+                      </div>
+                    )}
+
                     {/* 1. Gestion des hashtags */}
                     <div className="flex flex-col gap-1.5">
                       <span className="text-[10px] uppercase font-bold tracking-wider text-cordel-wood">
@@ -1198,6 +1269,7 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
                         </span>
                         {availableSocialTags.map((tag, idx) => {
                           const isEditing = editingTagIdx === idx;
+                          const tagStr = typeof tag === 'string' ? tag : (tag?.tag || tag?.label || String(tag));
                           return (
                             <div key={idx} className="flex items-center gap-1 bg-cordel-bg-light border border-encre-noire/35 px-2 py-0.5 rounded text-[11px]">
                               {isEditing ? (
@@ -1210,8 +1282,8 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
                                   />
                                   <button
                                     type="button"
-                                    onClick={() => handleUpdateSocialTag(idx, tag)}
-                                    className="text-green-700 hover:text-green-900 font-extrabold"
+                                    onClick={() => handleUpdateSocialTag(idx, tagStr)}
+                                    className="text-[var(--color-cordel-vert,#2d6a4f)] hover:brightness-75 font-extrabold"
                                     title="Enregistrer"
                                   >
                                     ✓
@@ -1230,12 +1302,12 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
                                 </div>
                               ) : (
                                 <>
-                                  <span className="font-bold text-encre-noire">{tag}</span>
+                                  <span className="font-bold text-encre-noire">{tagStr}</span>
                                   <button
                                     type="button"
                                     onClick={() => {
                                       setEditingTagIdx(idx);
-                                      setEditingTagValue(tag);
+                                      setEditingTagValue(tagStr);
                                     }}
                                     className="text-cordel-wood hover:brightness-75 font-semibold ml-1 cursor-pointer"
                                     title="Modifier"
@@ -1244,8 +1316,8 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
                                   </button>
                                   <button
                                     type="button"
-                                    onClick={() => handleDeleteSocialTag(tag)}
-                                    className="text-red-600 hover:text-red-800 font-bold ml-0.5 cursor-pointer"
+                                    onClick={() => handleDeleteSocialTag(tagStr)}
+                                    className="text-[var(--color-cordel-rouge,#8b2a1a)] hover:brightness-75 font-bold ml-0.5 cursor-pointer"
                                     title="Supprimer"
                                   >
                                     ✕
@@ -1281,19 +1353,25 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
                         📖 Lexique d'insertion rapide personnalisable (Admin)
                       </span>
                       <div className="flex gap-1.5 flex-wrap items-center">
-                        {studioLexique.map((term) => (
-                          <div key={term} className="flex items-center gap-1 bg-amber-50 border border-amber-900/30 px-2 py-0.5 rounded text-[11px]">
-                            <span className="font-bold text-amber-950">{term}</span>
-                            <button
-                              type="button"
-                              onClick={() => handleDeleteLexiqueTerm(term)}
-                              className="text-red-600 hover:text-red-800 font-bold ml-0.5 cursor-pointer"
-                              title={`Supprimer "${term}" du lexique`}
-                            >
-                              ✕
-                            </button>
-                          </div>
-                        ))}
+                        {studioLexique.map((term, idx) => {
+                          const isObj = typeof term === 'object' && term !== null;
+                          const termLabel = isObj ? (term.preferred || term.recommande || term.term || '') : String(term || '');
+                          const key = isObj ? (term.id || termLabel || idx) : `${termLabel}-${idx}`;
+                          if (!termLabel) return null;
+                          return (
+                            <div key={key} className="flex items-center gap-1 bg-amber-50 border border-amber-900/30 px-2 py-0.5 rounded text-[11px]">
+                              <span className="font-bold text-amber-950">{termLabel}</span>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteLexiqueTerm(term)}
+                                className="text-[var(--color-cordel-rouge,#8b2a1a)] hover:brightness-75 font-bold ml-0.5 cursor-pointer"
+                                title={`Supprimer "${termLabel}" du lexique`}
+                              >
+                                ✕
+                              </button>
+                            </div>
+                          );
+                        })}
                       </div>
 
                       <form onSubmit={handleAddLexiqueTerm} className="flex gap-2 mt-0.5 items-center">
@@ -1320,19 +1398,31 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
                         @ Mentions de comptes personnalisables (Admin)
                       </span>
                       <div className="flex gap-1.5 flex-wrap items-center">
-                        {studioMentions.map((mention) => (
-                          <div key={mention} className="flex items-center gap-1 bg-blue-50 border border-blue-900/30 px-2 py-0.5 rounded text-[11px]">
-                            <span className="font-bold text-blue-950">{mention}</span>
-                            <button
-                              type="button"
-                              onClick={() => handleDeleteMention(mention)}
-                              className="text-red-600 hover:text-red-800 font-bold ml-0.5 cursor-pointer"
-                              title={`Supprimer "${mention}" des mentions`}
-                            >
-                              ✕
-                            </button>
-                          </div>
-                        ))}
+                        {studioMentions.map((mention, idx) => {
+                          const isObj = typeof mention === 'object' && mention !== null;
+                          const handle = isObj ? (mention.handle || '') : String(mention || '');
+                          const label = isObj && mention.label ? mention.label : handle;
+                          const key = isObj ? (mention.id || mention.handle || idx) : `${handle}-${idx}`;
+
+                          if (!handle && !label) return null;
+
+                          return (
+                            <div key={key} className="flex items-center gap-1 bg-blue-50 border border-blue-900/30 px-2 py-0.5 rounded text-[11px]">
+                              <span className="font-bold text-blue-950">{label}</span>
+                              {isObj && mention.label && mention.handle && mention.label !== mention.handle && (
+                                <span className="text-[10px] text-blue-900/70 font-mono">({handle})</span>
+                              )}
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteMention(mention)}
+                                className="text-[var(--color-cordel-rouge,#8b2a1a)] hover:brightness-75 font-bold ml-0.5 cursor-pointer"
+                                title={`Supprimer "${label || handle}" des mentions`}
+                              >
+                                ✕
+                              </button>
+                            </div>
+                          );
+                        })}
                       </div>
 
                       <form onSubmit={handleAddMention} className="flex gap-2 mt-0.5 items-center">
