@@ -81,6 +81,21 @@ const ForumThreadCard = React.memo(({
               📊 Sondage {thread.poll.isClosed ? '(Clôturé)' : ''}
             </span>
           )}
+          {thread.validationData && (
+            <span className={`theme-stamp-badge text-[7px] rotate-0 font-bold ${
+              thread.validationData.statut === 'approuve'
+                ? 'theme-stamp-badge-vert'
+                : thread.validationData.statut === 'retouche_demandee'
+                ? 'theme-stamp-badge-wood'
+                : 'theme-stamp-badge-ocre'
+            }`}>
+              {thread.validationData.statut === 'approuve' 
+                ? '✅ Validé' 
+                : thread.validationData.statut === 'retouche_demandee'
+                ? '💬 Retouche requise'
+                : '⏳ En attente validation'}
+            </span>
+          )}
           {isUnread && (
             <span className="text-[7.5px] font-black text-white bg-red-600 px-1.5 py-0.5 rounded shadow-xs uppercase tracking-wider flex items-center gap-1">
               <span className="w-1.5 h-1.5 bg-white rounded-full animate-ping"></span>

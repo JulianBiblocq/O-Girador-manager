@@ -34,9 +34,9 @@ export function useConversations(user, groupId, profileData) {
     }
 
     const convRef = collection(db, 'conversations');
+    // Requête par participantIds (index simple natif Firestore sans index composé requis)
     const q = query(
       convRef,
-      where('groupId', '==', groupId),
       where('participantIds', 'array-contains', user.uid)
     );
 
@@ -45,7 +45,14 @@ export function useConversations(user, groupId, profileData) {
       (snapshot) => {
         const list = [];
         snapshot.forEach((docSnap) => {
-          list.push({ id: docSnap.id, ...docSnap.data() });
+          const data = docSnap.data();
+          // Filtrage souple multi-tenant insensible à la casse
+          const matchesGroup = !groupId || !data.groupId || 
+            String(data.groupId).toLowerCase() === String(groupId).toLowerCase();
+
+          if (matchesGroup) {
+            list.push({ id: docSnap.id, ...data });
+          }
         });
 
         // Trier par date de dernière activité (mise à jour ou création) décroissante

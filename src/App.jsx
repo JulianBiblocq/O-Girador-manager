@@ -853,12 +853,11 @@ export default function App() {
 
     // 2. Écoute des conversations modernes (groupes et directes) avec isolation multi-tenant
     let unsubConv = () => {};
-    if (profileData?.groupId) {
+    if (user?.uid) {
       try {
         const convRef = collection(db, 'conversations');
         const qConv = query(
           convRef,
-          where('groupId', '==', profileData.groupId),
           where('participantIds', 'array-contains', user.uid)
         );
 
@@ -869,6 +868,11 @@ export default function App() {
 
           snap.forEach(docSnap => {
             const data = docSnap.data();
+            const matchesGroup = !profileData?.groupId || !data.groupId ||
+              String(data.groupId).toLowerCase() === String(profileData.groupId).toLowerCase();
+
+            if (!matchesGroup) return;
+
             const lastMsg = data.lastMessage;
             const lastReadIso = data.readStatus?.[user.uid];
 

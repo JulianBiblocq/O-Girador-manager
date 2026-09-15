@@ -317,24 +317,43 @@ export default function Forum({
     return () => unsub();
   }, [profileData?.groupId]);
 
-  // Synchronisation temps réel des messages privés historiques
+  // Synchronisation temps réel des messages privés historiques (avec deux écoutes résilientes évitant les limites de requêtes OR)
   useEffect(() => {
     if (!user?.uid) return;
     const messagesRef = collection(db, 'private_messages');
-    const q = query(
-      messagesRef,
-      or(where('senderId', '==', user.uid), where('recipientId', '==', user.uid))
-    );
-    const unsubscribe = onSnapshot(q, (snap) => {
-      const fetched = [];
-      snap.forEach(doc => {
-        fetched.push({ id: doc.id, ...doc.data() });
-      });
-      setPrivateMessages(fetched);
+    
+    let sentList = [];
+    let receivedList = [];
+
+    const syncCombinedMessages = () => {
+      const map = new Map();
+      sentList.forEach(m => map.set(m.id, m));
+      receivedList.forEach(m => map.set(m.id, m));
+      setPrivateMessages(Array.from(map.values()));
+    };
+
+    const qSent = query(messagesRef, where('senderId', '==', user.uid));
+    const unsubSent = onSnapshot(qSent, (snap) => {
+      sentList = [];
+      snap.forEach(d => sentList.push({ id: d.id, ...d.data() }));
+      syncCombinedMessages();
     }, (error) => {
-      console.error("Forum - Erreur de synchronisation des messages privés :", error);
+      console.warn("Forum - Erreur écoute messages envoyés :", error);
     });
-    return () => unsubscribe();
+
+    const qRecv = query(messagesRef, where('recipientId', '==', user.uid));
+    const unsubRecv = onSnapshot(qRecv, (snap) => {
+      receivedList = [];
+      snap.forEach(d => receivedList.push({ id: d.id, ...d.data() }));
+      syncCombinedMessages();
+    }, (error) => {
+      console.warn("Forum - Erreur écoute messages reçus :", error);
+    });
+
+    return () => {
+      unsubSent();
+      unsubRecv();
+    };
   }, [user?.uid]);
 
   // Ouverture automatique d'une discussion privée en cas de rédirection depuis le Trombinoscope

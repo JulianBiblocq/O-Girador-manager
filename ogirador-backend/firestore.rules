@@ -474,6 +474,21 @@ service cloud.firestore {
       allow create, delete: if canManageEvents();
       allow update: if isAuthenticated() && (
         canManageEvents() || 
+        (
+          isDocSameGroup() && 
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'publicationTexte', 'publicationVisuelUrl', 'statutPublication', 
+            'publicationRedacteurId', 'publicationDateSoumission', 'publicationValidationThreadId'
+          ]) &&
+          request.resource.data.statutPublication == 'en_attente'
+        ) ||
+        (
+          isDocSameGroup() &&
+          isAdminOrMestre() &&
+          request.resource.data.diff(resource.data).affectedKeys().hasAny([
+            'statutPublication', 'publicationDateApprobation', 'publicationApprouvePar', 'publicationDerniereRetouche'
+          ])
+        ) ||
         (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['inscriptions', 'invitesExternes']))
       );
 
@@ -540,7 +555,7 @@ service cloud.firestore {
         ) ||
         (
           hasChannelWriteAccess(resource.data.channelId) &&
-          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reponses', 'derniereModification', 'poll'])
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reponses', 'derniereModification', 'poll', 'validationData'])
         )
       );
       allow delete: if isAdminOrMestre() || isModerator() || (isAuthenticated() && resource.data.authorId == request.auth.uid);

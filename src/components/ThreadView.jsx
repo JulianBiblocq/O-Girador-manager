@@ -7,6 +7,7 @@ import MoveReplyModal from './MoveReplyModal';
 import { useTranslation } from './LanguageContext';
 import { useThreadData } from '../hooks/useThreadData';
 import ThreadHeader from './forum/thread/ThreadHeader';
+import ThreadValidationCard from './forum/thread/ThreadValidationCard';
 import ThreadPollSection from './forum/thread/ThreadPollSection';
 import ThreadMessageList from './forum/thread/ThreadMessageList';
 import ThreadReplyBar from './forum/thread/ThreadReplyBar';
@@ -102,6 +103,17 @@ export default function ThreadView({
             t={t}
             getCategoryLabel={threadData.getCategoryLabel}
           />
+
+          {/* Section d'approbation collaborative de la publication réseaux sociaux */}
+          {threadData.thread?.validationData && (
+            <ThreadValidationCard
+              thread={threadData.thread}
+              userId={user?.uid}
+              profileData={profileData}
+              isModeratorOrAdmin={threadData.isModeratorOrAdmin}
+              allUsers={allUsers}
+            />
+          )}
 
           {/* Section sondage interactif & modale d'ajout */}
           <ThreadPollSection
