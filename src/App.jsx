@@ -23,6 +23,9 @@ import PendingValidationScreen from './components/auth/PendingValidationScreen';
 import { useTenantContext } from './context/TenantContext';
 import TenantNotFound from './components/TenantNotFound';
 import { DEFAULT_VARAL_CATEGORIES } from './hooks/useAssociationSettings';
+import { isDemoMode, initDemoSession, getDemoAuthUser, getDemoProfileData } from './demo/demoManager';
+import { DEMO_GROUP_ID } from './data/demoData';
+import DemoTopBanner from './components/demo/DemoTopBanner';
 
 const Onboarding = lazyWithRetry(() => import('./components/Onboarding'));
 const OnboardingWizard = lazyWithRetry(() => import('./components/onboarding/OnboardingWizard'));
@@ -284,11 +287,17 @@ function OrchestradorRedirector({ brandingStyle }) {
 export default function App() {
   const { appMode, groupId: urlGroupId, urls, isLocalhost, isTenantLoading, tenantError } = useTenantContext();
   const { t } = useTranslation();
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+
+  // Initialisation automatique du mode démo local si la route /demo ou ?demo=true est présente
+  if (typeof window !== 'undefined' && isDemoMode()) {
+    initDemoSession();
+  }
+
+  const [user, setUser] = useState(() => (isDemoMode() ? getDemoAuthUser() : null));
+  const [loading, setLoading] = useState(() => (isDemoMode() ? false : true));
   const [checkingProfile, setCheckingProfile] = useState(false);
-  const [profileExists, setProfileExists] = useState(false);
-  const [profileData, setProfileData] = useState(null);
+  const [profileExists, setProfileExists] = useState(() => (isDemoMode() ? true : false));
+  const [profileData, setProfileData] = useState(() => (isDemoMode() ? getDemoProfileData() : null));
   const [branding, setBranding] = useState(null);
   const [associationName, setAssociationName] = useState('');
   const [majoriteFeminine, setMajoriteFeminine] = useState(false);
@@ -966,6 +975,18 @@ export default function App() {
     const initAuth = () => {
       if (!isMounted) return;
 
+      // En mode démo, injecter immédiatement le profil Mestre da Ria sans contacter Firebase Auth
+      if (isDemoMode()) {
+        const demoUser = getDemoAuthUser();
+        const demoProfile = getDemoProfileData();
+        setUser(demoUser);
+        setProfileData(demoProfile);
+        setProfileExists(true);
+        setCheckingProfile(false);
+        setLoading(false);
+        return;
+      }
+
       unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
         // Si une opération SSO est activement en cours d'échange de jeton et que l'utilisateur est temporairement null,
         // on évite de flasher l'état déconnecté.
@@ -1114,14 +1135,25 @@ export default function App() {
 
   // 2. Routage dynamique : Vitrine Publique One-Page, Racine, Setup
 
-  const isRootPath = !currentRoute || currentRoute === '/' || currentRoute === '' || currentRoute === '/index.html' || currentRoute.startsWith('/?') || currentRoute.startsWith('/#');
+  // Détection explicite du mode Vitrine (Mostrador) en démo
+  const isDemoVitrine = isDemoMode() && (
+    appMode === 'mostrador' || 
+    (typeof window !== 'undefined' && (
+      new URLSearchParams(window.location.search).get('app') === 'mostrador' ||
+      window.location.pathname.includes('/vitrine') ||
+      window.location.pathname.includes('/mostrador')
+    ))
+  );
+
+  const isDemoPath = (currentRoute === '/demo' || currentRoute === '/demo/' || currentRoute.startsWith('/demo/') || isDemoMode()) && !isDemoVitrine;
+  const isRootPath = (!currentRoute || currentRoute === '/' || currentRoute === '' || currentRoute === '/index.html' || currentRoute.startsWith('/?') || currentRoute.startsWith('/#')) && !isDemoPath && !isDemoVitrine;
   const isSetupPath = currentRoute.startsWith('/setup');
-  const isAppPath = currentRoute.startsWith('/app');
-  const isLoginPath = currentRoute === '/login' || currentRoute === '/login/';
+  const isAppPath = currentRoute.startsWith('/app') || isDemoPath;
+  const isLoginPath = (currentRoute === '/login' || currentRoute === '/login/') && !isDemoPath && !isDemoVitrine;
   
-  // Toute autre route (ex: /asso-01) est traitée comme une route vitrine
-  const isVitrinePath = !isRootPath && !isSetupPath && !isAppPath && !isLoginPath;
-  const vitrineGroupId = isVitrinePath ? currentRoute.split('/')[1]?.split('?')[0] : null;
+  // Toute autre route (ex: /asso-01 ou vitrine démo) est traitée comme une route vitrine
+  const isVitrinePath = isDemoVitrine || (!isRootPath && !isSetupPath && !isAppPath && !isLoginPath);
+  const vitrineGroupId = isDemoMode() ? DEMO_GROUP_ID : (isVitrinePath ? currentRoute.split('/')[1]?.split('?')[0] : null);
 
   if (isSetupPath) {
     return (
@@ -1160,10 +1192,11 @@ export default function App() {
       return <OrganizadorRedirector user={user} navigateToRoute={navigateToRoute} brandingStyle={brandingStyle} />;
     }
 
-    const publicGroupId = vitrineGroupId || urlGroupId || profileData?.groupId || null;
+    const publicGroupId = isDemoMode() ? DEMO_GROUP_ID : (vitrineGroupId || urlGroupId || profileData?.groupId || null);
 
     return (
       <PublicThemeProvider groupId={publicGroupId}>
+        {isDemoMode() && <DemoTopBanner isVitrine={isDemoVitrine} />}
         <PublicHome
           groupId={publicGroupId}
           user={user}
@@ -1171,10 +1204,22 @@ export default function App() {
           permissionsMatrice={permissionsMatrice}
           effectiveUserTags={userTags}
           isAdministrativeUser={isAdministrativeUser}
-          associationName={associationName}
+          associationName={associationName || (isDemoMode() ? 'Maracatu Na Chuva' : '')}
           branding={branding}
-          onNavigateToApp={() => navigateToRoute(user ? '/app' : '/login')}
-          onNavigateToLogin={() => navigateToRoute('/login')}
+          onNavigateToApp={() => {
+            if (isDemoMode()) {
+              window.location.href = '/demo?app=organizador';
+            } else {
+              navigateToRoute(user ? '/app' : '/login');
+            }
+          }}
+          onNavigateToLogin={() => {
+            if (isDemoMode()) {
+              window.location.href = '/demo?app=organizador';
+            } else {
+              navigateToRoute('/login');
+            }
+          }}
         />
         <ReloadPrompt />
       </PublicThemeProvider>
@@ -1606,6 +1651,7 @@ export default function App() {
       >
         <LicenseProvider groupId={profileData?.groupId} associationSettings={associationData}>
           <div style={brandingStyle} className="min-h-screen flex flex-col w-full relative">
+            {isDemoMode() && <DemoTopBanner />}
             {accessDeniedToast && (
               <div className="fixed top-4 right-4 z-50 bg-amber-900 text-amber-100 font-extrabold text-xs px-4 py-3 rounded-[6px_10px_8px_12px] border-2 border-amber-600 shadow-[3px_3px_0px_0px_#181716] flex items-center gap-2 animate-bounce">
                 <span>🔒</span> Accès restreint : vous n'avez pas les droits nécessaires pour accéder à cet espace.

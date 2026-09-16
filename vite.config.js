@@ -3,6 +3,7 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
 import { readFileSync } from 'fs'
+import { fileURLToPath } from 'url'
 
 const packageJson = JSON.parse(readFileSync('./package.json', 'utf-8'))
 
@@ -99,6 +100,13 @@ function newsletterApiPlugin() {
 
 // https://vite.dev/config/
 export default defineConfig({
+  resolve: {
+    alias: {
+      'firebase/firestore': fileURLToPath(new URL('./src/demo/firestoreDemoAdapter.js', import.meta.url)),
+      'firebase/auth': fileURLToPath(new URL('./src/demo/authDemoAdapter.js', import.meta.url)),
+      'firebase/storage': fileURLToPath(new URL('./src/demo/storageDemoAdapter.js', import.meta.url))
+    }
+  },
   define: {
     'import.meta.env.VITE_APP_VERSION': JSON.stringify(`v${packageJson.version}`)
   },

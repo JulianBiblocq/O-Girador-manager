@@ -137,7 +137,7 @@ export default function WidgetDocuments({
         ...(docItem.modelData || docItem),
         focusedPartId: docItem.partId || null
       });
-    } else if (docType === 'report') {
+    } else if (docType === 'report' || docType === 'compte_rendu') {
       // Si le compte-rendu est un fichier PDF sans points structurés rédigés, l'ouvrir dans le lecteur universel
       if (docItem.fileUrl && (!docItem.points || docItem.points.length === 0) && !docItem.texte) {
         setSelectedDocumentView(docItem);
@@ -381,6 +381,14 @@ export default function WidgetDocuments({
             </div>
 
             <div className="flex-1 overflow-y-auto pr-1 flex flex-col gap-4 text-xs">
+              {/* Quorum de l'assemblée */}
+              {selectedReport.quorum && (
+                <div className="bg-[var(--color-cordel-vert,#2d6a4f)]/10 text-[var(--color-cordel-vert,#2d6a4f)] border border-[var(--color-cordel-vert,#2d6a4f)]/30 px-3 py-1.5 rounded text-xs font-bold flex items-center gap-2">
+                  <span>⚖️</span>
+                  <span><strong>Quorum :</strong> {selectedReport.quorum}</span>
+                </div>
+              )}
+
               {selectedReport.presents && selectedReport.presents.length > 0 && (
                 <div className="bg-cordel-bg-light/45 p-3 rounded border border-dashed border-encre-noire/15 flex flex-col gap-1.5">
                   <span className="text-[8px] font-black uppercase tracking-wider text-cordel-master-dark opacity-65">
@@ -391,6 +399,41 @@ export default function WidgetDocuments({
                       <span key={`${name}-${i}`} className="text-[9px] font-bold px-2 py-0.5 bg-neutral-200/50 rounded">
                         👤 {name}
                       </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Membres représentés (pouvoirs) */}
+              {selectedReport.representes && selectedReport.representes.length > 0 && (
+                <div className="bg-cordel-bg-light/45 p-3 rounded border border-dashed border-encre-noire/15 flex flex-col gap-1.5">
+                  <span className="text-[8px] font-black uppercase tracking-wider text-cordel-master-dark opacity-65">
+                    Membres représentés (pouvoirs validés) :
+                  </span>
+                  <div className="flex flex-wrap gap-1">
+                    {selectedReport.representes.map((item, i) => (
+                      <span key={i} className="text-[9px] font-bold px-2 py-0.5 bg-amber-50 border border-amber-300 rounded text-stone-800">
+                        📜 {item}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Résolutions et votes adoptés */}
+              {selectedReport.resolutions && selectedReport.resolutions.length > 0 && (
+                <div className="bg-white p-3.5 rounded border-2 border-[var(--color-cordel-vert,#2d6a4f)] shadow-xs flex flex-col gap-2">
+                  <span className="text-[9px] font-black uppercase tracking-wider text-[var(--color-cordel-vert,#2d6a4f)] flex items-center gap-1.5 border-b border-dashed border-[var(--color-cordel-vert,#2d6a4f)]/30 pb-1">
+                    <span>🗳️</span> Résolutions et Délibérations adoptées
+                  </span>
+                  <div className="flex flex-col gap-1.5">
+                    {selectedReport.resolutions.map((res, i) => (
+                      <div key={i} className="flex items-center justify-between gap-2 p-1.5 bg-neutral-50 rounded border border-encre-noire/10 text-xs">
+                        <span className="font-bold text-encre-noire">✓ {res.titre}</span>
+                        <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded bg-[var(--color-cordel-vert,#2d6a4f)] text-white shrink-0">
+                          {res.vote || "Adopté"}
+                        </span>
+                      </div>
                     ))}
                   </div>
                 </div>

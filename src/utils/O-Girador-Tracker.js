@@ -4,6 +4,7 @@
  */
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase';
+import { isDemoMode } from '../demo/demoManager';
 
 const API_URL = import.meta.env.VITE_OGIRADOR_HUB_API_URL;
 const API_KEY = import.meta.env.VITE_OGIRADOR_HUB_API_KEY || 'o-girador-telemetry-secret-key-2026';
@@ -91,6 +92,7 @@ class OGiradorTracker {
   }
 
   async startSession(userProfile, appId, groupId) {
+    if (isDemoMode()) return;
     sessionStartTime = Date.now();
     try {
       await addDoc(collection(db, 'hub_telemetry_daily'), {
@@ -110,7 +112,7 @@ class OGiradorTracker {
   }
 
   async endSession(appId, groupId) {
-    if (!sessionStartTime) return;
+    if (isDemoMode() || !sessionStartTime) return;
     
     const durationInSeconds = Math.floor((Date.now() - sessionStartTime) / 1000);
     try {

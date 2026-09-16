@@ -10,6 +10,8 @@ import useConfirm from '../hooks/useConfirm';
 import { getSocialVideoThumbnail } from '../utils/videoUtils';
 import StudioTextToolbar from './studio/StudioTextToolbar';
 import { DEFAULT_STUDIO_LEXIQUE, DEFAULT_STUDIO_MENTIONS } from './studio/StudioQuickChips';
+import StudioMultiPhotoManager from './studio/StudioMultiPhotoManager';
+import StudioSocialPreview from './studio/StudioSocialPreview';
 
 export default function StudioSocial({ groupId, branding, onBack, role, isSystemAdmin, user, profileData, onNavigateToView }) {
   const { t } = useTranslation();
@@ -18,11 +20,9 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [varalImages, setVaralImages] = useState([]);
   
-  // Background selection states
-  const [backgroundSource, setBackgroundSource] = useState('event'); // 'event', 'varal', 'upload'
-  const [backgroundImageUrl, setBackgroundImageUrl] = useState('');
-  const [selectedVaralImage, setSelectedVaralImage] = useState('');
-  const [localImageFile, setLocalImageFile] = useState(null);
+  // Collection ordonnée des photos de la publication réseaux
+  const [mediaList, setMediaList] = useState([]);
+  const backgroundImageUrl = mediaList[0]?.url || '';
   
   // Vidéo sociale & miniature
   const [socialVideoUrl, setSocialVideoUrl] = useState('');
@@ -32,7 +32,6 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
   const [publicationText, setPublicationText] = useState('');
   const [copySuccess, setCopySuccess] = useState(false);
   const [imageCopied, setImageCopied] = useState(false);
-  const [savingOfficialPoster, setSavingOfficialPoster] = useState(false);
   const [canvasError, setCanvasError] = useState(false);
   
   const canvasRef = useRef(null);
@@ -140,11 +139,17 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
         setSocialVideoUrl(ev.socialVideoUrl || ev.videoUrl || '');
         const thumb = ev.socialThumbnailUrl || (ev.socialVideoUrl ? getSocialVideoThumbnail(ev.socialVideoUrl) : null);
         if (ev.imageUrl || thumb) {
-          setBackgroundSource('event');
-          setBackgroundImageUrl(ev.imageUrl || thumb || '');
+          const posterUrl = ev.imageUrl || thumb;
+          setMediaList([{
+            id: `evt_${Date.now()}`,
+            url: posterUrl,
+            name: `Affiche : ${ev.titre || 'Événement'}`,
+            source: 'event',
+            isCover: true,
+            isUploading: false
+          }]);
         } else {
-          setBackgroundSource('upload');
-          setBackgroundImageUrl('');
+          setMediaList([]);
         }
       }
     }
@@ -213,15 +218,21 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
     
     if (ev) {
       const thumb = ev.socialThumbnailUrl || (ev.socialVideoUrl ? getSocialVideoThumbnail(ev.socialVideoUrl) : null);
-      if (ev.imageUrl || thumb) {
-        setBackgroundSource('event');
-        setBackgroundImageUrl(ev.imageUrl || thumb || '');
+      const posterUrl = ev.imageUrl || thumb;
+      if (posterUrl) {
+        setMediaList([{
+          id: `evt_${Date.now()}`,
+          url: posterUrl,
+          name: `Affiche : ${ev.titre || 'Événement'}`,
+          source: 'event',
+          isCover: true,
+          isUploading: false
+        }]);
       } else {
-        setBackgroundSource('upload');
-        setBackgroundImageUrl('');
+        setMediaList([]);
       }
     } else {
-      setBackgroundImageUrl('');
+      setMediaList([]);
     }
 
     const defaultTags = ['#OGirador', ...availableSocialTags].join(' ');
@@ -254,9 +265,20 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
       // Mettre à jour l'événement local sélectionné
       setSelectedEvent(prev => prev ? { ...prev, ...updatePayload } : null);
 
-      if (thumbnailUrl && (!backgroundImageUrl || backgroundSource === 'event')) {
-        setBackgroundImageUrl(thumbnailUrl);
-        setBackgroundSource('event');
+      if (thumbnailUrl) {
+        setMediaList(prev => {
+          if (!prev.some(m => m.url === thumbnailUrl)) {
+            return [{
+              id: `video_thumb_${Date.now()}`,
+              url: thumbnailUrl,
+              name: 'Miniature Vidéo',
+              source: 'event',
+              isCover: prev.length === 0,
+              isUploading: false
+            }, ...prev];
+          }
+          return prev;
+        });
       }
     } catch (err) {
       console.error("StudioSocial - Erreur sauvegarde vidéo :", err);
@@ -462,86 +484,14 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
     }
   };
 
-  // 4. Gérer Background Source Switch
-  useEffect(() => {
-    if (!selectedEvent) return;
-    if (backgroundSource === 'event') {
-      setBackgroundImageUrl(selectedEvent.imageUrl || '');
-    } else if (backgroundSource === 'varal') {
-      setBackgroundImageUrl(selectedVaralImage);
-    } else if (backgroundSource === 'upload' && !localImageFile) {
-      setBackgroundImageUrl('');
-    }
-  }, [backgroundSource, selectedEvent, selectedVaralImage, localImageFile]);
-
-  // Synchroniser selectedEvent with the real-time list of events (bidirectional synchroniser)
+  // Synchroniser selectedEvent avec la liste des événements en temps réel
   useEffect(() => {
     if (!selectedEvent || events.length === 0) return;
     const freshEvent = events.find(x => x.id === selectedEvent.id);
-    if (freshEvent) {
-      if (freshEvent.imageUrl !== selectedEvent.imageUrl) {
-        setSelectedEvent(freshEvent);
-        if (backgroundSource === 'event') {
-          setBackgroundImageUrl(freshEvent.imageUrl || '');
-        }
-      }
+    if (freshEvent && freshEvent.imageUrl !== selectedEvent.imageUrl) {
+      setSelectedEvent(freshEvent);
     }
-  }, [events, selectedEvent, backgroundSource]);
-
-  // 5. Gérer local upload a la volee (auto-enregistrer to Firestore)
-  const handleLocalImageSelected = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (selectedEvent) {
-      setSavingOfficialPoster(true);
-      try {
-        const storagePath = `documents/${groupId}/events/${Date.now()}_${file.name}`;
-        const fileRef = ref(storage, storagePath);
-        const snapshot = await uploadBytes(fileRef, file);
-        const downloadURL = await getDownloadURL(snapshot.ref);
-
-        const eventRef = doc(db, 'events', selectedEvent.id);
-        await updateDoc(eventRef, { imageUrl: downloadURL });
-
-        setSelectedEvent(prev => ({ ...prev, imageUrl: downloadURL }));
-        setBackgroundImageUrl(downloadURL);
-        setBackgroundSource('event');
-        setLocalImageFile(null);
-        alert("Image d'illustration mise à jour et associée à l'événement !");
-      } catch (err) {
-        console.error("StudioSocial - Erreur upload direct :", err);
-        alert("Erreur lors du téléversement de l'image.");
-      } finally {
-        setSavingOfficialPoster(false);
-      }
-    } else {
-      setLocalImageFile(file);
-      const reader = new FileReader();
-      reader.onload = (evt) => {
-        setBackgroundImageUrl(evt.target.result);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  // 6. Gérer Varal image selection (associer à l'événement et à la publication)
-  const handleVaralImageChange = async (e) => {
-    const url = typeof e === 'string' ? e : e?.target?.value;
-    if (!url) return;
-    setSelectedVaralImage(url);
-    setBackgroundImageUrl(url);
-
-    if (selectedEvent) {
-      try {
-        const eventRef = doc(db, 'events', selectedEvent.id);
-        await updateDoc(eventRef, { imageUrl: url });
-        setSelectedEvent(prev => ({ ...prev, imageUrl: url }));
-      } catch (err) {
-        console.error("StudioSocial - Erreur liaison image Varal :", err);
-      }
-    }
-  };
+  }, [events, selectedEvent]);
 
   // 7. Auto build publication text
   useEffect(() => {
@@ -880,35 +830,32 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
         }
       }
 
-      const visualUrl = uploadedVisualUrl || backgroundImageUrl || selectedEvent?.imageUrl || '';
+      const mediaUrls = mediaList.map(m => m.url).filter(Boolean);
+      const visualUrl = uploadedVisualUrl || mediaUrls[0] || selectedEvent?.imageUrl || '';
 
       // 2. Recherche robuste du salon ('Validation Comm', 'Validation', 'Bureau', 'CA', ou repli sécurisé)
-      let targetChannelId = `${groupId}_bureau`;
+      let targetChannelId = `${groupId || 'Samambaia'}_bureau`;
       try {
         const channelsRef = collection(db, 'forum_channels');
-        const qChan = query(channelsRef, where('groupId', '==', groupId));
+        const qChan = query(channelsRef, where('groupId', '==', groupId || 'Samambaia'));
         const chanSnap = await getDocs(qChan);
         const channelsList = [];
         chanSnap.forEach(d => channelsList.push({ id: d.id, ...d.data() }));
 
-        // Priorité 1 : Salons spécifiques de validation
         const validationChan = channelsList.find(c => {
           const n = (c.name || '').toLowerCase();
           return n === 'validation comm' || n === 'validation' || n.includes('validation');
         });
 
-        // Priorité 2 : Salons décisionnels Bureau ou CA
         const bureauCaChan = channelsList.find(c => {
           const n = (c.name || '').toLowerCase();
           return n === 'bureau' || n === 'ca';
         });
 
-        // Priorité 3 : Premier salon privé/restreint disponible
         const privateChan = channelsList.find(c => {
           return Array.isArray(c.readRoles) && !c.readRoles.includes('all') && c.readRoles.length > 0;
         });
 
-        // Priorité 4 : Salon Général ou premier salon disponible
         const generalChan = channelsList.find(c => {
           const n = (c.name || '').toLowerCase();
           return n === 'général' || n === 'general';
@@ -916,19 +863,28 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
 
         const fallbackChan = channelsList[0];
 
-        targetChannelId = validationChan?.id || bureauCaChan?.id || privateChan?.id || generalChan?.id || fallbackChan?.id || `${groupId}_bureau`;
+        targetChannelId = validationChan?.id || bureauCaChan?.id || privateChan?.id || generalChan?.id || fallbackChan?.id || `${groupId || 'Samambaia'}_bureau`;
       } catch (cErr) {
         console.warn("StudioSocial - Erreur recherche salon forum :", cErr);
-        targetChannelId = `${groupId}_bureau`;
+        targetChannelId = `${groupId || 'Samambaia'}_bureau`;
       }
 
       const nowIso = new Date().toISOString();
       const authorName = profileData ? `${profileData.prenom || ''} ${profileData.nom || ''}`.trim() : (user?.displayName || 'Membre');
       const eventTitle = selectedEvent?.titre || 'Publication Réseaux';
 
-      let messageHtml = `<p>📢 <strong>Proposition de publication réseaux sociaux</strong></p>`;
-      if (visualUrl) {
-        messageHtml += `<p><img src="${visualUrl}" alt="Visuel proposition" style="max-width:100%; max-height:400px; object-fit:contain; border-radius:6px; border:2px solid #181716;" /></p>`;
+      let messageHtml = `<p>📢 <strong>Proposition de publication réseaux sociaux</strong>`;
+      if (mediaUrls.length > 1) {
+        messageHtml += ` <em>(${mediaUrls.length} photos)</em></p>`;
+        messageHtml += `<div style="display:flex; flex-wrap:wrap; gap:8px; margin: 12px 0;">`;
+        mediaUrls.forEach((url, i) => {
+          messageHtml += `<a href="${url}" target="_blank" rel="noopener noreferrer"><img src="${url}" alt="Photo ${i + 1}" style="width:120px; height:120px; object-fit:cover; border-radius:6px; border:2px solid #181716;" /></a>`;
+        });
+        messageHtml += `</div>`;
+      } else if (visualUrl) {
+        messageHtml += `</p><p><img src="${visualUrl}" alt="Visuel proposition" style="max-width:100%; max-height:400px; object-fit:contain; border-radius:6px; border:2px solid #181716;" /></p>`;
+      } else {
+        messageHtml += `</p>`;
       }
       messageHtml += `<p><strong>Texte & Hashtags proposés :</strong></p><pre style="white-space:pre-wrap; font-family:inherit; background:#fbf9f4; padding:8px; border:1px solid #ccc; border-radius:4px;">${publicationText}</pre>`;
 
@@ -936,7 +892,7 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
       const threadDocRef = await addDoc(collection(db, 'forum'), {
         titre: `[Validation Comm'] ${eventTitle}`,
         categorie: 'Général',
-        groupId: groupId,
+        groupId: groupId || 'Samambaia',
         channelId: targetChannelId,
         auteurId: user?.uid || 'system',
         auteurNom: authorName,
@@ -950,6 +906,7 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
           redacteurId: user?.uid || 'system',
           redacteurNom: authorName,
           visuelUrl: visualUrl,
+          mediaUrls: mediaUrls.length > 0 ? mediaUrls : (visualUrl ? [visualUrl] : []),
           texte: publicationText,
           dateSoumission: nowIso
         },
@@ -963,13 +920,14 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
         ]
       });
 
-      // Mise à jour de l'événement dans Firestore
+      // Mise à jour de l'événement dans Firestore uniquement si sélectionné
       if (selectedEvent?.id) {
         const eventRef = doc(db, 'events', selectedEvent.id);
         const eventUpdate = {
           statutPublication: 'en_attente',
           publicationTexte: publicationText,
           publicationVisuelUrl: visualUrl,
+          publicationMediaUrls: mediaUrls,
           publicationValidationThreadId: threadDocRef.id,
           publicationRedacteurId: user?.uid || 'system',
           publicationDateSoumission: nowIso
@@ -1090,135 +1048,14 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
                   </p>
                 </div>
 
-                {/* Background Image Source selection */}
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-[10px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                    {t('studioSocial.backgroundSource') || "Source de l'image de fond"}
-                  </label>
-                  <div className="flex flex-wrap gap-2 text-xs">
-                    {selectedEvent.imageUrl && (
-                      <button
-                        type="button"
-                        onClick={() => setBackgroundSource('event')}
-                        className={`px-3 py-1.5 border border-encre-noire rounded-[3px_5px] font-bold ${
-                          backgroundSource === 'event'
-                            ? 'bg-cordel-wood text-white shadow-none translate-x-[0.5px] translate-y-[0.5px]'
-                            : 'bg-cordel-bg hover:bg-neutral-200 shadow-[1px_1px_0px_0px_#181716]'
-                        }`}
-                      >
-                        🖼️ {t('studioSocial.eventImage') || "Affiche de l'événement"}
-                      </button>
-                    )}
-                    
-                    <button
-                      type="button"
-                      onClick={() => setBackgroundSource('varal')}
-                      className={`px-3 py-1.5 border border-encre-noire rounded-[3px_5px] font-bold ${
-                        backgroundSource === 'varal'
-                          ? 'bg-cordel-wood text-white shadow-none translate-x-[0.5px] translate-y-[0.5px]'
-                          : 'bg-cordel-bg hover:bg-neutral-200 shadow-[1px_1px_0px_0px_#181716]'
-                      }`}
-                    >
-                      📂 {t('studioSocial.selectVaral') || "Bibliothèque du Varal"}
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setBackgroundSource('upload')}
-                      className={`px-3 py-1.5 border border-encre-noire rounded-[3px_5px] font-bold ${
-                        backgroundSource === 'upload'
-                          ? 'bg-cordel-wood text-white shadow-none translate-x-[0.5px] translate-y-[0.5px]'
-                          : 'bg-cordel-bg hover:bg-neutral-200 shadow-[1px_1px_0px_0px_#181716]'
-                      }`}
-                    >
-                      📤 {t('studioSocial.uploadAvol') || "Uploader à la volée"}
-                    </button>
-                  </div>
-                </div>
-
-                {/* Suboptions conditional on Source */}
-                {backgroundSource === 'varal' && (
-                  <div className="flex flex-col gap-2 p-2.5 bg-cordel-bg border border-dashed border-cordel-master-dark/30 rounded">
-                    <div className="flex items-center justify-between">
-                      <label className="text-[9.5px] uppercase font-black tracking-wider text-cordel-master-dark">
-                        {t('studioSocial.selectVaral') || "Sélectionner une photo du Varal"}
-                      </label>
-                      <span className="text-[9px] font-bold text-cordel-wood">
-                        {varalImages.length} photo(s) disponible(s)
-                      </span>
-                    </div>
-
-                    {varalImages.length === 0 ? (
-                      <span className="text-[10px] italic opacity-60">
-                        {t('studioSocial.noVaralImages') || "Aucune image trouvée dans le Varal."}
-                      </span>
-                    ) : (
-                      <>
-                        <select
-                          value={selectedVaralImage}
-                          onChange={handleVaralImageChange}
-                          className="theme-input w-full bg-cordel-bg-light text-xs font-bold py-1.5"
-                        >
-                          <option value="" disabled>
-                            -- Choisir une photo du Varal --
-                          </option>
-                          {varalImages.map((img) => (
-                            <option key={img.id} value={img.fileUrl}>
-                              {img.titre} ({img.categorie})
-                            </option>
-                          ))}
-                        </select>
-
-                        {/* Aperçus miniatures rapides */}
-                        <div className="flex items-center gap-1.5 overflow-x-auto py-1">
-                          {varalImages.slice(0, 8).map((img) => {
-                            const isSelected = selectedVaralImage === img.fileUrl;
-                            return (
-                              <button
-                                key={img.id}
-                                type="button"
-                                onClick={() => handleVaralImageChange(img.fileUrl)}
-                                className={`w-12 h-12 rounded border-2 shrink-0 overflow-hidden cursor-pointer transition-all ${
-                                  isSelected
-                                    ? 'border-encre-noire ring-2 ring-cordel-wood scale-105 shadow-md'
-                                    : 'border-stone-300 opacity-80 hover:opacity-100 hover:border-encre-noire'
-                                }`}
-                                title={img.titre}
-                              >
-                                <img
-                                  src={img.fileUrl}
-                                  alt={img.titre}
-                                  className="w-full h-full object-cover"
-                                  loading="lazy"
-                                />
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </>
-                    )}
-                  </div>
-                )}
-
-                {backgroundSource === 'upload' && (
-                  <div className="flex flex-col gap-2 p-2 bg-cordel-bg border border-dashed border-cordel-master-dark/30 rounded text-left">
-                    <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                      {t('studioSocial.uploadAvol') || "Sélectionner un fichier local"}
-                    </label>
-                    <div className="flex items-center gap-2">
-                      <label className="text-[10px] font-black uppercase tracking-widest bg-white border border-encre-noire px-3 py-1.5 rounded-[4px_6px_3px_5px] shadow-[1px_1px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:bg-neutral-100 cursor-pointer select-none">
-                        {savingOfficialPoster ? "⏳ Téléversement..." : (localImageFile ? `📂 ${localImageFile.name}` : "Parcourir...")}
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={handleLocalImageSelected}
-                          disabled={savingOfficialPoster}
-                          className="hidden"
-                        />
-                      </label>
-                    </div>
-                  </div>
-                )}
+                {/* Gestionnaire multi-photos avec glisser-déposer, Varal et affiche événement */}
+                <StudioMultiPhotoManager
+                  groupId={groupId}
+                  mediaList={mediaList}
+                  setMediaList={setMediaList}
+                  selectedEvent={selectedEvent}
+                  varalImages={varalImages}
+                />
 
                 {/* Hashtags Input */}
                 <div className="flex flex-col gap-1">
@@ -1493,89 +1330,23 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
           )}
         </div>
 
-        {/* Right Side: Preview & Export */}
+        {/* Right Side: Preview & Export interactif (Insta, Facebook, Canvas) */}
         <div className="md:col-span-5 flex flex-col gap-4 items-center">
-          <CordelCard variant="default" useExtremeBorder={true} className="p-4 w-full flex flex-col gap-4 items-center">
-            <span className="text-[10px] uppercase font-bold tracking-wider text-cordel-master-dark self-start">
-              📱 {t('studioSocial.previewTitle') || "Prévisualisation du Visuel"}
-            </span>
-
-            {/* Square Container wrapper for Canvas */}
-            <div className="relative aspect-square w-full max-w-[400px] border-4 border-encre-noire rounded-lg overflow-hidden bg-white shadow-lg">
-              <canvas
-                ref={canvasRef}
-                width={1080}
-                height={1080}
-                className="w-full h-full object-cover bg-neutral-100"
-              />
-              {!selectedEvent && (
-                <div className="absolute inset-0 flex items-center justify-center bg-black/10 backdrop-blur-xs select-none">
-                  <span className="text-xs font-heading font-black uppercase tracking-wider text-center p-4">
-                    Veuillez sélectionner un événement pour générer le visuel
-                  </span>
-                </div>
-              )}
-            </div>
-
-            {canvasError && selectedEvent && (
-              <div className="p-3 bg-red-100 border border-red-400 text-red-800 text-[10px] rounded leading-relaxed font-semibold">
-                ⚠️ <strong>CORS Canvas restriction</strong> : Le chargement de l'image de fond depuis Firebase Storage a été bloqué pour l'exportation du Canvas. Vous pouvez toujours effectuer un clic droit / appui long sur le visuel pour l'enregistrer dans votre galerie.
-              </div>
-            )}
-
-            {selectedEvent && (
-              <div className="flex flex-col gap-2 w-full max-w-[400px]">
-                {/* Export & Validation buttons */}
-                <div className="flex flex-col gap-2.5 w-full">
-                  <div className="grid grid-cols-3 gap-2 w-full">
-                    <CordelButton
-                      onClick={handleDownload}
-                      variant="default"
-                      useExtremeBorder={true}
-                      className="text-[11px] py-2.5 font-bold uppercase tracking-wider px-1 text-center"
-                    >
-                      💾 {t('studioSocial.downloadBtn') || "Télécharger"}
-                    </CordelButton>
-
-                    <CordelButton
-                      onClick={handleCopyImage}
-                      variant={imageCopied ? "vert" : "default"}
-                      useExtremeBorder={true}
-                      className="text-[11px] py-2.5 font-bold uppercase tracking-wider px-1 text-center"
-                      title="Copier le visuel PNG dans le presse-papier (Clipboard API)"
-                    >
-                      {imageCopied ? "✓ Copiée !" : "🖼️ Copier"}
-                    </CordelButton>
-                    
-                    <CordelButton
-                      onClick={handleShare}
-                      variant="ocre"
-                      useExtremeBorder={true}
-                      className="text-[11px] py-2.5 font-bold uppercase tracking-wider px-1 text-center"
-                    >
-                      🔗 {t('studioSocial.shareBtn') || "Partager"}
-                    </CordelButton>
-                  </div>
-
-                  <CordelButton
-                    onClick={handleSendForValidation}
-                    variant={selectedEvent.statutPublication === 'approuve' ? "vert" : "jaune"}
-                    useExtremeBorder={true}
-                    disabled={sendingValidation}
-                    className="w-full text-xs py-2.5 font-extrabold uppercase tracking-wider flex items-center justify-center gap-1.5"
-                  >
-                    {sendingValidation
-                      ? "Envoi en cours..."
-                      : selectedEvent.statutPublication === 'approuve'
-                      ? "✅ Déjà approuvé (Renvoyer mise à jour)"
-                      : selectedEvent.statutPublication === 'en_attente'
-                      ? "⏳ En attente (Renvoyer révision)"
-                      : "💬 Soumettre pour validation (Forum)"}
-                  </CordelButton>
-                </div>
-              </div>
-            )}
-          </CordelCard>
+          <StudioSocialPreview
+            mediaList={mediaList}
+            branding={branding}
+            selectedEvent={selectedEvent}
+            publicationText={publicationText}
+            canvasRef={canvasRef}
+            canvasError={canvasError}
+            imageCopied={imageCopied}
+            sendingValidation={sendingValidation}
+            isUploading={mediaList.some(m => m.isUploading)}
+            onDownload={handleDownload}
+            onCopyImage={handleCopyImage}
+            onShare={handleShare}
+            onSendForValidation={handleSendForValidation}
+          />
         </div>
       </div>
     </div>

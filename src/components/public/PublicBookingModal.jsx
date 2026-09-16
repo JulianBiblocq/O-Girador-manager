@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { db } from '../../firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { isDemoMode } from '../../demo/demoManager';
 
 /**
  * Modale Publique de Demande de Prestation / Booking pour la Vitrine SaaS.
@@ -112,7 +113,11 @@ export default function PublicBookingModal({
               Un grand merci ! Votre demande de prestation pour <strong>{organizer}</strong> a bien été enregistrée par l'équipe de <strong>{associationName}</strong>.
             </p>
             <div className="p-3 bg-white border border-emerald-300 rounded text-xs font-semibold text-emerald-900 w-full max-w-md">
-              📧 Nous avons conservé votre adresse <strong>{contactEmail}</strong> et nous reprendrons contact avec vous très rapidement avec une proposition adaptée.
+              {isDemoMode() ? (
+                <span>🥁 <strong>Mode Démonstration :</strong> Votre demande a bien été simulée localement (aucun e-mail réel n'est envoyé).</span>
+              ) : (
+                <span>📧 Nous avons conservé votre adresse <strong>{contactEmail}</strong> et nous reprendrons contact avec vous très rapidement avec une proposition adaptée.</span>
+              )}
             </div>
             <button
               type="button"

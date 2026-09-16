@@ -477,7 +477,7 @@ service cloud.firestore {
         (
           isDocSameGroup() && 
           request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-            'publicationTexte', 'publicationVisuelUrl', 'statutPublication', 
+            'publicationTexte', 'publicationVisuelUrl', 'publicationMediaUrls', 'statutPublication', 
             'publicationRedacteurId', 'publicationDateSoumission', 'publicationValidationThreadId'
           ]) &&
           request.resource.data.statutPublication == 'en_attente'

@@ -13,14 +13,32 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID
 };
 
-export const app = initializeApp(firebaseConfig);
-export const auth = getAuth(app);
+import { isDemoMode, getDemoAuthUser } from './demo/demoManager';
 
-// Forcer la persistance locale du navigateur pour maintenir la session hors-ligne
-setPersistence(auth, browserLocalPersistence)
-  .catch((err) => {
-    console.error("Firebase Auth - Erreur de persistance :", err);
-  });
+export const app = initializeApp(firebaseConfig);
+const baseAuth = getAuth(app);
+
+// Proxy transparent sur l'instance Auth pour fournir le profil démo Mestre sans appel réseau
+export const auth = new Proxy(baseAuth, {
+  get(target, prop) {
+    if (isDemoMode() && prop === 'currentUser') {
+      return getDemoAuthUser();
+    }
+    const val = target[prop];
+    if (typeof val === 'function') {
+      return val.bind(target);
+    }
+    return val;
+  }
+});
+
+// Forcer la persistance locale du navigateur pour maintenir la session hors-ligne (uniquement hors démo)
+if (!isDemoMode()) {
+  setPersistence(baseAuth, browserLocalPersistence)
+    .catch((err) => {
+      console.error("Firebase Auth - Erreur de persistance :", err);
+    });
+}
 
 export const googleProvider = new GoogleAuthProvider();
 

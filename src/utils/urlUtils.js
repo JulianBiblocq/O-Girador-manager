@@ -1,3 +1,5 @@
+import { isDemoMode } from '../demo/demoManager';
+
 /**
  * Utilitaires pour la génération et la gestion des URLs
  */
@@ -11,6 +13,11 @@
  * @returns {string} L'URL finale vers la vitrine
  */
 export function getVitrineUrl(urls, associationSettings = {}) {
+  // Cas Démo : Redirection vers la vitrine démo locale
+  if (isDemoMode()) {
+    return '/demo?app=mostrador';
+  }
+
   // Cas 1 : Domaine personnalisé configuré (ex: samambaia-maracatu.fr)
   if (associationSettings?.customDomains && Array.isArray(associationSettings.customDomains) && associationSettings.customDomains.length > 0) {
     const customDomain = associationSettings.customDomains[0];

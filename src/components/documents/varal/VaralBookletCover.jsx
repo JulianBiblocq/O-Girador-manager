@@ -60,6 +60,8 @@ export default function VaralBookletCover({
     dossier_externe: '📂',
     drive: '📂',
     report: '📜',
+    compte_rendu: '📜',
+    statuts: '⚖️',
     culture_fiche: '📖',
     instrument_model: '🛠️',
     instrument_part: '⚙️'

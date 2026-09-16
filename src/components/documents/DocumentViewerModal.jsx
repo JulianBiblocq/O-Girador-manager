@@ -125,7 +125,8 @@ export default function DocumentViewerModal({ document: docItem, onClose }) {
   const isAudio = !isFramaspaceShare && (docType === 'audio' || (mediaInfo && mediaInfo.type === 'audio-file'));
   const isImage = !isFramaspaceShare && (docType === 'image' || (mediaInfo && mediaInfo.type === 'image'));
   const isCloudDrive = !isFramaspaceShare && (docType === 'dossier_externe' || docType === 'drive' || (mediaInfo && mediaInfo.type === 'cloud-drive'));
-  const isReport = docType === 'report';
+  const isReport = docType === 'report' || docType === 'compte_rendu';
+  const isStatuts = docType === 'statuts' || (docItem.categorie || '').toLowerCase().includes('officiel') || (docItem.titre || '').toLowerCase().includes('statut');
 
   // Formatage de la date
   const displayDate = docItem.dateAjout || docItem.date || docItem.createdAt;
@@ -301,6 +302,14 @@ export default function DocumentViewerModal({ document: docItem, onClose }) {
           {/* 6. CAS COMPTE-RENDU TEXTUEL OU MIXTE AVEC PDF */}
           {isReport && (
             <div className="flex flex-col gap-4">
+              {/* Quorum de l'assemblée ou réunion */}
+              {docItem.quorum && (
+                <div className="bg-[var(--color-cordel-vert,#2d6a4f)]/10 text-[var(--color-cordel-vert,#2d6a4f)] border border-[var(--color-cordel-vert,#2d6a4f)]/30 px-3 py-2 rounded text-xs font-bold flex items-center gap-2">
+                  <span>⚖️</span>
+                  <span><strong>Quorum :</strong> {docItem.quorum}</span>
+                </div>
+              )}
+
               {/* Affichage des membres présents s'ils sont renseignés */}
               {docItem.presents && docItem.presents.length > 0 && (
                 <div className="bg-white/70 p-3 rounded border border-dashed border-encre-noire/15 flex flex-col gap-1.5 text-xs">
@@ -312,6 +321,55 @@ export default function DocumentViewerModal({ document: docItem, onClose }) {
                       <span key={`${name}-${i}`} className="text-[9px] font-bold px-2 py-0.5 bg-neutral-200/60 rounded">
                         👤 {name}
                       </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Membres représentés (pouvoirs remis) */}
+              {docItem.representes && docItem.representes.length > 0 && (
+                <div className="bg-white/70 p-3 rounded border border-dashed border-encre-noire/15 flex flex-col gap-1 text-xs">
+                  <span className="text-[8px] font-black uppercase tracking-wider text-cordel-master-dark opacity-75">
+                    Membres représentés (pouvoirs validés) :
+                  </span>
+                  <div className="flex flex-wrap gap-1">
+                    {docItem.representes.map((item, i) => (
+                      <span key={i} className="text-[9px] font-bold px-2 py-0.5 bg-amber-50 border border-amber-300 rounded text-stone-800">
+                        📜 {item}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Ordre du jour de la réunion */}
+              {docItem.ordreDuJour && Array.isArray(docItem.ordreDuJour) && docItem.ordreDuJour.length > 0 && (
+                <div className="bg-amber-50/70 border border-dashed border-amber-300 p-3 rounded text-xs">
+                  <span className="text-[9px] font-black uppercase tracking-wider text-cordel-wood block mb-1">
+                    📋 Ordre du jour arrêté :
+                  </span>
+                  <ul className="list-disc list-inside space-y-0.5 text-stone-700 font-semibold pl-1">
+                    {docItem.ordreDuJour.map((odj, i) => (
+                      <li key={i}>{odj}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Résolutions et votes adoptés */}
+              {docItem.resolutions && docItem.resolutions.length > 0 && (
+                <div className="bg-white p-4 rounded border-2 border-[var(--color-cordel-vert,#2d6a4f)] shadow-xs flex flex-col gap-2.5">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-[var(--color-cordel-vert,#2d6a4f)] flex items-center gap-1.5 border-b border-dashed border-[var(--color-cordel-vert,#2d6a4f)]/30 pb-1.5">
+                    <span>🗳️</span> Résolutions et Délibérations adoptées
+                  </span>
+                  <div className="flex flex-col gap-2">
+                    {docItem.resolutions.map((res, i) => (
+                      <div key={i} className="flex items-center justify-between gap-2 p-2 bg-neutral-50 rounded border border-encre-noire/10 text-xs">
+                        <span className="font-bold text-encre-noire">✓ {res.titre}</span>
+                        <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded bg-[var(--color-cordel-vert,#2d6a4f)] text-white shrink-0">
+                          {res.vote || "Adopté"}
+                        </span>
+                      </div>
                     ))}
                   </div>
                 </div>
@@ -355,6 +413,66 @@ export default function DocumentViewerModal({ document: docItem, onClose }) {
                   </div>
                 </div>
               )}
+            </div>
+          )}
+
+          {/* 7. CAS STATUTS CONSTITUTIFS OFFICIELS */}
+          {isStatuts && (
+            <div className="flex flex-col gap-4">
+              {/* Encart Siège social et Résumé */}
+              {(docItem.siegeSocial || docItem.resume) && (
+                <div className="bg-amber-50/80 border-2 border-dashed border-[var(--color-cordel-ocre,#c05621)]/40 p-4 rounded-[6px_10px_4px_8px] flex flex-col gap-2 text-xs">
+                  {docItem.siegeSocial && (
+                    <div className="flex items-center gap-2 text-stone-800 font-bold">
+                      <span>🏢</span>
+                      <span><strong>Siège social :</strong> {docItem.siegeSocial}</span>
+                    </div>
+                  )}
+                  {docItem.resume && (
+                    <p className="text-stone-700 leading-relaxed italic border-t border-dashed border-encre-noire/10 pt-2">
+                      {docItem.resume}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* Signataires fondateurs du bureau */}
+              {docItem.signataires && docItem.signataires.length > 0 && (
+                <div className="bg-white/80 p-3.5 rounded border border-dashed border-encre-noire/20 flex flex-col gap-1.5 text-xs">
+                  <span className="text-[9px] font-black uppercase tracking-wider text-cordel-wood">
+                    ✍️ Signataires constitutifs :
+                  </span>
+                  <div className="flex flex-wrap gap-2 mt-1">
+                    {docItem.signataires.map((sig, i) => (
+                      <div key={i} className="flex items-center gap-1.5 px-2.5 py-1 bg-neutral-100 rounded border border-encre-noire/15 text-xs font-bold text-stone-800">
+                        <span>{sig.role === 'Président' ? '👑' : sig.role === 'Secrétaire' ? '✒️' : '💰'}</span>
+                        <span>{sig.nom}</span>
+                        <span className="text-[9px] font-semibold text-stone-500 italic">({sig.role})</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Articles majeurs structurés */}
+              {docItem.points && docItem.points.length > 0 ? (
+                <div className="flex flex-col gap-3">
+                  {docItem.points.map((art, idx) => (
+                    <div key={art.id || idx} className="p-4 bg-white border-2 border-encre-noire/20 rounded-[4px_6px_3px_5px] shadow-xs flex flex-col gap-2 text-xs">
+                      <span className="font-extrabold text-cordel-wood border-b border-dashed border-encre-noire/15 pb-1 text-sm">
+                        📜 {art.titre}
+                      </span>
+                      <p className="opacity-90 leading-relaxed font-medium whitespace-pre-wrap pl-2 text-encre-noire">
+                        {art.notesCR || art.texte || art.contenu}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              ) : (docItem.contenuTexte || docItem.texte) ? (
+                <div className="p-4 bg-white border border-encre-noire/20 rounded shadow-xs text-xs whitespace-pre-wrap leading-relaxed font-medium text-encre-noire">
+                  {docItem.contenuTexte || docItem.texte}
+                </div>
+              ) : null}
             </div>
           )}
         </div>

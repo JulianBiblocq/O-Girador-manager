@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../firebase';
+import { isDemoMode } from '../../demo/demoManager';
 
 /**
  * Composant de formulaire public d'abonnement à la Newsletter.
@@ -48,7 +49,7 @@ export default function PublicNewsletterForm({ groupId, variant = 'card', public
         createdAt: serverTimestamp(),
         source: 'vitrine',
         groupId: groupId || '',
-        brevoStatus: 'pending'
+        brevoStatus: isDemoMode() ? 'demo_simulated' : 'pending'
       });
 
       setSubmittedSuccess(true);
@@ -83,7 +84,7 @@ export default function PublicNewsletterForm({ groupId, variant = 'card', public
           {submittedSuccess ? (
             <div className="p-4 rounded-lg bg-emerald-50 border border-emerald-300 text-emerald-800 text-xs font-semibold flex flex-col items-center gap-2 text-center animate-fade-in">
               <span className="text-xl">🎉</span>
-              <p>Merci ! Vous êtes bien inscrit(e) à notre newsletter.</p>
+              <p>{isDemoMode() ? "Merci pour votre inscription ! En mode démo, aucun e-mail réel n'est envoyé." : "Merci ! Vous êtes bien inscrit(e) à notre newsletter."}</p>
               <button
                 type="button"
                 onClick={() => setSubmittedSuccess(false)}
@@ -165,7 +166,7 @@ export default function PublicNewsletterForm({ groupId, variant = 'card', public
         {submittedSuccess ? (
           <div className="p-4 rounded-xl bg-emerald-900/80 border border-emerald-500 text-emerald-100 text-sm font-semibold max-w-md w-full flex flex-col items-center gap-2 animate-fade-in shadow-lg">
             <span className="text-xl">🎉</span>
-            <p>Merci ! Vous êtes bien inscrit(e) à notre newsletter.</p>
+            <p>{isDemoMode() ? "Merci pour votre message ! En mode démo, aucun e-mail réel n'est envoyé." : "Merci ! Vous êtes bien inscrit(e) à notre newsletter."}</p>
             <button
               type="button"
               onClick={() => setSubmittedSuccess(false)}

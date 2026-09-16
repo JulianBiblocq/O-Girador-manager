@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../firebase';
+import { isDemoMode } from '../demo/demoManager';
+import { DEMO_GROUP_ID } from '../data/demoData';
 
 export default function useTenantResolver() {
   const [tenantState, setTenantState] = useState({
@@ -19,6 +21,26 @@ export default function useTenantResolver() {
       const hostname = window.location.hostname;
       const urlParams = new URLSearchParams(window.location.search);
       const isLocal = hostname === 'localhost' || hostname === '127.0.0.1';
+
+      // En Mode Démo, résoudre instantanément pour l'association Maracatu Na Chuva
+      if (isDemoMode()) {
+        const isMostrador = urlParams.get('app') === 'mostrador' ||
+          window.location.pathname.includes('/vitrine') ||
+          window.location.pathname.includes('/mostrador');
+
+        setTenantState({
+          appMode: isMostrador ? 'mostrador' : 'organizador',
+          groupId: DEMO_GROUP_ID,
+          isLocalhost: isLocal,
+          isTenantLoading: false,
+          tenantError: null,
+          urls: { 
+            mostrador: '/demo?app=mostrador', 
+            organizador: '/demo?app=organizador' 
+          }
+        });
+        return;
+      }
       
       let currentMode = 'organizador';
       let extractedGroupId = null;

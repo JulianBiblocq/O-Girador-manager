@@ -1082,7 +1082,7 @@ export default function VaralManager({ groupId, onBack, role, isSystemAdmin, isE
                                         </>
                                       ) : (
                                         <>
-                                          {(docItem.fileUrl || docItem.type === 'report' || docItem.type === 'culture_fiche' || docItem.type === 'song' || (docItem.categorie || '').toLowerCase().includes('culture') || (docItem.categorie || '').toLowerCase().includes('toada')) && (
+                                          {(docItem.fileUrl || docItem.type === 'report' || docItem.type === 'compte_rendu' || docItem.type === 'statuts' || docItem.texte || docItem.contenuTexte || docItem.points || docItem.type === 'culture_fiche' || docItem.type === 'song' || (docItem.categorie || '').toLowerCase().includes('culture') || (docItem.categorie || '').toLowerCase().includes('toada')) && (
                                             <button
                                               onClick={() => {
                                                 const cat = (docItem.categorie || '').toLowerCase();
@@ -1092,7 +1092,7 @@ export default function VaralManager({ groupId, onBack, role, isSystemAdmin, isE
                                                   setSelectedToada(docItem);
                                                 } else if (inferredType === 'culture_fiche') {
                                                   setSelectedCultureCard(docItem);
-                                                } else if (inferredType === 'report' && (!docItem.fileUrl || (docItem.points && docItem.points.length > 0) || docItem.texte)) {
+                                                } else if ((inferredType === 'report' || inferredType === 'compte_rendu') && (!docItem.fileUrl || (docItem.points && docItem.points.length > 0) || docItem.texte || docItem.contenuTexte)) {
                                                   setSelectedReport(docItem);
                                                 } else {
                                                   setSelectedDocumentView(docItem);

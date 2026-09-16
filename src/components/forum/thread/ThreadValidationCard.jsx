@@ -4,6 +4,7 @@ import { db } from '../../../firebase';
 import CordelCard from '../../CordelCard';
 import CordelButton from '../../CordelButton';
 import useConfirm from '../../../hooks/useConfirm';
+import ThreadMediaGallery from './ThreadMediaGallery';
 
 /**
  * Carte interactive de revue et de validation collaborative pour les publications
@@ -37,6 +38,9 @@ export default function ThreadValidationCard({
   const redacteurId = validationData.redacteurId;
   const redacteurNom = validationData.redacteurNom || 'Membre';
   const visuelUrl = validationData.visuelUrl;
+  const mediaUrls = Array.isArray(validationData.mediaUrls) && validationData.mediaUrls.length > 0
+    ? validationData.mediaUrls
+    : (visuelUrl ? [visuelUrl] : []);
   const publicationTexte = validationData.texte || '';
 
   // Vérification des privilèges de revue (Admin, Mestre, Bureau, CA ou Modérateur)
@@ -249,8 +253,13 @@ export default function ThreadValidationCard({
           </div>
         </div>
 
-        {/* Badge d'état sémantique */}
-        <div>
+        {/* Badge d'état sémantique et indicateur multi-photos */}
+        <div className="flex items-center gap-1.5 flex-wrap">
+          {mediaUrls.length > 1 && (
+            <span className="theme-stamp-badge theme-stamp-badge-ocre text-[8px] sm:text-[9px] uppercase tracking-wider flex items-center gap-1 font-black">
+              📸 {mediaUrls.length} photos dans cette publication
+            </span>
+          )}
           {statut === 'approuve' ? (
             <span className="theme-stamp-badge theme-stamp-badge-vert text-[8px] sm:text-[9px] uppercase tracking-wider flex items-center gap-1 font-black">
               ✅ Validé pour diffusion
@@ -269,33 +278,18 @@ export default function ThreadValidationCard({
 
       {/* Contenu visuel et texte de la publication */}
       <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-start">
-        {/* Aperçu du visuel généré */}
-        {visuelUrl && (
+        {/* Aperçu des photos ou du visuel généré */}
+        {mediaUrls.length > 0 && (
           <div className="md:col-span-5 flex flex-col gap-1.5">
             <span className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-              🖼️ Visuel généré (Canvas)
+              🖼️ {mediaUrls.length > 1 ? `Photos proposées (${mediaUrls.length})` : "Visuel de la publication"}
             </span>
-            <div className="relative aspect-square w-full rounded border-2 border-encre-noire overflow-hidden bg-black/5 shadow-md">
-              <img
-                src={visuelUrl}
-                alt="Aperçu publication"
-                className="w-full h-full object-contain"
-                loading="lazy"
-              />
-            </div>
-            <a
-              href={visuelUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-[10px] text-cordel-wood hover:underline font-bold text-center mt-0.5"
-            >
-              🔍 Ouvrir l'image en grand format
-            </a>
+            <ThreadMediaGallery mediaUrls={mediaUrls} />
           </div>
         )}
 
         {/* Texte préparé avec émoticônes et hashtags */}
-        <div className={visuelUrl ? "md:col-span-7 flex flex-col gap-2" : "md:col-span-12 flex flex-col gap-2"}>
+        <div className={mediaUrls.length > 0 ? "md:col-span-7 flex flex-col gap-2" : "md:col-span-12 flex flex-col gap-2"}>
           <div className="flex justify-between items-center">
             <span className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
               📝 Texte & Hashtags proposés

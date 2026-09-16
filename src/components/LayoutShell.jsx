@@ -42,6 +42,7 @@ import SimulationBanner from './navigation/SimulationBanner';
 import ViewSimulatorSelector from './navigation/ViewSimulatorSelector';
 import useLicenseGuard from '../hooks/useLicenseGuard';
 import SubscriptionBanner from './SubscriptionBanner';
+import { isDemoMode } from '../demo/demoManager';
 
 export default function LayoutShell({ 
   logoUrl, 
@@ -92,7 +93,10 @@ export default function LayoutShell({
     return () => window.removeEventListener('combined-logo-ready', handleLogoReady);
   }, []);
 
-  const finalLogoUrl = combinedLogoUrl || logoUrl || '/favicon.svg';
+  const isDemo = isDemoMode();
+  const finalLogoUrl = isDemo
+    ? (logoUrl || '/brandings/logo-nachuva-girador.svg')
+    : (combinedLogoUrl || logoUrl || '/favicon.svg');
 
   const handleLogoClick = () => {
     setIsLogoTilting(true);
@@ -491,6 +495,18 @@ export default function LayoutShell({
               )}
               <ViewSimulatorSelector />
               {renderAppLauncher(true)}
+              {isDemoMode() && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    window.location.href = '/demo?app=mostrador';
+                  }}
+                  className="p-1.5 border-2 border-encre-noire bg-[var(--color-cordel-vert)] text-white rounded-[4px_6px_3px_5px] shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] cursor-pointer flex items-center justify-center text-xs font-bold"
+                  title="Voir le site public (Vitrine démo)"
+                >
+                  <span>🌍</span>
+                </button>
+              )}
             </div>
           </div>
 
@@ -569,6 +585,19 @@ export default function LayoutShell({
                 )}
                 <ViewSimulatorSelector />
               </div>
+
+              {isDemoMode() && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    window.location.href = '/demo?app=mostrador';
+                  }}
+                  className="w-full mt-1.5 py-1 px-2 text-[9px] font-black uppercase tracking-wider bg-[var(--color-cordel-vert)] text-white rounded-[5px_8px_6px_9px] border-2 border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-110 cursor-pointer flex items-center justify-center gap-1 transition-all"
+                  title="Ouvrir la Vitrine Publique en mode démo"
+                >
+                  <span>🌍 Voir le site public ↗</span>
+                </button>
+              )}
               {associationName && (
                 <span className="font-black text-xs uppercase tracking-wider text-cordel-wood mt-0.5 leading-tight text-center break-words max-w-[160px]">
                   {associationName}
@@ -888,7 +917,7 @@ export default function LayoutShell({
 
           <div className="w-full flex justify-between items-center mt-8 border-t border-dashed border-cordel-master-dark/10 pt-2 select-none shrink-0">
             <span className="text-[8px] font-black uppercase tracking-wider opacity-20">
-              © O Girador {associationName || 'Samambaia'}
+              © O Girador {associationName || (isDemo ? 'Maracatu Na Chuva' : 'Samambaia')}
             </span>
             <span className="text-[8px] font-black uppercase tracking-widest opacity-25 lg:hidden">
               {import.meta.env.VITE_APP_VERSION || 'v1.0.1'}
