@@ -25,7 +25,7 @@
     "dompurify": "^3.4.15",
     "es-abstract": "^1.24.2",
     "file-saver": "^2.0.5",
-    "firebase": "^12.18.0",
+    "firebase": "^12.19.0",
     "html5-qrcode": "^2.3.8",
     "jspdf": "^4.2.1",
     "jszip": "^3.10.1",
