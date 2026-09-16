@@ -28,7 +28,7 @@
     "firebase": "^12.18.0",
     "html5-qrcode": "^2.3.8",
     "jspdf": "^4.2.1",
-    "jszip": "^3.10.1",
+    "jszip": "^3.10.2",
     "lz-string": "^1.5.0",
     "qrcode.react": "^4.2.0",
     "react": "^19.2.8",
