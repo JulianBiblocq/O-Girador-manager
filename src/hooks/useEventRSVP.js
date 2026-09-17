@@ -4,6 +4,15 @@ import { db } from '../firebase';
 import { useFamilyMembers } from './useFamilyMembers';
 import useConfirm from './useConfirm';
 
+// Vérification sécurisée du dépassement de la date limite d'inscription (jusqu'à 23h59:59 si format YYYY-MM-DD)
+export const checkRegistrationDeadlinePassed = (deadline) => {
+  if (!deadline) return false;
+  const deadlineDate = (typeof deadline === 'string' && deadline.length === 10)
+    ? new Date(`${deadline}T23:59:59`)
+    : new Date(deadline);
+  return deadlineDate < new Date();
+};
+
 export function useEventRSVP(event, user, profileData, allUsers, isMusicLevelRestricted, setToastMessage) {
   const { confirm } = useConfirm();
   const existingResponse = (event?.inscriptions || []).find(ins => ins.userId === user?.uid);
@@ -137,10 +146,14 @@ export function useEventRSVP(event, user, profileData, allUsers, isMusicLevelRes
     if (!event?.id) return;
     setSaving(true);
 
-    const isRegistrationDeadlinePassed = event.dateLimiteInscription
-      ? new Date(event.dateLimiteInscription) < new Date()
-      : false;
-    const isAuthorized = profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.isSystemAdmin === true;
+    const isRegistrationDeadlinePassed = checkRegistrationDeadlinePassed(event.dateLimiteInscription);
+    const isAuthorized = profileData?.role === 'mestre' ||
+      profileData?.role === 'super-admin' ||
+      profileData?.role === 'admin' ||
+      profileData?.role === 'bureau' ||
+      profileData?.role === 'ca' ||
+      profileData?.isSystemAdmin === true ||
+      (profileData?.tags || []).some(t => ['bureau', 'admin', 'direction', 'organisateur', 'ca'].includes(t?.toLowerCase?.()));
 
     if (isRegistrationDeadlinePassed && !isAuthorized) {
       alert("Les inscriptions pour cet événement sont closes.");
@@ -156,7 +169,10 @@ export function useEventRSVP(event, user, profileData, allUsers, isMusicLevelRes
       return;
     }
 
-    const targetInstrument = overrideOptions.instrumentChoisi !== undefined ? overrideOptions.instrumentChoisi : instrumentChoisi;
+    const defaultInstrument = profileData?.instrument || profileData?.instrumentsJoues?.[0] || 'Autre';
+    const targetInstrument = (overrideOptions.instrumentChoisi !== undefined && overrideOptions.instrumentChoisi !== null)
+      ? overrideOptions.instrumentChoisi
+      : (instrumentChoisi || defaultInstrument);
     const targetTransport = overrideOptions.transport !== undefined ? overrideOptions.transport : transport;
     const targetDemandeRemb = overrideOptions.demandeRemboursementKm !== undefined ? overrideOptions.demandeRemboursementKm : demandeRemboursementKm;
     const targetBesoinTransp = overrideOptions.besoinTransportInstrument !== undefined ? overrideOptions.besoinTransportInstrument : besoinTransportInstrument;
@@ -184,6 +200,11 @@ export function useEventRSVP(event, user, profileData, allUsers, isMusicLevelRes
       const eventUpdates = {
         inscriptions: updatedInscriptions
       };
+
+      // Si l'utilisateur passe présent et n'avait pas d'instrument localement, on synchronise le state local
+      if (targetStatus === 'present' && !instrumentChoisi) {
+        setInstrumentChoisi(targetInstrument);
+      }
 
       // Si l'utilisateur est autonome ou absent, le retirer de la file d'attente recherchePlace s'il y était
       if (event.covoiturage?.recherchePlace && (targetStatus !== 'present' || targetTransport === 'autonome')) {
@@ -259,17 +280,16 @@ export function useEventRSVP(event, user, profileData, allUsers, isMusicLevelRes
         ...prev,
         [memberId]: {
           ...current,
-          selected: newStatus !== 'absent',
           status: newStatus
         }
       };
     });
   };
 
-  // Modifier l'instrument individuel pour un membre de la famille
+  // Modifier l'instrument d'un membre de la famille
   const handleFamilyMemberInstrumentChange = (memberId, newInstrument) => {
     setFamilyResponses(prev => {
-      const current = prev[memberId] || { selected: true, status: 'present', instrumentChoisi: 'Autre' };
+      const current = prev[memberId] || { selected: false, status: 'present', instrumentChoisi: 'Autre' };
       return {
         ...prev,
         [memberId]: {
@@ -290,10 +310,14 @@ export function useEventRSVP(event, user, profileData, allUsers, isMusicLevelRes
     if (!event?.id) return;
     setSaving(true);
 
-    const isRegistrationDeadlinePassed = event?.dateLimiteInscription
-      ? new Date(event.dateLimiteInscription) < new Date()
-      : false;
-    const isAuthorized = profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.isSystemAdmin === true;
+    const isRegistrationDeadlinePassed = checkRegistrationDeadlinePassed(event?.dateLimiteInscription);
+    const isAuthorized = profileData?.role === 'mestre' ||
+      profileData?.role === 'super-admin' ||
+      profileData?.role === 'admin' ||
+      profileData?.role === 'bureau' ||
+      profileData?.role === 'ca' ||
+      profileData?.isSystemAdmin === true ||
+      (profileData?.tags || []).some(t => ['bureau', 'admin', 'direction', 'organisateur', 'ca'].includes(t?.toLowerCase?.()));
 
     if (isRegistrationDeadlinePassed && !isAuthorized) {
       alert("Les inscriptions pour cet événement sont closes.");
@@ -445,15 +469,34 @@ export function useEventRSVP(event, user, profileData, allUsers, isMusicLevelRes
       const currentInscriptions = event.inscriptions || [];
       const updatedInscriptions = currentInscriptions.map(ins => {
         if (ins.userId === targetUserId) {
-          return { ...ins, status: newStatus };
+          const userObj = allUsers.find(u => u.id === targetUserId);
+          const safeInst = ins.instrumentChoisi || userObj?.instrument || userObj?.instrumentsJoues?.[0] || 'Autre';
+          return {
+            ...ins,
+            status: newStatus,
+            instrumentChoisi: newStatus === 'present' ? safeInst : null
+          };
         }
         return ins;
       });
 
-      const eventRef = doc(db, 'events', event.id);
-      await updateDoc(eventRef, {
+      const eventUpdates = {
         inscriptions: updatedInscriptions
-      });
+      };
+
+      // Si le membre passe absent, le retirer de la recherche de covoiturage s'il y était
+      if (newStatus !== 'present' && event.covoiturage?.recherchePlace) {
+        const freshRecherche = (event.covoiturage.recherchePlace || []).filter(p => p.uid !== targetUserId);
+        if (freshRecherche.length !== event.covoiturage.recherchePlace.length) {
+          eventUpdates.covoiturage = {
+            ...event.covoiturage,
+            recherchePlace: freshRecherche
+          };
+        }
+      }
+
+      const eventRef = doc(db, 'events', event.id);
+      await updateDoc(eventRef, eventUpdates);
 
       triggerToast("Statut mis à jour");
     } catch (error) {
@@ -535,6 +578,128 @@ export function useEventRSVP(event, user, profileData, allUsers, isMusicLevelRes
     }
   };
 
+  // Permet à un adhérent de demander une modification d'inscription au bureau (ex: après deadline ou pour ajuster sa présence)
+  const handleRequestRegistrationChange = async (requestedStatus, messageText = '') => {
+    if (!event?.id || !user?.uid) return;
+    setSaving(true);
+    try {
+      const currentRequests = event.demandesModificationInscription || [];
+      // On conserve les anciennes requêtes déjà traitées, mais on remplace toute demande en attente du même utilisateur
+      const otherRequests = currentRequests.filter(req => req.userId !== user.uid || req.status !== 'pending');
+
+      const safeInstrument = instrumentChoisi || profileData?.instrument || profileData?.instrumentsJoues?.[0] || 'Autre';
+      const newRequest = {
+        id: `req_${user.uid}_${Date.now()}`,
+        userId: user.uid,
+        userName: `${profileData?.prenom || ''} ${profileData?.nom || ''}`.trim() || user?.displayName || 'Membre',
+        userEmail: user?.email || '',
+        userAvatar: profileData?.photoURL || profileData?.avatar || null,
+        currentStatus: existingResponse?.status || 'non_inscrit',
+        requestedStatus, // 'present' | 'absent'
+        instrumentChoisi: requestedStatus === 'present' ? safeInstrument : null,
+        transport: requestedStatus === 'present' ? transport : null,
+        besoinTransportInstrument: requestedStatus === 'present' ? !!besoinTransportInstrument : false,
+        demandeRemboursementKm: (requestedStatus === 'present' && transport === 'propose_voiture') ? !!demandeRemboursementKm : false,
+        message: (messageText || '').trim(),
+        createdAt: new Date().toISOString(),
+        status: 'pending'
+      };
+
+      const updatedRequests = [...otherRequests, newRequest];
+      const eventRef = doc(db, 'events', event.id);
+      await updateDoc(eventRef, {
+        demandesModificationInscription: updatedRequests
+      });
+
+      triggerToast("Demande transmise au bureau avec succès !");
+    } catch (error) {
+      console.error("Erreur lors de la soumission de la demande de modification :", error);
+      alert("Erreur lors de l'envoi de la demande au bureau.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Permet à un membre d'annuler sa demande en attente
+  const handleCancelRegistrationChangeRequest = async (requestId) => {
+    if (!event?.id || !user?.uid) return;
+    try {
+      const currentRequests = event.demandesModificationInscription || [];
+      const updatedRequests = currentRequests.filter(r => r.id !== requestId && r.userId !== user.uid);
+      const eventRef = doc(db, 'events', event.id);
+      await updateDoc(eventRef, {
+        demandesModificationInscription: updatedRequests
+      });
+      triggerToast("Demande de modification annulée.");
+    } catch (error) {
+      console.error("Erreur lors de l'annulation de la demande :", error);
+      alert("Erreur lors de l'annulation de la demande.");
+    }
+  };
+
+  // Traitement d'une demande par un membre du bureau ou administrateur
+  const handleProcessRegistrationChangeRequest = async (requestItem, action) => {
+    if (!event?.id || !requestItem) return;
+    try {
+      const currentRequests = event.demandesModificationInscription || [];
+      const updatedRequests = currentRequests.map(r => {
+        if (r.id === requestItem.id) {
+          return {
+            ...r,
+            status: action === 'accept' ? 'accepted' : 'rejected',
+            processedAt: new Date().toISOString(),
+            processedBy: user.uid
+          };
+        }
+        return r;
+      });
+
+      const eventUpdates = {
+        demandesModificationInscription: updatedRequests
+      };
+
+      // Si acceptée, mise à jour effective du tableau des inscriptions
+      if (action === 'accept') {
+        const currentInscriptions = event.inscriptions || [];
+        const otherInscriptions = currentInscriptions.filter(ins => ins.userId !== requestItem.userId);
+
+        const newResponse = {
+          userId: requestItem.userId,
+          userName: requestItem.userName,
+          status: requestItem.requestedStatus,
+          transport: requestItem.requestedStatus === 'present' ? requestItem.transport : null,
+          places: 0,
+          instruments: "",
+          instrumentChoisi: requestItem.requestedStatus === 'present' ? (requestItem.instrumentChoisi || 'Autre') : null,
+          instrumentImposeParMestre: false,
+          demandeRemboursementKm: (requestItem.requestedStatus === 'present' && requestItem.transport === 'propose_voiture') ? !!requestItem.demandeRemboursementKm : false,
+          besoinTransportInstrument: requestItem.requestedStatus === 'present' ? !!requestItem.besoinTransportInstrument : false
+        };
+
+        eventUpdates.inscriptions = [...otherInscriptions, newResponse];
+
+        // Retrait de la recherche de covoiturage si la personne passe absente
+        if (requestItem.requestedStatus !== 'present' && event.covoiturage?.recherchePlace) {
+          const freshRecherche = (event.covoiturage.recherchePlace || []).filter(p => p.uid !== requestItem.userId);
+          if (freshRecherche.length !== event.covoiturage.recherchePlace.length) {
+            eventUpdates.covoiturage = {
+              ...event.covoiturage,
+              recherchePlace: freshRecherche
+            };
+          }
+        }
+      }
+
+      const eventRef = doc(db, 'events', event.id);
+      await updateDoc(eventRef, eventUpdates);
+
+      triggerToast(action === 'accept' ? "Demande validée et inscription mise à jour !" : "Demande refusée.");
+    } catch (error) {
+      console.error("Erreur lors du traitement de la demande de modification :", error);
+      alert("Erreur lors du traitement de la demande.");
+    }
+  };
+
   return {
     status,
     setStatus,
@@ -571,6 +736,9 @@ export function useEventRSVP(event, user, profileData, allUsers, isMusicLevelRes
     handleUpdateStatus,
     handleUpdateMemberInstrument,
     handleAddInviteExterne,
-    handleRemoveInviteExterne
+    handleRemoveInviteExterne,
+    handleRequestRegistrationChange,
+    handleCancelRegistrationChangeRequest,
+    handleProcessRegistrationChangeRequest
   };
 }

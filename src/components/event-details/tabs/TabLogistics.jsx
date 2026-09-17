@@ -74,6 +74,10 @@ export default function TabLogistics({
   savingManualRegistration,
   handleManualRegister,
   handleManualUnregister,
+  handleUpdateStatus,
+  handleRequestRegistrationChange,
+  handleCancelRegistrationChangeRequest,
+  handleProcessRegistrationChangeRequest,
   isRegistrationDeadlinePassed,
   t,
   handleAddInviteExterne,
@@ -233,6 +237,10 @@ export default function TabLogistics({
             savingManualRegistration={savingManualRegistration}
             handleManualRegister={handleManualRegister}
             handleManualUnregister={handleManualUnregister}
+            handleUpdateStatus={handleUpdateStatus}
+            handleRequestRegistrationChange={handleRequestRegistrationChange}
+            handleCancelRegistrationChangeRequest={handleCancelRegistrationChangeRequest}
+            handleProcessRegistrationChangeRequest={handleProcessRegistrationChangeRequest}
             isRegistrationDeadlinePassed={isRegistrationDeadlinePassed}
             t={t}
             agendaRequireInstrument={currentConfig?.agendaRequireInstrument}

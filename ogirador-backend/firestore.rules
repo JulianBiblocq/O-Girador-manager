@@ -161,7 +161,7 @@ service cloud.firestore {
         (
           channelId != null &&
           exists(/databases/$(database)/documents/forum_channels/$(channelId)) &&
-          getUserData().groupId == getChannelData(channelId).groupId &&
+          getUserData().get('groupId', '').lower() == getChannelData(channelId).get('groupId', '').lower() &&
           (
             getChannelData(channelId).isTransparent == true ||
             getChannelData(channelId).readRoles == null ||
@@ -182,7 +182,7 @@ service cloud.firestore {
         (
           channelId != null &&
           exists(/databases/$(database)/documents/forum_channels/$(channelId)) &&
-          getUserData().groupId == getChannelData(channelId).groupId &&
+          getUserData().get('groupId', '').lower() == getChannelData(channelId).get('groupId', '').lower() &&
           (!getChannelData(channelId).keys().hasAny(['readOnlyForMembers']) || getChannelData(channelId).readOnlyForMembers != true) &&
           (
             getChannelData(channelId).writeRoles == null ||
@@ -489,7 +489,12 @@ service cloud.firestore {
             'statutPublication', 'publicationDateApprobation', 'publicationApprouvePar', 'publicationDerniereRetouche'
           ])
         ) ||
-        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['inscriptions', 'invitesExternes']))
+        (
+          isDocSameGroup() &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'inscriptions', 'invitesExternes', 'covoiturage', 'demandesModificationInscription'
+          ])
+        )
       );
 
       match /comments/{commentId} {
@@ -515,7 +520,7 @@ service cloud.firestore {
         isAdminOrMestre() ||
         (
           resource != null &&
-          getUserData().get('groupId', '') == resource.data.get('groupId', '') &&
+          getUserData().get('groupId', '').lower() == resource.data.get('groupId', '').lower() &&
           (
             resource.data.get('isTransparent', false) == true ||
             !resource.data.keys().hasAny(['readRoles']) ||
@@ -530,7 +535,7 @@ service cloud.firestore {
           )
         )
       );
-      allow create: if isAuthenticated() && request.resource.data.get('groupId', '') == getUserData().get('groupId', '');
+      allow create: if isAuthenticated() && request.resource.data.get('groupId', '').lower() == getUserData().get('groupId', '').lower();
       allow update, delete: if isAdminOrMestre();
     }
 
@@ -539,7 +544,7 @@ service cloud.firestore {
         isSystemAdmin() ||
         isAdminOrMestre() ||
         isModerator() ||
-        (resource != null && resource.data.get('groupId', '') == getUserData().get('groupId', '')) ||
+        (resource != null && resource.data.get('groupId', '').lower() == getUserData().get('groupId', '').lower()) ||
         (resource != null && resource.data.keys().hasAny(['channelId']) && hasChannelReadAccess(resource.data.channelId))
       );
       allow create: if isAuthenticated() && (

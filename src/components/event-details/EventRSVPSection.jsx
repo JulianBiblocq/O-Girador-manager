@@ -40,6 +40,10 @@ export default function EventRSVPSection({
   savingManualRegistration,
   handleManualRegister,
   handleManualUnregister,
+  handleUpdateStatus,
+  handleRequestRegistrationChange,
+  handleCancelRegistrationChangeRequest,
+  handleProcessRegistrationChangeRequest,
   isRegistrationDeadlinePassed,
   t,
   agendaRequireInstrument = false,
@@ -69,6 +73,38 @@ export default function EventRSVPSection({
   const [inviteInstrument, setInviteInstrument] = useState('');
   const [addingInvite, setAddingInvite] = useState(false);
   const [isCalendarMenuOpen, setIsCalendarMenuOpen] = useState(false);
+
+  // Gestion du formulaire de demande de modification transmise au bureau
+  const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
+  const [requestStatusTarget, setRequestStatusTarget] = useState('present');
+  const [requestMessage, setRequestMessage] = useState('');
+  const [requestInstrument, setRequestInstrument] = useState(() => instrumentChoisi || profileData?.instrument || profileData?.instrumentsJoues?.[0] || 'Autre');
+  const [submittingRequest, setSubmittingRequest] = useState(false);
+
+  // Demande en attente de l'adhérent connecté
+  const userPendingRequest = (event?.demandesModificationInscription || []).find(
+    req => req.userId === user?.uid && req.status === 'pending'
+  );
+
+  // Demandes en attente visibles par les organisateurs
+  const pendingModificationRequests = (event?.demandesModificationInscription || []).filter(
+    req => req.status === 'pending'
+  );
+
+  const onSubmitRegistrationRequest = async () => {
+    if (!handleRequestRegistrationChange) return;
+    setSubmittingRequest(true);
+    try {
+      if (requestStatusTarget === 'present' && requestInstrument && setInstrumentChoisi) {
+        setInstrumentChoisi(requestInstrument);
+      }
+      await handleRequestRegistrationChange(requestStatusTarget, requestMessage);
+      setIsRequestModalOpen(false);
+      setRequestMessage('');
+    } finally {
+      setSubmittingRequest(false);
+    }
+  };
 
   // Initialiser guest instrument to first option when list is loaded
   React.useEffect(() => {
@@ -188,6 +224,136 @@ export default function EventRSVPSection({
             <div className="text-xs font-extrabold text-amber-800 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/20 p-4 rounded-[6px_10px_8px_12px] border-2 border-dashed border-amber-600/30 flex flex-col items-center justify-center gap-1.5 leading-relaxed">
               <span>{t('eventDetails.registrationClosed') || "🔒 Les inscriptions pour cet événement sont closes."}</span>
             </div>
+
+            {/* Demande de modification d'inscription au bureau (si deadline passée) */}
+            {userPendingRequest ? (
+              <div className="text-xs font-bold text-encre-noire bg-amber-50/90 dark:bg-amber-950/30 p-3 rounded-[6px_10px_8px_12px] border-2 border-dashed border-[var(--color-cordel-ocre)] flex flex-col gap-2 text-left">
+                <div className="flex items-center justify-between">
+                  <span className="text-[var(--color-cordel-ocre)] uppercase tracking-wider font-extrabold text-[10px] flex items-center gap-1">
+                    <span>⏳</span> Demande en attente de réponse du bureau
+                  </span>
+                  {handleCancelRegistrationChangeRequest && (
+                    <button
+                      type="button"
+                      onClick={() => handleCancelRegistrationChangeRequest(userPendingRequest.id)}
+                      className="text-cordel-wood underline hover:opacity-80 text-[10px] font-semibold cursor-pointer"
+                    >
+                      Annuler
+                    </button>
+                  )}
+                </div>
+                <p className="text-[11px] leading-relaxed">
+                  Passage demandé : <strong className="uppercase">{userPendingRequest.requestedStatus === 'present' ? '✅ Présent' : '❌ Absent'}</strong>
+                  {userPendingRequest.instrumentChoisi && <span className="ml-1">({userPendingRequest.instrumentChoisi})</span>}
+                </p>
+                {userPendingRequest.message && (
+                  <p className="text-[10px] italic opacity-80 border-l-2 border-[var(--color-cordel-ocre)] pl-2">
+                    « {userPendingRequest.message} »
+                  </p>
+                )}
+              </div>
+            ) : !isRequestModalOpen ? (
+              <CordelButton
+                type="button"
+                variant="ocre"
+                onClick={() => {
+                  setRequestStatusTarget(existingResponse?.status === 'present' ? 'absent' : 'present');
+                  setIsRequestModalOpen(true);
+                }}
+                className="w-full py-2.5 font-bold uppercase tracking-wider text-xs flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                📩 Demander une modification au bureau (Inscription tardive / Désistement)
+              </CordelButton>
+            ) : (
+              <div className="p-3 bg-cordel-bg-light/90 border-2 border-dashed border-cordel-master-dark/30 rounded-[6px_10px_8px_12px] flex flex-col gap-2.5 text-left">
+                <div className="flex items-center justify-between">
+                  <h5 className="font-extrabold text-[11px] uppercase tracking-wider text-cordel-wood">
+                    Demande de modification au bureau
+                  </h5>
+                  <button
+                    type="button"
+                    onClick={() => setIsRequestModalOpen(false)}
+                    className="text-xs text-encre-noire/60 hover:text-encre-noire cursor-pointer font-bold"
+                  >
+                    ✕
+                  </button>
+                </div>
+                
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setRequestStatusTarget('present')}
+                    className={`flex-1 py-1.5 text-xs font-bold rounded border cursor-pointer transition-all ${
+                      requestStatusTarget === 'present'
+                        ? 'bg-[var(--color-cordel-vert)] text-white border-[#2d6a4f]'
+                        : 'bg-white/60 text-encre-noire border-encre-noire/20'
+                    }`}
+                  >
+                    ✅ Je serai Présent
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setRequestStatusTarget('absent')}
+                    className={`flex-1 py-1.5 text-xs font-bold rounded border cursor-pointer transition-all ${
+                      requestStatusTarget === 'absent'
+                        ? 'bg-cordel-wood text-white border-cordel-wood'
+                        : 'bg-white/60 text-encre-noire border-encre-noire/20'
+                    }`}
+                  >
+                    ❌ Je serai Absent
+                  </button>
+                </div>
+
+                {requestStatusTarget === 'present' && instrumentsDisponibles?.length > 0 && (
+                  <div>
+                    <label className="block text-[10px] font-bold text-encre-noire/80 mb-1">
+                      Instrument souhaité :
+                    </label>
+                    <select
+                      value={requestInstrument}
+                      onChange={(e) => setRequestInstrument(e.target.value)}
+                      className="w-full text-xs p-1.5 border rounded bg-white dark:bg-neutral-900 border-encre-noire/20 text-encre-noire"
+                    >
+                      {instrumentsDisponibles.map(inst => (
+                        <option key={inst} value={inst}>{inst}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                <div>
+                  <label className="block text-[10px] font-bold text-encre-noire/80 mb-1">
+                    Motif ou message pour le bureau (optionnel) :
+                  </label>
+                  <textarea
+                    value={requestMessage}
+                    onChange={(e) => setRequestMessage(e.target.value)}
+                    rows={2}
+                    placeholder="Ex : Changement de planning imprévu, je suis disponible finalement..."
+                    className="w-full text-xs p-1.5 border rounded bg-white dark:bg-neutral-900 border-encre-noire/20 text-encre-noire resize-none"
+                  />
+                </div>
+
+                <div className="flex gap-2 justify-end mt-1">
+                  <button
+                    type="button"
+                    onClick={() => setIsRequestModalOpen(false)}
+                    className="px-3 py-1.5 text-xs font-semibold text-encre-noire/75 hover:text-encre-noire cursor-pointer"
+                  >
+                    Annuler
+                  </button>
+                  <CordelButton
+                    type="button"
+                    variant="primary"
+                    onClick={onSubmitRegistrationRequest}
+                    disabled={submittingRequest}
+                    className="py-1.5 px-3 text-xs font-bold uppercase tracking-wider"
+                  >
+                    {submittingRequest ? "Envoi..." : "Envoyer au bureau"}
+                  </CordelButton>
+                </div>
+              </div>
+            )}
           </CordelCard>
 
           {/* Calendar Synchroniser Button can still be visible */}
@@ -683,7 +849,57 @@ export default function EventRSVPSection({
           </div>
         )}
 
-        {/* Grouped by instrument for prestation, repetition, stage, atelier */}
+        {/* Demandes de modification d'inscription reçues par le bureau */}
+        {isAuthorized && pendingModificationRequests.length > 0 && (
+          <div className="flex flex-col gap-2 p-3 bg-amber-50/80 dark:bg-amber-950/30 border-2 border-dashed border-[var(--color-cordel-ocre)]/50 rounded-[6px_10px_8px_12px] text-xs text-left mb-3">
+            <div className="flex items-center justify-between">
+              <strong className="text-[var(--color-cordel-ocre)] flex items-center gap-1.5 font-bold uppercase tracking-wider text-[11px]">
+                <span>📬</span> Demandes de modification d'inscription reçues ({pendingModificationRequests.length})
+              </strong>
+            </div>
+            <div className="flex flex-col gap-2 mt-1">
+              {pendingModificationRequests.map(req => (
+                <div key={req.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-2 bg-white/80 dark:bg-black/40 rounded border border-encre-noire/10">
+                  <div className="flex items-center gap-2">
+                    <XiloAvatar src={req.userAvatar} name={req.userName} size={24} />
+                    <div>
+                      <span className="font-bold text-encre-noire text-xs">{req.userName}</span>
+                      <div className="text-[10px] text-encre-noire/75">
+                        Souhaite passer à : <span className={`font-black uppercase px-1 py-0.5 rounded text-[9px] ${
+                          req.requestedStatus === 'present' ? 'bg-[var(--color-cordel-vert)] text-white' : 'bg-cordel-wood text-white'
+                        }`}>
+                          {req.requestedStatus === 'present' ? '✅ Présent' : '❌ Absent'}
+                        </span>
+                        {req.instrumentChoisi && <span className="ml-1.5 italic font-medium">({req.instrumentChoisi})</span>}
+                        {req.message && <span className="ml-1.5 opacity-80">« {req.message} »</span>}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1.5 self-end sm:self-auto">
+                    <button
+                      type="button"
+                      onClick={() => handleProcessRegistrationChangeRequest && handleProcessRegistrationChangeRequest(req, 'accept')}
+                      className="px-2 py-1 text-[10px] font-bold uppercase rounded bg-[var(--color-cordel-vert)] text-white hover:opacity-90 shadow-sm cursor-pointer"
+                      title="Valider cette modification d'inscription"
+                    >
+                      ✓ Accepter
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleProcessRegistrationChangeRequest && handleProcessRegistrationChangeRequest(req, 'reject')}
+                      className="px-2 py-1 text-[10px] font-bold uppercase rounded bg-cordel-wood text-white hover:opacity-90 shadow-sm cursor-pointer"
+                      title="Refuser cette demande"
+                    >
+                      ✗ Refuser
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Liste des Présents (Groupée par pupitre si percussion, ou liste simple) */}
         {(event.includesPercussion !== false) ? (
           Object.keys(presentsByInstrument).length === 0 ? (
             <p className="text-[11px] italic opacity-60">Aucun membre présent pour le moment.</p>
@@ -772,7 +988,7 @@ export default function EventRSVPSection({
         ) : (
           <div className="flex flex-col gap-3.5 theme-inner-panel p-3.5 rounded text-xs text-left">
             <div>
-              <strong className="text-green-600 block border-b border-dashed border-green-500/10 pb-0.5 mb-1">
+              <strong className="text-[var(--color-cordel-vert)] block border-b border-dashed border-[#2d6a4f]/20 pb-0.5 mb-1">
                 ✅ Présents ({((event.inscriptions || []).filter(i => i.status === 'present').length) + ((event.invitesExternes || []).length)})
               </strong>
               <div className="flex flex-wrap gap-1.5 items-center mt-1">
@@ -834,70 +1050,106 @@ export default function EventRSVPSection({
                     )}
                   </div>
                 ))}
-                {(event.inscriptions || []).filter(i => i.status === 'present').length === 0 && (event.invitesExternes || []).length === 0 && <span className="opacity-60 italic">Aucun</span>}
+                {(event.inscriptions || []).filter(i => i.status === 'present').length === 0 && (event.invitesExternes || []).length === 0 && <span className="opacity-60 italic">Aucun présent</span>}
               </div>
             </div>
-            {isAuthorized && (
-              <div>
-                <strong className="text-red-600 block border-b border-dashed border-red-500/10 pb-0.5 mb-1">
-                  ❌ Absents ({(event.inscriptions || []).filter(i => i.status === 'absent').length})
-                </strong>
-                <div className="flex flex-wrap gap-1.5 items-center mt-1">
-                  {(event.inscriptions || []).filter(i => i.status === 'absent').map(i => {
-                    const userInfo = allUsers.find(u => u.id === i.userId) || {};
-                    return (
-                      <div key={i.userId} className="inline-flex items-center gap-1.5 bg-white/60 dark:bg-black/20 px-2 py-0.5 rounded border border-dashed border-encre-noire/10 text-xs font-semibold text-encre-noire">
-                        <XiloAvatar src={userInfo.photoURL} name={i.userName} size={18} />
-                        <span>{i.userName}</span>
-                        {isAuthorized && (
-                          <button
-                            type="button"
-                            onClick={() => handleManualUnregister(i.userId)}
-                            className="text-red-600 hover:text-red-800 text-[10px] font-black cursor-pointer ml-1.5 border-l border-encre-noire/15 pl-1.5"
-                            title="Désinscrire ce membre"
-                          >
-                            ✕
-                          </button>
-                        )}
-                      </div>
-                    );
-                  })}
-                  {(event.inscriptions || []).filter(i => i.status === 'absent').length === 0 && <span className="opacity-60 italic">Aucun</span>}
-                </div>
-              </div>
-            )}
-            
-            {isAuthorized && (
-              <div>
-                <strong className="text-orange-600 block border-b border-dashed border-orange-500/10 pb-0.5 mb-1">
-                  ⏳ À confirmer ({(event.inscriptions || []).filter(i => i.status === 'confirm').length})
-                </strong>
-                <div className="flex flex-wrap gap-1.5 items-center mt-1">
-                  {(event.inscriptions || []).filter(i => i.status === 'confirm').map(i => {
-                    const userInfo = allUsers.find(u => u.id === i.userId) || {};
-                    return (
-                      <div key={i.userId} className="inline-flex items-center gap-1.5 bg-white/60 dark:bg-black/20 px-2 py-0.5 rounded border border-dashed border-encre-noire/10 text-xs font-semibold text-encre-noire">
-                        <XiloAvatar src={userInfo.photoURL} name={i.userName} size={18} />
-                        <span>{i.userName}</span>
-                        {isAuthorized && (
-                          <button
-                            type="button"
-                            onClick={() => handleManualUnregister(i.userId)}
-                            className="text-red-600 hover:text-red-800 text-[10px] font-black cursor-pointer ml-1.5 border-l border-encre-noire/15 pl-1.5"
-                            title="Désinscrire ce membre"
-                          >
-                            ✕
-                          </button>
-                        )}
-                      </div>
-                    );
-                  })}
-                  {(event.inscriptions || []).filter(i => i.status === 'confirm').length === 0 && <span className="opacity-60 italic">Aucun</span>}
-                </div>
-              </div>
-            )}
           </div>
         )}
+
+        {/* Section Absents & À confirmer - Visible universellement pour tous les événements */}
+        <div className="flex flex-col gap-3.5 theme-inner-panel p-3.5 rounded text-xs text-left mt-3">
+          {/* Absents */}
+          <div>
+            <strong className="text-cordel-wood block border-b border-dashed border-[#8b2a1a]/20 pb-0.5 mb-1">
+              ❌ Absents ({(event.inscriptions || []).filter(i => i.status === 'absent').length})
+            </strong>
+            <div className="flex flex-wrap gap-1.5 items-center mt-1">
+              {(event.inscriptions || []).filter(i => i.status === 'absent').map(i => {
+                const userInfo = allUsers.find(u => u.id === i.userId) || {};
+                return (
+                  <div key={i.userId} className="inline-flex items-center gap-1.5 bg-white/60 dark:bg-black/20 px-2 py-1 rounded border border-dashed border-encre-noire/10 text-xs font-semibold text-encre-noire">
+                    <XiloAvatar src={userInfo.photoURL} name={i.userName} size={18} />
+                    <span>{i.userName}</span>
+                    {isAuthorized && (
+                      <div className="flex items-center gap-1 ml-1.5 border-l border-encre-noire/15 pl-1.5">
+                        <button
+                          type="button"
+                          onClick={() => handleUpdateStatus && handleUpdateStatus(i.userId, 'present')}
+                          className="text-[var(--color-cordel-vert)] hover:text-white text-[9px] font-black cursor-pointer px-1 py-0.5 bg-[var(--color-cordel-vert)]/10 hover:bg-[var(--color-cordel-vert)] border border-[#2d6a4f]/30 rounded transition-colors"
+                          title="Passer ce membre en Présent"
+                        >
+                          ✓ Présent
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleManualUnregister(i.userId)}
+                          className="text-cordel-wood hover:text-red-800 text-[10px] font-black cursor-pointer ml-0.5"
+                          title="Désinscrire ce membre"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+              {(event.inscriptions || []).filter(i => i.status === 'absent').length === 0 && (
+                <span className="opacity-60 italic">Aucun absent</span>
+              )}
+            </div>
+          </div>
+
+          {/* À confirmer */}
+          {agendaEnableMaybeStatus && (
+            <div>
+              <strong className="text-[var(--color-cordel-ocre)] block border-b border-dashed border-[#c05621]/20 pb-0.5 mb-1">
+                ⏳ À confirmer ({(event.inscriptions || []).filter(i => i.status === 'confirm').length})
+              </strong>
+              <div className="flex flex-wrap gap-1.5 items-center mt-1">
+                {(event.inscriptions || []).filter(i => i.status === 'confirm').map(i => {
+                  const userInfo = allUsers.find(u => u.id === i.userId) || {};
+                  return (
+                    <div key={i.userId} className="inline-flex items-center gap-1.5 bg-white/60 dark:bg-black/20 px-2 py-1 rounded border border-dashed border-encre-noire/10 text-xs font-semibold text-encre-noire">
+                      <XiloAvatar src={userInfo.photoURL} name={i.userName} size={18} />
+                      <span>{i.userName}</span>
+                      {isAuthorized && (
+                        <div className="flex items-center gap-1 ml-1.5 border-l border-encre-noire/15 pl-1.5">
+                          <button
+                            type="button"
+                            onClick={() => handleUpdateStatus && handleUpdateStatus(i.userId, 'present')}
+                            className="text-[var(--color-cordel-vert)] hover:text-white text-[9px] font-black cursor-pointer px-1 py-0.5 bg-[var(--color-cordel-vert)]/10 hover:bg-[var(--color-cordel-vert)] border border-[#2d6a4f]/30 rounded transition-colors"
+                            title="Valider en Présent"
+                          >
+                            ✓
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleUpdateStatus && handleUpdateStatus(i.userId, 'absent')}
+                            className="text-cordel-wood hover:text-white text-[9px] font-black cursor-pointer px-1 py-0.5 bg-cordel-wood/10 hover:bg-cordel-wood border border-cordel-wood/30 rounded transition-colors"
+                            title="Marquer comme Absent"
+                          >
+                            ✗
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleManualUnregister(i.userId)}
+                            className="text-cordel-wood hover:text-red-800 text-[10px] font-black cursor-pointer ml-0.5"
+                            title="Désinscrire ce membre"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+                {(event.inscriptions || []).filter(i => i.status === 'confirm').length === 0 && (
+                  <span className="opacity-60 italic">Aucun en attente</span>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* Validation section */}
         {((event.inscriptions || []).some(i => i.status === 'pending' || i.status === 'refused') || isAuthorized) && (

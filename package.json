@@ -8,6 +8,7 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "oxlint",
+    "test": "node scripts/run_all_tests.mjs",
     "preview": "vite preview",
     "audit-deps": "npx npm-check-updates",
     "update-deps": "npx npm-check-updates -u"

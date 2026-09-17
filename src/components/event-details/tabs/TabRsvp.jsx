@@ -43,6 +43,10 @@ export default function TabRsvp({
   savingManualRegistration,
   handleManualRegister,
   handleManualUnregister,
+  handleUpdateStatus,
+  handleRequestRegistrationChange,
+  handleCancelRegistrationChangeRequest,
+  handleProcessRegistrationChangeRequest,
   isRegistrationDeadlinePassed,
   t,
   currentConfig,
@@ -120,6 +124,10 @@ export default function TabRsvp({
             savingManualRegistration={savingManualRegistration}
             handleManualRegister={handleManualRegister}
             handleManualUnregister={handleManualUnregister}
+            handleUpdateStatus={handleUpdateStatus}
+            handleRequestRegistrationChange={handleRequestRegistrationChange}
+            handleCancelRegistrationChangeRequest={handleCancelRegistrationChangeRequest}
+            handleProcessRegistrationChangeRequest={handleProcessRegistrationChangeRequest}
             isRegistrationDeadlinePassed={isRegistrationDeadlinePassed}
             t={t}
             agendaRequireInstrument={currentConfig?.agendaRequireInstrument}

@@ -545,7 +545,7 @@ export function checkUserAccessToList(allowedList = ['all'], userRole = 'membre'
       const lower = directStr.toLowerCase().trim();
       if (lower !== 'super-admin' && lower !== 'superadmin') {
         allUserTagVariants.add(lower);
-        allUserTagVariants.add(lower.replace(/[\.\-_]/g, '').trim());
+        allUserTagVariants.add(lower.replace(/[.\-_]/g, '').trim());
       }
     }
     if (typeof t === 'object') {
@@ -553,7 +553,7 @@ export function checkUserAccessToList(allowedList = ['all'], userRole = 'membre'
         const idLower = String(t.id).toLowerCase().trim();
         if (idLower !== 'super-admin' && idLower !== 'superadmin') {
           allUserTagVariants.add(idLower);
-          allUserTagVariants.add(idLower.replace(/[\.\-_]/g, '').trim());
+          allUserTagVariants.add(idLower.replace(/[.\-_]/g, '').trim());
         }
       }
       if (t.nomM && !String(t.nomM).toLowerCase().includes('super-admin') && !String(t.nomM).toLowerCase().includes('superadmin')) {
@@ -574,7 +574,7 @@ export function checkUserAccessToList(allowedList = ['all'], userRole = 'membre'
         const idLower = String(tagObj.id).toLowerCase().trim();
         if (idLower !== 'super-admin' && idLower !== 'superadmin') {
           allUserTagVariants.add(idLower);
-          allUserTagVariants.add(idLower.replace(/[\.\-_]/g, '').trim());
+          allUserTagVariants.add(idLower.replace(/[.\-_]/g, '').trim());
         }
       }
       if (tagObj.nomM && !String(tagObj.nomM).toLowerCase().includes('super-admin') && !String(tagObj.nomM).toLowerCase().includes('superadmin')) {
@@ -593,7 +593,7 @@ export function checkUserAccessToList(allowedList = ['all'], userRole = 'membre'
             const pLower = String(pId).toLowerCase().trim();
             if (pLower !== 'super-admin' && pLower !== 'superadmin') {
               allUserTagVariants.add(pLower);
-              allUserTagVariants.add(pLower.replace(/[\.\-_]/g, '').trim());
+              allUserTagVariants.add(pLower.replace(/[.\-_]/g, '').trim());
             }
           }
         });
@@ -622,7 +622,7 @@ export function checkUserAccessToList(allowedList = ['all'], userRole = 'membre'
   // Les membres du CA non-membres du bureau en sont strictement exclus.
   const isBureauChannel = allowedList.some(r => {
     const s = String(r).toLowerCase().trim();
-    return s === 'bureau' || s.endsWith('_bureau') || s.startsWith('bureau');
+    return s === 'bureau' || s.endsWith('_bureau') || s.startsWith('bureau ') || s.startsWith('bureau -') || s.startsWith('bureau :');
   });
   if (isBureauChannel) {
     return hasBureauTag;
@@ -632,14 +632,26 @@ export function checkUserAccessToList(allowedList = ['all'], userRole = 'membre'
   // Accessible aux membres du CA et aux membres du Bureau.
   const isCaChannel = allowedList.some(r => {
     const s = String(r).toLowerCase().trim();
-    return s === 'ca' || s.endsWith('_ca') || s.includes('conseil');
+    return s === 'ca' || s.endsWith('_ca') || s === 'c.a.' || s.startsWith('ca ') || s.startsWith('ca -') || s.startsWith('ca :') || s.startsWith('c.a. ') || s.includes('conseil');
   });
   if (isCaChannel) {
     return hasCaTag;
   }
 
+  // Assimilation des variantes de rôles adhérent / élève au rôle 'membre'
+  const isMemberRole = ['membre', 'adherent', 'adhérent', 'adherente', 'adhérente', 'eleve', 'élève', 'batuqueiro'].includes(cleanRole);
+
   // 3. Correspondance directe de rôle système (en mode normal, super-admin n'accorde pas d'accès automatique)
-  if (cleanRole !== 'super-admin' && cleanRole !== 'superadmin' && allowedList.some(r => String(r).toLowerCase().trim() === cleanRole)) return true;
+  if (cleanRole !== 'super-admin' && cleanRole !== 'superadmin') {
+    if (allowedList.some(r => {
+      const target = String(r).toLowerCase().trim();
+      if (target === cleanRole) return true;
+      if (target === 'membre' && isMemberRole) return true;
+      return false;
+    })) {
+      return true;
+    }
+  }
 
   // 4. Vérification générique pour les autres salons (pupitres, groupes de travail...)
   return allowedList.some(allowedItem => {
@@ -721,11 +733,12 @@ export function canUserReadForumChannel(
     ? effectiveUserTags
     : (profileData?.tags || []);
 
-  // Sécurité absolue pour le salon Bureau : toujours strictement restreint aux membres du Bureau
+  // Sécurité absolue pour le salon Bureau : strictement restreint aux membres du Bureau
   const isBureau = channelNameLower === 'bureau' || 
                    channelNameLower === '#bureau' ||
-                   channelNameLower.startsWith('bureau') || 
-                   channelNameLower.includes('bureau') ||
+                   channelNameLower.startsWith('bureau ') || 
+                   channelNameLower.startsWith('bureau -') || 
+                   channelNameLower.startsWith('bureau :') || 
                    channelIdLower.endsWith('_bureau') || 
                    channelIdLower === 'bureau';
 
@@ -734,9 +747,16 @@ export function canUserReadForumChannel(
   }
 
   // Sécurité pour le salon CA : restreint aux membres du CA et du Bureau
+  // Seuls les salons explicitement nommés CA / C.A. / Conseil d'administration sont réservés.
+  // Les salons publics commençant par 'ca' comme Carnaval, Covoiturage, Calendrier ne doivent JAMAIS être bloqués !
   const isCa = channelNameLower === 'ca' || 
                channelNameLower === '#ca' ||
-               channelNameLower.startsWith('ca') || 
+               channelNameLower === 'c.a.' ||
+               channelNameLower === 'conseil d\'administration' ||
+               channelNameLower.startsWith('ca ') || 
+               channelNameLower.startsWith('ca -') || 
+               channelNameLower.startsWith('ca :') || 
+               channelNameLower.startsWith('c.a. ') || 
                channelIdLower.endsWith('_ca') || 
                channelIdLower === 'ca';
 

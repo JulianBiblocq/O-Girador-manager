@@ -5,7 +5,7 @@ import { db, storage } from '../firebase';
 import CordelButton from './CordelButton';
 import { useTranslation } from './LanguageContext';
 
-import { useEventRSVP } from '../hooks/useEventRSVP';
+import { useEventRSVP, checkRegistrationDeadlinePassed } from '../hooks/useEventRSVP';
 import { useEventCarpool, calculateCarStatus } from '../hooks/useEventCarpool';
 import { useEventSetlist } from '../hooks/useEventSetlist';
 import useConfirm from '../hooks/useConfirm';
@@ -223,9 +223,13 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
     handleValidatePending,
     handleManualRegister,
     handleManualUnregister,
+    handleUpdateStatus,
     handleUpdateMemberInstrument,
     handleAddInviteExterne,
     handleRemoveInviteExterne,
+    handleRequestRegistrationChange,
+    handleCancelRegistrationChangeRequest,
+    handleProcessRegistrationChangeRequest,
     dependents,
     familyMembers,
     familyResponses,
@@ -1017,9 +1021,7 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
   }
 
   // Date parsing for visual header
-  const isRegistrationDeadlinePassed = event.dateLimiteInscription
-    ? new Date(event.dateLimiteInscription) < new Date()
-    : false;
+  const isRegistrationDeadlinePassed = checkRegistrationDeadlinePassed(event.dateLimiteInscription);
 
   const eventType = event.type || 'repetition';
   const rawCurrentConfig = eventTypeConfigs[eventType] || {};
@@ -1566,6 +1568,10 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
                 savingManualRegistration={savingManualRegistration}
                 handleManualRegister={handleManualRegister}
                 handleManualUnregister={handleManualUnregister}
+                handleUpdateStatus={handleUpdateStatus}
+                handleRequestRegistrationChange={handleRequestRegistrationChange}
+                handleCancelRegistrationChangeRequest={handleCancelRegistrationChangeRequest}
+                handleProcessRegistrationChangeRequest={handleProcessRegistrationChangeRequest}
                 isRegistrationDeadlinePassed={isRegistrationDeadlinePassed}
                 t={t}
                 currentConfig={currentConfig}
@@ -1647,6 +1653,10 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
                 savingManualRegistration={savingManualRegistration}
                 handleManualRegister={handleManualRegister}
                 handleManualUnregister={handleManualUnregister}
+                handleUpdateStatus={handleUpdateStatus}
+                handleRequestRegistrationChange={handleRequestRegistrationChange}
+                handleCancelRegistrationChangeRequest={handleCancelRegistrationChangeRequest}
+                handleProcessRegistrationChangeRequest={handleProcessRegistrationChangeRequest}
                 isRegistrationDeadlinePassed={isRegistrationDeadlinePassed}
                 t={t}
                 handleAddInviteExterne={handleAddInviteExterne}

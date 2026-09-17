@@ -23,7 +23,11 @@ const testScripts = [
   'scripts/test_saas_multi_tenant_isolation.mjs',
   'scripts/test_saas_license_guard.mjs',
   'scripts/test_pupitre_instrument_rules.mjs',
-  'scripts/test_event_qr_code_pipeline.mjs'
+  'scripts/test_event_qr_code_pipeline.mjs',
+  'scripts/test_private_messages_recovery.mjs',
+  'scripts/test_studio_lexique_integration.mjs',
+  'scripts/test_studio_social_enrichment.mjs',
+  'scripts/test_studio_social_unicode_workflow.mjs'
 ];
 
 console.log("===============================================================");
