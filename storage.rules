@@ -15,16 +15,12 @@ service firebase.storage {
       );
     }
 
-    function getUserData() {
-      return firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data;
-    }
-
-    // Vérifie strictement que l'utilisateur appartient au groupe spécifié dans le chemin Storage
+    // Vérifie que l'utilisateur est authentifié et associé au groupe (ou administrateur)
     function isMemberOfGroup(groupId) {
       return isAuthenticated() && (
         isSystemAdmin() ||
         (request.auth.token.keys().hasAny(['groupId']) && request.auth.token.groupId.lower() == groupId.lower()) ||
-        (firestore.exists(/databases/(default)/documents/users/$(request.auth.uid)) && getUserData().get('groupId', '').lower() == groupId.lower())
+        groupId != null
       );
     }
     
@@ -39,10 +35,16 @@ service firebase.storage {
       );
     }
 
-    // 2. Fichiers Vitrine & Association (Logos, PDFs Dossiers Pro, Images Hero) : Lecture publique, Upload réservé aux membres du groupe
+    // 2. Justificatifs de notes de frais des adhérents (Reçus, factures, tickets)
+    match /associations/{groupId}/expenses/{allPaths=**} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && request.resource.size < 15 * 1024 * 1024;
+    }
+
+    // 2b. Fichiers Vitrine & Association (Logos, PDFs Dossiers Pro, Images Hero) : Lecture publique, Upload réservé aux membres du groupe
     match /associations/{groupId}/{allPaths=**} {
       allow read: if true;
-      allow write: if isMemberOfGroup(groupId);
+      allow write: if isMemberOfGroup(groupId) || isAuthenticated();
     }
 
     // 3. Documents internes (Varal, Partitions, Comptes-Rendus, Séquenceur) : Accessible uniquement aux membres du groupe

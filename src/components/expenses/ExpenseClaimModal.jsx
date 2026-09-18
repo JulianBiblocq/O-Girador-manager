@@ -95,7 +95,14 @@ export default function ExpenseClaimModal({
       setReceiptFile(null);
       onClose();
     } catch (err) {
-      setFormError(err.message || "Erreur lors de l'enregistrement de la note de frais.");
+      console.error("ExpenseClaimModal - Erreur soumission note de frais :", err);
+      let userFriendlyMessage = err.message || "Erreur lors de l'enregistrement de la note de frais.";
+      if (err.code === 'storage/unauthorized' || (err.message && err.message.includes('storage/unauthorized'))) {
+        userFriendlyMessage = "Accès refusé par le serveur de stockage. Vos droits pour téléverser ce justificatif n'ont pas été validés. Veuillez réessayer ou vérifier votre connexion.";
+      } else if (err.code === 'storage/canceled') {
+        userFriendlyMessage = "Le téléversement du justificatif a été annulé.";
+      }
+      setFormError(userFriendlyMessage);
     }
   };
 
@@ -130,7 +137,7 @@ export default function ExpenseClaimModal({
           </div>
 
           {formError && (
-            <div className="bg-red-100 border-l-4 border-red-600 text-red-900 dark:bg-red-950/40 dark:text-red-300 p-2.5 rounded text-xs font-bold animate-fadeIn">
+            <div className="bg-red-100 border-l-4 border-red-600 text-red-900 dark:bg-red-950/40 dark:text-red-300 p-3 rounded text-xs font-bold animate-fadeIn break-words break-all max-w-full overflow-hidden">
               ⚠️ {formError}
             </div>
           )}
