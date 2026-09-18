@@ -241,7 +241,8 @@ export default function useVaralData({
         }
       }
 
-      if (!docItem.isHidden) {
+      // Si le document est visible OU si l'utilisateur possède les droits de gestion (mestre, admin, canWrite)
+      if (!docItem.isHidden || isAuthorized) {
         if (!groups[catId]) {
           groups[catId] = [];
         }
@@ -546,6 +547,21 @@ export default function useVaralData({
     }
   };
 
+  // 14. Bascule rapide de l'état masqué / visible d'un document sur le Varal
+  const handleToggleHidden = async (docItem) => {
+    if (!docItem?.id || docItem.isVirtualEventMedia || isWorkshopVirtualDoc(docItem)) return;
+    try {
+      const docRef = doc(db, 'documents', docItem.id);
+      const newHiddenState = !docItem.isHidden;
+      await updateDoc(docRef, {
+        isHidden: newHiddenState
+      });
+    } catch (err) {
+      console.error("useVaralData - Erreur lors de la modification de la visibilité :", err);
+      alert(t('documents.updateError') || "Erreur lors de la modification de la visibilité.");
+    }
+  };
+
   return {
     documents,
     varalCategories,
@@ -562,6 +578,7 @@ export default function useVaralData({
     handleDelete,
     handleMoveLeft,
     handleMoveRight,
+    handleToggleHidden,
     updateDocumentsOrder,
     saveCategory,
     deleteCategory,

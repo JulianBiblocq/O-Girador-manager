@@ -187,16 +187,29 @@ export default function VaralCategoryRope({
   onSelectDoc,
   onMoveLeft,
   onMoveRight,
+  onToggleHidden,
   onEditDoc,
   onDeleteDoc
 }) {
   const { t } = useTranslation();
   const [cultureFilter, setCultureFilter] = useState('all');
+  const [visibilityFilter, setVisibilityFilter] = useState('all'); // 'all' | 'visible' | 'hidden'
 
   const variant = categoryVariants[category.id] || 'default';
 
-  // Filtrage spécifique pour la corde Culture
+  // Comptage des documents masqués et visibles pour les utilisateurs autorisés
+  const hiddenCount = documents.filter(d => Boolean(d.isHidden)).length;
+  const visibleCount = documents.filter(d => !d.isHidden).length;
+
+  // 1. Filtrage éventuel par état de visibilité pour les administrateurs
   let docList = documents;
+  if (isAuthorized && hiddenCount > 0) {
+    if (visibilityFilter === 'visible') {
+      docList = docList.filter(d => !d.isHidden);
+    } else if (visibilityFilter === 'hidden') {
+      docList = docList.filter(d => Boolean(d.isHidden));
+    }
+  }
   if (category.id === 'Culture' && cultureFilter !== 'all') {
     docList = docList.filter((d) => {
       if (d.type !== 'culture_fiche') return false;
@@ -240,6 +253,47 @@ export default function VaralCategoryRope({
           <span className={`theme-stamp-badge theme-stamp-badge-${variant === 'ocre' || variant === 'vert' ? 'wood' : 'dark'} text-[8.5px] tracking-wider font-extrabold`}>
             {getCategoryLabel(category.nom)}
           </span>
+
+          {/* Filtres de visibilité (Tous, Visibles, Masqués) si des documents sont masqués */}
+          {isAuthorized && hiddenCount > 0 && (
+            <div className="flex items-center gap-1 bg-[#fdfaf2] dark:bg-[#1a1816] border border-encre-noire/25 p-0.5 rounded shadow-xs select-none">
+              <button
+                type="button"
+                onClick={() => setVisibilityFilter('all')}
+                className={`text-[8.5px] font-black uppercase px-2 py-0.5 rounded transition-all cursor-pointer ${visibilityFilter === 'all'
+                  ? 'bg-cordel-master-dark text-[#FEF9E7] shadow-xs'
+                  : 'text-cordel-master-dark/80 hover:bg-neutral-200 dark:hover:bg-neutral-800'
+                }`}
+                title="Afficher tous les livrets de cette corde (visibles et masqués)"
+              >
+                Tous ({documents.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setVisibilityFilter('visible')}
+                className={`text-[8.5px] font-black uppercase px-2 py-0.5 rounded transition-all cursor-pointer flex items-center gap-1 ${visibilityFilter === 'visible'
+                  ? 'bg-[var(--color-cordel-vert,#2d6a4f)] text-[#FEF9E7] shadow-xs'
+                  : 'text-cordel-master-dark/80 hover:bg-neutral-200 dark:hover:bg-neutral-800'
+                }`}
+                title="Afficher uniquement les livrets visibles aux membres"
+              >
+                <span>👁️</span>
+                <span>Visibles ({visibleCount})</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setVisibilityFilter('hidden')}
+                className={`text-[8.5px] font-black uppercase px-2 py-0.5 rounded transition-all cursor-pointer flex items-center gap-1 ${visibilityFilter === 'hidden'
+                  ? 'bg-[var(--color-cordel-ocre,#c05621)] text-[#FEF9E7] shadow-xs'
+                  : 'text-cordel-wood font-extrabold hover:bg-neutral-200 dark:hover:bg-neutral-800'
+                }`}
+                title="Afficher uniquement les livrets masqués (brouillons)"
+              >
+                <span>🙈</span>
+                <span>Masqués ({hiddenCount})</span>
+              </button>
+            </div>
+          )}
 
           {/* Bouton "+ Déposer" compact par corde */}
           {canDeposit && (
@@ -344,6 +398,7 @@ export default function VaralCategoryRope({
                 onSelect={onSelectDoc}
                 onMoveLeft={onMoveLeft}
                 onMoveRight={onMoveRight}
+                onToggleHidden={onToggleHidden}
                 onEdit={onEditDoc}
                 onDelete={onDeleteDoc}
               />

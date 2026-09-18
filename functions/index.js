@@ -2922,38 +2922,85 @@ exports.testFramaspaceConnection = onCall(
 /**
  * Parseur XML WebDAV multistatus pour extraire la liste des fichiers partagés.
  * Filtre strictement les fichiers multimédias (images et vidéos).
+/**
+ * Parseur XML WebDAV multistatus pour extraire la liste des fichiers multimédias et des sous-dossiers.
+ * Filtre strictement les images et vidéos et identifie les sous-dossiers (collections non-racines).
+ *
  * @param {string} xmlString - Contenu XML multistatus de la réponse WebDAV
  * @param {string} instanceUrl - URL racine de l'instance Nextcloud
  * @param {string} token - Token de partage public
- * @returns {Array} Liste des médias extraits [{ id, name, type, url, mimeType, size }]
+ * @param {string} [baseDavPath="/public.php/webdav/"] - Chemin de base WebDAV interrogé
+ * @returns {{ items: Array, subfolders: Array<string> }}
  */
-function parseWebdavMultistatus(xmlString, instanceUrl, token) {
+function parseWebdavMultistatus(xmlString, instanceUrl, token, baseDavPath = "/public.php/webdav/") {
   const items = [];
-  const responseBlocks = xmlString.match(/<d:response[\s\S]*?<\/d:response>/gi) || [];
+  const subfolders = [];
+  const responseBlocks = xmlString.match(/<[a-z0-9_-]*:?response[\s\S]*?<\/[a-z0-9_-]*:?response>/gi) || [];
+
+  // Normalisation du chemin de base pour le calcul du chemin relatif (ex: '/public.php/webdav/')
+  const normBasePath = "/" + baseDavPath.replace(/^\/+/, "").replace(/\/+$/, "") + "/";
 
   for (const block of responseBlocks) {
-    // Si c'est un dossier (collection), ignorer
-    if (/<d:collection\s*\/?>/i.test(block)) continue;
+    const isCollection = /<[a-z0-9_-]*:?collection\s*\/?>/i.test(block);
 
-    // Extraire le href
-    const hrefMatch = block.match(/<d:href>([\s\S]*?)<\/d:href>/i);
-    const href = hrefMatch ? decodeURIComponent(hrefMatch[1].trim()) : "";
-    if (!href) continue;
+    // Extraction du href
+    const hrefMatch = block.match(/<[a-z0-9_-]*:?href[^>]*>([\s\S]*?)<\/[a-z0-9_-]*:?href>/i);
+    let rawHref = hrefMatch ? hrefMatch[1].trim() : "";
+    if (!rawHref) continue;
+
+    let cleanHref = rawHref;
+    if (cleanHref.includes("://")) {
+      try {
+        cleanHref = new URL(cleanHref).pathname;
+      } catch (e) {}
+    }
+    cleanHref = decodeURIComponent(cleanHref);
+
+    // Calcul du chemin relatif par rapport à la racine du partage
+    let relativePath = "";
+    const idx = cleanHref.indexOf(normBasePath);
+    if (idx !== -1) {
+      relativePath = cleanHref.substring(idx + normBasePath.length);
+    } else {
+      // Si normBasePath n'est pas trouvé tel quel, déduire le chemin relatif après les préfixes WebDAV Nextcloud connus
+      const matchPrefix = cleanHref.match(/^\/.*?\/(public\.php\/webdav|public\.php\/dav\/files\/[^/]+|remote\.php\/dav\/files\/[^/]+\/[^/]+)\/(.*)$/i);
+      if (matchPrefix && matchPrefix[2]) {
+        relativePath = matchPrefix[2];
+      } else {
+        const parts = cleanHref.split("/").filter(Boolean);
+        relativePath = parts.length > 0 ? parts[parts.length - 1] : "";
+      }
+    }
+    relativePath = relativePath.replace(/^\/+/, "");
+
+    // Si c'est un sous-dossier (collection non-racine)
+    if (isCollection) {
+      const folderRel = relativePath.replace(/\/+$/, "");
+      // Ignorer la racine elle-même (chemin relatif vide)
+      if (folderRel && !subfolders.includes(folderRel)) {
+        subfolders.push(folderRel);
+      }
+      continue;
+    }
 
     // Nom du fichier
-    const nameMatch = block.match(/<d:displayname>([\s\S]*?)<\/d:displayname>/i);
+    const nameMatch = block.match(/<[a-z0-9_-]*:?displayname[^>]*>([\s\S]*?)<\/[a-z0-9_-]*:?displayname>/i);
     let name = nameMatch ? nameMatch[1].trim() : "";
     if (!name) {
-      const parts = href.replace(/\/+$/, "").split("/");
+      const parts = relativePath.split("/");
       name = parts[parts.length - 1] || "media";
     }
 
+    // Déterminer le sous-dossier éventuel (ex: 'Raul')
+    const lastSlashIdx = relativePath.lastIndexOf("/");
+    const subfolder = lastSlashIdx !== -1 ? relativePath.substring(0, lastSlashIdx) : "";
+
     // Type MIME
-    const mimeMatch = block.match(/<d:getcontenttype>([\s\S]*?)<\/d:getcontenttype>/i);
+    const mimeMatch = block.match(/<[a-z0-9_-]*:?getcontenttype[^>]*>([\s\S]*?)<\/[a-z0-9_-]*:?getcontenttype>/i);
     const mimeType = mimeMatch ? mimeMatch[1].trim().toLowerCase() : "";
 
     // Taille en octets
-    const sizeMatch = block.match(/<d:getcontentlength>([\s\S]*?)<\/d:getcontentlength>/i);
+    const sizeMatch = block.match(/<[a-z0-9_-]*:?getcontentlength[^>]*>([\s\S]*?)<\/[a-z0-9_-]*:?getcontentlength>/i);
     const size = sizeMatch ? parseInt(sizeMatch[1].trim(), 10) : 0;
 
     // Filtrer strictement les images et vidéos
@@ -2964,23 +3011,31 @@ function parseWebdavMultistatus(xmlString, instanceUrl, token) {
 
     const mediaType = isVideo ? "video" : "image";
 
+    // Encodage du chemin relatif pour l'API Nextcloud
+    const encodedRelPath = encodeURIComponent("/" + relativePath);
+    const subfolderParam = subfolder ? encodeURIComponent("/" + subfolder) : "%2F";
+    const fileNameParam = encodeURIComponent(name);
+
     // 1. Miniature optimisée pour la grille du Varal (x=400, y=400, a=1)
-    const thumbnailUrl = `${instanceUrl}/index.php/apps/files_sharing/publicpreview?token=${token}&file=${encodeURIComponent(name)}&x=400&y=400&a=1`;
+    const thumbnailUrl = `${instanceUrl}/index.php/apps/files_sharing/publicpreview?token=${token}&file=${encodedRelPath}&x=400&y=400&a=1`;
 
     // 2. Prévisualisation grand format pour la Lightbox (x=1600, y=1600)
-    const previewUrl = `${instanceUrl}/index.php/apps/files_sharing/publicpreview?token=${token}&file=${encodeURIComponent(name)}&x=1600&y=1600`;
+    const previewUrl = `${instanceUrl}/index.php/apps/files_sharing/publicpreview?token=${token}&file=${encodedRelPath}&x=1600&y=1600`;
 
-    // 3. Flux brut / vidéo HTML5 / téléchargement direct (nom de fichier dans 'path' sans 'files=')
-    const rawUrl = `${instanceUrl}/s/${token}/download?path=%2F${encodeURIComponent(name)}`;
+    // 3. Flux brut / vidéo HTML5 / téléchargement direct Nextcloud :
+    // Format officiel : /s/TOKEN/download?path=/SOUS_DOSSIER&files=NOM_FICHIER
+    const rawUrl = `${instanceUrl}/s/${token}/download?path=${subfolderParam}&files=${fileNameParam}`;
 
     // Secours direct haute compatibilité
-    const pathPreviewUrl = `${instanceUrl}/index.php/apps/files_sharing/publicpreview/${token}?file=${encodeURIComponent(name)}&x=400&y=400&a=1`;
-    const pathPreviewHdUrl = `${instanceUrl}/index.php/apps/files_sharing/publicpreview/${token}?file=${encodeURIComponent(name)}&x=1600&y=1600`;
-    const directDavUrl = `${instanceUrl}/public.php/dav/files/${token}/${encodeURIComponent(name)}`;
+    const pathPreviewUrl = `${instanceUrl}/index.php/apps/files_sharing/publicpreview/${token}?file=${encodedRelPath}&x=400&y=400&a=1`;
+    const pathPreviewHdUrl = `${instanceUrl}/index.php/apps/files_sharing/publicpreview/${token}?file=${encodedRelPath}&x=1600&y=1600`;
+    const directDavUrl = `${instanceUrl}/public.php/webdav/${relativePath.split("/").filter(Boolean).map(encodeURIComponent).join("/")}`;
 
     items.push({
-      id: Buffer.from(name).toString("base64url"),
+      id: Buffer.from(relativePath || name).toString("base64url"),
       name,
+      subfolder,
+      relativePath,
       type: mediaType,
       url: rawUrl,
       previewUrl,
@@ -2994,12 +3049,13 @@ function parseWebdavMultistatus(xmlString, instanceUrl, token) {
     });
   }
 
-  return items;
+  return { items, subfolders };
 }
 
 /**
  * Fonction Cloud appelable (OnCall) pour lister les médias d'un album Framaspace partagé.
  * Permet d'alimenter la galerie native interactive du Varal Photos sans stocker les images sur Firebase.
+ * Explore automatiquement tous les sous-dossiers créés par Nextcloud (ex: sous-dossiers utilisateurs 'Raul/').
  */
 exports.getFramaspaceAlbumMedia = onCall(
   async (request) => {
@@ -3058,27 +3114,105 @@ exports.getFramaspaceAlbumMedia = onCall(
       const webdavPublicUrl = `${instanceUrl}/public.php/webdav/`;
       const publicBasicAuth = Buffer.from(`${token}:`).toString("base64");
 
-      const davRes = await fetch(webdavPublicUrl, {
-        method: "PROPFIND",
-        headers: {
-          Authorization: `Basic ${publicBasicAuth}`,
-          Depth: "1"
-        },
-        signal: AbortSignal.timeout(8000)
-      });
+      let allItems = [];
+      let discoveredSubfolders = [];
 
-      if (davRes.status === 207 || davRes.status === 200) {
-        const xmlText = await davRes.text();
-        const items = parseWebdavMultistatus(xmlText, instanceUrl, token);
-        console.log(`getFramaspaceAlbumMedia - ${items.length} médias extraits avec succès pour le token ${token.substring(0, 5)}...`);
+      // a. Tenter d'abord avec Depth: "infinity" pour récupérer tous les médias récursivement en un seul appel
+      try {
+        const infinityRes = await fetch(webdavPublicUrl, {
+          method: "PROPFIND",
+          headers: {
+            Authorization: `Basic ${publicBasicAuth}`,
+            Depth: "infinity"
+          },
+          signal: AbortSignal.timeout(8000)
+        });
+
+        if (infinityRes.status === 207 || infinityRes.status === 200) {
+          const xmlText = await infinityRes.text();
+          const parsed = parseWebdavMultistatus(xmlText, instanceUrl, token, "/public.php/webdav/");
+          if (parsed.items.length > 0) {
+            allItems = parsed.items;
+            console.log(`getFramaspaceAlbumMedia - Depth infinity réussi : ${parsed.items.length} médias extraits (incluant sous-dossiers).`);
+          } else {
+            discoveredSubfolders = parsed.subfolders;
+          }
+        }
+      } catch (infErr) {
+        console.warn("getFramaspaceAlbumMedia - Depth infinity non supporté :", infErr.message);
+      }
+
+      // b. Si Depth infinity n'a retourné aucun fichier, interroger Depth: "1" à la racine
+      if (allItems.length === 0) {
+        const davRes = await fetch(webdavPublicUrl, {
+          method: "PROPFIND",
+          headers: {
+            Authorization: `Basic ${publicBasicAuth}`,
+            Depth: "1"
+          },
+          signal: AbortSignal.timeout(8000)
+        });
+
+        if (davRes.status === 207 || davRes.status === 200) {
+          const xmlText = await davRes.text();
+          const parsed = parseWebdavMultistatus(xmlText, instanceUrl, token, "/public.php/webdav/");
+          allItems = [...parsed.items];
+          for (const sf of parsed.subfolders) {
+            if (!discoveredSubfolders.includes(sf)) {
+              discoveredSubfolders.push(sf);
+            }
+          }
+        }
+      }
+
+      // c. S'il existe des sous-dossiers (ex: 'Raul'), explorer chaque sous-dossier pour extraire leurs clichés
+      if (discoveredSubfolders.length > 0) {
+        console.log(`getFramaspaceAlbumMedia - ${discoveredSubfolders.length} sous-dossier(s) détecté(s) :`, discoveredSubfolders);
+
+        const subfolderPromises = discoveredSubfolders.slice(0, 20).map(async (folder) => {
+          try {
+            const folderEncoded = folder.split("/").map(encodeURIComponent).join("/");
+            const subDavUrl = `${instanceUrl}/public.php/webdav/${folderEncoded}/`;
+            const subRes = await fetch(subDavUrl, {
+              method: "PROPFIND",
+              headers: {
+                Authorization: `Basic ${publicBasicAuth}`,
+                Depth: "1"
+              },
+              signal: AbortSignal.timeout(6000)
+            });
+
+            if (subRes.status === 207 || subRes.status === 200) {
+              const subXml = await subRes.text();
+              const subParsed = parseWebdavMultistatus(subXml, instanceUrl, token, `/public.php/webdav/`);
+              return subParsed.items;
+            }
+          } catch (subErr) {
+            console.warn(`getFramaspaceAlbumMedia - Erreur scan sous-dossier '${folder}' :`, subErr.message);
+          }
+          return [];
+        });
+
+        const subResults = await Promise.all(subfolderPromises);
+        for (const subItems of subResults) {
+          for (const itm of subItems) {
+            if (!allItems.some(existing => existing.id === itm.id)) {
+              allItems.push(itm);
+            }
+          }
+        }
+      }
+
+      if (allItems.length > 0) {
+        console.log(`getFramaspaceAlbumMedia - ${allItems.length} médias extraits avec succès au total pour le token ${token.substring(0, 5)}...`);
         return {
           success: true,
-          items,
-          count: items.length
+          items: allItems,
+          count: allItems.length
         };
       }
 
-      console.warn(`getFramaspaceAlbumMedia - Réponse WebDAV public HTTP ${davRes.status}, tentative de fallback technique...`);
+      console.warn("getFramaspaceAlbumMedia - Aucun média extrait via le partage public, tentative de fallback technique...");
     } catch (publicErr) {
       console.warn("getFramaspaceAlbumMedia - Erreur WebDAV public :", publicErr.message);
     }
@@ -3095,7 +3229,8 @@ exports.getFramaspaceAlbumMedia = onCall(
             const evData = eventDoc.data();
             const folderPath = evData.framaspaceFolder;
             if (folderPath) {
-              const techDavUrl = `${framaspaceUrl.replace(/\/+$/, "")}/remote.php/dav/files/${encodeURIComponent(framaspaceUsername)}/${folderPath}/`;
+              const baseFolderDavPath = `/remote.php/dav/files/${encodeURIComponent(framaspaceUsername)}/${folderPath}/`;
+              const techDavUrl = `${framaspaceUrl.replace(/\/+$/, "")}${baseFolderDavPath}`;
               const techBasicAuth = Buffer.from(`${framaspaceUsername}:${framaspaceAppPassword}`).toString("base64");
 
               const techRes = await fetch(techDavUrl, {
@@ -3109,13 +3244,47 @@ exports.getFramaspaceAlbumMedia = onCall(
 
               if (techRes.status === 207 || techRes.status === 200) {
                 const xmlText = await techRes.text();
-                const items = parseWebdavMultistatus(xmlText, instanceUrl, token);
-                console.log(`getFramaspaceAlbumMedia (Fallback technique) - ${items.length} médias extraits.`);
-                return {
-                  success: true,
-                  items,
-                  count: items.length
-                };
+                const parsed = parseWebdavMultistatus(xmlText, instanceUrl, token, baseFolderDavPath);
+                let techItems = [...parsed.items];
+
+                // Explorer les sous-dossiers dans le fallback technique
+                if (parsed.subfolders.length > 0) {
+                  const techSubPromises = parsed.subfolders.slice(0, 20).map(async (folder) => {
+                    try {
+                      const subUrl = `${techDavUrl}${folder.split("/").map(encodeURIComponent).join("/")}/`;
+                      const sRes = await fetch(subUrl, {
+                        method: "PROPFIND",
+                        headers: {
+                          Authorization: `Basic ${techBasicAuth}`,
+                          Depth: "1"
+                        },
+                        signal: AbortSignal.timeout(6000)
+                      });
+                      if (sRes.status === 207 || sRes.status === 200) {
+                        const sXml = await sRes.text();
+                        return parseWebdavMultistatus(sXml, instanceUrl, token, baseFolderDavPath).items;
+                      }
+                    } catch (e) {}
+                    return [];
+                  });
+                  const sResults = await Promise.all(techSubPromises);
+                  for (const sList of sResults) {
+                    for (const itm of sList) {
+                      if (!techItems.some(ex => ex.id === itm.id)) {
+                        techItems.push(itm);
+                      }
+                    }
+                  }
+                }
+
+                if (techItems.length > 0) {
+                  console.log(`getFramaspaceAlbumMedia (Fallback technique) - ${techItems.length} médias extraits (incluant sous-dossiers).`);
+                  return {
+                    success: true,
+                    items: techItems,
+                    count: techItems.length
+                  };
+                }
               }
             }
           }

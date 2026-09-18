@@ -34,13 +34,19 @@ export default function VaralBookletCover({
   onSelect,
   onMoveLeft,
   onMoveRight,
+  onToggleHidden,
   onEdit,
   onDelete
 }) {
   const { t } = useTranslation();
 
   const isArchived = docItem.isArchived === true;
-  const opacityClass = isArchived ? 'opacity-60 grayscale-[0.3] hover:opacity-100 hover:grayscale-0 transition-all duration-300' : 'opacity-100';
+  const isHidden = docItem.isHidden === true;
+  const opacityClass = isArchived 
+    ? 'opacity-60 grayscale-[0.3] hover:opacity-100 hover:grayscale-0 transition-all duration-300' 
+    : isHidden 
+      ? 'opacity-85 hover:opacity-100 transition-all duration-300' 
+      : 'opacity-100';
 
   let colorClass = 'default';
   if (category?.id === 'Administratif' || category?.id === 'DocumentsFixes' || category?.nom === 'Administratif') {
@@ -138,7 +144,7 @@ export default function VaralBookletCover({
       {/* Couverture du livret Cordel (Booklet Cover) */}
       <div
         className={`
-          relative w-36 h-48 border-2 border-encre-noire p-3.5 flex flex-col justify-between text-left
+          relative w-36 h-48 border-2 ${isHidden ? 'border-dashed border-[var(--color-cordel-rouge,#8b2a1a)]/70' : 'border-encre-noire'} p-3.5 flex flex-col justify-between text-left
           bg-cordel-bg-light shadow-[4px_4px_0px_0px_#181716]
           rounded-[4px_10px_3px_8px]
           border-l-4 border-l-double
@@ -146,6 +152,14 @@ export default function VaralBookletCover({
           overflow-hidden
         `}
       >
+        {/* Hachures pour les documents masqués aux membres (brouillons) */}
+        {isHidden && (
+          <div
+            className="absolute inset-0 pointer-events-none z-[5] opacity-20 mix-blend-multiply" 
+            style={{ backgroundImage: `repeating-linear-gradient(-45deg, transparent, transparent 8px, #8b2a1a 8px, #8b2a1a 10px)` }}
+          />
+        )}
+
         {/* Hachures pour les réunions en brouillon non validées */}
         {docItem.type === 'reunion' && !docItem.isPublished && (
           <div
@@ -362,6 +376,19 @@ export default function VaralBookletCover({
                 ▶
               </button>
             )}
+            {isAuthorized && onToggleHidden && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onToggleHidden(docItem);
+                }}
+                className={`p-1 rounded bg-[var(--cordel-bg)] border border-[var(--cordel-border)] hover:bg-[var(--cordel-master-bg)] cursor-pointer select-none flex items-center justify-center shadow-sm ${docItem.isHidden ? 'text-[var(--color-cordel-vert,#2d6a4f)]' : 'text-[var(--color-cordel-rouge,#8b2a1a)]'}`}
+                title={docItem.isHidden ? "Masqué aux membres. Cliquer pour rendre visible." : "Visible aux membres. Cliquer pour masquer."}
+              >
+                <span className="text-[10px] leading-none">{docItem.isHidden ? '👁️' : '🙈'}</span>
+              </button>
+            )}
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -403,6 +430,19 @@ export default function VaralBookletCover({
               <span className="text-[7.5px] font-black uppercase px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-900 border border-amber-800/30">
                 {docItem.partsCount ? `📐 ${docItem.partsCount} p.` : '📐 Modèle'}
               </span>
+            ) : isHidden ? (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (isAuthorized && onToggleHidden) onToggleHidden(docItem);
+                }}
+                className="theme-stamp-badge text-[7.5px] font-black uppercase px-1.5 py-0.5 bg-[var(--color-cordel-ocre,#c05621)]/20 text-cordel-wood border border-cordel-wood/40 rounded shadow-xs hover:bg-[var(--color-cordel-vert,#2d6a4f)] hover:text-white transition-colors cursor-pointer flex items-center gap-0.5"
+                title={isAuthorized ? "Masqué sur le Varal. Cliquer pour rendre visible immédiatement." : "Masqué sur le Varal"}
+              >
+                <span>🙈 Masqué</span>
+                {isAuthorized && <span className="text-[9px]">➜ 👁️</span>}
+              </button>
             ) : (
               docItem.annee && (
                 <span className={`text-[8.5px] font-black px-1.5 py-0.5 rounded-sm ${yearBadgeClass}`}>

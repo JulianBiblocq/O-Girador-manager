@@ -1,3 +1,15 @@
+// =========================================================================================
+// ⚠️ ATTENTION / AVERTISSEMENT ARCHITECTURE : FICHIER OBSOLÈTE & DÉSARMÉ ⚠️
+// =========================================================================================
+// Ce fichier n'est plus déployé depuis ce projet satellite.
+// La SOURCE UNIQUE DE VÉRITÉ (SSOT) pour toutes les règles Firestore & Storage de l'écosystème
+// est désormais centralisée dans : o-girador-orquestrador
+// Toute modification doit être effectuée exclusivement dans :
+// - o-girador-orquestrador/firestore.rules
+// - o-girador-orquestrador/storage.rules
+// Déploiement : npx firebase deploy --only firestore:rules,storage (depuis o-girador-orquestrador)
+// =========================================================================================
+
 rules_version = '2';
 
 service firebase.storage {
