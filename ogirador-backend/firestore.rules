@@ -628,6 +628,26 @@ service cloud.firestore {
       );
     }
 
+    match /expense_claims/{claimId} {
+      allow read: if isAuthenticated() && (
+        canReadGroupData() ||
+        (resource != null && resource.data.get('userId', '') == request.auth.uid) ||
+        canManageTreasury() ||
+        isAdminOrMestre()
+      );
+      allow create: if isAuthenticated() && (
+        request.resource.data.get('userId', '') == request.auth.uid ||
+        isAdminOrMestre() ||
+        canManageTreasury()
+      );
+      allow update, delete: if isAuthenticated() && (
+        (resource != null && resource.data.get('userId', '') == request.auth.uid) ||
+        canManageTreasury() ||
+        isAdminOrMestre()
+      );
+    }
+
+
     match /private_messages/{messageId} {
       allow read: if isAuthenticated() && (
         resource.data.senderId == request.auth.uid || 

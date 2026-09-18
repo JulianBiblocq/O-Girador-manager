@@ -30,6 +30,7 @@ const testScripts = [
   'scripts/test_studio_social_unicode_workflow.mjs',
   'scripts/test_mestre_forum_rsvp_recovery.mjs',
   'scripts/test_expense_claims_season.mjs',
+  'scripts/test_expense_claims_firestore_rules.mjs',
   'scripts/test_orders_reconciliation.mjs',
   'scripts/test_in_app_notifications.mjs'
 ];
