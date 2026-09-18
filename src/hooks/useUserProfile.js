@@ -77,7 +77,8 @@ export function useUserProfile(user, profileData, t) {
     defaultPassengerSeats: profileData?.defaultPassengerSeats !== undefined ? profileData.defaultPassengerSeats : 3,
     defaultTrunkCapacity: profileData?.defaultTrunkCapacity !== undefined ? profileData.defaultTrunkCapacity : 1,
     hasRoofBars: profileData?.hasRoofBars || false,
-    hasTowHitch: profileData?.hasTowHitch || false
+    hasTowHitch: profileData?.hasTowHitch || false,
+    iban: profileData?.iban || profileData?.ribIban || ''
   });
 
   const [saving, setSaving] = useState(false);
@@ -145,7 +146,8 @@ export function useUserProfile(user, profileData, t) {
       defaultPassengerSeats: profileData?.defaultPassengerSeats !== undefined ? profileData.defaultPassengerSeats : 3,
       defaultTrunkCapacity: profileData?.defaultTrunkCapacity !== undefined ? profileData.defaultTrunkCapacity : 1,
       hasRoofBars: profileData?.hasRoofBars || false,
-      hasTowHitch: profileData?.hasTowHitch || false
+      hasTowHitch: profileData?.hasTowHitch || false,
+      iban: profileData?.iban || profileData?.ribIban || ''
     });
     setIsEditing(true);
   };
@@ -471,7 +473,8 @@ export function useUserProfile(user, profileData, t) {
         defaultPassengerSeats: formData.hasVehicle ? (parseInt(formData.defaultPassengerSeats, 10) || 0) : (profileData?.defaultPassengerSeats !== undefined ? profileData.defaultPassengerSeats : 3),
         defaultTrunkCapacity: formData.hasVehicle ? (parseInt(formData.defaultTrunkCapacity, 10) || 0) : (profileData?.defaultTrunkCapacity !== undefined ? profileData.defaultTrunkCapacity : 1),
         hasRoofBars: formData.hasVehicle ? Boolean(formData.hasRoofBars) : false,
-        hasTowHitch: formData.hasVehicle ? Boolean(formData.hasTowHitch) : false
+        hasTowHitch: formData.hasVehicle ? Boolean(formData.hasTowHitch) : false,
+        iban: formData.iban ? formData.iban.trim().toUpperCase() : (profileData?.iban || '')
       };
 
       if (demanderDroitImage) {

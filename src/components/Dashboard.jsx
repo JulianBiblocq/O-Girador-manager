@@ -449,6 +449,7 @@ export default function Dashboard({
                   <WidgetTreasury 
                     groupId={profileData?.groupId} 
                     profileData={profileData} 
+                    user={user}
                   />
                 </React.Suspense>
               );

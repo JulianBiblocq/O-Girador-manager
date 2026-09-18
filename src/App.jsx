@@ -23,6 +23,7 @@ import PendingValidationScreen from './components/auth/PendingValidationScreen';
 import { useTenantContext } from './context/TenantContext';
 import TenantNotFound from './components/TenantNotFound';
 import { DEFAULT_VARAL_CATEGORIES } from './hooks/useAssociationSettings';
+import { canonicalizeGroupId, isSameGroupCaseInsensitive } from './utils/tenantUtils';
 import { isDemoMode, initDemoSession, getDemoAuthUser, getDemoProfileData } from './demo/demoManager';
 import { DEMO_GROUP_ID } from './data/demoData';
 import DemoTopBanner from './components/demo/DemoTopBanner';
@@ -438,11 +439,11 @@ export default function App() {
 
   // Charger branding in real-time
   useEffect(() => {
-    let activeGroupId = profileData?.groupId || null;
+    let activeGroupId = canonicalizeGroupId(profileData?.groupId || null);
     
     if (!activeGroupId) {
       const searchParams = new URLSearchParams(window.location.search);
-      activeGroupId = searchParams.get('groupe') || null;
+      activeGroupId = canonicalizeGroupId(searchParams.get('groupe') || searchParams.get('tenant') || searchParams.get('assoc') || null);
     }
 
     if (!activeGroupId) {
@@ -465,7 +466,7 @@ export default function App() {
         } else {
           setBranding(null);
         }
-        setAssociationName(data.nom || '');
+        setAssociationName(data.nom || data.name || '');
         setMajoriteFeminine(Boolean(data.majoriteFeminine ?? data.majorityFemale ?? false));
         setSequenceurUrl(data.sequenceurUrl || '');
         setPermissionsMatrice(data.permissionsMatrice || null);
@@ -758,18 +759,28 @@ export default function App() {
   useEffect(() => {
     if (user && profileData) {
       const searchParams = new URLSearchParams(window.location.search);
-      const urlGroupId = searchParams.get('groupe');
-      if (urlGroupId && urlGroupId !== profileData.groupId) {
-        const userRef = doc(db, 'users', user.uid);
-        updateDoc(userRef, { groupId: urlGroupId })
-          .then(() => {
-            // Clean up the URL to hide the query parameter
-            const newUrl = window.location.pathname;
-            window.history.replaceState({}, document.title, newUrl);
-          })
-          .catch((err) => {
-            console.error("App - Erreur association groupe automatique :", err);
-          });
+      const rawUrlGroupId = searchParams.get('groupe') || searchParams.get('tenant') || searchParams.get('assoc');
+      if (rawUrlGroupId) {
+        const canonicalUrlGroupId = canonicalizeGroupId(rawUrlGroupId);
+        const currentCanonicalGroupId = canonicalizeGroupId(profileData.groupId);
+
+        // N'écraser le groupe que si l'invitation cible un groupe RÉELLEMENT distinct (insensible à la casse)
+        if (canonicalUrlGroupId && !isSameGroupCaseInsensitive(canonicalUrlGroupId, currentCanonicalGroupId)) {
+          const userRef = doc(db, 'users', user.uid);
+          updateDoc(userRef, { groupId: canonicalUrlGroupId })
+            .then(() => {
+              // Clean up the URL to hide the query parameter
+              const newUrl = window.location.pathname;
+              window.history.replaceState({}, document.title, newUrl);
+            })
+            .catch((err) => {
+              console.error("App - Erreur association groupe automatique :", err);
+            });
+        } else {
+          // Si l'utilisateur est déjà dans ce groupe (ex: URL contenant samambaia en minuscules), nettoyer immédiatement l'URL
+          const newUrl = window.location.pathname;
+          window.history.replaceState({}, document.title, newUrl);
+        }
       }
     }
   }, [user, profileData]);
@@ -794,6 +805,16 @@ export default function App() {
       } else if (hasThreadId || isForumRoute) {
         setCurrentPole('mon-espace');
         setCurrentTab('forum');
+      } else if (pathname.includes('/profil') || pathname.includes('/profile')) {
+        setCurrentPole('mon-espace');
+        setCurrentTab('profil');
+        setTimeout(() => {
+          const fraisEl = document.getElementById('member-expense-section');
+          if (fraisEl) fraisEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 150);
+      } else if (pathname.includes('/treasury') || pathname.includes('/frais-km')) {
+        setCurrentPole('tresorerie');
+        setCurrentTab(pathname.includes('/frais-km') ? 'frais-km' : 'dashboard-finance');
       }
 
       // Mettre à jour la route interne si un chemin explicite est fourni
@@ -1008,16 +1029,23 @@ export default function App() {
           unsubscribeProfile = onSnapshot(profileRef, (docSnap) => {
             if (docSnap.exists()) {
               const data = docSnap.data();
+              const canonicalGroup = canonicalizeGroupId(data.groupId);
               const migration = getMigratedRoleAndTags(data);
+
+              // Auto-guérison de la casse de groupId dans Firestore si nécessaire
+              if (data.groupId && data.groupId !== canonicalGroup) {
+                updateDoc(profileRef, { groupId: canonicalGroup }).catch(err => console.error("App - Erreur auto-heal groupId :", err));
+              }
+
               if (migration.needsMigration) {
                 updateDoc(profileRef, {
                   role: migration.newRole,
                   tags: migration.newTags
                 }).catch(err => console.error("App - Erreur migration profil utilisateur :", err));
 
-                setProfileData({ uid: docSnap.id, id: docSnap.id, ...data, role: migration.newRole, tags: migration.newTags });
+                setProfileData({ uid: docSnap.id, id: docSnap.id, ...data, groupId: canonicalGroup, role: migration.newRole, tags: migration.newTags });
               } else {
-                setProfileData({ uid: docSnap.id, id: docSnap.id, ...data });
+                setProfileData({ uid: docSnap.id, id: docSnap.id, ...data, groupId: canonicalGroup });
               }
               setProfileExists(true);
             } else {
@@ -1642,6 +1670,106 @@ export default function App() {
     }
   };
 
+  /**
+   * Gestionnaire central de navigation interne déclenchée par le Centre de Notifications
+   * et le Deep Linking SPA sans rechargement de page.
+   */
+  const handleNotificationNavigate = (targetUrl) => {
+    if (!targetUrl || typeof targetUrl !== 'string') return;
+
+    let path = targetUrl;
+    let queryStr = '';
+    if (targetUrl.includes('?')) {
+      const parts = targetUrl.split('?');
+      path = parts[0];
+      queryStr = parts[1];
+    }
+    const params = new URLSearchParams(queryStr);
+
+    // 1. Forum / Discussions (ex: /forum?threadId=xyz ou /threads/xyz)
+    if (path.includes('/forum') || path.includes('/threads')) {
+      let threadId = params.get('threadId');
+      if (!threadId && path.match(/\/threads\/([^/?#]+)/)) {
+        threadId = path.match(/\/threads\/([^/?#]+)/)[1];
+      }
+      setCurrentPole('mon-espace');
+      setCurrentTab('forum');
+      cleanUrlParams(['eventId']);
+
+      const newSearchParams = new URLSearchParams(window.location.search);
+      if (threadId) {
+        newSearchParams.set('threadId', threadId);
+      }
+      const newUrl = window.location.pathname + (newSearchParams.toString() ? '?' + newSearchParams.toString() : '');
+      window.history.pushState({ ...window.history.state, threadId }, '', newUrl);
+      return;
+    }
+
+    // 2. Agenda / Événements (ex: /events/abc ou /agenda?eventId=abc)
+    if (path.includes('/events') || path.includes('/agenda')) {
+      let eventId = params.get('eventId');
+      if (!eventId && path.match(/\/events\/([^/?#]+)/)) {
+        eventId = path.match(/\/events\/([^/?#]+)/)[1];
+      }
+      setCurrentPole('accueil');
+      setCurrentTab('agenda');
+      cleanUrlParams(['threadId']);
+
+      const newSearchParams = new URLSearchParams(window.location.search);
+      if (eventId) {
+        newSearchParams.set('eventId', eventId);
+      }
+      const newUrl = window.location.pathname + (newSearchParams.toString() ? '?' + newSearchParams.toString() : '');
+      window.history.pushState({ ...window.history.state, eventId }, '', newUrl);
+
+      // Notification immédiate pour WidgetAgenda
+      window.dispatchEvent(new PopStateEvent('popstate'));
+      return;
+    }
+
+    // 3. Profil / Notes de frais (ex: /profil ou /profil?tab=frais)
+    if (path.includes('/profil') || path.includes('/profile')) {
+      setCurrentPole('mon-espace');
+      setCurrentTab('profil');
+      cleanUrlParams(['eventId', 'threadId']);
+
+      window.history.pushState({}, '', window.location.pathname);
+
+      // Défilement automatique vers la section de remboursement des frais
+      setTimeout(() => {
+        const fraisEl = document.getElementById('member-expense-section');
+        if (fraisEl) {
+          fraisEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 150);
+      return;
+    }
+
+    // 4. Trésorerie (ex: /treasury?tab=frais-km ou /frais-km)
+    if (path.includes('/treasury') || path.includes('/frais-km')) {
+      const tab = params.get('tab') || (path.includes('/frais-km') ? 'frais-km' : 'dashboard-finance');
+      setCurrentPole('tresorerie');
+      cleanUrlParams(['eventId', 'threadId']);
+
+      if (tab === 'frais-km') {
+        setCurrentTab('frais-km');
+      } else if (['cotisations', 'events-finances', 'operations-diverses', 'reports-exports'].includes(tab)) {
+        setCurrentTab(tab);
+      } else {
+        setCurrentTab('dashboard-finance');
+      }
+
+      window.history.pushState({}, '', window.location.pathname);
+      return;
+    }
+
+    // 5. Repli sur le gestionnaire de vues génériques SPA
+    const cleanViewName = path.replace(/^\//, '').split('?')[0];
+    if (cleanViewName) {
+      handleNavigateToView(cleanViewName);
+    }
+  };
+
   return (
     <TerminologyProvider majoriteFeminine={majoriteFeminine}>
       <ViewSimulatorProvider
@@ -1675,6 +1803,7 @@ export default function App() {
                 setCurrentTab(tab);
               }}
               onOpenPrivateMessages={handleOpenPrivateMessages}
+              onNotificationNavigate={handleNotificationNavigate}
               polesList={POLES_CONFIG}
               profileData={profileData}
               onSignOut={handleSignOut}

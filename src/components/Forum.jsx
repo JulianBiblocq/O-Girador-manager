@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { collection, query, where, onSnapshot, or, doc, setDoc, addDoc, updateDoc, limit, orderBy } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, or, doc, getDoc, setDoc, addDoc, updateDoc, limit, orderBy } from 'firebase/firestore';
 import { db } from '../firebase';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
@@ -197,7 +197,8 @@ export default function Forum({
   onClearActivePrivateChat, 
   onOpenStudioForum, 
   breakGlassActive = false,
-  initialTab = 'discussions'
+  initialTab = 'discussions',
+  initialThreadId = null
 }) {
   const { t } = useTranslation();
   const { confirm } = useConfirm();
@@ -755,6 +756,38 @@ export default function Forum({
   const unreadGroupsCount = useMemo(() => {
     return groupConversations.filter((c) => c.isUnread).length;
   }, [groupConversations]);
+
+  // Détection et ouverture automatique du sujet ciblé par Deep Linking (URL query param threadId ou prop)
+  useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    const targetThreadId = initialThreadId || searchParams.get('threadId');
+    if (!targetThreadId) return;
+
+    // Déjà ouvert
+    if (selectedThread && selectedThread.id === targetThreadId) return;
+
+    // 1. Recherche dans les threads accessibles synchronisés
+    if (accessibleThreads.length > 0) {
+      const found = accessibleThreads.find((t) => t.id === targetThreadId);
+      if (found) {
+        setSelectedThread(found);
+        return;
+      }
+    }
+
+    // 2. Si absent du lot initial (ex: sujet ancien), chargement direct Firestore
+    if (!loading && profileData?.groupId) {
+      getDoc(doc(db, 'forum', targetThreadId))
+        .then((docSnap) => {
+          if (docSnap.exists()) {
+            setSelectedThread({ id: docSnap.id, ...docSnap.data() });
+          }
+        })
+        .catch((err) => {
+          console.warn("Forum - Erreur chargement sujet deep linking :", err);
+        });
+    }
+  }, [accessibleThreads, initialThreadId, selectedThread, loading, profileData?.groupId]);
 
   // Retrouver la discussion sélectionnée dans l'état synchronisé pour avoir les messages en temps réel
   const activeThread = selectedThread

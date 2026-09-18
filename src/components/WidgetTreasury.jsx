@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { doc, getDoc, onSnapshot } from 'firebase/firestore';
-import { db } from '../firebase';
+import { db, auth } from '../firebase';
 import CordelCard from './CordelCard';
-import { useTranslation } from './LanguageContext';
+import MemberExpenseSection from './expenses/MemberExpenseSection';
+import AssociationBankDetailsBox from './treasury/AssociationBankDetailsBox';
+import MemberOrdersPaymentAlert from './orders/MemberOrdersPaymentAlert';
 
-export default function WidgetTreasury({ groupId, profileData }) {
+export default function WidgetTreasury({ groupId, profileData, user, currentUser }) {
   const { t } = useTranslation();
   const [montantCotisation, setMontantCotisation] = useState(0);
   const [montantAdhesion, setMontantAdhesion] = useState(0);
@@ -155,8 +157,18 @@ export default function WidgetTreasury({ groupId, profileData }) {
     }
   };
 
+  const effectiveUser = user || currentUser || auth?.currentUser || { uid: profileData?.uid || profileData?.id, email: profileData?.email };
+
   return (
-    <CordelCard variant="default" useExtremeBorder={true} className="p-5 flex flex-col gap-4 text-left">
+    <div className="flex flex-col gap-4 w-full">
+      {/* Alerte des commandes groupées en attente de règlement */}
+      <MemberOrdersPaymentAlert
+        groupId={groupId || profileData?.groupId}
+        currentUser={effectiveUser}
+        profileData={profileData}
+      />
+
+      <CordelCard variant="default" useExtremeBorder={true} className="p-5 flex flex-col gap-4 text-left">
       {/* Bandeau de succès Fallback UI si de retour de paiement HelloAsso */}
       {showSuccessBanner && (
         <div className="bg-green-100 border-l-4 border-green-600 text-green-900 dark:bg-green-950/40 dark:text-green-300 p-3 rounded text-xs flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-1 animate-fadeIn border border-green-200">
@@ -250,6 +262,20 @@ export default function WidgetTreasury({ groupId, profileData }) {
           )}
         </div>
       )}
+
+      {/* Encart rétractable des coordonnées bancaires de l'association */}
+      <AssociationBankDetailsBox
+        groupId={groupId || profileData?.groupId}
+        defaultOpen={false}
+      />
     </CordelCard>
+
+    {/* Section Notes de frais & Remboursements de l'adhérent */}
+    <MemberExpenseSection
+      groupId={groupId || profileData?.groupId}
+      currentUser={effectiveUser}
+      profileData={profileData}
+    />
+  </div>
   );
 }

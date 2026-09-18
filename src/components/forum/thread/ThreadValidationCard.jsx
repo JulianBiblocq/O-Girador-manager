@@ -139,8 +139,12 @@ export default function ThreadValidationCard({
           createdAt: nowIso
         };
 
-        // Création dans la collection de notifications internes
-        await addDoc(collection(db, 'notifications'), notifPayload);
+        // Notification interne in-app
+        try {
+          await addDoc(collection(db, 'notifications'), notifPayload);
+        } catch (notifErr) {
+          console.warn("ThreadValidationCard - Notification interne non transmise :", notifErr);
+        }
 
         // Déclenchement dans la file de notifications Push FCM
         try {
@@ -213,7 +217,12 @@ export default function ThreadValidationCard({
           createdAt: nowIso
         };
 
-        await addDoc(collection(db, 'notifications'), notifPayload);
+        // Notification interne in-app
+        try {
+          await addDoc(collection(db, 'notifications'), notifPayload);
+        } catch (notifErr) {
+          console.warn("ThreadValidationCard - Notification interne de retouche non transmise :", notifErr);
+        }
 
         try {
           await addDoc(collection(db, 'notifications_queue'), notifPayload);

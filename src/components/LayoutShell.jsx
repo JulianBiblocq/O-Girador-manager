@@ -43,6 +43,7 @@ import ViewSimulatorSelector from './navigation/ViewSimulatorSelector';
 import useLicenseGuard from '../hooks/useLicenseGuard';
 import SubscriptionBanner from './SubscriptionBanner';
 import { isDemoMode } from '../demo/demoManager';
+import NotificationCenter from './notifications/NotificationCenter';
 
 export default function LayoutShell({ 
   logoUrl, 
@@ -54,6 +55,7 @@ export default function LayoutShell({
   currentTab,
   onNavigateToTab,
   onOpenPrivateMessages,
+  onNotificationNavigate,
   polesList = [],
   profileData, 
   onSignOut, 
@@ -518,8 +520,13 @@ export default function LayoutShell({
             </div>
           )}
 
-          {/* Online Presence Indicator Widget */}
+          {/* Centre de notifications & indicateur de présence en ligne */}
           <div className="flex items-center gap-2">
+            <NotificationCenter 
+              currentUser={currentProfile}
+              groupId={currentGroupId}
+              onNavigateToUrl={onNotificationNavigate}
+            />
             <OnlineStatusWidget onlineMembers={onlineMembers} onlineCount={onlineCount} isPresenceEnabled={isPresenceEnabled} />
 
             {/* Hamburger Menu Button */}
@@ -570,6 +577,11 @@ export default function LayoutShell({
                 </span>
               </div>
               <div className="mt-2 mb-1 flex items-center gap-1.5 justify-center flex-wrap">
+                <NotificationCenter 
+                  currentUser={currentProfile}
+                  groupId={currentGroupId}
+                  onNavigateToUrl={onNotificationNavigate}
+                />
                 {renderAppLauncher(false)}
                 {hasBadgeOrRole && (
                   <button
@@ -872,6 +884,11 @@ export default function LayoutShell({
                   })}
                 </div>
                 <div className="flex items-center gap-2">
+                  <NotificationCenter 
+                    currentUser={currentProfile}
+                    groupId={currentGroupId}
+                    onNavigateToUrl={onNotificationNavigate}
+                  />
                   {hasBadgeOrRole && (
                     <button
                       type="button"

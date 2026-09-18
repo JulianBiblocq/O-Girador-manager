@@ -8,7 +8,7 @@ import TreasuryCotisations from './treasury/TreasuryCotisations';
 import TreasuryEvents from './treasury/TreasuryEvents';
 import TreasuryInvoices from './treasury/TreasuryInvoices';
 import TreasuryOperations from './treasury/TreasuryOperations';
-import KilometricReimbursementManager from './KilometricReimbursementManager';
+import TreasuryFraisTab from './treasury/TreasuryFraisTab';
 import ReportsExports from './ReportsExports';
 
 export default function TreasuryManager({ groupId, onBack, role, isSystemAdmin, hasAccessTresorerie, profileData, initialTab }) {
@@ -122,12 +122,11 @@ export default function TreasuryManager({ groupId, onBack, role, isSystemAdmin, 
         );
       case 'frais-km':
         return (
-          <KilometricReimbursementManager 
+          <TreasuryFraisTab 
             groupId={groupId}
             role={role}
             isSystemAdmin={isSystemAdmin}
             hasAccessTresorerie={hasAccessTresorerie}
-            isEmbedded={true}
             onBack={onBack}
           />
         );

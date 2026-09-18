@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { collection, query, where, onSnapshot, getDocs, or } from 'firebase/firestore';
 import { db } from '../firebase';
 import LZString from 'lz-string';
+import { canonicalizeGroupId } from '../utils/tenantUtils';
 
 /**
  * Vérifie si un morceau ou une séquence est un artefact issu de tests automatisés (E2E)
@@ -51,25 +52,20 @@ export function useSequencerFirestoreData(groupId) {
 
     const fetchData = async () => {
       try {
-        const groupVariants = Array.from(new Set([
-          groupId,
-          groupId.toLowerCase(),
-          ...(groupId.toLowerCase() === 'samambaia' ? ['Samambaia', 'samambaia'] : [])
-        ]));
-
+        const canonicalGroup = canonicalizeGroupId(groupId);
         // 1. Récupérer tous les membres de l'association pour pouvoir requêter les presets par ownerId
-        const qUsers = query(collection(db, 'users'), where('groupId', 'in', groupVariants));
+        const qUsers = query(collection(db, 'users'), where('groupId', '==', canonicalGroup));
         const usersSnap = await getDocs(qUsers);
         const memberIds = Array.from(new Set(usersSnap.docs.map(doc => doc.id)));
         
         // Mestre Samambaia UID garanti pour résoudre le catalogue
-        if (groupId.toLowerCase() === 'samambaia' && !memberIds.includes('iA0SweEHyOPzAPGIDVZdeKAV2mk1')) {
+        if (canonicalGroup.toLowerCase() === 'samambaia' && !memberIds.includes('iA0SweEHyOPzAPGIDVZdeKAV2mk1')) {
           memberIds.push('iA0SweEHyOPzAPGIDVZdeKAV2mk1');
         }
 
         // S'il n'y a pas de membres, on ajoute au moins le groupId au cas où il soit propriétaire
-        if (!memberIds.includes(groupId)) {
-          memberIds.push(groupId);
+        if (!memberIds.includes(canonicalGroup)) {
+          memberIds.push(canonicalGroup);
         }
 
         // On sépare en chunks de 10 pour la limitation des requêtes 'in' sur Firestore

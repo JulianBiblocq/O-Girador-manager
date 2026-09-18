@@ -1373,13 +1373,23 @@ export default function EventRSVPSection({
                     >
                       <option value="" disabled>Sélectionner un membre...</option>
                       {unregisteredUsers.length === 0 ? (
-                        <option disabled>Tous les membres sont inscrits</option>
+                        <option disabled>Tous les membres sont déjà présents</option>
                       ) : (
-                        unregisteredUsers.map(u => (
-                          <option key={u.id} value={u.id}>
-                            {u.prenom} {u.nom} {u.instrument ? `(🎵 ${u.instrument})` : ''}
-                          </option>
-                        ))
+                        unregisteredUsers.map(u => {
+                          const statusSuffix = u.currentStatus === 'absent' 
+                            ? ' — [❌ Absent]' 
+                            : u.currentStatus === 'confirm' 
+                            ? ' — [⏳ À confirmer]' 
+                            : u.currentStatus === 'pending'
+                            ? ' — [⏳ En attente]'
+                            : '';
+                          const instSuffix = u.instrument ? ` (🎵 ${u.instrument})` : '';
+                          return (
+                            <option key={u.id} value={u.id}>
+                              {u.displayNameFormatted || `${u.prenom || ''} ${u.nom || ''}`.trim() || u.displayName || u.email}{statusSuffix}{instSuffix}
+                            </option>
+                          );
+                        })
                       )}
                     </select>
                   </div>

@@ -4,6 +4,7 @@ import CordelButton from '../CordelButton';
 import LegalInfoBlock from './blocks/LegalInfoBlock';
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '../../firebase';
+import { canonicalizeGroupId } from '../../utils/tenantUtils';
 
 export default function TabIdentity({
   formData,
@@ -469,7 +470,8 @@ export default function TabIdentity({
             onClick={async () => {
               const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
               const baseUrl = isLocal ? window.location.origin : 'https://organizador.o-girador.com';
-              const invitationUrl = `${baseUrl}/?groupe=${groupId}`;
+              const canonicalId = canonicalizeGroupId(groupId) || 'Samambaia';
+              const invitationUrl = `${baseUrl}/?groupe=${canonicalId}`;
               const shareText = `Rejoins notre groupe sur ${formData.nom || 'notre association'} : ${invitationUrl}`;
               try {
                 await navigator.clipboard.writeText(shareText);

@@ -67,10 +67,14 @@ export function useEventComments(eventId, user, profileData, event) {
     const nowIso = new Date().toISOString();
 
     try {
-      // 1. Écriture du commentaire dans la sous-collection events/{eventId}/comments
+      // 1. Résolution du groupe d'appartenance pour l'isolation multi-tenant
+      const effectiveGroupId = event?.groupId || profileData?.groupId || 'Samambaia';
+
+      // 2. Écriture du commentaire dans la sous-collection events/{eventId}/comments
       const commentsRef = collection(db, 'events', eventId, 'comments');
       await addDoc(commentsRef, {
         eventId: eventId,
+        groupId: effectiveGroupId,
         auteurId: user.uid,
         auteurNom: authorName,
         auteurPhoto: authorPhoto,
@@ -79,8 +83,8 @@ export function useEventComments(eventId, user, profileData, event) {
         dateCreationIso: nowIso
       });
 
-      // 2. Récupération des paramètres de l'association pour l'étiquette de notification
-      const groupId = event?.groupId || profileData?.groupId;
+      // 3. Récupération des paramètres de l'association pour l'étiquette de notification
+      const groupId = effectiveGroupId;
       let tagConfigured = '';
 
       if (groupId) {

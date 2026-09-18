@@ -10,6 +10,7 @@ import { useTranslation } from './LanguageContext';
 import { fr } from '../locales/fr';
 import useConfirm from '../hooks/useConfirm';
 import { useSuppliesData } from '../hooks/useSuppliesData';
+import OrderPaymentControls from './orders/OrderPaymentControls';
 
 export default function OrdersManager({ groupId, onBack, role, isSystemAdmin, hasAccessLogistique }) {
   const { t } = useTranslation();
@@ -838,6 +839,10 @@ export default function OrdersManager({ groupId, onBack, role, isSystemAdmin, ha
                               💡 Suggestion : {req.suggestion}
                             </p>
                           )}
+
+                          {/* Contrôles financiers & Rapprochement bancaire */}
+                          <OrderPaymentControls request={req} groupId={groupId} />
+
                           <div className="flex justify-between items-center mt-1.5 pt-1.5 border-t border-dashed border-encre-noire/5">
                             <span className="text-[8px] font-bold text-cordel-master-dark/50">
                               {req.status === 'recu' ? "📦 Reçu" : req.status === 'validated' ? "✓ Validé" : "⏳ En attente"}

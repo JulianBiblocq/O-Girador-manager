@@ -158,6 +158,8 @@ service cloud.firestore {
       return isAuthenticated() && (
         isAdminOrMestre() ||
         isModerator() ||
+        channelId == null ||
+        channelId in ['general', 'general-annonces'] ||
         (
           channelId != null &&
           exists(/databases/$(database)/documents/forum_channels/$(channelId)) &&
@@ -180,17 +182,23 @@ service cloud.firestore {
         isAdminOrMestre() ||
         isModerator() ||
         (
-          channelId != null &&
-          exists(/databases/$(database)/documents/forum_channels/$(channelId)) &&
-          getUserData().get('groupId', '').lower() == getChannelData(channelId).get('groupId', '').lower() &&
-          (!getChannelData(channelId).keys().hasAny(['readOnlyForMembers']) || getChannelData(channelId).readOnlyForMembers != true) &&
           (
-            getChannelData(channelId).writeRoles == null ||
-            getChannelData(channelId).writeRoles.size() == 0 ||
-            getChannelData(channelId).writeRoles.hasAny(['all']) ||
-            (getChannelData(channelId).keys().hasAny(['allowedRoles']) && getChannelData(channelId).allowedRoles.hasAny(['all'])) ||
-            getChannelData(channelId).writeRoles.hasAny([getUserData().role]) ||
-            (getUserData().keys().hasAny(['tags']) && getUserData().tags.hasAny(getChannelData(channelId).writeRoles))
+            channelId in ['general', 'general-annonces'] &&
+            !exists(/databases/$(database)/documents/forum_channels/$(channelId))
+          ) ||
+          (
+            channelId != null &&
+            exists(/databases/$(database)/documents/forum_channels/$(channelId)) &&
+            getUserData().get('groupId', '').lower() == getChannelData(channelId).get('groupId', '').lower() &&
+            (!getChannelData(channelId).keys().hasAny(['readOnlyForMembers']) || getChannelData(channelId).readOnlyForMembers != true) &&
+            (
+              getChannelData(channelId).writeRoles == null ||
+              getChannelData(channelId).writeRoles.size() == 0 ||
+              getChannelData(channelId).writeRoles.hasAny(['all']) ||
+              (getChannelData(channelId).keys().hasAny(['allowedRoles']) && getChannelData(channelId).allowedRoles.hasAny(['all'])) ||
+              getChannelData(channelId).writeRoles.hasAny([getUserData().role]) ||
+              (getUserData().keys().hasAny(['tags']) && getUserData().tags.hasAny(getChannelData(channelId).writeRoles))
+            )
           )
         )
       );
@@ -222,7 +230,7 @@ service cloud.firestore {
         (
           resource != null &&
           exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-          resource.data.get('groupId', '') == getUserData().get('groupId', '')
+          resource.data.get('groupId', '').lower() == getUserData().get('groupId', '').lower()
         )
       );
       allow create: if isAuthenticated() && (
@@ -230,7 +238,7 @@ service cloud.firestore {
           request.auth.uid == userId && (
             (!request.resource.data.keys().hasAny(['isSystemAdmin']) || request.resource.data.isSystemAdmin == false) &&
             (!request.resource.data.keys().hasAny(['hasAccessLogistique']) || request.resource.data.hasAccessLogistique == false) &&
-            (!request.resource.data.keys().hasAny(['paymentStatus']) || request.resource.data.paymentStatus == 'unpaid') &&
+            (!request.resource.data.keys().hasAny(['paymentStatus']) || request.resource.data.paymentStatus in ['unpaid', 'paid']) &&
             (!request.resource.data.keys().hasAny(['role']) || request.resource.data.role == 'membre' || request.resource.data.role == 'visiteur' || request.resource.data.role == 'eleve' || (request.resource.data.role == 'mestre' && request.auth.token.email.matches(".*@ogirador\\.com"))) &&
             (!request.resource.data.keys().hasAny(['statutActuel']) || request.resource.data.statutActuel == 'active') &&
             (!request.resource.data.keys().hasAny(['adhesionBase']) || request.resource.data.adhesionBase == true) &&
@@ -258,11 +266,11 @@ service cloud.firestore {
               resource.data.get('onboardingCompleted', false) == false &&
               (!request.resource.data.keys().hasAny(['isSystemAdmin']) || request.resource.data.isSystemAdmin == false) &&
               (!request.resource.data.keys().hasAny(['hasAccessLogistique']) || request.resource.data.hasAccessLogistique == false) &&
-              (!request.resource.data.keys().hasAny(['paymentStatus']) || request.resource.data.paymentStatus == 'unpaid') &&
+              (!request.resource.data.keys().hasAny(['paymentStatus']) || request.resource.data.paymentStatus in ['unpaid', 'paid']) &&
               (!request.resource.data.keys().hasAny(['canWriteSequenciador']) || request.resource.data.canWriteSequenciador == false) &&
               (!request.resource.data.keys().hasAny(['canWriteDansador']) || request.resource.data.canWriteDansador == false) &&
               (!request.resource.data.keys().hasAny(['canWriteOrchestrador']) || request.resource.data.canWriteOrchestrador == false) &&
-              (!request.resource.data.keys().hasAny(['tags']) || request.resource.data.tags.size() == 0) &&
+              (!request.resource.data.keys().hasAny(['tags']) || request.resource.data.tags == resource.data.get('tags', []) || request.resource.data.tags.size() == 0) &&
               (!request.resource.data.keys().hasAny(['statutActuel']) || request.resource.data.statutActuel == 'active')
             ) || (
               !request.resource.data.diff(resource.data).affectedKeys().hasAny([
@@ -337,11 +345,26 @@ service cloud.firestore {
           (resource != null && resource.data.managedBy == request.auth.uid)
         );
       }
+
+      // Sous-collection in_app_notifications (Centre de notifications internes du membre)
+      match /in_app_notifications/{notifId} {
+        allow read, update: if request.auth != null && request.auth.uid == userId;
+        allow create: if request.auth != null;
+      }
     }
 
     match /inventory/{item} {
       allow read: if canReadGroupData();
-      allow write: if canManageInventory();
+      allow create, delete: if canManageInventory();
+      allow update: if canManageInventory() || (
+        isAuthenticated() && isDocSameGroup() && (
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['pendingMovement']) ||
+          (
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['etat', 'notes']) &&
+            request.resource.data.etat == 'À réparer'
+          )
+        )
+      );
     }
 
     match /inventory_supplies/{item} {
@@ -356,12 +379,24 @@ service cloud.firestore {
 
     match /inventory_parts/{item} {
       allow read: if canReadGroupData();
-      allow write: if canManageInventory();
+      allow create, delete: if canManageInventory();
+      allow update: if canManageInventory() || (
+        isAuthenticated() && isDocSameGroup() && (
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'notes']) &&
+          request.resource.data.status == 'À réparer'
+        )
+      );
     }
 
     match /inventoryParts/{item} {
       allow read: if canReadGroupData();
-      allow write: if canManageInventory();
+      allow create, delete: if canManageInventory();
+      allow update: if canManageInventory() || (
+        isAuthenticated() && isDocSameGroup() && (
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'notes']) &&
+          request.resource.data.status == 'À réparer'
+        )
+      );
     }
 
     match /inventory_projects/{item} {
@@ -426,7 +461,15 @@ service cloud.firestore {
 
     match /documents/{document} {
       allow read: if canReadGroupData();
-      allow write: if canManageDocs();
+      allow update, delete: if canManageDocs();
+      allow create: if canManageDocs() || (
+        isAuthenticated() &&
+        isDocSameGroup() &&
+        (
+          request.resource.data.get('auteurId', request.resource.data.get('authorId', '')) == request.auth.uid ||
+          request.resource.data.get('createdBy', '') == request.auth.uid
+        )
+      );
     }
 
     match /reunions/{reunion} {
@@ -464,6 +507,11 @@ service cloud.firestore {
       allow read, update, delete: if isAdminOrMestre();
     }
 
+    match /notifications/{notifId} {
+      allow create: if isAuthenticated();
+      allow read, update, delete: if isAuthenticated() && resource.data.get('userId', '') == request.auth.uid;
+    }
+
     match /campaigns/{campaign} {
       allow read: if canReadGroupData();
       allow write: if isAdminOrMestre() || canManageInventory();
@@ -492,13 +540,17 @@ service cloud.firestore {
         (
           isDocSameGroup() &&
           request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-            'inscriptions', 'invitesExternes', 'covoiturage', 'demandesModificationInscription'
+            'inscriptions', 'invitesExternes', 'covoiturage', 'demandesModificationInscription', 'sujetsProposes'
           ])
         )
       );
 
       match /comments/{commentId} {
-        allow read: if canReadGroupData();
+        allow read: if isAuthenticated() && (
+          canReadGroupData() ||
+          !resource.data.keys().hasAny(['groupId']) ||
+          resource.data.get('groupId', '').lower() == getUserData().get('groupId', '').lower()
+        );
         allow create: if isAuthenticated() && request.resource.data.auteurId == request.auth.uid;
         allow update, delete: if isAuthenticated() && (
           resource.data.auteurId == request.auth.uid ||
@@ -554,16 +606,18 @@ service cloud.firestore {
         isAdminOrMestre() ||
         isModerator() ||
         (
-          resource.data.authorId == request.auth.uid &&
-          (hasChannelWriteAccess(resource.data.channelId) || !resource.data.keys().hasAny(['channelId'])) &&
+          resource.data.get('auteurId', resource.data.get('authorId', '')) == request.auth.uid &&
+          (hasChannelWriteAccess(resource.data.get('channelId', '')) || !resource.data.keys().hasAny(['channelId'])) &&
           (!request.resource.data.keys().hasAny(['channelId']) || request.resource.data.channelId == resource.data.channelId)
         ) ||
         (
-          hasChannelWriteAccess(resource.data.channelId) &&
-          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reponses', 'derniereModification', 'poll', 'validationData'])
+          hasChannelWriteAccess(resource.data.get('channelId', '')) &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'reponses', 'derniereModification', 'nombreReponses', 'poll', 'reactions', 'validationData'
+          ])
         )
       );
-      allow delete: if isAdminOrMestre() || isModerator() || (isAuthenticated() && resource.data.authorId == request.auth.uid);
+      allow delete: if isAdminOrMestre() || isModerator() || (isAuthenticated() && resource.data.get('auteurId', resource.data.get('authorId', '')) == request.auth.uid);
     }
 
     match /campaignRequests/{req} {
@@ -656,7 +710,11 @@ service cloud.firestore {
     }
 
     match /pending_payments/{email} {
-      allow read, write: if isAdminOrMestre();
+      allow read: if isAuthenticated() && (
+        isAdminOrMestre() ||
+        (request.auth.token.email != null && request.auth.token.email.lower() == email.lower())
+      );
+      allow write: if isAdminOrMestre();
     }
 
     match /newsletter_subscribers/{subscriberDoc} {

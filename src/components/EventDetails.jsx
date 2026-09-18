@@ -29,6 +29,7 @@ import TabProgram from './event-details/tabs/TabProgram';
 import TabAdmin from './event-details/tabs/TabAdmin';
 import useHardwareBack from '../hooks/useHardwareBack';
 import { triggerEventStatusAutomation } from '../utils/automationEngine';
+import { canonicalizeGroupId } from '../utils/tenantUtils';
 
 export default function EventDetails({ event, user, profileData, onNavigateToView, onClose, onPrev, onNext, viewMode: _viewMode, setViewMode: _setViewMode, onGoToStageLayoutEditor }) {
   const { t } = useTranslation();
@@ -365,7 +366,8 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
   // Synchroniser users list to récupérer instruments and names in real-time
   useEffect(() => {
     if (!event.groupId) return;
-    const q = query(collection(db, 'users'), where('groupId', '==', event.groupId));
+    const canonicalGroup = canonicalizeGroupId(event.groupId);
+    const q = query(collection(db, 'users'), where('groupId', '==', canonicalGroup));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const usersList = [];
       snapshot.forEach(docSnap => {
@@ -1057,9 +1059,31 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
     agendaEnableVolunteerShifts: rawEditConfig.agendaEnableVolunteerShifts !== undefined ? rawEditConfig.agendaEnableVolunteerShifts : (agendaEnableVolunteerShifts && (editType === 'prestation' || editType === 'stage'))
   };
 
+  const formatUserDisplayName = (u) => {
+    const fn = (u?.prenom || '').trim();
+    const ln = (u?.nom || '').trim();
+    if (fn || ln) return `${fn} ${ln}`.trim();
+    return u?.displayName || u?.email || 'Membre';
+  };
+
   const unregisteredUsers = allUsers
-    .filter(u => u.prenom && !(event.inscriptions || []).some(ins => ins.userId === u.id))
-    .sort((a, b) => `${a.prenom} ${a.nom}`.localeCompare(`${b.prenom} ${b.nom}`));
+    .filter(u => {
+      if (!u) return false;
+      const hasIdentity = Boolean(u.prenom || u.nom || u.displayName || u.email);
+      if (!hasIdentity) return false;
+      const currentInscription = (event.inscriptions || []).find(ins => ins.userId === u.id);
+      // Inclure les non-inscrits ainsi que les membres actuellement notés absents ou à confirmer
+      return !currentInscription || currentInscription.status !== 'present';
+    })
+    .map(u => {
+      const currentInscription = (event.inscriptions || []).find(ins => ins.userId === u.id);
+      return {
+        ...u,
+        displayNameFormatted: formatUserDisplayName(u),
+        currentStatus: currentInscription?.status || 'none'
+      };
+    })
+    .sort((a, b) => a.displayNameFormatted.localeCompare(b.displayNameFormatted));
 
   const formatEventHeaderDate = (startDateStr, endDateStr, horaires) => {
     if (!startDateStr) return '';

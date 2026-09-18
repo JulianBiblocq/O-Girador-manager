@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import CordelCard from '../../CordelCard';
+import { canonicalizeGroupId } from '../../../utils/tenantUtils';
 
 /**
  * Étape 4 du Wizard : Invitation du Bureau & Collège 👥
@@ -23,7 +24,7 @@ export default function WizardStepTeamInvite({ wizardData, updateWizardData, gro
   // URL d'invitation directe vers l'espace du groupe
   const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
   const currentOrigin = isLocal ? window.location.origin : 'https://organizador.o-girador.com';
-  const inviteUrl = `${currentOrigin}/login?groupe=${groupId || 'samambaia'}`;
+  const inviteUrl = `${currentOrigin}/login?groupe=${canonicalizeGroupId(groupId) || 'Samambaia'}`;
 
   // Copie de l'URL d'invitation
   const handleCopyInviteUrl = () => {

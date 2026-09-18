@@ -27,7 +27,11 @@ const testScripts = [
   'scripts/test_private_messages_recovery.mjs',
   'scripts/test_studio_lexique_integration.mjs',
   'scripts/test_studio_social_enrichment.mjs',
-  'scripts/test_studio_social_unicode_workflow.mjs'
+  'scripts/test_studio_social_unicode_workflow.mjs',
+  'scripts/test_mestre_forum_rsvp_recovery.mjs',
+  'scripts/test_expense_claims_season.mjs',
+  'scripts/test_orders_reconciliation.mjs',
+  'scripts/test_in_app_notifications.mjs'
 ];
 
 console.log("===============================================================");

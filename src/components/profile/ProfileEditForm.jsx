@@ -508,6 +508,30 @@ export default function ProfileEditForm({
         disabled={saving}
       />
 
+      {/* SECTION : COORDONNÉES BANCAIRES / REMBOURSEMENTS */}
+      <CordelCard variant="default" useExtremeBorder={true} className="p-4 flex flex-col gap-2.5 text-left">
+        <h4 className="text-xs font-black uppercase tracking-wider text-cordel-wood flex items-center gap-1.5 border-b border-dashed border-cordel-master-dark/15 pb-1">
+          💳 Coordonnées bancaires (Remboursements)
+        </h4>
+        <p className="text-[10px] text-cordel-master-dark/80 italic font-medium leading-tight">
+          💡 Renseignez votre IBAN pour permettre au trésorier de vous rembourser rapidement vos notes de frais et indemnités kilométriques.
+        </p>
+        <div className="flex flex-col gap-1 mt-1">
+          <label className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-master-dark">
+            IBAN (Virement bancaire)
+          </label>
+          <input
+            type="text"
+            name="iban"
+            value={formData.iban || ''}
+            onChange={(e) => setFormData(prev => ({ ...prev, iban: e.target.value.toUpperCase() }))}
+            disabled={saving}
+            placeholder="Ex : FR76 1234 5678 9012 3456 7890 123"
+            className="theme-input w-full text-xs font-mono font-bold tracking-wider py-1.5 bg-cordel-bg-light"
+          />
+        </div>
+      </CordelCard>
+
       {/* Actions Buttons */}
       <div className="flex gap-3 mt-2 select-none">
         <CordelButton 

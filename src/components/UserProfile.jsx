@@ -25,6 +25,7 @@ import ProfileEditForm from './profile/ProfileEditForm';
 import ImageLightboxModal from './ImageLightboxModal';
 import FamilyMembersManager from './profile/FamilyMembersManager';
 import NotificationDiagnostic from './profile/NotificationDiagnostic';
+import MemberExpenseSection from './expenses/MemberExpenseSection';
 import QRScannerModal from './auth/QRScannerModal';
 const CordelImageEditor = React.lazy(() => import('./CordelImageEditor'));
 
@@ -657,6 +658,13 @@ export default function UserProfile({ user, profileData, associationName, onBack
           t={t}
         />
       )}
+
+      {/* Section des Remboursements de frais */}
+      <MemberExpenseSection
+        groupId={profileData?.groupId}
+        currentUser={user}
+        profileData={profileData}
+      />
 
       {/* Notification Diagnostic Section */}
       <NotificationDiagnostic 

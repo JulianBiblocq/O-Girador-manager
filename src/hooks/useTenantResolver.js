@@ -3,6 +3,7 @@ import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../firebase';
 import { isDemoMode } from '../demo/demoManager';
 import { DEMO_GROUP_ID } from '../data/demoData';
+import { canonicalizeGroupId } from '../utils/tenantUtils';
 
 export default function useTenantResolver() {
   const [tenantState, setTenantState] = useState({
@@ -111,18 +112,20 @@ export default function useTenantResolver() {
       let mostradorUrl = '';
       let organizadorUrl = '';
 
+      const canonicalGroupId = canonicalizeGroupId(extractedGroupId);
+
       if (isLocal) {
-        mostradorUrl = `/?app=mostrador${extractedGroupId ? `&tenant=${extractedGroupId}` : ''}`;
-        organizadorUrl = `/login?app=organizador${extractedGroupId ? `&tenant=${extractedGroupId}` : ''}`;
+        mostradorUrl = `/?app=mostrador${canonicalGroupId ? `&tenant=${canonicalGroupId}` : ''}`;
+        organizadorUrl = `/login?app=organizador${canonicalGroupId ? `&tenant=${canonicalGroupId}` : ''}`;
       } else {
-        const groupPrefix = extractedGroupId ? `${extractedGroupId}.` : '';
+        const groupPrefix = canonicalGroupId ? `${canonicalGroupId.toLowerCase()}.` : '';
         mostradorUrl = `https://${groupPrefix}mostrador.o-girador.com`;
         organizadorUrl = `https://${groupPrefix}organizador.o-girador.com`;
       }
 
       setTenantState({
         appMode: currentMode,
-        groupId: extractedGroupId,
+        groupId: canonicalGroupId,
         isLocalhost: isLocal,
         isTenantLoading: false,
         tenantError: hasError,

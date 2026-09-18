@@ -8,6 +8,7 @@ import { XiloClose, XiloBox } from './XiloIcons';
 import { useTerminologie } from '../hooks/useTerminologie';
 import { useTranslation } from './LanguageContext';
 import { fr } from '../locales/fr';
+import MemberOrdersPaymentAlert from './orders/MemberOrdersPaymentAlert';
 
 export default function WidgetCommandes({ groupId, user, profileData }) {
   const { t } = useTranslation();
@@ -366,6 +367,13 @@ export default function WidgetCommandes({ groupId, user, profileData }) {
               </CordelButton>
             </form>
           </CordelCard>
+
+          {/* Alertes de paiement pour commandes de matériel */}
+          <MemberOrdersPaymentAlert
+            groupId={groupId}
+            currentUser={user}
+            profileData={profileData}
+          />
 
           {/* User's existing requests list */}
           {userRequests.length > 0 && (
