@@ -36,6 +36,7 @@ export default function InstrumentsDataTable({
   onSortHeaderClick,
   onInlineFieldChange,
   onAssignBorrower,
+  onToggleAssignation,
   onReturnInstrument,
   onOpenEdit,
   onDelete,
@@ -323,27 +324,69 @@ export default function InstrumentsDataTable({
                 </td>
 
                 {/* Colonne 8 : Assignations de membres */}
-                <td className="p-2 border-r border-encre-noire/10">
-                  {inst.assignations && inst.assignations.length > 0 ? (
-                    <div className="flex flex-wrap gap-1">
-                      {inst.assignations.map((uid) => {
-                        const u = usersList.find((userObj) => userObj.id === uid);
-                        if (!u) return null;
-                        const fullName = `${u.prenom} ${u.nom}`;
-                        return (
-                          <span 
-                            key={uid} 
-                            className="inline-flex items-center gap-1 bg-white/60 dark:bg-stone-800/60 px-1.5 py-0.5 rounded border border-dashed border-encre-noire/20 text-[9px] font-semibold"
-                          >
-                            <XiloAvatar src={u.photoURL} name={fullName} size={14} />
-                            <span>{fullName}</span>
-                          </span>
-                        );
-                      })}
+                <td className="p-2 border-r border-encre-noire/10 min-w-[160px]">
+                  <div className="flex flex-col gap-1.5">
+                    {/* Liste des membres assignés */}
+                    <div className="flex flex-wrap items-center gap-1">
+                      {inst.assignations && inst.assignations.length > 0 ? (
+                        inst.assignations.map((uid) => {
+                          const u = usersList.find((userObj) => userObj.id === uid);
+                          if (!u) return null;
+                          const fullName = `${u.prenom} ${u.nom}`;
+                          return (
+                            <span 
+                              key={uid} 
+                              className="inline-flex items-center gap-1 bg-white/70 dark:bg-stone-800/70 px-1.5 py-0.5 rounded border border-dashed border-encre-noire/25 text-[9px] font-semibold"
+                            >
+                              <XiloAvatar src={u.photoURL} name={fullName} size={14} />
+                              <span>{fullName}</span>
+                              {onToggleAssignation && (
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onToggleAssignation(inst.id, uid);
+                                  }}
+                                  className="text-[9px] text-[var(--color-cordel-rouge)] hover:brightness-125 ml-0.5 font-black cursor-pointer leading-none px-0.5"
+                                  title={`Retirer l'assignation de ${fullName}`}
+                                >
+                                  ×
+                                </button>
+                              )}
+                            </span>
+                          );
+                        })
+                      ) : (
+                        <span className="text-[10px] opacity-40 italic">-</span>
+                      )}
                     </div>
-                  ) : (
-                    <span className="text-[10px] opacity-40 italic">-</span>
-                  )}
+
+                    {/* Sélecteur d'assignation rapide en 1 clic */}
+                    {onToggleAssignation && (
+                      <div className="flex items-center gap-1">
+                        <select
+                          value=""
+                          onClick={(e) => e.stopPropagation()}
+                          onChange={(e) => {
+                            if (e.target.value) {
+                              onToggleAssignation(inst.id, e.target.value);
+                            }
+                          }}
+                          className="theme-input text-[9px] font-bold py-0.5 px-1 bg-white dark:bg-stone-800 border-dashed border-encre-noire/30 w-full cursor-pointer hover:border-encre-noire transition-colors"
+                          title="Assigner un membre en 1 clic"
+                        >
+                          <option value="">+ Assigner membre...</option>
+                          {usersList
+                            .filter((u) => !(inst.assignations || []).includes(u.id))
+                            .map((u) => (
+                              <option key={u.id} value={u.id}>
+                                {u.prenom} {u.nom}
+                              </option>
+                            ))}
+                        </select>
+                      </div>
+                    )}
+                  </div>
                 </td>
 
                 {/* Colonne 9 : Actions */}

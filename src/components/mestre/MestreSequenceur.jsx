@@ -115,10 +115,11 @@ export default function MestreSequenceur({ groupId, sequenceurUrl }) {
       };
     });
 
-    const storageMapped = storageRhythms.map(r => ({ ...r, source: 'storage' }));
-    
-    // Pour ne pas écraser les audios de storage s'il y a des doublons, on peut simplement les lister tous.
-    return [...storageMapped, ...fsMapped].sort((a, b) => a.titre.localeCompare(b.titre));
+    // Dédoublonnage strict par identifiant unique pour éviter toute duplication
+    const map = new Map();
+    storageMapped.forEach(r => map.set(r.id, r));
+    fsMapped.forEach(r => map.set(r.id, r));
+    return Array.from(map.values()).sort((a, b) => a.titre.localeCompare(b.titre));
   }, [storageRhythms, firestoreRhythms]);
 
   const loading = loadingStorage || fsLoading;

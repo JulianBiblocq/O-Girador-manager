@@ -82,7 +82,11 @@ export default function StudioPhotosView({
 
       {/* 3. Contenu de la sous-vue active */}
       {activeSubTab === 'recolte' ? (
-        <StudioEventsMediaTable groupId={groupId} canWrite={canWrite} />
+        <StudioEventsMediaTable 
+          groupId={groupId} 
+          canWrite={canWrite} 
+          onSwitchToVaral={() => setActiveSubTab('varal')} 
+        />
       ) : (
         <div data-tour="studio-varal-photos-rope" className="w-full">
           <WidgetDocuments

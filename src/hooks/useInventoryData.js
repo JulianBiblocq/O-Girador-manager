@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { collection, query, where, onSnapshot, doc, addDoc, updateDoc, deleteDoc, writeBatch, increment, arrayUnion } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, doc, addDoc, updateDoc, deleteDoc, writeBatch, increment, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { db } from '../firebase';
 import useConfirm from './useConfirm';
+import { canonicalizeGroupId } from '../utils/tenantUtils';
 
 /**
  * Hook personnalisé pour piloter l'inventaire du matériel et des instruments d'une association.
@@ -18,6 +19,18 @@ export function useInventoryData(groupId, isAuthorized, t) {
   const [saving, setSaving] = useState(false);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
+
+  // Construction des variantes de groupId pour robustesse multi-casse
+  const groupVariants = useMemo(() => {
+    if (!groupId) return [];
+    const canonical = canonicalizeGroupId(groupId);
+    return Array.from(new Set([
+      groupId,
+      canonical,
+      typeof groupId === 'string' ? groupId.toLowerCase() : null,
+      typeof canonical === 'string' ? canonical.toLowerCase() : null
+    ])).filter(Boolean);
+  }, [groupId]);
 
   // Nouvel état pour les pièces détachées
   const [inventoryParts, setInventoryParts] = useState([]);
@@ -62,7 +75,9 @@ export function useInventoryData(groupId, isAuthorized, t) {
     if (!isAuthorized || !groupId) return;
 
     const usersRef = collection(db, 'users');
-    const q = query(usersRef, where('groupId', '==', groupId));
+    const q = groupVariants.length > 1
+      ? query(usersRef, where('groupId', 'in', groupVariants))
+      : query(usersRef, where('groupId', '==', groupVariants[0] || groupId));
 
     const unsubscribe = onSnapshot(
       q,
@@ -80,7 +95,7 @@ export function useInventoryData(groupId, isAuthorized, t) {
     );
 
     return () => unsubscribe();
-  }, [groupId, isAuthorized]);
+  }, [groupId, isAuthorized, groupVariants]);
 
   // Synchronisation en temps réel de l'inventaire du matériel
   useEffect(() => {
@@ -90,7 +105,9 @@ export function useInventoryData(groupId, isAuthorized, t) {
     }
 
     const inventoryRef = collection(db, 'inventory');
-    const q = query(inventoryRef, where('groupId', '==', groupId));
+    const q = groupVariants.length > 1
+      ? query(inventoryRef, where('groupId', 'in', groupVariants))
+      : query(inventoryRef, where('groupId', '==', groupVariants[0] || groupId));
 
     const unsubscribe = onSnapshot(
       q,
@@ -111,7 +128,9 @@ export function useInventoryData(groupId, isAuthorized, t) {
 
     // Synchronisation des pièces détachées
     const partsRef = collection(db, 'inventory_parts');
-    const qParts = query(partsRef, where('groupId', '==', groupId));
+    const qParts = groupVariants.length > 1
+      ? query(partsRef, where('groupId', 'in', groupVariants))
+      : query(partsRef, where('groupId', '==', groupVariants[0] || groupId));
 
     const unsubscribeParts = onSnapshot(
       qParts,
@@ -130,7 +149,10 @@ export function useInventoryData(groupId, isAuthorized, t) {
 
     // Synchronisation des Modèles d'instruments
     const modelsRef = collection(db, 'instrument_models');
-    const qModels = query(modelsRef, where('groupId', '==', groupId));
+    const qModels = groupVariants.length > 1
+      ? query(modelsRef, where('groupId', 'in', groupVariants))
+      : query(modelsRef, where('groupId', '==', groupVariants[0] || groupId));
+
     const unsubscribeModels = onSnapshot(
       qModels,
       (querySnapshot) => {
@@ -587,6 +609,23 @@ export function useInventoryData(groupId, isAuthorized, t) {
     }
   }, [t]);
 
+  // Bascule rapide d'assignation d'un membre à un instrument (1-clic direct avec arrayUnion/arrayRemove)
+  const handleToggleAssignation = useCallback(async (instId, userId) => {
+    if (!instId || !userId) return;
+    try {
+      const currentInst = instruments.find(i => i.id === instId);
+      const isAssigned = (currentInst?.assignations || []).includes(userId);
+      const docRef = doc(db, 'inventory', instId);
+
+      await updateDoc(docRef, {
+        assignations: isAssigned ? arrayRemove(userId) : arrayUnion(userId)
+      });
+    } catch (error) {
+      console.error("useInventoryData - Erreur bascule assignation membre :", error);
+      alert((t && t('common.saveError')) || "Erreur lors de l'assignation du membre.");
+    }
+  }, [instruments, t]);
+
   // Sauvegarde avec synchronisation atomique et résiliente des stocks de consommables/fournitures
   const handleSaveWithSupplies = useCallback(async (e, supplies = []) => {
     if (e && e.preventDefault) e.preventDefault();
@@ -770,6 +809,7 @@ export function useInventoryData(groupId, isAuthorized, t) {
     handleRejectMovement,
     handleInlineFieldChange,
     handleAssignBorrower,
+    handleToggleAssignation,
     handleReturnInstrument,
     handleSaveWithSupplies,
     handleDeleteWithSupplies,

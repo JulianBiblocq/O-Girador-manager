@@ -45,8 +45,8 @@ export default function InventoryManager({
   const { t } = useTranslation();
   const shouldShowSubTabs = !hideSubTabs && !activeTabProp;
 
-  // Contrôle RBAC : Mestre, Super-Admin, Admin Système, Accès Logistique ou Accès Lutherie
-  const isAuthorized = role === 'mestre' || role === 'super-admin' || isSystemAdmin === true || hasAccessLogistique === true || hasAccessLutherie === true;
+  // Contrôle RBAC : Mestre, Super-Admin, Admin, Bureau, Admin Système, Accès Logistique ou Accès Lutherie
+  const isAuthorized = role === 'mestre' || role === 'super-admin' || role === 'admin' || role === 'bureau' || isSystemAdmin === true || hasAccessLogistique === true || hasAccessLutherie === true;
 
   const { 
     formData: settings = {}, 
@@ -101,6 +101,7 @@ export default function InventoryManager({
     handleRejectMovement,
     handleInlineFieldChange,
     handleAssignBorrower,
+    handleToggleAssignation,
     handleReturnInstrument,
     handleSaveWithSupplies,
     handleDeleteWithSupplies,
@@ -355,6 +356,7 @@ export default function InventoryManager({
               onSortHeaderClick={handleSortHeaderClick}
               onInlineFieldChange={handleInlineFieldChange}
               onAssignBorrower={handleAssignBorrower}
+              onToggleAssignation={handleToggleAssignation}
               onReturnInstrument={handleReturnInstrument}
               onOpenEdit={handleOpenEdit}
               onDelete={(id) => handleDeleteWithSupplies(id, supplies)}

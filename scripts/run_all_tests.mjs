@@ -32,7 +32,9 @@ const testScripts = [
   'scripts/test_expense_claims_season.mjs',
   'scripts/test_expense_claims_firestore_rules.mjs',
   'scripts/test_orders_reconciliation.mjs',
-  'scripts/test_in_app_notifications.mjs'
+  'scripts/test_in_app_notifications.mjs',
+  'scripts/test_treasurer_logistics_permissions.mjs',
+  'scripts/test_sequencer_repertoire_unification.mjs'
 ];
 
 console.log("===============================================================");

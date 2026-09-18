@@ -317,21 +317,101 @@ export function canAccessMestre(profileData, permissionsMatrice = null, effectiv
 }
 
 /**
+ * Table de correspondance entre onglets d'administration et leurs pôles parents respectifs.
+ */
+export const TAB_TO_POLE_MAP = {
+  // Logistique
+  inventory: 'logistique',
+  'logistics-pupitres': 'logistique',
+  'logistics-kits': 'logistique',
+  'logistics-carpool': 'logistique',
+  orders: 'logistique',
+  'orders-manager': 'logistique',
+
+  // Trésorerie
+  'dashboard-finance': 'tresorerie',
+  cotisations: 'tresorerie',
+  'events-finances': 'tresorerie',
+  'operations-diverses': 'tresorerie',
+  'frais-km': 'tresorerie',
+  'reports-exports': 'tresorerie',
+
+  // Lutherie
+  'inventory-projects': 'lutherie',
+  'instrument-models': 'lutherie',
+  'inventory-parts': 'lutherie',
+  'inventory-supplies': 'lutherie',
+  'workshop-tools': 'lutherie',
+  'varal-lutherie': 'lutherie',
+  canValidateWorkshopSteps: 'lutherie',
+
+  // Costumerie
+  'wardrobe-projects': 'costumerie',
+  'wardrobe-models': 'costumerie',
+  'wardrobe-pieces': 'costumerie',
+  'wardrobe-supplies': 'costumerie',
+  'wardrobe-tools': 'costumerie',
+  'wardrobe-sizes': 'costumerie',
+  'varal-costumerie': 'costumerie',
+
+  // Diffusion
+  'gigs-pipeline': 'diffusion',
+
+  // Secrétariat
+  'export-annu': 'secretariat',
+  'reunion-manager': 'secretariat',
+  'activity-reports': 'secretariat',
+  'mestre-forum-channels': 'secretariat',
+  'studio-events': 'secretariat',
+  'varal-secretariat': 'secretariat',
+  'secretariat-documents': 'secretariat',
+  'secretariat-lieux': 'secretariat',
+
+  // Gouvernance / CA
+  'ca-reunions': 'gouvernance',
+  'ca-reports': 'gouvernance',
+  'ca-documents': 'gouvernance',
+  'ca-finances': 'gouvernance',
+  'ca-prestations': 'gouvernance',
+
+  // Studio
+  'studio-social': 'studio',
+  'studio-lexique': 'studio',
+  newsletter: 'studio',
+  'studio-communication': 'studio',
+  'varal-photos': 'studio',
+
+  // Pédagogie
+  'varal-manager': 'pedagogie',
+  'mestre-pedagogy-qcm': 'pedagogie',
+  'mestre-pedagogy-dashboard': 'pedagogie',
+
+  // Mestria
+  'mestre-repertoire': 'mestre',
+  'mestre-categories': 'mestre',
+  'mestre-orientation': 'mestre',
+  'mestre-events': 'mestre',
+  'mestre-stage-layout': 'mestre',
+  'mestre-sequenceur': 'mestre',
+  'mestre-mot-mestre': 'mestre'
+};
+
+/**
  * Mots-clés d'étiquettes/badges autorisant les pôles d'administration par défaut.
  */
 export const POLE_ALLOWED_KEYWORDS = {
-  diffusion: ['diffusion', 'booking', 'communication'],
-  tresorerie: ['trésorier', 'trésorière', 'trésorerie', 'comptable', 'finance'],
+  diffusion: ['diffusion', 'booking', 'communication', 'admin', 'bureau', 'direction'],
+  tresorerie: ['trésorier', 'trésorière', 'trésorerie', 'comptable', 'finance', 'admin', 'bureau', 'direction', 'président', 'présidente'],
   secretariat: ['secrétaire', 'secretaire', 'secrétariat', 'secretariat', 'bureau', 'direction', 'admin'],
   gouvernance: ['gouvernance', 'ca', 'conseil', 'bureau', 'direction', 'admin'],
-  logistique: ['logistique', 'matériel', 'inventaire', 'instruments', 'commandes'],
-  lutherie: ['lutherie', 'atelier', 'artisan', 'fabrication', 'matériel'],
-  costumerie: ['costume', 'costumes', 'costumière', 'couture', 'couturier', 'tailleur', 'habillage', 'vestiaire'],
-  studio: ['studio', 'communication', 'porte-voix', 'newsletter'],
+  logistique: ['logistique', 'matériel', 'inventaire', 'instruments', 'commandes', 'trésorier', 'trésorière', 'admin', 'bureau', 'direction'],
+  lutherie: ['lutherie', 'atelier', 'artisan', 'fabrication', 'matériel', 'admin', 'bureau', 'direction', 'logistique'],
+  costumerie: ['costume', 'costumes', 'costumière', 'couture', 'couturier', 'tailleur', 'habillage', 'vestiaire', 'admin', 'bureau', 'direction'],
+  studio: ['studio', 'communication', 'porte-voix', 'newsletter', 'admin', 'bureau', 'direction'],
   mestre: ['mestre', 'mestria', 'direction', 'artistique', 'scène', 'scene', 'chef de pupitre'],
-  vitrine: ['vitrine', 'communication', 'webmaster'],
-  pedagogie: ['mestre', 'pédagogie'],
-  config: ['config', 'sécurité', 'secrétaire']
+  vitrine: ['vitrine', 'communication', 'webmaster', 'admin', 'bureau'],
+  pedagogie: ['mestre', 'pédagogie', 'direction'],
+  config: ['config', 'sécurité', 'secrétaire', 'admin', 'bureau', 'direction']
 };
 
 /**
@@ -356,9 +436,9 @@ export function canAccessPole(poleId, profileData, permissionsMatrice = null, ef
     return true;
   }
 
-  // Rôle Administrateur de l'association (role === 'admin')
+  // Rôle Administrateur ou Bureau de l'association
   const systemRole = (profileData.role || '').toLowerCase();
-  if (systemRole === 'admin') {
+  if (systemRole === 'admin' || systemRole === 'bureau') {
     return true;
   }
 
@@ -401,14 +481,29 @@ export function canAccessPole(poleId, profileData, permissionsMatrice = null, ef
  * Vérifie si l'utilisateur possède les droits d'accès à un Onglet / Sous-Menu d'administration spécifique.
  * 
  * @param {string} tabId Identifiant de l'onglet (ex: 'gigs-pipeline', 'cotisations', 'inventory', etc.)
- * @param {string} poleId Identifiant du pôle parent
- * @param {Object} profileData Profil de l'utilisateur
- * @param {Object} permissionsMatrice Matrice des permissions
- * @param {Array} effectiveUserTags Étiquettes effectives
- * @param {boolean} breakGlassActive Mode intervention d'urgence actif
+ * @param {string|Object} poleIdOrProfile Identifiant du pôle parent ou directement le profil utilisateur
+ * @param {Object|null} profileDataArg Profil de l'utilisateur (si poleId passé en 2e arg) ou matrice de permissions
+ * @param {Object|Array|null} permissionsMatriceArg Matrice des permissions ou tags effectifs
+ * @param {Array|boolean} effectiveUserTagsArg Étiquettes effectives ou drapeau breakGlassActive
+ * @param {boolean} breakGlassActiveArg Mode intervention d'urgence actif
  * @returns {boolean} true si l'accès à l'onglet est autorisé
  */
-export function canAccessTabPermission(tabId, poleId, profileData, permissionsMatrice = null, effectiveUserTags = [], breakGlassActive = false) {
+export function canAccessTabPermission(tabId, poleIdOrProfile, profileDataArg = null, permissionsMatriceArg = null, effectiveUserTagsArg = [], breakGlassActiveArg = false) {
+  let poleId = poleIdOrProfile;
+  let profileData = profileDataArg;
+  let permissionsMatrice = permissionsMatriceArg;
+  let effectiveUserTags = effectiveUserTagsArg;
+  let breakGlassActive = breakGlassActiveArg;
+
+  // Surcharge : si le 2e argument est un objet profil (poleId omis par l'appelant)
+  if (poleIdOrProfile && typeof poleIdOrProfile === 'object' && !Array.isArray(poleIdOrProfile)) {
+    profileData = poleIdOrProfile;
+    permissionsMatrice = profileDataArg;
+    effectiveUserTags = Array.isArray(permissionsMatriceArg) ? permissionsMatriceArg : (profileData?.tags || []);
+    breakGlassActive = Boolean(effectiveUserTagsArg);
+    poleId = TAB_TO_POLE_MAP[tabId] || null;
+  }
+
   if (!profileData) return false;
 
   // Onglets publics Espace Membre : toujours autorisés
@@ -421,9 +516,9 @@ export function canAccessTabPermission(tabId, poleId, profileData, permissionsMa
     return true;
   }
 
-  // Rôle Administrateur de l'association (role === 'admin')
+  // Rôle Administrateur ou Bureau de l'association
   const systemRole = (profileData.role || '').toLowerCase();
-  if (systemRole === 'admin') {
+  if (systemRole === 'admin' || systemRole === 'bureau') {
     return true;
   }
 
@@ -442,7 +537,7 @@ export function canAccessTabPermission(tabId, poleId, profileData, permissionsMa
   }
 
   // 1. Si l'utilisateur possède les droits d'administration globaux sur le pôle parent, accorder l'accès
-  if (canAccessPole(poleId, profileData, permissionsMatrice, effectiveUserTags, breakGlassActive)) {
+  if (poleId && canAccessPole(poleId, profileData, permissionsMatrice, effectiveUserTags, breakGlassActive)) {
     return true;
   }
 
@@ -484,7 +579,7 @@ export function isUserModeratorOrAdmin(profileData, breakGlassActive = false) {
   }
 
   const role = (profileData.role || '').toLowerCase();
-  if (role === 'bureau') {
+  if (role === 'bureau' || role === 'admin' || role === 'mestre') {
     return true;
   }
 
@@ -502,7 +597,13 @@ export function isUserModeratorOrAdmin(profileData, breakGlassActive = false) {
     'président',
     'présidente',
     'présidence',
-    'direction'
+    'direction',
+    'trésorier',
+    'trésorière',
+    'secrétaire',
+    'admin',
+    'administrateur',
+    'administratrice'
   ];
 
   return tagStrings.some(t => MODERATION_KEYWORDS.some(kw => matchesAllowedKeyword(t, kw)));

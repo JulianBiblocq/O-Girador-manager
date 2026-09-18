@@ -36,8 +36,8 @@ export default function TagManager({ groupId, onBack, role, isSystemAdmin }) {
   const [draggedIndex, setDraggedIndex] = useState(null);
   const [dragOverIndex, setDragOverIndex] = useState(null);
 
-  // Security Vérifier: Mestres, Super-Admins and System Admins only
-  const isAuthorized = role === 'mestre' || role === 'super-admin' || isSystemAdmin === true;
+  // Security Vérifier: Mestres, Super-Admins, Admins et Bureau
+  const isAuthorized = role === 'mestre' || role === 'super-admin' || role === 'admin' || role === 'bureau' || isSystemAdmin === true;
 
   useEffect(() => {
     if (!isAuthorized || !groupId) {

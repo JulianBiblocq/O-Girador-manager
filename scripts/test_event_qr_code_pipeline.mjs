@@ -283,7 +283,75 @@ assert(widgetAgendaCode.includes('activerRecolteMedias: typeCfg.activerRecolteMe
 assert(tabAdminCode.includes('📸 Boîte Photos'), "TabAdmin.jsx doit proposer l'interrupteur '📸 Boîte Photos'");
 console.log("  ✅ [PASS] Intégrité de la chaîne TabAgenda -> Formulaire -> WidgetAgenda -> Vue Détails confirmée\n");
 
+
+// --- MODULE 7 : Sécurisation Fiche & Alerte Repli Général ---
+console.log("▶️ Module 7 : Sécurisation Fiche & Alerte Repli Général");
+
+const eventPublicQrCodeModalPath = path.resolve('src/components/event-details/EventPublicQrCodeModal.jsx');
+const eventDetailsComponentPath = path.resolve('src/components/EventDetails.jsx');
+
+const eventPublicQrCodeModalCode = fs.readFileSync(eventPublicQrCodeModalPath, 'utf-8');
+const eventDetailsCompCode = fs.readFileSync(eventDetailsComponentPath, 'utf-8');
+
+// 1. Détection du repli général et affichage de l'avertissement explicite
+assert(eventPublicQrCodeModalCode.includes('isGeneralFallback'), "EventPublicQrCodeModal doit accepter la prop isGeneralFallback");
+assert(eventPublicQrCodeModalCode.includes("Dossier général de l'association") || eventPublicQrCodeModalCode.includes("Dossier général"), "EventPublicQrCodeModal doit afficher un avertissement clair en cas de dossier général");
+assert(eventPublicQrCodeModalCode.includes('onProvisionSpecific'), "EventPublicQrCodeModal doit accepter le callback onProvisionSpecific pour créer le dossier Framaspace dédié");
+console.log("  ✅ [PASS] Alerte explicite de dossier général et bouton de provisionnement spécifique validés dans EventPublicQrCodeModal");
+
+// 2. Présence du bouton d'action directe 1-clic dans EventDetails
+assert(eventDetailsCompCode.includes('handleQuickProvisionFramaspace'), "EventDetails doit implémenter handleQuickProvisionFramaspace");
+assert(eventDetailsCompCode.includes('Créer dossier Framaspace') || eventDetailsCompCode.includes('Créer le dossier Framaspace'), "EventDetails doit proposer le bouton 1-clic pour créer le dossier spécifique");
+console.log("  ✅ [PASS] Déclenchement 1-clic de création Framaspace présent sur la fiche événement\n");
+
+
+// --- MODULE 8 : Régie Studio & Varal (StudioEventsMediaTable & StudioPhotosView) ---
+console.log("▶️ Module 8 : Régie Studio & Varal (Alignement immédiat & synchronisation)");
+
+const studioTablePath = path.resolve('src/components/studio/StudioEventsMediaTable.jsx');
+const studioPhotosViewPath = path.resolve('src/components/studio/StudioPhotosView.jsx');
+
+const studioTableCode = fs.readFileSync(studioTablePath, 'utf-8');
+const studioPhotosViewCode = fs.readFileSync(studioPhotosViewPath, 'utf-8');
+
+// 1. Alignement immédiat vers l'album Varal depuis l'URL de dépôt
+assert(studioTableCode.includes('handleAlignDepotToAlbum'), "StudioEventsMediaTable doit inclure handleAlignDepotToAlbum");
+assert(studioTableCode.includes('Aligner avec le dépôt'), "StudioEventsMediaTable doit proposer le bouton 'Aligner avec le dépôt'");
+console.log("  ✅ [PASS] Alignement immédiat vers l'album Varal opérationnel");
+
+// 2. Raccourci vers le Varal et synchronisation documents
+assert(studioTableCode.includes('Voir le livret sur le Varal') || studioTableCode.includes('Voir sur le Varal'), "StudioEventsMediaTable doit proposer le raccourci 'Voir le livret sur le Varal'");
+assert(studioTableCode.includes("categoryId: 'PhotosPrestations'"), "StudioEventsMediaTable doit synchroniser avec la catégorie PhotosPrestations");
+assert(studioPhotosViewCode.includes('onSwitchToVaral'), "StudioPhotosView doit transmettre onSwitchToVaral à StudioEventsMediaTable");
+console.log("  ✅ [PASS] Synchronisation automatique du livret et raccourci d'accès au Varal validés\n");
+
+
+// --- MODULE 9 : Cloud Functions - Partages OCS Distincts & Synchronisation Backend ---
+console.log("▶️ Module 9 : Cloud Functions - Partages OCS Distincts & Synchronisation Backend");
+
+const functionsIndexPath = path.resolve('functions/index.js');
+const functionsIndexCode = fs.readFileSync(functionsIndexPath, 'utf-8');
+
+// 1. Deux partages OCS distincts avec labels explicites
+assert(functionsIndexCode.includes("Depot Public"), "Cloud Functions doit nommer le partage public 'Depot Public'");
+assert(functionsIndexCode.includes("Album Photos"), "Cloud Functions doit nommer le partage de consultation 'Album Photos'");
+assert(functionsIndexCode.includes('permissions: 4') || functionsIndexCode.includes('permissions, "4"') || functionsIndexCode.includes('4, "Depot Public"'), "Le partage Depot Public doit avoir les permissions: 4 (File drop / upload-only)");
+assert(functionsIndexCode.includes('permissions: 1') || functionsIndexCode.includes('1, "Album Photos"'), "Le partage Album Photos doit avoir les permissions: 1 (Lecture seule)");
+console.log("  ✅ [PASS] Partages OCS Nextcloud distincts configurés avec permissions 4 et 1");
+
+// 2. Règle absolue anti-file drop pour la lecture de l'album
+assert(functionsIndexCode.includes("permissions === 1 ? shares.find(s => Number(s.share_type) === 3 && (Number(s.permissions) & 1) !== 0)"), "Cloud Functions ne doit jamais renvoyer un lien File drop (perm 4) pour l'album en lecture");
+console.log("  ✅ [PASS] Règle stricte anti-file drop vérifiée pour les liens d'album");
+
+// 3. Synchronisation atomique du livret documents côté backend
+assert(functionsIndexCode.includes('db.collection("documents")'), "Cloud Functions doit mettre à jour la collection 'documents'");
+assert(functionsIndexCode.includes('PhotosPrestations'), "Cloud Functions doit classer le document sous PhotosPrestations");
+assert(functionsIndexCode.includes('dossier_externe'), "Le livret synchronisé doit avoir le type 'dossier_externe'");
+console.log("  ✅ [PASS] Synchronisation atomique Firestore 'documents' confirmée côté Cloud Functions\n");
+
+
 console.log("===============================================================");
 console.log("🏆 SUCCÈS TOTAL : TOUTES LES ASSERTIONS QR CODE SONT VALIDÉES !");
 console.log("===============================================================");
+
 

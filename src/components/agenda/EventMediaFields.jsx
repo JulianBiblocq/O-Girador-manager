@@ -83,53 +83,116 @@ export default function EventMediaFields({
   const rawVideoUrl = (formData.videoUrl || '').trim();
   const isVideoUrlInvalid = rawVideoUrl !== '' && (!isValidHttpUrl(rawVideoUrl) || !youtubeAnalysis);
 
+  const isTypeTargetDefault = ['prestation', 'concert', 'spectacle', 'festival', 'parade'].includes((formData.type || '').toLowerCase());
+  const isRecolteMediasActive = formData.activerRecolteMedias !== undefined
+    ? Boolean(formData.activerRecolteMedias)
+    : isTypeTargetDefault;
+
+  const handleToggleRecolteMedias = (isChecked) => {
+    if (setFormData) {
+      setFormData(prev => ({ ...prev, activerRecolteMedias: isChecked }));
+    } else if (handleChange) {
+      handleChange({ target: { name: 'activerRecolteMedias', value: isChecked } });
+    }
+  };
+
   return (
     <div className="flex flex-col gap-3 p-3 bg-cordel-bg-light/60 border-2 border-dashed border-cordel-master-dark/25 rounded-[6px_8px_7px_9px] text-left select-none">
       <div className="flex items-center justify-between border-b border-dashed border-cordel-master-dark/20 pb-1.5">
         <h5 className="text-[11px] uppercase font-black tracking-wider text-cordel-wood flex items-center gap-1.5">
-          <span>📹</span>
-          <span>Médias & Captations</span>
+          <span>📸</span>
+          <span>Boîte à Photos & Captations</span>
         </h5>
         <span className="text-[9px] font-semibold text-cordel-master-dark/60 italic">
-          Framaspace & YouTube
+          Framaspace & Varal
         </span>
       </div>
 
-      {/* 1. Interrupteur d'autorisation du dépôt vidéo */}
-      <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-encre-noire hover:text-cordel-wood transition-colors">
-        <input
-          type="checkbox"
-          name="enableVideoDrop"
-          checked={isDropAllowed}
-          onChange={(e) => handleToggleVideoDrop(e.target.checked)}
-          disabled={saving}
-          className="w-4 h-4 rounded accent-cordel-wood cursor-pointer"
-        />
-        <span>📹 Autoriser le dépôt de vidéos pour cette date</span>
-      </label>
+      {/* 1. Interrupteur principal : Boîte à photos / QR Code spectateurs */}
+      <div className="flex flex-col gap-1.5">
+        <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-encre-noire hover:text-cordel-wood transition-colors">
+          <input
+            type="checkbox"
+            name="activerRecolteMedias"
+            checked={isRecolteMediasActive}
+            onChange={(e) => handleToggleRecolteMedias(e.target.checked)}
+            disabled={saving}
+            className="w-4 h-4 rounded accent-amber-600 cursor-pointer"
+          />
+          <span>📸 Activer la boîte à photos / QR Code spectateurs</span>
+        </label>
+        <span className="text-[9.5px] text-encre-noire/70 font-medium pl-6 leading-tight">
+          Génère le QR Code de dépôt spectateurs et provisionne automatiquement l'album sur Framaspace et le Varal Photos.
+        </span>
 
-      {/* 2. Champ dropUrl (affiché uniquement si le dépôt vidéo est autorisé) */}
-      {isDropAllowed && (
+        {/* État du dossier Framaspace ou déclencheur rapide */}
+        {isRecolteMediasActive && (
+          <div className="pl-6 pt-1 flex items-center gap-2 flex-wrap">
+            {formData.lienDepotMedias || formData.dropUrl ? (
+              <span className="px-2 py-0.5 rounded text-[9px] font-bold bg-emerald-100 text-emerald-900 border border-emerald-400 flex items-center gap-1">
+                <span>✓</span>
+                <span>Dossier Framaspace prêt pour le QR-Code</span>
+              </span>
+            ) : (
+              <button
+                type="button"
+                onClick={handleAutoProvisionFramaspace}
+                disabled={provisioning || saving}
+                className="px-2.5 py-1 bg-[var(--color-cordel-vert,#2d6a4f)] text-white text-[9px] font-black uppercase rounded hover:brightness-110 active:scale-95 transition-all flex items-center gap-1 cursor-pointer disabled:opacity-50 shadow-xs"
+                title="Créer immédiatement le dossier dédié sur Framaspace et insérer le lien de dépôt public"
+              >
+                {provisioning ? <><span className="animate-spin">⏳</span><span>Création en cours...</span></> : <><span>⚡</span><span>Créer le dossier Framaspace en 1 clic</span></>}
+              </button>
+            )}
+
+            {formData.framaspaceFolder && (
+              <span className="text-[9px] font-mono text-stone-600 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">
+                📁 {formData.framaspaceFolder}
+              </span>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* 2. Interrupteur d'autorisation du dépôt vidéo brut */}
+      <div className="pt-2 border-t border-dashed border-cordel-master-dark/15 flex flex-col gap-1">
+        <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-encre-noire hover:text-cordel-wood transition-colors">
+          <input
+            type="checkbox"
+            name="enableVideoDrop"
+            checked={isDropAllowed}
+            onChange={(e) => handleToggleVideoDrop(e.target.checked)}
+            disabled={saving}
+            className="w-4 h-4 rounded accent-cordel-wood cursor-pointer"
+          />
+          <span>📹 Autoriser le dépôt de vidéos pour cette date</span>
+        </label>
+      </div>
+
+      {/* 3. Champ dropUrl (affiché si le dépôt vidéo est autorisé ou si un lien existe) */}
+      {(isDropAllowed || isRecolteMediasActive) && (
         <div className="flex flex-col gap-2 pl-6 pt-1 border-l-2 border-dashed border-cordel-wood/30">
           <div className="flex items-center justify-between gap-2 flex-wrap">
             <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-              <span>🔗 Lien Framaspace File Drop (Dépôt brut)</span>
+              <span>🔗 Lien Framaspace File Drop (Dépôt public)</span>
             </label>
-            <button
-              type="button"
-              onClick={handleAutoProvisionFramaspace}
-              disabled={provisioning || saving}
-              className="px-2 py-0.5 bg-cordel-vert text-white text-[8.5px] font-black uppercase rounded hover:brightness-110 active:scale-95 transition-all flex items-center gap-1 cursor-pointer disabled:opacity-50 shadow-sm"
-              title="Créer automatiquement le dossier sur Framaspace et insérer le lien de dépôt public"
-            >
-              {provisioning ? <><span className="animate-spin">⏳</span><span>Création...</span></> : <><span>⚡</span><span>Créer le dossier Framaspace</span></>}
-            </button>
+            {!formData.dropUrl && !formData.lienDepotMedias && (
+              <button
+                type="button"
+                onClick={handleAutoProvisionFramaspace}
+                disabled={provisioning || saving}
+                className="px-2 py-0.5 bg-[var(--color-cordel-vert,#2d6a4f)] text-white text-[8.5px] font-black uppercase rounded hover:brightness-110 active:scale-95 transition-all flex items-center gap-1 cursor-pointer disabled:opacity-50 shadow-sm"
+                title="Créer automatiquement le dossier sur Framaspace et insérer le lien de dépôt public"
+              >
+                {provisioning ? <><span className="animate-spin">⏳</span><span>Création...</span></> : <><span>⚡</span><span>Créer sur Framaspace</span></>}
+              </button>
+            )}
           </div>
 
           {defaultDropUrl && !(formData.dropUrl || formData.lienDepotMedias) && (
             <div className="flex items-center gap-1.5 p-1.5 bg-emerald-50 border border-emerald-300 rounded text-[9.5px] text-emerald-900 font-semibold">
               <span>✅</span>
-              <span>Dossier général actif : les vidéos iront par défaut dans le dossier de l'association.</span>
+              <span>Dossier général actif : les fichiers iront par défaut dans le dossier de l'association.</span>
             </div>
           )}
 

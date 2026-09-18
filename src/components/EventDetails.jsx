@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { doc, updateDoc, collection, query, where, onSnapshot, writeBatch, getDocs, getDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { db, storage } from '../firebase';
+import { httpsCallable } from 'firebase/functions';
+import { db, storage, functions } from '../firebase';
 import CordelButton from './CordelButton';
 import { useTranslation } from './LanguageContext';
 
@@ -1181,6 +1182,36 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
   const effectiveQrUrl = isRecolteActive ? (currentLienDepot || (lienGoogleFormRecoltePhotos || '').trim()) : '';
   const hasQrCode = isRecolteActive && Boolean(effectiveQrUrl);
 
+  const [provisioningFramaspace, setProvisioningFramaspace] = useState(false);
+
+  // Déclencheur rapide de création de dossier Framaspace pour cet événement
+  const handleQuickProvisionFramaspace = async () => {
+    if (!event?.groupId || !event?.id) return;
+    setProvisioningFramaspace(true);
+    try {
+      const provisionFn = httpsCallable(functions, 'provisionFramaspaceEventFolders');
+      const res = await provisionFn({
+        eventId: event.id,
+        groupId: event.groupId,
+        eventData: activeEvent || event
+      });
+      const data = res?.data;
+      if (data?.success && (data.dropUrl || data.lienDepotMedias)) {
+        if (setToastMessage) {
+          setToastMessage("Dossier Framaspace & QR Code créés avec succès !");
+          setTimeout(() => setToastMessage(null), 3500);
+        }
+        setShowQrCodeModal(false);
+        setShowMediaQrCodeModal(true);
+      }
+    } catch (err) {
+      console.error("EventDetails - Erreur provisionnement Framaspace :", err);
+      alert("Erreur lors de la création du dossier Framaspace : " + (err.message || err));
+    } finally {
+      setProvisioningFramaspace(false);
+    }
+  };
+
   // Gestionnaire d'ouverture unifié de la modale QR Code avec priorité au dépôt Framaspace
   const handleOpenQrCodeModal = () => {
     if (currentLienDepot) {
@@ -1250,6 +1281,22 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
               >
                 <span>✏️</span>
                 <span className="hidden sm:inline">Modifier</span>
+              </button>
+            )}
+
+            {/* Bouton rapide de provisionnement si récolte active mais pas de dossier Framaspace créé */}
+            {isRecolteActive && !currentLienDepot && isAuthorized && (
+              <button
+                type="button"
+                onClick={handleQuickProvisionFramaspace}
+                disabled={provisioningFramaspace}
+                className="text-[10px] font-black uppercase bg-[var(--color-cordel-vert,#2d6a4f)] hover:bg-emerald-800 text-white border border-emerald-950 px-2.5 sm:px-3 py-1.5 rounded shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none cursor-pointer flex items-center gap-1 transition-colors select-none"
+                title="Créer immédiatement le dossier Framaspace dédié à cet événement"
+              >
+                <span>{provisioningFramaspace ? '⏳' : '⚡'}</span>
+                <span className="hidden sm:inline">
+                  {provisioningFramaspace ? 'Création Cloud...' : 'Créer dossier Framaspace'}
+                </span>
               </button>
             )}
 
@@ -1770,11 +1817,13 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
         />
       )}
 
-      {/* MODALE : QR Code Public Récolte Photos (Google Form Asso) */}
+      {/* MODALE : QR Code Public Récolte Photos (Google Form Asso ou repli) */}
       {showQrCodeModal && lienGoogleFormRecoltePhotos && (
         <EventPublicQrCodeModal
           qrUrl={lienGoogleFormRecoltePhotos}
           eventTitle={(activeEvent || event).titre}
+          isGeneralFallback={!currentLienDepot}
+          onProvisionSpecific={isAuthorized ? handleQuickProvisionFramaspace : undefined}
           onClose={() => setShowQrCodeModal(false)}
         />
       )}

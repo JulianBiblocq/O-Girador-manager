@@ -62,7 +62,7 @@ export default function KilometricReimbursementManager({ groupId, onBack, role, 
   const [formReimbursementRule, setFormReimbursementRule] = useState('full_cars_only');
   const [savingSettings, setSavingSettings] = useState(false);
 
-  const isAuthorized = role === 'mestre' || role === 'super-admin' || isSystemAdmin === true || hasAccessTresorerie === true;
+  const isAuthorized = role === 'mestre' || role === 'super-admin' || role === 'admin' || role === 'bureau' || isSystemAdmin === true || hasAccessTresorerie === true;
 
   // 1. Charger les paramètres de l'association
   useEffect(() => {

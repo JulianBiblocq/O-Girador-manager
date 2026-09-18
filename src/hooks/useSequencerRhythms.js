@@ -1,58 +1,24 @@
-import { useState, useEffect, useCallback } from 'react';
-import { ref, listAll, getDownloadURL } from 'firebase/storage';
-import { storage } from '../firebase';
+/**
+ * Hook unifié pour fournir le catalogue complet des rythmes du Séquenceur
+ * (motifs Firestore, dossiers privés, presets, sections et fichiers Storage)
+ * aux composants de gestion artistique, du répertoire et de l'agenda.
+ * Délègue de manière transparente à useSequencerFirestoreData sans rompre les contrats existants.
+ */
 
+import { useSequencerFirestoreData } from './useSequencerFirestoreData';
+
+/**
+ * Fournit la liste unifiée des rythmes pour l'association spécifiée.
+ *
+ * @param {string} groupId - Identifiant de l'association
+ * @returns {{ catalogRhythms: Array, loadingRhythms: boolean, fetchCatalogRhythms: Function }}
+ */
 export function useSequencerRhythms(groupId) {
-  const [catalogRhythms, setCatalogRhythms] = useState([]);
-  const [loadingRhythms, setLoadingRhythms] = useState(false);
-
-  const fetchCatalogRhythms = useCallback(async () => {
-    if (!groupId) {
-      setCatalogRhythms([]);
-      return;
-    }
-    setLoadingRhythms(true);
-    try {
-      const folderRef = ref(storage, `documents/${groupId}/sequencer`);
-      const res = await listAll(folderRef);
-
-      const fetchedRhythms = await Promise.all(
-        res.items.map(async (itemRef) => {
-          try {
-            const jsonUrl = await getDownloadURL(itemRef);
-            const rawName = itemRef.name;
-            const cleanName = rawName.replace(/^\d+_/, '').replace(/\.json$/i, '');
-            return {
-              id: rawName,
-              titre: cleanName,
-              jsonUrl: jsonUrl,
-              fileName: rawName
-            };
-          } catch (urlError) {
-            console.error("useSequencerRhythms - Erreur getDownloadURL :", itemRef.name, urlError);
-            return null;
-          }
-        })
-      );
-
-      const validRhythms = fetchedRhythms.filter(Boolean);
-      validRhythms.sort((a, b) => a.titre.localeCompare(b.titre));
-      setCatalogRhythms(validRhythms);
-    } catch (error) {
-      console.error("useSequencerRhythms - Erreur lors de la récupération du catalogue :", error);
-      setCatalogRhythms([]);
-    } finally {
-      setLoadingRhythms(false);
-    }
-  }, [groupId]);
-
-  useEffect(() => {
-    fetchCatalogRhythms();
-  }, [fetchCatalogRhythms]);
+  const { rhythms, loading, refresh } = useSequencerFirestoreData(groupId);
 
   return {
-    catalogRhythms,
-    loadingRhythms,
-    fetchCatalogRhythms
+    catalogRhythms: rhythms,
+    loadingRhythms: loading,
+    fetchCatalogRhythms: refresh
   };
 }

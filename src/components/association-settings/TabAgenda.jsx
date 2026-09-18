@@ -261,6 +261,80 @@ export default function TabAgenda({
         </div>
       </CordelCard>
 
+      {/* Automatisation Boîte à Photos & Varal Framaspace par Type d'Événement */}
+      <CordelCard variant="default" useExtremeBorder={true} className="py-4 px-5">
+        <div className="flex items-center justify-between gap-2 border-b border-dashed border-cordel-master-dark/15 pb-2 mb-3 flex-wrap">
+          <div className="flex items-center gap-2">
+            <span className="text-base">📸</span>
+            <h3 className="text-xs uppercase font-extrabold tracking-wider text-cordel-wood">
+              Boîte à Photos & Varal Framaspace par Type d'Événement
+            </h3>
+          </div>
+          <span className="text-[9.5px] font-black uppercase tracking-wider px-2 py-0.5 rounded bg-amber-100 text-amber-900 border border-amber-800/40">
+            Framaspace Cloud
+          </span>
+        </div>
+
+        <p className="text-[10px] text-cordel-master-dark opacity-80 leading-relaxed mb-3.5 text-left">
+          Sélectionnez pour quels types d'événements la récolte de clichés (QR Code spectateurs) et l'album Varal doivent être activés par défaut. Dès qu'un événement du type coché est créé, son dossier Framaspace est provisionné automatiquement et relié au Varal Photos.
+        </p>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5 text-left">
+          {eventTypes.map((type) => {
+            const rawConfig = (formData.eventTypeConfigs && formData.eventTypeConfigs[type]) || {};
+            const isTargetDefault = ['prestation', 'concert', 'spectacle', 'festival', 'parade'].includes(type.toLowerCase());
+            const isRecolteActive = rawConfig.activerRecolteMedias !== undefined 
+              ? Boolean(rawConfig.activerRecolteMedias) 
+              : isTargetDefault;
+
+            const handleToggleRecolte = (e) => {
+              const currentConfigs = formData.eventTypeConfigs || {};
+              const currentTypeConfig = currentConfigs[type] || {};
+              handleChange('eventTypeConfigs', {
+                ...currentConfigs,
+                [type]: {
+                  ...currentTypeConfig,
+                  activerRecolteMedias: e.target.checked
+                }
+              });
+            };
+
+            return (
+              <label 
+                key={`recolte-type-${type}`}
+                className={`flex items-center justify-between p-2.5 rounded-[4px_6px_3px_5px] border-2 cursor-pointer transition-all select-none ${
+                  isRecolteActive
+                    ? 'bg-amber-50/90 border-amber-900 shadow-[1.5px_1.5px_0px_0px_#181716]'
+                    : 'bg-cordel-bg-light/40 border-encre-noire/25 hover:border-encre-noire/60'
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <span className="text-xs">
+                    {type === 'prestation' ? '🎭' : type === 'concert' ? '🎶' : type === 'repetition' ? '🥁' : type === 'stage' ? '🥋' : type === 'atelier' ? '🛠️' : '📅'}
+                  </span>
+                  <div className="flex flex-col">
+                    <span className="text-[11px] font-black capitalize text-encre-noire">
+                      {type}
+                    </span>
+                    <span className="text-[8.5px] font-semibold text-stone-500">
+                      {isRecolteActive ? 'QR Code & Framaspace actifs' : 'Récolte désactivée'}
+                    </span>
+                  </div>
+                </div>
+
+                <input 
+                  type="checkbox"
+                  checked={isRecolteActive}
+                  onChange={handleToggleRecolte}
+                  disabled={saving}
+                  className="w-4 h-4 accent-amber-600 rounded cursor-pointer shrink-0"
+                />
+              </label>
+            );
+          })}
+        </div>
+      </CordelCard>
+
       {/* Types d'événements dynamiques */}
       <CordelCard variant="default" useExtremeBorder={true} className="py-4 px-5">
         <h3 className="text-xs uppercase font-extrabold tracking-wider text-cordel-wood mb-3">
@@ -317,7 +391,7 @@ export default function TabAgenda({
                 includesDance: rawConfig.includesDance !== undefined ? rawConfig.includesDance : (type === 'prestation' || type === 'repetition' || type === 'stage'),
                 enableCarpool: rawConfig.enableCarpool !== undefined ? rawConfig.enableCarpool : (type !== 'reunion' && type !== 'atelier'),
                 isPublic: rawConfig.isPublic !== undefined ? rawConfig.isPublic : (type === 'prestation'),
-                activerRecolteMedias: rawConfig.activerRecolteMedias !== undefined ? rawConfig.activerRecolteMedias : (type === 'prestation' || type === 'concert' || type === 'spectacle' || type === 'festival'),
+                activerRecolteMedias: rawConfig.activerRecolteMedias !== undefined ? rawConfig.activerRecolteMedias : ['prestation', 'concert', 'spectacle', 'festival', 'parade'].includes(type.toLowerCase()),
                 enableVideoDrop: rawConfig.enableVideoDrop !== undefined ? rawConfig.enableVideoDrop : (type === 'atelier' || type === 'repetition' || type === 'stage')
               };
 

@@ -44,6 +44,8 @@ import useLicenseGuard from '../hooks/useLicenseGuard';
 import SubscriptionBanner from './SubscriptionBanner';
 import { isDemoMode } from '../demo/demoManager';
 import NotificationCenter from './notifications/NotificationCenter';
+import EcosystemAppLauncher from './navigation/EcosystemAppLauncher';
+import LanguageToggle from './common/LanguageToggle';
 
 export default function LayoutShell({ 
   logoUrl, 
@@ -442,11 +444,11 @@ export default function LayoutShell({
       <div className="w-full h-screen lg:h-screen lg:max-w-none lg:border-none lg:rounded-none lg:shadow-none overflow-hidden flex flex-col lg:flex-row relative bg-cordel-bg-light text-encre-noire">
         
         {/* Top Header / Navbar for Mobile and Tablet (hidden on Desktop) */}
-        <div className="lg:hidden w-full h-16 landscape:h-12 border-b-4 border-cordel-master-dark bg-cordel-bg-light flex items-center px-4 justify-between select-none shrink-0 z-[90]">
-          <div className="flex items-center gap-3">
+        <div className="lg:hidden w-full h-16 landscape:h-12 border-b-4 border-cordel-master-dark bg-cordel-bg-light flex items-center px-3 sm:px-4 justify-between select-none shrink-0 z-[90]">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <div 
               onClick={handleLogoClick}
-              className={`flex items-center gap-3 cursor-pointer hover:opacity-90 transition-all ${
+              className={`flex items-center gap-2 sm:gap-3 cursor-pointer hover:opacity-90 transition-all shrink-0 ${
                 isLogoTilting ? 'animate-logo-tilt' : ''
               }`}
               title={t('poles.accueil')}
@@ -458,82 +460,47 @@ export default function LayoutShell({
                 height={40}
                 className="w-10 h-10 landscape:w-8 landscape:h-8 object-cover rounded-full pointer-events-none drop-shadow-sm" 
               />
-              <div className="flex flex-col text-left">
-                <span className="font-extrabold text-[8px] uppercase tracking-widest text-cordel-master-dark/50">
+              <div className="flex flex-col text-left truncate">
+                <span className="font-extrabold text-[8px] uppercase tracking-widest text-cordel-master-dark/50 truncate">
                   O Girador
                 </span>
                 {associationName && (
-                  <span className="font-black text-[10px] uppercase tracking-wider text-cordel-wood truncate max-w-[120px] -mt-0.5">
+                  <span className="font-black text-[10px] uppercase tracking-wider text-cordel-wood truncate max-w-[110px] sm:max-w-[150px] -mt-0.5">
                     {associationName}
                   </span>
                 )}
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              {isSuperAdmin && (
-                <button
-                  type="button"
-                  onClick={onToggleBreakGlass}
-                  className={`p-2 border-2 rounded transition-all cursor-pointer flex items-center justify-center ${
-                    breakGlassActive 
-                      ? 'bg-amber-400 border-encre-noire text-encre-noire animate-pulse shadow-xs' 
-                      : 'border-dashed border-encre-noire/20 text-stone-600 hover:border-encre-noire'
-                  }`}
-                  title={breakGlassActive ? "Mode Intervention Actif (Cliquez pour désactiver)" : "Activer le Mode Intervention (Déverrouiller)"}
-                >
-                  <span className="text-sm">{breakGlassActive ? '🔓' : '🔒'}</span>
-                </button>
-              )}
-              {hasBadgeOrRole && (
-                <button
-                  type="button"
-                  onClick={() => setIsCommandPaletteOpen(true)}
-                  className="p-2 border-2 border-encre-noire bg-cordel-bg hover:bg-white text-encre-noire rounded-[4px_6px_3px_5px] shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] cursor-pointer flex items-center justify-center transition-all"
-                  title="Recherche rapide (Ctrl + K)"
-                  aria-label="Palette de commande"
-                >
-                  <span className="text-sm">🔍</span>
-                </button>
-              )}
-              <ViewSimulatorSelector />
-              {renderAppLauncher(true)}
-              {isDemoMode() && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    window.location.href = '/demo?app=mostrador';
-                  }}
-                  className="p-1.5 border-2 border-encre-noire bg-[var(--color-cordel-vert)] text-white rounded-[4px_6px_3px_5px] shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] cursor-pointer flex items-center justify-center text-xs font-bold"
-                  title="Voir le site public (Vitrine démo)"
-                >
-                  <span>🌍</span>
-                </button>
-              )}
-            </div>
           </div>
 
           {associationName && (
-            <div className="hidden sm:flex flex-grow justify-center px-4 select-none pointer-events-none">
-              <span className="font-black text-xs md:text-sm uppercase tracking-widest text-cordel-wood truncate max-w-[200px] md:max-w-xs">
+            <div className="hidden md:flex flex-grow justify-center px-2 select-none pointer-events-none">
+              <span className="font-black text-xs md:text-sm uppercase tracking-widest text-cordel-wood truncate max-w-[200px]">
                 {associationName}
               </span>
             </div>
           )}
 
-          {/* Centre de notifications & indicateur de présence en ligne */}
-          <div className="flex items-center gap-2">
+          {/* Actions rapides Mobile : Écosystème, Présence compacte, Notifications & Menu */}
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+            <EcosystemAppLauncher urls={urls} associationData={associationData} />
+            <OnlineStatusWidget 
+              onlineMembers={onlineMembers} 
+              onlineCount={onlineCount} 
+              isPresenceEnabled={isPresenceEnabled}
+              compact={true}
+            />
             <NotificationCenter 
               currentUser={currentProfile}
               groupId={currentGroupId}
               onNavigateToUrl={onNotificationNavigate}
             />
-            <OnlineStatusWidget onlineMembers={onlineMembers} onlineCount={onlineCount} isPresenceEnabled={isPresenceEnabled} />
 
             {/* Hamburger Menu Button */}
             <button
               type="button"
               onClick={() => setIsDrawerOpen(true)}
-              className="relative p-2 border-2 border-dashed border-encre-noire/20 hover:border-encre-noire text-encre-noire rounded-md cursor-pointer flex items-center justify-center transition-colors"
+              className="relative p-2 min-w-[38px] min-h-[38px] border-2 border-dashed border-encre-noire/20 hover:border-encre-noire text-encre-noire rounded-md cursor-pointer flex items-center justify-center transition-colors select-none"
               title="Ouvrir le menu"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
@@ -814,6 +781,10 @@ export default function LayoutShell({
               </button>
             )}
             
+            <div className="w-full flex items-center justify-center mt-2">
+              <LanguageToggle className="w-full" />
+            </div>
+
             <span className="text-[7.5px] font-black opacity-35 tracking-widest uppercase select-none mt-1">
               {import.meta.env.VITE_APP_VERSION || 'v1.0.1'}
             </span>
@@ -889,19 +860,6 @@ export default function LayoutShell({
                     groupId={currentGroupId}
                     onNavigateToUrl={onNotificationNavigate}
                   />
-                  {hasBadgeOrRole && (
-                    <button
-                      type="button"
-                      onClick={() => setIsCommandPaletteOpen(true)}
-                      className="px-2.5 py-1.5 border-2 border-encre-noire bg-cordel-bg hover:bg-white text-encre-noire rounded-[4px_6px_3px_5px] shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] cursor-pointer flex items-center gap-1.5 transition-all text-xs font-black uppercase tracking-wider"
-                      title="Recherche rapide de réglages (Ctrl + K)"
-                      aria-label="Recherche rapide"
-                    >
-                      <span className="text-sm">🔍</span>
-                      <span className="hidden xl:inline text-[10px] font-normal normal-case">Recherche</span>
-                      <span className="hidden sm:inline text-[9px] font-mono opacity-60 bg-encre-noire/10 px-1 py-0.5 rounded border border-encre-noire/20">Ctrl K</span>
-                    </button>
-                  )}
                   <ViewSimulatorSelector />
                   <InfoPoleHelpButton 
                     key={`help_btn_${activePoleObj?.id || currentPole}_${currentTab || 'default'}`}
@@ -977,22 +935,34 @@ export default function LayoutShell({
                   </span>
                 )}
 
-                {/* Bouton Mode Intervention Mobile dans le Drawer */}
+                {/* Encart réservé Administration Technique (Super-Admin / Mestres réels) */}
                 {isSystemOrSuperAdminOrMestre && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      onToggleBreakGlass();
-                      setIsDrawerOpen(false);
-                    }}
-                    className={`mt-2 w-full py-1.5 px-2 rounded-[6px_9px_5px_8px] text-[9px] font-black uppercase tracking-wider border-2 transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-[1.5px_1.5px_0px_0px_#181716] ${
-                      breakGlassActive
-                        ? 'bg-amber-400 text-encre-noire border-encre-noire animate-pulse'
-                        : 'bg-cordel-bg text-cordel-master-dark/85 border-cordel-master-dark/30 hover:border-encre-noire'
-                    }`}
-                  >
-                    <span>{breakGlassActive ? '🔓 Mode Intervention Actif' : '🔒 Mode Intervention'}</span>
-                  </button>
+                  <div className="w-full mt-2 p-2 bg-amber-500/10 border-2 border-dashed border-amber-800/40 rounded-[6px_9px_5px_8px] flex flex-col gap-1.5 text-left">
+                    <span className="text-[8px] font-black uppercase tracking-widest text-amber-950/80">
+                      🛠️ Administration technique
+                    </span>
+                    <div className="flex items-center gap-1.5">
+                      {isSuperAdmin && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            onToggleBreakGlass();
+                          }}
+                          className={`flex-1 py-1.5 px-2 rounded-[5px_7px_4px_6px] text-[8.5px] font-black uppercase tracking-wider border-2 transition-all cursor-pointer flex items-center justify-center gap-1 shadow-[1px_1px_0px_0px_#181716] ${
+                            breakGlassActive
+                              ? 'bg-amber-400 text-encre-noire border-encre-noire animate-pulse'
+                              : 'bg-cordel-bg text-cordel-master-dark/85 border-cordel-master-dark/30 hover:border-encre-noire'
+                          }`}
+                          title={breakGlassActive ? "Mode Intervention Actif" : "Déverrouiller le Mode Intervention"}
+                        >
+                          <span>{breakGlassActive ? '🔓 Actif' : '🔒 Intervention'}</span>
+                        </button>
+                      )}
+                      <div className="shrink-0">
+                        <ViewSimulatorSelector />
+                      </div>
+                    </div>
+                  </div>
                 )}
 
                 {/* Bouton Palette de Commande Mobile dans le Drawer */}
@@ -1003,7 +973,7 @@ export default function LayoutShell({
                       setIsDrawerOpen(false);
                       setIsCommandPaletteOpen(true);
                     }}
-                    className="mt-2 w-full py-1.5 px-2 rounded-[6px_9px_5px_8px] text-[9px] font-black uppercase tracking-wider border-2 border-encre-noire bg-cordel-bg hover:bg-white text-encre-noire transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-[1.5px_1.5px_0px_0px_#181716]"
+                    className="mt-1 w-full py-1.5 px-2 rounded-[6px_9px_5px_8px] text-[9px] font-black uppercase tracking-wider border-2 border-encre-noire bg-cordel-bg hover:bg-white text-encre-noire transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-[1.5px_1.5px_0px_0px_#181716]"
                   >
                     <span>🔍 Recherche rapide (Ctrl + K)</span>
                   </button>
@@ -1207,6 +1177,10 @@ export default function LayoutShell({
                     💡 Feedback
                   </button>
                 )}
+
+                <div className="w-full flex items-center justify-center mt-2">
+                  <LanguageToggle className="w-full" />
+                </div>
 
                 <div className="flex justify-between items-center text-[8px] font-black opacity-30 mt-1">
                   <span>O GIRADOR</span>

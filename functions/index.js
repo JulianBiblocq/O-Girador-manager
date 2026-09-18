@@ -2354,12 +2354,16 @@ async function provisionFramaspaceForEvent(eventId, eventData, options = {}) {
   // 3. Génération des partages publics via l'API OCS (files_sharing)
   const ocsEndpoint = `${cleanUrl}/ocs/v2.php/apps/files_sharing/api/v1/shares?format=json`;
 
-  const getOrCreateOcsShare = async (permissions) => {
-    // Tentative de création du partage
+  const getOrCreateOcsShare = async (permissions, label = "") => {
+    // Tentative de création du partage avec label explicite
     const bodyParams = new URLSearchParams();
     bodyParams.append("path", `/${folderPath}`);
     bodyParams.append("shareType", "3"); // 3 = Lien public
     bodyParams.append("permissions", String(permissions)); // 4 = File drop (dépôt seul), 1 = Lecture seule
+    if (label) {
+      bodyParams.append("name", label);
+      bodyParams.append("label", label);
+    }
 
     const ocsRes = await fetch(ocsEndpoint, {
       method: "POST",
@@ -2395,35 +2399,63 @@ async function provisionFramaspaceForEvent(eventId, eventData, options = {}) {
       const listJson = await listRes.json();
       const shares = listJson.ocs?.data;
       if (Array.isArray(shares) && shares.length > 0) {
-        // Trouver le partage correspondant aux permissions demandées
+        // Recherche stricte selon les permissions demandées
+        // Si on cherche de la lecture (1), interdire strictement le lien File drop (4) seul
         const match = shares.find(s => Number(s.share_type) === 3 && Number(s.permissions) === permissions) ||
-                      shares.find(s => Number(s.share_type) === 3);
+                      (permissions === 1 ? shares.find(s => Number(s.share_type) === 3 && (Number(s.permissions) & 1) !== 0) : null) ||
+                      (permissions === 4 ? shares.find(s => Number(s.share_type) === 3 && Number(s.permissions) === 4) : null);
         if (match && match.url) {
-          console.log(`provisionFramaspaceForEvent - Partage existant réutilisé (perm: ${permissions}) :`, match.url);
+          console.log(`provisionFramaspaceForEvent - Partage existant réutilisé (perm: ${match.permissions}) :`, match.url);
           return match.url;
+        }
+
+        // Si on a demandé de la lecture (1) mais que seul un partage en dépôt (4) existe, tenter de créer en perm 5 (Lecture + Dépôt)
+        if (permissions === 1) {
+          const bodyParams5 = new URLSearchParams();
+          bodyParams5.append("path", `/${folderPath}`);
+          bodyParams5.append("shareType", "3");
+          bodyParams5.append("permissions", "5");
+          bodyParams5.append("name", "Album et Depot");
+          bodyParams5.append("label", "Album et Depot");
+
+          const res5 = await fetch(ocsEndpoint, {
+            method: "POST",
+            headers: {
+              "OCS-APIRequest": "true",
+              Authorization: `Basic ${basicAuth}`,
+              "Content-Type": "application/x-www-form-urlencoded",
+              Accept: "application/json"
+            },
+            body: bodyParams5.toString()
+          });
+          const json5 = await res5.json();
+          if (res5.ok && json5.ocs?.data?.url) {
+            console.log("provisionFramaspaceForEvent - Partage mixte (perm 5) créé pour l'album :", json5.ocs.data.url);
+            return json5.ocs.data.url;
+          }
         }
       }
     } catch (listErr) {
       console.warn("provisionFramaspaceForEvent - Erreur récupération liste des partages :", listErr.message);
     }
 
-    throw new Error(`Erreur API OCS (perm ${permissions}): ${ocsJson.ocs?.meta?.message || ocsRes.statusText}`);
+    throw new Error(`Erreur API OCS (perm ${permissions}, label ${label}): ${ocsJson.ocs?.meta?.message || ocsRes.statusText}`);
   };
 
-  // a) Lien de dépôt public (File drop / Create only -> permissions: 4)
+  // a) Lien de dépôt public (File drop / Create only -> permissions: 4, label: "Depot Public")
   let urlFileDrop = null;
   try {
-    urlFileDrop = await getOrCreateOcsShare(4);
+    urlFileDrop = await getOrCreateOcsShare(4, "Depot Public");
     console.log("provisionFramaspaceForEvent - URL Dépôt public (File drop) :", urlFileDrop);
   } catch (dropErr) {
     console.error("provisionFramaspaceForEvent - Échec création File Drop :", dropErr.message);
     throw dropErr;
   }
 
-  // b) Lien de consultation de l'album (Lecture seule -> permissions: 1)
+  // b) Lien de consultation de l'album (Lecture seule -> permissions: 1, label: "Album Photos")
   let urlLectureSeule = null;
   try {
-    urlLectureSeule = await getOrCreateOcsShare(1);
+    urlLectureSeule = await getOrCreateOcsShare(1, "Album Photos");
     console.log("provisionFramaspaceForEvent - URL Album photos (Lecture seule) :", urlLectureSeule);
   } catch (albumErr) {
     console.error("provisionFramaspaceForEvent - Échec création Album ReadOnly :", albumErr.message);
@@ -2439,6 +2471,44 @@ async function provisionFramaspaceForEvent(eventId, eventData, options = {}) {
       framaspaceFolder: folderPath,
       framaspaceProvisionedAt: new Date().toISOString()
     });
+
+    // 5. Synchronisation atomique du livret sur le Varal Photos (collection 'documents')
+    const isVaralPublished = eventData.publierSurVaral !== false;
+    if (urlLectureSeule && isVaralPublished) {
+      try {
+        const docsRef = db.collection("documents");
+        const existingSnap = await docsRef
+          .where("groupId", "==", groupId)
+          .where("eventId", "==", eventId)
+          .where("categoryId", "==", "PhotosPrestations")
+          .get();
+
+        const eventTitle = eventData.titre || eventData.nom || "Événement";
+        const eventDateStr = eventData.dateDebut || eventData.date || new Date().toISOString();
+        const dateFormatted = new Date(eventDateStr).toLocaleDateString('fr-FR');
+        const docPayload = {
+          groupId,
+          eventId,
+          titre: `[Album] ${eventTitle}`,
+          fileUrl: urlLectureSeule,
+          categorie: 'PhotosPrestations',
+          categoryId: 'PhotosPrestations',
+          type: 'dossier_externe',
+          dateAjout: eventDateStr,
+          description: `Album photos officiel de l'événement "${eventTitle}" du ${dateFormatted}.`
+        };
+
+        if (!existingSnap.empty) {
+          await existingSnap.docs[0].ref.update(docPayload);
+          console.log(`provisionFramaspaceForEvent - Livret Varal mis à jour dans documents (${existingSnap.docs[0].id})`);
+        } else {
+          const newDoc = await docsRef.add(docPayload);
+          console.log(`provisionFramaspaceForEvent - Nouveau livret Varal créé dans documents (${newDoc.id})`);
+        }
+      } catch (syncDocErr) {
+        console.warn("provisionFramaspaceForEvent - Erreur synchronisation livret documents :", syncDocErr.message);
+      }
+    }
   }
 
   console.log(`provisionFramaspaceForEvent - Événement ${eventId || "nouveau"} enrichi avec succès !`);
@@ -2467,8 +2537,8 @@ exports.onPrestationCreatedProvisionCloud = onDocumentCreated(
 
     // Conditionnement strict demandé pour la création automatique :
     const typeEv = (eventData.type || eventData.typeEvenement || "").toLowerCase();
-    const isTargetPrestation = ["prestation", "concert", "spectacle"].includes(typeEv) || eventData.isPrestation === true;
-    const isExcludedType = ["repetition", "reunion", "atelier", "stage"].includes(typeEv);
+    const isTargetPrestation = ["prestation", "concert", "spectacle", "festival", "parade"].includes(typeEv) || eventData.isPrestation === true;
+    const isExcludedType = ["reunion"].includes(typeEv);
 
     let shouldProvision = false;
     if (isExcludedType) {

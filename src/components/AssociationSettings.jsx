@@ -40,7 +40,7 @@ export default function AssociationSettings({
     permissionsMatrice,
     effectiveUserTags
   );
-  const isAuthorized = role === 'mestre' || role === 'super-admin' || isSystemAdmin === true || (mode === 'public-theme-only' && hasVitrinePermission);
+  const isAuthorized = role === 'mestre' || role === 'super-admin' || role === 'admin' || role === 'bureau' || isSystemAdmin === true || (mode === 'public-theme-only' && hasVitrinePermission);
 
   const {
     formData,

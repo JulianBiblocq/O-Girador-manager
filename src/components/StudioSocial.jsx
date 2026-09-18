@@ -37,7 +37,7 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
   const canvasRef = useRef(null);
   const textareaRef = useRef(null);
 
-  const isAuthorized = role === 'mestre' || role === 'super-admin' || isSystemAdmin === true;
+  const isAuthorized = role === 'mestre' || role === 'super-admin' || role === 'admin' || role === 'bureau' || isSystemAdmin === true;
 
   const [availableSocialTags, setAvailableSocialTags] = useState([]);
   const [newSocialTag, setNewSocialTag] = useState('');

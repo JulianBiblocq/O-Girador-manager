@@ -33,7 +33,7 @@ export default function WardrobeManager({
   const currentActiveTab = activeTabProp || activeTab || localTab;
   const shouldShowSubTabs = !hideSubTabs && !activeTab && !activeTabProp;
   
-  const isAuthorized = role === 'mestre' || role === 'super-admin' || isSystemAdmin === true || hasAccessLogistique === true || hasAccessCostumerie === true;
+  const isAuthorized = role === 'mestre' || role === 'super-admin' || role === 'admin' || role === 'bureau' || isSystemAdmin === true || hasAccessLogistique === true || hasAccessCostumerie === true;
   
   const {
     formData,

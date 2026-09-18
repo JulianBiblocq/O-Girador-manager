@@ -66,7 +66,13 @@ const OnlineMemberItem = React.memo(({ member }) => {
   );
 });
 
-export default function OnlineStatusWidget({ onlineMembers = [], onlineCount = 0, className = "", isPresenceEnabled: propIsEnabled }) {
+export default function OnlineStatusWidget({ 
+  onlineMembers = [], 
+  onlineCount = 0, 
+  className = "", 
+  isPresenceEnabled: propIsEnabled,
+  compact = false 
+}) {
   const [isOpen, setIsOpen] = useState(false);
   const context = usePresenceContext();
   const isPresenceEnabled = propIsEnabled !== undefined ? propIsEnabled : context?.isPresenceEnabled;
@@ -75,19 +81,22 @@ export default function OnlineStatusWidget({ onlineMembers = [], onlineCount = 0
 
   return (
     <>
-      {/* Trigger Button */}
+      {/* Trigger Button avec cible tactile minimale 40x40 sur mobile */}
       <button
         type="button"
         onClick={() => setIsOpen(true)}
-        className={`inline-flex items-center gap-1.5 px-2.5 py-1 bg-cordel-bg-light border-2 border-encre-noire rounded-[6px_9px_7px_8px] shadow-[1.5px_1.5px_0px_0px_#181716] hover:scale-[1.03] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none transition-all cursor-pointer select-none ${className}`}
-        title="Voir les membres connectés en temps réel"
+        className={`inline-flex items-center justify-center gap-1.5 ${
+          compact ? 'min-w-[40px] min-h-[40px] px-2 py-1' : 'px-2.5 py-1 min-h-[34px]'
+        } bg-cordel-bg-light border-2 border-encre-noire rounded-[6px_9px_7px_8px] shadow-[1.5px_1.5px_0px_0px_#181716] hover:scale-[1.03] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none transition-all cursor-pointer select-none ${className}`}
+        title={compact ? `${onlineCount} membre(s) en ligne - Cliquer pour voir la liste` : "Voir les membres connectés en temps réel"}
+        aria-label={`${onlineCount} membres en ligne`}
       >
-        <span className="relative flex h-2.5 w-2.5">
+        <span className="relative flex h-2.5 w-2.5 shrink-0">
           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
           <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-600"></span>
         </span>
         <span className="text-[10px] font-black uppercase tracking-wider text-encre-noire">
-          {onlineCount} en ligne
+          {compact ? onlineCount : `${onlineCount} en ligne`}
         </span>
       </button>
 

@@ -14,8 +14,7 @@ import { extractYouTubeVideoId } from './common/LiteYouTubeEmbed';
 const WidgetDocuments = lazyWithRetry(() => import('./WidgetDocuments'));
 const WidgetTreasury = lazyWithRetry(() => import('./WidgetTreasury'));
 import CordelCard from './CordelCard';
-import CordelButton from './CordelButton';
-import { XiloPeople, XiloMandacaru } from './XiloIcons';
+import { XiloMandacaru } from './XiloIcons';
 import { useTranslation } from './LanguageContext';
 import { useTerminologie } from '../hooks/useTerminologie';
 import InstrumentReminderBanner from './dashboard/InstrumentReminderBanner';
@@ -24,7 +23,7 @@ import { usePresenceContext } from '../context/PresenceContext';
 export default function Dashboard({ 
   user, 
   profileData, 
-  onNavigateToTrombi, 
+  onNavigateToTrombi: _onNavigateToTrombi, 
   onNavigateToView, 
   onSignOut: _onSignOut, 
   installPromptAvailable, 
@@ -34,7 +33,7 @@ export default function Dashboard({
   tagsDisponibles = []
 }) {
   const { tRole } = useTerminologie();
-  const { locale, toggleLanguage, t } = useTranslation();
+  const { t } = useTranslation();
   const { isPresenceEnabled } = usePresenceContext();
 
   // Détection des rôles privilégiés (Système, Super-Admin ou Mestre)
@@ -209,20 +208,8 @@ export default function Dashboard({
     <div className="flex flex-col gap-4 w-full max-w-full overflow-hidden">
 
       {/* Header Panel */}
-      <div className="flex justify-between items-center py-2 border-b-2 border-dashed border-cordel-master-dark/30 select-none">
-        {/* Basculer Language Button in Header */}
-        <button 
-          type="button"
-          onClick={toggleLanguage}
-          className="theme-btn px-2 py-1 text-[11px] font-black rounded-[4px_6px_3px_5px] shadow-[1px_1px_0px_0px_rgba(0,0,0,0.15)] cursor-pointer flex items-center justify-center gap-1 min-w-[36px] min-h-7"
-          title={locale === 'fr' ? "Mudar para Português (Brasil)" : "Changer en Français"}
-        >
-          <span className={locale === 'fr' ? 'font-black text-cordel-wood' : 'opacity-40'}>FR</span>
-          <span className="opacity-20">/</span>
-          <span className={locale === 'pt' ? 'font-black text-cordel-wood' : 'opacity-40'}>BR</span>
-        </button>
-        
-        <div className="text-center flex-1">
+      <div className="flex justify-center items-center py-2 border-b-2 border-dashed border-cordel-master-dark/30 select-none">
+        <div className="text-center">
           <h1 className="panel-title text-3xl font-extrabold tracking-wider text-cordel-wood">
             O GIRADOR
           </h1>
@@ -230,8 +217,6 @@ export default function Dashboard({
             {t('dashboard.title')}
           </p>
         </div>
-        
-
       </div>
 
 
@@ -326,28 +311,18 @@ export default function Dashboard({
         </CordelCard>
       </div>
 
-      {/* Navigation to Trombinoscope */}
-      <div className="flex flex-col gap-2 -mt-2">
-        {installPromptAvailable && (
+      {/* Bouton d'installation PWA si disponible */}
+      {installPromptAvailable && (
+        <div className="flex flex-col gap-2 -mt-2 mb-1">
           <button
             type="button"
             onClick={onTriggerInstall}
-            className="w-full py-2.5 font-extrabold flex items-center justify-center gap-2 bg-[#84967a] text-encre-noire border-2 border-encre-noire rounded-[8px_12px_9px_11px] shadow-[2px_2px_0px_0px_#181716] hover:scale-[1.01] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-105 transition-all text-xs mb-1"
+            className="w-full py-2.5 font-extrabold flex items-center justify-center gap-2 bg-[#84967a] text-encre-noire border-2 border-encre-noire rounded-[8px_12px_9px_11px] shadow-[2px_2px_0px_0px_#181716] hover:scale-[1.01] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-105 transition-all text-xs"
           >
             📱 {t('dashboard.installApp')}
           </button>
-        )}
-
-        <CordelButton 
-          variant="ocre" 
-          useExtremeBorder={true}
-          onClick={onNavigateToTrombi} 
-          className="w-full py-2.5 font-extrabold flex items-center justify-center gap-2"
-        >
-          <XiloPeople size={14} />
-          {t('dashboard.seeTrombi')}
-        </CordelButton>
-      </div>
+        </div>
+      )}
 
       <WidgetValidations 
         groupId={profileData?.groupId} 

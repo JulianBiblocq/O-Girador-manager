@@ -9,6 +9,7 @@ import RepertoireVideoModal from './RepertoireVideoModal';
 import SignalZoomModal from './SignalZoomModal';
 import useConfirm from '../../hooks/useConfirm';
 import useMestreSignals from '../../hooks/useMestreSignals';
+import { openSequencerWithCrossApp } from '../../utils/sequencerUrlUtils';
 
 /**
  * Vue principale du Répertoire de la troupe (Mestria).
@@ -302,14 +303,8 @@ export default function MestreRepertoireView({ groupId, user, profileData, seque
           {filteredPieces.map((piece) => {
             const isPret = piece.etatValidation === 'pret';
 
-            // Lien Séquenceur
-            let targetSeqUrl = '';
-            if (piece.sequenceurFileUrl) {
-              const baseUrl = sequenceurUrl || 'https://sequenceur.app';
-              targetSeqUrl = baseUrl.includes('?')
-                ? `${baseUrl}&file=${encodeURIComponent(piece.sequenceurFileUrl)}`
-                : `${baseUrl}?file=${encodeURIComponent(piece.sequenceurFileUrl)}`;
-            }
+            // Détection de la présence d'un rythme ou d'un motif Séquenceur associé
+            const hasSequencer = Boolean(piece.sequenceurFileUrl || piece.sequenceurId);
 
             return (
               <div
@@ -356,7 +351,7 @@ export default function MestreRepertoireView({ groupId, user, profileData, seque
 
                   {/* Badges discrets des liaisons actives */}
                   <div className="flex items-center gap-1.5 flex-wrap pt-1">
-                    {piece.sequenceurFileUrl && (
+                    {hasSequencer && (
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-black uppercase rounded bg-amber-50 text-amber-900 border border-amber-300">
                         <span>🥁</span>
                         <span>Séquenceur</span>
@@ -384,7 +379,7 @@ export default function MestreRepertoireView({ groupId, user, profileData, seque
                       </span>
                     )}
 
-                    {!piece.sequenceurFileUrl && !piece.toadaDocId && !piece.dancadorChoreoId && !piece.cultureDocId && (
+                    {!hasSequencer && !piece.toadaDocId && !piece.dancadorChoreoId && !piece.cultureDocId && (
                       <span className="text-[9.5px] italic text-encre-noire/50">
                         Autonome (joué de mémoire)
                       </span>
@@ -445,17 +440,17 @@ export default function MestreRepertoireView({ groupId, user, profileData, seque
 
                 {/* Bas de la carte : Barre d'actions */}
                 <div className="flex items-center justify-between gap-2 pt-3 border-t border-dashed border-cordel-master-dark/15 mt-1">
-                  {/* Bouton pour écouter dans le séquenceur si disponible */}
-                  {targetSeqUrl ? (
-                    <a
-                      href={targetSeqUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-[10px] font-black uppercase tracking-wider text-cordel-wood hover:underline inline-flex items-center gap-1"
+                  {/* Bouton pour écouter dans le séquenceur avec SSO transparent si disponible */}
+                  {hasSequencer ? (
+                    <button
+                      type="button"
+                      onClick={() => openSequencerWithCrossApp(sequenceurUrl, piece)}
+                      className="text-[10px] font-black uppercase tracking-wider text-cordel-wood hover:underline inline-flex items-center gap-1 bg-transparent border-none p-0 cursor-pointer"
+                      title="Ouvrir et écouter ce morceau dans le Séquenceur avec SSO"
                     >
                       <span>🎧</span>
                       <span>Écouter</span>
-                    </a>
+                    </button>
                   ) : (
                     <div />
                   )}

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { collection, query, where, onSnapshot, addDoc, doc } from 'firebase/firestore';
-import { db } from '../firebase';
+import { httpsCallable } from 'firebase/functions';
+import { db, functions } from '../firebase';
 import CordelButton from './CordelButton';
 import ErrorBoundary from './ErrorBoundary';
 const EventDetails = React.lazy(() => import('./EventDetails'));
@@ -506,7 +507,11 @@ export default function WidgetAgenda({
     setSaving(true);
     try {
       const createSingleDoc = async (dateVal, isPollMode = false, pollGroupId = null, optionIndex = 1, totalOptions = 1) => {
-        await addDoc(collection(db, 'events'), {
+        const isRecolteActiveForDoc = formData.activerRecolteMedias !== undefined 
+          ? Boolean(formData.activerRecolteMedias) 
+          : Boolean(activeConfig.activerRecolteMedias);
+
+        const newDocRef = await addDoc(collection(db, 'events'), {
           titre: formData.titre,
           type: formData.type,
           date: dateVal,
@@ -559,8 +564,8 @@ export default function WidgetAgenda({
           enableCarpool: formData.enableCarpool !== false,
           isPublic: Boolean(formData.isPublic),
           enableInscriptions: formData.enableInscriptions !== false,
-          activerRecolteMedias: formData.activerRecolteMedias !== undefined ? Boolean(formData.activerRecolteMedias) : Boolean(activeConfig.activerRecolteMedias),
-          publierSurVaral: formData.publierSurVaral !== undefined ? Boolean(formData.publierSurVaral) : (formData.activerRecolteMedias !== false),
+          activerRecolteMedias: isRecolteActiveForDoc,
+          publierSurVaral: formData.publierSurVaral !== undefined ? Boolean(formData.publierSurVaral) : (isRecolteActiveForDoc !== false),
           sendPushNotification: Boolean(formData.sendPushNotification),
           description: formData.description || '',
           latitude: formData.latitude ? Number(formData.latitude) : null,
@@ -569,6 +574,31 @@ export default function WidgetAgenda({
           specialiteAtelier: (formData.type === 'atelier' || formData.type === 'stage') ? (formData.specialiteAtelier || 'general') : null,
           programmeFabrication: (formData.type === 'atelier' || formData.type === 'stage') && formData.specialiteAtelier === 'fabrication' ? (formData.programmeFabrication || null) : null
         });
+
+        // Provisionnement automatique immédiat Framaspace (dossier, QR-Code spectateurs et Varal)
+        if (isRecolteActiveForDoc && newDocRef?.id && groupId) {
+          try {
+            const provisionFn = httpsCallable(functions, 'provisionFramaspaceEventFolders');
+            provisionFn({
+              eventId: newDocRef.id,
+              groupId,
+              eventData: {
+                id: newDocRef.id,
+                titre: formData.titre,
+                type: formData.type,
+                date: dateVal,
+                dateDebut: dateVal,
+                groupId,
+                activerRecolteMedias: true,
+                publierSurVaral: formData.publierSurVaral !== false
+              }
+            }).catch((provErr) => {
+              console.warn("WidgetAgenda - Auto-provision Framaspace différé :", provErr.message);
+            });
+          } catch (fnErr) {
+            console.warn("WidgetAgenda - Exception appel provisionFramaspaceEventFolders :", fnErr.message);
+          }
+        }
       };
 
       if (formData.isPoll) {

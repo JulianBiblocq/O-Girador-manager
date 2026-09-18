@@ -1,9 +1,11 @@
 /**
  * Centre de Notifications Internes (In-App) avec indicateur dynamique et tiroir interactif.
  * Conforme à la charte visuelle Cordel et aux directives d'accessibilité mobile/desktop.
+ * Intègre un positionnement adaptatif via Portal garantissant qu'aucune partie du panneau ne sorte de l'écran.
  */
 
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useLayoutEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useInAppNotifications } from '../../hooks/useInAppNotifications';
 import NotificationItem from './NotificationItem';
 
@@ -23,16 +25,105 @@ export default function NotificationCenter({
   } = useInAppNotifications(userId, groupId);
 
   const [isOpen, setIsOpen] = useState(false);
-  const containerRef = useRef(null);
+  const [panelStyle, setPanelStyle] = useState({});
+  const [isDesktop, setIsDesktop] = useState(
+    typeof window !== 'undefined' ? window.innerWidth >= 768 : true
+  );
 
-  // Fermeture lors d'un clic en dehors du panneau (Desktop popover)
+  const buttonRef = useRef(null);
+  const panelRef = useRef(null);
+
+  // Recalcul précis de la géométrie et du positionnement du panneau
+  const updatePosition = useCallback(() => {
+    if (typeof window === 'undefined') return;
+    const desktop = window.innerWidth >= 768;
+    setIsDesktop(desktop);
+
+    if (!desktop || !buttonRef.current) {
+      setPanelStyle({});
+      return;
+    }
+
+    const rect = buttonRef.current.getBoundingClientRect();
+    // Largeur du panneau adaptée aux écrans moyens et grands (384px max)
+    const panelWidth = Math.min(384, window.innerWidth - 24);
+
+    // Positionnement horizontal avec marge de sécurité de 12px
+    let left;
+    if (rect.left + panelWidth <= window.innerWidth - 12) {
+      // Aligné sur le bord gauche du bouton (très adapté à la barre latérale gauche)
+      left = Math.max(12, rect.left);
+    } else {
+      // Aligné sur le bord droit du bouton (très adapté aux barres supérieures droites)
+      left = Math.max(12, rect.right - panelWidth);
+    }
+    // Clamping strict dans les limites du viewport horizontal
+    left = Math.max(12, Math.min(left, window.innerWidth - panelWidth - 12));
+
+    // Positionnement vertical intelligent (évite le débordement bas/haut)
+    const spaceBelow = window.innerHeight - rect.bottom - 16;
+    const spaceAbove = rect.top - 16;
+    let top;
+    let maxHeight;
+
+    if (spaceBelow < 280 && spaceAbove > spaceBelow) {
+      // Espace insuffisant en bas : affichage au-dessus du bouton
+      maxHeight = Math.min(560, spaceAbove);
+      top = Math.max(12, rect.top - 8 - maxHeight);
+    } else {
+      // Affichage par défaut sous le bouton déclencheur
+      top = rect.bottom + 8;
+      maxHeight = Math.min(560, spaceBelow);
+    }
+
+    setPanelStyle({
+      position: 'fixed',
+      left: `${Math.round(left)}px`,
+      top: `${Math.round(top)}px`,
+      width: `${Math.round(panelWidth)}px`,
+      maxHeight: `${Math.round(maxHeight)}px`,
+    });
+  }, []);
+
+  // Bascule d'ouverture avec recalcul immédiat des coordonnées
+  const handleToggle = () => {
+    if (!isOpen) {
+      updatePosition();
+    }
+    setIsOpen((prev) => !prev);
+  };
+
+  // Mise à jour de la position lors de l'ouverture et lors du redimensionnement / défilement
+  useLayoutEffect(() => {
+    if (!isOpen) return;
+
+    updatePosition();
+
+    const handleUpdate = () => {
+      updatePosition();
+    };
+
+    window.addEventListener('resize', handleUpdate);
+    window.addEventListener('scroll', handleUpdate, true);
+
+    return () => {
+      window.removeEventListener('resize', handleUpdate);
+      window.removeEventListener('scroll', handleUpdate, true);
+    };
+  }, [isOpen, updatePosition]);
+
+  // Fermeture lors d'un clic en dehors du panneau ou de l'appui sur Echap
   useEffect(() => {
     if (!isOpen) return;
 
     const handleClickOutside = (event) => {
-      if (containerRef.current && !containerRef.current.contains(event.target)) {
-        setIsOpen(false);
+      if (buttonRef.current && buttonRef.current.contains(event.target)) {
+        return;
       }
+      if (panelRef.current && panelRef.current.contains(event.target)) {
+        return;
+      }
+      setIsOpen(false);
     };
 
     const handleKeyDown = (event) => {
@@ -42,10 +133,12 @@ export default function NotificationCenter({
     };
 
     document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside);
     document.addEventListener('keydown', handleKeyDown);
 
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
       document.removeEventListener('keydown', handleKeyDown);
     };
   }, [isOpen]);
@@ -69,11 +162,12 @@ export default function NotificationCenter({
   }, [markAsRead, onNavigateToUrl]);
 
   return (
-    <div ref={containerRef} className={`relative inline-block ${className}`}>
+    <div className={`relative inline-block ${className}`}>
       {/* Bouton Déclencheur Cloche avec pastille dynamique */}
       <button
+        ref={buttonRef}
         type="button"
-        onClick={() => setIsOpen((prev) => !prev)}
+        onClick={handleToggle}
         className={`relative p-2 border-2 border-encre-noire rounded-[4px_6px_3px_5px] shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] cursor-pointer flex items-center justify-center transition-all ${
           isOpen
             ? 'bg-amber-100 text-encre-noire'
@@ -97,18 +191,26 @@ export default function NotificationCenter({
         )}
       </button>
 
-      {/* Tiroir Mobile / Popover Desktop */}
-      {isOpen && (
+      {/* Tiroir Mobile / Popover Desktop rendu dans document.body via Portal */}
+      {isOpen && typeof document !== 'undefined' && document.body && createPortal(
         <>
           {/* Backdrop mobile pour fermeture tactile */}
-          <div 
-            className="fixed inset-0 bg-black/40 backdrop-blur-xs z-[110] md:hidden animate-fade-in"
-            onClick={() => setIsOpen(false)}
-            aria-hidden="true"
-          />
+          {!isDesktop && (
+            <div 
+              className="fixed inset-0 bg-black/40 backdrop-blur-xs z-[9998] md:hidden animate-fade-in"
+              onClick={() => setIsOpen(false)}
+              aria-hidden="true"
+            />
+          )}
 
           <div
-            className="fixed inset-y-0 right-0 w-full max-w-sm sm:max-w-md md:absolute md:inset-auto md:right-0 md:top-full md:mt-2 md:w-96 bg-cordel-bg-light border-l-4 md:border-2 border-cordel-master-dark md:border-encre-noire md:rounded-[8px_12px_9px_11px] shadow-[4px_4px_0px_0px_#181716] z-[120] flex flex-col max-h-screen md:max-h-[85vh] overflow-hidden select-none animate-slide-in-right md:animate-fade-in"
+            ref={panelRef}
+            style={isDesktop ? panelStyle : undefined}
+            className={`fixed z-[9999] flex flex-col bg-cordel-bg-light overflow-hidden select-none ${
+              isDesktop
+                ? 'border-2 border-encre-noire rounded-[8px_12px_9px_11px] shadow-[4px_4px_0px_0px_#181716] animate-fade-in'
+                : 'inset-y-0 right-0 w-full max-w-sm sm:max-w-md border-l-4 border-cordel-master-dark max-h-screen shadow-2xl animate-slide-in-right'
+            }`}
             role="dialog"
             aria-label="Centre de notifications"
           >
@@ -189,7 +291,8 @@ export default function NotificationCenter({
               </div>
             )}
           </div>
-        </>
+        </>,
+        document.body
       )}
     </div>
   );

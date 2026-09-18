@@ -10,9 +10,17 @@ import CordelButton from '../CordelButton';
  * @param {Object} props Propriétés du composant
  * @param {string} props.qrUrl URL du Google Form de récolte des photos du public
  * @param {string} [props.eventTitle] Titre de l'événement (optionnel)
+ * @param {boolean} [props.isGeneralFallback] Indique s'il s'agit du dossier général de repli
+ * @param {Function} [props.onProvisionSpecific] Callback pour provisionner le dossier spécifique
  * @param {Function} props.onClose Fonction de fermeture de la modale
  */
-export default function EventPublicQrCodeModal({ qrUrl, eventTitle, onClose }) {
+export default function EventPublicQrCodeModal({ 
+  qrUrl, 
+  eventTitle, 
+  isGeneralFallback = false,
+  onProvisionSpecific,
+  onClose 
+}) {
   const [copied, setCopied] = useState(false);
   const canvasRef = useRef(null);
 
@@ -146,6 +154,28 @@ export default function EventPublicQrCodeModal({ qrUrl, eventTitle, onClose }) {
               <span className="text-[11px] font-bold text-cordel-master-dark opacity-80">
                 {eventTitle}
               </span>
+            )}
+
+            {/* Avertissement explicite si dossier général de repli */}
+            {isGeneralFallback && (
+              <div className="w-full p-2.5 bg-amber-100/90 text-amber-950 border-2 border-dashed border-amber-600 rounded-[4px_6px_3px_5px] text-xs font-bold text-left flex flex-col gap-1 my-1">
+                <span className="flex items-center gap-1.5 font-black uppercase text-[10px] text-amber-900">
+                  <span>⚠️</span> Dossier général de l'association
+                </span>
+                <span className="text-[10px] font-medium leading-relaxed">
+                  Le dossier Framaspace dédié à cet événement n'a pas encore été généré. Les clichés envoyés via ce QR Code atterriront dans la boîte générale de l'association.
+                </span>
+                {onProvisionSpecific && (
+                  <button
+                    type="button"
+                    onClick={onProvisionSpecific}
+                    className="mt-1 px-3 py-1 bg-[var(--color-cordel-vert,#2d6a4f)] hover:bg-emerald-800 text-white text-[9.5px] font-black uppercase rounded shadow-xs active:scale-95 transition-all cursor-pointer flex items-center gap-1 w-fit"
+                  >
+                    <span>⚡</span>
+                    <span>Créer le dossier spécifique Framaspace en 1 clic</span>
+                  </button>
+                )}
+              </div>
             )}
 
             {/* QR Code haute résolution via Canvas */}

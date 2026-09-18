@@ -66,7 +66,7 @@ export default function RepertoirePieceModal({
       setVideos(Array.isArray(pieceToEdit.videos) ? pieceToEdit.videos : []);
       setSignalIds(Array.isArray(pieceToEdit.signalIds) ? pieceToEdit.signalIds : []);
       setSelectedToadaId(pieceToEdit.toadaDocId || '');
-      setSelectedSeqUrl(pieceToEdit.sequenceurFileUrl || '');
+      setSelectedSeqUrl(pieceToEdit.sequenceurFileUrl || pieceToEdit.sequenceurId || '');
       setSelectedChoreoId(pieceToEdit.dancadorChoreoId || '');
       setSelectedCultureId(pieceToEdit.cultureDocId || '');
     } else {
@@ -136,11 +136,23 @@ export default function RepertoirePieceModal({
     setErrorMsg(null);
 
     try {
-      // Trouver l'identifiant du rythme sélectionné si une URL est choisie
+      // Trouver l'identifiant et l'URL du rythme sélectionné
       let matchedSeqId = null;
+      let matchedSeqUrl = null;
       if (selectedSeqUrl && catalogRhythms.length > 0) {
-        const found = catalogRhythms.find((r) => r.jsonUrl === selectedSeqUrl);
-        if (found) matchedSeqId = found.id || null;
+        const found = catalogRhythms.find((r) => r.jsonUrl === selectedSeqUrl || r.id === selectedSeqUrl);
+        if (found) {
+          matchedSeqId = found.id || null;
+          matchedSeqUrl = (found.jsonUrl && (found.jsonUrl.startsWith('http://') || found.jsonUrl.startsWith('https://')))
+            ? found.jsonUrl
+            : (selectedSeqUrl.startsWith('http://') || selectedSeqUrl.startsWith('https://') ? selectedSeqUrl : null);
+        } else {
+          if (selectedSeqUrl.startsWith('http://') || selectedSeqUrl.startsWith('https://')) {
+            matchedSeqUrl = selectedSeqUrl;
+          } else {
+            matchedSeqId = selectedSeqUrl;
+          }
+        }
       }
 
       // Nettoyage strict des vidéos et signaux
@@ -154,7 +166,7 @@ export default function RepertoirePieceModal({
 
       const cleanSignalIds = (signalIds || []).filter(Boolean);
 
-      // Construction de l'objet strictement assaini
+      // Construction de l'objet strictement assaini (aucun undefined envoyé à Firestore)
       const pieceData = {
         groupId: groupId,
         titre: titre.trim(),
@@ -164,7 +176,7 @@ export default function RepertoirePieceModal({
         videos: cleanVideos,
         signalIds: cleanSignalIds,
         sequenceurId: matchedSeqId || null,
-        sequenceurFileUrl: selectedSeqUrl || null,
+        sequenceurFileUrl: matchedSeqUrl || null,
         dancadorChoreoId: selectedChoreoId || null,
         toadaDocId: selectedToadaId || null,
         cultureDocId: selectedCultureId || null,
@@ -190,6 +202,34 @@ export default function RepertoirePieceModal({
       setErrorMsg("Erreur lors de l'enregistrement dans le répertoire.");
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const selectedSong = toadasList.find((s) => s.id === selectedToadaId);
+
+  // Gestion de la sélection d'une toada avec injection automatique du titre si vide
+  const handleToadaChange = (e) => {
+    const newToadaId = e.target.value;
+    setSelectedToadaId(newToadaId);
+
+    if (newToadaId) {
+      const chosenSong = toadasList.find((s) => s.id === newToadaId);
+      if (chosenSong && chosenSong.titre && !titre.trim()) {
+        setTitre(chosenSong.titre);
+      }
+    }
+  };
+
+  // Gestion de la sélection d'un rythme séquenceur avec injection du titre si vide
+  const handleSequenceurChange = (e) => {
+    const newSeqUrl = e.target.value;
+    setSelectedSeqUrl(newSeqUrl);
+
+    if (newSeqUrl && !titre.trim()) {
+      const found = catalogRhythms.find((r) => r.jsonUrl === newSeqUrl || r.id === newSeqUrl);
+      if (found && (found.titre || found.name)) {
+        setTitre(found.titre || found.name);
+      }
     }
   };
 
@@ -221,9 +261,21 @@ export default function RepertoirePieceModal({
         <form onSubmit={handleSubmit} className="flex flex-col gap-4 text-left">
           {/* Titre du morceau */}
           <div className="flex flex-col gap-1">
-            <label className="text-[10px] uppercase font-black tracking-wider text-cordel-master-dark">
-              Titre du morceau / Rythme <span className="text-red-600">*</span>
-            </label>
+            <div className="flex items-center justify-between gap-2">
+              <label className="text-[10px] uppercase font-black tracking-wider text-cordel-master-dark">
+                Titre du morceau / Rythme <span className="text-red-600">*</span>
+              </label>
+              {selectedSong && selectedSong.titre && titre.trim() !== selectedSong.titre && (
+                <button
+                  type="button"
+                  onClick={() => setTitre(selectedSong.titre)}
+                  className="text-[9.5px] font-extrabold text-amber-800 hover:text-amber-950 underline cursor-pointer flex items-center gap-1"
+                  title="Injecter le titre de la toada sélectionnée"
+                >
+                  <span>💡 Suggérer « {selectedSong.titre} »</span>
+                </button>
+              )}
+            </div>
             <input
               type="text"
               required
@@ -345,7 +397,7 @@ export default function RepertoirePieceModal({
                 </label>
                 <select
                   value={selectedToadaId}
-                  onChange={(e) => setSelectedToadaId(e.target.value)}
+                  onChange={handleToadaChange}
                   disabled={submitting || loadingDocs}
                   className="theme-input text-xs font-semibold p-2 bg-cordel-bg-light border border-encre-noire/30 rounded cursor-pointer"
                 >
@@ -356,6 +408,21 @@ export default function RepertoirePieceModal({
                     </option>
                   ))}
                 </select>
+
+                {/* Suggestion en 1 clic si le titre actuel est différent de la toada choisie */}
+                {selectedSong && selectedSong.titre && titre.trim() !== selectedSong.titre && (
+                  <button
+                    type="button"
+                    onClick={() => setTitre(selectedSong.titre)}
+                    className="mt-1 inline-flex items-center gap-1.5 px-2.5 py-1 text-[10px] font-black text-amber-950 bg-amber-100 hover:bg-amber-200 border border-amber-300 rounded-[4px_6px_3px_5px] shadow-xs cursor-pointer transition-all text-left animate-fade-in"
+                    title="Cliquer pour utiliser le nom de cette toada comme titre du morceau"
+                  >
+                    <span>💡</span>
+                    <span>
+                      Définir comme titre : <u>« {selectedSong.titre} »</u>
+                    </span>
+                  </button>
+                )}
               </div>
 
               {/* 2. Rythme du Séquenceur */}
@@ -366,14 +433,14 @@ export default function RepertoirePieceModal({
                 </label>
                 <select
                   value={selectedSeqUrl}
-                  onChange={(e) => setSelectedSeqUrl(e.target.value)}
+                  onChange={handleSequenceurChange}
                   disabled={submitting || loadingRhythms}
                   className="theme-input text-xs font-semibold p-2 bg-cordel-bg-light border border-encre-noire/30 rounded cursor-pointer"
                 >
                   <option value="">-- Aucun rythme séquenceur lié --</option>
                   {catalogRhythms.map((rhythm) => (
-                    <option key={rhythm.id} value={rhythm.jsonUrl}>
-                      🥁 {rhythm.titre}
+                    <option key={rhythm.id} value={rhythm.jsonUrl || rhythm.id}>
+                      🥁 {rhythm.displayTitle || rhythm.titre}
                     </option>
                   ))}
                 </select>

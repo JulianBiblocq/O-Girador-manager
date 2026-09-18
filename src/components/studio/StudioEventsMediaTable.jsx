@@ -16,7 +16,7 @@ import StudioPhotoQrPrintModal from './StudioPhotoQrPrintModal';
  * @param {string} groupId Identifiant de l'association
  * @param {boolean} canWrite Droit d'édition des métadonnées événements
  */
-export default function StudioEventsMediaTable({ groupId, canWrite = false }) {
+export default function StudioEventsMediaTable({ groupId, canWrite = false, onSwitchToVaral }) {
   const { t } = useTranslation();
 
   const [events, setEvents] = useState([]);
@@ -153,17 +153,19 @@ export default function StudioEventsMediaTable({ groupId, canWrite = false }) {
 
   // 4. Sauvegarde atomique du Lien d'Album Finalisé (albumPhotosUrl)
   // et synchronisation automatique avec la collection 'documents' (Varal Photos)
-  const handleSaveAlbum = useCallback(async (event) => {
-    if (!groupId || !canWrite) return;
+  const handleSaveAlbumDirect = useCallback(async (event, specificUrl = null) => {
+    if (!groupId || !canWrite || !event?.id) return;
     const eventId = event.id;
     const currentState = rowStates[eventId];
-    if (!currentState) return;
-
-    const cleanUrl = (currentState.albumPhotosUrl || '').trim();
+    const cleanUrl = (specificUrl !== null ? specificUrl : (currentState?.albumPhotosUrl || '')).trim();
 
     setRowStates((prev) => ({
       ...prev,
-      [eventId]: { ...prev[eventId], savingAlbum: true }
+      [eventId]: { 
+        ...prev[eventId], 
+        albumPhotosUrl: cleanUrl, 
+        savingAlbum: true 
+      }
     }));
 
     try {
@@ -222,6 +224,7 @@ export default function StudioEventsMediaTable({ groupId, canWrite = false }) {
         ...prev,
         [eventId]: {
           ...prev[eventId],
+          albumPhotosUrl: cleanUrl,
           savingAlbum: false,
           savedAlbum: true,
           isEditingAlbum: false
@@ -243,6 +246,24 @@ export default function StudioEventsMediaTable({ groupId, canWrite = false }) {
       alert("Erreur lors de la synchronisation de l'album avec le Varal.");
     }
   }, [groupId, canWrite, rowStates]);
+
+  const handleSaveAlbum = useCallback(async (event) => {
+    return handleSaveAlbumDirect(event);
+  }, [handleSaveAlbumDirect]);
+
+  // 4b. Alignement immédiat vers l'album Varal si une URL de dépôt est présente
+  const handleAlignDepotToAlbum = useCallback(async (event) => {
+    if (!groupId || !canWrite || !event?.id) return;
+    const currentState = rowStates[event.id];
+    const depotUrl = (currentState?.lienDepotMedias || event.lienDepotMedias || '').trim();
+    if (!depotUrl) {
+      alert("Aucun lien de dépôt n'est disponible pour cet événement.");
+      return;
+    }
+
+    // Aligner l'URL et synchroniser immédiatement avec le Varal
+    await handleSaveAlbumDirect(event, depotUrl);
+  }, [groupId, canWrite, rowStates, handleSaveAlbumDirect]);
 
   // 5. Bascule instantanée des options booléennes de récolte et de publication Varal
   const handleToggleEventField = useCallback(async (ev, fieldName, currentValue) => {
@@ -267,28 +288,31 @@ export default function StudioEventsMediaTable({ groupId, canWrite = false }) {
         for (const d of existingSnap.docs) {
           await deleteDoc(doc(db, 'documents', d.id));
         }
-      } else if (fieldName === 'publierSurVaral' && nextValue === true && ev.albumPhotosUrl) {
-        // Si on active et qu'un album existe déjà, s'assurer que documents est synchronisé
-        const docsRef = collection(db, 'documents');
-        const qDoc = query(
-          docsRef,
-          where('groupId', '==', groupId),
-          where('eventId', '==', ev.id),
-          where('categoryId', '==', 'PhotosPrestations')
-        );
-        const existingSnap = await getDocs(qDoc);
-        if (existingSnap.empty) {
-          await addDoc(docsRef, {
-            groupId,
-            eventId: ev.id,
-            titre: `[Album] ${ev.titre || 'Événement'}`,
-            fileUrl: ev.albumPhotosUrl,
-            categorie: 'PhotosPrestations',
-            categoryId: 'PhotosPrestations',
-            type: 'dossier_externe',
-            dateAjout: ev.dateDebut || ev.date || new Date().toISOString(),
-            description: `Album photos officiel de l'événement "${ev.titre || ''}" du ${new Date(ev.dateDebut || ev.date || Date.now()).toLocaleDateString('fr-FR')}.`
-          });
+      } else if (fieldName === 'publierSurVaral' && nextValue === true) {
+        // Si on active la publication Varal, utiliser l'album ou à défaut le lien de dépôt
+        const targetUrl = ev.albumPhotosUrl || ev.lienDepotMedias;
+        if (targetUrl) {
+          const docsRef = collection(db, 'documents');
+          const qDoc = query(
+            docsRef,
+            where('groupId', '==', groupId),
+            where('eventId', '==', ev.id),
+            where('categoryId', '==', 'PhotosPrestations')
+          );
+          const existingSnap = await getDocs(qDoc);
+          if (existingSnap.empty) {
+            await addDoc(docsRef, {
+              groupId,
+              eventId: ev.id,
+              titre: `[Album] ${ev.titre || 'Événement'}`,
+              fileUrl: targetUrl,
+              categorie: 'PhotosPrestations',
+              categoryId: 'PhotosPrestations',
+              type: 'dossier_externe',
+              dateAjout: ev.dateDebut || ev.date || new Date().toISOString(),
+              description: `Album photos officiel de l'événement "${ev.titre || ''}" du ${new Date(ev.dateDebut || ev.date || Date.now()).toLocaleDateString('fr-FR')}.`
+            });
+          }
         }
       }
     } catch (err) {
@@ -366,18 +390,69 @@ export default function StudioEventsMediaTable({ groupId, canWrite = false }) {
           [ev.id]: { loading: false, error: null, success: true }
         }));
 
+        const newLienDepot = data.lienDepotMedias || ev.lienDepotMedias || '';
+        const newAlbumUrl = data.albumPhotosUrl || ev.albumPhotosUrl || '';
+        const finalUrl = newAlbumUrl || newLienDepot;
+
         // Mise à jour immédiate de l'affichage local si nouveaux liens reçus
-        if (data.lienDepotMedias || data.albumPhotosUrl) {
+        if (newLienDepot || newAlbumUrl) {
           setRowStates((prev) => ({
             ...prev,
             [ev.id]: {
               ...prev[ev.id],
-              lienDepotMedias: data.lienDepotMedias || prev[ev.id]?.lienDepotMedias || '',
-              albumPhotosUrl: data.albumPhotosUrl || prev[ev.id]?.albumPhotosUrl || '',
-              savedDepot: Boolean(data.lienDepotMedias),
-              savedAlbum: Boolean(data.albumPhotosUrl)
+              lienDepotMedias: newLienDepot,
+              albumPhotosUrl: newAlbumUrl,
+              savedDepot: Boolean(newLienDepot),
+              savedAlbum: Boolean(newAlbumUrl)
             }
           }));
+        }
+
+        // Relier et synchroniser automatiquement le livret dans 'documents' (PhotosPrestations) au provisionnement
+        try {
+          const eventRef = doc(db, 'events', ev.id);
+          await updateDoc(eventRef, {
+            ...(newLienDepot ? { lienDepotMedias: newLienDepot } : {}),
+            ...(newAlbumUrl ? { albumPhotosUrl: newAlbumUrl } : {}),
+            publierSurVaral: true,
+            activerRecolteMedias: true,
+            ...(data.folderSlug ? { framaspaceFolder: data.folderSlug } : {}),
+            framaspaceProvisionedAt: new Date().toISOString()
+          });
+
+          if (finalUrl) {
+            const docsRef = collection(db, 'documents');
+            const qDoc = query(
+              docsRef,
+              where('groupId', '==', groupId),
+              where('eventId', '==', ev.id),
+              where('categoryId', '==', 'PhotosPrestations')
+            );
+            const existingSnap = await getDocs(qDoc);
+
+            if (!existingSnap.empty) {
+              const docItem = existingSnap.docs[0];
+              await updateDoc(doc(db, 'documents', docItem.id), {
+                titre: `[Album] ${ev.titre || 'Événement'}`,
+                fileUrl: finalUrl,
+                dateAjout: ev.dateDebut || ev.date || new Date().toISOString()
+              });
+            } else {
+              await addDoc(docsRef, {
+                groupId,
+                eventId: ev.id,
+                titre: `[Album] ${ev.titre || 'Événement'}`,
+                fileUrl: finalUrl,
+                categorie: 'PhotosPrestations',
+                categoryId: 'PhotosPrestations',
+                type: 'dossier_externe',
+                dateAjout: ev.dateDebut || ev.date || new Date().toISOString(),
+                description: `Album photos officiel de l'événement "${ev.titre || ''}" du ${new Date(ev.dateDebut || ev.date || Date.now()).toLocaleDateString('fr-FR')}.`
+              });
+            }
+          }
+        } catch (syncErr) {
+          console.warn("StudioEventsMediaTable - Avertissement synchronisation Firestore côté client :", syncErr);
         }
 
         // Réinitialisation du statut de succès après 3.5 secondes
@@ -582,6 +657,25 @@ export default function StudioEventsMediaTable({ groupId, canWrite = false }) {
                       </span>
                     )}
 
+                    {/* Raccourci vers le livret sur le Varal Photos */}
+                    {(hasAlbum || Boolean(ev.publierSurVaral)) && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (onSwitchToVaral) {
+                            onSwitchToVaral();
+                          } else if (ev.albumPhotosUrl || ev.lienDepotMedias) {
+                            window.open(ev.albumPhotosUrl || ev.lienDepotMedias, '_blank', 'noopener,noreferrer');
+                          }
+                        }}
+                        className="px-2 py-0.5 text-[8.5px] font-black uppercase tracking-wider rounded border border-encre-noire bg-amber-200 hover:bg-amber-300 text-encre-noire cursor-pointer flex items-center gap-1 shadow-xs active:scale-95"
+                        title="Consulter le livret de cet événement sur le Varal Photos"
+                      >
+                        <span>👁️</span>
+                        <span>Voir sur le Varal</span>
+                      </button>
+                    )}
+
                     {/* Déclencheur manuel Framaspace Nextcloud */}
                     {canWrite && (
                       <button
@@ -739,26 +833,41 @@ export default function StudioEventsMediaTable({ groupId, canWrite = false }) {
 
                   {/* BLOC 2 : Lien de l'album finalisé & Synchronisation Varal */}
                   <div className="flex flex-col gap-1.5 p-3 bg-cordel-bg/60 border border-encre-noire/20 rounded-[4px_6px_3px_5px]">
-                    <div className="flex items-center justify-between gap-1">
+                    <div className="flex items-center justify-between gap-1 flex-wrap">
                       <label className="text-[9.5px] font-black uppercase tracking-wider text-cordel-master-dark flex items-center gap-1">
                         <span>🪢 2. Album photos finalisé (Sync Varal Photos)</span>
                       </label>
-                      {hasAlbum && (
-                        <button
-                          type="button"
-                          onClick={() => setActiveQrModal({
-                            qrUrl: ev.albumPhotosUrl,
-                            eventTitle: ev.titre,
-                            eventDate: evDate,
-                            eventLocation: ev.lieu,
-                            mode: 'album'
-                          })}
-                          className="px-2 py-0.5 text-[9px] font-black uppercase tracking-wider rounded border border-encre-noire bg-amber-300 hover:bg-amber-200 text-encre-noire cursor-pointer flex items-center gap-1 shadow-xs"
-                          title="Afficher et imprimer le QR-Code de l'album"
-                        >
-                          <span>📱 QR-Code</span>
-                        </button>
-                      )}
+                      <div className="flex items-center gap-1 flex-wrap">
+                        {/* Alignement immédiat avec l'URL de dépôt si présente */}
+                        {canWrite && !rowState.albumPhotosUrl && (rowState.lienDepotMedias || ev.lienDepotMedias) && (
+                          <button
+                            type="button"
+                            onClick={() => handleAlignDepotToAlbum(ev)}
+                            className="px-2 py-0.5 text-[8.5px] font-black uppercase tracking-wider rounded border border-amber-800/50 bg-amber-100 hover:bg-amber-200 text-amber-950 cursor-pointer flex items-center gap-1 shadow-xs transition-all active:scale-95"
+                            title="Copier l'URL de dépôt comme album et synchroniser le Varal"
+                          >
+                            <span>⚡</span>
+                            <span>Aligner avec le dépôt</span>
+                          </button>
+                        )}
+
+                        {hasAlbum && (
+                          <button
+                            type="button"
+                            onClick={() => setActiveQrModal({
+                              qrUrl: ev.albumPhotosUrl,
+                              eventTitle: ev.titre,
+                              eventDate: evDate,
+                              eventLocation: ev.lieu,
+                              mode: 'album'
+                            })}
+                            className="px-2 py-0.5 text-[9px] font-black uppercase tracking-wider rounded border border-encre-noire bg-amber-300 hover:bg-amber-200 text-encre-noire cursor-pointer flex items-center gap-1 shadow-xs"
+                            title="Afficher et imprimer le QR-Code de l'album"
+                          >
+                            <span>📱 QR-Code</span>
+                          </button>
+                        )}
+                      </div>
                     </div>
 
                     <div className="flex items-center gap-1.5">
@@ -793,9 +902,30 @@ export default function StudioEventsMediaTable({ groupId, canWrite = false }) {
                         </button>
                       )}
                     </div>
-                    <span className="text-[9px] text-encre-noire/60 font-medium">
-                      Génère un livret Cordel sur la corde « Photos Prestations » du Varal. Vider le champ le retire du Varal.
-                    </span>
+
+                    <div className="flex items-center justify-between gap-1 flex-wrap">
+                      <span className="text-[9px] text-encre-noire/60 font-medium">
+                        Génère un livret Cordel sur la corde « Photos Prestations » du Varal. Vider le champ le retire du Varal.
+                      </span>
+
+                      {(hasAlbum || Boolean(ev.publierSurVaral)) && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (onSwitchToVaral) {
+                              onSwitchToVaral();
+                            } else if (ev.albumPhotosUrl || ev.lienDepotMedias) {
+                              window.open(ev.albumPhotosUrl || ev.lienDepotMedias, '_blank', 'noopener,noreferrer');
+                            }
+                          }}
+                          className="text-[9px] font-black text-cordel-wood hover:underline cursor-pointer flex items-center gap-0.5 shrink-0"
+                          title="Accéder au livret de l'événement sur le Varal"
+                        >
+                          <span>👁️</span>
+                          <span>Voir le livret sur le Varal</span>
+                        </button>
+                      )}
+                    </div>
                   </div>
 
                 </div>
