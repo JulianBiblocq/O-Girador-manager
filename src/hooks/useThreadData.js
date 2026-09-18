@@ -12,6 +12,7 @@ import {
 } from '../utils/permissionUtils';
 import useConfirm from './useConfirm';
 import { extractMentionedUserIds } from '../components/forum/MentionAutocomplete';
+import { canonicalizeGroupId } from '../utils/tenantUtils';
 
 /**
  * Hook personnalisé encapsulant toute la logique d'état, les écoutes temps réel,
@@ -367,7 +368,9 @@ export function useThreadData({
             ? `🗣️ ${senderName} vous a mentionné(e)`
             : `🎯 Nouveau message pour ${selectedTarget}`;
 
+          const effectiveGroupId = canonicalizeGroupId(profileData?.groupId || thread?.groupId);
           return addDoc(collection(db, 'notifications'), {
+            groupId: effectiveGroupId,
             userId: recipientId,
             title: notifTitle,
             body: `"${snippet}" dans "${thread?.titre || 'le forum'}"`,

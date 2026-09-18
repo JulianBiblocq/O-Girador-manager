@@ -20,17 +20,8 @@ export function useInventoryData(groupId, isAuthorized, t) {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
 
-  // Construction des variantes de groupId pour robustesse multi-casse
-  const groupVariants = useMemo(() => {
-    if (!groupId) return [];
-    const canonical = canonicalizeGroupId(groupId);
-    return Array.from(new Set([
-      groupId,
-      canonical,
-      typeof groupId === 'string' ? groupId.toLowerCase() : null,
-      typeof canonical === 'string' ? canonical.toLowerCase() : null
-    ])).filter(Boolean);
-  }, [groupId]);
+  // Résolution canonique du groupId (normalisé en minuscules pour isolation multi-tenant stricte)
+  const canonicalGroupId = useMemo(() => canonicalizeGroupId(groupId), [groupId]);
 
   // Nouvel état pour les pièces détachées
   const [inventoryParts, setInventoryParts] = useState([]);
@@ -72,12 +63,11 @@ export function useInventoryData(groupId, isAuthorized, t) {
 
   // Synchronisation en temps réel de la liste des membres du groupe
   useEffect(() => {
-    if (!isAuthorized || !groupId) return;
+    const targetGroupId = canonicalGroupId || groupId;
+    if (!isAuthorized || !targetGroupId) return;
 
     const usersRef = collection(db, 'users');
-    const q = groupVariants.length > 1
-      ? query(usersRef, where('groupId', 'in', groupVariants))
-      : query(usersRef, where('groupId', '==', groupVariants[0] || groupId));
+    const q = query(usersRef, where('groupId', '==', targetGroupId));
 
     const unsubscribe = onSnapshot(
       q,
@@ -95,19 +85,18 @@ export function useInventoryData(groupId, isAuthorized, t) {
     );
 
     return () => unsubscribe();
-  }, [groupId, isAuthorized, groupVariants]);
+  }, [canonicalGroupId, groupId, isAuthorized]);
 
   // Synchronisation en temps réel de l'inventaire du matériel
   useEffect(() => {
-    if (!isAuthorized || !groupId) {
+    const targetGroupId = canonicalGroupId || groupId;
+    if (!isAuthorized || !targetGroupId) {
       setLoading(false);
       return;
     }
 
     const inventoryRef = collection(db, 'inventory');
-    const q = groupVariants.length > 1
-      ? query(inventoryRef, where('groupId', 'in', groupVariants))
-      : query(inventoryRef, where('groupId', '==', groupVariants[0] || groupId));
+    const q = query(inventoryRef, where('groupId', '==', targetGroupId));
 
     const unsubscribe = onSnapshot(
       q,
@@ -128,9 +117,7 @@ export function useInventoryData(groupId, isAuthorized, t) {
 
     // Synchronisation des pièces détachées
     const partsRef = collection(db, 'inventory_parts');
-    const qParts = groupVariants.length > 1
-      ? query(partsRef, where('groupId', 'in', groupVariants))
-      : query(partsRef, where('groupId', '==', groupVariants[0] || groupId));
+    const qParts = query(partsRef, where('groupId', '==', targetGroupId));
 
     const unsubscribeParts = onSnapshot(
       qParts,
@@ -149,9 +136,7 @@ export function useInventoryData(groupId, isAuthorized, t) {
 
     // Synchronisation des Modèles d'instruments
     const modelsRef = collection(db, 'instrument_models');
-    const qModels = groupVariants.length > 1
-      ? query(modelsRef, where('groupId', 'in', groupVariants))
-      : query(modelsRef, where('groupId', '==', groupVariants[0] || groupId));
+    const qModels = query(modelsRef, where('groupId', '==', targetGroupId));
 
     const unsubscribeModels = onSnapshot(
       qModels,
@@ -173,7 +158,7 @@ export function useInventoryData(groupId, isAuthorized, t) {
       unsubscribeParts();
       unsubscribeModels();
     };
-  }, [groupId, isAuthorized]);
+  }, [canonicalGroupId, groupId, isAuthorized]);
 
   // Carte de résolution O(1) des noms d'utilisateurs
   const usersMap = useMemo(() => {
@@ -315,7 +300,7 @@ export function useInventoryData(groupId, isAuthorized, t) {
         etat: partFormData.etat,
         status: partFormData.status || 'En stock',
         instrumentAssocie_id: partFormData.instrumentAssocie_id || null,
-        groupId: groupId,
+        groupId: canonicalGroupId || groupId,
         modelId: partFormData.modelId || null,
         partId: partFormData.partId || null,
         notesAtelier: partFormData.notesAtelier || '',
@@ -652,7 +637,7 @@ export function useInventoryData(groupId, isAuthorized, t) {
         modelId: formData.modelId || '',
         nomenclature: formData.nomenclature || [],
         kitChecklist: newChecklist,
-        groupId: groupId
+        groupId: canonicalGroupId || groupId
       };
 
       if (editingId) {

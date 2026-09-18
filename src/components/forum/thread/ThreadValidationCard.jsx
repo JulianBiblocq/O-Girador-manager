@@ -5,6 +5,7 @@ import CordelCard from '../../CordelCard';
 import CordelButton from '../../CordelButton';
 import useConfirm from '../../../hooks/useConfirm';
 import ThreadMediaGallery from './ThreadMediaGallery';
+import { canonicalizeGroupId } from '../../../utils/tenantUtils';
 
 /**
  * Carte interactive de revue et de validation collaborative pour les publications
@@ -127,7 +128,9 @@ export default function ThreadValidationCard({
 
       // 3. Notifier le rédacteur de l'approbation
       if (redacteurId && redacteurId !== userId) {
+        const effectiveGroupId = canonicalizeGroupId(thread?.groupId || profileData?.groupId);
         const notifPayload = {
+          groupId: effectiveGroupId,
           userId: redacteurId,
           recipientUserIds: [redacteurId],
           title: "✅ Publication approuvée !",
@@ -205,7 +208,9 @@ export default function ThreadValidationCard({
 
       // 3. Notifier le rédacteur
       if (redacteurId && redacteurId !== userId) {
+        const effectiveGroupId = canonicalizeGroupId(thread?.groupId || profileData?.groupId);
         const notifPayload = {
+          groupId: effectiveGroupId,
           userId: redacteurId,
           recipientUserIds: [redacteurId],
           title: "💬 Retouche demandée pour votre publication",

@@ -11,6 +11,7 @@ import PrintConfigModal from './PrintConfigModal';
 import ReunionViewModal from './ReunionViewModal';
 import DocumentViewerModal from './documents/DocumentViewerModal';
 import VaralCategoryRope from './documents/varal/VaralCategoryRope';
+import DocStatusSelector from './documents/varal/DocStatusSelector';
 import useVaralData, { DEFAULT_VARAL_CATEGORIES, DEFAULT_POLE_ROPES } from '../hooks/useVaralData';
 import { isWorkshopVirtualDoc } from '../utils/workshopProjectionUtils';
 import { useTranslation } from './LanguageContext';
@@ -49,7 +50,8 @@ export default function WidgetDocuments({
     handleDelete,
     handleMoveLeft,
     handleMoveRight,
-    handleToggleHidden,
+    handleSetDocStatus,
+    isManagementView,
     saveCategory,
     deleteCategory,
     getDocType
@@ -243,7 +245,7 @@ export default function WidgetDocuments({
                 category={category}
                 documents={groupedDocs[category.id] || []}
                 newestDocumentId={newestDocumentId}
-                isAuthorized={isAuthorized}
+                isAuthorized={isAuthorized && isManagementView}
                 canWrite={canWrite}
                 canDeposit={canDepositOnCategory(category)}
                 getDocType={getDocType}
@@ -253,7 +255,6 @@ export default function WidgetDocuments({
                 onSelectDoc={handleSelectDoc}
                 onMoveLeft={handleMoveLeft}
                 onMoveRight={handleMoveRight}
-                onToggleHidden={handleToggleHidden}
                 onEditDoc={setDocumentToEdit}
                 onDeleteDoc={handleDelete}
               />
@@ -486,6 +487,23 @@ export default function WidgetDocuments({
               </div>
             </div>
 
+            {isAuthorized && isManagementView && !selectedReport.reunionData && (
+              <div className="mt-3 shrink-0">
+                <DocStatusSelector
+                  docItem={selectedReport}
+                  isAuthorized={isAuthorized}
+                  onStatusChange={async (newStatus) => {
+                    await handleSetDocStatus(selectedReport, newStatus);
+                    setSelectedReport(prev => ({
+                      ...prev,
+                      isHidden: newStatus === 'hidden',
+                      isArchived: newStatus === 'archived'
+                    }));
+                  }}
+                />
+              </div>
+            )}
+
             <div className="mt-4 pt-3 border-t border-dashed border-cordel-master-dark/15 text-center text-[9px] font-black text-cordel-wood opacity-55 shrink-0 select-none uppercase tracking-widest">
               O Girador - Document Officiel Archivé
             </div>
@@ -513,36 +531,7 @@ export default function WidgetDocuments({
             >
               ✕
             </button>
-            {/* Bandeau d'alerte et action rapide si la toada est masquée */}
-            {selectedToada.isHidden && isAuthorized && (
-              <div className="w-full mb-3 p-3 bg-[#fdfaf2] dark:bg-[#201d18] border-2 border-[var(--color-cordel-ocre,#c05621)] rounded-lg shadow-md flex items-center justify-between gap-3 text-left animate-fadeIn">
-                <div className="flex items-center gap-2">
-                  <span className="text-lg">🙈</span>
-                  <div>
-                    <div className="text-xs font-black text-cordel-master-dark dark:text-cordel-bg-light">
-                      Toada actuellement masquée sur le Varal
-                    </div>
-                    <div className="text-[10px] text-cordel-master-dark/70 dark:text-cordel-bg-light/70 font-semibold">
-                      Invisible pour les membres standards (mode brouillon).
-                    </div>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={async () => {
-                    await handleToggleHidden(selectedToada);
-                    setSelectedToada(prev => ({ ...prev, isHidden: false }));
-                  }}
-                  className="shrink-0 text-xs font-black uppercase tracking-wider px-3 py-1.5 rounded-[4px_6px_3px_5px] bg-[var(--color-cordel-vert,#2d6a4f)] text-[#FEF9E7] border border-encre-noire shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] hover:brightness-110 cursor-pointer flex items-center gap-1.5 transition-all"
-                  title="Rendre cette toada visible sur le Varal pour tous les membres"
-                >
-                  <span>👁️</span>
-                  <span>Rendre visible</span>
-                </button>
-              </div>
-            )}
-
-            <div className="w-full h-full overflow-y-auto scrollbar-hide rounded-lg shadow-2xl flex justify-center">
+            <div className="w-full flex-1 overflow-y-auto scrollbar-hide rounded-lg shadow-2xl flex justify-center">
               <SongCard
                 song={selectedToada}
                 defaultRevisionMode={false}
@@ -554,6 +543,24 @@ export default function WidgetDocuments({
                 }}
               />
             </div>
+
+            {/* Sélecteur de statut 3 états pour les encadrants */}
+            {isAuthorized && isManagementView && (
+              <div className="w-full mt-2 shrink-0">
+                <DocStatusSelector
+                  docItem={selectedToada}
+                  isAuthorized={isAuthorized}
+                  onStatusChange={async (newStatus) => {
+                    await handleSetDocStatus(selectedToada, newStatus);
+                    setSelectedToada(prev => ({
+                      ...prev,
+                      isHidden: newStatus === 'hidden',
+                      isArchived: newStatus === 'archived'
+                    }));
+                  }}
+                />
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -578,9 +585,27 @@ export default function WidgetDocuments({
             >
               ✕
             </button>
-            <div className="w-full h-full overflow-y-auto scrollbar-hide rounded-lg shadow-2xl flex justify-center">
+            <div className="w-full flex-1 overflow-y-auto scrollbar-hide rounded-lg shadow-2xl flex justify-center">
               <CultureCard culture={selectedCultureCard} />
             </div>
+
+            {/* Sélecteur de statut 3 états pour les fiches culturelles */}
+            {isAuthorized && isManagementView && (
+              <div className="w-full mt-2 shrink-0">
+                <DocStatusSelector
+                  docItem={selectedCultureCard}
+                  isAuthorized={isAuthorized}
+                  onStatusChange={async (newStatus) => {
+                    await handleSetDocStatus(selectedCultureCard, newStatus);
+                    setSelectedCultureCard(prev => ({
+                      ...prev,
+                      isHidden: newStatus === 'hidden',
+                      isArchived: newStatus === 'archived'
+                    }));
+                  }}
+                />
+              </div>
+            )}
           </div>
         </div>
       )}

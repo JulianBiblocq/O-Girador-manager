@@ -383,9 +383,10 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
 
   useEffect(() => {
     if (!event?.groupId) return;
+    const canonicalGroup = canonicalizeGroupId(event.groupId);
 
-    const qCostumes = query(collection(db, 'costumes'), where('groupId', '==', event.groupId));
-    const qInventory = query(collection(db, 'wardrobeInventory'), where('groupId', '==', event.groupId));
+    const qCostumes = query(collection(db, 'costumes'), where('groupId', '==', canonicalGroup));
+    const qInventory = query(collection(db, 'wardrobeInventory'), where('groupId', '==', canonicalGroup));
 
     let costumesData = [];
     let inventoryData = [];

@@ -77,6 +77,11 @@ export default function useVaralData({
   // Les droits d'administration couvrent les mestres, super-admins et utilisateurs ayant les droits d'écriture sur le pôle
   const isAuthorized = role === 'mestre' || role === 'super-admin' || isSystemAdmin === true || canWrite === true;
 
+  // Distinction Pôle de gestion vs Accueil :
+  // Sur l'accueil (ou le varal général de l'accueil), un encadrant doit voir le Varal comme les élèves (aucun document masqué).
+  const isManagementView = Boolean(poleId && poleId !== 'accueil');
+  const canSeeHidden = isAuthorized && isManagementView;
+
   // 1. Écouteur Firestore pour tous les documents réels de l'association (sans troncature)
   useEffect(() => {
     if (!groupId) return;
@@ -241,8 +246,8 @@ export default function useVaralData({
         }
       }
 
-      // Si le document est visible OU si l'utilisateur possède les droits de gestion (mestre, admin, canWrite)
-      if (!docItem.isHidden || isAuthorized) {
+      // Si le document est visible OU si l'utilisateur possède les droits de gestion dans un pôle métier
+      if (!docItem.isHidden || canSeeHidden) {
         if (!groups[catId]) {
           groups[catId] = [];
         }
@@ -308,7 +313,7 @@ export default function useVaralData({
         const pad = (n) => n.toString().padStart(2, '0');
         const formattedDate = `${pad(eventDate.getDate())}-${pad(eventDate.getMonth() + 1)}-${eventDate.getFullYear()}`;
 
-        if (!isHidden || isAuthorized) {
+        if (!isHidden || canSeeHidden) {
           groups['ComptesRendus'].push({
             id: reunion.id,
             titre: `CR du ${formattedDate}`,
@@ -345,7 +350,7 @@ export default function useVaralData({
     }
 
     return groups;
-  }, [documents, instrumentModels, varalCategories, eventsWithMedia, reunions, isAuthorized]);
+  }, [documents, instrumentModels, varalCategories, eventsWithMedia, reunions, canSeeHidden]);
 
   // 7. Résolution des étiquettes / badges effectifs de l'utilisateur
   const profileTags = profileData?.tags;
@@ -547,19 +552,30 @@ export default function useVaralData({
     }
   };
 
-  // 14. Bascule rapide de l'état masqué / visible d'un document sur le Varal
-  const handleToggleHidden = async (docItem) => {
+  // 14. Définition du statut de publication d'un document sur le Varal (Afficher, Masquer, Archiver)
+  const handleSetDocStatus = async (docItem, status) => {
     if (!docItem?.id || docItem.isVirtualEventMedia || isWorkshopVirtualDoc(docItem)) return;
     try {
       const docRef = doc(db, 'documents', docItem.id);
-      const newHiddenState = !docItem.isHidden;
-      await updateDoc(docRef, {
-        isHidden: newHiddenState
-      });
+      let updatePayload = {};
+      if (status === 'visible') {
+        updatePayload = { isHidden: false, isArchived: false };
+      } else if (status === 'hidden') {
+        updatePayload = { isHidden: true, isArchived: false };
+      } else if (status === 'archived') {
+        updatePayload = { isArchived: true, isHidden: false };
+      }
+      await updateDoc(docRef, updatePayload);
     } catch (err) {
-      console.error("useVaralData - Erreur lors de la modification de la visibilité :", err);
-      alert(t('documents.updateError') || "Erreur lors de la modification de la visibilité.");
+      console.error("useVaralData - Erreur lors de la modification du statut :", err);
+      alert(t('documents.updateError') || "Erreur lors de la modification du statut.");
     }
+  };
+
+  // 15. Bascule rapide de l'état masqué / visible d'un document sur le Varal (rétro-compatibilité)
+  const handleToggleHidden = async (docItem) => {
+    const nextStatus = docItem.isHidden ? 'visible' : 'hidden';
+    await handleSetDocStatus(docItem, nextStatus);
   };
 
   return {
@@ -570,6 +586,8 @@ export default function useVaralData({
     reunions,
     instrumentModels,
     isAuthorized,
+    isManagementView,
+    canSeeHidden,
     newestDocumentId,
     groupedDocs,
     effectiveTags,
@@ -579,6 +597,7 @@ export default function useVaralData({
     handleMoveLeft,
     handleMoveRight,
     handleToggleHidden,
+    handleSetDocStatus,
     updateDocumentsOrder,
     saveCategory,
     deleteCategory,

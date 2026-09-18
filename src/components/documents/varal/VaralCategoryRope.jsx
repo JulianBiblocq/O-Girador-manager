@@ -187,7 +187,6 @@ export default function VaralCategoryRope({
   onSelectDoc,
   onMoveLeft,
   onMoveRight,
-  onToggleHidden,
   onEditDoc,
   onDeleteDoc
 }) {
@@ -197,17 +196,20 @@ export default function VaralCategoryRope({
 
   const variant = categoryVariants[category.id] || 'default';
 
-  // Comptage des documents masqués et visibles pour les utilisateurs autorisés
-  const hiddenCount = documents.filter(d => Boolean(d.isHidden)).length;
-  const visibleCount = documents.filter(d => !d.isHidden).length;
+  // Comptage des documents masqués, archivés et visibles pour les utilisateurs autorisés
+  const archivedCount = documents.filter(d => Boolean(d.isArchived)).length;
+  const hiddenCount = documents.filter(d => Boolean(d.isHidden) && !d.isArchived).length;
+  const visibleCount = documents.filter(d => !d.isHidden && !d.isArchived).length;
 
   // 1. Filtrage éventuel par état de visibilité pour les administrateurs
   let docList = documents;
-  if (isAuthorized && hiddenCount > 0) {
+  if (isAuthorized && (hiddenCount > 0 || archivedCount > 0)) {
     if (visibilityFilter === 'visible') {
-      docList = docList.filter(d => !d.isHidden);
+      docList = docList.filter(d => !d.isHidden && !d.isArchived);
     } else if (visibilityFilter === 'hidden') {
-      docList = docList.filter(d => Boolean(d.isHidden));
+      docList = docList.filter(d => Boolean(d.isHidden) && !d.isArchived);
+    } else if (visibilityFilter === 'archived') {
+      docList = docList.filter(d => Boolean(d.isArchived));
     }
   }
   if (category.id === 'Culture' && cultureFilter !== 'all') {
@@ -254,8 +256,8 @@ export default function VaralCategoryRope({
             {getCategoryLabel(category.nom)}
           </span>
 
-          {/* Filtres de visibilité (Tous, Visibles, Masqués) si des documents sont masqués */}
-          {isAuthorized && hiddenCount > 0 && (
+          {/* Filtres de visibilité (Tous, Visibles, Masqués, Archivés) */}
+          {isAuthorized && (hiddenCount > 0 || archivedCount > 0) && (
             <div className="flex items-center gap-1 bg-[#fdfaf2] dark:bg-[#1a1816] border border-encre-noire/25 p-0.5 rounded shadow-xs select-none">
               <button
                 type="button"
@@ -264,7 +266,7 @@ export default function VaralCategoryRope({
                   ? 'bg-cordel-master-dark text-[#FEF9E7] shadow-xs'
                   : 'text-cordel-master-dark/80 hover:bg-neutral-200 dark:hover:bg-neutral-800'
                 }`}
-                title="Afficher tous les livrets de cette corde (visibles et masqués)"
+                title="Afficher tous les livrets de cette corde"
               >
                 Tous ({documents.length})
               </button>
@@ -280,18 +282,34 @@ export default function VaralCategoryRope({
                 <span>👁️</span>
                 <span>Visibles ({visibleCount})</span>
               </button>
-              <button
-                type="button"
-                onClick={() => setVisibilityFilter('hidden')}
-                className={`text-[8.5px] font-black uppercase px-2 py-0.5 rounded transition-all cursor-pointer flex items-center gap-1 ${visibilityFilter === 'hidden'
-                  ? 'bg-[var(--color-cordel-ocre,#c05621)] text-[#FEF9E7] shadow-xs'
-                  : 'text-cordel-wood font-extrabold hover:bg-neutral-200 dark:hover:bg-neutral-800'
-                }`}
-                title="Afficher uniquement les livrets masqués (brouillons)"
-              >
-                <span>🙈</span>
-                <span>Masqués ({hiddenCount})</span>
-              </button>
+              {hiddenCount > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setVisibilityFilter('hidden')}
+                  className={`text-[8.5px] font-black uppercase px-2 py-0.5 rounded transition-all cursor-pointer flex items-center gap-1 ${visibilityFilter === 'hidden'
+                    ? 'bg-[var(--color-cordel-ocre,#c05621)] text-[#FEF9E7] shadow-xs'
+                    : 'text-cordel-wood font-extrabold hover:bg-neutral-200 dark:hover:bg-neutral-800'
+                  }`}
+                  title="Afficher uniquement les livrets masqués (brouillons)"
+                >
+                  <span>🙈</span>
+                  <span>Masqués ({hiddenCount})</span>
+                </button>
+              )}
+              {archivedCount > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setVisibilityFilter('archived')}
+                  className={`text-[8.5px] font-black uppercase px-2 py-0.5 rounded transition-all cursor-pointer flex items-center gap-1 ${visibilityFilter === 'archived'
+                    ? 'bg-[var(--color-cordel-wood,#8b2a1a)] text-[#FEF9E7] shadow-xs'
+                    : 'text-cordel-wood font-extrabold hover:bg-neutral-200 dark:hover:bg-neutral-800'
+                  }`}
+                  title="Afficher uniquement les livrets archivés (anciennes saisons)"
+                >
+                  <span>📦</span>
+                  <span>Archivés ({archivedCount})</span>
+                </button>
+              )}
             </div>
           )}
 
@@ -398,7 +416,6 @@ export default function VaralCategoryRope({
                 onSelect={onSelectDoc}
                 onMoveLeft={onMoveLeft}
                 onMoveRight={onMoveRight}
-                onToggleHidden={onToggleHidden}
                 onEdit={onEditDoc}
                 onDelete={onDeleteDoc}
               />

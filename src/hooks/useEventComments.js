@@ -67,12 +67,16 @@ export function useEventComments(eventId, user, profileData, event) {
     const nowIso = new Date().toISOString();
 
     try {
-      // 1. Résolution du groupe d'appartenance pour l'isolation multi-tenant
-      const effectiveGroupId = event?.groupId || profileData?.groupId || 'Samambaia';
+      // 1. Validation stricte et résolution canonique du groupId
+      const rawGroupId = profileData?.groupId || user?.groupId || event?.groupId;
+      if (!rawGroupId || typeof rawGroupId !== 'string' || !rawGroupId.trim()) {
+        throw new Error("Impossible d'ajouter un commentaire : groupId introuvable dans le profil utilisateur.");
+      }
+      const effectiveGroupId = rawGroupId.trim().toLowerCase();
 
       // 2. Écriture du commentaire dans la sous-collection events/{eventId}/comments
       const commentsRef = collection(db, 'events', eventId, 'comments');
-      await addDoc(commentsRef, {
+      const commentPayload = {
         eventId: eventId,
         groupId: effectiveGroupId,
         auteurId: user.uid,
@@ -81,32 +85,36 @@ export function useEventComments(eventId, user, profileData, event) {
         texte: cleanText,
         dateCreation: serverTimestamp(),
         dateCreationIso: nowIso
+      };
+
+      const docRef = await addDoc(commentsRef, commentPayload);
+
+      // Injection dans l'état optimiste local du hook
+      setComments((prev) => {
+        if (prev.some((c) => c.id === docRef.id)) return prev;
+        return [...prev, { id: docRef.id, ...commentPayload, dateCreation: new Date() }];
       });
 
       // 3. Récupération des paramètres de l'association pour l'étiquette de notification
-      const groupId = effectiveGroupId;
       let tagConfigured = '';
-
-      if (groupId) {
-        try {
-          const assocRef = doc(db, 'associations', groupId);
-          const assocSnap = await getDoc(assocRef);
-          if (assocSnap.exists()) {
-            tagConfigured = assocSnap.data().tagNotificationCommentairesEvenement || '';
-          }
-        } catch (assocErr) {
-          console.error("useEventComments - Erreur lecture paramètres association :", assocErr);
+      try {
+        const assocRef = doc(db, 'associations', effectiveGroupId);
+        const assocSnap = await getDoc(assocRef);
+        if (assocSnap.exists()) {
+          tagConfigured = assocSnap.data().tagNotificationCommentairesEvenement || '';
         }
+      } catch (assocErr) {
+        console.warn("useEventComments - Erreur lecture paramètres association :", assocErr);
       }
 
       const eventTitle = event?.titre || event?.nom || 'Événement';
       const excerpt = cleanText.length > 90 ? cleanText.slice(0, 90) + '...' : cleanText;
 
-      // 3. Notification pour l'étiquette configurée (ex: Bureau, Admins, Mestre)
-      if (tagConfigured && groupId) {
+      // 4. Notification pour l'étiquette configurée (ex: Bureau, Admins, Mestre)
+      if (tagConfigured) {
         try {
           await addDoc(collection(db, 'notifications_queue'), {
-            groupId: groupId,
+            groupId: effectiveGroupId,
             title: `💬 Question / Commentaire : ${eventTitle}`,
             body: `${authorName} : "${excerpt}"`,
             targetTag: tagConfigured,
@@ -115,16 +123,16 @@ export function useEventComments(eventId, user, profileData, event) {
             createdAt: nowIso
           });
         } catch (notifErr) {
-          console.error("useEventComments - Erreur envoi notification tag :", notifErr);
+          console.warn("useEventComments - Erreur envoi notification tag :", notifErr);
         }
       }
 
-      // 4. Notification pour le créateur de l'événement (s'il n'est pas le commenteur lui-même)
+      // 5. Notification pour le créateur de l'événement (s'il n'est pas le commenteur lui-même)
       const eventCreatorId = event?.createdBy || event?.auteurId;
-      if (eventCreatorId && eventCreatorId !== user.uid && groupId) {
+      if (eventCreatorId && eventCreatorId !== user.uid) {
         try {
           await addDoc(collection(db, 'notifications_queue'), {
-            groupId: groupId,
+            groupId: effectiveGroupId,
             title: `💬 Nouveau commentaire sur votre événement : ${eventTitle}`,
             body: `${authorName} : "${excerpt}"`,
             recipientId: eventCreatorId,
@@ -133,7 +141,7 @@ export function useEventComments(eventId, user, profileData, event) {
             createdAt: nowIso
           });
         } catch (notifErr) {
-          console.error("useEventComments - Erreur envoi notification créateur :", notifErr);
+          console.warn("useEventComments - Erreur envoi notification créateur :", notifErr);
         }
       }
 

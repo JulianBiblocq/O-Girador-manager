@@ -5,6 +5,7 @@
 /**
  * Normalise un identifiant d'organisation vers sa casse canonique reconnue par Firestore.
  * Par exemple, 'samambaia' (provenant d'un sous-domaine DNS ou d'un paramètre d'URL) est normalisé en 'Samambaia'.
+ * Gère gracieusement les valeurs nulles, indéfinies ou non-string avant tout appel à .toLowerCase().
  * 
  * @param {string|null|undefined} groupId - L'identifiant brut du groupe
  * @returns {string|null|undefined} L'identifiant normalisé canonique
@@ -20,6 +21,7 @@ export function canonicalizeGroupId(groupId) {
 
 /**
  * Vérifie si deux identifiants de groupe sont équivalents (insensible à la casse).
+ * Gère gracieusement les valeurs nulles, indéfinies ou non-string.
  * 
  * @param {string|null|undefined} g1 
  * @param {string|null|undefined} g2 

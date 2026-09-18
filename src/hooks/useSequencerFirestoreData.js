@@ -66,7 +66,7 @@ export function useSequencerFirestoreData(groupId) {
     cleanupListeners();
 
     try {
-      const canonicalGroup = canonicalizeGroupId(groupId);
+      const canonicalGroup = canonicalizeGroupId(groupId) || (typeof groupId === 'string' ? groupId.trim().toLowerCase() : '');
       // Construction des variantes de groupId pour robustesse multi-casse
       const groupVariants = Array.from(
         new Set([
@@ -87,12 +87,14 @@ export function useSequencerFirestoreData(groupId) {
       }
 
       // Adhérents enregistrés dans la collection users pour ce groupe
-      try {
-        const qUsers = query(collection(db, 'users'), where('groupId', 'in', groupVariants));
-        const usersSnap = await getDocs(qUsers);
-        usersSnap.docs.forEach((d) => memberIdsSet.add(d.id));
-      } catch (userErr) {
-        console.warn("useSequencerFirestoreData - Impossible de lister les utilisateurs par groupId :", userErr);
+      if (canonicalGroup) {
+        try {
+          const qUsers = query(collection(db, 'users'), where('groupId', '==', canonicalGroup));
+          const usersSnap = await getDocs(qUsers);
+          usersSnap.docs.forEach((d) => memberIdsSet.add(d.id));
+        } catch (userErr) {
+          console.warn("useSequencerFirestoreData - Impossible de lister les utilisateurs par groupId :", userErr);
+        }
       }
 
       // Garantie pour l'association Samambaia (Mestre historique)
@@ -100,8 +102,10 @@ export function useSequencerFirestoreData(groupId) {
         memberIdsSet.add('iA0SweEHyOPzAPGIDVZdeKAV2mk1');
       }
 
-      // Ajout du groupId lui-même pour les motifs créés sous l'identifiant de groupe
-      groupVariants.forEach((gv) => memberIdsSet.add(gv));
+      // Ajout du groupId canonique lui-même pour les motifs créés sous l'identifiant de groupe
+      if (canonicalGroup) {
+        memberIdsSet.add(canonicalGroup);
+      }
 
       const memberIds = Array.from(memberIdsSet);
 
@@ -194,24 +198,26 @@ export function useSequencerFirestoreData(groupId) {
       const patternsRef = collection(db, 'patterns');
 
       // 2.a Patterns par groupId direct
-      try {
-        const qPatternsGroup = query(patternsRef, where('groupId', 'in', groupVariants));
-        const unsubPGroup = onSnapshot(qPatternsGroup, (snap) => {
-          snap.docs.forEach((doc) => itemsMap.set(doc.id, processDoc(doc, 'patterns')));
-          mergeAndSet();
-        }, (err) => console.warn("useSequencerFirestoreData - Patterns group :", err));
-        unsubsRef.current.push(unsubPGroup);
-      } catch (_) {}
+      if (canonicalGroup) {
+        try {
+          const qPatternsGroup = query(patternsRef, where('groupId', '==', canonicalGroup));
+          const unsubPGroup = onSnapshot(qPatternsGroup, (snap) => {
+            snap.docs.forEach((doc) => itemsMap.set(doc.id, processDoc(doc, 'patterns')));
+            mergeAndSet();
+          }, (err) => console.warn("useSequencerFirestoreData - Patterns group :", err));
+          unsubsRef.current.push(unsubPGroup);
+        } catch (_) {}
 
-      // 2.b Patterns par mestreId (variantes de groupe)
-      try {
-        const qPatternsMestre = query(patternsRef, where('mestreId', 'in', groupVariants));
-        const unsubPMestre = onSnapshot(qPatternsMestre, (snap) => {
-          snap.docs.forEach((doc) => itemsMap.set(doc.id, processDoc(doc, 'patterns')));
-          mergeAndSet();
-        }, (err) => console.warn("useSequencerFirestoreData - Patterns mestreId :", err));
-        unsubsRef.current.push(unsubPMestre);
-      } catch (_) {}
+        // 2.b Patterns par mestreId (normalisé sur groupId canonique)
+        try {
+          const qPatternsMestre = query(patternsRef, where('mestreId', '==', canonicalGroup));
+          const unsubPMestre = onSnapshot(qPatternsMestre, (snap) => {
+            snap.docs.forEach((doc) => itemsMap.set(doc.id, processDoc(doc, 'patterns')));
+            mergeAndSet();
+          }, (err) => console.warn("useSequencerFirestoreData - Patterns mestreId :", err));
+          unsubsRef.current.push(unsubPMestre);
+        } catch (_) {}
+      }
 
       // 2.c Patterns par lots de memberIds (ownerId & mestreId)
       chunks.forEach((chunk) => {
@@ -247,14 +253,16 @@ export function useSequencerFirestoreData(groupId) {
       // 3. Écoute des Sections (Séquences & Arrangements)
       const sectionsRef = collection(db, 'sections');
 
-      try {
-        const qSectionsGroup = query(sectionsRef, where('groupId', 'in', groupVariants));
-        const unsubSGroup = onSnapshot(qSectionsGroup, (snap) => {
-          snap.docs.forEach((doc) => itemsMap.set(doc.id, processDoc(doc, 'sections')));
-          mergeAndSet();
-        }, (err) => console.warn("useSequencerFirestoreData - Sections group :", err));
-        unsubsRef.current.push(unsubSGroup);
-      } catch (_) {}
+      if (canonicalGroup) {
+        try {
+          const qSectionsGroup = query(sectionsRef, where('groupId', '==', canonicalGroup));
+          const unsubSGroup = onSnapshot(qSectionsGroup, (snap) => {
+            snap.docs.forEach((doc) => itemsMap.set(doc.id, processDoc(doc, 'sections')));
+            mergeAndSet();
+          }, (err) => console.warn("useSequencerFirestoreData - Sections group :", err));
+          unsubsRef.current.push(unsubSGroup);
+        } catch (_) {}
+      }
 
       chunks.forEach((chunk) => {
         try {
@@ -270,14 +278,16 @@ export function useSequencerFirestoreData(groupId) {
       // 4. Écoute des Presets (Arrangements de batterie & boîtes à rythme)
       const presetsRef = collection(db, 'presets');
 
-      try {
-        const qPresetsGroup = query(presetsRef, where('groupId', 'in', groupVariants));
-        const unsubPresGroup = onSnapshot(qPresetsGroup, (snap) => {
-          snap.docs.forEach((doc) => itemsMap.set(doc.id, processDoc(doc, 'presets')));
-          mergeAndSet();
-        }, (err) => console.warn("useSequencerFirestoreData - Presets group :", err));
-        unsubsRef.current.push(unsubPresGroup);
-      } catch (_) {}
+      if (canonicalGroup) {
+        try {
+          const qPresetsGroup = query(presetsRef, where('groupId', '==', canonicalGroup));
+          const unsubPresGroup = onSnapshot(qPresetsGroup, (snap) => {
+            snap.docs.forEach((doc) => itemsMap.set(doc.id, processDoc(doc, 'presets')));
+            mergeAndSet();
+          }, (err) => console.warn("useSequencerFirestoreData - Presets group :", err));
+          unsubsRef.current.push(unsubPresGroup);
+        } catch (_) {}
+      }
 
       chunks.forEach((chunk) => {
         try {
@@ -292,28 +302,30 @@ export function useSequencerFirestoreData(groupId) {
 
       // 5. Écoute des Audio Masters
       const audioMastersRef = collection(db, 'audio_masters');
-      try {
-        const qAMTenant = query(audioMastersRef, where('tenantId', 'in', groupVariants));
-        const unsubAM = onSnapshot(qAMTenant, (snap) => {
-          snap.docs.forEach((doc) => {
-            const d = doc.data() || {};
-            itemsMap.set(doc.id, {
-              id: doc.id,
-              _collection: 'audio_masters',
-              source: 'firestore',
-              isJson: false,
-              isAudio: true,
-              titre: d.nom || 'Master Audio',
-              displayTitle: `[Audio] ${d.nom || 'Master Audio'}`,
-              audioUrl: d.audioUrl || null,
-              bpm: d.bpm,
-              ...d
+      if (canonicalGroup) {
+        try {
+          const qAMTenant = query(audioMastersRef, where('tenantId', '==', canonicalGroup));
+          const unsubAM = onSnapshot(qAMTenant, (snap) => {
+            snap.docs.forEach((doc) => {
+              const d = doc.data() || {};
+              itemsMap.set(doc.id, {
+                id: doc.id,
+                _collection: 'audio_masters',
+                source: 'firestore',
+                isJson: false,
+                isAudio: true,
+                titre: d.nom || 'Master Audio',
+                displayTitle: `[Audio] ${d.nom || 'Master Audio'}`,
+                audioUrl: d.audioUrl || null,
+                bpm: d.bpm,
+                ...d
+              });
             });
-          });
-          mergeAndSet();
-        }, (err) => console.warn("useSequencerFirestoreData - Audio Masters :", err));
-        unsubsRef.current.push(unsubAM);
-      } catch (_) {}
+            mergeAndSet();
+          }, (err) => console.warn("useSequencerFirestoreData - Audio Masters :", err));
+          unsubsRef.current.push(unsubAM);
+        } catch (_) {}
+      }
 
       // 6. Récupération des fichiers physiques Firebase Storage (documents/${groupId}/sequencer)
       const loadStorageFiles = async () => {
