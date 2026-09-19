@@ -1196,6 +1196,8 @@ gmp-place-autocomplete:focus-within {
 /* === GLOBAL POPUP & MODAL RESPONSIVE COMPATIBILITY === */
 .modal-overlay, .modal-backdrop, [role="dialog"], .popup-window, .modal-content, [class*="modal"] {
   max-height: 90vh !important;
+  max-width: calc(100vw - 16px) !important;
+  box-sizing: border-box !important;
   overflow-y: auto !important;
 }
 

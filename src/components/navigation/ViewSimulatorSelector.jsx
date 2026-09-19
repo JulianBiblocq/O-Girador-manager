@@ -1,4 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useLayoutEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useViewSimulator } from '../../context/ViewSimulatorContext';
 
 /**
@@ -34,6 +35,7 @@ export function CordelEyeIcon({ size = 18, className = "" }) {
 /**
  * Bouton et Menu Popover Cordel pour le Simulateur de Vue (Mode Impersonation / Test de vue).
  * Réservé exclusivement aux Super-Administrateurs et Mestres réels.
+ * Intègre un positionnement clampé anti-débordement sur petits écrans et dans les tiroirs.
  */
 export default function ViewSimulatorSelector() {
   const {
@@ -50,6 +52,8 @@ export default function ViewSimulatorSelector() {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedTagId, setSelectedTagId] = useState("");
   const [selectedUserId, setSelectedUserId] = useState("");
+  const [popoverStyle, setPopoverStyle] = useState({});
+  const buttonRef = useRef(null);
   const popoverRef = useRef(null);
 
   // Visibilité conditionnelle stricte : Super-Admin ou Mestre réel uniquement
@@ -59,25 +63,98 @@ export default function ViewSimulatorSelector() {
     (realProfileData?.role || '').toLowerCase() === 'mestre'
   );
 
+  // Recalcul géométrique précis et clamping strict dans le viewport
+  const updatePosition = useCallback(() => {
+    if (!buttonRef.current || typeof window === 'undefined') return;
+
+    const rect = buttonRef.current.getBoundingClientRect();
+    const screenWidth = window.innerWidth;
+    const screenHeight = window.innerHeight;
+
+    // Largeur adaptative : sur mobile/tiroir étroit, on s'adapte à l'écran avec marge de 16px
+    const targetWidth = Math.min(320, Math.max(260, screenWidth - 16));
+
+    // Alignement par défaut sous le bouton
+    let left = rect.left;
+    if (rect.left + targetWidth > screenWidth - 8) {
+      left = rect.right - targetWidth;
+    }
+
+    // Clamping strict : [8px, screenWidth - targetWidth - 8px]
+    const minLeft = 8;
+    const maxLeft = Math.max(8, screenWidth - targetWidth - 8);
+    left = Math.max(minLeft, Math.min(left, maxLeft));
+
+    // Clamping vertical
+    const spaceBelow = screenHeight - rect.bottom - 12;
+    const spaceAbove = rect.top - 12;
+
+    let top;
+    let maxHeight;
+
+    if (spaceBelow < 280 && spaceAbove > spaceBelow) {
+      maxHeight = Math.min(500, spaceAbove);
+      top = Math.max(8, rect.top - maxHeight - 6);
+    } else {
+      top = rect.bottom + 8;
+      maxHeight = Math.min(520, spaceBelow);
+    }
+
+    setPopoverStyle({
+      position: 'fixed',
+      top: `${Math.round(top)}px`,
+      left: `${Math.round(left)}px`,
+      width: `${Math.round(targetWidth)}px`,
+      maxHeight: `${Math.round(maxHeight)}px`,
+    });
+  }, []);
+
+  // Recalcul en temps réel lors de l'ouverture, du redimensionnement et du défilement
+  useLayoutEffect(() => {
+    if (!isOpen) return;
+
+    updatePosition();
+
+    const handleUpdate = () => {
+      updatePosition();
+    };
+
+    window.addEventListener('resize', handleUpdate);
+    window.addEventListener('scroll', handleUpdate, true);
+
+    return () => {
+      window.removeEventListener('resize', handleUpdate);
+      window.removeEventListener('scroll', handleUpdate, true);
+    };
+  }, [isOpen, updatePosition]);
+
   // Fermeture au clic à l'extérieur ou sur touche Échap
   useEffect(() => {
+    if (!isOpen) return;
+
     function handleClickOutside(event) {
-      if (popoverRef.current && !popoverRef.current.contains(event.target)) {
-        setIsOpen(false);
+      if (buttonRef.current && buttonRef.current.contains(event.target)) {
+        return;
       }
+      if (popoverRef.current && popoverRef.current.contains(event.target)) {
+        return;
+      }
+      setIsOpen(false);
     }
+
     function handleKeyDown(event) {
       if (event.key === 'Escape') {
         setIsOpen(false);
       }
     }
 
-    if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-      document.addEventListener('keydown', handleKeyDown);
-    }
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside);
+    document.addEventListener('keydown', handleKeyDown);
+
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
       document.removeEventListener('keydown', handleKeyDown);
     };
   }, [isOpen]);
@@ -145,11 +222,15 @@ export default function ViewSimulatorSelector() {
   };
 
   return (
-    <div className="relative inline-block" ref={popoverRef}>
+    <div className="relative inline-block">
       {/* Bouton de déclenchement (Icône Œil Cordel) */}
       <button
+        ref={buttonRef}
         type="button"
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={() => {
+          if (!isOpen) updatePosition();
+          setIsOpen(!isOpen);
+        }}
         className={`p-1.5 sm:p-2 border-2 rounded-[5px_8px_4px_7px] transition-all cursor-pointer flex items-center justify-center gap-1 text-encre-noire select-none ${
           isSimulating
             ? 'bg-amber-400 border-encre-noire animate-pulse shadow-[2px_2px_0px_0px_#181716]'
@@ -169,145 +250,161 @@ export default function ViewSimulatorSelector() {
         )}
       </button>
 
-      {/* Popover Cordel */}
-      {isOpen && (
-        <div className="absolute right-0 sm:right-auto sm:left-0 mt-2 w-80 sm:w-88 p-4 bg-cordel-bg border-2 border-encre-noire rounded-[8px_12px_9px_11px] shadow-[3px_3px_0px_0px_#181716] z-[100] text-encre-noire animate-fadeIn">
-          {/* En-tête du Popover */}
-          <div className="flex items-start justify-between pb-2.5 mb-3 border-b-2 border-dashed border-cordel-master-dark/20">
-            <div>
-              <div className="flex items-center gap-1.5 font-black text-xs uppercase tracking-wide">
-                <CordelEyeIcon size={14} />
-                <span>Simulateur de Vue</span>
-              </div>
-              <div className="text-[10px] text-cordel-master-dark/75 font-medium">
-                Auditer ce que voient les membres en direct
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={() => setIsOpen(false)}
-              className="text-xs font-black text-cordel-master-dark hover:text-cordel-wood p-1 cursor-pointer"
-              title="Fermer"
-            >
-              ✕
-            </button>
-          </div>
+      {/* Popover Cordel déporté via Portal avec z-[9999] */}
+      {isOpen && typeof document !== 'undefined' && document.body && createPortal(
+        <>
+          {/* Arrière-plan semi-transparent tactile */}
+          <div
+            className="fixed inset-0 bg-black/30 backdrop-blur-xs z-[9998] animate-fade-in"
+            onClick={() => setIsOpen(false)}
+            aria-hidden="true"
+          />
 
-          <div className="flex flex-col gap-3.5 text-xs">
-            {/* 1. Option Adhérent standard */}
-            <div className="flex flex-col gap-1 p-2 bg-cordel-bg-light border border-encre-noire/30 rounded-[5px_7px_4px_6px]">
-              <div className="font-extrabold text-[11px] flex items-center gap-1">
-                <span>🌱</span>
-                <span>Adhérent standard</span>
+          <div 
+            ref={popoverRef}
+            style={popoverStyle}
+            className="fixed p-3 sm:p-4 bg-cordel-bg border-2 border-encre-noire rounded-[8px_12px_9px_11px] shadow-[4px_4px_0px_0px_#181716] z-[9999] text-encre-noire animate-scale-up select-none flex flex-col overflow-hidden"
+            role="dialog"
+            aria-label="Simulateur de vue"
+          >
+            {/* En-tête du Popover */}
+            <div className="flex items-start justify-between pb-2 mb-2.5 border-b-2 border-dashed border-cordel-master-dark/20 shrink-0">
+              <div>
+                <div className="flex items-center gap-1.5 font-black text-xs uppercase tracking-wide">
+                  <CordelEyeIcon size={14} />
+                  <span>Simulateur de Vue</span>
+                </div>
+                <div className="text-[10px] text-cordel-master-dark/75 font-medium">
+                  Auditer ce que voient les membres en direct
+                </div>
               </div>
-              <p className="text-[9.5px] text-cordel-master-dark/70">
-                Vue de base sans aucun badge ni accès aux pôles administratifs.
-              </p>
               <button
                 type="button"
-                onClick={handleSimulateStandard}
-                className="mt-1 w-full py-1.5 px-2 bg-white hover:bg-neutral-100 border border-encre-noire rounded font-black text-[10px] uppercase tracking-wider text-center cursor-pointer shadow-[1px_1px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px]"
+                onClick={() => setIsOpen(false)}
+                className="text-xs font-black text-cordel-master-dark hover:text-cordel-wood p-1 cursor-pointer"
+                title="Fermer"
               >
-                Tester vue Adhérent standard
+                ✕
               </button>
             </div>
 
-            {/* 2. Option Par Badge / Étiquette */}
-            <form onSubmit={handleSimulateTag} className="flex flex-col gap-1.5 p-2 bg-cordel-bg-light border border-encre-noire/30 rounded-[5px_7px_4px_6px]">
-              <div className="font-extrabold text-[11px] flex items-center gap-1">
-                <span>🏷️</span>
-                <span>Par Badge / Étiquette</span>
-              </div>
-              <p className="text-[9.5px] text-cordel-master-dark/70">
-                Simule un membre portant uniquement cette étiquette.
-              </p>
-              <div className="flex gap-1.5 mt-0.5">
-                <select
-                  value={selectedTagId}
-                  onChange={(e) => setSelectedTagId(e.target.value)}
-                  className="flex-1 text-[10px] font-bold p-1 bg-white border border-encre-noire rounded cursor-pointer truncate"
-                  required
-                >
-                  <option value="">-- Choisir un badge --</option>
-                  {tagsDisponibles.map((tag) => {
-                    const tagId = typeof tag === 'string' ? tag : (tag.id || tag.nomM);
-                    const tagLabel = typeof tag === 'string'
-                      ? tag
-                      : (tag.nomF && tag.nomF !== tag.nomM ? `${tag.nomM} / ${tag.nomF}` : tag.nomM);
-                    return (
-                      <option key={tagId} value={tagId}>
-                        {tagLabel}
-                      </option>
-                    );
-                  })}
-                </select>
-                <button
-                  type="submit"
-                  disabled={!selectedTagId}
-                  className="py-1 px-2.5 bg-cordel-bg hover:bg-white border border-encre-noire rounded font-black text-[10px] uppercase cursor-pointer disabled:opacity-40 shadow-[1px_1px_0px_0px_#181716] shrink-0"
-                >
-                  Appliquer
-                </button>
-              </div>
-            </form>
-
-            {/* 3. Option Par Adhérent précis */}
-            <form onSubmit={handleSimulateUser} className="flex flex-col gap-1.5 p-2 bg-cordel-bg-light border border-encre-noire/30 rounded-[5px_7px_4px_6px]">
-              <div className="font-extrabold text-[11px] flex items-center gap-1">
-                <span>👤</span>
-                <span>Par Adhérent précis</span>
-              </div>
-              <p className="text-[9.5px] text-cordel-master-dark/70">
-                Adopte l'identité, le pupitre et l'ensemble des badges réels du membre.
-              </p>
-              <div className="flex gap-1.5 mt-0.5">
-                <select
-                  value={selectedUserId}
-                  onChange={(e) => setSelectedUserId(e.target.value)}
-                  disabled={loadingMembers}
-                  className="flex-1 text-[10px] font-bold p-1 bg-white border border-encre-noire rounded cursor-pointer truncate"
-                  required
-                >
-                  <option value="">
-                    {loadingMembers ? "Chargement des membres..." : "-- Sélectionner un membre --"}
-                  </option>
-                  {availableMembers.map((m) => {
-                    const fullName = `${m.prenom || ''} ${m.nom || ''}`.trim() || 'Membre sans nom';
-                    const detail = m.surnom ? `« ${m.surnom} »` : (m.instrumentPrincipal || m.role || '');
-                    return (
-                      <option key={m.id} value={m.id}>
-                        {fullName} {detail ? `(${detail})` : ''}
-                      </option>
-                    );
-                  })}
-                </select>
-                <button
-                  type="submit"
-                  disabled={!selectedUserId || loadingMembers}
-                  className="py-1 px-2.5 bg-cordel-bg hover:bg-white border border-encre-noire rounded font-black text-[10px] uppercase cursor-pointer disabled:opacity-40 shadow-[1px_1px_0px_0px_#181716] shrink-0"
-                >
-                  Adopter
-                </button>
-              </div>
-            </form>
-
-            {/* 4. Bouton Quitter (si simulation active) */}
-            {isSimulating && (
-              <div className="pt-2 border-t border-dashed border-cordel-master-dark/20">
+            <div className="flex flex-col gap-3 text-xs overflow-y-auto pr-0.5 custom-scrollbar">
+              {/* 1. Option Adhérent standard */}
+              <div className="flex flex-col gap-1 p-2 bg-cordel-bg-light border border-encre-noire/30 rounded-[5px_7px_4px_6px]">
+                <div className="font-extrabold text-[11px] flex items-center gap-1">
+                  <span>🌱</span>
+                  <span>Adhérent standard</span>
+                </div>
+                <p className="text-[9.5px] text-cordel-master-dark/70">
+                  Vue de base sans aucun badge ni accès aux pôles administratifs.
+                </p>
                 <button
                   type="button"
-                  onClick={() => {
-                    stopSimulation();
-                    setIsOpen(false);
-                  }}
-                  className="w-full py-1.5 px-3 bg-cordel-wood text-cordel-bg-light hover:brightness-110 border-2 border-encre-noire rounded-[5px_7px_4px_6px] font-black text-[10px] uppercase tracking-wider shadow-[1.5px_1.5px_0px_0px_#181716] cursor-pointer active:translate-x-[0.5px] active:translate-y-[0.5px]"
+                  onClick={handleSimulateStandard}
+                  className="mt-1 w-full py-1.5 px-2 bg-white hover:bg-neutral-100 border border-encre-noire rounded font-black text-[10px] uppercase tracking-wider text-center cursor-pointer shadow-[1px_1px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px]"
                 >
-                  ✕ Quitter la simulation
+                  Tester vue Adhérent standard
                 </button>
               </div>
-            )}
+
+              {/* 2. Option Par Badge / Étiquette */}
+              <form onSubmit={handleSimulateTag} className="flex flex-col gap-1.5 p-2 bg-cordel-bg-light border border-encre-noire/30 rounded-[5px_7px_4px_6px]">
+                <div className="font-extrabold text-[11px] flex items-center gap-1">
+                  <span>🏷️</span>
+                  <span>Par Badge / Étiquette</span>
+                </div>
+                <p className="text-[9.5px] text-cordel-master-dark/70">
+                  Simule un membre portant uniquement cette étiquette.
+                </p>
+                <div className="flex gap-1.5 mt-0.5">
+                  <select
+                    value={selectedTagId}
+                    onChange={(e) => setSelectedTagId(e.target.value)}
+                    className="flex-1 text-[10px] font-bold p-1 bg-white border border-encre-noire rounded cursor-pointer truncate"
+                    required
+                  >
+                    <option value="">-- Choisir un badge --</option>
+                    {tagsDisponibles.map((tag) => {
+                      const tagId = typeof tag === 'string' ? tag : (tag.id || tag.nomM);
+                      const tagLabel = typeof tag === 'string'
+                        ? tag
+                        : (tag.nomF && tag.nomF !== tag.nomM ? `${tag.nomM} / ${tag.nomF}` : tag.nomM);
+                      return (
+                        <option key={tagId} value={tagId}>
+                          {tagLabel}
+                        </option>
+                      );
+                    })}
+                  </select>
+                  <button
+                    type="submit"
+                    disabled={!selectedTagId}
+                    className="py-1 px-2.5 bg-cordel-bg hover:bg-white border border-encre-noire rounded font-black text-[10px] uppercase cursor-pointer disabled:opacity-40 shadow-[1px_1px_0px_0px_#181716] shrink-0"
+                  >
+                    Appliquer
+                  </button>
+                </div>
+              </form>
+
+              {/* 3. Option Par Adhérent précis */}
+              <form onSubmit={handleSimulateUser} className="flex flex-col gap-1.5 p-2 bg-cordel-bg-light border border-encre-noire/30 rounded-[5px_7px_4px_6px]">
+                <div className="font-extrabold text-[11px] flex items-center gap-1">
+                  <span>👤</span>
+                  <span>Par Adhérent précis</span>
+                </div>
+                <p className="text-[9.5px] text-cordel-master-dark/70">
+                  Adopte l'identité, le pupitre et l'ensemble des badges réels du membre.
+                </p>
+                <div className="flex gap-1.5 mt-0.5">
+                  <select
+                    value={selectedUserId}
+                    onChange={(e) => setSelectedUserId(e.target.value)}
+                    disabled={loadingMembers}
+                    className="flex-1 text-[10px] font-bold p-1 bg-white border border-encre-noire rounded cursor-pointer truncate"
+                    required
+                  >
+                    <option value="">
+                      {loadingMembers ? "Chargement des membres..." : "-- Sélectionner un membre --"}
+                    </option>
+                    {availableMembers.map((m) => {
+                      const fullName = `${m.prenom || ''} ${m.nom || ''}`.trim() || 'Membre sans nom';
+                      const detail = m.surnom ? `« ${m.surnom} »` : (m.instrumentPrincipal || m.role || '');
+                      return (
+                        <option key={m.id} value={m.id}>
+                          {fullName} {detail ? `(${detail})` : ''}
+                        </option>
+                      );
+                    })}
+                  </select>
+                  <button
+                    type="submit"
+                    disabled={!selectedUserId || loadingMembers}
+                    className="py-1 px-2.5 bg-cordel-bg hover:bg-white border border-encre-noire rounded font-black text-[10px] uppercase cursor-pointer disabled:opacity-40 shadow-[1px_1px_0px_0px_#181716] shrink-0"
+                  >
+                    Adopter
+                  </button>
+                </div>
+              </form>
+
+              {/* 4. Bouton Quitter (si simulation active) */}
+              {isSimulating && (
+                <div className="pt-2 border-t border-dashed border-cordel-master-dark/20">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      stopSimulation();
+                      setIsOpen(false);
+                    }}
+                    className="w-full py-1.5 px-3 bg-cordel-wood text-cordel-bg-light hover:brightness-110 border-2 border-encre-noire rounded-[5px_7px_4px_6px] font-black text-[10px] uppercase tracking-wider shadow-[1.5px_1.5px_0px_0px_#181716] cursor-pointer active:translate-x-[0.5px] active:translate-y-[0.5px]"
+                  >
+                    ✕ Quitter la simulation
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
-        </div>
+        </>,
+        document.body
       )}
     </div>
   );

@@ -1,4 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useLayoutEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { auth } from '../../firebase';
 import { launchCrossApp } from '../../utils/crossAppAuth';
 import { getVitrineUrl } from '../../utils/urlUtils';
@@ -33,8 +34,9 @@ export function CordelGridIcon({ size = 16, className = "" }) {
 
 /**
  * Lanceur applicatif Écosystème O Girador sous forme de bouton gaufrier compact.
- * Déploie un popover Cordel sécurisé (z-[100]) listant les applications de la suite
- * avec gestion du SSO transparent (launchCrossApp) et des autorisations (ecosystemAccess).
+ * Déploie un popover Cordel sécurisé (z-[9999]) listant les applications de la suite
+ * avec gestion du SSO transparent (launchCrossApp), autorisations (ecosystemAccess)
+ * et positionnement clampé anti-débordement sur petits écrans / résolutions mobiles.
  * 
  * @param {Object} props
  * @param {Object} [props.urls] - URLs spécifiques du locataire
@@ -44,6 +46,8 @@ export function CordelGridIcon({ size = 16, className = "" }) {
 export default function EcosystemAppLauncher({ urls, associationData, className = "" }) {
   const [isOpen, setIsOpen] = useState(false);
   const [launchingAppKey, setLaunchingAppKey] = useState(null);
+  const [popoverStyle, setPopoverStyle] = useState({});
+  const buttonRef = useRef(null);
   const popoverRef = useRef(null);
 
   const isLocal = typeof window !== 'undefined' && 
@@ -93,24 +97,94 @@ export default function EcosystemAppLauncher({ urls, associationData, className 
     }
   ];
 
+  // Recalcul géométrique précis et clamping strict dans le viewport
+  const updatePosition = useCallback(() => {
+    if (!buttonRef.current || typeof window === 'undefined') return;
+
+    const rect = buttonRef.current.getBoundingClientRect();
+    const screenWidth = window.innerWidth;
+    const screenHeight = window.innerHeight;
+
+    // Largeur adaptative : sur petit smartphone (< 360px), on s'adapte à l'écran avec 16px de marge
+    // Sur grand écran, on conserve une largeur confortable et compacte (300px max)
+    const targetWidth = Math.min(300, Math.max(260, screenWidth - 16));
+
+    // Alignement par défaut sous le bouton à droite
+    let left = rect.right - targetWidth;
+
+    // Clamping strict : le panneau ne doit JAMAIS déborder à gauche (< 8px) ni à droite (> screenWidth - targetWidth - 8px)
+    const minLeft = 8;
+    const maxLeft = Math.max(8, screenWidth - targetWidth - 8);
+    left = Math.max(minLeft, Math.min(left, maxLeft));
+
+    // Calcul de l'espace vertical disponible au-dessus et en dessous
+    const spaceBelow = screenHeight - rect.bottom - 12;
+    const spaceAbove = rect.top - 12;
+
+    let top;
+    let maxHeight;
+
+    if (spaceBelow < 220 && spaceAbove > spaceBelow) {
+      // Espace restreint en bas (ex: smartphone en orientation paysage)
+      maxHeight = Math.min(440, spaceAbove);
+      top = Math.max(8, rect.top - maxHeight - 6);
+    } else {
+      top = rect.bottom + 8;
+      maxHeight = Math.min(460, spaceBelow);
+    }
+
+    setPopoverStyle({
+      position: 'fixed',
+      top: `${Math.round(top)}px`,
+      left: `${Math.round(left)}px`,
+      width: `${Math.round(targetWidth)}px`,
+      maxHeight: `${Math.round(maxHeight)}px`,
+    });
+  }, []);
+
+  // Recalcul en temps réel lors de l'ouverture, du redimensionnement et du défilement
+  useLayoutEffect(() => {
+    if (!isOpen) return;
+
+    updatePosition();
+
+    const handleUpdate = () => {
+      updatePosition();
+    };
+
+    window.addEventListener('resize', handleUpdate);
+    window.addEventListener('scroll', handleUpdate, true);
+
+    return () => {
+      window.removeEventListener('resize', handleUpdate);
+      window.removeEventListener('scroll', handleUpdate, true);
+    };
+  }, [isOpen, updatePosition]);
+
   // Fermeture au clic extérieur et touche Échap
   useEffect(() => {
+    if (!isOpen) return;
+
     function handleClickOutside(event) {
-      if (popoverRef.current && !popoverRef.current.contains(event.target)) {
-        setIsOpen(false);
+      if (buttonRef.current && buttonRef.current.contains(event.target)) {
+        return;
       }
+      if (popoverRef.current && popoverRef.current.contains(event.target)) {
+        return;
+      }
+      setIsOpen(false);
     }
+
     function handleKeyDown(event) {
       if (event.key === 'Escape') {
         setIsOpen(false);
       }
     }
 
-    if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-      document.addEventListener('touchstart', handleClickOutside);
-      document.addEventListener('keydown', handleKeyDown);
-    }
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside);
+    document.addEventListener('keydown', handleKeyDown);
+
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
       document.removeEventListener('touchstart', handleClickOutside);
@@ -139,11 +213,15 @@ export default function EcosystemAppLauncher({ urls, associationData, className 
   };
 
   return (
-    <div className={`relative inline-block ${className}`} ref={popoverRef}>
-      {/* Bouton déclencheur Gaufrier avec cible tactile minimale 40x40 */}
+    <div className={`relative inline-block ${className}`}>
+      {/* Bouton déclencheur Gaufrier avec cible tactile minimale 38x38 */}
       <button
+        ref={buttonRef}
         type="button"
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={() => {
+          if (!isOpen) updatePosition();
+          setIsOpen(!isOpen);
+        }}
         className={`p-2 min-w-[38px] min-h-[38px] border-2 border-encre-noire rounded-[4px_6px_3px_5px] shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] cursor-pointer flex items-center justify-center transition-all select-none ${
           isOpen
             ? 'bg-amber-200 text-encre-noire'
@@ -156,24 +234,26 @@ export default function EcosystemAppLauncher({ urls, associationData, className 
         <CordelGridIcon size={16} />
       </button>
 
-      {/* Popover Écosystème (z-[100] élevé pour survoler les conteneurs et bannières) */}
-      {isOpen && (
+      {/* Popover Écosystème déporté via Portal avec z-[9999] pour survoler tous les conteneurs */}
+      {isOpen && typeof document !== 'undefined' && document.body && createPortal(
         <>
-          {/* Arrière-plan semi-transparent tactile pour fermeture facile sur petit écran */}
+          {/* Arrière-plan semi-transparent tactile pour fermeture rapide sur smartphone */}
           <div
-            className="fixed inset-0 bg-black/25 backdrop-blur-[1px] z-[99] sm:hidden"
+            className="fixed inset-0 bg-black/30 backdrop-blur-xs z-[9998] animate-fade-in"
             onClick={() => setIsOpen(false)}
             aria-hidden="true"
           />
 
           <div 
-            className="absolute right-0 mt-2 w-72 sm:w-80 p-3 bg-cordel-bg border-2 border-encre-noire rounded-[8px_12px_9px_11px] shadow-[3px_3px_0px_0px_#181716] z-[100] text-encre-noire animate-fadeIn select-none"
+            ref={popoverRef}
+            style={popoverStyle}
+            className="fixed p-2.5 sm:p-3 bg-cordel-bg border-2 border-encre-noire rounded-[8px_12px_9px_11px] shadow-[4px_4px_0px_0px_#181716] z-[9999] text-encre-noire animate-scale-up select-none flex flex-col overflow-hidden"
             role="dialog"
             aria-label="Menu des applications"
           >
             {/* En-tête du Popover */}
-            <div className="flex items-center justify-between pb-2 mb-2 border-b-2 border-dashed border-cordel-master-dark/20">
-              <div className="flex items-center gap-1.5 font-black text-xs uppercase tracking-wider text-cordel-wood">
+            <div className="flex items-center justify-between pb-2 mb-2 border-b-2 border-dashed border-cordel-master-dark/20 shrink-0">
+              <div className="flex items-center gap-1.5 font-black text-[11px] sm:text-xs uppercase tracking-wider text-cordel-wood">
                 <CordelGridIcon size={13} />
                 <span>Suite O Girador</span>
               </div>
@@ -187,8 +267,8 @@ export default function EcosystemAppLauncher({ urls, associationData, className 
               </button>
             </div>
 
-            {/* Grille des applications */}
-            <div className="flex flex-col gap-1.5">
+            {/* Grille défilante des applications adaptée aux résolutions compactes */}
+            <div className="flex flex-col gap-1.5 overflow-y-auto pr-0.5 custom-scrollbar">
               {apps.map(app => {
                 const isEnabled = ecosystemAccess[app.key] !== false;
                 const isLaunching = launchingAppKey === app.key;
@@ -197,17 +277,17 @@ export default function EcosystemAppLauncher({ urls, associationData, className 
                   return (
                     <div
                       key={app.key}
-                      className="p-2 border border-dashed border-encre-noire/20 rounded-[5px_7px_4px_6px] bg-neutral-100/60 opacity-50 grayscale cursor-not-allowed flex items-center justify-between"
+                      className="p-1.5 sm:p-2 border border-dashed border-encre-noire/20 rounded-[5px_7px_4px_6px] bg-neutral-100/60 opacity-50 grayscale cursor-not-allowed flex items-center justify-between"
                       title="Module non activé pour votre association"
                     >
-                      <div className="flex items-center gap-2.5">
-                        <img src={app.img} alt={app.label} className="w-6 h-6 object-contain shrink-0" />
-                        <div className="flex flex-col text-left">
-                          <span className="font-extrabold text-[11px] leading-tight text-neutral-600">{app.label}</span>
-                          <span className="text-[9px] text-neutral-500">{app.subtitle}</span>
+                      <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
+                        <img src={app.img} alt={app.label} className="w-5 h-5 sm:w-6 sm:h-6 object-contain shrink-0" />
+                        <div className="flex flex-col text-left truncate">
+                          <span className="font-extrabold text-[10.5px] sm:text-[11px] leading-tight text-neutral-600 truncate">{app.label}</span>
+                          <span className="text-[8.5px] sm:text-[9px] text-neutral-500 truncate">{app.subtitle}</span>
                         </div>
                       </div>
-                      <span className="text-[9px] font-black uppercase tracking-wider text-neutral-400 bg-neutral-200/80 px-1.5 py-0.5 rounded">
+                      <span className="text-[8.5px] sm:text-[9px] font-black uppercase tracking-wider text-neutral-400 bg-neutral-200/80 px-1.5 py-0.5 rounded shrink-0 ml-1">
                         Inactif
                       </span>
                     </div>
@@ -219,17 +299,17 @@ export default function EcosystemAppLauncher({ urls, associationData, className 
                     key={app.key}
                     href={app.url}
                     onClick={(e) => handleLaunchApp(e, app)}
-                    className={`p-2 border-2 border-encre-noire/25 hover:border-encre-noire rounded-[5px_7px_4px_6px] bg-white hover:bg-amber-50/60 transition-all flex items-center justify-between cursor-pointer group shadow-[1px_1px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] ${
+                    className={`p-1.5 sm:p-2 border-2 border-encre-noire/25 hover:border-encre-noire rounded-[5px_7px_4px_6px] bg-white hover:bg-amber-50/60 transition-all flex items-center justify-between cursor-pointer group shadow-[1px_1px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] ${
                       isLaunching ? 'opacity-60 pointer-events-none' : ''
                     }`}
                   >
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <img src={app.img} alt={app.label} className="w-6 h-6 object-contain shrink-0 group-hover:scale-105 transition-transform" />
+                    <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
+                      <img src={app.img} alt={app.label} className="w-5 h-5 sm:w-6 sm:h-6 object-contain shrink-0 group-hover:scale-105 transition-transform" />
                       <div className="flex flex-col text-left truncate">
-                        <span className="font-extrabold text-[11px] leading-tight text-encre-noire group-hover:text-cordel-wood truncate">
+                        <span className="font-extrabold text-[10.5px] sm:text-[11px] leading-tight text-encre-noire group-hover:text-cordel-wood truncate">
                           {app.label}
                         </span>
-                        <span className="text-[9px] text-cordel-master-dark/70 truncate">
+                        <span className="text-[8.5px] sm:text-[9px] text-cordel-master-dark/70 truncate">
                           {app.subtitle}
                         </span>
                       </div>
@@ -237,7 +317,7 @@ export default function EcosystemAppLauncher({ urls, associationData, className 
 
                     <div className="shrink-0 ml-2">
                       {isLaunching ? (
-                        <div className="w-4 h-4 border-2 border-cordel-wood border-t-transparent rounded-full animate-spin" />
+                        <div className="w-3.5 h-3.5 sm:w-4 sm:h-4 border-2 border-cordel-wood border-t-transparent rounded-full animate-spin" />
                       ) : (
                         <span className="text-xs text-cordel-wood font-black opacity-60 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all">
                           ↗
@@ -255,7 +335,7 @@ export default function EcosystemAppLauncher({ urls, associationData, className 
                   onClick={() => {
                     window.location.href = '/demo?app=mostrador';
                   }}
-                  className="mt-1 p-2 border-2 border-encre-noire bg-[var(--color-cordel-vert,#2d6a4f)] text-white rounded-[5px_7px_4px_6px] shadow-[1px_1px_0px_0px_#181716] hover:brightness-110 active:translate-x-[0.5px] active:translate-y-[0.5px] cursor-pointer flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-wider"
+                  className="mt-1 p-1.5 sm:p-2 border-2 border-encre-noire bg-[var(--color-cordel-vert,#2d6a4f)] text-white rounded-[5px_7px_4px_6px] shadow-[1px_1px_0px_0px_#181716] hover:brightness-110 active:translate-x-[0.5px] active:translate-y-[0.5px] cursor-pointer flex items-center justify-center gap-2 text-[9.5px] sm:text-[10px] font-black uppercase tracking-wider shrink-0"
                 >
                   <span>🌍 Voir le site public (Démo)</span>
                   <span>↗</span>
@@ -263,8 +343,10 @@ export default function EcosystemAppLauncher({ urls, associationData, className 
               )}
             </div>
           </div>
-        </>
+        </>,
+        document.body
       )}
     </div>
   );
 }
+

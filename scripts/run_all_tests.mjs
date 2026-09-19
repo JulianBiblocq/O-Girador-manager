@@ -34,7 +34,8 @@ const testScripts = [
   'scripts/test_orders_reconciliation.mjs',
   'scripts/test_in_app_notifications.mjs',
   'scripts/test_treasurer_logistics_permissions.mjs',
-  'scripts/test_sequencer_repertoire_unification.mjs'
+  'scripts/test_sequencer_repertoire_unification.mjs',
+  'scripts/test_responsive_popups_clamping.mjs'
 ];
 
 console.log("===============================================================");
