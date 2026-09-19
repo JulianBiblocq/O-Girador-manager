@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from './LanguageContext';
 import { doc, getDoc, onSnapshot } from 'firebase/firestore';
 import { db, auth } from '../firebase';
 import CordelCard from './CordelCard';
-import MemberExpenseSection from './expenses/MemberExpenseSection';
 import AssociationBankDetailsBox from './treasury/AssociationBankDetailsBox';
 import MemberOrdersPaymentAlert from './orders/MemberOrdersPaymentAlert';
 
@@ -18,7 +18,15 @@ export default function WidgetTreasury({ groupId, profileData, user, currentUser
   const [showSuccessBanner, setShowSuccessBanner] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const paymentStatus = profileData?.paymentStatus || 'unpaid';
+  const rawStatus = profileData?.paymentStatus || 'unpaid';
+  // Détection exhaustive et tolérante de l'exonération de cotisation
+  const isExonere = 
+    rawStatus === 'exempted' || 
+    rawStatus === 'exempt' || 
+    profileData?.isCotisationExoneree === true || 
+    profileData?.cotisationStatus === 'exonere' || 
+    (Array.isArray(profileData?.tags) && profileData.tags.some(t => typeof t === 'string' && t.toLowerCase().includes('exon')));
+  const paymentStatus = isExonere ? 'exempted' : rawStatus;
 
   // Détection du retour de paiement HelloAsso (?payment=success, ?checkout=success...)
   useEffect(() => {
@@ -269,13 +277,6 @@ export default function WidgetTreasury({ groupId, profileData, user, currentUser
         defaultOpen={false}
       />
     </CordelCard>
-
-    {/* Section Notes de frais & Remboursements de l'adhérent */}
-    <MemberExpenseSection
-      groupId={groupId || profileData?.groupId}
-      currentUser={effectiveUser}
-      profileData={profileData}
-    />
   </div>
   );
 }

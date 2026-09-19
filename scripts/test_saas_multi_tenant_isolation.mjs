@@ -29,7 +29,12 @@ function test(name, fn) {
 // -------------------------------------------------------------
 console.log("📌 Module 1 : Étanchéité et règles d'isolation de firestore.rules");
 
-const firestoreRulesPath = path.join(rootDir, 'ogirador-backend', 'firestore.rules');
+const firestoreRulesCandidates = [
+  path.join(rootDir, 'ogirador-backend', 'firestore.rules.DEPRECATED'),
+  path.join(rootDir, 'ogirador-backend', 'firestore.rules'),
+  path.join(rootDir, '..', 'o-girador-orquestrador', 'firestore.rules')
+];
+const firestoreRulesPath = firestoreRulesCandidates.find(p => fs.existsSync(p)) || firestoreRulesCandidates[0];
 assert.ok(fs.existsSync(firestoreRulesPath), "Le fichier ogirador-backend/firestore.rules doit exister");
 const firestoreRulesContent = fs.readFileSync(firestoreRulesPath, 'utf8');
 
@@ -111,7 +116,12 @@ test("Suppression absolue des jokers permissifs résiduels (match /events/{docum
 // -------------------------------------------------------------
 console.log("\n📌 Module 2 : Étanchéité et règles d'isolation de storage.rules");
 
-const storageRulesPath = path.join(rootDir, 'storage.rules');
+const storageRulesCandidates = [
+  path.join(rootDir, 'storage.rules.DEPRECATED'),
+  path.join(rootDir, 'storage.rules'),
+  path.join(rootDir, '..', 'o-girador-orquestrador', 'storage.rules')
+];
+const storageRulesPath = storageRulesCandidates.find(p => fs.existsSync(p)) || storageRulesCandidates[0];
 assert.ok(fs.existsSync(storageRulesPath), "Le fichier storage.rules doit exister");
 const storageRulesContent = fs.readFileSync(storageRulesPath, 'utf8');
 

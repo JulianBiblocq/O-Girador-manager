@@ -15,7 +15,12 @@ console.log("=== Lancement des tests du Centre de Notifications Internes ===");
 
 // 1. Vérification des règles de sécurité Firestore
 console.log("\n[Test 1] Vérification de firestore.rules...");
-const firestoreRulesPath = path.join(rootDir, 'ogirador-backend', 'firestore.rules');
+const firestoreRulesCandidates = [
+  path.join(rootDir, 'ogirador-backend', 'firestore.rules.DEPRECATED'),
+  path.join(rootDir, 'ogirador-backend', 'firestore.rules'),
+  path.join(rootDir, '..', 'o-girador-orquestrador', 'firestore.rules')
+];
+const firestoreRulesPath = firestoreRulesCandidates.find(p => fs.existsSync(p)) || firestoreRulesCandidates[0];
 assert(fs.existsSync(firestoreRulesPath), "Le fichier firestore.rules doit exister");
 const rulesContent = fs.readFileSync(firestoreRulesPath, 'utf8');
 

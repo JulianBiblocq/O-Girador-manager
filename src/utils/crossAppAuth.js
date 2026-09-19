@@ -35,7 +35,7 @@ export async function launchCrossApp(targetUrl, options = {}) {
   let newTab = null;
   if (!forceSameTab) {
     try {
-      newTab = window.open('', '_blank');
+      newTab = window.open('about:blank', '_blank');
       if (newTab) {
         try {
           newTab.document.write(`
@@ -103,7 +103,7 @@ export async function launchCrossApp(targetUrl, options = {}) {
   try {
     const getSSOToken = httpsCallable(functions, 'getCrossAppAuthToken');
     const res = await getSSOToken();
-    const customToken = res.data?.customToken;
+    const customToken = res.data?.token || res.data?.customToken;
 
     const urlObj = new URL(targetUrl, window.location.origin);
     if (customToken) {

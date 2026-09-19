@@ -14,7 +14,7 @@ import { XiloMegaphone } from './XiloIcons';
 import useConfirm from '../hooks/useConfirm';
 import { resolveEffectiveUserTags } from '../utils/tagUtils'; // Utilitaires pour la gestion et la résolution des étiquettes
 import { isUserModeratorOrAdmin, canUserWriteInForumChannel, canUserReadForumChannel, checkUserAccessToList } from '../utils/permissionUtils';
-import { countThreadUnreadMessages, getAllChannelsUnreadStats } from '../utils/forumUnreadUtils';
+import { countThreadUnreadMessages, getAllChannelsUnreadStats, getEffectiveReadThreads, saveLocalAllReadThreads, saveLocalReadThread } from '../utils/forumUnreadUtils';
 import ForumThreadCard from './forum/ForumThreadCard';
 import ConversationCard from './forum/ConversationCard';
 import NewDirectMessageModal from './forum/NewDirectMessageModal';
@@ -22,18 +22,20 @@ import NewGroupModal from './forum/NewGroupModal';
 import { useConversations } from '../hooks/useConversations';
 import useHardwareBack from '../hooks/useHardwareBack';
 
-function ChannelTreeItem({ 
-  channel, 
-  channels, 
+function ChannelTreeItem({
+  channel,
+  channels,
   allThreads = [],
-  activeChannelId, 
-  onSelectChannel, 
+  activeChannelId,
+  onSelectChannel,
   onSelectThread,
   selectedThreadId,
   hasWriteAccess,
   profileData,
+  effectiveReadThreads = {},
+  currentUserId,
   channelStatsMap = {},
-  level = 0 
+  level = 0
 }) {
   const children = channels.filter(c => c.parentId === channel.id);
   const channelThreads = useMemo(() => {
@@ -127,6 +129,8 @@ function ChannelTreeItem({
               selectedThreadId={selectedThreadId}
               hasWriteAccess={hasWriteAccess}
               profileData={profileData}
+              effectiveReadThreads={effectiveReadThreads}
+              currentUserId={currentUserId}
               channelStatsMap={channelStatsMap}
               level={level + 1}
             />
@@ -138,8 +142,8 @@ function ChannelTreeItem({
             const repliesCount = thread.reponses ? thread.reponses.length - 1 : 0;
             const unreadCount = countThreadUnreadMessages(
               thread,
-              profileData?.uid || profileData?.id,
-              profileData?.readThreads?.[thread.id]
+              currentUserId,
+              effectiveReadThreads[thread.id]
             );
             const isUnread = !isThreadActive && unreadCount > 0;
 
@@ -593,9 +597,51 @@ export default function Forum({
   }, [accessibleThreads, activeChannelId, channels]);
 
   // Carte des statistiques de non-lus calculée en cascade pour l'arborescence des salons
+  const currentUserId = user?.uid || profileData?.uid || profileData?.id;
+
+  // Réactivité instantanée : surcharges locales en mémoire pour effacement immédiat des pastilles
+  const [localReadOverrides, setLocalReadOverrides] = useState({});
+
+  useEffect(() => {
+    const handleSingle = (e) => {
+      const { threadId, timestamp } = e.detail || {};
+      if (threadId && timestamp) {
+        setLocalReadOverrides(prev => ({ ...prev, [threadId]: timestamp }));
+      }
+    };
+    const handleAll = (e) => {
+      const { threadIds, timestamp } = e.detail || {};
+      if (Array.isArray(threadIds) && timestamp) {
+        setLocalReadOverrides(prev => {
+          const next = { ...prev };
+          threadIds.forEach(id => { if (id) next[id] = timestamp; });
+          return next;
+        });
+      }
+    };
+
+    window.addEventListener('forum_thread_read', handleSingle);
+    window.addEventListener('forum_all_threads_read', handleAll);
+    return () => {
+      window.removeEventListener('forum_thread_read', handleSingle);
+      window.removeEventListener('forum_all_threads_read', handleAll);
+    };
+  }, []);
+
+  const markThreadAsReadLocally = useCallback((threadId, timeIso = new Date().toISOString()) => {
+    if (!threadId || !currentUserId) return;
+    saveLocalReadThread(currentUserId, threadId, timeIso);
+    setLocalReadOverrides(prev => ({ ...prev, [threadId]: timeIso }));
+  }, [currentUserId]);
+
+  const effectiveReadThreads = useMemo(() => {
+    const base = getEffectiveReadThreads(currentUserId, profileData?.readThreads);
+    return { ...base, ...localReadOverrides };
+  }, [currentUserId, profileData?.readThreads, localReadOverrides]);
+
   const channelStatsMap = useMemo(() => {
-    return getAllChannelsUnreadStats(channels, accessibleThreads, user?.uid, profileData?.readThreads);
-  }, [channels, accessibleThreads, user?.uid, profileData?.readThreads]);
+    return getAllChannelsUnreadStats(channels, accessibleThreads, currentUserId, effectiveReadThreads);
+  }, [channels, accessibleThreads, currentUserId, effectiveReadThreads]);
 
   // Action globale pour acquitter tous les sujets de la section courante
   const handleMarkAllAsRead = useCallback(async () => {
@@ -620,16 +666,18 @@ export default function Forum({
     if (targetThreads.length === 0) return;
 
     const nowIso = new Date().toISOString();
+    saveLocalAllReadThreads(currentUserId, targetThreads.map(t => t.id), nowIso);
+
     const updates = {};
     targetThreads.forEach(t => {
       updates[`readThreads.${t.id}`] = nowIso;
     });
 
     try {
-      const userRef = doc(db, 'users', user.uid);
+      const userRef = doc(db, 'users', currentUserId);
       await updateDoc(userRef, updates);
     } catch (err) {
-      console.error("Erreur lors de l'acquittement global :", err);
+      console.warn("Avertissement lors de l'acquittement global :", err);
     }
   }, [user?.uid, accessibleThreads, activeChannelId, channels]);
 
@@ -799,6 +847,10 @@ export default function Forum({
     previousChannelRef.current = originChannelId !== null ? originChannelId : activeChannelId;
     setSelectedThread(thread);
 
+    if (thread?.id) {
+      markThreadAsReadLocally(thread.id);
+    }
+
     const newUrl = new URL(window.location);
     newUrl.searchParams.set('threadId', thread.id);
     window.history.pushState(
@@ -806,7 +858,7 @@ export default function Forum({
       '',
       newUrl.toString()
     );
-  }, [activeChannelId]);
+  }, [activeChannelId, markThreadAsReadLocally]);
 
   const handleCloseThread = useCallback(() => {
     // 1. Nettoyer l'URL de manière idempotente sans double popstate
@@ -1147,6 +1199,8 @@ export default function Forum({
                     selectedThreadId={selectedThread?.id}
                     hasWriteAccess={hasWriteAccess}
                     profileData={profileData}
+                    effectiveReadThreads={effectiveReadThreads}
+                    currentUserId={currentUserId}
                     channelStatsMap={channelStatsMap}
                     level={0}
                   />
@@ -1258,7 +1312,9 @@ export default function Forum({
                         <ForumThreadCard
                           key={thread.id}
                           thread={thread}
+                          user={user}
                           profileData={profileData}
+                          effectiveReadThreads={effectiveReadThreads}
                           onClick={handleSelectThread}
                           isModeratorOrAdmin={isModeratorOrAdmin}
                           onTogglePin={(id, currentStatus) => togglePinThread(id, currentStatus)}

@@ -14,7 +14,12 @@ const rootDir = path.resolve(__dirname, '..');
 
 console.log("=== Lancement des tests de sécurité Firestore : Notes de Frais ===");
 
-const firestoreRulesPath = path.join(rootDir, 'ogirador-backend', 'firestore.rules');
+const firestoreRulesCandidates = [
+  path.join(rootDir, 'ogirador-backend', 'firestore.rules.DEPRECATED'),
+  path.join(rootDir, 'ogirador-backend', 'firestore.rules'),
+  path.join(rootDir, '..', 'o-girador-orquestrador', 'firestore.rules')
+];
+const firestoreRulesPath = firestoreRulesCandidates.find(p => fs.existsSync(p)) || firestoreRulesCandidates[0];
 assert(fs.existsSync(firestoreRulesPath), "Le fichier ogirador-backend/firestore.rules doit exister");
 const rulesContent = fs.readFileSync(firestoreRulesPath, 'utf8');
 

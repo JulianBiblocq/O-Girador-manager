@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 // 1. Chargement et vérification des utilitaires RBAC frontend
@@ -69,7 +69,12 @@ console.log('  ✅ Profil Admin validé.\n');
 
 // --- TEST 4 : Audit statique des règles Firestore ---
 console.log('▶ Test 4 : Analyse syntaxique de firestore.rules');
-const rulesPath = resolve('ogirador-backend/firestore.rules');
+const rulesCandidates = [
+  resolve('ogirador-backend/firestore.rules.DEPRECATED'),
+  resolve('ogirador-backend/firestore.rules'),
+  resolve('../o-girador-orquestrador/firestore.rules')
+];
+const rulesPath = rulesCandidates.find(p => existsSync(p)) || rulesCandidates[0];
 const rulesContent = readFileSync(rulesPath, 'utf-8');
 
 // Vérification de l'élargissement des tags Trésorier / Secrétaire

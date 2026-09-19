@@ -11,7 +11,7 @@ beforeAll(async () => {
   testEnv = await initializeTestEnvironment({
     projectId: 'demo-ogirador',
     firestore: {
-      rules: fs.readFileSync('firestore.rules', 'utf8'),
+      rules: fs.readFileSync(fs.existsSync('firestore.rules.DEPRECATED') ? 'firestore.rules.DEPRECATED' : 'firestore.rules', 'utf8'),
       host: 'localhost',
       port: 8080,
     },

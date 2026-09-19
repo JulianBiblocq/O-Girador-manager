@@ -1,14 +1,16 @@
 import React from 'react';
 import CordelCard from '../CordelCard';
 import { usePresenceContext } from '../../context/PresenceContext';
-import { countThreadUnreadMessages } from '../../utils/forumUnreadUtils';
+import { countThreadUnreadMessages, getLocalReadThreads } from '../../utils/forumUnreadUtils';
 
 /**
  * Carte de prévisualisation d'un sujet dans le forum.
  *
  * @param {Object} props Propriétés du composant
  * @param {Object} props.thread Données du sujet
+ * @param {Object} props.user Utilisateur connecté
  * @param {Object} props.profileData Profil du membre connecté
+ * @param {Object} [props.effectiveReadThreads] Horodatages effectifs de lecture
  * @param {Function} props.onClick Action d'ouverture de la discussion
  * @param {boolean} props.isModeratorOrAdmin Indique si le membre dispose de droits de modération
  * @param {Function} props.onTogglePin Action d'épinglage
@@ -18,7 +20,9 @@ import { countThreadUnreadMessages } from '../../utils/forumUnreadUtils';
  */
 const ForumThreadCard = React.memo(({
   thread,
+  user,
   profileData,
+  effectiveReadThreads,
   onClick,
   isModeratorOrAdmin,
   onTogglePin,
@@ -37,10 +41,12 @@ const ForumThreadCard = React.memo(({
   const repliesCount = thread.reponses ? thread.reponses.length - 1 : 0;
 
   // Calcul du nombre de messages non lus pour l'utilisateur
+  const currentUserId = user?.uid || profileData?.uid || profileData?.id;
+  const userLastReadDate = effectiveReadThreads?.[thread.id] || profileData?.readThreads?.[thread.id] || getLocalReadThreads(currentUserId)[thread.id];
   const unreadCount = countThreadUnreadMessages(
     thread,
-    profileData?.uid || profileData?.id,
-    profileData?.readThreads?.[thread.id]
+    currentUserId,
+    userLastReadDate
   );
   const isUnread = unreadCount > 0;
 
@@ -52,126 +58,110 @@ const ForumThreadCard = React.memo(({
 
   return (
     <CordelCard 
-      variant={thread.isPinned ? "jaune" : isThreadTargeted ? "jaune" : "default"} 
-      useExtremeBorder={false} 
-      className={`hover:scale-[1.01] transition-all relative pr-20 cursor-pointer select-none text-left ${
-        isThreadTargeted ? 'border-cordel-wood border-2 shadow-[2px_2px_0px_0px_#8b2a1a]' : 'bg-cordel-bg'
-      }`}
+      variant="default"
+      useExtremeBorder={false}
       onClick={() => onClick(thread)}
+      className={`p-3.5 transition-all cursor-pointer relative hover:border-cordel-wood ${
+        isUnread 
+          ? 'bg-cordel-accent-light/15 border-l-4 border-l-cordel-accent-dark font-medium shadow-sm' 
+          : 'bg-cordel-bg'
+      }`}
     >
-      <div className="flex flex-col gap-1 items-start">
-        {thread.isPinned && (
-          <span className="theme-stamp-badge theme-stamp-badge-wood text-[7.5px] uppercase tracking-wider mb-1 flex items-center gap-1">
-            📌 Épinglé
-          </span>
-        )}
-        {isThreadTargeted && (
-          <span className="text-[8px] font-black text-cordel-wood uppercase tracking-wider mb-1 block animate-pulse">
-            🗣️ Concernant votre pupitre / tag ({thread.targetTag})
-          </span>
-        )}
-
-        {/* Categorie & Sondage & Badge Non Lus */}
-        <div className="flex items-center gap-1.5 flex-wrap mb-1">
-          <span className="theme-stamp-badge theme-stamp-badge-dark text-[7px] rotate-0">
-            {thread.categorie || 'Général'}
-          </span>
-          {thread.poll && (
-            <span className="theme-stamp-badge text-[7px] rotate-0 bg-amber-100 dark:bg-amber-950/40 text-amber-900 border-amber-600/40">
-              📊 Sondage {thread.poll.isClosed ? '(Clôturé)' : ''}
-            </span>
-          )}
-          {thread.validationData && (
-            <span className={`theme-stamp-badge text-[7px] rotate-0 font-bold ${
-              thread.validationData.statut === 'approuve'
-                ? 'theme-stamp-badge-vert'
-                : thread.validationData.statut === 'retouche_demandee'
-                ? 'theme-stamp-badge-wood'
-                : 'theme-stamp-badge-ocre'
-            }`}>
-              {thread.validationData.statut === 'approuve' 
-                ? '✅ Validé' 
-                : thread.validationData.statut === 'retouche_demandee'
-                ? '💬 Retouche requise'
-                : '⏳ En attente validation'}
-            </span>
-          )}
-          {isUnread && (
-            <span className="text-[7.5px] font-black text-white bg-red-600 px-1.5 py-0.5 rounded shadow-xs uppercase tracking-wider flex items-center gap-1">
-              <span className="w-1.5 h-1.5 bg-white rounded-full animate-ping"></span>
-              {unreadCount} {unreadCount > 1 ? 'nouveaux' : 'nouveau'}
-            </span>
-          )}
-        </div>
-
-        {/* Titre du sujet */}
-        <h4 className={`text-sm text-encre-noire leading-tight pr-4 ${isUnread ? 'font-black' : 'font-extrabold'}`}>
-          {thread.titre}
-        </h4>
-
-        {/* Métadonnées auteur et date */}
-        <div className="flex items-center gap-1.5 mt-1 text-[10px] font-semibold text-cordel-master-dark/70">
-          <span className="flex items-center gap-1">
-            <span>Par {thread.auteurNom || 'Membre'}</span>
-            {isAuthorOnline && (
-              <span className="relative flex h-2 w-2" title="En ligne">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-600"></span>
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-1.5 flex-wrap mb-1">
+            {thread.isPinned && (
+              <span className="text-[10px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-amber-100 text-amber-900 border border-amber-300">
+                📌 {t('forum.pinned', "Épinglé")}
               </span>
             )}
-          </span>
-          <span>•</span>
-          <span>Le {formattedDate}</span>
+            
+            {thread.channelId ? (
+              <span className="text-[10px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-cordel-bg-light text-cordel-wood border border-cordel-wood/30">
+                📁 {thread.channelName || thread.categorie || 'Salon'}
+              </span>
+            ) : thread.categorie && (
+              <span className="text-[10px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-cordel-bg-light text-cordel-wood border border-cordel-wood/30">
+                {thread.categorie}
+              </span>
+            )}
+
+            {isThreadTargeted && (
+              <span className="text-[10px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-cordel-accent/20 text-cordel-wood border border-cordel-accent">
+                🎯 {thread.targetTag}
+              </span>
+            )}
+
+            {isUnread && (
+              <span className="text-[10px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-cordel-accent text-cordel-master-light animate-pulse">
+                {unreadCount > 1 
+                  ? `${unreadCount} ${t('forum.newRepliesBadge', "nouveaux messages")}`
+                  : t('forum.newReplyBadge', "Nouveau message")}
+              </span>
+            )}
+          </div>
+
+          <h3 className={`text-sm tracking-tight truncate ${isUnread ? 'font-black text-cordel-master-dark' : 'font-bold text-cordel-wood'}`}>
+            {thread.titre}
+          </h3>
+
+          <div className="flex items-center gap-3 mt-2 text-[11px] opacity-75">
+            <span className="flex items-center gap-1">
+              <span 
+                className={`w-2 h-2 rounded-full inline-block ${
+                  isAuthorOnline ? 'bg-emerald-500 shadow-sm' : 'bg-cordel-wood/40'
+                }`} 
+                title={isAuthorOnline ? t('forum.userOnline', "En ligne") : t('forum.userOffline', "Hors-ligne")}
+              />
+              <span className="font-semibold truncate max-w-[120px]">{thread.auteurNom || 'Anonyme'}</span>
+            </span>
+            <span>•</span>
+            <span>{formattedDate}</span>
+            <span>•</span>
+            <span className="font-semibold">
+              💬 {repliesCount} {repliesCount > 1 ? t('forum.repliesCountPlural', "réponses") : t('forum.repliesCountSingular', "réponse")}
+            </span>
+            {thread.poll && (
+              <>
+                <span>•</span>
+                <span className="font-semibold text-cordel-wood">📊 {t('forum.pollBadge', "Sondage")}</span>
+              </>
+            )}
+          </div>
         </div>
 
-        {/* Commandes rapides de modération */}
         {isModeratorOrAdmin && (
-          <div className="flex items-center gap-1.5 mt-2 pt-1.5 border-t border-dashed border-cordel-master-dark/15 w-full">
+          <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
             <button
               type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onTogglePin(thread.id, thread.isPinned);
-              }}
-              className="text-[9px] font-bold px-1.5 py-0.5 bg-cordel-bg-light border border-cordel-master-dark/20 rounded hover:bg-white cursor-pointer"
-              title={thread.isPinned ? "Désépingler" : "Épingler"}
+              onClick={() => onTogglePin(thread.id, thread.isPinned)}
+              title={thread.isPinned ? t('forum.unpin', "Désépingler") : t('forum.pin', "Épingler")}
+              className={`p-1 rounded text-xs transition-colors ${
+                thread.isPinned 
+                  ? 'text-amber-800 bg-amber-100 hover:bg-amber-200' 
+                  : 'opacity-40 hover:opacity-100 hover:bg-cordel-bg-light'
+              }`}
             >
-              📌 {thread.isPinned ? 'Désépingler' : 'Épingler'}
+              📌
             </button>
             <button
               type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onMoveThread(thread);
-              }}
-              className="text-[9px] font-bold px-1.5 py-0.5 bg-cordel-bg-light border border-cordel-master-dark/20 rounded hover:bg-white cursor-pointer"
-              title="Déplacer vers un autre salon"
+              onClick={() => onMoveThread(thread)}
+              title={t('forum.move', "Déplacer")}
+              className="p-1 rounded text-xs opacity-40 hover:opacity-100 hover:bg-cordel-bg-light transition-colors"
             >
-              🚚 Déplacer
+              📁
             </button>
             <button
               type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onDeleteThread(thread);
-              }}
-              className="text-[9px] font-bold px-1.5 py-0.5 bg-[var(--theme-primary)]/10 hover:bg-[var(--theme-primary)] text-[var(--theme-primary)] hover:text-white border border-[var(--theme-primary)]/30 rounded cursor-pointer transition-colors"
-              title="Supprimer le sujet"
+              onClick={() => onDeleteThread(thread)}
+              title={t('forum.delete', "Supprimer")}
+              className="p-1 rounded text-xs opacity-40 hover:opacity-100 hover:text-red-700 hover:bg-red-50 transition-colors"
             >
               🗑️
             </button>
           </div>
         )}
-      </div>
-
-      {/* Badge du nombre de réponses */}
-      <div className="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col items-center justify-center">
-        <div className="w-8 h-8 bg-cordel-bg-light border-2 border-encre-noire flex items-center justify-center font-black text-xs rounded-full shadow-[2px_2px_0px_0px_#181716]">
-          {repliesCount}
-        </div>
-        <span className="text-[7px] font-extrabold uppercase mt-1 tracking-wider opacity-60">
-          {repliesCount > 1 ? 'réponses' : 'réponse'}
-        </span>
       </div>
     </CordelCard>
   );

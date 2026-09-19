@@ -1030,24 +1030,72 @@ export default function App() {
             if (docSnap.exists()) {
               const data = docSnap.data();
               const canonicalGroup = canonicalizeGroupId(data.groupId);
-              const migration = getMigratedRoleAndTags(data);
 
-              // Auto-guérison de la casse de groupId dans Firestore si nécessaire
-              if (data.groupId && data.groupId !== canonicalGroup) {
-                updateDoc(profileRef, { groupId: canonicalGroup }).catch(err => console.error("App - Erreur auto-heal groupId :", err));
+              // 1. Court-circuit Fondateur / Super-Admin
+              const isFounderOrSuperAdmin = docSnap.id === 'iA0SweEHyOPzAPGIDVZdeKAV2mk1' || data.isSystemAdmin === true || data.role === 'super-admin';
+
+              // 2. Fusion strictement additive des tags pour TOUS les utilisateurs
+              const existingTags = Array.isArray(data.tags) ? data.tags : [];
+              const migration = getMigratedRoleAndTags(data);
+              const mergedTags = Array.from(new Set([...existingTags, ...(migration.newTags || [])]));
+
+              // Si le profil était déjà exonéré, préserver absolument le statut :
+              const isExonere = existingTags.includes('Exonéré') ||
+                                data.cotisationStatus === 'exonere' ||
+                                data.paymentStatus === 'exempt' ||
+                                data.paymentStatus === 'exempted' ||
+                                data.isCotisationExoneree === true;
+              if (isExonere && !mergedTags.includes('Exonéré')) {
+                mergedTags.push('Exonéré');
               }
 
-              if (migration.needsMigration) {
+              // Si Fondateur / Super-Admin : garantir l'ensemble des tags de gouvernance
+              if (isFounderOrSuperAdmin) {
+                const requiredFounderTags = [
+                  'Mestre', 'Direction', 'Bureau', 'CA', 'Exonéré', 
+                  'Fondateur', 'Logistique', 'Comptes-Rendus', 'Secrétariat'
+                ];
+                requiredFounderTags.forEach(t => {
+                  if (!mergedTags.includes(t)) mergedTags.push(t);
+                });
+              }
+
+              // Détermination du rôle résolu
+              const resolvedRole = isFounderOrSuperAdmin ? (data.role || 'mestre') : (migration.needsMigration ? migration.newRole : data.role);
+
+              // 3. Injection immédiate dans le state React (zéro latence)
+              setProfileData({
+                uid: docSnap.id,
+                id: docSnap.id,
+                ...data,
+                groupId: canonicalGroup || data.groupId,
+                role: resolvedRole,
+                tags: mergedTags,
+                isSystemAdmin: isFounderOrSuperAdmin ? true : Boolean(data.isSystemAdmin),
+                canViewAll: isFounderOrSuperAdmin ? true : Boolean(data.canViewAll),
+                paymentStatus: (isFounderOrSuperAdmin || isExonere) ? 'exempt' : (data.paymentStatus || 'unpaid'),
+                cotisationStatus: (isFounderOrSuperAdmin || isExonere) ? 'exonere' : (data.cotisationStatus || 'non_payee'),
+                isCotisationExoneree: (isFounderOrSuperAdmin || isExonere) ? true : Boolean(data.isCotisationExoneree)
+              });
+              setProfileExists(true);
+
+              // 4. Auto-guérison de la casse de groupId en arrière-plan (non-bloquant)
+              if (data.groupId && data.groupId !== canonicalGroup && canonicalGroup) {
+                updateDoc(profileRef, { groupId: canonicalGroup }).catch(err => {
+                  console.warn("App - Avertissement auto-heal groupId (non-bloquant) :", err);
+                });
+              }
+
+              // 5. Migration des rôles et tags en arrière-plan (non-bloquant)
+              // STRICTEMENT DÉSACTIVÉ pour le Fondateur / Super-Admin afin d'éviter tout écrasement descendant
+              if (!isFounderOrSuperAdmin && migration.needsMigration) {
                 updateDoc(profileRef, {
                   role: migration.newRole,
-                  tags: migration.newTags
-                }).catch(err => console.error("App - Erreur migration profil utilisateur :", err));
-
-                setProfileData({ uid: docSnap.id, id: docSnap.id, ...data, groupId: canonicalGroup, role: migration.newRole, tags: migration.newTags });
-              } else {
-                setProfileData({ uid: docSnap.id, id: docSnap.id, ...data, groupId: canonicalGroup });
+                  tags: mergedTags
+                }).catch(err => {
+                  console.warn("App - Avertissement migration profil utilisateur (non-bloquant) :", err);
+                });
               }
-              setProfileExists(true);
             } else {
               setProfileData(null);
               setProfileExists(false);
@@ -1103,8 +1151,9 @@ export default function App() {
   // Interception ProtectedRoutes : si le membre standard tente d'accéder à un pôle ou onglet réservé
   useEffect(() => {
     if (!profileData || profileData.isNew) return;
-    // Si l'utilisateur est Mestre (ou direction/admin) et navigue vers le pôle mestre, l'accès est garanti d'office
-    if (currentPole === 'mestre' && (profileData.role === 'mestre' || profileData.role === 'super-admin' || profileData.role === 'admin' || profileData.isSystemAdmin)) {
+    // Si l'utilisateur est Mestre (ou direction/admin) et navigue vers le pôle mestre ou config, l'accès est garanti d'office
+    const isPrivilegedUser = profileData.role === 'mestre' || profileData.role === 'super-admin' || profileData.role === 'admin' || profileData.isSystemAdmin === true || profileData.uid === 'iA0SweEHyOPzAPGIDVZdeKAV2mk1';
+    if ((currentPole === 'mestre' || currentPole === 'config' || currentPole === null) && isPrivilegedUser) {
       return;
     }
     if (currentPole && currentPole !== 'accueil' && currentPole !== 'mon-espace') {
@@ -1359,7 +1408,7 @@ export default function App() {
     canAccessMestre(profileData, permissionsMatrice, userTags);
   const hasAccessPedagogie = isMasterKeyActive || canAccessPole('pedagogie', profileData, permissionsMatrice, userTags) || checkTabAccess('mestre-pedagogy-dashboard', 'pedagogie') || checkTabAccess('varal-manager', 'pedagogie') || checkTabAccess('mestre-pedagogy-qcm', 'pedagogie');
   const hasAccessVitrine = isMasterKeyActive || checkTabAccess('vitrine-general', 'vitrine') || checkTabAccess('vitrine-editor', 'vitrine');
-  const hasAccessConfig = isMasterKeyActive || checkTabAccess('config-identity', 'config') || checkTabAccess('config-security', 'config') || checkTabAccess('config-layout', 'config') || checkTabAccess('config-member-layout', 'config') || checkTabAccess('config-profile', 'config') || checkTabAccess('config-modules', 'config') || checkTabAccess('config-tambours', 'config');
+  const hasAccessConfig = isSystemOrSuperAdminOrMestre || isMasterKeyActive || checkTabAccess('config-identity', 'config') || checkTabAccess('config-security', 'config') || checkTabAccess('config-layout', 'config') || checkTabAccess('config-member-layout', 'config') || checkTabAccess('config-profile', 'config') || checkTabAccess('config-modules', 'config') || checkTabAccess('config-tambours', 'config');
   const hasAccessForumMod = isMasterKeyActive || userTags.some(t => ['Modérateur', 'Modérateur Forum', 'Gestionnaire Porte-voix', 'Porte-voix'].includes(t));
 
   // Fonction utilitaire pour nettoyer les paramètres d'URL (ex: threadId, eventId) lors des navigations

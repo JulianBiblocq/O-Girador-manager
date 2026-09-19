@@ -297,7 +297,7 @@ export default function Dashboard({
                     Payé
                   </span>
                 )}
-                {profileData?.paymentStatus === 'exempted' && (
+                {(profileData?.paymentStatus === 'exempted' || profileData?.paymentStatus === 'exempt' || profileData?.isCotisationExoneree === true || profileData?.cotisationStatus === 'exonere' || (Array.isArray(profileData?.tags) && profileData.tags.some(t => typeof t === 'string' && t.toLowerCase().includes('exon')))) && (
                   <span className="theme-stamp-badge theme-stamp-badge-wood bg-blue-100 text-blue-800 dark:bg-blue-950/20 dark:text-blue-400 border-blue-700/35 uppercase text-[7px] font-black tracking-wider px-1.5 py-0.2 shrink-0 scale-90 rotate-[-1deg]">
                     Exonéré
                   </span>
@@ -447,11 +447,18 @@ export default function Dashboard({
               return null;
           }
 
-          // Conditional hiding for non-administrators
+          // Masquage strict du widget trésorerie/cotisation si le membre est à jour ou exonéré
           if (widgetId === 'tresorerie') {
             const status = profileData?.paymentStatus || 'unpaid';
+            const isExonere = 
+              status === 'exempted' || 
+              status === 'exempt' || 
+              profileData?.isCotisationExoneree === true || 
+              profileData?.cotisationStatus === 'exonere' || 
+              (Array.isArray(profileData?.tags) && profileData.tags.some(t => typeof t === 'string' && t.toLowerCase().includes('exon')));
+            const isAJour = status === 'paid';
             const isReturnFromPayment = typeof window !== 'undefined' && window.location.search.includes('payment=success');
-            if ((status === 'paid' || status === 'exempted') && !isReturnFromPayment) {
+            if ((isAJour || isExonere) && !isReturnFromPayment) {
               return null;
             }
           }

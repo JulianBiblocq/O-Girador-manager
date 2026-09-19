@@ -6,7 +6,7 @@ import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase';
 import { isDemoMode } from '../demo/demoManager';
 
-const API_URL = import.meta.env.VITE_OGIRADOR_HUB_API_URL;
+const API_URL = import.meta.env.VITE_OGIRADOR_HUB_API_URL || import.meta.env.VITE_OGIRADOR_HUB_URL;
 const API_KEY = import.meta.env.VITE_OGIRADOR_HUB_API_KEY || 'o-girador-telemetry-secret-key-2026';
 
 let sessionStartTime = null;

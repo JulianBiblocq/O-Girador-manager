@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { doc, onSnapshot, updateDoc, arrayUnion, collection, addDoc, runTransaction, getDoc } from 'firebase/firestore';
 import { db } from '../firebase';
-import { getFirstUnreadIndex } from '../utils/forumUnreadUtils';
+import { getFirstUnreadIndex, toTimestamp, getLocalReadThreads, saveLocalReadThread } from '../utils/forumUnreadUtils';
 import { useForumModeration } from './useForumModeration';
 import { getTagId, resolveEffectiveUserTags } from '../utils/tagUtils';
 import {
@@ -215,11 +215,13 @@ export function useThreadData({
 
   // Mémorisation de la date de dernière lecture initiale lors du premier affichage
   useEffect(() => {
-    if (threadId && user?.uid && !initialSetRef.current) {
+    const currentUserId = user?.uid || profileData?.uid || profileData?.id;
+    if (threadId && currentUserId && !initialSetRef.current) {
       initialSetRef.current = true;
-      setInitialLastRead(profileData?.readThreads?.[threadId] || null);
+      const local = getLocalReadThreads(currentUserId);
+      setInitialLastRead(profileData?.readThreads?.[threadId] || local[threadId] || null);
     }
-  }, [threadId, user?.uid, profileData?.readThreads]);
+  }, [threadId, user?.uid, profileData?.uid, profileData?.id, profileData?.readThreads]);
 
   // Écoute en temps réel de la discussion
   useEffect(() => {
@@ -243,31 +245,39 @@ export function useThreadData({
 
   // Repère du premier message non-lu
   const firstUnreadIdx = useMemo(() => {
-    if (!thread || !user?.uid) return -1;
-    return getFirstUnreadIndex(thread, user.uid, initialLastRead);
-  }, [thread, user, initialLastRead]);
+    const currentUserId = user?.uid || profileData?.uid || profileData?.id;
+    if (!thread || !currentUserId) return -1;
+    return getFirstUnreadIndex(thread, currentUserId, initialLastRead);
+  }, [thread, user?.uid, profileData?.uid, profileData?.id, initialLastRead]);
 
   // Marquage automatique comme lu lorsque le sujet est ouvert
   useEffect(() => {
-    if (thread && user?.uid) {
+    const currentUserId = user?.uid || profileData?.uid || profileData?.id || auth?.currentUser?.uid;
+    const currentThreadId = thread?.id || threadId;
+    if (thread && currentUserId && currentThreadId) {
       const modStr = thread.derniereModification || thread.dateCreation;
       if (!modStr) return;
 
-      const threadLastMod = new Date(modStr).getTime();
-      const userLastReadStr = profileData?.readThreads?.[thread.id];
-      const userLastRead = userLastReadStr ? new Date(userLastReadStr).getTime() : 0;
+      const threadLastMod = toTimestamp(modStr);
+      const localReads = getLocalReadThreads(currentUserId);
+      const userLastReadStr = profileData?.readThreads?.[currentThreadId] || localReads[currentThreadId];
+      const userLastRead = toTimestamp(userLastReadStr);
 
-      if (threadLastMod > userLastRead) {
-        const now = Date.now();
-        const safeReadTime = new Date(Math.max(now, threadLastMod + 1000)).toISOString();
+      const now = Date.now();
+      const safeReadTime = new Date(Math.max(now, threadLastMod + 1000)).toISOString();
 
-        const userRef = doc(db, 'users', user.uid);
+      // 1. Sauvegarde locale synchrone immédiate (zéro latence)
+      saveLocalReadThread(currentUserId, currentThreadId, safeReadTime);
+
+      // 2. Sauvegarde Firestore distante
+      if (!userLastRead || threadLastMod >= userLastRead) {
+        const userRef = doc(db, 'users', currentUserId);
         updateDoc(userRef, {
-          [`readThreads.${thread.id}`]: safeReadTime
-        }).catch((err) => console.error("useThreadData - Erreur mise à jour lecture:", err));
+          [`readThreads.${currentThreadId}`]: safeReadTime
+        }).catch((err) => console.warn("useThreadData - Avertissement mise à jour lecture:", err));
       }
     }
-  }, [thread, user, profileData?.readThreads]);
+  }, [thread, user, threadId, profileData?.readThreads]);
 
   // Gestion du défilement initial vers le séparateur ou le bas
   useEffect(() => {

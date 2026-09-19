@@ -100,7 +100,8 @@ console.log('✅ Test 5 validé : Ciblage de salon robuste et non bloquant.');
 
 // Test 6 : Vérification de la configuration des règles Firestore
 console.log('\n--- Test 6 : Contrôle de syntaxe et règles Firestore ---');
-const firestoreRules = fs.readFileSync('ogirador-backend/firestore.rules', 'utf8');
+const rulesFile = ['ogirador-backend/firestore.rules.DEPRECATED', 'ogirador-backend/firestore.rules', '../o-girador-orquestrador/firestore.rules'].find(p => fs.existsSync(p));
+  const firestoreRules = fs.readFileSync(rulesFile, 'utf8');
 assert(firestoreRules.includes('statutPublication'), 'Les règles doivent référencer statutPublication');
 assert(firestoreRules.includes('publicationTexte'), 'Les règles doivent référencer publicationTexte');
 assert(firestoreRules.includes("request.resource.data.statutPublication == 'en_attente'"), 'La soumission doit être limitée au statut en_attente pour les membres standard');

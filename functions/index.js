@@ -932,8 +932,9 @@ exports.approveQrSession = onCall(async (request) => {
 
 /**
  * Cloud Function HTTPS Callable (v2) : getCrossAppAuthToken
- * Permet à un utilisateur authentifié de forger un jeton personnalisé Firebase (customToken)
- * pour réaliser un Single Sign-On (SSO) transparent vers une autre application de la suite O Girador.
+ * Permet à un utilisateur connecté de forger un jeton d'authentification personnalisé (customToken)
+ * enrichi avec ses revendications (role, groupId, displayName) pour naviguer de façon fluide et
+ * transparente entre les applications de la suite O Girador sans rupture de session (SSO Cross-App).
  */
 exports.getCrossAppAuthToken = onCall({ cors: true }, async (request) => {
   const authData = request.auth || (request.context && request.context.auth);
@@ -947,13 +948,45 @@ exports.getCrossAppAuthToken = onCall({ cors: true }, async (request) => {
   const uid = authData.uid;
 
   try {
-    const customToken = await getAuth().createCustomToken(uid);
-    return { customToken };
+    let role = 'membre';
+    let groupId = '';
+    let displayName = authData.token?.name || '';
+
+    // 1. Récupération du profil Firestore de l'utilisateur
+    try {
+      const userDoc = await getFirestore().collection("users").doc(uid).get();
+      if (userDoc.exists) {
+        const userData = userDoc.data() || {};
+        role = userData.role || role;
+        groupId = userData.groupId || '';
+        displayName = userData.displayName || `${userData.prenom || ''} ${userData.nom || ''}`.trim() || displayName;
+      }
+    } catch (profileErr) {
+      console.warn(`[SSO] Avertissement: Impossible d'accéder au profil Firestore pour ${uid} :`, profileErr);
+    }
+
+    // 2. Constitution des revendications personnalisées
+    const customClaims = {
+      role: role,
+      groupId: typeof groupId === 'string' ? groupId.trim().toLowerCase() : (groupId || ''),
+    };
+    if (displayName) {
+      customClaims.displayName = displayName;
+    }
+
+    // 3. Forge du jeton sécurisé via Firebase Admin SDK
+    const customToken = await getAuth().createCustomToken(uid, customClaims);
+
+    return {
+      success: true,
+      token: customToken,
+      customToken: customToken
+    };
   } catch (error) {
-    console.error("Erreur lors de la création du customToken SSO pour l'UID " + uid + " :", error);
+    console.error(`[SSO] Erreur lors de la création du customToken pour l'UID ${uid} :`, error);
     throw new HttpsError(
       "internal",
-      "Impossible de forger le jeton d'authentification SSO."
+      `Impossible de forger le jeton d'authentification SSO : ${error.message || error}`
     );
   }
 });

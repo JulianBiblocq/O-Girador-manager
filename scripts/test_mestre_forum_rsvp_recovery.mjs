@@ -27,7 +27,12 @@ console.log("  ✅ [PASS] Normalisation canonique et comparaison insensible à l
 
 // 2. Test ogirador-backend/firestore.rules
 console.log("\n📌 Module 2 : Audit des règles de sécurité Firestore");
-const rulesPath = path.join(rootDir, 'ogirador-backend', 'firestore.rules');
+const rulesCandidates = [
+  path.join(rootDir, 'ogirador-backend', 'firestore.rules.DEPRECATED'),
+  path.join(rootDir, 'ogirador-backend', 'firestore.rules'),
+  path.join(rootDir, '..', 'o-girador-orquestrador', 'firestore.rules')
+];
+const rulesPath = rulesCandidates.find(p => fs.existsSync(p)) || rulesCandidates[0];
 const rulesContent = fs.readFileSync(rulesPath, 'utf8');
 
 // Forum paternity bilingue

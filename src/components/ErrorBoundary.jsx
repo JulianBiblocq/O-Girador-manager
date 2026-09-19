@@ -15,35 +15,46 @@ export default class ErrorBoundary extends React.Component {
   sendTelemetry = (errorType, error, errorInfo = null) => {
     try {
       const payload = {
-        type: 'crash',
-        errorType,
-        message: error?.message || String(error),
-        stack: error?.stack || null,
-        componentStack: errorInfo?.componentStack || null,
-        context: {
+        collectionType: 'crash',
+        data: {
+          appId: 'organizador',
+          type: errorType,
+          errorType,
+          errorMessage: error?.message || String(error),
+          stackTrace: error?.stack || null,
+          componentStack: errorInfo?.componentStack || null,
+          route: window.location.pathname,
           pageUrl: window.location.href,
           appVersion: import.meta.env.VITE_APP_VERSION || 'N/A',
           userAgent: navigator.userAgent
         },
+        // Fallback rétrocompatible
+        type: 'crash',
+        message: error?.message || String(error),
+        stack: error?.stack || null,
         timestamp: new Date().toISOString()
       };
 
       const hubUrl = import.meta.env.VITE_OGIRADOR_HUB_URL || import.meta.env.VITE_ECOSYSTEM_HUB_URL;
+      const apiKey = import.meta.env.VITE_OGIRADOR_HUB_API_KEY || 'o-girador-telemetry-secret-key-2026';
       if (!hubUrl) return;
 
+      const headers = {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey
+      };
+
       if (navigator.sendBeacon) {
-        // Blob is required for sendBeacon to définir application/json content type correctly if accepted by server, 
-        // but text/plain is safer for CORS. We'll use récupérer with keepalive as primary since it supports headers.
         fetch(hubUrl, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers,
           body: JSON.stringify(payload),
           keepalive: true
         }).catch(() => {});
       } else {
         fetch(hubUrl, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers,
           body: JSON.stringify(payload)
         }).catch(() => {});
       }
