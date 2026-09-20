@@ -379,6 +379,15 @@ export const SETTINGS_INDEX = [
   // 8. STUDIO & COMMUNICATION
   // ==========================================
   {
+    id: 'studio-annonces',
+    title: 'Le Mégaphone (Annonces)',
+    description: 'Publication des annonces officielles et communications prioritaires sur le tableau de bord',
+    keywords: ['megaphone', 'mégaphone', 'annonces', 'communication', 'ca', 'moderateur', 'modérateur', 'dashboard', 'accueil'],
+    poleId: 'studio',
+    tabId: 'annonces-publish',
+    requiredPole: 'studio'
+  },
+  {
     id: 'studio-social',
     title: 'Studio Social & Réseaux',
     description: 'Publications, kit de communication, visuels et calendrier éditorial',

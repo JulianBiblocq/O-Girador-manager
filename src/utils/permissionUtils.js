@@ -382,6 +382,7 @@ export const TAB_TO_POLE_MAP = {
   'ca-prestations': 'gouvernance',
 
   // Studio
+  'annonces-publish': 'studio',
   'studio-social': 'studio',
   'studio-lexique': 'studio',
   newsletter: 'studio',
@@ -940,4 +941,68 @@ export function canValidateWorkshop(profileData, permissionsMatrice = null, effe
   ];
 
   return userTagsList.some(ut => DEFAULT_WORKSHOP_KEYWORDS.some(kw => matchesAllowedKeyword(ut, kw)));
+}
+
+/**
+ * Vérifie si l'utilisateur possède les droits de rédaction et de publication pour le Mégaphone (Annonces).
+ *
+ * @param {Object} profileData Profil de l'utilisateur
+ * @param {Object} permissionsMatrice Matrice des permissions de l'association
+ * @param {Array} effectiveUserTags Liste effective des étiquettes du membre
+ * @param {boolean} breakGlassActive Mode intervention d'urgence actif
+ * @returns {boolean} true si le membre peut publier des annonces
+ */
+export function canPublishAnnonces(profileData, permissionsMatrice = null, effectiveUserTags = [], breakGlassActive = false) {
+  if (!profileData) return false;
+
+  // 1. Mode Intervention (Break-Glass) : Passe-partout complet pour Super-Admin
+  if (breakGlassActive && isSuperAdminProfile(profileData)) {
+    return true;
+  }
+
+  // 2. Administrateur système technique
+  if (profileData.isSystemAdmin === true) {
+    return true;
+  }
+
+  // 3. Rôles directeurs par défaut (Mestre, Super-Admin, Admin ou Bureau)
+  const systemRole = (profileData.role || '').toLowerCase();
+  if (
+    systemRole === 'mestre' ||
+    systemRole === 'super-admin' ||
+    systemRole === 'admin' ||
+    systemRole === 'bureau' ||
+    profileData.uid === 'iA0SweEHyOPzAPGIDVZdeKAV2mk1' ||
+    profileData.id === 'iA0SweEHyOPzAPGIDVZdeKAV2mk1'
+  ) {
+    return true;
+  }
+
+  // 4. Liste des étiquettes effectives de l'utilisateur
+  const userTagsList = (
+    effectiveUserTags && effectiveUserTags.length > 0
+      ? effectiveUserTags
+      : profileData.tags || []
+  )
+    .map(t => (typeof t === 'string' ? t.toLowerCase().trim() : (t.id || t.nomM || t.nomF || '').toLowerCase().trim()))
+    .filter(t => t !== 'super-admin' && t !== 'superadmin');
+
+  // 5. Vérification dans la matrice des permissions configurées par l'association
+  if (permissionsMatrice && typeof permissionsMatrice === 'object') {
+    const configuredTags = (
+      permissionsMatrice['annonces-publish'] ||
+      permissionsMatrice['annonces'] ||
+      []
+    ).map(t =>
+      (typeof t === 'string' ? t.toLowerCase().trim() : (t.id || t.nomM || t.nomF || '').toLowerCase().trim())
+    );
+
+    if (configuredTags.length > 0) {
+      if (userTagsList.some(ut => configuredTags.includes(ut))) {
+        return true;
+      }
+    }
+  }
+
+  return false;
 }

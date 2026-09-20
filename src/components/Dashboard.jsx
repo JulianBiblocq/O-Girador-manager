@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { doc, onSnapshot, collection, query, where } from 'firebase/firestore';
 import { db } from '../firebase';
 import { lazyWithRetry } from '../utils/pwaUtils';
@@ -19,6 +19,8 @@ import { useTranslation } from './LanguageContext';
 import { useTerminologie } from '../hooks/useTerminologie';
 import InstrumentReminderBanner from './dashboard/InstrumentReminderBanner';
 import { usePresenceContext } from '../context/PresenceContext';
+import { canPublishAnnonces } from '../utils/permissionUtils';
+import { resolveEffectiveUserTags } from '../utils/tagUtils';
 
 export default function Dashboard({ 
   user, 
@@ -42,6 +44,15 @@ export default function Dashboard({
     profileData?.role === 'super-admin' || 
     profileData?.role === 'mestre'
   );
+
+  // Résolution des étiquettes effectives et calcul des droits de publication au Mégaphone (Annonces)
+  const effectiveUserTags = useMemo(() => {
+    return resolveEffectiveUserTags(profileData?.tags || [], tagsDisponibles);
+  }, [profileData?.tags, tagsDisponibles]);
+
+  const canUserPublishAnnonces = useMemo(() => {
+    return canPublishAnnonces(profileData, _permissionsMatrice, effectiveUserTags, breakGlassActive);
+  }, [profileData, _permissionsMatrice, effectiveUserTags, breakGlassActive]);
 
   const [layout, setLayout] = useState(["motMestre", "annonces", "agenda", "commandes", "forum", "documents", "tresorerie", "anniversaires"]);
   const [agendaFocusMode, setAgendaFocusMode] = useState(false);
@@ -357,6 +368,10 @@ export default function Dashboard({
                   isSystemAdmin={profileData?.isSystemAdmin} 
                   user={user}
                   onNavigateToView={onNavigateToView}
+                  permissionsMatrice={_permissionsMatrice}
+                  canPublish={canUserPublishAnnonces}
+                  breakGlassActive={breakGlassActive}
+                  userTags={effectiveUserTags}
                 />
               );
               break;
@@ -467,7 +482,7 @@ export default function Dashboard({
             if (widgetId === 'motMestre' && (!motDuMestre || !motDuMestre.trim())) {
               return null;
             }
-            if (widgetId === 'annonces' && !hasActiveAnnouncements) {
+            if (widgetId === 'annonces' && !hasActiveAnnouncements && !canUserPublishAnnonces) {
               return null;
             }
             if (widgetId === 'commandes' && !hasOpenCampaign) {

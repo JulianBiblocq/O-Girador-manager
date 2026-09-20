@@ -104,6 +104,13 @@ const PERMISSION_POLES = [
     label: 'Studio',
     desc: 'Communication externe, réseaux sociaux, newsletter et Varal photos',
     tabs: [
+      { 
+        id: 'annonces-publish', 
+        label: '📢 Le Mégaphone (Annonces)', 
+        desc: "Autorise à rédiger, publier et gérer les annonces officielles sur le tableau de bord (ex: CA, Modérateur, Communication)",
+        labelKey: 'permAnnoncesPublish',
+        descKey: 'permAnnoncesPublishDesc'
+      },
       { id: 'studio-social', label: 'Studio social', desc: 'Gestion et publication sur les réseaux sociaux' },
       { id: 'newsletter', label: 'Newsletter', desc: 'Création et envoi de newsletters' },
       { id: 'studio-communication', label: 'Communication & Brevo', desc: 'Clés Brevo API, DNS, newsletter et export des inscrits (CSV)' },

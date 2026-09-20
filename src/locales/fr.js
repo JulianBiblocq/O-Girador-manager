@@ -924,6 +924,8 @@ export const fr = {
     tabWorkshopTools: "Outillage",
     permCanValidateWorkshopSteps: "Validation d'atelier & Fiche suiveuse",
     permCanValidateWorkshopStepsDesc: "Autorise à valider les étapes d'usinage et à demander des retouches sur l'établi",
+    permAnnoncesPublish: "Le Mégaphone (Annonces Accueil)",
+    permAnnoncesPublishDesc: "Autorise à rédiger, publier et gérer les annonces officielles sur le tableau de bord (ex: CA, Modérateur, Communication)",
     tabOrders: "Commandes",
     tabWardrobe: "Vestiaire",
     tabStudioEvents: "Registre des dates",

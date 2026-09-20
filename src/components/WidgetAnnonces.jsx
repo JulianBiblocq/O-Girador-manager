@@ -9,12 +9,26 @@ import { useTranslation } from './LanguageContext';
 import { formatTagGender, getTagId } from '../utils/tagUtils';
 import { showPushActivationConfirmation } from '../utils/pushNotificationHelper';
 import useConfirm from '../hooks/useConfirm';
+import { canPublishAnnonces } from '../utils/permissionUtils';
+import { resolveEffectiveUserTags } from '../utils/tagUtils';
 
-export default function WidgetAnnonces({ groupId, profileData, role, isSystemAdmin, user, onNavigateToView }) {
+export default function WidgetAnnonces({ 
+  groupId, 
+  profileData, 
+  role, 
+  isSystemAdmin, 
+  user, 
+  onNavigateToView,
+  permissionsMatrice,
+  canPublish: canPublishProp,
+  breakGlassActive = false,
+  userTags: userTagsProp
+}) {
   const { t } = useTranslation();
   const { confirm } = useConfirm();
   const [announcements, setAnnouncements] = useState([]);
   const [tagsDisponibles, setTagsDisponibles] = useState([]);
+  const [assocPermissionsMatrice, setAssocPermissionsMatrice] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -95,7 +109,12 @@ export default function WidgetAnnonces({ groupId, profileData, role, isSystemAdm
   const [sendViaEmail, setSendViaEmail] = useState(false);
   const [sendPushNotification, setSendPushNotification] = useState(false);
 
-  const isAdmin = role === 'mestre' || role === 'super-admin' || isSystemAdmin === true;
+  const effectiveMatrice = permissionsMatrice || assocPermissionsMatrice;
+  const effectiveTags = userTagsProp || resolveEffectiveUserTags(profileData?.tags || [], tagsDisponibles);
+  const canPublish = canPublishProp !== undefined 
+    ? canPublishProp 
+    : canPublishAnnonces(profileData, effectiveMatrice, effectiveTags, breakGlassActive);
+  const isAdmin = canPublish;
 
   // Synchronisation en temps réel des annonces
   useEffect(() => {
@@ -136,7 +155,11 @@ export default function WidgetAnnonces({ groupId, profileData, role, isSystemAdm
     const assocRef = doc(db, 'associations', groupId);
     const unsubscribe = onSnapshot(assocRef, (docSnap) => {
       if (docSnap.exists()) {
-        setTagsDisponibles(docSnap.data().tagsDisponibles || []);
+        const data = docSnap.data();
+        setTagsDisponibles(data.tagsDisponibles || []);
+        if (data.permissionsMatrice) {
+          setAssocPermissionsMatrice(data.permissionsMatrice);
+        }
       }
     }, (error) => {
       console.error("WidgetAnnonces - Erreur onSnapshot association tags :", error);
@@ -198,7 +221,8 @@ export default function WidgetAnnonces({ groupId, profileData, role, isSystemAdm
         message: message.trim(),
         actionText: actionText.trim(),
         actionLink: actionLink.trim(),
-        auteurNom: `${profileData?.prenom || 'Admin'} ${profileData?.nom || ''}`,
+        auteurId: user?.uid || null,
+        auteurNom: `${profileData?.prenom || 'Admin'} ${profileData?.nom || ''}`.trim() || 'Association',
         dateCreation: new Date().toISOString(),
         cibles,
         publishOnApp,
@@ -261,7 +285,7 @@ export default function WidgetAnnonces({ groupId, profileData, role, isSystemAdm
     return ann.cibles.some(t => userTags.includes(t));
   });
 
-  if (!loading && !isAdmin && visibleAnnouncements.length === 0) {
+  if (!loading && !canPublish && visibleAnnouncements.length === 0) {
     return null;
   }
 
@@ -272,7 +296,7 @@ export default function WidgetAnnonces({ groupId, profileData, role, isSystemAdm
         <h3 className="text-xs font-extrabold tracking-wider text-cordel-master-dark opacity-75 uppercase text-left flex items-center gap-1.5">
           <XiloMegaphone size={16} className="text-cordel-wood" /> {t('widgetAnnonces.title')}
         </h3>
-        {!loading && isAdmin && !isAdding && (
+        {!loading && canPublish && !isAdding && (
           <CordelButton 
             variant="default" 
             onClick={() => setIsAdding(true)} 
@@ -634,8 +658,8 @@ export default function WidgetAnnonces({ groupId, profileData, role, isSystemAdm
                     </div>
                   )}
 
-                  {/* Supprimer trigger (visible only for admin) */}
-                  {isAdmin && (
+                  {/* Supprimer trigger (visible for authorized publishers or author) */}
+                  {(canPublish || (ann.auteurId && user?.uid && ann.auteurId === user.uid)) && (
                     <button
                       type="button"
                       onClick={() => handleDelete(ann.id, ann.titre)}

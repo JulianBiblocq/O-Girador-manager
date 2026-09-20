@@ -134,3 +134,5 @@ export async function launchCrossApp(targetUrl, options = {}) {
     }
   }
 }
+
+export const launchWithSSO = launchCrossApp;

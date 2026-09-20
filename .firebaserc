@@ -1,5 +1,15 @@
 {
   "projects": {
     "default": "o-girador-7828c"
-  }
+  },
+  "targets": {
+    "o-girador-7828c": {
+      "hosting": {
+        "organizador": [
+          "o-girador-organizador"
+        ]
+      }
+    }
+  },
+  "etags": {}
 }

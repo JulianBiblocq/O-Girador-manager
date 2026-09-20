@@ -4,6 +4,7 @@ import { auth } from '../../firebase';
 import { launchCrossApp } from '../../utils/crossAppAuth';
 import { getVitrineUrl } from '../../utils/urlUtils';
 import { isDemoMode } from '../../demo/demoManager';
+import { getEcosystemUrl } from '../../constants/ecosystemUrls';
 
 /**
  * Icône SVG Cordel 3x3 représentant le "Gaufrier" applicatif
@@ -73,7 +74,7 @@ export default function EcosystemAppLauncher({ urls, associationData, className 
     },
     {
       key: 'sequenciador',
-      url: isLocal ? 'http://localhost:5174' : 'https://sequenciador.o-girador.com',
+      url: getEcosystemUrl('sequenciador'),
       img: '/ecosystem/favicon.svg',
       label: 'Sequenciador',
       subtitle: 'Partitions & Rythmes',
@@ -81,7 +82,7 @@ export default function EcosystemAppLauncher({ urls, associationData, className 
     },
     {
       key: 'dancador',
-      url: isLocal ? 'http://localhost:5175' : 'https://dancador.o-girador.com',
+      url: getEcosystemUrl('dancador'),
       img: '/ecosystem/dancador-logo.png',
       label: 'Dancador',
       subtitle: 'Atelier chorégraphique',
@@ -89,7 +90,7 @@ export default function EcosystemAppLauncher({ urls, associationData, className 
     },
     {
       key: 'hub',
-      url: isLocal ? 'http://localhost:5176' : 'https://o-girador.com',
+      url: getEcosystemUrl('hub'),
       img: '/ecosystem/hub-logo.png',
       label: 'Orquestrador',
       subtitle: 'Portail central O Girador',

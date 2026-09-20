@@ -928,6 +928,8 @@ export const pt = {
     tabWorkshopTools: "Ferramentas",
     permCanValidateWorkshopSteps: "Validação de oficina e Ficha de acompanhamento",
     permCanValidateWorkshopStepsDesc: "Autoriza a validação de etapas de usinagem e solicitações de retrabalho na bancada",
+    permAnnoncesPublish: "O Megafone (Avisos Iniciais)",
+    permAnnoncesPublishDesc: "Autoriza redigir, publicar e gerenciar avisos oficiais no painel principal (ex: CA, Moderador, Comunicação)",
     tabOrders: "Pedidos",
     tabWardrobe: "Guarda-roupa",
     tabStudioEvents: "Registro de datas",

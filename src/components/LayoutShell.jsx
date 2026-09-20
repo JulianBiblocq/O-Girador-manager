@@ -37,6 +37,7 @@ import { getVitrineUrl } from '../utils/urlUtils';
 import { httpsCallable } from 'firebase/functions';
 import { auth, functions } from '../firebase';
 import { launchCrossApp } from '../utils/crossAppAuth';
+import { getEcosystemUrl } from '../constants/ecosystemUrls';
 import { useViewSimulator } from '../context/ViewSimulatorContext';
 import SimulationBanner from './navigation/SimulationBanner';
 import ViewSimulatorSelector from './navigation/ViewSimulatorSelector';
@@ -357,19 +358,19 @@ export default function LayoutShell({
       },
       {
         key: 'sequenciador',
-        url: isLocal ? 'http://localhost:5174' : 'https://sequenciador.o-girador.com',
+        url: getEcosystemUrl('sequenciador'),
         img: '/ecosystem/favicon.svg',
         label: 'Sequenciador'
       },
       {
         key: 'dancador',
-        url: isLocal ? 'http://localhost:5175' : 'https://dancador.o-girador.com',
+        url: getEcosystemUrl('dancador'),
         img: '/ecosystem/dancador-logo.png',
         label: 'Dancador'
       },
       {
         key: 'hub',
-        url: isLocal ? 'http://localhost:5176' : 'https://o-girador.com',
+        url: getEcosystemUrl('hub'),
         img: '/ecosystem/hub-logo.png',
         label: 'Orquestrador'
       }
