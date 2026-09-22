@@ -51,7 +51,7 @@ export default function useTenantResolver() {
       if (isLocal) {
         // Paramètres URL (priorité haute) ou Variables d'environnement
         currentMode = urlParams.get('app') || import.meta.env.VITE_DEFAULT_APP || 'organizador';
-        extractedGroupId = urlParams.get('tenant') || urlParams.get('groupe') || urlParams.get('assoc') || import.meta.env.VITE_DEFAULT_TENANT || null;
+        extractedGroupId = urlParams.get('groupId') || urlParams.get('tenant') || urlParams.get('groupe') || urlParams.get('assoc') || import.meta.env.VITE_DEFAULT_TENANT || null;
       } 
       // 2. Environnement de production / En ligne
       else {
@@ -75,6 +75,12 @@ export default function useTenantResolver() {
           // Si le premier sous-domaine n'est pas le nom de l'app, c'est le groupe
           if (parts.length > 2 && !['mostrador', 'organizador', 'manager', 'sequenciador', 'dancador', 'www', 'o-girador-organizador'].includes(parts[0])) {
             extractedGroupId = parts[0];
+          }
+
+          // Tolérance Deep Linking : paramètre URL explicite prioritaire
+          const queryGroupId = urlParams.get('groupId') || urlParams.get('tenant') || urlParams.get('groupe') || urlParams.get('assoc');
+          if (queryGroupId) {
+            extractedGroupId = queryGroupId;
           }
         } else {
           // 3. Domaine personnalisé externe (ex: www.samambaia-maracatu.fr)

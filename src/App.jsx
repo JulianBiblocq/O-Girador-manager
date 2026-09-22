@@ -953,15 +953,16 @@ export default function App() {
     let unsubscribeAuth = null;
     let isMounted = true;
 
-    // Détection et traitement du SSO Custom Token
+    // Détection et traitement du SSO Custom Token (tolérance ssoToken et token)
     const searchParams = new URLSearchParams(window.location.search);
-    const ssoToken = searchParams.get('ssoToken');
+    const ssoToken = searchParams.get('ssoToken') || searchParams.get('token');
     let isSSOPending = Boolean(ssoToken);
 
     if (ssoToken) {
       // Nettoyage immédiat de l'URL pour la sécurité et la propreté de la navigation
       const cleanUrl = new URL(window.location.href);
       cleanUrl.searchParams.delete('ssoToken');
+      cleanUrl.searchParams.delete('token');
       window.history.replaceState({}, document.title, cleanUrl.toString());
 
       let tokenUid = null;
