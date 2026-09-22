@@ -30,6 +30,7 @@ export default function TabRsvp({
   getPupitreName,
   presentsByInstrument,
   allUsers,
+  unansweredUsers = [],
   isAuthorized,
   handleValidatePending,
   handleUpdateMemberInstrument,
@@ -111,6 +112,7 @@ export default function TabRsvp({
             getPupitreName={getPupitreName}
             presentsByInstrument={presentsByInstrument}
             allUsers={allUsers}
+            unansweredUsers={unansweredUsers}
             isAuthorized={isAuthorized}
             handleValidatePending={handleValidatePending}
             handleUpdateMemberInstrument={handleUpdateMemberInstrument}

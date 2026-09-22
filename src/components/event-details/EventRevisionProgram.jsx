@@ -7,6 +7,7 @@ import { useSequencerFirestoreData } from '../../hooks/useSequencerFirestoreData
 import useMestreSignals from '../../hooks/useMestreSignals';
 import RepertoireVideoModal from '../mestre/RepertoireVideoModal';
 import SignalZoomModal from '../mestre/SignalZoomModal';
+import { buildSequencerUrl } from '../../utils/sequencerUrlUtils';
 
 export default function EventRevisionProgram({
   setlist,
@@ -155,14 +156,14 @@ export default function EventRevisionProgram({
                 {/* Liste transversale du Fil Conducteur */}
                 {setlist.map((morceau) => {
                   const disc = getDisciplineBadge(morceau);
+                  // Résolution propre de l'URL du séquenceur (compatible presets, sections, patterns et legacy jsonUrl)
                   let targetUrl = '';
-                  if (morceau.jsonUrl) {
-                    const baseUrl = assocSequenceurUrl || 'https://sequenceur.app';
-                    targetUrl = baseUrl.includes('?') 
-                      ? `${baseUrl}&file=${encodeURIComponent(morceau.jsonUrl)}`
-                      : `${baseUrl}?file=${encodeURIComponent(morceau.jsonUrl)}`;
-                  } else if (morceau.sequenceurUrl) {
-                    targetUrl = morceau.sequenceurUrl;
+                  if (morceau.sequenceurType || morceau.sequenceurId || morceau.jsonUrl || morceau.sequenceurUrl) {
+                    targetUrl = buildSequencerUrl({
+                      sequenceurType: morceau.sequenceurType,
+                      sequenceurId: morceau.sequenceurId,
+                      sequenceurFileUrl: morceau.jsonUrl || morceau.sequenceurUrl,
+                    }, assocSequenceurUrl);
                   }
 
                   return (
@@ -249,7 +250,21 @@ export default function EventRevisionProgram({
                         </div>
                       )}
 
-                      {/* Lecteur / Lien Séquenceur si disponible uniquement (tolérance propre pour les morceaux sans séquenceur) */}
+                      {/* Audio de référence (écoute directe dans Organizador) */}
+                      {morceau.audioUrl && (
+                        <div className="w-full mt-1">
+                          <audio
+                            controls
+                            src={morceau.audioUrl}
+                            className="w-full h-8"
+                            preload="none"
+                          >
+                            Votre navigateur ne supporte pas la lecture audio.
+                          </audio>
+                        </div>
+                      )}
+
+                      {/* Lecteur / Lien Séquenceur si disponible uniquement */}
                       {targetUrl && (
                         <a
                           href={targetUrl}
@@ -257,7 +272,7 @@ export default function EventRevisionProgram({
                           rel="noopener noreferrer"
                           className="theme-btn theme-bg-ocre text-encre-noire px-3 py-1.5 text-[10px] font-black rounded-[4px_6px_3px_5px] shadow-[1px_1px_0px_0px_rgba(0,0,0,0.15)] inline-flex items-center justify-center gap-1.5 hover:brightness-105 active:translate-x-[0.5px] active:translate-y-[0.5px] w-full text-center mt-1"
                         >
-                          🎧 Écouter dans le Séquenceur
+                          🎧 {morceau.sequenceurType === 'presets' ? 'Ouvrir le Preset dans le Séquenceur' : (morceau.sequenceurType === 'sections' ? 'Ouvrir la Séquence dans le Séquenceur' : 'Écouter dans le Séquenceur')}
                         </a>
                       )}
                     </div>

@@ -208,9 +208,8 @@ export default function FramaspaceGalleryViewer({
                           muted
                           playsInline
                           onError={(e) => {
-                            if (item.directDavUrl && e.target.src !== item.directDavUrl) {
-                              e.target.src = item.directDavUrl;
-                            }
+                            // Ne jamais rediriger vers WebDAV direct car cela déclenche la boîte de dialogue système HTTP Basic Auth
+                            console.warn("FramaspaceGalleryViewer - Format vidéo non pris en charge nativement :", item.name);
                           }}
                         />
                         <span className="absolute inset-0 flex items-center justify-center pointer-events-none">
@@ -235,9 +234,12 @@ export default function FramaspaceGalleryViewer({
                           objectPosition: 'center',
                         }}
                         onError={(e) => {
-                          const fallback = item.pathPreviewUrl || item.previewUrl || item.directDavUrl || item.url;
-                          if (fallback && e.target.src !== fallback) {
-                            e.target.src = fallback;
+                          // Repli en cascade sécurisé sans jamais interroger le endpoint WebDAV direct (qui renvoie un HTTP 401 Basic Auth)
+                          const currentSrc = e.target.src;
+                          const safeFallbacks = [item.pathPreviewUrl, item.previewUrl, item.url].filter(Boolean);
+                          const nextFallback = safeFallbacks.find((fb) => fb && fb !== currentSrc);
+                          if (nextFallback) {
+                            e.target.src = nextFallback;
                           }
                         }}
                         className="block transition-transform duration-200 group-hover:scale-105"
@@ -339,9 +341,8 @@ export default function FramaspaceGalleryViewer({
                   autoPlay
                   preload="metadata"
                   onError={(e) => {
-                    if (currentMedia.directDavUrl && e.target.src !== currentMedia.directDavUrl) {
-                      e.target.src = currentMedia.directDavUrl;
-                    }
+                    // Ne jamais rediriger vers directDavUrl pour éviter le popup d'authentification navigateur
+                    console.warn("FramaspaceGalleryViewer - Impossible de lire la vidéo en grand format :", currentMedia.name);
                   }}
                   className="max-h-[78vh] max-w-[92vw] rounded shadow-2xl bg-black"
                 >
@@ -354,9 +355,12 @@ export default function FramaspaceGalleryViewer({
                   loading="lazy"
                   decoding="async"
                   onError={(e) => {
-                    const fallback = currentMedia.pathPreviewHdUrl || currentMedia.pathPreviewUrl || currentMedia.directDavUrl || currentMedia.url;
-                    if (fallback && e.target.src !== fallback) {
-                      e.target.src = fallback;
+                    // Repli en cascade grand format sécurisé
+                    const currentSrc = e.target.src;
+                    const safeFallbacks = [currentMedia.pathPreviewHdUrl, currentMedia.pathPreviewUrl, currentMedia.url].filter(Boolean);
+                    const nextFallback = safeFallbacks.find((fb) => fb && fb !== currentSrc);
+                    if (nextFallback) {
+                      e.target.src = nextFallback;
                     }
                   }}
                   className="max-h-[78vh] max-w-[92vw] object-contain rounded shadow-2xl"

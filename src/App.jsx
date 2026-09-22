@@ -14,6 +14,7 @@ import ErrorBoundary from './components/ErrorBoundary';
 import PublicHome from './components/PublicHome';
 import PublicThemeProvider from './components/PublicThemeProvider';
 import { tracker } from './utils/O-Girador-Tracker';
+import { useAppUpdate } from './hooks/useAppUpdate';
 
 import { lazyWithRetry } from './utils/pwaUtils';
 import { resolveEffectiveUserTags } from './utils/tagUtils';
@@ -286,6 +287,7 @@ function OrchestradorRedirector({ brandingStyle }) {
 }
 
 export default function App() {
+  useAppUpdate();
   const { appMode, groupId: urlGroupId, urls, isLocalhost, isTenantLoading, tenantError } = useTenantContext();
   const { t } = useTranslation();
 

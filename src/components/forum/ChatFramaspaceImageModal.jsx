@@ -296,9 +296,12 @@ export default function ChatFramaspaceImageModal({
                         objectPosition: 'center',
                       }}
                       onError={(e) => {
-                        const fallback = item.pathPreviewUrl || item.previewUrl || item.directDavUrl || item.url;
-                        if (fallback && e.target.src !== fallback) {
-                          e.target.src = fallback;
+                        // Repli en cascade sécurisé sans jamais interroger WebDAV en direct
+                        const currentSrc = e.target.src;
+                        const safeFallbacks = [item.pathPreviewUrl, item.previewUrl, item.url].filter(Boolean);
+                        const nextFallback = safeFallbacks.find((fb) => fb && fb !== currentSrc);
+                        if (nextFallback) {
+                          e.target.src = nextFallback;
                         }
                       }}
                       className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-200 block"

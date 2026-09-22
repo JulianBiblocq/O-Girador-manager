@@ -62,6 +62,7 @@ export default function TabLogistics({
   getPupitreName,
   presentsByInstrument,
   allUsers,
+  unansweredUsers = [],
   handleValidatePending,
   handleUpdateMemberInstrument,
   isManualRegisterOpen,
@@ -224,6 +225,7 @@ export default function TabLogistics({
             getPupitreName={getPupitreName}
             presentsByInstrument={presentsByInstrument}
             allUsers={allUsers}
+            unansweredUsers={unansweredUsers}
             isAuthorized={isAuthorized}
             handleValidatePending={handleValidatePending}
             handleUpdateMemberInstrument={handleUpdateMemberInstrument}

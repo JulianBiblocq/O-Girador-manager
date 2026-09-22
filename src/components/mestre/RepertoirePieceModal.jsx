@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { collection, query, where, getDocs, doc, addDoc, updateDoc } from 'firebase/firestore';
-import { db } from '../../firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { db, storage } from '../../firebase';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 import { useSequencerRhythms } from '../../hooks/useSequencerRhythms';
@@ -40,6 +41,9 @@ export default function RepertoirePieceModal({
   // Liaisons optionnelles
   const [selectedToadaId, setSelectedToadaId] = useState('');
   const [selectedSeqUrl, setSelectedSeqUrl] = useState('');
+  const [selectedSeqType, setSelectedSeqType] = useState(null); // 'presets' | 'sections' | 'patterns' | 'storage'
+  const [selectedAudioUrl, setSelectedAudioUrl] = useState('');
+  const [uploadingAudio, setUploadingAudio] = useState(false);
   const [selectedChoreoId, setSelectedChoreoId] = useState('');
   const [selectedCultureId, setSelectedCultureId] = useState('');
 
@@ -66,7 +70,24 @@ export default function RepertoirePieceModal({
       setVideos(Array.isArray(pieceToEdit.videos) ? pieceToEdit.videos : []);
       setSignalIds(Array.isArray(pieceToEdit.signalIds) ? pieceToEdit.signalIds : []);
       setSelectedToadaId(pieceToEdit.toadaDocId || '');
-      setSelectedSeqUrl(pieceToEdit.sequenceurFileUrl || pieceToEdit.sequenceurId || '');
+
+      // Détecter si l'ancienne valeur était un audio ou un rythme séquenceur
+      const rawSeq = pieceToEdit.sequenceurFileUrl || pieceToEdit.sequenceurId || '';
+      const isSeqAudio = /\.(mp3|wav|ogg|m4a|aac)$/i.test(rawSeq) || (pieceToEdit.sequenceurId && String(pieceToEdit.sequenceurId).startsWith('am_'));
+
+      if (pieceToEdit.audioUrl) {
+        setSelectedAudioUrl(pieceToEdit.audioUrl);
+        setSelectedSeqUrl(isSeqAudio ? '' : rawSeq);
+      } else if (isSeqAudio) {
+        // Migration automatique : si l'ancien champ contenait un audio, l'attribuer à audioUrl
+        setSelectedAudioUrl(pieceToEdit.sequenceurFileUrl || '');
+        setSelectedSeqUrl('');
+      } else {
+        setSelectedAudioUrl('');
+        setSelectedSeqUrl(rawSeq);
+      }
+      setSelectedSeqType(pieceToEdit.sequenceurType || null);
+
       setSelectedChoreoId(pieceToEdit.dancadorChoreoId || '');
       setSelectedCultureId(pieceToEdit.cultureDocId || '');
     } else {
@@ -79,6 +100,8 @@ export default function RepertoirePieceModal({
       setSignalIds([]);
       setSelectedToadaId('');
       setSelectedSeqUrl('');
+      setSelectedSeqType(null);
+      setSelectedAudioUrl('');
       setSelectedChoreoId('');
       setSelectedCultureId('');
     }
@@ -136,13 +159,16 @@ export default function RepertoirePieceModal({
     setErrorMsg(null);
 
     try {
-      // Trouver l'identifiant et l'URL du rythme sélectionné
+      // Trouver l'identifiant, l'URL et le type du rythme séquenceur
       let matchedSeqId = null;
       let matchedSeqUrl = null;
+      let matchedSeqType = selectedSeqType || null;
+
       if (selectedSeqUrl && catalogRhythms.length > 0) {
         const found = catalogRhythms.find((r) => r.jsonUrl === selectedSeqUrl || r.id === selectedSeqUrl);
         if (found) {
           matchedSeqId = found.id || null;
+          matchedSeqType = found._collection || null;
           matchedSeqUrl = (found.jsonUrl && (found.jsonUrl.startsWith('http://') || found.jsonUrl.startsWith('https://')))
             ? found.jsonUrl
             : (selectedSeqUrl.startsWith('http://') || selectedSeqUrl.startsWith('https://') ? selectedSeqUrl : null);
@@ -176,7 +202,9 @@ export default function RepertoirePieceModal({
         videos: cleanVideos,
         signalIds: cleanSignalIds,
         sequenceurId: matchedSeqId || null,
+        sequenceurType: matchedSeqType || null,
         sequenceurFileUrl: matchedSeqUrl || null,
+        audioUrl: (selectedAudioUrl || '').trim() || null,
         dancadorChoreoId: selectedChoreoId || null,
         toadaDocId: selectedToadaId || null,
         cultureDocId: selectedCultureId || null,
@@ -225,13 +253,59 @@ export default function RepertoirePieceModal({
     const newSeqUrl = e.target.value;
     setSelectedSeqUrl(newSeqUrl);
 
-    if (newSeqUrl && !titre.trim()) {
+    if (newSeqUrl) {
       const found = catalogRhythms.find((r) => r.jsonUrl === newSeqUrl || r.id === newSeqUrl);
-      if (found && (found.titre || found.name)) {
-        setTitre(found.titre || found.name);
+      if (found) {
+        setSelectedSeqType(found._collection || null);
+        if (!titre.trim() && (found.titre || found.name)) {
+          setTitre(found.titre || found.name);
+        }
       }
+    } else {
+      setSelectedSeqType(null);
     }
   };
+
+  // Téléversement d'un fichier audio vers Firebase Storage
+  const handleAudioFileUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 25 * 1024 * 1024) {
+      alert("Le fichier audio est trop volumineux (maximum 25 Mo).");
+      return;
+    }
+
+    setUploadingAudio(true);
+    try {
+      const cleanFileName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+      const storagePath = `associations/${groupId}/repertoire/audio_${Date.now()}_${cleanFileName}`;
+      const audioRef = ref(storage, storagePath);
+      const snapshot = await uploadBytes(audioRef, file);
+      const downloadUrl = await getDownloadURL(snapshot.ref);
+      setSelectedAudioUrl(downloadUrl);
+    } catch (err) {
+      console.error("Erreur lors du téléversement audio :", err);
+      alert("Erreur lors de l'envoi du fichier audio.");
+    } finally {
+      setUploadingAudio(false);
+      e.target.value = '';
+    }
+  };
+
+  // Rythmes et séquences pour le Séquenceur (exclusion des purs fichiers audio)
+  const sequencerRhythms = (catalogRhythms || []).filter(
+    (r) => !r.isAudio || r.isJson || r._collection === 'presets' || r._collection === 'sections'
+  );
+  const presetsList = sequencerRhythms.filter((r) => r._collection === 'presets');
+  const sectionsList = sequencerRhythms.filter((r) => r._collection === 'sections');
+  const patternsList = sequencerRhythms.filter((r) => r._collection !== 'presets' && r._collection !== 'sections');
+
+  // Enregistrements et pistes pour l'Audio de référence
+  const audioMastersList = (catalogRhythms || []).filter(
+    (r) => r.isAudio || r._collection === 'audio_masters' || Boolean(r.audioUrl) || /\.(mp3|wav|ogg|m4a|aac)$/i.test(r.fileName || r.id || r.titre)
+  );
+  const toadaAudiosList = (toadasList || []).filter((t) => Boolean(t.audioUrl));
 
   return (
     <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
@@ -425,11 +499,18 @@ export default function RepertoirePieceModal({
                 )}
               </div>
 
-              {/* 2. Rythme du Séquenceur */}
+              {/* 2. Séquence / Préréglage Séquenceur (Renvoi vers le Séquenceur) */}
               <div className="flex flex-col gap-1">
-                <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark flex items-center gap-1">
-                  <span>🥁</span>
-                  <span>Rythme Séquenceur associé</span>
+                <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark flex items-center justify-between">
+                  <span className="flex items-center gap-1">
+                    <span>🥁</span>
+                    <span>Séquence / Preset Séquenceur</span>
+                  </span>
+                  {selectedSeqUrl && (
+                    <span className="text-[8.5px] text-amber-700 font-bold lowercase">
+                      {selectedSeqType === 'presets' ? '✓ preset' : selectedSeqType === 'sections' ? '✓ séquence' : '✓ rythme'}
+                    </span>
+                  )}
                 </label>
                 <select
                   value={selectedSeqUrl}
@@ -437,13 +518,133 @@ export default function RepertoirePieceModal({
                   disabled={submitting || loadingRhythms}
                   className="theme-input text-xs font-semibold p-2 bg-cordel-bg-light border border-encre-noire/30 rounded cursor-pointer"
                 >
-                  <option value="">-- Aucun rythme séquenceur lié --</option>
-                  {catalogRhythms.map((rhythm) => (
-                    <option key={rhythm.id} value={rhythm.jsonUrl || rhythm.id}>
-                      🥁 {rhythm.displayTitle || rhythm.titre}
-                    </option>
-                  ))}
+                  <option value="">-- Aucun préréglage ou séquence liée --</option>
+                  {presetsList.length > 0 && (
+                    <optgroup label="🎛️ Préréglages Séquenceur (Presets complets)">
+                      {presetsList.map((rhythm) => (
+                        <option key={rhythm.id} value={rhythm.jsonUrl || rhythm.id}>
+                          🎛️ {rhythm.displayTitle || rhythm.titre}
+                        </option>
+                      ))}
+                    </optgroup>
+                  )}
+                  {sectionsList.length > 0 && (
+                    <optgroup label="📑 Séquences & Arrangements (Sections)">
+                      {sectionsList.map((rhythm) => (
+                        <option key={rhythm.id} value={rhythm.jsonUrl || rhythm.id}>
+                          📑 {rhythm.displayTitle || rhythm.titre}
+                        </option>
+                      ))}
+                    </optgroup>
+                  )}
+                  {patternsList.length > 0 && (
+                    <optgroup label="🥁 Motifs individuels & Fichiers JSON">
+                      {patternsList.map((rhythm) => (
+                        <option key={rhythm.id} value={rhythm.jsonUrl || rhythm.id}>
+                          🥁 {rhythm.displayTitle || rhythm.titre}
+                        </option>
+                      ))}
+                    </optgroup>
+                  )}
                 </select>
+                <span className="text-[8.5px] opacity-65 italic">
+                  Permet d'ouvrir et travailler le morceau directement dans le Séquenceur multi-pistes.
+                </span>
+              </div>
+
+              {/* 3. Audio de référence (Écoute directe dans Organizador) */}
+              <div className="flex flex-col gap-1.5 p-2.5 rounded bg-white/40 dark:bg-black/10 border border-dashed border-encre-noire/15">
+                <div className="flex items-center justify-between">
+                  <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark flex items-center gap-1">
+                    <span>🎵</span>
+                    <span>Audio de référence (écoute dans Organizador)</span>
+                  </label>
+                  {selectedAudioUrl && (
+                    <button
+                      type="button"
+                      onClick={() => setSelectedAudioUrl('')}
+                      className="text-[9px] text-cordel-wood hover:underline font-bold cursor-pointer"
+                      title="Dissocier cet enregistrement audio"
+                    >
+                      Retirer l'audio
+                    </button>
+                  )}
+                </div>
+
+                <select
+                  value={selectedAudioUrl}
+                  onChange={(e) => setSelectedAudioUrl(e.target.value)}
+                  disabled={submitting || uploadingAudio}
+                  className="theme-input text-xs font-semibold p-2 bg-cordel-bg-light border border-encre-noire/30 rounded cursor-pointer"
+                >
+                  <option value="">-- Aucun audio de référence --</option>
+                  {audioMastersList.length > 0 && (
+                    <optgroup label="🎧 Masters Audio & Enregistrements du Séquenceur">
+                      {audioMastersList.map((a) => (
+                        <option key={a.id || a.audioUrl} value={a.audioUrl || a.jsonUrl}>
+                          🎧 {a.titre || a.displayTitle}
+                        </option>
+                      ))}
+                    </optgroup>
+                  )}
+                  {toadaAudiosList.length > 0 && (
+                    <optgroup label="🗣️ Audios des Toadas (Chants)">
+                      {toadaAudiosList.map((t) => (
+                        <option key={t.id} value={t.audioUrl}>
+                          🗣️ {t.titre} {t.nacao ? `(${t.nacao})` : ''}
+                        </option>
+                      ))}
+                    </optgroup>
+                  )}
+                  {selectedAudioUrl &&
+                    !audioMastersList.some((a) => (a.audioUrl || a.jsonUrl) === selectedAudioUrl) &&
+                    !toadaAudiosList.some((t) => t.audioUrl === selectedAudioUrl) && (
+                      <optgroup label="🔗 Audio personnalisé">
+                        <option value={selectedAudioUrl}>
+                          🎵 Fichier lié ({selectedAudioUrl.split('/').pop()?.split('?')[0] || 'Lien externe'})
+                        </option>
+                      </optgroup>
+                    )}
+                </select>
+
+                {/* Actions d'ajout : Fichier local ou URL */}
+                <div className="flex items-center gap-2 pt-0.5">
+                  <label className="inline-flex items-center gap-1 px-2.5 py-1 text-[9.5px] font-black uppercase text-encre-noire bg-cordel-bg-light hover:bg-stone-200 border border-encre-noire/30 rounded shadow-xs cursor-pointer select-none">
+                    <span>{uploadingAudio ? '⏳ Téléversement...' : '📁 Téléverser un MP3 / WAV'}</span>
+                    <input
+                      type="file"
+                      accept="audio/*,.mp3,.wav,.ogg,.m4a"
+                      disabled={submitting || uploadingAudio}
+                      className="hidden"
+                      onChange={handleAudioFileUpload}
+                    />
+                  </label>
+
+                  <span className="text-[9px] opacity-50">ou</span>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const custom = window.prompt("Entrez l'URL directe du fichier audio (MP3, WAV, etc.) :", selectedAudioUrl || '');
+                      if (custom !== null) {
+                        setSelectedAudioUrl(custom.trim());
+                      }
+                    }}
+                    className="inline-flex items-center gap-1 px-2.5 py-1 text-[9.5px] font-black uppercase text-encre-noire bg-cordel-bg-light hover:bg-stone-200 border border-encre-noire/30 rounded shadow-xs cursor-pointer"
+                  >
+                    <span>🔗 Coller une URL</span>
+                  </button>
+                </div>
+
+                {/* Pré-écoute immédiate du fichier sélectionné */}
+                {selectedAudioUrl && (
+                  <div className="mt-1 p-2 rounded bg-cordel-bg/80 border border-encre-noire/15 flex flex-col gap-1">
+                    <span className="text-[8.5px] font-bold uppercase tracking-wider text-cordel-wood">
+                      ▶ Pré-écoute de l'audio :
+                    </span>
+                    <audio controls src={selectedAudioUrl} className="w-full h-7 rounded" preload="metadata" />
+                  </div>
+                )}
               </div>
 
               {/* 3. Chorégraphie Dançador */}

@@ -27,6 +27,7 @@ export default function EventRSVPSection({
   getPupitreName,
   presentsByInstrument,
   allUsers,
+  unansweredUsers = [],
   isAuthorized,
   handleValidatePending,
   handleUpdateMemberInstrument,
@@ -782,6 +783,37 @@ export default function EventRSVPSection({
     return [restrictions, allergies].filter(Boolean).join(' | ');
   };
 
+  // Résolution multi-critères fiable et anti-scintillement des informations de chaque participant
+  const resolveMemberInfo = (userId, fallbackName = '') => {
+    if (!userId && !fallbackName) return { id: '', prenom: 'Membre', nom: '', instrument: 'Autre' };
+
+    // 1. Profil de l'utilisateur connecté (source de vérité immédiate et stable)
+    if (user?.uid && (userId === user.uid || (fallbackName && `${profileData?.prenom || ''} ${profileData?.nom || ''}`.trim().toLowerCase() === fallbackName.trim().toLowerCase()))) {
+      return {
+        id: user.uid,
+        prenom: profileData?.prenom || fallbackName || '',
+        nom: profileData?.nom || '',
+        photoURL: profileData?.photoURL || user?.photoURL || null,
+        dietaryRestrictions: profileData?.dietaryRestrictions || [],
+        allergies: profileData?.allergies || '',
+        instrument: profileData?.instrument || profileData?.instrumentsJoues?.[0] || 'Autre',
+        ...profileData
+      };
+    }
+
+    // 2. Recherche multicritères dans la liste globale des utilisateurs
+    if (Array.isArray(allUsers) && allUsers.length > 0) {
+      const found = allUsers.find(u => 
+        (userId && (u.id === userId || u.uid === userId || u.email === userId)) ||
+        (fallbackName && `${u.prenom || ''} ${u.nom || ''}`.trim().toLowerCase() === fallbackName.trim().toLowerCase()) ||
+        (fallbackName && u.displayName && u.displayName.trim().toLowerCase() === fallbackName.trim().toLowerCase())
+      );
+      if (found) return found;
+    }
+
+    return { id: userId, prenom: fallbackName, nom: '', instrument: 'Autre' };
+  };
+
   const getDietarySummary = (presentUsersList) => {
     const counts = {};
     const specificAllergies = [];
@@ -930,16 +962,18 @@ export default function EventRSVPSection({
                     </strong>
                     <div className="flex flex-wrap gap-1.5 items-center pl-4">
                        {list.map(u => {
-                         const dietaryText = isAuthorized ? getDietaryTooltipText(u) : null;
+                         const memberInfo = resolveMemberInfo(u.id, u.prenom);
+                         const resolved = { ...memberInfo, ...u, photoURL: u.photoURL || memberInfo.photoURL, dietaryRestrictions: u.dietaryRestrictions || memberInfo.dietaryRestrictions, allergies: u.allergies || memberInfo.allergies };
+                         const dietaryText = isAuthorized ? getDietaryTooltipText(resolved) : null;
                          return (
                            <div 
                              key={u.id || `${u.prenom}-${u.nom}`} 
                              className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded border border-dashed border-encre-noire/15 text-xs font-semibold text-encre-noire"
                              style={{ backgroundColor: getColorForInstrument(inst, 'pastel') }}
                            >
-                             <XiloAvatar src={u.photoURL} name={u.isInvite ? u.prenom : `${u.prenom} ${u.nom}`} size={18} />
+                             <XiloAvatar src={resolved.photoURL} name={u.isInvite ? u.prenom : `${resolved.prenom || u.prenom} ${resolved.nom || u.nom}`} size={18} />
                              <span className="inline-flex items-center gap-1">
-                               {u.isInvite ? u.prenom : `${u.prenom} ${u.nom}`}
+                               {u.isInvite ? u.prenom : `${resolved.prenom || u.prenom} ${resolved.nom || u.nom}`}
                                {u.isInvite && (
                                  <span className="ml-1 px-1 py-0.5 text-[8px] font-extrabold uppercase border border-amber-600/30 text-amber-700 bg-amber-50 dark:bg-amber-950/20 dark:text-amber-400 rounded-sm inline-block select-none leading-none">
                                    [Invité]
@@ -993,7 +1027,7 @@ export default function EventRSVPSection({
               </strong>
               <div className="flex flex-wrap gap-1.5 items-center mt-1">
                 {(event.inscriptions || []).filter(i => i.status === 'present').map(i => {
-                  const userInfo = allUsers.find(u => u.id === i.userId) || {};
+                  const userInfo = resolveMemberInfo(i.userId, i.userName);
                   const dietaryText = isAuthorized ? getDietaryTooltipText(userInfo) : null;
                   return (
                     <div 
@@ -1065,7 +1099,7 @@ export default function EventRSVPSection({
             </strong>
             <div className="flex flex-wrap gap-1.5 items-center mt-1">
               {(event.inscriptions || []).filter(i => i.status === 'absent').map(i => {
-                const userInfo = allUsers.find(u => u.id === i.userId) || {};
+                const userInfo = resolveMemberInfo(i.userId, i.userName);
                 return (
                   <div key={i.userId} className="inline-flex items-center gap-1.5 bg-white/60 dark:bg-black/20 px-2 py-1 rounded border border-dashed border-encre-noire/10 text-xs font-semibold text-encre-noire">
                     <XiloAvatar src={userInfo.photoURL} name={i.userName} size={18} />
@@ -1107,7 +1141,7 @@ export default function EventRSVPSection({
               </strong>
               <div className="flex flex-wrap gap-1.5 items-center mt-1">
                 {(event.inscriptions || []).filter(i => i.status === 'confirm').map(i => {
-                  const userInfo = allUsers.find(u => u.id === i.userId) || {};
+                  const userInfo = resolveMemberInfo(i.userId, i.userName);
                   return (
                     <div key={i.userId} className="inline-flex items-center gap-1.5 bg-white/60 dark:bg-black/20 px-2 py-1 rounded border border-dashed border-encre-noire/10 text-xs font-semibold text-encre-noire">
                       <XiloAvatar src={userInfo.photoURL} name={i.userName} size={18} />
@@ -1162,7 +1196,7 @@ export default function EventRSVPSection({
                 </strong>
                 <div className="flex flex-wrap gap-1.5 items-center mt-1">
                   {(event.inscriptions || []).filter(i => i.status === 'pending').map(i => {
-                    const userInfo = allUsers.find(u => u.id === i.userId) || {};
+                    const userInfo = resolveMemberInfo(i.userId, i.userName);
                     return (
                       <div key={i.userId} className="inline-flex items-center gap-1.5 bg-white/60 dark:bg-black/20 px-2 py-1 rounded border border-dashed border-yellow-500/30 text-xs font-semibold text-encre-noire">
                         <XiloAvatar src={userInfo.photoURL} name={i.userName} size={18} />
@@ -1211,7 +1245,7 @@ export default function EventRSVPSection({
                 </strong>
                 <div className="flex flex-wrap gap-1.5 items-center mt-1">
                   {(event.inscriptions || []).filter(i => i.status === 'refused').map(i => {
-                    const userInfo = allUsers.find(u => u.id === i.userId) || {};
+                    const userInfo = resolveMemberInfo(i.userId, i.userName);
                     return (
                       <div key={i.userId} className="inline-flex items-center gap-1.5 bg-white/60 dark:bg-black/20 px-2 py-1 rounded border border-dashed border-gray-300 text-xs font-semibold text-encre-noire opacity-70">
                         <XiloAvatar src={userInfo.photoURL} name={i.userName} size={18} />
@@ -1245,6 +1279,65 @@ export default function EventRSVPSection({
             )}
           </div>
         )}
+
+        {/* Section Sans réponse - Membres de l'association n'ayant pas encore voté/répondu */}
+        <div className="flex flex-col gap-3.5 theme-inner-panel p-3.5 rounded text-xs text-left mt-3.5 border-t border-dashed border-cordel-master-dark/15">
+          <div>
+            <div className="flex items-center justify-between border-b border-dashed border-cordel-master-dark/20 pb-0.5 mb-1.5">
+              <strong className="text-cordel-master-dark dark:text-cordel-bg-light flex items-center gap-1.5 font-bold">
+                <span>❓</span>
+                <span>Sans réponse ({unansweredUsers?.length || 0})</span>
+              </strong>
+              {unansweredUsers?.length > 0 && (
+                <span className="text-[10px] opacity-60 font-semibold italic">
+                  En attente d'un vote
+                </span>
+              )}
+            </div>
+            <div className="flex flex-wrap gap-1.5 items-center mt-1">
+              {(unansweredUsers || []).map(u => {
+                const name = u.displayNameFormatted || `${u.prenom || ''} ${u.nom || ''}`.trim() || u.email || 'Membre';
+                return (
+                  <div 
+                    key={u.id || u.uid || name} 
+                    className="inline-flex items-center gap-1.5 bg-white/60 dark:bg-black/20 px-2 py-1 rounded border border-dashed border-encre-noire/15 text-xs font-semibold text-encre-noire opacity-80 hover:opacity-100 transition-opacity"
+                  >
+                    <XiloAvatar src={u.photoURL} name={name} size={18} />
+                    <span>{name}</span>
+                    {u.instrument && u.instrument !== 'Autre' && (
+                      <span className="text-[9.5px] opacity-70 font-normal">
+                        ({u.instrument})
+                      </span>
+                    )}
+                    {isAuthorized && (
+                      <div className="flex items-center gap-1 ml-1.5 border-l border-encre-noire/15 pl-1.5 font-bold">
+                        <button
+                          type="button"
+                          onClick={() => handleUpdateStatus && handleUpdateStatus(u.id || u.uid, 'present')}
+                          className="text-[var(--color-cordel-vert)] hover:text-white text-[9px] font-black cursor-pointer px-1.5 py-0.5 bg-[var(--color-cordel-vert)]/10 hover:bg-[var(--color-cordel-vert)] border border-[#2d6a4f]/30 rounded transition-colors"
+                          title="Marquer ce membre comme Présent"
+                        >
+                          ✓ Présent
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleUpdateStatus && handleUpdateStatus(u.id || u.uid, 'absent')}
+                          className="text-cordel-wood hover:text-white text-[9px] font-black cursor-pointer px-1.5 py-0.5 bg-cordel-wood/10 hover:bg-cordel-wood border border-cordel-wood/30 rounded transition-colors"
+                          title="Marquer ce membre comme Absent"
+                        >
+                          ✗ Absent
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+              {(unansweredUsers || []).length === 0 && (
+                <span className="opacity-60 italic text-xs">Tous les membres ont répondu ! 🎉</span>
+              )}
+            </div>
+          </div>
+        </div>
 
         {isAuthorized && (event.includesPercussion !== false) && (event.inscriptions || []).filter(i => i.status === 'present').length > 0 && (
           <div className="mt-4 pt-4 border-t border-dashed border-cordel-master-dark/15 text-left flex flex-col gap-3">

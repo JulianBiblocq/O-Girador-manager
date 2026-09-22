@@ -466,10 +466,11 @@ export function useEventRSVP(event, user, profileData, allUsers, isMusicLevelRes
   const handleUpdateStatus = async (targetUserId, newStatus) => {
     if (!event.id || !targetUserId) return;
     try {
-      const currentInscriptions = event.inscriptions || [];
+      let memberFound = false;
       const updatedInscriptions = currentInscriptions.map(ins => {
         if (ins.userId === targetUserId) {
-          const userObj = allUsers.find(u => u.id === targetUserId);
+          memberFound = true;
+          const userObj = allUsers.find(u => u.id === targetUserId || u.uid === targetUserId);
           const safeInst = ins.instrumentChoisi || userObj?.instrument || userObj?.instrumentsJoues?.[0] || 'Autre';
           return {
             ...ins,
@@ -479,6 +480,24 @@ export function useEventRSVP(event, user, profileData, allUsers, isMusicLevelRes
         }
         return ins;
       });
+
+      // Si le membre n'avait aucune inscription préalable (sans réponse), créer son inscription
+      if (!memberFound) {
+        const userObj = (allUsers || []).find(u => u.id === targetUserId || u.uid === targetUserId);
+        const name = userObj ? (`${userObj.prenom || ''} ${userObj.nom || ''}`.trim() || userObj.displayName || 'Membre') : 'Membre';
+        const safeInst = userObj?.instrument || userObj?.instrumentsJoues?.[0] || 'Autre';
+        updatedInscriptions.push({
+          userId: targetUserId,
+          userName: name,
+          status: newStatus,
+          transport: null,
+          places: 0,
+          instruments: "",
+          instrumentChoisi: newStatus === 'present' ? safeInst : null,
+          instrumentImposeParMestre: false,
+          demandeRemboursementKm: false
+        });
+      }
 
       const eventUpdates = {
         inscriptions: updatedInscriptions

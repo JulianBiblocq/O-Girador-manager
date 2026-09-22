@@ -3062,7 +3062,6 @@ function parseWebdavMultistatus(xmlString, instanceUrl, token, baseDavPath = "/p
     // Secours direct haute compatibilité
     const pathPreviewUrl = `${instanceUrl}/index.php/apps/files_sharing/publicpreview/${token}?file=${encodedRelPath}&x=400&y=400&a=1`;
     const pathPreviewHdUrl = `${instanceUrl}/index.php/apps/files_sharing/publicpreview/${token}?file=${encodedRelPath}&x=1600&y=1600`;
-    const directDavUrl = `${instanceUrl}/public.php/webdav/${relativePath.split("/").filter(Boolean).map(encodeURIComponent).join("/")}`;
 
     items.push({
       id: Buffer.from(relativePath || name).toString("base64url"),
@@ -3076,7 +3075,7 @@ function parseWebdavMultistatus(xmlString, instanceUrl, token, baseDavPath = "/p
       downloadUrl: rawUrl,
       pathPreviewUrl,
       pathPreviewHdUrl,
-      directDavUrl,
+      directDavUrl: null,
       mimeType: mimeType || (isVideo ? "video/mp4" : "image/jpeg"),
       size
     });

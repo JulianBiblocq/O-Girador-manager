@@ -303,8 +303,9 @@ export default function MestreRepertoireView({ groupId, user, profileData, seque
           {filteredPieces.map((piece) => {
             const isPret = piece.etatValidation === 'pret';
 
-            // Détection de la présence d'un rythme ou d'un motif Séquenceur associé
+            // Détection de la présence d'un rythme ou d'un motif Séquenceur associé et d'un audio
             const hasSequencer = Boolean(piece.sequenceurFileUrl || piece.sequenceurId);
+            const hasAudio = Boolean(piece.audioUrl);
 
             return (
               <div
@@ -354,7 +355,20 @@ export default function MestreRepertoireView({ groupId, user, profileData, seque
                     {hasSequencer && (
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-black uppercase rounded bg-amber-50 text-amber-900 border border-amber-300">
                         <span>🥁</span>
-                        <span>Séquenceur</span>
+                        <span>
+                          {piece.sequenceurType === 'presets'
+                            ? 'Preset'
+                            : piece.sequenceurType === 'sections'
+                              ? 'Séquence'
+                              : 'Séquenceur'}
+                        </span>
+                      </span>
+                    )}
+
+                    {hasAudio && (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-black uppercase rounded bg-purple-50 text-purple-900 border border-purple-300">
+                        <span>🎵</span>
+                        <span>Audio</span>
                       </span>
                     )}
 
@@ -379,12 +393,23 @@ export default function MestreRepertoireView({ groupId, user, profileData, seque
                       </span>
                     )}
 
-                    {!hasSequencer && !piece.toadaDocId && !piece.dancadorChoreoId && !piece.cultureDocId && (
+                    {!hasSequencer && !hasAudio && !piece.toadaDocId && !piece.dancadorChoreoId && !piece.cultureDocId && (
                       <span className="text-[9.5px] italic text-encre-noire/50">
                         Autonome (joué de mémoire)
                       </span>
                     )}
                   </div>
+
+                  {/* Lecteur direct pour l'audio de référence */}
+                  {hasAudio && (
+                    <div className="w-full mt-2 pt-2 border-t border-dashed border-encre-noire/15 flex flex-col gap-1">
+                      <span className="text-[9px] font-black uppercase tracking-wider text-cordel-master-dark flex items-center gap-1">
+                        <span>🎵</span>
+                        <span>Audio de référence :</span>
+                      </span>
+                      <audio controls src={piece.audioUrl} className="w-full h-7 rounded border border-encre-noire/10" preload="none" />
+                    </div>
+                  )}
 
                   {/* Vidéos personnalisables du morceau */}
                   {Array.isArray(piece.videos) && piece.videos.length > 0 && (
@@ -440,16 +465,22 @@ export default function MestreRepertoireView({ groupId, user, profileData, seque
 
                 {/* Bas de la carte : Barre d'actions */}
                 <div className="flex items-center justify-between gap-2 pt-3 border-t border-dashed border-cordel-master-dark/15 mt-1">
-                  {/* Bouton pour écouter dans le séquenceur avec SSO transparent si disponible */}
+                  {/* Bouton pour ouvrir dans le séquenceur avec SSO transparent si disponible */}
                   {hasSequencer ? (
                     <button
                       type="button"
                       onClick={() => openSequencerWithCrossApp(sequenceurUrl, piece)}
-                      className="text-[10px] font-black uppercase tracking-wider text-cordel-wood hover:underline inline-flex items-center gap-1 bg-transparent border-none p-0 cursor-pointer"
-                      title="Ouvrir et écouter ce morceau dans le Séquenceur avec SSO"
+                      className="text-[10px] font-black uppercase tracking-wider text-cordel-wood hover:underline inline-flex items-center gap-1 bg-transparent border-none p-0 cursor-pointer font-extrabold"
+                      title="Ouvrir et travailler ce morceau dans le Séquenceur avec SSO"
                     >
-                      <span>🎧</span>
-                      <span>Écouter</span>
+                      <span>🥁</span>
+                      <span>
+                        {piece.sequenceurType === 'presets'
+                          ? 'Ouvrir le Preset ➔'
+                          : piece.sequenceurType === 'sections'
+                            ? 'Ouvrir la Séquence ➔'
+                            : 'Ouvrir Séquenceur ➔'}
+                      </span>
                     </button>
                   ) : (
                     <div />

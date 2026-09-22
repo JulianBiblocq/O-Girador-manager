@@ -373,6 +373,10 @@ const startQuiz = (theme, specificToadaId = null) => {
             profileData={profileData} 
             allSongs={allSongs} 
             allSheets={allSheets} 
+            onSelectToada={(toadaId) => {
+              setShowToadaProgress(false);
+              startQuiz('toadas', toadaId);
+            }}
           />
         </div>
       </div>

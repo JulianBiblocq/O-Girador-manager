@@ -40,13 +40,13 @@ export function buildSequencerUrl(baseUrl = 'https://sequenceur.app', item) {
   }
 
   // Détection explicite de section
-  const sectionId = item.sectionId || (collectionType === 'sections' ? (item.id || item.sequenceurId) : null);
+  const sectionId = item.sectionId || (collectionType === 'sections' || item.sequenceurType === 'sections' ? (item.id || item.sequenceurId) : null);
   if (sectionId) {
     return `${base}${separator}sectionId=${encodeURIComponent(sectionId)}`;
   }
 
   // Détection explicite de preset
-  const presetId = item.loadPreset || item.presetId || (collectionType === 'presets' ? (item.id || item.sequenceurId) : null);
+  const presetId = item.loadPreset || item.presetId || (collectionType === 'presets' || item.sequenceurType === 'presets' ? (item.id || item.sequenceurId) : null);
   if (presetId) {
     return `${base}${separator}loadPreset=${encodeURIComponent(presetId)}`;
   }

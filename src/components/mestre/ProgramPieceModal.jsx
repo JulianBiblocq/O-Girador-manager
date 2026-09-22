@@ -112,6 +112,12 @@ export default function ProgramPieceModal({
       if (piece.sequenceurId) {
         setlistItem.sequenceurId = piece.sequenceurId;
       }
+      if (piece.sequenceurType) {
+        setlistItem.sequenceurType = piece.sequenceurType;
+      }
+      if (piece.audioUrl) {
+        setlistItem.audioUrl = piece.audioUrl;
+      }
       if (piece.toadaDocId) {
         setlistItem.toadaDocId = piece.toadaDocId;
       }
@@ -199,11 +205,20 @@ export default function ProgramPieceModal({
 
           {/* Badges des liaisons actives */}
           <div className="flex items-center gap-1.5 flex-wrap pt-1 text-[9px] font-bold text-encre-noire/70">
-            {piece.sequenceurFileUrl && <span className="px-1.5 py-0.5 rounded bg-amber-50 border border-amber-200">🥁 Séquenceur lié</span>}
+            {(piece.sequenceurFileUrl || piece.sequenceurId) && (
+              <span className="px-1.5 py-0.5 rounded bg-amber-50 border border-amber-200">
+                🥁 {piece.sequenceurType === 'presets' ? 'Preset lié' : piece.sequenceurType === 'sections' ? 'Séquence liée' : 'Séquenceur lié'}
+              </span>
+            )}
+            {piece.audioUrl && (
+              <span className="px-1.5 py-0.5 rounded bg-purple-50 border border-purple-200">
+                🎵 Audio lié
+              </span>
+            )}
             {piece.toadaDocId && <span className="px-1.5 py-0.5 rounded bg-emerald-50 border border-emerald-200">🗣️ Toada liée</span>}
             {piece.dancadorChoreoId && <span className="px-1.5 py-0.5 rounded bg-pink-50 border border-pink-200">💃 Danse liée</span>}
             {piece.cultureDocId && <span className="px-1.5 py-0.5 rounded bg-blue-50 border border-blue-200">📖 Culture liée</span>}
-            {!piece.sequenceurFileUrl && !piece.toadaDocId && !piece.dancadorChoreoId && !piece.cultureDocId && (
+            {!piece.sequenceurFileUrl && !piece.sequenceurId && !piece.audioUrl && !piece.toadaDocId && !piece.dancadorChoreoId && !piece.cultureDocId && (
               <span className="italic opacity-60">Morceau autonome (sans ressource externe)</span>
             )}
           </div>

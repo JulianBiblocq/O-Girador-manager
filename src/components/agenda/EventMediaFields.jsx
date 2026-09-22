@@ -54,12 +54,16 @@ export default function EventMediaFields({
       });
 
       const generatedUrl = res.data?.dropUrl || res.data?.lienDepotMedias;
+      const generatedAlbumUrl = res.data?.albumPhotosUrl;
+      const generatedFolder = res.data?.framaspaceFolder || res.data?.folderSlug;
       if (generatedUrl) {
         if (setFormData) {
           setFormData(prev => ({
             ...prev,
             dropUrl: generatedUrl,
-            lienDepotMedias: generatedUrl
+            lienDepotMedias: generatedUrl,
+            ...(generatedAlbumUrl ? { albumPhotosUrl: generatedAlbumUrl } : {}),
+            ...(generatedFolder ? { framaspaceFolder: generatedFolder } : {})
           }));
         } else if (handleChange) {
           handleChange({ target: { name: 'dropUrl', value: generatedUrl } });

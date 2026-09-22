@@ -55,6 +55,8 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
     handleDeleteEvent
   } = useEventDetailsController(event, onClose, t);
 
+  const targetEvent = activeEvent || event;
+
   const [allUsers, setAllUsers] = useState([]);
 
   // Construction standardisée de l'état du formulaire à partir d'un événement
@@ -239,7 +241,7 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
     handleFamilyMemberStatusChange,
     handleFamilyMemberInstrumentChange,
     handleFamilySave
-  } = useEventRSVP(event, user, profileData, allUsers, isMusicLevelRestricted, setToastMessage);
+  } = useEventRSVP(targetEvent, user, profileData, allUsers, isMusicLevelRestricted, setToastMessage);
 
   // useEventCarpool hook
   const {
@@ -364,20 +366,89 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
     return () => unsubscribe();
   }, [event.groupId]);
 
-  // Synchroniser users list to récupérer instruments and names in real-time
+  // Synchronisation en temps réel de la liste des utilisateurs de l'association
   useEffect(() => {
-    if (!event.groupId) return;
-    const canonicalGroup = canonicalizeGroupId(event.groupId);
-    const q = query(collection(db, 'users'), where('groupId', '==', canonicalGroup));
+    const rawGroupId = targetEvent?.groupId || event?.groupId || profileData?.groupId;
+    if (!rawGroupId) return;
+    const canonicalGroup = canonicalizeGroupId(rawGroupId);
+    const groupVariants = Array.from(new Set([
+      canonicalGroup,
+      rawGroupId,
+      canonicalGroup?.toLowerCase(),
+      rawGroupId?.toLowerCase()
+    ].filter(Boolean)));
+
+    const q = groupVariants.length === 1
+      ? query(collection(db, 'users'), where('groupId', '==', groupVariants[0]))
+      : query(collection(db, 'users'), where('groupId', 'in', groupVariants));
+
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const usersList = [];
       snapshot.forEach(docSnap => {
         usersList.push({ id: docSnap.id, ...docSnap.data() });
       });
       setAllUsers(usersList);
+    }, (err) => {
+      console.error("EventDetails - Erreur snapshot users :", err);
     });
     return () => unsubscribe();
-  }, [event.groupId]);
+  }, [targetEvent?.groupId, event?.groupId, profileData?.groupId]);
+
+  // Liste enrichie avec garantie de présence du profil utilisateur local
+  const effectiveAllUsers = useMemo(() => {
+    const list = [...allUsers];
+    if (user?.uid && profileData) {
+      const idx = list.findIndex(u => u.id === user.uid || u.uid === user.uid);
+      const myProfile = { id: user.uid, uid: user.uid, ...profileData, photoURL: profileData.photoURL || user.photoURL };
+      if (idx >= 0) {
+        list[idx] = { ...myProfile, ...list[idx], photoURL: list[idx].photoURL || profileData.photoURL || user.photoURL };
+      } else {
+        list.push(myProfile);
+      }
+    }
+    return list;
+  }, [allUsers, user?.uid, user?.photoURL, profileData]);
+
+  // Résolution multi-critères fiable et anti-scintillement des informations de chaque participant
+  const resolveUserInfo = useCallback((userId, userName = '') => {
+    if (!userId && !userName) return { id: '', prenom: 'Membre', nom: '', instrument: 'Autre' };
+
+    // 1. Profil de l'utilisateur connecté (source de vérité immédiate et stable)
+    if (user?.uid && (userId === user.uid || (userName && `${profileData?.prenom || ''} ${profileData?.nom || ''}`.trim().toLowerCase() === userName.trim().toLowerCase()))) {
+      return {
+        id: user.uid,
+        prenom: profileData?.prenom || userName || '',
+        nom: profileData?.nom || '',
+        photoURL: profileData?.photoURL || user?.photoURL || null,
+        dietaryRestrictions: profileData?.dietaryRestrictions || [],
+        allergies: profileData?.allergies || '',
+        instrument: profileData?.instrument || profileData?.instrumentsJoues?.[0] || 'Autre',
+        ...profileData
+      };
+    }
+
+    // 2. Dépendants / Ayants droit familiaux
+    if (Array.isArray(familyMembers) && familyMembers.length > 0) {
+      const fam = familyMembers.find(f => 
+        (userId && (f.id === userId || f.uid === userId)) ||
+        (userName && `${f.prenom || ''} ${f.nom || ''}`.trim().toLowerCase() === userName.trim().toLowerCase())
+      );
+      if (fam) return fam;
+    }
+
+    // 3. Recherche multicritères dans la liste globale des utilisateurs
+    if (Array.isArray(effectiveAllUsers) && effectiveAllUsers.length > 0) {
+      const found = effectiveAllUsers.find(u => 
+        (userId && (u.id === userId || u.uid === userId || u.email === userId)) ||
+        (userName && `${u.prenom || ''} ${u.nom || ''}`.trim().toLowerCase() === userName.trim().toLowerCase()) ||
+        (userName && u.displayName && u.displayName.trim().toLowerCase() === userName.trim().toLowerCase())
+      );
+      if (found) return found;
+    }
+
+    // 4. Objet de repli avec le prénom/nom préservé
+    return { id: userId, prenom: userName, nom: '', instrument: 'Autre' };
+  }, [user?.uid, user?.photoURL, profileData, familyMembers, effectiveAllUsers]);
 
   const [wardrobeCostumes, setWardrobeCostumes] = useState([]);
 
@@ -958,46 +1029,49 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
     }
   };
 
-  // Group presents by instrument for grouped presence list display
-  const presentsByInstrument = {};
-  if (event.inscriptions && event.inscriptions.length > 0) {
-    event.inscriptions.forEach((ins) => {
-      if (ins.status === 'present') {
-        const userInfo = allUsers.find(u => u.id === ins.userId) || { id: ins.userId, prenom: ins.userName, nom: '', instrument: 'Autre' };
-        const inst = ins.instrumentChoisi || userInfo.instrument || 'Autre';
-        if (!presentsByInstrument[inst]) {
-          presentsByInstrument[inst] = [];
+  // Regrouper les présents par pupitre pour la liste de présence
+  const presentsByInstrument = useMemo(() => {
+    const grouped = {};
+    if (targetEvent.inscriptions && targetEvent.inscriptions.length > 0) {
+      targetEvent.inscriptions.forEach((ins) => {
+        if (ins.status === 'present') {
+          const userInfo = resolveUserInfo(ins.userId, ins.userName);
+          const inst = ins.instrumentChoisi || userInfo.instrument || 'Autre';
+          if (!grouped[inst]) {
+            grouped[inst] = [];
+          }
+          grouped[inst].push({
+            ...userInfo,
+            isInvite: false
+          });
         }
-        presentsByInstrument[inst].push({
-          ...userInfo,
-          isInvite: false
-        });
-      }
-    });
-  }
-
-  // Ajouter external guests to grouped presence list
-  if (event.invitesExternes && event.invitesExternes.length > 0) {
-    event.invitesExternes.forEach((invite) => {
-      const inst = invite.instrument || invite.fonction || 'Autre';
-      if (!presentsByInstrument[inst]) {
-        presentsByInstrument[inst] = [];
-      }
-      presentsByInstrument[inst].push({
-        id: invite.id,
-        prenom: invite.nom,
-        nom: '',
-        instrument: inst,
-        photoURL: null,
-        isInvite: true
       });
-    });
-  }
+    }
+
+    // Ajouter les invités externes à la liste groupée
+    if (targetEvent.invitesExternes && targetEvent.invitesExternes.length > 0) {
+      targetEvent.invitesExternes.forEach((invite) => {
+        const inst = invite.instrument || invite.fonction || 'Autre';
+        if (!grouped[inst]) {
+          grouped[inst] = [];
+        }
+        grouped[inst].push({
+          id: invite.id,
+          prenom: invite.nom,
+          nom: '',
+          instrument: inst,
+          photoURL: null,
+          isInvite: true
+        });
+      });
+    }
+    return grouped;
+  }, [targetEvent.inscriptions, targetEvent.invitesExternes, resolveUserInfo]);
 
   // Extract convoi drivers and individual drivers
   const convoiDrivers = [];
-  if (event.covoiturage?.voitures) {
-    event.covoiturage.voitures.forEach(voiture => {
+  if (targetEvent.covoiturage?.voitures) {
+    targetEvent.covoiturage.voitures.forEach(voiture => {
       if (voiture.chauffeurId && voiture.chauffeurNom) {
         const carStatus = calculateCarStatus(voiture, { enableCarpoolReimbursement, reimbursementRule });
         convoiDrivers.push({
@@ -1011,8 +1085,8 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
 
   const convoiChauffeurIds = new Set(convoiDrivers.map(d => d.id));
   const individualDrivers = [];
-  if (event.inscriptions) {
-    event.inscriptions.forEach(ins => {
+  if (targetEvent.inscriptions) {
+    targetEvent.inscriptions.forEach(ins => {
       if (ins.status === 'present' && ins.transport === 'propre') {
         if (!convoiChauffeurIds.has(ins.userId)) {
           individualDrivers.push({
@@ -1025,9 +1099,9 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
   }
 
   // Date parsing for visual header
-  const isRegistrationDeadlinePassed = checkRegistrationDeadlinePassed(event.dateLimiteInscription);
+  const isRegistrationDeadlinePassed = checkRegistrationDeadlinePassed(targetEvent.dateLimiteInscription);
 
-  const eventType = event.type || 'repetition';
+  const eventType = targetEvent.type || 'repetition';
   const rawCurrentConfig = eventTypeConfigs[eventType] || {};
   const currentConfig = {
     agendaRequireInstrument: rawCurrentConfig.agendaRequireInstrument || false,
@@ -1068,24 +1142,67 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
     return u?.displayName || u?.email || 'Membre';
   };
 
-  const unregisteredUsers = allUsers
-    .filter(u => {
-      if (!u) return false;
-      const hasIdentity = Boolean(u.prenom || u.nom || u.displayName || u.email);
-      if (!hasIdentity) return false;
-      const currentInscription = (event.inscriptions || []).find(ins => ins.userId === u.id);
-      // Inclure les non-inscrits ainsi que les membres actuellement notés absents ou à confirmer
-      return !currentInscription || currentInscription.status !== 'present';
-    })
-    .map(u => {
-      const currentInscription = (event.inscriptions || []).find(ins => ins.userId === u.id);
-      return {
+  const unregisteredUsers = useMemo(() => {
+    return effectiveAllUsers
+      .filter(u => {
+        if (!u) return false;
+        const hasIdentity = Boolean(u.prenom || u.nom || u.displayName || u.email);
+        if (!hasIdentity) return false;
+        const currentInscription = (targetEvent.inscriptions || []).find(ins => 
+          ins.userId === u.id || ins.userId === u.uid || 
+          (u.email && ins.email && ins.email === u.email)
+        );
+        // Inclure les non-inscrits ainsi que les membres actuellement notés absents ou à confirmer
+        return !currentInscription || currentInscription.status !== 'present';
+      })
+      .map(u => {
+        const currentInscription = (targetEvent.inscriptions || []).find(ins => 
+          ins.userId === u.id || ins.userId === u.uid || 
+          (u.email && ins.email && ins.email === u.email)
+        );
+        return {
+          ...u,
+          displayNameFormatted: formatUserDisplayName(u),
+          currentStatus: currentInscription?.status || 'none'
+        };
+      })
+      .sort((a, b) => a.displayNameFormatted.localeCompare(b.displayNameFormatted));
+  }, [effectiveAllUsers, targetEvent.inscriptions]);
+
+  // Calcul des membres de l'association n'ayant pas encore répondu (aucun vote/inscription)
+  const unansweredUsers = useMemo(() => {
+    const inscriptions = targetEvent?.inscriptions || [];
+    const respondedUserIds = new Set();
+    const respondedUserEmails = new Set();
+    const respondedUserNames = new Set();
+
+    inscriptions.forEach(ins => {
+      if (ins.userId) respondedUserIds.add(ins.userId);
+      if (ins.email) respondedUserEmails.add(ins.email.toLowerCase().trim());
+      if (ins.userName) respondedUserNames.add(ins.userName.toLowerCase().trim());
+    });
+
+    return (effectiveAllUsers || [])
+      .filter(u => {
+        if (!u) return false;
+        const hasIdentity = Boolean(u.prenom || u.nom || u.displayName || u.email);
+        if (!hasIdentity) return false;
+
+        if (u.id && respondedUserIds.has(u.id)) return false;
+        if (u.uid && respondedUserIds.has(u.uid)) return false;
+        if (u.email && respondedUserEmails.has(u.email.toLowerCase().trim())) return false;
+        const fullName = `${u.prenom || ''} ${u.nom || ''}`.trim().toLowerCase();
+        if (fullName && respondedUserNames.has(fullName)) return false;
+        if (u.displayName && respondedUserNames.has(u.displayName.toLowerCase().trim())) return false;
+
+        return true;
+      })
+      .map(u => ({
         ...u,
-        displayNameFormatted: formatUserDisplayName(u),
-        currentStatus: currentInscription?.status || 'none'
-      };
-    })
-    .sort((a, b) => a.displayNameFormatted.localeCompare(b.displayNameFormatted));
+        displayNameFormatted: formatUserDisplayName(u)
+      }))
+      .sort((a, b) => a.displayNameFormatted.localeCompare(b.displayNameFormatted));
+  }, [targetEvent?.inscriptions, effectiveAllUsers]);
 
   const formatEventHeaderDate = (startDateStr, endDateStr, horaires) => {
     if (!startDateStr) return '';
@@ -1626,7 +1743,8 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
                 getMemberInstrumentOptions={getMemberInstrumentOptions}
                 getPupitreName={getPupitreName}
                 presentsByInstrument={presentsByInstrument}
-                allUsers={allUsers}
+                allUsers={effectiveAllUsers}
+                unansweredUsers={unansweredUsers}
                 isAuthorized={isAuthorized}
                 handleValidatePending={handleValidatePending}
                 handleUpdateMemberInstrument={handleUpdateMemberInstrument}
@@ -1712,7 +1830,8 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
                 getMemberInstrumentOptions={getMemberInstrumentOptions}
                 getPupitreName={getPupitreName}
                 presentsByInstrument={presentsByInstrument}
-                allUsers={allUsers}
+                allUsers={effectiveAllUsers}
+                unansweredUsers={unansweredUsers}
                 handleValidatePending={handleValidatePending}
                 handleUpdateMemberInstrument={handleUpdateMemberInstrument}
                 isManualRegisterOpen={isManualRegisterOpen}

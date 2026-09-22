@@ -3,13 +3,10 @@ import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '../../firebase';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
-import AutoEvalQuizContainer from './AutoEvalQuizContainer';
 import { calculateToadaScore, calculateGlobalNacaoScore, getProgressColor } from '../../utils/toadaProgressEngine';
-import useHardwareBack from '../../hooks/useHardwareBack';
 
-export default function StudentToadasProgress({ profileData, allSongs = [], allSheets = [] }) {
+export default function StudentToadasProgress({ profileData, allSongs = [], allSheets = [], onSelectToada = null }) {
   const [quizHistory, setQuizHistory] = useState([]);
-  const [activeToadaId, setActiveToadaId] = useState(null); // Pour lancer un quiz ciblé
 
   useEffect(() => {
     if (!profileData?.uid) return;
@@ -21,22 +18,6 @@ export default function StudentToadasProgress({ profileData, allSongs = [], allS
     });
     return () => unsub();
   }, [profileData?.uid]);
-
-  useHardwareBack(!!activeToadaId, () => setActiveToadaId(null));
-
-  // Si on a sélectionné un chant pour révision ciblée
-  if (activeToadaId) {
-    return (
-      <AutoEvalQuizContainer 
-        profileData={profileData} 
-        allSongs={allSongs} 
-        allSheets={allSheets} 
-        initialTheme="toadas"
-        targetedToadaId={activeToadaId}
-        onExit={() => setActiveToadaId(null)}
-      />
-    );
-  }
 
   // Les chansons ont déjà été filtrées par excludeFromPedagogy dans MonParcours
   const activeSongs = allSongs;
@@ -113,7 +94,7 @@ export default function StudentToadasProgress({ profileData, allSongs = [], allS
 
                 <CordelButton 
                   variant="secondary" 
-                  onClick={() => setActiveToadaId(song.id)}
+                  onClick={() => onSelectToada && onSelectToada(song.id)}
                   className="w-full text-[10px] py-1.5 mt-2 font-black uppercase"
                 >
                   🎯 Réviser ce chant
