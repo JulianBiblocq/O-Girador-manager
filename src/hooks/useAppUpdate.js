@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { forceUpdateAndClearCache } from '../utils/pwaUtils';
 
-export const CURRENT_VERSION = '1.6.0';
+export const CURRENT_VERSION = '1.0.0';
 
 /**
  * Hook de détection de version et purge de cache PWA pour Organizad'Or.
