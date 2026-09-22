@@ -1,15 +1,19 @@
 import React, { useState, useMemo } from 'react';
 import CordelCard from './CordelCard';
 import EventDisciplineBadges from './agenda/EventDisciplineBadges';
+import { useTranslation } from './LanguageContext';
 
 export default function CalendarGrid({ events = [], onSelectEvent, t }) {
+  const { t: tCtx, locale } = useTranslation();
+  const tFunc = t || tCtx;
   const [currentDate, setCurrentDate] = useState(new Date());
 
   const currentYear = currentDate.getFullYear();
   const currentMonth = currentDate.getMonth(); // 0-indexed
 
   // Header month names
-  const monthName = currentDate.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+  const dateLocale = locale === 'pt' ? 'pt-BR' : 'fr-FR';
+  const monthName = currentDate.toLocaleDateString(dateLocale, { month: 'long', year: 'numeric' });
 
   // Event type variants
   const variants = {
@@ -78,7 +82,9 @@ export default function CalendarGrid({ events = [], onSelectEvent, t }) {
     setCurrentDate(new Date(currentYear, currentMonth + 1, 1));
   };
 
-  const weekdays = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
+  const weekdays = locale === 'pt'
+    ? ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom']
+    : ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
 
   return (
     <CordelCard variant="default" useExtremeBorder={true} className="p-3 sm:p-5 select-none w-full bg-cordel-bg-light">
@@ -145,7 +151,7 @@ export default function CalendarGrid({ events = [], onSelectEvent, t }) {
                 </span>
                 {isToday && (
                   <span className="text-[6px] sm:text-[7px] uppercase font-black tracking-wider text-cordel-wood border border-cordel-wood/30 px-1 rounded-sm leading-none bg-amber-50">
-                    Auj.
+                    {locale === 'pt' ? 'Hoje' : 'Auj.'}
                   </span>
                 )}
               </div>

@@ -264,16 +264,16 @@ export default function LayoutShell({
   const canSendFeedback = currentProfile?.role === 'admin' || currentProfile?.role === 'mestre' || currentProfile?.role === 'super-admin' || currentProfile?.role === 'bureau' || currentProfile?.isSystemAdmin;
 
   const allMemberMenuItems = [
-    { id: 'accueil', label: 'Accueil', icon: <XiloHome size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('accueil', 'dashboard'); onNavigateToTab && onNavigateToTab('dashboard'); } },
-    { id: 'profil', label: 'Profil', icon: <XiloUser size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('mon-espace', 'profil'); onNavigateToTab && onNavigateToTab('profil'); } },
-    { id: 'mon-parcours', label: 'Mon Parcours', icon: <XiloCompass size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('mon-espace', 'mon-parcours'); onNavigateToTab && onNavigateToTab('mon-parcours'); } },
-    { id: 'agenda', label: 'Agenda', icon: <XiloCalendar size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('mon-espace', 'agenda'); onNavigateToTab && onNavigateToTab('agenda'); } },
-    { id: 'atelier', label: 'Atelier', icon: <XiloChisel size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('mon-espace', 'atelier'); onNavigateToTab && onNavigateToTab('atelier'); } },
-    { id: 'materiel', label: 'Matériel', icon: <XiloCaixa size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('mon-espace', 'materiel'); onNavigateToTab && onNavigateToTab('materiel'); } },
-    { id: 'vestiaire', label: 'Vestiaire', icon: <XiloHanger size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('mon-espace', 'vestiaire'); onNavigateToTab && onNavigateToTab('vestiaire'); } },
-    { id: 'trombinoscope', label: 'Trombinoscope', icon: <XiloPeople size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('mon-espace', 'trombinoscope'); onNavigateToTab && onNavigateToTab('trombinoscope'); } },
-    { id: 'forum', label: 'Porte-voix', icon: <XiloMegaphone size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('mon-espace', 'forum'); onNavigateToTab && onNavigateToTab('forum'); } },
-    { id: 'varal', label: 'Varal', icon: <XiloScroll size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('mon-espace', 'varal'); onNavigateToTab && onNavigateToTab('varal'); } }
+    { id: 'accueil', label: 'Accueil', labelKey: 'poles.tabAccueil', icon: <XiloHome size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('accueil', 'dashboard'); onNavigateToTab && onNavigateToTab('dashboard'); } },
+    { id: 'profil', label: 'Profil', labelKey: 'poles.tabProfil', icon: <XiloUser size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('mon-espace', 'profil'); onNavigateToTab && onNavigateToTab('profil'); } },
+    { id: 'mon-parcours', label: 'Mon Parcours', labelKey: 'poles.tabParcours', icon: <XiloCompass size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('mon-espace', 'mon-parcours'); onNavigateToTab && onNavigateToTab('mon-parcours'); } },
+    { id: 'agenda', label: 'Agenda', labelKey: 'poles.tabAgenda', icon: <XiloCalendar size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('mon-espace', 'agenda'); onNavigateToTab && onNavigateToTab('agenda'); } },
+    { id: 'atelier', label: 'Atelier', labelKey: 'poles.tabAtelier', icon: <XiloChisel size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('mon-espace', 'atelier'); onNavigateToTab && onNavigateToTab('atelier'); } },
+    { id: 'materiel', label: 'Matériel', labelKey: 'poles.tabMateriel', icon: <XiloCaixa size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('mon-espace', 'materiel'); onNavigateToTab && onNavigateToTab('materiel'); } },
+    { id: 'vestiaire', label: 'Vestiaire', labelKey: 'poles.tabVestiaire', icon: <XiloHanger size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('mon-espace', 'vestiaire'); onNavigateToTab && onNavigateToTab('vestiaire'); } },
+    { id: 'trombinoscope', label: 'Trombinoscope', labelKey: 'poles.tabTrombinoscope', icon: <XiloPeople size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('mon-espace', 'trombinoscope'); onNavigateToTab && onNavigateToTab('trombinoscope'); } },
+    { id: 'forum', label: 'Porte-voix', labelKey: 'poles.tabPorteVoix', icon: <XiloMegaphone size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('mon-espace', 'forum'); onNavigateToTab && onNavigateToTab('forum'); } },
+    { id: 'varal', label: 'Varal', labelKey: 'poles.tabVaral', icon: <XiloScroll size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('mon-espace', 'varal'); onNavigateToTab && onNavigateToTab('varal'); } }
   ];
 
   const memberMenuItems = allMemberMenuItems.filter(item => isModuleEnabled(item.id, 'mon-espace'));
@@ -687,7 +687,7 @@ export default function LayoutShell({
                     >
                       <span className="flex items-center gap-2">
                         {item.icon}
-                        {item.label}
+                        {item.labelKey ? (t(item.labelKey) || item.label) : item.label}
                       </span>
                       {item.id === 'forum' && unreadPrivateMessagesCount > 0 && (
                         <span
@@ -827,7 +827,7 @@ export default function LayoutShell({
                     const isActive = currentTab === tab.id;
                     const isRestrictedTitle = t('common.accessRestricted') || "Accès restreint";
 
-                    const translatedLabel = tab.labelKey ? t(`poles.${tab.labelKey}`) : null;
+                    const translatedLabel = tab.labelKey ? (tab.labelKey.startsWith('poles.') ? t(tab.labelKey) : t(`poles.${tab.labelKey}`)) : null;
                     const displayLabel = (translatedLabel && !translatedLabel.startsWith('poles.')) ? translatedLabel : tab.label;
 
                     if (!isUnlocked) {
@@ -1084,7 +1084,7 @@ export default function LayoutShell({
                       >
                         <span className="flex items-center gap-2">
                           {item.icon}
-                          {item.label}
+                          {item.labelKey ? (t(item.labelKey) || item.label) : item.label}
                         </span>
                         {item.id === 'forum' && unreadPrivateMessagesCount > 0 && (
                           <span

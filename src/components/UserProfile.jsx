@@ -29,7 +29,7 @@ import MemberExpenseSection from './expenses/MemberExpenseSection';
 import QRScannerModal from './auth/QRScannerModal';
 const CordelImageEditor = React.lazy(() => import('./CordelImageEditor'));
 
-import { formatTagGender } from '../utils/tagUtils';
+import { formatTagGender, filterUserAssignedTags } from '../utils/tagUtils';
 
 const getInstrumentIconPath = (instName) => {
   if (!instName) return '/favicon.svg';
@@ -88,6 +88,8 @@ export default function UserProfile({ user, profileData, associationName, onBack
     handleForceUpdate
   } = useUserProfile(user, profileData, t);
 
+  const visibleTags = filterUserAssignedTags(profileData?.tags, tagsDisponibles);
+
   const fullName = `${profileData?.prenom || ''} ${profileData?.nom || ''}`;
 
   const translate = (key, fallback) => {
@@ -130,10 +132,10 @@ export default function UserProfile({ user, profileData, associationName, onBack
         <div className="bg-amber-100 dark:bg-amber-950/40 border-2 border-dashed border-amber-600 text-amber-900 dark:text-amber-200 p-3 rounded flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs text-left shadow-sm animate-fade-in select-none">
           <div className="flex flex-col">
             <span className="font-black uppercase tracking-wider text-amber-700 dark:text-amber-400 text-[10px]">
-              ⚠️ Profil incomplet - Informations obligatoires manquantes
+              ⚠️ {t('userProfile.incompleteAlert')}
             </span>
             <span className="font-bold mt-0.5">
-              Veuillez compléter : {missingLabels.join(', ')}.
+              {t('userProfile.pleaseComplete')} {missingLabels.join(', ')}.
             </span>
           </div>
           {!isEditing && (
@@ -143,7 +145,7 @@ export default function UserProfile({ user, profileData, associationName, onBack
               onClick={handleStartEdit}
               className="text-[10px] py-1.5 px-3 uppercase font-black shrink-0"
             >
-              ✏️ Renseigner maintenant
+              ✏️ {t('userProfile.fillNow')}
             </CordelButton>
           )}
         </div>
@@ -154,7 +156,7 @@ export default function UserProfile({ user, profileData, associationName, onBack
         <div 
           className="relative cursor-pointer group hover:scale-105 transition-transform" 
           onClick={() => (profileData?.photoURL || user?.photoURL) && setLightboxOpen(true)}
-          title="Cliquer pour agrandir la photo"
+          title={t('userProfile.photoEnlargeTitle')}
         >
           <XiloAvatar src={profileData?.photoURL || user?.photoURL} name={fullName} size={110} />
           {/* Sceaux décoratifs sur l'avatar */}
@@ -183,9 +185,9 @@ export default function UserProfile({ user, profileData, associationName, onBack
 
         {/* Badges de rôles et d'instruments */}
         <div className="flex flex-wrap gap-2.5 justify-center items-center w-full px-2 max-w-2xl border-b border-dashed border-cordel-master-dark/10 pb-4">
-          {profileData?.tags && profileData.tags.length > 0 && (
+          {visibleTags && visibleTags.length > 0 && (
             <div className="flex flex-wrap gap-1.5 justify-center">
-              {profileData.tags.map((tag, idx) => {
+              {visibleTags.map((tag, idx) => {
                 const formattedTag = formatTagGender(tag, profileData?.genre, profileData?.majoriteFeminine, tagsDisponibles);
                 const tagStr = typeof tag === 'string' ? tag : (tag.id || idx);
                 const rotation = ((String(tagStr).charCodeAt(0) + idx) % 5) - 2;
@@ -233,7 +235,7 @@ export default function UserProfile({ user, profileData, associationName, onBack
         <div className="flex flex-col items-center gap-2 mt-1 w-full max-w-md">
           <div className="bg-cordel-bg-light/90 border border-dashed border-cordel-master-dark/25 p-2.5 rounded-[6px] text-center w-full shadow-sm">
             <p className="text-[10px] text-cordel-master-dark font-semibold leading-relaxed">
-              💡 <span className="font-extrabold text-cordel-wood">Photo de profil :</span> Choisissez une photo où votre visage est bien visible afin d'aider les autres membres du groupe à vous reconnaître facilement dans le Trombinoscope !
+              💡 <span className="font-extrabold text-cordel-wood">{t('userProfile.photoTipTitle')}</span> {t('userProfile.photoTipDesc')}
             </p>
           </div>
 
@@ -276,10 +278,10 @@ export default function UserProfile({ user, profileData, associationName, onBack
                 <XiloEye size={22} className="text-emerald-700 dark:text-emerald-400 shrink-0" />
                 <div>
                   <h4 className="font-black text-xs uppercase text-emerald-900 dark:text-emerald-300 flex items-center gap-1.5">
-                    1. Mon Profil Public (Trombinoscope)
+                    {t('userProfile.cardPublicTitle')}
                   </h4>
                   <p className="text-[10px] text-emerald-800 dark:text-emerald-200 opacity-90 font-medium">
-                    Ces informations apparaissent publiquement sur votre fiche dans le Trombinoscope de l'association.
+                    {t('userProfile.cardPublicDesc')}
                   </p>
                 </div>
               </div>
@@ -306,18 +308,18 @@ export default function UserProfile({ user, profileData, associationName, onBack
 
               <div>
                 <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70 block">
-                  {translate('onboarding.pupitre', "Pupitre Principal")}
+                  {translate('onboarding.pupitre', t('userProfile.pupitrePrincipal'))}
                 </span>
                 <span className="font-extrabold text-cordel-wood flex items-center gap-1.5 flex-wrap">
-                  {profileData?.instrument || <span className="italic font-normal opacity-60">En attente de validation</span>}
+                  {profileData?.instrument || <span className="italic font-normal opacity-60">{t('userProfile.pendingValidation')}</span>}
                   {profileData?.sousInstrument && (
                     <span className="text-[10px] font-bold text-cordel-master-dark/80 bg-black/5 dark:bg-white/10 px-1.5 py-0.5 rounded border border-cordel-master-dark/15">
-                      Attribution : {profileData.sousInstrument}
+                      {t('userProfile.attribution')} : {profileData.sousInstrument}
                     </span>
                   )}
                   {profileData?.instrument?.toLowerCase().includes('alfaia') && Array.isArray(profileData?.competencesAlfaia) && profileData.competencesAlfaia.length > 0 && (
                     <span className="text-[10px] font-bold text-cordel-master-dark/80 bg-black/5 dark:bg-white/10 px-1.5 py-0.5 rounded border border-cordel-master-dark/15">
-                      Voix : {profileData.competencesAlfaia.join(', ')}
+                      {t('userProfile.voix')} : {profileData.competencesAlfaia.join(', ')}
                     </span>
                   )}
                 </span>
@@ -326,7 +328,7 @@ export default function UserProfile({ user, profileData, associationName, onBack
               {profileData?.instrumentSecondaire && (
                 <div>
                   <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70 block">
-                    Pupitre Secondaire
+                    {t('userProfile.pupitreSecondaire')}
                   </span>
                   <span className="font-bold">{profileData.instrumentSecondaire}</span>
                 </div>
@@ -335,22 +337,22 @@ export default function UserProfile({ user, profileData, associationName, onBack
               {(profileData?.voeuPrincipal || profileData?.voeuSecondaire || profileData?.voeuTertiaire) && (
                 <div className="col-span-1 md:col-span-2 bg-cordel-bg-light/60 border border-dashed border-cordel-master-dark/20 p-2.5 rounded mt-1">
                   <span className="text-[10px] uppercase font-black tracking-wider text-cordel-wood flex items-center gap-1 mb-1">
-                    <XiloSparkles size={12} /> Vœux d'Orientation Musicale (Transmis au Mestre) :
+                    <XiloSparkles size={12} /> {t('userProfile.voeuxOrientation')}
                   </span>
                   <div className="flex flex-wrap gap-2 text-xs">
                     {profileData?.voeuPrincipal && (
                       <span className="bg-white/70 dark:bg-black/20 px-2 py-1 rounded border border-cordel-master-dark/15">
-                        <strong className="text-cordel-wood">Vœu 1 :</strong> {profileData.voeuPrincipal}
+                        <strong className="text-cordel-wood">{t('userProfile.voeu1')}</strong> {profileData.voeuPrincipal}
                       </span>
                     )}
                     {profileData?.voeuSecondaire && (
                       <span className="bg-white/70 dark:bg-black/20 px-2 py-1 rounded border border-cordel-master-dark/15">
-                        <strong className="text-cordel-wood">Vœu 2 :</strong> {profileData.voeuSecondaire}
+                        <strong className="text-cordel-wood">{t('userProfile.voeu2')}</strong> {profileData.voeuSecondaire}
                       </span>
                     )}
                     {profileData?.voeuTertiaire && (
                       <span className="bg-white/70 dark:bg-black/20 px-2 py-1 rounded border border-cordel-master-dark/15">
-                        <strong className="text-cordel-wood">Vœu 3 :</strong> {profileData.voeuTertiaire}
+                        <strong className="text-cordel-wood">{t('userProfile.voeu3')}</strong> {profileData.voeuTertiaire}
                       </span>
                     )}
                   </div>
@@ -366,10 +368,10 @@ export default function UserProfile({ user, profileData, associationName, onBack
                 <XiloLock size={22} className="text-amber-700 dark:text-amber-400 shrink-0" />
                 <div>
                   <h4 className="font-black text-xs uppercase text-amber-900 dark:text-amber-300 flex items-center gap-1.5">
-                    2. Coordonnées & Visibilité Annuaire
+                    {t('userProfile.cardContactTitle')}
                   </h4>
                   <p className="text-[10px] text-amber-800 dark:text-amber-200 opacity-90 font-medium">
-                    Contrôle des informations partagées dans le trombinoscope des membres.
+                    {t('userProfile.cardContactDesc')}
                   </p>
                 </div>
               </div>
@@ -382,7 +384,7 @@ export default function UserProfile({ user, profileData, associationName, onBack
                     <XiloPhone size={12} /> {t('userProfile.phone')}
                   </span>
                   <div className="flex items-center gap-2 flex-wrap mt-0.5">
-                    <span className="font-extrabold">{formData.telephone || <span className="italic opacity-50">Non renseigné</span>}</span>
+                    <span className="font-extrabold">{formData.telephone || <span className="italic opacity-50">{t('userProfile.notSpecified')}</span>}</span>
                     {formData.telephone && (
                       <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded border flex items-center gap-1 ${
                         (formData.afficherTelephone !== false && formData.publierTelephone !== false)
@@ -390,8 +392,8 @@ export default function UserProfile({ user, profileData, associationName, onBack
                           : 'bg-amber-100 text-amber-900 border-amber-400'
                       }`}>
                         {(formData.afficherTelephone !== false && formData.publierTelephone !== false) 
-                          ? <><XiloEye size={10} /> Numéro visible</> 
-                          : <><XiloEyeOff size={10} /> Masqué aux membres</>
+                          ? <><XiloEye size={10} /> {t('userProfile.phoneVisible')}</> 
+                          : <><XiloEyeOff size={10} /> {t('userProfile.phoneHidden')}</>
                         }
                       </span>
                     )}
@@ -408,9 +410,9 @@ export default function UserProfile({ user, profileData, associationName, onBack
                     <span>
                       {formData.dateNaissance 
                         ? (formData.afficherDateNaissance 
-                            ? new Date(formData.dateNaissance).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })
-                            : new Date(formData.dateNaissance).toLocaleDateString('fr-FR')) 
-                        : <span className="italic opacity-50">Non renseigné</span>
+                            ? new Date(formData.dateNaissance).toLocaleDateString(locale === 'pt' ? 'pt-BR' : 'fr-FR', { day: 'numeric', month: 'long' })
+                            : new Date(formData.dateNaissance).toLocaleDateString(locale === 'pt' ? 'pt-BR' : 'fr-FR')) 
+                        : <span className="italic opacity-50">{t('userProfile.notSpecified')}</span>
                       }
                     </span>
                     {formData.dateNaissance && (
@@ -420,8 +422,8 @@ export default function UserProfile({ user, profileData, associationName, onBack
                           : 'bg-amber-100 text-amber-900 border-amber-400'
                       }`}>
                         {formData.afficherDateNaissance 
-                          ? <><XiloBirthday size={10} /> Anniversaire visible (Jour/Mois)</> 
-                          : <><XiloEyeOff size={10} /> Masqué aux membres</>
+                          ? <><XiloBirthday size={10} /> {t('userProfile.birthdayVisible')}</> 
+                          : <><XiloEyeOff size={10} /> {t('userProfile.birthdayHidden')}</>
                         }
                       </span>
                     )}
@@ -432,11 +434,11 @@ export default function UserProfile({ user, profileData, associationName, onBack
               {isFieldVisible('adresse') && (
                 <div className="col-span-1 md:col-span-2 bg-cordel-bg-light/60 p-2.5 rounded border border-dashed border-cordel-master-dark/20">
                   <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70 flex items-center gap-1">
-                    <XiloHome size={12} /> {t('userProfile.adresse')} (Admin & Logistique)
+                    <XiloHome size={12} /> {t('userProfile.addressAdmin')}
                   </span>
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mt-0.5">
                     <span className="font-bold">
-                      {formData.adresse || (profileData?.adresseRue ? `${profileData.adresseRue}, ${profileData.adresseCP || ''} ${profileData.adresseVille || ''}` : <span className="italic opacity-50">Non renseignée</span>)}
+                      {formData.adresse || (profileData?.adresseRue ? `${profileData.adresseRue}, ${profileData.adresseCP || ''} ${profileData.adresseVille || ''}` : <span className="italic opacity-50">{t('userProfile.notSpecifiedFem')}</span>)}
                     </span>
                     <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded border shrink-0 flex items-center gap-1 ${
                       formData.afficherVille
@@ -444,8 +446,8 @@ export default function UserProfile({ user, profileData, associationName, onBack
                         : 'bg-amber-100 text-amber-900 border-amber-400'
                     }`}>
                       {formData.afficherVille 
-                        ? <><XiloPin size={10} /> Ville visible ({profileData?.adresseVille || formData.adresseVille || 'Ville'})</> 
-                        : <><XiloEyeOff size={10} /> Adresse masquée aux membres</>
+                        ? <><XiloPin size={10} /> {t('userProfile.cityVisible')} ({profileData?.adresseVille || formData.adresseVille || ''})</> 
+                        : <><XiloEyeOff size={10} /> {t('userProfile.addressHidden')}</>
                       }
                     </span>
                   </div>
@@ -461,10 +463,10 @@ export default function UserProfile({ user, profileData, associationName, onBack
                 <XiloShield size={22} className="text-sky-700 dark:text-sky-400 shrink-0" />
                 <div>
                   <h4 className="font-black text-xs uppercase text-sky-900 dark:text-sky-300 flex items-center gap-1.5">
-                    3. Placement Scénique, Costumes & Santé (Confidentiel Mestre / Admin)
+                    {t('userProfile.cardConfidentialTitle')}
                   </h4>
                   <p className="text-[10px] text-sky-800 dark:text-sky-200 opacity-90 font-medium">
-                    Réservé au Mestre (placement sur scène dans le Séquenceur) et aux administrateurs. <strong>Ne sera jamais affiché dans le trombinoscope.</strong>
+                    {t('userProfile.cardConfidentialDesc')}
                   </p>
                 </div>
               </div>
@@ -474,7 +476,7 @@ export default function UserProfile({ user, profileData, associationName, onBack
               {isFieldVisible('lateralite') && (
                 <div>
                   <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70 flex items-center gap-1">
-                    <XiloHand size={12} /> {t('userProfile.lateralite')} (Séquenceur Mestre)
+                    <XiloHand size={12} /> {t('userProfile.lateraliteMestre')}
                   </span>
                   <span className="capitalize font-extrabold text-cordel-wood">{formData.lateralite === 'droitier' ? t('onboarding.handRight') : t('onboarding.handLeft')}</span>
                 </div>
@@ -483,13 +485,13 @@ export default function UserProfile({ user, profileData, associationName, onBack
               {(isFieldVisible('tailleTshirt') || isFieldVisible('taillePantalon')) && (
                 <div className="col-span-1 md:col-span-2 border-t border-dashed border-cordel-master-dark/15 pt-2 mt-1">
                   <span className="text-[10px] uppercase font-black text-cordel-wood flex items-center gap-1 mb-1">
-                    <XiloShirt size={12} /> Mensurations / Taille des Costumes
+                    <XiloShirt size={12} /> {t('userProfile.costumeSizes')}
                   </span>
                   <div className="grid grid-cols-2 gap-4">
                     {isFieldVisible('tailleTshirt') && (
                       <div>
                         <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70 block">
-                          T-shirt
+                          {t('userProfile.tshirt')}
                         </span>
                         <span className="font-extrabold text-sm">{formData.tailleTshirt}</span>
                       </div>
@@ -497,7 +499,7 @@ export default function UserProfile({ user, profileData, associationName, onBack
                     {isFieldVisible('taillePantalon') && (
                       <div>
                         <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70 block">
-                          Pantalon / Bas
+                          {t('userProfile.pantalon')}
                         </span>
                         <span className="font-extrabold text-sm">{formData.taillePantalon}</span>
                       </div>
@@ -512,14 +514,14 @@ export default function UserProfile({ user, profileData, associationName, onBack
                     {t('userProfile.imageRights')}
                   </span>
                   <div className="flex items-center gap-2">
-                    <span>{formData.droitImage ? "✅ Accordé" : "❌ Refusé"}</span>
+                    <span>{formData.droitImage ? `✅ ${t('userProfile.granted')}` : `❌ ${t('userProfile.refused')}`}</span>
                     {formData.droitImage && (
                       <button 
                         type="button" 
                         onClick={() => generateImageCharterPDF(profileData, associationName)}
                         className="text-[9px] font-bold text-cordel-wood hover:underline ml-1 flex items-center gap-1"
                       >
-                        <XiloDocument size={12} /> Télécharger PDF
+                        <XiloDocument size={12} /> {t('userProfile.downloadPdf')}
                       </button>
                     )}
                   </div>
@@ -529,17 +531,17 @@ export default function UserProfile({ user, profileData, associationName, onBack
               {demanderAttestationSante && (
                 <div>
                   <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70 block">
-                    {t('userProfile.medicalCert')}
+                    {t('userProfile.medicalAttestation')}
                   </span>
                   <div className="flex items-center gap-2">
-                    <span>{formData.aptitudeMedicale ? "✅ Attesté sur l'honneur" : "❌ Non attesté"}</span>
+                    <span>{formData.aptitudeMedicale ? `✅ ${t('userProfile.declaredFit')}` : `❌ ${t('userProfile.notSpecified')}`}</span>
                     {formData.aptitudeMedicale && (
                       <button 
                         type="button" 
                         onClick={() => generateMedicalAttestationPDF(profileData, associationName)}
                         className="text-[9px] font-bold text-cordel-wood hover:underline ml-1 flex items-center gap-1"
                       >
-                        <XiloDocument size={12} /> Télécharger PDF
+                        <XiloDocument size={12} /> {t('userProfile.downloadPdf')}
                       </button>
                     )}
                   </div>

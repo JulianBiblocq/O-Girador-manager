@@ -9,7 +9,7 @@ export default function TenantNotFound() {
         Nous n'avons pas pu trouver l'association correspondant à cette adresse. Vérifiez l'URL ou retournez à l'accueil.
       </p>
       <a 
-        href="https://o-girador.com" 
+        href="https://www.o-girador.com" 
         className="px-6 py-3 bg-[var(--color-cordel-ocre)] text-white font-bold rounded-md hover:bg-[var(--theme-primary)] transition-colors"
       >
         Retour au Hub

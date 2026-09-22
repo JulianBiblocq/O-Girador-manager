@@ -251,7 +251,7 @@ export default function TagManager({ groupId, onBack, role, isSystemAdmin }) {
       setEditingTag(null);
     } catch (error) {
       console.error("TagManager - Erreur de modification d'étiquette :", error);
-      alert("Erreur lors de la mise à jour de l'étiquette.");
+      alert(t('tagManager.errorUpdate') || "Erreur lors de la mise à jour de l'étiquette.");
     } finally {
       setSaving(false);
     }
@@ -260,10 +260,10 @@ export default function TagManager({ groupId, onBack, role, isSystemAdmin }) {
   const handleDeleteTag = async (normTag) => {
     if (!groupId) return;
     const confirmDelete = await confirm({
-      title: "Supprimer l'étiquette",
+      title: t('tagManager.deleteTitle') || "Supprimer l'étiquette",
       message: (t('tagManager.deleteConfirmText') || `Voulez-vous vraiment supprimer l'étiquette "{tag}" ?`).replace('{tag}', normTag.nomM),
-      confirmText: "Oui, supprimer",
-      cancelText: "Annuler",
+      confirmText: t('common.yesDelete') || "Oui, supprimer",
+      cancelText: t('common.cancel') || "Annuler",
       variant: "danger"
     });
     if (!confirmDelete) return;
@@ -332,7 +332,7 @@ export default function TagManager({ groupId, onBack, role, isSystemAdmin }) {
           {t('tags.createLabel') || "Créer une nouvelle étiquette"}
         </h3>
         <p className="text-[10px] text-cordel-master-dark opacity-75 mb-4">
-          Spécifiez le nom au masculin et au féminin pour un accord dynamique selon le profil du membre.
+          {t('tagManager.desc') || "Spécifiez le nom au masculin et au féminin pour un accord dynamique selon le profil du membre."}
         </p>
 
         <form onSubmit={handleAddTag} className="flex flex-col gap-3">
@@ -340,14 +340,14 @@ export default function TagManager({ groupId, onBack, role, isSystemAdmin }) {
             {/* Masculin */}
             <div className="flex flex-col gap-1">
               <label className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-master-dark">
-                👨 Nom (Masculin) *
+                👨 {t('tagManager.nomM') || "Nom (Masculin)"} *
               </label>
               <input
                 type="text"
                 value={nomM}
                 onChange={(e) => setNomM(e.target.value)}
                 disabled={saving}
-                placeholder="Ex: Trésorier, Modérateur..."
+                placeholder={t('tagManager.placeholderM') || "Ex: Trésorier, Modérateur..."}
                 required
                 maxLength={30}
                 className="theme-input text-xs py-2 font-bold w-full"
@@ -357,14 +357,14 @@ export default function TagManager({ groupId, onBack, role, isSystemAdmin }) {
             {/* Féminin */}
             <div className="flex flex-col gap-1">
               <label className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-master-dark">
-                👩 Nom (Féminin) *
+                👩 {t('tagManager.nomF') || "Nom (Féminin)"} *
               </label>
               <input
                 type="text"
                 value={nomF}
                 onChange={(e) => setNomF(e.target.value)}
                 disabled={saving}
-                placeholder="Ex: Trésorière, Modératrice..."
+                placeholder={t('tagManager.placeholderF') || "Ex: Trésorière, Modératrice..."}
                 required
                 maxLength={30}
                 className="theme-input text-xs py-2 font-bold w-full"
@@ -466,7 +466,7 @@ export default function TagManager({ groupId, onBack, role, isSystemAdmin }) {
                   <div className="flex items-center gap-1.5 shrink-0">
                     <span 
                       className="cursor-grab active:cursor-grabbing text-cordel-master-dark opacity-60 hover:opacity-100 px-1 py-0.5 text-sm font-black select-none"
-                      title="Glisser-déposer pour réorganiser"
+                      title={t('tagManager.dragDrop') || "Glisser-déposer pour réorganiser"}
                     >
                       ⋮⋮
                     </span>
@@ -477,7 +477,7 @@ export default function TagManager({ groupId, onBack, role, isSystemAdmin }) {
                         onClick={() => handleMoveTagOrder(index, 'up')}
                         disabled={index === 0 || saving}
                         className="p-1 text-[10px] font-black leading-none text-cordel-wood hover:text-encre-noire disabled:opacity-20 cursor-pointer"
-                        title="Monter"
+                        title={t('common.moveUp') || "Monter"}
                       >
                         ▲
                       </button>
@@ -486,7 +486,7 @@ export default function TagManager({ groupId, onBack, role, isSystemAdmin }) {
                         onClick={() => handleMoveTagOrder(index, 'down')}
                         disabled={index === tagsList.length - 1 || saving}
                         className="p-1 text-[10px] font-black leading-none text-cordel-wood hover:text-encre-noire disabled:opacity-20 cursor-pointer"
-                        title="Descendre"
+                        title={t('common.moveDown') || "Descendre"}
                       >
                         ▼
                       </button>
@@ -505,7 +505,7 @@ export default function TagManager({ groupId, onBack, role, isSystemAdmin }) {
                     {/* Inherited Roles Indicator Badge */}
                     {tag.inheritsFrom && tag.inheritsFrom.length > 0 && (
                       <span className="text-[8.5px] font-bold px-1.5 py-0.5 rounded bg-amber-100/90 text-amber-900 border border-amber-400 dark:bg-amber-950/70 dark:text-amber-200 dark:border-amber-700 flex items-center gap-1">
-                        🔗 Inclut : {tag.inheritsFrom.join(', ')}
+                        🔗 {t('tagManager.includes') || "Inclut :"} {tag.inheritsFrom.join(', ')}
                       </span>
                     )}
                   </div>
@@ -522,10 +522,10 @@ export default function TagManager({ groupId, onBack, role, isSystemAdmin }) {
                             ? 'bg-emerald-100/90 text-[var(--color-cordel-vert)] border-[#2d6a4f]/50 hover:bg-emerald-200 hover:border-[#2d6a4f] shadow-xs'
                             : 'bg-cordel-bg-light/60 text-cordel-master-dark/50 border-cordel-master-dark/20 hover:bg-white hover:text-cordel-master-dark'
                         }`}
-                        title={`Voir les ${assignedCount} membre(s) portant l'étiquette "${tag.nomM}"`}
+                        title={(t('tagManager.viewCarriers') || 'Voir les {count} membre(s) portant l\'étiquette "{tag}"').replace('{count}', assignedCount).replace('{tag}', tag.nomM)}
                       >
                         <span className="text-xs">👥</span>
-                        <span>{assignedCount} {assignedCount > 1 ? 'membres' : 'membre'}</span>
+                        <span>{assignedCount} {assignedCount > 1 ? (t('tagManager.members') || 'membres') : (t('tagManager.member') || 'membre')}</span>
                       </button>
                     );
                   })()}
@@ -537,7 +537,7 @@ export default function TagManager({ groupId, onBack, role, isSystemAdmin }) {
                       onClick={() => handleOpenEdit(tag)}
                       disabled={saving}
                       className="w-7 h-7 flex items-center justify-center border border-encre-noire bg-cordel-bg-light text-encre-noire rounded shadow-[1px_1px_0px_0px_#181716] hover:bg-white cursor-pointer disabled:opacity-50 text-xs font-bold"
-                      title="Modifier l'étiquette et ses héritages de rôles"
+                      title={t('tagManager.editTitle') || "Modifier l'étiquette et ses héritages de rôles"}
                     >
                       ✏️
                     </button>
@@ -570,7 +570,7 @@ export default function TagManager({ groupId, onBack, role, isSystemAdmin }) {
             {/* 1. Header (Fixe) */}
             <div className="flex-shrink-0 p-4 border-b-2 border-dashed border-cordel-master-dark/25 flex justify-between items-start bg-cordel-bg">
               <h3 className="font-heading font-black text-base text-encre-noire tracking-wider uppercase">
-                ✏️ Modifier l'étiquette
+                ✏️ {t('tagManager.editModalTitle') || "Modifier l'étiquette"}
               </h3>
               <button
                 type="button"
@@ -588,7 +588,7 @@ export default function TagManager({ groupId, onBack, role, isSystemAdmin }) {
               <div className="flex-1 overflow-y-auto p-4 space-y-4 text-xs">
                 <div className="flex flex-col gap-1">
                   <label className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-master-dark">
-                    👨 Nom (Masculin) *
+                    👨 {t('tagManager.nomM') || "Nom (Masculin)"} *
                   </label>
                   <input
                     type="text"
@@ -602,7 +602,7 @@ export default function TagManager({ groupId, onBack, role, isSystemAdmin }) {
 
                 <div className="flex flex-col gap-1">
                   <label className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-master-dark">
-                    👩 Nom (Féminin) *
+                    👩 {t('tagManager.nomF') || "Nom (Féminin)"} *
                   </label>
                   <input
                     type="text"
@@ -665,7 +665,7 @@ export default function TagManager({ groupId, onBack, role, isSystemAdmin }) {
                   disabled={saving}
                   className="py-2 px-4 text-xs font-bold uppercase"
                 >
-                  Annuler
+                  {t('common.cancel') || "Annuler"}
                 </CordelButton>
                 <CordelButton
                   type="submit"
@@ -674,7 +674,7 @@ export default function TagManager({ groupId, onBack, role, isSystemAdmin }) {
                   disabled={saving || !editNomM.trim() || !editNomF.trim()}
                   className="py-2 px-4 text-xs font-black uppercase tracking-wider"
                 >
-                  {saving ? "Enregistrement..." : "Enregistrer"}
+                  {saving ? (t('common.saving') || "Enregistrement...") : (t('common.save') || "Enregistrer")}
                 </CordelButton>
               </div>
             </form>

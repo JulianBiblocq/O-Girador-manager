@@ -231,13 +231,13 @@ const POLES_CONFIG = [
     label: 'Vitrine',
     labelKey: 'poles.vitrine',
     tabs: [
-      { id: 'vitrine-general', label: 'Général & SEO' },
-      { id: 'vitrine-presentation', label: 'Présentation' },
-      { id: 'vitrine-organisateur', label: 'Organisateur & Technique' },
-      { id: 'vitrine-galerie', label: 'Galerie Photo' },
-      { id: 'vitrine-recrutement', label: 'Recrutement & Vie Associative' },
-      { id: 'vitrine-reseaux', label: 'Réseaux & Newsletter' },
-      { id: 'vitrine-apparence', label: 'Apparence' }
+      { id: 'vitrine-general', label: 'Général & SEO', labelKey: 'tabVitrineGeneral' },
+      { id: 'vitrine-presentation', label: 'Présentation', labelKey: 'tabVitrinePresentation' },
+      { id: 'vitrine-organisateur', label: 'Organisateur & Technique', labelKey: 'tabVitrineOrganisateur' },
+      { id: 'vitrine-galerie', label: 'Galerie Photo', labelKey: 'tabVitrineGalerie' },
+      { id: 'vitrine-recrutement', label: 'Recrutement & Vie Associative', labelKey: 'tabVitrineRecrutement' },
+      { id: 'vitrine-reseaux', label: 'Réseaux & Newsletter', labelKey: 'tabVitrineReseaux' },
+      { id: 'vitrine-apparence', label: 'Apparence', labelKey: 'tabVitrineApparence' }
     ]
   },
   {
@@ -273,7 +273,7 @@ function OrganizadorRedirector({ user, navigateToRoute, brandingStyle }) {
 
 function OrchestradorRedirector({ brandingStyle }) {
   useEffect(() => {
-    window.location.href = 'https://o-girador.com';
+    window.location.href = 'https://www.o-girador.com';
   }, []);
 
   return (
@@ -1050,17 +1050,6 @@ export default function App() {
                                 data.isCotisationExoneree === true;
               if (isExonere && !mergedTags.includes('Exonéré')) {
                 mergedTags.push('Exonéré');
-              }
-
-              // Si Fondateur / Super-Admin : garantir l'ensemble des tags de gouvernance
-              if (isFounderOrSuperAdmin) {
-                const requiredFounderTags = [
-                  'Mestre', 'Direction', 'Bureau', 'CA', 'Exonéré', 
-                  'Fondateur', 'Logistique', 'Comptes-Rendus', 'Secrétariat'
-                ];
-                requiredFounderTags.forEach(t => {
-                  if (!mergedTags.includes(t)) mergedTags.push(t);
-                });
               }
 
               // Détermination du rôle résolu

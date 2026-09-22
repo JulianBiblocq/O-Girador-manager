@@ -9,7 +9,7 @@ import { useTranslation } from './LanguageContext';
 import { XiloCaixa, XiloPeople } from './XiloIcons';
 import { useInstrumentColor } from '../hooks/useInstrumentColor';
 import ImageLightboxModal from './ImageLightboxModal';
-import { formatTagGender, getTagId, filterPublicPercussionInstruments, computePupitresList } from '../utils/tagUtils';
+import { formatTagGender, getTagId, filterPublicPercussionInstruments, computePupitresList, filterUserAssignedTags } from '../utils/tagUtils';
 import { usePresenceContext } from '../context/PresenceContext';
 import useHardwareBack from '../hooks/useHardwareBack';
 import { useAvatarUpload } from '../hooks/useAvatarUpload';
@@ -51,6 +51,7 @@ const MemberCard = React.memo(({
   onOpenLightbox,
   t,
   tRole,
+  locale,
   getPupitreName,
   getColorForInstrument,
   tagsDisponibles = [],
@@ -61,7 +62,8 @@ const MemberCard = React.memo(({
 }) => {
   const fullName = `${prenom || ''} ${nom || ''}`;
   const hasRoleBadge = role && role !== 'membre';
-  const hasTags = tags && tags.length > 0;
+  const validTags = useMemo(() => filterUserAssignedTags(tags, tagsDisponibles), [tags, tagsDisponibles]);
+  const hasTags = validTags && validTags.length > 0;
 
   // Contrôle strict de la confidentialité selon les préférences choisies par le membre
   const isPhoneEnabled = fieldsConfig?.telephone?.enabled !== false;
@@ -99,6 +101,7 @@ const MemberCard = React.memo(({
 
   const formatBirthday = (dateStr) => {
     if (!dateStr) return '';
+    const dateLocale = locale === 'pt' ? 'pt-BR' : 'fr-FR';
     const parts = dateStr.split('-');
     if (parts.length === 3) {
       const year = parseInt(parts[0], 10);
@@ -106,12 +109,12 @@ const MemberCard = React.memo(({
       const day = parseInt(parts[2], 10);
       if (!isNaN(day) && !isNaN(month)) {
         const d = new Date(year, month, day);
-        return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' });
+        return d.toLocaleDateString(dateLocale, { day: 'numeric', month: 'long' });
       }
     }
     try {
       const d = new Date(dateStr);
-      return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' });
+      return d.toLocaleDateString(dateLocale, { day: 'numeric', month: 'long' });
     } catch {
       return dateStr;
     }
@@ -155,13 +158,13 @@ const MemberCard = React.memo(({
               onEditPhoto(null);
             }
           }}
-          title={photoURL ? "Cliquer pour agrandir la photo" : (isCurrentUser ? "Cliquer pour ajouter votre photo" : fullName)}
+          title={photoURL ? (t('trombinoscope.photoZoom') || "Cliquer pour agrandir la photo") : (isCurrentUser ? (t('trombinoscope.clickToAddPhoto') || "Cliquer pour ajouter votre photo") : fullName)}
         >
           <XiloAvatar src={photoURL} name={fullName} size={72} />
           {isPresenceEnabled !== false && isOnline && (
             <span 
               className="absolute -bottom-0.5 -right-0.5 z-20 w-4 h-4 bg-emerald-500 border-2 border-white rounded-full flex items-center justify-center shadow-md"
-              title="Actuellement en ligne"
+              title={t('trombinoscope.onlineNow') || "Actuellement en ligne"}
             >
               <span className="w-1.5 h-1.5 bg-white rounded-full animate-ping"></span>
             </span>
@@ -174,7 +177,7 @@ const MemberCard = React.memo(({
                 onEditPhoto(photoURL);
               }}
               className="absolute -bottom-1 -right-1 bg-encre-noire text-cordel-bg-light hover:bg-cordel-wood rounded-full p-1.5 border border-encre-noire shadow-[1px_1px_0px_0px_#181716] cursor-pointer z-30 transition-all hover:scale-110 active:scale-95 flex items-center justify-center select-none"
-              title={photoURL ? "Modifier ma photo (Filtre Xylogravure)" : "Ajouter ma photo de profil"}
+              title={photoURL ? (t('trombinoscope.editPhotoFilter') || "Modifier ma photo (Filtre Xylogravure)") : (t('trombinoscope.clickToAddPhoto') || "Ajouter ma photo de profil")}
             >
               {photoURL ? (
                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -191,12 +194,12 @@ const MemberCard = React.memo(({
         <div className="text-center mt-1 w-full select-none flex flex-col items-center">
           {isGhost && (
             <span className="bg-amber-100 text-amber-900 border border-dashed border-amber-600 text-[8px] font-black px-1.5 py-0.5 rounded uppercase mb-1.5 inline-block tracking-wider text-center">
-              👻 Polyvalent • Principal : {primaryInstrumentName || 'Autre'}
+              👻 {(t('trombinoscope.ghostBadge') || 'Polyvalent • Principal :')} {primaryInstrumentName || t('common.other') || 'Autre'}
             </span>
           )}
           {isDependent && (
             <span className="bg-amber-200 text-amber-900 border border-amber-400 text-[8px] font-black px-1.5 py-0.2 rounded uppercase mb-0.5 inline-block">
-              👶 Enfant
+              👶 {t('trombinoscope.childBadge') || 'Enfant'}
             </span>
           )}
           <div className="font-bold text-xs truncate leading-snug">
@@ -212,7 +215,7 @@ const MemberCard = React.memo(({
           {hasPercussions && (
             <div className="flex flex-col items-center">
               <span className="font-extrabold text-cordel-wood flex items-center justify-center gap-0.5 uppercase text-[8.5px] tracking-wider">
-                <XiloCaixa size={9} /> Percussion
+                <XiloCaixa size={9} /> {t('trombinoscope.percussion') || 'Percussion'}
               </span>
               <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 mt-1">
                 {percussions.map((inst) => {
@@ -244,7 +247,7 @@ const MemberCard = React.memo(({
           {hasDanse && (
             <div className={`flex flex-col items-center ${hasPercussions ? 'mt-1.5 border-t border-dashed border-cordel-master-dark/10 pt-1.5' : ''}`}>
               <span className="font-extrabold text-cordel-wood flex items-center justify-center gap-0.5 uppercase text-[8.5px] tracking-wider">
-                💃 Danse
+                💃 {t('trombinoscope.dance') || 'Danse'}
               </span>
               {isNiveauxEnabled && (
                 <span className="font-semibold text-encre-noire text-[9.5px] mt-0.5">
@@ -272,7 +275,7 @@ const MemberCard = React.memo(({
         {/* Member Tags (Custom ink stamp badges) */}
         {hasTags && (
           <div className="flex flex-wrap gap-1 mt-3 justify-center max-w-full z-10 select-none">
-            {tags.map((tag, tagIdx) => {
+            {validTags.map((tag, tagIdx) => {
               const formattedTag = formatTagGender(tag, genre, majoriteFeminine, tagsDisponibles);
               const tagStr = typeof tag === 'string' ? tag : (tag.id || tagIdx);
               const rotation = ((String(tagStr).charCodeAt(0) + tagIdx) % 5) - 2;
@@ -296,7 +299,7 @@ const MemberCard = React.memo(({
             onClick={() => onContactUser(id)}
             className="mt-3 text-[9px] font-black uppercase tracking-wider bg-cordel-bg-light text-encre-noire border border-encre-noire px-3 py-1 rounded-[4px_6px_3px_5px] shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:bg-cordel-hover cursor-pointer flex items-center justify-center gap-1 w-full max-w-[120px] mx-auto transition-all select-none z-10"
           >
-            ✉️ Contacter
+            ✉️ {t('trombinoscope.contact') || 'Contacter'}
           </button>
         )}
 
@@ -312,8 +315,9 @@ const MemberCard = React.memo(({
     </div>
   );
 }, (prevProps, nextProps) => {
-  // high performance equality vérifier to emp�cher unneeded card renders
+  // high performance equality vérifier to empcher unneeded card renders
   return prevProps.id === nextProps.id &&
+         prevProps.locale === nextProps.locale &&
          prevProps.isOnline === nextProps.isOnline &&
          prevProps.prenom === nextProps.prenom &&
          prevProps.nom === nextProps.nom &&
@@ -950,10 +954,10 @@ export default function Trombinoscope({ user, profileData, onBack, onContactUser
             <span className="text-2xl shrink-0">📸</span>
             <div>
               <span className="font-black uppercase tracking-wider text-amber-800 dark:text-amber-300 text-[10px] block">
-                Votre photo est manquante dans le Trombinoscope
+                {t('trombinoscope.bannerMissingTitle') || "Votre photo est manquante dans le Trombinoscope"}
               </span>
               <span className="font-bold text-[11px] leading-tight">
-                Ajoutez votre portrait pour permettre aux autres membres du groupe de vous reconnaître facilement !
+                {t('trombinoscope.bannerMissingDesc') || "Ajoutez votre portrait pour permettre aux autres membres du groupe de vous reconnaître facilement !"}
               </span>
             </div>
           </div>
@@ -964,7 +968,7 @@ export default function Trombinoscope({ user, profileData, onBack, onContactUser
             onClick={() => fileInputRef.current?.click()}
             className="text-[10px] py-1.5 px-3 uppercase font-black shrink-0 flex items-center justify-center gap-1"
           >
-            📸 {isCompressing ? "Chargement..." : "Ajouter ma photo"}
+            📸 {isCompressing ? (t('common.loading') || "Chargement...") : (t('trombinoscope.addMyPhoto') || "Ajouter ma photo")}
           </CordelButton>
         </div>
       )}
@@ -1002,7 +1006,7 @@ export default function Trombinoscope({ user, profileData, onBack, onContactUser
                 {pupitresList.map((pupitre) => (
                   <option key={pupitre} value={pupitre}>{pupitre}</option>
                 ))}
-                <option value="Danse">Danse</option>
+                <option value="Danse">{t('trombinoscope.dance') || 'Danse'}</option>
                 <option value="Autre">{t('trombinoscope.other')}</option>
               </select>
             </div>
@@ -1136,6 +1140,7 @@ export default function Trombinoscope({ user, profileData, onBack, onContactUser
                           onOpenLightbox={handleOpenLightbox}
                           t={t}
                           tRole={tRole}
+                          locale={locale}
                           getPupitreName={getPupitreName}
                           getColorForInstrument={getColorForInstrument}
                           tagsDisponibles={tagsDisponibles}

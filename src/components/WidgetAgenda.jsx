@@ -19,20 +19,21 @@ import { resolveEffectiveUserTags } from '../utils/tagUtils';
 import { formatLocationShort } from '../utils/locationUtils';
 import useHardwareBack from '../hooks/useHardwareBack';
 
-const formatDateWithDay = (dateStr, includeYear = true) => {
+const formatDateWithDay = (dateStr, includeYear = true, locale = 'fr') => {
   const date = new Date(dateStr);
   if (isNaN(date.getTime())) return '';
-  const weekday = new Intl.DateTimeFormat('fr-FR', { weekday: 'short' }).format(date).toUpperCase().replace('.', '');
+  const dateLocale = locale === 'pt' ? 'pt-BR' : 'fr-FR';
+  const weekday = new Intl.DateTimeFormat(dateLocale, { weekday: 'short' }).format(date).toUpperCase().replace('.', '');
   
   if (includeYear) {
-    const dateParts = new Intl.DateTimeFormat('fr-FR', {
+    const dateParts = new Intl.DateTimeFormat(dateLocale, {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric'
     }).format(date);
     return `${weekday} ${dateParts}`;
   } else {
-    const datePartsNoYear = new Intl.DateTimeFormat('fr-FR', {
+    const datePartsNoYear = new Intl.DateTimeFormat(dateLocale, {
       day: '2-digit',
       month: '2-digit'
     }).format(date);
@@ -52,7 +53,7 @@ export default function WidgetAgenda({
   setSelectedEvent: propSetSelectedEvent,
   isFullPage = false
 }) {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
@@ -884,7 +885,7 @@ export default function WidgetAgenda({
                   const dateObj = new Date(event.date);
                   const formattedDate = isNaN(dateObj.getTime())
                     ? '?'
-                    : formatDateWithDay(event.date, true);
+                    : formatDateWithDay(event.date, true, locale);
                   
                   const variant = variants[event.type] || 'kraft';
                   const insList = event.inscriptions || [];
@@ -910,17 +911,17 @@ export default function WidgetAgenda({
                         </div>
                         {event.status === 'annule' && (
                           <span className="text-red-600 font-bold ml-1.5 uppercase text-[8px] border border-red-600 px-1 rounded select-none">
-                            ANNULÉ
+                            {t('widgetAgenda.canceled') || 'ANNULÉ'}
                           </span>
                         )}
                         {event.status === 'a_confirmer' && (
                           <span className="text-orange-600 font-bold ml-1.5 uppercase text-[8px] border border-orange-600 px-1 rounded select-none">
-                            À CONFIRMER
+                            {t('common.toConfirm') || 'À CONFIRMER'}
                           </span>
                         )}
                         {event.status === 'sondage' && (
                           <span className="text-amber-900 bg-amber-100 border border-amber-500 font-black ml-1.5 uppercase text-[8px] px-1.5 py-0.5 rounded select-none shadow-sm inline-flex items-center gap-1">
-                            📊 SONDAGE (Opt. {event.optionIndex || 1}/{event.totalOptions || 1}) {event.pollTarget ? `• ${event.pollTarget}` : ''}
+                            📊 {t('widgetAgenda.poll') || 'SONDAGE'} (Opt. {event.optionIndex || 1}/{event.totalOptions || 1}) {event.pollTarget ? `• ${event.pollTarget}` : ''}
                           </span>
                         )}
                       </td>
@@ -939,12 +940,12 @@ export default function WidgetAgenda({
                       </td>
                       <td className="p-1.5 md:p-2.5 text-center font-bold whitespace-nowrap">
                         {(() => {
-                          if (event.enableInscriptions === false) return <span className="inline-block px-1.5 py-0.5 rounded text-[9px] uppercase font-bold bg-neutral-200 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300">📢 Informatif</span>;
-                          if (userStatus === 'present') return <span className="inline-block px-1.5 py-0.5 rounded text-[9px] uppercase font-black badge-status-present">Présent ({presentCount})</span>;
-                          if (userStatus === 'absent') return <span className="inline-block px-1.5 py-0.5 rounded text-[9px] uppercase font-black badge-status-absent">Absent ({presentCount})</span>;
-                          if (userStatus === 'confirm') return <span className="inline-block px-1.5 py-0.5 rounded text-[9px] uppercase font-black badge-status-confirm">À confirmer ({presentCount})</span>;
-                          if (userStatus === 'pending') return <span className="inline-block px-1.5 py-0.5 rounded text-[9px] uppercase font-bold badge-status-pending">En attente ({presentCount})</span>;
-                          return <span className="text-neutral-500 font-bold">Sans réponse ({presentCount})</span>;
+                          if (event.enableInscriptions === false) return <span className="inline-block px-1.5 py-0.5 rounded text-[9px] uppercase font-bold bg-neutral-200 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300">📢 {t('widgetAgenda.informative') || 'Informatif'}</span>;
+                          if (userStatus === 'present') return <span className="inline-block px-1.5 py-0.5 rounded text-[9px] uppercase font-black badge-status-present">{t('common.present') || 'Présent'} ({presentCount})</span>;
+                          if (userStatus === 'absent') return <span className="inline-block px-1.5 py-0.5 rounded text-[9px] uppercase font-black badge-status-absent">{t('common.absent') || 'Absent'} ({presentCount})</span>;
+                          if (userStatus === 'confirm') return <span className="inline-block px-1.5 py-0.5 rounded text-[9px] uppercase font-black badge-status-confirm">{t('common.toConfirm') || 'À confirmer'} ({presentCount})</span>;
+                          if (userStatus === 'pending') return <span className="inline-block px-1.5 py-0.5 rounded text-[9px] uppercase font-bold badge-status-pending">{t('common.pending') || 'En attente'} ({presentCount})</span>;
+                          return <span className="text-neutral-500 font-bold">{t('widgetAgenda.noAnswer') || 'Sans réponse'} ({presentCount})</span>;
                         })()}
                       </td>
                     </tr>
@@ -959,12 +960,13 @@ export default function WidgetAgenda({
               {visibleEvents.map((event) => {
                 const dateObj = new Date(event.date);
                 const day = isNaN(dateObj.getTime()) ? '?' : dateObj.getDate();
+                const dateLocale = locale === 'pt' ? 'pt-BR' : 'fr-FR';
                 const month = isNaN(dateObj.getTime()) 
                   ? '???' 
-                  : dateObj.toLocaleDateString('fr-FR', { month: 'short' }).toUpperCase().replace('.', '');
+                  : dateObj.toLocaleDateString(dateLocale, { month: 'short' }).toUpperCase().replace('.', '');
                 const time = isNaN(dateObj.getTime())
                   ? '--h--'
-                  : dateObj.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+                  : dateObj.toLocaleTimeString(dateLocale, { hour: '2-digit', minute: '2-digit' });
 
                 const variant = variants[event.type] || 'kraft';
 
@@ -990,7 +992,7 @@ export default function WidgetAgenda({
                           style={{ transform: 'rotate(-15deg)' }}
                           className="text-red-600 dark:text-red-500 border-[3.5px] border-red-600 dark:border-red-500 px-5 py-1.5 rounded-lg font-black text-[15px] tracking-widest uppercase opacity-80 bg-white/5 dark:bg-black/5"
                         >
-                          ANNULÉ
+                          {t('widgetAgenda.canceled') || 'ANNULÉ'}
                         </span>
                       </div>
                     )}
@@ -1000,7 +1002,7 @@ export default function WidgetAgenda({
                           style={{ transform: 'rotate(-15deg)' }}
                           className="text-orange-600 dark:text-orange-400 border-[3.5px] border-orange-600 dark:border-orange-400 px-5 py-1.5 rounded-lg font-black text-[15px] tracking-widest uppercase opacity-80 bg-white/5 dark:bg-black/5"
                         >
-                          À CONFIRMER
+                          {t('common.toConfirm') || 'À CONFIRMER'}
                         </span>
                       </div>
                     )}
@@ -1011,14 +1013,14 @@ export default function WidgetAgenda({
                           style={{ transform: 'rotate(-10deg)', color: 'var(--color-cordel-vert)', borderColor: 'var(--color-cordel-vert)' }}
                           className="border-[3.5px] px-5 py-1.5 rounded-lg font-black text-[15px] tracking-widest uppercase opacity-80 bg-white/5 dark:bg-black/5"
                         >
-                          VALIDÉ
+                          {t('widgetAgenda.confirmed') || 'VALIDÉ'}
                         </span>
                       </div>
                     )}
                     {event.status === 'sondage' && (
                       <div className="absolute top-2 right-2 flex gap-1 select-none z-10">
                         <span className="text-amber-900 bg-amber-100/90 border border-amber-600 font-black uppercase text-[8px] px-2 py-0.5 rounded shadow-sm">
-                          📊 SONDAGE ({event.optionIndex || 1}/{event.totalOptions || 1}) {event.pollTarget ? `• ${event.pollTarget}` : ''}
+                          📊 {t('widgetAgenda.poll') || 'SONDAGE'} ({event.optionIndex || 1}/{event.totalOptions || 1}) {event.pollTarget ? `• ${event.pollTarget}` : ''}
                         </span>
                       </div>
                     )}
@@ -1038,9 +1040,11 @@ export default function WidgetAgenda({
                         </div>
                         <span className="text-[9px] font-extrabold text-encre-noire/70 mb-1 leading-none select-none">
                           {event.dateFin ? (
-                            `Du ${formatDateWithDay(event.date, true)} au ${formatDateWithDay(event.dateFin, false)}`
+                            locale === 'pt'
+                              ? `De ${formatDateWithDay(event.date, true, locale)} até ${formatDateWithDay(event.dateFin, false, locale)}`
+                              : `Du ${formatDateWithDay(event.date, true, locale)} au ${formatDateWithDay(event.dateFin, false, locale)}`
                           ) : (
-                            `${formatDateWithDay(event.date, true)}`
+                            `${formatDateWithDay(event.date, true, locale)}`
                           )}
                         </span>
                         {event.lieu && (
@@ -1060,16 +1064,16 @@ export default function WidgetAgenda({
                             {/* Connected User Attendance Badge */}
                             {(() => {
                               if (event.enableInscriptions === false) {
-                                return <span className="text-[8px] font-bold px-1.5 py-0.5 rounded-[4px_6px_3px_5px] uppercase tracking-wider bg-neutral-200 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300 leading-none select-none">📢 Informatif</span>;
+                                return <span className="text-[8px] font-bold px-1.5 py-0.5 rounded-[4px_6px_3px_5px] uppercase tracking-wider bg-neutral-200 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300 leading-none select-none">📢 {t('widgetAgenda.informative') || 'Informatif'}</span>;
                               }
                               const userInscription = (event.inscriptions || []).find(ins => ins.userId === user.uid);
                               const userStatus = userInscription ? userInscription.status : null;
                               if (userStatus === 'present') {
                                 return <span className="text-[8px] font-black px-1.5 py-0.5 rounded-[4px_6px_3px_5px] uppercase tracking-wider badge-status-present leading-none select-none">{t('common.present')}</span>;
                               } else if (userStatus === 'pending') {
-                                return <span className="text-[8px] font-bold px-1.5 py-0.5 rounded-[4px_6px_3px_5px] uppercase tracking-wider bg-yellow-100 text-yellow-800 border border-yellow-300 leading-none select-none">En attente de validation</span>;
+                                return <span className="text-[8px] font-bold px-1.5 py-0.5 rounded-[4px_6px_3px_5px] uppercase tracking-wider bg-yellow-100 text-yellow-800 border border-yellow-300 leading-none select-none">{t('userProfile.pendingValidation') || 'En attente de validation'}</span>;
                               } else if (userStatus === 'refused') {
-                                return <span className="text-[8px] font-black px-1.5 py-0.5 rounded-[4px_6px_3px_5px] uppercase tracking-wider badge-status-absent leading-none select-none">Refusé</span>;
+                                return <span className="text-[8px] font-black px-1.5 py-0.5 rounded-[4px_6px_3px_5px] uppercase tracking-wider badge-status-absent leading-none select-none">{t('userProfile.refused') || 'Refusé'}</span>;
                               } else if (userStatus === 'absent') {
                                 return <span className="text-[8px] font-black px-1.5 py-0.5 rounded-[4px_6px_3px_5px] uppercase tracking-wider badge-status-absent leading-none select-none">{t('common.absent')}</span>;
                               } else if (userStatus === 'confirm') {

@@ -39,6 +39,7 @@ export const rolesDictionary = {
   fr: {
     mestre: { homme: "Mestre", femme: "Mestra", autre: "Mestre" },
     'super-admin': { homme: "Administrateur", femme: "Administratrice", autre: "Administrateur" },
+    admin: { homme: "Administrateur", femme: "Administratrice", autre: "Administrateur" },
     membre: { homme: "Adhérent", femme: "Adhérente", autre: "Membre" },
     tresorier: { homme: "Trésorier", femme: "Trésorière", autre: "Trésorier" },
     president: { homme: "Président", femme: "Présidente", autre: "Président" },
@@ -47,6 +48,7 @@ export const rolesDictionary = {
   pt: {
     mestre: { homme: "Mestre", femme: "Mestra", autre: "Mestre" },
     'super-admin': { homme: "Administrador", femme: "Administradora", autre: "Administrador" },
+    admin: { homme: "Administrador", femme: "Administradora", autre: "Administrador" },
     membre: { homme: "Associado", femme: "Associada", autre: "Membro" },
     tresorier: { homme: "Tesoureiro", femme: "Tesoureira", autre: "Tesoureiro" },
     president: { homme: "Presidente", femme: "Presidente", autre: "Presidente" },

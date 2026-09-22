@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import CordelCard from '../CordelCard';
 import PermissionsGuideBox from '../PermissionsGuideBox';
 import { formatTagGender, getTagId } from '../../utils/tagUtils';
+import { useTranslation } from '../LanguageContext';
 
 const PERMISSION_POLES = [
   {
@@ -173,6 +174,8 @@ export default function TabSecurity({
   t,
   onNavigateToTagManager
 }) {
+  const { t: translate } = useTranslation();
+  const tFunc = t || translate;
   const { permissionsMatrice = {}, tagsDisponibles = [] } = formData;
 
   // État local des accordéons de pôles
@@ -198,23 +201,22 @@ export default function TabSecurity({
       // Badges prioritaires de gouvernance (CA, Bureau, Présidence, Direction, Conseil)
       const defaultGovTagIds = tagsDisponibles
         .filter(t => {
-          const str = (typeof t === 'string' ? t : (t.id || t.nomM || t.nomF || t.name || '')).toLowerCase();
-          return str.includes('ca') || str.includes('bureau') || str.includes('conseil') || str.includes('présid') || str.includes('direction');
+          const name = (typeof t === 'string' ? t : (t.nomM || t.label || t.id || '')).toLowerCase();
+          return name.includes('ca') || name.includes('bureau') || name.includes('présid') || name.includes('presid') || name.includes('direction') || name.includes('conseil');
         })
         .map(t => getTagId(t));
 
       if (defaultGovTagIds.length > 0) {
-        const updated = { ...permissionsMatrice };
-        governanceTabs.forEach(tabId => {
-          if (updated[tabId] === undefined) {
-            updated[tabId] = defaultGovTagIds;
-          }
+        // Pré-assignation automatique sur le pôle gouvernance entier
+        handleChange('permissionsMatrice', {
+          ...permissionsMatrice,
+          gouvernance: defaultGovTagIds
         });
-        handleChange('permissionsMatrice', updated);
       }
     }
-  }, [tagsDisponibles, permissionsMatrice, handleChange]);
+  }, [tagsDisponibles]);
 
+  // Basculer l'état ouvert/fermé d'un accordéon de pôle
   const togglePoleAccordion = (poleId) => {
     setOpenPoles(prev => ({
       ...prev,
@@ -222,24 +224,34 @@ export default function TabSecurity({
     }));
   };
 
+  // Déplier tous les accordéons
   const expandAll = () => {
     const allOpen = {};
-    PERMISSION_POLES.forEach(p => { allOpen[p.id] = true; });
+    PERMISSION_POLES.forEach(pole => {
+      allOpen[pole.id] = true;
+    });
     setOpenPoles(allOpen);
   };
 
+  // Replier tous les accordéons
   const collapseAll = () => {
     const allClosed = {};
-    PERMISSION_POLES.forEach(p => { allClosed[p.id] = false; });
+    PERMISSION_POLES.forEach(pole => {
+      allClosed[pole.id] = false;
+    });
     setOpenPoles(allClosed);
   };
 
-  // Basculer badge permission for a specific tab (or legacy pole)
+  // Basculer une permission (ajouter ou retirer une étiquette sur une cible donnée)
   const handleTogglePermission = (targetId, tagId, checked) => {
     const currentTags = permissionsMatrice[targetId] || [];
-    const updatedTags = checked
-      ? [...new Set([...currentTags, tagId])]
-      : currentTags.filter(t => t !== tagId);
+    let updatedTags;
+
+    if (checked) {
+      updatedTags = [...new Set([...currentTags, tagId])];
+    } else {
+      updatedTags = currentTags.filter(id => id !== tagId);
+    }
 
     handleChange('permissionsMatrice', {
       ...permissionsMatrice,
@@ -287,9 +299,9 @@ export default function TabSecurity({
                   ? 'theme-stamp-badge-wood bg-cordel-wood text-white border-encre-noire' 
                   : 'theme-stamp-badge-wood opacity-70'
             }`}
-            title={isInheritedFromPole ? "Ce badge bénéficie déjà d'un accès illimité via l'attribution globale au Pôle entier" : undefined}
+            title={isInheritedFromPole ? (tFunc('tabSecurity.inheritedTooltip') || "Ce badge bénéficie déjà d'un accès illimité via l'attribution globale au Pôle entier") : undefined}
           >
-            {formattedLabel} {isInheritedFromPole && '✓ (Pôle)'}
+            {formattedLabel} {isInheritedFromPole && (tFunc('tabSecurity.inheritedSuffix') || '✓ (Pôle)')}
           </span>
         </label>
       );
@@ -320,10 +332,10 @@ export default function TabSecurity({
           <div className="flex flex-col">
             <span className="text-xs font-black text-encre-noire flex items-center gap-1.5">
               <span>🏷️</span>
-              <span>Gestionnaire d'Étiquettes & Vue Inversée</span>
+              <span>{tFunc('tabSecurity.shortcutTitle') || "Gestionnaire d'Étiquettes & Vue Inversée"}</span>
             </span>
             <span className="text-[10px] text-cordel-master-dark/80 font-medium mt-0.5">
-              Créer ou modifier les rôles (ex. Trésorier, CA), auditer les membres porteurs et dissocier les étiquettes.
+              {tFunc('tabSecurity.shortcutDesc') || "Créer ou modifier les rôles (ex. Trésorier, CA), auditer les membres porteurs et dissocier les étiquettes."}
             </span>
           </div>
           <button
@@ -332,7 +344,7 @@ export default function TabSecurity({
             className="px-3.5 py-1.5 bg-cordel-wood text-cordel-bg-light border-2 border-encre-noire rounded-[4px_7px_5px_6px] font-black text-[10px] uppercase tracking-wider shadow-[1.5px_1.5px_0px_0px_#181716] hover:brightness-110 active:scale-95 cursor-pointer shrink-0 flex items-center gap-1.5 transition-transform"
           >
             <span>🏷️</span>
-            <span>Ouvrir les Badges & Vue Inversée →</span>
+            <span>{tFunc('tabSecurity.shortcutBtn') || "Ouvrir les Badges & Vue Inversée →"}</span>
           </button>
         </div>
       )}
@@ -343,7 +355,7 @@ export default function TabSecurity({
       <CordelCard variant="default" useExtremeBorder={true} className="py-4 px-5">
       <div className="flex justify-between items-center mb-3">
         <h3 className="text-xs uppercase font-extrabold tracking-wider text-cordel-wood text-left flex items-center gap-2">
-          <span>🪢</span> Matrice des Permissions (Par Pôle & Par Onglet)
+          <span>🪢</span> {tFunc('tabSecurity.matrixTitle') || "Matrice des Permissions (Par Pôle & Par Onglet)"}
         </h3>
 
         {/* Accordion Global Controls */}
@@ -353,7 +365,7 @@ export default function TabSecurity({
             onClick={expandAll}
             className="text-[9px] font-bold uppercase tracking-wider text-cordel-wood hover:underline cursor-pointer select-none"
           >
-            📂 Tout ouvrir
+            📂 {tFunc('tabSecurity.expandAll') || "Tout ouvrir"}
           </button>
           <span className="text-[9px] opacity-40">|</span>
           <button
@@ -361,18 +373,18 @@ export default function TabSecurity({
             onClick={collapseAll}
             className="text-[9px] font-bold uppercase tracking-wider text-cordel-wood hover:underline cursor-pointer select-none"
           >
-            📁 Tout fermer
+            📁 {tFunc('tabSecurity.collapseAll') || "Tout fermer"}
           </button>
         </div>
       </div>
 
       <p className="text-[10px] text-cordel-master-dark/70 font-semibold leading-relaxed mb-4 text-left">
-        Attribuez l'accès global à un pôle entier (recommandé pour une gestion rapide) ou affinez les autorisations onglet par onglet pour chaque étiquette/rôle.
+        {tFunc('tabSecurity.matrixDesc') || "Attribuez l'accès global à un pôle entier (recommandé pour une gestion rapide) ou affinez les autorisations onglet par onglet pour chaque étiquette/rôle."}
       </p>
 
       {tagsDisponibles.length === 0 ? (
         <div className="text-[10px] italic text-red-700 bg-red-100/20 p-3 border border-dashed border-red-700/20 rounded text-left">
-          ⚠️ Aucune étiquette/badge n'est configuré pour cette association. Veuillez d'abord créer des badges dans le Gestionnaire de Badges.
+          ⚠️ {tFunc('tabSecurity.noTagsWarning') || "Aucune étiquette/badge n'est configuré pour cette association. Veuillez d'abord créer des badges dans le Gestionnaire de Badges."}
         </div>
       ) : (
         <div className="flex flex-col gap-3 text-left">
@@ -398,13 +410,13 @@ export default function TabSecurity({
                     {poleAssignedCount > 0 && (
                       <span className="text-[8.5px] font-extrabold px-2 py-0.5 rounded-full bg-[var(--color-cordel-vert,#2d6a4f)]/15 text-[var(--color-cordel-vert,#2d6a4f)] border border-[var(--color-cordel-vert,#2d6a4f)]/30 flex items-center gap-1">
                         <span>🏛️</span>
-                        <span>{poleAssignedCount} badge(s) pôle entier</span>
+                        <span>{(tFunc('tabSecurity.entirePoleBadges') || '{count} badge(s) pôle entier').replace('{count}', poleAssignedCount)}</span>
                       </span>
                     )}
 
                     {/* Badge indicateur d'onglets restreints */}
                     <span className="text-[8.5px] font-bold px-2 py-0.5 rounded-full bg-cordel-wood/15 text-cordel-wood border border-cordel-wood/30">
-                      {tabRestrictedCount} / {pole.tabs.length} onglet(s) configuré(s)
+                      {(tFunc('tabSecurity.configuredTabs') || '{count} / {total} onglet(s) configuré(s)').replace('{count}', tabRestrictedCount).replace('{total}', pole.tabs.length)}
                     </span>
                   </div>
 
@@ -429,11 +441,11 @@ export default function TabSecurity({
                           <div className="flex items-center gap-1.5">
                             <span className="text-sm">🏛️</span>
                             <span className="text-xs font-black uppercase tracking-wider text-stone-900 dark:text-stone-100">
-                              Accès Global au Pôle Entier ({pole.label})
+                              {(tFunc('tabSecurity.globalPoleAccess') || 'Accès Global au Pôle Entier ({pole})').replace('{pole}', pole.label)}
                             </span>
                           </div>
                           <p className="text-[9px] text-stone-600 dark:text-stone-400 font-medium mt-0.5">
-                            Cochez une étiquette ici pour lui accorder l'accès d'office à l'ensemble du pôle et à tous ses onglets en une seule fois.
+                            {tFunc('tabSecurity.globalPoleDesc') || "Cochez une étiquette ici pour lui accorder l'accès d'office à l'ensemble du pôle et à tous ses onglets en une seule fois."}
                           </p>
                         </div>
 
@@ -447,7 +459,7 @@ export default function TabSecurity({
                             title="Accorder l'accès à tout le pôle pour toutes les étiquettes"
                           >
                             <span>✓</span>
-                            <span>Tout le Pôle</span>
+                            <span>{tFunc('tabSecurity.entirePoleBtn') || "Tout le Pôle"}</span>
                           </button>
                           <button
                             type="button"
@@ -456,7 +468,7 @@ export default function TabSecurity({
                             className="px-2 py-1 rounded bg-stone-200 text-stone-700 border border-stone-300 hover:bg-stone-300 active:scale-95 transition-all cursor-pointer"
                             title="Retirer les accès globaux accordés à ce pôle"
                           >
-                            Aucun
+                            {tFunc('tabSecurity.noneBtn') || "Aucun"}
                           </button>
                         </div>
                       </div>
@@ -470,10 +482,10 @@ export default function TabSecurity({
                     {/* SÉPARATEUR : Onglets spécifiques */}
                     <div className="flex items-center gap-2 pt-1 border-t border-dashed border-cordel-master-dark/15">
                       <span className="text-[10px] font-black uppercase tracking-wider text-cordel-wood">
-                        📑 Restrictions par Onglet Spécifique
+                        📑 {tFunc('tabSecurity.tabRestrictionsTitle') || "Restrictions par Onglet Spécifique"}
                       </span>
                       <span className="text-[8.5px] text-stone-500 italic hidden sm:inline">
-                        (Pour attribuer un accès partiel aux membres n'ayant pas l'accès global au pôle)
+                        {tFunc('tabSecurity.tabRestrictionsDesc') || "(Pour attribuer un accès partiel aux membres n'ayant pas l'accès global au pôle)"}
                       </span>
                     </div>
 
@@ -487,11 +499,11 @@ export default function TabSecurity({
                             <div className="flex justify-between items-center">
                               <div>
                                 <span className="text-[10.5px] font-extrabold text-encre-noire">
-                                  📑 {tab.labelKey && t ? (t(`poles.${tab.labelKey}`) || tab.label) : tab.label}
+                                  📑 {tab.labelKey && tFunc ? (tFunc(`poles.${tab.labelKey}`) || tab.label) : tab.label}
                                 </span>
                                 {(tab.descKey || tab.desc) && (
                                   <span className="text-[8.5px] text-cordel-master-dark/65 block font-medium">
-                                    {tab.descKey && t ? (t(`poles.${tab.descKey}`) || tab.desc) : tab.desc}
+                                    {tab.descKey && tFunc ? (tFunc(`poles.${tab.descKey}`) || tab.desc) : tab.desc}
                                   </span>
                                 )}
                               </div>
@@ -504,7 +516,7 @@ export default function TabSecurity({
                                   className="px-1.5 py-0.5 rounded bg-cordel-wood/10 text-cordel-wood border border-cordel-wood/20 hover:bg-cordel-wood/20 cursor-pointer"
                                   title="Cocher tous les badges pour cet onglet"
                                 >
-                                  Tous
+                                  {tFunc('tabSecurity.allBtn') || "Tous"}
                                 </button>
                                 <button
                                   type="button"
@@ -512,7 +524,7 @@ export default function TabSecurity({
                                   className="px-1.5 py-0.5 rounded bg-neutral-200 text-neutral-700 border border-neutral-300 hover:bg-neutral-300 cursor-pointer"
                                   title="Décocher tous les badges pour cet onglet"
                                 >
-                                  Aucun
+                                  {tFunc('tabSecurity.noneBtn') || "Aucun"}
                                 </button>
                               </div>
                             </div>

@@ -299,3 +299,55 @@ export function resolvePupitreForInstrument(instName, pupitresList = [], linkedI
   return cleanInst;
 }
 
+/**
+ * Filtre les étiquettes attribuées à un utilisateur pour ne conserver QUE celles
+ * qui correspondent réellement à une étiquette configurée dans l'association (tagsDisponibles).
+ * Éradique ainsi les badges fantômes ou orphelins non désirés.
+ * 
+ * @param {Array<string|object>} userTags - Étiquettes actuellement rattachées au profil
+ * @param {Array<string|object>} tagsDisponibles - Étiquettes actives configurées dans l'association
+ * @returns {Array<string|object>} Liste assainie des étiquettes légitimes
+ */
+export function filterUserAssignedTags(userTags = [], tagsDisponibles = []) {
+  if (!Array.isArray(userTags) || userTags.length === 0) return [];
+  if (!Array.isArray(tagsDisponibles) || tagsDisponibles.length === 0) return [];
+
+  // Création d'un ensemble de clés valides en minuscules pour comparaison robuste
+  const validKeys = new Set();
+  tagsDisponibles.forEach(item => {
+    if (!item) return;
+    if (typeof item === 'string') {
+      const trimmed = item.trim().toLowerCase();
+      if (trimmed) validKeys.add(trimmed);
+    } else if (typeof item === 'object') {
+      if (item.id) validKeys.add(String(item.id).trim().toLowerCase());
+      if (item.nomM) validKeys.add(String(item.nomM).trim().toLowerCase());
+      if (item.nomF) validKeys.add(String(item.nomF).trim().toLowerCase());
+      if (item.name) validKeys.add(String(item.name).trim().toLowerCase());
+      if (item.nom) validKeys.add(String(item.nom).trim().toLowerCase());
+    }
+  });
+
+  return userTags.filter(tag => {
+    if (!tag) return false;
+    if (typeof tag === 'string') {
+      return validKeys.has(tag.trim().toLowerCase());
+    }
+    if (typeof tag === 'object') {
+      const tagId = tag.id ? String(tag.id).trim().toLowerCase() : '';
+      const tagM = tag.nomM ? String(tag.nomM).trim().toLowerCase() : '';
+      const tagF = tag.nomF ? String(tag.nomF).trim().toLowerCase() : '';
+      const tagName = tag.name ? String(tag.name).trim().toLowerCase() : '';
+      const tagNom = tag.nom ? String(tag.nom).trim().toLowerCase() : '';
+      return (
+        (tagId && validKeys.has(tagId)) ||
+        (tagM && validKeys.has(tagM)) ||
+        (tagF && validKeys.has(tagF)) ||
+        (tagName && validKeys.has(tagName)) ||
+        (tagNom && validKeys.has(tagNom))
+      );
+    }
+    return false;
+  });
+}
+
