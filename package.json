@@ -12,7 +12,7 @@
     "preview": "vite preview",
     "audit-deps": "npx npm-check-updates",
     "update-deps": "npx npm-check-updates -u",
-    "deploy": "vite build && firebase deploy --only hosting:organizador"
+    "deploy": "vite build && firebase deploy --only hosting:organizador && firebase hosting:clone o-girador-organizador:live o-girador-7828c:live"
   },
   "dependencies": {
     "@rolldown/pluginutils": "^1.0.1",
