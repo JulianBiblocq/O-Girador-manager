@@ -10,6 +10,7 @@ import SignalZoomModal from './SignalZoomModal';
 import TablatureModal from './TablatureModal';
 import CreateCultureFicheModal from './CreateCultureFicheModal';
 import CultureCard from '../CultureCard';
+import SongCard from '../SongCard';
 import RepertoireUnlinkedPresetsBanner from './RepertoireUnlinkedPresetsBanner';
 import useConfirm from '../../hooks/useConfirm';
 import useMestreSignals from '../../hooks/useMestreSignals';
@@ -65,6 +66,7 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
   const [activeTablaturePiece, setActiveTablaturePiece] = useState(null);
   const [pieceForCultureCreation, setPieceForCultureCreation] = useState(null);
   const [activeCultureDocToView, setActiveCultureDocToView] = useState(null);
+  const [activeToadaToView, setActiveToadaToView] = useState(null);
 
   // Synchronisation & Importation
   const [syncingPieceId, setSyncingPieceId] = useState(null);
@@ -534,15 +536,25 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
                     )}
 
                     {piece.hasToada && (
-                      <span
-                        className="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-black uppercase rounded bg-emerald-50 text-emerald-900 border border-emerald-300"
-                        title={piece.activeToada?.titre ? `Toada du Varal : ${piece.activeToada.titre}` : 'Chant lié'}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const toadaToOpen = piece.activeToada || toadasList.find((t) => t.id === piece.toadaDocId);
+                          if (toadaToOpen) {
+                            setActiveToadaToView(toadaToOpen);
+                          } else {
+                            showToast("La fiche de ce chant n'a pas pu être trouvée sur le Varal.");
+                          }
+                        }}
+                        className="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-black uppercase rounded bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-300 transition-colors shadow-2xs cursor-pointer select-none"
+                        title={piece.activeToada?.titre ? `Lire les paroles : ${piece.activeToada.titre}` : 'Lire les paroles de la Toada du Varal'}
                       >
                         <span>🗣️</span>
                         <span className="truncate max-w-[130px]">
                           {piece.activeToada?.titre ? piece.activeToada.titre : 'Toada'}
                         </span>
-                      </span>
+                        <span className="text-[8px] opacity-70">↗</span>
+                      </button>
                     )}
 
                     {piece.hasChoreography && piece.activeChoreography && (
@@ -794,6 +806,28 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
                       </CordelButton>
                     )}
 
+                    {/* Bouton consultation Toada (Chant & Paroles) */}
+                    {piece.hasToada && (
+                      <CordelButton
+                        type="button"
+                        variant="default"
+                        useExtremeBorder={false}
+                        onClick={() => {
+                          const toadaToOpen = piece.activeToada || toadasList.find((t) => t.id === piece.toadaDocId);
+                          if (toadaToOpen) {
+                            setActiveToadaToView(toadaToOpen);
+                          } else {
+                            showToast("La fiche de ce chant n'a pas pu être trouvée sur le Varal.");
+                          }
+                        }}
+                        className="py-1 px-2 text-[9.5px] uppercase tracking-wider font-black bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 text-emerald-950 flex items-center gap-1 shrink-0"
+                        title={piece.activeToada?.titre ? `Lire les paroles de « ${piece.activeToada.titre} »` : "Lire les paroles du chant associé (Toada du Varal)"}
+                      >
+                        <span>🗣️</span>
+                        <span>Toada</span>
+                      </CordelButton>
+                    )}
+
                     {/* Bouton consultation Fiche Varal Culture liée ou passerelle de création */}
                     {(piece.activeCultureDoc || piece.cultureDocId) ? (
                       <CordelButton
@@ -951,6 +985,43 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
               ✕
             </button>
             <CultureCard culture={activeCultureDocToView} />
+          </div>
+        </div>
+      )}
+
+      {/* Modale de consultation d'une Toada (Chant & Paroles) du Varal */}
+      {activeToadaToView && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-black/60 backdrop-blur-xs">
+          <div className="relative w-full max-w-[580px] max-h-[92vh] flex flex-col bg-[#fdfaf2] rounded-lg shadow-2xl overflow-hidden border-2 border-encre-noire text-left">
+            {/* Header avec titre & bouton fermeture */}
+            <div className="w-full flex justify-between items-center px-4 py-2.5 border-b-2 border-dashed border-cordel-master-dark/20 shrink-0 bg-[#fdfaf2]">
+              <div className="flex items-center gap-2">
+                <span className="text-base">🗣️</span>
+                <span className="text-xs font-black uppercase text-cordel-wood tracking-wider">
+                  Chant &amp; Paroles {activeToadaToView.titre ? `— ${activeToadaToView.titre}` : ''}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setActiveToadaToView(null)}
+                className="w-7 h-7 rounded-full bg-encre-noire text-white font-black text-sm flex items-center justify-center border-2 border-white shadow-md hover:bg-red-700 transition-colors cursor-pointer"
+                title="Fermer"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Contenu défilable */}
+            <div className="w-full flex-1 overflow-y-auto p-2 sm:p-4 bg-cordel-bg-light flex flex-col items-center">
+              <div className="w-full h-full max-w-full">
+                <SongCard
+                  song={activeToadaToView}
+                  defaultRevisionMode={false}
+                  groupId={groupId}
+                  profileData={_profileData}
+                />
+              </div>
+            </div>
           </div>
         </div>
       )}

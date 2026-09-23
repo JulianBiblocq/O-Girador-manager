@@ -11,6 +11,7 @@ import RepertoireVideosPicker from './RepertoireVideosPicker';
 import RepertoireSignalsPicker from './RepertoireSignalsPicker';
 import RepertoireSinaisDoMestreEditor from './RepertoireSinaisDoMestreEditor';
 import CreateCultureFicheModal from './CreateCultureFicheModal';
+import SongCard from '../SongCard';
 import { useDancadorChoreographies } from '../../hooks/useDancadorData';
 import { useRepertoireVaralDocs } from '../../hooks/useRepertoireVaralDocs';
 import { cleanFirestorePayload } from '../../utils/firestoreUtils';
@@ -64,6 +65,7 @@ export default function RepertoirePieceModal({
   const [histoire, setHistoire] = useState('');
   const [showTabPreview, setShowTabPreview] = useState(false);
   const [isCultureModalOpen, setIsCultureModalOpen] = useState(false);
+  const [toadaToPreview, setToadaToPreview] = useState(null);
   const [uploadingAudio, setUploadingAudio] = useState(false);
 
   // État du formulaire
@@ -705,6 +707,18 @@ export default function RepertoirePieceModal({
                     <span>Définir comme titre : <u>« {selectedSong.titre} »</u></span>
                   </button>
                 )}
+
+                {selectedSong && (
+                  <button
+                    type="button"
+                    onClick={() => setToadaToPreview(selectedSong)}
+                    className="mt-1 inline-flex items-center gap-1.5 px-2.5 py-0.5 text-[9.5px] font-bold text-emerald-950 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 rounded shadow-2xs cursor-pointer transition-all text-left w-fit"
+                    title="Consulter les paroles complètes de ce chant"
+                  >
+                    <span>🗣️</span>
+                    <span>Lire les paroles de « {selectedSong.titre} » ↗</span>
+                  </button>
+                )}
               </div>
 
               {/* 2. Séquence / Préréglage Séquenceur */}
@@ -1077,6 +1091,39 @@ export default function RepertoirePieceModal({
           setIsCultureModalOpen(false);
         }}
       />
+
+      {/* Modale d'aperçu d'une Toada (Chant & Paroles) */}
+      {toadaToPreview && (
+        <div className="fixed inset-0 z-60 flex items-center justify-center p-3 bg-black/60 backdrop-blur-xs">
+          <div className="relative w-full max-w-[580px] max-h-[92vh] flex flex-col bg-[#fdfaf2] rounded-lg shadow-2xl overflow-hidden border-2 border-encre-noire text-left">
+            <div className="w-full flex justify-between items-center px-4 py-2.5 border-b-2 border-dashed border-cordel-master-dark/20 shrink-0 bg-[#fdfaf2]">
+              <div className="flex items-center gap-2">
+                <span className="text-base">🗣️</span>
+                <span className="text-xs font-black uppercase text-cordel-wood tracking-wider">
+                  Chant &amp; Paroles {toadaToPreview.titre ? `— ${toadaToPreview.titre}` : ''}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setToadaToPreview(null)}
+                className="w-7 h-7 rounded-full bg-encre-noire text-white font-black text-sm flex items-center justify-center border-2 border-white shadow-md hover:bg-red-700 transition-colors cursor-pointer"
+                title="Fermer"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="w-full flex-1 overflow-y-auto p-2 sm:p-4 bg-cordel-bg-light flex flex-col items-center">
+              <div className="w-full h-full max-w-full">
+                <SongCard
+                  song={toadaToPreview}
+                  defaultRevisionMode={false}
+                  groupId={groupId}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
