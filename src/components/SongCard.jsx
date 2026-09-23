@@ -341,7 +341,7 @@ function SongCard({
     <>
       <div 
         id={`song-card-${song?.id || 'temp'}`}
-        className="bg-[#fdfaf2] dark:bg-[#1a1816] border-2 border-encre-noire rounded-lg shadow-[3px_3px_0px_0px_#181716] w-full max-w-[560px] min-h-[790px] mx-auto overflow-hidden flex flex-col print:shadow-none print:border-none print:max-w-full print:min-h-0 print:h-auto print:mx-0 print:overflow-visible relative"
+        className="bg-[#fdfaf2] dark:bg-[#1a1816] border-2 border-encre-noire rounded-lg shadow-[3px_3px_0px_0px_#181716] w-full max-w-[580px] mx-auto flex flex-col relative print:shadow-none print:border-none print:max-w-full print:min-h-0 print:h-auto print:mx-0 print:overflow-visible"
       >
       
       {/* Boutons d'actions fiche (Impression & Demande de révision 1-clic) */}

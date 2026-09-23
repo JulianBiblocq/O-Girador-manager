@@ -992,7 +992,7 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
       {/* Modale de consultation d'une Toada (Chant & Paroles) du Varal */}
       {activeToadaToView && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-black/60 backdrop-blur-xs">
-          <div className="relative w-full max-w-[580px] max-h-[92vh] flex flex-col bg-[#fdfaf2] rounded-lg shadow-2xl overflow-hidden border-2 border-encre-noire text-left">
+          <div className="relative w-full max-w-[580px] max-h-[92vh] flex flex-col min-h-0 bg-[#fdfaf2] rounded-lg shadow-2xl overflow-hidden border-2 border-encre-noire text-left">
             {/* Header avec titre & bouton fermeture */}
             <div className="w-full flex justify-between items-center px-4 py-2.5 border-b-2 border-dashed border-cordel-master-dark/20 shrink-0 bg-[#fdfaf2]">
               <div className="flex items-center gap-2">
@@ -1012,8 +1012,8 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
             </div>
 
             {/* Contenu défilable */}
-            <div className="w-full flex-1 overflow-y-auto p-2 sm:p-4 bg-cordel-bg-light flex flex-col items-center">
-              <div className="w-full h-full max-w-full">
+            <div className="w-full flex-1 min-h-0 overflow-y-auto p-2 sm:p-4 bg-cordel-bg-light flex flex-col items-center">
+              <div className="w-full max-w-full">
                 <SongCard
                   song={activeToadaToView}
                   defaultRevisionMode={false}

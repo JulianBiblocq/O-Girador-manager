@@ -514,34 +514,36 @@ export default function WidgetDocuments({
       {/* Modale de consultation d'une Toada (Carnet de chants) */}
       {selectedToada && (
         <div 
-          className="fixed inset-0 bg-black/80 backdrop-blur-xs flex items-center justify-center z-50 p-2 sm:p-6 md:p-12 animate-fadeIn overflow-hidden"
+          className="fixed inset-0 bg-black/80 backdrop-blur-xs flex items-center justify-center z-50 p-2 sm:p-4 md:p-8 animate-fadeIn"
           onClick={() => setSelectedToada(null)}
         >
           <div 
-            className="relative w-full max-w-[560px] max-h-[92vh] flex flex-col items-center"
+            className="relative w-full max-w-[580px] max-h-[92vh] flex flex-col items-center min-h-0"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Bouton de fermeture tactile ergonomique et toujours accessible */}
             <button
               type="button"
               onClick={() => setSelectedToada(null)}
-              className="absolute top-2.5 right-2.5 z-50 bg-[var(--color-cordel-rouge,#8b2a1a)] text-white w-9 h-9 sm:w-10 sm:h-10 rounded-full font-black flex items-center justify-center shadow-lg hover:brightness-110 active:scale-95 transition-all border-2 border-white cursor-pointer"
+              className="absolute -top-3 -right-3 z-50 bg-[var(--color-cordel-rouge,#8b2a1a)] text-white w-9 h-9 sm:w-10 sm:h-10 rounded-full font-black flex items-center justify-center shadow-lg hover:brightness-110 active:scale-95 transition-all border-2 border-white cursor-pointer"
               title={t('common.close') || "Fermer"}
               aria-label={t('common.close') || "Fermer"}
             >
               ✕
             </button>
-            <div className="w-full flex-1 overflow-y-auto scrollbar-hide rounded-lg shadow-2xl flex justify-center">
-              <SongCard
-                song={selectedToada}
-                defaultRevisionMode={false}
-                allDocsToPrint={groupedDocs['Toadas'] || []}
-                onPrintAll={(config) => {
-                  setSelectedToada(null);
-                  setPrintCategory('Toadas');
-                  handleBulkPrint(config);
-                }}
-              />
+            <div className="w-full flex-1 min-h-0 overflow-y-auto rounded-lg shadow-2xl flex flex-col items-center">
+              <div className="w-full max-w-full">
+                <SongCard
+                  song={selectedToada}
+                  defaultRevisionMode={false}
+                  allDocsToPrint={groupedDocs['Toadas'] || []}
+                  onPrintAll={(config) => {
+                    setSelectedToada(null);
+                    setPrintCategory('Toadas');
+                    handleBulkPrint(config);
+                  }}
+                />
+              </div>
             </div>
 
             {/* Sélecteur de statut 3 états pour les encadrants */}
@@ -568,25 +570,27 @@ export default function WidgetDocuments({
       {/* Modale de consultation d'une fiche Culture */}
       {selectedCultureCard && (
         <div 
-          className="fixed inset-0 bg-black/80 backdrop-blur-xs flex items-center justify-center z-50 p-2 sm:p-6 md:p-12 animate-fadeIn overflow-hidden"
+          className="fixed inset-0 bg-black/80 backdrop-blur-xs flex items-center justify-center z-50 p-2 sm:p-4 md:p-8 animate-fadeIn"
           onClick={() => setSelectedCultureCard(null)}
         >
           <div 
-            className="relative w-full max-w-[560px] max-h-[92vh] flex flex-col items-center"
+            className="relative w-full max-w-[580px] max-h-[92vh] flex flex-col items-center min-h-0"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Bouton de fermeture tactile ergonomique et toujours accessible */}
             <button
               type="button"
               onClick={() => setSelectedCultureCard(null)}
-              className="absolute top-2.5 right-2.5 z-50 bg-[var(--color-cordel-rouge,#8b2a1a)] text-white w-9 h-9 sm:w-10 sm:h-10 rounded-full font-black flex items-center justify-center shadow-lg hover:brightness-110 active:scale-95 transition-all border-2 border-white cursor-pointer"
+              className="absolute -top-3 -right-3 z-50 bg-[var(--color-cordel-rouge,#8b2a1a)] text-white w-9 h-9 sm:w-10 sm:h-10 rounded-full font-black flex items-center justify-center shadow-lg hover:brightness-110 active:scale-95 transition-all border-2 border-white cursor-pointer"
               title={t('common.close') || "Fermer"}
               aria-label={t('common.close') || "Fermer"}
             >
               ✕
             </button>
-            <div className="w-full flex-1 overflow-y-auto scrollbar-hide rounded-lg shadow-2xl flex justify-center">
-              <CultureCard culture={selectedCultureCard} />
+            <div className="w-full flex-1 min-h-0 overflow-y-auto rounded-lg shadow-2xl flex flex-col items-center">
+              <div className="w-full max-w-full">
+                <CultureCard culture={selectedCultureCard} />
+              </div>
             </div>
 
             {/* Sélecteur de statut 3 états pour les fiches culturelles */}

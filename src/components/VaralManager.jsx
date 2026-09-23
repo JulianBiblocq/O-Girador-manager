@@ -1207,23 +1207,28 @@ export default function VaralManager({ groupId, onBack, role, isSystemAdmin, isE
 
       {/* Modale de lecture d'une Toada (Carnet de Chants) */}
       {selectedToada && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-2 sm:p-6 md:p-12 animate-fadeIn overflow-hidden">
-          <div className="w-full max-w-[560px] max-h-[95vh] flex flex-col bg-cordel-bg rounded-lg shadow-2xl overflow-hidden">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-xs flex items-center justify-center z-50 p-2 sm:p-4 md:p-8 animate-fadeIn">
+          <div className="w-full max-w-[600px] max-h-[92vh] flex flex-col min-h-0 bg-cordel-bg rounded-lg shadow-2xl border-2 border-encre-noire overflow-hidden">
             {/* Header avec bouton fermeture */}
-            <div className="w-full flex justify-between items-center p-3 border-b-2 border-dashed border-cordel-master-dark/20 shrink-0 bg-cordel-bg">
-              <span className="text-xs font-black uppercase text-cordel-wood tracking-wider">Carnet de Chants</span>
+            <div className="w-full flex justify-between items-center p-3 border-b-2 border-dashed border-cordel-master-dark/20 shrink-0 bg-[#fdfaf2]">
+              <div className="flex items-center gap-2">
+                <span className="text-base">🗣️</span>
+                <span className="text-xs font-black uppercase text-cordel-wood tracking-wider">
+                  Carnet de Chants {selectedToada.titre ? `— ${selectedToada.titre}` : ''}
+                </span>
+              </div>
               <button
                 type="button"
                 onClick={() => setSelectedToada(null)}
-                className="bg-[var(--theme-primary)] text-white w-7 h-7 rounded font-black flex items-center justify-center shadow hover:bg-red-700 transition-colors border border-white cursor-pointer"
+                className="bg-encre-noire text-white w-7 h-7 rounded-full font-black flex items-center justify-center shadow hover:bg-red-700 transition-colors border border-white cursor-pointer"
                 title="Fermer"
               >
-                X
+                ✕
               </button>
             </div>
             {/* Contenu défilable */}
-            <div className="w-full flex-1 overflow-y-auto scrollbar-hide flex flex-col items-center p-0 bg-cordel-bg-light">
-              <div className="w-full h-full max-w-full">
+            <div className="w-full flex-1 min-h-0 overflow-y-auto p-2 sm:p-4 bg-cordel-bg-light flex flex-col items-center">
+              <div className="w-full max-w-full">
                 <SongCard song={selectedToada} defaultRevisionMode={false} />
               </div>
             </div>
@@ -1233,23 +1238,28 @@ export default function VaralManager({ groupId, onBack, role, isSystemAdmin, isE
 
       {/* Modale de lecture d'une Fiche Culture */}
       {selectedCultureCard && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-2 sm:p-6 md:p-12 animate-fadeIn overflow-hidden">
-          <div className="w-full max-w-[560px] max-h-[95vh] flex flex-col bg-cordel-bg rounded-lg shadow-2xl overflow-hidden">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-xs flex items-center justify-center z-50 p-2 sm:p-4 md:p-8 animate-fadeIn">
+          <div className="w-full max-w-[600px] max-h-[92vh] flex flex-col min-h-0 bg-cordel-bg rounded-lg shadow-2xl border-2 border-encre-noire overflow-hidden">
             {/* Header avec bouton fermeture */}
-            <div className="w-full flex justify-between items-center p-3 border-b-2 border-dashed border-cordel-master-dark/20 shrink-0 bg-cordel-bg">
-              <span className="text-xs font-black uppercase text-cordel-wood tracking-wider">Fiche Culturelle</span>
+            <div className="w-full flex justify-between items-center p-3 border-b-2 border-dashed border-cordel-master-dark/20 shrink-0 bg-[#fdfaf2]">
+              <div className="flex items-center gap-2">
+                <span className="text-base">📖</span>
+                <span className="text-xs font-black uppercase text-cordel-wood tracking-wider">
+                  Fiche Culturelle {selectedCultureCard.titre ? `— ${selectedCultureCard.titre}` : ''}
+                </span>
+              </div>
               <button
                 type="button"
                 onClick={() => setSelectedCultureCard(null)}
-                className="bg-[var(--theme-primary)] text-white w-7 h-7 rounded font-black flex items-center justify-center shadow hover:bg-red-700 transition-colors border border-white cursor-pointer"
+                className="bg-encre-noire text-white w-7 h-7 rounded-full font-black flex items-center justify-center shadow hover:bg-red-700 transition-colors border border-white cursor-pointer"
                 title="Fermer"
               >
-                X
+                ✕
               </button>
             </div>
             {/* Contenu défilable */}
-            <div className="w-full flex-1 overflow-y-auto scrollbar-hide flex flex-col items-center p-0 bg-cordel-bg-light">
-              <div className="w-full h-full max-w-full">
+            <div className="w-full flex-1 min-h-0 overflow-y-auto p-2 sm:p-4 bg-cordel-bg-light flex flex-col items-center">
+              <div className="w-full max-w-full">
                 <CultureCard culture={selectedCultureCard} />
               </div>
             </div>
