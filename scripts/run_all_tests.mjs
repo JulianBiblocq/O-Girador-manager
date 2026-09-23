@@ -43,7 +43,8 @@ const testScripts = [
   'scripts/test_sinais_do_mestre_aspiration.mjs',
   'scripts/test_season_cycles_config.mjs',
   'scripts/test_agenda_temporal_season_filtering.mjs',
-  'scripts/test_treasury_secretariat_season_wiring.mjs'
+  'scripts/test_treasury_secretariat_season_wiring.mjs',
+  'scripts/test_repertoire_reactive_architecture.mjs'
 ];
 
 console.log("===============================================================");

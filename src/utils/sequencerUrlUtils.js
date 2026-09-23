@@ -31,7 +31,7 @@ export function buildSequencerUrl(baseUrl = 'https://sequenceur.app', item) {
   }
 
   // 2. Cas où l'argument est un objet (morceau de répertoire ou ressource séquenceur)
-  const collectionType = item._collection || item.collection;
+  const collectionType = item._collection || item.collection || item.preset?._collection;
 
   // Détection d'un fichier hébergé (Storage ou URL distante)
   const candidateFileUrl = item.fileUrl || item.sequenceurFileUrl || (typeof item.jsonUrl === 'string' && (item.jsonUrl.startsWith('http://') || item.jsonUrl.startsWith('https://')) ? item.jsonUrl : null);
@@ -40,13 +40,13 @@ export function buildSequencerUrl(baseUrl = 'https://sequenceur.app', item) {
   }
 
   // Détection explicite de section
-  const sectionId = item.sectionId || (collectionType === 'sections' || item.sequenceurType === 'sections' ? (item.id || item.sequenceurId) : null);
+  const sectionId = item.sectionId || (collectionType === 'sections' || item.sequenceurType === 'sections' || item.preset?._collection === 'sections' ? (item.preset?.id || item.sequenceurId || item.id) : null);
   if (sectionId) {
     return `${base}${separator}sectionId=${encodeURIComponent(sectionId)}`;
   }
 
   // Détection explicite de preset
-  const presetId = item.loadPreset || item.presetId || (collectionType === 'presets' || item.sequenceurType === 'presets' ? (item.id || item.sequenceurId) : null);
+  const presetId = item.loadPreset || item.presetId || (collectionType === 'presets' || item.sequenceurType === 'presets' || item.preset?._collection === 'presets' ? (item.preset?.id || item.sequenceurId || item.id) : null);
   if (presetId) {
     return `${base}${separator}loadPreset=${encodeURIComponent(presetId)}`;
   }

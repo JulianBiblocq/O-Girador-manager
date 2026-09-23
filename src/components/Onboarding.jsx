@@ -9,16 +9,19 @@ import OnboardingPublicBlock from './onboarding/OnboardingPublicBlock';
 import OnboardingVisibilityBlock from './onboarding/OnboardingVisibilityBlock';
 import OnboardingPrivateBlock from './onboarding/OnboardingPrivateBlock';
 
+// Configuration par défaut des champs du formulaire d'inscription.
+// Les champs non essentiels sont isRequired: false pour éviter qu'un champ masqué
+// ne bloque silencieusement la soumission. L'association peut surcharger via Firestore.
 const DEFAULT_FIELDS_CONFIG = {
-  telephone: { key: "telephone", label: "Téléphone", enabled: true, filledBy: "member", isRequired: true },
-  adresse: { key: "adresse", label: "Adresse physique", enabled: true, filledBy: "member", isRequired: true },
+  telephone: { key: "telephone", label: "Téléphone", enabled: true, filledBy: "member", isRequired: false },
+  adresse: { key: "adresse", label: "Adresse physique", enabled: true, filledBy: "member", isRequired: false },
   surnom: { key: "surnom", label: "Surnom", enabled: true, filledBy: "member", isRequired: false },
-  tailleTshirt: { key: "tailleTshirt", label: "Taille T-shirt", enabled: true, filledBy: "member", isRequired: true },
-  taillePantalon: { key: "taillePantalon", label: "Taille Pantalon/Bas", enabled: true, filledBy: "member", isRequired: true },
+  tailleTshirt: { key: "tailleTshirt", label: "Taille T-shirt", enabled: true, filledBy: "member", isRequired: false },
+  taillePantalon: { key: "taillePantalon", label: "Taille Pantalon/Bas", enabled: true, filledBy: "member", isRequired: false },
   droitImage: { key: "droitImage", label: "Droit à l'image", enabled: true, filledBy: "member", isRequired: false },
   aptitudeMedicale: { key: "aptitudeMedicale", label: "Aptitude médicale", enabled: true, filledBy: "member", isRequired: false },
   lateralite: { key: "lateralite", label: "Latéralité (Gaucher/Droitier)", enabled: true, filledBy: "member", isRequired: false },
-  dateNaissance: { key: "dateNaissance", label: "Date de naissance", enabled: true, filledBy: "member", isRequired: true },
+  dateNaissance: { key: "dateNaissance", label: "Date de naissance", enabled: true, filledBy: "member", isRequired: false },
   niveaux: { key: "niveaux", label: "Affichage des niveaux dans le trombinoscope", enabled: true, filledBy: "admin", isRequired: false }
 };
 
@@ -49,8 +52,9 @@ export default function Onboarding({ user, branding, onComplete, profileData }) 
     voeuSecondaire: profileData?.voeuSecondaire || '',
     instrumentsJoues: profileData?.instrumentsJoues || [],
     voeuxInstruments: profileData?.voeuxInstruments || [],
-    pratiqueDanse: profileData?.pratiqueDanse || false,
-    estAncienMembre: profileData?.estAncienMembre || false,
+    pratiqueDanse: profileData?.pratiqueDanse ?? false,
+    pratiquePercussion: profileData?.pratiquePercussion ?? false,
+    estAncienMembre: profileData?.estAncienMembre ?? false,
     souhaiteChangerInstrument: profileData?.souhaiteChangerInstrument || false,
     volontaireAncienInstrument: profileData?.volontaireAncienInstrument || false,
     genre: profileData?.genre || 'femme',
@@ -170,22 +174,24 @@ export default function Onboarding({ user, branding, onComplete, profileData }) 
       }
     }
 
-    const missingRequired = Object.keys(fieldsConfig || {}).some(key => {
-      if (!isFieldRequired(key)) return false;
-      if (key === 'telephone') return !formData.phone || !formData.phone.trim();
-      if (key === 'surnom') return !formData.surnom || !formData.surnom.trim();
-      if (key === 'adresse') return (!formData.adresseRue || !formData.adresseRue.trim());
-      if (key === 'tailleTshirt') return !formData.tailleTshirt || !formData.tailleTshirt.trim();
-      if (key === 'taillePantalon') return !formData.taillePantalon || !formData.taillePantalon.trim();
-      if (key === 'lateralite') return !formData.lateralite || !formData.lateralite.trim();
-      if (key === 'dateNaissance') return !formData.dateNaissance || !formData.dateNaissance.trim();
-      if (key === 'droitImage') return demanderDroitImage && !formData.droitImage;
-      if (key === 'aptitudeMedicale') return demanderAttestationSante && !formData.aptitudeMedicale;
-      return false;
+    // Collecte explicite des libellés de champs obligatoires manquants
+    const champsManquants = [];
+    Object.keys(fieldsConfig || {}).forEach(key => {
+      if (!isFieldRequired(key)) return;
+      const label = fieldsConfig[key]?.label || key;
+      if (key === 'telephone' && (!formData.phone || !formData.phone.trim())) champsManquants.push(label);
+      else if (key === 'surnom' && (!formData.surnom || !formData.surnom.trim())) champsManquants.push(label);
+      else if (key === 'adresse' && (!formData.adresseRue || !formData.adresseRue.trim())) champsManquants.push(label);
+      else if (key === 'tailleTshirt' && (!formData.tailleTshirt || !formData.tailleTshirt.trim())) champsManquants.push(label);
+      else if (key === 'taillePantalon' && (!formData.taillePantalon || !formData.taillePantalon.trim())) champsManquants.push(label);
+      else if (key === 'lateralite' && (!formData.lateralite || !formData.lateralite.trim())) champsManquants.push(label);
+      else if (key === 'dateNaissance' && (!formData.dateNaissance || !formData.dateNaissance.trim())) champsManquants.push(label);
+      else if (key === 'droitImage' && demanderDroitImage && !formData.droitImage) champsManquants.push(label);
+      else if (key === 'aptitudeMedicale' && demanderAttestationSante && !formData.aptitudeMedicale) champsManquants.push(label);
     });
 
-    if (missingRequired) {
-      const errMsg = "Veuillez remplir tous les champs obligatoires.";
+    if (champsManquants.length > 0) {
+      const errMsg = `Veuillez renseigner : ${champsManquants.join(', ')}.`;
       setValidationError(errMsg);
       alert(errMsg);
       return;
@@ -206,6 +212,9 @@ export default function Onboarding({ user, branding, onComplete, profileData }) 
         (profileData?.role && profileData.role !== 'nouveau')
       );
 
+      // Construction de la fiche utilisateur — les champs sensibles (role, isSystemAdmin)
+      // ne sont injectés que pour les profils réellement nouveaux afin de ne pas écraser
+      // les valeurs existantes gérées par les firestore.rules du backend maître.
       const userDoc = {
         nom: formData.lastName,
         prenom: formData.firstName,
@@ -218,9 +227,6 @@ export default function Onboarding({ user, branding, onComplete, profileData }) 
         tailleTshirt: isFieldVisible('tailleTshirt') ? formData.tailleTshirt : "M",
         taillePantalon: isFieldVisible('taillePantalon') ? formData.taillePantalon : "M",
         droitImage: demanderDroitImage ? formData.droitImage : false,
-        dateSignatureDroitImage: demanderDroitImage && formData.droitImage ? new Date() : null,
-        aptitudeMedicale: demanderAttestationSante ? formData.aptitudeMedicale : false,
-        dateSignatureAttestationSante: demanderAttestationSante && formData.aptitudeMedicale ? new Date() : null,
         lateralite: isFieldVisible('lateralite') ? formData.lateralite : "droitier",
         dateNaissance: isFieldVisible('dateNaissance') ? formData.dateNaissance : "",
         pratiquePercussion: isPercussion,
@@ -238,11 +244,9 @@ export default function Onboarding({ user, branding, onComplete, profileData }) 
         instrumentSecondaire: "",
         instrumentsJoues: cleanVoeux,
         genre: formData.genre,
-        role: profileData?.role || "membre",
         isNew: profileData?.isNew !== undefined ? profileData.isNew : (!isExistingMember),
         statutActuel: profileData?.statutActuel || "active",
         groupId: (profileData?.groupId || groupId)?.toLowerCase() === 'samambaia' ? 'Samambaia' : (profileData?.groupId || groupId),
-        tags: profileData?.tags || [],
         afficherTelephone: Boolean(formData.afficherTelephone),
         afficherDateNaissance: Boolean(formData.afficherDateNaissance),
         visibiliteAdresse: formData.visibiliteAdresse || 'ville',
@@ -250,6 +254,30 @@ export default function Onboarding({ user, branding, onComplete, profileData }) 
         publierDateNaissance: Boolean(formData.afficherDateNaissance),
         onboardingCompleted: true
       };
+
+      // Injection conditionnelle des dates de signature (uniquement si la fonctionnalité est activée)
+      if (demanderDroitImage && formData.droitImage) {
+        userDoc.dateSignatureDroitImage = new Date();
+      }
+      if (demanderAttestationSante && formData.aptitudeMedicale) {
+        userDoc.dateSignatureAttestationSante = new Date();
+      }
+
+      // Injection des champs sensibles uniquement pour les profils sans rôle existant
+      if (!profileData?.role) {
+        userDoc.role = "membre";
+      }
+      if (!profileData?.tags) {
+        userDoc.tags = [];
+      }
+
+      // Nettoyage du payload : suppression des valeurs null/undefined
+      // pour éviter un rejet par les règles Firestore du backend maître
+      Object.keys(userDoc).forEach(key => {
+        if (userDoc[key] === null || userDoc[key] === undefined) {
+          delete userDoc[key];
+        }
+      });
 
       // Réconciliation avec le sas de paiement HelloAsso préalable (pending_payments)
       const cleanEmail = (user.email || '').trim().toLowerCase();
@@ -313,7 +341,7 @@ export default function Onboarding({ user, branding, onComplete, profileData }) 
             {t('onboarding.title') || "NOUVEAU PROFIL"}
           </h1>
           <p className="text-[10px] font-bold tracking-widest text-cordel-master-dark opacity-75 mt-1">
-            {t('onboarding.step') || "INSCRIPTION • ÉTAPE 1 SUR 2"}
+            {t('onboarding.step') || "INSCRIPTION • COMPLÉTER MON PROFIL"}
           </p>
         </div>
 

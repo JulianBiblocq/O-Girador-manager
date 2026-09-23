@@ -35,7 +35,8 @@ export function isTestOrE2ESequence(item) {
  * @param {string} groupId - Identifiant de l'association
  * @returns {{ rhythms: Array, loading: boolean, error: any, refresh: Function }}
  */
-export function useSequencerFirestoreData(groupId) {
+export function useSequencerFirestoreData(rawGroupId) {
+  const groupId = rawGroupId || 'Samambaia';
   const [rhythms, setRhythms] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -55,25 +56,22 @@ export function useSequencerFirestoreData(groupId) {
   }, []);
 
   const fetchData = useCallback(async () => {
-    if (!groupId) {
-      setRhythms([]);
-      setLoading(false);
-      return;
-    }
-
+    const targetGroupId = groupId || 'Samambaia';
     setLoading(true);
     setError(null);
     cleanupListeners();
 
     try {
-      const canonicalGroup = canonicalizeGroupId(groupId) || (typeof groupId === 'string' ? groupId.trim().toLowerCase() : '');
+      const canonicalGroup = canonicalizeGroupId(groupId) || (typeof groupId === 'string' ? groupId.trim().toLowerCase() : 'samambaia');
       // Construction des variantes de groupId pour robustesse multi-casse
       const groupVariants = Array.from(
         new Set([
           groupId,
           canonicalGroup,
-          typeof groupId === 'string' ? groupId.toLowerCase() : null,
-          typeof canonicalGroup === 'string' ? canonicalGroup.toLowerCase() : null
+          typeof targetGroupId === 'string' ? targetGroupId.toLowerCase() : null,
+          typeof canonicalGroup === 'string' ? canonicalGroup.toLowerCase() : null,
+          'Samambaia',
+          'samambaia'
         ])
       ).filter(Boolean);
 
@@ -97,9 +95,10 @@ export function useSequencerFirestoreData(groupId) {
         }
       }
 
-      // Garantie pour l'association Samambaia (Mestre historique)
+      // Garantie pour l'association Samambaia (Mestre historique & Bastien)
       if (canonicalGroup.toLowerCase() === 'samambaia') {
         memberIdsSet.add('iA0SweEHyOPzAPGIDVZdeKAV2mk1');
+        memberIdsSet.add('pFAmvjJWGtaWV0a6i9JcReuiyTJ2');
       }
 
       // Ajout du groupId canonique lui-même pour les motifs créés sous l'identifiant de groupe
@@ -139,7 +138,7 @@ export function useSequencerFirestoreData(groupId) {
         const data = doc.data() || {};
         let parsedData = data;
 
-        // Décompression du champ data (LZString UTF-16 ou Base64 ou JSON natif)
+        // Décompression du champ data (Base64 prioritaire comme le Séquenceur, puis UTF-16 ou JSON natif)
         if (data.data) {
           try {
             if (typeof data.data === 'object') {
@@ -149,15 +148,17 @@ export function useSequencerFirestoreData(groupId) {
               if (str.startsWith('{') || str.startsWith('[')) {
                 parsedData = JSON.parse(str);
               } else {
-                let decompressed = LZString.decompressFromUTF16(str);
+                let decompressed = LZString.decompressFromBase64(str);
                 if (!decompressed) {
-                  decompressed = LZString.decompressFromBase64(str);
+                  decompressed = LZString.decompressFromUTF16(str);
                 }
                 if (!decompressed) {
                   decompressed = LZString.decompress(str);
                 }
                 if (decompressed) {
-                  parsedData = JSON.parse(decompressed);
+                  try {
+                    parsedData = JSON.parse(decompressed);
+                  } catch (_) {}
                 }
               }
             }
@@ -178,127 +179,138 @@ export function useSequencerFirestoreData(groupId) {
           displayTitle = `[Preset] ${rawTitle}`;
         }
 
+        // Extraction résiliente de l'URL audio (niveau racine, dans parsedData ou dans metadata)
+        const audioUrl =
+          data.audioUrl ||
+          parsedData?.audioUrl ||
+          parsedData?.metadata?.audioUrl ||
+          null;
+
+        // Extraction résiliente des signes du Mestre
+        const sinaisDoMestre =
+          (Array.isArray(data.sinaisDoMestre) && data.sinaisDoMestre.length > 0)
+            ? data.sinaisDoMestre
+            : (Array.isArray(parsedData?.sinaisDoMestre) && parsedData.sinaisDoMestre.length > 0)
+              ? parsedData.sinaisDoMestre
+              : (Array.isArray(parsedData?.metadata?.sinaisDoMestre) && parsedData.metadata.sinaisDoMestre.length > 0)
+                ? parsedData.metadata.sinaisDoMestre
+                : [];
+
+        // Extraction résiliente du BPM
+        const bpm =
+          data.bpm ||
+          parsedData?.bpm ||
+          parsedData?.metadata?.bpm ||
+          null;
+
+        // Extraction résiliente de l'URL vidéo
+        const videoUrl =
+          data.videoUrl ||
+          parsedData?.videoUrl ||
+          parsedData?.metadata?.videoUrl ||
+          null;
+
         return {
+          ...data,
           id: doc.id,
           _collection: collectionName,
           source: 'firestore',
           isJson: true,
-          isAudio: !!data.audioUrl,
+          isAudio: Boolean(audioUrl),
           titre: rawTitle,
+          name: rawTitle,
           displayTitle: displayTitle,
           folder: folder,
           jsonUrl: doc.id,
-          audioUrl: data.audioUrl || null,
-          ...data,
+          audioUrl: audioUrl,
+          sinaisDoMestre: sinaisDoMestre,
+          bpm: bpm,
+          videoUrl: videoUrl,
           parsedData
         };
       };
 
-      // 2. Écoute des Patterns (Motifs individuels et dossiers privés comme 'samba')
-      const patternsRef = collection(db, 'patterns');
-
-      // 2.a Patterns par groupId direct
-      if (canonicalGroup) {
-        try {
-          const qPatternsGroup = query(patternsRef, where('groupId', '==', canonicalGroup));
-          const unsubPGroup = onSnapshot(qPatternsGroup, (snap) => {
-            snap.docs.forEach((doc) => itemsMap.set(doc.id, processDoc(doc, 'patterns')));
-            mergeAndSet();
-          }, (err) => console.warn("useSequencerFirestoreData - Patterns group :", err));
-          unsubsRef.current.push(unsubPGroup);
-        } catch (_) {}
-
-        // 2.b Patterns par mestreId (normalisé sur groupId canonique)
-        try {
-          const qPatternsMestre = query(patternsRef, where('mestreId', '==', canonicalGroup));
-          const unsubPMestre = onSnapshot(qPatternsMestre, (snap) => {
-            snap.docs.forEach((doc) => itemsMap.set(doc.id, processDoc(doc, 'patterns')));
-            mergeAndSet();
-          }, (err) => console.warn("useSequencerFirestoreData - Patterns mestreId :", err));
-          unsubsRef.current.push(unsubPMestre);
-        } catch (_) {}
-      }
-
-      // 2.c Patterns par lots de memberIds (ownerId & mestreId)
-      chunks.forEach((chunk) => {
-        try {
-          const qOwner = query(patternsRef, where('ownerId', 'in', chunk));
-          const unsubOwner = onSnapshot(qOwner, (snap) => {
-            snap.docs.forEach((doc) => itemsMap.set(doc.id, processDoc(doc, 'patterns')));
-            mergeAndSet();
-          }, (err) => console.warn("useSequencerFirestoreData - Patterns owner chunk :", err));
-          unsubsRef.current.push(unsubOwner);
-        } catch (_) {}
+      // 2. Écoute directe et temps réel des collections Séquenceur
+      // Note : les règles Firestore autorisent la lecture publique sur presets, sections, patterns et audio_masters.
+      // Une écoute directe de la collection est donc exhaustive, sans risque de rater de morceaux par filtre restrictif.
+      const listenCollection = (colName) => {
+        const colRef = collection(db, colName);
 
         try {
-          const qMestreChunk = query(patternsRef, where('mestreId', 'in', chunk));
-          const unsubMestre = onSnapshot(qMestreChunk, (snap) => {
-            snap.docs.forEach((doc) => itemsMap.set(doc.id, processDoc(doc, 'patterns')));
-            mergeAndSet();
-          }, (err) => console.warn("useSequencerFirestoreData - Patterns mestre chunk :", err));
-          unsubsRef.current.push(unsubMestre);
-        } catch (_) {}
-      });
+          const unsub = onSnapshot(
+            colRef,
+            (snap) => {
+              snap.docs.forEach((d) => {
+                const item = processDoc(d, colName);
+                if (item) {
+                  itemsMap.set(d.id, item);
+                }
+              });
+              mergeAndSet();
+            },
+            (err) => {
+              console.warn(`useSequencerFirestoreData - Écoute directe ${colName} (repli ciblé) :`, err);
+              // Repli ciblé si l'écoute globale est restreinte
+              listenCollectionTargeted(colName, colRef);
+            }
+          );
+          unsubsRef.current.push(unsub);
+        } catch (_) {
+          listenCollectionTargeted(colName, colRef);
+        }
+      };
 
-      // 2.d Patterns publics du catalogue général
-      try {
-        const qPublicPatterns = query(patternsRef, where('visibility', '==', 'public'));
-        const unsubPublicP = onSnapshot(qPublicPatterns, (snap) => {
-          snap.docs.forEach((doc) => itemsMap.set(doc.id, processDoc(doc, 'patterns')));
-          mergeAndSet();
-        }, (err) => console.warn("useSequencerFirestoreData - Patterns public :", err));
-        unsubsRef.current.push(unsubPublicP);
-      } catch (_) {}
+      // Stratégie de repli par requêtes ciblées si l'écoute globale est refusée
+      const listenCollectionTargeted = (colName, colRef) => {
+        if (groupVariants.length > 0) {
+          try {
+            const qGroup = query(colRef, where('groupId', 'in', groupVariants.slice(0, 10)));
+            const unsubGroup = onSnapshot(
+              qGroup,
+              (snap) => {
+                snap.docs.forEach((d) => itemsMap.set(d.id, processDoc(d, colName)));
+                mergeAndSet();
+              },
+              (err) => console.warn(`useSequencerFirestoreData - ${colName} groupVariants :`, err)
+            );
+            unsubsRef.current.push(unsubGroup);
+          } catch (_) {}
+        }
 
-      // 3. Écoute des Sections (Séquences & Arrangements)
-      const sectionsRef = collection(db, 'sections');
+        chunks.forEach((chunk) => {
+          try {
+            const qOwner = query(colRef, where('ownerId', 'in', chunk));
+            const unsubOwner = onSnapshot(
+              qOwner,
+              (snap) => {
+                snap.docs.forEach((d) => itemsMap.set(d.id, processDoc(d, colName)));
+                mergeAndSet();
+              },
+              (err) => console.warn(`useSequencerFirestoreData - ${colName} owner chunk :`, err)
+            );
+            unsubsRef.current.push(unsubOwner);
+          } catch (_) {}
+        });
 
-      if (canonicalGroup) {
         try {
-          const qSectionsGroup = query(sectionsRef, where('groupId', '==', canonicalGroup));
-          const unsubSGroup = onSnapshot(qSectionsGroup, (snap) => {
-            snap.docs.forEach((doc) => itemsMap.set(doc.id, processDoc(doc, 'sections')));
-            mergeAndSet();
-          }, (err) => console.warn("useSequencerFirestoreData - Sections group :", err));
-          unsubsRef.current.push(unsubSGroup);
+          const qPublic = query(colRef, where('visibility', '==', 'public'));
+          const unsubPublic = onSnapshot(
+            qPublic,
+            (snap) => {
+              snap.docs.forEach((d) => itemsMap.set(d.id, processDoc(d, colName)));
+              mergeAndSet();
+            },
+            (err) => console.warn(`useSequencerFirestoreData - ${colName} public :`, err)
+          );
+          unsubsRef.current.push(unsubPublic);
         } catch (_) {}
-      }
+      };
 
-      chunks.forEach((chunk) => {
-        try {
-          const qSecOwner = query(sectionsRef, where('ownerId', 'in', chunk));
-          const unsubSecOwner = onSnapshot(qSecOwner, (snap) => {
-            snap.docs.forEach((doc) => itemsMap.set(doc.id, processDoc(doc, 'sections')));
-            mergeAndSet();
-          }, (err) => console.warn("useSequencerFirestoreData - Sections owner chunk :", err));
-          unsubsRef.current.push(unsubSecOwner);
-        } catch (_) {}
-      });
-
-      // 4. Écoute des Presets (Arrangements de batterie & boîtes à rythme)
-      const presetsRef = collection(db, 'presets');
-
-      if (canonicalGroup) {
-        try {
-          const qPresetsGroup = query(presetsRef, where('groupId', '==', canonicalGroup));
-          const unsubPresGroup = onSnapshot(qPresetsGroup, (snap) => {
-            snap.docs.forEach((doc) => itemsMap.set(doc.id, processDoc(doc, 'presets')));
-            mergeAndSet();
-          }, (err) => console.warn("useSequencerFirestoreData - Presets group :", err));
-          unsubsRef.current.push(unsubPresGroup);
-        } catch (_) {}
-      }
-
-      chunks.forEach((chunk) => {
-        try {
-          const qPresOwner = query(presetsRef, where('ownerId', 'in', chunk));
-          const unsubPresOwner = onSnapshot(qPresOwner, (snap) => {
-            snap.docs.forEach((doc) => itemsMap.set(doc.id, processDoc(doc, 'presets')));
-            mergeAndSet();
-          }, (err) => console.warn("useSequencerFirestoreData - Presets owner chunk :", err));
-          unsubsRef.current.push(unsubPresOwner);
-        } catch (_) {}
-      });
+      // Déclenchement exhaustif pour les ressources du Séquenceur
+      listenCollection('presets');
+      listenCollection('sections');
+      listenCollection('patterns');
+      listenCollection('audio_masters');
 
       // 5. Écoute des Audio Masters
       const audioMastersRef = collection(db, 'audio_masters');

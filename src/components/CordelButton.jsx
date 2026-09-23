@@ -13,7 +13,12 @@ export default function CordelButton({
   className = '',
   ...props
 }) {
-  const baseClass = "theme-btn px-5 py-2 cursor-pointer inline-block text-center transition-all select-none";
+  // Détection d'un padding personnalisé pour éviter les conflits Tailwind v4
+  const hasCustomPaddingX = /(?:^|\s)(?:px-|p-)\S+/.test(className);
+  const hasCustomPaddingY = /(?:^|\s)(?:py-|p-)\S+/.test(className);
+  const defaultPadding = `${hasCustomPaddingX ? '' : 'px-5'} ${hasCustomPaddingY ? '' : 'py-2'}`.trim();
+
+  const baseClass = `theme-btn ${defaultPadding} cursor-pointer inline-block text-center transition-all select-none`.replace(/\s+/g, ' ').trim();
   const borderClass = useExtremeBorder ? 'theme-btn-extreme' : 'theme-btn-standard';
 
   const bgColors = {
@@ -29,7 +34,7 @@ export default function CordelButton({
     <button 
       type={type}
       onClick={onClick}
-      className={`${baseClass} ${borderClass} ${bgColors[variant] || bgColors.default} ${className}`}
+      className={`${baseClass} ${borderClass} ${bgColors[variant] || bgColors.default} ${className}`.trim()}
       {...props}
     >
       {children}

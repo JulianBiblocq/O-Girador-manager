@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { collection, onSnapshot, doc, deleteDoc } from 'firebase/firestore';
+import { collection, onSnapshot, doc, deleteDoc, addDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../../firebase';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
@@ -9,28 +9,46 @@ import RepertoireVideoModal from './RepertoireVideoModal';
 import SignalZoomModal from './SignalZoomModal';
 import TablatureModal from './TablatureModal';
 import CreateCultureFicheModal from './CreateCultureFicheModal';
+import RepertoireUnlinkedPresetsBanner from './RepertoireUnlinkedPresetsBanner';
 import useConfirm from '../../hooks/useConfirm';
 import useMestreSignals from '../../hooks/useMestreSignals';
+import { useSequencerRhythms } from '../../hooks/useSequencerRhythms';
+import { useDancadorChoreographies } from '../../hooks/useDancadorData';
+import { useRepertoireVaralDocs } from '../../hooks/useRepertoireVaralDocs';
 import { openSequencerWithCrossApp } from '../../utils/sequencerUrlUtils';
 import { parseYouTubeMedia } from '../../utils/mediaUrlUtils';
+import { cleanFirestorePayload } from '../../utils/firestoreUtils';
+import {
+  buildResolutionDictionaries,
+  resolvePieceLiveTechnicalData,
+  getPieceTablature,
+  findMatchingPreset
+} from '../../utils/repertoireMatcher';
 
 /**
- * Vue principale du Répertoire de la troupe (Mestria).
- * Classeur central de tous les morceaux, rythmes et créations de la saison.
+ * Vue principale du Répertoire de la troupe (Direction Artistique & Mestria).
+ * Architecture 100 % réactive : les données techniques (audio, tablature, signes,
+ * toadas, danse et culture) sont résolues en direct depuis les hooks en mémoire vive.
  *
  * @param {string} groupId - Identifiant du groupe/association
  * @param {Object} user - Données utilisateur de session
  * @param {Object} profileData - Profil adhérent
  * @param {string} sequenceurUrl - URL de base du Séquenceur
  */
-export default function MestreRepertoireView({ groupId, user, profileData, sequenceurUrl }) {
+export default function MestreRepertoireView({ groupId, user: _user, profileData: _profileData, sequenceurUrl }) {
   const { confirm } = useConfirm();
   const [pieces, setPieces] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(null);
 
   // Bibliothèque des Signes du Mestre
   const { signals } = useMestreSignals(groupId);
   const signalsMap = useMemo(() => new Map((signals || []).map((s) => [s.id, s])), [signals]);
+
+  // Catalogues vivants des modules transversaux (Séquenceur, Dançad'Or, Varal)
+  const { catalogRhythms } = useSequencerRhythms(groupId);
+  const { choreographies } = useDancadorChoreographies(groupId);
+  const { toadasList, cultureDocsList } = useRepertoireVaralDocs(groupId);
 
   // Filtres
   const [seasonFilter, setSeasonFilter] = useState('saison'); // 'saison' | 'chantier' | 'archive' | 'all'
@@ -46,15 +64,16 @@ export default function MestreRepertoireView({ groupId, user, profileData, seque
   const [activeTablaturePiece, setActiveTablaturePiece] = useState(null);
   const [pieceForCultureCreation, setPieceForCultureCreation] = useState(null);
 
+  // Synchronisation & Importation
+  const [syncingPieceId, setSyncingPieceId] = useState(null);
+  const [importingPresetId, setImportingPresetId] = useState(null);
+
   // Notification toast
   const [toastMsg, setToastMsg] = useState(null);
-
   const showToast = (msg) => {
     setToastMsg(msg);
     setTimeout(() => setToastMsg(null), 4000);
   };
-
-  const [fetchError, setFetchError] = useState(null);
 
   // Écoute en temps réel de la collection repertoire
   useEffect(() => {
@@ -86,13 +105,28 @@ export default function MestreRepertoireView({ groupId, user, profileData, seque
     return () => unsubscribe();
   }, [groupId]);
 
+  // Construction mémoïsée des dictionnaires de résolution pour un accès instantané O(1)
+  const resolutionDicts = useMemo(() => {
+    return buildResolutionDictionaries({
+      catalogRhythms,
+      toadasList,
+      cultureDocsList,
+      choreographies
+    });
+  }, [catalogRhythms, toadasList, cultureDocsList, choreographies]);
+
+  // Résolution vivante mémoïsée de l'ensemble des morceaux du répertoire
+  const resolvedPieces = useMemo(() => {
+    return pieces.map((piece) => resolvePieceLiveTechnicalData(piece, resolutionDicts));
+  }, [pieces, resolutionDicts]);
+
   // Compteurs par statut de saison
   const counts = useMemo(() => {
     let saison = 0;
     let chantier = 0;
     let archive = 0;
 
-    pieces.forEach((p) => {
+    resolvedPieces.forEach((p) => {
       if (p.statutSaison === 'saison') saison++;
       else if (p.statutSaison === 'chantier') chantier++;
       else if (p.statutSaison === 'archive') archive++;
@@ -102,27 +136,53 @@ export default function MestreRepertoireView({ groupId, user, profileData, seque
       saison,
       chantier,
       archive,
-      all: pieces.length
+      all: resolvedPieces.length
     };
-  }, [pieces]);
+  }, [resolvedPieces]);
 
-  // Morceaux filtrés par saison et recherche
+  // Morceaux filtrés par saison et recherche textuelle
   const filteredPieces = useMemo(() => {
-    return pieces.filter((p) => {
-      // Filtre de saison
+    return resolvedPieces.filter((p) => {
       if (seasonFilter !== 'all' && p.statutSaison !== seasonFilter) {
         return false;
       }
-      // Filtre de recherche textuelle
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
         const inTitre = (p.titre || '').toLowerCase().includes(q);
         const inNotes = (p.notes || '').toLowerCase().includes(q);
-        return inTitre || inNotes;
+        const inPreset = (p.preset?.titre || p.preset?.name || '').toLowerCase().includes(q);
+        const inToada = (p.activeToada?.titre || '').toLowerCase().includes(q);
+        return inTitre || inNotes || inPreset || inToada;
       }
       return true;
     });
-  }, [pieces, seasonFilter, searchQuery]);
+  }, [resolvedPieces, seasonFilter, searchQuery]);
+
+  // Détection des Presets complets du Séquenceur non encore répertoriés
+  const unlinkedPresets = useMemo(() => {
+    if (!Array.isArray(catalogRhythms) || catalogRhythms.length === 0) return [];
+
+    const fullPresets = catalogRhythms.filter(
+      (r) => r._collection === 'presets' || r.collection === 'presets'
+    );
+
+    const registeredIds = new Set(
+      pieces.map((p) => p.sequenceurId || p.sequenceurFileUrl).filter(Boolean)
+    );
+    const registeredTitles = new Set(
+      pieces.map((p) => (p.titre || '').trim().toLowerCase()).filter(Boolean)
+    );
+
+    return fullPresets.filter((preset) => {
+      if (preset.id && registeredIds.has(preset.id)) return false;
+      if (preset.jsonUrl && registeredIds.has(preset.jsonUrl)) return false;
+
+      const pTitle = (preset.titre || preset.name || '').trim().toLowerCase();
+      if (pTitle && registeredTitles.has(pTitle)) return false;
+
+      return true;
+    });
+  }, [catalogRhythms, pieces]);
 
   // Suppression d'un morceau
   const handleDeletePiece = async (piece) => {
@@ -146,22 +206,94 @@ export default function MestreRepertoireView({ groupId, user, profileData, seque
     }
   };
 
-  // Ouverture modale d'ajout
-  const handleOpenAddModal = () => {
-    setPieceToEdit(null);
-    setIsEditModalOpen(true);
+  // Importation en 1 clic d'un Preset Séquenceur : POINTEURS purs, 0 copie de données dérivées
+  const handleImportPreset = async (preset) => {
+    if (!groupId || !preset) return;
+    setImportingPresetId(preset.id);
+
+    try {
+      const newPieceData = {
+        groupId,
+        titre: (preset.titre || preset.name || 'Nouveau Morceau').trim(),
+        statutSaison: 'chantier',
+        etatValidation: 'a_faire',
+        notes: '',
+        videos: preset.videoUrl
+          ? [{ id: `vid_${Date.now()}`, titre: 'Vidéo Séquenceur', url: preset.videoUrl.trim() }]
+          : [],
+        signalIds: [],
+        sequenceurId: preset.id || null,
+        sequenceurType: 'presets',
+        sequenceurFileUrl:
+          preset.jsonUrl &&
+          (preset.jsonUrl.startsWith('http://') || preset.jsonUrl.startsWith('https://'))
+            ? preset.jsonUrl
+            : null,
+        audioUrl: null,
+        videoUrl: (preset.videoUrl || '').trim() || null,
+        contexteHistorique: null,
+        histoire: null,
+        dancadorChoreoId: null,
+        toadaDocId: null,
+        cultureDocId: null,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+
+      const colRef = collection(db, 'associations', groupId, 'repertoire');
+      await addDoc(colRef, cleanFirestorePayload(newPieceData));
+      showToast(`« ${newPieceData.titre} » importé dans le Répertoire (liaison vivante) !`);
+    } catch (err) {
+      console.error("Erreur lors de l'importation du preset :", err);
+      showToast("Erreur lors de l'importation du morceau dans le Répertoire.");
+    } finally {
+      setImportingPresetId(null);
+    }
   };
 
-  // Ouverture modale d'édition
-  const handleOpenEditModal = (piece) => {
-    setPieceToEdit(piece);
-    setIsEditModalOpen(true);
+  // Raccordement / Réactualisation vivante de la référence Séquenceur
+  const handleSyncWithSequencer = async (piece) => {
+    if (!piece || !groupId) return;
+    setSyncingPieceId(piece.id);
+
+    try {
+      const match = piece.preset || findMatchingPreset(piece, catalogRhythms);
+      if (!match) {
+        showToast(`Rythme associé introuvable dans le Séquenceur pour « ${piece.titre} ».`);
+        setSyncingPieceId(null);
+        return;
+      }
+
+      // Mise à jour ciblée : UNIQUEMENT les pointeurs d'identification, aucun snapshot dupliqué
+      const updateData = {
+        sequenceurId: match.id || null,
+        sequenceurType: match._collection || 'presets',
+        sequenceurFileUrl:
+          match.jsonUrl && (match.jsonUrl.startsWith('http://') || match.jsonUrl.startsWith('https://'))
+            ? match.jsonUrl
+            : null,
+        updatedAt: new Date().toISOString()
+      };
+
+      const pieceRef = doc(db, 'associations', groupId, 'repertoire', piece.id);
+      await updateDoc(pieceRef, cleanFirestorePayload(updateData));
+
+      showToast(`« ${piece.titre} » synchronisé avec le Séquenceur !`);
+    } catch (err) {
+      console.error("Erreur lors de la synchronisation avec le Séquenceur :", err);
+      showToast("Erreur lors de la synchronisation avec le Séquenceur.");
+    } finally {
+      setSyncingPieceId(null);
+    }
   };
 
-  // Ouverture modale de programmation dans l'Agenda
-  const handleOpenProgramModal = (piece) => {
-    setPieceToProgram(piece);
-    setIsProgramModalOpen(true);
+  // Ouverture paresseuse (lazy) de la tablature au clic
+  const handleOpenTablatureModal = (piece) => {
+    const lazyTab = getPieceTablature(piece);
+    setActiveTablaturePiece({
+      ...piece,
+      tablature: lazyTab
+    });
   };
 
   return (
@@ -181,7 +313,7 @@ export default function MestreRepertoireView({ groupId, user, profileData, seque
             <span>Direction Artistique — Répertoire de la Troupe</span>
           </h2>
           <p className="text-[11px] font-bold text-encre-noire/70 mt-0.5">
-            Classeur central des morceaux, rythmes et intentions artistiques de la saison
+            Architecture réactive vivante liée au Séquenceur, au Varal et à Dançad'Or
           </p>
         </div>
 
@@ -189,7 +321,10 @@ export default function MestreRepertoireView({ groupId, user, profileData, seque
           type="button"
           variant="ocre"
           useExtremeBorder={true}
-          onClick={handleOpenAddModal}
+          onClick={() => {
+            setPieceToEdit(null);
+            setIsEditModalOpen(true);
+          }}
           className="py-1.5 px-4 text-xs font-black uppercase tracking-wider shrink-0"
         >
           ➕ Ajouter un morceau
@@ -277,11 +412,18 @@ export default function MestreRepertoireView({ groupId, user, profileData, seque
         </div>
       )}
 
-      {/* Contenu principal */}
+      {/* Encart des Presets complets du Séquenceur non encore répertoriés */}
+      <RepertoireUnlinkedPresetsBanner
+        unlinkedPresets={unlinkedPresets}
+        onImportPreset={handleImportPreset}
+        importingPresetId={importingPresetId}
+      />
+
+      {/* Liste principale des morceaux */}
       {loading ? (
         <div className="flex justify-center items-center py-16">
           <span className="text-xs uppercase tracking-widest font-black animate-pulse opacity-60">
-            ⏳ Chargement du répertoire...
+            ⏳ Chargement du répertoire vivant...
           </span>
         </div>
       ) : filteredPieces.length === 0 ? (
@@ -296,7 +438,10 @@ export default function MestreRepertoireView({ groupId, user, profileData, seque
             <CordelButton
               type="button"
               variant="ocre"
-              onClick={handleOpenAddModal}
+              onClick={() => {
+                setPieceToEdit(null);
+                setIsEditModalOpen(true);
+              }}
               className="py-1 px-3 text-xs font-black uppercase tracking-wider mt-1"
             >
               ➕ Ajouter un premier morceau
@@ -307,10 +452,7 @@ export default function MestreRepertoireView({ groupId, user, profileData, seque
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
           {filteredPieces.map((piece) => {
             const isPret = piece.etatValidation === 'pret';
-
-            // Détection de la présence d'un rythme ou d'un motif Séquenceur associé et d'un audio
             const hasSequencer = Boolean(piece.sequenceurFileUrl || piece.sequenceurId);
-            const hasAudio = Boolean(piece.audioUrl);
 
             return (
               <div
@@ -324,7 +466,6 @@ export default function MestreRepertoireView({ groupId, user, profileData, seque
                       <h3 className="font-extrabold text-sm md:text-base text-encre-noire leading-tight">
                         {piece.titre}
                       </h3>
-                      {/* Statut de saison sous forme de sous-titre si vue 'all' */}
                       {seasonFilter === 'all' && (
                         <span className="text-[9.5px] font-black uppercase tracking-wider text-cordel-master-dark/60 mt-0.5">
                           {piece.statutSaison === 'saison'
@@ -336,7 +477,6 @@ export default function MestreRepertoireView({ groupId, user, profileData, seque
                       )}
                     </div>
 
-                    {/* Pastille de maturité artistique */}
                     <span
                       className={`px-2.5 py-0.5 border border-dashed rounded-[4px_6px_3px_5px] font-black uppercase text-[9.5px] shrink-0 ${
                         isPret
@@ -355,14 +495,17 @@ export default function MestreRepertoireView({ groupId, user, profileData, seque
                     </p>
                   )}
 
-                  {/* Badges discrets des liaisons actives */}
+                  {/* Badges des liaisons actives résolues en direct */}
                   <div className="flex items-center gap-1.5 flex-wrap pt-1">
-                    {hasSequencer && (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-black uppercase rounded bg-amber-50 text-amber-900 border border-amber-300">
+                    {piece.hasSequencer && (
+                      <span
+                        className="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-black uppercase rounded bg-amber-50 text-amber-900 border border-amber-300"
+                        title={piece.preset ? `Lié en direct au Preset : ${piece.preset.titre || piece.preset.name}` : 'Lié au Séquenceur'}
+                      >
                         <span>🥁</span>
                         <span>
-                          {piece.sequenceurType === 'presets'
-                            ? 'Preset'
+                          {piece.preset?._collection === 'presets' || piece.sequenceurType === 'presets'
+                            ? 'Preset vivant'
                             : piece.sequenceurType === 'sections'
                               ? 'Séquence'
                               : 'Séquenceur'}
@@ -370,69 +513,94 @@ export default function MestreRepertoireView({ groupId, user, profileData, seque
                       </span>
                     )}
 
-                    {hasAudio && (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-black uppercase rounded bg-purple-50 text-purple-900 border border-purple-300">
+                    {piece.hasAudio && (
+                      <span
+                        className="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-black uppercase rounded bg-purple-50 text-purple-900 border border-purple-300"
+                        title={piece.preset?.audioUrl ? "Audio direct du Séquenceur" : "Audio de référence lié"}
+                      >
                         <span>🎵</span>
                         <span>Audio</span>
                       </span>
                     )}
 
-                    {piece.toadaDocId && (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-black uppercase rounded bg-emerald-50 text-emerald-900 border border-emerald-300">
+                    {piece.hasToada && (
+                      <span
+                        className="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-black uppercase rounded bg-emerald-50 text-emerald-900 border border-emerald-300"
+                        title={piece.activeToada?.titre ? `Toada du Varal : ${piece.activeToada.titre}` : 'Chant lié'}
+                      >
                         <span>🗣️</span>
-                        <span>Toada</span>
+                        <span className="truncate max-w-[130px]">
+                          {piece.activeToada?.titre ? piece.activeToada.titre : 'Toada'}
+                        </span>
                       </span>
                     )}
 
-                    {piece.dancadorChoreoId && (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-black uppercase rounded bg-pink-50 text-pink-900 border border-pink-300">
+                    {piece.hasChoreography && piece.activeChoreography && (
+                      <a
+                        href={`https://dancador.ogirador.fr/?choreoId=${piece.activeChoreography.id}&groupId=${groupId}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-black uppercase rounded bg-pink-50 hover:bg-pink-100 text-pink-900 border border-pink-300 transition-colors shadow-2xs"
+                        title={`Ouvrir « ${piece.activeChoreography.nom} » dans Dançad'Or`}
+                      >
                         <span>💃</span>
-                        <span>Danse</span>
-                      </span>
+                        <span className="truncate max-w-[120px]">{piece.activeChoreography.nom}</span>
+                        <span className="text-[8px] opacity-70">↗</span>
+                      </a>
                     )}
 
-                    {piece.cultureDocId && (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-black uppercase rounded bg-blue-50 text-blue-900 border border-blue-300">
+                    {piece.hasCulture && (
+                      <span
+                        className="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-black uppercase rounded bg-blue-50 text-blue-900 border border-blue-300"
+                        title={piece.activeCultureDoc?.titre || 'Fiche Culturelle du Varal'}
+                      >
                         <span>📖</span>
                         <span>Culture</span>
                       </span>
                     )}
 
-                    {piece.tablature && (
+                    {piece.hasTablature && (
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-black uppercase rounded bg-stone-100 text-stone-800 border border-stone-300">
                         <span>📄</span>
-                        <span>Tablature</span>
+                        <span>Tablature vivante</span>
                       </span>
                     )}
 
-                    {Array.isArray(piece.sinaisDoMestre) && piece.sinaisDoMestre.length > 0 && (
+                    {((Array.isArray(piece.activeSinaisDoMestre) && piece.activeSinaisDoMestre.length > 0) || (Array.isArray(piece.sinaisDoMestre) && piece.sinaisDoMestre.length > 0)) && (
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-black uppercase rounded bg-amber-50 text-amber-950 border border-amber-300">
                         <span>🖐️</span>
-                        <span>{piece.sinaisDoMestre.length} Signe{piece.sinaisDoMestre.length > 1 ? 's' : ''}</span>
+                        <span>{(piece.activeSinaisDoMestre?.length || piece.sinaisDoMestre?.length || (piece.sinaisDoMestre ? piece.sinaisDoMestre.length : 0))} Signe{(piece.activeSinaisDoMestre?.length || piece.sinaisDoMestre?.length) > 1 ? 's' : ''}</span>
                       </span>
                     )}
 
-                    {!hasSequencer && !hasAudio && !piece.tablature && !piece.toadaDocId && !piece.dancadorChoreoId && !piece.cultureDocId && (!piece.sinaisDoMestre || piece.sinaisDoMestre.length === 0) && (
+                    {!piece.hasSequencer && !piece.hasAudio && !piece.hasTablature && !piece.hasToada && !piece.hasChoreography && !piece.hasCulture && (!piece.activeSinaisDoMestre || piece.activeSinaisDoMestre.length === 0) && (
                       <span className="text-[9.5px] italic text-encre-noire/50">
                         Autonome (joué de mémoire)
                       </span>
                     )}
                   </div>
 
-                  {/* Lecteur direct pour l'audio de référence */}
-                  {hasAudio && (
+                  {/* Lecteur direct pour l'audio résolu en temps réel */}
+                  {piece.hasAudio && piece.activeAudioUrl && (
                     <div className="w-full mt-2 pt-2 border-t border-dashed border-encre-noire/15 flex flex-col gap-1">
-                      <span className="text-[9px] font-black uppercase tracking-wider text-cordel-master-dark flex items-center gap-1">
-                        <span>🎵</span>
-                        <span>Audio de référence :</span>
-                      </span>
-                      <audio controls src={piece.audioUrl} className="w-full mt-2 h-7 rounded border border-encre-noire/10" preload="none" />
+                      <div className="flex items-center justify-between">
+                        <span className="text-[9px] font-black uppercase tracking-wider text-cordel-master-dark flex items-center gap-1">
+                          <span>🎵</span>
+                          <span>Audio de référence :</span>
+                        </span>
+                        {piece.preset?.audioUrl ? (
+                          <span className="text-[8.5px] text-amber-800 font-bold lowercase">✓ direct séquenceur</span>
+                        ) : piece.activeToada?.audioUrl ? (
+                          <span className="text-[8.5px] text-emerald-800 font-bold lowercase">✓ direct toada</span>
+                        ) : null}
+                      </div>
+                      <audio controls src={piece.activeAudioUrl} className="w-full mt-1.5 h-7 rounded border border-encre-noire/10" preload="none" />
                     </div>
                   )}
 
-                  {/* Intégration du lecteur vidéo YouTube */}
+                  {/* Lecteur vidéo YouTube */}
                   {(() => {
-                    const targetVideo = piece.videoUrl || (Array.isArray(piece.videos) && piece.videos.length > 0 ? piece.videos[0].url : null);
+                    const targetVideo = piece.activeVideoUrl;
                     const yt = targetVideo ? parseYouTubeMedia(targetVideo) : null;
                     if (!yt || !yt.embedUrl) return null;
                     return (
@@ -464,8 +632,8 @@ export default function MestreRepertoireView({ groupId, user, profileData, seque
                     );
                   })()}
 
-                  {/* Encart lisible Contexte & Histoire */}
-                  {(piece.contexteHistorique || piece.histoire) && (
+                  {/* Encart Contexte & Histoire vivant */}
+                  {(piece.contexteHistorique || piece.histoire || piece.activeHistoire) && (
                     <div className="w-full mt-2 p-3 rounded bg-[#fcf9f0] border border-encre-noire/15 shadow-xs flex flex-col gap-1.5 text-left">
                       <div className="flex items-center justify-between">
                         <span className="text-[9.5px] font-black uppercase tracking-wider text-cordel-wood flex items-center gap-1.5">
@@ -484,7 +652,7 @@ export default function MestreRepertoireView({ groupId, user, profileData, seque
                         )}
                       </div>
                       <p className="text-xs leading-relaxed text-encre-noire/90 font-serif whitespace-pre-line italic">
-                        {piece.contexteHistorique || piece.histoire}
+                        {piece.activeHistoire}
                       </p>
                     </div>
                   )}
@@ -540,15 +708,15 @@ export default function MestreRepertoireView({ groupId, user, profileData, seque
                     </div>
                   )}
 
-                  {/* Signes & Conventions chronologiques par mesure (Séquenceur / Mestria) */}
-                  {Array.isArray(piece.sinaisDoMestre) && piece.sinaisDoMestre.length > 0 && (
+                  {/* Signes & Conventions chronologiques vivants */}
+                  {((Array.isArray(piece.activeSinaisDoMestre) && piece.activeSinaisDoMestre.length > 0) || (Array.isArray(piece.sinaisDoMestre) && piece.sinaisDoMestre.length > 0)) && (
                     <div className="flex flex-col gap-1 pt-1.5 border-t border-dashed border-encre-noire/10 text-left">
                       <span className="text-[9px] font-black uppercase tracking-wider text-cordel-master-dark/80 flex items-center gap-1">
                         <span>🖐️</span>
-                        <span>Signes &amp; Conventions ({piece.sinaisDoMestre.length}) :</span>
+                        <span>Signes &amp; Conventions ({(piece.activeSinaisDoMestre?.length || piece.sinaisDoMestre?.length || (piece.sinaisDoMestre ? piece.sinaisDoMestre.length : 0))}) :</span>
                       </span>
                       <div className="flex items-center gap-1.5 flex-wrap">
-                        {[...piece.sinaisDoMestre]
+                        {[...(piece.activeSinaisDoMestre || piece.sinaisDoMestre || [])]
                           .sort((a, b) => {
                             const ma = typeof a === 'object' && a !== null ? (a.mesure ?? a.bar ?? a.barIndex ?? 0) : 0;
                             const mb = typeof b === 'object' && b !== null ? (b.mesure ?? b.bar ?? b.barIndex ?? 0) : 0;
@@ -572,40 +740,58 @@ export default function MestreRepertoireView({ groupId, user, profileData, seque
                   )}
                 </div>
 
-                {/* Bas de la carte : Barre d'actions */}
-                <div className="flex items-center justify-between gap-2 pt-3 border-t border-dashed border-cordel-master-dark/15 mt-1">
-                  {/* Bouton pour ouvrir dans le séquenceur avec SSO transparent si disponible */}
-                  {hasSequencer ? (
+                {/* Bas de la carte : Barre d'actions responsive */}
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 pt-3 border-t border-dashed border-cordel-master-dark/15 mt-1">
+                  {/* Boutons d'accès et de synchronisation Séquenceur */}
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {piece.hasSequencer ? (
+                      <button
+                        type="button"
+                        onClick={() => openSequencerWithCrossApp(sequenceurUrl, piece)}
+                        className="text-[10px] font-black uppercase tracking-wider text-cordel-wood hover:underline inline-flex items-center gap-1.5 bg-transparent border-none p-0 cursor-pointer font-extrabold w-fit shrink-0"
+                        title="Ouvrir et travailler ce morceau dans le Séquenceur avec SSO"
+                      >
+                        <span>🥁</span>
+                        <span>
+                          {piece.preset?._collection === 'presets' || piece.sequenceurType === 'presets'
+                            ? 'Ouvrir le Preset ➔'
+                            : piece.sequenceurType === 'sections'
+                              ? 'Ouvrir la Séquence ➔'
+                              : 'Ouvrir Séquenceur ➔'}
+                        </span>
+                      </button>
+                    ) : null}
+
+                    {/* Bouton de synchronisation / rattachement au Séquenceur */}
                     <button
                       type="button"
-                      onClick={() => openSequencerWithCrossApp(sequenceurUrl, piece)}
-                      className="text-[10px] font-black uppercase tracking-wider text-cordel-wood hover:underline inline-flex items-center gap-1 bg-transparent border-none p-0 cursor-pointer font-extrabold"
-                      title="Ouvrir et travailler ce morceau dans le Séquenceur avec SSO"
+                      disabled={syncingPieceId === piece.id}
+                      onClick={() => handleSyncWithSequencer(piece)}
+                      className="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] bg-stone-100 hover:bg-stone-200 text-stone-800 border border-encre-noire/25 cursor-pointer shadow-2xs transition-all active:translate-y-[0.5px] disabled:opacity-50 select-none"
+                      title={piece.sequenceurId ? "Synchroniser les références et données vives du Séquenceur" : "Lier automatiquement au Preset Séquenceur correspondant"}
                     >
-                      <span>🥁</span>
+                      <span className={syncingPieceId === piece.id ? 'animate-spin inline-block' : ''}>🔄</span>
                       <span>
-                        {piece.sequenceurType === 'presets'
-                          ? 'Ouvrir le Preset ➔'
-                          : piece.sequenceurType === 'sections'
-                            ? 'Ouvrir la Séquence ➔'
-                            : 'Ouvrir Séquenceur ➔'}
+                        {syncingPieceId === piece.id
+                          ? 'Synchronisation...'
+                          : piece.sequenceurId
+                            ? 'Synchroniser'
+                            : 'Lier Séquenceur'}
                       </span>
                     </button>
-                  ) : (
-                    <div />
-                  )}
+                  </div>
 
                   {/* Actions rapides */}
-                  <div className="flex items-center gap-1.5">
-                    {/* Bouton discret Tablature */}
-                    {piece.tablature && (
+                  <div className="flex items-center gap-1.5 flex-wrap justify-end sm:justify-end sm:ml-auto">
+                    {/* Bouton Tablature avec calcul paresseux (lazy) à la demande */}
+                    {piece.hasTablature && (
                       <CordelButton
                         type="button"
                         variant="default"
                         useExtremeBorder={false}
-                        onClick={() => setActiveTablaturePiece(piece)}
-                        className="py-1 px-2.5 text-[9.5px] uppercase tracking-wider font-black bg-stone-100 hover:bg-stone-200 border border-encre-noire/25 text-encre-noire flex items-center gap-1"
-                        title="Consulter et imprimer la tablature"
+                        onClick={() => handleOpenTablatureModal(piece)}
+                        className="py-1 px-2 text-[9.5px] uppercase tracking-wider font-black bg-stone-100 hover:bg-stone-200 border border-encre-noire/25 text-encre-noire flex items-center gap-1 shrink-0"
+                        title="Consulter et imprimer la tablature (calculée à la volée)"
                       >
                         <span>📄</span>
                         <span>Tablature</span>
@@ -619,7 +805,7 @@ export default function MestreRepertoireView({ groupId, user, profileData, seque
                         variant="default"
                         useExtremeBorder={false}
                         onClick={() => setPieceForCultureCreation(piece)}
-                        className="py-1 px-2 text-[9.5px] uppercase tracking-wider font-black bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-950 flex items-center gap-1"
+                        className="py-1 px-2 text-[9.5px] uppercase tracking-wider font-black bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-950 flex items-center gap-1 shrink-0"
                         title="Créer une fiche du Varal Culture pré-remplie à partir de ce morceau"
                       >
                         <span>📜</span>
@@ -631,8 +817,11 @@ export default function MestreRepertoireView({ groupId, user, profileData, seque
                       type="button"
                       variant="ocre"
                       useExtremeBorder={false}
-                      onClick={() => handleOpenProgramModal(piece)}
-                      className="py-1 px-2.5 text-[9.5px] uppercase tracking-wider font-black"
+                      onClick={() => {
+                        setPieceToProgram(piece);
+                        setIsProgramModalOpen(true);
+                      }}
+                      className="py-1 px-2 text-[9.5px] uppercase tracking-wider font-black shrink-0"
                       title="Ajouter au fil conducteur d'une répétition ou d'un concert"
                     >
                       ➕ Programmer
@@ -642,8 +831,11 @@ export default function MestreRepertoireView({ groupId, user, profileData, seque
                       type="button"
                       variant="default"
                       useExtremeBorder={false}
-                      onClick={() => handleOpenEditModal(piece)}
-                      className="py-1 px-2 text-[9.5px] uppercase tracking-wider font-black bg-stone-100 hover:bg-stone-200 border border-encre-noire/20"
+                      onClick={() => {
+                        setPieceToEdit(piece);
+                        setIsEditModalOpen(true);
+                      }}
+                      className="py-1 px-2 text-[9.5px] uppercase tracking-wider font-black bg-stone-100 hover:bg-stone-200 border border-encre-noire/20 shrink-0"
                       title="Modifier les informations"
                     >
                       ✏️
@@ -651,10 +843,10 @@ export default function MestreRepertoireView({ groupId, user, profileData, seque
 
                     <CordelButton
                       type="button"
-                      variant="default"
+                      variant="rouge"
                       useExtremeBorder={false}
                       onClick={() => handleDeletePiece(piece)}
-                      className="py-1 px-2 text-[9.5px] uppercase tracking-wider font-black bg-red-50 hover:bg-red-100 text-red-700 border border-red-200"
+                      className="py-1 px-2 text-[9.5px] uppercase tracking-wider font-black shrink-0"
                       title="Supprimer du répertoire"
                     >
                       🗑️

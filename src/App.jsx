@@ -1060,7 +1060,7 @@ export default function App() {
                 uid: docSnap.id,
                 id: docSnap.id,
                 ...data,
-                groupId: canonicalGroup || data.groupId,
+                groupId: canonicalGroup || data.groupId || (isFounderOrSuperAdmin ? 'Samambaia' : null),
                 role: resolvedRole,
                 tags: mergedTags,
                 isSystemAdmin: isFounderOrSuperAdmin ? true : Boolean(data.isSystemAdmin),
@@ -2437,7 +2437,7 @@ export default function App() {
                   </div>
                 ) : (currentTab === 'mestre-repertoire' && hasAccessMestre) ? (
                   <MestreRepertoireView 
-                    groupId={profileData?.groupId} 
+                    groupId={profileData?.groupId || 'Samambaia'} 
                     user={user}
                     profileData={profileData}
                     sequenceurUrl={sequenceurUrl}
