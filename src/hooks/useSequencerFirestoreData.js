@@ -203,11 +203,14 @@ export function useSequencerFirestoreData(rawGroupId) {
           parsedData?.metadata?.bpm ||
           null;
 
-        // Extraction résiliente de l'URL vidéo
+        // Extraction résiliente de l'URL vidéo (formats videoUrl et youtubeUrl au niveau racine ou métadonnées)
         const videoUrl =
           data.videoUrl ||
+          data.youtubeUrl ||
           parsedData?.videoUrl ||
+          parsedData?.youtubeUrl ||
           parsedData?.metadata?.videoUrl ||
+          parsedData?.metadata?.youtubeUrl ||
           null;
 
         return {
@@ -226,6 +229,7 @@ export function useSequencerFirestoreData(rawGroupId) {
           sinaisDoMestre: sinaisDoMestre,
           bpm: bpm,
           videoUrl: videoUrl,
+          youtubeUrl: videoUrl,
           parsedData
         };
       };

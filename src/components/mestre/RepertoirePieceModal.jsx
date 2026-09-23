@@ -108,8 +108,8 @@ export default function RepertoirePieceModal({
       setSelectedChoreoId(pieceToEdit.dancadorChoreoId || '');
       setSelectedCultureId(pieceToEdit.cultureDocId || '');
       setShowTabPreview(false);
-      setVideoUrl(pieceToEdit.videoUrl || (pieceToEdit.videos && pieceToEdit.videos[0]?.url) || '');
-      setHistoire(pieceToEdit.contexteHistorique || pieceToEdit.histoire || '');
+      setVideoUrl(pieceToEdit.videoUrl || pieceToEdit.youtubeUrl || pieceToEdit.activeVideoUrl || (pieceToEdit.videos && pieceToEdit.videos[0]?.url) || '');
+      setHistoire(pieceToEdit.contexteHistorique || pieceToEdit.histoire || pieceToEdit.activeHistoire || '');
     } else {
       setTitre('');
       setStatutSaison('saison');

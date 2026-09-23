@@ -335,19 +335,27 @@ export function resolvePieceLiveTechnicalData(piece, dicts) {
     piece.bpm ||
     null;
 
-  // 9. Vidéo active
+  // 9. Vidéo active (supporte videoUrl, youtubeUrl à la racine ou dans metadata)
   const activeVideoUrl =
     (piece.videoUrl || '').trim() ||
+    (piece.youtubeUrl || '').trim() ||
     (preset?.videoUrl || '').trim() ||
+    (preset?.youtubeUrl || '').trim() ||
+    (preset?.parsedData?.videoUrl || '').trim() ||
+    (preset?.parsedData?.youtubeUrl || '').trim() ||
     (preset?.parsedData?.metadata?.videoUrl || '').trim() ||
+    (preset?.parsedData?.metadata?.youtubeUrl || '').trim() ||
     (Array.isArray(piece.videos) && piece.videos[0]?.url ? piece.videos[0].url.trim() : null);
 
-  // 10. Contexte Historique & Histoire
+  // 10. Contexte Historique & Histoire (supporte fiches culture, metadata preset en fr/pt)
   const activeHistoire =
     (activeCultureDoc?.texte || activeCultureDoc?.description || '').trim() ||
     (preset?.histoire || '').trim() ||
     (preset?.parsedData?.metadata?.histoire || '').trim() ||
     (preset?.parsedData?.metadata?.contexteHistorique || '').trim() ||
+    (preset?.parsedData?.metadata?.descriptionFr || '').trim() ||
+    (preset?.parsedData?.metadata?.description || '').trim() ||
+    (preset?.parsedData?.metadata?.descriptionPt || '').trim() ||
     (piece.contexteHistorique || piece.histoire || '').trim() ||
     null;
 

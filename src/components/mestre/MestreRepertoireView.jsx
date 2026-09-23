@@ -212,14 +212,17 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
     setImportingPresetId(preset.id);
 
     try {
+      const presetVid = preset.videoUrl || preset.youtubeUrl || preset.parsedData?.metadata?.youtubeUrl || preset.parsedData?.metadata?.videoUrl || null;
+      const presetDesc = preset.histoire || preset.parsedData?.metadata?.descriptionFr || preset.parsedData?.metadata?.description || preset.parsedData?.metadata?.descriptionPt || null;
+
       const newPieceData = {
         groupId,
         titre: (preset.titre || preset.name || 'Nouveau Morceau').trim(),
         statutSaison: 'chantier',
         etatValidation: 'a_faire',
         notes: '',
-        videos: preset.videoUrl
-          ? [{ id: `vid_${Date.now()}`, titre: 'Vidéo Séquenceur', url: preset.videoUrl.trim() }]
+        videos: presetVid
+          ? [{ id: `vid_${Date.now()}`, titre: 'Vidéo Séquenceur', url: presetVid.trim() }]
           : [],
         signalIds: [],
         sequenceurId: preset.id || null,
@@ -230,9 +233,9 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
             ? preset.jsonUrl
             : null,
         audioUrl: null,
-        videoUrl: (preset.videoUrl || '').trim() || null,
-        contexteHistorique: null,
-        histoire: null,
+        videoUrl: presetVid ? presetVid.trim() : null,
+        contexteHistorique: presetDesc ? presetDesc.trim() : null,
+        histoire: presetDesc ? presetDesc.trim() : null,
         dancadorChoreoId: null,
         toadaDocId: null,
         cultureDocId: null,
@@ -264,7 +267,8 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
         return;
       }
 
-      // Mise à jour ciblée : UNIQUEMENT les pointeurs d'identification, aucun snapshot dupliqué
+      // Mise à jour ciblée : pointeurs d'identification et vidéo/histoire si non renseignés localement
+      const matchVid = match.videoUrl || match.youtubeUrl || match.parsedData?.metadata?.youtubeUrl || match.parsedData?.metadata?.videoUrl || null;
       const updateData = {
         sequenceurId: match.id || null,
         sequenceurType: match._collection || 'presets',
@@ -274,6 +278,10 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
             : null,
         updatedAt: new Date().toISOString()
       };
+
+      if (matchVid && !piece.videoUrl) {
+        updateData.videoUrl = matchVid.trim();
+      }
 
       const pieceRef = doc(db, 'associations', groupId, 'repertoire', piece.id);
       await updateDoc(pieceRef, cleanFirestorePayload(updateData));
