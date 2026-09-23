@@ -20,3 +20,10 @@ These are the core architectural and design system rules for the O-Girador-manag
 - **Rouge Terre Cuite (`#8b2a1a` / `--color-cordel-rouge` / `--cordel-wood`)** : À utiliser impérativement pour toutes les fonctions de suppression, désactivation, refus, statut "Absent" et actions destructives.
 - **Ocre Ambré (`#c05621` / `--color-cordel-ocre`)** : À utiliser impérativement pour tout ce qui est en attente, le statut "À confirmer", les avertissements neutres et la modération temporaire.
 
+---
+### 🛡️ Gouvernance Centralisée des Règles Firebase & Sécurité (Strict)
+- **Autorité unique :** Les règles d'accès (`firestore.rules` et `storage.rules`) sont exclusivement pilotées, modifiées et déployées par le projet maître (**Orchestrad'Or** / backend commun).
+- **Interdiction formelle dans cette application :** 
+  * Ne jamais créer, modifier ou valider de fichier local `firestore.rules` ou `storage.rules`.
+  * Ne jamais exécuter de commande de déploiement de règles (`firebase deploy --only firestore:rules` ou `storage` formellement proscrits).
+- **Développement client :** Les requêtes Firestore et Storage doivent impérativement s'adapter aux modèles de permissions et collections existants sans exiger d'altération des règles de sécurité depuis ce dépôt.
