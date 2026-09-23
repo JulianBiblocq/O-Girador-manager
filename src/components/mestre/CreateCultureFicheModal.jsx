@@ -40,9 +40,19 @@ export default function CreateCultureFicheModal({
 
     setTitre(piece.titre || '');
     setCategorieFiche('Histoire');
-    setVideoUrl(piece.videoUrl || (piece.videos && piece.videos[0]?.url) || '');
+    setVideoUrl(piece.activeVideoUrl || piece.videoUrl || (piece.videos && piece.videos[0]?.url) || piece.preset?.videoUrl || piece.preset?.youtubeUrl || '');
     setSousTitre('Origines & Histoire');
-    setTexte(piece.contexteHistorique || piece.histoire || piece.notes || '');
+    setTexte(
+      piece.activeHistoire ||
+      piece.contexteHistorique ||
+      piece.histoire ||
+      piece.preset?.histoire ||
+      piece.preset?.parsedData?.metadata?.descriptionFr ||
+      piece.preset?.parsedData?.metadata?.description ||
+      piece.preset?.parsedData?.metadata?.descriptionPt ||
+      piece.notes ||
+      ''
+    );
     setAnecdote('');
     setErrorMsg(null);
   }, [isOpen, piece]);

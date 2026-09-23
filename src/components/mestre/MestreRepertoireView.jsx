@@ -9,6 +9,7 @@ import RepertoireVideoModal from './RepertoireVideoModal';
 import SignalZoomModal from './SignalZoomModal';
 import TablatureModal from './TablatureModal';
 import CreateCultureFicheModal from './CreateCultureFicheModal';
+import CultureCard from '../CultureCard';
 import RepertoireUnlinkedPresetsBanner from './RepertoireUnlinkedPresetsBanner';
 import useConfirm from '../../hooks/useConfirm';
 import useMestreSignals from '../../hooks/useMestreSignals';
@@ -63,6 +64,7 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
   const [activeSignalToZoom, setActiveSignalToZoom] = useState(null);
   const [activeTablaturePiece, setActiveTablaturePiece] = useState(null);
   const [pieceForCultureCreation, setPieceForCultureCreation] = useState(null);
+  const [activeCultureDocToView, setActiveCultureDocToView] = useState(null);
 
   // Synchronisation & Importation
   const [syncingPieceId, setSyncingPieceId] = useState(null);
@@ -558,13 +560,24 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
                     )}
 
                     {piece.hasCulture && (
-                      <span
-                        className="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-black uppercase rounded bg-blue-50 text-blue-900 border border-blue-300"
-                        title={piece.activeCultureDoc?.titre || 'Fiche Culturelle du Varal'}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const docToOpen = piece.activeCultureDoc || {
+                            id: piece.cultureDocId,
+                            titre: piece.titre,
+                            videoUrl: piece.activeVideoUrl || piece.videoUrl,
+                            chapitres: piece.activeHistoire ? [{ sousTitre: 'Origines & Histoire', texte: piece.activeHistoire }] : []
+                          };
+                          setActiveCultureDocToView(docToOpen);
+                        }}
+                        className="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-black uppercase rounded bg-blue-50 hover:bg-blue-100 text-blue-900 border border-blue-300 transition-colors shadow-2xs cursor-pointer select-none"
+                        title={piece.activeCultureDoc?.titre ? `Consulter la fiche culturelle : ${piece.activeCultureDoc.titre}` : 'Consulter la fiche culturelle du Varal'}
                       >
                         <span>📖</span>
-                        <span>Culture</span>
-                      </span>
+                        <span className="truncate max-w-[130px]">{piece.activeCultureDoc?.titre ? piece.activeCultureDoc.titre : 'Culture'}</span>
+                        <span className="text-[8px] opacity-70">↗</span>
+                      </button>
                     )}
 
                     {piece.hasTablature && (
@@ -639,31 +652,6 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
                       </div>
                     );
                   })()}
-
-                  {/* Encart Contexte & Histoire vivant */}
-                  {(piece.contexteHistorique || piece.histoire || piece.activeHistoire) && (
-                    <div className="w-full mt-2 p-3 rounded bg-[#fcf9f0] border border-encre-noire/15 shadow-xs flex flex-col gap-1.5 text-left">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[9.5px] font-black uppercase tracking-wider text-cordel-wood flex items-center gap-1.5">
-                          <span>📜</span>
-                          <span>Contexte &amp; Histoire :</span>
-                        </span>
-                        {!piece.cultureDocId && (
-                          <button
-                            type="button"
-                            onClick={() => setPieceForCultureCreation(piece)}
-                            className="text-[9px] font-extrabold text-amber-900 hover:text-amber-950 underline cursor-pointer flex items-center gap-1"
-                            title="Créer une fiche du Varal Culture pré-remplie avec ces informations"
-                          >
-                            <span>➕ Fiche Culture</span>
-                          </button>
-                        )}
-                      </div>
-                      <p className="text-xs leading-relaxed text-encre-noire/90 font-serif whitespace-pre-line italic">
-                        {piece.activeHistoire}
-                      </p>
-                    </div>
-                  )}
 
                   {/* Vidéos personnalisables du morceau */}
                   {Array.isArray(piece.videos) && piece.videos.length > 0 && (
@@ -806,17 +794,37 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
                       </CordelButton>
                     )}
 
-                    {/* Bouton passerelle créer fiche Varal Culture */}
-                    {!piece.cultureDocId && (
+                    {/* Bouton consultation Fiche Varal Culture liée ou passerelle de création */}
+                    {(piece.activeCultureDoc || piece.cultureDocId) ? (
+                      <CordelButton
+                        type="button"
+                        variant="default"
+                        useExtremeBorder={false}
+                        onClick={() => {
+                          const docToOpen = piece.activeCultureDoc || {
+                            id: piece.cultureDocId,
+                            titre: piece.titre,
+                            videoUrl: piece.activeVideoUrl || piece.videoUrl,
+                            chapitres: piece.activeHistoire ? [{ sousTitre: 'Origines & Histoire', texte: piece.activeHistoire }] : []
+                          };
+                          setActiveCultureDocToView(docToOpen);
+                        }}
+                        className="py-1 px-2 text-[9.5px] uppercase tracking-wider font-black bg-blue-50 hover:bg-blue-100 border border-blue-300 text-blue-950 flex items-center gap-1 shrink-0"
+                        title="Consulter la fiche culturelle du Varal associée"
+                      >
+                        <span>📖</span>
+                        <span>Fiche Culture</span>
+                      </CordelButton>
+                    ) : (
                       <CordelButton
                         type="button"
                         variant="default"
                         useExtremeBorder={false}
                         onClick={() => setPieceForCultureCreation(piece)}
                         className="py-1 px-2 text-[9.5px] uppercase tracking-wider font-black bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-950 flex items-center gap-1 shrink-0"
-                        title="Créer une fiche du Varal Culture pré-remplie à partir de ce morceau"
+                        title="Créer une fiche du Varal Culture pré-remplie avec le Contexte & Histoire du morceau (contexteHistorique)"
                       >
-                        <span>📜</span>
+                        <span>➕</span>
                         <span>Fiche Culture</span>
                       </CordelButton>
                     )}
@@ -929,6 +937,23 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
           setPieceForCultureCreation(null);
         }}
       />
+
+      {/* Modale de consultation de la Fiche Culture du Varal */}
+      {activeCultureDocToView && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-black/60 backdrop-blur-xs">
+          <div className="relative w-full max-w-[620px] max-h-[90vh] flex flex-col">
+            <button
+              type="button"
+              onClick={() => setActiveCultureDocToView(null)}
+              className="absolute -top-3 -right-3 z-30 w-8 h-8 rounded-full bg-encre-noire text-white font-black text-sm flex items-center justify-center border-2 border-white shadow-md hover:scale-105 transition-transform cursor-pointer"
+              title="Fermer"
+            >
+              ✕
+            </button>
+            <CultureCard culture={activeCultureDocToView} />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
