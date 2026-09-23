@@ -4,7 +4,7 @@ import { db } from '../../firebase';
 import CordelCard from '../CordelCard';
 import ExpenseRefusalModal from '../expenses/ExpenseRefusalModal';
 import { useExpenseClaims } from '../../hooks/useExpenseClaims';
-import { getCurrentSeason, getSeasonOptions, isPastSeason } from '../../utils/seasonUtils';
+import { getCurrentSeason, getSeasonOptions, isPastSeason, DEFAULT_SEASON_START_MONTH } from '../../utils/seasonUtils';
 
 /**
  * Interface du Trésorier : Gestion des Notes de Frais & Achats.
@@ -17,28 +17,40 @@ export default function TreasuryExpenseClaims({
   groupId,
   _role,
   _isSystemAdmin,
-  _hasAccessTresorerie
+  _hasAccessTresorerie,
+  associationSettings
 }) {
-  const currentSeason = useMemo(() => getCurrentSeason(), []);
-  const [selectedSeason, setSelectedSeason] = useState(currentSeason);
-  const [showAllUnpaid, setShowAllUnpaid] = useState(false);
-  const [searchMember, setSearchMember] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
-
-  const [refusalModalClaim, setRefusalModalClaim] = useState(null);
-  const [actionInProgressId, setActionInProgressId] = useState(null);
-  const [copiedIbanClaimId, setCopiedIbanClaimId] = useState(null);
-
-  // 1. Récupération des notes de frais via le hook
+  // 1. Récupération des notes de frais via le hook avec mois de rentrée dynamique
   const {
     claims,
     loading,
     error,
     submitting,
+    saisonDebutMois: hookSaisonDebutMois,
     approveExpenseClaim,
     rejectExpenseClaim,
     markAsReimbursed
   } = useExpenseClaims(groupId, null);
+
+  const effectiveStartMonth = associationSettings?.saisonDebutMois !== undefined
+    ? Number(associationSettings.saisonDebutMois)
+    : (hookSaisonDebutMois || DEFAULT_SEASON_START_MONTH);
+
+  const currentSeason = useMemo(() => getCurrentSeason(effectiveStartMonth), [effectiveStartMonth]);
+  const [selectedSeason, setSelectedSeason] = useState(currentSeason);
+  const [showAllUnpaid, setShowAllUnpaid] = useState(false);
+  const [searchMember, setSearchMember] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [refusalModalClaim, setRefusalModalClaim] = useState(null);
+  const [actionInProgressId, setActionInProgressId] = useState(null);
+  const [copiedIbanClaimId, setCopiedIbanClaimId] = useState(null);
+
+  useEffect(() => {
+    if (currentSeason) {
+      setSelectedSeason(prev => (prev ? prev : currentSeason));
+    }
+  }, [currentSeason]);
+
 
   // 2. Récupération de la liste des membres pour croiser l'IBAN le plus frais du profil
   const [membersMap, setMembersMap] = useState({});
@@ -101,15 +113,21 @@ export default function TreasuryExpenseClaims({
     let approvedCount = 0;
     let totalUnpaidAmount = 0;
     let totalReimbursedSeason = 0;
+    let pastSeasonUnpaidAmount = 0;
 
     claims.forEach((c) => {
       const montant = parseFloat(c.montant) || 0;
+      const isUnpaid = c.status === 'pending' || c.status === 'approved';
       if (c.status === 'pending') {
         pendingCount++;
         totalUnpaidAmount += montant;
       } else if (c.status === 'approved') {
         approvedCount++;
         totalUnpaidAmount += montant;
+      }
+
+      if (isUnpaid && isPastSeason(c.saison, currentSeason)) {
+        pastSeasonUnpaidAmount += montant;
       }
 
       if (c.saison === selectedSeason && c.status === 'reimbursed') {
@@ -121,9 +139,10 @@ export default function TreasuryExpenseClaims({
       pendingCount,
       approvedCount,
       totalUnpaidAmount,
-      totalReimbursedSeason
+      totalReimbursedSeason,
+      pastSeasonUnpaidAmount
     };
-  }, [claims, selectedSeason]);
+  }, [claims, selectedSeason, currentSeason]);
 
   const handleCopyIban = async (claimId, ibanValue) => {
     if (!ibanValue) return;

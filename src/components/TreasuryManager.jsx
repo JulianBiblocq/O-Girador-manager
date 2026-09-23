@@ -128,6 +128,7 @@ export default function TreasuryManager({ groupId, onBack, role, isSystemAdmin, 
             isSystemAdmin={isSystemAdmin}
             hasAccessTresorerie={hasAccessTresorerie}
             onBack={onBack}
+            associationSettings={associationSettings}
           />
         );
       case 'reports-exports':
@@ -140,6 +141,7 @@ export default function TreasuryManager({ groupId, onBack, role, isSystemAdmin, 
             profileData={profileData}
             isEmbedded={true}
             onBack={onBack}
+            associationSettings={associationSettings}
           />
         );
       default:

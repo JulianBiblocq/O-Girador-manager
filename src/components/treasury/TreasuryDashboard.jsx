@@ -5,6 +5,7 @@ import Tooltip from '../Tooltip';
 import { useTranslation } from '../LanguageContext';
 import BankAccountsTracker from './BankAccountsTracker';
 import BankDetailsBlock from '../association-settings/blocks/BankDetailsBlock';
+import { getFiscalYearDateRange, DEFAULT_FISCAL_START_MONTH } from '../../utils/seasonUtils';
 
 export default function TreasuryDashboard({ 
   calculateGlobalBalance,
@@ -15,15 +16,26 @@ export default function TreasuryDashboard({
 }) {
   const { t } = useTranslation();
 
-  // Définir default dates to school year (Sep 1st to Aug 31st)
-  const now = new Date();
-  const currentYear = now.getFullYear();
-  const startYear = now.getMonth() >= 8 ? currentYear : currentYear - 1;
-  const defaultStartDate = `${startYear}-09-01`;
-  const defaultEndDate = `${startYear + 1}-08-31`;
+  // Déterminer le mois de début de l'exercice comptable (par défaut 1 = Janvier / Année civile)
+  const exerciceDebutMois = associationSettings?.exerciceDebutMois !== undefined && associationSettings?.exerciceDebutMois !== null
+    ? Number(associationSettings.exerciceDebutMois)
+    : DEFAULT_FISCAL_START_MONTH;
 
-  const [startDate, setStartDate] = useState(defaultStartDate);
-  const [endDate, setEndDate] = useState(defaultEndDate);
+  // Initialisation dynamique des dates selon l'exercice comptable en cours
+  const initialFiscalRange = getFiscalYearDateRange(new Date(), exerciceDebutMois, 0);
+
+  const [startDate, setStartDate] = useState(initialFiscalRange.startDate);
+  const [endDate, setEndDate] = useState(initialFiscalRange.endDate);
+  const [userHasCustomizedDates, setUserHasCustomizedDates] = useState(false);
+
+  // Synchronisation dynamique si les paramètres changent et que l'utilisateur n'a pas modifié manuellement
+  useEffect(() => {
+    if (!userHasCustomizedDates && associationSettings?.exerciceDebutMois !== undefined && associationSettings?.exerciceDebutMois !== null) {
+      const range = getFiscalYearDateRange(new Date(), Number(associationSettings.exerciceDebutMois), 0);
+      setStartDate(range.startDate);
+      setEndDate(range.endDate);
+    }
+  }, [associationSettings?.exerciceDebutMois, userHasCustomizedDates]);
 
   // État local des coordonnées bancaires (IBAN, BIC, TVA)
   const [showBankDetails, setShowBankDetails] = useState(false);
@@ -106,7 +118,10 @@ export default function TreasuryDashboard({
             <input 
               type="date" 
               value={startDate} 
-              onChange={(e) => setStartDate(e.target.value)} 
+              onChange={(e) => {
+                setStartDate(e.target.value);
+                setUserHasCustomizedDates(true);
+              }} 
               className="theme-input w-full font-bold text-xs"
             />
           </div>
@@ -117,7 +132,10 @@ export default function TreasuryDashboard({
             <input 
               type="date" 
               value={endDate} 
-              onChange={(e) => setEndDate(e.target.value)} 
+              onChange={(e) => {
+                setEndDate(e.target.value);
+                setUserHasCustomizedDates(true);
+              }} 
               className="theme-input w-full font-bold text-xs"
             />
           </div>

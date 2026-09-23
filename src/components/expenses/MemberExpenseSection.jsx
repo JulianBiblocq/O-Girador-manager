@@ -1,27 +1,38 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 import ExpenseClaimModal from './ExpenseClaimModal';
 import { useExpenseClaims } from '../../hooks/useExpenseClaims';
-import { getCurrentSeason, getSeasonOptions, isPastSeason } from '../../utils/seasonUtils';
+import { getCurrentSeason, getSeasonOptions, isPastSeason, DEFAULT_SEASON_START_MONTH } from '../../utils/seasonUtils';
 
 /**
  * Section "Mes Remboursements de frais" affichée côté adhérent
  * (dans WidgetTreasury et dans le profil de l'utilisateur).
  */
-export default function MemberExpenseSection({ groupId, currentUser, profileData }) {
-  const currentSeason = useMemo(() => getCurrentSeason(), []);
-  const [selectedSeason, setSelectedSeason] = useState(currentSeason);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-
+export default function MemberExpenseSection({ groupId, currentUser, profileData, saisonDebutMois }) {
   // Hook temps réel des notes de frais du membre
   const {
     claims,
     loading,
     error,
     submitting,
+    saisonDebutMois: hookSaisonDebutMois,
     addExpenseClaim
   } = useExpenseClaims(groupId, currentUser?.uid || profileData?.uid || profileData?.id);
+
+  const effectiveStartMonth = saisonDebutMois !== undefined
+    ? Number(saisonDebutMois)
+    : (hookSaisonDebutMois || DEFAULT_SEASON_START_MONTH);
+
+  const currentSeason = useMemo(() => getCurrentSeason(effectiveStartMonth), [effectiveStartMonth]);
+  const [selectedSeason, setSelectedSeason] = useState(currentSeason);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  useEffect(() => {
+    if (currentSeason) {
+      setSelectedSeason(prev => (prev ? prev : currentSeason));
+    }
+  }, [currentSeason]);
 
   // Liste des saisons disponibles calculée à partir des notes de frais de l'adhérent
   const seasonOptions = useMemo(() => {
@@ -289,6 +300,7 @@ export default function MemberExpenseSection({ groupId, currentUser, profileData
         onSubmit={handleCreateClaim}
         submitting={submitting}
         profileData={profileData}
+        saisonDebutMois={effectiveStartMonth}
       />
     </CordelCard>
   );

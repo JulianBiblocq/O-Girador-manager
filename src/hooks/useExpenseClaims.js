@@ -12,7 +12,7 @@ import {
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '../firebase';
-import { getSeasonFromDate } from '../utils/seasonUtils';
+import { getSeasonFromDate, DEFAULT_SEASON_START_MONTH } from '../utils/seasonUtils';
 import { createInAppNotification } from '../utils/inAppNotificationService';
 
 /**
@@ -25,12 +25,31 @@ import { createInAppNotification } from '../utils/inAppNotificationService';
  * 
  * @param {string} groupId Identifiant de l'association
  * @param {string} [userId=null] Optionnel : filtre spécifique à un adhérent
+ * @param {number} [startMonth=DEFAULT_SEASON_START_MONTH] Optionnel : mois de rentrée de saison associative (1 à 12)
  */
-export function useExpenseClaims(groupId, userId = null) {
+export function useExpenseClaims(groupId, userId = null, startMonth = DEFAULT_SEASON_START_MONTH) {
   const [allClaims, setAllClaims] = useState([]);
   const [loading, setLoading] = useState(Boolean(groupId));
   const [error, setError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+  const [associationSeasonStartMonth, setAssociationSeasonStartMonth] = useState(startMonth);
+
+  // Synchronisation du mois de démarrage de la saison associative depuis les réglages
+  useEffect(() => {
+    if (!groupId) return;
+    const assocRef = doc(db, 'associations', groupId);
+    const unsubscribe = onSnapshot(assocRef, (docSnap) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        if (data.saisonDebutMois !== undefined) {
+          setAssociationSeasonStartMonth(Number(data.saisonDebutMois));
+        }
+      }
+    }, (err) => {
+      console.warn("useExpenseClaims - Erreur lecture saisonDebutMois assoc:", err);
+    });
+    return () => unsubscribe();
+  }, [groupId]);
 
   // 1. Écoute temps réel de la collection expense_claims isolée par groupId
   useEffect(() => {
@@ -109,7 +128,8 @@ export function useExpenseClaims(groupId, userId = null) {
     receiptFile,
     userIban,
     currentUser,
-    profileData
+    profileData,
+    startMonth: customStartMonth
   }) => {
     if (!groupId) throw new Error("Identifiant de groupe manquant.");
     if (!currentUser?.uid) throw new Error("Utilisateur non authentifié.");
@@ -128,8 +148,12 @@ export function useExpenseClaims(groupId, userId = null) {
       const claimRef = doc(collection(db, 'expense_claims'));
       const claimId = claimRef.id;
 
-      // Calcul automatique de la saison associative selon la date de dépense
-      const saison = getSeasonFromDate(dateDepense);
+      // Calcul automatique de la saison associative selon le mois configuré
+      const effectiveStartMonth = customStartMonth !== undefined
+        ? Number(customStartMonth)
+        : (startMonth !== DEFAULT_SEASON_START_MONTH ? startMonth : associationSeasonStartMonth);
+      const saison = getSeasonFromDate(dateDepense, effectiveStartMonth);
+
 
       // Téléversement du justificatif dans Firebase Storage
       // Format de chemin : associations/{groupId}/expenses/{userId}/{claimId}_{Date.now()}_{nomFichier}
@@ -353,6 +377,7 @@ export function useExpenseClaims(groupId, userId = null) {
     loading,
     error,
     submitting,
+    saisonDebutMois: associationSeasonStartMonth,
     addExpenseClaim,
     approveExpenseClaim,
     rejectExpenseClaim,

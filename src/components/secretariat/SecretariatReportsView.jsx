@@ -14,6 +14,14 @@ import ReportTerritoryCard from './reports/ReportTerritoryCard';
 import ReportVolunteerCard from './reports/ReportVolunteerCard';
 import ReportAudienceCard from './reports/ReportAudienceCard';
 import AgSlideshowModal from './reports/AgSlideshowModal';
+import {
+  getSeasonDateRange,
+  getCurrentSeason,
+  getPreviousSeason,
+  getFiscalYearDateRange,
+  DEFAULT_SEASON_START_MONTH,
+  DEFAULT_FISCAL_START_MONTH
+} from '../../utils/seasonUtils';
 
 /**
  * Composant : SecretariatReportsView
@@ -33,27 +41,9 @@ export default function SecretariatReportsView({ groupId, onBack }) {
   const { t } = useTranslation();
 
   // =========================================================================
-  // 1. CALCUL ET GESTION DE LA PÉRIODE D'ANALYSE (SAISON ASSOCIATIVE)
+  // 1. CALCUL ET GESTION DE LA PÉRIODE D'ANALYSE (CYCLES DYNAMIQUES)
   // =========================================================================
-  const now = new Date();
-  const currentYear = now.getFullYear();
-  // La saison associative démarre au 1er septembre (mois 8 en JS)
-  const currentSeasonStartYear = now.getMonth() >= 8 ? currentYear : currentYear - 1;
-
-  const defaultStartDate = `${currentSeasonStartYear}-09-01`;
-  const defaultEndDate = `${currentSeasonStartYear + 1}-08-31`;
-
-  const [periodPreset, setPeriodPreset] = useState('current_season');
-  const [startDate, setStartDate] = useState(defaultStartDate);
-  const [endDate, setEndDate] = useState(defaultEndDate);
-
-  // État d'ouverture du Diaporama / Livret d'AG
-  const [isSlideshowOpen, setIsSlideshowOpen] = useState(false);
-
-  // État de chargement et de synchronisation des données
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [lastRefreshed, setLastRefreshed] = useState(null);
+  const now = useMemo(() => new Date(), []);
 
   // Données brutes agrégées depuis Firestore
   const [rawUsers, setRawUsers] = useState([]);
@@ -65,20 +55,84 @@ export default function SecretariatReportsView({ groupId, onBack }) {
   const [rawGigs, setRawGigs] = useState([]);
   const [assocInfo, setAssocInfo] = useState(null);
 
-  // Sélecteur de préréglages de dates
+  // Configuration temporelle de l'association
+  const saisonDebutMois = assocInfo?.saisonDebutMois !== undefined
+    ? Number(assocInfo.saisonDebutMois)
+    : DEFAULT_SEASON_START_MONTH;
+
+  const exerciceDebutMois = assocInfo?.exerciceDebutMois !== undefined
+    ? Number(assocInfo.exerciceDebutMois)
+    : DEFAULT_FISCAL_START_MONTH;
+
+  // Calculs dynamiques de la saison d'activité et de l'exercice comptable
+  const currentSeason = useMemo(() => getCurrentSeason(saisonDebutMois), [saisonDebutMois]);
+  const previousSeason = useMemo(() => getPreviousSeason(currentSeason), [currentSeason]);
+
+  const currentSeasonRange = useMemo(() => getSeasonDateRange(currentSeason, saisonDebutMois), [currentSeason, saisonDebutMois]);
+  const previousSeasonRange = useMemo(() => getSeasonDateRange(previousSeason, saisonDebutMois), [previousSeason, saisonDebutMois]);
+  const currentFiscalRange = useMemo(() => getFiscalYearDateRange(now, exerciceDebutMois, 0), [now, exerciceDebutMois]);
+  const previousFiscalRange = useMemo(() => getFiscalYearDateRange(now, exerciceDebutMois, -1), [now, exerciceDebutMois]);
+
+  const [periodPreset, setPeriodPreset] = useState('current_season');
+  const [startDate, setStartDate] = useState(currentSeasonRange.startDate);
+  const [endDate, setEndDate] = useState(currentSeasonRange.endDate);
+
+  // Synchronisation des dates par défaut si les paramètres de l'association sont chargés
+  useEffect(() => {
+    if (periodPreset === 'current_season') {
+      setStartDate(currentSeasonRange.startDate);
+      setEndDate(currentSeasonRange.endDate);
+    } else if (periodPreset === 'previous_season') {
+      setStartDate(previousSeasonRange.startDate);
+      setEndDate(previousSeasonRange.endDate);
+    } else if (periodPreset === 'current_fiscal') {
+      setStartDate(currentFiscalRange.startDate);
+      setEndDate(currentFiscalRange.endDate);
+    } else if (periodPreset === 'previous_fiscal') {
+      setStartDate(previousFiscalRange.startDate);
+      setEndDate(previousFiscalRange.endDate);
+    }
+  }, [currentSeasonRange, previousSeasonRange, currentFiscalRange, previousFiscalRange, periodPreset]);
+
+  // État d'ouverture du Diaporama / Livret d'AG
+  const [isSlideshowOpen, setIsSlideshowOpen] = useState(false);
+
+  // État de chargement et de synchronisation des données
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [lastRefreshed, setLastRefreshed] = useState(null);
+
+  // Sélecteur de préréglages de dates dynamique
   const handleSelectPreset = (preset) => {
     setPeriodPreset(preset);
     if (preset === 'current_season') {
-      setStartDate(`${currentSeasonStartYear}-09-01`);
-      setEndDate(`${currentSeasonStartYear + 1}-08-31`);
+      setStartDate(currentSeasonRange.startDate);
+      setEndDate(currentSeasonRange.endDate);
     } else if (preset === 'previous_season') {
-      setStartDate(`${currentSeasonStartYear - 1}-09-01`);
-      setEndDate(`${currentSeasonStartYear}-08-31`);
+      setStartDate(previousSeasonRange.startDate);
+      setEndDate(previousSeasonRange.endDate);
+    } else if (preset === 'current_fiscal') {
+      setStartDate(currentFiscalRange.startDate);
+      setEndDate(currentFiscalRange.endDate);
+    } else if (preset === 'previous_fiscal') {
+      setStartDate(previousFiscalRange.startDate);
+      setEndDate(previousFiscalRange.endDate);
     } else if (preset === 'calendar_year') {
-      setStartDate(`${currentYear}-01-01`);
-      setEndDate(`${currentYear}-12-31`);
+      setStartDate(`${now.getFullYear()}-01-01`);
+      setEndDate(`${now.getFullYear()}-12-31`);
     }
   };
+
+  // Libellé de période enrichi pour l'IHM et le diaporama
+  const periodLabel = useMemo(() => {
+    if (periodPreset === 'current_season') return `Saison d'activité ${currentSeason}`;
+    if (periodPreset === 'previous_season') return `Saison d'activité N-1 (${previousSeason})`;
+    if (periodPreset === 'current_fiscal') return `Exercice comptable ${currentFiscalRange.fiscalYearLabel}`;
+    if (periodPreset === 'previous_fiscal') return `Exercice comptable N-1 (${previousFiscalRange.fiscalYearLabel})`;
+    if (periodPreset === 'calendar_year') return `Année civile ${now.getFullYear()}`;
+    return `Période personnalisée (${startDate} au ${endDate})`;
+  }, [periodPreset, currentSeason, previousSeason, currentFiscalRange, previousFiscalRange, startDate, endDate, now]);
+
 
   // =========================================================================
   // 2. CHARGEMENT OPTIMISÉ À LA DEMANDE (getDocs ponctuel, 0 onSnapshot)
@@ -536,8 +590,9 @@ export default function SecretariatReportsView({ groupId, onBack }) {
                   ? 'bg-amber-300 text-encre-noire border-encre-noire shadow-none'
                   : 'bg-cordel-bg text-encre-noire border-encre-noire/40 hover:border-encre-noire'
               }`}
+              title={`Saison d'activité du ${currentSeasonRange.startDate} au ${currentSeasonRange.endDate}`}
             >
-              🌱 {t('secretariatReports.currentSeason') || "Saison en cours"} ({currentSeasonStartYear}-{currentSeasonStartYear + 1})
+              🌱 {t('secretariatReports.currentSeason') || "Saison en cours"} ({currentSeasonRange.startDate} – {currentSeasonRange.endDate})
             </button>
             <button
               type="button"
@@ -547,20 +602,47 @@ export default function SecretariatReportsView({ groupId, onBack }) {
                   ? 'bg-amber-300 text-encre-noire border-encre-noire shadow-none'
                   : 'bg-cordel-bg text-encre-noire border-encre-noire/40 hover:border-encre-noire'
               }`}
+              title={`Saison d'activité N-1 du ${previousSeasonRange.startDate} au ${previousSeasonRange.endDate}`}
             >
-              🌾 {t('secretariatReports.previousSeason') || "Saison N-1"} ({currentSeasonStartYear - 1}-{currentSeasonStartYear})
+              🌾 {t('secretariatReports.previousSeason') || "Saison N-1"} ({previousSeasonRange.startDate} – {previousSeasonRange.endDate})
             </button>
             <button
               type="button"
-              onClick={() => handleSelectPreset('calendar_year')}
+              onClick={() => handleSelectPreset('current_fiscal')}
               className={`px-2.5 py-1 text-[9.5px] font-black uppercase tracking-wider rounded-[3px_5px_4px_4px] border transition-all cursor-pointer ${
-                periodPreset === 'calendar_year'
+                periodPreset === 'current_fiscal'
                   ? 'bg-amber-300 text-encre-noire border-encre-noire shadow-none'
                   : 'bg-cordel-bg text-encre-noire border-encre-noire/40 hover:border-encre-noire'
               }`}
+              title={`Exercice comptable en cours du ${currentFiscalRange.startDate} au ${currentFiscalRange.endDate}`}
             >
-              📅 {t('secretariatReports.calendarYear') || "Année civile"} ({currentYear})
+              💼 {t('secretariatReports.currentFiscal') || "Exercice comptable"} ({currentFiscalRange.startDate} – {currentFiscalRange.endDate})
             </button>
+            <button
+              type="button"
+              onClick={() => handleSelectPreset('previous_fiscal')}
+              className={`px-2.5 py-1 text-[9.5px] font-black uppercase tracking-wider rounded-[3px_5px_4px_4px] border transition-all cursor-pointer ${
+                periodPreset === 'previous_fiscal'
+                  ? 'bg-amber-300 text-encre-noire border-encre-noire shadow-none'
+                  : 'bg-cordel-bg text-encre-noire border-encre-noire/40 hover:border-encre-noire'
+              }`}
+              title={`Exercice comptable N-1 du ${previousFiscalRange.startDate} au ${previousFiscalRange.endDate}`}
+            >
+              📑 {t('secretariatReports.previousFiscal') || "Exercice N-1"} ({previousFiscalRange.startDate} – {previousFiscalRange.endDate})
+            </button>
+            {exerciceDebutMois !== 1 && (
+              <button
+                type="button"
+                onClick={() => handleSelectPreset('calendar_year')}
+                className={`px-2.5 py-1 text-[9.5px] font-black uppercase tracking-wider rounded-[3px_5px_4px_4px] border transition-all cursor-pointer ${
+                  periodPreset === 'calendar_year'
+                    ? 'bg-amber-300 text-encre-noire border-encre-noire shadow-none'
+                    : 'bg-cordel-bg text-encre-noire border-encre-noire/40 hover:border-encre-noire'
+                }`}
+              >
+                📅 {t('secretariatReports.calendarYear') || "Année civile"} ({now.getFullYear()})
+              </button>
+            )}
           </div>
 
           {/* Sélecteurs de dates personnalisées */}
@@ -903,6 +985,7 @@ export default function SecretariatReportsView({ groupId, onBack }) {
           assocInfo={assocInfo}
           startDate={startDate}
           endDate={endDate}
+          periodLabel={periodLabel}
         />
       )}
     </div>

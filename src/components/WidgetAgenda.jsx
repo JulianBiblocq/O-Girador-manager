@@ -13,6 +13,14 @@ import EventDisciplineBadges from './agenda/EventDisciplineBadges';
 import { useTranslation } from './LanguageContext';
 import { XiloCalendar } from './XiloIcons';
 import { splitEventsByTime } from '../utils/dateUtils';
+import {
+  getSeasonFromDate,
+  getCurrentSeason,
+  getSeasonOptions,
+  getPreviousSeason,
+  DEFAULT_SEASON_START_MONTH
+} from '../utils/seasonUtils';
+import AgendaTemporalTabs from './agenda/AgendaTemporalTabs';
 import EventThumbnail from './agenda/EventThumbnail';
 import { canManageEvents } from '../utils/permissionUtils';
 import { resolveEffectiveUserTags } from '../utils/tagUtils';
@@ -63,7 +71,9 @@ export default function WidgetAgenda({
   const selectedEvent = propSelectedEvent !== undefined ? propSelectedEvent : localSelectedEvent;
   const setSelectedEvent = propSetSelectedEvent !== undefined ? propSetSelectedEvent : setLocalSelectedEvent;
   const [showAll, setShowAll] = useState(isFullPage);
-  const [showPastHistory, setShowPastHistory] = useState(false);
+  const [temporalTab, setTemporalTab] = useState('upcoming'); // 'upcoming' | 'past'
+  const [selectedPastSeason, setSelectedPastSeason] = useState(null);
+  const [saisonDebutMois, setSaisonDebutMois] = useState(DEFAULT_SEASON_START_MONTH);
 
   useHardwareBack(isAdding, () => setIsAdding(false));
   const [viewMode, setViewMode] = useState('cards'); // 'cards' ou 'list' ou 'grid'
@@ -104,6 +114,9 @@ export default function WidgetAgenda({
         setLieuxImportants(Array.isArray(data.lieuxImportants) ? data.lieuxImportants : []);
         setDefaultLocationsByEventType(data.defaultLocationsByEventType && typeof data.defaultLocationsByEventType === 'object' ? data.defaultLocationsByEventType : {});
         setDefaultDropUrl(data.defaultDropUrl || '');
+        if (data.saisonDebutMois !== undefined) {
+          setSaisonDebutMois(Number(data.saisonDebutMois));
+        }
       }
     }, (err) => {
       console.error("WidgetAgenda - Erreur snapshot assocRef :", err);
@@ -181,15 +194,21 @@ export default function WidgetAgenda({
   const isMobile = windowWidth < 768;
   const limit = isMobile ? 5 : 9;
 
-  // Split and trier events into upcoming (chronological) and past (antichronological)
-  const { upcomingEvents, pastEvents } = splitEventsByTime(events);
+  // Calcul de la saison associative courante et précédente selon la configuration
+  const currentSeason = useMemo(() => getCurrentSeason(saisonDebutMois), [saisonDebutMois]);
+  const previousSeason = useMemo(() => getPreviousSeason(currentSeason), [currentSeason]);
+
+  // Séparation étanche et tri chronologique différencié :
+  // - Mode « À venir » : Tri chronologique croissant (ASC) — l'échéance la plus proche en tête
+  // - Mode « Passés » : Tri antéchronologique décroissant (DESC) — l'événement le plus récent en tête
+  const { upcomingEvents, pastEvents } = useMemo(() => splitEventsByTime(events), [events]);
 
   const filterFn = (e) => {
-    // Discipline filtrer (percussion vs dance)
+    // Filtre de discipline (percussion vs danse)
     if (disciplineFilter === 'percussion' && !e.includesPercussion) return false;
     if (disciplineFilter === 'dance' && !e.includesDance) return false;
 
-    // Type filtrer
+    // Filtre de type d'événement
     if (hiddenTypes.includes(e.type)) return false;
     if (selectedTypeFilter !== 'all' && selectedTypeFilter !== 'custom') {
       return e.type === selectedTypeFilter;
@@ -197,17 +216,39 @@ export default function WidgetAgenda({
     return true;
   };
 
-  const filteredUpcoming = upcomingEvents.filter(filterFn);
-  const filteredPast = pastEvents.filter(filterFn);
+  const filteredUpcoming = useMemo(() => upcomingEvents.filter(filterFn), [upcomingEvents, filterFn]);
+  const filteredPastAll = useMemo(() => pastEvents.filter(filterFn), [pastEvents, filterFn]);
 
+  // Liste ordonnée (antéchronologique) des saisons trouvées dans les événements passés
+  const pastSeasonOptions = useMemo(() => {
+    const seasonsFound = filteredPastAll.map(ev => getSeasonFromDate(ev.dateDebut || ev.date, saisonDebutMois));
+    return getSeasonOptions(currentSeason, seasonsFound);
+  }, [filteredPastAll, currentSeason, saisonDebutMois]);
 
-  const activeFilteredEvents = showPastHistory
-    ? [...filteredUpcoming, ...filteredPast]
-    : filteredUpcoming;
+  // Saison active sélectionnée (par défaut stricte : saison en cours)
+  const activePastSeason = selectedPastSeason || currentSeason;
 
-  const visibleEvents = (isFullPage || showAll || showPastHistory)
-    ? activeFilteredEvents
-    : activeFilteredEvents.slice(0, limit);
+  // Comptage des événements passés pour la saison courante (pour message bienveillant si 0)
+  const pastInCurrentSeasonCount = useMemo(() => {
+    return filteredPastAll.filter(ev => getSeasonFromDate(ev.dateDebut || ev.date, saisonDebutMois) === currentSeason).length;
+  }, [filteredPastAll, currentSeason, saisonDebutMois]);
+
+  // Filtrage des événements passés selon la saison active (ou plafonné aux 30 derniers si "all")
+  const filteredPastBySeason = useMemo(() => {
+    if (activePastSeason === 'all') {
+      return filteredPastAll.slice(0, 30);
+    }
+    return filteredPastAll.filter(ev => getSeasonFromDate(ev.dateDebut || ev.date, saisonDebutMois) === activePastSeason);
+  }, [filteredPastAll, activePastSeason, saisonDebutMois]);
+
+  // Événements actifs exclusifs selon l'onglet temporel sélectionné (séparation 100% étanche)
+  const activeTabEvents = temporalTab === 'upcoming' ? filteredUpcoming : filteredPastBySeason;
+
+  // Détermination des événements visibles selon le mode d'affichage et la pagination
+  const visibleEvents = (isFullPage || showAll || temporalTab === 'past')
+    ? activeTabEvents
+    : activeTabEvents.slice(0, limit);
+
   
   const [formData, setFormData] = useState({
     titre: '',
@@ -311,21 +352,9 @@ export default function WidgetAgenda({
         });
       });
 
-      // Filtrage temporel par défaut : du 1er jour du mois précédent aux événements futurs
-      // Si l'utilisateur demande explicitement l'historique complet (showPastHistory), tout le stock est conservé
-      let eventsToDisplay = fetchedEvents;
-      if (!showPastHistory) {
-        const now = new Date();
-        const dateLimiteBasse = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString().split('T')[0];
-        eventsToDisplay = fetchedEvents.filter((ev) => {
-          const evDate = ev.date || ev.dateDebut || '';
-          return !evDate || evDate >= dateLimiteBasse;
-        });
-      }
-
-      // Tri local chronologique en JavaScript pour gérer harmonieusement les dates ISO
-      const sortedEvents = eventsToDisplay.sort((a, b) => new Date(a.date || a.dateDebut || 0) - new Date(b.date || b.dateDebut || 0));
-      setEvents(sortedEvents);
+      // Stockage de l'ensemble des événements du groupe.
+      // Le découpage temporel (à venir vs passés), le tri et le filtrage par saison sont assurés en mémoire.
+      setEvents(fetchedEvents);
       setLoading(false);
     }, (error) => {
       console.error("WidgetAgenda - Erreur onSnapshot :", error);
@@ -333,7 +362,7 @@ export default function WidgetAgenda({
     });
 
     return () => unsubscribe();
-  }, [groupId, showPastHistory]);
+  }, [groupId]);
 
   // Synchronisation de l'URL et de l'historique pour le routage des événements
   useEffect(() => {
@@ -796,6 +825,25 @@ export default function WidgetAgenda({
         </div>
       </div>
 
+      {/* Sélecteur temporel exclusif [ 📅 À venir ] / [ 🏛️ Passés ] & Navigation contextuelle par saison */}
+      {!loading && !isAdding && (
+        <AgendaTemporalTabs
+          temporalTab={temporalTab}
+          setTemporalTab={setTemporalTab}
+          upcomingCount={filteredUpcoming.length}
+          pastCount={filteredPastAll.length}
+          currentSeason={currentSeason}
+          previousSeason={previousSeason}
+          selectedPastSeason={selectedPastSeason}
+          setSelectedPastSeason={setSelectedPastSeason}
+          pastSeasonOptions={pastSeasonOptions}
+          pastInCurrentSeasonCount={pastInCurrentSeasonCount}
+          pastSeasonCount={filteredPastBySeason.length}
+          totalPastEventsCount={filteredPastAll.length}
+          t={t}
+        />
+      )}
+
       {/* Event Filters (Visible when not chargement de and not adding) */}
       {!loading && !isAdding && (
         <AgendaFilterBar
@@ -856,18 +904,27 @@ export default function WidgetAgenda({
       {!loading && !isAdding && (
         visibleEvents.length === 0 ? (
           <EmptyState
-            icon="📅"
-            title={t('widgetAgenda.noEvents') || "Aucun événement prévu pour le moment"}
-            description="L'agenda est vide pour cette période. Organisez une répétition, une prestation, un stage ou une réunion en un clic !"
-            actionLabel={isAuthorized ? "+ Créer mon premier événement" : null}
-            onAction={isAuthorized ? () => setIsAdding(true) : null}
+            icon={temporalTab === 'upcoming' ? "📅" : "🏛️"}
+            title={
+              temporalTab === 'upcoming'
+                ? (t('widgetAgenda.noEvents') || "Aucun événement prévu pour le moment")
+                : (t('agendaTemporal.noPast') || "Aucun événement passé dans cette sélection")
+            }
+            description={
+              temporalTab === 'upcoming'
+                ? "L'agenda est vide pour cette période. Organisez une répétition, une prestation, un stage ou une réunion en un clic !"
+                : "Aucun événement archivé trouvé pour cette saison associative."
+            }
+            actionLabel={temporalTab === 'upcoming' && isAuthorized ? "+ Créer mon premier événement" : null}
+            onAction={temporalTab === 'upcoming' && isAuthorized ? () => setIsAdding(true) : null}
           />
         ) : viewMode === 'grid' ? (
           <CalendarGrid 
-            events={events} 
+            events={activeTabEvents} 
             onSelectEvent={handleSelectEvent} 
             t={t} 
           />
+
         ) : viewMode === 'list' ? (
           <div className="w-full max-w-full overflow-x-auto border-2 border-encre-noire rounded-[8px_12px_9px_11px] shadow-[2.5px_2.5px_0px_0px_#181716] bg-cordel-bg-light">
             <table className="w-full text-xs text-left border-collapse">
@@ -908,20 +965,29 @@ export default function WidgetAgenda({
                         <div className="flex items-center gap-2 flex-wrap">
                           <span>{event.titre}</span>
                           <EventDisciplineBadges event={event} compact={true} />
+                          {temporalTab === 'past' && (
+                            <span 
+                              className="text-[8px] font-black uppercase tracking-wider bg-cordel-master-dark/10 text-encre-noire px-1.5 py-0.5 rounded-[4px_6px_3px_5px] border border-encre-noire/20 select-none inline-flex items-center gap-0.5" 
+                              title={`${t('agendaTemporal.seasonLabel') || 'Saison'} ${getSeasonFromDate(event.dateDebut || event.date, saisonDebutMois)}`}
+                            >
+                              <span>🏛️</span>
+                              <span>{getSeasonFromDate(event.dateDebut || event.date, saisonDebutMois)}</span>
+                            </span>
+                          )}
                         </div>
                         {event.status === 'annule' && (
                           <span className="text-red-600 font-bold ml-1.5 uppercase text-[8px] border border-red-600 px-1 rounded select-none">
-                            {t('widgetAgenda.canceled') || 'ANNULÉ'}
+                            {t('widgetAgenda.canceled', 'Annulé') || 'ANNULÉ'}
                           </span>
                         )}
                         {event.status === 'a_confirmer' && (
                           <span className="text-orange-600 font-bold ml-1.5 uppercase text-[8px] border border-orange-600 px-1 rounded select-none">
-                            {t('common.toConfirm') || 'À CONFIRMER'}
+                            {t('common.toConfirm', 'À confirmer') || 'À CONFIRMER'}
                           </span>
                         )}
                         {event.status === 'sondage' && (
                           <span className="text-amber-900 bg-amber-100 border border-amber-500 font-black ml-1.5 uppercase text-[8px] px-1.5 py-0.5 rounded select-none shadow-sm inline-flex items-center gap-1">
-                            📊 {t('widgetAgenda.poll') || 'SONDAGE'} (Opt. {event.optionIndex || 1}/{event.totalOptions || 1}) {event.pollTarget ? `• ${event.pollTarget}` : ''}
+                            📊 {t('widgetAgenda.poll', 'Sondage') || 'SONDAGE'} (Opt. {event.optionIndex || 1}/{event.totalOptions || 1}) {event.pollTarget ? `• ${event.pollTarget}` : ''}
                           </span>
                         )}
                       </td>
@@ -940,12 +1006,12 @@ export default function WidgetAgenda({
                       </td>
                       <td className="p-1.5 md:p-2.5 text-center font-bold whitespace-nowrap">
                         {(() => {
-                          if (event.enableInscriptions === false) return <span className="inline-block px-1.5 py-0.5 rounded text-[9px] uppercase font-bold bg-neutral-200 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300">📢 {t('widgetAgenda.informative') || 'Informatif'}</span>;
-                          if (userStatus === 'present') return <span className="inline-block px-1.5 py-0.5 rounded text-[9px] uppercase font-black badge-status-present">{t('common.present') || 'Présent'} ({presentCount})</span>;
-                          if (userStatus === 'absent') return <span className="inline-block px-1.5 py-0.5 rounded text-[9px] uppercase font-black badge-status-absent">{t('common.absent') || 'Absent'} ({presentCount})</span>;
-                          if (userStatus === 'confirm') return <span className="inline-block px-1.5 py-0.5 rounded text-[9px] uppercase font-black badge-status-confirm">{t('common.toConfirm') || 'À confirmer'} ({presentCount})</span>;
-                          if (userStatus === 'pending') return <span className="inline-block px-1.5 py-0.5 rounded text-[9px] uppercase font-bold badge-status-pending">{t('common.pending') || 'En attente'} ({presentCount})</span>;
-                          return <span className="text-neutral-500 font-bold">{t('widgetAgenda.noAnswer') || 'Sans réponse'} ({presentCount})</span>;
+                          if (event.enableInscriptions === false) return <span className="inline-block px-1.5 py-0.5 rounded text-[9px] uppercase font-bold bg-neutral-200 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300">📢 {t('widgetAgenda.informative', 'Informatif') || 'Informatif'}</span>;
+                          if (userStatus === 'present') return <span className="inline-block px-1.5 py-0.5 rounded text-[9px] uppercase font-black badge-status-present">{t('common.present', 'Présent') || 'Présent'} ({presentCount})</span>;
+                          if (userStatus === 'absent') return <span className="inline-block px-1.5 py-0.5 rounded text-[9px] uppercase font-black badge-status-absent">{t('common.absent', 'Absent') || 'Absent'} ({presentCount})</span>;
+                          if (userStatus === 'confirm') return <span className="inline-block px-1.5 py-0.5 rounded text-[9px] uppercase font-black badge-status-confirm">{t('common.toConfirm', 'À confirmer') || 'À confirmer'} ({presentCount})</span>;
+                          if (userStatus === 'pending') return <span className="inline-block px-1.5 py-0.5 rounded text-[9px] uppercase font-bold badge-status-pending">{t('common.pending', 'En attente') || 'En attente'} ({presentCount})</span>;
+                          return <span className="text-neutral-500 font-bold">{t('widgetAgenda.noAnswer', 'Sans réponse') || 'Sans réponse'} ({presentCount})</span>;
                         })()}
                       </td>
                     </tr>
@@ -983,6 +1049,7 @@ export default function WidgetAgenda({
                       flex items-stretch
                       min-h-[90px]
                       cursor-pointer hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[5.5px_5.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-[2px_2px_0px_0px_#181716] transition-all
+                      ${temporalTab === 'past' ? 'border-dashed border-cordel-master-dark/40 opacity-95' : ''}
                     `}
                   >
                     {/* Effet tampon gros statut en biais */}
@@ -992,7 +1059,7 @@ export default function WidgetAgenda({
                           style={{ transform: 'rotate(-15deg)' }}
                           className="text-red-600 dark:text-red-500 border-[3.5px] border-red-600 dark:border-red-500 px-5 py-1.5 rounded-lg font-black text-[15px] tracking-widest uppercase opacity-80 bg-white/5 dark:bg-black/5"
                         >
-                          {t('widgetAgenda.canceled') || 'ANNULÉ'}
+                          {t('widgetAgenda.canceled', 'Annulé') || 'ANNULÉ'}
                         </span>
                       </div>
                     )}
@@ -1002,7 +1069,7 @@ export default function WidgetAgenda({
                           style={{ transform: 'rotate(-15deg)' }}
                           className="text-orange-600 dark:text-orange-400 border-[3.5px] border-orange-600 dark:border-orange-400 px-5 py-1.5 rounded-lg font-black text-[15px] tracking-widest uppercase opacity-80 bg-white/5 dark:bg-black/5"
                         >
-                          {t('common.toConfirm') || 'À CONFIRMER'}
+                          {t('common.toConfirm', 'À confirmer') || 'À CONFIRMER'}
                         </span>
                       </div>
                     )}
@@ -1013,14 +1080,14 @@ export default function WidgetAgenda({
                           style={{ transform: 'rotate(-10deg)', color: 'var(--color-cordel-vert)', borderColor: 'var(--color-cordel-vert)' }}
                           className="border-[3.5px] px-5 py-1.5 rounded-lg font-black text-[15px] tracking-widest uppercase opacity-80 bg-white/5 dark:bg-black/5"
                         >
-                          {t('widgetAgenda.confirmed') || 'VALIDÉ'}
+                          {t('widgetAgenda.confirmed', 'Validé') || 'VALIDÉ'}
                         </span>
                       </div>
                     )}
                     {event.status === 'sondage' && (
                       <div className="absolute top-2 right-2 flex gap-1 select-none z-10">
                         <span className="text-amber-900 bg-amber-100/90 border border-amber-600 font-black uppercase text-[8px] px-2 py-0.5 rounded shadow-sm">
-                          📊 {t('widgetAgenda.poll') || 'SONDAGE'} ({event.optionIndex || 1}/{event.totalOptions || 1}) {event.pollTarget ? `• ${event.pollTarget}` : ''}
+                          📊 {t('widgetAgenda.poll', 'Sondage') || 'SONDAGE'} ({event.optionIndex || 1}/{event.totalOptions || 1}) {event.pollTarget ? `• ${event.pollTarget}` : ''}
                         </span>
                       </div>
                     )}
@@ -1060,11 +1127,20 @@ export default function WidgetAgenda({
                                 {event.type}
                               </span>
                               <EventDisciplineBadges event={event} />
+                              {temporalTab === 'past' && (
+                                <span 
+                                  className="text-[8px] font-black uppercase tracking-wider bg-cordel-master-dark/10 text-encre-noire px-1.5 py-0.5 rounded-[4px_6px_3px_5px] border border-encre-noire/20 select-none inline-flex items-center gap-0.5"
+                                  title={`${t('agendaTemporal.seasonLabel') || 'Saison'} ${getSeasonFromDate(event.dateDebut || event.date, saisonDebutMois)}`}
+                                >
+                                  <span>🏛️</span>
+                                  <span>{getSeasonFromDate(event.dateDebut || event.date, saisonDebutMois)}</span>
+                                </span>
+                              )}
                             </div>
                             {/* Connected User Attendance Badge */}
                             {(() => {
                               if (event.enableInscriptions === false) {
-                                return <span className="text-[8px] font-bold px-1.5 py-0.5 rounded-[4px_6px_3px_5px] uppercase tracking-wider bg-neutral-200 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300 leading-none select-none">📢 {t('widgetAgenda.informative') || 'Informatif'}</span>;
+                                return <span className="text-[8px] font-bold px-1.5 py-0.5 rounded-[4px_6px_3px_5px] uppercase tracking-wider bg-neutral-200 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300 leading-none select-none">📢 {t('widgetAgenda.informative', 'Informatif') || 'Informatif'}</span>;
                               }
                               const userInscription = (event.inscriptions || []).find(ins => ins.userId === user.uid);
                               const userStatus = userInscription ? userInscription.status : null;
@@ -1105,7 +1181,8 @@ export default function WidgetAgenda({
               })}
             </div>
             
-            {filteredUpcoming.length > limit && !showPastHistory && (
+            {/* Bouton Voir plus pour le mode À venir si le nombre d'événements dépasse la limite initiale */}
+            {temporalTab === 'upcoming' && filteredUpcoming.length > limit && (
               <div className="flex justify-center mt-3">
                 <CordelButton 
                   variant="default"
@@ -1117,23 +1194,6 @@ export default function WidgetAgenda({
               </div>
             )}
 
-            {/* Discrete Past Events History Basculer Button */}
-            {filteredPast.length > 0 && (
-              <div className="flex justify-center mt-4 pt-3 border-t border-dashed border-cordel-master-dark/20">
-                <button
-                  type="button"
-                  onClick={() => setShowPastHistory(prev => !prev)}
-                  className="text-[10px] font-black uppercase tracking-wider bg-cordel-bg-light text-cordel-wood border-2 border-encre-noire px-3.5 py-1.5 rounded-[6px_9px_5px_8px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:bg-amber-100/60 cursor-pointer transition-all flex items-center gap-1.5 select-none"
-                >
-                  <span>
-                    {showPastHistory
-                      ? (t('agendaTemporal.hidePastHistory') || "📜 Cacher l'historique des événements passés")
-                      : `${t('agendaTemporal.seePastHistory') || "📜 Voir l'historique des événements passés"} (${filteredPast.length})`
-                    }
-                  </span>
-                </button>
-              </div>
-            )}
           </>
         )
       )}

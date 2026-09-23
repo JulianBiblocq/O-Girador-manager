@@ -26,7 +26,8 @@ export default function AgSlideshowModal({
   indicators = {},
   assocInfo = {},
   startDate = '',
-  endDate = ''
+  endDate = '',
+  periodLabel = ''
 }) {
   const [currentSlide, setCurrentSlide] = useState(1);
   const totalSlides = 6;
@@ -151,8 +152,13 @@ export default function AgSlideshowModal({
                 <h1 className="text-2xl sm:text-4xl font-black uppercase text-encre-noire tracking-tight">
                   {assocNom}
                 </h1>
-                <p className="text-xs sm:text-sm text-encre-noire/70 font-semibold mt-1">
-                  Période d'exercice : du <strong>{startDate}</strong> au <strong>{endDate}</strong>
+                {periodLabel && (
+                  <span className="text-[11px] font-black uppercase tracking-wider text-cordel-wood block mt-1">
+                    {periodLabel}
+                  </span>
+                )}
+                <p className="text-xs sm:text-sm text-encre-noire/70 font-semibold mt-0.5">
+                  Période couverte : du <strong>{startDate}</strong> au <strong>{endDate}</strong>
                 </p>
               </div>
 
@@ -751,7 +757,7 @@ export default function AgSlideshowModal({
         {[1, 2, 3, 4, 5, 6].map(idx => (
           <div key={idx} className="print-page">
             <div className="flex justify-between items-center border-b border-encre-noire pb-2 mb-4 text-[10px] font-black uppercase text-encre-noire/70">
-              <span>{assocNom} — Livret d'Assemblée Générale</span>
+              <span>{assocNom} — Livret d'Assemblée Générale {periodLabel ? `(${periodLabel})` : ''}</span>
               <span>Page {idx} / {totalSlides}</span>
             </div>
 

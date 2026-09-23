@@ -41,46 +41,77 @@ export const isEventStrictlyPassed = (event, referenceDate = new Date()) => {
 };
 
 /**
- * Vérifie si un événement est passé (antérieur à aujourd'hui 00:00:00).
- * Utilise dateFin si présent, sinon date.
+ * Vérifie si un événement est passé (strictement antérieur à aujourd'hui 00:00:00).
+ * Utilise dans l'ordre de priorité : dateFin, dateDebut ou date.
  * 
- * @param {Object} event
- * @returns {boolean} true si l'événement est passé
+ * @param {Object} event Événement à tester
+ * @returns {boolean} true si l'événement est passé (< aujourd'hui)
  */
 export const isPastEvent = (event) => {
-  if (!event || (!event.date && !event.dateFin)) return false;
+  if (!event) return false;
   
-  const targetDateStr = event.dateFin || event.date;
-  const eventDate = new Date(targetDateStr);
-  if (isNaN(eventDate.getTime())) return false;
+  const targetDateStr = (typeof event === 'string' || event instanceof Date || (typeof event === 'object' && typeof event?.toDate === 'function'))
+    ? event
+    : (event.dateFin || event.dateDebut || event.date);
+  if (!targetDateStr) return false;
+
+  let eventDate;
+  if (typeof targetDateStr === 'string') {
+    const clean = targetDateStr.split('T')[0];
+    const parts = clean.split('-');
+    if (parts.length >= 3) {
+      eventDate = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+    } else {
+      eventDate = new Date(targetDateStr);
+    }
+  } else if (targetDateStr instanceof Date) {
+    eventDate = new Date(targetDateStr.getFullYear(), targetDateStr.getMonth(), targetDateStr.getDate());
+  } else if (typeof targetDateStr === 'object' && typeof targetDateStr.toDate === 'function') {
+    const d = targetDateStr.toDate();
+    eventDate = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  } else {
+    eventDate = new Date(targetDateStr);
+  }
+
+  if (!eventDate || isNaN(eventDate.getTime())) return false;
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  return eventDate < today;
+  return eventDate.getTime() < today.getTime();
 };
 
 /**
- * Trie les événements à venir par ordre chronologique croissant (les plus proches en premier).
+ * Trie les événements à venir par ordre chronologique croissant (ASC - les plus proches en premier).
  * ex: 15 oct, 22 oct, 01 nov...
+ * 
+ * @param {Array} events Liste des événements
+ * @returns {Array} Liste triée chronologiquement
  */
 export const sortUpcomingEvents = (events = []) => {
   return [...events].sort((a, b) => {
-    const dateA = new Date(a.date);
-    const dateB = new Date(b.date);
-    return dateA - dateB;
+    const strA = a.dateDebut || a.date || '';
+    const strB = b.dateDebut || b.date || '';
+    const timeA = strA ? new Date(strA).getTime() : 0;
+    const timeB = strB ? new Date(strB).getTime() : 0;
+    return timeA - timeB;
   });
 };
 
 /**
- * Trie les événements passés par ordre antichronologique décroissant (les plus récents en premier).
+ * Trie les événements passés par ordre antéchronologique décroissant (DESC - les plus récents en premier).
  * ex: Hier, La semaine dernière, Le mois dernier...
+ * 
+ * @param {Array} events Liste des événements
+ * @returns {Array} Liste triée antéchronologiquement
  */
 export const sortPastEvents = (events = []) => {
   return [...events].sort((a, b) => {
-    const dateA = new Date(a.dateFin || a.date);
-    const dateB = new Date(b.dateFin || b.date);
-    return dateB - dateA;
+    const strA = a.dateFin || a.dateDebut || a.date || '';
+    const strB = b.dateFin || b.dateDebut || b.date || '';
+    const timeA = strA ? new Date(strA).getTime() : 0;
+    const timeB = strB ? new Date(strB).getTime() : 0;
+    return timeB - timeA;
   });
 };
 

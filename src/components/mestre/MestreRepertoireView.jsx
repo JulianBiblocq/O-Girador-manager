@@ -7,9 +7,12 @@ import RepertoirePieceModal from './RepertoirePieceModal';
 import ProgramPieceModal from './ProgramPieceModal';
 import RepertoireVideoModal from './RepertoireVideoModal';
 import SignalZoomModal from './SignalZoomModal';
+import TablatureModal from './TablatureModal';
+import CreateCultureFicheModal from './CreateCultureFicheModal';
 import useConfirm from '../../hooks/useConfirm';
 import useMestreSignals from '../../hooks/useMestreSignals';
 import { openSequencerWithCrossApp } from '../../utils/sequencerUrlUtils';
+import { parseYouTubeMedia } from '../../utils/mediaUrlUtils';
 
 /**
  * Vue principale du Répertoire de la troupe (Mestria).
@@ -40,6 +43,8 @@ export default function MestreRepertoireView({ groupId, user, profileData, seque
   const [pieceToProgram, setPieceToProgram] = useState(null);
   const [activeVideoToWatch, setActiveVideoToWatch] = useState(null);
   const [activeSignalToZoom, setActiveSignalToZoom] = useState(null);
+  const [activeTablaturePiece, setActiveTablaturePiece] = useState(null);
+  const [pieceForCultureCreation, setPieceForCultureCreation] = useState(null);
 
   // Notification toast
   const [toastMsg, setToastMsg] = useState(null);
@@ -393,7 +398,21 @@ export default function MestreRepertoireView({ groupId, user, profileData, seque
                       </span>
                     )}
 
-                    {!hasSequencer && !hasAudio && !piece.toadaDocId && !piece.dancadorChoreoId && !piece.cultureDocId && (
+                    {piece.tablature && (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-black uppercase rounded bg-stone-100 text-stone-800 border border-stone-300">
+                        <span>📄</span>
+                        <span>Tablature</span>
+                      </span>
+                    )}
+
+                    {Array.isArray(piece.sinaisDoMestre) && piece.sinaisDoMestre.length > 0 && (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-black uppercase rounded bg-amber-50 text-amber-950 border border-amber-300">
+                        <span>🖐️</span>
+                        <span>{piece.sinaisDoMestre.length} Signe{piece.sinaisDoMestre.length > 1 ? 's' : ''}</span>
+                      </span>
+                    )}
+
+                    {!hasSequencer && !hasAudio && !piece.tablature && !piece.toadaDocId && !piece.dancadorChoreoId && !piece.cultureDocId && (!piece.sinaisDoMestre || piece.sinaisDoMestre.length === 0) && (
                       <span className="text-[9.5px] italic text-encre-noire/50">
                         Autonome (joué de mémoire)
                       </span>
@@ -407,7 +426,66 @@ export default function MestreRepertoireView({ groupId, user, profileData, seque
                         <span>🎵</span>
                         <span>Audio de référence :</span>
                       </span>
-                      <audio controls src={piece.audioUrl} className="w-full h-7 rounded border border-encre-noire/10" preload="none" />
+                      <audio controls src={piece.audioUrl} className="w-full mt-2 h-7 rounded border border-encre-noire/10" preload="none" />
+                    </div>
+                  )}
+
+                  {/* Intégration du lecteur vidéo YouTube */}
+                  {(() => {
+                    const targetVideo = piece.videoUrl || (Array.isArray(piece.videos) && piece.videos.length > 0 ? piece.videos[0].url : null);
+                    const yt = targetVideo ? parseYouTubeMedia(targetVideo) : null;
+                    if (!yt || !yt.embedUrl) return null;
+                    return (
+                      <div className="w-full mt-2 pt-2 border-t border-dashed border-encre-noire/15 flex flex-col gap-1.5 text-left">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[9px] font-black uppercase tracking-wider text-cordel-master-dark flex items-center gap-1">
+                            <span>🎬</span>
+                            <span>Vidéo de référence :</span>
+                          </span>
+                          <a
+                            href={yt.directUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-[9px] text-cordel-wood hover:underline font-bold"
+                          >
+                            Ouvrir sur YouTube ↗
+                          </a>
+                        </div>
+                        <div className="relative w-full aspect-video rounded overflow-hidden border border-encre-noire/20 shadow-xs bg-black">
+                          <iframe
+                            src={yt.embedUrl}
+                            title={`Vidéo ${piece.titre}`}
+                            className="w-full h-full border-0"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowFullScreen
+                          />
+                        </div>
+                      </div>
+                    );
+                  })()}
+
+                  {/* Encart lisible Contexte & Histoire */}
+                  {(piece.contexteHistorique || piece.histoire) && (
+                    <div className="w-full mt-2 p-3 rounded bg-[#fcf9f0] border border-encre-noire/15 shadow-xs flex flex-col gap-1.5 text-left">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[9.5px] font-black uppercase tracking-wider text-cordel-wood flex items-center gap-1.5">
+                          <span>📜</span>
+                          <span>Contexte &amp; Histoire :</span>
+                        </span>
+                        {!piece.cultureDocId && (
+                          <button
+                            type="button"
+                            onClick={() => setPieceForCultureCreation(piece)}
+                            className="text-[9px] font-extrabold text-amber-900 hover:text-amber-950 underline cursor-pointer flex items-center gap-1"
+                            title="Créer une fiche du Varal Culture pré-remplie avec ces informations"
+                          >
+                            <span>➕ Fiche Culture</span>
+                          </button>
+                        )}
+                      </div>
+                      <p className="text-xs leading-relaxed text-encre-noire/90 font-serif whitespace-pre-line italic">
+                        {piece.contexteHistorique || piece.histoire}
+                      </p>
                     </div>
                   )}
 
@@ -461,6 +539,37 @@ export default function MestreRepertoireView({ groupId, user, profileData, seque
                       })}
                     </div>
                   )}
+
+                  {/* Signes & Conventions chronologiques par mesure (Séquenceur / Mestria) */}
+                  {Array.isArray(piece.sinaisDoMestre) && piece.sinaisDoMestre.length > 0 && (
+                    <div className="flex flex-col gap-1 pt-1.5 border-t border-dashed border-encre-noire/10 text-left">
+                      <span className="text-[9px] font-black uppercase tracking-wider text-cordel-master-dark/80 flex items-center gap-1">
+                        <span>🖐️</span>
+                        <span>Signes &amp; Conventions ({piece.sinaisDoMestre.length}) :</span>
+                      </span>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        {[...piece.sinaisDoMestre]
+                          .sort((a, b) => {
+                            const ma = typeof a === 'object' && a !== null ? (a.mesure ?? a.bar ?? a.barIndex ?? 0) : 0;
+                            const mb = typeof b === 'object' && b !== null ? (b.mesure ?? b.bar ?? b.barIndex ?? 0) : 0;
+                            return Number(ma) - Number(mb);
+                          })
+                          .map((s, idx) => {
+                            const m = typeof s === 'object' && s !== null ? (s.mesure ?? s.bar ?? s.barIndex ?? (idx + 1)) : (idx + 1);
+                            const nom = typeof s === 'object' && s !== null ? (s.nom || s.name || s.signe || s.label || s.action || 'Signe') : String(s);
+                            return (
+                              <span
+                                key={s.id || idx}
+                                className="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-extrabold rounded-[4px_6px_3px_5px] bg-[#fbf7ee] text-encre-noire border border-encre-noire/25 shadow-2xs"
+                              >
+                                <span className="text-cordel-wood font-black">Mesure {m} :</span>
+                                <span>{nom}</span>
+                              </span>
+                            );
+                          })}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Bas de la carte : Barre d'actions */}
@@ -488,6 +597,36 @@ export default function MestreRepertoireView({ groupId, user, profileData, seque
 
                   {/* Actions rapides */}
                   <div className="flex items-center gap-1.5">
+                    {/* Bouton discret Tablature */}
+                    {piece.tablature && (
+                      <CordelButton
+                        type="button"
+                        variant="default"
+                        useExtremeBorder={false}
+                        onClick={() => setActiveTablaturePiece(piece)}
+                        className="py-1 px-2.5 text-[9.5px] uppercase tracking-wider font-black bg-stone-100 hover:bg-stone-200 border border-encre-noire/25 text-encre-noire flex items-center gap-1"
+                        title="Consulter et imprimer la tablature"
+                      >
+                        <span>📄</span>
+                        <span>Tablature</span>
+                      </CordelButton>
+                    )}
+
+                    {/* Bouton passerelle créer fiche Varal Culture */}
+                    {!piece.cultureDocId && (
+                      <CordelButton
+                        type="button"
+                        variant="default"
+                        useExtremeBorder={false}
+                        onClick={() => setPieceForCultureCreation(piece)}
+                        className="py-1 px-2 text-[9.5px] uppercase tracking-wider font-black bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-950 flex items-center gap-1"
+                        title="Créer une fiche du Varal Culture pré-remplie à partir de ce morceau"
+                      >
+                        <span>📜</span>
+                        <span>Fiche Culture</span>
+                      </CordelButton>
+                    )}
+
                     <CordelButton
                       type="button"
                       variant="ocre"
@@ -563,6 +702,32 @@ export default function MestreRepertoireView({ groupId, user, profileData, seque
         isOpen={Boolean(activeSignalToZoom)}
         onClose={() => setActiveSignalToZoom(null)}
         signal={activeSignalToZoom}
+      />
+
+      {/* Modale de consultation et d'impression de la tablature */}
+      <TablatureModal
+        isOpen={Boolean(activeTablaturePiece)}
+        onClose={() => setActiveTablaturePiece(null)}
+        piece={activeTablaturePiece}
+      />
+
+      {/* Modale passerelle vers le Varal Culture */}
+      <CreateCultureFicheModal
+        isOpen={Boolean(pieceForCultureCreation)}
+        onClose={() => setPieceForCultureCreation(null)}
+        groupId={groupId}
+        piece={pieceForCultureCreation}
+        onSuccess={(newCultureId) => {
+          if (pieceForCultureCreation) {
+            setPieces((prev) =>
+              prev.map((p) =>
+                p.id === pieceForCultureCreation.id ? { ...p, cultureDocId: newCultureId } : p
+              )
+            );
+            showToast(`Fiche culture créée sur le Varal et liée à « ${pieceForCultureCreation.titre} » !`);
+          }
+          setPieceForCultureCreation(null);
+        }}
       />
     </div>
   );

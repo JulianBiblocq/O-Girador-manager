@@ -14,7 +14,8 @@ export default function ExpenseClaimModal({
   onClose,
   onSubmit,
   submitting,
-  profileData
+  profileData,
+  saisonDebutMois = 9
 }) {
   const todayStr = useMemo(() => {
     const d = new Date();
@@ -31,10 +32,10 @@ export default function ExpenseClaimModal({
   const [userIban, setUserIban] = useState(profileData?.iban || profileData?.ribIban || '');
   const [formError, setFormError] = useState('');
 
-  // Calcul dynamique de la saison en fonction de la date saisie
+  // Calcul dynamique de la saison en fonction de la date saisie et du mois de rentrée configuré
   const computedSeason = useMemo(() => {
-    return getSeasonFromDate(dateDepense);
-  }, [dateDepense]);
+    return getSeasonFromDate(dateDepense, Number(saisonDebutMois) || 9);
+  }, [dateDepense, saisonDebutMois]);
 
   if (!isOpen) return null;
 
@@ -87,7 +88,8 @@ export default function ExpenseClaimModal({
         montant: parsedAmount,
         motif: motif.trim(),
         receiptFile,
-        userIban: userIban.trim()
+        userIban: userIban.trim(),
+        startMonth: Number(saisonDebutMois) || 9
       });
       // Réinitialisation du formulaire à la fermeture
       setMontant('');

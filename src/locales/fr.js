@@ -44,7 +44,11 @@ export const fr = {
     visual: "Visuel",
     document: "Document",
     moveUp: "Monter",
-    moveDown: "Descendre"
+    moveDown: "Descendre",
+    saving: "Enregistrement...",
+    deleteConfirmTitle: "Confirmer la suppression",
+    deleteConfirmMessage: "Êtes-vous sûr de vouloir supprimer cet élément ? Cette action est irréversible.",
+    deleteError: "Erreur lors de la suppression."
   },
   tags: {
     managerTitle: "Gestion des étiquettes",
@@ -330,6 +334,15 @@ export const fr = {
     upcoming: "À venir (Défaut)",
     past: "Passés",
     all: "Tous",
+    upcomingTab: "À venir",
+    pastTab: "Passés",
+    seasonLabel: "Saison archivée :",
+    allSeasons: "Toutes les saisons",
+    currentSeasonBadge: "En cours",
+    noPastInCurrentSeason: "Aucun événement passé pour la saison en cours ({{season}}).",
+    goToPreviousSeason: "Consulter la saison précédente ({{prevSeason}})",
+    cappedPastNotice: "Affichage limité aux 30 derniers événements passés pour garantir la fluidité.",
+    pastEventBadge: "Archive",
     seePastHistory: "📜 Voir l'historique des événements passés",
     hidePastHistory: "📜 Cacher l'historique des événements passés",
     noUpcoming: "Aucun événement à venir.",
@@ -412,7 +425,14 @@ export const fr = {
     noDressCode: "-- Aucune tenue spécifiée --",
     startDateLabel: "Date et heure de début",
     endDateLabel: "Date et heure de fin (optionnel)",
-    requiresValidationLabel: "Inscriptions soumises à validation par l'administrateur"
+    requiresValidationLabel: "Inscriptions soumises à validation par l'administrateur",
+    presence: "Présence",
+    canceled: "Annulé",
+    poll: "Sondage",
+    informative: "Informatif",
+    noAnswer: "Sans réponse",
+    confirmed: "Validé",
+    confirmRemoveType: "Êtes-vous sûr de vouloir supprimer ce type d'événement ?"
   },
   widgetTreasury: {
     title: "Adhésion & cotisation",
@@ -513,6 +533,7 @@ export const fr = {
   },
   eventDetails: {
     title: "Détails de l'événement",
+    unnamedEvent: "Événement sans titre",
     cancelStatus: "Annulé",
     myPresence: "Ma Présence",
     statusConfirmed: "Je viens (Présent)",
@@ -885,7 +906,9 @@ export const fr = {
     Tous: "Tous",
     "Comptes Rendus": "Comptes Rendus",
     "Statuts & Assurances": "Statuts & Assurances",
-    "Inscriptions": "Inscriptions"
+    "Inscriptions": "Inscriptions",
+    archivedStamp: "Archivé",
+    updateError: "Erreur lors de la mise à jour du document."
   },
   forum: {
     threadsList: "Fils de discussion",
@@ -927,7 +950,24 @@ export const fr = {
     readOnly: "Lecture seule",
     readOnlySalon: "Ce salon est en lecture seule pour votre rôle.",
     targetGroup: "Cibler un groupe (Optionnel)",
-    targetAll: "-- Tout le monde --"
+    targetAll: "-- Tout le monde --",
+    pinned: "Épinglé",
+    newRepliesBadge: "nouvelles réponses",
+    newReplyBadge: "nouvelle réponse",
+    userOnline: "En ligne",
+    userOffline: "Hors ligne",
+    repliesCountPlural: "réponses",
+    repliesCountSingular: "réponse",
+    pollBadge: "Sondage",
+    unpin: "Désépingler",
+    pin: "Épingler",
+    move: "Déplacer",
+    delete: "Supprimer",
+    noReplies: "Aucune réponse pour le moment.",
+    errorSending: "Erreur lors de l'envoi du message.",
+    deleteReplyConfirm: "Êtes-vous sûr de vouloir supprimer cette réponse ?",
+    errorDeletingReply: "Erreur lors de la suppression de la réponse.",
+    deleteThreadConfirm: "Êtes-vous sûr de vouloir supprimer ce sujet ?"
   },
   studioSocial: {
     title: "Studio Réseaux Sociaux",
@@ -1528,6 +1568,7 @@ export const fr = {
     territoryLexiconQuestion: "Lequel de ces mots/biomes est directement lié à '{{titre}}' ?",
     territoryLexiconFeedback: "Le terme exact est bien : {{mot}}.",
     mestreSignInstruction: "Sinais do Mestre",
+    mestreSignInstructionExpert: "Signes du Mestre (Expert)",
     mestreSignModCInstruction: "Signes du Mestre (Modèle C)",
     mestreSignQuestion: "Quel est le signe du Mestre pour annoncer : {{titre}} ?",
     mestreSignFeedback: "Le bon signe pour \"{{titre}}\" est celui affiché en vert.",
@@ -1612,6 +1653,8 @@ export const fr = {
     periodSelectorTitle: "Période d'analyse",
     currentSeason: "Saison en cours",
     previousSeason: "Saison précédente",
+    currentFiscal: "Exercice en cours",
+    previousFiscal: "Exercice N-1",
     calendarYear: "Année civile",
     customPeriod: "Période libre",
     startDate: "Date de début",
@@ -1703,5 +1746,39 @@ export const fr = {
     mentionsTitle: "Carnet de mentions (@)",
     vocabTitle: "Vocabulaire & Guide culturel",
     hashtagsTitle: "Hashtags par défaut"
+  },
+  qrLogin: {
+    title: "Connexion par QR Code",
+    instruction: "Scannez ce QR Code avec votre appareil photo ou votre application mobile pour vous connecter instantanément."
+  },
+  layoutEditor: {
+    accessDenied: "Accès réservé aux administrateurs."
+  },
+  months: {
+    january: "Janvier",
+    february: "Février",
+    march: "Mars",
+    april: "Avril",
+    may: "Mai",
+    june: "Juin",
+    july: "Juillet",
+    august: "Août",
+    september: "Septembre",
+    october: "Octobre",
+    november: "Novembre",
+    december: "Décembre"
+  },
+  calendarSettings: {
+    cardTitle: "Calendrier Associatif & Cycles Annuels",
+    cardDesc: "Configurez les périodes de référence temporelles de votre association pour synchroniser l'Agenda, les notes de frais, les répertoires et les bilans d'AG.",
+    seasonStartLabel: "Mois de rentrée / Saison d'activité",
+    seasonStartDesc: "Définit le mois de rentrée de la troupe, le calcul des saisons dans l'Agenda, les notes de frais et les répertoires.",
+    fiscalStartLabel: "Mois de démarrage de l'exercice comptable",
+    fiscalStartDesc: "Définit la période de clôture des comptes pour le bilan d'Assemblée Générale, le grand livre et les dossiers Cerfa.",
+    livePreviewTitle: "Aperçu dynamique des périodes actives",
+    currentSeasonBadge: "Saison d'activité courante",
+    currentFiscalBadge: "Exercice comptable en cours",
+    from: "Du",
+    to: "au"
   }
 };

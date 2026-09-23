@@ -35,8 +35,15 @@ const testScripts = [
   'scripts/test_in_app_notifications.mjs',
   'scripts/test_treasurer_logistics_permissions.mjs',
   'scripts/test_sequencer_repertoire_unification.mjs',
-  'scripts/test_responsive_popups_clamping.mjs',
-  'scripts/test_annonces_publish_permissions.mjs'
+  'scripts/test_annonces_publish_permissions.mjs',
+  'scripts/test_tablature_formatter.mjs',
+  'scripts/test_repertoire_culture_bridge.mjs',
+  'scripts/test_react_hooks_imports.mjs',
+  'scripts/test_agenda_translations.mjs',
+  'scripts/test_sinais_do_mestre_aspiration.mjs',
+  'scripts/test_season_cycles_config.mjs',
+  'scripts/test_agenda_temporal_season_filtering.mjs',
+  'scripts/test_treasury_secretariat_season_wiring.mjs'
 ];
 
 console.log("===============================================================");

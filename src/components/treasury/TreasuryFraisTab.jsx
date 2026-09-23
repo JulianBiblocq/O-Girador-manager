@@ -14,7 +14,8 @@ export default function TreasuryFraisTab({
   role,
   isSystemAdmin,
   hasAccessTresorerie,
-  onBack
+  onBack,
+  associationSettings
 }) {
   const [activeSubTab, setActiveSubTab] = useState('expenses'); // 'expenses' | 'km'
 
@@ -66,6 +67,7 @@ export default function TreasuryFraisTab({
           role={role}
           isSystemAdmin={isSystemAdmin}
           hasAccessTresorerie={hasAccessTresorerie}
+          associationSettings={associationSettings}
         />
       ) : (
         <KilometricReimbursementManager

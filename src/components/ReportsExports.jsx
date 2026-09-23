@@ -5,6 +5,7 @@ import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
 import { XiloScroll } from './XiloIcons';
 import { useTranslation } from './LanguageContext';
+import { getFiscalYearDateRange, DEFAULT_FISCAL_START_MONTH } from '../utils/seasonUtils';
 
 const toJsDate = (val) => {
   if (!val) return null;
@@ -56,29 +57,50 @@ const calculateCarStatus = (car, associationSettings) => {
   };
 };
 
-export default function ReportsExports({ groupId, role, isSystemAdmin, hasAccessTresorerie, profileData, onBack, isEmbedded }) {
+export default function ReportsExports({ 
+  groupId, 
+  role, 
+  isSystemAdmin, 
+  hasAccessTresorerie, 
+  profileData, 
+  onBack, 
+  isEmbedded,
+  associationSettings: propAssociationSettings
+}) {
   const { t } = useTranslation();
   
-  // Définir default dates to school year (Sep 1st of current/previous year to Aug 31st of current/next year)
-  const now = new Date();
-  const currentYear = now.getFullYear();
-  const startYear = now.getMonth() >= 8 ? currentYear : currentYear - 1;
-  const defaultStartDate = `${startYear}-09-01`;
-  const defaultEndDate = `${startYear + 1}-08-31`;
+  // Mois de début de l'exercice comptable (par défaut 1 = Janvier / Année civile)
+  const initialExerciceDebutMois = propAssociationSettings?.exerciceDebutMois !== undefined && propAssociationSettings?.exerciceDebutMois !== null
+    ? Number(propAssociationSettings.exerciceDebutMois)
+    : DEFAULT_FISCAL_START_MONTH;
 
-  const [startDate, setStartDate] = useState(defaultStartDate);
-  const [endDate, setEndDate] = useState(defaultEndDate);
+  // Calcul dynamique de la plage de l'exercice comptable en cours
+  const initialFiscalRange = getFiscalYearDateRange(new Date(), initialExerciceDebutMois, 0);
+
+  const [startDate, setStartDate] = useState(initialFiscalRange.startDate);
+  const [endDate, setEndDate] = useState(initialFiscalRange.endDate);
+  const [userHasCustomizedDates, setUserHasCustomizedDates] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   
   const [loadingLedger, setLoadingLedger] = useState(false);
   const [exportingAccounting, setExportingAccounting] = useState(false);
-  const [associationSettings, setAssociationSettings] = useState(null);
+  const [associationSettings, setAssociationSettings] = useState(propAssociationSettings || null);
   const [ledgerEntries, setLedgerEntries] = useState([]);
-  const [bankAccounts, setBankAccounts] = useState([]);
+  const [bankAccounts, setBankAccounts] = useState(propAssociationSettings?.bankAccounts || []);
 
-  // Charger association settings for pricing & km refund configurations
+  // Synchronisation si propAssociationSettings est fourni en prop
   useEffect(() => {
-    if (!groupId) return;
+    if (propAssociationSettings) {
+      setAssociationSettings(propAssociationSettings);
+      if (Array.isArray(propAssociationSettings.bankAccounts)) {
+        setBankAccounts(propAssociationSettings.bankAccounts);
+      }
+    }
+  }, [propAssociationSettings]);
+
+  // Charger association settings si non fournis via prop
+  useEffect(() => {
+    if (!groupId || propAssociationSettings) return;
     const assocRef = doc(db, 'associations', groupId);
     getDoc(assocRef).then((snap) => {
       if (snap.exists()) {
@@ -91,7 +113,16 @@ export default function ReportsExports({ groupId, role, isSystemAdmin, hasAccess
     }).catch(err => {
       console.error("ReportsExports - Error loading association settings:", err);
     });
-  }, [groupId]);
+  }, [groupId, propAssociationSettings]);
+
+  // Synchronisation dynamique de la plage d'exercice comptable si non personnalisée manuellement
+  useEffect(() => {
+    if (!userHasCustomizedDates && associationSettings?.exerciceDebutMois !== undefined && associationSettings?.exerciceDebutMois !== null) {
+      const range = getFiscalYearDateRange(new Date(), Number(associationSettings.exerciceDebutMois), 0);
+      setStartDate(range.startDate);
+      setEndDate(range.endDate);
+    }
+  }, [associationSettings?.exerciceDebutMois, userHasCustomizedDates]);
 
   // Charger & compute live accounting ledger entries
   const fetchLedgerData = useCallback(async () => {
@@ -533,7 +564,10 @@ export default function ReportsExports({ groupId, role, isSystemAdmin, hasAccess
             <input 
               type="date" 
               value={startDate} 
-              onChange={(e) => setStartDate(e.target.value)} 
+              onChange={(e) => {
+                setStartDate(e.target.value);
+                setUserHasCustomizedDates(true);
+              }} 
               className="theme-input w-full font-bold text-xs"
             />
           </div>
@@ -544,7 +578,10 @@ export default function ReportsExports({ groupId, role, isSystemAdmin, hasAccess
             <input 
               type="date" 
               value={endDate} 
-              onChange={(e) => setEndDate(e.target.value)} 
+              onChange={(e) => {
+                setEndDate(e.target.value);
+                setUserHasCustomizedDates(true);
+              }} 
               className="theme-input w-full font-bold text-xs"
             />
           </div>

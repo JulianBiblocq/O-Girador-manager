@@ -225,6 +225,8 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
     agendaEnableFinance: true,
     agendaEnableInscriptions: true,
     pupitresColors: { Mestre: '#8b2a1a' },
+    saisonDebutMois: 9,
+    exerciceDebutMois: 1,
     nomenclature: {
       maracatu: { ...DEFAULT_MARACATU_NOMENCLATURE }
     },
@@ -507,6 +509,8 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
           agendaEnableFinance: data.agendaEnableFinance !== false,
           agendaEnableInscriptions: data.agendaEnableInscriptions !== false,
           pupitresColors: data.pupitresColors || { Mestre: '#8b2a1a' },
+          saisonDebutMois: data.saisonDebutMois !== undefined ? Number(data.saisonDebutMois) : 9,
+          exerciceDebutMois: data.exerciceDebutMois !== undefined ? Number(data.exerciceDebutMois) : 1,
           nomenclature: {
             maracatu: {
               ...DEFAULT_MARACATU_NOMENCLATURE,
@@ -769,6 +773,8 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
         instructionsPaiement: formData.instructionsPaiement,
         permissionsMatrice: formData.permissionsMatrice,
         pupitresColors: formData.pupitresColors || {},
+        saisonDebutMois: Number(formData.saisonDebutMois) || 9,
+        exerciceDebutMois: Number(formData.exerciceDebutMois) || 1,
         nomenclature: {
           maracatu: formData.nomenclature?.maracatu || formData.nomenclature || DEFAULT_MARACATU_NOMENCLATURE
         },

@@ -5,9 +5,15 @@ import { db, storage } from '../../firebase';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 import { useSequencerRhythms } from '../../hooks/useSequencerRhythms';
-import { useDancadorChoreographies } from '../../hooks/useDancadorData';
+import { formatPieceTablature } from '../../utils/tablatureFormatter';
+import { buildSequencerUrl } from '../../utils/sequencerUrlUtils';
+import { parseYouTubeMedia } from '../../utils/mediaUrlUtils';
 import RepertoireVideosPicker from './RepertoireVideosPicker';
 import RepertoireSignalsPicker from './RepertoireSignalsPicker';
+import RepertoireSinaisDoMestreEditor from './RepertoireSinaisDoMestreEditor';
+import CreateCultureFicheModal from './CreateCultureFicheModal';
+import { useDancadorChoreographies } from '../../hooks/useDancadorData';
+import { cleanFirestorePayload } from '../../utils/firestoreUtils';
 
 /**
  * Modale de création et d'édition d'un morceau du répertoire musical.
@@ -37,12 +43,18 @@ export default function RepertoirePieceModal({
   // Vidéos libres & Signes du Mestre
   const [videos, setVideos] = useState([]);
   const [signalIds, setSignalIds] = useState([]);
+  const [sinaisDoMestre, setSinaisDoMestre] = useState([]);
 
-  // Liaisons optionnelles
+  // Liaisons optionnelles & Triptyque Séquenceur (Preset, Audio, Tablature, Vidéo, Histoire)
   const [selectedToadaId, setSelectedToadaId] = useState('');
   const [selectedSeqUrl, setSelectedSeqUrl] = useState('');
   const [selectedSeqType, setSelectedSeqType] = useState(null); // 'presets' | 'sections' | 'patterns' | 'storage'
   const [selectedAudioUrl, setSelectedAudioUrl] = useState('');
+  const [tablature, setTablature] = useState('');
+  const [showTabPreview, setShowTabPreview] = useState(false);
+  const [videoUrl, setVideoUrl] = useState('');
+  const [histoire, setHistoire] = useState('');
+  const [isCultureModalOpen, setIsCultureModalOpen] = useState(false);
   const [uploadingAudio, setUploadingAudio] = useState(false);
   const [selectedChoreoId, setSelectedChoreoId] = useState('');
   const [selectedCultureId, setSelectedCultureId] = useState('');
@@ -69,6 +81,7 @@ export default function RepertoirePieceModal({
       setNotes(pieceToEdit.notes || '');
       setVideos(Array.isArray(pieceToEdit.videos) ? pieceToEdit.videos : []);
       setSignalIds(Array.isArray(pieceToEdit.signalIds) ? pieceToEdit.signalIds : []);
+      setSinaisDoMestre(Array.isArray(pieceToEdit.sinaisDoMestre) ? pieceToEdit.sinaisDoMestre : []);
       setSelectedToadaId(pieceToEdit.toadaDocId || '');
 
       // Détecter si l'ancienne valeur était un audio ou un rythme séquenceur
@@ -90,6 +103,10 @@ export default function RepertoirePieceModal({
 
       setSelectedChoreoId(pieceToEdit.dancadorChoreoId || '');
       setSelectedCultureId(pieceToEdit.cultureDocId || '');
+      setTablature(pieceToEdit.tablature || '');
+      setShowTabPreview(Boolean(pieceToEdit.tablature));
+      setVideoUrl(pieceToEdit.videoUrl || (pieceToEdit.videos && pieceToEdit.videos[0]?.url) || '');
+      setHistoire(pieceToEdit.contexteHistorique || pieceToEdit.histoire || '');
     } else {
       // Valeurs par défaut pour un nouveau morceau
       setTitre('');
@@ -98,10 +115,15 @@ export default function RepertoirePieceModal({
       setNotes('');
       setVideos([]);
       setSignalIds([]);
+      setSinaisDoMestre([]);
       setSelectedToadaId('');
       setSelectedSeqUrl('');
       setSelectedSeqType(null);
       setSelectedAudioUrl('');
+      setTablature('');
+      setShowTabPreview(false);
+      setVideoUrl('');
+      setHistoire('');
       setSelectedChoreoId('');
       setSelectedCultureId('');
     }
@@ -192,6 +214,18 @@ export default function RepertoirePieceModal({
 
       const cleanSignalIds = (signalIds || []).filter(Boolean);
 
+      // Inclusion de la vidéo principale dans la liste des vidéos si non encore présente
+      if (videoUrl && videoUrl.trim()) {
+        const vTrim = videoUrl.trim();
+        if (!cleanVideos.some((v) => v.url === vTrim)) {
+          cleanVideos.unshift({
+            id: `vid_yt_${Date.now()}`,
+            titre: 'Vidéo principale',
+            url: vTrim
+          });
+        }
+      }
+
       // Construction de l'objet strictement assaini (aucun undefined envoyé à Firestore)
       const pieceData = {
         groupId: groupId,
@@ -201,10 +235,15 @@ export default function RepertoirePieceModal({
         notes: (notes || '').trim(),
         videos: cleanVideos,
         signalIds: cleanSignalIds,
+        sinaisDoMestre: Array.isArray(sinaisDoMestre) ? cleanFirestorePayload(sinaisDoMestre) : [],
         sequenceurId: matchedSeqId || null,
         sequenceurType: matchedSeqType || null,
         sequenceurFileUrl: matchedSeqUrl || null,
         audioUrl: (selectedAudioUrl || '').trim() || null,
+        videoUrl: (videoUrl || '').trim() || null,
+        contexteHistorique: (histoire || '').trim() || null,
+        histoire: (histoire || '').trim() || null,
+        tablature: (tablature || '').trim() || null,
         dancadorChoreoId: selectedChoreoId || null,
         toadaDocId: selectedToadaId || null,
         cultureDocId: selectedCultureId || null,
@@ -248,17 +287,63 @@ export default function RepertoirePieceModal({
     }
   };
 
-  // Gestion de la sélection d'un rythme séquenceur avec injection du titre si vide
+  // Gestion de la sélection d'un rythme séquenceur avec injection du titre si vide,
+  // auto-complétion du bounce audio, de la tablature, de la vidéo et de l'histoire
   const handleSequenceurChange = (e) => {
     const newSeqUrl = e.target.value;
     setSelectedSeqUrl(newSeqUrl);
+
+    // Injection automatique du titre si vide
+    if (newSeqUrl && !titre.trim()) {
+      const foundItem = catalogRhythms.find((r) => r.jsonUrl === newSeqUrl || r.id === newSeqUrl);
+      if (foundItem && (foundItem.titre || foundItem.name)) {
+        setTitre(foundItem.titre || foundItem.name);
+      }
+    }
 
     if (newSeqUrl) {
       const found = catalogRhythms.find((r) => r.jsonUrl === newSeqUrl || r.id === newSeqUrl);
       if (found) {
         setSelectedSeqType(found._collection || null);
-        if (!titre.trim() && (found.titre || found.name)) {
-          setTitre(found.titre || found.name);
+
+        // 1. Auto-compléter le champ audio si audioUrl existe sur le preset
+        if (found.audioUrl) {
+          setSelectedAudioUrl(found.audioUrl);
+        }
+
+        // 2. Auto-générer la tablature textuelle si parsedData existe
+        if (found.parsedData) {
+          const generatedTab = formatPieceTablature(found.parsedData);
+          if (generatedTab) {
+            setTablature(generatedTab);
+            setShowTabPreview(true);
+          }
+        }
+
+        // 3. Auto-compléter la vidéo YouTube si présente dans le preset
+        const presetVideo = found.videoUrl || found.parsedData?.metadata?.videoUrl || found.parsedData?.metadata?.youtubeUrl || found.youtubeUrl || null;
+        if (presetVideo && !videoUrl.trim()) {
+          setVideoUrl(presetVideo.trim());
+        }
+
+        // 4. Auto-compléter l'histoire / contexte culturel si présent dans le preset
+        const presetHistoire = found.parsedData?.metadata?.histoire ||
+          found.parsedData?.metadata?.contexteHistorique ||
+          found.parsedData?.metadata?.descriptionFr ||
+          found.parsedData?.metadata?.description ||
+          found.parsedData?.description ||
+          found.histoire || null;
+        if (presetHistoire && !histoire.trim()) {
+          setHistoire(presetHistoire.trim());
+        }
+
+        // 5. Auto-aspiration des signes et conventions du Mestre depuis le preset
+        const extractedSinais = found.parsedData?.sinaisDoMestre ||
+          found.parsedData?.metadata?.sinaisDoMestre ||
+          found.sinaisDoMestre ||
+          [];
+        if (Array.isArray(extractedSinais) && extractedSinais.length > 0) {
+          setSinaisDoMestre(extractedSinais);
         }
       }
     } else {
@@ -520,10 +605,12 @@ export default function RepertoirePieceModal({
                 >
                   <option value="">-- Aucun préréglage ou séquence liée --</option>
                   {presetsList.length > 0 && (
-                    <optgroup label="🎛️ Préréglages Séquenceur (Presets complets)">
+                    <optgroup label="⭐ 🎛️ Préréglages Complets (Presets - Recommandé avec Audio & Tablature)">
                       {presetsList.map((rhythm) => (
                         <option key={rhythm.id} value={rhythm.jsonUrl || rhythm.id}>
-                          🎛️ {rhythm.displayTitle || rhythm.titre}
+                          ⭐ {rhythm.displayTitle || rhythm.titre}
+                          {rhythm.audioUrl ? ' 🔊' : ''}
+                          {rhythm.parsedData ? ' 📄' : ''}
                         </option>
                       ))}
                     </optgroup>
@@ -691,17 +778,155 @@ export default function RepertoirePieceModal({
             </div>
           </div>
 
+          {/* Aperçu repliable de la tablature générée */}
+          {tablature && (
+            <div className="p-3.5 rounded bg-white border border-encre-noire/15 shadow-xs flex flex-col gap-2">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => setShowTabPreview(!showTabPreview)}
+                  className="flex items-center gap-1.5 text-[10px] uppercase font-black tracking-wider text-cordel-master-dark hover:text-cordel-wood cursor-pointer select-none transition-colors"
+                >
+                  <span>📄</span>
+                  <span>Tablature générée ({tablature.split('\n').length} lignes)</span>
+                  <span className="text-[11px] font-bold text-cordel-wood underline ml-1">
+                    {showTabPreview ? '▲ Replier' : '▼ Déplier l\'aperçu'}
+                  </span>
+                </button>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard.writeText(tablature);
+                      alert("Tablature copiée dans le presse-papier !");
+                    }}
+                    className="px-2.5 py-1 text-[9.5px] font-black uppercase bg-cordel-bg-light hover:bg-stone-200 text-encre-noire border border-encre-noire/25 rounded shadow-xs cursor-pointer flex items-center gap-1"
+                    title="Copier la tablature"
+                  >
+                    <span>📋</span>
+                    <span>Copier</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setTablature('')}
+                    className="text-[9.5px] text-cordel-wood hover:underline font-bold cursor-pointer"
+                    title="Retirer la tablature de ce morceau"
+                  >
+                    Effacer
+                  </button>
+                </div>
+              </div>
+
+              {showTabPreview && (
+                <div className="w-full overflow-x-auto p-3 bg-[#fdfaf2] border border-encre-noire/20 rounded max-h-56 overflow-y-auto">
+                  <pre className="text-[10px] md:text-[11px] font-mono leading-relaxed text-encre-noire whitespace-pre min-w-max select-text">
+                    {tablature}
+                  </pre>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Vidéo YouTube de référence & Histoire du morceau */}
+          <div className="p-3.5 rounded bg-white border border-encre-noire/15 shadow-xs flex flex-col gap-3">
+            <div className="flex items-center justify-between border-b border-dashed border-cordel-master-dark/15 pb-1">
+              <h4 className="text-[10px] uppercase font-black tracking-wider text-cordel-wood flex items-center gap-1.5">
+                <span>🎬</span>
+                <span>Vidéo de référence &amp; Histoire culturelle</span>
+              </h4>
+              {!selectedCultureId && (
+                <button
+                  type="button"
+                  onClick={() => setIsCultureModalOpen(true)}
+                  className="text-[9.5px] font-extrabold text-amber-900 hover:text-amber-950 underline cursor-pointer flex items-center gap-1"
+                  title="Créer une fiche sur le Varal Culture pré-remplie avec ces informations"
+                >
+                  <span>📜</span>
+                  <span>Créer la fiche Varal Culture</span>
+                </button>
+              )}
+            </div>
+
+            {/* URL de la vidéo YouTube */}
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center justify-between">
+                <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark flex items-center gap-1">
+                  <span>🎬</span>
+                  <span>Lien vidéo YouTube (aspiré depuis le Preset ou personnalisé)</span>
+                </label>
+                {videoUrl && (
+                  <button
+                    type="button"
+                    onClick={() => setVideoUrl('')}
+                    className="text-[8.5px] text-cordel-wood hover:underline font-bold cursor-pointer"
+                  >
+                    Effacer
+                  </button>
+                )}
+              </div>
+              <input
+                type="url"
+                value={videoUrl}
+                onChange={(e) => setVideoUrl(e.target.value)}
+                disabled={submitting}
+                placeholder="https://www.youtube.com/watch?v=..."
+                className="theme-input text-xs font-semibold p-2 bg-cordel-bg-light border border-encre-noire/30 rounded"
+              />
+              {videoUrl && parseYouTubeMedia(videoUrl)?.isValid && (
+                <span className="text-[8.5px] text-green-800 font-bold flex items-center gap-1">
+                  <span>✓</span>
+                  <span>Vidéo YouTube reconnue (ID : {parseYouTubeMedia(videoUrl).videoId})</span>
+                </span>
+              )}
+            </div>
+
+            {/* Contexte historique & histoire du morceau */}
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center justify-between">
+                <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark flex items-center gap-1">
+                  <span>📜</span>
+                  <span>Histoire &amp; Contexte culturel (aspiré ou personnalisé)</span>
+                </label>
+                {histoire && (
+                  <button
+                    type="button"
+                    onClick={() => setHistoire('')}
+                    className="text-[8.5px] text-cordel-wood hover:underline font-bold cursor-pointer"
+                  >
+                    Effacer
+                  </button>
+                )}
+              </div>
+              <textarea
+                rows={3}
+                value={histoire}
+                onChange={(e) => setHistoire(e.target.value)}
+                disabled={submitting}
+                placeholder="Renseignez l'histoire, la nation d'origine, le contexte cérémoniel ou l'inspiration du morceau..."
+                className="theme-input text-xs font-medium p-2 bg-cordel-bg-light border border-encre-noire/30 rounded leading-relaxed font-serif"
+              />
+            </div>
+          </div>
+
           {/* Vidéos personnalisables du morceau */}
           <RepertoireVideosPicker
             videos={videos}
             onChange={setVideos}
           />
 
-          {/* Signes du Mestre associés */}
+          {/* Signes du Mestre associés (vignettes bibliothèque) */}
           <RepertoireSignalsPicker
             selectedSignalIds={signalIds}
             onChange={setSignalIds}
             groupId={groupId}
+          />
+
+          {/* Signes & Conventions chronologiques par mesure (Séquenceur & Mestria) */}
+          <RepertoireSinaisDoMestreEditor
+            sinais={sinaisDoMestre}
+            onChange={setSinaisDoMestre}
+            disabled={submitting}
           />
 
           {/* Notes d'intention / mémo du Mestre */}
@@ -742,6 +967,28 @@ export default function RepertoirePieceModal({
           </div>
         </form>
       </CordelCard>
+
+      {/* Modale passerelle vers le Varal Culture */}
+      <CreateCultureFicheModal
+        isOpen={isCultureModalOpen}
+        onClose={() => setIsCultureModalOpen(false)}
+        groupId={groupId}
+        piece={{
+          id: pieceToEdit?.id,
+          titre: titre || '',
+          videoUrl: videoUrl || '',
+          histoire: histoire || '',
+          contexteHistorique: histoire || ''
+        }}
+        onSuccess={(newCultureId, newCultureDoc) => {
+          setSelectedCultureId(newCultureId);
+          setCultureDocsList((prev) => {
+            if (prev.some((c) => c.id === newCultureId)) return prev;
+            return [...prev, newCultureDoc];
+          });
+          setIsCultureModalOpen(false);
+        }}
+      />
     </div>
   );
 }

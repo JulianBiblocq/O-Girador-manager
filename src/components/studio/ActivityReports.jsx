@@ -1,23 +1,70 @@
-import React, { useState } from 'react';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import React, { useState, useEffect } from 'react';
+import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
 import { db } from '../../firebase';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 import { XiloScroll } from '../XiloIcons';
 import { useTranslation } from '../LanguageContext';
+import { 
+  getCurrentSeason, 
+  getSeasonDateRange, 
+  DEFAULT_SEASON_START_MONTH 
+} from '../../utils/seasonUtils';
 
-export default function ActivityReports({ groupId, onBack, isEmbedded }) {
+export default function ActivityReports({ 
+  groupId, 
+  onBack, 
+  isEmbedded,
+  associationSettings: propAssociationSettings 
+}) {
   const { t } = useTranslation();
 
-  // Définir default dates to school year (Sep 1st of current/previous year to Aug 31st of current/next year)
-  const now = new Date();
-  const currentYear = now.getFullYear();
-  const startYear = now.getMonth() >= 8 ? currentYear : currentYear - 1;
-  const defaultStartDate = `${startYear}-09-01`;
-  const defaultEndDate = `${startYear + 1}-08-31`;
+  const [associationSettings, setAssociationSettings] = useState(propAssociationSettings || null);
 
-  const [startDate, setStartDate] = useState(defaultStartDate);
-  const [endDate, setEndDate] = useState(defaultEndDate);
+  // Charger les paramètres de l'association si non passés en prop
+  useEffect(() => {
+    if (!groupId || propAssociationSettings) return;
+    const assocRef = doc(db, 'associations', groupId);
+    getDoc(assocRef).then((snap) => {
+      if (snap.exists()) {
+        setAssociationSettings(snap.data());
+      }
+    }).catch(err => {
+      console.error("ActivityReports - Erreur chargement paramètres association :", err);
+    });
+  }, [groupId, propAssociationSettings]);
+
+  useEffect(() => {
+    if (propAssociationSettings) {
+      setAssociationSettings(propAssociationSettings);
+    }
+  }, [propAssociationSettings]);
+
+  // Mois de début de saison d'activité (par défaut 9 = Septembre)
+  const effectiveStartMonth = (propAssociationSettings?.saisonDebutMois !== undefined && propAssociationSettings?.saisonDebutMois !== null)
+    ? Number(propAssociationSettings.saisonDebutMois)
+    : (associationSettings?.saisonDebutMois !== undefined && associationSettings?.saisonDebutMois !== null)
+      ? Number(associationSettings.saisonDebutMois)
+      : DEFAULT_SEASON_START_MONTH;
+
+  // Calcul dynamique de la saison en cours et de sa plage de dates
+  const initialSeason = getCurrentSeason(effectiveStartMonth);
+  const initialRange = getSeasonDateRange(initialSeason, effectiveStartMonth);
+
+  const [startDate, setStartDate] = useState(initialRange.startDate);
+  const [endDate, setEndDate] = useState(initialRange.endDate);
+  const [userHasCustomizedDates, setUserHasCustomizedDates] = useState(false);
+
+  // Synchronisation dynamique si les paramètres d'association sont chargés et non personnalisés manuellement
+  useEffect(() => {
+    if (!userHasCustomizedDates && associationSettings?.saisonDebutMois !== undefined && associationSettings?.saisonDebutMois !== null) {
+      const month = Number(associationSettings.saisonDebutMois);
+      const season = getCurrentSeason(month);
+      const range = getSeasonDateRange(season, month);
+      setStartDate(range.startDate);
+      setEndDate(range.endDate);
+    }
+  }, [associationSettings?.saisonDebutMois, userHasCustomizedDates]);
 
   const [eventTypes, setEventTypes] = useState({
     prestation: true,
@@ -146,7 +193,10 @@ export default function ActivityReports({ groupId, onBack, isEmbedded }) {
             <input 
               type="date" 
               value={startDate} 
-              onChange={(e) => setStartDate(e.target.value)} 
+              onChange={(e) => {
+                setStartDate(e.target.value);
+                setUserHasCustomizedDates(true);
+              }} 
               className="theme-input w-full font-bold text-xs"
             />
           </div>
@@ -157,7 +207,10 @@ export default function ActivityReports({ groupId, onBack, isEmbedded }) {
             <input 
               type="date" 
               value={endDate} 
-              onChange={(e) => setEndDate(e.target.value)} 
+              onChange={(e) => {
+                setEndDate(e.target.value);
+                setUserHasCustomizedDates(true);
+              }} 
               className="theme-input w-full font-bold text-xs"
             />
           </div>
