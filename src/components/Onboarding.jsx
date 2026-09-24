@@ -251,6 +251,41 @@ export default function Onboarding({ user, branding, onComplete, profileData }) 
     setSubmitting(true);
 
     try {
+      if (!user?.uid) {
+        throw new Error("Identifiant utilisateur manquant. Veuillez vous reconnecter.");
+      }
+
+      // Vérification préalable de l'existence du document pour distinguer création vs mise à jour
+      const userRef = doc(db, 'users', user.uid);
+      const userSnap = await getDoc(userRef);
+      const isNewDoc = !userSnap.exists();
+
+      // Réconciliation préalable avec le sas de paiement HelloAsso (pending_payments)
+      let pendingPaymentData = null;
+      let pendingTxId = null;
+      let pendingRefToClean = null;
+      const cleanEmail = (user.email || '').trim().toLowerCase();
+
+      if (cleanEmail) {
+        try {
+          const pendingRef = doc(db, 'pending_payments', cleanEmail);
+          const pendingSnap = await getDoc(pendingRef);
+          if (pendingSnap.exists()) {
+            const pendingData = pendingSnap.data();
+            pendingPaymentData = {
+              date: pendingData.paymentDate || new Date().toISOString(),
+              amount: pendingData.amountEuros || 0,
+              orderId: pendingData.orderId || null,
+              eventType: pendingData.eventType || 'Order'
+            };
+            pendingTxId = pendingData.transactionId || null;
+            pendingRefToClean = pendingRef;
+          }
+        } catch (pendingErr) {
+          console.warn("Onboarding - Erreur vérification sas pending_payments :", pendingErr);
+        }
+      }
+
       const currentInstVal = isAncien ? (formData.instrumentPrincipal || "") : (isPercussion ? "En attente" : "");
 
       // Construction de la fiche utilisateur Firestore
@@ -263,9 +298,6 @@ export default function Onboarding({ user, branding, onComplete, profileData }) 
         (profileData?.role && profileData.role !== 'nouveau')
       );
 
-      // Construction de la fiche utilisateur — les champs sensibles (role, isSystemAdmin)
-      // ne sont injectés que pour les profils réellement nouveaux afin de ne pas écraser
-      // les valeurs existantes gérées par les firestore.rules du backend maître.
       const userDoc = {
         nom: formData.lastName,
         prenom: formData.firstName,
@@ -314,14 +346,6 @@ export default function Onboarding({ user, branding, onComplete, profileData }) 
         userDoc.dateSignatureAttestationSante = new Date();
       }
 
-      // Injection des champs sensibles uniquement pour les profils sans rôle existant
-      if (!profileData?.role) {
-        userDoc.role = "membre";
-      }
-      if (!profileData?.tags) {
-        userDoc.tags = [];
-      }
-
       // Nettoyage du payload : suppression des valeurs null/undefined
       // pour éviter un rejet par les règles Firestore du backend maître
       Object.keys(userDoc).forEach(key => {
@@ -330,49 +354,70 @@ export default function Onboarding({ user, branding, onComplete, profileData }) 
         }
       });
 
-      // Réconciliation avec le sas de paiement HelloAsso préalable (pending_payments)
-      const cleanEmail = (user.email || '').trim().toLowerCase();
-      if (cleanEmail) {
-        try {
-          const pendingRef = doc(db, 'pending_payments', cleanEmail);
-          const pendingSnap = await getDoc(pendingRef);
-          if (pendingSnap.exists()) {
-            const pendingData = pendingSnap.data();
-            userDoc.paymentStatus = 'paid';
-            userDoc.helloAssoLastPayment = {
-              date: pendingData.paymentDate || new Date().toISOString(),
-              amount: pendingData.amountEuros || 0,
-              orderId: pendingData.orderId || null,
-              eventType: pendingData.eventType || 'Order'
-            };
+      if (isNewDoc) {
+        // --- 1. CRÉATION D'UN NOUVEAU DOCUMENT UTILISATEUR ---
+        // Conformité stricte avec les règles Firestore allow create :
+        // - role doit être 'membre'
+        // - tags doit être []
+        // - statutActuel doit être 'active'
+        // - paymentStatus DOIT être 'unpaid' (la règle interdit formellement 'paid' à la création)
+        userDoc.role = "membre";
+        userDoc.tags = [];
+        userDoc.paymentStatus = "unpaid";
 
-            // Rapatrier la transaction financière avec son UID si transactionId existe
-            if (pendingData.transactionId && user?.uid) {
-              try {
-                await updateDoc(doc(db, 'transactions', pendingData.transactionId), {
-                  userId: user.uid
-                });
-              } catch (txUpdateErr) {
-                console.warn("Onboarding - Impossible de rattacher la transaction comptable :", txUpdateErr);
-              }
-            }
+        if (pendingPaymentData) {
+          userDoc.helloAssoLastPayment = pendingPaymentData;
+        }
 
-            // Supprimer l'entrée réconciliée du sas pending_payments
-            await deleteDoc(pendingRef);
+        // Création initiale autorisée par les règles de sécurité
+        await setDoc(userRef, userDoc);
+
+        // Si un paiement HelloAsso préalable a été détecté, basculer le statut en 'paid'
+        // via une mise à jour (autorisée par la règle allow update pour le profil utilisateur)
+        if (pendingPaymentData) {
+          try {
+            await updateDoc(userRef, { paymentStatus: 'paid' });
+          } catch (payUpdateErr) {
+            console.warn("Onboarding - Erreur bascule paymentStatus en 'paid' :", payUpdateErr);
           }
-        } catch (pendingErr) {
-          console.warn("Onboarding - Erreur vérification sas pending_payments :", pendingErr);
+        }
+      } else {
+        // --- 2. MISE À JOUR D'UN DOCUMENT EXISTANT ---
+        // Les règles Firestore allow update interdisent aux membres non-admin
+        // de modifier les clés système (role, privilèges, etc.)
+        delete userDoc.role;
+        delete userDoc.isSystemAdmin;
+        delete userDoc.hasAccessLogistique;
+        delete userDoc.canWriteSequenciador;
+        delete userDoc.canWriteDansador;
+        delete userDoc.canWriteOrchestrador;
+
+        if (pendingPaymentData) {
+          userDoc.paymentStatus = 'paid';
+          userDoc.helloAssoLastPayment = pendingPaymentData;
+        }
+
+        await setDoc(userRef, userDoc, { merge: true });
+      }
+
+      // Nettoyages annexes non-bloquants (transactions comptables et sas pending_payments)
+      if (pendingTxId) {
+        try {
+          await updateDoc(doc(db, 'transactions', pendingTxId), { userId: user.uid });
+        } catch (txUpdateErr) {
+          console.info("Onboarding - Liaison transaction comptable différée :", txUpdateErr?.message);
         }
       }
 
-      if (!user?.uid) {
-        throw new Error("Identifiant utilisateur manquant. Veuillez vous reconnecter.");
+      if (pendingRefToClean) {
+        try {
+          await deleteDoc(pendingRefToClean);
+        } catch (pendingDelErr) {
+          console.info("Onboarding - Sas pending_payments conservé pour archivage serveur :", pendingDelErr?.message);
+        }
       }
 
-      // Enregistrement de la fiche adhérent dans Firestore avec l'UID Auth comme identifiant
-      await setDoc(doc(db, 'users', user.uid), userDoc, { merge: true });
-
-      // Trigger the parent callback to complete onboarding
+      // Déclenchement du callback parent pour finaliser l'onboarding
       if (onComplete) {
         onComplete();
       }
